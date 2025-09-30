@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   db:
     image: postgres:15
@@ -31,7 +33,10 @@ services:
     restart: on-failure
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        REACT_APP_API_URL: http://cenate-backend:8080/api
     container_name: cenate-frontend
     depends_on:
       - backend
