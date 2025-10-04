@@ -7,7 +7,7 @@ Proyecto de ejemplo que expone una **API REST** para obtener información de pac
 ## 🛠 Tecnologías
 
 - **Backend**: Java 17, Spring Boot 3.x, Spring Data JPA
-- **Frontend**: React (Create React App)
+- **Frontend**: React (Create React App) + Tailwind CSS
 - **Base de datos**: PostgreSQL 15
 - **Contenerización**: Docker, Docker Compose
 - **Comunicación**: REST API (JSON)
@@ -37,11 +37,37 @@ cenate/
 │   │       └── CenateApplicationTests.java
 │   └── pom.xml
 ├── frontend/
-│   ├── src/
+│   ├── Dockerfile
+│   ├── README.md
+│   ├── default.conf
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── postcss.config.js
+│   ├── tailwind.config.js
+│   ├── build/                 # generado tras build de React
+│   ├── node_modules/
 │   ├── public/
-│   └── package.json
+│   └── src/
+│       ├── App.css
+│       ├── App.js
+│       ├── App.test.js
+│       ├── api/
+│       │   └── pacientes.js
+│       ├── components/
+│       │   └── PacienteCard.jsx
+│       ├── hooks/
+│       │   └── usePacientes.js
+│       ├── index.css
+│       ├── index.js
+│       ├── logo.svg
+│       ├── pages/
+│       │   └── PacientesPage.jsx
+│       ├── reportWebVitals.js
+│       ├── setupTests.js
+│       └── utils/
 ├── docker-compose.yml
 └── README.md
+
 
 
 
@@ -106,3 +132,21 @@ curl "http://localhost:8080/api/asegurados/doc/07208947"
 
 ```
 
+### Comandos solo para actualizar el front-end o el back-end
+
+- Solo Front-End
+```yaml
+docker-compose build --no-cache frontend                                                                                 
+docker-compose up -d
+```
+- Solo Back-End
+```yaml
+docker-compose build --no-cache backend                                                                                 
+docker-compose up -d
+```
+
+## 📌 Notas
+
+- La API permite paginación, búsqueda por ID y búsqueda por documento.
+- El frontend consume los endpoints de forma reactiva mediante hooks personalizados.
+- Todo el proyecto está listo para producción usando Docker + Nginx para servir el frontend.
