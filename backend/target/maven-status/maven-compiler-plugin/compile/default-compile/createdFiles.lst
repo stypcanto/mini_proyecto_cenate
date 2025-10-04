@@ -1,5 +1,5 @@
+styp/com/cenate/model/Asegurado.class
+styp/com/cenate/api/AseguradoController.class
 styp/com/cenate/CenateApplication.class
-styp/com/cenate/model/Paciente.class
-styp/com/cenate/repository/PacienteRepository.class
-styp/com/cenate/api/PacienteController.class
 styp/com/cenate/api/Hello.class
+styp/com/cenate/repository/AseguradoRepository.class
