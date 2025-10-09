@@ -1,5 +1,6 @@
 # ================================
 # Multi-stage Dockerfile para Spring Boot con Gradle
+# Compatible con Apple Silicon (ARM) y AMD64
 # ================================
 
 # -----------------------------
@@ -22,7 +23,8 @@ RUN ./gradlew clean build -x test --no-daemon
 # -----------------------------
 # Stage 2: Runtime
 # -----------------------------
-FROM eclipse-temurin:17-jre-alpine
+# ⚠️ Se cambia alpine (no compatible con ARM) por slim
+FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
@@ -30,7 +32,7 @@ WORKDIR /app
 COPY --from=build /app/build/libs/*.jar app.jar
 
 # Crear usuario no-root para seguridad
-RUN addgroup -S spring && adduser -S spring -G spring
+RUN addgroup --system spring && adduser --system --ingroup spring spring
 USER spring:spring
 
 # Exponer puerto

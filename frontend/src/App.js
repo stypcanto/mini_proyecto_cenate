@@ -16,6 +16,7 @@ import PacientesPage from "./pages/PacientesPage";
 import TransferenciaExamenesPage from "./pages/TransferenciaExamenesPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import UserManagement from "./pages/admin/UserManagement";
+import AdminUsersManagement from "./pages/admin/AdminUsersManagement";
 import RolesManagement from "./pages/admin/RolesManagement";
 import SystemLogs from "./pages/admin/SystemLogs";
 import UserDashboard from "./pages/user/UserDashboard";
@@ -96,7 +97,7 @@ function App() {
                     path="/admin/users"
                     element={
                         <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <UserManagement />
+                            <AdminUsersManagement />
                         </RequireAuth>
                     }
                 />
