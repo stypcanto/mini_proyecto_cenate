@@ -20,4 +20,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
         WHERE u.nameUser = :username
     """)
     Optional<Usuario> findByNameUserWithRoles(@Param("username") String username);
+
+    // Contar usuarios por estado
+    long countByStatUser(String statUser);
 }

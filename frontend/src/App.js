@@ -15,6 +15,9 @@ import ForgotPassword from "./pages/ForgotPassword";
 import PacientesPage from "./pages/PacientesPage";
 import TransferenciaExamenesPage from "./pages/TransferenciaExamenesPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import UserManagement from "./pages/admin/UserManagement";
+import RolesManagement from "./pages/admin/RolesManagement";
+import SystemLogs from "./pages/admin/SystemLogs";
 import UserDashboard from "./pages/user/UserDashboard";
 import NotFound from "./pages/NotFound";
 
@@ -75,29 +78,56 @@ function App() {
                         }
                     />
 
-                    {/* Panel de administración (roles específicos) */}
-                    <Route
-                        path="/admin"
-                        element={
-                            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                                <AdminDashboard />
-                            </RequireAuth>
-                        }
-                    />
-
-                    {/* Panel de usuario normal */}
-                    <Route
-                        path="/usuario"
-                        element={
-                            <RequireAuth allowedRoles={["USUARIO", "USER"]}>
-                                <UserDashboard />
-                            </RequireAuth>
-                        }
-                    />
-
                     {/* Página 404 dentro del Layout */}
                     <Route path="*" element={<NotFound />} />
                 </Route>
+
+                {/* 👑 Panel de administración (sin Layout principal, usa AdminLayout) */}
+                <Route
+                    path="/admin"
+                    element={
+                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+                            <AdminDashboard />
+                        </RequireAuth>
+                    }
+                />
+                
+                <Route
+                    path="/admin/users"
+                    element={
+                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+                            <UserManagement />
+                        </RequireAuth>
+                    }
+                />
+
+                <Route
+                    path="/admin/roles"
+                    element={
+                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+                            <RolesManagement />
+                        </RequireAuth>
+                    }
+                />
+
+                <Route
+                    path="/admin/logs"
+                    element={
+                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+                            <SystemLogs />
+                        </RequireAuth>
+                    }
+                />
+
+                {/* Panel de usuario normal */}
+                <Route
+                    path="/user/dashboard"
+                    element={
+                        <RequireAuth allowedRoles={["USUARIO", "USER"]}>
+                            <UserDashboard />
+                        </RequireAuth>
+                    }
+                />
             </Routes>
         </Router>
     );
