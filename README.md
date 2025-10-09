@@ -145,6 +145,17 @@ docker-compose build --no-cache backend
 docker-compose up -d
 ```
 
+### En resumen
+
+```yaml
+| Entorno                                       | Cómo ejecutarlo                              | Ventajas                            |
+| --------------------------------------------- | -------------------------------------------- | ----------------------------------- |
+| 🧱 Desarrollo (local)                         | `npm start` o `npm run dev`                  | Hot reload, cambios instantáneos    |
+| 🐋 Producción (Docker)                        | `docker compose up --build`                  | Entorno real, igual al despliegue   |
+| 🧪 Mixto (frontend local + backend en Docker) | `docker compose up backend db` + `npm start` | Desarrollo rápido y backend estable |
+```
+
+
 ## 📌 Notas
 
 - La API permite paginación, búsqueda por ID y búsqueda por documento.
