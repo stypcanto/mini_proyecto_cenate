@@ -34,6 +34,7 @@ const UserManagement = () => {
 
             if (response.ok) {
                 const data = await response.json();
+                console.log("Datos recibidos del backend:", data);
                 setUsuarios(data);
             }
         } catch (error) {
@@ -46,10 +47,10 @@ const UserManagement = () => {
     const filtrarUsuarios = () => {
         return usuarios.filter((usuario) => {
             const matchSearch =
-                usuario.nameUser.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                usuario.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 usuario.idUser.toString().includes(searchTerm);
 
-            const matchEstado = !filterEstado || usuario.statUser === filterEstado;
+            const matchEstado = !filterEstado || usuario.estado === filterEstado;
 
             return matchSearch && matchEstado;
         });
@@ -186,7 +187,7 @@ const UserManagement = () => {
                                     Usuarios Activos
                                 </p>
                                 <p className="text-3xl font-bold text-green-600">
-                                    {usuarios.filter((u) => u.statUser === "ACTIVO").length}
+                                    {usuarios.filter((u) => u.estado === "ACTIVO").length}
                                 </p>
                             </div>
                             <div className="p-3 bg-green-100 rounded-lg">
@@ -202,7 +203,7 @@ const UserManagement = () => {
                                     Usuarios Inactivos
                                 </p>
                                 <p className="text-3xl font-bold text-red-600">
-                                    {usuarios.filter((u) => u.statUser === "INACTIVO").length}
+                                    {usuarios.filter((u) => u.estado === "INACTIVO").length}
                                 </p>
                             </div>
                             <div className="p-3 bg-red-100 rounded-lg">
@@ -267,28 +268,28 @@ const UserManagement = () => {
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
                                                         <span className="text-white font-bold">
-                                                            {usuario.nameUser.charAt(0).toUpperCase()}
+                                                            {usuario.username ? usuario.username.charAt(0).toUpperCase() : '?'}
                                                         </span>
                                                     </div>
                                                     <div className="ml-4">
                                                         <div className="text-sm font-medium text-gray-900">
-                                                            {usuario.nameUser}
+                                                            {usuario.username || 'Sin nombre'}
                                                         </div>
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap">
-                                                {getEstadoBadge(usuario.statUser)}
+                                                {getEstadoBadge(usuario.estado)}
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-wrap gap-1">
                                                     {usuario.roles && usuario.roles.length > 0 ? (
-                                                        usuario.roles.map((rol, index) => (
+                                                        Array.from(usuario.roles).map((rol, index) => (
                                                             <span
                                                                 key={index}
                                                                 className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium"
                                                             >
-                                                                {rol.descRol}
+                                                                {rol}
                                                             </span>
                                                         ))
                                                     ) : (

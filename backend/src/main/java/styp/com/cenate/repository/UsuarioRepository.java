@@ -4,6 +4,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import styp.com.cenate.model.Usuario;
+import java.util.List;
 import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
@@ -20,6 +21,14 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
         WHERE u.nameUser = :username
     """)
     Optional<Usuario> findByNameUserWithRoles(@Param("username") String username);
+
+    // 🔥 NUEVO: Método para obtener todos los usuarios con sus roles cargados
+    @Query("""
+        SELECT DISTINCT u FROM Usuario u
+        LEFT JOIN FETCH u.roles r
+        LEFT JOIN FETCH r.permisos
+    """)
+    List<Usuario> findAllWithRoles();
 
     // Contar usuarios por estado
     long countByStatUser(String statUser);

@@ -22,7 +22,7 @@ public class UsuarioService {
     
     @Transactional(readOnly = true)
     public List<UsuarioResponse> getAllUsers() {
-        return usuarioRepository.findAll().stream()
+        return usuarioRepository.findAllWithRoles().stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
