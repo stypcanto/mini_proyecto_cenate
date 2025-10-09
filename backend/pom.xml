@@ -21,6 +21,10 @@
 
     <properties>
         <java.version>17</java.version>
+        <!-- For compatibility and to avoid warnings -->
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <maven.compiler.release>17</maven.compiler.release>
     </properties>
 
     <dependencies>
@@ -51,9 +55,16 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
+            <exclusions>
+                <!-- Excluir jjwt clásico si Spring Security lo trae por defecto -->
+                <exclusion>
+                    <groupId>io.jsonwebtoken</groupId>
+                    <artifactId>jjwt</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
-        <!-- JWT -->
+        <!-- JWT - JJWT 0.12.3 modular -->
         <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-api</artifactId>
