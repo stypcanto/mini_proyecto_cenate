@@ -30,74 +30,119 @@ import java.util.List;
 @EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    
+
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
-    
+
+    // ===========================================================
+    // 🔐 CONFIGURACIÓN DE SEGURIDAD PRINCIPAL
+    // ===========================================================
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-            .csrf(AbstractHttpConfigurer::disable)
-            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-            .authorizeHttpRequests(auth -> auth
-                // Endpoints públicos (sin autenticación)
-                .requestMatchers(
-                    "/api/auth/**",
-                    "/api/public/**",
-                    "/hello",
-                    "/error"
-                ).permitAll()
-                
-                // Endpoints protegidos por rol
-                .requestMatchers("/api/admin/**").hasRole("SUPERADMIN")
-                .requestMatchers("/api/usuarios/**").hasAnyRole("SUPERADMIN", "ADMIN")
-                
-                // Todos los demás endpoints requieren autenticación
-                .anyRequest().authenticated()
-            )
-            .sessionManagement(session -> session
-                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-            )
-            .authenticationProvider(authenticationProvider())
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-        
+                // 🚫 Desactivar CSRF (ya que usamos JWT)
+                .csrf(AbstractHttpConfigurer::disable)
+
+                // 🌐 Habilitar configuración CORS personalizada
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // 🧭 Configurar rutas públicas y protegidas
+                .authorizeHttpRequests(auth -> auth
+
+                        // Endpoints públicos
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/public/**",
+                                "/error",
+                                "/hello"
+                        ).permitAll()
+
+                        // 👑 SuperAdmin
+                        .requestMatchers("/api/admin/**").hasRole("SUPERADMIN")
+
+                        // 👥 Gestión de usuarios
+                        .requestMatchers("/api/usuarios/**").hasAnyRole("SUPERADMIN", "ADMIN")
+
+                        // 🩺 Áreas médicas
+                        .requestMatchers("/api/medico/**").hasAnyRole("SUPERADMIN", "ADMIN", "MEDICO", "ENFERMERIA", "OBSTETRA")
+
+                        // 🧪 Diagnóstico y farmacia
+                        .requestMatchers("/api/laboratorio/**").hasAnyRole("SUPERADMIN", "ADMIN", "LABORATORIO")
+                        .requestMatchers("/api/radiologia/**").hasAnyRole("SUPERADMIN", "ADMIN", "RADIOLOGIA")
+                        .requestMatchers("/api/farmacia/**").hasAnyRole("SUPERADMIN", "ADMIN", "FARMACIA")
+
+                        // 🧠 Psicología, terapias y nutrición
+                        .requestMatchers("/api/psicologia/**").hasAnyRole("SUPERADMIN", "ADMIN", "PSICOLOGO")
+                        .requestMatchers("/api/terapia/**").hasAnyRole("SUPERADMIN", "ADMIN", "TERAPISTA_FISI", "TERAPISTA_LENG")
+                        .requestMatchers("/api/nutricion/**").hasAnyRole("SUPERADMIN", "ADMIN", "NUTRICION")
+
+                        // 📋 Áreas administrativas
+                        .requestMatchers("/api/admisiones/**").hasAnyRole("SUPERADMIN", "ADMIN", "ADMISION", "FACTURACION_SE")
+                        .requestMatchers("/api/transferencias/**").hasAnyRole("SUPERADMIN", "ADMIN", "COORDINACION", "COORD_TRANSFER")
+                        .requestMatchers("/api/auditoria/**").hasAnyRole("SUPERADMIN", "ADMIN", "AUDITOR_CLINIC")
+                        .requestMatchers("/api/externos/**").hasAnyRole("SUPERADMIN", "ADMIN", "INSTITUCION_EX", "ASEGURADORA", "REGULADOR")
+                        .requestMatchers("/api/soporte/**").hasAnyRole("SUPERADMIN", "SOPORTE_TI")
+
+                        // ✅ Todo lo demás requiere autenticación
+                        .anyRequest().authenticated()
+                )
+
+                // 🧩 Usar JWT sin sesiones
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // 🔑 Autenticación y filtro JWT
+                .authenticationProvider(authenticationProvider())
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+
         return http.build();
     }
-    
+
+    // ===========================================================
+    // 🌍 CONFIGURACIÓN GLOBAL DE CORS
+    // ===========================================================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList(
-            "http://localhost:3000",
-            "http://localhost:5173",
-            "http://10.0.89.13:3000",
-            "http://10.0.89.13:5173"
+        CorsConfiguration config = new CorsConfiguration();
+
+        // 🔧 Lista de orígenes permitidos
+        config.setAllowedOrigins(Arrays.asList(
+                "http://localhost",           // 🔥 agregado: frontend en docker/nginx
+                "http://localhost:3000",
+                "http://127.0.0.1:3000",
+                "http://localhost:5173",
+                "http://127.0.0.1:5173",
+                "http://10.0.89.13:3000",
+                "http://10.0.89.13:5173"
         ));
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(List.of("*"));
-        configuration.setExposedHeaders(Arrays.asList("Authorization"));
-        configuration.setAllowCredentials(true);
-        configuration.setMaxAge(3600L);
-        
+
+        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        config.setAllowedHeaders(List.of("*"));
+        config.setExposedHeaders(List.of("Authorization"));
+        config.setAllowCredentials(true);
+        config.setMaxAge(3600L);
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        source.registerCorsConfiguration("/**", configuration);
+        source.registerCorsConfiguration("/**", config);
         return source;
     }
-    
+
+    // ===========================================================
+    // 🧱 CONFIGURACIÓN DE AUTENTICACIÓN
+    // ===========================================================
     @Bean
     public AuthenticationProvider authenticationProvider() {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
-        authProvider.setPasswordEncoder(passwordEncoder());
-        return authProvider;
+        DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
+        provider.setUserDetailsService(userDetailsService);
+        provider.setPasswordEncoder(passwordEncoder());
+        return provider;
     }
-    
+
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) 
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
             throws Exception {
         return config.getAuthenticationManager();
     }
-    
+
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
