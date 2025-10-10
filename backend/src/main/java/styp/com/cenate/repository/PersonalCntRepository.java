@@ -8,9 +8,46 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> {
+public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Integer> {
+    
+    /**
+     * Buscar personal por estado
+     */
     List<PersonalCnt> findByStatPers(String status);
+    
+    /**
+     * Buscar personal por número de documento
+     */
     Optional<PersonalCnt> findByNumDocPers(String numDoc);
-    List<PersonalCnt> findByAreaIdArea(Long idArea);
-    List<PersonalCnt> findByRegimenLaboralIdRegLab(Long idRegLab);
+    
+    /**
+     * Verificar si existe personal con ese número de documento
+     */
+    boolean existsByNumDocPers(String numDoc);
+    
+    /**
+     * Buscar personal por área
+     */
+    List<PersonalCnt> findByAreaIdArea(Integer idArea);
+    
+    /**
+     * Buscar personal por régimen laboral
+     */
+    List<PersonalCnt> findByRegimenLaboralIdRegLab(Integer idRegLab);
+    
+    /**
+     * Buscar personal por nombre completo (búsqueda parcial en cualquier campo de nombre)
+     */
+    List<PersonalCnt> findByNomPersContainingIgnoreCaseOrApePaterPersContainingIgnoreCaseOrApeMaterPersContainingIgnoreCase(
+            String nombre, String apellidoPaterno, String apellidoMaterno);
+    
+    /**
+     * Buscar personal por email
+     */
+    Optional<PersonalCnt> findByEmailPers(String email);
+    
+    /**
+     * Buscar personal por email corporativo
+     */
+    Optional<PersonalCnt> findByEmailCorpPers(String emailCorp);
 }

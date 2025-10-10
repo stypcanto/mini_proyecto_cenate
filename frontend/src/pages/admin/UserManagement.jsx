@@ -10,6 +10,9 @@ import {
     XCircle,
     RefreshCw,
     Filter,
+    Lock,
+    Unlock,
+    AlertCircle
 } from "lucide-react";
 
 const UserManagement = () => {
@@ -17,6 +20,7 @@ const UserManagement = () => {
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterEstado, setFilterEstado] = useState("");
+    const [error, setError] = useState(null);
 
     useEffect(() => {
         cargarUsuarios();
@@ -24,62 +28,154 @@ const UserManagement = () => {
 
     const cargarUsuarios = async () => {
         setLoading(true);
+        setError(null);
+        
         try {
             const token = localStorage.getItem("token");
+            
+            if (!token) {
+                setError("No hay sesión activa. Por favor, inicia sesión nuevamente.");
+                setLoading(false);
+                return;
+            }
+
+            console.log("🔄 Cargando usuarios desde API...");
+            
             const response = await fetch("http://localhost:8080/api/usuarios", {
+                method: 'GET',
                 headers: {
-                    Authorization: `Bearer ${token}`,
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
                 },
             });
 
-            if (response.ok) {
-                const data = await response.json();
-                console.log("Datos recibidos del backend:", data);
-                setUsuarios(data);
+            console.log("📡 Status HTTP:", response.status);
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    setError("Sesión expirada. Por favor, inicia sesión nuevamente.");
+                    localStorage.removeItem("token");
+                } else {
+                    const errorText = await response.text();
+                    setError(`Error del servidor: ${response.status} - ${errorText}`);
+                }
+                setLoading(false);
+                return;
             }
+
+            const data = await response.json();
+            console.log("✅ Datos recibidos:", data);
+            console.log("📊 Número de usuarios:", data.length);
+            
+            if (data.length > 0) {
+                console.log("👤 Primer usuario completo:", JSON.stringify(data[0], null, 2));
+            }
+            
+            setUsuarios(data);
+            setError(null);
+            
         } catch (error) {
-            console.error("Error al cargar usuarios:", error);
+            console.error("❌ Error en la petición:", error);
+            setError(`Error de conexión: ${error.message}`);
         } finally {
             setLoading(false);
         }
     };
 
     const filtrarUsuarios = () => {
+        if (!usuarios || !Array.isArray(usuarios)) {
+            console.warn("⚠️ usuarios no es un array válido");
+            return [];
+        }
+
         return usuarios.filter((usuario) => {
-            const matchSearch =
-                usuario.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                usuario.idUser.toString().includes(searchTerm);
+            if (!usuario) return false;
 
-            const matchEstado = !filterEstado || usuario.estado === filterEstado;
+            // Filtro de búsqueda
+            const searchMatch = !searchTerm || 
+                (usuario.username && usuario.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                (usuario.idUser && usuario.idUser.toString().includes(searchTerm));
 
-            return matchSearch && matchEstado;
+            // Filtro de estado
+            const estadoMatch = !filterEstado || usuario.estado === filterEstado;
+
+            return searchMatch && estadoMatch;
         });
     };
 
     const getEstadoBadge = (estado) => {
-        return estado === "ACTIVO" ? (
-            <span className="flex items-center px-3 py-1 bg-green-100 text-green-800 rounded-full text-xs font-semibold">
-                <CheckCircle className="w-3 h-3 mr-1" />
-                Activo
-            </span>
-        ) : (
-            <span className="flex items-center px-3 py-1 bg-red-100 text-red-800 rounded-full text-xs font-semibold">
-                <XCircle className="w-3 h-3 mr-1" />
-                Inactivo
+        const esActivo = estado === "ACTIVO";
+        
+        return (
+            <span className={`flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
+                esActivo 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-red-100 text-red-800'
+            }`}>
+                {esActivo ? <CheckCircle className="w-3 h-3 mr-1" /> : <XCircle className="w-3 h-3 mr-1" />}
+                {esActivo ? 'Activo' : 'Inactivo'}
             </span>
         );
     };
 
     const formatFecha = (fecha) => {
         if (!fecha) return "N/A";
-        return new Date(fecha).toLocaleDateString("es-PE", {
-            year: "numeric",
-            month: "short",
-            day: "numeric",
-        });
+        try {
+            return new Date(fecha).toLocaleDateString("es-PE", {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+            });
+        } catch (e) {
+            return "N/A";
+        }
+    };
+
+    const handleActivar = async (id) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`http://localhost:8080/api/usuarios/${id}/activate`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+            });
+
+            if (response.ok) {
+                await cargarUsuarios();
+                console.log(`✅ Usuario ${id} activado`);
+            }
+        } catch (error) {
+            console.error("❌ Error al activar usuario:", error);
+            setError("Error al activar el usuario");
+        }
+    };
+
+    const handleDesactivar = async (id) => {
+        try {
+            const token = localStorage.getItem("token");
+            const response = await fetch(`http://localhost:8080/api/usuarios/${id}/deactivate`, {
+                method: 'PUT',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+            });
+
+            if (response.ok) {
+                await cargarUsuarios();
+                console.log(`✅ Usuario ${id} desactivado`);
+            }
+        } catch (error) {
+            console.error("❌ Error al desactivar usuario:", error);
+            setError("Error al desactivar el usuario");
+        }
     };
 
     const usuariosFiltrados = filtrarUsuarios();
+    const totalActivos = usuarios.filter(u => u.estado === "ACTIVO").length;
+    const totalInactivos = usuarios.filter(u => u.estado === "INACTIVO").length;
 
     return (
         <AdminLayout>
@@ -106,10 +202,22 @@ const UserManagement = () => {
 
             {/* Contenido */}
             <div className="max-w-7xl mx-auto p-8">
+                {/* Mensaje de error */}
+                {error && (
+                    <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-6 rounded-r-lg">
+                        <div className="flex items-center">
+                            <AlertCircle className="w-5 h-5 text-red-500 mr-3" />
+                            <div>
+                                <p className="text-red-800 font-semibold">Error</p>
+                                <p className="text-red-700 text-sm">{error}</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* Filtros */}
                 <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        {/* Búsqueda */}
                         <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Buscar Usuario
@@ -126,7 +234,6 @@ const UserManagement = () => {
                             </div>
                         </div>
 
-                        {/* Filtro por estado */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Estado
@@ -146,9 +253,10 @@ const UserManagement = () => {
                     <div className="flex space-x-3 mt-4">
                         <button
                             onClick={cargarUsuarios}
-                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            disabled={loading}
+                            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
                         >
-                            <RefreshCw className="w-4 h-4" />
+                            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
                             <span>Actualizar</span>
                         </button>
                         <button
@@ -164,7 +272,7 @@ const UserManagement = () => {
                     </div>
                 </div>
 
-                {/* Estadísticas rápidas */}
+                {/* Estadísticas */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <div className="bg-white rounded-xl shadow-lg p-6">
                         <div className="flex items-center justify-between">
@@ -186,9 +294,7 @@ const UserManagement = () => {
                                 <p className="text-gray-600 text-sm font-semibold mb-1">
                                     Usuarios Activos
                                 </p>
-                                <p className="text-3xl font-bold text-green-600">
-                                    {usuarios.filter((u) => u.estado === "ACTIVO").length}
-                                </p>
+                                <p className="text-3xl font-bold text-green-600">{totalActivos}</p>
                             </div>
                             <div className="p-3 bg-green-100 rounded-lg">
                                 <CheckCircle className="w-8 h-8 text-green-600" />
@@ -202,9 +308,7 @@ const UserManagement = () => {
                                 <p className="text-gray-600 text-sm font-semibold mb-1">
                                     Usuarios Inactivos
                                 </p>
-                                <p className="text-3xl font-bold text-red-600">
-                                    {usuarios.filter((u) => u.estado === "INACTIVO").length}
-                                </p>
+                                <p className="text-3xl font-bold text-red-600">{totalInactivos}</p>
                             </div>
                             <div className="p-3 bg-red-100 rounded-lg">
                                 <XCircle className="w-8 h-8 text-red-600" />
@@ -213,7 +317,7 @@ const UserManagement = () => {
                     </div>
                 </div>
 
-                {/* Tabla de usuarios */}
+                {/* Tabla */}
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     {loading ? (
                         <div className="p-12 text-center">
@@ -224,6 +328,11 @@ const UserManagement = () => {
                         <div className="p-12 text-center">
                             <Users className="w-16 h-16 mx-auto text-gray-400 mb-4" />
                             <p className="text-gray-600 text-lg">No se encontraron usuarios</p>
+                            {usuarios.length > 0 && (
+                                <p className="text-gray-500 text-sm mt-2">
+                                    Intenta cambiar los filtros de búsqueda
+                                </p>
+                            )}
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
@@ -267,7 +376,7 @@ const UserManagement = () => {
                                             <td className="px-6 py-4 whitespace-nowrap">
                                                 <div className="flex items-center">
                                                     <div className="flex-shrink-0 h-10 w-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                                                        <span className="text-white font-bold">
+                                                        <span className="text-white font-bold text-sm">
                                                             {usuario.username ? usuario.username.charAt(0).toUpperCase() : '?'}
                                                         </span>
                                                     </div>
@@ -275,6 +384,12 @@ const UserManagement = () => {
                                                         <div className="text-sm font-medium text-gray-900">
                                                             {usuario.username || 'Sin nombre'}
                                                         </div>
+                                                        {usuario.isLocked && (
+                                                            <div className="flex items-center text-xs text-red-600 mt-1">
+                                                                <Lock className="w-3 h-3 mr-1" />
+                                                                Bloqueado
+                                                            </div>
+                                                        )}
                                                     </div>
                                                 </div>
                                             </td>
@@ -283,8 +398,8 @@ const UserManagement = () => {
                                             </td>
                                             <td className="px-6 py-4">
                                                 <div className="flex flex-wrap gap-1">
-                                                    {usuario.roles && usuario.roles.length > 0 ? (
-                                                        Array.from(usuario.roles).map((rol, index) => (
+                                                    {usuario.roles && Array.isArray(usuario.roles) && usuario.roles.length > 0 ? (
+                                                        usuario.roles.map((rol, index) => (
                                                             <span
                                                                 key={index}
                                                                 className="px-2 py-1 bg-purple-100 text-purple-800 rounded text-xs font-medium"
@@ -305,10 +420,29 @@ const UserManagement = () => {
                                             </td>
                                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                                 <div className="flex space-x-2">
-                                                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                                                    {usuario.estado === "ACTIVO" ? (
+                                                        <button 
+                                                            onClick={() => handleDesactivar(usuario.idUser)}
+                                                            className="p-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors"
+                                                            title="Desactivar usuario"
+                                                        >
+                                                            <XCircle className="w-4 h-4" />
+                                                        </button>
+                                                    ) : (
+                                                        <button 
+                                                            onClick={() => handleActivar(usuario.idUser)}
+                                                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                                                            title="Activar usuario"
+                                                        >
+                                                            <CheckCircle className="w-4 h-4" />
+                                                        </button>
+                                                    )}
+                                                    <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                            title="Editar usuario">
                                                         <Edit className="w-4 h-4" />
                                                     </button>
-                                                    <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                                                    <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                            title="Eliminar usuario">
                                                         <Trash2 className="w-4 h-4" />
                                                     </button>
                                                 </div>
@@ -320,6 +454,16 @@ const UserManagement = () => {
                         </div>
                     )}
                 </div>
+
+                {/* Info de Debug */}
+                {process.env.NODE_ENV === 'development' && (
+                    <div className="mt-6 p-4 bg-gray-100 rounded-lg text-xs font-mono">
+                        <p className="font-bold mb-2">🐛 Debug Info:</p>
+                        <p>Total usuarios cargados: {usuarios.length}</p>
+                        <p>Usuarios filtrados: {usuariosFiltrados.length}</p>
+                        <p>Activos: {totalActivos} | Inactivos: {totalInactivos}</p>
+                    </div>
+                )}
             </div>
         </AdminLayout>
     );
