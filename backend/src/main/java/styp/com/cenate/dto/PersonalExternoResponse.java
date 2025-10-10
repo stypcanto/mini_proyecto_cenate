@@ -4,20 +4,16 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-/**
- * DTO de respuesta para Personal Externo
- */
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class PersonalExternoResponse {
-    
-    private Long idPersExt;  // ✅ Cambiado a Long
+
+    private Long idPersExt;
     private TipoDocumentoResponse tipoDocumento;
     private String numDocExt;
     private String nomExt;
@@ -27,20 +23,11 @@ public class PersonalExternoResponse {
     private LocalDate fechNaciExt;
     private Integer edad;
     private String genExt;
+    private IpressResponse ipress;
+    private String nombreInstitucion;
     private String movilExt;
     private String emailPersExt;
-    
-    /**
-     * Institución (IPRESS) a la que pertenece
-     */
-    private IpressResponse ipress;
-    
-    /**
-     * Nombre de la institución (campo de conveniencia)
-     */
-    private String nombreInstitucion;
-    
-    private Long idUser;  // ✅ Cambiado a Long
+    private Long idUser;
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
 }

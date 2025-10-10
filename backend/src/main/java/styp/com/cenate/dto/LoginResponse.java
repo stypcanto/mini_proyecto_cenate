@@ -14,6 +14,7 @@ import java.util.Set;
 public class LoginResponse {
     
     private String token;
+    @Builder.Default
     private String type = "Bearer";
     private Long userId;  // ✅ Cambiado de Integer a Long
     private String username;

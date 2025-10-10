@@ -33,6 +33,7 @@ public class Rol {
     @JsonIgnore // 🔥 Evita recursión infinita en serialización
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @Builder.Default
     private Set<Usuario> usuarios = new HashSet<>();
 
     @ManyToMany(fetch = FetchType.LAZY)

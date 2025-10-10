@@ -31,6 +31,7 @@ public class Permiso {
     @ManyToMany(mappedBy = "permisos", fetch = FetchType.LAZY)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
+    @Builder.Default
     private Set<Rol> roles = new HashSet<>();
 
     @PrePersist

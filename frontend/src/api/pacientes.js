@@ -1,42 +1,38 @@
 // frontend/src/api/pacientes.js
-const API_URL = process.env.REACT_APP_API_URL || "http://localhost:8080/api";
-
+import { API_BASE, getHeaders, handleResponse } from "@/config/api";
 
 export const getAsegurados = async (page = 0, size = 10) => {
     try {
-        const response = await fetch(`${API_URL}/asegurados?page=${page}&size=${size}`);
-        if (!response.ok) {
-            throw new Error("Error al obtener asegurados");
-        }
-        return await response.json();
+        const response = await fetch(`${API_BASE}/asegurados?page=${page}&size=${size}`, {
+            headers: getHeaders(true),
+        });
+        return await handleResponse(response);
     } catch (error) {
-        console.error("API Error:", error);
+        console.error("getAsegurados error:", error);
         throw error;
     }
 };
 
 export const getAseguradoById = async (pkAsegurado) => {
     try {
-        const response = await fetch(`${API_URL}/asegurados/id/${pkAsegurado}`);
-        if (!response.ok) {
-            throw new Error("Asegurado no encontrado");
-        }
-        return await response.json();
+        const response = await fetch(`${API_BASE}/asegurados/id/${pkAsegurado}`, {
+            headers: getHeaders(true),
+        });
+        return await handleResponse(response);
     } catch (error) {
-        console.error("API Error:", error);
+        console.error("getAseguradoById error:", error);
         throw error;
     }
 };
 
 export const getAseguradoByDoc = async (docPaciente) => {
     try {
-        const response = await fetch(`${API_URL}/asegurados/doc/${docPaciente}`);
-        if (!response.ok) {
-            throw new Error("Asegurado no encontrado");
-        }
-        return await response.json();
+        const response = await fetch(`${API_BASE}/asegurados/doc/${docPaciente}`, {
+            headers: getHeaders(true),
+        });
+        return await handleResponse(response);
     } catch (error) {
-        console.error("API Error:", error);
+        console.error("getAseguradoByDoc error:", error);
         throw error;
     }
 };

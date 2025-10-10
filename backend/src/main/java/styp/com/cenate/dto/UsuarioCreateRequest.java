@@ -24,5 +24,6 @@ public class UsuarioCreateRequest {
     @NotNull(message = "Se debe asignar al menos un rol")
     private Set<Integer> roleIds;
     
+    @Builder.Default
     private String estado = "ACTIVO";
 }

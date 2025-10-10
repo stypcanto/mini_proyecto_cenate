@@ -530,7 +530,76 @@ Respuesta esperada:
 
 ```
 
----
+## Testing
+```sql
+ SELECT * FROM dim_personal_externo LIMIT 10;
+```
+
+```sql
+SELECT 
+    pe.id_pers_ext,
+    pe.num_doc_ext,
+    pe.nom_ext || ' ' || pe.ape_pater_ext || ' ' || pe.ape_mater_ext AS nombre_completo,
+    pe.id_user,
+    u.name_user,
+    i.desc_ipress
+FROM dim_personal_externo pe
+LEFT JOIN dim_usuarios u ON pe.id_user = u.id_user
+LEFT JOIN dim_ipress i ON pe.id_ipress = i.id_ipress;
+
+
+```
+Esto ya sería perfecto para alimentar una tabla en tu interfaz React, por ejemplo en un módulo de gestión de personal externo.
+```sql
+SELECT 
+    pe.id_pers_ext,
+    pe.num_doc_ext,
+    pe.nom_ext || ' ' || pe.ape_pater_ext || ' ' || pe.ape_mater_ext AS nombre_completo,
+    pe.id_user,
+    u.name_user,
+    i.desc_ipress
+FROM dim_personal_externo pe
+LEFT JOIN dim_usuarios u ON pe.id_user = u.id_user
+LEFT JOIN dim_ipress i ON pe.id_ipress = i.id_ipress
+ORDER BY nombre_completo ASC;
+
+```
+
+1️⃣ Obtener todo el personal externo:
+
+```bash
+curl -X GET http://localhost:8080/api/personal-externo \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
+
+```
+
+2️⃣ Obtener personal externo por ID:
+
+```bash
+curl -X GET http://localhost:8080/api/personal-externo/2 \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
+
+```
+
+3️⃣ Buscar personal externo:
+
+```bash
+curl -X GET "http://localhost:8080/api/personal-externo/search?query=MARIA" \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
+
+```
+
+4️⃣ Obtener personal externo por usuario:
+
+```bash
+curl -X GET http://localhost:8080/api/personal-externo/usuario/4 \
+     -H "Content-Type: application/json" \
+     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
+
+```
 
 ## 📄 Licencia
 

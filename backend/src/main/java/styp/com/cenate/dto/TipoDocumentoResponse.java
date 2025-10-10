@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 public class TipoDocumentoResponse {
     private Long idTipDoc;
     private String descTipDoc;
-    private String statTipDoc;
-    private LocalDateTime createAt;
-    private LocalDateTime updateAt;
+    private String statTipDoc;       // Estado del documento
+    private LocalDateTime createAt;  // Fecha de creación
+    private LocalDateTime updateAt;  // Fecha de actualización
 }

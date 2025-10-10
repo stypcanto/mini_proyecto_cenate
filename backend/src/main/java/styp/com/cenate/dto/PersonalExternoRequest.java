@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 /**
- * DTO para crear/actualizar Personal Externo
+ * DTO para solicitudes de creación/actualización de Personal Externo
  */
 @Data
 @NoArgsConstructor
@@ -17,43 +17,41 @@ import java.time.LocalDate;
 @Builder
 public class PersonalExternoRequest {
     
-    @NotNull(message = "El tipo de documento es requerido")
-    private Long idTipDoc;  // ✅ Cambiado a Long
+    @NotNull(message = "El tipo de documento es obligatorio")
+    private Long idTipDoc;
     
-    @NotBlank(message = "El número de documento es requerido")
-    @Size(max = 20, message = "El número de documento no puede exceder 20 caracteres")
+    @NotBlank(message = "El número de documento es obligatorio")
+    @Size(max = 20, message = "El número de documento no puede tener más de 20 caracteres")
     private String numDocExt;
     
-    @NotBlank(message = "El nombre es requerido")
-    @Size(max = 255, message = "El nombre no puede exceder 255 caracteres")
+    @NotBlank(message = "El nombre es obligatorio")
+    @Size(max = 255, message = "El nombre no puede tener más de 255 caracteres")
     private String nomExt;
     
-    @NotBlank(message = "El apellido paterno es requerido")
-    @Size(max = 255, message = "El apellido paterno no puede exceder 255 caracteres")
+    @NotBlank(message = "El apellido paterno es obligatorio")
+    @Size(max = 255, message = "El apellido paterno no puede tener más de 255 caracteres")
     private String apePaterExt;
     
-    @Size(max = 255, message = "El apellido materno no puede exceder 255 caracteres")
+    @NotBlank(message = "El apellido materno es obligatorio")
+    @Size(max = 255, message = "El apellido materno no puede tener más de 255 caracteres")
     private String apeMaterExt;
     
+    @NotNull(message = "La fecha de nacimiento es obligatoria")
+    @Past(message = "La fecha de nacimiento debe ser en el pasado")
     private LocalDate fechNaciExt;
     
-    @Pattern(regexp = "^[MF]$", message = "El género debe ser M (Masculino) o F (Femenino)")
+    @NotBlank(message = "El género es obligatorio")
+    @Pattern(regexp = "^[MF]$", message = "El género debe ser 'M' o 'F'")
     private String genExt;
     
-    @Size(max = 20, message = "El teléfono no puede exceder 20 caracteres")
+    @Size(max = 20, message = "El móvil no puede tener más de 20 caracteres")
     private String movilExt;
     
     @Email(message = "El email personal debe ser válido")
-    @Size(max = 100, message = "El email personal no puede exceder 100 caracteres")
+    @Size(max = 100, message = "El email personal no puede tener más de 100 caracteres")
     private String emailPersExt;
     
-    /**
-     * ID de la institución (IPRESS) a la que pertenece
-     */
-    private Long idIpress;  // ✅ Cambiado a Long
+    private Long idIpress;
     
-    /**
-     * ID del usuario asociado
-     */
-    private Long idUser;  // ✅ Cambiado a Long
+    private Long idUser;
 }

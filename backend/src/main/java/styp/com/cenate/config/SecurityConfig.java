@@ -82,6 +82,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/auditoria/**").hasAnyRole("SUPERADMIN", "ADMIN", "AUDITOR_CLINIC")
                         .requestMatchers("/api/externos/**").hasAnyRole("SUPERADMIN", "ADMIN", "INSTITUCION_EX", "ASEGURADORA", "REGULADOR")
                         .requestMatchers("/api/soporte/**").hasAnyRole("SUPERADMIN", "SOPORTE_TI")
+                        .requestMatchers("/api/personal-externo/**").hasAnyRole("SUPERADMIN", "INSTITUCION_EX")
 
                         // ✅ Todo lo demás requiere autenticación
                         .anyRequest().authenticated()

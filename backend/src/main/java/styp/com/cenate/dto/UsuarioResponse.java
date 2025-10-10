@@ -27,6 +27,11 @@ public class UsuarioResponse {
     private Integer failedAttempts;
     private boolean isLocked;
     
+    // Campos adicionales de personal (si aplica)
+    private String nombreCompleto;
+    private String numDocumento;
+    private String descIpress;
+    
     // Método de conveniencia para obtener el estado
     public String getStatUser() {
         return statUser != null ? statUser : estado;

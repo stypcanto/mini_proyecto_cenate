@@ -12,12 +12,14 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Usuario {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_user")
-    private Long idUser;  // ✅ Cambiado de Integer a Long
+    @EqualsAndHashCode.Include
+    private Long idUser;
 
     @Column(name = "name_user", unique = true, nullable = false, length = 100)
     private String nameUser;
@@ -25,6 +27,7 @@ public class Usuario {
     @Column(name = "pass_user", nullable = false, length = 255)
     private String passUser;
 
+    @Builder.Default
     @Column(name = "stat_user", length = 20)
     private String statUser = "ACTIVO";
 
@@ -37,6 +40,7 @@ public class Usuario {
     @Column(name = "password_changed_at")
     private LocalDateTime passwordChangedAt;
 
+    @Builder.Default
     @Column(name = "failed_attempts")
     private Integer failedAttempts = 0;
 
@@ -82,5 +86,15 @@ public class Usuario {
 
     public boolean isActive() {
         return "ACTIVO".equalsIgnoreCase(statUser);
+    }
+
+    public boolean isEnabled() {
+        return isActive() && !isAccountLocked();
+    }
+
+    @Transient
+    public String getNombreCompleto() {
+        // si en un futuro quieres usarlo
+        return this.nameUser;
     }
 }

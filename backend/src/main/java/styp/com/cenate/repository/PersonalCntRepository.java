@@ -28,12 +28,12 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
     /**
      * Buscar personal por área
      */
-    List<PersonalCnt> findByAreaIdArea(Long idArea);
+    List<PersonalCnt> findByArea_IdArea(Long idArea);
     
     /**
      * Buscar personal por régimen laboral
      */
-    List<PersonalCnt> findByRegimenLaboralIdRegLab(Long idRegLab);
+    List<PersonalCnt> findByRegimenLaboral_IdRegLab(Long idRegLab);
     
     /**
      * Buscar personal por nombre completo (búsqueda parcial en cualquier campo de nombre)
@@ -50,4 +50,9 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
      * Buscar personal por email corporativo
      */
     Optional<PersonalCnt> findByEmailCorpPers(String emailCorp);
+    
+    /**
+     * Buscar personal por usuario
+     */
+    Optional<PersonalCnt> findByIdUsuario(Long idUsuario);
 }

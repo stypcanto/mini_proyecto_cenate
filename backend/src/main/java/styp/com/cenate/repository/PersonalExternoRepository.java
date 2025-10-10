@@ -35,4 +35,14 @@ public interface PersonalExternoRepository extends JpaRepository<PersonalExterno
      */
     List<PersonalExterno> findByNomExtContainingIgnoreCaseOrApePaterExtContainingIgnoreCaseOrApeMaterExtContainingIgnoreCase(
             String nombre, String apellidoPaterno, String apellidoMaterno);
+    
+    /**
+     * Buscar por IPRESS
+     */
+    List<PersonalExterno> findByIpress_IdIpress(Long idIpress);
+    
+    /**
+     * Buscar por usuario
+     */
+    Optional<PersonalExterno> findByIdUser(Long idUser);
 }
