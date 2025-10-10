@@ -14,50 +14,93 @@ java {
     }
 }
 
+repositories {
+    mavenCentral()
+}
+
 configurations {
     compileOnly {
         extendsFrom annotationProcessor
     }
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
-    // Spring Boot Starters
+    /* ==========================
+       🔹 SPRING BOOT STARTERS
+       ========================== */
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
-    
-    // PostgreSQL Driver
+
+    /* ==========================
+       🔹 DATABASE
+       ========================== */
     runtimeOnly 'org.postgresql:postgresql'
-    
-    // JWT Dependencies
+
+    /* ==========================
+       🔹 JWT (JSON Web Tokens)
+       ========================== */
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
-    
-    // Lombok
-    compileOnly 'org.projectlombok:lombok'
-    annotationProcessor 'org.projectlombok:lombok'
-    
-    // Testing
+
+    /* ==========================
+       🔹 LOMBOK
+       ========================== */
+    compileOnly 'org.projectlombok:lombok:1.18.40'
+    annotationProcessor 'org.projectlombok:lombok:1.18.40'
+
+    testCompileOnly 'org.projectlombok:lombok:1.18.40'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.40'
+
+    /* ==========================
+       🔹 TESTING
+       ========================== */
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+/* ==========================
+   🔹 SPRING BOOT CONFIG
+   ========================== */
 springBoot {
     mainClass = 'styp.com.cenate.CenateApplication'
 }
 
+/* ==========================
+   🔹 TEST CONFIG
+   ========================== */
 tasks.named('test') {
     useJUnitPlatform()
 }
 
-// Tarea para limpiar y construir
+/* ==========================
+   🔹 CUSTOM TASKS
+   ========================== */
 tasks.register('cleanBuild') {
     dependsOn 'clean', 'build'
+}
+
+/* ==========================
+   🔹 COMPILATION OPTIMIZATION
+   ========================== */
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += [
+            '-parameters' // Permite usar nombres reales de parámetros (útil en controladores Spring)
+    ]
+    // Asegura que Lombok se procese correctamente
+    options.annotationProcessorPath = configurations.annotationProcessor
+}
+
+/* ==========================
+   🔹 BUILD CACHE / OPTIMIZATION
+   ========================== */
+tasks.withType(Test).configureEach {
+    systemProperty "spring.profiles.active", "test"
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
 }

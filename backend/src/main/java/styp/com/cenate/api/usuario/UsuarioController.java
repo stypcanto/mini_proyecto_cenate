@@ -1,6 +1,5 @@
 package styp.com.cenate.api.usuario;
 
-
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -74,5 +73,48 @@ public class UsuarioController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> unlockUser(@PathVariable Long id) {
         return ResponseEntity.ok(usuarioService.unlockUser(id));
+    }
+
+    // 🟩 NUEVO MÉTODO: Consulta extendida del usuario
+    @GetMapping("/detalle/{username}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> obtenerDetalleUsuario(@PathVariable String username) {
+        try {
+            log.info("🔍 Consultando detalle extendido del usuario: {}", username);
+
+            String sql = """
+                SELECT 
+                  u.id_user,
+                  u.name_user,
+                  u.stat_user,
+                  p.id_pers,
+                  p.nom_pers AS nombre,
+                  p.ape_pater_pers AS apellido_paterno,
+                  p.ape_mater_pers AS apellido_materno,
+                  p.num_doc_pers AS dni,
+                  p.email_pers,
+                  p.email_corp_pers,
+                  p.direc_pers,
+                  p.foto_pers
+                FROM dim_usuarios u
+                LEFT JOIN dim_personal_cnt p ON u.id_user = p.id_usuario
+                WHERE u.name_user = :username
+            """;
+
+            List<Map<String, Object>> result = usuarioService.executeCustomQuery(sql, username);
+
+            if (result.isEmpty()) {
+                return ResponseEntity.status(404)
+                        .body(Map.of("message", "Usuario no encontrado"));
+            }
+
+            return ResponseEntity.ok(result.get(0));
+
+        } catch (Exception e) {
+            e.printStackTrace(); // 🔍 muestra el error real en consola
+            log.error("❌ Error al obtener detalle del usuario {}: {}", username, e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Error interno del servidor", "error", e.toString()));
+        }
     }
 }

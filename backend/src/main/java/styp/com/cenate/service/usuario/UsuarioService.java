@@ -2,6 +2,7 @@ package styp.com.cenate.service.usuario;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import styp.com.cenate.dto.UsuarioResponse;
@@ -11,6 +12,7 @@ import styp.com.cenate.model.Usuario;
 import styp.com.cenate.repository.UsuarioRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -20,13 +22,16 @@ import java.util.stream.Collectors;
 public class UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
     /**
      * Obtiene todos los usuarios
      */
     @Transactional(readOnly = true)
     public List<UsuarioResponse> getAllUsers() {
-        return usuarioRepository.findAll().stream()
+        log.info("🔍 Consultando todos los usuarios");
+        return usuarioRepository.findAll()
+                .stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
@@ -37,7 +42,8 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioResponse getUserById(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado con ID: " + id));
+        log.info("🔍 Consultando usuario con ID {}", id);
         return convertToResponse(usuario);
     }
 
@@ -47,7 +53,8 @@ public class UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioResponse getUserByUsername(String username) {
         Usuario usuario = usuarioRepository.findByNameUser(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+                .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado: " + username));
+        log.info("🔍 Consultando usuario con username {}", username);
         return convertToResponse(usuario);
     }
 
@@ -57,9 +64,9 @@ public class UsuarioService {
     @Transactional
     public void deleteUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado con ID: " + id));
         usuarioRepository.delete(usuario);
-        log.info("Usuario {} eliminado", usuario.getNameUser());
+        log.info("🗑️ Usuario eliminado: {}", usuario.getNameUser());
     }
 
     /**
@@ -68,10 +75,10 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponse activateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado con ID: " + id));
         usuario.setStatUser("ACTIVO");
-        usuario = usuarioRepository.save(usuario);
-        log.info("Usuario {} activado", usuario.getNameUser());
+        usuarioRepository.save(usuario);
+        log.info("✅ Usuario activado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
@@ -81,10 +88,10 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponse deactivateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado con ID: " + id));
         usuario.setStatUser("INACTIVO");
-        usuario = usuarioRepository.save(usuario);
-        log.info("Usuario {} desactivado", usuario.getNameUser());
+        usuarioRepository.save(usuario);
+        log.info("🚫 Usuario desactivado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
@@ -94,12 +101,21 @@ public class UsuarioService {
     @Transactional
     public UsuarioResponse unlockUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado con ID: " + id));
         usuario.setFailedAttempts(0);
         usuario.setLockedUntil(null);
-        usuario = usuarioRepository.save(usuario);
-        log.info("Usuario {} desbloqueado", usuario.getNameUser());
+        usuarioRepository.save(usuario);
+        log.info("🔓 Usuario desbloqueado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
+    }
+
+    /**
+     * Ejecuta una consulta SQL personalizada
+     */
+    @Transactional(readOnly = true)
+    public List<Map<String, Object>> executeCustomQuery(String sql, String username) {
+        log.info("🧠 Ejecutando consulta SQL personalizada para usuario: {}", username);
+        return namedParameterJdbcTemplate.queryForList(sql, Map.of("username", username));
     }
 
     /**
