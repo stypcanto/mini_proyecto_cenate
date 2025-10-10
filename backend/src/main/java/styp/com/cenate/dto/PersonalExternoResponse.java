@@ -12,11 +12,12 @@ import java.time.LocalDateTime;
  * DTO de respuesta para Personal Externo
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class PersonalExternoResponse {
-    private Integer idPersExt;
+    
+    private Long idPersExt;  // ✅ Cambiado a Long
     private TipoDocumentoResponse tipoDocumento;
     private String numDocExt;
     private String nomExt;
@@ -24,12 +25,22 @@ public class PersonalExternoResponse {
     private String apeMaterExt;
     private String nombreCompleto;
     private LocalDate fechNaciExt;
+    private Integer edad;
     private String genExt;
     private String movilExt;
-    private String emailExt;
-    private String emailCorpExt;
-    private String instExt;
-    private Integer idUsuario;
+    private String emailPersExt;
+    
+    /**
+     * Institución (IPRESS) a la que pertenece
+     */
+    private IpressResponse ipress;
+    
+    /**
+     * Nombre de la institución (campo de conveniencia)
+     */
+    private String nombreInstitucion;
+    
+    private Long idUser;  // ✅ Cambiado a Long
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
 }

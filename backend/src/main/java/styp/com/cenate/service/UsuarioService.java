@@ -28,7 +28,7 @@ public class UsuarioService {
     }
     
     @Transactional(readOnly = true)
-    public UsuarioResponse getUserById(Integer id) {
+    public UsuarioResponse getUserById(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         return convertToResponse(usuario);
@@ -42,7 +42,7 @@ public class UsuarioService {
     }
     
     @Transactional
-    public void deleteUser(Integer id) {
+    public void deleteUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         
@@ -51,7 +51,7 @@ public class UsuarioService {
     }
     
     @Transactional
-    public UsuarioResponse activateUser(Integer id) {
+    public UsuarioResponse activateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         
@@ -63,7 +63,7 @@ public class UsuarioService {
     }
     
     @Transactional
-    public UsuarioResponse deactivateUser(Integer id) {
+    public UsuarioResponse deactivateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         
@@ -75,7 +75,7 @@ public class UsuarioService {
     }
     
     @Transactional
-    public UsuarioResponse unlockUser(Integer id) {
+    public UsuarioResponse unlockUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
         
@@ -100,7 +100,9 @@ public class UsuarioService {
         return UsuarioResponse.builder()
                 .idUser(usuario.getIdUser())
                 .username(usuario.getNameUser())
+                .nameUser(usuario.getNameUser())
                 .estado(usuario.getStatUser())
+                .statUser(usuario.getStatUser())
                 .roles(roles)
                 .permisos(permisos)
                 .lastLoginAt(usuario.getLastLoginAt())

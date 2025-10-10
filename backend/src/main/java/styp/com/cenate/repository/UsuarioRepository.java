@@ -7,7 +7,7 @@ import styp.com.cenate.model.Usuario;
 import java.util.List;
 import java.util.Optional;
 
-public interface UsuarioRepository extends JpaRepository<Usuario, Integer> {
+public interface UsuarioRepository extends JpaRepository<Usuario, Long> {  // ✅ Cambiado de Integer a Long
 
     Optional<Usuario> findByNameUser(String nameUser);
 

@@ -15,7 +15,7 @@ public class LoginResponse {
     
     private String token;
     private String type = "Bearer";
-    private Integer userId;
+    private Long userId;  // ✅ Cambiado de Integer a Long
     private String username;
     private Set<String> roles;
     private Set<String> permisos;

@@ -38,7 +38,7 @@ public class PersonalExternoController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
-    public ResponseEntity<PersonalExternoResponse> getPersonalExternoById(@PathVariable Integer id) {
+    public ResponseEntity<PersonalExternoResponse> getPersonalExternoById(@PathVariable Long id) {
         log.info("Consultando personal externo por ID: {}", id);
         PersonalExternoResponse personal = personalExternoService.getPersonalExternoById(id);
         return ResponseEntity.ok(personal);
@@ -61,7 +61,7 @@ public class PersonalExternoController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<PersonalExternoResponse> updatePersonalExterno(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @Valid @RequestBody PersonalExternoRequest request) {
         log.info("Actualizando personal externo con ID: {}", id);
         PersonalExternoResponse personal = personalExternoService.updatePersonalExterno(id, request);
@@ -73,7 +73,7 @@ public class PersonalExternoController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
-    public ResponseEntity<Void> deletePersonalExterno(@PathVariable Integer id) {
+    public ResponseEntity<Void> deletePersonalExterno(@PathVariable Long id) {
         log.info("Eliminando personal externo con ID: {}", id);
         personalExternoService.deletePersonalExterno(id);
         return ResponseEntity.noContent().build();

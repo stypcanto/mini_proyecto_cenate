@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Integer> {
+public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> {  // ✅ Cambiado a Long
     
     /**
      * Buscar personal por estado
@@ -28,12 +28,12 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Intege
     /**
      * Buscar personal por área
      */
-    List<PersonalCnt> findByAreaIdArea(Integer idArea);
+    List<PersonalCnt> findByAreaIdArea(Long idArea);
     
     /**
      * Buscar personal por régimen laboral
      */
-    List<PersonalCnt> findByRegimenLaboralIdRegLab(Integer idRegLab);
+    List<PersonalCnt> findByRegimenLaboralIdRegLab(Long idRegLab);
     
     /**
      * Buscar personal por nombre completo (búsqueda parcial en cualquier campo de nombre)

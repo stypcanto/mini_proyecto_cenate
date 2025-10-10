@@ -53,7 +53,7 @@ public class PersonalCntController {
      */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
-    public ResponseEntity<PersonalCntResponse> getPersonalById(@PathVariable Integer id) {
+    public ResponseEntity<PersonalCntResponse> getPersonalById(@PathVariable Long id) {
         log.info("Consultando personal por ID: {}", id);
         PersonalCntResponse personal = personalCntService.getPersonalById(id);
         return ResponseEntity.ok(personal);
@@ -76,7 +76,7 @@ public class PersonalCntController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<PersonalCntResponse> updatePersonal(
-            @PathVariable Integer id, 
+            @PathVariable Long id, 
             @Valid @RequestBody PersonalCntRequest request) {
         log.info("Actualizando personal con ID: {}", id);
         PersonalCntResponse personal = personalCntService.updatePersonal(id, request);
@@ -88,7 +88,7 @@ public class PersonalCntController {
      */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
-    public ResponseEntity<Map<String, String>> deletePersonal(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, String>> deletePersonal(@PathVariable Long id) {
         log.info("Eliminando personal con ID: {}", id);
         personalCntService.deletePersonal(id);
         Map<String, String> response = new HashMap<>();
@@ -113,7 +113,7 @@ public class PersonalCntController {
     @PostMapping("/{id}/foto")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<PersonalCntResponse> uploadFoto(
-            @PathVariable Integer id,
+            @PathVariable Long id,
             @RequestParam("file") MultipartFile file) {
         log.info("Subiendo foto para personal ID: {}", id);
         
@@ -130,7 +130,7 @@ public class PersonalCntController {
      * ✅ NUEVO: Obtener foto del personal
      */
     @GetMapping("/{id}/foto")
-    public ResponseEntity<Resource> getFoto(@PathVariable Integer id) {
+    public ResponseEntity<Resource> getFoto(@PathVariable Long id) {
         try {
             PersonalCntResponse personal = personalCntService.getPersonalById(id);
             
@@ -165,7 +165,7 @@ public class PersonalCntController {
      */
     @DeleteMapping("/{id}/foto")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
-    public ResponseEntity<Map<String, String>> deleteFoto(@PathVariable Integer id) {
+    public ResponseEntity<Map<String, String>> deleteFoto(@PathVariable Long id) {
         log.info("Eliminando foto para personal ID: {}", id);
         
         try {

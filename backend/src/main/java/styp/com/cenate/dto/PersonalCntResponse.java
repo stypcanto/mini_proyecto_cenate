@@ -16,7 +16,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class PersonalCntResponse {
-    private Integer idPers;
+    private Long idPers;  // ✅ Cambiado a Long
     private TipoDocumentoResponse tipoDocumento;
     private String numDocPers;
     private String nomPers;
@@ -26,7 +26,7 @@ public class PersonalCntResponse {
     private String perPers;
     private String statPers;
     private LocalDate fechNaciPers;
-    private Integer edad;              // ✅ NUEVO
+    private Integer edad;
     private String genPers;
     private String movilPers;
     private String emailPers;
@@ -34,10 +34,10 @@ public class PersonalCntResponse {
     private String colegPers;
     private String codPlanRem;
     private String direcPers;
-    private String fotoPers;           // ✅ NUEVO
+    private String fotoPers;
     private RegimenLaboralResponse regimenLaboral;
     private AreaResponse area;
-    private Integer idUsuario;
+    private Long idUsuario;  // ✅ Cambiado a Long
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
 }

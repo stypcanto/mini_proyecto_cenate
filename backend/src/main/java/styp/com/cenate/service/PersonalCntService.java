@@ -51,7 +51,7 @@ public class PersonalCntService {
     }
     
     @Transactional(readOnly = true)
-    public PersonalCntResponse getPersonalById(Integer id) {
+    public PersonalCntResponse getPersonalById(Long id) {
         log.info("Obteniendo personal con ID: {}", id);
         PersonalCnt personal = personalCntRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Personal no encontrado"));
@@ -107,7 +107,7 @@ public class PersonalCntService {
     }
     
     @Transactional
-    public PersonalCntResponse updatePersonal(Integer id, PersonalCntRequest request) {
+    public PersonalCntResponse updatePersonal(Long id, PersonalCntRequest request) {
         log.info("Actualizando personal con ID: {}", id);
         
         PersonalCnt personal = personalCntRepository.findById(id)
@@ -165,7 +165,7 @@ public class PersonalCntService {
      * ✅ NUEVO: Subir foto del personal
      */
     @Transactional
-    public PersonalCntResponse uploadFoto(Integer id, MultipartFile file) throws IOException {
+    public PersonalCntResponse uploadFoto(Long id, MultipartFile file) throws IOException {
         log.info("Subiendo foto para personal ID: {}", id);
         
         PersonalCnt personal = personalCntRepository.findById(id)
@@ -216,7 +216,7 @@ public class PersonalCntService {
      * ✅ NUEVO: Eliminar foto del personal
      */
     @Transactional
-    public void deleteFoto(Integer id) throws IOException {
+    public void deleteFoto(Long id) throws IOException {
         log.info("Eliminando foto para personal ID: {}", id);
         
         PersonalCnt personal = personalCntRepository.findById(id)
@@ -233,7 +233,7 @@ public class PersonalCntService {
     }
     
     @Transactional
-    public void deletePersonal(Integer id) {
+    public void deletePersonal(Long id) {
         log.info("Eliminando personal con ID: {}", id);
         PersonalCnt personal = personalCntRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Personal no encontrado"));

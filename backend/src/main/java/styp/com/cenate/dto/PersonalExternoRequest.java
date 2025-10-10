@@ -18,7 +18,7 @@ import java.time.LocalDate;
 public class PersonalExternoRequest {
     
     @NotNull(message = "El tipo de documento es requerido")
-    private Long idTipDoc;
+    private Long idTipDoc;  // ✅ Cambiado a Long
     
     @NotBlank(message = "El número de documento es requerido")
     @Size(max = 20, message = "El número de documento no puede exceder 20 caracteres")
@@ -45,14 +45,15 @@ public class PersonalExternoRequest {
     
     @Email(message = "El email personal debe ser válido")
     @Size(max = 100, message = "El email personal no puede exceder 100 caracteres")
-    private String emailExt;
+    private String emailPersExt;
     
-    @Email(message = "El email corporativo debe ser válido")
-    @Size(max = 100, message = "El email corporativo no puede exceder 100 caracteres")
-    private String emailCorpExt;
+    /**
+     * ID de la institución (IPRESS) a la que pertenece
+     */
+    private Long idIpress;  // ✅ Cambiado a Long
     
-    @Size(max = 255, message = "La institución no puede exceder 255 caracteres")
-    private String instExt;
-    
-    private Integer idUsuario;
+    /**
+     * ID del usuario asociado
+     */
+    private Long idUser;  // ✅ Cambiado a Long
 }

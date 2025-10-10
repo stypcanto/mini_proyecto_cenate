@@ -15,6 +15,8 @@ import java.time.Period;
 /**
  * Entidad que representa al personal interno de CENATE
  * Tabla: dim_personal_cnt
+ * 
+ * ⚠️ MODELO ACTUALIZADO para coincidir con la estructura REAL de la base de datos
  */
 @Entity
 @Table(name = "dim_personal_cnt")
@@ -27,40 +29,28 @@ public class PersonalCnt {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_pers")
-    private Integer idPers;
+    private Long idPers;
     
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_tip_doc", nullable = false)
     private TipoDocumento tipoDocumento;
     
-    /**
-     * Número de documento de identidad
-     */
     @Column(name = "num_doc_pers", nullable = false, length = 20)
     private String numDocPers;
     
-    /**
-     * Nombres del personal
-     */
-    @Column(name = "nom_pers", nullable = false, length = 255)
+    @Column(name = "nom_pers", length = 255)
     private String nomPers;
     
-    /**
-     * Apellido paterno del personal
-     */
-    @Column(name = "ape_pater_pers", nullable = false, length = 255)
+    @Column(name = "ape_pater_pers", length = 255)
     private String apePaterPers;
     
-    /**
-     * Apellido materno del personal
-     */
     @Column(name = "ape_mater_pers", length = 255)
     private String apeMaterPers;
     
     /**
-     * Periodo de inicio de trabajo (formato: YYYYMM, ejemplo: 202504)
+     * Periodo de inicio de trabajo (formato: YYYYMM)
      */
-    @Column(name = "per_pers", length = 6)
+    @Column(name = "per_pers", nullable = false, length = 6)
     private String perPers;
     
     /**
@@ -106,7 +96,7 @@ public class PersonalCnt {
     private String direcPers;
     
     /**
-     * ✅ NUEVO: Ruta de la foto del personal
+     * Ruta de la foto del personal
      */
     @Column(name = "foto_pers", length = 500)
     private String fotoPers;
@@ -123,7 +113,7 @@ public class PersonalCnt {
     private Area area;
     
     @Column(name = "id_usuario")
-    private Integer idUsuario;
+    private Long idUsuario;
     
     @CreationTimestamp
     @Column(name = "create_at", nullable = false, updatable = false)
@@ -145,7 +135,7 @@ public class PersonalCnt {
     }
     
     /**
-     * ✅ NUEVO: Calcula la edad actual basada en la fecha de nacimiento
+     * Calcula la edad actual basada en la fecha de nacimiento
      */
     public Integer getEdad() {
         if (fechNaciPers == null) return null;

@@ -10,10 +10,13 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 
 /**
  * Entidad que representa al personal externo (no pertenece a CENATE)
  * Tabla: dim_personal_externo
+ * 
+ * ⚠️ MODELO ACTUALIZADO para coincidir con la estructura REAL de la base de datos
  */
 @Entity
 @Table(name = "dim_personal_externo")
@@ -26,7 +29,7 @@ public class PersonalExterno {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_pers_ext")
-    private Integer idPersExt;
+    private Long idPersExt;
     
     /**
      * Tipo de documento (DNI, CE, Pasaporte, etc.)
@@ -56,47 +59,66 @@ public class PersonalExterno {
     /**
      * Apellido materno
      */
-    @Column(name = "ape_mater_ext", length = 255)
+    @Column(name = "ape_mater_ext", nullable = false, length = 255)
     private String apeMaterExt;
     
     /**
      * Fecha de nacimiento
      */
-    @Column(name = "fech_naci_ext")
+    @Column(name = "fech_naci_ext", nullable = false)
     private LocalDate fechNaciExt;
     
     /**
      * Género (M=Masculino, F=Femenino)
      */
-    @Column(name = "gen_ext", length = 1)
+    @Column(name = "gen_ext", nullable = false, length = 1)
     private String genExt;
     
     /**
-     * Teléfono personal
+     * ✅ RELACIÓN CON IPRESS: Institución a la que pertenece
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_ipress", nullable = false)
+    private Ipress ipress;
+    
+    /**
+     * Teléfono móvil
      */
     @Column(name = "movil_ext", length = 20)
     private String movilExt;
     
     /**
-     * Correo personal
+     * Email personal (columna principal)
      */
-    @Column(name = "email_ext", length = 100)
-    private String emailExt;
+    @Column(name = "email_pers_ext", length = 100)
+    private String emailPersExt;
     
     /**
-     * Correo corporativo (de su institución)
+     * Email corporativo
      */
     @Column(name = "email_corp_ext", length = 100)
     private String emailCorpExt;
     
     /**
-     * Institución de procedencia
+     * Email alternativo (columna legacy)
+     */
+    @Column(name = "email_ext", length = 100)
+    private String emailExt;
+    
+    /**
+     * Institución (texto legacy - antes de la relación con IPRESS)
      */
     @Column(name = "inst_ext", length = 255)
     private String instExt;
     
     /**
-     * Relación con usuario del sistema
+     * Relación con usuario del sistema (columna nueva)
+     */
+    @Column(name = "id_user")
+    private Long idUser;
+    
+    /**
+     * Relación con usuario del sistema (columna legacy)
      */
     @Column(name = "id_usuario")
     private Integer idUsuario;
@@ -118,5 +140,38 @@ public class PersonalExterno {
         if (apePaterExt != null) nombre.append(" ").append(apePaterExt);
         if (apeMaterExt != null) nombre.append(" ").append(apeMaterExt);
         return nombre.toString().trim();
+    }
+    
+    /**
+     * Calcula la edad actual basada en la fecha de nacimiento
+     */
+    public Integer getEdad() {
+        if (fechNaciExt == null) return null;
+        return Period.between(fechNaciExt, LocalDate.now()).getYears();
+    }
+    
+    /**
+     * Obtiene el nombre de la institución
+     */
+    public String getNombreInstitucion() {
+        return ipress != null ? ipress.getDescIpress() : instExt;
+    }
+    
+    /**
+     * Obtiene el email principal (prioriza email_pers_ext)
+     */
+    public String getEmailPrincipal() {
+        if (emailPersExt != null && !emailPersExt.isEmpty()) return emailPersExt;
+        if (emailExt != null && !emailExt.isEmpty()) return emailExt;
+        return emailCorpExt;
+    }
+    
+    /**
+     * Obtiene el ID de usuario (prioriza id_user)
+     */
+    public Long getIdUserPrincipal() {
+        if (idUser != null) return idUser;
+        if (idUsuario != null) return idUsuario.longValue();
+        return null;
     }
 }

@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.Optional;
 
 @Repository
-public interface PersonalExternoRepository extends JpaRepository<PersonalExterno, Integer> {
+public interface PersonalExternoRepository extends JpaRepository<PersonalExterno, Long> {  // ✅ Cambiado a Long
     
     /**
      * Buscar personal externo por número de documento
@@ -23,10 +23,10 @@ public interface PersonalExternoRepository extends JpaRepository<PersonalExterno
     /**
      * Buscar por email
      */
-    Optional<PersonalExterno> findByEmailExt(String emailExt);
+    Optional<PersonalExterno> findByEmailPersExt(String emailPersExt);
     
     /**
-     * Buscar por institución
+     * Buscar por institución (legacy)
      */
     List<PersonalExterno> findByInstExtContainingIgnoreCase(String institucion);
     

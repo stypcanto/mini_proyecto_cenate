@@ -1,0 +1,490 @@
+{
+  "info": {
+    "name": "CENATE - Sistema Unificado de Personal",
+    "description": "Colección completa de endpoints para gestión unificada de personal interno (CENATE) y externo (otras instituciones)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080/api",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Autenticación",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.environment.set('jwt_token', response.token);",
+                  "    pm.collectionVariables.set('jwt_token', response.token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"username\": \"admin\",\n    \"password\": \"admin123\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Personal Unificado",
+      "item": [
+        {
+          "name": "Estadísticas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/estadisticas",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "estadisticas"]
+            },
+            "description": "Obtiene métricas generales del personal del sistema"
+          }
+        },
+        {
+          "name": "Listar Todo el Personal",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado"]
+            },
+            "description": "Obtiene TODO el personal (CENATE + Externos) sin filtros"
+          }
+        },
+        {
+          "name": "Solo Personal CENATE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/cenate",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "cenate"]
+            },
+            "description": "Atajo para obtener solo personal interno de CENATE"
+          }
+        },
+        {
+          "name": "Solo Personal Externo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/externos",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "externos"]
+            },
+            "description": "Atajo para obtener solo personal de otras instituciones"
+          }
+        },
+        {
+          "name": "Filtrar por Tipo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/filtrar?tipoPersonal=CENATE",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "filtrar"],
+              "query": [
+                {
+                  "key": "tipoPersonal",
+                  "value": "CENATE",
+                  "description": "CENATE | EXTERNO"
+                }
+              ]
+            },
+            "description": "Filtrar por tipo de institución (CENATE o EXTERNO)"
+          }
+        },
+        {
+          "name": "Filtrar por Mes de Cumpleaños",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/filtrar?mesCumpleanos=6",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "filtrar"],
+              "query": [
+                {
+                  "key": "mesCumpleanos",
+                  "value": "6",
+                  "description": "1-12 (1=Enero, 12=Diciembre)"
+                }
+              ]
+            },
+            "description": "Filtrar por mes de nacimiento (1-12)"
+          }
+        },
+        {
+          "name": "Filtrar por Estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/filtrar?estado=ACTIVO",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "filtrar"],
+              "query": [
+                {
+                  "key": "estado",
+                  "value": "ACTIVO",
+                  "description": "ACTIVO | INACTIVO | A | I"
+                }
+              ]
+            },
+            "description": "Filtrar por estado (ACTIVO, INACTIVO, A, I)"
+          }
+        },
+        {
+          "name": "Filtrar por Área (CENATE)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/filtrar?tipoPersonal=CENATE&idArea=1",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "filtrar"],
+              "query": [
+                {
+                  "key": "tipoPersonal",
+                  "value": "CENATE"
+                },
+                {
+                  "key": "idArea",
+                  "value": "1",
+                  "description": "ID del área (solo para CENATE)"
+                }
+              ]
+            },
+            "description": "Filtrar personal CENATE por área específica"
+          }
+        },
+        {
+          "name": "Búsqueda Libre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/buscar?q=garcia",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "buscar"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "garcia",
+                  "description": "Término de búsqueda (nombres, apellidos, documento)"
+                }
+              ]
+            },
+            "description": "Buscar personal por nombre, apellido o documento"
+          }
+        },
+        {
+          "name": "Filtros Combinados",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/filtrar?tipoPersonal=CENATE&estado=ACTIVO&idArea=5&searchTerm=maria",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "filtrar"],
+              "query": [
+                {
+                  "key": "tipoPersonal",
+                  "value": "CENATE"
+                },
+                {
+                  "key": "estado",
+                  "value": "ACTIVO"
+                },
+                {
+                  "key": "idArea",
+                  "value": "5"
+                },
+                {
+                  "key": "searchTerm",
+                  "value": "maria"
+                }
+              ]
+            },
+            "description": "Ejemplo de múltiples filtros aplicados simultáneamente"
+          }
+        },
+        {
+          "name": "Cumpleañeros del Mes",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-unificado/cumpleanos/12",
+              "host": ["{{base_url}}"],
+              "path": ["personal-unificado", "cumpleanos", "12"]
+            },
+            "description": "Personal que cumple años en un mes específico"
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 IPRESS (Instituciones)",
+      "item": [
+        {
+          "name": "Listar Todas las IPRESS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ipress",
+              "host": ["{{base_url}}"],
+              "path": ["ipress"]
+            },
+            "description": "Obtiene todas las instituciones de salud registradas"
+          }
+        },
+        {
+          "name": "Listar IPRESS Activas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ipress/activas",
+              "host": ["{{base_url}}"],
+              "path": ["ipress", "activas"]
+            },
+            "description": "Obtiene solo las instituciones activas"
+          }
+        },
+        {
+          "name": "Obtener IPRESS por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ipress/1",
+              "host": ["{{base_url}}"],
+              "path": ["ipress", "1"]
+            },
+            "description": "Obtiene detalles de una institución específica"
+          }
+        },
+        {
+          "name": "Buscar IPRESS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/ipress/buscar?q=hospital",
+              "host": ["{{base_url}}"],
+              "path": ["ipress", "buscar"],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "hospital",
+                  "description": "Término de búsqueda en nombre"
+                }
+              ]
+            },
+            "description": "Buscar instituciones por nombre"
+          }
+        }
+      ]
+    },
+    {
+      "name": "👥 Personal Externo",
+      "item": [
+        {
+          "name": "Listar Personal Externo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-externo",
+              "host": ["{{base_url}}"],
+              "path": ["personal-externo"]
+            },
+            "description": "Lista todo el personal de instituciones externas"
+          }
+        },
+        {
+          "name": "Obtener Personal Externo por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-externo/1",
+              "host": ["{{base_url}}"],
+              "path": ["personal-externo", "1"]
+            }
+          }
+        },
+        {
+          "name": "Crear Personal Externo",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"idTipDoc\": 1,\n    \"numDocExt\": \"45678912\",\n    \"nomExt\": \"LUIS ALBERTO\",\n    \"apePaterExt\": \"RODRIGUEZ\",\n    \"apeMaterExt\": \"MARTINEZ\",\n    \"fechNaciExt\": \"1987-06-20\",\n    \"genExt\": \"M\",\n    \"movilExt\": \"965432178\",\n    \"emailPersExt\": \"lrodriguez@hospital.gob.pe\",\n    \"idIpress\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/personal-externo",
+              "host": ["{{base_url}}"],
+              "path": ["personal-externo"]
+            },
+            "description": "Crea un nuevo registro de personal externo vinculado a una IPRESS"
+          }
+        },
+        {
+          "name": "Actualizar Personal Externo",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"idTipDoc\": 1,\n    \"numDocExt\": \"45678912\",\n    \"nomExt\": \"LUIS ALBERTO\",\n    \"apePaterExt\": \"RODRIGUEZ\",\n    \"apeMaterExt\": \"MARTINEZ\",\n    \"fechNaciExt\": \"1987-06-20\",\n    \"genExt\": \"M\",\n    \"movilExt\": \"965432178\",\n    \"emailPersExt\": \"lrodriguez@hospital.gob.pe\",\n    \"idIpress\": 2\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{base_url}}/personal-externo/1",
+              "host": ["{{base_url}}"],
+              "path": ["personal-externo", "1"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Personal Externo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-externo/search?query=garcia",
+              "host": ["{{base_url}}"],
+              "path": ["personal-externo", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "garcia"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Eliminar Personal Externo",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal-externo/1",
+              "host": ["{{base_url}}"],
+              "path": ["personal-externo", "1"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏢 Personal CENATE",
+      "item": [
+        {
+          "name": "Listar Personal CENATE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal",
+              "host": ["{{base_url}}"],
+              "path": ["personal"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Personal CENATE por ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal/1",
+              "host": ["{{base_url}}"],
+              "path": ["personal", "1"]
+            }
+          }
+        },
+        {
+          "name": "Buscar Personal CENATE",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/personal/search?query=garcia",
+              "host": ["{{base_url}}"],
+              "path": ["personal", "search"],
+              "query": [
+                {
+                  "key": "query",
+                  "value": "garcia"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

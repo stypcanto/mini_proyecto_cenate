@@ -72,5 +72,5 @@ public class PersonalCntRequest {
     
     private Long idArea;
     
-    private Integer idUsuario;
+    private Long idUsuario;  // ✅ Cambiado a Long
 }

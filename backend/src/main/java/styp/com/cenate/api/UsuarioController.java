@@ -32,7 +32,7 @@ public class UsuarioController {
     
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
-    public ResponseEntity<UsuarioResponse> getUserById(@PathVariable Integer id) {
+    public ResponseEntity<UsuarioResponse> getUserById(@PathVariable Long id) {
         log.info("Consultando usuario por ID: {}", id);
         UsuarioResponse user = usuarioService.getUserById(id);
         return ResponseEntity.ok(user);
@@ -48,7 +48,7 @@ public class UsuarioController {
     
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
-    public ResponseEntity<?> deleteUser(@PathVariable Integer id) {
+    public ResponseEntity<?> deleteUser(@PathVariable Long id) {
         log.info("Eliminando usuario con ID: {}", id);
         usuarioService.deleteUser(id);
         Map<String, String> response = new HashMap<>();
@@ -58,7 +58,7 @@ public class UsuarioController {
     
     @PutMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
-    public ResponseEntity<UsuarioResponse> activateUser(@PathVariable Integer id) {
+    public ResponseEntity<UsuarioResponse> activateUser(@PathVariable Long id) {
         log.info("Activando usuario con ID: {}", id);
         UsuarioResponse user = usuarioService.activateUser(id);
         return ResponseEntity.ok(user);
@@ -66,7 +66,7 @@ public class UsuarioController {
     
     @PutMapping("/{id}/deactivate")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
-    public ResponseEntity<UsuarioResponse> deactivateUser(@PathVariable Integer id) {
+    public ResponseEntity<UsuarioResponse> deactivateUser(@PathVariable Long id) {
         log.info("Desactivando usuario con ID: {}", id);
         UsuarioResponse user = usuarioService.deactivateUser(id);
         return ResponseEntity.ok(user);
@@ -74,7 +74,7 @@ public class UsuarioController {
     
     @PutMapping("/{id}/unlock")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
-    public ResponseEntity<UsuarioResponse> unlockUser(@PathVariable Integer id) {
+    public ResponseEntity<UsuarioResponse> unlockUser(@PathVariable Long id) {
         log.info("Desbloqueando usuario con ID: {}", id);
         UsuarioResponse user = usuarioService.unlockUser(id);
         return ResponseEntity.ok(user);
