@@ -43,6 +43,25 @@ public class TipoDocumento {
     }
 
     // ------------------ Getters ------------------
+    public Long getIdTipDoc() {
+        return this.idTipDoc;
+    }
+
+    public String getDescTipDoc() {
+        return this.descTipDoc;
+    }
+
+    public String getStatTipDoc() {
+        return this.statTipDoc;
+    }
+
+    public LocalDateTime getCreateAt() {
+        return this.createAt;
+    }
+
+    public LocalDateTime getUpdateAt() {
+        return this.updateAt;
+    }
 
     public Long getIdTipDoc() {
         return idTipDoc;

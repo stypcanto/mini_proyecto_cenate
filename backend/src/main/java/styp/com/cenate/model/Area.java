@@ -20,7 +20,36 @@ public class Area {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_area")
     private Long idArea;
-    
+
+    public Long getIdArea() {
+        return this.idArea;
+    }
+
+    public String getDescArea() {
+        return this.descArea;
+    }
+
+    public String getStatArea() {
+        return this.statArea;
+    }
+
+    public LocalDateTime getCreateAt() {
+        return this.createAt;
+    }
+
+    public LocalDateTime getUpdateAt() {
+        return this.updateAt;
+    }
+
+    public void setDescArea(String descArea) {
+        this.descArea = descArea;
+    }
+
+    public void setStatArea(String statArea) {
+        this.statArea = statArea;
+    }
+
+
     @Column(name = "desc_area", nullable = false, length = 255)
     private String descArea;
     

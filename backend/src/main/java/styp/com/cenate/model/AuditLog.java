@@ -6,9 +6,9 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "audit_logs", indexes = {
-    @Index(name = "idx_audit_usuario", columnList = "usuario"),
-    @Index(name = "idx_audit_action", columnList = "action"),
-    @Index(name = "idx_audit_fecha", columnList = "fecha_hora")
+        @Index(name = "idx_audit_usuario", columnList = "usuario"),
+        @Index(name = "idx_audit_action", columnList = "action"),
+        @Index(name = "idx_audit_fecha", columnList = "fecha_hora")
 })
 @Data
 @NoArgsConstructor
@@ -49,6 +49,23 @@ public class AuditLog {
 
     @Column(name = "duracion_ms")
     private Long duracionMs; // duración de la operación en milisegundos
+
+    // Constructor necesario para el Builder de Lombok
+    public AuditLog(Long id, String usuario, String action, String modulo, String detalle,
+                    String ipAddress, String userAgent, String nivel, String estado,
+                    LocalDateTime fechaHora, Long duracionMs) {
+        this.id = id;
+        this.usuario = usuario;
+        this.action = action;
+        this.modulo = modulo;
+        this.detalle = detalle;
+        this.ipAddress = ipAddress;
+        this.userAgent = userAgent;
+        this.nivel = nivel;
+        this.estado = estado;
+        this.fechaHora = fechaHora;
+        this.duracionMs = duracionMs;
+    }
 
     @PrePersist
     protected void onCreate() {

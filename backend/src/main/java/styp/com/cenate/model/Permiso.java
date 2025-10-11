@@ -34,6 +34,10 @@ public class Permiso {
     @Builder.Default
     private Set<Rol> roles = new HashSet<>();
 
+    public String getDescPermiso() {
+        return this.descPermiso;
+    }
+
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();

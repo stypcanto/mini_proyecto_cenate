@@ -52,6 +52,14 @@ public class Rol {
         updatedAt = now;
     }
 
+    public String getDescRol() {
+        return this.descRol;
+    }
+
+    public Set<Permiso> getPermisos() {
+        return this.permisos;
+    }
+
     @PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();

@@ -109,7 +109,12 @@ public class Ipress {
     @UpdateTimestamp
     @Column(name = "update_at", nullable = false)
     private LocalDateTime updateAt;
-    
+
+
+    public String getDescIpress() {
+        return this.descIpress;
+    }
+
     /**
      * Verifica si la IPRESS está activa
      */

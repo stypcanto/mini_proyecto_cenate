@@ -13,6 +13,22 @@ import java.time.LocalDate;
 @Builder            // Permite usar .builder()
 public class PersonalRequest {
 
+    public String getNombres() {
+        return this.nombres;
+    }
+
+    public String getApellidoPaterno() {
+        return this.apellidoPaterno;
+    }
+
+    public Long getIdIpress() {
+        return this.idIpress;
+    }
+
+    public void setTipoPersonal(String tipoPersonal) {
+        this.tipoPersonal = tipoPersonal;
+    }
+
     // ============================================
     // TIPO DE PERSONAL
     // ============================================

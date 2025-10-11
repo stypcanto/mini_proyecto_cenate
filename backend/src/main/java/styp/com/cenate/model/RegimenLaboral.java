@@ -20,7 +20,36 @@ public class RegimenLaboral {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_reg_lab")
     private Long idRegLab;
-    
+
+    public Long getIdRegLab() {
+        return this.idRegLab;
+    }
+
+    public String getDescRegLab() {
+        return this.descRegLab;
+    }
+
+    public String getStatRegLab() {
+        return this.statRegLab;
+    }
+
+    public LocalDateTime getCreateAt() {
+        return this.createAt;
+    }
+
+    public LocalDateTime getUpdateAt() {
+        return this.updateAt;
+    }
+
+    public void setDescRegLab(String descRegLab) {
+        this.descRegLab = descRegLab;
+    }
+
+    public void setStatRegLab(String statRegLab) {
+        this.statRegLab = statRegLab;
+    }
+
+
     @Column(name = "desc_reg_lab", nullable = false, length = 100)
     private String descRegLab;
     
