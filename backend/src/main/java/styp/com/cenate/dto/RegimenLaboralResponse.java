@@ -1,17 +1,14 @@
 package styp.com.cenate.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.time.LocalDateTime;
 
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-@Builder
+@Data               // Genera getters, setters, equals, hashCode y toString
+@NoArgsConstructor  // Constructor vacío
+@AllArgsConstructor // Constructor con todos los campos
+@Builder            // Permite usar .builder()
 public class RegimenLaboralResponse {
+
     private Long idRegLab;
     private String descRegLab;
     private String statRegLab;

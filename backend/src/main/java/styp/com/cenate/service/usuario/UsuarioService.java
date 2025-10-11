@@ -24,9 +24,6 @@ public class UsuarioService {
     private final UsuarioRepository usuarioRepository;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    /**
-     * Obtiene todos los usuarios
-     */
     @Transactional(readOnly = true)
     public List<UsuarioResponse> getAllUsers() {
         log.info("🔍 Consultando todos los usuarios");
@@ -36,31 +33,20 @@ public class UsuarioService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Obtiene un usuario por ID
-     */
     @Transactional(readOnly = true)
     public UsuarioResponse getUserById(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado con ID: " + id));
-        log.info("🔍 Consultando usuario con ID {}", id);
         return convertToResponse(usuario);
     }
 
-    /**
-     * Obtiene un usuario por nombre de usuario
-     */
     @Transactional(readOnly = true)
     public UsuarioResponse getUserByUsername(String username) {
         Usuario usuario = usuarioRepository.findByNameUser(username)
                 .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado: " + username));
-        log.info("🔍 Consultando usuario con username {}", username);
         return convertToResponse(usuario);
     }
 
-    /**
-     * Elimina un usuario
-     */
     @Transactional
     public void deleteUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
@@ -69,35 +55,24 @@ public class UsuarioService {
         log.info("🗑️ Usuario eliminado: {}", usuario.getNameUser());
     }
 
-    /**
-     * Activa un usuario
-     */
     @Transactional
     public UsuarioResponse activateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado con ID: " + id));
         usuario.setStatUser("ACTIVO");
         usuarioRepository.save(usuario);
-        log.info("✅ Usuario activado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
-    /**
-     * Desactiva un usuario
-     */
     @Transactional
     public UsuarioResponse deactivateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("❌ Usuario no encontrado con ID: " + id));
         usuario.setStatUser("INACTIVO");
         usuarioRepository.save(usuario);
-        log.info("🚫 Usuario desactivado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
-    /**
-     * Desbloquea un usuario
-     */
     @Transactional
     public UsuarioResponse unlockUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
@@ -105,22 +80,14 @@ public class UsuarioService {
         usuario.setFailedAttempts(0);
         usuario.setLockedUntil(null);
         usuarioRepository.save(usuario);
-        log.info("🔓 Usuario desbloqueado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
-    /**
-     * Ejecuta una consulta SQL personalizada
-     */
     @Transactional(readOnly = true)
     public List<Map<String, Object>> executeCustomQuery(String sql, String username) {
-        log.info("🧠 Ejecutando consulta SQL personalizada para usuario: {}", username);
         return namedParameterJdbcTemplate.queryForList(sql, Map.of("username", username));
     }
 
-    /**
-     * Convierte una entidad Usuario a UsuarioResponse
-     */
     private UsuarioResponse convertToResponse(Usuario usuario) {
         Set<String> roles = usuario.getRoles().stream()
                 .map(Rol::getDescRol)

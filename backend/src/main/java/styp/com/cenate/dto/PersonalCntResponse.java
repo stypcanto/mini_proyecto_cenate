@@ -1,10 +1,6 @@
 package styp.com.cenate.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -16,7 +12,8 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @Builder
 public class PersonalCntResponse {
-    private Long idPers;  // ✅ Cambiado a Long
+
+    private Long idPers;
     private TipoDocumentoResponse tipoDocumento;
     private String numDocPers;
     private String nomPers;
@@ -37,7 +34,7 @@ public class PersonalCntResponse {
     private String fotoPers;
     private RegimenLaboralResponse regimenLaboral;
     private AreaResponse area;
-    private Long idUsuario;  // ✅ Cambiado a Long
+    private Long idUsuario;
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
 }

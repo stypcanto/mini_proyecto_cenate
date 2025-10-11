@@ -1,10 +1,6 @@
 package styp.com.cenate.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
@@ -13,17 +9,17 @@ import java.util.Set;
  * DTO unificado que representa tanto personal interno (CENATE) como externo (otras instituciones).
  * Incluye información de usuario y datos personales, evitando duplicaciones.
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@Data               // Genera getters, setters, toString, equals y hashCode
+@NoArgsConstructor  // Constructor vacío
+@AllArgsConstructor // Constructor con todos los campos
+@Builder            // Permite usar .builder()
 public class PersonalResponse {
 
     // ============================================
     // IDENTIFICACIÓN
     // ============================================
-    private Long idPersonal;            // ID del personal (interno o externo)
-    private String tipoPersonal;        // "CENATE" o "EXTERNO"
+    private Long idPersonal;
+    private String tipoPersonal;
     private TipoDocumentoResponse tipoDocumento;
     private String numeroDocumento;
 
@@ -48,13 +44,13 @@ public class PersonalResponse {
     // ============================================
     // INSTITUCIÓN
     // ============================================
-    private String institucion;       // Ej. "CENATE" o nombre IPRESS externa
-    private IpressResponse ipress;    // Solo para externos
+    private String institucion;
+    private IpressResponse ipress;
 
     // ============================================
     // INFORMACIÓN LABORAL (CENATE)
     // ============================================
-    private String estado;                         // A o I
+    private String estado;
     private AreaResponse area;
     private RegimenLaboralResponse regimenLaboral;
     private String periodo;

@@ -1,10 +1,6 @@
 package styp.com.cenate.dto;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
+import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -12,12 +8,13 @@ import java.time.LocalDateTime;
  * DTO de respuesta para IPRESS (Instituciones Prestadoras de Servicios de Salud)
  */
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class IpressResponse {
+
     private Long idIpress;
-    private String codIpress;      // ⚠️ nuevo campo
+    private String codIpress;
     private String descIpress;
 
     // Relaciones (IDs)
@@ -38,9 +35,9 @@ public class IpressResponse {
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
 
-    /**
-     * Verifica si la IPRESS está activa
-     */
+    // ===========================
+    // MÉTODOS DE CONVENIENCIA
+    // ===========================
     public boolean isActiva() {
         return "A".equalsIgnoreCase(statIpress);
     }

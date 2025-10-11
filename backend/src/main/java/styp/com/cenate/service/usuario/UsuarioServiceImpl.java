@@ -84,7 +84,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         return convertToResponse(usuario);
     }
 
-    // 🧠 Aquí tu nuevo método SQL personalizado
     @Transactional(readOnly = true)
     public List<Map<String, Object>> executeCustomQuery(String sql, String username) {
         log.info("🧠 Ejecutando consulta SQL personalizada para usuario: {}", username);
@@ -92,14 +91,13 @@ public class UsuarioServiceImpl implements UsuarioService {
         return namedParameterJdbcTemplate.queryForList(sql, params);
     }
 
-    // Conversión a DTO
     private UsuarioResponse convertToResponse(Usuario usuario) {
         Set<String> roles = usuario.getRoles().stream()
                 .map(Rol::getDescRol)
                 .collect(Collectors.toSet());
 
         Set<String> permisos = usuario.getRoles().stream()
-                .flatMap(rol -> rol.getPermisos().stream())
+                .flatMap(r -> r.getPermisos().stream())
                 .map(Permiso::getDescPermiso)
                 .collect(Collectors.toSet());
 

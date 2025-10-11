@@ -22,8 +22,9 @@ import styp.com.cenate.repository.UsuarioRepository;
 import styp.com.cenate.security.JwtService;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.HashSet;
 
 @Service
 @RequiredArgsConstructor
@@ -39,26 +40,20 @@ public class AuthenticationService {
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final long LOCK_TIME_DURATION_MINUTES = 30;
 
-    /**
-     * Login de usuario con validaciones de bloqueo, estado y JWT.
-     */
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         try {
             Usuario usuario = usuarioRepository.findByNameUserWithRoles(request.getUsername())
                     .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas"));
 
-            // Verificar si está bloqueado
             if (usuario.isAccountLocked()) {
                 throw new BadCredentialsException("Cuenta bloqueada. Intente nuevamente más tarde.");
             }
 
-            // Verificar si está activo
             if (!usuario.isActive()) {
                 throw new BadCredentialsException("Cuenta inactiva. Contacte al administrador.");
             }
 
-            // Autenticar con Spring Security
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(),
@@ -66,18 +61,14 @@ public class AuthenticationService {
                     )
             );
 
-            // Resetear intentos fallidos
             resetFailedAttempts(usuario);
 
-            // Actualizar último acceso
             usuario.setLastLoginAt(LocalDateTime.now());
             usuarioRepository.save(usuario);
 
-            // Generar token JWT
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String token = jwtService.generateToken(userDetails);
 
-            // Roles y permisos
             Set<Rol> rolesUsuario = new HashSet<>(usuario.getRoles());
 
             Set<String> roles = rolesUsuario.stream()
@@ -107,15 +98,11 @@ public class AuthenticationService {
                     .ifPresent(this::increaseFailedAttempts);
             throw new BadCredentialsException("Usuario o contraseña incorrectos");
         } catch (Exception e) {
-            // 🔥 Corrección: no referenciamos 'request' fuera de alcance
             log.error("❌ Error inesperado durante el login: {}", e.getMessage(), e);
             throw new RuntimeException("Ocurrió un error en el servidor al procesar el inicio de sesión");
         }
     }
 
-    /**
-     * Crear un nuevo usuario con sus roles asignados.
-     */
     @Transactional
     public UsuarioResponse createUser(UsuarioCreateRequest request) {
         if (usuarioRepository.existsByNameUser(request.getUsername())) {
@@ -143,9 +130,6 @@ public class AuthenticationService {
         return convertToResponse(usuario);
     }
 
-    /**
-     * Incrementar intentos fallidos y bloquear si excede el límite.
-     */
     private void increaseFailedAttempts(Usuario usuario) {
         int newFailAttempts = usuario.getFailedAttempts() + 1;
         usuario.setFailedAttempts(newFailAttempts);
@@ -159,9 +143,6 @@ public class AuthenticationService {
         usuarioRepository.save(usuario);
     }
 
-    /**
-     * Reinicia los intentos fallidos después de un login exitoso.
-     */
     private void resetFailedAttempts(Usuario usuario) {
         if (usuario.getFailedAttempts() > 0 || usuario.getLockedUntil() != null) {
             usuario.setFailedAttempts(0);
@@ -170,38 +151,6 @@ public class AuthenticationService {
         }
     }
 
-    /**
-     * Cambiar contraseña de un usuario autenticado.
-     */
-    @Transactional
-    public void changePassword(String username, String currentPassword, String newPassword, String confirmPassword) {
-        if (!newPassword.equals(confirmPassword)) {
-            throw new RuntimeException("Las contraseñas no coinciden");
-        }
-
-        Usuario usuario = usuarioRepository.findByNameUser(username)
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
-
-        if (!passwordEncoder.matches(currentPassword, usuario.getPassUser())) {
-            throw new RuntimeException("La contraseña actual es incorrecta");
-        }
-
-        if (passwordEncoder.matches(newPassword, usuario.getPassUser())) {
-            throw new RuntimeException("La nueva contraseña debe ser diferente a la actual");
-        }
-
-        usuario.setPassUser(passwordEncoder.encode(newPassword));
-        usuario.setPasswordChangedAt(LocalDateTime.now());
-        usuario.setFailedAttempts(0);
-        usuario.setLockedUntil(null);
-
-        usuarioRepository.save(usuario);
-        log.info("🔑 Contraseña cambiada exitosamente para usuario {}", usuario.getNameUser());
-    }
-
-    /**
-     * Convertir entidad Usuario a DTO.
-     */
     private UsuarioResponse convertToResponse(Usuario usuario) {
         Set<String> roles = usuario.getRoles().stream()
                 .map(Rol::getDescRol)
@@ -210,13 +159,15 @@ public class AuthenticationService {
         Set<String> permisos = usuario.getRoles().stream()
                 .filter(r -> r.getPermisos() != null)
                 .flatMap(r -> r.getPermisos().stream())
-                .map(Permiso::getDescPermiso)
+                .map(p -> p.getDescPermiso())
                 .collect(Collectors.toSet());
 
         return UsuarioResponse.builder()
                 .idUser(usuario.getIdUser())
                 .username(usuario.getNameUser())
+                .nameUser(usuario.getNameUser())
                 .estado(usuario.getStatUser())
+                .statUser(usuario.getStatUser())
                 .roles(roles)
                 .permisos(permisos)
                 .lastLoginAt(usuario.getLastLoginAt())
