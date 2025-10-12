@@ -7,11 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import styp.com.cenate.dto.LoginRequest;
-import styp.com.cenate.dto.LoginResponse;
-import styp.com.cenate.dto.UsuarioCreateRequest;
-import styp.com.cenate.dto.UsuarioResponse;
+import styp.com.cenate.dto.*;
 import styp.com.cenate.service.AuthenticationService;
 import styp.com.cenate.service.AuditLogService;
 
@@ -43,33 +41,25 @@ public class AuthController {
 
             if (response == null) {
                 log.warn("Login fallido: respuesta nula para usuario {}", request.getUsername());
-                auditLogService.registrarError("LOGIN_FAILED", "AUTH", 
-                    "Login fallido para usuario: " + request.getUsername(), httpRequest);
+                auditLogService.registrarError("LOGIN_FAILED", "AUTH",
+                        "Login fallido para usuario: " + request.getUsername(), httpRequest);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Collections.singletonMap("message", "Credenciales inválidas"));
             }
 
-            // ✅ Registrar login exitoso
             auditLogService.registrarLogin(request.getUsername(), httpRequest);
             return ResponseEntity.ok(response);
 
         } catch (BadCredentialsException e) {
             log.warn("Credenciales incorrectas para usuario: {}", request.getUsername());
-            auditLogService.registrarError("LOGIN_FAILED", "AUTH", 
-                "Credenciales incorrectas para usuario: " + request.getUsername(), httpRequest);
+            auditLogService.registrarError("LOGIN_FAILED", "AUTH",
+                    "Credenciales incorrectas para usuario: " + request.getUsername(), httpRequest);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Collections.singletonMap("message", "Usuario o contraseña incorrectos"));
-        } catch (java.util.ConcurrentModificationException e) {
-            log.error("Error de concurrencia durante login para {}: {}", request.getUsername(), e.getMessage());
-            auditLogService.registrarError("LOGIN_ERROR", "AUTH", 
-                "Error de concurrencia: " + e.getMessage(), httpRequest);
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Collections.singletonMap("message",
-                            "Error interno: acceso concurrente detectado. Contacta al administrador."));
         } catch (Exception e) {
             log.error("Error inesperado en login para usuario {}: {}", request.getUsername(), e.toString(), e);
-            auditLogService.registrarError("LOGIN_ERROR", "AUTH", 
-                "Error inesperado: " + e.getMessage(), httpRequest);
+            auditLogService.registrarError("LOGIN_ERROR", "AUTH",
+                    "Error inesperado: " + e.getMessage(), httpRequest);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Collections.singletonMap("message", "Error interno del servidor"));
         }
@@ -80,16 +70,15 @@ public class AuthController {
         try {
             log.info("Registro de nuevo usuario: {}", request.getUsername());
             UsuarioResponse response = authenticationService.createUser(request);
-            
-            // ✅ Registrar creación de usuario
-            auditLogService.registrarAccion("REGISTER", "AUTH", 
-                "Nuevo usuario registrado: " + request.getUsername(), "INFO", httpRequest);
-            
+
+            auditLogService.registrarAccion("REGISTER", "AUTH",
+                    "Nuevo usuario registrado: " + request.getUsername(), "INFO", httpRequest);
+
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (RuntimeException e) {
             log.error("Error en registro de usuario {}: {}", request.getUsername(), e.getMessage());
-            auditLogService.registrarError("REGISTER_FAILED", "AUTH", 
-                "Error en registro: " + e.getMessage(), httpRequest);
+            auditLogService.registrarError("REGISTER_FAILED", "AUTH",
+                    "Error en registro: " + e.getMessage(), httpRequest);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Collections.singletonMap("message", e.getMessage()));
         }
@@ -105,8 +94,8 @@ public class AuthController {
 
     @PostMapping("/change-password")
     public ResponseEntity<?> changePassword(
-            @Valid @RequestBody styp.com.cenate.dto.ChangePasswordRequest request,
-            org.springframework.security.core.Authentication authentication,
+            @Valid @RequestBody ChangePasswordRequest request,
+            Authentication authentication,
             HttpServletRequest httpRequest
     ) {
         try {
@@ -120,15 +109,14 @@ public class AuthController {
                     request.getConfirmPassword()
             );
 
-            // ✅ Registrar cambio de contraseña
-            auditLogService.registrarAccion("CHANGE_PASSWORD", "AUTH", 
-                "Cambio de contraseña exitoso", "INFO", httpRequest);
+            auditLogService.registrarAccion("CHANGE_PASSWORD", "AUTH",
+                    "Cambio de contraseña exitoso", "INFO", httpRequest);
 
             return ResponseEntity.ok(Collections.singletonMap("message", "Contraseña actualizada exitosamente"));
         } catch (RuntimeException e) {
             log.error("Error al cambiar contraseña para {}: {}", authentication.getName(), e.getMessage());
-            auditLogService.registrarError("CHANGE_PASSWORD_FAILED", "AUTH", 
-                "Error al cambiar contraseña: " + e.getMessage(), httpRequest);
+            auditLogService.registrarError("CHANGE_PASSWORD_FAILED", "AUTH",
+                    "Error al cambiar contraseña: " + e.getMessage(), httpRequest);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Collections.singletonMap("message", e.getMessage()));
         }
@@ -136,16 +124,13 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<?> logout(
-            org.springframework.security.core.Authentication authentication,
+            Authentication authentication,
             HttpServletRequest httpRequest
     ) {
         try {
             String username = authentication != null ? authentication.getName() : "UNKNOWN";
             log.info("Logout de usuario: {}", username);
-            
-            // ✅ Registrar logout
             auditLogService.registrarLogout(username, httpRequest);
-            
             return ResponseEntity.ok(Collections.singletonMap("message", "Logout exitoso"));
         } catch (Exception e) {
             log.error("Error en logout: {}", e.getMessage());

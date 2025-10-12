@@ -10,20 +10,20 @@ import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    // 🔹 Buscar usuario por username (login)
-    Optional<Usuario> findByUsername(String username);
+    // 🔹 Buscar usuario por nombre de usuario (login)
+    Optional<Usuario> findByNameUser(String nameUser);
 
     // 🔹 Verificar existencia de usuario
-    boolean existsByUsername(String username);
+    boolean existsByNameUser(String nameUser);
 
     // 🔥 Cargar usuario con roles y permisos (para login o auth)
     @Query("""
         SELECT DISTINCT u FROM Usuario u
         LEFT JOIN FETCH u.roles r
         LEFT JOIN FETCH r.permisos
-        WHERE u.nameUser = :username
+        WHERE u.nameUser = :nameUser
     """)
-    Optional<Usuario> findByUsernameWithRoles(@Param("username") String username);
+    Optional<Usuario> findByNameUserWithRoles(@Param("nameUser") String nameUser);
 
     // 🔥 Listar todos los usuarios con roles y permisos
     @Query("""

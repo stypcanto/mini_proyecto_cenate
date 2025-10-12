@@ -8,7 +8,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "dim_roles")
+@Table(name = "dim_roles", schema = "public") // ✅ Esquema explícito
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -31,16 +31,17 @@ public class Rol {
 
     // 🔹 Relación inversa con Usuario
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
-    @JsonIgnore // Evita recursión infinita cuando se serializa Usuario->Rol->Usuario...
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Builder.Default
     private Set<Usuario> usuarios = new HashSet<>();
 
-    // 🔹 Relación con Permiso
+    // 🔹 Relación con permisos
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "roles_permisos",
+            schema = "public", // ✅ importante
             joinColumns = @JoinColumn(name = "id_rol"),
             inverseJoinColumns = @JoinColumn(name = "id_permiso")
     )
@@ -49,7 +50,7 @@ public class Rol {
     @Builder.Default
     private Set<Permiso> permisos = new HashSet<>();
 
-    // 🔸 Set timestamps automáticamente
+    // 🔹 Auto timestamps
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -60,14 +61,5 @@ public class Rol {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    // 🔸 Métodos de acceso personalizados si los necesitas
-    public String getDescRol() {
-        return descRol;
-    }
-
-    public Set<Permiso> getPermisos() {
-        return permisos;
     }
 }

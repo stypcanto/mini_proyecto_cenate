@@ -12,7 +12,6 @@ import java.time.LocalDateTime;
 })
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
 @Builder
 public class AuditLog {
 
@@ -24,7 +23,7 @@ public class AuditLog {
     private String usuario;
 
     @Column(name = "action", nullable = false, length = 100)
-    private String action; // LOGIN, LOGOUT, CREATE_USER, UPDATE_USER, DELETE, etc.
+    private String action; // LOGIN, LOGOUT, CREATE_USER, etc.
 
     @Column(name = "modulo", length = 50)
     private String modulo; // USUARIOS, ROLES, PACIENTES, EXAMENES, etc.
@@ -48,9 +47,9 @@ public class AuditLog {
     private LocalDateTime fechaHora;
 
     @Column(name = "duracion_ms")
-    private Long duracionMs; // duración de la operación en milisegundos
+    private Long duracionMs; // duración en milisegundos
 
-    // Constructor necesario para el Builder de Lombok
+    // ✅ Constructor manual (único)
     public AuditLog(Long id, String usuario, String action, String modulo, String detalle,
                     String ipAddress, String userAgent, String nivel, String estado,
                     LocalDateTime fechaHora, Long duracionMs) {

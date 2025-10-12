@@ -1,0 +1,13 @@
+# Ignorar dependencias y archivos innecesarios
+node_modules
+dist
+build
+.git
+.gitignore
+Dockerfile
+Dockerfile.prod
+.dockerignore
+npm-debug.log
+yarn-error.log
+*.md
+

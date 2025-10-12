@@ -52,7 +52,7 @@ public class PersonalExternoController {
      */
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
-    public ResponseEntity<PersonalResponse> createPersonalExterno(@Valid @RequestBody PersonalRequest request) {
+    public ResponseEntity<?> createPersonalExterno(@Valid @RequestBody PersonalRequest request) {
         log.info("Creando nuevo personal externo: {} {}", request.getNombres(), request.getApellidoPaterno());
 
         // Asegurarse de que el tipo sea EXTERNO
@@ -60,7 +60,8 @@ public class PersonalExternoController {
 
         // Validación básica: IPRESS obligatoria
         if (request.getIdIpress() == null) {
-            return ResponseEntity.badRequest().body(null);
+            log.warn("No se proporcionó el ID de IPRESS");
+            return ResponseEntity.badRequest().body("El ID de IPRESS es obligatorio.");
         }
 
         PersonalResponse personal = personalExternoService.createPersonalExterno(request);
@@ -100,9 +101,15 @@ public class PersonalExternoController {
      */
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
-    public ResponseEntity<List<PersonalResponse>> searchPersonalExterno(@RequestParam("searchTerm") String searchTerm) {
-        log.info("Buscando personal externo con término: {}", searchTerm);
-        List<PersonalResponse> personal = personalExternoService.searchPersonalExterno(searchTerm);
+    public ResponseEntity<?> searchPersonalExterno(@RequestParam("query") String query) {
+        log.info("Buscando personal externo con término: {}", query);
+
+        if (query == null || query.trim().isEmpty()) {
+            log.warn("El término de búsqueda está vacío");
+            return ResponseEntity.badRequest().body("El término de búsqueda no puede estar vacío.");
+        }
+
+        List<PersonalResponse> personal = personalExternoService.searchPersonalExterno(query);
         return ResponseEntity.ok(personal);
     }
 

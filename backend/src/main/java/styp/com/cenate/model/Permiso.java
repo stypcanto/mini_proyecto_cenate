@@ -8,7 +8,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "dim_permisos")
+@Table(name = "dim_permisos", schema = "public") // ✅ Esquema explícito
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,7 +20,7 @@ public class Permiso {
     @Column(name = "id_permiso")
     private Integer idPermiso;
 
-    @Column(name = "desc_permiso", unique = true, nullable = false, length = 100)
+    @Column(name = "desc_permiso", nullable = false, unique = true, length = 100)
     private String descPermiso;
 
     @Column(name = "created_at", updatable = false)
@@ -29,15 +29,12 @@ public class Permiso {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // 🔹 Relación inversa con Rol
     @ManyToMany(mappedBy = "permisos", fetch = FetchType.LAZY)
-    @JsonIgnore // evita bucles infinitos en serialización Rol -> Permiso -> Rol...
+    @JsonIgnore
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    @Builder.Default
     private Set<Rol> roles = new HashSet<>();
 
-    // 🔸 Eventos de ciclo de vida
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
@@ -48,10 +45,5 @@ public class Permiso {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
-    }
-
-    // 🔸 Métodos de acceso personalizados si se necesitan
-    public String getDescPermiso() {
-        return descPermiso;
     }
 }

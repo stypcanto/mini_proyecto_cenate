@@ -80,29 +80,37 @@ public class PersonalExterno {
     @Column(name = "update_at", nullable = false)
     private LocalDateTime updateAt;
 
+    /** 🧑 Nombre completo */
     public String getNombreCompleto() {
         StringBuilder nombre = new StringBuilder();
-        if (nomExt != null) nombre.append(nomExt);
-        if (apePaterExt != null) nombre.append(" ").append(apePaterExt);
-        if (apeMaterExt != null) nombre.append(" ").append(apeMaterExt);
+        if (nomExt != null && !nomExt.isBlank()) nombre.append(nomExt);
+        if (apePaterExt != null && !apePaterExt.isBlank()) nombre.append(" ").append(apePaterExt);
+        if (apeMaterExt != null && !apeMaterExt.isBlank()) nombre.append(" ").append(apeMaterExt);
         return nombre.toString().trim();
     }
 
+    /** 📆 Edad calculada */
     public Integer getEdad() {
         if (fechNaciExt == null) return null;
         return Period.between(fechNaciExt, LocalDate.now()).getYears();
     }
 
+    /** 🏥 Nombre de institución */
     public String getNombreInstitucion() {
-        return ipress != null ? ipress.getDescIpress() : instExt;
+        if (ipress != null && ipress.getDescIpress() != null) {
+            return ipress.getDescIpress();
+        }
+        return instExt;
     }
 
+    /** 📧 Email principal */
     public String getEmailPrincipal() {
-        if (emailPersExt != null && !emailPersExt.isEmpty()) return emailPersExt;
-        if (emailExt != null && !emailExt.isEmpty()) return emailExt;
+        if (emailPersExt != null && !emailPersExt.isBlank()) return emailPersExt;
+        if (emailExt != null && !emailExt.isBlank()) return emailExt;
         return emailCorpExt;
     }
 
+    /** 👤 ID de usuario principal */
     public Long getIdUserPrincipal() {
         if (idUser != null) return idUser;
         if (idUsuario != null) return idUsuario.longValue();

@@ -1,24 +1,59 @@
-v
+version: "3.9"
 
 services:
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: cenate-backend
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://10.0.89.13:5432/maestro_cenate
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: Essalud2025
+      # 🔹 Variables de conexión a BD (puedes definirlas en .env)
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://10.0.89.13:5432/maestro_cenate}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-Essalud2025}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_JPA_SHOW_SQL: "true"
     ports:
       - "8080:8080"
+    networks:
+      - cenate-net
     restart: on-failure
 
   frontend:
     build:
       context: ./frontend
+      dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: http://cenate-backend:8080/api
+        # ✅ API interna entre contenedores
+        VITE_API_URL: http://cenate-backend:8080/api
     container_name: cenate-frontend
     depends_on:
       - backend
     ports:
       - "80:80"
+    networks:
+      - cenate-net
+    restart: on-failure
+
+# (opcional) Si deseas volver a usar Postgres en Docker, descomenta esto ↓
+#  db:
+#    image: postgres:15
+#    container_name: cenate-db
+#    environment:
+#      POSTGRES_DB: maestro_cenate
+#      POSTGRES_USER: postgres
+#      POSTGRES_PASSWORD: Essalud2025
+#    ports:
+#      - "5432:5432"
+#    volumes:
+#      - cenate-db-data:/var/lib/postgresql/data
+#    networks:
+#      - cenate-net
+#    restart: always
+
+volumes:
+  cenate-db-data:
+
+networks:
+  cenate-net:
+    driver: bridge

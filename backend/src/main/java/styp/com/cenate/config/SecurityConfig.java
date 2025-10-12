@@ -147,6 +147,7 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
+        // Fuerza BCrypt con versión $2A y fuerza 10
+        return new BCryptPasswordEncoder(10);
     }
 }

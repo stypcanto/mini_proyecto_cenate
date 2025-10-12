@@ -39,6 +39,12 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 
     /* ==========================
+       🔹 JPA / HIBERNATE / JAKARTA
+       ========================== */
+    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
+    implementation 'org.hibernate.orm:hibernate-core:6.5.2.Final'
+
+    /* ==========================
        🔹 JWT (JSON Web Tokens)
        ========================== */
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
@@ -50,7 +56,6 @@ dependencies {
        ========================== */
     compileOnly 'org.projectlombok:lombok:1.18.40'
     annotationProcessor 'org.projectlombok:lombok:1.18.40'
-
     testCompileOnly 'org.projectlombok:lombok:1.18.40'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.40'
 
@@ -88,15 +93,12 @@ tasks.register('cleanBuild') {
    ========================== */
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
-    options.compilerArgs += [
-            '-parameters' // Permite usar nombres reales de parámetros (útil en controladores Spring)
-    ]
-    // Asegura que Lombok se procese correctamente
+    options.compilerArgs += ['-parameters']
     options.annotationProcessorPath = configurations.annotationProcessor
 }
 
 /* ==========================
-   🔹 BUILD CACHE / OPTIMIZATION
+   🔹 LOGGING Y BUILD CACHE
    ========================== */
 tasks.withType(Test).configureEach {
     systemProperty "spring.profiles.active", "test"

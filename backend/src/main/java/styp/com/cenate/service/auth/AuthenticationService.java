@@ -1,8 +1,5 @@
 package styp.com.cenate.service;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -26,8 +23,8 @@ import styp.com.cenate.security.JwtService;
 
 import java.time.LocalDateTime;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.HashSet;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -43,20 +40,23 @@ public class AuthenticationService {
     private static final int MAX_FAILED_ATTEMPTS = 5;
     private static final long LOCK_TIME_DURATION_MINUTES = 30;
 
+    // -------------------------------
+    // LOGIN
+    // -------------------------------
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
+        Usuario usuario = usuarioRepository.findByNameUserWithRoles(request.getUsername())
+                .orElseThrow(() -> new BadCredentialsException("Usuario o contraseña incorrectos"));
+
+        if (usuario.isAccountLocked()) {
+            throw new BadCredentialsException("Cuenta bloqueada temporalmente. Intente más tarde.");
+        }
+
+        if (!usuario.isActive()) {
+            throw new BadCredentialsException("Cuenta inactiva. Contacte al administrador.");
+        }
+
         try {
-            Usuario usuario = usuarioRepository.findByNameUserWithRoles(request.getUsername())
-                    .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas"));
-
-            if (usuario.isAccountLocked()) {
-                throw new BadCredentialsException("Cuenta bloqueada. Intente nuevamente más tarde.");
-            }
-
-            if (!usuario.isActive()) {
-                throw new BadCredentialsException("Cuenta inactiva. Contacte al administrador.");
-            }
-
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getUsername(),
@@ -64,6 +64,7 @@ public class AuthenticationService {
                     )
             );
 
+            // Reset de intentos fallidos
             resetFailedAttempts(usuario);
 
             usuario.setLastLoginAt(LocalDateTime.now());
@@ -72,18 +73,6 @@ public class AuthenticationService {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
             String token = jwtService.generateToken(userDetails);
 
-            Set<Rol> rolesUsuario = new HashSet<>(usuario.getRoles());
-
-            Set<String> roles = rolesUsuario.stream()
-                    .map(Rol::getDescRol)
-                    .collect(Collectors.toSet());
-
-            Set<String> permisos = rolesUsuario.stream()
-                    .filter(r -> r.getPermisos() != null)
-                    .flatMap(r -> r.getPermisos().stream())
-                    .map(Permiso::getDescPermiso)
-                    .collect(Collectors.toSet());
-
             log.info("✅ Usuario {} inició sesión exitosamente", usuario.getNameUser());
 
             return LoginResponse.builder()
@@ -91,8 +80,8 @@ public class AuthenticationService {
                     .type("Bearer")
                     .userId(usuario.getIdUser())
                     .username(usuario.getNameUser())
-                    .roles(roles)
-                    .permisos(permisos)
+                    .roles(mapRoles(usuario))
+                    .permisos(mapPermisos(usuario))
                     .message("Login exitoso")
                     .build();
 
@@ -101,11 +90,14 @@ public class AuthenticationService {
                     .ifPresent(this::increaseFailedAttempts);
             throw new BadCredentialsException("Usuario o contraseña incorrectos");
         } catch (Exception e) {
-            log.error("❌ Error inesperado durante el login: {}", e.getMessage(), e);
-            throw new RuntimeException("Ocurrió un error en el servidor al procesar el inicio de sesión");
+            log.error("❌ Error inesperado durante login de {}: {}", request.getUsername(), e.getMessage(), e);
+            throw new RuntimeException("Ocurrió un error interno en el servidor");
         }
     }
 
+    // -------------------------------
+    // REGISTRO
+    // -------------------------------
     @Transactional
     public UsuarioResponse createUser(UsuarioCreateRequest request) {
         if (usuarioRepository.existsByNameUser(request.getUsername())) {
@@ -125,6 +117,7 @@ public class AuthenticationService {
                 .statUser(request.getEstado())
                 .roles(roles)
                 .failedAttempts(0)
+                .createAt(LocalDateTime.now())
                 .build();
 
         usuario = usuarioRepository.save(usuario);
@@ -133,14 +126,39 @@ public class AuthenticationService {
         return convertToResponse(usuario);
     }
 
-    private void increaseFailedAttempts(Usuario usuario) {
-        int newFailAttempts = usuario.getFailedAttempts() + 1;
-        usuario.setFailedAttempts(newFailAttempts);
+    // -------------------------------
+    // CAMBIO DE CONTRASEÑA
+    // -------------------------------
+    @Transactional
+    public void changePassword(String username, String currentPassword, String newPassword, String confirmPassword) {
+        Usuario usuario = usuarioRepository.findByNameUser(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-        if (newFailAttempts >= MAX_FAILED_ATTEMPTS) {
+        if (!passwordEncoder.matches(currentPassword, usuario.getPassUser())) {
+            throw new RuntimeException("La contraseña actual es incorrecta");
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            throw new RuntimeException("La nueva contraseña y la confirmación no coinciden");
+        }
+
+        usuario.setPassUser(passwordEncoder.encode(newPassword));
+        usuario.setUpdateAt(LocalDateTime.now());
+        usuarioRepository.save(usuario);
+
+        log.info("🔐 Contraseña actualizada exitosamente para {}", username);
+    }
+
+    // -------------------------------
+    // UTILITARIOS DE INTENTOS
+    // -------------------------------
+    private void increaseFailedAttempts(Usuario usuario) {
+        int newAttempts = usuario.getFailedAttempts() + 1;
+        usuario.setFailedAttempts(newAttempts);
+
+        if (newAttempts >= MAX_FAILED_ATTEMPTS) {
             usuario.setLockedUntil(LocalDateTime.now().plusMinutes(LOCK_TIME_DURATION_MINUTES));
-            log.warn("🔒 Usuario {} bloqueado por {} intentos fallidos",
-                    usuario.getNameUser(), newFailAttempts);
+            log.warn("🚫 Usuario {} bloqueado por {} intentos fallidos", usuario.getNameUser(), newAttempts);
         }
 
         usuarioRepository.save(usuario);
@@ -154,25 +172,35 @@ public class AuthenticationService {
         }
     }
 
-    private UsuarioResponse convertToResponse(Usuario usuario) {
-        Set<String> roles = usuario.getRoles().stream()
+    // -------------------------------
+    // UTILITARIOS DE ROLES / PERMISOS
+    // -------------------------------
+    private Set<String> mapRoles(Usuario usuario) {
+        return usuario.getRoles().stream()
                 .map(Rol::getDescRol)
                 .collect(Collectors.toSet());
+    }
 
-        Set<String> permisos = usuario.getRoles().stream()
+    private Set<String> mapPermisos(Usuario usuario) {
+        return usuario.getRoles().stream()
                 .filter(r -> r.getPermisos() != null)
                 .flatMap(r -> r.getPermisos().stream())
-                .map(p -> p.getDescPermiso())
+                .map(Permiso::getDescPermiso)
                 .collect(Collectors.toSet());
+    }
 
+    // -------------------------------
+    // MAPEADOR DE RESPONSE
+    // -------------------------------
+    private UsuarioResponse convertToResponse(Usuario usuario) {
         return UsuarioResponse.builder()
                 .idUser(usuario.getIdUser())
                 .username(usuario.getNameUser())
                 .nameUser(usuario.getNameUser())
                 .estado(usuario.getStatUser())
                 .statUser(usuario.getStatUser())
-                .roles(roles)
-                .permisos(permisos)
+                .roles(mapRoles(usuario))
+                .permisos(mapPermisos(usuario))
                 .lastLoginAt(usuario.getLastLoginAt())
                 .createAt(usuario.getCreateAt())
                 .updateAt(usuario.getUpdateAt())
