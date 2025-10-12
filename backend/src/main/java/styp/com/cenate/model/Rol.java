@@ -23,45 +23,51 @@ public class Rol {
     @Column(name = "desc_rol", unique = true, nullable = false, length = 50)
     private String descRol;
 
-    @Column(name = "created_at")
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    // 🔹 Relación inversa con Usuario
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
-    @JsonIgnore // 🔥 Evita recursión infinita en serialización
+    @JsonIgnore // Evita recursión infinita cuando se serializa Usuario->Rol->Usuario...
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     @Builder.Default
     private Set<Usuario> usuarios = new HashSet<>();
 
+    // 🔹 Relación con Permiso
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "roles_permisos",
             joinColumns = @JoinColumn(name = "id_rol"),
             inverseJoinColumns = @JoinColumn(name = "id_permiso")
     )
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     @Builder.Default
     private Set<Permiso> permisos = new HashSet<>();
 
+    // 🔸 Set timestamps automáticamente
     @PrePersist
     protected void onCreate() {
         LocalDateTime now = LocalDateTime.now();
-        createdAt = now;
-        updatedAt = now;
-    }
-
-    public String getDescRol() {
-        return this.descRol;
-    }
-
-    public Set<Permiso> getPermisos() {
-        return this.permisos;
+        this.createdAt = now;
+        this.updatedAt = now;
     }
 
     @PreUpdate
     protected void onUpdate() {
-        updatedAt = LocalDateTime.now();
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    // 🔸 Métodos de acceso personalizados si los necesitas
+    public String getDescRol() {
+        return descRol;
+    }
+
+    public Set<Permiso> getPermisos() {
+        return permisos;
     }
 }
