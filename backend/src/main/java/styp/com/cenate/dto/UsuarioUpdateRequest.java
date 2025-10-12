@@ -2,11 +2,11 @@ package styp.com.cenate.dto;
 
 import lombok.Data;
 
-import java.util.Set;
-
+/**
+ * DTO para actualizar los datos básicos de un usuario.
+ */
 @Data
 public class UsuarioUpdateRequest {
-    private String nameUser;      // Nombre completo o visible
-    private String estado;        // ACTIVO / INACTIVO
-    private Set<String> roles;    // Lista de roles
+    private String username;  // Nuevo nombre de usuario (opcional)
+    private String estado;    // ACTIVO / INACTIVO
 }

@@ -8,7 +8,7 @@ import java.util.Set;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "dim_permisos", schema = "public") // ✅ Esquema explícito
+@Table(name = "dim_permisos", schema = "public")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -29,6 +29,7 @@ public class Permiso {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @ManyToMany(mappedBy = "permisos", fetch = FetchType.LAZY)
     @JsonIgnore
     @ToString.Exclude

@@ -1,13 +1,34 @@
-# Ignorar dependencias y archivos innecesarios
+# =====================================
+# 🎨 .dockerignore para frontend (React/Vite)
+# =====================================
+
+# 📦 Dependencias y builds
 node_modules
 dist
 build
+
+# 🧠 Archivos de control de versiones
 .git
 .gitignore
+
+# 🧰 Configuración y logs
+npm-debug.log
+yarn-error.log
+pnpm-lock.yaml
+package-lock.json
+
+# 🧑‍💻 Archivos de IDE
+.vscode
+.idea
+*.iml
+*.log
+*.tmp
+*.bak
+*.DS_Store
+
+# 🧱 Backend y cosas que no deben copiarse
+../backend/
 Dockerfile
 Dockerfile.prod
 .dockerignore
-npm-debug.log
-yarn-error.log
 *.md
-

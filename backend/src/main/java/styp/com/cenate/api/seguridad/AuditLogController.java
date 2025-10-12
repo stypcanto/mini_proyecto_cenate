@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import styp.com.cenate.model.AuditLog;
-import styp.com.cenate.service.AuditLogService;
+import styp.com.cenate.service.auditlog.AuditLogService;
 
 import java.time.LocalDateTime;
 import java.util.Map;

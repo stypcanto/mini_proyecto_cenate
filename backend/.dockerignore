@@ -1,0 +1,46 @@
+# =====================================
+# 🧠 .dockerignore para backend (Spring Boot)
+# =====================================
+
+# 🧩 Control de versiones
+.git
+.gitignore
+
+# ⚙️ Archivos de configuración locales o de IDE
+.idea
+.vscode
+*.iml
+*.class
+*.log
+*.tmp
+*.swp
+*.bak
+*.DS_Store
+
+# 🧱 Directorios de build o cache
+.gradle
+build
+out
+target
+
+# ⚡ Dependencias innecesarias
+**/node_modules/
+**/frontend/
+**/test/
+**/__pycache__/
+
+# 🔒 Archivos sensibles
+.env
+.env.*
+*.pem
+*.crt
+*.key
+
+# 📝 Documentación o archivos markdown
+*.md
+
+# 🚫 Archivos propios de Docker
+Dockerfile
+Dockerfile.prod
+docker-compose.yml
+.dockerignore

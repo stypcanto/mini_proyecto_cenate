@@ -4,10 +4,11 @@ import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import styp.com.cenate.dto.UsuarioResponse;
 import styp.com.cenate.dto.UsuarioCreateRequest;
+import styp.com.cenate.dto.UsuarioResponse;
 import styp.com.cenate.dto.UsuarioUpdateRequest;
 import styp.com.cenate.model.Permiso;
 import styp.com.cenate.model.Rol;
@@ -15,14 +16,11 @@ import styp.com.cenate.model.Usuario;
 import styp.com.cenate.repository.UsuarioRepository;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
  * 💡 Servicio que implementa la lógica de negocio para la gestión de usuarios.
- * Aquí se definen los métodos CRUD y utilidades adicionales.
  */
 @Service
 @RequiredArgsConstructor
@@ -31,14 +29,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;
     private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
+    private final PasswordEncoder passwordEncoder;
 
     // =============================================================
     // 🟢 MÉTODOS DE LECTURA
     // =============================================================
 
-    /**
-     * Obtiene todos los usuarios del sistema.
-     */
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponse> getAllUsers() {
@@ -49,9 +45,6 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .collect(Collectors.toList());
     }
 
-    /**
-     * Obtiene un usuario por su ID.
-     */
     @Override
     @Transactional(readOnly = true)
     public UsuarioResponse getUserById(Long id) {
@@ -60,9 +53,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         return convertToResponse(usuario);
     }
 
-    /**
-     * Obtiene un usuario por su nombre de usuario.
-     */
     @Override
     @Transactional(readOnly = true)
     public UsuarioResponse getUserByUsername(String username) {
@@ -75,47 +65,40 @@ public class UsuarioServiceImpl implements UsuarioService {
     // 🟢 CREACIÓN Y ACTUALIZACIÓN
     // =============================================================
 
-    /**
-     * 🆕 Crea un nuevo usuario.
-     */
     @Override
     @Transactional
     public UsuarioResponse createUser(UsuarioCreateRequest request) {
+        if (request == null) throw new IllegalArgumentException("❌ Datos de usuario no proporcionados");
+
+        if (usuarioRepository.existsByNameUser(request.getUsername())) {
+            throw new IllegalArgumentException("⚠️ El nombre de usuario ya existe: " + request.getUsername());
+        }
+
         Usuario usuario = new Usuario();
-        usuario.setNameUser(request.getNameUser());
-        usuario.setPassUser(request.getPassUser()); // ⚠️ idealmente encriptar con BCrypt antes
-        usuario.setStatUser("ACTIVO");
+        usuario.setNameUser(request.getUsername());
+        usuario.setPassUser(passwordEncoder.encode(request.getPassword())); // 🔐 Encriptación segura
+        usuario.setStatUser(request.getEstado() != null ? request.getEstado() : "ACTIVO");
         usuario.setCreateAt(LocalDateTime.now());
 
         usuarioRepository.save(usuario);
-        log.info("✅ Usuario creado: {}", usuario.getNameUser());
+        log.info("✅ Usuario creado exitosamente: {}", usuario.getNameUser());
 
         return convertToResponse(usuario);
     }
 
-    /**
-     * ✏️ Actualiza datos de un usuario existente.
-     * Usa el DTO UsuarioUpdateRequest.
-     */
     @Override
     @Transactional
     public UsuarioResponse updateUser(Long id, UsuarioUpdateRequest request) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
 
-        // 🔸 Actualizar campos básicos
-        if (request.getNameUser() != null)
-            usuario.setNameUser(request.getNameUser());
+        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+            usuario.setNameUser(request.getUsername());
+        }
 
-        if (request.getEstado() != null)
+        if (request.getEstado() != null && !request.getEstado().isBlank()) {
             usuario.setStatUser(request.getEstado());
-
-        // 🔸 Aquí podrías actualizar roles si tienes un RolRepository
-        // por ejemplo:
-        // if (request.getRoles() != null && !request.getRoles().isEmpty()) {
-        //     Set<Rol> nuevosRoles = rolRepository.findByDescRolIn(request.getRoles());
-        //     usuario.setRoles(nuevosRoles);
-        // }
+        }
 
         usuario.setUpdateAt(LocalDateTime.now());
         usuarioRepository.save(usuario);
@@ -125,12 +108,9 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // =============================================================
-    // 🟢 ELIMINACIÓN / ESTADOS
+    // 🗑️ ELIMINACIÓN / ESTADOS
     // =============================================================
 
-    /**
-     * 🗑️ Elimina un usuario.
-     */
     @Override
     @Transactional
     public void deleteUser(Long id) {
@@ -140,9 +120,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         log.info("🗑️ Usuario eliminado: {}", usuario.getNameUser());
     }
 
-    /**
-     * ✅ Activa un usuario.
-     */
     @Override
     @Transactional
     public UsuarioResponse activateUser(Long id) {
@@ -150,13 +127,9 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
         usuario.setStatUser("ACTIVO");
         usuarioRepository.save(usuario);
-        log.info("✅ Usuario activado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
-    /**
-     * 🚫 Desactiva un usuario.
-     */
     @Override
     @Transactional
     public UsuarioResponse deactivateUser(Long id) {
@@ -164,13 +137,9 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
         usuario.setStatUser("INACTIVO");
         usuarioRepository.save(usuario);
-        log.info("🚫 Usuario desactivado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
-    /**
-     * 🔓 Desbloquea un usuario.
-     */
     @Override
     @Transactional
     public UsuarioResponse unlockUser(Long id) {
@@ -179,7 +148,6 @@ public class UsuarioServiceImpl implements UsuarioService {
         usuario.setFailedAttempts(0);
         usuario.setLockedUntil(null);
         usuarioRepository.save(usuario);
-        log.info("🔓 Usuario desbloqueado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
@@ -187,27 +155,28 @@ public class UsuarioServiceImpl implements UsuarioService {
     // 🧠 MÉTODOS AUXILIARES
     // =============================================================
 
-    /**
-     * Ejecuta una consulta SQL personalizada.
-     */
     @Override
     @Transactional(readOnly = true)
     public List<Map<String, Object>> executeCustomQuery(String sql, String username) {
+        if (sql == null || sql.isBlank()) throw new IllegalArgumentException("❌ SQL no puede estar vacío");
         log.info("🧠 Ejecutando consulta SQL personalizada para usuario: {}", username);
         Map<String, Object> params = Map.of("username", username);
         return namedParameterJdbcTemplate.queryForList(sql, params);
     }
 
-    /**
-     * Convierte la entidad Usuario en un objeto UsuarioResponse.
-     */
     private UsuarioResponse convertToResponse(Usuario usuario) {
-        Set<String> roles = usuario.getRoles().stream()
+        Set<String> roles = Optional.ofNullable(usuario.getRoles())
+                .orElse(Collections.emptySet())
+                .stream()
                 .map(Rol::getDescRol)
                 .collect(Collectors.toSet());
 
-        Set<String> permisos = usuario.getRoles().stream()
-                .flatMap(r -> r.getPermisos().stream())
+        Set<String> permisos = Optional.ofNullable(usuario.getRoles())
+                .orElse(Collections.emptySet())
+                .stream()
+                .flatMap(r -> Optional.ofNullable(r.getPermisos())
+                        .orElse(Collections.emptySet())
+                        .stream())
                 .map(Permiso::getDescPermiso)
                 .collect(Collectors.toSet());
 
