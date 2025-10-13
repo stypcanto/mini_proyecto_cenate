@@ -10,7 +10,6 @@ import styp.com.cenate.dto.UsuarioResponse;
 import styp.com.cenate.dto.UsuarioUpdateRequest;
 import styp.com.cenate.service.usuario.UsuarioService;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,7 +33,7 @@ public class UsuarioController {
     private final UsuarioService usuarioService;
 
     // ============================================================
-    // 📋 CONSULTAS
+    // 📋 CONSULTAS GENERALES
     // ============================================================
 
     /** Obtener todos los usuarios */
@@ -62,10 +61,37 @@ public class UsuarioController {
     }
 
     // ============================================================
+    // 🧭 CONSULTAS POR TIPO DE USUARIO
+    // ============================================================
+
+    /**
+     * 🌐 Obtener usuarios EXTERNOS (INSTITUCION_EX, ASEGURADORA, REGULADOR)
+     */
+    @GetMapping("/externos")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<List<UsuarioResponse>> getExternalUsers() {
+        log.info("🌍 Consultando usuarios EXTERNOS (INSTITUCION_EX, ASEGURADORA, REGULADOR)");
+        return ResponseEntity.ok(
+                usuarioService.getUsuariosByRoles(List.of("INSTITUCION_EX", "ASEGURADORA", "REGULADOR"))
+        );
+    }
+
+    /**
+     * 🏥 Obtener usuarios INTERNOS (personal de CENATE, médicos, coordinadores, etc.)
+     */
+    @GetMapping("/internos")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<List<UsuarioResponse>> getInternalUsers() {
+        log.info("🏥 Consultando usuarios INTERNOS (excluyendo externos)");
+        return ResponseEntity.ok(
+                usuarioService.getUsuariosExcluyendoRoles(List.of("INSTITUCION_EX", "ASEGURADORA", "REGULADOR"))
+        );
+    }
+
+    // ============================================================
     // ⚙️ GESTIÓN ADMINISTRATIVA
     // ============================================================
 
-    /** Actualizar datos de usuario */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> updateUser(
@@ -76,7 +102,6 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.updateUser(id, request));
     }
 
-    /** Eliminar usuario */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
@@ -84,7 +109,6 @@ public class UsuarioController {
         return ResponseEntity.ok(Map.of("message", "✅ Usuario eliminado exitosamente"));
     }
 
-    /** Activar usuario */
     @PutMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> activateUser(@PathVariable Long id) {
@@ -92,7 +116,6 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.activateUser(id));
     }
 
-    /** Desactivar usuario */
     @PutMapping("/{id}/deactivate")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> deactivateUser(@PathVariable Long id) {
@@ -100,7 +123,6 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.deactivateUser(id));
     }
 
-    /** Desbloquear usuario (fallos de login, bloqueo temporal, etc.) */
     @PutMapping("/{id}/unlock")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> unlockUser(@PathVariable Long id) {
@@ -109,40 +131,18 @@ public class UsuarioController {
     }
 
     // ============================================================
-    // 🔍 CONSULTA DETALLADA (con datos personales)
+    // 🔍 CONSULTA DETALLADA
     // ============================================================
     @GetMapping("/detalle/{username}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<?> obtenerDetalleUsuario(@PathVariable String username) {
         try {
             log.info("🔍 Consultando detalle extendido del usuario: {}", username);
-
-            String sql = """
-                SELECT 
-                  u.id_user,
-                  u.name_user,
-                  u.stat_user,
-                  p.id_pers,
-                  p.nom_pers AS nombre,
-                  p.ape_pater_pers AS apellido_paterno,
-                  p.ape_mater_pers AS apellido_materno,
-                  p.num_doc_pers AS dni,
-                  p.email_pers,
-                  p.email_corp_pers,
-                  p.direc_pers,
-                  p.foto_pers
-                FROM dim_usuarios u
-                LEFT JOIN dim_personal_cnt p ON u.id_user = p.id_usuario
-                WHERE u.name_user = :username
-            """;
-
-            List<Map<String, Object>> result = usuarioService.executeCustomQuery(sql, username);
+            List<Map<String, Object>> result = usuarioService.obtenerDetalleUsuario(username);
             if (result.isEmpty()) {
                 return ResponseEntity.status(404).body(Map.of("message", "Usuario no encontrado"));
             }
-
             return ResponseEntity.ok(result.get(0));
-
         } catch (Exception e) {
             log.error("❌ Error al obtener detalle del usuario {}: {}", username, e.getMessage());
             return ResponseEntity.internalServerError()
@@ -151,7 +151,7 @@ public class UsuarioController {
     }
 
     // ============================================================
-    // 🚫 CREACIÓN DE USUARIOS (deshabilitado para usuarios comunes)
+    // 🚫 CREACIÓN DIRECTA BLOQUEADA
     // ============================================================
     @PostMapping
     public ResponseEntity<Map<String, String>> createUserDisabled() {

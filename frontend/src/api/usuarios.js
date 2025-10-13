@@ -15,7 +15,6 @@ export const getUsuarios = async () => {
 
 /**
  * 🔍 Obtiene un usuario por ID
- * @param {number|string} id - ID del usuario
  */
 export const getUsuarioById = async (id) => {
     const response = await fetch(`${API_BASE}/usuarios/${id}`, {
@@ -25,7 +24,7 @@ export const getUsuarioById = async (id) => {
 };
 
 /**
- * ➕ Crea un nuevo usuario
+ * ➕ Crea un nuevo usuario (centralizado)
  */
 export const createUsuario = async (usuarioData) => {
     const response = await fetch(`${API_BASE}/usuarios`, {
@@ -103,10 +102,30 @@ export const deleteUsuario = async (id) => {
 };
 
 /**
- * 🧍 Obtiene todos los usuarios que tienen personal externo vinculado
+ * 🌐 Obtiene usuarios EXTERNOS (INSTITUCION_EX, ASEGURADORA, REGULADOR)
  */
 export const getUsuariosExternos = async () => {
     const response = await fetch(`${API_BASE}/usuarios/externos`, {
+        headers: getHeaders(true),
+    });
+    return handleResponse(response);
+};
+
+/**
+ * 🏥 Obtiene usuarios INTERNOS (excluye externos)
+ */
+export const getUsuariosInternos = async () => {
+    const response = await fetch(`${API_BASE}/usuarios/internos`, {
+        headers: getHeaders(true),
+    });
+    return handleResponse(response);
+};
+
+/**
+ * 🔍 Obtiene detalle extendido de un usuario
+ */
+export const getUsuarioDetalle = async (username) => {
+    const response = await fetch(`${API_BASE}/usuarios/detalle/${username}`, {
         headers: getHeaders(true),
     });
     return handleResponse(response);

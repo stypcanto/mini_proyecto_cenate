@@ -1,149 +1,99 @@
-// src/App.js
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
-// Layout principal
-import Layout from "../components/layout/Layout";
+const AccountRequest = () => {
+    const navigate = useNavigate();
+    const [formData, setFormData] = useState({
+        nombreCompleto: "",
+        emailInstitucional: "",
+        motivo: "",
+    });
 
-// 🔓 Páginas públicas
-import Home from "./Home";
-import Login from "./Login";
-import Register from "./Register";
-import ForgotPassword from "./ForgotPassword";
-import AccountRequest from "./AccountRequest"; // ✅ Nueva página de solicitud
+    const handleChange = (e) => {
+        setFormData({ ...formData, [e.target.name]: e.target.value });
+    };
 
-// 🔐 Páginas protegidas
-import PacientesPage from "./PacientesPage";
-import TransferenciaExamenesPage from "./TransferenciaExamenesPage";
-import NotFound from "./NotFound";
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        // Aquí podrías llamar a tu API para enviar la solicitud
+        alert("✅ Solicitud enviada correctamente");
+        navigate("/login");
+    };
 
-// 👑 Panel administrativo
-import AdminDashboard from "./admin/AdminDashboard";
-import UserManagement from "./admin/UserManagement";
-import AdminUsersManagement from "./admin/AdminUsersManagement";
-import RolesManagement from "./admin/RolesManagement";
-import SystemLogs from "./admin/SystemLogs";
+    return (
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100">
+            <div className="relative w-full max-w-md p-8 rounded-2xl shadow-2xl backdrop-blur-lg bg-white/70 border border-white/30 animate-fadeIn">
+                <h2 className="text-2xl font-bold text-gray-800 text-center mb-1">
+                    Solicitud de Creación de Cuenta
+                </h2>
+                <p className="text-sm text-gray-500 text-center mb-6">
+                    Completa los siguientes campos para solicitar acceso
+                </p>
 
-// 👤 Panel de usuario
-import UserDashboard from "./user/UserDashboard";
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Nombre completo
+                        </label>
+                        <input
+                            type="text"
+                            name="nombreCompleto"
+                            placeholder="Ej. Juan Pérez"
+                            value={formData.nombreCompleto}
+                            onChange={handleChange}
+                            required
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white/80"
+                        />
+                    </div>
 
-/**
- * 🧩 Componente de protección de rutas
- * - Verifica si hay token JWT
- * - Permite restringir acceso por roles
- */
-const RequireAuth = ({ children, allowedRoles = [] }) => {
-    const token = localStorage.getItem("token");
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Correo institucional
+                        </label>
+                        <input
+                            type="email"
+                            name="emailInstitucional"
+                            placeholder="Ej. juan.perez@essalud.gob.pe"
+                            value={formData.emailInstitucional}
+                            onChange={handleChange}
+                            required
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white/80"
+                        />
+                    </div>
 
-    // Si no hay token, redirige al login
-    if (!token) return <Navigate to="/login" replace />;
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                            Motivo de la solicitud
+                        </label>
+                        <textarea
+                            name="motivo"
+                            rows="3"
+                            placeholder="Describe brevemente el motivo de la solicitud"
+                            value={formData.motivo}
+                            onChange={handleChange}
+                            required
+                            className="w-full rounded-lg border border-gray-300 px-3 py-2 focus:ring-2 focus:ring-indigo-400 focus:outline-none bg-white/80"
+                        ></textarea>
+                    </div>
 
-    // Si se especifican roles, valida
-    if (allowedRoles.length > 0) {
-        const storedRoles = JSON.parse(localStorage.getItem("roles") || "[]");
-        const userRoles = storedRoles.map((r) => String(r).toUpperCase());
-        const allowedUpper = allowedRoles.map((r) => String(r).toUpperCase());
+                    <button
+                        type="submit"
+                        className="w-full bg-indigo-600 text-white font-semibold py-2.5 rounded-lg hover:bg-indigo-700 transition-all duration-200 shadow-md"
+                    >
+                        Enviar Solicitud
+                    </button>
 
-        const isAllowed = userRoles.some((role) => allowedUpper.includes(role));
-        if (!isAllowed) return <Navigate to="/" replace />;
-    }
-
-    return children;
+                    <button
+                        type="button"
+                        onClick={() => navigate("/login")}
+                        className="w-full border border-gray-300 text-gray-600 font-medium py-2.5 rounded-lg hover:bg-gray-100 transition-all duration-200"
+                    >
+                        Volver al login
+                    </button>
+                </form>
+            </div>
+        </div>
+    );
 };
 
-function App() {
-    return (
-        <Router>
-            <Routes>
-                {/* =====================================
-            🔓 RUTAS PÚBLICAS (sin autenticación)
-        ===================================== */}
-                <Route path="/login" element={<Login />} />
-                <Route path="/registro" element={<Register />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/solicitud-cuenta" element={<AccountRequest />} /> {/* ✅ Nueva */}
-
-                {/* =====================================
-            🔐 RUTAS CON LAYOUT (autenticadas)
-        ===================================== */}
-                <Route element={<Layout />}>
-                    <Route path="/" element={<Home />} />
-
-                    <Route
-                        path="/pacientes"
-                        element={
-                            <RequireAuth>
-                                <PacientesPage />
-                            </RequireAuth>
-                        }
-                    />
-
-                    <Route
-                        path="/transferencia-examenes"
-                        element={
-                            <RequireAuth>
-                                <TransferenciaExamenesPage />
-                            </RequireAuth>
-                        }
-                    />
-
-                    {/* Página 404 dentro del layout */}
-                    <Route path="*" element={<NotFound />} />
-                </Route>
-
-                {/* =====================================
-            👑 PANEL ADMINISTRATIVO
-        ===================================== */}
-                <Route
-                    path="/admin"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <AdminDashboard />
-                        </RequireAuth>
-                    }
-                />
-
-                <Route
-                    path="/admin/users"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <AdminUsersManagement />
-                        </RequireAuth>
-                    }
-                />
-
-                <Route
-                    path="/admin/roles"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <RolesManagement />
-                        </RequireAuth>
-                    }
-                />
-
-                <Route
-                    path="/admin/logs"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <SystemLogs />
-                        </RequireAuth>
-                    }
-                />
-
-                {/* =====================================
-            👤 PANEL DE USUARIO NORMAL
-        ===================================== */}
-                <Route
-                    path="/user/dashboard"
-                    element={
-                        <RequireAuth allowedRoles={["USUARIO", "USER"]}>
-                            <UserDashboard />
-                        </RequireAuth>
-                    }
-                />
-            </Routes>
-        </Router>
-    );
-}
-
-export default App;
+export default AccountRequest;

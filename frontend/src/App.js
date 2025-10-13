@@ -1,42 +1,47 @@
-// src/App.js
+// ========================================================================
+// 🌐 SISTEMA INTRANET CENATE - App.js
+// ========================================================================
+
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 
 // 🧱 Layout principal
-import Layout from "./components/layout/Layout";
+import Layout from "./components/layout/Layout.jsx";
 
 // 🔓 Páginas públicas
-import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import ForgotPassword from "./pages/ForgotPassword";
-import AccountRequest from "./pages/AccountRequest"; // Nueva página para solicitud de cuentas
+import Home from "./pages/Home.jsx";
+import Login from "./pages/Login.jsx";
+import Register from "./pages/Register.jsx";
+import ForgotPassword from "./pages/ForgotPassword.jsx";
+import AccountRequest from "./pages/AccountRequest.jsx"; // o SolicitudCuenta.jsx
 
-// 🔐 Páginas protegidas (requieren autenticación)
-import PacientesPage from "./pages/PacientesPage";
-import TransferenciaExamenesPage from "./pages/TransferenciaExamenesPage";
+// 🔐 Páginas protegidas
+import PacientesPage from "./pages/PacientesPage.jsx";
+import TransferenciaExamenesPage from "./pages/TransferenciaExamenesPage.jsx";
 
 // 👑 Panel administrativo
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AdminUsersManagement from "./pages/admin/AdminUsersManagement";
-import RolesManagement from "./pages/admin/RolesManagement";
-import SystemLogs from "./pages/admin/SystemLogs";
-import UserManagement from "./pages/admin/UserManagement";
-import AdminAccountRequests from "./pages/AdminAccountRequests";
+import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import AdminUsersManagement from "./pages/admin/AdminUsersManagement.jsx";
+import RolesManagement from "./pages/admin/RolesManagement.jsx";
+import SystemLogs from "./pages/admin/SystemLogs.jsx";
+import UserManagement from "./pages/admin/UserManagement.jsx";
+import AdminAccountRequests from "./pages/admin/AdminAccountRequests.jsx";
+import PermisosManagement from "./pages/admin/PermisosManagement.jsx"; // ✅ Nuevo módulo
+import AdminRecoveries from "./pages/admin/AdminRecoveries.jsx";
 
-// 👤 Panel de usuario general
-import UserDashboard from "./pages/user/UserDashboard";
+// 👤 Panel de usuario
+import UserDashboard from "./pages/user/UserDashboard.jsx";
 
-// 🩺 Módulos por roles
-import DashboardMedico from "./pages/roles/medico/DashboardMedico";
-import DashboardCoordinador from "./pages/roles/coordinador/DashboardCoordinador";
-import DashboardExterno from "./pages/roles/externo/DashboardExterno";
+// 🩺 Módulos especializados
+import DashboardMedico from "./pages/roles/medico/DashboardMedico.jsx";
+import DashboardCoordinador from "./pages/roles/coordinador/DashboardCoordinador.jsx";
+import DashboardExterno from "./pages/roles/externo/DashboardExterno.jsx";
 
 // ⚠️ Página 404
-import NotFound from "./pages/NotFound";
+import NotFound from "./pages/NotFound.jsx";
 
 /* ==============================================================
- 🧩 Componente de protección de rutas
+ 🧩 Protección de rutas con roles
 ============================================================== */
 const RequireAuth = ({ children, allowedRoles = [] }) => {
     const token = localStorage.getItem("token");
@@ -48,6 +53,7 @@ const RequireAuth = ({ children, allowedRoles = [] }) => {
         const userRoles = storedRoles.map((r) => String(r).toUpperCase());
         const allowedUpper = allowedRoles.map((r) => String(r).toUpperCase());
         const isAllowed = userRoles.some((r) => allowedUpper.includes(r));
+
         if (!isAllowed) return <Navigate to="/" replace />;
     }
 
@@ -55,25 +61,26 @@ const RequireAuth = ({ children, allowedRoles = [] }) => {
 };
 
 /* ==============================================================
- 🌐 Enrutamiento principal de la aplicación
+ 🧭 Enrutamiento principal
 ============================================================== */
 function App() {
     return (
         <Router>
             <Routes>
-                {/* ==============================================================
-                   🔓 RUTAS PÚBLICAS (sin layout principal)
-                ============================================================== */}
+                {/* ======================================================
+                    🔓 RUTAS PÚBLICAS (sin autenticación)
+                ====================================================== */}
                 <Route path="/login" element={<Login />} />
                 <Route path="/registro" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/account-request" element={<AccountRequest />} />
+                <Route path="/solicitud-cuenta" element={<AccountRequest />} />
 
-                {/* ==============================================================
-                   🔐 RUTAS CON LAYOUT (con header y footer)
-                ============================================================== */}
+                {/* ======================================================
+                    🔐 RUTAS CON LAYOUT (autenticadas)
+                ====================================================== */}
                 <Route element={<Layout />}>
                     <Route path="/" element={<Home />} />
+
                     <Route
                         path="/pacientes"
                         element={
@@ -82,6 +89,7 @@ function App() {
                             </RequireAuth>
                         }
                     />
+
                     <Route
                         path="/transferencia-examenes"
                         element={
@@ -90,12 +98,13 @@ function App() {
                             </RequireAuth>
                         }
                     />
+
                     <Route path="*" element={<NotFound />} />
                 </Route>
 
-                {/* ==============================================================
-                   👑 PANEL ADMINISTRATIVO
-                ============================================================== */}
+                {/* ======================================================
+                    👑 PANEL ADMINISTRATIVO
+                ====================================================== */}
                 <Route
                     path="/admin"
                     element={
@@ -104,6 +113,16 @@ function App() {
                         </RequireAuth>
                     }
                 />
+
+                <Route
+                    path="/admin/recoveries"
+                    element={
+                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+                            <AdminRecoveries />
+                        </RequireAuth>
+                    }
+                />
+
                 <Route
                     path="/admin/users"
                     element={
@@ -112,6 +131,7 @@ function App() {
                         </RequireAuth>
                     }
                 />
+
                 <Route
                     path="/admin/roles"
                     element={
@@ -120,6 +140,7 @@ function App() {
                         </RequireAuth>
                     }
                 />
+
                 <Route
                     path="/admin/logs"
                     element={
@@ -128,6 +149,7 @@ function App() {
                         </RequireAuth>
                     }
                 />
+
                 <Route
                     path="/admin/account-requests"
                     element={
@@ -136,6 +158,7 @@ function App() {
                         </RequireAuth>
                     }
                 />
+
                 <Route
                     path="/admin/user-management"
                     element={
@@ -145,16 +168,25 @@ function App() {
                     }
                 />
 
-                {/* ==============================================================
-                   🩺 PANEL PROFESIONAL DE SALUD
-                ============================================================== */}
+                <Route
+                    path="/admin/permisos"
+                    element={
+                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+                            <PermisosManagement />
+                        </RequireAuth>
+                    }
+                />
+
+                {/* ======================================================
+                    🩺 PANEL MÉDICO
+                ====================================================== */}
                 <Route
                     path="/medico"
                     element={
                         <RequireAuth
                             allowedRoles={[
                                 "MEDICO",
-                                "ENFERMERIA",
+                                "ENFERMERA",
                                 "OBSTETRA",
                                 "PSICOLOGO",
                                 "TERAPISTA_LENG",
@@ -167,9 +199,9 @@ function App() {
                     }
                 />
 
-                {/* ==============================================================
-                   🗓️ PANEL COORDINADOR DE GESTIÓN DE CITAS
-                ============================================================== */}
+                {/* ======================================================
+                    🗓️ PANEL COORDINADOR
+                ====================================================== */}
                 <Route
                     path="/coordinador"
                     element={
@@ -179,9 +211,9 @@ function App() {
                     }
                 />
 
-                {/* ==============================================================
-                   🏢 PANEL PERSONAL EXTERNO / INSTITUCIONES
-                ============================================================== */}
+                {/* ======================================================
+                    🏢 PANEL EXTERNO / INSTITUCIONES
+                ====================================================== */}
                 <Route
                     path="/externo"
                     element={
@@ -193,13 +225,13 @@ function App() {
                     }
                 />
 
-                {/* ==============================================================
-                   👤 PANEL DE USUARIO GENERAL
-                ============================================================== */}
+                {/* ======================================================
+                    👤 PANEL USUARIO GENERAL
+                ====================================================== */}
                 <Route
                     path="/user/dashboard"
                     element={
-                        <RequireAuth allowedRoles={["USUARIO", "USER"]}>
+                        <RequireAuth allowedRoles={["USER", "USUARIO"]}>
                             <UserDashboard />
                         </RequireAuth>
                     }

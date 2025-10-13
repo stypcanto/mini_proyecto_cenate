@@ -9,7 +9,7 @@ import java.util.Map;
 
 public interface UsuarioService {
 
-    // 🔹 Consultas
+    // 🔹 Consultas generales
     List<UsuarioResponse> getAllUsers();
     UsuarioResponse getUserById(Long id);
     UsuarioResponse getUserByUsername(String username);
@@ -24,6 +24,10 @@ public interface UsuarioService {
     UsuarioResponse deactivateUser(Long id);
     UsuarioResponse unlockUser(Long id);
 
-    // 🔹 Ejecución de consultas personalizadas (para /detalle/{username})
-    List<Map<String, Object>> executeCustomQuery(String sql, String username);
+    // 🔹 Consultas avanzadas
+    List<Map<String, Object>> obtenerDetalleUsuario(String username);
+
+    // 🔹 Filtros por roles
+    List<UsuarioResponse> getUsuariosByRoles(List<String> roles);
+    List<UsuarioResponse> getUsuariosExcluyendoRoles(List<String> roles);
 }

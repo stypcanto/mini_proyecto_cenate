@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import styp.com.cenate.model.Rol;
-import styp.com.cenate.repository.RolRepository;
+import styp.com.cenate.service.rol.RolService;
 
 import java.util.List;
 
@@ -24,15 +24,15 @@ import java.util.List;
 @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
 public class RolController {
 
-    private final RolRepository rolRepository;
+    private final RolService rolService;
 
     // =====================================================
-    // 🔹 OBTENER TODOS LOS ROLES
+    // 📋 OBTENER TODOS LOS ROLES
     // =====================================================
     @GetMapping
     public ResponseEntity<List<Rol>> obtenerTodosLosRoles() {
         try {
-            List<Rol> roles = rolRepository.findAll();
+            List<Rol> roles = rolService.getAll();
             return ResponseEntity.ok(roles);
         } catch (Exception e) {
             log.error("❌ Error al obtener roles: {}", e.getMessage());
@@ -41,14 +41,13 @@ public class RolController {
     }
 
     // =====================================================
-    // 🔹 OBTENER ROL POR ID
+    // 🔍 OBTENER ROL POR ID
     // =====================================================
     @GetMapping("/{id}")
     public ResponseEntity<Rol> obtenerRolPorId(@PathVariable Integer id) {
         try {
-            return rolRepository.findById(id)
-                    .map(ResponseEntity::ok)
-                    .orElse(ResponseEntity.notFound().build());
+            Rol rol = rolService.getById(id);
+            return rol != null ? ResponseEntity.ok(rol) : ResponseEntity.notFound().build();
         } catch (Exception e) {
             log.error("❌ Error al obtener rol {}: {}", id, e.getMessage());
             return ResponseEntity.internalServerError().build();
@@ -56,73 +55,53 @@ public class RolController {
     }
 
     // =====================================================
-    // 🔹 CREAR NUEVO ROL
+    // ➕ CREAR NUEVO ROL
     // =====================================================
     @PostMapping
     public ResponseEntity<?> crearRol(@RequestBody Rol rol) {
         try {
-            if (rolRepository.existsByDescRol(rol.getDescRol())) {
-                return ResponseEntity.badRequest()
-                        .body("⚠️ Ya existe un rol con ese nombre");
-            }
-
-            Rol nuevoRol = rolRepository.save(rol);
-            log.info("✅ Rol creado exitosamente: {}", nuevoRol.getDescRol());
-            return ResponseEntity.ok(nuevoRol);
+            Rol nuevo = rolService.createRol(rol);
+            log.info("✅ Rol creado exitosamente: {}", nuevo.getDescRol());
+            return ResponseEntity.ok(nuevo);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("💥 Error al crear rol: {}", e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body("Error al crear el rol");
+            return ResponseEntity.internalServerError().body("Error interno al crear el rol");
         }
     }
 
     // =====================================================
-    // 🔹 ACTUALIZAR ROL EXISTENTE
+    // ✏️ ACTUALIZAR ROL EXISTENTE
     // =====================================================
     @PutMapping("/{id}")
     public ResponseEntity<?> actualizarRol(@PathVariable Integer id, @RequestBody Rol rolActualizado) {
         try {
-            return rolRepository.findById(id)
-                    .map(rol -> {
-                        rol.setDescRol(rolActualizado.getDescRol());
-                        if (rolActualizado.getPermisos() != null) {
-                            rol.setPermisos(rolActualizado.getPermisos());
-                        }
-                        Rol rolGuardado = rolRepository.save(rol);
-                        log.info("✏️ Rol actualizado: {}", rolGuardado.getDescRol());
-                        return ResponseEntity.ok(rolGuardado);
-                    })
-                    .orElse(ResponseEntity.notFound().build());
+            Rol actualizado = rolService.updateRol(id, rolActualizado);
+            log.info("✏️ Rol actualizado: {}", actualizado.getDescRol());
+            return ResponseEntity.ok(actualizado);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("💥 Error al actualizar rol {}: {}", id, e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body("Error al actualizar el rol");
+            return ResponseEntity.internalServerError().body("Error interno al actualizar el rol");
         }
     }
 
     // =====================================================
-    // 🔹 ELIMINAR ROL
+    // 🗑️ ELIMINAR ROL
     // =====================================================
     @DeleteMapping("/{id}")
     public ResponseEntity<?> eliminarRol(@PathVariable Integer id) {
         try {
-            if (!rolRepository.existsById(id)) {
-                return ResponseEntity.notFound().build();
-            }
-
-            Rol rol = rolRepository.findById(id).orElse(null);
-            if (rol != null && rol.getUsuarios() != null && !rol.getUsuarios().isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body("🚫 No se puede eliminar el rol porque tiene usuarios asignados");
-            }
-
-            rolRepository.deleteById(id);
+            rolService.deleteRol(id);
             log.info("🗑️ Rol eliminado: ID {}", id);
             return ResponseEntity.ok("Rol eliminado exitosamente");
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
         } catch (Exception e) {
             log.error("💥 Error al eliminar rol {}: {}", id, e.getMessage());
-            return ResponseEntity.internalServerError()
-                    .body("Error al eliminar el rol");
+            return ResponseEntity.internalServerError().body("Error interno al eliminar el rol");
         }
     }
 }

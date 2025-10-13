@@ -1,144 +1,133 @@
 package styp.com.cenate.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.Builder;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
+import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.Period;
 
 /**
- * Entidad que representa al personal interno de CENATE
- * Tabla: dim_personal_cnt
- * 
- * ⚠️ MODELO ACTUALIZADO para coincidir con la estructura REAL de la base de datos
+ * 🧑‍⚕️ Entidad que representa el personal interno (CNT)
+ * Incluye información personal, laboral y de usuario asociado.
  */
 @Entity
 @Table(name = "dim_personal_cnt")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = {"usuario", "area", "regimenLaboral", "tipoDocumento"})
 public class PersonalCnt {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     @Column(name = "id_pers")
     private Long idPers;
-    
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_tip_doc", nullable = false)
-    private TipoDocumento tipoDocumento;
-    
-    @Column(name = "num_doc_pers", nullable = false, length = 20)
-    private String numDocPers;
-    
-    @Column(name = "nom_pers", length = 255)
+
+    @Column(name = "nom_pers", nullable = false)
     private String nomPers;
-    
-    @Column(name = "ape_pater_pers", length = 255)
+
+    @Column(name = "ape_pater_pers")
     private String apePaterPers;
-    
-    @Column(name = "ape_mater_pers", length = 255)
+
+    @Column(name = "ape_mater_pers")
     private String apeMaterPers;
-    
+
+    @Column(name = "num_doc_pers", unique = true)
+    private String numDocPers;
+
     /**
-     * Periodo de inicio de trabajo (formato: YYYYMM)
+     * 📅 Fecha de nacimiento (solo fecha, sin hora)
+     * Si tu base de datos usa TIMESTAMP, cambia a LocalDateTime.
      */
-    @Column(name = "per_pers", nullable = false, length = 6)
-    private String perPers;
-    
-    /**
-     * Estado del personal (A=Activo, I=Inactivo)
-     */
-    @Column(name = "stat_pers", nullable = false, length = 1)
-    private String statPers;
-    
     @Column(name = "fech_naci_pers")
     private LocalDate fechNaciPers;
-    
-    /**
-     * Género (M=Masculino, F=Femenino)
-     */
-    @Column(name = "gen_pers", length = 1)
+
+    @Column(name = "gen_pers")
     private String genPers;
-    
-    @Column(name = "movil_pers", length = 20)
+
+    @Column(name = "movil_pers")
     private String movilPers;
-    
-    @Column(name = "email_pers", length = 100)
+
+    @Column(name = "email_pers")
     private String emailPers;
-    
-    @Column(name = "email_corp_pers", length = 100)
+
+    @Column(name = "email_corp_pers")
     private String emailCorpPers;
-    
-    /**
-     * Número de colegiatura
-     */
-    @Column(name = "coleg_pers", length = 20)
-    private String colegPers;
-    
-    /**
-     * Código de planilla laboral
-     */
-    @Column(name = "cod_plan_rem", length = 50)
-    private String codPlanRem;
-    
-    /**
-     * Domicilio del personal
-     */
-    @Column(name = "direc_pers", length = 255)
-    private String direcPers;
-    
-    /**
-     * Ruta de la foto del personal
-     */
-    @Column(name = "foto_pers", length = 500)
+
+    @Column(name = "stat_pers", length = 1)
+    private String statPers; // 'A' = Activo, 'I' = Inactivo
+
+    @Column(name = "foto_pers")
     private String fotoPers;
-    
-    /**
-     * Régimen laboral del personal
-     */
-    @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_reg_lab")
-    private RegimenLaboral regimenLaboral;
-    
-    @ManyToOne(fetch = FetchType.EAGER)
+
+    @Column(name = "coleg_pers")
+    private String colegPers;
+
+    @Column(name = "cod_plan_rem")
+    private String codPlanRem;
+
+    @Column(name = "direc_pers")
+    private String direcPers;
+
+    @Column(name = "per_pers")
+    private String perPers;
+
+    @Column(name = "create_at")
+    private LocalDateTime createAt;
+
+    @Column(name = "update_at")
+    private LocalDateTime updateAt;
+
+    // ==========================================================
+    // 🔗 Relaciones
+    // ==========================================================
+
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_area")
     private Area area;
-    
-    @Column(name = "id_usuario")
-    private Long idUsuario;
-    
-    @CreationTimestamp
-    @Column(name = "create_at", nullable = false, updatable = false)
-    private LocalDateTime createAt;
-    
-    @UpdateTimestamp
-    @Column(name = "update_at", nullable = false)
-    private LocalDateTime updateAt;
-    
-    /**
-     * Obtiene el nombre completo del personal
-     */
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_reg_lab")
+    private RegimenLaboral regimenLaboral;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tip_doc")
+    private TipoDocumento tipoDocumento;
+
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario")
+    private Usuario usuario;
+
+    // ==========================================================
+    // 🧩 Métodos utilitarios
+    // ==========================================================
+
+    /** Devuelve el nombre completo formateado */
     public String getNombreCompleto() {
-        StringBuilder nombre = new StringBuilder();
-        if (nomPers != null) nombre.append(nomPers);
-        if (apePaterPers != null) nombre.append(" ").append(apePaterPers);
-        if (apeMaterPers != null) nombre.append(" ").append(apeMaterPers);
-        return nombre.toString().trim();
+        return String.format("%s %s %s",
+                safe(nomPers),
+                safe(apePaterPers),
+                safe(apeMaterPers)
+        ).trim();
     }
-    
-    /**
-     * Calcula la edad actual basada en la fecha de nacimiento
-     */
-    public Integer getEdad() {
-        if (fechNaciPers == null) return null;
-        return Period.between(fechNaciPers, LocalDate.now()).getYears();
+
+    /** Evita NullPointer al concatenar nombres */
+    private String safe(String valor) {
+        return valor != null ? valor : "";
+    }
+
+    /** Marca el registro como actualizado */
+    @PreUpdate
+    public void preUpdate() {
+        this.updateAt = LocalDateTime.now();
+    }
+
+    /** Marca el registro como creado */
+    @PrePersist
+    public void prePersist() {
+        this.createAt = LocalDateTime.now();
     }
 }

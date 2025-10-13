@@ -11,19 +11,23 @@ import java.util.HashSet;
 import java.util.Set;
 
 /**
- * 🎭 Representa un rol dentro del sistema (ej: ADMIN, MEDICO, SUPERVISOR).
+ * 🎭 Representa un rol dentro del sistema (ej: ADMIN, MÉDICO, SUPERVISOR).
  */
 @Entity
 @Table(name = "dim_roles", schema = "public")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"permisos", "usuarios"}) // evita recursión infinita en logs
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Rol {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_rol")
+    @EqualsAndHashCode.Include
     private Integer idRol;
 
     @Column(name = "desc_rol", nullable = false, unique = true, length = 50)
@@ -43,7 +47,7 @@ public class Rol {
     @Builder.Default
     private Set<Permiso> permisos = new HashSet<>();
 
-    // 🔹 Relación inversa: muchos usuarios pueden tener este rol
+    // 🔹 Muchos usuarios pueden tener este rol
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     @JsonIgnore
     @Builder.Default

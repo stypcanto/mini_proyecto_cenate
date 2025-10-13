@@ -33,14 +33,37 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     long countByStatUser(String statUser);
 
-    // 🔍 (opcional) Dashboard: listar usuarios con roles
+    /** Usuarios activos con roles específicos */
+    @Query("""
+        SELECT DISTINCT u FROM Usuario u
+        JOIN u.roles r
+        WHERE r.descRol IN :roles AND u.statUser = 'A'
+    """)
+    List<Usuario> findByRolesActivos(@Param("roles") List<String> roles);
+
+    /** Usuarios activos excluyendo ciertos roles */
+    @Query("""
+        SELECT DISTINCT u FROM Usuario u
+        JOIN u.roles r
+        WHERE r.descRol NOT IN :roles AND u.statUser = 'A'
+    """)
+    List<Usuario> findByRolesActivosExcluyendo(@Param("roles") List<String> roles);
+
+    // ✅ Busca si existe un correo en cualquiera de las tablas de personal (interno o externo)
     @Query(value = """
-        SELECT u.name_user AS username, 
-               STRING_AGG(r.desc_rol, ', ') AS roles
-        FROM public.dim_usuarios u
-        LEFT JOIN public.usuarios_roles ur ON u.id_user = ur.id_user
-        LEFT JOIN public.dim_roles r ON ur.id_rol = r.id_rol
-        GROUP BY u.name_user
-    """, nativeQuery = true)
-    List<Object[]> listarUsuariosConRoles();
+        SELECT CASE 
+            WHEN COUNT(*) > 0 THEN TRUE 
+            ELSE FALSE 
+        END
+        FROM dim_usuarios u
+        LEFT JOIN dim_personal_cnt pc ON pc.id_usuario = u.id_user
+        LEFT JOIN dim_personal_externo pe ON pe.id_user = u.id_user
+        WHERE 
+            LOWER(pc.email_pers) = LOWER(:email)
+            OR LOWER(pc.email_corp_pers) = LOWER(:email)
+            OR LOWER(pe.email_pers_ext) = LOWER(:email)
+            OR LOWER(pe.email_corp_ext) = LOWER(:email)
+            OR LOWER(pe.email_ext) = LOWER(:email)
+        """, nativeQuery = true)
+    boolean existsByAnyEmail(@Param("email") String email);
 }

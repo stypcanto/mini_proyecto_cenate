@@ -7,52 +7,65 @@ import styp.com.cenate.model.PersonalCnt;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * 📚 Repositorio JPA para gestionar el personal CNT.
+ *
+ * Proporciona operaciones CRUD y consultas personalizadas
+ * para búsqueda, filtrado y relaciones con usuarios, áreas
+ * y regímenes laborales.
+ */
 @Repository
-public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> {  // ✅ Cambiado a Long
-    
+public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> {
+
     /**
-     * Buscar personal por estado
+     * Verifica si existe un registro de personal CNT con el número de documento especificado.
+     *
+     * @param numDocPers número de documento del personal
+     * @return true si existe, false en caso contrario
      */
-    List<PersonalCnt> findByStatPers(String status);
-    
+    boolean existsByNumDocPers(String numDocPers);
+
     /**
-     * Buscar personal por número de documento
+     * Obtiene el registro de personal CNT asociado a un usuario específico.
+     *
+     * @param idUser identificador del usuario en dim_usuarios
+     * @return Optional con el registro si existe
      */
-    Optional<PersonalCnt> findByNumDocPers(String numDoc);
-    
+    Optional<PersonalCnt> findByUsuario_IdUser(Long idUser);
+
     /**
-     * Verificar si existe personal con ese número de documento
-     */
-    boolean existsByNumDocPers(String numDoc);
-    
-    /**
-     * Buscar personal por área
-     */
-    List<PersonalCnt> findByArea_IdArea(Long idArea);
-    
-    /**
-     * Buscar personal por régimen laboral
-     */
-    List<PersonalCnt> findByRegimenLaboral_IdRegLab(Long idRegLab);
-    
-    /**
-     * Buscar personal por nombre completo (búsqueda parcial en cualquier campo de nombre)
+     * Busca personal CNT por coincidencia parcial en nombres o apellidos.
+     *
+     * @param nomPers       nombre
+     * @param apePaterPers  apellido paterno
+     * @param apeMaterPers  apellido materno
+     * @return lista de coincidencias
      */
     List<PersonalCnt> findByNomPersContainingIgnoreCaseOrApePaterPersContainingIgnoreCaseOrApeMaterPersContainingIgnoreCase(
-            String nombre, String apellidoPaterno, String apellidoMaterno);
-    
+            String nomPers, String apePaterPers, String apeMaterPers
+    );
+
     /**
-     * Buscar personal por email
+     * Obtiene el personal CNT perteneciente a un área específica.
+     *
+     * @param idArea identificador del área
+     * @return lista de personal CNT del área
      */
-    Optional<PersonalCnt> findByEmailPers(String email);
-    
+    List<PersonalCnt> findByArea_IdArea(Long idArea);
+
     /**
-     * Buscar personal por email corporativo
+     * Obtiene el personal CNT asociado a un régimen laboral específico.
+     *
+     * @param idRegLab identificador del régimen laboral
+     * @return lista de personal CNT
      */
-    Optional<PersonalCnt> findByEmailCorpPers(String emailCorp);
-    
+    List<PersonalCnt> findByRegimenLaboral_IdRegLab(Long idRegLab);
+
     /**
-     * Buscar personal por usuario
+     * Filtra el personal CNT por estado (Activo/Inactivo).
+     *
+     * @param statPers estado del personal (A = Activo, I = Inactivo)
+     * @return lista filtrada por estado
      */
-    Optional<PersonalCnt> findByIdUsuario(Long idUsuario);
+    List<PersonalCnt> findByStatPers(String statPers);
 }

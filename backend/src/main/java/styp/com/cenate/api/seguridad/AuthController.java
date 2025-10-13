@@ -9,16 +9,23 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import styp.com.cenate.dto.*;
+import styp.com.cenate.dto.ChangePasswordRequest;
+import styp.com.cenate.dto.LoginRequest;
+import styp.com.cenate.dto.LoginResponse;
+import styp.com.cenate.model.RecuperacionCuenta;
+import styp.com.cenate.repository.RecuperacionCuentaRepository;
+import styp.com.cenate.repository.UsuarioRepository;
 import styp.com.cenate.service.auth.AuthenticationService;
 import styp.com.cenate.service.auditlog.AuditLogService;
-import styp.com.cenate.repository.UsuarioRepository;
 
+import java.time.LocalDateTime;
 import java.util.*;
 
 /**
- * 🌐 Controlador para autenticación, solicitudes de cuenta y gestión de contraseñas.
- * Todo el flujo está auditado y preparado para entorno institucional.
+ * 🌐 Controlador REST encargado de:
+ * - Autenticación y login
+ * - Cambio y recuperación de contraseñas
+ * - Consultas administrativas de solicitudes
  */
 @RestController
 @RequestMapping("/api/auth")
@@ -36,19 +43,19 @@ public class AuthController {
     private final AuthenticationService authenticationService;
     private final AuditLogService auditLogService;
     private final UsuarioRepository usuarioRepository;
+    private final RecuperacionCuentaRepository recuperacionCuentaRepository;
 
     // ======================================================
-    // ✅ LOGIN
+    // 🔐 LOGIN
     // ======================================================
     @PostMapping("/login")
     public ResponseEntity<?> login(@Valid @RequestBody LoginRequest request, HttpServletRequest httpRequest) {
+        log.info("🔑 Intento de login - usuario: {}", request.getUsername());
         try {
-            log.info("🔑 Intento de login para usuario: {}", request.getUsername());
             LoginResponse response = authenticationService.login(request);
 
             if (response == null) {
-                log.warn("⚠️ Login fallido (respuesta nula) para usuario {}", request.getUsername());
-                auditLogService.registrarError("LOGIN_FAILED", "AUTH", "Login fallido: respuesta nula", httpRequest);
+                auditLogService.registrarError("LOGIN_FAILED", "AUTH", "Respuesta nula en login", httpRequest);
                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                         .body(Map.of("message", "Credenciales inválidas o cuenta pendiente de aprobación."));
             }
@@ -57,38 +64,20 @@ public class AuthController {
             return ResponseEntity.ok(response);
 
         } catch (BadCredentialsException e) {
-            log.warn("🚫 Credenciales incorrectas para usuario: {}", request.getUsername());
             auditLogService.registrarError("LOGIN_FAILED", "AUTH", "Credenciales incorrectas", httpRequest);
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Map.of("message", "Usuario o contraseña incorrectos."));
 
-        } catch (RuntimeException e) {
-            log.warn("⚠️ Error controlado en login: {}", e.getMessage());
-            auditLogService.registrarError("LOGIN_ERROR", "AUTH", e.getMessage(), httpRequest);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of("message", e.getMessage()));
-
         } catch (Exception e) {
-            log.error("💥 Error inesperado en login de {}: {}", request.getUsername(), e.getMessage(), e);
+            log.error("💥 Error inesperado en login [{}]: {}", request.getUsername(), e.getMessage());
             auditLogService.registrarError("LOGIN_ERROR", "AUTH", e.getMessage(), httpRequest);
             return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Error interno del servidor"));
+                    .body(Map.of("message", "Error interno del servidor."));
         }
     }
 
     // ======================================================
-    // 🚫 REGISTRO DIRECTO DESHABILITADO
-    // ======================================================
-    @PostMapping("/register")
-    public ResponseEntity<?> registerDisabled() {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                .body(Map.of("message",
-                        "El registro directo está deshabilitado. " +
-                                "Debe solicitar la creación de cuenta al área administrativa o al SUPERADMIN."));
-    }
-
-    // ======================================================
-    // ✅ CAMBIO DE CONTRASEÑA
+    // 🔄 CAMBIO DE CONTRASEÑA
     // ======================================================
     @PutMapping("/change-password")
     public ResponseEntity<?> changePassword(
@@ -96,15 +85,13 @@ public class AuthController {
             Authentication authentication,
             HttpServletRequest httpRequest
     ) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Token inválido o expirado."));
+        }
+
         try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "Token inválido o expirado"));
-            }
-
             String username = authentication.getName();
-            log.info("🔄 Cambio de contraseña solicitado por: {}", username);
-
             authenticationService.changePassword(
                     username,
                     request.getCurrentPassword(),
@@ -120,78 +107,100 @@ public class AuthController {
             return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
 
         } catch (Exception e) {
-            log.error("💥 Error inesperado al cambiar contraseña: {}", e.getMessage(), e);
+            log.error("💥 Error inesperado al cambiar contraseña: {}", e.getMessage());
             return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Error interno del servidor"));
+                    .body(Map.of("message", "Error interno del servidor."));
         }
     }
 
     // ======================================================
-    // ✅ RECUPERACIÓN DE CONTRASEÑA (simulada)
+    // 📩 SOLICITUD DE RECUPERACIÓN DE CONTRASEÑA
     // ======================================================
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@RequestBody Map<String, String> request) {
-        String email = request.get("email");
-        if (email == null || email.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("message", "El correo electrónico es obligatorio."));
+    public ResponseEntity<Map<String, Object>> forgotPassword(@RequestBody Map<String, String> request) {
+        String email = Optional.ofNullable(request.get("email"))
+                .map(String::trim)
+                .orElse("");
+
+        if (email.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "El correo electrónico es obligatorio."
+            ));
         }
 
-        log.info("📩 Solicitud de recuperación de contraseña para: {}", email);
-        // 🔸 Aquí se puede agregar en el futuro un MailService real
-        return ResponseEntity.ok(Map.of("message", "Se ha enviado un enlace de recuperación (simulado) al correo: " + email));
-    }
+        log.info("📨 Solicitud de recuperación de contraseña recibida para: {}", email);
 
-    // ======================================================
-    // ✅ PERFIL DEL USUARIO AUTENTICADO
-    // ======================================================
-    @GetMapping("/me")
-    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         try {
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
-                        .body(Map.of("message", "No hay un usuario autenticado"));
+            // 🔍 Verificar existencia del correo en usuarios internos/externos
+            boolean existe = usuarioRepository.existsByAnyEmail(email);
+
+            if (!existe) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of(
+                        "success", false,
+                        "message", "No existe ninguna cuenta registrada con ese correo."
+                ));
             }
 
-            String username = authentication.getName();
-            log.info("🔎 Consultando perfil del usuario autenticado: {}", username);
+            // 💾 Registrar solicitud
+            RecuperacionCuenta solicitud = RecuperacionCuenta.builder()
+                    .email(email)
+                    .fechaSolicitud(LocalDateTime.now())
+                    .estado("PENDIENTE")
+                    .observacion("Solicitud pendiente de revisión por el administrador")
+                    .build();
 
-            var usuario = usuarioRepository.findByNameUser(username)
-                    .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+            recuperacionCuentaRepository.save(solicitud);
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("idUser", usuario.getIdUser());
-            response.put("username", usuario.getNameUser());
-            response.put("estado", usuario.getStatUser());
-            response.put("roles", usuario.getRoles().stream().map(r -> r.getDescRol()).toList());
-            response.put("permisos", usuario.getRoles().stream()
-                    .flatMap(r -> r.getPermisos().stream().map(p -> p.getDescPermiso()))
-                    .collect(java.util.stream.Collectors.toSet()));
+            log.info("✅ Solicitud de recuperación registrada correctamente en BD ({})", email);
 
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Tu solicitud ha sido registrada. Un administrador revisará tu cuenta."
+            ));
 
         } catch (Exception e) {
-            log.error("💥 Error al obtener el usuario autenticado: {}", e.getMessage(), e);
-            return ResponseEntity.internalServerError()
-                    .body(Map.of("message", "Error interno del servidor"));
+            log.error("❌ Error al procesar solicitud de recuperación [{}]: {}", email, e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "success", false,
+                    "message", "Error interno del servidor. Inténtalo más tarde."
+            ));
         }
     }
 
     // ======================================================
-    // ✅ LOGOUT
+    // 🧾 ENDPOINTS ADMINISTRATIVOS
     // ======================================================
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(Authentication authentication, HttpServletRequest httpRequest) {
-        String username = (authentication != null) ? authentication.getName() : "UNKNOWN";
-        log.info("👋 Logout de usuario: {}", username);
-        auditLogService.registrarLogout(username, httpRequest);
-        return ResponseEntity.ok(Map.of("message", "Logout exitoso."));
+
+    /**
+     * 📋 Lista completa de solicitudes de recuperación
+     */
+    @GetMapping("/recoveries")
+    public ResponseEntity<?> getAllRecoveries() {
+        try {
+            List<RecuperacionCuenta> solicitudes = recuperacionCuentaRepository.findAll();
+            log.info("📋 {} solicitudes de recuperación encontradas", solicitudes.size());
+            return ResponseEntity.ok(solicitudes);
+        } catch (Exception e) {
+            log.error("❌ Error al obtener solicitudes de recuperación: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Error al obtener solicitudes de recuperación."));
+        }
     }
 
-    // ======================================================
-    // ✅ HEALTHCHECK
-    // ======================================================
-    @GetMapping("/health")
-    public ResponseEntity<?> health() {
-        return ResponseEntity.ok(Map.of("status", "OK", "service", "Authentication Service"));
+    /**
+     * 🔢 Contador de solicitudes pendientes
+     */
+    @GetMapping("/recoveries/pending-count")
+    public ResponseEntity<?> getPendingRecoveriesCount() {
+        try {
+            long count = recuperacionCuentaRepository.countByEstado("PENDIENTE");
+            log.info("📊 {} solicitudes de recuperación pendientes", count);
+            return ResponseEntity.ok(Map.of("pendingRecoveries", count));
+        } catch (Exception e) {
+            log.error("❌ Error al contar solicitudes pendientes: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Error al contar solicitudes pendientes."));
+        }
     }
 }

@@ -10,7 +10,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import styp.com.cenate.dto.*;
 import styp.com.cenate.exception.WeakPasswordException;
+import styp.com.cenate.model.Permiso;
+import styp.com.cenate.model.Rol;
 import styp.com.cenate.model.Usuario;
+import styp.com.cenate.repository.PermisoRepository;
 import styp.com.cenate.repository.UsuarioRepository;
 import styp.com.cenate.security.service.JwtService;
 
@@ -23,64 +26,108 @@ import java.util.stream.Collectors;
 public class AuthenticationServiceImpl implements AuthenticationService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PermisoRepository permisoRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
     // =========================================================
-    // 🔐 LOGIN
+    // 🔐 LOGIN (por usuario o correo)
     // =========================================================
     @Override
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
-        log.info("🔐 Login solicitado para usuario: {}", request.getUsername());
+        log.info("🔐 Intento de login para: {}", request.getUsername());
 
         Usuario user = usuarioRepository.findByNameUser(request.getUsername())
-                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+                .orElseGet(() -> buscarUsuarioPorCorreo(request.getUsername())
+                        .orElseThrow(() -> new RuntimeException("Usuario o correo no encontrado")));
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassUser())) {
             throw new RuntimeException("Usuario o contraseña incorrectos");
         }
 
-        if (!"ACTIVO".equalsIgnoreCase(user.getStatUser())) {
+        if (!user.isActive()) {
             throw new RuntimeException("La cuenta está inactiva o bloqueada.");
         }
 
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        user.getRoles().forEach(rol -> {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + rol.getDescRol()));
-            rol.getPermisos().forEach(permiso ->
-                    authorities.add(new SimpleGrantedAuthority(permiso.getDescPermiso()))
-            );
-        });
+        // ============================================
+        // 🧠 Si es SUPERADMIN → obtiene TODOS los permisos
+        // ============================================
+        Set<Rol> roles = user.getRoles();
+        List<Permiso> permisos;
 
+        if (roles.stream().anyMatch(r -> r.getDescRol().equalsIgnoreCase("SUPERADMIN"))) {
+            log.info("🧠 Usuario SUPERADMIN detectado, otorgando todos los permisos existentes");
+            permisos = permisoRepository.findAll();
+        } else {
+            permisos = roles.stream()
+                    .flatMap(r -> r.getPermisos().stream())
+                    .distinct()
+                    .collect(Collectors.toList());
+        }
+
+        // ============================================
+        // Autoridades para el contexto de seguridad
+        // ============================================
+        List<GrantedAuthority> authorities = new ArrayList<>();
+        roles.forEach(rol -> authorities.add(new SimpleGrantedAuthority("ROLE_" + rol.getDescRol())));
+        permisos.forEach(p -> authorities.add(new SimpleGrantedAuthority(p.getDescPermiso())));
+
+        // ============================================
+        // Claims personalizados para el JWT
+        // ============================================
         Map<String, Object> claims = new HashMap<>();
-        claims.put("roles", user.getRoles().stream()
-                .map(r -> r.getDescRol()).collect(Collectors.toSet()));
-        claims.put("permisos", user.getRoles().stream()
-                .flatMap(r -> r.getPermisos().stream())
-                .map(p -> p.getDescPermiso())
-                .collect(Collectors.toSet()));
+        claims.put("roles", roles.stream().map(Rol::getDescRol).toList());
+        claims.put("permisos", permisos.stream().map(Permiso::getDescPermiso).toList());
 
         User userDetails = new User(user.getNameUser(), user.getPassUser(), authorities);
         String token = jwtService.generateToken(claims, userDetails);
 
+        // ============================================
+        // Rol principal y respuesta final
+        // ============================================
+        String rolPrincipal = roles.stream().findFirst()
+                .map(Rol::getDescRol)
+                .orElse("SIN_ROL");
+
         return LoginResponse.builder()
-                .type("Bearer")
                 .token(token)
-                .userId(user.getIdUser())
                 .username(user.getNameUser())
-                .roles(user.getRoles().stream()
-                        .map(r -> r.getDescRol()).collect(Collectors.toSet()))
-                .permisos(user.getRoles().stream()
-                        .flatMap(r -> r.getPermisos().stream())
-                        .map(p -> p.getDescPermiso())
-                        .collect(Collectors.toSet()))
-                .message("Login exitoso")
+                .nombreCompleto(user.getNombreCompleto())
+                .rolPrincipal(rolPrincipal)
+                .roles(roles.stream().map(Rol::getDescRol).toList())
+                .permisos(permisos.stream().map(Permiso::getDescPermiso).toList())
                 .build();
     }
 
+    /**
+     * ✅ Busca usuario por correo (interno o externo)
+     */
+    private Optional<Usuario> buscarUsuarioPorCorreo(String correo) {
+        log.info("🔎 Buscando usuario por correo: {}", correo);
+        try {
+            boolean existe = usuarioRepository.existsByAnyEmail(correo);
+            if (!existe) return Optional.empty();
+
+            return usuarioRepository.findAll().stream()
+                    .filter(u -> correo.equalsIgnoreCase(obtenerCorreoUsuario(u)))
+                    .findFirst();
+
+        } catch (Exception e) {
+            log.error("⚠️ Error buscando usuario por correo: {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    /**
+     * 🧩 Obtiene el correo del usuario desde las tablas relacionadas
+     */
+    private String obtenerCorreoUsuario(Usuario u) {
+        return null; // TODO: Integrar con dim_personal_cnt / dim_personal_externo
+    }
+
     // =========================================================
-    // 🧍 CREAR USUARIO MANUAL (solo para pruebas o admin)
+    // 🧍 CREAR USUARIO (para pruebas o admin)
     // =========================================================
     @Override
     @Transactional
@@ -100,14 +147,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Usuario user = new Usuario();
         user.setNameUser(request.getUsername());
         user.setPassUser(passwordEncoder.encode(request.getPassword()));
-        user.setStatUser("ACTIVO");
+        user.setStatUser("A");
 
         Usuario savedUser = usuarioRepository.save(user);
 
         return UsuarioResponse.builder()
                 .idUser(savedUser.getIdUser())
                 .username(savedUser.getNameUser())
-                .estado(savedUser.getStatUser()) // 🔹 Cambiado de statUser() → estado()
+                .estado(savedUser.getStatUser())
                 .message("Usuario registrado exitosamente")
                 .build();
     }

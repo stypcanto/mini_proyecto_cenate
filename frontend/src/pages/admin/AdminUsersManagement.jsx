@@ -5,21 +5,24 @@ import {
     UserCheck,
     UserCog,
     Building2,
-    FileText,
-    Network,
     RefreshCw,
     Search,
     Shield,
+    X,
 } from "lucide-react";
 import AdminLayout from "../../components/layout/AdminLayout";
-import { API_BASE } from "../../config/api";
+import {
+    getUsuariosExternos,
+    getUsuariosInternos,
+    getUsuarioById,
+} from "../../api/usuarios";
 
 export default function AdminUsersManagement() {
-    const [activeTab, setActiveTab] = useState("usuarios");
+    const [activeTab, setActiveTab] = useState("internos");
     const [usuarios, setUsuarios] = useState([]);
-    const [personal, setPersonal] = useState([]);
     const [searchTerm, setSearchTerm] = useState("");
     const [loading, setLoading] = useState(false);
+    const [detalle, setDetalle] = useState(null);
 
     useEffect(() => {
         cargarDatos();
@@ -28,47 +31,35 @@ export default function AdminUsersManagement() {
     const cargarDatos = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem("token");
-            let endpoint = "";
-            switch (activeTab) {
-                case "usuarios":
-                    endpoint = "/usuarios";
-                    break;
-                case "personal":
-                    endpoint = "/personal";
-                    break;
-                case "externos":
-                    endpoint = "/personal-externo";
-                    break;
-                case "areas":
-                    endpoint = "/areas";
-                    break;
-                default:
-                    endpoint = "/usuarios";
+            let data = [];
+            if (activeTab === "internos") {
+                data = await getUsuariosInternos();
+            } else if (activeTab === "externos") {
+                data = await getUsuariosExternos();
             }
 
-            const response = await fetch(`${API_BASE}${endpoint}`, {
-                headers: { Authorization: `Bearer ${token}` },
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (["usuarios", "personal", "externos"].includes(activeTab))
-                    setUsuarios(data);
-                else setPersonal(data);
-            }
+            // Mostrar solo usuarios activos
+            const activos = (data || []).filter((u) => u.statUser === "ACTIVO");
+            setUsuarios(activos);
         } catch (err) {
-            console.error("Error al cargar datos:", err);
+            console.error("❌ Error al cargar usuarios:", err);
         } finally {
             setLoading(false);
         }
     };
 
+    const verDetalleUsuario = async (id) => {
+        try {
+            const data = await getUsuarioById(id);
+            setDetalle(data);
+        } catch (err) {
+            console.error("❌ Error al obtener detalle del usuario:", err);
+        }
+    };
+
     const tabs = [
-        { key: "usuarios", label: "Usuarios Internos", icon: <UserCog /> },
+        { key: "internos", label: "Usuarios Internos", icon: <UserCog /> },
         { key: "externos", label: "Usuarios Externos", icon: <Building2 /> },
-        { key: "areas", label: "Áreas", icon: <Network /> },
-        { key: "tipos-documento", label: "Tipos Documento", icon: <FileText /> },
     ];
 
     const filteredData = usuarios.filter((u) =>
@@ -87,7 +78,7 @@ export default function AdminUsersManagement() {
                         <h1 className="text-4xl font-bold">Gestión de Usuarios</h1>
                     </div>
                     <p className="text-blue-100 text-lg">
-                        Administra usuarios internos, externos y personal del sistema
+                        Administra usuarios internos y externos del sistema CENATE
                     </p>
                 </div>
             </div>
@@ -114,19 +105,19 @@ export default function AdminUsersManagement() {
                     ))}
                 </div>
 
-                {/* Barra de búsqueda */}
+                {/* Búsqueda */}
                 <div className="relative mb-8">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
                         type="text"
-                        placeholder="Buscar usuario, documento o nombre..."
+                        placeholder="Buscar usuario, nombre o documento..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="w-full pl-12 pr-4 py-3 rounded-2xl border border-gray-200 shadow-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                     />
                 </div>
 
-                {/* Sección de estadísticas */}
+                {/* Estadísticas */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
                     <StatCard
                         icon={<UserCheck className="text-green-600" />}
@@ -145,13 +136,13 @@ export default function AdminUsersManagement() {
                     />
                     <StatCard
                         icon={<UserCog className="text-indigo-600" />}
-                        title="Total de Usuarios"
+                        title="Total Usuarios"
                         value={usuarios.length}
                         color="indigo"
                     />
                 </div>
 
-                {/* Contenido principal */}
+                {/* Tabla */}
                 <div className="bg-white/80 rounded-3xl shadow-xl border border-gray-100 backdrop-blur-xl overflow-hidden">
                     {loading ? (
                         <div className="p-16 flex flex-col items-center">
@@ -164,10 +155,10 @@ export default function AdminUsersManagement() {
                         <div className="p-16 text-center">
                             <UserCog className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                             <p className="text-gray-600 text-lg font-medium">
-                                No se encontraron registros
+                                No se encontraron usuarios activos
                             </p>
                             <p className="text-gray-400 text-sm">
-                                Intenta ajustar tu búsqueda o selecciona otra pestaña.
+                                Intenta ajustar tu búsqueda o revisa otra pestaña.
                             </p>
                         </div>
                     ) : (
@@ -180,26 +171,24 @@ export default function AdminUsersManagement() {
                                     <Th>Documento</Th>
                                     <Th>Rol</Th>
                                     <Th>Estado</Th>
-                                    <Th>Fecha Registro</Th>
+                                    <Th>Detalle</Th>
                                 </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-100">
                                 {filteredData.map((u, i) => (
                                     <tr
                                         key={i}
-                                        className="hover:bg-gray-50 transition-all duration-150"
+                                        className="hover:bg-blue-50 cursor-pointer transition-all duration-150"
                                     >
                                         <Td>#{u.idUser || i + 1}</Td>
                                         <Td>
                                             <div className="flex items-center space-x-3">
                                                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-bold">
-                                                    {(u.username || u.nombreCompleto || "?")
-                                                        .charAt(0)
-                                                        .toUpperCase()}
+                                                    {(u.username || "?").charAt(0).toUpperCase()}
                                                 </div>
                                                 <div>
                                                     <p className="font-semibold text-gray-800">
-                                                        {u.username || u.nombreCompleto || "Sin nombre"}
+                                                        {u.username || "Sin nombre"}
                                                     </p>
                                                     <p className="text-sm text-gray-500">
                                                         {u.email || "—"}
@@ -225,20 +214,17 @@ export default function AdminUsersManagement() {
                                             )}
                                         </Td>
                                         <Td>
-                                            {u.statUser === "ACTIVO" ? (
-                                                <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                            Activo
-                          </span>
-                                            ) : (
-                                                <span className="px-3 py-1 bg-red-100 text-red-700 rounded-full text-xs font-semibold">
-                            Inactivo
-                          </span>
-                                            )}
+                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
+                          Activo
+                        </span>
                                         </Td>
                                         <Td>
-                                            {u.createAt
-                                                ? new Date(u.createAt).toLocaleDateString("es-PE")
-                                                : "—"}
+                                            <button
+                                                onClick={() => verDetalleUsuario(u.idUser)}
+                                                className="text-blue-600 hover:underline text-sm font-medium"
+                                            >
+                                                Ver Detalle
+                                            </button>
                                         </Td>
                                     </tr>
                                 ))}
@@ -248,24 +234,48 @@ export default function AdminUsersManagement() {
                     )}
                 </div>
             </div>
+
+            {/* Modal Detalle */}
+            {detalle && (
+                <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+                    <motion.div
+                        initial={{ scale: 0.9, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg relative"
+                    >
+                        <button
+                            onClick={() => setDetalle(null)}
+                            className="absolute top-3 right-3 text-gray-500 hover:text-gray-700"
+                        >
+                            <X className="w-5 h-5" />
+                        </button>
+                        <h3 className="text-2xl font-bold text-gray-800 mb-4">
+                            👤 Detalle del Usuario
+                        </h3>
+                        <ul className="text-sm text-gray-700 space-y-2">
+                            <li><strong>ID:</strong> {detalle.idUser}</li>
+                            <li><strong>Nombre:</strong> {detalle.nombreCompleto || "—"}</li>
+                            <li><strong>Documento:</strong> {detalle.numDocumento || "—"}</li>
+                            <li><strong>Email:</strong> {detalle.email || "—"}</li>
+                            <li><strong>Roles:</strong> {detalle.roles?.join(", ") || "—"}</li>
+                            <li><strong>Estado:</strong> {detalle.statUser}</li>
+                        </ul>
+                    </motion.div>
+                </div>
+            )}
         </AdminLayout>
     );
 }
 
 /* === COMPONENTES REUTILIZABLES === */
-
 const StatCard = ({ icon, title, value, color }) => (
     <motion.div
         whileHover={{ scale: 1.03 }}
-        className={`bg-white/70 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-md p-6 flex items-center justify-between`}
+        className="bg-white/70 backdrop-blur-xl border border-gray-100 rounded-2xl shadow-md p-6 flex items-center justify-between"
     >
         <div>
             <p className="text-gray-600 text-sm font-semibold">{title}</p>
-            <p
-                className={`text-3xl font-bold text-${color}-600 transition-all duration-300`}
-            >
-                {value || 0}
-            </p>
+            <p className={`text-3xl font-bold text-${color}-600`}>{value || 0}</p>
         </div>
         <div className={`p-3 bg-${color}-100 rounded-xl`}>{icon}</div>
     </motion.div>

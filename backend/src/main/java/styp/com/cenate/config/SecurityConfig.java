@@ -41,16 +41,17 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 🚫 Desactiva CSRF (ya que usamos JWT)
+                // 🚫 Desactiva CSRF (usamos JWT)
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 🌐 Configuración CORS personalizada
+                // 🌍 CORS habilitado con configuración personalizada
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 🧭 Configura rutas públicas y protegidas
+                // 🧭 Autorización de rutas
                 .authorizeHttpRequests(auth -> auth
                         // 🟢 Endpoints públicos
-                        .requestMatchers(HttpMethod.POST, "/api/account-requests").permitAll() // crear solicitud
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                        .requestMatchers(HttpMethod.POST, "/api/account-requests").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/public/**",
@@ -92,10 +93,10 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
 
-                // ⚙️ Política sin sesiones (stateless)
+                // ⚙️ Sesión sin estado (Stateless, porque usamos JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 🔑 Configuración de autenticación con JWT
+                // 🔑 Autenticación con provider y filtro JWT
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -109,6 +110,7 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
+        // 💡 Permite desarrollo local y servidores internos
         config.setAllowedOrigins(Arrays.asList(
                 "http://localhost",
                 "http://localhost:3000",
@@ -117,8 +119,13 @@ public class SecurityConfig {
                 "http://127.0.0.1:5173",
                 "http://10.0.89.13:3000",
                 "http://10.0.89.13:5173",
-                "http://10.0.89.239"
+                "http://10.0.89.239",
+                "http://10.0.89.239:80",
+                "http://10.0.89.239:8080"
         ));
+
+        // 🔧 Patrón adicional para entornos Docker/Nginx
+        config.addAllowedOriginPattern("*");
 
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
@@ -132,7 +139,7 @@ public class SecurityConfig {
     }
 
     // ===========================================================
-    // 🧱 CONFIGURACIÓN DE AUTENTICACIÓN
+    // 🧱 AUTENTICACIÓN Y PASSWORD ENCODER
     // ===========================================================
     @Bean
     public AuthenticationProvider authenticationProvider() {

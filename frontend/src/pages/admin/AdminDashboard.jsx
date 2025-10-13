@@ -1,3 +1,4 @@
+// src/pages/admin/AdminDashboard.jsx
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -8,6 +9,8 @@ import {
     LayoutDashboard,
     TrendingUp,
     RefreshCw,
+    FileText,
+    KeyRound,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import AdminLayout from "../../components/layout/AdminLayout";
@@ -21,6 +24,8 @@ const AdminDashboard = () => {
         totalLogs: 0,
         logsRecientes24h: 0,
         actividadSemanal: 0,
+        solicitudesCuenta: 0,
+        solicitudesRecuperacion: 0,
     });
     const [loading, setLoading] = useState(true);
 
@@ -34,15 +39,17 @@ const AdminDashboard = () => {
             const response = await fetch(
                 "http://localhost:8080/api/admin/dashboard/stats",
                 {
-                    headers: {
-                        Authorization: `Bearer ${token}`,
-                    },
+                    headers: { Authorization: `Bearer ${token}` },
                 }
             );
 
             if (response.ok) {
                 const data = await response.json();
-                setStats(data);
+                setStats({
+                    ...data,
+                    solicitudesCuenta: data.solicitudesCuenta || 3, // Simulado
+                    solicitudesRecuperacion: data.solicitudesRecuperacion || 1, // Simulado
+                });
             }
         } catch (error) {
             console.error("❌ Error al cargar estadísticas:", error);
@@ -58,6 +65,7 @@ const AdminDashboard = () => {
             orange: "from-orange-500/20 to-orange-600/5",
             purple: "from-purple-500/20 to-purple-600/5",
             green: "from-green-500/20 to-green-600/5",
+            pink: "from-pink-500/20 to-pink-600/5",
         };
 
         const card = (
@@ -72,9 +80,7 @@ const AdminDashboard = () => {
                         <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-white/70 mb-4 shadow-inner">
                             {icon}
                         </div>
-                        <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                            {title}
-                        </h3>
+                        <h3 className="text-sm font-semibold text-gray-600 mb-1">{title}</h3>
                         <p className="text-3xl font-bold text-gray-900">
                             {loading ? "..." : value}
                         </p>
@@ -158,8 +164,36 @@ const AdminDashboard = () => {
                     </div>
                 </div>
 
-                {/* 🔸 Estado de usuarios */}
+                {/* 🔸 NUEVA SECCIÓN: Solicitudes */}
+                <div className="mb-12">
+                    <h2 className="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+                        <FileText className="w-6 h-6 mr-2 text-teal-600" />
+                        Solicitudes pendientes
+                    </h2>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <StatCard
+                            icon={<FileText className="w-6 h-6 text-teal-700" />}
+                            title="Solicitudes de Cuenta"
+                            value={stats.solicitudesCuenta}
+                            subtitle="Pendientes de revisión"
+                            color="green"
+                            to="/admin/account-requests"
+                        />
+                        <StatCard
+                            icon={<KeyRound className="w-6 h-6 text-pink-700" />}
+                            title="Recuperación de Contraseña"
+                            value={stats.solicitudesRecuperacion}
+                            subtitle="Solicitudes recientes"
+                            color="pink"
+                            to="/admin/recoveries"
+                        />
+                    </div>
+                </div>
+
+                {/* 🔸 Estado de usuarios y actividad */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    {/* Estado de Usuarios */}
                     <motion.div
                         className="bg-white/70 rounded-2xl shadow-lg p-6 backdrop-blur-xl border border-gray-100"
                         initial={{ opacity: 0, y: 15 }}
@@ -172,17 +206,13 @@ const AdminDashboard = () => {
                         </h3>
                         <div className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                <span className="text-gray-700 font-medium">
-                  Usuarios Activos
-                </span>
+                                <span className="text-gray-700 font-medium">Usuarios Activos</span>
                                 <span className="text-2xl font-bold text-green-600">
                   {loading ? "..." : stats.usuariosActivos}
                 </span>
                             </div>
                             <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
-                <span className="text-gray-700 font-medium">
-                  Usuarios Inactivos
-                </span>
+                                <span className="text-gray-700 font-medium">Usuarios Inactivos</span>
                                 <span className="text-2xl font-bold text-red-600">
                   {loading ? "..." : stats.usuariosInactivos}
                 </span>
@@ -190,7 +220,7 @@ const AdminDashboard = () => {
                         </div>
                     </motion.div>
 
-                    {/* 🔸 Actividad reciente */}
+                    {/* Actividad del Sistema */}
                     <motion.div
                         className="bg-white/70 rounded-2xl shadow-lg p-6 backdrop-blur-xl border border-gray-100"
                         initial={{ opacity: 0, y: 15 }}
@@ -203,9 +233,7 @@ const AdminDashboard = () => {
                         </h3>
                         <div className="space-y-3">
                             <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                <span className="text-gray-700 font-medium">
-                  Últimas 24 horas
-                </span>
+                                <span className="text-gray-700 font-medium">Últimas 24 horas</span>
                                 <span className="text-2xl font-bold text-blue-600">
                   {loading ? "..." : stats.logsRecientes24h}
                 </span>

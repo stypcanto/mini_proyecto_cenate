@@ -1,4 +1,3 @@
-// src/api/auth.js
 // ========================================================================
 // 🔐 API DE AUTENTICACIÓN - CENATE
 // ========================================================================
@@ -19,12 +18,13 @@ export const login = async (username, password) => {
         return await handleResponse(response);
     } catch (error) {
         console.error("❌ Error en login:", error);
-        throw new Error("Error al iniciar sesión");
+        throw new Error("Error al iniciar sesión. Intenta nuevamente.");
     }
 };
 
 /**
- * 🧍 Registro de usuario nuevo
+ * 🚫 Registro de usuario nuevo
+ * (Deshabilitado por política institucional)
  */
 export const registerUser = async (username, password) => {
     try {
@@ -36,39 +36,29 @@ export const registerUser = async (username, password) => {
         return await handleResponse(response);
     } catch (error) {
         console.error("❌ Error en registerUser:", error);
-        throw new Error("Error al registrar usuario");
+        throw new Error("El registro directo está deshabilitado.");
     }
 };
 
 /**
- * 🔑 Cambio de contraseña
- * (Requiere token JWT)
+ * 🔑 Cambio de contraseña (requiere token JWT válido)
  */
-export const changePassword = async (
-    currentPassword,
-    newPassword,
-    confirmPassword
-) => {
+export const changePassword = async (currentPassword, newPassword, confirmPassword) => {
     try {
         const response = await fetch(`${API_BASE}/auth/change-password`, {
             method: "PUT",
             headers: getHeaders(true),
-            body: JSON.stringify({
-                currentPassword,
-                newPassword,
-                confirmPassword,
-            }),
+            body: JSON.stringify({ currentPassword, newPassword, confirmPassword }),
         });
         return await handleResponse(response);
     } catch (error) {
         console.error("❌ Error en changePassword:", error);
-        throw new Error("No se pudo cambiar la contraseña");
+        throw new Error("No se pudo cambiar la contraseña.");
     }
 };
 
 /**
  * 🧾 Obtener perfil del usuario actual (/auth/me)
- * Devuelve username, roles y permisos desde el token.
  */
 export const getCurrentUser = async () => {
     try {
@@ -79,13 +69,13 @@ export const getCurrentUser = async () => {
         return await handleResponse(response);
     } catch (error) {
         console.error("❌ Error en getCurrentUser:", error);
-        throw new Error("No se pudo obtener la información del usuario");
+        throw new Error("No se pudo obtener la información del usuario actual.");
     }
 };
 
 /**
  * 📩 Recuperar contraseña
- * Envía un correo de recuperación al usuario.
+ * Este endpoint registra la solicitud en BD sin enviar correo real.
  */
 export const forgotPassword = async (email) => {
     try {
@@ -94,19 +84,28 @@ export const forgotPassword = async (email) => {
             headers: getHeaders(),
             body: JSON.stringify({ email }),
         });
-        return await handleResponse(response);
+
+        // 🔍 Decodificamos respuesta del backend
+        const data = await response.json();
+
+        if (!response.ok) {
+            // Propaga mensaje personalizado desde backend
+            throw new Error(data.message || "No se pudo registrar la solicitud.");
+        }
+
+        return data;
     } catch (error) {
         console.error("❌ Error en forgotPassword:", error);
-        throw new Error("No se pudo enviar el correo de recuperación");
+        throw new Error("No se pudo procesar la solicitud de recuperación.");
     }
 };
 
 /**
- * 🚪 Logout (opcional si manejas token local)
- * Elimina el token JWT del almacenamiento local.
+ * 🚪 Logout local (borra sesión almacenada)
  */
 export const logout = () => {
     localStorage.removeItem("token");
-    localStorage.removeItem("user");
+    localStorage.removeItem("username");
     localStorage.removeItem("roles");
+    localStorage.removeItem("permisos");
 };

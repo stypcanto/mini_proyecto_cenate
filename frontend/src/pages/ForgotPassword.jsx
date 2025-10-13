@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { Mail, ArrowLeft, Send } from "lucide-react";
-import { useUsuarios } from "../hooks/useUsuarios"; // ✅ Centralización de lógica API
+import { useUsuarios } from "../hooks/useUsuarios"; // ✅ Hook centralizado
 
 const ForgotPassword = () => {
-    const { forgotPassword } = useUsuarios(); // ✅ usa la función del hook central
+    const { recoverPassword } = useUsuarios(); // ✅ nombre correcto del método
     const [email, setEmail] = useState("");
     const [message, setMessage] = useState("");
     const [error, setError] = useState("");
@@ -15,12 +15,11 @@ const ForgotPassword = () => {
         setMessage("");
         setError("");
 
-        if (!email) {
+        if (!email.trim()) {
             setError("Por favor, ingresa tu correo electrónico.");
             return;
         }
 
-        // Validación simple de correo
         const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         if (!emailRegex.test(email)) {
             setError("Por favor, ingresa un correo electrónico válido.");
@@ -29,19 +28,16 @@ const ForgotPassword = () => {
 
         try {
             setLoading(true);
-            const data = await forgotPassword(email);
+            const data = await recoverPassword(email.trim());
 
-            if (data?.message?.toLowerCase().includes("enlace") || data?.success) {
-                setMessage(
-                    data.message ||
-                    "Se ha enviado un enlace de recuperación si el correo está registrado."
-                );
+            if (data?.success) {
+                setMessage(data.message || "Tu solicitud ha sido registrada correctamente.");
             } else {
-                setError(data?.message || "Error al enviar el correo de recuperación.");
+                setError(data?.message || "No existe ninguna cuenta con ese correo.");
             }
         } catch (err) {
-            console.error("❌ Error al enviar correo de recuperación:", err);
-            setError("Ha ocurrido un error al enviar el correo de recuperación.");
+            console.error("❌ Error al enviar solicitud:", err);
+            setError("Error al procesar la solicitud. Inténtalo nuevamente.");
         } finally {
             setLoading(false);
         }
@@ -50,12 +46,12 @@ const ForgotPassword = () => {
     return (
         <div
             style={{ backgroundImage: "url('/images/fondo-portal-web-cenate-2025.png')" }}
-            className="min-h-screen bg-cover bg-center flex items-center justify-center p-4 relative"
+            className="min-h-screen bg-cover bg-center flex items-center justify-center p-4 relative overflow-hidden"
         >
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_2px_2px,white_1px,transparent_0)] bg-[length:40px_40px]" />
 
             <div className="w-full max-w-md relative z-10">
-                {/* Botón volver */}
+                {/* 🔙 Botón volver */}
                 <Link
                     to="/login"
                     className="inline-flex items-center space-x-2 text-white hover:text-blue-100 transition-colors mb-6"
@@ -64,7 +60,7 @@ const ForgotPassword = () => {
                     <span className="font-medium">Volver al Login</span>
                 </Link>
 
-                {/* Card */}
+                {/* 📨 Card principal */}
                 <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 text-center">
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#2e63a6] to-[#1d4f8a] rounded-2xl mb-6 shadow-lg">
                         <Mail className="w-10 h-10 text-white" />
@@ -74,7 +70,7 @@ const ForgotPassword = () => {
                         Recuperar contraseña
                     </h2>
                     <p className="text-gray-600 mb-6">
-                        Ingresa tu correo institucional para recibir instrucciones
+                        Ingresa tu correo institucional para registrar una solicitud de recuperación
                     </p>
 
                     {error && (
@@ -120,16 +116,16 @@ const ForgotPassword = () => {
                             ) : (
                                 <>
                                     <Send className="w-5 h-5" />
-                                    <span>Enviar enlace</span>
+                                    <span>Enviar solicitud</span>
                                 </>
                             )}
                         </button>
                     </form>
                 </div>
 
+                {/* ⚪ Footer */}
                 <p className="mt-6 text-center text-white/80 text-sm">
-                    © {new Date().getFullYear()} CENATE - EsSalud · Todos los derechos
-                    reservados
+                    © {new Date().getFullYear()} CENATE - EsSalud · Todos los derechos reservados
                 </p>
             </div>
         </div>

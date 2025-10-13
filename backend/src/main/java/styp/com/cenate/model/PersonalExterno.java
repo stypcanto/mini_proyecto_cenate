@@ -1,10 +1,7 @@
 package styp.com.cenate.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.Builder;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -41,14 +38,14 @@ public class PersonalExterno {
     @Column(name = "ape_mater_ext", nullable = false, length = 255)
     private String apeMaterExt;
 
-    @Column(name = "fech_naci_ext", nullable = false)
+    @Column(name = "fech_naci_ext")
     private LocalDate fechNaciExt;
 
-    @Column(name = "gen_ext", nullable = false, length = 1)
+    @Column(name = "gen_ext", length = 1)
     private String genExt;
 
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "id_ipress", nullable = false)
+    @JoinColumn(name = "id_ipress")
     private Ipress ipress;
 
     @Column(name = "movil_ext", length = 20)

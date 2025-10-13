@@ -1,3 +1,7 @@
+// ========================================================================
+// 🔐 LOGIN - SISTEMA DE INTRANET CENATE
+// ========================================================================
+
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn, User, Lock, ArrowLeft } from "lucide-react";
@@ -11,7 +15,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [redirectRoles, setRedirectRoles] = useState(null); // ✅ para redirección dinámica
+  const [redirectRoles, setRedirectRoles] = useState(null);
   const navigate = useNavigate();
 
   // ======================================================
@@ -38,13 +42,19 @@ const Login = () => {
         localStorage.setItem("roles", JSON.stringify(data.roles || []));
         localStorage.setItem("username", username);
 
-        setRedirectRoles(data.roles); // ✅ dispara la redirección según roles
+        setRedirectRoles(data.roles); // Redirección según roles
       } else {
-        setError(data?.message || "Credenciales incorrectas.");
+        setError(
+            data?.message ||
+            "Usuario o contraseña incorrectos. Si olvidaste tu clave, selecciona '¿Olvidaste tu contraseña?'."
+        );
       }
     } catch (err) {
       console.error("❌ Error al iniciar sesión:", err);
-      setError(err.message || "Usuario o contraseña incorrectos.");
+      setError(
+          err.message ||
+          "Usuario o contraseña incorrectos. Si olvidaste tu clave, selecciona '¿Olvidaste tu contraseña?'."
+      );
     } finally {
       setLoading(false);
     }
@@ -56,6 +66,7 @@ const Login = () => {
   return (
       <>
         {redirectRoles && <RoleRedirector roles={redirectRoles} />}
+
         <div
             style={{
               backgroundImage: "url('/images/fondo-portal-web-cenate-2025.png')",
@@ -132,6 +143,7 @@ const Login = () => {
                         className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent text-gray-900 font-medium"
                         disabled={loading}
                         autoComplete="username"
+                        autoFocus
                     />
                   </div>
                 </div>
@@ -174,7 +186,7 @@ const Login = () => {
                 {/* 🔗 Recuperar contraseña */}
                 <div className="text-right">
                   <Link
-                      to="/forgot-password"
+                      to="/forgot-password" // ✅ asegúrate de que esta ruta exista en App.js
                       className="text-sm text-[#2e63a6] hover:text-[#1d4f8a] font-semibold transition-colors"
                   >
                     ¿Olvidaste tu contraseña?
@@ -216,7 +228,7 @@ const Login = () => {
               <div className="text-center space-y-4">
                 <button
                     type="button"
-                    onClick={() => navigate("/account-request")}
+                    onClick={() => navigate("/solicitud-cuenta")} // ✅ ruta en español
                     className="w-full py-4 px-6 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-bold shadow-md hover:scale-[1.02] transition-all"
                 >
                   Solicitar acceso al sistema
@@ -237,7 +249,8 @@ const Login = () => {
             {/* ⚪ Footer */}
             <div className="mt-8 text-center">
               <p className="text-white/80 text-sm">
-                © {new Date().getFullYear()} CENATE - EsSalud · Todos los derechos reservados
+                © {new Date().getFullYear()} CENATE - EsSalud · Todos los derechos
+                reservados
               </p>
             </div>
           </div>

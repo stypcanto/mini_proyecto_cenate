@@ -11,6 +11,8 @@ import {
     X,
     ChevronDown,
     ChevronRight,
+    Bell,
+    ClipboardList, // 🆕 Icono para el módulo de solicitudes
 } from "lucide-react";
 
 const AdminSidebar = () => {
@@ -19,14 +21,18 @@ const AdminSidebar = () => {
     const [isOpen, setIsOpen] = useState(true);
     const [expandedMenu, setExpandedMenu] = useState(null);
 
-    const username = localStorage.getItem("username") || "Admin";
-    const roles = JSON.parse(localStorage.getItem("roles") || "[]");
+    // ✅ Información de usuario desde localStorage
+    const nombreCompleto = localStorage.getItem("nombreCompleto") || "Usuario";
+    const rol = localStorage.getItem("rol") || "Administrador";
 
     const handleLogout = () => {
         localStorage.clear();
         navigate("/login");
     };
 
+    // ======================================================
+    // 📋 Menú lateral de administración
+    // ======================================================
     const menuItems = [
         {
             title: "Dashboard",
@@ -48,6 +54,18 @@ const AdminSidebar = () => {
             icon: <ShieldCheck className="w-5 h-5" />,
             path: "/admin/roles",
         },
+
+        // 🆕 NUEVO BLOQUE - Solicitudes del Sistema
+        {
+            title: "Solicitudes del Sistema",
+            icon: <ClipboardList className="w-5 h-5" />,
+            path: "/admin/solicitudes",
+            submenu: [
+                { title: "Acceso al Sistema", path: "/admin/account-requests" },
+                { title: "Recuperación de Contraseña", path: "/admin/password-recovery" },
+            ],
+        },
+
         {
             title: "Logs del Sistema",
             icon: <ServerCog className="w-5 h-5" />,
@@ -61,9 +79,7 @@ const AdminSidebar = () => {
     ];
 
     const isActive = (path, exact = false) => {
-        if (exact) {
-            return location.pathname === path;
-        }
+        if (exact) return location.pathname === path;
         return location.pathname.startsWith(path);
     };
 
@@ -71,9 +87,12 @@ const AdminSidebar = () => {
         setExpandedMenu(expandedMenu === title ? null : title);
     };
 
+    // ======================================================
+    // 🧭 Render del Sidebar
+    // ======================================================
     return (
         <>
-            {/* Overlay para móvil */}
+            {/* Overlay móvil */}
             {isOpen && (
                 <div
                     className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -81,70 +100,73 @@ const AdminSidebar = () => {
                 />
             )}
 
-            {/* Sidebar */}
+            {/* Sidebar principal */}
             <aside
                 className={`
-                    fixed top-0 left-0 h-screen bg-gradient-to-b from-slate-800 to-slate-900 
-                    text-white z-50 transition-all duration-300 ease-in-out
-                    ${isOpen ? "w-64" : "w-0 lg:w-20"}
-                    overflow-hidden shadow-2xl
-                `}
+          fixed top-0 left-0 h-screen bg-gradient-to-b from-slate-800 to-slate-900 
+          text-white z-50 transition-all duration-300 ease-in-out
+          ${isOpen ? "w-64" : "w-0 lg:w-20"}
+          overflow-hidden shadow-2xl
+        `}
             >
                 <div className="flex flex-col h-full">
-                    {/* Header con logo y perfil */}
+                    {/* Header con perfil */}
                     <div className="p-6 border-b border-slate-700">
                         <div className="flex items-center justify-between mb-6">
                             <div className="flex items-center space-x-3">
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center">
-                                    <span className="text-white font-bold text-lg">
-                                        {username.charAt(0).toUpperCase()}
-                                    </span>
+                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-md">
+                  <span className="text-white font-bold text-lg">
+                    {nombreCompleto.charAt(0).toUpperCase()}
+                  </span>
                                 </div>
                                 {isOpen && (
                                     <div>
-                                        <p className="font-semibold text-sm">{username}</p>
-                                        <p className="text-xs text-slate-400">Administrador</p>
+                                        <p className="font-semibold text-sm text-white truncate w-36">
+                                            {nombreCompleto}
+                                        </p>
+                                        <p className="text-xs text-slate-400">{rol}</p>
                                     </div>
                                 )}
                             </div>
+
+                            {/* 🔔 Icono de notificaciones */}
+                            {isOpen && (
+                                <div className="relative cursor-pointer hover:scale-110 transition-transform">
+                                    <Bell className="w-5 h-5 text-slate-300 hover:text-white" />
+                                    <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full"></span>
+                                </div>
+                            )}
                         </div>
                     </div>
 
-                    {/* Menú de navegación */}
+                    {/* Menú principal */}
                     <nav className="flex-1 overflow-y-auto py-4 px-3">
                         {menuItems.map((item, index) => (
                             <div key={index} className="mb-1">
                                 {item.submenu ? (
-                                    // Item con submenú
-                                    <div>
+                                    <>
                                         <button
                                             onClick={() => toggleSubmenu(item.title)}
-                                            className={`
-                                                w-full flex items-center justify-between px-4 py-3 rounded-lg
-                                                transition-all duration-200
-                                                ${
-                                                    isActive(item.path)
-                                                        ? "bg-teal-600 text-white shadow-lg"
-                                                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                                                }
-                                            `}
+                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
+                                                isActive(item.path)
+                                                    ? "bg-teal-600 text-white shadow-lg"
+                                                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                                            }`}
                                         >
                                             <div className="flex items-center space-x-3">
                                                 {item.icon}
                                                 {isOpen && (
-                                                    <span className="font-medium text-sm">
-                                                        {item.title}
-                                                    </span>
+                                                    <span className="font-medium text-sm">{item.title}</span>
                                                 )}
                                             </div>
                                             {isOpen && (
                                                 <span>
-                                                    {expandedMenu === item.title ? (
-                                                        <ChevronDown className="w-4 h-4" />
-                                                    ) : (
-                                                        <ChevronRight className="w-4 h-4" />
-                                                    )}
-                                                </span>
+                          {expandedMenu === item.title ? (
+                              <ChevronDown className="w-4 h-4" />
+                          ) : (
+                              <ChevronRight className="w-4 h-4" />
+                          )}
+                        </span>
                                             )}
                                         </button>
 
@@ -155,35 +177,26 @@ const AdminSidebar = () => {
                                                     <Link
                                                         key={subindex}
                                                         to={subitem.path}
-                                                        className={`
-                                                            block px-4 py-2 rounded-lg text-sm
-                                                            transition-all duration-200
-                                                            ${
-                                                                location.pathname === subitem.path
-                                                                    ? "bg-teal-600/50 text-white"
-                                                                    : "text-slate-400 hover:bg-slate-700 hover:text-white"
-                                                            }
-                                                        `}
+                                                        className={`block px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+                                                            location.pathname === subitem.path
+                                                                ? "bg-teal-600/50 text-white"
+                                                                : "text-slate-400 hover:bg-slate-700 hover:text-white"
+                                                        }`}
                                                     >
                                                         {subitem.title}
                                                     </Link>
                                                 ))}
                                             </div>
                                         )}
-                                    </div>
+                                    </>
                                 ) : (
-                                    // Item sin submenú
                                     <Link
                                         to={item.path}
-                                        className={`
-                                            flex items-center space-x-3 px-4 py-3 rounded-lg
-                                            transition-all duration-200
-                                            ${
-                                                isActive(item.path, item.exact)
-                                                    ? "bg-teal-600 text-white shadow-lg"
-                                                    : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                                            }
-                                        `}
+                                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                                            isActive(item.path, item.exact)
+                                                ? "bg-teal-600 text-white shadow-lg"
+                                                : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                                        }`}
                                     >
                                         {item.icon}
                                         {isOpen && (
@@ -195,15 +208,11 @@ const AdminSidebar = () => {
                         ))}
                     </nav>
 
-                    {/* Botón de logout */}
+                    {/* Logout */}
                     <div className="p-4 border-t border-slate-700">
                         <button
                             onClick={handleLogout}
-                            className="
-                                w-full flex items-center space-x-3 px-4 py-3 rounded-lg
-                                text-slate-300 hover:bg-red-600 hover:text-white
-                                transition-all duration-200
-                            "
+                            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-slate-300 hover:bg-red-600 hover:text-white transition-all duration-200"
                         >
                             <LogOut className="w-5 h-5" />
                             {isOpen && <span className="font-medium text-sm">Cerrar Sesión</span>}
@@ -212,15 +221,10 @@ const AdminSidebar = () => {
                 </div>
             </aside>
 
-            {/* Botón toggle para móvil/escritorio */}
+            {/* Botón toggle móvil */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="
-                    fixed top-4 left-4 z-[60] p-2 rounded-lg
-                    bg-slate-800 text-white shadow-lg
-                    hover:bg-slate-700 transition-colors duration-200
-                    lg:hidden
-                "
+                className="fixed top-4 left-4 z-[60] p-2 rounded-lg bg-slate-800 text-white shadow-lg hover:bg-slate-700 transition-colors duration-200 lg:hidden"
             >
                 {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>

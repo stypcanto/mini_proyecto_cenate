@@ -1,13 +1,15 @@
 version: "3.9"
 
 services:
+  # ===============================
+  # 🧩 BACKEND (Spring Boot)
+  # ===============================
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: cenate-backend
     environment:
-      # 🔹 Variables de conexión a BD (puedes definirlas en .env)
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://10.0.89.13:5432/maestro_cenate}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-Essalud2025}
@@ -19,13 +21,13 @@ services:
       - cenate-net
     restart: on-failure
 
+  # ===============================
+  # 💻 FRONTEND (React + Nginx)
+  # ===============================
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-      args:
-        # ✅ API interna entre contenedores
-        VITE_API_URL: http://cenate-backend:8080/api
     container_name: cenate-frontend
     depends_on:
       - backend
@@ -35,22 +37,9 @@ services:
       - cenate-net
     restart: on-failure
 
-# (opcional) Si deseas volver a usar Postgres en Docker, descomenta esto ↓
-#  db:
-#    image: postgres:15
-#    container_name: cenate-db
-#    environment:
-#      POSTGRES_DB: maestro_cenate
-#      POSTGRES_USER: postgres
-#      POSTGRES_PASSWORD: Essalud2025
-#    ports:
-#      - "5432:5432"
-#    volumes:
-#      - cenate-db-data:/var/lib/postgresql/data
-#    networks:
-#      - cenate-net
-#    restart: always
-
+# ===============================
+# 🔗 Redes y volúmenes
+# ===============================
 volumes:
   cenate-db-data:
 

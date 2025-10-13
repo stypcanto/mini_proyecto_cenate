@@ -32,7 +32,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     // =============================================================
-    // 🟢 CREAR USUARIO (solo por aprobación o administrador)
+    // 🟢 CREAR USUARIO
     // =============================================================
     @Override
     @Transactional
@@ -46,13 +46,11 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = new Usuario();
         usuario.setNameUser(request.getUsername());
         usuario.setPassUser(passwordEncoder.encode(request.getPassword()));
-        usuario.setStatUser(
-                request.getEstado() != null ? request.getEstado() : "INACTIVO"
-        ); // 👈 Por defecto queda inactivo hasta aprobación
+        usuario.setStatUser(request.getEstado() != null ? request.getEstado() : "INACTIVO");
         usuario.setCreateAt(LocalDateTime.now());
 
         usuarioRepository.save(usuario);
-        log.info("🧾 Solicitud o usuario creado pendiente de aprobación: {}", usuario.getNameUser());
+        log.info("🧾 Usuario creado pendiente de aprobación: {}", usuario.getNameUser());
 
         return convertToResponse(usuario);
     }
@@ -60,14 +58,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     // =============================================================
     // 🟢 CONSULTAS
     // =============================================================
-
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponse> getAllUsers() {
         return usuarioRepository.findAll()
                 .stream()
                 .map(this::convertToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Override
@@ -87,7 +84,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // =============================================================
-    // 🟢 ACTUALIZAR DATOS
+    // ✏️ ACTUALIZAR USUARIO
     // =============================================================
     @Override
     @Transactional
@@ -109,7 +106,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // =============================================================
-    // 🟡 ELIMINAR / ACTIVAR / DESACTIVAR / DESBLOQUEAR
+    // 🚫 ELIMINAR / ESTADO
     // =============================================================
     @Override
     @Transactional
@@ -157,20 +154,53 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // =============================================================
-    // 🧩 CONSULTAS PERSONALIZADAS
+    // 🔍 CONSULTAS PERSONALIZADAS
     // =============================================================
     @Override
     @Transactional(readOnly = true)
-    public List<Map<String, Object>> executeCustomQuery(String sql, String username) {
+    public List<Map<String, Object>> obtenerDetalleUsuario(String username) {
         try {
-            log.info("🔍 Ejecutando consulta personalizada para usuario: {}", username);
-            Map<String, Object> params = new HashMap<>();
-            params.put("username", username);
+            String sql = """
+                    SELECT u.id_user, u.name_user, u.stat_user,
+                           r.desc_rol AS rol, p.desc_permiso AS permiso
+                    FROM dim_usuarios u
+                    LEFT JOIN dim_usuario_rol ur ON u.id_user = ur.id_user
+                    LEFT JOIN dim_roles r ON ur.id_rol = r.id_rol
+                    LEFT JOIN dim_rol_permiso rp ON r.id_rol = rp.id_rol
+                    LEFT JOIN dim_permisos p ON rp.id_permiso = p.id_permiso
+                    WHERE u.name_user = :username
+                    """;
+            Map<String, Object> params = Map.of("username", username);
             return namedParameterJdbcTemplate.queryForList(sql, params);
         } catch (Exception e) {
-            log.error("❌ Error ejecutando consulta personalizada: {}", e.getMessage());
-            throw new RuntimeException("Error al ejecutar consulta SQL personalizada", e);
+            log.error("❌ Error obteniendo detalle del usuario {}: {}", username, e.getMessage());
+            throw new RuntimeException("Error al obtener detalle del usuario", e);
         }
+    }
+
+    // =============================================================
+    // 🧩 FILTROS POR ROLES
+    // =============================================================
+    @Override
+    @Transactional(readOnly = true)
+    public List<UsuarioResponse> getUsuariosByRoles(List<String> roles) {
+        return usuarioRepository.findAll().stream()
+                .filter(u -> u.getRoles() != null &&
+                        u.getRoles().stream()
+                                .anyMatch(r -> roles.contains(r.getDescRol())))
+                .map(this::convertToResponse)
+                .toList();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<UsuarioResponse> getUsuariosExcluyendoRoles(List<String> roles) {
+        return usuarioRepository.findAll().stream()
+                .filter(u -> u.getRoles() == null ||
+                        u.getRoles().stream()
+                                .noneMatch(r -> roles.contains(r.getDescRol())))
+                .map(this::convertToResponse)
+                .toList();
     }
 
     // =============================================================
