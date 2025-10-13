@@ -10,9 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import styp.com.cenate.dto.UsuarioCreateRequest;
 import styp.com.cenate.dto.UsuarioResponse;
 import styp.com.cenate.dto.UsuarioUpdateRequest;
-import styp.com.cenate.model.Permiso;
-import styp.com.cenate.model.Rol;
-import styp.com.cenate.model.Usuario;
+import styp.com.cenate.model.*;
 import styp.com.cenate.repository.UsuarioRepository;
 
 import java.time.LocalDateTime;
@@ -20,7 +18,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 💡 Servicio de gestión de usuarios (solo administrativos o aprobados por el SUPERADMIN).
+ * 💼 Servicio principal para la gestión de usuarios del sistema CENATE.
+ * Incluye creación, actualización, eliminación, detalle extendido y filtros por roles.
  */
 @Service
 @RequiredArgsConstructor
@@ -46,17 +45,17 @@ public class UsuarioServiceImpl implements UsuarioService {
         Usuario usuario = new Usuario();
         usuario.setNameUser(request.getUsername());
         usuario.setPassUser(passwordEncoder.encode(request.getPassword()));
-        usuario.setStatUser(request.getEstado() != null ? request.getEstado() : "INACTIVO");
+        usuario.setStatUser(Optional.ofNullable(request.getEstado()).orElse("I"));
         usuario.setCreateAt(LocalDateTime.now());
 
         usuarioRepository.save(usuario);
-        log.info("🧾 Usuario creado pendiente de aprobación: {}", usuario.getNameUser());
+        log.info("🧾 Usuario creado: {}", usuario.getNameUser());
 
         return convertToResponse(usuario);
     }
 
     // =============================================================
-    // 🟢 CONSULTAS
+    // 🔍 CONSULTAS
     // =============================================================
     @Override
     @Transactional(readOnly = true)
@@ -106,23 +105,27 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // =============================================================
-    // 🚫 ELIMINAR / ESTADO
+    // 🚫 ELIMINAR USUARIO
     // =============================================================
     @Override
     @Transactional
     public void deleteUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
+
         usuarioRepository.delete(usuario);
-        log.info("🗑️ Usuario eliminado: {}", usuario.getNameUser());
+        log.info("🗑️ Usuario eliminado correctamente: {}", usuario.getNameUser());
     }
 
+    // =============================================================
+    // 🔒 CONTROL DE ESTADO
+    // =============================================================
     @Override
     @Transactional
     public UsuarioResponse activateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
-        usuario.setStatUser("ACTIVO");
+        usuario.setStatUser("A");
         usuario.setUpdateAt(LocalDateTime.now());
         usuarioRepository.save(usuario);
         log.info("✅ Usuario activado: {}", usuario.getNameUser());
@@ -134,7 +137,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     public UsuarioResponse deactivateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
-        usuario.setStatUser("INACTIVO");
+        usuario.setStatUser("I");
         usuario.setUpdateAt(LocalDateTime.now());
         usuarioRepository.save(usuario);
         log.info("🚫 Usuario desactivado: {}", usuario.getNameUser());
@@ -154,40 +157,82 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // =============================================================
-    // 🔍 CONSULTAS PERSONALIZADAS
+    // 🔍 CONSULTA EXTENDIDA (usuario + personal + roles)
+    // =============================================================
+    @Override
+    @Transactional(readOnly = true)
+    public UsuarioResponse obtenerDetalleUsuarioExtendido(String username) {
+        Usuario usuario = usuarioRepository.findByNameUser(username)
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado: " + username));
+
+        UsuarioResponse base = convertToResponse(usuario);
+
+        if (usuario.getPersonalCnt() != null) {
+            PersonalCnt p = usuario.getPersonalCnt();
+
+            base.setNombreCompleto(p.getNombreCompleto());
+            base.setCorreoPersonal(p.getEmailPers());
+            base.setCorreoCorporativo(p.getEmailCorpPers());
+            base.setNumeroDocumento(p.getNumDocPers());
+            base.setTipoDocumento(p.getTipoDocumento() != null ? p.getTipoDocumento().toString() : null);
+            base.setRegimenLaboral(p.getRegimenLaboral() != null ? p.getRegimenLaboral().getDescRegLab() : null);
+            base.setAreaTrabajo(p.getArea() != null ? p.getArea().getDescArea() : null);
+            base.setFotoUrl(p.getFotoPers());
+
+            // ✅ Firmas
+            base.setFirmasDigitales(
+                    p.getFirmas().stream()
+                            .map(f -> f.getDescFirma() != null ? f.getDescFirma() : "Sin firma")
+                            .collect(Collectors.toList())
+            );
+
+            // ✅ Profesiones
+            base.setProfesiones(
+                    p.getProfesiones().stream()
+                            .map(pp -> pp.getProfesion().getDescProf())
+                            .collect(Collectors.toList())
+            );
+
+            // ✅ Órdenes de compra
+            base.setOrdenesCompra(
+                    p.getOcs().stream()
+                            .map(oc -> oc.getNumOc() != null ? oc.getNumOc() : "Sin OC")
+                            .collect(Collectors.toList())
+            );
+        }
+
+        log.info("📋 Detalle extendido generado para usuario: {}", username);
+        return base;
+    }
+
+    // =============================================================
+    // 🔍 CONSULTA SQL BÁSICA
     // =============================================================
     @Override
     @Transactional(readOnly = true)
     public List<Map<String, Object>> obtenerDetalleUsuario(String username) {
-        try {
-            String sql = """
-                    SELECT u.id_user, u.name_user, u.stat_user,
-                           r.desc_rol AS rol, p.desc_permiso AS permiso
-                    FROM dim_usuarios u
-                    LEFT JOIN dim_usuario_rol ur ON u.id_user = ur.id_user
-                    LEFT JOIN dim_roles r ON ur.id_rol = r.id_rol
-                    LEFT JOIN dim_rol_permiso rp ON r.id_rol = rp.id_rol
-                    LEFT JOIN dim_permisos p ON rp.id_permiso = p.id_permiso
-                    WHERE u.name_user = :username
-                    """;
-            Map<String, Object> params = Map.of("username", username);
-            return namedParameterJdbcTemplate.queryForList(sql, params);
-        } catch (Exception e) {
-            log.error("❌ Error obteniendo detalle del usuario {}: {}", username, e.getMessage());
-            throw new RuntimeException("Error al obtener detalle del usuario", e);
-        }
+        String sql = """
+                SELECT u.id_user, u.name_user, u.stat_user,
+                       r.desc_rol AS rol, p.desc_permiso AS permiso
+                FROM dim_usuarios u
+                LEFT JOIN dim_usuario_rol ur ON u.id_user = ur.id_user
+                LEFT JOIN dim_roles r ON ur.id_rol = r.id_rol
+                LEFT JOIN dim_rol_permiso rp ON r.id_rol = rp.id_rol
+                LEFT JOIN dim_permisos p ON rp.id_permiso = p.id_permiso
+                WHERE u.name_user = :username
+                """;
+        return namedParameterJdbcTemplate.queryForList(sql, Map.of("username", username));
     }
 
     // =============================================================
-    // 🧩 FILTROS POR ROLES
+    // 🧩 FILTROS
     // =============================================================
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponse> getUsuariosByRoles(List<String> roles) {
         return usuarioRepository.findAll().stream()
                 .filter(u -> u.getRoles() != null &&
-                        u.getRoles().stream()
-                                .anyMatch(r -> roles.contains(r.getDescRol())))
+                        u.getRoles().stream().anyMatch(r -> roles.contains(r.getDescRol())))
                 .map(this::convertToResponse)
                 .toList();
     }
@@ -197,14 +242,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     public List<UsuarioResponse> getUsuariosExcluyendoRoles(List<String> roles) {
         return usuarioRepository.findAll().stream()
                 .filter(u -> u.getRoles() == null ||
-                        u.getRoles().stream()
-                                .noneMatch(r -> roles.contains(r.getDescRol())))
+                        u.getRoles().stream().noneMatch(r -> roles.contains(r.getDescRol())))
                 .map(this::convertToResponse)
                 .toList();
     }
 
     // =============================================================
-    // 🧠 CONVERSIÓN A DTO
+    // 🧠 CONVERSIÓN DTO
     // =============================================================
     private UsuarioResponse convertToResponse(Usuario usuario) {
         Set<String> roles = Optional.ofNullable(usuario.getRoles())
@@ -232,7 +276,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .createAt(usuario.getCreateAt())
                 .updateAt(usuario.getUpdateAt())
                 .failedAttempts(usuario.getFailedAttempts())
-                .isLocked(usuario.isAccountLocked())
+                .locked(usuario.isAccountLocked())
                 .message("Usuario " + usuario.getStatUser().toLowerCase())
                 .build();
     }

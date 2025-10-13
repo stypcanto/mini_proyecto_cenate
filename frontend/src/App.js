@@ -4,6 +4,7 @@
 
 import React from "react";
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 
 // 🧱 Layout principal
 import Layout from "./components/layout/Layout.jsx";
@@ -13,7 +14,8 @@ import Home from "./pages/Home.jsx";
 import Login from "./pages/Login.jsx";
 import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
-import AccountRequest from "./pages/AccountRequest.jsx"; // o SolicitudCuenta.jsx
+import AccountRequest from "./pages/AccountRequest.jsx";
+import Unauthorized from "./pages/Unauthorized.jsx"; // ⚠️ Acceso denegado
 
 // 🔐 Páginas protegidas
 import PacientesPage from "./pages/PacientesPage.jsx";
@@ -26,7 +28,7 @@ import RolesManagement from "./pages/admin/RolesManagement.jsx";
 import SystemLogs from "./pages/admin/SystemLogs.jsx";
 import UserManagement from "./pages/admin/UserManagement.jsx";
 import AdminAccountRequests from "./pages/admin/AdminAccountRequests.jsx";
-import PermisosManagement from "./pages/admin/PermisosManagement.jsx"; // ✅ Nuevo módulo
+import PermisosManagement from "./pages/admin/PermisosManagement.jsx";
 import AdminRecoveries from "./pages/admin/AdminRecoveries.jsx";
 
 // 👤 Panel de usuario
@@ -41,7 +43,7 @@ import DashboardExterno from "./pages/roles/externo/DashboardExterno.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 /* ==============================================================
- 🧩 Protección de rutas con roles
+ 🧩 Protección de rutas (roles + autenticación)
 ============================================================== */
 const RequireAuth = ({ children, allowedRoles = [] }) => {
     const token = localStorage.getItem("token");
@@ -54,33 +56,56 @@ const RequireAuth = ({ children, allowedRoles = [] }) => {
         const allowedUpper = allowedRoles.map((r) => String(r).toUpperCase());
         const isAllowed = userRoles.some((r) => allowedUpper.includes(r));
 
-        if (!isAllowed) return <Navigate to="/" replace />;
+        if (!isAllowed) return <Navigate to="/unauthorized" replace />;
     }
 
     return children;
 };
 
 /* ==============================================================
- 🧭 Enrutamiento principal
+ 🧭 Enrutamiento principal + Notificaciones globales
 ============================================================== */
 function App() {
     return (
         <Router>
+            {/* 🔔 Sistema global de notificaciones tipo macOS */}
+            <Toaster
+                position="top-right"
+                toastOptions={{
+                    style: {
+                        borderRadius: "14px",
+                        background: "rgba(15, 32, 70, 0.92)", // azul institucional CENATE
+                        color: "#f1f5f9",
+                        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+                        backdropFilter: "blur(10px)",
+                        padding: "14px 18px",
+                        boxShadow: "0 4px 25px rgba(0, 0, 0, 0.15)",
+                        fontSize: "0.9rem",
+                    },
+                    success: {
+                        iconTheme: { primary: "#00C897", secondary: "#fff" },
+                    },
+                    error: {
+                        iconTheme: { primary: "#FF4C4C", secondary: "#fff" },
+                    },
+                }}
+            />
+
             <Routes>
                 {/* ======================================================
-                    🔓 RUTAS PÚBLICAS (sin autenticación)
-                ====================================================== */}
+          🔓 PÁGINAS PÚBLICAS
+        ====================================================== */}
+                <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/registro" element={<Register />} />
                 <Route path="/forgot-password" element={<ForgotPassword />} />
                 <Route path="/solicitud-cuenta" element={<AccountRequest />} />
+                <Route path="/unauthorized" element={<Unauthorized />} />
 
                 {/* ======================================================
-                    🔐 RUTAS CON LAYOUT (autenticadas)
-                ====================================================== */}
+          🔐 PÁGINAS PROTEGIDAS (con Layout general)
+        ====================================================== */}
                 <Route element={<Layout />}>
-                    <Route path="/" element={<Home />} />
-
                     <Route
                         path="/pacientes"
                         element={
@@ -89,7 +114,6 @@ function App() {
                             </RequireAuth>
                         }
                     />
-
                     <Route
                         path="/transferencia-examenes"
                         element={
@@ -98,13 +122,11 @@ function App() {
                             </RequireAuth>
                         }
                     />
-
-                    <Route path="*" element={<NotFound />} />
                 </Route>
 
                 {/* ======================================================
-                    👑 PANEL ADMINISTRATIVO
-                ====================================================== */}
+          👑 PANEL ADMINISTRATIVO
+        ====================================================== */}
                 <Route
                     path="/admin"
                     element={
@@ -113,7 +135,6 @@ function App() {
                         </RequireAuth>
                     }
                 />
-
                 <Route
                     path="/admin/recoveries"
                     element={
@@ -122,7 +143,6 @@ function App() {
                         </RequireAuth>
                     }
                 />
-
                 <Route
                     path="/admin/users"
                     element={
@@ -131,7 +151,6 @@ function App() {
                         </RequireAuth>
                     }
                 />
-
                 <Route
                     path="/admin/roles"
                     element={
@@ -140,7 +159,6 @@ function App() {
                         </RequireAuth>
                     }
                 />
-
                 <Route
                     path="/admin/logs"
                     element={
@@ -149,7 +167,6 @@ function App() {
                         </RequireAuth>
                     }
                 />
-
                 <Route
                     path="/admin/account-requests"
                     element={
@@ -158,7 +175,6 @@ function App() {
                         </RequireAuth>
                     }
                 />
-
                 <Route
                     path="/admin/user-management"
                     element={
@@ -167,7 +183,6 @@ function App() {
                         </RequireAuth>
                     }
                 />
-
                 <Route
                     path="/admin/permisos"
                     element={
@@ -178,15 +193,15 @@ function App() {
                 />
 
                 {/* ======================================================
-                    🩺 PANEL MÉDICO
-                ====================================================== */}
+          🩺 PANEL MÉDICO
+        ====================================================== */}
                 <Route
                     path="/medico"
                     element={
                         <RequireAuth
                             allowedRoles={[
                                 "MEDICO",
-                                "ENFERMERA",
+                                "ENFERMERIA",
                                 "OBSTETRA",
                                 "PSICOLOGO",
                                 "TERAPISTA_LENG",
@@ -200,8 +215,8 @@ function App() {
                 />
 
                 {/* ======================================================
-                    🗓️ PANEL COORDINADOR
-                ====================================================== */}
+          🗓️ PANEL COORDINADOR
+        ====================================================== */}
                 <Route
                     path="/coordinador"
                     element={
@@ -212,13 +227,13 @@ function App() {
                 />
 
                 {/* ======================================================
-                    🏢 PANEL EXTERNO / INSTITUCIONES
-                ====================================================== */}
+          🏢 PANEL EXTERNO / INSTITUCIONES
+        ====================================================== */}
                 <Route
                     path="/externo"
                     element={
                         <RequireAuth
-                            allowedRoles={["INSTITUCION_EX", "ASEGURADORA", "REGULADOR"]}
+                            allowedRoles={["INSTITUCION", "ASEGURADORA", "REGULADOR"]}
                         >
                             <DashboardExterno />
                         </RequireAuth>
@@ -226,8 +241,8 @@ function App() {
                 />
 
                 {/* ======================================================
-                    👤 PANEL USUARIO GENERAL
-                ====================================================== */}
+          👤 PANEL USUARIO GENERAL
+        ====================================================== */}
                 <Route
                     path="/user/dashboard"
                     element={
@@ -236,6 +251,11 @@ function App() {
                         </RequireAuth>
                     }
                 />
+
+                {/* ======================================================
+          🚫 PÁGINA NO ENCONTRADA
+        ====================================================== */}
+                <Route path="*" element={<NotFound />} />
             </Routes>
         </Router>
     );

@@ -5,7 +5,7 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, LogIn, User, Lock, ArrowLeft } from "lucide-react";
-import { useUsuarios } from "../hooks/useUsuarios";
+import { useUsuarios } from "@/hooks/useUsuarios";
 import RoleRedirector from "../utils/RoleRedirector";
 
 const Login = () => {
@@ -41,8 +41,7 @@ const Login = () => {
         localStorage.setItem("token", data.token);
         localStorage.setItem("roles", JSON.stringify(data.roles || []));
         localStorage.setItem("username", username);
-
-        setRedirectRoles(data.roles); // Redirección según roles
+        setRedirectRoles(data.roles);
       } else {
         setError(
             data?.message ||
@@ -92,7 +91,7 @@ const Login = () => {
                 <div className="bg-white p-4 rounded-2xl shadow-2xl">
                   <img
                       src="/images/Logo CENATE Azul.png"
-                      alt="CENATE"
+                      alt="Logo del Sistema CENATE"
                       className="h-16 object-contain"
                   />
                 </div>
@@ -173,6 +172,7 @@ const Login = () => {
                         onClick={() => setShowPassword(!showPassword)}
                         className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#2e63a6] transition"
                         disabled={loading}
+                        aria-label="Mostrar u ocultar contraseña"
                     >
                       {showPassword ? (
                           <EyeOff className="w-5 h-5" />
@@ -186,7 +186,7 @@ const Login = () => {
                 {/* 🔗 Recuperar contraseña */}
                 <div className="text-right">
                   <Link
-                      to="/forgot-password" // ✅ asegúrate de que esta ruta exista en App.js
+                      to="/forgot-password"
                       className="text-sm text-[#2e63a6] hover:text-[#1d4f8a] font-semibold transition-colors"
                   >
                     ¿Olvidaste tu contraseña?
@@ -228,7 +228,7 @@ const Login = () => {
               <div className="text-center space-y-4">
                 <button
                     type="button"
-                    onClick={() => navigate("/solicitud-cuenta")} // ✅ ruta en español
+                    onClick={() => navigate("/solicitud-cuenta")}
                     className="w-full py-4 px-6 bg-gray-100 hover:bg-gray-200 text-gray-900 rounded-xl font-bold shadow-md hover:scale-[1.02] transition-all"
                 >
                   Solicitar acceso al sistema
@@ -236,12 +236,15 @@ const Login = () => {
 
                 <p className="text-sm text-gray-600">
                   Al continuar, aceptas nuestros{" "}
-                  <a
-                      href="#"
+                  <button
+                      type="button"
+                      onClick={() => alert("Términos y Condiciones próximamente")}
                       className="text-[#2e63a6] hover:underline font-semibold"
+                      role="button"
+                      tabIndex={0}
                   >
                     Términos y Condiciones
-                  </a>
+                  </button>
                 </p>
               </div>
             </div>

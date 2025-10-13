@@ -3,92 +3,94 @@
 // ========================================================================
 // Gestiona Personal CENATE (CNT) y Personal Externo con endpoints REST.
 // Incluye funciones auxiliares para búsqueda, áreas e imágenes.
+// ========================================================================
 
 import { API_BASE, getHeaders, handleResponse } from "../config/api";
 
 // ========================================================================
-// 🏢 PERSONAL CNT (CENATE)
+// 🧠 Helper genérico para llamadas seguras (con manejo de errores)
+// ========================================================================
+const safeFetch = async (url, options = {}) => {
+  try {
+    const res = await fetch(url, options);
+    return await handleResponse(res);
+  } catch (error) {
+    console.error(`❌ Error en llamada a ${url}:`, error);
+    throw new Error("Error al comunicarse con el servidor");
+  }
+};
+
+// ========================================================================
+// 🏢 PERSONAL CNT (INTERNOS - CENATE)
 // ========================================================================
 
-export const getAllPersonalCnt = async () => {
-  const res = await fetch(`${API_BASE}/personal-cnt`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getAllPersonalCnt = () =>
+    safeFetch(`${API_BASE}/personal-cnt`, { headers: getHeaders(true) });
 
-export const getPersonalCntById = async (id) => {
-  const res = await fetch(`${API_BASE}/personal-cnt/${id}`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getPersonalCntById = (id) =>
+    safeFetch(`${API_BASE}/personal-cnt/${id}`, { headers: getHeaders(true) });
 
-export const createPersonalCnt = async (personal) => {
-  const res = await fetch(`${API_BASE}/personal-cnt`, {
-    method: "POST",
-    headers: getHeaders(true),
-    body: JSON.stringify(personal),
-  });
-  return handleResponse(res);
-};
+export const getPersonalCntByUsuario = (idUsuario) =>
+    safeFetch(`${API_BASE}/personal-cnt/usuario/${idUsuario}`, { headers: getHeaders(true) });
 
-export const updatePersonalCnt = async (id, personal) => {
-  const res = await fetch(`${API_BASE}/personal-cnt/${id}`, {
-    method: "PUT",
-    headers: getHeaders(true),
-    body: JSON.stringify(personal),
-  });
-  return handleResponse(res);
-};
+export const createPersonalCnt = (personal) =>
+    safeFetch(`${API_BASE}/personal-cnt`, {
+      method: "POST",
+      headers: getHeaders(true),
+      body: JSON.stringify(personal),
+    });
 
-export const deletePersonalCnt = async (id) => {
-  const res = await fetch(`${API_BASE}/personal-cnt/${id}`, {
-    method: "DELETE",
-    headers: getHeaders(true),
-  });
-  return handleResponse(res);
-};
+export const updatePersonalCnt = (id, personal) =>
+    safeFetch(`${API_BASE}/personal-cnt/${id}`, {
+      method: "PUT",
+      headers: getHeaders(true),
+      body: JSON.stringify(personal),
+    });
 
-export const searchPersonalCnt = async (query) => {
-  const res = await fetch(`${API_BASE}/personal-cnt/search?query=${encodeURIComponent(query)}`, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(res);
-};
+export const deletePersonalCnt = (id) =>
+    safeFetch(`${API_BASE}/personal-cnt/${id}`, {
+      method: "DELETE",
+      headers: getHeaders(true),
+    });
 
-export const getPersonalCntByArea = async (idArea) => {
-  const res = await fetch(`${API_BASE}/personal-cnt/area/${idArea}`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const searchPersonalCnt = (query) =>
+    safeFetch(`${API_BASE}/personal-cnt/search?query=${encodeURIComponent(query)}`, {
+      headers: getHeaders(true),
+    });
 
-export const getPersonalCntActivo = async () => {
-  const res = await fetch(`${API_BASE}/personal-cnt/activo`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getPersonalCntByArea = (idArea) =>
+    safeFetch(`${API_BASE}/personal-cnt/area/${idArea}`, { headers: getHeaders(true) });
 
-export const getPersonalCntInactivo = async () => {
-  const res = await fetch(`${API_BASE}/personal-cnt/inactivo`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getPersonalCntActivo = () =>
+    safeFetch(`${API_BASE}/personal-cnt/activo`, { headers: getHeaders(true) });
+
+export const getPersonalCntInactivo = () =>
+    safeFetch(`${API_BASE}/personal-cnt/inactivo`, { headers: getHeaders(true) });
 
 // 📸 Subir / Eliminar / Obtener foto de personal CNT
 export const uploadFotoPersonalCnt = async (id, file) => {
+  const token = localStorage.getItem("token");
   const formData = new FormData();
   formData.append("file", file);
-  const token = localStorage.getItem("token");
 
-  const res = await fetch(`${API_BASE}/personal-cnt/${id}/foto`, {
-    method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
-    body: formData,
-  });
-  return handleResponse(res);
+  try {
+    const res = await fetch(`${API_BASE}/personal-cnt/${id}/foto`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    return await handleResponse(res);
+  } catch (error) {
+    console.error("❌ Error al subir foto del personal CNT:", error);
+    throw new Error("No se pudo subir la foto");
+  }
 };
 
-export const deleteFotoPersonalCnt = async (id) => {
-  const res = await fetch(`${API_BASE}/personal-cnt/${id}/foto`, {
-    method: "DELETE",
-    headers: getHeaders(true),
-  });
-  return handleResponse(res);
-};
+export const deleteFotoPersonalCnt = (id) =>
+    safeFetch(`${API_BASE}/personal-cnt/${id}/foto`, {
+      method: "DELETE",
+      headers: getHeaders(true),
+    });
 
 export const getFotoPersonalCntUrl = (id) => `${API_BASE}/personal-cnt/${id}/foto`;
 
@@ -96,83 +98,90 @@ export const getFotoPersonalCntUrl = (id) => `${API_BASE}/personal-cnt/${id}/fot
 // 🌍 PERSONAL EXTERNO
 // ========================================================================
 
-export const getAllPersonalExterno = async () => {
-  const res = await fetch(`${API_BASE}/personal-externo`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getAllPersonalExterno = () =>
+    safeFetch(`${API_BASE}/personal-externo`, { headers: getHeaders(true) });
 
-export const getPersonalExternoById = async (id) => {
-  const res = await fetch(`${API_BASE}/personal-externo/${id}`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getPersonalExternoById = (id) =>
+    safeFetch(`${API_BASE}/personal-externo/${id}`, { headers: getHeaders(true) });
 
-export const createPersonalExterno = async (personal) => {
-  const res = await fetch(`${API_BASE}/personal-externo`, {
-    method: "POST",
-    headers: getHeaders(true),
-    body: JSON.stringify(personal),
-  });
-  return handleResponse(res);
-};
+export const createPersonalExterno = (personal) =>
+    safeFetch(`${API_BASE}/personal-externo`, {
+      method: "POST",
+      headers: getHeaders(true),
+      body: JSON.stringify(personal),
+    });
 
-export const updatePersonalExterno = async (id, personal) => {
-  const res = await fetch(`${API_BASE}/personal-externo/${id}`, {
-    method: "PUT",
-    headers: getHeaders(true),
-    body: JSON.stringify(personal),
-  });
-  return handleResponse(res);
-};
+export const updatePersonalExterno = (id, personal) =>
+    safeFetch(`${API_BASE}/personal-externo/${id}`, {
+      method: "PUT",
+      headers: getHeaders(true),
+      body: JSON.stringify(personal),
+    });
 
-export const deletePersonalExterno = async (id) => {
-  const res = await fetch(`${API_BASE}/personal-externo/${id}`, {
-    method: "DELETE",
-    headers: getHeaders(true),
-  });
-  return handleResponse(res);
-};
+export const deletePersonalExterno = (id) =>
+    safeFetch(`${API_BASE}/personal-externo/${id}`, {
+      method: "DELETE",
+      headers: getHeaders(true),
+    });
 
-export const searchPersonalExterno = async (query) => {
-  const res = await fetch(`${API_BASE}/personal-externo/search?query=${encodeURIComponent(query)}`, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(res);
-};
+export const searchPersonalExterno = (query) =>
+    safeFetch(`${API_BASE}/personal-externo/search?query=${encodeURIComponent(query)}`, {
+      headers: getHeaders(true),
+    });
 
-export const getPersonalExternoByIpress = async (idIpress) => {
-  const res = await fetch(`${API_BASE}/personal-externo/ipress/${idIpress}`, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(res);
-};
+export const getPersonalExternoByIpress = (idIpress) =>
+    safeFetch(`${API_BASE}/personal-externo/ipress/${idIpress}`, {
+      headers: getHeaders(true),
+    });
 
 // ========================================================================
-// 📋 CATÁLOGOS (Auxiliares, opcional separar en catalogosApi.js)
+// 📋 CATÁLOGOS AUXILIARES (Tipos, Áreas, Régimen, Ipress)
 // ========================================================================
 
-export const getTiposDocumento = async () => {
-  const res = await fetch(`${API_BASE}/tipos-documento`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getTiposDocumento = () =>
+    safeFetch(`${API_BASE}/tipos-documento`, { headers: getHeaders(true) });
 
-export const getAreas = async () => {
-  const res = await fetch(`${API_BASE}/areas`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getAreas = () =>
+    safeFetch(`${API_BASE}/areas`, { headers: getHeaders(true) });
 
-export const getRegimenesLaborales = async () => {
-  const res = await fetch(`${API_BASE}/regimenes-laborales`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getRegimenesLaborales = () =>
+    safeFetch(`${API_BASE}/regimenes-laborales`, { headers: getHeaders(true) });
 
-export const getIpress = async () => {
-  const res = await fetch(`${API_BASE}/ipress`, { headers: getHeaders(true) });
-  return handleResponse(res);
-};
+export const getIpress = () =>
+    safeFetch(`${API_BASE}/ipress`, { headers: getHeaders(true) });
 
-export const searchIpress = async (query) => {
-  const res = await fetch(`${API_BASE}/ipress/search?query=${encodeURIComponent(query)}`, {
-    headers: getHeaders(true),
-  });
-  return handleResponse(res);
+export const searchIpress = (query) =>
+    safeFetch(`${API_BASE}/ipress/search?query=${encodeURIComponent(query)}`, {
+      headers: getHeaders(true),
+    });
+
+// ========================================================================
+// 🚀 EXPORTACIÓN GENERAL (por si se importa todo junto)
+// ========================================================================
+export default {
+  getAllPersonalCnt,
+  getPersonalCntById,
+  getPersonalCntByUsuario,
+  createPersonalCnt,
+  updatePersonalCnt,
+  deletePersonalCnt,
+  searchPersonalCnt,
+  getPersonalCntByArea,
+  getPersonalCntActivo,
+  getPersonalCntInactivo,
+  uploadFotoPersonalCnt,
+  deleteFotoPersonalCnt,
+  getFotoPersonalCntUrl,
+  getAllPersonalExterno,
+  getPersonalExternoById,
+  createPersonalExterno,
+  updatePersonalExterno,
+  deletePersonalExterno,
+  searchPersonalExterno,
+  getPersonalExternoByIpress,
+  getTiposDocumento,
+  getAreas,
+  getRegimenesLaborales,
+  getIpress,
+  searchIpress,
 };

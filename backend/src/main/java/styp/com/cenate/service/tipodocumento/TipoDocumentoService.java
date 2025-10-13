@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import styp.com.cenate.dto.TipoDocumentoResponse;
 import styp.com.cenate.model.TipoDocumento;
 import styp.com.cenate.repository.TipoDocumentoRepository;
+import styp.com.cenate.exception.ResourceNotFoundException;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -15,59 +16,89 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 public class TipoDocumentoService {
-    
+
     private final TipoDocumentoRepository tipoDocumentoRepository;
-    
+
     @Transactional(readOnly = true)
     public List<TipoDocumentoResponse> getAllTiposDocumento() {
-        log.info("Obteniendo todos los tipos de documento");
-        return tipoDocumentoRepository.findAll().stream()
+        log.info("📄 Obteniendo todos los tipos de documento");
+        return tipoDocumentoRepository.findAll()
+                .stream()
                 .map(this::convertToResponse)
                 .collect(Collectors.toList());
     }
-    
+
+    @Transactional(readOnly = true)
+    public List<TipoDocumentoResponse> getTiposDocumentoActivos() {
+        log.info("📋 Obteniendo tipos de documento activos (stat_tip_doc = 'A')");
+        return tipoDocumentoRepository.findByStatTipDoc("A")
+                .stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
     @Transactional(readOnly = true)
     public TipoDocumentoResponse getTipoDocumentoById(Long id) {
-        log.info("Obteniendo tipo de documento con ID: {}", id);
+        log.info("🔍 Buscando tipo de documento con ID: {}", id);
         TipoDocumento tipoDoc = tipoDocumentoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tipo de documento no encontrado"));
+                .orElseThrow(() -> new ResourceNotFoundException("Tipo de documento no encontrado con ID: " + id));
         return convertToResponse(tipoDoc);
     }
-    
+
     @Transactional
     public TipoDocumentoResponse createTipoDocumento(String desc, String stat) {
-        log.info("Creando nuevo tipo de documento: {}", desc);
-        TipoDocumento tipoDoc = new TipoDocumento();
-        tipoDoc.setDescTipDoc(desc);
-        tipoDoc.setStatTipDoc(stat);
+        log.info("🟢 Creando nuevo tipo de documento: {}", desc);
+
+        if (desc == null || desc.trim().isEmpty()) {
+            throw new IllegalArgumentException("La descripción del tipo de documento no puede estar vacía");
+        }
+
+        boolean exists = tipoDocumentoRepository.existsByDescTipDocIgnoreCase(desc.trim());
+        if (exists) {
+            throw new IllegalArgumentException("Ya existe un tipo de documento con esa descripción");
+        }
+
+        TipoDocumento tipoDoc = TipoDocumento.builder()
+                .descTipDoc(desc.trim())
+                .statTipDoc(stat != null ? stat.trim().toUpperCase() : "A")
+                .build();
+
         TipoDocumento saved = tipoDocumentoRepository.save(tipoDoc);
+        log.info("✅ Tipo de documento creado con ID: {}", saved.getIdTipDoc());
         return convertToResponse(saved);
     }
-    
+
     @Transactional
     public TipoDocumentoResponse updateTipoDocumento(Long id, String desc, String stat) {
-        log.info("Actualizando tipo de documento con ID: {}", id);
+        log.info("✏️ Actualizando tipo de documento con ID: {}", id);
         TipoDocumento tipoDoc = tipoDocumentoRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Tipo de documento no encontrado"));
-        tipoDoc.setDescTipDoc(desc);
-        tipoDoc.setStatTipDoc(stat);
+                .orElseThrow(() -> new ResourceNotFoundException("Tipo de documento no encontrado con ID: " + id));
+
+        if (desc != null && !desc.trim().isEmpty()) tipoDoc.setDescTipDoc(desc.trim());
+        if (stat != null && !stat.trim().isEmpty()) tipoDoc.setStatTipDoc(stat.trim().toUpperCase());
+
         TipoDocumento updated = tipoDocumentoRepository.save(tipoDoc);
+        log.info("✅ Tipo de documento actualizado: {}", updated.getDescTipDoc());
         return convertToResponse(updated);
     }
-    
+
     @Transactional
     public void deleteTipoDocumento(Long id) {
-        log.info("Eliminando tipo de documento con ID: {}", id);
+        log.warn("🗑️ Eliminando tipo de documento con ID: {}", id);
+        if (!tipoDocumentoRepository.existsById(id)) {
+            throw new ResourceNotFoundException("No existe un tipo de documento con el ID proporcionado: " + id);
+        }
         tipoDocumentoRepository.deleteById(id);
+        log.info("✅ Tipo de documento eliminado correctamente");
     }
-    
+
     private TipoDocumentoResponse convertToResponse(TipoDocumento tipoDoc) {
-        TipoDocumentoResponse response = new TipoDocumentoResponse();
-        response.setIdTipDoc(tipoDoc.getIdTipDoc());
-        response.setDescTipDoc(tipoDoc.getDescTipDoc());
-        response.setStatTipDoc(tipoDoc.getStatTipDoc());
-        response.setCreateAt(tipoDoc.getCreateAt());
-        response.setUpdateAt(tipoDoc.getUpdateAt());
-        return response;
+        return TipoDocumentoResponse.builder()
+                .idTipDoc(tipoDoc.getIdTipDoc())
+                .descTipDoc(tipoDoc.getDescTipDoc())
+                .statTipDoc(tipoDoc.getStatTipDoc())
+                .createAt(tipoDoc.getCreateAt())
+                .updateAt(tipoDoc.getUpdateAt())
+                .build();
     }
 }

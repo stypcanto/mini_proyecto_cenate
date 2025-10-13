@@ -3,29 +3,26 @@ package styp.com.cenate.dto;
 import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 /**
- * DTO unificado que representa tanto personal interno (CENATE) como externo (otras instituciones).
- * Incluye información de usuario y datos personales, evitando duplicaciones.
+ * 🧑‍⚕️ DTO unificado para representar tanto personal interno (CENATE)
+ * como externo. Incluye datos personales, institucionales y laborales.
  */
-@Data               // Genera getters, setters, toString, equals y hashCode
-@NoArgsConstructor  // Constructor vacío
-@AllArgsConstructor // Constructor con todos los campos
-@Builder            // Permite usar .builder()
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class PersonalResponse {
 
-    // ============================================
-    // IDENTIFICACIÓN
-    // ============================================
+    // 🔹 IDENTIFICACIÓN
     private Long idPersonal;
-    private String tipoPersonal;
+    private String tipoPersonal; // INTERNO o EXTERNO
     private TipoDocumentoResponse tipoDocumento;
     private String numeroDocumento;
 
-    // ============================================
-    // DATOS PERSONALES
-    // ============================================
+    // 🔹 DATOS PERSONALES
     private String nombres;
     private String apellidoPaterno;
     private String apellidoMaterno;
@@ -33,35 +30,32 @@ public class PersonalResponse {
     private LocalDate fechaNacimiento;
     private Integer edad;
     private String genero;
+    private String foto;
 
-    // ============================================
-    // CONTACTO
-    // ============================================
+    // 🔹 CONTACTO
     private String telefono;
     private String emailPersonal;
     private String emailCorporativo;
+    private String direccion;
 
-    // ============================================
-    // INSTITUCIÓN
-    // ============================================
-    private String institucion;
-    private IpressResponse ipress;
-
-    // ============================================
-    // INFORMACIÓN LABORAL (CENATE)
-    // ============================================
-    private String estado;
+    // 🔹 INFORMACIÓN LABORAL (CENATE)
+    private String estado; // A o I
     private AreaResponse area;
     private RegimenLaboralResponse regimenLaboral;
     private String periodo;
     private String codigoPlanilla;
     private String numeroColegiatura;
-    private String direccion;
-    private String foto;
 
-    // ============================================
-    // DATOS DE USUARIO
-    // ============================================
+    // 🔹 RELACIONES PROFESIONALES (N:N)
+    private List<String> profesiones;   // dim_profesiones
+    private List<String> tiposPersonal; // dim_tipo_personal
+    private List<String> ocs;           // dim_oc
+    private List<String> firmas;        // dim_firma_digital
+
+    // 🔹 INFORMACIÓN INSTITUCIONAL (principalmente externos)
+    private String institucion;
+
+    // 🔹 DATOS DE USUARIO
     private Long idUsuario;
     private String username;
     private Set<String> roles;
@@ -70,23 +64,25 @@ public class PersonalResponse {
     private LocalDateTime ultimoLogin;
     private Boolean cuentaBloqueada;
 
-    // ============================================
-    // AUDITORÍA
-    // ============================================
+    // 🔹 AUDITORÍA
     private LocalDateTime createAt;
     private LocalDateTime updateAt;
 
-    // ============================================
-    // CAMPOS CALCULADOS
-    // ============================================
+    // 🧮 Utilidades
     public Integer getMesCumpleanos() {
         return fechaNacimiento != null ? fechaNacimiento.getMonthValue() : null;
     }
 
     public boolean isActivo() {
-        if ("CENATE".equalsIgnoreCase(tipoPersonal)) {
+        if ("CENATE".equalsIgnoreCase(tipoPersonal) || "INTERNO".equalsIgnoreCase(tipoPersonal)) {
             return "A".equalsIgnoreCase(estado);
         }
         return estadoUsuario != null && "ACTIVO".equalsIgnoreCase(estadoUsuario);
+    }
+
+    public String getDisplayName() {
+        return (nombreCompleto != null && !nombreCompleto.isBlank())
+                ? nombreCompleto
+                : (username != null ? username : "Usuario sin nombre");
     }
 }

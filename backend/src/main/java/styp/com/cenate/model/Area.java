@@ -1,66 +1,65 @@
 package styp.com.cenate.model;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
+/**
+ * 🏢 Entidad que representa las áreas internas del sistema CENATE.
+ * Tabla: dim_area
+ */
 @Entity
 @Table(name = "dim_area")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@ToString(exclude = "personal")
 public class Area {
-    
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @EqualsAndHashCode.Include
     @Column(name = "id_area")
     private Long idArea;
 
-    public Long getIdArea() {
-        return this.idArea;
-    }
-
-    public String getDescArea() {
-        return this.descArea;
-    }
-
-    public String getStatArea() {
-        return this.statArea;
-    }
-
-    public LocalDateTime getCreateAt() {
-        return this.createAt;
-    }
-
-    public LocalDateTime getUpdateAt() {
-        return this.updateAt;
-    }
-
-    public void setDescArea(String descArea) {
-        this.descArea = descArea;
-    }
-
-    public void setStatArea(String statArea) {
-        this.statArea = statArea;
-    }
-
-
     @Column(name = "desc_area", nullable = false, length = 255)
     private String descArea;
-    
+
     @Column(name = "stat_area", nullable = false, length = 1)
-    private String statArea;
-    
+    private String statArea; // 'A' = Activo, 'I' = Inactivo
+
     @CreationTimestamp
     @Column(name = "create_at", nullable = false, updatable = false)
     private LocalDateTime createAt;
-    
+
     @UpdateTimestamp
     @Column(name = "update_at", nullable = false)
     private LocalDateTime updateAt;
+
+    // ==========================================================
+    // 🔗 Relación con PersonalCnt
+    // ==========================================================
+    @Builder.Default
+    @OneToMany(mappedBy = "area", fetch = FetchType.LAZY)
+    private Set<PersonalCnt> personal = new HashSet<>();
+
+    // ==========================================================
+    // 🧩 Métodos utilitarios
+    // ==========================================================
+    /** Devuelve si el área está activa */
+    public boolean isActiva() {
+        return "A".equalsIgnoreCase(this.statArea);
+    }
+
+    /** Devuelve nombre en mayúsculas limpias */
+    public String getNombreLimpio() {
+        return descArea != null ? descArea.trim().toUpperCase() : "";
+    }
 }

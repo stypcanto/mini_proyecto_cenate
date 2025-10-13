@@ -1,0 +1,28 @@
+package styp.com.cenate.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import styp.com.cenate.model.id.PersonalTipoId;
+
+@Entity
+@Table(name = "dim_personal_tipo")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class PersonalTipo {
+
+    @EmbeddedId
+    private PersonalTipoId id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("idPers")
+    @JoinColumn(name = "id_pers")
+    private PersonalCnt personal;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("idTipPers")
+    @JoinColumn(name = "id_tip_pers")
+    private TipoPersonal tipoPersonal;
+}

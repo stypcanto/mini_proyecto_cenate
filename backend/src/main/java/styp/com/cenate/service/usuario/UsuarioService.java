@@ -8,11 +8,11 @@ import java.util.List;
 import java.util.Map;
 
 public interface UsuarioService {
-
     // 🔹 Consultas generales
     List<UsuarioResponse> getAllUsers();
     UsuarioResponse getUserById(Long id);
     UsuarioResponse getUserByUsername(String username);
+    UsuarioResponse obtenerDetalleUsuarioExtendido(String username);
 
     // 🔹 Gestión de usuarios
     UsuarioResponse createUser(UsuarioCreateRequest request);

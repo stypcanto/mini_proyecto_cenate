@@ -14,9 +14,9 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 🎯 Controlador para la gestión interna de usuarios.
- * Los usuarios solo pueden ser creados a través de solicitudes (AccountRequest).
- * Este controlador se usa por administradores para gestionar cuentas existentes.
+ * 🎯 Controlador REST para la gestión interna de usuarios en el sistema CENATE.
+ * - Los usuarios solo pueden ser creados a través de solicitudes (AccountRequest).
+ * - Este controlador permite a los administradores ver, editar, activar o desactivar cuentas.
  */
 @RestController
 @RequestMapping("/api/usuarios")
@@ -36,7 +36,7 @@ public class UsuarioController {
     // 📋 CONSULTAS GENERALES
     // ============================================================
 
-    /** Obtener todos los usuarios */
+    /** 🔹 Obtener todos los usuarios */
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<UsuarioResponse>> getAllUsers() {
@@ -44,7 +44,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.getAllUsers());
     }
 
-    /** Obtener un usuario por ID */
+    /** 🔹 Obtener un usuario por su ID */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> getUserById(@PathVariable Long id) {
@@ -52,7 +52,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.getUserById(id));
     }
 
-    /** Obtener el usuario autenticado actual */
+    /** 🔹 Obtener el usuario autenticado actual */
     @GetMapping("/me")
     public ResponseEntity<UsuarioResponse> getCurrentUser(Authentication authentication) {
         String username = authentication.getName();
@@ -61,12 +61,10 @@ public class UsuarioController {
     }
 
     // ============================================================
-    // 🧭 CONSULTAS POR TIPO DE USUARIO
+    // 🧭 CONSULTAS FILTRADAS
     // ============================================================
 
-    /**
-     * 🌐 Obtener usuarios EXTERNOS (INSTITUCION_EX, ASEGURADORA, REGULADOR)
-     */
+    /** 🌐 Obtener usuarios EXTERNOS (INSTITUCION_EX, ASEGURADORA, REGULADOR) */
     @GetMapping("/externos")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<UsuarioResponse>> getExternalUsers() {
@@ -76,9 +74,7 @@ public class UsuarioController {
         );
     }
 
-    /**
-     * 🏥 Obtener usuarios INTERNOS (personal de CENATE, médicos, coordinadores, etc.)
-     */
+    /** 🏥 Obtener usuarios INTERNOS (personal de CENATE, médicos, coordinadores, etc.) */
     @GetMapping("/internos")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<UsuarioResponse>> getInternalUsers() {
@@ -92,6 +88,7 @@ public class UsuarioController {
     // ⚙️ GESTIÓN ADMINISTRATIVA
     // ============================================================
 
+    /** ✏️ Actualizar datos del usuario (estado, roles, datos personales o profesionales) */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> updateUser(
@@ -102,6 +99,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.updateUser(id, request));
     }
 
+    /** ❌ Eliminar usuario */
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
@@ -109,6 +107,7 @@ public class UsuarioController {
         return ResponseEntity.ok(Map.of("message", "✅ Usuario eliminado exitosamente"));
     }
 
+    /** 🟢 Activar usuario */
     @PutMapping("/{id}/activate")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> activateUser(@PathVariable Long id) {
@@ -116,6 +115,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.activateUser(id));
     }
 
+    /** 🔴 Desactivar usuario */
     @PutMapping("/{id}/deactivate")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> deactivateUser(@PathVariable Long id) {
@@ -123,6 +123,7 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.deactivateUser(id));
     }
 
+    /** 🔓 Desbloquear usuario */
     @PutMapping("/{id}/unlock")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> unlockUser(@PathVariable Long id) {
@@ -131,18 +132,19 @@ public class UsuarioController {
     }
 
     // ============================================================
-    // 🔍 CONSULTA DETALLADA
+    // 🔍 CONSULTA DETALLADA (INCLUYE FOTO, FIRMA, PROFESIÓN, ETC.)
     // ============================================================
+
     @GetMapping("/detalle/{username}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<?> obtenerDetalleUsuario(@PathVariable String username) {
         try {
             log.info("🔍 Consultando detalle extendido del usuario: {}", username);
-            List<Map<String, Object>> result = usuarioService.obtenerDetalleUsuario(username);
-            if (result.isEmpty()) {
+            UsuarioResponse detalle = usuarioService.obtenerDetalleUsuarioExtendido(username);
+            if (detalle == null) {
                 return ResponseEntity.status(404).body(Map.of("message", "Usuario no encontrado"));
             }
-            return ResponseEntity.ok(result.get(0));
+            return ResponseEntity.ok(detalle);
         } catch (Exception e) {
             log.error("❌ Error al obtener detalle del usuario {}: {}", username, e.getMessage());
             return ResponseEntity.internalServerError()
@@ -151,8 +153,9 @@ public class UsuarioController {
     }
 
     // ============================================================
-    // 🚫 CREACIÓN DIRECTA BLOQUEADA
+    // 🚫 BLOQUEO DE CREACIÓN DIRECTA
     // ============================================================
+
     @PostMapping
     public ResponseEntity<Map<String, String>> createUserDisabled() {
         return ResponseEntity.status(403)

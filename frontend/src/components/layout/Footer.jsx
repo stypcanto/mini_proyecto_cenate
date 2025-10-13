@@ -1,7 +1,18 @@
-// src/components/layout/Footer.jsx
+// ========================================================================
+// 🌐 COMPONENTE: Footer.jsx
+// Descripción: Pie de página institucional CENATE - EsSalud
+// ========================================================================
+
 import { Facebook, Twitter, Youtube, Linkedin } from "lucide-react";
 
 const Footer = () => {
+  const socialLinks = [
+    { Icon: Facebook, url: "https://www.facebook.com/EsSaludPeru", name: "Facebook" },
+    { Icon: Twitter, url: "https://twitter.com/EsSaludPeru", name: "Twitter" },
+    { Icon: Youtube, url: "https://www.youtube.com/@EsSaludPeru", name: "YouTube" },
+    { Icon: Linkedin, url: "https://www.linkedin.com/company/essalud-peru", name: "LinkedIn" },
+  ];
+
   return (
       <footer className="bg-[#0b2149] text-gray-300 mt-auto py-10">
         <div className="container mx-auto px-6 grid md:grid-cols-4 gap-10">
@@ -9,7 +20,7 @@ const Footer = () => {
           <div>
             <img
                 src="/images/Logo CENATE Blanco.png"
-                alt="CENATE"
+                alt="CENATE EsSalud"
                 className="h-12 mb-3"
             />
             <p className="text-sm leading-relaxed">
@@ -37,14 +48,17 @@ const Footer = () => {
             <p className="text-sm">✉️ cenate@essalud.gob.pe</p>
           </div>
 
-          {/* Redes */}
+          {/* Redes sociales */}
           <div>
             <h3 className="text-white font-semibold mb-3">Síguenos</h3>
             <div className="flex gap-3">
-              {[Facebook, Twitter, Youtube, Linkedin].map((Icon, i) => (
+              {socialLinks.map(({ Icon, url, name }, i) => (
                   <a
                       key={i}
-                      href="#"
+                      href={url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={`Abrir ${name}`}
                       className="p-2 bg-[#123d7d] rounded-full hover:bg-[#1d5fb8] transition-colors"
                   >
                     <Icon className="w-5 h-5 text-white" />
