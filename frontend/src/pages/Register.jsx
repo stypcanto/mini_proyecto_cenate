@@ -1,10 +1,10 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { UserPlus, Lock, Mail, ArrowLeft, User, Eye, EyeOff } from "lucide-react";
-import { useUsuarios } from "../hooks/useUsuarios"; // ✅ usa tu hook centralizado
+import { useUsuarios } from "../hooks/useUsuarios";
 
 const Register = () => {
-    const { registerUser } = useUsuarios(); // ✅ función del hook
+    const { registerUser } = useUsuarios();
     const [formData, setFormData] = useState({
         username: "",
         email: "",
@@ -18,8 +18,7 @@ const Register = () => {
     const [showConfirm, setShowConfirm] = useState(false);
     const navigate = useNavigate();
 
-    const handleChange = (e) =>
-        setFormData({ ...formData, [e.target.name]: e.target.value });
+    const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
     const handleRegister = async (e) => {
         e.preventDefault();
@@ -38,7 +37,6 @@ const Register = () => {
             return;
         }
 
-        // Validar fortaleza local antes de llamar al backend
         const strongRegex =
             /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_\-+=])[A-Za-z\d!@#$%^&*()_\-+=]{8,}$/;
         if (!strongRegex.test(password)) {
@@ -72,9 +70,10 @@ const Register = () => {
             }}
             className="min-h-screen bg-cover bg-center flex items-center justify-center p-4 relative"
         >
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_2px_2px,white_1px,transparent_0)] bg-[length:40px_40px]" />
+            {/* Patrón Apple-style */}
+            <div className="absolute inset-0 bg-white/10 backdrop-blur-2xl" />
 
-            <div className="w-full max-w-md relative z-10">
+            <div className="w-full max-w-md relative z-10 transition-all duration-500 ease-in-out hover:scale-[1.01]">
                 {/* Botón volver */}
                 <Link
                     to="/login"
@@ -84,20 +83,22 @@ const Register = () => {
                     <span className="font-medium">Volver al Login</span>
                 </Link>
 
-                <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 text-center">
+                <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-[0_0_35px_-10px_rgba(0,0,0,0.3)] p-8 md:p-10 text-center border border-white/40">
+                    {/* Icono superior */}
                     <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#2e63a6] to-[#1d4f8a] rounded-2xl mb-6 shadow-lg">
                         <UserPlus className="w-10 h-10 text-white" />
                     </div>
 
-                    <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+                    <h2 className="text-3xl font-bold text-gray-900 mb-2 tracking-tight">
                         Crear una cuenta
                     </h2>
-                    <p className="text-gray-600 mb-6">
+                    <p className="text-gray-600 mb-6 text-sm">
                         Regístrate para acceder al sistema interno de CENATE
                     </p>
 
+                    {/* Mensajes */}
                     {error && (
-                        <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg text-red-700 text-sm font-medium animate-pulse">
+                        <div className="mb-4 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg text-red-700 text-sm font-medium animate-fade-in">
                             {error}
                         </div>
                     )}
@@ -120,7 +121,7 @@ const Register = () => {
                                     value={formData.username}
                                     onChange={handleChange}
                                     placeholder="Ingresa tu usuario"
-                                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent bg-white/60 backdrop-blur-sm transition-all"
                                     required
                                 />
                             </div>
@@ -139,7 +140,7 @@ const Register = () => {
                                     value={formData.email}
                                     onChange={handleChange}
                                     placeholder="ejemplo@correo.com"
-                                    className="w-full pl-10 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent"
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent bg-white/60 backdrop-blur-sm"
                                     required
                                 />
                             </div>
@@ -158,7 +159,7 @@ const Register = () => {
                                     value={formData.password}
                                     onChange={handleChange}
                                     placeholder="********"
-                                    className="w-full pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent"
+                                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent bg-white/60 backdrop-blur-sm"
                                     required
                                 />
                                 <button
@@ -184,7 +185,7 @@ const Register = () => {
                                     value={formData.confirmPassword}
                                     onChange={handleChange}
                                     placeholder="********"
-                                    className="w-full pl-10 pr-10 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent"
+                                    className="w-full pl-10 pr-10 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent bg-white/60 backdrop-blur-sm"
                                     required
                                 />
                                 <button
@@ -201,7 +202,7 @@ const Register = () => {
                         <button
                             type="submit"
                             disabled={loading}
-                            className="w-full py-4 px-6 bg-gradient-to-r from-[#2e63a6] to-[#1d4f8a] text-white font-bold rounded-xl shadow-lg hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
+                            className="w-full py-4 px-6 bg-gradient-to-r from-[#2e63a6] to-[#1d4f8a] text-white font-bold rounded-xl shadow-lg hover:shadow-xl hover:scale-[1.02] transition-transform disabled:opacity-50 flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <>
@@ -218,9 +219,8 @@ const Register = () => {
                     </form>
                 </div>
 
-                <p className="mt-6 text-center text-white/80 text-sm">
-                    © {new Date().getFullYear()} CENATE - EsSalud · Todos los derechos
-                    reservados
+                <p className="mt-6 text-center text-white/80 text-sm font-light tracking-wide">
+                    © {new Date().getFullYear()} CENATE - EsSalud · Todos los derechos reservados
                 </p>
             </div>
         </div>

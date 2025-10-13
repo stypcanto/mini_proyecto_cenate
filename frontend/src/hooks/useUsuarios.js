@@ -12,7 +12,7 @@ import {
     getCurrentUser,
     forgotPassword,
     changePassword,
-} from "../api/auth"; // ✅ ahora importamos todas las funciones de autenticación
+} from "@/utils/auth"; // ✅ ahora importamos todas las funciones de autenticación
 
 /**
  * Hook centralizado para manejar autenticación y usuarios.

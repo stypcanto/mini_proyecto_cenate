@@ -12,7 +12,12 @@ import {
     XCircle,
     ChevronLeft,
     ChevronRight,
+    Eye,
+    X,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+
+const API_URL = "http://localhost:8080/api/admin/audit/logs";
 
 const SystemLogs = () => {
     const [logs, setLogs] = useState([]);
@@ -22,6 +27,7 @@ const SystemLogs = () => {
     const [searchTerm, setSearchTerm] = useState("");
     const [filterNivel, setFilterNivel] = useState("");
     const [filterEstado, setFilterEstado] = useState("");
+    const [selectedLog, setSelectedLog] = useState(null);
 
     useEffect(() => {
         cargarLogs();
@@ -31,151 +37,163 @@ const SystemLogs = () => {
         setLoading(true);
         try {
             const token = localStorage.getItem("token");
-            let url = `http://localhost:8080/api/admin/audit/logs?page=${page}&size=20&sortBy=fechaHora&direction=desc`;
+            let url = `${API_URL}?page=${page}&size=20&sortBy=fechaHora&direction=desc`;
 
             if (filterNivel) url += `&nivel=${filterNivel}`;
             if (filterEstado) url += `&estado=${filterEstado}`;
+            if (searchTerm) url += `&search=${searchTerm}`;
 
-            const response = await fetch(url, {
-                headers: {
-                    Authorization: `Bearer ${token}`,
-                },
+            const res = await fetch(url, {
+                headers: { Authorization: `Bearer ${token}` },
             });
 
-            if (response.ok) {
-                const data = await response.json();
+            if (res.ok) {
+                const data = await res.json();
                 setLogs(data.content);
                 setTotalPages(data.totalPages);
             }
-        } catch (error) {
-            console.error("Error al cargar logs:", error);
+        } catch (err) {
+            console.error("Error al cargar logs:", err);
         } finally {
             setLoading(false);
         }
     };
 
-    const getNivelIcon = (nivel) => {
-        switch (nivel) {
-            case "INFO":
-                return <Info className="w-5 h-5 text-blue-600" />;
-            case "WARNING":
-                return <AlertCircle className="w-5 h-5 text-yellow-600" />;
-            case "ERROR":
-                return <XCircle className="w-5 h-5 text-red-600" />;
-            case "CRITICAL":
-                return <XCircle className="w-5 h-5 text-red-800" />;
-            default:
-                return <Info className="w-5 h-5 text-gray-600" />;
-        }
+    const exportarCSV = () => {
+        const csv = logs
+            .map((log) =>
+                [
+                    log.nivel,
+                    log.usuario,
+                    log.action,
+                    log.modulo,
+                    log.estado,
+                    log.fechaHora,
+                ].join(",")
+            )
+            .join("\n");
+
+        const blob = new Blob([`nivel,usuario,accion,modulo,estado,fecha\n${csv}`], {
+            type: "text/csv",
+        });
+
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(blob);
+        link.download = `logs_${new Date().toISOString().slice(0, 10)}.csv`;
+        link.click();
     };
 
     const getNivelBadge = (nivel) => {
-        const classes = {
-            INFO: "bg-blue-100 text-blue-800",
-            WARNING: "bg-yellow-100 text-yellow-800",
-            ERROR: "bg-red-100 text-red-800",
-            CRITICAL: "bg-red-200 text-red-900",
+        const styles = {
+            INFO: "bg-blue-50 text-blue-700 border-blue-200",
+            WARNING: "bg-yellow-50 text-yellow-700 border-yellow-200",
+            ERROR: "bg-red-50 text-red-700 border-red-200",
+            CRITICAL: "bg-red-100 text-red-800 border-red-300 font-semibold",
         };
         return (
-            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${classes[nivel] || "bg-gray-100 text-gray-800"}`}>
-                {nivel}
-            </span>
+            <span
+                className={`px-3 py-1 text-xs rounded-full border font-medium ${
+                    styles[nivel] || "bg-gray-50 text-gray-600 border-gray-200"
+                }`}
+            >
+        {nivel}
+      </span>
         );
     };
 
-    const getEstadoBadge = (estado) => {
-        return estado === "SUCCESS" ? (
+    const getEstadoBadge = (estado) =>
+        estado === "SUCCESS" ? (
             <span className="flex items-center text-green-600 text-sm font-medium">
-                <CheckCircle className="w-4 h-4 mr-1" />
-                Éxito
-            </span>
+        <CheckCircle className="w-4 h-4 mr-1" />
+        Éxito
+      </span>
         ) : (
             <span className="flex items-center text-red-600 text-sm font-medium">
-                <XCircle className="w-4 h-4 mr-1" />
-                Fallo
-            </span>
+        <XCircle className="w-4 h-4 mr-1" />
+        Fallo
+      </span>
         );
-    };
 
-    const formatFecha = (fecha) => {
-        return new Date(fecha).toLocaleString("es-PE", {
-            year: "numeric",
-            month: "2-digit",
+    const formatFecha = (fecha) =>
+        new Date(fecha).toLocaleString("es-PE", {
             day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
             second: "2-digit",
         });
-    };
 
     return (
         <AdminLayout>
-            {/* Header */}
+            {/* HEADER */}
             <div className="bg-gradient-to-r from-orange-600 to-orange-700 text-white p-8 shadow-lg">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex items-center space-x-3 mb-2">
-                        <ServerCog className="w-8 h-8" />
-                        <h1 className="text-4xl font-bold">Logs del Sistema</h1>
+                <div className="max-w-7xl mx-auto flex justify-between items-center">
+                    <div>
+                        <h1 className="text-3xl font-bold flex items-center gap-3">
+                            <ServerCog className="w-8 h-8" />
+                            Logs del Sistema
+                        </h1>
+                        <p className="text-orange-100">Monitoreo y auditoría en tiempo real</p>
                     </div>
-                    <p className="text-orange-100 text-lg">Monitoreo y auditoría de actividades</p>
+                    <button
+                        onClick={exportarCSV}
+                        className="flex items-center gap-2 px-4 py-2 bg-white text-orange-700 rounded-xl hover:bg-orange-50 shadow font-semibold"
+                    >
+                        <Download className="w-5 h-5" /> Exportar CSV
+                    </button>
                 </div>
             </div>
 
-            {/* Contenido */}
+            {/* CONTENIDO */}
             <div className="max-w-7xl mx-auto p-8">
-                {/* Filtros y búsqueda */}
-                <div className="bg-white rounded-2xl shadow-lg p-6 mb-8">
+                {/* FILTROS */}
+                <div className="bg-white rounded-2xl shadow-md p-6 mb-8 border border-gray-100">
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        {/* Búsqueda */}
+                        {/* Buscador */}
                         <div className="md:col-span-2">
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Buscar
                             </label>
                             <div className="relative">
-                                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
                                 <input
                                     type="text"
-                                    placeholder="Usuario, acción, módulo..."
+                                    placeholder="Usuario, acción o módulo..."
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                    className="w-full pl-10 pr-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
                                 />
                             </div>
                         </div>
 
-                        {/* Filtro por nivel */}
+                        {/* Nivel */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Nivel
                             </label>
                             <select
                                 value={filterNivel}
-                                onChange={(e) => {
-                                    setFilterNivel(e.target.value);
-                                    setPage(0);
-                                }}
-                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                onChange={(e) => setFilterNivel(e.target.value)}
+                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
                             >
                                 <option value="">Todos</option>
-                                <option value="INFO">INFO</option>
-                                <option value="WARNING">WARNING</option>
-                                <option value="ERROR">ERROR</option>
-                                <option value="CRITICAL">CRITICAL</option>
+                                <option value="INFO">Info</option>
+                                <option value="WARNING">Warning</option>
+                                <option value="ERROR">Error</option>
+                                <option value="CRITICAL">Crítico</option>
                             </select>
                         </div>
 
-                        {/* Filtro por estado */}
+                        {/* Estado */}
                         <div>
                             <label className="block text-sm font-semibold text-gray-700 mb-2">
                                 Estado
                             </label>
                             <select
                                 value={filterEstado}
-                                onChange={(e) => {
-                                    setFilterEstado(e.target.value);
-                                    setPage(0);
-                                }}
-                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500"
+                                onChange={(e) => setFilterEstado(e.target.value)}
+                                className="w-full px-4 py-2 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500"
                             >
                                 <option value="">Todos</option>
                                 <option value="SUCCESS">Éxito</option>
@@ -184,31 +202,31 @@ const SystemLogs = () => {
                         </div>
                     </div>
 
-                    {/* Botones de acción */}
-                    <div className="flex space-x-3 mt-4">
+                    {/* Botones */}
+                    <div className="flex gap-3 mt-4">
                         <button
                             onClick={cargarLogs}
-                            className="flex items-center space-x-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition"
                         >
                             <RefreshCw className="w-4 h-4" />
-                            <span>Actualizar</span>
+                            Actualizar
                         </button>
                         <button
                             onClick={() => {
-                                setSearchTerm("");
                                 setFilterNivel("");
                                 setFilterEstado("");
+                                setSearchTerm("");
                                 setPage(0);
                             }}
-                            className="flex items-center space-x-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                            className="flex items-center gap-2 px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
                         >
                             <Filter className="w-4 h-4" />
-                            <span>Limpiar Filtros</span>
+                            Limpiar filtros
                         </button>
                     </div>
                 </div>
 
-                {/* Tabla de logs */}
+                {/* TABLA */}
                 <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
                     {loading ? (
                         <div className="p-12 text-center">
@@ -221,131 +239,132 @@ const SystemLogs = () => {
                             <p className="text-gray-600 text-lg">No hay logs registrados</p>
                         </div>
                     ) : (
-                        <>
-                            <div className="overflow-x-auto">
-                                <table className="w-full">
-                                    <thead className="bg-gray-50 border-b-2 border-gray-200">
-                                        <tr>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                Nivel
-                                            </th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                Usuario
-                                            </th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                Acción
-                                            </th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                Módulo
-                                            </th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                Detalle
-                                            </th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                Estado
-                                            </th>
-                                            <th className="px-6 py-4 text-left text-xs font-bold text-gray-700 uppercase tracking-wider">
-                                                Fecha/Hora
-                                            </th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="bg-white divide-y divide-gray-200">
-                                        {logs.map((log) => (
-                                            <tr
-                                                key={log.id}
-                                                className="hover:bg-gray-50 transition-colors"
+                        <div className="overflow-x-auto">
+                            <table className="w-full">
+                                <thead className="bg-gray-50 border-b">
+                                <tr>
+                                    {["Nivel", "Usuario", "Acción", "Módulo", "Estado", "Fecha", " "].map(
+                                        (head) => (
+                                            <th
+                                                key={head}
+                                                className="px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider"
                                             >
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <div className="flex items-center space-x-2">
-                                                        {getNivelIcon(log.nivel)}
-                                                        {getNivelBadge(log.nivel)}
-                                                    </div>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="font-medium text-gray-900">
-                                                        {log.usuario}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm text-gray-700">
-                                                        {log.action}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-medium">
-                                                        {log.modulo}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4">
-                                                    <span className="text-sm text-gray-600 line-clamp-2">
-                                                        {log.detalle}
-                                                    </span>
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    {getEstadoBadge(log.estado)}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap">
-                                                    <span className="text-sm text-gray-500">
-                                                        {formatFecha(log.fechaHora)}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
-                            </div>
-
-                            {/* Paginación */}
-                            {totalPages > 1 && (
-                                <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200">
-                                    <div className="flex-1 flex justify-between sm:hidden">
-                                        <button
-                                            onClick={() => setPage(page - 1)}
-                                            disabled={page === 0}
-                                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Anterior
-                                        </button>
-                                        <button
-                                            onClick={() => setPage(page + 1)}
-                                            disabled={page >= totalPages - 1}
-                                            className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                        >
-                                            Siguiente
-                                        </button>
-                                    </div>
-                                    <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
-                                        <div>
-                                            <p className="text-sm text-gray-700">
-                                                Página <span className="font-medium">{page + 1}</span> de{" "}
-                                                <span className="font-medium">{totalPages}</span>
-                                            </p>
-                                        </div>
-                                        <div>
-                                            <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
-                                                <button
-                                                    onClick={() => setPage(page - 1)}
-                                                    disabled={page === 0}
-                                                    className="relative inline-flex items-center px-3 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    <ChevronLeft className="w-5 h-5" />
-                                                </button>
-                                                <button
-                                                    onClick={() => setPage(page + 1)}
-                                                    disabled={page >= totalPages - 1}
-                                                    className="relative inline-flex items-center px-3 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                                                >
-                                                    <ChevronRight className="w-5 h-5" />
-                                                </button>
-                                            </nav>
-                                        </div>
-                                    </div>
-                                </div>
-                            )}
-                        </>
+                                                {head}
+                                            </th>
+                                        )
+                                    )}
+                                </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                {logs.map((log) => (
+                                    <tr
+                                        key={log.id}
+                                        className="hover:bg-gray-50 transition-colors"
+                                        onClick={() => setSelectedLog(log)}
+                                    >
+                                        <td className="px-6 py-4">{getNivelBadge(log.nivel)}</td>
+                                        <td className="px-6 py-4 text-sm font-medium text-gray-800">
+                                            {log.usuario}
+                                        </td>
+                                        <td className="px-6 py-4 text-sm text-gray-700">
+                                            {log.action}
+                                        </td>
+                                        <td className="px-6 py-4">
+                        <span className="px-2 py-1 bg-blue-50 text-blue-700 text-xs rounded font-medium">
+                          {log.modulo}
+                        </span>
+                                        </td>
+                                        <td className="px-6 py-4">{getEstadoBadge(log.estado)}</td>
+                                        <td className="px-6 py-4 text-gray-500 text-sm">
+                                            {formatFecha(log.fechaHora)}
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <Eye className="w-4 h-4 text-gray-400 hover:text-orange-500 transition" />
+                                        </td>
+                                    </tr>
+                                ))}
+                                </tbody>
+                            </table>
+                        </div>
                     )}
                 </div>
+
+                {/* PAGINACIÓN */}
+                {totalPages > 1 && (
+                    <div className="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-200 mt-2 rounded-b-2xl">
+                        <button
+                            onClick={() => setPage(page - 1)}
+                            disabled={page === 0}
+                            className="p-2 rounded-lg bg-white border text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <p className="text-sm text-gray-700">
+                            Página <span className="font-semibold">{page + 1}</span> de{" "}
+                            <span className="font-semibold">{totalPages}</span>
+                        </p>
+                        <button
+                            onClick={() => setPage(page + 1)}
+                            disabled={page >= totalPages - 1}
+                            className="p-2 rounded-lg bg-white border text-gray-600 hover:bg-gray-50 disabled:opacity-50"
+                        >
+                            <ChevronRight className="w-5 h-5" />
+                        </button>
+                    </div>
+                )}
             </div>
+
+            {/* 🔍 Modal Detalle */}
+            <AnimatePresence>
+                {selectedLog && (
+                    <motion.div
+                        className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            initial={{ y: 50, opacity: 0 }}
+                            animate={{ y: 0, opacity: 1 }}
+                            exit={{ y: 50, opacity: 0 }}
+                            className="bg-white rounded-2xl shadow-2xl p-6 w-full max-w-lg"
+                        >
+                            <div className="flex justify-between items-center mb-4">
+                                <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                    <ServerCog className="text-orange-600 w-5 h-5" />
+                                    Detalle del Log
+                                </h2>
+                                <button
+                                    onClick={() => setSelectedLog(null)}
+                                    className="text-gray-400 hover:text-gray-700"
+                                >
+                                    <X className="w-5 h-5" />
+                                </button>
+                            </div>
+                            <div className="space-y-3 text-sm text-gray-700">
+                                <p>
+                                    <strong>Usuario:</strong> {selectedLog.usuario}
+                                </p>
+                                <p>
+                                    <strong>Acción:</strong> {selectedLog.action}
+                                </p>
+                                <p>
+                                    <strong>Módulo:</strong> {selectedLog.modulo}
+                                </p>
+                                <p>
+                                    <strong>Detalle:</strong> {selectedLog.detalle || "—"}
+                                </p>
+                                <p>
+                                    <strong>Estado:</strong> {getEstadoBadge(selectedLog.estado)}
+                                </p>
+                                <p>
+                                    <strong>Fecha:</strong> {formatFecha(selectedLog.fechaHora)}
+                                </p>
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </AdminLayout>
     );
 };
