@@ -1,24 +1,25 @@
 package styp.com.cenate.security.service;
 
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.GrantedAuthority;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import styp.com.cenate.model.Rol;
 import styp.com.cenate.model.Usuario;
 import styp.com.cenate.repository.UsuarioRepository;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Servicio que carga los detalles del usuario para el proceso de autenticación.
- * Implementa la interfaz de Spring Security UserDetailsService.
+ * 🔐 Servicio que carga los detalles del usuario desde la base de datos
+ * y convierte roles + permisos a autoridades reconocidas por Spring Security.
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserDetailsServiceImpl implements UserDetailsService {
@@ -26,43 +27,32 @@ public class UserDetailsServiceImpl implements UserDetailsService {
     private final UsuarioRepository usuarioRepository;
 
     @Override
-    @Transactional(readOnly = true)
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        Usuario usuario = usuarioRepository.findByNameUser(username)
+        Usuario usuario = usuarioRepository.findByNameUserWithRoles(username)
                 .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        // Verificar si la cuenta está activa
-        if (!usuario.isActive()) {
-            throw new UsernameNotFoundException("Usuario inactivo: " + username);
-        }
+        // 🎭 Mapeamos roles con prefijo ROLE_
+        List<SimpleGrantedAuthority> authorities = usuario.getRoles().stream()
+                .map(Rol::getDescRol)
+                .map(descRol -> new SimpleGrantedAuthority("ROLE_" + descRol.toUpperCase()))
+                .collect(Collectors.toList());
 
-        // Verificar si la cuenta está bloqueada
-        if (usuario.isAccountLocked()) {
-            throw new UsernameNotFoundException("Usuario bloqueado: " + username);
-        }
+        // 🔐 Añadimos permisos granulares (si existen)
+        usuario.getRoles().stream()
+                .filter(r -> r.getPermisos() != null)
+                .flatMap(r -> r.getPermisos().stream())
+                .forEach(p -> authorities.add(new SimpleGrantedAuthority(p.getDescPermiso().toUpperCase())));
 
-        // Construir las autoridades (roles y permisos)
-        List<GrantedAuthority> authorities = new ArrayList<>();
+        log.info("✅ Usuario autenticado: {} con autoridades: {}", username, authorities);
 
-        // Agregar roles
-        usuario.getRoles().forEach(rol -> {
-            authorities.add(new SimpleGrantedAuthority("ROLE_" + rol.getDescRol()));
-
-            // Agregar permisos asociados al rol
-            rol.getPermisos().forEach(permiso ->
-                    authorities.add(new SimpleGrantedAuthority(permiso.getDescPermiso()))
-            );
-        });
-
-        // Retornar el usuario compatible con Spring Security
-        return User.builder()
-                .username(usuario.getNameUser())
-                .password(usuario.getPassUser())
-                .authorities(authorities)
-                .accountExpired(false)
-                .accountLocked(usuario.isAccountLocked())
-                .credentialsExpired(false)
-                .disabled(!usuario.isActive())
-                .build();
+        return new User(
+                usuario.getNameUser(),
+                usuario.getPassUser(),
+                usuario.isActive(),              // habilitado (stat_user = 'A')
+                true,                            // cuenta no expirada
+                true,                            // credenciales no expiradas
+                !usuario.isAccountLocked(),      // cuenta no bloqueada
+                authorities
+        );
     }
 }

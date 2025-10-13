@@ -1,5 +1,6 @@
 package styp.com.cenate.config;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,6 +17,8 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.access.AccessDeniedHandler;
+import org.springframework.security.web.authentication.Http403ForbiddenEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -23,6 +26,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import styp.com.cenate.security.filter.JwtAuthenticationFilter;
 import styp.com.cenate.security.service.UserDetailsServiceImpl;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
 
@@ -41,66 +45,91 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 🚫 Desactiva CSRF (usamos JWT)
+                // 🚫 Desactiva CSRF porque usamos JWT
                 .csrf(AbstractHttpConfigurer::disable)
 
-                // 🌍 CORS habilitado con configuración personalizada
+                // 🌍 CORS global
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 🧭 Autorización de rutas
+                // ⚠️ Manejo profesional de errores
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+                        .accessDeniedHandler(accessDeniedHandler())
+                )
+
+                // 🧭 Configuración de permisos
                 .authorizeHttpRequests(auth -> auth
-                        // 🟢 Endpoints públicos
+                        // ✅ Endpoints públicos
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/account-requests").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/public/**",
+                                "/api/account-requests",
                                 "/error",
-                                "/hello"
+                                "/health"
                         ).permitAll()
 
-                        // 🔒 Endpoints restringidos a ADMIN/SUPERADMIN
+                        // 🔒 Endpoints restringidos a roles específicos
                         .requestMatchers(
                                 "/api/account-requests/pendientes",
-                                "/api/account-requests/{id}/aprobar",
-                                "/api/account-requests/{id}/rechazar"
-                        ).hasAnyRole("SUPERADMIN", "ADMIN")
+                                "/api/account-requests/*/aprobar",
+                                "/api/account-requests/*/rechazar"
+                        ).hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN")
 
-                        // 🔒 Rutas administrativas
-                        .requestMatchers("/api/admin/**").hasRole("SUPERADMIN")
-                        .requestMatchers("/api/usuarios/**").hasAnyRole("SUPERADMIN", "ADMIN")
+                        // 🔐 Administración
+                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_SUPERADMIN")
+                        .requestMatchers("/api/usuarios/**").hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN")
 
-                        // 🏥 Áreas médicas
-                        .requestMatchers("/api/medico/**").hasAnyRole("SUPERADMIN", "ADMIN", "MEDICO", "ENFERMERIA", "OBSTETRA")
-                        .requestMatchers("/api/laboratorio/**").hasAnyRole("SUPERADMIN", "ADMIN", "LABORATORIO")
-                        .requestMatchers("/api/radiologia/**").hasAnyRole("SUPERADMIN", "ADMIN", "RADIOLOGIA")
-                        .requestMatchers("/api/farmacia/**").hasAnyRole("SUPERADMIN", "ADMIN", "FARMACIA")
+                        // 👨‍⚕️ Áreas médicas
+                        .requestMatchers("/api/medico/**", "/api/laboratorio/**", "/api/radiologia/**")
+                        .hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN", "ROLE_MEDICO", "ROLE_LABORATORIO", "ROLE_RADIOLOGIA")
 
                         // 🧠 Psicología y terapias
-                        .requestMatchers("/api/psicologia/**").hasAnyRole("SUPERADMIN", "ADMIN", "PSICOLOGO")
-                        .requestMatchers("/api/terapia/**").hasAnyRole("SUPERADMIN", "ADMIN", "TERAPISTA_FISI", "TERAPISTA_LENG")
-                        .requestMatchers("/api/nutricion/**").hasAnyRole("SUPERADMIN", "ADMIN", "NUTRICION")
+                        .requestMatchers("/api/psicologia/**", "/api/terapia/**", "/api/nutricion/**")
+                        .hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN", "ROLE_PSICOLOGO", "ROLE_TERAPISTA_FISI", "ROLE_TERAPISTA_LENG", "ROLE_NUTRICION")
 
                         // 🏢 Áreas administrativas
-                        .requestMatchers("/api/admisiones/**").hasAnyRole("SUPERADMIN", "ADMIN", "ADMISION", "FACTURACION_SE")
-                        .requestMatchers("/api/transferencias/**").hasAnyRole("SUPERADMIN", "ADMIN", "COORDINACION", "COORD_TRANSFER")
-                        .requestMatchers("/api/auditoria/**").hasAnyRole("SUPERADMIN", "ADMIN", "AUDITOR_CLINIC")
-                        .requestMatchers("/api/externos/**").hasAnyRole("SUPERADMIN", "ADMIN", "INSTITUCION_EX", "ASEGURADORA", "REGULADOR")
-                        .requestMatchers("/api/soporte/**").hasAnyRole("SUPERADMIN", "SOPORTE_TI")
-                        .requestMatchers("/api/personal-externo/**").hasAnyRole("SUPERADMIN", "INSTITUCION_EX")
+                        .requestMatchers("/api/transferencias/**", "/api/auditoria/**", "/api/externos/**")
+                        .hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN")
 
                         // 🔐 Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
 
-                // ⚙️ Sesión sin estado (Stateless, porque usamos JWT)
+                // ⚙️ Stateless (sin sesiones, solo JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 🔑 Autenticación con provider y filtro JWT
+                // 🔑 Provider y filtro JWT
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    // ===========================================================
+    // ⚠️ HANDLER PERSONALIZADO PARA 403 (RESPUESTA JSON)
+    // ===========================================================
+    @Bean
+    public AccessDeniedHandler accessDeniedHandler() {
+        return (request, response, accessDeniedException) -> {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.setContentType("application/json");
+
+            String message = """
+            {
+                "status": 403,
+                "timestamp": "%s",
+                "path": "%s",
+                "message": "🚫 Acceso restringido: no tienes los permisos necesarios para realizar esta acción.",
+                "tip": "Si crees que esto es un error, contacta al administrador del sistema o revisa tus credenciales de acceso."
+            }
+            """.formatted(
+                    LocalDateTime.now(),
+                    request.getRequestURI()
+            );
+
+            response.getWriter().write(message);
+        };
     }
 
     // ===========================================================
@@ -110,23 +139,16 @@ public class SecurityConfig {
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
 
-        // 💡 Permite desarrollo local y servidores internos
+        // Permitir orígenes locales y de servidores internos
         config.setAllowedOrigins(Arrays.asList(
-                "http://localhost",
                 "http://localhost:3000",
-                "http://127.0.0.1:3000",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
-                "http://10.0.89.13:3000",
                 "http://10.0.89.13:5173",
-                "http://10.0.89.239",
-                "http://10.0.89.239:80",
-                "http://10.0.89.239:8080"
+                "http://10.0.89.239"
         ));
 
-        // 🔧 Patrón adicional para entornos Docker/Nginx
-        config.addAllowedOriginPattern("*");
-
+        config.addAllowedOriginPattern("*"); // 🔧 Acepta patrones (útil con Docker/Nginx)
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));

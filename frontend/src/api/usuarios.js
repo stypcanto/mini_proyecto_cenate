@@ -1,33 +1,46 @@
 // ========================================================================
-// 👥 API USUARIOS - CENATE
+// 👥 API USUARIOS - CENATE (versión corregida)
 // ========================================================================
+
 import { API_BASE, getHeaders, handleResponse } from "../config/api";
 
 /**
- * 📋 Obtiene la lista de todos los usuarios (incluye roles, permisos y personal externo)
+ * 🔧 Ajuste importante:
+ * Aseguramos que API_BASE siempre tenga formato correcto,
+ * por ejemplo: http://localhost:8080/api
  */
+const BASE_URL = API_BASE?.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
+
+// ================================================================
+// 📋 OBTENER TODOS LOS USUARIOS (incluye roles, permisos, etc.)
+// ================================================================
 export const getUsuarios = async () => {
-    const response = await fetch(`${API_BASE}/usuarios`, {
-        headers: getHeaders(true),
-    });
-    return handleResponse(response);
+    try {
+        const response = await fetch(`${BASE_URL}/usuarios`, {
+            headers: getHeaders(true),
+        });
+        return await handleResponse(response);
+    } catch (error) {
+        console.error("❌ Error al obtener usuarios:", error);
+        return [];
+    }
 };
 
-/**
- * 🔍 Obtiene un usuario por ID
- */
+// ================================================================
+// 🔍 OBTENER USUARIO POR ID
+// ================================================================
 export const getUsuarioById = async (id) => {
-    const response = await fetch(`${API_BASE}/usuarios/${id}`, {
+    const response = await fetch(`${BASE_URL}/usuarios/${id}`, {
         headers: getHeaders(true),
     });
     return handleResponse(response);
 };
 
-/**
- * ➕ Crea un nuevo usuario (centralizado)
- */
+// ================================================================
+// ➕ CREAR NUEVO USUARIO
+// ================================================================
 export const createUsuario = async (usuarioData) => {
-    const response = await fetch(`${API_BASE}/usuarios`, {
+    const response = await fetch(`${BASE_URL}/usuarios`, {
         method: "POST",
         headers: getHeaders(true),
         body: JSON.stringify(usuarioData),
@@ -35,11 +48,11 @@ export const createUsuario = async (usuarioData) => {
     return handleResponse(response);
 };
 
-/**
- * ✏️ Actualiza un usuario existente
- */
+// ================================================================
+// ✏️ ACTUALIZAR USUARIO
+// ================================================================
 export const updateUsuario = async (id, usuarioData) => {
-    const response = await fetch(`${API_BASE}/usuarios/${id}`, {
+    const response = await fetch(`${BASE_URL}/usuarios/${id}`, {
         method: "PUT",
         headers: getHeaders(true),
         body: JSON.stringify(usuarioData),
@@ -47,85 +60,85 @@ export const updateUsuario = async (id, usuarioData) => {
     return handleResponse(response);
 };
 
-/**
- * 👤 Obtiene la información del usuario logueado
- */
+// ================================================================
+// 👤 OBTENER USUARIO ACTUAL (logueado)
+// ================================================================
 export const getCurrentUser = async () => {
-    const response = await fetch(`${API_BASE}/usuarios/me`, {
+    const response = await fetch(`${BASE_URL}/usuarios/me`, {
         headers: getHeaders(true),
     });
     return handleResponse(response);
 };
 
-/**
- * 🟢 Activa un usuario
- */
+// ================================================================
+// 🟢 ACTIVAR USUARIO
+// ================================================================
 export const activateUsuario = async (id) => {
-    const response = await fetch(`${API_BASE}/usuarios/${id}/activate`, {
+    const response = await fetch(`${BASE_URL}/usuarios/${id}/activate`, {
         method: "PUT",
         headers: getHeaders(true),
     });
     return handleResponse(response);
 };
 
-/**
- * 🔴 Desactiva un usuario
- */
+// ================================================================
+// 🔴 DESACTIVAR USUARIO
+// ================================================================
 export const deactivateUsuario = async (id) => {
-    const response = await fetch(`${API_BASE}/usuarios/${id}/deactivate`, {
+    const response = await fetch(`${BASE_URL}/usuarios/${id}/deactivate`, {
         method: "PUT",
         headers: getHeaders(true),
     });
     return handleResponse(response);
 };
 
-/**
- * 🔓 Desbloquea un usuario
- */
+// ================================================================
+// 🔓 DESBLOQUEAR USUARIO
+// ================================================================
 export const unlockUsuario = async (id) => {
-    const response = await fetch(`${API_BASE}/usuarios/${id}/unlock`, {
+    const response = await fetch(`${BASE_URL}/usuarios/${id}/unlock`, {
         method: "PUT",
         headers: getHeaders(true),
     });
     return handleResponse(response);
 };
 
-/**
- * 🗑️ Elimina un usuario por ID
- */
+// ================================================================
+// 🗑️ ELIMINAR USUARIO POR ID
+// ================================================================
 export const deleteUsuario = async (id) => {
-    const response = await fetch(`${API_BASE}/usuarios/${id}`, {
+    const response = await fetch(`${BASE_URL}/usuarios/${id}`, {
         method: "DELETE",
         headers: getHeaders(true),
     });
     return handleResponse(response);
 };
 
-/**
- * 🌐 Obtiene usuarios EXTERNOS (INSTITUCION_EX, ASEGURADORA, REGULADOR)
- */
+// ================================================================
+// 🌐 OBTENER USUARIOS EXTERNOS
+// ================================================================
 export const getUsuariosExternos = async () => {
-    const response = await fetch(`${API_BASE}/usuarios/externos`, {
+    const response = await fetch(`${BASE_URL}/usuarios/externos`, {
         headers: getHeaders(true),
     });
     return handleResponse(response);
 };
 
-/**
- * 🏥 Obtiene usuarios INTERNOS (excluye externos)
- */
+// ================================================================
+// 🏥 OBTENER USUARIOS INTERNOS
+// ================================================================
 export const getUsuariosInternos = async () => {
-    const response = await fetch(`${API_BASE}/usuarios/internos`, {
+    const response = await fetch(`${BASE_URL}/usuarios/internos`, {
         headers: getHeaders(true),
     });
     return handleResponse(response);
 };
 
-/**
- * 🔍 Obtiene detalle extendido de un usuario
- */
+// ================================================================
+// 🔍 OBTENER DETALLE EXTENDIDO DE UN USUARIO
+// ================================================================
 export const getUsuarioDetalle = async (username) => {
-    const response = await fetch(`${API_BASE}/usuarios/detalle/${username}`, {
+    const response = await fetch(`${BASE_URL}/usuarios/detalle/${username}`, {
         headers: getHeaders(true),
     });
     return handleResponse(response);

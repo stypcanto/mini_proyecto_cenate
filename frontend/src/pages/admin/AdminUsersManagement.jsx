@@ -1,3 +1,4 @@
+// src/pages/admin/AdminUsersManagement.jsx
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
@@ -34,12 +35,18 @@ export default function AdminUsersManagement() {
             let data = [];
             if (activeTab === "internos") {
                 data = await getUsuariosInternos();
-            } else if (activeTab === "externos") {
+            } else {
                 data = await getUsuariosExternos();
             }
 
-            // Mostrar solo usuarios activos
-            const activos = (data || []).filter((u) => u.statUser === "ACTIVO");
+            // ✅ Mostrar usuarios activos (acepta 'A' o 'ACTIVO')
+            const activos = (data || []).filter(
+                (u) =>
+                    u.statUser === "A" ||
+                    u.statUser === "ACTIVO" ||
+                    u.estado === "A" ||
+                    u.estado === "ACTIVO"
+            );
             setUsuarios(activos);
         } catch (err) {
             console.error("❌ Error al cargar usuarios:", err);
@@ -122,7 +129,7 @@ export default function AdminUsersManagement() {
                     <StatCard
                         icon={<UserCheck className="text-green-600" />}
                         title="Usuarios Activos"
-                        value={usuarios.filter((u) => u.statUser === "ACTIVO").length}
+                        value={usuarios.length}
                         color="green"
                     />
                     <StatCard
@@ -168,7 +175,6 @@ export default function AdminUsersManagement() {
                                 <tr>
                                     <Th>ID</Th>
                                     <Th>Usuario</Th>
-                                    <Th>Documento</Th>
                                     <Th>Rol</Th>
                                     <Th>Estado</Th>
                                     <Th>Detalle</Th>
@@ -196,7 +202,6 @@ export default function AdminUsersManagement() {
                                                 </div>
                                             </div>
                                         </Td>
-                                        <Td>{u.numDocumento || "—"}</Td>
                                         <Td>
                                             {u.roles && u.roles.length > 0 ? (
                                                 <div className="flex flex-wrap gap-1">
@@ -214,8 +219,14 @@ export default function AdminUsersManagement() {
                                             )}
                                         </Td>
                                         <Td>
-                        <span className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-xs font-semibold">
-                          Activo
+                        <span
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                u.statUser === "A" || u.statUser === "ACTIVO"
+                                    ? "bg-green-100 text-green-700"
+                                    : "bg-red-100 text-red-700"
+                            }`}
+                        >
+                          {u.statUser === "A" ? "Activo" : "Inactivo"}
                         </span>
                                         </Td>
                                         <Td>
@@ -253,12 +264,21 @@ export default function AdminUsersManagement() {
                             👤 Detalle del Usuario
                         </h3>
                         <ul className="text-sm text-gray-700 space-y-2">
-                            <li><strong>ID:</strong> {detalle.idUser}</li>
-                            <li><strong>Nombre:</strong> {detalle.nombreCompleto || "—"}</li>
-                            <li><strong>Documento:</strong> {detalle.numDocumento || "—"}</li>
-                            <li><strong>Email:</strong> {detalle.email || "—"}</li>
-                            <li><strong>Roles:</strong> {detalle.roles?.join(", ") || "—"}</li>
-                            <li><strong>Estado:</strong> {detalle.statUser}</li>
+                            <li>
+                                <strong>ID:</strong> {detalle.idUser}
+                            </li>
+                            <li>
+                                <strong>Nombre:</strong> {detalle.nombreCompleto || "—"}
+                            </li>
+                            <li>
+                                <strong>Email:</strong> {detalle.email || "—"}
+                            </li>
+                            <li>
+                                <strong>Roles:</strong> {detalle.roles?.join(", ") || "—"}
+                            </li>
+                            <li>
+                                <strong>Estado:</strong> {detalle.statUser}
+                            </li>
                         </ul>
                     </motion.div>
                 </div>
