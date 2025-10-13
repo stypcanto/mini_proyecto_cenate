@@ -12,8 +12,9 @@ import {
     ChevronDown,
     ChevronRight,
     Bell,
-    ClipboardList, // 🆕 Icono para el módulo de solicitudes
+    ClipboardList,
 } from "lucide-react";
+import useAuth from "../../hooks/useAuth";
 
 const AdminSidebar = () => {
     const location = useLocation();
@@ -21,9 +22,7 @@ const AdminSidebar = () => {
     const [isOpen, setIsOpen] = useState(true);
     const [expandedMenu, setExpandedMenu] = useState(null);
 
-    // ✅ Información de usuario desde localStorage
-    const nombreCompleto = localStorage.getItem("nombreCompleto") || "Usuario";
-    const rol = localStorage.getItem("rol") || "Administrador";
+    const { nombreCompleto, rol, hasPermission, hasRole } = useAuth();
 
     const handleLogout = () => {
         localStorage.clear();
@@ -31,7 +30,7 @@ const AdminSidebar = () => {
     };
 
     // ======================================================
-    // 📋 Menú lateral de administración
+    // 📋 Menú lateral con permisos dinámicos
     // ======================================================
     const menuItems = [
         {
@@ -39,6 +38,7 @@ const AdminSidebar = () => {
             icon: <LayoutDashboard className="w-5 h-5" />,
             path: "/admin",
             exact: true,
+            visible: hasPermission("VER_DASHBOARD") || hasRole(["SUPERADMIN"]),
         },
         {
             title: "Usuarios",
@@ -48,14 +48,20 @@ const AdminSidebar = () => {
                 { title: "Lista de Usuarios", path: "/admin/users" },
                 { title: "Crear Usuario", path: "/admin/users/create" },
             ],
+            visible:
+                hasPermission("GESTIONAR_USUARIOS") ||
+                hasPermission("CREAR_USUARIO") ||
+                hasRole(["SUPERADMIN"]),
         },
         {
             title: "Roles y Permisos",
             icon: <ShieldCheck className="w-5 h-5" />,
             path: "/admin/roles",
+            visible:
+                hasPermission("GESTIONAR_PERMISOS") ||
+                hasPermission("GESTIONAR_ROLES") ||
+                hasRole(["SUPERADMIN"]),
         },
-
-        // 🆕 NUEVO BLOQUE - Solicitudes del Sistema
         {
             title: "Solicitudes del Sistema",
             icon: <ClipboardList className="w-5 h-5" />,
@@ -64,17 +70,19 @@ const AdminSidebar = () => {
                 { title: "Acceso al Sistema", path: "/admin/account-requests" },
                 { title: "Recuperación de Contraseña", path: "/admin/password-recovery" },
             ],
+            visible: hasPermission("GESTIONAR_SOLICITUDES") || hasRole(["SUPERADMIN"]),
         },
-
         {
             title: "Logs del Sistema",
             icon: <ServerCog className="w-5 h-5" />,
             path: "/admin/logs",
+            visible: hasPermission("VER_AUDITORIA") || hasRole(["SUPERADMIN"]),
         },
         {
             title: "Reportes",
             icon: <BarChart3 className="w-5 h-5" />,
             path: "/admin/reportes",
+            visible: hasPermission("VER_REPORTES") || hasRole(["SUPERADMIN"]),
         },
     ];
 
@@ -92,7 +100,6 @@ const AdminSidebar = () => {
     // ======================================================
     return (
         <>
-            {/* Overlay móvil */}
             {isOpen && (
                 <div
                     className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
@@ -100,7 +107,6 @@ const AdminSidebar = () => {
                 />
             )}
 
-            {/* Sidebar principal */}
             <aside
                 className={`
           fixed top-0 left-0 h-screen bg-gradient-to-b from-slate-800 to-slate-900 
@@ -116,20 +122,20 @@ const AdminSidebar = () => {
                             <div className="flex items-center space-x-3">
                                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-500 to-teal-600 flex items-center justify-center shadow-md">
                   <span className="text-white font-bold text-lg">
-                    {nombreCompleto.charAt(0).toUpperCase()}
+                    {nombreCompleto?.charAt(0)?.toUpperCase() || "U"}
                   </span>
                                 </div>
                                 {isOpen && (
                                     <div>
                                         <p className="font-semibold text-sm text-white truncate w-36">
-                                            {nombreCompleto}
+                                            {nombreCompleto || "Usuario"}
                                         </p>
-                                        <p className="text-xs text-slate-400">{rol}</p>
+                                        <p className="text-xs text-slate-400">{rol || "Rol"}</p>
                                     </div>
                                 )}
                             </div>
 
-                            {/* 🔔 Icono de notificaciones */}
+                            {/* 🔔 Notificación */}
                             {isOpen && (
                                 <div className="relative cursor-pointer hover:scale-110 transition-transform">
                                     <Bell className="w-5 h-5 text-slate-300 hover:text-white" />
@@ -141,71 +147,72 @@ const AdminSidebar = () => {
 
                     {/* Menú principal */}
                     <nav className="flex-1 overflow-y-auto py-4 px-3">
-                        {menuItems.map((item, index) => (
-                            <div key={index} className="mb-1">
-                                {item.submenu ? (
-                                    <>
-                                        <button
-                                            onClick={() => toggleSubmenu(item.title)}
-                                            className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
-                                                isActive(item.path)
+                        {menuItems
+                            .filter((item) => item.visible)
+                            .map((item, index) => (
+                                <div key={index} className="mb-1">
+                                    {item.submenu ? (
+                                        <>
+                                            <button
+                                                onClick={() => toggleSubmenu(item.title)}
+                                                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
+                                                    isActive(item.path)
+                                                        ? "bg-teal-600 text-white shadow-lg"
+                                                        : "text-slate-300 hover:bg-slate-700 hover:text-white"
+                                                }`}
+                                            >
+                                                <div className="flex items-center space-x-3">
+                                                    {item.icon}
+                                                    {isOpen && (
+                                                        <span className="font-medium text-sm">{item.title}</span>
+                                                    )}
+                                                </div>
+                                                {isOpen && (
+                                                    <span>
+                            {expandedMenu === item.title ? (
+                                <ChevronDown className="w-4 h-4" />
+                            ) : (
+                                <ChevronRight className="w-4 h-4" />
+                            )}
+                          </span>
+                                                )}
+                                            </button>
+
+                                            {isOpen && expandedMenu === item.title && (
+                                                <div className="ml-4 mt-1 space-y-1">
+                                                    {item.submenu.map((subitem, subindex) => (
+                                                        <Link
+                                                            key={subindex}
+                                                            to={subitem.path}
+                                                            className={`block px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
+                                                                location.pathname === subitem.path
+                                                                    ? "bg-teal-600/50 text-white"
+                                                                    : "text-slate-400 hover:bg-slate-700 hover:text-white"
+                                                            }`}
+                                                        >
+                                                            {subitem.title}
+                                                        </Link>
+                                                    ))}
+                                                </div>
+                                            )}
+                                        </>
+                                    ) : (
+                                        <Link
+                                            to={item.path}
+                                            className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                                                isActive(item.path, item.exact)
                                                     ? "bg-teal-600 text-white shadow-lg"
                                                     : "text-slate-300 hover:bg-slate-700 hover:text-white"
                                             }`}
                                         >
-                                            <div className="flex items-center space-x-3">
-                                                {item.icon}
-                                                {isOpen && (
-                                                    <span className="font-medium text-sm">{item.title}</span>
-                                                )}
-                                            </div>
+                                            {item.icon}
                                             {isOpen && (
-                                                <span>
-                          {expandedMenu === item.title ? (
-                              <ChevronDown className="w-4 h-4" />
-                          ) : (
-                              <ChevronRight className="w-4 h-4" />
-                          )}
-                        </span>
+                                                <span className="font-medium text-sm">{item.title}</span>
                                             )}
-                                        </button>
-
-                                        {/* Submenú */}
-                                        {isOpen && expandedMenu === item.title && (
-                                            <div className="ml-4 mt-1 space-y-1">
-                                                {item.submenu.map((subitem, subindex) => (
-                                                    <Link
-                                                        key={subindex}
-                                                        to={subitem.path}
-                                                        className={`block px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
-                                                            location.pathname === subitem.path
-                                                                ? "bg-teal-600/50 text-white"
-                                                                : "text-slate-400 hover:bg-slate-700 hover:text-white"
-                                                        }`}
-                                                    >
-                                                        {subitem.title}
-                                                    </Link>
-                                                ))}
-                                            </div>
-                                        )}
-                                    </>
-                                ) : (
-                                    <Link
-                                        to={item.path}
-                                        className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
-                                            isActive(item.path, item.exact)
-                                                ? "bg-teal-600 text-white shadow-lg"
-                                                : "text-slate-300 hover:bg-slate-700 hover:text-white"
-                                        }`}
-                                    >
-                                        {item.icon}
-                                        {isOpen && (
-                                            <span className="font-medium text-sm">{item.title}</span>
-                                        )}
-                                    </Link>
-                                )}
-                            </div>
-                        ))}
+                                        </Link>
+                                    )}
+                                </div>
+                            ))}
                     </nav>
 
                     {/* Logout */}
