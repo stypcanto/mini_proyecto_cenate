@@ -3,10 +3,21 @@ package styp.com.cenate.dto;
 import lombok.Data;
 
 /**
- * DTO para actualizar los datos básicos de un usuario.
+ * DTO para actualizar los datos básicos de un usuario del sistema.
+ * Utilizado por administradores o procesos internos de mantenimiento.
  */
 @Data
 public class UsuarioUpdateRequest {
-    private String username;  // Nuevo nombre de usuario (opcional)
-    private String estado;    // ACTIVO / INACTIVO
+
+    /**
+     * Nuevo nombre de usuario (opcional).
+     * Si se envía vacío o nulo, no se actualiza.
+     */
+    private String username;
+
+    /**
+     * Estado del usuario.
+     * Valores esperados: "ACTIVO" o "INACTIVO".
+     */
+    private String estado;
 }

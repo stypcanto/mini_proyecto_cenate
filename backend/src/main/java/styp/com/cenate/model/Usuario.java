@@ -4,13 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
 @Entity
-@Table(name = "dim_usuarios", schema = "public") // ✅ Esquema explícito
+@Table(name = "dim_usuarios", schema = "public")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -25,34 +25,46 @@ public class Usuario {
     @Column(name = "name_user", unique = true, nullable = false, length = 50)
     private String nameUser;
 
-    @Column(name = "pass_user", nullable = false)
+    @Column(name = "pass_user", nullable = false, length = 255)
     private String passUser;
 
+    // ✅ Estado del usuario: A = Activo, I = Inactivo
+    @Builder.Default
     @Column(name = "stat_user", nullable = false, length = 10)
-    private String statUser;
+    private String statUser = "A";
 
     @CreationTimestamp
-    @Column(name = "create_at", updatable = false)
+    @Column(name = "create_at", updatable = false, nullable = false)
     private LocalDateTime createAt;
 
     @UpdateTimestamp
-    @Column(name = "update_at")
+    @Column(name = "update_at", nullable = false)
     private LocalDateTime updateAt;
 
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
+    @Column(name = "password_changed_at")
+    private LocalDateTime passwordChangedAt;
 
-    @Column(name = "failed_attempts")
-    private Integer failedAttempts;
+    @Builder.Default
+    @Column(name = "failed_attempts", nullable = false)
+    private Integer failedAttempts = 0;
 
     @Column(name = "locked_until")
     private LocalDateTime lockedUntil;
 
+    @Column(name = "last_login_at")
+    private LocalDateTime lastLoginAt;
+
+    @Column(name = "reset_token_hash")
+    private String resetTokenHash;
+
+    @Column(name = "reset_token_expires_at")
+    private LocalDateTime resetTokenExpiresAt;
+
     // 🔹 Relación con roles
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.EAGER) // 👈 así carga roles al iniciar sesión
     @JoinTable(
             name = "usuarios_roles",
-            schema = "public", // ✅ importante
+            schema = "public",
             joinColumns = @JoinColumn(name = "id_user"),
             inverseJoinColumns = @JoinColumn(name = "id_rol")
     )
@@ -68,6 +80,6 @@ public class Usuario {
     }
 
     public boolean isActive() {
-        return "ACTIVO".equalsIgnoreCase(statUser);
+        return "A".equalsIgnoreCase(statUser) || "ACTIVO".equalsIgnoreCase(statUser);
     }
 }

@@ -20,7 +20,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * 💡 Servicio que implementa la lógica de negocio para la gestión de usuarios.
+ * 💡 Servicio de gestión de usuarios (solo administrativos o aprobados por el SUPERADMIN).
  */
 @Service
 @RequiredArgsConstructor
@@ -32,13 +32,38 @@ public class UsuarioServiceImpl implements UsuarioService {
     private final PasswordEncoder passwordEncoder;
 
     // =============================================================
-    // 🟢 MÉTODOS DE LECTURA
+    // 🟢 CREAR USUARIO (solo por aprobación o administrador)
+    // =============================================================
+    @Override
+    @Transactional
+    public UsuarioResponse createUser(UsuarioCreateRequest request) {
+        if (request == null)
+            throw new IllegalArgumentException("❌ Datos de usuario no proporcionados");
+
+        if (usuarioRepository.existsByNameUser(request.getUsername()))
+            throw new IllegalArgumentException("⚠️ El nombre de usuario ya existe: " + request.getUsername());
+
+        Usuario usuario = new Usuario();
+        usuario.setNameUser(request.getUsername());
+        usuario.setPassUser(passwordEncoder.encode(request.getPassword()));
+        usuario.setStatUser(
+                request.getEstado() != null ? request.getEstado() : "INACTIVO"
+        ); // 👈 Por defecto queda inactivo hasta aprobación
+        usuario.setCreateAt(LocalDateTime.now());
+
+        usuarioRepository.save(usuario);
+        log.info("🧾 Solicitud o usuario creado pendiente de aprobación: {}", usuario.getNameUser());
+
+        return convertToResponse(usuario);
+    }
+
+    // =============================================================
+    // 🟢 CONSULTAS
     // =============================================================
 
     @Override
     @Transactional(readOnly = true)
     public List<UsuarioResponse> getAllUsers() {
-        log.info("📋 Consultando todos los usuarios");
         return usuarioRepository.findAll()
                 .stream()
                 .map(this::convertToResponse)
@@ -49,7 +74,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioResponse getUserById(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
         return convertToResponse(usuario);
     }
 
@@ -57,48 +82,24 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional(readOnly = true)
     public UsuarioResponse getUserByUsername(String username) {
         Usuario usuario = usuarioRepository.findByNameUser(username)
-                .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado: " + username));
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado: " + username));
         return convertToResponse(usuario);
     }
 
     // =============================================================
-    // 🟢 CREACIÓN Y ACTUALIZACIÓN
+    // 🟢 ACTUALIZAR DATOS
     // =============================================================
-
-    @Override
-    @Transactional
-    public UsuarioResponse createUser(UsuarioCreateRequest request) {
-        if (request == null) throw new IllegalArgumentException("❌ Datos de usuario no proporcionados");
-
-        if (usuarioRepository.existsByNameUser(request.getUsername())) {
-            throw new IllegalArgumentException("⚠️ El nombre de usuario ya existe: " + request.getUsername());
-        }
-
-        Usuario usuario = new Usuario();
-        usuario.setNameUser(request.getUsername());
-        usuario.setPassUser(passwordEncoder.encode(request.getPassword())); // 🔐 Encriptación segura
-        usuario.setStatUser(request.getEstado() != null ? request.getEstado() : "ACTIVO");
-        usuario.setCreateAt(LocalDateTime.now());
-
-        usuarioRepository.save(usuario);
-        log.info("✅ Usuario creado exitosamente: {}", usuario.getNameUser());
-
-        return convertToResponse(usuario);
-    }
-
     @Override
     @Transactional
     public UsuarioResponse updateUser(Long id, UsuarioUpdateRequest request) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
 
-        if (request.getUsername() != null && !request.getUsername().isBlank()) {
+        if (request.getUsername() != null && !request.getUsername().isBlank())
             usuario.setNameUser(request.getUsername());
-        }
 
-        if (request.getEstado() != null && !request.getEstado().isBlank()) {
+        if (request.getEstado() != null && !request.getEstado().isBlank())
             usuario.setStatUser(request.getEstado());
-        }
 
         usuario.setUpdateAt(LocalDateTime.now());
         usuarioRepository.save(usuario);
@@ -108,14 +109,13 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // =============================================================
-    // 🗑️ ELIMINACIÓN / ESTADOS
+    // 🟡 ELIMINAR / ACTIVAR / DESACTIVAR / DESBLOQUEAR
     // =============================================================
-
     @Override
     @Transactional
     public void deleteUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
         usuarioRepository.delete(usuario);
         log.info("🗑️ Usuario eliminado: {}", usuario.getNameUser());
     }
@@ -124,9 +124,11 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional
     public UsuarioResponse activateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
         usuario.setStatUser("ACTIVO");
+        usuario.setUpdateAt(LocalDateTime.now());
         usuarioRepository.save(usuario);
+        log.info("✅ Usuario activado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
@@ -134,9 +136,11 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional
     public UsuarioResponse deactivateUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
         usuario.setStatUser("INACTIVO");
+        usuario.setUpdateAt(LocalDateTime.now());
         usuarioRepository.save(usuario);
+        log.info("🚫 Usuario desactivado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
@@ -144,26 +148,34 @@ public class UsuarioServiceImpl implements UsuarioService {
     @Transactional
     public UsuarioResponse unlockUser(Long id) {
         Usuario usuario = usuarioRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("❌ Usuario no encontrado con ID: " + id));
-        usuario.setFailedAttempts(0);
+                .orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
         usuario.setLockedUntil(null);
+        usuario.setFailedAttempts(0);
         usuarioRepository.save(usuario);
+        log.info("🔓 Usuario desbloqueado: {}", usuario.getNameUser());
         return convertToResponse(usuario);
     }
 
     // =============================================================
-    // 🧠 MÉTODOS AUXILIARES
+    // 🧩 CONSULTAS PERSONALIZADAS
     // =============================================================
-
     @Override
     @Transactional(readOnly = true)
     public List<Map<String, Object>> executeCustomQuery(String sql, String username) {
-        if (sql == null || sql.isBlank()) throw new IllegalArgumentException("❌ SQL no puede estar vacío");
-        log.info("🧠 Ejecutando consulta SQL personalizada para usuario: {}", username);
-        Map<String, Object> params = Map.of("username", username);
-        return namedParameterJdbcTemplate.queryForList(sql, params);
+        try {
+            log.info("🔍 Ejecutando consulta personalizada para usuario: {}", username);
+            Map<String, Object> params = new HashMap<>();
+            params.put("username", username);
+            return namedParameterJdbcTemplate.queryForList(sql, params);
+        } catch (Exception e) {
+            log.error("❌ Error ejecutando consulta personalizada: {}", e.getMessage());
+            throw new RuntimeException("Error al ejecutar consulta SQL personalizada", e);
+        }
     }
 
+    // =============================================================
+    // 🧠 CONVERSIÓN A DTO
+    // =============================================================
     private UsuarioResponse convertToResponse(Usuario usuario) {
         Set<String> roles = Optional.ofNullable(usuario.getRoles())
                 .orElse(Collections.emptySet())
@@ -191,6 +203,7 @@ public class UsuarioServiceImpl implements UsuarioService {
                 .updateAt(usuario.getUpdateAt())
                 .failedAttempts(usuario.getFailedAttempts())
                 .isLocked(usuario.isAccountLocked())
+                .message("Usuario " + usuario.getStatUser().toLowerCase())
                 .build();
     }
 }

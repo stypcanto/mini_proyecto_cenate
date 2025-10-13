@@ -2,13 +2,19 @@ package styp.com.cenate.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 
+/**
+ * 🎭 Representa un rol dentro del sistema (ej: ADMIN, MEDICO, SUPERVISOR).
+ */
 @Entity
-@Table(name = "dim_roles", schema = "public") // ✅ Esquema explícito
+@Table(name = "dim_roles", schema = "public")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,46 +26,26 @@ public class Rol {
     @Column(name = "id_rol")
     private Integer idRol;
 
-    @Column(name = "desc_rol", unique = true, nullable = false, length = 50)
+    @Column(name = "desc_rol", nullable = false, unique = true, length = 50)
     private String descRol;
 
+    @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
+    @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // 🔹 Relación inversa con Usuario
-    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    // 🔹 Un rol puede tener muchos permisos
+    @OneToMany(mappedBy = "rol", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonIgnore
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    @Builder.Default
-    private Set<Usuario> usuarios = new HashSet<>();
-
-    // 🔹 Relación con permisos
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "roles_permisos",
-            schema = "public", // ✅ importante
-            joinColumns = @JoinColumn(name = "id_rol"),
-            inverseJoinColumns = @JoinColumn(name = "id_permiso")
-    )
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
     @Builder.Default
     private Set<Permiso> permisos = new HashSet<>();
 
-    // 🔹 Auto timestamps
-    @PrePersist
-    protected void onCreate() {
-        LocalDateTime now = LocalDateTime.now();
-        this.createdAt = now;
-        this.updatedAt = now;
-    }
-
-    @PreUpdate
-    protected void onUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
+    // 🔹 Relación inversa: muchos usuarios pueden tener este rol
+    @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
+    @JsonIgnore
+    @Builder.Default
+    private Set<Usuario> usuarios = new HashSet<>();
 }

@@ -1,9 +1,11 @@
+// src/pages/Login.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { loginUser } from "../api/config";
 import { Eye, EyeOff, LogIn, User, Lock, ArrowLeft } from "lucide-react";
+import { useUsuarios } from "../hooks/useUsuarios"; // ✅ ahora usamos el hook centralizado
 
 const Login = () => {
+  const { loginUser } = useUsuarios(); // ✅ usa el hook unificado
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -11,6 +13,9 @@ const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
+  // ======================================================
+  // 🧠 Lógica de Login
+  // ======================================================
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -27,12 +32,6 @@ const Login = () => {
       console.log("📡 Respuesta del backend:", data);
 
       if (data?.token) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("userId", data.userId || "");
-        localStorage.setItem("username", data.username || "");
-        localStorage.setItem("roles", JSON.stringify(data.roles || []));
-        localStorage.setItem("permisos", JSON.stringify(data.permisos || []));
-
         // ✅ Redirección profesional según roles
         const roles = data.roles || [];
         if (roles.includes("SUPERADMIN") || roles.includes("ADMIN")) {
@@ -45,12 +44,15 @@ const Login = () => {
       }
     } catch (err) {
       console.error("❌ Error al iniciar sesión:", err);
-      setError(err.message || "Usuario y/o contraseña incorrecta o inexistente.");
+      setError(err.message || "Usuario o contraseña incorrectos.");
     } finally {
       setLoading(false);
     }
   };
 
+  // ======================================================
+  // 💅 UI (igual que antes)
+  // ======================================================
   return (
       <div
           style={{

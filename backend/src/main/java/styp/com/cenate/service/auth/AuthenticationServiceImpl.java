@@ -26,6 +26,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
 
+    // =========================================================
+    // 🔐 LOGIN
+    // =========================================================
     @Override
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
@@ -36,6 +39,10 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassUser())) {
             throw new RuntimeException("Usuario o contraseña incorrectos");
+        }
+
+        if (!"ACTIVO".equalsIgnoreCase(user.getStatUser())) {
+            throw new RuntimeException("La cuenta está inactiva o bloqueada.");
         }
 
         List<GrantedAuthority> authorities = new ArrayList<>();
@@ -72,6 +79,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
     }
 
+    // =========================================================
+    // 🧍 CREAR USUARIO MANUAL (solo para pruebas o admin)
+    // =========================================================
     @Override
     @Transactional
     public UsuarioResponse createUser(UsuarioCreateRequest request) {
@@ -90,18 +100,21 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         Usuario user = new Usuario();
         user.setNameUser(request.getUsername());
         user.setPassUser(passwordEncoder.encode(request.getPassword()));
-        user.setStatUser("A");
+        user.setStatUser("ACTIVO");
 
         Usuario savedUser = usuarioRepository.save(user);
 
         return UsuarioResponse.builder()
                 .idUser(savedUser.getIdUser())
                 .username(savedUser.getNameUser())
-                .statUser(savedUser.getStatUser())
+                .estado(savedUser.getStatUser()) // 🔹 Cambiado de statUser() → estado()
                 .message("Usuario registrado exitosamente")
                 .build();
     }
 
+    // =========================================================
+    // 🔑 CAMBIO DE CONTRASEÑA
+    // =========================================================
     @Override
     @Transactional
     public void changePassword(String username, String currentPassword, String newPassword, String confirmPassword) {
@@ -134,6 +147,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         log.info("✅ Contraseña actualizada exitosamente para {}", username);
     }
 
+    // =========================================================
+    // 🧠 Validación de seguridad de contraseña
+    // =========================================================
     private boolean isPasswordSecure(String password) {
         return password.length() >= 8 &&
                 password.matches(".*[A-Z].*") &&

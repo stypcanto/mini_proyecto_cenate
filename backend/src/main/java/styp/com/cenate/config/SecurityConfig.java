@@ -3,6 +3,7 @@ package styp.com.cenate.config;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -46,27 +47,40 @@ public class SecurityConfig {
                 // 🌐 Configuración CORS personalizada
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // 🧭 Rutas públicas y protegidas
+                // 🧭 Configura rutas públicas y protegidas
                 .authorizeHttpRequests(auth -> auth
-                        // Endpoints públicos
-                        .requestMatchers("/api/auth/**", "/api/public/**", "/error", "/hello").permitAll()
+                        // 🟢 Endpoints públicos
+                        .requestMatchers(HttpMethod.POST, "/api/account-requests").permitAll() // crear solicitud
+                        .requestMatchers(
+                                "/api/auth/**",
+                                "/api/public/**",
+                                "/error",
+                                "/hello"
+                        ).permitAll()
 
-                        // Roles administrativos
+                        // 🔒 Endpoints restringidos a ADMIN/SUPERADMIN
+                        .requestMatchers(
+                                "/api/account-requests/pendientes",
+                                "/api/account-requests/{id}/aprobar",
+                                "/api/account-requests/{id}/rechazar"
+                        ).hasAnyRole("SUPERADMIN", "ADMIN")
+
+                        // 🔒 Rutas administrativas
                         .requestMatchers("/api/admin/**").hasRole("SUPERADMIN")
                         .requestMatchers("/api/usuarios/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
-                        // Áreas médicas
+                        // 🏥 Áreas médicas
                         .requestMatchers("/api/medico/**").hasAnyRole("SUPERADMIN", "ADMIN", "MEDICO", "ENFERMERIA", "OBSTETRA")
                         .requestMatchers("/api/laboratorio/**").hasAnyRole("SUPERADMIN", "ADMIN", "LABORATORIO")
                         .requestMatchers("/api/radiologia/**").hasAnyRole("SUPERADMIN", "ADMIN", "RADIOLOGIA")
                         .requestMatchers("/api/farmacia/**").hasAnyRole("SUPERADMIN", "ADMIN", "FARMACIA")
 
-                        // Psicología y terapias
+                        // 🧠 Psicología y terapias
                         .requestMatchers("/api/psicologia/**").hasAnyRole("SUPERADMIN", "ADMIN", "PSICOLOGO")
                         .requestMatchers("/api/terapia/**").hasAnyRole("SUPERADMIN", "ADMIN", "TERAPISTA_FISI", "TERAPISTA_LENG")
                         .requestMatchers("/api/nutricion/**").hasAnyRole("SUPERADMIN", "ADMIN", "NUTRICION")
 
-                        // Áreas administrativas
+                        // 🏢 Áreas administrativas
                         .requestMatchers("/api/admisiones/**").hasAnyRole("SUPERADMIN", "ADMIN", "ADMISION", "FACTURACION_SE")
                         .requestMatchers("/api/transferencias/**").hasAnyRole("SUPERADMIN", "ADMIN", "COORDINACION", "COORD_TRANSFER")
                         .requestMatchers("/api/auditoria/**").hasAnyRole("SUPERADMIN", "ADMIN", "AUDITOR_CLINIC")
@@ -74,14 +88,14 @@ public class SecurityConfig {
                         .requestMatchers("/api/soporte/**").hasAnyRole("SUPERADMIN", "SOPORTE_TI")
                         .requestMatchers("/api/personal-externo/**").hasAnyRole("SUPERADMIN", "INSTITUCION_EX")
 
-                        // Todo lo demás requiere autenticación
+                        // 🔐 Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
 
-                // 🧩 Política sin sesiones
+                // ⚙️ Política sin sesiones (stateless)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 🔑 Configura autenticación con JWT
+                // 🔑 Configuración de autenticación con JWT
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 

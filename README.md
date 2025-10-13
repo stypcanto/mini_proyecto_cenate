@@ -600,6 +600,51 @@ curl -X GET http://localhost:8080/api/personal-externo/usuario/4 \
      -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
 
 ```
+# 🔐 Pruebas del Endpoint `/api/auth/change-password`
+
+Este documento describe todas las pruebas realizadas para verificar el correcto funcionamiento del cambio de contraseña en el módulo de autenticación del sistema **CENATE Backend**.
+
+---
+
+## ⚙️ Información general
+
+- **Endpoint:** `PUT /api/auth/change-password`
+- **Autenticación:** JWT Bearer Token
+- **Content-Type:** `application/json`
+- **Módulo:** `AuthenticationService`
+- **Controlador:** `AuthController`
+- **Estado:** ✅ **Funcional y validado**
+
+---
+
+## 🧾 Requisitos previos
+
+Antes de probar el cambio de contraseña, se debe iniciar sesión para obtener un token válido.
+
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+        "username": "admin_test",
+        "password": "admin20253"
+      }'
+  ```
+
+Respuesta esperada:
+
+```bash
+{
+  "type": "Bearer",
+  "token": "<TOKEN_JWT_GENERADO>",
+  "userId": 5,
+  "username": "admin_test",
+  "roles": ["SUPERADMIN"],
+  "permisos": [],
+  "message": "Login exitoso"
+}
+```
+
+
 
 ## 📄 Licencia
 

@@ -10,13 +10,10 @@ import java.util.Optional;
 
 public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
-    // 🔹 Buscar usuario por nombre de usuario (login)
     Optional<Usuario> findByNameUser(String nameUser);
 
-    // 🔹 Verificar existencia de usuario
     boolean existsByNameUser(String nameUser);
 
-    // 🔥 Cargar usuario con roles y permisos (para login o auth)
     @Query("""
         SELECT DISTINCT u FROM Usuario u
         LEFT JOIN FETCH u.roles r
@@ -25,7 +22,6 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     """)
     Optional<Usuario> findByNameUserWithRoles(@Param("nameUser") String nameUser);
 
-    // 🔥 Listar todos los usuarios con roles y permisos
     @Query("""
         SELECT DISTINCT u FROM Usuario u
         LEFT JOIN FETCH u.roles r
@@ -33,9 +29,18 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     """)
     List<Usuario> findAllWithRoles();
 
-    // 🔹 Listar usuarios filtrando por estado
     List<Usuario> findByStatUser(String statUser);
 
-    // 🔹 Contar usuarios por estado
     long countByStatUser(String statUser);
+
+    // 🔍 (opcional) Dashboard: listar usuarios con roles
+    @Query(value = """
+        SELECT u.name_user AS username, 
+               STRING_AGG(r.desc_rol, ', ') AS roles
+        FROM public.dim_usuarios u
+        LEFT JOIN public.usuarios_roles ur ON u.id_user = ur.id_user
+        LEFT JOIN public.dim_roles r ON ur.id_rol = r.id_rol
+        GROUP BY u.name_user
+    """, nativeQuery = true)
+    List<Object[]> listarUsuariosConRoles();
 }
