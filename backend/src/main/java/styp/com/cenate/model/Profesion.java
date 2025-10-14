@@ -31,11 +31,11 @@ public class Profesion {
     private String statProf = "A"; // A=Activo, I=Inactivo
 
     @CreationTimestamp
-    @Column(name = "create_at", updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createAt;
 
     @UpdateTimestamp
-    @Column(name = "update_at")
+    @Column(name = "updated_at")
     private LocalDateTime updateAt;
 
     public boolean isActivo() {

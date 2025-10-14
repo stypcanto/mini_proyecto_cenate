@@ -103,11 +103,11 @@ public class Ipress {
     private String statIpress;
     
     @CreationTimestamp
-    @Column(name = "create_at", nullable = false, updatable = false)
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createAt;
     
     @UpdateTimestamp
-    @Column(name = "update_at", nullable = false)
+    @Column(name = "updated_at", nullable = false)
     private LocalDateTime updateAt;
 
 

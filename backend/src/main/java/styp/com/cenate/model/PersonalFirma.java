@@ -3,8 +3,8 @@ package styp.com.cenate.model;
 import jakarta.persistence.*;
 import lombok.*;
 import styp.com.cenate.model.id.PersonalFirmaId;
+
 import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * 🖋️ Entidad que representa la relación entre un personal y su firma digital.
@@ -35,12 +35,7 @@ public class PersonalFirma implements Serializable {
     @JoinColumn(name = "id_firm_dig", referencedColumnName = "id_firm_dig", nullable = false)
     private FirmaDigital firmaDigital;
 
-    // 📅 Fechas de auditoría
-    @Column(name = "created_at")
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at")
-    private LocalDateTime updatedAt;
+    // 🚫 Eliminamos las columnas created_at y updated_at
 
     // 🔹 Métodos auxiliares
     public String getSerieFirma() {

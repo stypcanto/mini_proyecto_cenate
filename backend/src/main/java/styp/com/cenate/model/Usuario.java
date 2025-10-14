@@ -51,11 +51,11 @@ public class Usuario implements UserDetails {
     private String statUser = "A"; // A = Activo, I = Inactivo
 
     @CreatedDate
-    @Column(name = "create_at", updatable = false)
+    @Column(name = "created_at", updatable = false)
     private LocalDateTime createAt;
 
     @LastModifiedDate
-    @Column(name = "update_at")
+    @Column(name = "updated_at")
     private LocalDateTime updateAt;
 
     @Column(name = "last_login_at")
