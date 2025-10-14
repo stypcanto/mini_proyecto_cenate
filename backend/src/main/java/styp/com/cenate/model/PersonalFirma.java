@@ -1,12 +1,14 @@
 package styp.com.cenate.model;
-import styp.com.cenate.model.id.PersonalFirmaId;
+
 import jakarta.persistence.*;
 import lombok.*;
-
+import styp.com.cenate.model.id.PersonalFirmaId;
 import java.io.Serializable;
+import java.time.LocalDateTime;
 
 /**
- * 🖋️ Entidad que representa las firmas registradas del personal.
+ * 🖋️ Entidad que representa la relación entre un personal y su firma digital.
+ * Corresponde a la tabla: dim_personal_firma
  */
 @Entity
 @Table(name = "dim_personal_firma")
@@ -15,33 +17,39 @@ import java.io.Serializable;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"personal", "firmaDigital"})
 public class PersonalFirma implements Serializable {
 
     @EmbeddedId
     private PersonalFirmaId id;
 
+    // 🔗 Relación con personal CNT
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idPersonal")
-    @JoinColumn(name = "id_personal", referencedColumnName = "id_personal")
+    @JoinColumn(name = "id_pers", referencedColumnName = "id_pers", nullable = false)
     private PersonalCnt personal;
 
-    @Column(name = "desc_firma", length = 255)
-    private String descFirma; // ✅ descripción o nombre de la firma
+    // 🔗 Relación con firma digital
+    @ManyToOne(fetch = FetchType.LAZY)
+    @MapsId("idFirmaDigital")
+    @JoinColumn(name = "id_firm_dig", referencedColumnName = "id_firm_dig", nullable = false)
+    private FirmaDigital firmaDigital;
 
-    @Column(name = "ruta_firma", length = 500)
-    private String rutaFirma; // ✅ ruta o URL del archivo de firma
-
-    @Column(name = "estado", length = 1)
-    private String estado; // A/I
-
+    // 📅 Fechas de auditoría
     @Column(name = "created_at")
-    private java.time.LocalDateTime createdAt;
+    private LocalDateTime createdAt;
 
     @Column(name = "updated_at")
-    private java.time.LocalDateTime updatedAt;
+    private LocalDateTime updatedAt;
 
-    // 🔹 Método auxiliar (para mostrar firma descriptiva)
-    public String getDescFirma() {
-        return descFirma != null ? descFirma : rutaFirma;
+    // 🔹 Métodos auxiliares
+    public String getSerieFirma() {
+        return (firmaDigital != null && firmaDigital.getSerieFirmDig() != null)
+                ? firmaDigital.getSerieFirmDig()
+                : "Sin firma";
+    }
+
+    public boolean isFirmaActiva() {
+        return firmaDigital != null && firmaDigital.isActivo();
     }
 }

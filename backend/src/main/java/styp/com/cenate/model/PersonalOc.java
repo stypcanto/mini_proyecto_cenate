@@ -23,7 +23,7 @@ public class PersonalOc implements Serializable {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @MapsId("idPersonal")
-    @JoinColumn(name = "id_personal", referencedColumnName = "id_personal")
+    @JoinColumn(name = "id_pers", referencedColumnName = "id_pers", nullable = false)
     private PersonalCnt personal;
 
     @Column(name = "num_oc", length = 50)

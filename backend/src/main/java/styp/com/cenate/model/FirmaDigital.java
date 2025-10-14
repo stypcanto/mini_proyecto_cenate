@@ -4,8 +4,14 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
+/**
+ * 🖋️ Entidad que representa una firma digital emitida a un personal del sistema.
+ * Corresponde a la tabla: dim_firma_digital
+ */
 @Entity
 @Table(name = "dim_firma_digital")
 @Getter
@@ -13,7 +19,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString
+@ToString(exclude = "tipoDispositivo")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class FirmaDigital {
 
@@ -23,13 +29,21 @@ public class FirmaDigital {
     @Column(name = "id_firm_dig")
     private Long idFirmDig;
 
-    @Column(name = "desc_firm_dig", nullable = false, length = 200)
-    private String descFirmDig;
+    @Column(name = "serie_firm_dig", nullable = false, unique = true)
+    private String serieFirmDig;
 
-    @Column(name = "ruta_archivo", length = 255)
-    private String rutaArchivo; // Ruta del archivo en disco o URL
+    @Column(name = "fech_ini_firm", nullable = false)
+    private LocalDate fechIniFirm;
 
-    @Builder.Default // ✅ mantiene el valor por defecto "A" al usar el builder
+    @Column(name = "fech_fin_firm")
+    private LocalDate fechFinFirm;
+
+    // 🔗 Relación con tipo de dispositivo
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_tip_dis", nullable = false)
+    private TipoDispositivo tipoDispositivo;
+
+    @Builder.Default
     @Column(name = "stat_firm_dig", nullable = false, length = 1)
     private String statFirmDig = "A";
 
@@ -41,7 +55,12 @@ public class FirmaDigital {
     @Column(name = "update_at")
     private LocalDateTime updateAt;
 
+    // 🔹 Método auxiliar
     public boolean isActivo() {
         return "A".equalsIgnoreCase(statFirmDig);
+    }
+
+    public String getDescripcion() {
+        return serieFirmDig + " (" + tipoDispositivo.getDescTipDis() + ")";
     }
 }

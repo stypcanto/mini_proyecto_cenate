@@ -1,4 +1,4 @@
-package styp.com.cenate.api.area;
+package styp.com.cenate.api.personal;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.validation.Valid;
@@ -41,9 +41,9 @@ public class PersonalCntController {
     @Value("${app.upload.dir:${user.home}/cenate-uploads/personal}")
     private String uploadDir;
 
-    /** ===============================================================
-     * 📁 Inicializa la carpeta de uploads si no existe
-     * =============================================================== */
+    // ===============================================================
+    // 📁 Inicializa la carpeta de uploads si no existe
+    // ===============================================================
     @PostConstruct
     private void initUploadDir() throws IOException {
         Path path = Paths.get(uploadDir);
@@ -53,9 +53,9 @@ public class PersonalCntController {
         }
     }
 
-    /** ===============================================================
-     * 🔹 MÉTODOS CRUD
-     * =============================================================== */
+    // ===============================================================
+    // 🔹 MÉTODOS CRUD
+    // ===============================================================
 
     @GetMapping
     @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
@@ -96,9 +96,9 @@ public class PersonalCntController {
         return ResponseEntity.noContent().build();
     }
 
-    /** ===============================================================
-     * 🔍 BÚSQUEDAS Y FILTROS
-     * =============================================================== */
+    // ===============================================================
+    // 🔍 BÚSQUEDAS Y FILTROS
+    // ===============================================================
 
     @GetMapping("/search")
     @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
@@ -122,7 +122,7 @@ public class PersonalCntController {
     }
 
     @GetMapping("/usuario/{idUsuario}")
-    @PreAuthorize("isAuthenticated()") // ✅ Permite ver su propio perfil
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<PersonalResponse> getPersonalCntByUsuario(@PathVariable Long idUsuario) {
         log.info("👤 Obteniendo personal CNT por usuario {}", idUsuario);
         return ResponseEntity.ok(personalCntService.getPersonalCntByUsuario(idUsuario));
@@ -142,21 +142,21 @@ public class PersonalCntController {
         return ResponseEntity.ok(personalCntService.getPersonalCntInactivo());
     }
 
-    /** ===============================================================
-     * 🖼️ MANEJO DE FOTOS
-     * =============================================================== */
+    // ===============================================================
+    // 🖼️ MANEJO DE FOTOS
+    // ===============================================================
 
     @PostMapping("/{id}/foto")
     @PreAuthorize("hasAnyAuthority('EDITAR_PERSONAL', 'ADMIN_TOTAL')")
     public ResponseEntity<PersonalResponse> uploadFoto(@PathVariable Long id,
-                                                       @RequestParam("file") MultipartFile file) throws IOException {
+                                                       @RequestParam("file") MultipartFile file) {
         log.info("🖼️ Subiendo foto para personal CNT con ID {}", id);
         return ResponseEntity.ok(personalCntService.uploadFoto(id, file));
     }
 
     @DeleteMapping("/{id}/foto")
     @PreAuthorize("hasAnyAuthority('EDITAR_PERSONAL', 'ADMIN_TOTAL')")
-    public ResponseEntity<Void> deleteFoto(@PathVariable Long id) throws IOException {
+    public ResponseEntity<Void> deleteFoto(@PathVariable Long id) {
         log.info("🗑️ Eliminando foto de personal CNT con ID {}", id);
         personalCntService.deleteFoto(id);
         return ResponseEntity.noContent().build();
@@ -179,13 +179,13 @@ public class PersonalCntController {
             if (contentType == null) contentType = "application/octet-stream";
 
             return ResponseEntity.ok()
-                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic()) // ⚡ Cache por 7 días
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + personal.getFoto() + "\"")
                     .body(resource);
 
         } catch (MalformedURLException e) {
-            log.error("❌ Error URL foto: {}", e.getMessage());
+            log.error("❌ Error en URL de foto: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         } catch (IOException e) {
             log.error("⚠️ Error al leer la foto: {}", e.getMessage());
@@ -193,13 +193,9 @@ public class PersonalCntController {
         }
     }
 
-    /** ===============================================================
-     * 🔒 MÉTODOS PRIVADOS AUXILIARES
-     * =============================================================== */
-
-    /**
-     * Define automáticamente el tipo de personal como "CENATE"
-     */
+    // ===============================================================
+    // 🔒 MÉTODOS PRIVADOS AUXILIARES
+    // ===============================================================
     private void setTipoCenate(PersonalRequest request) {
         request.setTipoPersonal("CENATE");
     }

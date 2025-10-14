@@ -41,9 +41,9 @@ public interface PersonalFirmaRepository extends JpaRepository<PersonalFirma, Pe
     """)
     List<PersonalFirma> findAllWithFirmaByPersonal(Long idPers);
 
-    /** 🎯 Retorna solo las descripciones de las firmas digitales asociadas. */
+    /** 🎯 Retorna solo las series de las firmas digitales asociadas. */
     @Query("""
-        SELECT f.descFirmDig
+        SELECT f.serieFirmDig
         FROM PersonalFirma pf
         JOIN pf.firmaDigital f
         WHERE pf.personal.idPers = :idPers

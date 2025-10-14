@@ -179,10 +179,12 @@ public class UsuarioServiceImpl implements UsuarioService {
             base.setAreaTrabajo(p.getArea() != null ? p.getArea().getDescArea() : null);
             base.setFotoUrl(p.getFotoPers());
 
-            // ✅ Firmas
+            // ✅ Firmas digitales (ajustado a la nueva estructura)
             base.setFirmasDigitales(
                     p.getFirmas().stream()
-                            .map(f -> f.getDescFirma() != null ? f.getDescFirma() : "Sin firma")
+                            .map(f -> f.getFirmaDigital() != null
+                                    ? f.getFirmaDigital().getSerieFirmDig()
+                                    : "Sin firma")
                             .collect(Collectors.toList())
             );
 

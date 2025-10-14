@@ -22,7 +22,7 @@ public interface PersonalOcRepository extends JpaRepository<PersonalOc, Personal
     List<PersonalOc> findByPersonal_IdPers(Long idPers);
 
     /** 🔍 Verifica si un personal tiene una OC específica asignada. */
-    Optional<PersonalOc> findByPersonal_IdPersAndOc_IdOc(Long idPers, Long idOc);
+    Optional<PersonalOc> findByPersonal_IdPersAndId_IdOc(Long idPers, Long idOc);
 
     /** 🗑️ Elimina todas las órdenes de contrato asociadas a un personal CNT. */
     @Transactional
@@ -32,20 +32,23 @@ public interface PersonalOcRepository extends JpaRepository<PersonalOc, Personal
     /** 📊 Cuenta cuántas órdenes de contrato tiene un personal CNT. */
     long countByPersonal_IdPers(Long idPers);
 
-    /** 🚀 Carga OCs con todos sus datos (JOIN FETCH para evitar LazyInitializationException). */
+    /**
+     * 🚀 Carga las OCs con todos sus datos asociados al personal CNT.
+     * (No hay entidad “oc”, se accede directamente a los campos de PersonalOc)
+     */
     @Query("""
         SELECT poc
         FROM PersonalOc poc
-        JOIN FETCH poc.oc ocEntity
         WHERE poc.personal.idPers = :idPers
     """)
     List<PersonalOc> findAllWithOcByPersonal(Long idPers);
 
-    /** 🎯 Retorna solo las descripciones (desc_oc) de las OCs asociadas al personal CNT. */
+    /**
+     * 🎯 Retorna solo las descripciones (desc_oc) de las OCs asociadas al personal CNT.
+     */
     @Query("""
-        SELECT ocEntity.descOc
+        SELECT poc.descOc
         FROM PersonalOc poc
-        JOIN poc.oc ocEntity
         WHERE poc.personal.idPers = :idPers
     """)
     List<String> findOCsByPersonalId(Long idPers);

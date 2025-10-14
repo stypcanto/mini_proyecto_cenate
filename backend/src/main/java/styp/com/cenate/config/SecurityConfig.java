@@ -69,12 +69,16 @@ public class SecurityConfig {
                                 "/health"
                         ).permitAll()
 
-                        // 🔒 Endpoints restringidos a roles específicos
-                        .requestMatchers(
-                                "/api/account-requests/pendientes",
-                                "/api/account-requests/*/aprobar",
-                                "/api/account-requests/*/rechazar"
-                        ).hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN")
+                        // 👨‍⚕️ Personal CNT (nuevo módulo)
+                        .requestMatchers("/api/personal-cnt/**")
+                        .hasAnyAuthority(
+                                "ROLE_SUPERADMIN",
+                                "ROLE_ADMIN",
+                                "VER_PERSONAL",
+                                "CREAR_PERSONAL",
+                                "EDITAR_PERSONAL",
+                                "ELIMINAR_PERSONAL"
+                        )
 
                         // 🔐 Administración
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_SUPERADMIN")

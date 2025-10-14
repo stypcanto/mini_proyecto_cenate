@@ -8,7 +8,8 @@ import java.io.Serializable;
 import java.util.Objects;
 
 /**
- * 🆔 Clave compuesta para PersonalFirma
+ * 🆔 Clave compuesta para la entidad PersonalFirma.
+ * Mapea correctamente las columnas reales de la tabla: dim_personal_firma
  */
 @Embeddable
 @Getter
@@ -18,22 +19,22 @@ import java.util.Objects;
 @Builder
 public class PersonalFirmaId implements Serializable {
 
-    @Column(name = "id_personal")
+    @Column(name = "id_pers")
     private Long idPersonal;
 
-    @Column(name = "id_firma")
-    private Long idFirma;
+    @Column(name = "id_firm_dig")
+    private Long idFirmaDigital;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof PersonalFirmaId that)) return false;
         return Objects.equals(idPersonal, that.idPersonal) &&
-                Objects.equals(idFirma, that.idFirma);
+                Objects.equals(idFirmaDigital, that.idFirmaDigital);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(idPersonal, idFirma);
+        return Objects.hash(idPersonal, idFirmaDigital);
     }
 }
