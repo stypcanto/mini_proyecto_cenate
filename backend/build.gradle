@@ -33,6 +33,9 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
+    /* ✅ ACTUATOR (para /actuator/health, /actuator/mappings, etc.) */
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
     /* ==========================
        🔹 DATABASE
        ========================== */

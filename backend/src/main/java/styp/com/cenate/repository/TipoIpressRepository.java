@@ -3,19 +3,28 @@ package styp.com.cenate.repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import styp.com.cenate.model.TipoIpress;
-
 import java.util.List;
+import java.util.Optional;
 
+/**
+ * Repositorio JPA para la entidad TipoIpress.
+ */
 @Repository
 public interface TipoIpressRepository extends JpaRepository<TipoIpress, Long> {
 
     /**
-     * Lista tipos de IPRESS activos ('A')
+     * Obtiene todos los tipos de IPRESS con un estado específico.
+     * Ejemplo: findByEstadoIgnoreCase("A")
      */
-    List<TipoIpress> findByStatTipIpressIgnoreCase(String statTipIpress);
+    List<TipoIpress> findByEstadoIgnoreCase(String estado);
 
     /**
-     * Verifica duplicado por descripción (UNIQUE desc_tip_ipress)
+     * Busca un tipo de IPRESS por descripción (ignora mayúsculas/minúsculas).
      */
-    boolean existsByDescTipIpressIgnoreCase(String descTipIpress);
+    Optional<TipoIpress> findByDescripcionIgnoreCase(String descripcion);
+
+    /**
+     * Verifica si existe un tipo de IPRESS con la misma descripción.
+     */
+    boolean existsByDescripcionIgnoreCase(String descripcion);
 }

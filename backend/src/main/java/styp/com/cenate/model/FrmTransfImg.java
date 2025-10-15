@@ -19,14 +19,17 @@ public class FrmTransfImg {
     @Column(name = "id_frm_transf_img")
     private Long id;
 
+    // 🔹 Red (ya la tienes como entidad aparte)
     @Column(name = "id_red", nullable = false)
     private Long idRed;
 
     @Column(name = "desc_red", nullable = false)
     private String descRed;
 
-    @Column(name = "id_ipress", nullable = false)
-    private Long idIpress;
+    // 🔹 Relación con IPRESS (ya existe la entidad Ipress)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_ipress", nullable = false)
+    private Ipress ipress;
 
     @Column(name = "desc_ipress", nullable = false)
     private String descIpress;

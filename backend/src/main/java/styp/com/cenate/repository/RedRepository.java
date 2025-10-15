@@ -10,12 +10,12 @@ import java.util.List;
 public interface RedRepository extends JpaRepository<Red, Long> {
 
     /**
-     * Busca todas las redes que pertenecen a una macroregión específica.
+     * 🔹 Busca todas las redes que pertenecen a una macroregión específica.
      */
     List<Red> findByIdMacro(Long idMacro);
 
     /**
-     * Verifica si ya existe una red con la misma descripción.
+     * 🔹 Verifica si ya existe una red con la misma descripción (ignora mayúsculas/minúsculas).
      */
-    boolean existsByDescRedIgnoreCase(String descRed);
+    boolean existsByDescripcionIgnoreCase(String descripcion);
 }

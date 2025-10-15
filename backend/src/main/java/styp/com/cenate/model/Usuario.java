@@ -90,17 +90,14 @@ public class Usuario implements UserDetails {
     // 🧠 Métodos utilitarios
     // ======================================================
 
-    /** Verifica si el usuario está activo */
     public boolean isActive() {
         return "A".equalsIgnoreCase(this.statUser);
     }
 
-    /** Verifica si la cuenta está bloqueada temporalmente */
     public boolean isAccountLocked() {
         return lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
     }
 
-    /** Incrementa los intentos fallidos de inicio de sesión */
     public void increaseFailedAttempts() {
         if (failedAttempts == null) failedAttempts = 0;
         failedAttempts++;
@@ -109,7 +106,6 @@ public class Usuario implements UserDetails {
         }
     }
 
-    /** Reinicia el contador de intentos fallidos */
     public void resetFailedAttempts() {
         failedAttempts = 0;
         lockedUntil = null;
@@ -129,21 +125,19 @@ public class Usuario implements UserDetails {
         return "/images/default-profile.png";
     }
 
-    /** Estado legible para UI */
     public String getEstadoLegible() {
         return "A".equalsIgnoreCase(statUser) ? "Activo" : "Inactivo";
     }
 
-    /** Roles como texto */
     public String getRolesAsString() {
         return roles.stream()
-                .map(Rol::getDescRol)
+                .map(Rol::getDescRol)  // ✅ Usará el getter generado por Lombok
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("Sin rol");
     }
 
     // ======================================================
-    // ⚙️ Auditoría (fallback manual)
+    // ⚙️ Auditoría manual (por si falla el listener)
     // ======================================================
     @PrePersist
     public void prePersist() {

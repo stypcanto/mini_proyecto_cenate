@@ -5,7 +5,8 @@ import lombok.*;
 import java.time.LocalDate;
 
 /**
- * DTO para solicitudes de creación/actualización de Personal Externo
+ * 🧾 DTO para solicitudes de creación o actualización de Personal Externo.
+ * Se usa en endpoints REST para garantizar validaciones antes de persistir.
  */
 @Data
 @NoArgsConstructor
@@ -37,7 +38,7 @@ public class PersonalExternoRequest {
     private LocalDate fechNaciExt;
 
     @NotBlank(message = "El género es obligatorio")
-    @Pattern(regexp = "^[MF]$", message = "El género debe ser 'M' o 'F'")
+    @Pattern(regexp = "^[MFX]$", message = "El género debe ser 'M', 'F' o 'X'")
     private String genExt;
 
     @Size(max = 20, message = "El móvil no puede tener más de 20 caracteres")

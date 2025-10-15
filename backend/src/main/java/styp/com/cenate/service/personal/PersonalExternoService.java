@@ -6,37 +6,38 @@ import styp.com.cenate.dto.PersonalResponse;
 import java.util.List;
 
 /**
- * Servicio para gestión de Personal Externo (no pertenece a CENATE)
+ * 🧩 Servicio para la gestión del Personal Externo del sistema CENATE.
+ * Este personal pertenece a instituciones aliadas o externas al CENATE.
  */
 public interface PersonalExternoService {
 
-    /** Obtiene todo el personal externo */
+    /** 🔹 Obtiene todos los registros de personal externo */
     List<PersonalResponse> getAllPersonalExterno();
 
-    /** Obtiene personal externo por ID */
+    /** 🔹 Obtiene un registro de personal externo por su ID */
     PersonalResponse getPersonalExternoById(Long id);
 
-    /** Crea un nuevo personal externo */
+    /** 🔹 Crea un nuevo registro de personal externo */
     PersonalResponse createPersonalExterno(PersonalRequest request);
 
-    /** Actualiza un personal externo existente */
+    /** 🔹 Actualiza un registro existente de personal externo */
     PersonalResponse updatePersonalExterno(Long id, PersonalRequest request);
 
-    /** Elimina un personal externo */
+    /** 🔹 Elimina un registro de personal externo */
     void deletePersonalExterno(Long id);
 
-    /** Busca personal externo por nombre o apellidos */
+    /** 🔹 Busca personal externo por nombre o apellidos (búsqueda parcial, case-insensitive) */
     List<PersonalResponse> searchPersonalExterno(String searchTerm);
 
-    /** Obtiene personal externo por IPRESS */
+    /** 🔹 Obtiene el personal externo vinculado a una IPRESS específica */
     List<PersonalResponse> getPersonalExternoByIpress(Long idIpress);
 
-    /** Obtiene personal externo por usuario */
+    /** 🔹 Obtiene el personal externo asociado a un usuario del sistema */
     PersonalResponse getPersonalExternoByUsuario(Long idUsuario);
 
-    /** Obtiene personal externo activo */
+    /** 🔹 Obtiene todo el personal externo activo */
     List<PersonalResponse> getPersonalExternoActivo();
 
-    /** Obtiene personal externo inactivo */
+    /** 🔹 Obtiene todo el personal externo inactivo */
     List<PersonalResponse> getPersonalExternoInactivo();
 }

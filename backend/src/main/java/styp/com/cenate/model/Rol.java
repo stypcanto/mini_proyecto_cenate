@@ -12,6 +12,7 @@ import java.util.Set;
 
 /**
  * 🎭 Representa un rol dentro del sistema (ej: ADMIN, MÉDICO, SUPERVISOR).
+ * Tabla: dim_roles
  */
 @Entity
 @Table(name = "dim_roles", schema = "public")
@@ -20,7 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"permisos", "usuarios"}) // evita recursión infinita en logs
+@ToString(exclude = {"permisos", "usuarios"}) // Evita recursión infinita al imprimir
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Rol {
 
@@ -41,15 +42,32 @@ public class Rol {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // 🔹 Un rol puede tener muchos permisos
-    @OneToMany(mappedBy = "rol", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    // ==========================================================
+    // 🔗 Relación con permisos
+    // ==========================================================
+    @OneToMany(mappedBy = "rol", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @JsonIgnore
     @Builder.Default
     private Set<Permiso> permisos = new HashSet<>();
 
-    // 🔹 Muchos usuarios pueden tener este rol
+    // ==========================================================
+    // 🔗 Relación con usuarios
+    // ==========================================================
     @ManyToMany(mappedBy = "roles", fetch = FetchType.LAZY)
     @JsonIgnore
     @Builder.Default
     private Set<Usuario> usuarios = new HashSet<>();
+
+    // ==========================================================
+    // 🧩 Métodos utilitarios
+    // ==========================================================
+    /** Retorna el nombre del rol en mayúsculas */
+    public String getNombreRol() {
+        return descRol != null ? descRol.trim().toUpperCase() : "";
+    }
+
+    /** Indica si el rol es de tipo administrador */
+    public boolean isAdmin() {
+        return getNombreRol().contains("ADMIN");
+    }
 }

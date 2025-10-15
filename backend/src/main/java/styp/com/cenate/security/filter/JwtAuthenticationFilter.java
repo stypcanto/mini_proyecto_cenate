@@ -39,21 +39,24 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
         final String authHeader = request.getHeader("Authorization");
 
-        // 🚫 Si no hay token, continuar sin autenticación
+        // 🚫 Si no hay token JWT, continúa sin autenticación
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
             filterChain.doFilter(request, response);
             return;
         }
 
+        final String jwt = authHeader.substring(7);
+
         try {
-            // 🔍 Extraer el token
-            final String jwt = authHeader.substring(7);
+            // 🔍 Extraer usuario del token
             final String username = jwtService.extractUsername(jwt);
 
+            // ⚙️ Solo autenticar si no existe contexto previo
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
 
-                // 🧩 Validar token y establecer autenticación
+                // ✅ Validar token y establecer contexto de seguridad
                 if (jwtService.isTokenValid(jwt, userDetails)) {
                     UsernamePasswordAuthenticationToken authToken =
                             new UsernamePasswordAuthenticationToken(
@@ -61,17 +64,36 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     null,
                                     userDetails.getAuthorities()
                             );
+
                     authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                     SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                    log.debug("✅ JWT válido para usuario: {}", username);
                 } else {
-                    log.warn("⚠️ Token JWT inválido o expirado para usuario {}", username);
+                    log.warn("⚠️ Token JWT inválido o expirado para usuario: {}", username);
                 }
             }
 
         } catch (Exception e) {
-            log.error("❌ Error al autenticar JWT: {}", e.getMessage(), e);
+            log.error("❌ Error al procesar JWT: {}", e.getMessage(), e);
+
+            // 🔄 En caso de error grave, limpiar el contexto de seguridad
+            SecurityContextHolder.clearContext();
+
+            // Opcional: devolver 401 si el token está dañado
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setContentType("application/json");
+            response.getWriter().write("""
+            {
+                "status": 401,
+                "message": "Token inválido o expirado.",
+                "error": "%s"
+            }
+            """.formatted(e.getMessage()));
+            return;
         }
 
+        // Continuar con el resto de filtros
         filterChain.doFilter(request, response);
     }
 }

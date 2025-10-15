@@ -1,6 +1,7 @@
 package styp.com.cenate.service.frmtransfimg.impl;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import styp.com.cenate.dto.FrmTransfImgRequest;
@@ -11,9 +12,11 @@ import styp.com.cenate.repository.*;
 import styp.com.cenate.service.frmtransfimg.FrmTransfImgService;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 @Transactional
 public class FrmTransfImgServiceImpl implements FrmTransfImgService {
 
@@ -25,13 +28,17 @@ public class FrmTransfImgServiceImpl implements FrmTransfImgService {
     private final NivelAtencionRepository nivelRepo;
     private final AreaHospitalariaRepository areaRepo;
 
+    // ============================================================
     @Override
     public List<FrmTransfImgResponse> listar() {
-        return repository.findAll().stream()
+        log.info("Listando todos los formularios de transferencia de imágenes");
+        return repository.findAll()
+                .stream()
                 .map(this::toResponse)
-                .toList();
+                .collect(Collectors.toList());
     }
 
+    // ============================================================
     @Override
     public FrmTransfImgResponse obtenerPorId(Long id) {
         FrmTransfImg entity = repository.findById(id)
@@ -39,25 +46,35 @@ public class FrmTransfImgServiceImpl implements FrmTransfImgService {
         return toResponse(entity);
     }
 
+    // ============================================================
     @Override
     public FrmTransfImgResponse crear(FrmTransfImgRequest request) {
+        log.info("Creando nuevo formulario de transferencia de imágenes...");
+
+        // 🔹 Validar entidades relacionadas
         Ipress ipress = ipressRepo.findById(request.getIdIpress())
-                .orElseThrow(() -> new ResourceNotFoundException("IPRESS no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("IPRESS no encontrada con ID: " + request.getIdIpress()));
+
         Red red = redRepo.findById(ipress.getIdRed())
-                .orElseThrow(() -> new ResourceNotFoundException("Red no encontrada"));
+                .orElseThrow(() -> new ResourceNotFoundException("Red no encontrada para IPRESS"));
+
         Procedimiento proc = procedRepo.findById(request.getIdProced())
                 .orElseThrow(() -> new ResourceNotFoundException("Procedimiento no encontrado"));
+
         TipoProcedimiento tipo = tipoRepo.findById(request.getIdTipProced())
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de procedimiento no encontrado"));
+
         NivelAtencion nivel = nivelRepo.findById(ipress.getIdNivAten())
                 .orElseThrow(() -> new ResourceNotFoundException("Nivel de atención no encontrado"));
+
         AreaHospitalaria area = areaRepo.findById(request.getIdAreaHosp())
                 .orElseThrow(() -> new ResourceNotFoundException("Área hospitalaria no encontrada"));
 
+        // 🔹 Crear nuevo registro con relaciones correctas
         FrmTransfImg nuevo = FrmTransfImg.builder()
                 .idRed(red.getId())
                 .descRed(red.getDescripcion())
-                .idIpress(ipress.getIdIpress())
+                .ipress(ipress) // ✅ relación ManyToOne con la entidad Ipress
                 .descIpress(ipress.getDescIpress())
                 .idNivel(nivel.getId())
                 .descNivelIpress(nivel.getDescripcion())
@@ -74,9 +91,11 @@ public class FrmTransfImgServiceImpl implements FrmTransfImgService {
                 .descRefe(request.getDescRefe())
                 .build();
 
-        return toResponse(repository.save(nuevo));
+        FrmTransfImg guardado = repository.save(nuevo);
+        return toResponse(guardado);
     }
 
+    // ============================================================
     @Override
     public FrmTransfImgResponse actualizar(Long id, FrmTransfImgRequest request) {
         FrmTransfImg existente = repository.findById(id)
@@ -87,16 +106,31 @@ public class FrmTransfImgServiceImpl implements FrmTransfImgService {
         existente.setDescRefe(request.getDescRefe());
         existente.setEstado(request.getEstado());
 
-        return toResponse(repository.save(existente));
+        FrmTransfImg actualizado = repository.save(existente);
+        return toResponse(actualizado);
     }
 
+    // ============================================================
     @Override
     public void eliminar(Long id) {
         if (!repository.existsById(id))
             throw new ResourceNotFoundException("Formulario no encontrado con ID: " + id);
+
         repository.deleteById(id);
+        log.info("Formulario eliminado con ID: {}", id);
     }
 
+    // ============================================================
+    @Transactional(readOnly = true)
+    public List<FrmTransfImgResponse> obtenerPorIpress(Long idIpress) {
+        log.info("Obteniendo formularios por ID de IPRESS: {}", idIpress);
+        return repository.findByIpress_IdIpress(idIpress)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ============================================================
     private FrmTransfImgResponse toResponse(FrmTransfImg f) {
         return FrmTransfImgResponse.builder()
                 .id(f.getId())

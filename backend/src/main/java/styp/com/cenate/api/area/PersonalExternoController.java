@@ -14,53 +14,57 @@ import styp.com.cenate.service.personal.PersonalExternoService;
 import java.util.List;
 
 /**
- * Controlador REST para gestión de Personal Externo
+ * 🎯 Controlador REST para la gestión del Personal Externo
+ * Permite CRUD completo y búsquedas avanzadas.
  */
 @RestController
 @RequestMapping("/api/personal-externo")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://10.0.89.239:5173"
+})
 public class PersonalExternoController {
 
     private final PersonalExternoService personalExternoService;
 
-    /**
-     * Obtiene todo el personal externo
-     */
+    // ============================================================
+    // 🔹 CONSULTAS
+    // ============================================================
+
     @GetMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
     public ResponseEntity<List<PersonalResponse>> getAllPersonalExterno() {
-        log.info("Obteniendo todo el personal externo");
+        log.info("📋 Obteniendo todo el personal externo");
         List<PersonalResponse> personal = personalExternoService.getAllPersonalExterno();
         return ResponseEntity.ok(personal);
     }
 
-    /**
-     * Obtiene personal externo por ID
-     */
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
     public ResponseEntity<PersonalResponse> getPersonalExternoById(@PathVariable Long id) {
-        log.info("Obteniendo personal externo con ID: {}", id);
+        log.info("🔍 Obteniendo personal externo con ID: {}", id);
         PersonalResponse personal = personalExternoService.getPersonalExternoById(id);
         return ResponseEntity.ok(personal);
     }
 
-    /**
-     * Crea un nuevo personal externo
-     */
+    // ============================================================
+    // 🔹 CREACIÓN
+    // ============================================================
+
     @PostMapping
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
     public ResponseEntity<?> createPersonalExterno(@Valid @RequestBody PersonalRequest request) {
-        log.info("Creando nuevo personal externo: {} {}", request.getNombres(), request.getApellidoPaterno());
+        log.info("🆕 Creando nuevo personal externo: {} {}", request.getNombres(), request.getApellidoPaterno());
 
-        // Asegurarse de que el tipo sea EXTERNO
+        // Aseguramos que siempre sea tipo EXTERNO
         request.setTipoPersonal("EXTERNO");
 
-        // Validación básica: IPRESS obligatoria
+        // Validación básica
         if (request.getIdIpress() == null) {
-            log.warn("No se proporcionó el ID de IPRESS");
+            log.warn("⚠️ No se proporcionó el ID de IPRESS");
             return ResponseEntity.badRequest().body("El ID de IPRESS es obligatorio.");
         }
 
@@ -68,69 +72,64 @@ public class PersonalExternoController {
         return ResponseEntity.status(HttpStatus.CREATED).body(personal);
     }
 
-    /**
-     * Actualiza un personal externo existente
-     */
+    // ============================================================
+    // 🔹 ACTUALIZACIÓN
+    // ============================================================
+
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
     public ResponseEntity<PersonalResponse> updatePersonalExterno(
             @PathVariable Long id,
             @Valid @RequestBody PersonalRequest request) {
-        log.info("Actualizando personal externo con ID: {}", id);
+        log.info("✏️ Actualizando personal externo con ID: {}", id);
 
-        // Asegurarse de que el tipo sea EXTERNO
-        request.setTipoPersonal("EXTERNO");
+        request.setTipoPersonal("EXTERNO"); // aseguramos consistencia
 
         PersonalResponse personal = personalExternoService.updatePersonalExterno(id, request);
         return ResponseEntity.ok(personal);
     }
 
-    /**
-     * Elimina un personal externo
-     */
+    // ============================================================
+    // 🔹 ELIMINACIÓN
+    // ============================================================
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
     public ResponseEntity<Void> deletePersonalExterno(@PathVariable Long id) {
-        log.info("Eliminando personal externo con ID: {}", id);
+        log.warn("🗑️ Eliminando personal externo con ID: {}", id);
         personalExternoService.deletePersonalExterno(id);
         return ResponseEntity.noContent().build();
     }
 
-    /**
-     * Busca personal externo por término de búsqueda
-     */
+    // ============================================================
+    // 🔹 BÚSQUEDAS
+    // ============================================================
+
     @GetMapping("/search")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
     public ResponseEntity<?> searchPersonalExterno(@RequestParam("query") String query) {
-        log.info("Buscando personal externo con término: {}", query);
-
         if (query == null || query.trim().isEmpty()) {
-            log.warn("El término de búsqueda está vacío");
+            log.warn("⚠️ El término de búsqueda está vacío");
             return ResponseEntity.badRequest().body("El término de búsqueda no puede estar vacío.");
         }
 
+        log.info("🔎 Buscando personal externo con término: '{}'", query);
         List<PersonalResponse> personal = personalExternoService.searchPersonalExterno(query);
         return ResponseEntity.ok(personal);
     }
 
-    /**
-     * Obtiene personal externo por IPRESS
-     */
     @GetMapping("/ipress/{idIpress}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
     public ResponseEntity<List<PersonalResponse>> getPersonalExternoByIpress(@PathVariable Long idIpress) {
-        log.info("Obteniendo personal externo por IPRESS ID: {}", idIpress);
+        log.info("🏥 Obteniendo personal externo por IPRESS ID: {}", idIpress);
         List<PersonalResponse> personal = personalExternoService.getPersonalExternoByIpress(idIpress);
         return ResponseEntity.ok(personal);
     }
 
-    /**
-     * Obtiene personal externo por usuario
-     */
     @GetMapping("/usuario/{idUsuario}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'INSTITUCION_EX')")
     public ResponseEntity<PersonalResponse> getPersonalExternoByUsuario(@PathVariable Long idUsuario) {
-        log.info("Obteniendo personal externo por usuario ID: {}", idUsuario);
+        log.info("👤 Obteniendo personal externo por usuario ID: {}", idUsuario);
         PersonalResponse personal = personalExternoService.getPersonalExternoByUsuario(idUsuario);
         return ResponseEntity.ok(personal);
     }

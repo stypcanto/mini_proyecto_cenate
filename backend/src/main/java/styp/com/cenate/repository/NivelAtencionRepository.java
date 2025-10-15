@@ -10,12 +10,12 @@ import java.util.List;
 public interface NivelAtencionRepository extends JpaRepository<NivelAtencion, Long> {
 
     /**
-     * Filtra niveles por estado ('A' o 'I').
+     * 🔹 Filtra niveles de atención activos o inactivos (campo: estado)
      */
-    List<NivelAtencion> findByStatNivAtenIgnoreCase(String statNivAten);
+    List<NivelAtencion> findByEstadoIgnoreCase(String estado);
 
     /**
-     * Verifica si ya existe un nivel con la misma descripción (UNIQUE desc_niv_aten).
+     * 🔹 Verifica si existe un nivel de atención por su descripción (campo: descripcion)
      */
-    boolean existsByDescNivAtenIgnoreCase(String descNivAten);
+    boolean existsByDescripcionIgnoreCase(String descripcion);
 }

@@ -11,17 +11,17 @@ import java.util.Optional;
 public interface ProcedimientoRepository extends JpaRepository<Procedimiento, Long> {
 
     /**
-     * Busca procedimientos activos (stat_proced = 'A')
+     * 🔹 Busca procedimientos por estado (ej: "A" para activos)
      */
-    List<Procedimiento> findByStatProcedIgnoreCase(String statProced);
+    List<Procedimiento> findByEstadoIgnoreCase(String estado);
 
     /**
-     * Busca por código único
+     * 🔹 Busca por código único (campo: codigo)
      */
-    Optional<Procedimiento> findByCodProcedIgnoreCase(String codProced);
+    Optional<Procedimiento> findByCodigoIgnoreCase(String codigo);
 
     /**
-     * Verifica existencia por descripción
+     * 🔹 Verifica existencia por descripción (campo: descripcion)
      */
-    boolean existsByDescProcedIgnoreCase(String descProced);
+    boolean existsByDescripcionIgnoreCase(String descripcion);
 }

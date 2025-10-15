@@ -7,42 +7,48 @@ import styp.com.cenate.model.PersonalExterno;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * 🧩 Repositorio JPA para gestionar el personal externo del sistema CENATE.
+ * Mapea la entidad {@link PersonalExterno}.
+ */
 @Repository
-public interface PersonalExternoRepository extends JpaRepository<PersonalExterno, Long> {  // ✅ Cambiado a Long
-    
+public interface PersonalExternoRepository extends JpaRepository<PersonalExterno, Long> {
+
     /**
-     * Buscar personal externo por número de documento
+     * 🔍 Buscar personal externo por número de documento.
      */
     Optional<PersonalExterno> findByNumDocExt(String numDocExt);
-    
+
     /**
-     * Verificar si existe personal externo con ese número de documento
+     * ✅ Verificar si ya existe un registro con ese número de documento.
      */
     boolean existsByNumDocExt(String numDocExt);
-    
+
     /**
-     * Buscar por email
+     * 🔍 Buscar por email personal.
      */
     Optional<PersonalExterno> findByEmailPersExt(String emailPersExt);
-    
+
     /**
-     * Buscar por institución (legacy)
+     * 🏢 Buscar por nombre parcial de institución (ej. "Universidad", "Clínica").
      */
-    List<PersonalExterno> findByInstExtContainingIgnoreCase(String institucion);
-    
+    List<PersonalExterno> findByInstExtContainingIgnoreCase(String instExt);
+
     /**
-     * Buscar por nombre completo (búsqueda parcial)
+     * 🧑 Buscar coincidencias parciales por nombres o apellidos.
+     * Ideal para buscadores de personal externo (ej. “Pérez”, “Juan”).
      */
     List<PersonalExterno> findByNomExtContainingIgnoreCaseOrApePaterExtContainingIgnoreCaseOrApeMaterExtContainingIgnoreCase(
-            String nombre, String apellidoPaterno, String apellidoMaterno);
-    
+            String nom, String apePat, String apeMat
+    );
+
     /**
-     * Buscar por IPRESS
+     * 🏥 Buscar personal externo asociado a una IPRESS específica.
      */
     List<PersonalExterno> findByIpress_IdIpress(Long idIpress);
-    
+
     /**
-     * Buscar por usuario
+     * 👤 Buscar personal externo vinculado a un usuario del sistema.
      */
     Optional<PersonalExterno> findByIdUser(Long idUser);
 }

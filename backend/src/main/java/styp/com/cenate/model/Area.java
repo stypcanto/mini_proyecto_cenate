@@ -2,6 +2,7 @@ package styp.com.cenate.model;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j; // ✅ Import necesario para usar log.*
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
@@ -21,6 +22,7 @@ import java.util.Set;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(exclude = "personal")
+@Slf4j // ✅ Agrega soporte para log.info(), log.warn(), etc.
 public class Area {
 
     @Id
@@ -61,5 +63,10 @@ public class Area {
     /** Devuelve nombre en mayúsculas limpias */
     public String getNombreLimpio() {
         return descArea != null ? descArea.trim().toUpperCase() : "";
+    }
+
+    /** Ejemplo de uso de log */
+    public void registrarCreacion() {
+        log.info("🧩 Nueva área registrada: {}", this.descArea);
     }
 }

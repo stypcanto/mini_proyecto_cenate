@@ -39,15 +39,24 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
+    /**
+     * 🔒 Configura toda la seguridad HTTP de la aplicación.
+     * Incluye JWT, CORS, CSRF y manejo de sesiones sin estado.
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
+                // 🔐 Desactiva CSRF y configura CORS global
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+
+                // ⚠️ Manejadores de errores personalizados
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
                         .accessDeniedHandler(accessDeniedHandler())
                 )
+
+                // 🛡️ Configura acceso por rutas y roles
                 .authorizeHttpRequests(auth -> auth
                         // ✅ Endpoints públicos generales
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
@@ -56,13 +65,13 @@ public class SecurityConfig {
                                 "/api/public/**",
                                 "/api/account-requests",
                                 "/error",
-                                "/health",
+                                "/actuator/**",
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html"
                         ).permitAll()
 
-                        // ✅ Nuevos módulos de datos básicos (públicos)
+                        // ✅ Datos básicos públicos
                         .requestMatchers(HttpMethod.GET,
                                 "/api/entidad/redes/**",
                                 "/api/entidad/niveles/**",
@@ -83,7 +92,7 @@ public class SecurityConfig {
                         .requestMatchers("/api/admin/**").hasAuthority("ROLE_SUPERADMIN")
                         .requestMatchers("/api/usuarios/**").hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN")
 
-                        // 👨‍⚕️ Áreas médicas
+                        // 🩺 Áreas asistenciales
                         .requestMatchers("/api/medico/**", "/api/laboratorio/**", "/api/radiologia/**")
                         .hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN", "ROLE_MEDICO", "ROLE_LABORATORIO", "ROLE_RADIOLOGIA")
 
@@ -98,14 +107,22 @@ public class SecurityConfig {
                         // 🔒 Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
+
+                // 🚫 Sin sesiones (stateless para JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+
+                // 🔧 Proveedor de autenticación personalizado
                 .authenticationProvider(authenticationProvider())
+
+                // 📦 Filtro JWT antes del filtro de autenticación estándar
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // ⚠️ Manejador personalizado para respuestas 403
+    /**
+     * ⚠️ Manejador personalizado para respuestas 403
+     */
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
@@ -124,10 +141,14 @@ public class SecurityConfig {
         };
     }
 
-    // 🌍 Configuración CORS global
+    /**
+     * 🌍 Configuración CORS global
+     */
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+
+        // 🔹 Orígenes permitidos (React local + servidor)
         config.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
                 "http://localhost:3000",
@@ -135,8 +156,9 @@ public class SecurityConfig {
                 "http://10.0.89.13:5173",
                 "http://10.0.89.239"
         ));
-        config.addAllowedOriginPattern("*");
-        config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // 🔹 Métodos y cabeceras
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
@@ -147,7 +169,9 @@ public class SecurityConfig {
         return source;
     }
 
-    // 🧱 Configuración de autenticación y encriptación
+    /**
+     * 🧱 Configura el proveedor de autenticación basado en usuario/contraseña
+     */
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -156,12 +180,17 @@ public class SecurityConfig {
         return provider;
     }
 
+    /**
+     * ⚙️ Permite inyectar AuthenticationManager en AuthController
+     */
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration config)
-            throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
+    /**
+     * 🔐 Cifra las contraseñas con BCrypt
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);

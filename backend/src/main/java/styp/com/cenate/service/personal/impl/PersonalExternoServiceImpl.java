@@ -4,7 +4,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import styp.com.cenate.dto.*;
+import styp.com.cenate.dto.PersonalRequest;
+import styp.com.cenate.dto.PersonalResponse;
 import styp.com.cenate.exception.ResourceNotFoundException;
 import styp.com.cenate.exception.BusinessException;
 import styp.com.cenate.model.*;
@@ -198,8 +199,9 @@ public class PersonalExternoServiceImpl implements PersonalExternoService {
                 .emailCorporativo(personal.getEmailCorpExt())
                 .idUsuario(personal.getIdUser())
                 .institucion(personal.getIpress() != null ? personal.getIpress().getDescIpress() : null)
-                .createAt(personal.getCreateAt())
-                .updateAt(personal.getUpdateAt())
+                // ✅ Conversión de OffsetDateTime a LocalDateTime
+                .createAt(personal.getCreateAt() != null ? personal.getCreateAt().toLocalDateTime() : null)
+                .updateAt(personal.getUpdateAt() != null ? personal.getUpdateAt().toLocalDateTime() : null)
                 .build();
     }
 }
