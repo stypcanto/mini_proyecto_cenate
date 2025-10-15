@@ -1,0 +1,275 @@
+# 🧪 GUÍA RÁPIDA DE PRUEBAS - MBAC API
+
+## 📁 Archivos Creados
+
+| Archivo | Descripción | Uso |
+|---------|-------------|-----|
+| `test_mbac_api.sh` | Script interactivo de pruebas | Ejecutar paso a paso |
+| `CURL_COMMANDS.md` | Comandos curl listos | Copiar y pegar |
+| `CENATE_MBAC_API.postman_collection.json` | Colección Postman | Importar en Postman |
+
+---
+
+## 🚀 OPCIÓN 1: Script Interactivo
+
+### Dar permisos y ejecutar:
+```bash
+cd /Users/styp/Documents/CENATE/Chatbot/API_Springboot/cenate/backend
+
+chmod +x test_mbac_api.sh
+./test_mbac_api.sh
+```
+
+### Características:
+- ✅ Pruebas paso a paso
+- ✅ Explicaciones de cada endpoint
+- ✅ Respuestas esperadas
+- ✅ 23 casos de prueba
+- ✅ Formato amigable con colores
+
+---
+
+## 🚀 OPCIÓN 2: Comandos CURL Directos
+
+### 1. Configurar variables:
+```bash
+export BASE_URL="http://localhost:8080"
+export JWT_TOKEN="tu_token_jwt_aqui"
+```
+
+### 2. Autenticarse:
+```bash
+curl -X POST "$BASE_URL/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "superadmin", "password": "tu_password"}'
+```
+
+### 3. Copiar token y exportar:
+```bash
+export JWT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+```
+
+### 4. Probar endpoints:
+```bash
+# Health check
+curl -X GET "$BASE_URL/api/permisos/health" \
+  -H "Authorization: Bearer $JWT_TOKEN"
+
+# Obtener permisos
+curl -X GET "$BASE_URL/api/permisos/usuario/1" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json"
+
+# Verificar permiso
+curl -X POST "$BASE_URL/api/permisos/check" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "userId": 1,
+    "rutaPagina": "/roles/medico/pacientes",
+    "accion": "ver"
+  }'
+```
+
+**Ver archivo completo**: `CURL_COMMANDS.md`
+
+---
+
+## 🚀 OPCIÓN 3: Postman Collection
+
+### 1. Abrir Postman
+
+### 2. Importar colección:
+- File → Import
+- Seleccionar: `CENATE_MBAC_API.postman_collection.json`
+
+### 3. Configurar variables:
+En la colección, editar variables:
+- `baseUrl`: http://localhost:8080
+- `jwtToken`: (se llenará automáticamente al hacer login)
+
+### 4. Ejecutar pruebas:
+1. Ejecutar "01 - Autenticación → Login" (guarda el token automáticamente)
+2. Ejecutar cualquier otro endpoint
+
+### 5. Runner de Postman:
+- Collection Runner → Seleccionar "CENATE - MBAC API Tests"
+- Run → Ejecuta todos los tests automáticamente
+
+---
+
+## 📊 ESTRUCTURA DE PRUEBAS
+
+### API de Permisos (8 endpoints):
+```
+✅ GET  /api/permisos/health
+✅ GET  /api/permisos/usuario/{id}
+✅ GET  /api/permisos/usuario/username/{username}
+✅ GET  /api/permisos/usuario/{userId}/modulo/{idModulo}
+✅ POST /api/permisos/check
+✅ GET  /api/permisos/usuario/{userId}/modulos
+✅ GET  /api/permisos/usuario/{userId}/modulo/{idModulo}/paginas
+```
+
+### API de Auditoría (11 endpoints):
+```
+✅ GET  /api/auditoria/health
+✅ GET  /api/auditoria/modulos
+✅ GET  /api/auditoria/usuario/{userId}
+✅ GET  /api/auditoria/username/{username}
+✅ GET  /api/auditoria/modulo/{modulo}
+✅ GET  /api/auditoria/accion/{accion}
+✅ GET  /api/auditoria/rango
+✅ GET  /api/auditoria/usuario/{userId}/rango
+✅ GET  /api/auditoria/resumen
+✅ GET  /api/auditoria/ultimos
+✅ GET  /api/auditoria/buscar
+```
+
+### Pruebas de Seguridad (3 casos):
+```
+❌ Sin token (401)
+❌ Token inválido (401)
+❌ Usuario inexistente (404)
+```
+
+---
+
+## 🎯 QUICK TEST (Prueba Rápida)
+
+```bash
+# 1. Login y guardar token
+TOKEN=$(curl -s -X POST "http://localhost:8080/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"superadmin","password":"tu_password"}' | jq -r '.token')
+
+# 2. Health check
+curl -X GET "http://localhost:8080/api/permisos/health" \
+  -H "Authorization: Bearer $TOKEN"
+
+# 3. Obtener permisos
+curl -X GET "http://localhost:8080/api/permisos/usuario/1" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+
+# 4. Verificar un permiso
+curl -X POST "http://localhost:8080/api/permisos/check" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"userId":1,"rutaPagina":"/roles/medico/pacientes","accion":"ver"}' | jq '.'
+
+# 5. Ver últimos eventos de auditoría
+curl -X GET "http://localhost:8080/api/auditoria/ultimos?limit=5" \
+  -H "Authorization: Bearer $TOKEN" | jq '.'
+```
+
+---
+
+## 🔧 TROUBLESHOOTING
+
+### Error: "Connection refused"
+```bash
+# Verificar que el servidor esté corriendo
+curl http://localhost:8080/actuator/health
+```
+
+### Error: 401 Unauthorized
+```bash
+# Verificar el token
+echo $JWT_TOKEN
+
+# Re-autenticar si es necesario
+curl -X POST "http://localhost:8080/api/auth/login" ...
+```
+
+### Error: 404 Not Found
+```bash
+# Verificar la URL
+echo $BASE_URL
+
+# Listar endpoints disponibles
+curl http://localhost:8080/actuator/mappings
+```
+
+### Ver logs del servidor
+```bash
+# Si usas Gradle
+./gradlew bootRun
+
+# Si usas Docker
+docker logs cenate-backend
+```
+
+---
+
+## 📈 PRUEBAS DE CARGA
+
+### Con Apache Bench (ab):
+```bash
+# 1000 requests, 50 concurrentes
+ab -n 1000 -c 50 \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  "http://localhost:8080/api/permisos/usuario/1"
+```
+
+### Con wrk:
+```bash
+# 30 segundos, 10 threads, 100 conexiones
+wrk -t10 -c100 -d30s \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  "http://localhost:8080/api/permisos/usuario/1"
+```
+
+---
+
+## 📚 DOCUMENTACIÓN SWAGGER
+
+Una vez el servidor esté corriendo:
+
+```
+http://localhost:8080/swagger-ui.html
+```
+
+Buscar las secciones:
+- **Permisos MBAC**
+- **Auditoría MBAC**
+
+---
+
+## ✅ CHECKLIST DE PRUEBAS
+
+- [ ] Servidor corriendo (`./gradlew bootRun`)
+- [ ] Base de datos inicializada (`psql ... -f sql/mbac_init_data.sql`)
+- [ ] Login exitoso y token obtenido
+- [ ] Health checks respondiendo (permisos y auditoría)
+- [ ] Permisos de SUPERADMIN funcionando (acceso completo)
+- [ ] Permisos de ADMIN funcionando (limitado)
+- [ ] Permisos de MEDICO funcionando (más limitado)
+- [ ] Auditoría registrando eventos
+- [ ] Pruebas de seguridad (401, 403, 404)
+- [ ] Swagger UI accesible
+
+---
+
+## 🎉 SIGUIENTE PASO
+
+Una vez completadas las pruebas:
+
+1. ✅ Integrar con el frontend React
+2. ✅ Configurar administración de permisos
+3. ✅ Monitorear auditoría regularmente
+4. ✅ Configurar alertas para cambios críticos
+
+---
+
+**¿Necesitas ayuda?**
+
+Consulta los archivos:
+- `MBAC_README.md` - Documentación técnica completa
+- `INSTRUCCIONES_COMPILACION.md` - Guía de compilación
+- `ERRORES_CORREGIDOS.md` - Solución de problemas
+
+---
+
+**Autor**: CENATE Development Team  
+**Fecha**: 2025-10-15  
+**Versión**: 1.0

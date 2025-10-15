@@ -37,6 +37,11 @@ dependencies {
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
     /* ==========================
+       🔹 AOP (para MBAC Permission Aspect)
+       ========================== */
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    /* ==========================
        🔹 DATABASE
        ========================== */
     runtimeOnly 'org.postgresql:postgresql'

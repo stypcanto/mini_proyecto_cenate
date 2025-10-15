@@ -158,7 +158,7 @@ public class PersonalCntController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + personal.getFoto() + "\"")
                     .body(resource);
 
-        } catch (MalformedURLException | IOException e) {
+        } catch (IOException e) {
             log.error("❌ Error al obtener la foto: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
