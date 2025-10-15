@@ -39,26 +39,23 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
-    /**
-     * 🔒 Configura toda la seguridad HTTP de la aplicación.
-     * Incluye JWT, CORS, CSRF y manejo de sesiones sin estado.
-     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 🔐 Desactiva CSRF y configura CORS global
+                // 🔐 Desactiva CSRF y activa CORS global
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
 
-                // ⚠️ Manejadores de errores personalizados
+                // ⚠️ Manejadores personalizados para errores
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
                         .accessDeniedHandler(accessDeniedHandler())
                 )
 
-                // 🛡️ Configura acceso por rutas y roles
+                // 🛡️ Autorización por rutas
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ Endpoints públicos generales
+
+                        // ✅ Endpoints públicos
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
@@ -71,58 +68,57 @@ public class SecurityConfig {
                                 "/swagger-ui.html"
                         ).permitAll()
 
-                        // ✅ Datos básicos públicos
+                        // ✅ Datos generales (acceso libre GET)
                         .requestMatchers(HttpMethod.GET,
-                                "/api/entidad/redes/**",
-                                "/api/entidad/niveles/**",
-                                "/api/entidad/procedimientos/**",
-                                "/api/entidad/tipo-procedimientos/**",
-                                "/api/entidad/area-hospitalaria/**",
-                                "/api/entidad/ipress/**",
-                                "/api/entidad/frm-transf-img/**"
+                                "/api/ipress/**",
+                                "/api/tipo-ipress/**",
+                                "/api/area-hospitalaria/**",
+                                "/api/redes/**",
+                                "/api/niveles/**",
+                                "/api/procedimientos/**",
+                                "/api/tipo-procedimientos/**",
+                                "/api/frm-transf-img/**"
                         ).permitAll()
 
-                        // 👨‍⚕️ Personal CNT
+                        // 👨‍⚕️ Personal CNT (acceso controlado)
                         .requestMatchers("/api/personal-cnt/**").hasAnyAuthority(
                                 "ROLE_SUPERADMIN", "ROLE_ADMIN",
-                                "VER_PERSONAL", "CREAR_PERSONAL", "EDITAR_PERSONAL", "ELIMINAR_PERSONAL"
+                                "GESTIONAR_PERSONAL_CNT", "VER_PERSONAL_CNT",
+                                "CREAR_PERSONAL_CNT", "EDITAR_PERSONAL_CNT", "ELIMINAR_PERSONAL_CNT"
                         )
 
-                        // 🔐 Administración
-                        .requestMatchers("/api/admin/**").hasAuthority("ROLE_SUPERADMIN")
-                        .requestMatchers("/api/usuarios/**").hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN")
+                        // 👩‍⚕️ Personal Externo
+                        .requestMatchers("/api/personal-externo/**").hasAnyAuthority(
+                                "ROLE_SUPERADMIN", "ROLE_ADMIN", "GESTIONAR_PERSONAL_EXTERNOS"
+                        )
 
-                        // 🩺 Áreas asistenciales
-                        .requestMatchers("/api/medico/**", "/api/laboratorio/**", "/api/radiologia/**")
-                        .hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN", "ROLE_MEDICO", "ROLE_LABORATORIO", "ROLE_RADIOLOGIA")
+                        // 🧰 Administración
+                        .requestMatchers("/api/admin/**", "/api/usuarios/**").hasAnyAuthority(
+                                "ROLE_SUPERADMIN", "ROLE_ADMIN"
+                        )
 
-                        // 🧠 Psicología y terapias
-                        .requestMatchers("/api/psicologia/**", "/api/terapia/**", "/api/nutricion/**")
-                        .hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN", "ROLE_PSICOLOGO", "ROLE_TERAPISTA_FISI", "ROLE_TERAPISTA_LENG", "ROLE_NUTRICION")
-
-                        // 🏢 Áreas administrativas
-                        .requestMatchers("/api/transferencias/**", "/api/auditoria/**", "/api/externos/**")
-                        .hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN")
+                        // 📊 Dashboard
+                        .requestMatchers("/api/dashboard/**").hasAnyAuthority(
+                                "ROLE_SUPERADMIN", "ROLE_ADMIN", "VER_REPORTES"
+                        )
 
                         // 🔒 Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
 
-                // 🚫 Sin sesiones (stateless para JWT)
+                // 🚫 Sin sesiones (JWT stateless)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 
-                // 🔧 Proveedor de autenticación personalizado
+                // 🔧 Configura proveedor de autenticación
                 .authenticationProvider(authenticationProvider())
 
-                // 📦 Filtro JWT antes del filtro de autenticación estándar
+                // 🧩 Filtro JWT
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    /**
-     * ⚠️ Manejador personalizado para respuestas 403
-     */
+    // ⚠️ Manejador personalizado para errores 403
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
@@ -133,31 +129,25 @@ public class SecurityConfig {
                 "status": 403,
                 "timestamp": "%s",
                 "path": "%s",
-                "message": "🚫 Acceso restringido: no tienes los permisos necesarios para realizar esta acción.",
-                "tip": "Si crees que esto es un error, contacta al administrador del sistema o revisa tus credenciales."
+                "message": "🚫 Acceso restringido: no tienes permisos para realizar esta acción.",
+                "tip": "Si crees que esto es un error, contacta al administrador del sistema."
             }
             """.formatted(LocalDateTime.now(), request.getRequestURI());
             response.getWriter().write(message);
         };
     }
 
-    /**
-     * 🌍 Configuración CORS global
-     */
+    // 🌍 CORS global
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
-        // 🔹 Orígenes permitidos (React local + servidor)
         config.setAllowedOrigins(Arrays.asList(
                 "http://localhost:5173",
                 "http://localhost:3000",
                 "http://127.0.0.1:5173",
                 "http://10.0.89.13:5173",
-                "http://10.0.89.239"
+                "http://10.0.89.239:5173"
         ));
-
-        // 🔹 Métodos y cabeceras
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
@@ -169,9 +159,7 @@ public class SecurityConfig {
         return source;
     }
 
-    /**
-     * 🧱 Configura el proveedor de autenticación basado en usuario/contraseña
-     */
+    // 🔐 Proveedor de autenticación (DaoAuthenticationProvider)
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
@@ -180,17 +168,13 @@ public class SecurityConfig {
         return provider;
     }
 
-    /**
-     * ⚙️ Permite inyectar AuthenticationManager en AuthController
-     */
+    // ⚙️ Manager para AuthController
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    /**
-     * 🔐 Cifra las contraseñas con BCrypt
-     */
+    // 🔑 PasswordEncoder con BCrypt
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder(10);

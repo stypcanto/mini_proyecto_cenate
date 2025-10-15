@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.*;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -19,11 +20,9 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.*;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-/**
- * 🧩 Controlador REST para la gestión de Personal CNT (CENATE)
- */
 @RestController
 @RequestMapping("/api/personal-cnt")
 @RequiredArgsConstructor
@@ -37,13 +36,11 @@ import java.util.concurrent.TimeUnit;
 public class PersonalCntController {
 
     private final PersonalCntService personalCntService;
+    private final JdbcTemplate jdbcTemplate;
 
     @Value("${app.upload.dir:${user.home}/cenate-uploads/personal}")
     private String uploadDir;
 
-    // ===============================================================
-    // 📁 Inicializa la carpeta de uploads si no existe
-    // ===============================================================
     @PostConstruct
     private void initUploadDir() throws IOException {
         Path path = Paths.get(uploadDir);
@@ -54,9 +51,50 @@ public class PersonalCntController {
     }
 
     // ===============================================================
-    // 🔹 MÉTODOS CRUD
+    // 📊 NUEVO ENDPOINT - LISTA DETALLADA DEL PERSONAL CNT
     // ===============================================================
+    @GetMapping("/detalle")
+    @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
+    public ResponseEntity<List<Map<String, Object>>> getPersonalCntDetalle() {
+        log.info("📊 Consultando detalle completo del personal CNT con JOIN");
+        String sql = """
+            SELECT 
+                u.id_user,
+                u.name_user AS username,
+                u.stat_user AS estado_usuario,
+                p.id_pers AS id_personal,
+                p.num_doc_pers AS numero_documento,
+                p.nom_pers AS nombres,
+                p.ape_pater_pers AS apellido_paterno,
+                p.ape_mater_pers AS apellido_materno,
+                CONCAT(p.nom_pers, ' ', p.ape_pater_pers, ' ', p.ape_mater_pers) AS nombre_completo,
+                p.gen_pers AS genero,
+                p.email_corp_pers AS correo_corporativo,
+                p.email_pers AS correo_personal,
+                p.movil_pers AS telefono,
+                p.id_area,
+                a.desc_area AS area,
+                p.id_reg_lab,
+                r.desc_reg_lab AS regimen_laboral,
+                p.coleg_pers AS colegiatura,
+                p.cod_plan_rem AS codigo_planilla,
+                p.foto_pers AS foto,
+                u.created_at AS fecha_creacion_usuario,
+                u.updated_at AS ultima_actualizacion_usuario
+            FROM dim_usuarios u
+            LEFT JOIN dim_personal_cnt p ON p.id_usuario = u.id_user
+            LEFT JOIN dim_area a ON a.id_area = p.id_area
+            LEFT JOIN dim_regimen_laboral r ON r.id_reg_lab = p.id_reg_lab
+            ORDER BY p.ape_pater_pers, p.ape_mater_pers
+        """;
 
+        List<Map<String, Object>> resultado = jdbcTemplate.queryForList(sql);
+        return ResponseEntity.ok(resultado);
+    }
+
+    // ===============================================================
+    // 🔹 MÉTODOS CRUD (sin cambios)
+    // ===============================================================
     @GetMapping
     @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
     public ResponseEntity<List<PersonalResponse>> getAllPersonalCnt() {
@@ -97,76 +135,12 @@ public class PersonalCntController {
     }
 
     // ===============================================================
-    // 🔍 BÚSQUEDAS Y FILTROS
+    // 🖼️ FOTO DE PERFIL (sin cambios)
     // ===============================================================
-
-    @GetMapping("/search")
-    @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
-    public ResponseEntity<List<PersonalResponse>> searchPersonalCnt(@RequestParam String query) {
-        log.info("🔎 Buscando personal CNT con query '{}'", query);
-        return ResponseEntity.ok(personalCntService.searchPersonalCnt(query));
-    }
-
-    @GetMapping("/area/{idArea}")
-    @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
-    public ResponseEntity<List<PersonalResponse>> getPersonalCntByArea(@PathVariable Long idArea) {
-        log.info("🏢 Obteniendo personal CNT por área {}", idArea);
-        return ResponseEntity.ok(personalCntService.getPersonalCntByArea(idArea));
-    }
-
-    @GetMapping("/regimen-laboral/{idRegimenLaboral}")
-    @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
-    public ResponseEntity<List<PersonalResponse>> getPersonalCntByRegimenLaboral(@PathVariable Long idRegimenLaboral) {
-        log.info("📋 Obteniendo personal CNT por régimen laboral {}", idRegimenLaboral);
-        return ResponseEntity.ok(personalCntService.getPersonalCntByRegimenLaboral(idRegimenLaboral));
-    }
-
-    @GetMapping("/usuario/{idUsuario}")
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<PersonalResponse> getPersonalCntByUsuario(@PathVariable Long idUsuario) {
-        log.info("👤 Obteniendo personal CNT por usuario {}", idUsuario);
-        return ResponseEntity.ok(personalCntService.getPersonalCntByUsuario(idUsuario));
-    }
-
-    @GetMapping("/activo")
-    @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
-    public ResponseEntity<List<PersonalResponse>> getPersonalCntActivo() {
-        log.info("🟢 Obteniendo personal CNT activo");
-        return ResponseEntity.ok(personalCntService.getPersonalCntActivo());
-    }
-
-    @GetMapping("/inactivo")
-    @PreAuthorize("hasAnyAuthority('VER_PERSONAL', 'ADMIN_TOTAL')")
-    public ResponseEntity<List<PersonalResponse>> getPersonalCntInactivo() {
-        log.info("🔴 Obteniendo personal CNT inactivo");
-        return ResponseEntity.ok(personalCntService.getPersonalCntInactivo());
-    }
-
-    // ===============================================================
-    // 🖼️ MANEJO DE FOTOS
-    // ===============================================================
-
-    @PostMapping("/{id}/foto")
-    @PreAuthorize("hasAnyAuthority('EDITAR_PERSONAL', 'ADMIN_TOTAL')")
-    public ResponseEntity<PersonalResponse> uploadFoto(@PathVariable Long id,
-                                                       @RequestParam("file") MultipartFile file) {
-        log.info("🖼️ Subiendo foto para personal CNT con ID {}", id);
-        return ResponseEntity.ok(personalCntService.uploadFoto(id, file));
-    }
-
-    @DeleteMapping("/{id}/foto")
-    @PreAuthorize("hasAnyAuthority('EDITAR_PERSONAL', 'ADMIN_TOTAL')")
-    public ResponseEntity<Void> deleteFoto(@PathVariable Long id) {
-        log.info("🗑️ Eliminando foto de personal CNT con ID {}", id);
-        personalCntService.deleteFoto(id);
-        return ResponseEntity.noContent().build();
-    }
-
     @GetMapping("/{id}/foto")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> getFoto(@PathVariable Long id) {
         log.info("🖼️ Obteniendo foto de personal CNT con ID {}", id);
-
         try {
             PersonalResponse personal = personalCntService.getPersonalCntById(id);
             if (personal.getFoto() == null) return ResponseEntity.notFound().build();
@@ -184,17 +158,14 @@ public class PersonalCntController {
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + personal.getFoto() + "\"")
                     .body(resource);
 
-        } catch (MalformedURLException e) {
-            log.error("❌ Error en URL de foto: {}", e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
-        } catch (IOException e) {
-            log.error("⚠️ Error al leer la foto: {}", e.getMessage());
+        } catch (MalformedURLException | IOException e) {
+            log.error("❌ Error al obtener la foto: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 
     // ===============================================================
-    // 🔒 MÉTODOS PRIVADOS AUXILIARES
+    // 🔒 AUXILIAR
     // ===============================================================
     private void setTipoCenate(PersonalRequest request) {
         request.setTipoPersonal("CENATE");
