@@ -1,34 +1,43 @@
 # =====================================
-# 🎨 .dockerignore para frontend (React/Vite)
+# 🚫 .dockerignore para frontend (React)
 # =====================================
 
-# 📦 Dependencias y builds
-node_modules
-dist
-build
-
-# 🧠 Archivos de control de versiones
+# Control de versiones
 .git
 .gitignore
 
-# 🧰 Configuración y logs
-npm-debug.log
-yarn-error.log
-pnpm-lock.yaml
-package-lock.json
-
-# 🧑‍💻 Archivos de IDE
-.vscode
+# Archivos del sistema y del IDE
 .idea
+.vscode
 *.iml
 *.log
 *.tmp
 *.bak
+*.swp
 *.DS_Store
 
-# 🧱 Backend y cosas que no deben copiarse
-../backend/
-Dockerfile
-Dockerfile.prod
-.dockerignore
+# Dependencias y builds
+node_modules
+node_modules 2
+build
+dist
+.cache
+coverage
+
+# Archivos de entorno
+.env
+.env.*
+*.pem
+*.crt
+*.key
+
+# Archivos innecesarios
 *.md
+*.pdf
+*.zip
+*.tar
+*.rar
+
+# Archivos propios de Docker
+Dockerfile
+docker-compose.yml

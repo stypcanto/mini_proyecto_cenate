@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from "react";
-import { Pencil, Trash2, Plus, RefreshCw } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Plus, RefreshCw, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -10,210 +11,144 @@ import {
 } from "@/api/regimenesApi";
 
 export default function RegimenesLaboralesTable() {
-    const [regimenes, setRegimenes] = useState([]);
-    const [nuevoNombre, setNuevoNombre] = useState("");
-    const [editandoId, setEditandoId] = useState(null);
-    const [nombreEditado, setNombreEditado] = useState("");
-    const [loading, setLoading] = useState(true);
+    const [data, setData] = useState([]);
+    const [nuevo, setNuevo] = useState("");
+    const [editando, setEditando] = useState(null);
     const [mensaje, setMensaje] = useState("");
 
+    const fetchData = async () => {
+        try {
+            const res = await getRegimenes();
+            setData(res || []);
+        } catch {
+            setMensaje("❌ Error al cargar regímenes.");
+        }
+    };
+
     useEffect(() => {
-        fetchRegimenes();
+        fetchData();
     }, []);
 
-    const fetchRegimenes = async () => {
-        setLoading(true);
+    const saveNew = async () => {
         try {
-            const data = await getRegimenes();
-            setRegimenes(data || []);
-        } catch (error) {
-            console.error("Error cargando regímenes:", error);
-        } finally {
-            setLoading(false);
+            await createRegimen({ nombre: nuevo });
+            setNuevo("");
+            setMensaje("✅ Régimen creado.");
+            fetchData();
+        } catch {
+            setMensaje("❌ No se pudo crear régimen.");
         }
     };
 
-    const handleCreate = async () => {
-        if (!nuevoNombre.trim()) {
-            setMensaje("⚠️ Ingresa un nombre válido para el régimen.");
-            return;
-        }
+    const updateOne = async (id) => {
         try {
-            await createRegimen({ nombre: nuevoNombre.trim() });
-            setNuevoNombre("");
-            setMensaje("✅ Régimen laboral creado correctamente.");
-            fetchRegimenes();
-        } catch (error) {
-            console.error("Error al crear régimen:", error);
-            setMensaje("❌ No se pudo crear el régimen laboral.");
+            await updateRegimen(id, { nombre: editando.nombre });
+            setEditando(null);
+            setMensaje("✅ Actualizado correctamente.");
+            fetchData();
+        } catch {
+            setMensaje("❌ No se pudo actualizar.");
         }
     };
 
-    const handleUpdate = async (id) => {
-        if (!nombreEditado.trim()) {
-            setMensaje("⚠️ El nombre no puede estar vacío.");
-            return;
-        }
-        try {
-            await updateRegimen(id, { nombre: nombreEditado.trim() });
-            setEditandoId(null);
-            setNombreEditado("");
-            setMensaje("✅ Régimen actualizado exitosamente.");
-            fetchRegimenes();
-        } catch (error) {
-            console.error("Error actualizando régimen:", error);
-            setMensaje("❌ No se pudo actualizar el régimen.");
-        }
-    };
-
-    const handleDelete = async (id) => {
-        const confirmar = confirm("¿Seguro que deseas eliminar este régimen?");
-        if (!confirmar) return;
-
+    const deleteOne = async (id) => {
+        if (!window.confirm("¿Eliminar régimen?")) return;
         try {
             await deleteRegimen(id);
-            setMensaje("🗑️ Régimen eliminado correctamente.");
-            fetchRegimenes();
-        } catch (error) {
-            console.error("Error eliminando régimen:", error);
-            setMensaje("❌ No se pudo eliminar el régimen.");
+            setMensaje("🗑️ Eliminado correctamente.");
+            fetchData();
+        } catch {
+            setMensaje("❌ Error al eliminar.");
         }
     };
 
     return (
         <Card className="p-6 shadow-lg border border-gray-100 rounded-2xl">
             <CardContent>
-                {/* 🔹 Header */}
-                <div className="flex flex-col md:flex-row justify-between items-center mb-6">
-                    <div>
-                        <h2 className="text-2xl font-bold text-gray-800 mb-1">
-                            Regímenes Laborales
-                        </h2>
-                        <p className="text-gray-500 text-sm">
-                            Administra los regímenes laborales del personal
-                        </p>
-                    </div>
-
-                    <div className="flex mt-3 md:mt-0 space-x-2">
-                        <input
-                            type="text"
-                            placeholder="Nuevo régimen..."
-                            value={nuevoNombre}
-                            onChange={(e) => setNuevoNombre(e.target.value)}
-                            className="border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-green-500"
-                        />
-                        <Button
-                            onClick={handleCreate}
-                            className="bg-green-600 hover:bg-green-700"
-                        >
-                            <Plus className="w-4 h-4 mr-1" /> Agregar
-                        </Button>
-                        <Button
-                            variant="outline"
-                            onClick={fetchRegimenes}
-                            className="border-gray-300 hover:bg-gray-100"
-                        >
-                            <RefreshCw className="w-4 h-4 mr-1" /> Actualizar
-                        </Button>
-                    </div>
+                <div className="flex justify-between items-center mb-5">
+                    <h2 className="text-2xl font-bold text-gray-800">Regímenes Laborales</h2>
+                    <Button onClick={fetchData} variant="outline">
+                        <RefreshCw className="w-4 h-4 mr-1" /> Actualizar
+                    </Button>
                 </div>
 
-                {/* 🧭 Mensaje feedback */}
-                {mensaje && (
-                    <div className="mb-4 p-3 bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg">
-                        {mensaje}
-                    </div>
-                )}
+                <div className="flex space-x-2 mb-4">
+                    <input
+                        placeholder="Nuevo régimen..."
+                        value={nuevo}
+                        onChange={(e) => setNuevo(e.target.value)}
+                        className="border rounded-lg px-3 py-2 text-sm flex-1"
+                    />
+                    <Button onClick={saveNew} className="bg-green-600 hover:bg-green-700">
+                        <Plus className="w-4 h-4 mr-1" /> Agregar
+                    </Button>
+                </div>
 
-                {/* 🗂 Tabla */}
+                {mensaje && <p className="text-green-600 text-sm mb-3">{mensaje}</p>}
+
                 <div className="overflow-x-auto">
-                    {loading ? (
-                        <div className="py-12 text-center text-gray-500 flex flex-col items-center">
-                            <RefreshCw className="w-10 h-10 animate-spin text-green-500 mb-3" />
-                            Cargando regímenes...
-                        </div>
-                    ) : regimenes.length === 0 ? (
-                        <div className="text-center text-gray-500 py-8">
-                            No hay regímenes laborales registrados.
-                        </div>
-                    ) : (
-                        <table className="w-full border border-gray-200 rounded-lg overflow-hidden text-sm">
-                            <thead className="bg-gray-50 border-b-2 border-gray-200">
-                            <tr>
-                                <Th>ID</Th>
-                                <Th>Nombre del Régimen</Th>
-                                <Th className="text-center">Acciones</Th>
-                            </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-100">
-                            {regimenes.map((regimen) => (
-                                <tr
-                                    key={regimen.id}
-                                    className="hover:bg-gray-50 transition-all"
-                                >
-                                    <Td>#{regimen.id}</Td>
-                                    <Td>
-                                        {editandoId === regimen.id ? (
-                                            <input
-                                                value={nombreEditado}
-                                                onChange={(e) => setNombreEditado(e.target.value)}
-                                                className="border-2 border-gray-300 rounded px-2 py-1 text-sm w-full focus:ring-2 focus:ring-green-500"
-                                            />
-                                        ) : (
-                                            <span className="font-medium text-gray-800">
-                          {regimen.nombre}
-                        </span>
-                                        )}
-                                    </Td>
-                                    <Td className="text-center space-x-2">
-                                        {editandoId === regimen.id ? (
-                                            <Button
-                                                size="sm"
-                                                onClick={() => handleUpdate(regimen.id)}
-                                                className="bg-green-600 hover:bg-green-700"
-                                            >
-                                                Guardar
-                                            </Button>
-                                        ) : (
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                onClick={() => {
-                                                    setEditandoId(regimen.id);
-                                                    setNombreEditado(regimen.nombre);
-                                                }}
-                                            >
-                                                <Pencil className="w-4 h-4" />
-                                            </Button>
-                                        )}
+                    <table className="w-full text-sm border border-gray-200">
+                        <thead className="bg-gray-50">
+                        <tr>
+                            <Th>ID</Th>
+                            <Th>Nombre</Th>
+                            <Th>Acciones</Th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {data.map((r) => (
+                            <motion.tr key={r.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+                                <Td>#{r.id}</Td>
+                                <Td>
+                                    {editando?.id === r.id ? (
+                                        <input
+                                            value={editando.nombre}
+                                            onChange={(e) =>
+                                                setEditando({ ...editando, nombre: e.target.value })
+                                            }
+                                            className="border rounded px-2 py-1 w-full"
+                                        />
+                                    ) : (
+                                        r.nombre
+                                    )}
+                                </Td>
+                                <Td className="space-x-2">
+                                    {editando?.id === r.id ? (
+                                        <Button size="sm" onClick={() => updateOne(r.id)}>
+                                            Guardar
+                                        </Button>
+                                    ) : (
                                         <Button
                                             size="sm"
-                                            variant="destructive"
-                                            onClick={() => handleDelete(regimen.id)}
+                                            variant="outline"
+                                            onClick={() => setEditando(r)}
                                         >
-                                            <Trash2 className="w-4 h-4" />
+                                            <Pencil className="w-4 h-4" />
                                         </Button>
-                                    </Td>
-                                </tr>
-                            ))}
-                            </tbody>
-                        </table>
-                    )}
+                                    )}
+                                    <Button
+                                        size="sm"
+                                        variant="destructive"
+                                        onClick={() => deleteOne(r.id)}
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                </Td>
+                            </motion.tr>
+                        ))}
+                        </tbody>
+                    </table>
                 </div>
             </CardContent>
         </Card>
     );
 }
 
-// 📦 Componentes auxiliares reutilizables
-const Th = ({ children, className }) => (
-    <th
-        className={`px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wider ${className}`}
-    >
+const Th = ({ children }) => (
+    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase tracking-wide">
         {children}
     </th>
 );
-
-const Td = ({ children, className }) => (
-    <td className={`px-6 py-3 text-gray-700 ${className}`}>{children}</td>
+const Td = ({ children }) => (
+    <td className="px-4 py-2 text-gray-700 whitespace-nowrap">{children}</td>
 );

@@ -68,7 +68,7 @@ export default function TiposDocumentoTable() {
     };
 
     const handleDelete = async (id) => {
-        const confirmar = confirm("¿Seguro que deseas eliminar este tipo de documento?");
+        const confirmar = window.confirm("¿Seguro que deseas eliminar este tipo de documento?");
         if (!confirmar) return;
 
         try {

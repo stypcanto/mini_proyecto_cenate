@@ -8,8 +8,9 @@ const getApiBaseUrl = () => {
   const envUrl =
       import.meta?.env?.VITE_API_URL || process.env.REACT_APP_API_URL;
 
-  // Fallback local
-  return envUrl?.replace(/\/$/, "") || "http://localhost:8080/api";
+  // Fallback local por defecto
+  const base = envUrl?.trim()?.replace(/\/$/, "");
+  return base || "http://localhost:8080/api";
 };
 
 // 🌐 Base de la API
@@ -26,7 +27,7 @@ export const getHeaders = (includeAuth = false) => {
 
   if (includeAuth) {
     const token = localStorage.getItem("token");
-    if (token) headers["Authorization"] = `Bearer ${token}`;
+    if (token) headers.Authorization = `Bearer ${token}`;
   }
 
   return headers;
@@ -48,12 +49,11 @@ export const handleResponse = async (response) => {
     const errorMessage =
         data?.message ||
         (response.status === 401
-            ? "Sesión expirada o no autorizada."
+            ? "⚠️ Sesión expirada o no autorizada."
             : response.status === 403
                 ? "🚫 No tienes permisos para esta acción."
                 : `Error ${response.status}: ${response.statusText}`);
 
-    // Muestra el error en consola para debugging
     console.error("❌ Error de API:", errorMessage, data);
 
     throw new Error(errorMessage);
@@ -89,3 +89,9 @@ export const apiRequest = async (
     );
   }
 };
+
+// ========================================================================
+// ✅ Exportación adicional compatible con otros imports
+// ========================================================================
+export const API_URL = API_BASE; // Alias usado en algunos módulos antiguos
+export default API_BASE;

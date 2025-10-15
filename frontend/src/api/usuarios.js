@@ -1,18 +1,16 @@
 // ========================================================================
-// 👥 API USUARIOS - CENATE (versión corregida)
+// 👥 API USUARIOS - CENATE (versión extendida y robusta)
 // ========================================================================
 
 import { API_BASE, getHeaders, handleResponse } from "../config/api";
 
 /**
- * 🔧 Ajuste importante:
- * Aseguramos que API_BASE siempre tenga formato correcto,
- * por ejemplo: http://localhost:8080/api
+ * 🔧 Asegura que la URL base termine correctamente en /api
  */
 const BASE_URL = API_BASE?.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
 
 // ================================================================
-// 📋 OBTENER TODOS LOS USUARIOS (incluye roles, permisos, etc.)
+// 📋 OBTENER TODOS LOS USUARIOS
 // ================================================================
 export const getUsuarios = async () => {
     try {
@@ -31,6 +29,16 @@ export const getUsuarios = async () => {
 // ================================================================
 export const getUsuarioById = async (id) => {
     const response = await fetch(`${BASE_URL}/usuarios/${id}`, {
+        headers: getHeaders(true),
+    });
+    return handleResponse(response);
+};
+
+// ================================================================
+// 🧩 OBTENER DETALLE EXTENDIDO POR USERNAME (para modal o perfil)
+// ================================================================
+export const getUsuarioDetalle = async (username) => {
+    const response = await fetch(`${BASE_URL}/usuarios/detalle/${username}`, {
         headers: getHeaders(true),
     });
     return handleResponse(response);
@@ -129,16 +137,6 @@ export const getUsuariosExternos = async () => {
 // ================================================================
 export const getUsuariosInternos = async () => {
     const response = await fetch(`${BASE_URL}/usuarios/internos`, {
-        headers: getHeaders(true),
-    });
-    return handleResponse(response);
-};
-
-// ================================================================
-// 🔍 OBTENER DETALLE EXTENDIDO DE UN USUARIO
-// ================================================================
-export const getUsuarioDetalle = async (username) => {
-    const response = await fetch(`${BASE_URL}/usuarios/detalle/${username}`, {
         headers: getHeaders(true),
     });
     return handleResponse(response);

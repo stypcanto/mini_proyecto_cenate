@@ -1,23 +1,27 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
+# Control de versiones
+.git
+.gitignore
 
-# dependencies
-/node_modules
-/.pnp
-.pnp.js
+# IDE y cachés
+.idea
+.vscode
+*.iml
+*.class
+*.log
+*.tmp
+*.swp
+*.bak
+*.DS_Store
 
-# testing
-/coverage
+# Builds
+.gradle
+build
+out
+target
 
-# production
-/build
-
-# misc
-.DS_Store
-.env.local
-.env.development.local
-.env.test.local
-.env.production.local
-
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
+# Otros
+**/node_modules/
+**/__pycache__/
+.env*
+Dockerfile
+docker-compose.yml

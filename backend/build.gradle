@@ -39,17 +39,21 @@ dependencies {
     runtimeOnly 'org.postgresql:postgresql'
 
     /* ==========================
-       🔹 JPA / HIBERNATE / JAKARTA
-       ========================== */
-    implementation 'jakarta.persistence:jakarta.persistence-api:3.1.0'
-    implementation 'org.hibernate.orm:hibernate-core:6.5.2.Final'
-
-    /* ==========================
-       🔹 JWT (JSON Web Tokens)
+       🔹 JWT
        ========================== */
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+
+    /* ==========================
+       🔹 SWAGGER / OPENAPI
+       ========================== */
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
+    /* ==========================
+       🔹 MODEL MAPPER
+       ========================== */
+    implementation 'org.modelmapper:modelmapper:3.2.0'
 
     /* ==========================
        🔹 LOMBOK
@@ -67,39 +71,24 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
-/* ==========================
-   🔹 SPRING BOOT CONFIG
-   ========================== */
 springBoot {
     mainClass = 'styp.com.cenate.CenateApplication'
 }
 
-/* ==========================
-   🔹 TEST CONFIG
-   ========================== */
 tasks.named('test') {
     useJUnitPlatform()
 }
 
-/* ==========================
-   🔹 CUSTOM TASKS
-   ========================== */
 tasks.register('cleanBuild') {
     dependsOn 'clean', 'build'
 }
 
-/* ==========================
-   🔹 COMPILATION OPTIMIZATION
-   ========================== */
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.compilerArgs += ['-parameters']
     options.annotationProcessorPath = configurations.annotationProcessor
 }
 
-/* ==========================
-   🔹 LOGGING Y BUILD CACHE
-   ========================== */
 tasks.withType(Test).configureEach {
     systemProperty "spring.profiles.active", "test"
     testLogging {

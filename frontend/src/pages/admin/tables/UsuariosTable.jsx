@@ -1,201 +1,126 @@
-import React, { useState } from "react";
-import { motion } from "framer-motion";
-import { Users, Shield, CalendarClock, Search } from "lucide-react";
+// ========================================================================
+// 👥 UsuariosTable.jsx - Panel administrativo CENATE
+// CRUD de usuarios internos/externos con soporte de roles y estados
+// ========================================================================
+
+import React from "react";
+import { Eye, Pencil, Trash2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import EstadoBadge from "../ui/EstadoBadge";
+import { useUsuarios } from "@/hooks/useUsuarios";
+import toast from "react-hot-toast";
 
-export default function UsuariosTable({ usuarios = [], personal = [], searchTerm = "" }) {
-    const [filterEstado, setFilterEstado] = useState("");
-    const [filterRol, setFilterRol] = useState("");
+export default function UsuariosTable({ usuarios = [] }) {
+    const navigate = useNavigate();
+    const { deleteExistingUsuario } = useUsuarios();
 
-    const rolesDisponibles = [...new Set(usuarios.flatMap(u => u.roles || []))];
+    // ======================================================
+    // ✏️ Editar usuario
+    // ======================================================
+    const handleEdit = (usuario) => {
+        if (!usuario) return;
+        navigate(`/admin/users/${usuario.username}`); // redirige al detalle editable
+    };
 
-    const filtrados = usuarios.filter(u => {
-        const matchSearch =
-            !searchTerm ||
-            (u.username && u.username.toLowerCase().includes(searchTerm.toLowerCase())) ||
-            (u.idUser && u.idUser.toString().includes(searchTerm));
-        const matchEstado = !filterEstado || u.estado === filterEstado;
-        const matchRol = !filterRol || (u.roles && u.roles.includes(filterRol));
-        return matchSearch && matchEstado && matchRol;
-    });
+    // ======================================================
+    // 🗑️ Eliminar usuario
+    // ======================================================
+    const handleDelete = async (idUser) => {
+        if (!idUser) return;
+        const confirmar = window.confirm("¿Seguro que deseas eliminar este usuario?");
+        if (!confirmar) return;
 
-    const getPersonalInfo = (idUser) => personal.find(p => p.idUsuario === idUser);
+        try {
+            await deleteExistingUsuario(idUser);
+            toast.success("Usuario eliminado correctamente.");
+        } catch (err) {
+            toast.error("Error al eliminar usuario.");
+            console.error(err);
+        }
+    };
 
-    if (filtrados.length === 0) {
+    if (!usuarios.length) {
         return (
-            <div className="p-16 text-center backdrop-blur-lg bg-white/70 rounded-3xl shadow-inner">
-                <Users className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-                <p className="text-gray-700 text-lg font-medium">
-                    No se encontraron usuarios
-                </p>
-                <p className="text-gray-500 text-sm mt-1">
-                    Ajusta los filtros o intenta con otro término de búsqueda.
-                </p>
+            <div className="p-8 text-center text-gray-500 bg-white rounded-xl shadow-sm">
+                No hay usuarios registrados.
             </div>
         );
     }
 
     return (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4 }}
-            className="space-y-6"
-        >
-            {/* 🔹 Filtros */}
-            <div className="flex flex-wrap gap-4 items-end bg-gradient-to-br from-gray-50 to-gray-100 p-5 rounded-2xl border border-gray-200 shadow-sm">
-                <div className="flex-1">
-                    <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">
-                        Estado
-                    </label>
-                    <select
-                        value={filterEstado}
-                        onChange={(e) => setFilterEstado(e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all"
+        <div className="overflow-x-auto bg-white rounded-2xl shadow-md border border-gray-100">
+            <table className="w-full border-collapse text-sm">
+                <thead className="bg-gray-50 border-b">
+                <tr>
+                    <Th>ID</Th>
+                    <Th>Usuario</Th>
+                    <Th>Nombre</Th>
+                    <Th>Documento</Th>
+                    <Th>Rol</Th>
+                    <Th>Estado</Th>
+                    <Th className="text-center">Acciones</Th>
+                </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                {usuarios.map((usuario) => (
+                    <tr
+                        key={usuario.idUser}
+                        className="hover:bg-gray-50 transition-all duration-150"
                     >
-                        <option value="">Todos</option>
-                        <option value="ACTIVO">Activo</option>
-                        <option value="INACTIVO">Inactivo</option>
-                    </select>
-                </div>
+                        <Td>#{usuario.idUser}</Td>
+                        <Td>{usuario.username || "—"}</Td>
+                        <Td>{usuario.nombreCompleto || "—"}</Td>
+                        <Td>{usuario.numeroDocumento || "—"}</Td>
+                        <Td>
+                            {usuario.roles?.length ? usuario.roles.join(", ") : "Sin rol"}
+                        </Td>
+                        <Td>
+                            <EstadoBadge estado={usuario.activo ? "Activo" : "Inactivo"} />
+                        </Td>
 
-                <div className="flex-1">
-                    <label className="block text-xs font-semibold text-gray-600 mb-1 uppercase tracking-wide">
-                        Rol
-                    </label>
-                    <select
-                        value={filterRol}
-                        onChange={(e) => setFilterRol(e.target.value)}
-                        className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-blue-500 transition-all"
-                    >
-                        <option value="">Todos</option>
-                        {rolesDisponibles.map((rol, idx) => (
-                            <option key={idx} value={rol}>
-                                {rol}
-                            </option>
-                        ))}
-                    </select>
-                </div>
-
-                <div className="relative flex-1 max-w-xs">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-4 h-4" />
-                    <input
-                        type="text"
-                        value={searchTerm}
-                        readOnly
-                        placeholder="Buscar usuario..."
-                        className="w-full pl-9 pr-4 py-2 border-2 border-gray-200 rounded-xl text-sm bg-white focus:ring-2 focus:ring-blue-500"
-                    />
-                </div>
-            </div>
-
-            {/* 🔹 Tabla */}
-            <div className="overflow-x-auto rounded-3xl shadow-lg border border-gray-100 bg-white/80 backdrop-blur-xl">
-                <table className="w-full border-collapse text-sm">
-                    <thead className="bg-gray-50/80 border-b border-gray-200">
-                    <tr>
-                        <Th>ID</Th>
-                        <Th>Usuario</Th>
-                        <Th>Nombre</Th>
-                        <Th>Documento</Th>
-                        <Th>Estado</Th>
-                        <Th>Roles</Th>
-                        <Th>Creado</Th>
-                    </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                    {filtrados.map((usuario, index) => {
-                        const info = getPersonalInfo(usuario.idUser);
-                        return (
-                            <motion.tr
-                                key={usuario.idUser || index}
-                                initial={{ opacity: 0 }}
-                                animate={{ opacity: 1 }}
-                                transition={{ delay: index * 0.03 }}
-                                className="hover:bg-gray-50 transition-all duration-150"
+                        {/* 🔘 Acciones */}
+                        <Td className="flex justify-center gap-2 py-3">
+                            <button
+                                onClick={() => navigate(`/admin/users/${usuario.username}`)}
+                                title="Ver detalle"
+                                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
                             >
-                                <Td>#{usuario.idUser}</Td>
+                                <Eye className="w-4 h-4 text-gray-600" />
+                            </button>
 
-                                {/* Usuario */}
-                                <Td>
-                                    <div className="flex items-center space-x-3">
-                                        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white font-semibold shadow">
-                                            {usuario.username?.charAt(0)?.toUpperCase() || "?"}
-                                        </div>
-                                        <div>
-                                            <p className="font-medium text-gray-800">
-                                                {usuario.username || "—"}
-                                            </p>
-                                            <p className="text-xs text-gray-500">{usuario.email || ""}</p>
-                                        </div>
-                                    </div>
-                                </Td>
+                            <button
+                                onClick={() => handleEdit(usuario)}
+                                title="Editar usuario"
+                                className="p-2 rounded-lg border border-gray-200 hover:bg-gray-100 transition"
+                            >
+                                <Pencil className="w-4 h-4 text-gray-600" />
+                            </button>
 
-                                {/* Nombre */}
-                                <Td>{info?.nombreCompleto || "—"}</Td>
-
-                                {/* Documento */}
-                                <Td>
-                                    {info
-                                        ? `${info.tipoDocumento?.descTipDoc || ""} ${info.numDocPers || ""}`
-                                        : "—"}
-                                </Td>
-
-                                {/* Estado */}
-                                <Td>
-                                    <EstadoBadge estado={usuario.estado} />
-                                </Td>
-
-                                {/* Roles */}
-                                <Td>
-                                    {usuario.roles?.length ? (
-                                        <div className="flex flex-wrap gap-1">
-                                            {usuario.roles.map((rol, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium"
-                                                >
-                            {rol}
-                          </span>
-                                            ))}
-                                        </div>
-                                    ) : (
-                                        <span className="text-gray-400 text-xs">Sin roles</span>
-                                    )}
-                                </Td>
-
-                                {/* Fecha */}
-                                <Td className="text-gray-500 text-xs">
-                                    <CalendarClock className="w-4 h-4 inline mr-1 text-gray-400" />
-                                    {usuario.createAt
-                                        ? new Date(usuario.createAt).toLocaleDateString("es-PE", {
-                                            year: "numeric",
-                                            month: "short",
-                                            day: "numeric",
-                                        })
-                                        : "—"}
-                                </Td>
-                            </motion.tr>
-                        );
-                    })}
-                    </tbody>
-                </table>
-            </div>
-        </motion.div>
+                            <button
+                                onClick={() => handleDelete(usuario.idUser)}
+                                title="Eliminar usuario"
+                                className="p-2 rounded-lg bg-red-500 hover:bg-red-600 text-white transition"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                            </button>
+                        </Td>
+                    </tr>
+                ))}
+                </tbody>
+            </table>
+        </div>
     );
 }
 
-/* === 🧩 COMPONENTES REUTILIZABLES === */
-const Th = ({ children }) => (
-    <th className="px-6 py-3 text-left text-[11px] font-bold text-gray-600 uppercase tracking-wider select-none">
+// 🧩 Helpers
+const Th = ({ children, className }) => (
+    <th
+        className={`px-6 py-3 text-left text-xs font-bold text-gray-700 uppercase tracking-wide ${className}`}
+    >
         {children}
     </th>
 );
 
-const Td = ({ children, className = "" }) => (
-    <td
-        className={`px-6 py-4 whitespace-nowrap text-sm text-gray-700 ${className}`}
-    >
-        {children}
-    </td>
+const Td = ({ children, className }) => (
+    <td className={`px-6 py-4 text-gray-700 ${className}`}>{children}</td>
 );

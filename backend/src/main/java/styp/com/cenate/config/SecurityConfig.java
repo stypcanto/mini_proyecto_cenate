@@ -39,45 +39,44 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
-    // ===========================================================
-    // 🔐 CONFIGURACIÓN PRINCIPAL DE SEGURIDAD
-    // ===========================================================
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 🚫 Desactiva CSRF porque usamos JWT
                 .csrf(AbstractHttpConfigurer::disable)
-
-                // 🌍 CORS global
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // ⚠️ Manejo profesional de errores
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
                         .accessDeniedHandler(accessDeniedHandler())
                 )
-
-                // 🧭 Configuración de permisos
                 .authorizeHttpRequests(auth -> auth
-                        // ✅ Endpoints públicos
+                        // ✅ Endpoints públicos generales
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/public/**",
                                 "/api/account-requests",
                                 "/error",
-                                "/health"
+                                "/health",
+                                "/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html"
                         ).permitAll()
 
-                        // 👨‍⚕️ Personal CNT (nuevo módulo)
-                        .requestMatchers("/api/personal-cnt/**")
-                        .hasAnyAuthority(
-                                "ROLE_SUPERADMIN",
-                                "ROLE_ADMIN",
-                                "VER_PERSONAL",
-                                "CREAR_PERSONAL",
-                                "EDITAR_PERSONAL",
-                                "ELIMINAR_PERSONAL"
+                        // ✅ Nuevos módulos de datos básicos (públicos)
+                        .requestMatchers(HttpMethod.GET,
+                                "/api/entidad/redes/**",
+                                "/api/entidad/niveles/**",
+                                "/api/entidad/procedimientos/**",
+                                "/api/entidad/tipo-procedimientos/**",
+                                "/api/entidad/area-hospitalaria/**",
+                                "/api/entidad/ipress/**",
+                                "/api/entidad/frm-transf-img/**"
+                        ).permitAll()
+
+                        // 👨‍⚕️ Personal CNT
+                        .requestMatchers("/api/personal-cnt/**").hasAnyAuthority(
+                                "ROLE_SUPERADMIN", "ROLE_ADMIN",
+                                "VER_PERSONAL", "CREAR_PERSONAL", "EDITAR_PERSONAL", "ELIMINAR_PERSONAL"
                         )
 
                         // 🔐 Administración
@@ -96,63 +95,47 @@ public class SecurityConfig {
                         .requestMatchers("/api/transferencias/**", "/api/auditoria/**", "/api/externos/**")
                         .hasAnyAuthority("ROLE_SUPERADMIN", "ROLE_ADMIN")
 
-                        // 🔐 Todo lo demás requiere autenticación
+                        // 🔒 Todo lo demás requiere autenticación
                         .anyRequest().authenticated()
                 )
-
-                // ⚙️ Stateless (sin sesiones, solo JWT)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // 🔑 Provider y filtro JWT
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // ===========================================================
-    // ⚠️ HANDLER PERSONALIZADO PARA 403 (RESPUESTA JSON)
-    // ===========================================================
+    // ⚠️ Manejador personalizado para respuestas 403
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             response.setContentType("application/json");
-
             String message = """
             {
                 "status": 403,
                 "timestamp": "%s",
                 "path": "%s",
                 "message": "🚫 Acceso restringido: no tienes los permisos necesarios para realizar esta acción.",
-                "tip": "Si crees que esto es un error, contacta al administrador del sistema o revisa tus credenciales de acceso."
+                "tip": "Si crees que esto es un error, contacta al administrador del sistema o revisa tus credenciales."
             }
-            """.formatted(
-                    LocalDateTime.now(),
-                    request.getRequestURI()
-            );
-
+            """.formatted(LocalDateTime.now(), request.getRequestURI());
             response.getWriter().write(message);
         };
     }
 
-    // ===========================================================
-    // 🌍 CONFIGURACIÓN GLOBAL DE CORS
-    // ===========================================================
+    // 🌍 Configuración CORS global
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
-        // Permitir orígenes locales y de servidores internos
         config.setAllowedOrigins(Arrays.asList(
-                "http://localhost:3000",
                 "http://localhost:5173",
+                "http://localhost:3000",
                 "http://127.0.0.1:5173",
                 "http://10.0.89.13:5173",
                 "http://10.0.89.239"
         ));
-
-        config.addAllowedOriginPattern("*"); // 🔧 Acepta patrones (útil con Docker/Nginx)
+        config.addAllowedOriginPattern("*");
         config.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
@@ -164,9 +147,7 @@ public class SecurityConfig {
         return source;
     }
 
-    // ===========================================================
-    // 🧱 AUTENTICACIÓN Y PASSWORD ENCODER
-    // ===========================================================
+    // 🧱 Configuración de autenticación y encriptación
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();

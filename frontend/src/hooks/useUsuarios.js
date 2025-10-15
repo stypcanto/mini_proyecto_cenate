@@ -1,21 +1,24 @@
 // ========================================================================
-// 👥 useUsuarios - Gestión centralizada y profesional de usuarios CENATE
-// Estilo macOS + manejo de autenticación y CRUD con notificaciones
+// 👥 useUsuarios.js - Hook profesional para gestión de usuarios (CENATE)
 // ========================================================================
 
 import { useState, useEffect, useCallback } from "react";
 import toast from "react-hot-toast";
 import {
-    getUsuarios,
+    getUsuariosInternos,
+    getUsuariosExternos,
     getUsuarioById,
+    getUsuarioDetalle,
     createUsuario,
     updateUsuario,
     deleteUsuario,
     getCurrentUser,
-    getUsuariosExternos,
-    getUsuariosInternos,
 } from "@/api/usuarios";
 import * as AuthAPI from "@/api/auth";
+
+// ========================================================================
+// 🧠 Hook principal de gestión de usuarios
+// ========================================================================
 
 export const useUsuarios = () => {
     // ----------------------------------------------------------
@@ -27,7 +30,7 @@ export const useUsuarios = () => {
     const [error, setError] = useState("");
 
     // ======================================================
-    // 🔐 LOGIN Y AUTENTICACIÓN
+    // 🔐 LOGIN / AUTENTICACIÓN
     // ======================================================
     const loginUser = useCallback(async (username, password) => {
         setLoading(true);
@@ -60,7 +63,7 @@ export const useUsuarios = () => {
     }, []);
 
     // ======================================================
-    // 👤 USUARIO AUTENTICADO
+    // 👤 USUARIO AUTENTICADO ACTUAL
     // ======================================================
     const loadCurrentUser = useCallback(async () => {
         try {
@@ -72,48 +75,10 @@ export const useUsuarios = () => {
     }, []);
 
     // ======================================================
-    // 🔁 RECUPERAR / CAMBIAR CONTRASEÑA
-    // ======================================================
-    const recoverPassword = useCallback(async (email) => {
-        setLoading(true);
-        setError("");
-        try {
-            const data = await AuthAPI.forgotPassword(email);
-            if (!data?.success) throw new Error(data?.message || "No se pudo enviar el correo.");
-            toast.success("📨 Correo de recuperación enviado.");
-            return data;
-        } catch (err) {
-            const message = err.message || "Error al recuperar contraseña.";
-            toast.error(message);
-            setError(message);
-            throw new Error(message);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    const updatePassword = useCallback(async (currentPassword, newPassword, confirmPassword) => {
-        setLoading(true);
-        setError("");
-        try {
-            const data = await AuthAPI.changePassword(currentPassword, newPassword, confirmPassword);
-            toast.success("🔒 Contraseña actualizada correctamente.");
-            return data;
-        } catch (err) {
-            const message = err.message || "Error al cambiar contraseña.";
-            toast.error(message);
-            setError(message);
-            throw new Error(message);
-        } finally {
-            setLoading(false);
-        }
-    }, []);
-
-    // ======================================================
-    // 👥 CRUD DE USUARIOS (Panel Admin)
+    // 👥 CRUD DE USUARIOS
     // ======================================================
 
-    // 🔹 Obtener lista general de usuarios
+    // 🔹 Obtener lista de usuarios (internos o externos)
     const fetchUsuarios = useCallback(async (tipo = "internos") => {
         setLoading(true);
         setError("");
@@ -145,7 +110,19 @@ export const useUsuarios = () => {
         }
     }, []);
 
-    // 🔹 Crear nuevo usuario
+    // 🔹 Obtener detalle extendido (username)
+    const fetchUsuarioDetalle = useCallback(async (username) => {
+        try {
+            const data = await getUsuarioDetalle(username);
+            return data;
+        } catch (err) {
+            toast.error("Error al obtener detalle del usuario.");
+            console.error(`❌ Error al obtener detalle del usuario ${username}:`, err);
+            throw new Error("No se pudo obtener el detalle del usuario.");
+        }
+    }, []);
+
+    // 🔹 Crear usuario
     const createNewUsuario = useCallback(async (usuario) => {
         try {
             const data = await createUsuario(usuario);
@@ -158,7 +135,7 @@ export const useUsuarios = () => {
         }
     }, []);
 
-    // 🔹 Actualizar usuario existente
+    // 🔹 Actualizar usuario
     const updateExistingUsuario = useCallback(async (id, usuario) => {
         try {
             const data = await updateUsuario(id, usuario);
@@ -187,7 +164,7 @@ export const useUsuarios = () => {
     }, []);
 
     // ======================================================
-    // 🚀 AUTO-CARGA (token válido)
+    // 🚀 AUTO-CARGA SI HAY TOKEN
     // ======================================================
     useEffect(() => {
         const token = localStorage.getItem("token");
@@ -205,13 +182,12 @@ export const useUsuarios = () => {
 
         // 🔐 Auth
         loginUser,
-        recoverPassword,
-        updatePassword,
         loadCurrentUser,
 
         // 👥 CRUD
         fetchUsuarios,
         fetchUsuarioById,
+        fetchUsuarioDetalle,
         createNewUsuario,
         updateExistingUsuario,
         deleteExistingUsuario,

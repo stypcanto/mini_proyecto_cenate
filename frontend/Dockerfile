@@ -1,21 +1,26 @@
+# ================================
+# ⚡ Multi-stage Dockerfile para React + Nginx (CRA)
+# Compatible con ARM y AMD64
+# ================================
+
 # ---------------------------
-# 🧩 Etapa 1: Build React (CRA) con Node 18
+# 🧩 Etapa 1: Build React
 # ---------------------------
 FROM node:18-alpine AS build
 WORKDIR /app
 
-# Copiar dependencias
+# Copiar dependencias (aprovecha caché)
 COPY package*.json ./
-RUN npm install --legacy-peer-deps
+RUN npm ci --legacy-peer-deps
 
-# Copiar código fuente
+# Copiar el resto del código fuente
 COPY . .
 
-# Establecer variable de entorno (CRA usa REACT_APP_API_URL)
+# Variable para React App
 ARG REACT_APP_API_URL
 ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
-# 🚀 Build para producción (CRA genera /build)
+# 🚀 Compilar build de producción
 RUN npm run build
 
 # ---------------------------
@@ -23,11 +28,12 @@ RUN npm run build
 # ---------------------------
 FROM nginx:alpine
 
-# Copiar el build generado
-COPY --from=build /app/build /usr/share/nginx/html
-
-# Copiar configuración de Nginx personalizada
+# Eliminar configuración por defecto y usar la tuya
+RUN rm -rf /etc/nginx/conf.d/*
 COPY default.conf /etc/nginx/conf.d/default.conf
+
+# Copiar build generado (CRA → /build)
+COPY --from=build /app/build /usr/share/nginx/html
 
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
