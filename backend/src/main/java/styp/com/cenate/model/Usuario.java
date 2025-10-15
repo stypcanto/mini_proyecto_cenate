@@ -46,7 +46,7 @@ public class Usuario implements UserDetails {
     @Column(name = "pass_user", nullable = false, length = 200)
     private String passUser; // Contraseña (hash)
 
-    @Column(name = "stat_user", length = 1, nullable = false)
+    @Column(name = "stat_user", length = 20, nullable = false)
     @Builder.Default
     private String statUser = "A"; // A = Activo, I = Inactivo
 
@@ -90,14 +90,19 @@ public class Usuario implements UserDetails {
     // 🧠 Métodos utilitarios
     // ======================================================
 
+    /** Determina si el usuario está activo */
     public boolean isActive() {
-        return "A".equalsIgnoreCase(this.statUser);
+        if (this.statUser == null) return false;
+        String estado = this.statUser.trim().toUpperCase();
+        return estado.equals("A") || estado.equals("ACTIVO");
     }
 
+    /** Determina si la cuenta está bloqueada temporalmente */
     public boolean isAccountLocked() {
         return lockedUntil != null && lockedUntil.isAfter(LocalDateTime.now());
     }
 
+    /** Incrementa los intentos fallidos y bloquea si excede el límite */
     public void increaseFailedAttempts() {
         if (failedAttempts == null) failedAttempts = 0;
         failedAttempts++;
@@ -106,6 +111,7 @@ public class Usuario implements UserDetails {
         }
     }
 
+    /** Reinicia los intentos fallidos */
     public void resetFailedAttempts() {
         failedAttempts = 0;
         lockedUntil = null;
@@ -125,13 +131,17 @@ public class Usuario implements UserDetails {
         return "/images/default-profile.png";
     }
 
+    /** Devuelve el estado legible del usuario */
     public String getEstadoLegible() {
-        return "A".equalsIgnoreCase(statUser) ? "Activo" : "Inactivo";
+        if (statUser == null) return "Desconocido";
+        String estado = statUser.trim().toUpperCase();
+        return (estado.equals("A") || estado.equals("ACTIVO")) ? "Activo" : "Inactivo";
     }
 
+    /** Devuelve los roles como una cadena */
     public String getRolesAsString() {
         return roles.stream()
-                .map(Rol::getDescRol)  // ✅ Usará el getter generado por Lombok
+                .map(Rol::getDescRol)
                 .reduce((a, b) -> a + ", " + b)
                 .orElse("Sin rol");
     }

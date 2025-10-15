@@ -135,6 +135,19 @@ export const getPersonalExternoByIpress = (idIpress) =>
     });
 
 // ========================================================================
+// 👥 PERSONAL TOTAL (Vista combinada CENATE + Externo)
+// ========================================================================
+
+export const getPersonalTotal = () =>
+    safeFetch(`${API_BASE}/personal/total`, { headers: getHeaders(true) });
+
+export const getDetalleCenate = (id) =>
+    safeFetch(`${API_BASE}/personal/cenate/${id}`, { headers: getHeaders(true) });
+
+export const getDetalleExterno = (id) =>
+    safeFetch(`${API_BASE}/personal/externo/${id}`, { headers: getHeaders(true) });
+
+// ========================================================================
 // 📋 CATÁLOGOS AUXILIARES (Tipos, Áreas, Régimen, Ipress)
 // ========================================================================
 
@@ -159,6 +172,9 @@ export const searchIpress = (query) =>
 // 🚀 EXPORTACIÓN GENERAL (por si se importa todo junto)
 // ========================================================================
 export default {
+  getPersonalTotal,
+  getDetalleCenate,
+  getDetalleExterno,
   getAllPersonalCnt,
   getPersonalCntById,
   getPersonalCntByUsuario,
