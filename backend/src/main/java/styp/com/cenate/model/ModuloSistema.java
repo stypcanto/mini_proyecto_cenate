@@ -1,5 +1,6 @@
 package styp.com.cenate.model;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,9 +13,10 @@ import java.util.List;
 /**
  * Entidad que representa los módulos del sistema CENATE.
  * Almacena información sobre los módulos principales de la aplicación.
- * 
- * @author CENATE Development Team
- * @version 1.0
+ *
+ * @author
+ *   CENATE Development Team
+ * @version 1.1
  */
 @Entity
 @Table(name = "dim_modulos_sistema")
@@ -51,11 +53,12 @@ public class ModuloSistema {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Relaciones
-    @OneToMany(mappedBy = "modulo", cascade = CascadeType.ALL)
+    // 🔹 Relaciones
+    @OneToMany(mappedBy = "modulo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
     private List<PaginaModulo> paginas;
 
-    @OneToMany(mappedBy = "modulo", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "modulo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<ContextoModulo> contextos;
 
     @PrePersist

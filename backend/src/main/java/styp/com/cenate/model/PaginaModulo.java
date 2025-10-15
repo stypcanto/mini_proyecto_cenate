@@ -1,5 +1,6 @@
 package styp.com.cenate.model;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -12,9 +13,10 @@ import java.util.List;
 /**
  * Entidad que representa las páginas de un módulo en el sistema CENATE.
  * Cada página pertenece a un módulo y tiene permisos asociados.
- * 
- * @author CENATE Development Team
- * @version 1.0
+ *
+ * @author
+ *   CENATE Development Team
+ * @version 1.1
  */
 @Entity
 @Table(name = "dim_paginas_modulo")
@@ -31,6 +33,7 @@ public class PaginaModulo {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_modulo", nullable = false)
+    @JsonBackReference
     private ModuloSistema modulo;
 
     @Column(name = "nombre_pagina", nullable = false, length = 255)
@@ -52,8 +55,8 @@ public class PaginaModulo {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    // Relaciones
-    @OneToMany(mappedBy = "pagina", cascade = CascadeType.ALL)
+    // 🔹 Relaciones
+    @OneToMany(mappedBy = "pagina", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<PermisoModular> permisos;
 
     @PrePersist
