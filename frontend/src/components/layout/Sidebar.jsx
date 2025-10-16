@@ -1,91 +1,167 @@
 // src/components/layout/Sidebar.jsx
-import React from "react";
+import React, { useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Users, FileText, Grid, Shield, LogOut, Home } from "lucide-react";
+import {
+  Users,
+  FileText,
+  Grid,
+  Shield,
+  LogOut,
+  Home,
+  Menu,
+  X,
+  Activity,
+} from "lucide-react";
 
 /**
- * Sidebar dinámico por roles.
- * Se basa en localStorage.roles (array de strings).
+ * Sidebar general CENATE
+ * Visible para roles externos, médicos, coordinadores, etc.
  */
 export default function Sidebar() {
-    const navigate = useNavigate();
-    const rawRoles = JSON.parse(localStorage.getItem("roles") || "[]");
-    const roles = rawRoles.map((r) => String(r).toUpperCase());
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(true);
 
-    // Menú con control de visibilidad por rol.
-    const menuItems = [
-        { key: "inicio", label: "Inicio", path: "/", icon: Home, roles: ["*"] },
-        { key: "pacientes", label: "Pacientes", path: "/pacientes", icon: Users, roles: ["*"] },
-        {
-            key: "transferencias",
-            label: "Transferencia Exámenes",
-            path: "/transferencia-examenes",
-            icon: FileText,
-            roles: ["*"],
-        },
-        {
-            key: "admin",
-            label: "Administración",
-            path: "/admin",
-            icon: Shield,
-            roles: ["SUPERADMIN", "ADMIN"],
-        },
-        {
-            key: "reportes",
-            label: "Reportes",
-            path: "/reportes",
-            icon: Grid,
-            roles: ["SUPERADMIN", "ADMIN", "AUDITOR_CLINIC"],
-        },
-    ];
+  // Extraer datos del localStorage
+  const rawRoles = JSON.parse(localStorage.getItem("roles") || "[]");
+  const roles = rawRoles.map((r) => String(r).toUpperCase());
+  const nombre = localStorage.getItem("username") || "Usuario";
 
-    const canShow = (itemRoles) =>
-        itemRoles.includes("*") || roles.some((r) => itemRoles.map((x) => x.toUpperCase()).includes(r));
+  // Definición del menú
+  const menuItems = [
+    { key: "inicio", label: "Inicio", path: "/", icon: Home, roles: ["*"] },
+    { key: "pacientes", label: "Pacientes", path: "/pacientes", icon: Users, roles: ["*"] },
+    {
+      key: "transferencias",
+      label: "Transferencia Exámenes",
+      path: "/transferencia-examenes",
+      icon: FileText,
+      roles: ["*"],
+    },
+    {
+      key: "admin",
+      label: "Administración",
+      path: "/admin",
+      icon: Shield,
+      roles: ["SUPERADMIN", "ADMIN"],
+    },
+    {
+      key: "reportes",
+      label: "Reportes",
+      path: "/reportes",
+      icon: Grid,
+      roles: ["SUPERADMIN", "ADMIN", "AUDITOR_CLINIC"],
+    },
+    {
+      key: "actividad",
+      label: "Actividad",
+      path: "/actividad",
+      icon: Activity,
+      roles: ["*"],
+    },
+  ];
 
-    const handleLogout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("roles");
-        localStorage.removeItem("username");
-        localStorage.removeItem("userId");
-        navigate("/login");
-        // recargar para asegurarse
-        window.location.reload();
-    };
+  const canShow = (itemRoles) =>
+    itemRoles.includes("*") ||
+    roles.some((r) => itemRoles.map((x) => x.toUpperCase()).includes(r));
 
-    return (
-        <aside className="w-64 bg-gradient-to-b from-blue-800 to-blue-900 text-white flex flex-col">
-            <div className="px-6 py-5 flex items-center gap-3 border-b border-blue-700">
-                <div className="text-lg font-bold">CENATE</div>
+  const handleLogout = () => {
+    localStorage.clear();
+    navigate("/login");
+    window.location.reload();
+  };
+
+  return (
+    <>
+      {/* Overlay móvil */}
+      {isOpen && (
+        <div
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-40 z-40"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      {/* Sidebar principal */}
+      <aside
+        className={`
+          fixed top-0 left-0 h-screen bg-gradient-to-b from-blue-950 to-slate-900
+          text-white shadow-xl z-50 transition-all duration-300 ease-in-out
+          ${isOpen ? "w-64" : "w-0 lg:w-20"} overflow-hidden
+        `}
+      >
+        <div className="flex flex-col h-full">
+          {/* Header */}
+          <div className="px-5 py-6 border-b border-blue-800 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-teal-500 flex items-center justify-center shadow-md">
+                <span className="text-white font-bold text-lg">
+                  {nombre.charAt(0).toUpperCase()}
+                </span>
+              </div>
+              {isOpen && (
+                <div>
+                  <p className="text-sm font-semibold truncate w-32">{nombre}</p>
+                  <p className="text-xs text-blue-300">
+                    {roles.length ? roles[0] : "Sin rol"}
+                  </p>
+                </div>
+              )}
             </div>
+          </div>
 
-            <nav className="flex-1 px-2 py-4 space-y-1 overflow-auto">
-                {menuItems
-                    .filter((m) => canShow(m.roles))
-                    .map((m) => (
-                        <NavLink
-                            key={m.key}
-                            to={m.path}
-                            className={({ isActive }) =>
-                                `flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium hover:bg-blue-700 transition ${
-                                    isActive ? "bg-blue-700" : "text-white/95"
-                                }`
-                            }
-                        >
-                            <m.icon className="w-5 h-5" />
-                            <span>{m.label}</span>
-                        </NavLink>
-                    ))}
-            </nav>
-
-            <div className="px-4 py-3 border-t border-blue-700">
-                <button
-                    onClick={handleLogout}
-                    className="w-full flex items-center justify-center gap-2 py-2 rounded-md bg-blue-600 hover:bg-blue-500 transition"
+          {/* Menú principal */}
+          <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            {menuItems
+              .filter((m) => canShow(m.roles))
+              .map((m) => (
+                <NavLink
+                  key={m.key}
+                  to={m.path}
+                  className={({ isActive }) =>
+                    `
+                      flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium
+                      transition-all duration-200 relative group
+                      ${
+                        isActive
+                          ? "bg-blue-700 text-white shadow-md border-l-4 border-teal-400"
+                          : "text-white/80 hover:bg-blue-800 hover:text-white"
+                      }
+                    `
+                  }
                 >
-                    <LogOut className="w-4 h-4" />
-                    Salir
-                </button>
-            </div>
-        </aside>
-    );
+                  <m.icon className="w-5 h-5" />
+                  {isOpen && <span>{m.label}</span>}
+
+                  {/* Tooltip si el sidebar está colapsado */}
+                  {!isOpen && (
+                    <span className="absolute left-16 bg-slate-800 text-xs rounded-md px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {m.label}
+                    </span>
+                  )}
+                </NavLink>
+              ))}
+          </nav>
+
+          {/* Logout */}
+          <div className="p-4 border-t border-blue-800">
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 py-2 rounded-md
+              bg-gradient-to-r from-red-600 to-red-500 hover:from-red-500 hover:to-red-400 transition-all"
+            >
+              <LogOut className="w-4 h-4" />
+              {isOpen && <span>Salir</span>}
+            </button>
+          </div>
+        </div>
+      </aside>
+
+      {/* Toggle botón móvil */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="fixed top-4 left-4 z-[60] p-2 rounded-lg bg-blue-900 text-white shadow-md hover:bg-blue-800 transition-colors duration-200 lg:hidden"
+      >
+        {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+      </button>
+    </>
+  );
 }

@@ -1,5 +1,5 @@
 // ========================================================================
-// 🌐 SISTEMA INTRANET CENATE - App.js (versión extendida con roles/lineamientos)
+// 🌐 SISTEMA INTRANET CENATE - App.js (versión actualizada)
 // ========================================================================
 
 import React from "react";
@@ -16,8 +16,9 @@ import Register from "./pages/Register.jsx";
 import ForgotPassword from "./pages/ForgotPassword.jsx";
 import AccountRequest from "./pages/AccountRequest.jsx";
 import Unauthorized from "./pages/Unauthorized.jsx";
+import NotFound from "./pages/NotFound.jsx";
 
-// 🔐 Páginas protegidas
+// 🔐 Páginas protegidas generales
 import PacientesPage from "./pages/PacientesPage.jsx";
 import TransferenciaExamenesPage from "./pages/TransferenciaExamenesPage.jsx";
 
@@ -30,11 +31,16 @@ import UserManagement from "./pages/admin/UserManagement.jsx";
 import AdminAccountRequests from "./pages/admin/AdminAccountRequests.jsx";
 import PermisosManagement from "./pages/admin/PermisosManagement.jsx";
 import AdminRecoveries from "./pages/admin/AdminRecoveries.jsx";
+import AdminPersonalPanel from "./pages/admin/AdminPersonalPanel.jsx";
 
-// ⚙️ Nuevos módulos administrativos
+// ⚙️ Tablas administrativas
 import ProfesionesTable from "./pages/admin/tables/ProfesionesTable.jsx";
 import FirmasDigitalesTable from "./pages/admin/tables/FirmasDigitalesTable.jsx";
 import OrdenesCompraTable from "./pages/admin/tables/OrdenesCompraTable.jsx";
+import PersonalTable from "./pages/admin/tables/PersonalTable.jsx";
+import RegimenesLaboralesTable from "./pages/admin/tables/RegimenesLaboralesTable.jsx";
+import TiposDocumentoTable from "./pages/admin/tables/TiposDocumentoTable.jsx";
+import AreasTable from "./pages/admin/tables/AreasTable.jsx";
 
 // 🩺 Roles especializados
 import DashboardMedico from "./pages/roles/medico/DashboardMedico.jsx";
@@ -42,274 +48,300 @@ import DashboardCoordinador from "./pages/roles/coordinador/DashboardCoordinador
 import DashboardExterno from "./pages/roles/externo/DashboardExterno.jsx";
 import DashboardCitas from "./pages/roles/citas/DashboardCitas.jsx";
 
-// 📘 Módulo compartido - Lineamientos IPRESS
+// 📘 Lineamientos IPRESS
 import LineamientosIpress from "./pages/roles/lineamientos/LineamientosIpress.jsx";
 
-// 👤 Panel usuario general
+// 👤 Usuario general
 import UserDashboard from "./pages/user/UserDashboard.jsx";
 
-// ⚙️ Roles y permisos globales
+// ⚙️ Constantes de roles
 import { ROLES } from "./constants/auth.js";
 
-// ⚠️ Página 404
-import NotFound from "./pages/NotFound.jsx";
-
-/* ==============================================================
- 🧩 Protección de rutas (roles + autenticación)
-============================================================== */
+// =============================================================
+// 🧩 Protección de rutas
+// =============================================================
 const RequireAuth = ({ children, allowedRoles = [] }) => {
-    const token = localStorage.getItem("token");
+  const token = localStorage.getItem("token");
 
-    if (!token) return <Navigate to="/login" replace />;
+  if (!token) return <Navigate to="/login" replace />;
 
-    if (allowedRoles.length > 0) {
-        const storedRoles = JSON.parse(localStorage.getItem("roles") || "[]");
-        const userRoles = storedRoles.map((r) => String(r).toUpperCase());
-        const allowedUpper = allowedRoles.map((r) => String(r).toUpperCase());
-        const isAllowed = userRoles.some((r) => allowedUpper.includes(r));
+  if (allowedRoles.length > 0) {
+    const storedRoles = JSON.parse(localStorage.getItem("roles") || "[]");
+    const userRoles = storedRoles.map((r) => String(r).toUpperCase());
+    const allowedUpper = allowedRoles.map((r) => String(r).toUpperCase());
+    const isAllowed = userRoles.some((r) => allowedUpper.includes(r));
 
-        if (!isAllowed) return <Navigate to="/unauthorized" replace />;
-    }
+    if (!isAllowed) return <Navigate to="/unauthorized" replace />;
+  }
 
-    return children;
+  return children;
 };
 
-/* ==============================================================
- 🧭 Enrutamiento principal + Notificaciones globales
-============================================================== */
+// =============================================================
+// 🚀 Aplicación principal
+// =============================================================
 function App() {
-    return (
-        <Router>
-            {/* 🔔 Sistema global de notificaciones tipo macOS */}
-            <Toaster
-                position="top-right"
-                toastOptions={{
-                    style: {
-                        borderRadius: "14px",
-                        background: "rgba(15, 32, 70, 0.92)",
-                        color: "#f1f5f9",
-                        fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
-                        backdropFilter: "blur(10px)",
-                        padding: "14px 18px",
-                        boxShadow: "0 4px 25px rgba(0, 0, 0, 0.15)",
-                        fontSize: "0.9rem",
-                    },
-                    success: { iconTheme: { primary: "#00C897", secondary: "#fff" } },
-                    error: { iconTheme: { primary: "#FF4C4C", secondary: "#fff" } },
-                }}
-            />
+  return (
+    <Router>
+      <Toaster
+        position="top-right"
+        toastOptions={{
+          style: {
+            borderRadius: "12px",
+            background: "rgba(15, 32, 70, 0.9)",
+            color: "#f1f5f9",
+            fontFamily: "Inter, -apple-system, BlinkMacSystemFont, sans-serif",
+            backdropFilter: "blur(10px)",
+            padding: "14px 18px",
+            boxShadow: "0 4px 25px rgba(0, 0, 0, 0.15)",
+            fontSize: "0.9rem",
+          },
+          success: { iconTheme: { primary: "#00C897", secondary: "#fff" } },
+          error: { iconTheme: { primary: "#FF4C4C", secondary: "#fff" } },
+        }}
+      />
 
-            <Routes>
-                {/* ======================================================
-          🔓 PÁGINAS PÚBLICAS
+      <Routes>
+        {/* ======================================================
+        🔓 PÚBLICAS
         ====================================================== */}
-                <Route path="/" element={<Home />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/registro" element={<Register />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/solicitud-cuenta" element={<AccountRequest />} />
-                <Route path="/unauthorized" element={<Unauthorized />} />
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/registro" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/solicitud-cuenta" element={<AccountRequest />} />
+        <Route path="/unauthorized" element={<Unauthorized />} />
 
-                {/* ======================================================
-          🔐 PÁGINAS PROTEGIDAS CON LAYOUT
+        {/* ======================================================
+        🔐 PROTEGIDAS CON LAYOUT
         ====================================================== */}
-                <Route element={<Layout />}>
-                    <Route
-                        path="/pacientes"
-                        element={
-                            <RequireAuth>
-                                <PacientesPage />
-                            </RequireAuth>
-                        }
-                    />
-                    <Route
-                        path="/transferencia-examenes"
-                        element={
-                            <RequireAuth>
-                                <TransferenciaExamenesPage />
-                            </RequireAuth>
-                        }
-                    />
-                </Route>
+        <Route element={<Layout />}>
+          <Route
+            path="/pacientes"
+            element={
+              <RequireAuth>
+                <PacientesPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/transferencia-examenes"
+            element={
+              <RequireAuth>
+                <TransferenciaExamenesPage />
+              </RequireAuth>
+            }
+          />
+        </Route>
 
-                {/* ======================================================
-          👑 PANEL ADMINISTRATIVO
+        {/* ======================================================
+        👑 ADMINISTRATIVAS
         ====================================================== */}
-                <Route
-                    path="/admin"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <AdminDashboard />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/recoveries"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <AdminRecoveries />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/users"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <AdminUsersManagement />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/roles"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <RolesManagement />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/logs"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <SystemLogs />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/account-requests"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <AdminAccountRequests />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/user-management"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <UserManagement />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/permisos"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <PermisosManagement />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/profesiones"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <ProfesionesTable />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/firmas"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <FirmasDigitalesTable />
-                        </RequireAuth>
-                    }
-                />
-                <Route
-                    path="/admin/ordenes"
-                    element={
-                        <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
-                            <OrdenesCompraTable />
-                        </RequireAuth>
-                    }
-                />
+        <Route
+          path="/admin/dashboard"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <AdminDashboard />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/users"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <AdminUsersManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/personal"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <AdminPersonalPanel />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/account-requests"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <AdminAccountRequests />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/roles"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN"]}>
+              <RolesManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/permisos"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN"]}>
+              <PermisosManagement />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/logs"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <SystemLogs />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/recoveries"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <AdminRecoveries />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/user-management"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <UserManagement />
+            </RequireAuth>
+          }
+        />
 
-                {/* ======================================================
-          🩺 PANEL MÉDICO
-        ====================================================== */}
-                <Route
-                    path="/medico"
-                    element={
-                        <RequireAuth allowedRoles={[ROLES.MEDICO]}>
-                            <DashboardMedico />
-                        </RequireAuth>
-                    }
-                />
+        {/* Tablas administrativas */}
+        <Route
+          path="/admin/tablas/profesiones"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <ProfesionesTable />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/tablas/firmas"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <FirmasDigitalesTable />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/tablas/ordenes"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <OrdenesCompraTable />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/tablas/personal"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <PersonalTable />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/tablas/regimenes"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <RegimenesLaboralesTable />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/tablas/tipos-documento"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <TiposDocumentoTable />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/admin/tablas/areas"
+          element={
+            <RequireAuth allowedRoles={["SUPERADMIN", "ADMIN"]}>
+              <AreasTable />
+            </RequireAuth>
+          }
+        />
 
-                {/* ======================================================
-          🗓️ PANEL DE CITAS
+        {/* ======================================================
+        🩺 ROLES FUNCIONALES
         ====================================================== */}
-                <Route
-                    path="/citas"
-                    element={
-                        <RequireAuth allowedRoles={[ROLES.CITAS]}>
-                            <DashboardCitas />
-                        </RequireAuth>
-                    }
-                />
+        <Route
+          path="/medico/dashboard"
+          element={
+            <RequireAuth allowedRoles={[ROLES.MEDICO]}>
+              <DashboardMedico />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/coordinador/dashboard"
+          element={
+            <RequireAuth allowedRoles={[ROLES.COORDINADOR_MEDICO]}>
+              <DashboardCoordinador />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/externo/dashboard"
+          element={
+            <RequireAuth allowedRoles={[ROLES.EXTERNO]}>
+              <DashboardExterno />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/citas/dashboard"
+          element={
+            <RequireAuth allowedRoles={[ROLES.CITAS]}>
+              <DashboardCitas />
+            </RequireAuth>
+          }
+        />
 
-                {/* ======================================================
-          🩺 PANEL COORDINADOR MÉDICO
+        {/* ======================================================
+        📘 LINEAMIENTOS IPRESS
         ====================================================== */}
-                <Route
-                    path="/coordinador"
-                    element={
-                        <RequireAuth allowedRoles={[ROLES.COORDINADOR_MEDICO]}>
-                            <DashboardCoordinador />
-                        </RequireAuth>
-                    }
-                />
+        <Route
+          path="/lineamientos"
+          element={
+            <RequireAuth
+              allowedRoles={[
+                ROLES.EXTERNO,
+                ROLES.MEDICO,
+                ROLES.COORDINADOR_MEDICO,
+                ROLES.COORD_LINEAMIENTOS_IPRESS,
+              ]}
+            >
+              <LineamientosIpress />
+            </RequireAuth>
+          }
+        />
 
-                {/* ======================================================
-          🏢 PANEL EXTERNO
+        {/* ======================================================
+        👤 PANEL DE USUARIO
         ====================================================== */}
-                <Route
-                    path="/externo"
-                    element={
-                        <RequireAuth allowedRoles={[ROLES.EXTERNO]}>
-                            <DashboardExterno />
-                        </RequireAuth>
-                    }
-                />
+        <Route
+          path="/user/dashboard"
+          element={
+            <RequireAuth allowedRoles={["USER", "USUARIO"]}>
+              <UserDashboard />
+            </RequireAuth>
+          }
+        />
 
-                {/* ======================================================
-          📘 MÓDULO COMPARTIDO: LINEAMIENTOS IPRESS
+        {/* ======================================================
+        🚫 NO ENCONTRADA
         ====================================================== */}
-                <Route
-                    path="/lineamientos"
-                    element={
-                        <RequireAuth
-                            allowedRoles={[
-                                ROLES.EXTERNO,
-                                ROLES.MEDICO,
-                                ROLES.COORDINADOR_MEDICO,
-                                ROLES.COORD_LINEAMIENTOS_IPRESS,
-                            ]}
-                        >
-                            <LineamientosIpress />
-                        </RequireAuth>
-                    }
-                />
-
-                {/* ======================================================
-          👤 PANEL USUARIO GENERAL
-        ====================================================== */}
-                <Route
-                    path="/user/dashboard"
-                    element={
-                        <RequireAuth allowedRoles={["USER", "USUARIO"]}>
-                            <UserDashboard />
-                        </RequireAuth>
-                    }
-                />
-
-                {/* ======================================================
-          🚫 PÁGINA NO ENCONTRADA
-        ====================================================== */}
-                <Route path="*" element={<NotFound />} />
-            </Routes>
-        </Router>
-    );
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </Router>
+  );
 }
 
 export default App;

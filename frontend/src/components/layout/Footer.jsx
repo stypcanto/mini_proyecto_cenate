@@ -3,75 +3,61 @@
 // Descripción: Pie de página institucional CENATE - EsSalud
 // ========================================================================
 
-import { Facebook, Twitter, Youtube, Linkedin } from "lucide-react";
-
 const Footer = () => {
-  const socialLinks = [
-    { Icon: Facebook, url: "https://www.facebook.com/EsSaludPeru", name: "Facebook" },
-    { Icon: Twitter, url: "https://twitter.com/EsSaludPeru", name: "Twitter" },
-    { Icon: Youtube, url: "https://www.youtube.com/@EsSaludPeru", name: "YouTube" },
-    { Icon: Linkedin, url: "https://www.linkedin.com/company/essalud-peru", name: "LinkedIn" },
-  ];
-
   return (
-      <footer className="bg-[#0b2149] text-gray-300 mt-auto py-10">
-        <div className="container mx-auto px-6 grid md:grid-cols-4 gap-10">
-          {/* Logo y descripción */}
-          <div>
-            <img
-                src="/images/Logo CENATE Blanco.png"
-                alt="CENATE EsSalud"
-                className="h-12 mb-3"
-            />
-            <p className="text-sm leading-relaxed">
-              Centro Nacional de Telemedicina — Innovando en servicios de salud a
-              distancia.
-            </p>
-          </div>
-
-          {/* Servicios */}
-          <div>
-            <h3 className="text-white font-semibold mb-3">Nuestros Servicios</h3>
-            <ul className="space-y-2 text-sm">
-              <li>Telegestión</li>
-              <li>Tele IEC</li>
-              <li>Telecapacitaciones</li>
-              <li>Telemedicina</li>
-            </ul>
-          </div>
-
-          {/* Contacto */}
-          <div>
-            <h3 className="text-white font-semibold mb-3">Contacto</h3>
-            <p className="text-sm">Av. Arenales 1404, Jesús María - Lima</p>
-            <p className="text-sm">📞 (01) 265-6000</p>
-            <p className="text-sm">✉️ cenate@essalud.gob.pe</p>
-          </div>
-
-          {/* Redes sociales */}
-          <div>
-            <h3 className="text-white font-semibold mb-3">Síguenos</h3>
-            <div className="flex gap-3">
-              {socialLinks.map(({ Icon, url, name }, i) => (
-                  <a
-                      key={i}
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      aria-label={`Abrir ${name}`}
-                      className="p-2 bg-[#123d7d] rounded-full hover:bg-[#1d5fb8] transition-colors"
-                  >
-                    <Icon className="w-5 h-5 text-white" />
-                  </a>
-              ))}
-            </div>
-          </div>
+    <footer className="bg-gradient-to-r from-[#0B2149] via-[#123C73] to-[#0B2149] text-gray-200 mt-auto">
+      {/* Contenido principal */}
+      <div className="container mx-auto px-6 py-10 grid md:grid-cols-3 gap-10">
+        {/* Logo e identidad institucional */}
+        <div className="flex flex-col items-start">
+          <img
+            src="/images/Logo CENATE Blanco.png"
+            alt="CENATE EsSalud"
+            className="h-12 mb-3"
+          />
+          <p className="text-sm leading-relaxed text-gray-300">
+            <strong>CENATE</strong> — Centro Nacional de Telemedicina de EsSalud.<br />
+            Comprometidos con la innovación, calidad y acceso equitativo a la salud digital.
+          </p>
         </div>
 
-        <div className="text-center text-xs text-gray-400 mt-10 border-t border-gray-700 pt-4">
-          © 2025 CENATE - EsSalud. Todos los derechos reservados.
+        {/* Servicios destacados */}
+        <div>
+          <h3 className="text-white font-semibold mb-3 uppercase tracking-wide">
+            Nuestros Servicios
+          </h3>
+          <ul className="space-y-2 text-sm">
+            <li>🩺 Telemedicina Asistencial</li>
+            <li>🎓 Teleeducación y Telecapacitaciones</li>
+            <li>🧭 Telegestión Institucional</li>
+            <li>💬 Tele IEC (Información, Educación y Comunicación)</li>
+          </ul>
         </div>
-      </footer>
+
+        {/* Información de contacto */}
+        <div>
+          <h3 className="text-white font-semibold mb-3 uppercase tracking-wide">
+            Contáctanos
+          </h3>
+          <ul className="space-y-2 text-sm text-gray-300">
+            <li>📍 Av. Arenales 1404, Jesús María — Lima</li>
+            <li>📞 Central Telefónica: (01) 265-6000</li>
+            <li>✉️ <a href="mailto:cenate@essalud.gob.pe" className="hover:underline text-blue-200">cenate@essalud.gob.pe</a></li>
+            <li>🕓 Horario de atención: L–V 8:00 a.m. – 5:00 p.m.</li>
+          </ul>
+        </div>
+      </div>
+
+      {/* Línea inferior institucional */}
+      <div className="border-t border-blue-900/60 bg-[#0A1B3A] py-4 text-center text-xs text-gray-400">
+        <p>
+          © {new Date().getFullYear()} <strong>CENATE</strong> — EsSalud. Todos los derechos reservados.
+        </p>
+        <p className="mt-1 text-gray-500 text-[11px]">
+          Centro Nacional de Telemedicina · Oficina de Gestión Digital
+        </p>
+      </div>
+    </footer>
   );
 };
 

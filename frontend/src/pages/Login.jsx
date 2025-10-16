@@ -1,5 +1,5 @@
 // ========================================================================
-// 🔐 LOGIN - SISTEMA DE INTRANET CENATE (Versión conectada con roles)
+// 🔐 LOGIN - SISTEMA DE INTRANET CENATE (versión institucional optimizada)
 // ========================================================================
 
 import React, { useState } from "react";
@@ -12,85 +12,63 @@ const Login = () => {
   const { loginUser } = useUsuarios();
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   // ======================================================
-  // 🧠 Lógica de Login con roles
+  // 🧠 Lógica de autenticación con redirección por rol
   // ======================================================
   const handleLogin = async (e) => {
     e.preventDefault();
 
     if (!username || !password) {
-      setError("Por favor, ingresa usuario y contraseña.");
+      toast.error("Por favor, ingresa usuario y contraseña.");
       return;
     }
 
     setLoading(true);
-    setError("");
-
     try {
       const data = await loginUser(username, password);
-      console.log("📡 Respuesta del backend:", data);
 
-      if (data?.token) {
-        // ✅ Guardamos los datos esenciales
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("username", username);
-        localStorage.setItem("nombreCompleto", data.nombreCompleto || "");
-        localStorage.setItem("roles", JSON.stringify(data.roles || []));
-        localStorage.setItem("permisos", JSON.stringify(data.permisos || []));
-
-        toast.success(`Bienvenido ${data.nombreCompleto || username}`);
-
-        // 🚀 Redirección según el primer rol
-        const rol = data.roles?.[0]?.toUpperCase() || "";
-
-        switch (rol) {
-          case "SUPERADMIN":
-          case "ADMIN":
-            navigate("/admin");
-            break;
-
-          case "MEDICO":
-            navigate("/medico");
-            break;
-
-          case "COORDINADOR_MEDICO":
-          case "COORDINACION":
-          case "COORD_TRANSFER":
-            navigate("/coordinador");
-            break;
-
-          case "EXTERNO":
-            navigate("/externo");
-            break;
-
-          case "CITAS":
-            navigate("/citas");
-            break;
-
-          case "COORD_LINEAMIENTOS_IPRESS":
-            navigate("/lineamientos");
-            break;
-
-          default:
-            navigate("/user/dashboard");
-            break;
-        }
-      } else {
-        setError(
-            data?.message ||
-            "Usuario o contraseña incorrectos. Si olvidaste tu clave, selecciona '¿Olvidaste tu contraseña?'."
-        );
+      if (!data?.token) {
+        toast.error(data?.message || "Credenciales incorrectas.");
+        setLoading(false);
+        return;
       }
+
+      // ✅ Guardar datos del usuario autenticado
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("username", username);
+      localStorage.setItem("nombreCompleto", data.nombreCompleto || "");
+      localStorage.setItem("roles", JSON.stringify(data.roles || []));
+      localStorage.setItem("permisos", JSON.stringify(data.permisos || []));
+
+      toast.success(`Bienvenido ${data.nombreCompleto || username}`);
+
+      // 🚀 Determinar ruta de destino según rol principal
+      const rol = (data.roles?.[0] || "").toUpperCase();
+      const rutasPorRol = {
+        SUPERADMIN: "/admin",
+        ADMIN: "/admin",
+        MEDICO: "/medico",
+        COORDINADOR_MEDICO: "/coordinador",
+        COORDINACION: "/coordinador",
+        COORD_TRANSFER: "/coordinador",
+        EXTERNO: "/externo",
+        CITAS: "/citas",
+        COORD_LINEAMIENTOS_IPRESS: "/lineamientos",
+      };
+
+      // 🧭 Si el rol no coincide, enviar al dashboard de usuario genérico
+      const destino = rutasPorRol[rol] || "/user/dashboard";
+      navigate(destino, { replace: true });
     } catch (err) {
-      console.error("❌ Error al iniciar sesión:", err);
-      setError(
-          err.message ||
-          "Usuario o contraseña incorrectos. Si olvidaste tu clave, selecciona '¿Olvidaste tu contraseña?'."
+      console.error("❌ Error en login:", err);
+      toast.error(
+        err.message?.includes("fetch")
+          ? "No se pudo conectar con el servidor."
+          : "Error al iniciar sesión. Inténtalo nuevamente."
       );
     } finally {
       setLoading(false);
@@ -98,158 +76,159 @@ const Login = () => {
   };
 
   // ======================================================
-  // 💅 Interfaz moderna (sin cambios)
+  // 💅 Interfaz institucional con estilo EsSalud-CENATE
   // ======================================================
   return (
-      <div
-          style={{
-            backgroundImage: "url('/images/fondo-portal-web-cenate-2025.png')",
-          }}
-          className="min-h-screen bg-cover bg-center flex items-center justify-center p-4 relative overflow-hidden"
-      >
-        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_2px_2px,white_1px,transparent_0)] bg-[length:40px_40px]" />
+    <div
+      className="min-h-screen flex items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0B2149] via-[#123C73] to-[#0B2149]"
+      style={{
+        backgroundImage:
+          "url('/images/fondo-portal-web-cenate-2025.png'), radial-gradient(circle at top right, rgba(18,60,115,0.3), transparent)",
+        backgroundBlendMode: "overlay",
+        backgroundSize: "cover",
+      }}
+    >
+      {/* Patrón de puntos institucional */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_2px_2px,white_1px,transparent_0)] bg-[length:36px_36px] opacity-10" />
 
-        <div className="w-full max-w-md relative z-10">
-          <Link
-              to="/"
-              className="inline-flex items-center space-x-2 text-white hover:text-blue-100 transition-colors mb-6"
-          >
-            <ArrowLeft className="w-5 h-5" />
-            <span className="font-medium">Volver al inicio</span>
-          </Link>
+      <div className="relative z-10 w-full max-w-md px-6">
+        {/* Enlace volver */}
+        <Link
+          to="/"
+          className="inline-flex items-center gap-2 text-white/90 hover:text-white transition mb-8"
+        >
+          <ArrowLeft className="w-5 h-5" />
+          <span className="text-sm font-medium">Volver al inicio</span>
+        </Link>
 
+        {/* Logo y título */}
+        <div className="text-center mb-8">
+          <div className="flex justify-center mb-6">
+            <div className="bg-white p-4 rounded-2xl shadow-xl">
+              <img
+                src="/images/Logo CENATE Azul.png"
+                alt="CENATE"
+                className="h-16 object-contain"
+              />
+            </div>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
+            Intranet CENATE
+          </h1>
+          <p className="text-blue-100 text-sm">
+            Acceso exclusivo para personal autorizado
+          </p>
+        </div>
+
+        {/* Tarjeta del formulario */}
+        <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10 border border-gray-100">
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-6">
-              <div className="bg-white p-4 rounded-2xl shadow-2xl">
-                <img
-                    src="/images/Logo CENATE Azul.png"
-                    alt="Logo del Sistema CENATE"
-                    className="h-16 object-contain"
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#0B2149] to-[#123C73] rounded-2xl mb-6 shadow-lg">
+              <User className="w-10 h-10 text-white" />
+            </div>
+            <h2 className="text-2xl font-bold text-gray-900">Iniciar Sesión</h2>
+            <p className="text-gray-600 text-sm mt-2">
+              Ingresa tus credenciales para continuar
+            </p>
+          </div>
+
+          <form onSubmit={handleLogin} className="space-y-6">
+            {/* Usuario */}
+            <div>
+              <label
+                htmlFor="username"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
+                Usuario
+              </label>
+              <div className="relative">
+                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="username"
+                  type="text"
+                  placeholder="Ingresa tu usuario"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#123C73] focus:border-transparent text-gray-900 font-medium"
+                  disabled={loading}
+                  autoComplete="username"
                 />
               </div>
             </div>
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-2">
-              Sistema de Intranet
-            </h1>
-          </div>
 
-          <div className="bg-white rounded-3xl shadow-2xl p-8 md:p-10">
-            <div className="text-center mb-8">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#2e63a6] to-[#1d4f8a] rounded-2xl mb-6 shadow-lg">
-                <User className="w-10 h-10 text-white" />
+            {/* Contraseña */}
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-semibold text-gray-700 mb-2"
+              >
+                Contraseña
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Ingresa tu contraseña"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#123C73] focus:border-transparent text-gray-900 font-medium"
+                  disabled={loading}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#123C73] transition"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
-              <h2 className="text-2xl md:text-3xl font-bold text-gray-900">
-                Iniciar Sesión
-              </h2>
-              <p className="text-gray-600 mt-2">
-                Ingresa tus credenciales para continuar
-              </p>
             </div>
 
-            {error && (
-                <div className="mb-6 p-4 bg-red-50 border-l-4 border-red-500 rounded-lg">
-                  <p className="text-red-700 text-sm font-medium">{error}</p>
-                </div>
-            )}
-
-            <form onSubmit={handleLogin} className="space-y-6">
-              {/* Usuario */}
-              <div>
-                <label
-                    htmlFor="username"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                >
-                  Usuario
-                </label>
-                <div className="relative">
-                  <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                      id="username"
-                      type="text"
-                      placeholder="Ingresa tu usuario"
-                      value={username}
-                      onChange={(e) => setUsername(e.target.value)}
-                      className="w-full pl-12 pr-4 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent text-gray-900 font-medium"
-                      disabled={loading}
-                      autoComplete="username"
-                      autoFocus
-                  />
-                </div>
-              </div>
-
-              {/* Contraseña */}
-              <div>
-                <label
-                    htmlFor="password"
-                    className="block text-sm font-semibold text-gray-700 mb-2"
-                >
-                  Contraseña
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                      id="password"
-                      type={showPassword ? "text" : "password"}
-                      placeholder="Ingresa tu contraseña"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      className="w-full pl-12 pr-12 py-3 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-[#2e63a6] focus:border-transparent text-gray-900 font-medium"
-                      disabled={loading}
-                      autoComplete="current-password"
-                  />
-                  <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#2e63a6] transition"
-                      disabled={loading}
-                  >
-                    {showPassword ? (
-                        <EyeOff className="w-5 h-5" />
-                    ) : (
-                        <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              {/* Enlace de recuperación */}
-              <div className="text-right">
-                <Link
-                    to="/forgot-password"
-                    className="text-sm text-[#2e63a6] hover:text-[#1d4f8a] font-semibold transition-colors"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </div>
-
-              {/* Botón principal */}
-              <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full py-4 px-6 bg-gradient-to-r from-[#2e63a6] to-[#1d4f8a] text-white text-base font-bold rounded-xl shadow-lg hover:scale-[1.02] transition-all duration-300 flex items-center justify-center gap-3 disabled:opacity-50"
+            {/* Recuperación */}
+            <div className="text-right">
+              <Link
+                to="/forgot-password"
+                className="text-sm text-[#123C73] hover:text-[#0B2149] font-semibold transition-colors"
               >
-                {loading ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Iniciando sesión...</span>
-                    </>
-                ) : (
-                    <>
-                      <LogIn className="w-5 h-5" />
-                      <span>Iniciar sesión</span>
-                    </>
-                )}
-              </button>
-            </form>
-          </div>
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </div>
 
-          <div className="mt-8 text-center">
-            <p className="text-white/80 text-sm">
-              © {new Date().getFullYear()} CENATE - EsSalud · Todos los derechos reservados
-            </p>
-          </div>
+            {/* Botón principal */}
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full py-4 px-6 bg-gradient-to-r from-[#123C73] to-[#0B2149] text-white text-base font-bold rounded-xl shadow-md hover:scale-[1.02] transition-all flex items-center justify-center gap-3 disabled:opacity-60"
+            >
+              {loading ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  <span>Iniciando sesión...</span>
+                </>
+              ) : (
+                <>
+                  <LogIn className="w-5 h-5" />
+                  <span>Iniciar sesión</span>
+                </>
+              )}
+            </button>
+          </form>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-8 text-center">
+          <p className="text-white/80 text-xs">
+            © {new Date().getFullYear()} CENATE – EsSalud · Todos los derechos reservados
+          </p>
         </div>
       </div>
+    </div>
   );
 };
 
