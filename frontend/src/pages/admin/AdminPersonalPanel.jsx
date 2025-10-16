@@ -20,7 +20,7 @@ import {
   Shield,
   AlertCircle,
 } from 'lucide-react';
-import { getPersonalTotal, getDetalleCenate, getDetalleExterno } from '../../api/personal';
+import { getPersonalTotal, getDetallePersonal } from '../../api/personal';
 import { tienePermiso } from '../../api/permisosApi';
 import PersonalDetailCard from '../../components/ui/PersonalDetailCard';
 import useAuth from '../../hooks/useAuth';
@@ -93,7 +93,6 @@ const AdminPersonalPanel = () => {
         (p) =>
           p.nombre_completo?.toLowerCase().includes(search) ||
           p.numero_documento?.toLowerCase().includes(search) ||
-          p.correo_corporativo?.toLowerCase().includes(search) ||
           p.username?.toLowerCase().includes(search)
       );
     }
@@ -127,23 +126,16 @@ const AdminPersonalPanel = () => {
     return Array.from(roles).sort();
   }, [personal]);
 
-  // Ver detalle
+  // Ver detalle - CORREGIDO: usa id_user en lugar de id_personal
   const handleVerDetalle = async (persona) => {
     try {
       setLoading(true);
-      let detalle;
-      
-      if (persona.tipo_personal === 'CENATE') {
-        detalle = await getDetalleCenate(persona.id_personal);
-      } else {
-        detalle = await getDetalleExterno(persona.id_personal);
-      }
-      
-      setSelectedPersonal({ ...detalle, tipo_personal: persona.tipo_personal });
+      const detalle = await getDetallePersonal(persona.id_user);
+      setSelectedPersonal(detalle);
       setShowDetail(true);
     } catch (err) {
       console.error('Error al obtener detalle:', err);
-      alert('No se pudo cargar el detalle del personal');
+      alert('No se pudo cargar el detalle del personal. Verifica que el usuario tenga datos asociados.');
     } finally {
       setLoading(false);
     }
@@ -152,22 +144,21 @@ const AdminPersonalPanel = () => {
   // Exportar datos
   const handleExportar = () => {
     const csv = [
-      ['Nombre', 'Tipo', 'Documento', 'IPRESS', 'Roles', 'Correo', 'Teléfono', 'Estado'],
+      ['Nombre', 'Tipo', 'Documento', 'IPRESS', 'Roles', 'Estado', 'Fecha Creación'],
       ...filteredPersonal.map((p) => [
-        p.nombre_completo,
-        p.tipo_personal,
-        p.numero_documento,
-        p.ipress_asignada,
+        p.nombre_completo || '',
+        p.tipo_personal || '',
+        p.numero_documento || '',
+        p.ipress_asignada || '',
         p.roles || '',
-        p.correo_corporativo || '',
-        p.telefono || '',
-        p.estado_usuario === 'A' ? 'Activo' : 'Inactivo',
+        p.estado_usuario || '',
+        p.fecha_creacion_usuario || '',
       ]),
     ]
-      .map((row) => row.join(','))
+      .map((row) => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(','))
       .join('\n');
 
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
     link.download = `personal_${new Date().toISOString().split('T')[0]}.csv`;
@@ -176,7 +167,7 @@ const AdminPersonalPanel = () => {
 
   // Badge de estado
   const EstadoBadge = ({ estado }) => {
-    const isActivo = estado === 'A';
+    const isActivo = estado === 'ACTIVO';
     return (
       <span
         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -229,7 +220,7 @@ const AdminPersonalPanel = () => {
       >
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center space-x-3">
-            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl">
+            <div className="p-3 bg-gradient-to-br from-indigo-500 to-purple-500 rounded-2xl shadow-lg">
               <Users className="w-8 h-8 text-white" />
             </div>
             <div>
@@ -261,7 +252,8 @@ const AdminPersonalPanel = () => {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={handleExportar}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-xl shadow-sm hover:shadow-md transition-all duration-200 flex items-center space-x-2"
+                disabled={filteredPersonal.length === 0}
+                className="px-4 py-2 bg-indigo-600 text-white rounded-xl shadow-sm hover:shadow-md hover:bg-indigo-700 transition-all duration-200 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <Download className="w-4 h-4" />
                 <span className="text-sm font-medium">Exportar</span>
@@ -278,7 +270,7 @@ const AdminPersonalPanel = () => {
         transition={{ delay: 0.1 }}
         className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6"
       >
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow duration-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Total</p>
@@ -290,7 +282,7 @@ const AdminPersonalPanel = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow duration-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">CENATE</p>
@@ -304,7 +296,7 @@ const AdminPersonalPanel = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow duration-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Externos</p>
@@ -318,12 +310,12 @@ const AdminPersonalPanel = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-xl shadow-sm p-4">
+        <div className="bg-white rounded-xl shadow-sm p-4 hover:shadow-md transition-shadow duration-200">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Activos</p>
               <p className="text-2xl font-bold text-green-600">
-                {personal.filter((p) => p.estado_usuario === 'A').length}
+                {personal.filter((p) => p.estado_usuario === 'ACTIVO').length}
               </p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
@@ -359,7 +351,7 @@ const AdminPersonalPanel = () => {
             <select
               value={selectedTipo}
               onChange={(e) => setSelectedTipo(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
             >
               <option value="TODOS">Todos los tipos</option>
               <option value="CENATE">CENATE</option>
@@ -373,7 +365,7 @@ const AdminPersonalPanel = () => {
             <select
               value={selectedRol}
               onChange={(e) => setSelectedRol(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
             >
               <option value="TODOS">Todos los roles</option>
               {rolesUnicos.map((rol) => (
@@ -390,18 +382,18 @@ const AdminPersonalPanel = () => {
             <select
               value={selectedEstado}
               onChange={(e) => setSelectedEstado(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none"
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 appearance-none cursor-pointer"
             >
               <option value="TODOS">Todos los estados</option>
-              <option value="A">Activos</option>
-              <option value="I">Inactivos</option>
+              <option value="ACTIVO">Activos</option>
+              <option value="INACTIVO">Inactivos</option>
             </select>
           </div>
         </div>
 
         {/* Contador de resultados */}
         <div className="mt-4 text-sm text-gray-600">
-          Mostrando {filteredPersonal.length} de {personal.length} registros
+          Mostrando <span className="font-semibold text-indigo-600">{filteredPersonal.length}</span> de <span className="font-semibold">{personal.length}</span> registros
         </div>
       </motion.div>
 
@@ -423,6 +415,12 @@ const AdminPersonalPanel = () => {
             <div className="text-center">
               <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
               <p className="text-gray-600">{error}</p>
+              <button
+                onClick={cargarPersonal}
+                className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+              >
+                Reintentar
+              </button>
             </div>
           </div>
         )}
@@ -432,7 +430,7 @@ const AdminPersonalPanel = () => {
             <div className="text-center">
               <Users className="w-12 h-12 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600">
-                No se encontraron registros
+                No se encontraron registros con los filtros aplicados
               </p>
             </div>
           </div>
@@ -456,7 +454,7 @@ const AdminPersonalPanel = () => {
                     Roles
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Contacto
+                    Usuario
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Estado
@@ -472,17 +470,17 @@ const AdminPersonalPanel = () => {
                     key={persona.id_user || index}
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.02 }}
+                    transition={{ delay: Math.min(index * 0.02, 0.5) }}
                     className="hover:bg-gray-50 transition-colors duration-150"
                   >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
                         <div>
                           <div className="text-sm font-medium text-gray-900">
-                            {persona.nombre_completo}
+                            {persona.nombre_completo || 'Sin nombre'}
                           </div>
                           <div className="text-sm text-gray-500">
-                            {persona.numero_documento}
+                            {persona.numero_documento || 'Sin documento'}
                           </div>
                         </div>
                       </div>
@@ -491,31 +489,18 @@ const AdminPersonalPanel = () => {
                       <TipoBadge tipo={persona.tipo_personal} />
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">
+                      <div className="text-sm text-gray-900 max-w-xs truncate" title={persona.ipress_asignada}>
                         {persona.ipress_asignada || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm text-gray-900 max-w-xs truncate">
+                      <div className="text-sm text-gray-900 max-w-xs truncate" title={persona.roles}>
                         {persona.roles || 'Sin rol'}
                       </div>
                     </td>
-                    <td className="px-6 py-4">
-                      <div className="flex flex-col space-y-1">
-                        {persona.correo_corporativo && (
-                          <div className="flex items-center space-x-1 text-sm text-gray-600">
-                            <Mail className="w-3 h-3" />
-                            <span className="truncate max-w-[150px]">
-                              {persona.correo_corporativo}
-                            </span>
-                          </div>
-                        )}
-                        {persona.telefono && (
-                          <div className="flex items-center space-x-1 text-sm text-gray-600">
-                            <Phone className="w-3 h-3" />
-                            <span>{persona.telefono}</span>
-                          </div>
-                        )}
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {persona.username || 'N/A'}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -526,7 +511,7 @@ const AdminPersonalPanel = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                         onClick={() => handleVerDetalle(persona)}
-                        className="inline-flex items-center space-x-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200"
+                        className="inline-flex items-center space-x-1 px-3 py-1.5 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors duration-200 shadow-sm hover:shadow-md"
                       >
                         <Eye className="w-4 h-4" />
                         <span>Ver Detalle</span>
@@ -544,7 +529,6 @@ const AdminPersonalPanel = () => {
       {showDetail && selectedPersonal && (
         <PersonalDetailCard
           personal={selectedPersonal}
-          tipo={selectedPersonal.tipo_personal}
           onClose={() => {
             setShowDetail(false);
             setSelectedPersonal(null);

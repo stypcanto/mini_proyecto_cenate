@@ -1,4 +1,4 @@
-
+version: "3.9"
 
 services:
   # ===============================
@@ -21,14 +21,13 @@ services:
     networks:
       - cenate-net
     restart: unless-stopped
-    # 👉 Para builds más rápidos
     deploy:
       resources:
         limits:
           memory: 1.5G
 
   # ===============================
-  # 💻 FRONTEND (React + Nginx)
+  # 💻 FRONTEND (React CRA + Nginx)
   # ===============================
   frontend:
     build:
@@ -40,7 +39,7 @@ services:
     ports:
       - "80:80"
     environment:
-      - VITE_API_URL=http://backend:8080/api
+      - REACT_APP_API_URL=/api        # ✅ CRA usa este prefijo
       - TZ=America/Lima
     networks:
       - cenate-net
@@ -51,7 +50,7 @@ services:
           memory: 512M
 
 # ===============================
-# 🔗 Redes
+# 🔗 RED DE CONEXIÓN INTERNA
 # ===============================
 networks:
   cenate-net:

@@ -5,6 +5,14 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.util.List;
+
+/**
+ * DTO de respuesta para páginas de módulo.
+ * 
+ * @author CENATE Development Team
+ * @version 1.1
+ */
 @Data
 @Builder
 @NoArgsConstructor
@@ -15,4 +23,5 @@ public class PaginaModuloResponse {
     private String rutaPagina;
     private String descripcion;
     private Boolean activo;
+    private List<PermisoModularResponse> permisos;
 }

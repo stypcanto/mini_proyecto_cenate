@@ -137,17 +137,32 @@ public class SecurityConfig {
         };
     }
 
-    // 🌍 CORS global
+    // 🌍 Configuración CORS global (💥 versión corregida)
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
+
+        // ✅ Orígenes permitidos
         config.setAllowedOrigins(Arrays.asList(
+                // Local sin puerto (Nginx/CRA en Docker)
+                "http://localhost",
+                "http://localhost:80",
+                "http://127.0.0.1",
+                "http://127.0.0.1:80",
+
+                // CRA modo desarrollo
                 "http://localhost:5173",
                 "http://localhost:3000",
                 "http://127.0.0.1:5173",
-                "http://10.0.89.13:5173",
+
+                // IPs locales (LAN / pruebas en red)
+                "http://10.0.89.13",
+                "http://10.0.89.13:80",
+                "http://10.0.89.239",
                 "http://10.0.89.239:5173"
         ));
+
+        // ✅ Métodos y cabeceras permitidos
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));

@@ -180,6 +180,33 @@ export const getPermisosUsuarioActual = async () => {
 };
 
 // ========================================================================
+// 📊 GESTIÓN DE PERMISOS (Legacy - para compatibilidad)
+// ========================================================================
+
+/**
+ * Obtiene permisos de un rol específico
+ * @param {number} rolId - ID del rol
+ * @returns {Promise<Array>} Lista de permisos del rol
+ */
+export const getPermisosByRol = (rolId) =>
+  safeFetch(`${API_BASE}/permisos/rol/${rolId}`, {
+    headers: getHeaders(true),
+  });
+
+/**
+ * Actualiza un permiso
+ * @param {number} permisoId - ID del permiso
+ * @param {Object} permiso - Datos del permiso a actualizar
+ * @returns {Promise<Object>} Permiso actualizado
+ */
+export const updatePermiso = (permisoId, permiso) =>
+  safeFetch(`${API_BASE}/permisos/${permisoId}`, {
+    method: "PUT",
+    headers: getHeaders(true),
+    body: JSON.stringify(permiso),
+  });
+
+// ========================================================================
 // 🚀 EXPORTACIÓN GENERAL
 // ========================================================================
 export default {
@@ -195,4 +222,6 @@ export default {
   getUltimosEventos,
   tienePermiso,
   getPermisosUsuarioActual,
+  getPermisosByRol,
+  updatePermiso,
 };

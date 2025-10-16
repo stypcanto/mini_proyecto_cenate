@@ -138,14 +138,44 @@ export const getPersonalExternoByIpress = (idIpress) =>
 // 👥 PERSONAL TOTAL (Vista combinada CENATE + Externo)
 // ========================================================================
 
+/**
+ * Obtiene lista general de todo el personal (CENATE + Externo)
+ * desde la vista vista_personal_total
+ */
 export const getPersonalTotal = () =>
     safeFetch(`${API_BASE}/personal/total`, { headers: getHeaders(true) });
 
-export const getDetalleCenate = (id) =>
-    safeFetch(`${API_BASE}/personal/cenate/${id}`, { headers: getHeaders(true) });
+/**
+ * Obtiene el detalle completo de un usuario (CENATE o Externo)
+ * El backend determina automáticamente el tipo según el id_user
+ * @param {number} idUser - ID del usuario
+ * @returns {Promise<Object>} Objeto con detalle completo del personal
+ */
+export const getDetallePersonal = (idUser) =>
+    safeFetch(`${API_BASE}/personal/detalle/${idUser}`, { headers: getHeaders(true) });
 
-export const getDetalleExterno = (id) =>
-    safeFetch(`${API_BASE}/personal/externo/${id}`, { headers: getHeaders(true) });
+// ========================================================================
+// 📅 CUMPLEAÑOS
+// ========================================================================
+
+/**
+ * Obtiene cumpleañeros del mes actual
+ */
+export const getCumpleanerosMesActual = () =>
+    safeFetch(`${API_BASE}/personal/cumpleaneros/mes`, { headers: getHeaders(true) });
+
+/**
+ * Obtiene cumpleañeros de un mes específico
+ * @param {number} mes - Número del mes (1-12)
+ */
+export const getCumpleanerosMes = (mes) =>
+    safeFetch(`${API_BASE}/personal/cumpleaneros/mes/${mes}`, { headers: getHeaders(true) });
+
+/**
+ * Obtiene cumpleañeros del día de hoy
+ */
+export const getCumpleanerosHoy = () =>
+    safeFetch(`${API_BASE}/personal/cumpleaneros/hoy`, { headers: getHeaders(true) });
 
 // ========================================================================
 // 📋 CATÁLOGOS AUXILIARES (Tipos, Áreas, Régimen, Ipress)
@@ -173,8 +203,10 @@ export const searchIpress = (query) =>
 // ========================================================================
 export default {
   getPersonalTotal,
-  getDetalleCenate,
-  getDetalleExterno,
+  getDetallePersonal,
+  getCumpleanerosMesActual,
+  getCumpleanerosMes,
+  getCumpleanerosHoy,
   getAllPersonalCnt,
   getPersonalCntById,
   getPersonalCntByUsuario,

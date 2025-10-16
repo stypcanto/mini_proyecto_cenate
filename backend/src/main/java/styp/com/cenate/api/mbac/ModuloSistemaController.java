@@ -5,9 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import styp.com.cenate.model.PaginaModulo;
-import styp.com.cenate.repository.mbac.ModuloSistemaRepository;
-import styp.com.cenate.repository.mbac.PaginaModuloRepository;
+import styp.com.cenate.dto.mbac.ModuloSistemaResponse;
+import styp.com.cenate.dto.mbac.PaginaModuloResponse;
+import styp.com.cenate.service.mbac.ModuloSistemaService;
 
 import java.util.List;
 
@@ -15,9 +15,8 @@ import java.util.List;
  * Controlador para la gestión de módulos y páginas del sistema MBAC (Modular-Based Access Control).
  * Permite listar módulos, sus páginas activas y buscar páginas por ruta.
  *
- * @author
- *   CENATE Development Team
- * @version 1.2
+ * @author CENATE Development Team
+ * @version 1.3
  */
 @Slf4j
 @RestController
@@ -30,25 +29,28 @@ import java.util.List;
 })
 public class ModuloSistemaController {
 
-    private final ModuloSistemaRepository moduloRepo;
-    private final PaginaModuloRepository paginaRepo;
+    private final ModuloSistemaService moduloService;
 
     // 🔹 DTO simple para respuestas de error
     record ErrorResponse(String message) {}
 
     // =========================================================================================
-    // 🔸 1. Listar todos los módulos activos con sus páginas
+    // 🔸 1. Listar todos los módulos activos con sus páginas y permisos
     // =========================================================================================
     @GetMapping
     public ResponseEntity<?> listarModulos() {
         try {
             log.info("📦 Listando todos los módulos MBAC...");
-            var modulos = moduloRepo.findAllWithPaginas();
+            
+            List<ModuloSistemaResponse> modulos = moduloService.obtenerTodosLosModulos();
+            
             if (modulos.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NO_CONTENT)
                         .body(new ErrorResponse("No hay módulos registrados."));
             }
+            
             return ResponseEntity.ok(modulos);
+            
         } catch (Exception e) {
             log.error("❌ Error al listar módulos MBAC: {}", e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -57,18 +59,22 @@ public class ModuloSistemaController {
     }
 
     // =========================================================================================
-    // 🔸 2. Listar páginas activas por ID de módulo
+    // 🔸 2. Listar páginas activas por ID de módulo con sus permisos
     // =========================================================================================
     @GetMapping("/{id}/paginas")
     public ResponseEntity<?> listarPaginasPorModulo(@PathVariable Integer id) {
         try {
             log.info("📄 Listando páginas activas del módulo ID {}", id);
-            List<PaginaModulo> paginas = paginaRepo.findByModuloIdAndActivoTrue(id);
+            
+            List<PaginaModuloResponse> paginas = moduloService.obtenerPaginasPorModulo(id);
+            
             if (paginas.isEmpty()) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body(new ErrorResponse("No se encontraron páginas activas para este módulo."));
             }
+            
             return ResponseEntity.ok(paginas);
+            
         } catch (Exception e) {
             log.error("❌ Error al listar páginas del módulo {}: {}", id, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -83,10 +89,12 @@ public class ModuloSistemaController {
     public ResponseEntity<?> buscarPaginaPorRuta(@RequestParam String ruta) {
         try {
             log.info("🔍 Buscando página por ruta: {}", ruta);
-            return paginaRepo.findByRutaPaginaWithModulo(ruta)
+            
+            return moduloService.buscarPaginaPorRuta(ruta)
                     .<ResponseEntity<?>>map(ResponseEntity::ok)
                     .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                             .body(new ErrorResponse("No se encontró una página con la ruta especificada.")));
+                            
         } catch (Exception e) {
             log.error("❌ Error al buscar página por ruta {}: {}", ruta, e.getMessage(), e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

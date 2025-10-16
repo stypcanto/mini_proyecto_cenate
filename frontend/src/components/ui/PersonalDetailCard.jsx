@@ -20,20 +20,23 @@ import {
   Award,
   FileText,
   Users,
+  Cake,
 } from 'lucide-react';
 
-const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
-  if (!personal) return null;
+const PersonalDetailCard = ({ personal, onClose }) => {
+  if (!personal || !personal.personal) return null;
+
+  const data = personal.personal;
+  const isCenate = data.laboral?.area !== undefined;
 
   // Construir URL de la foto
   const getFotoUrl = () => {
-    if (!personal.foto) return null;
+    if (!data.foto) return null;
     const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080';
-    if (tipo === 'CENATE') {
-      return `${baseUrl}/api/personal-cnt/${personal.id_personal || personal.id_pers}/foto`;
-    } else {
-      return `${baseUrl}/api/personal-externo/${personal.id_personal || personal.id_pers_ext}/foto`;
+    if (isCenate) {
+      return `${baseUrl}/api/personal-cnt/${data.id_personal}/foto`;
     }
+    return null; // Personal externo no tiene foto por ahora
   };
 
   const fotoUrl = getFotoUrl();
@@ -52,9 +55,16 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
     }
   };
 
+  // Formatear cumpleaños
+  const formatCumpleanos = () => {
+    if (!data.cumpleanos) return null;
+    const { mes, dia } = data.cumpleanos;
+    return `${dia} de ${mes}`;
+  };
+
   // Renderizar campo con ícono
   const Campo = ({ icon: Icon, label, value, highlight = false }) => {
-    if (!value || value === 'N/A') return null;
+    if (!value || value === 'N/A' || value === 'null' || value === null) return null;
     
     return (
       <div className={`flex items-start space-x-3 py-3 ${highlight ? 'bg-blue-50 -mx-4 px-4 rounded-lg' : ''}`}>
@@ -79,6 +89,12 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
       {rol}
     </span>
   );
+
+  // Obtener valores seguros
+  const contacto = data.contacto || {};
+  const direccion = data.direccion || {};
+  const laboral = data.laboral || {};
+  const roles = personal.roles || [];
 
   return (
     <AnimatePresence>
@@ -112,7 +128,7 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
                     animate={{ scale: 1, opacity: 1 }}
                     transition={{ delay: 0.1 }}
                     src={fotoUrl}
-                    alt={personal.nombre_completo}
+                    alt={data.nombre_completo}
                     className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-xl"
                     onError={(e) => {
                       e.target.style.display = 'none';
@@ -135,7 +151,7 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
                 transition={{ delay: 0.15 }}
                 className="mt-4 text-2xl font-bold text-white text-center"
               >
-                {personal.nombre_completo}
+                {data.nombre_completo}
               </motion.h2>
               
               <motion.span
@@ -144,7 +160,7 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
                 transition={{ delay: 0.2 }}
                 className="mt-2 px-3 py-1 rounded-full text-xs font-semibold bg-white bg-opacity-20 backdrop-blur-md text-white"
               >
-                Personal {tipo}
+                Personal {isCenate ? 'CENATE' : 'EXTERNO'}
               </motion.span>
             </div>
           </div>
@@ -152,7 +168,7 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
           {/* Content */}
           <div className="px-8 pb-8 -mt-12 overflow-y-auto max-h-[calc(90vh-200px)]">
             {/* Roles */}
-            {personal.roles && personal.roles.length > 0 && (
+            {roles && roles.length > 0 && (
               <motion.div
                 initial={{ y: 20, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
@@ -161,11 +177,11 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
               >
                 <div className="flex items-center space-x-2 mb-4">
                   <Shield className="w-5 h-5 text-indigo-600" />
-                  <h3 className="text-lg font-semibold text-gray-900">Roles</h3>
+                  <h3 className="text-lg font-semibold text-gray-900">Roles del Sistema</h3>
                 </div>
                 <div className="flex flex-wrap gap-2">
-                  {personal.roles.split(',').map((rol, idx) => (
-                    <RolBadge key={idx} rol={rol.trim()} />
+                  {roles.map((rol, idx) => (
+                    <RolBadge key={idx} rol={rol} />
                   ))}
                 </div>
               </motion.div>
@@ -185,19 +201,29 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
               <div className="space-y-1">
                 <Campo
                   icon={FileText}
-                  label="Documento"
-                  value={`${personal.tipo_documento || 'DNI'} - ${personal.numero_documento}`}
+                  label="Documento de Identidad"
+                  value={`${data.tipo_documento || 'DNI'} - ${data.numero_documento}`}
                   highlight
                 />
                 <Campo
                   icon={User}
                   label="Género"
-                  value={personal.genero}
+                  value={data.genero === 'M' ? 'Masculino' : data.genero === 'F' ? 'Femenino' : data.genero}
                 />
                 <Campo
                   icon={Calendar}
                   label="Fecha de Nacimiento"
-                  value={formatFecha(personal.fecha_nacimiento)}
+                  value={formatFecha(data.fecha_nacimiento)}
+                />
+                <Campo
+                  icon={Cake}
+                  label="Cumpleaños"
+                  value={formatCumpleanos()}
+                />
+                <Campo
+                  icon={Calendar}
+                  label="Edad Actual"
+                  value={data.edad_actual ? `${data.edad_actual} años` : null}
                 />
               </div>
             </motion.div>
@@ -217,23 +243,38 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
                 <Campo
                   icon={Mail}
                   label="Correo Corporativo"
-                  value={personal.correo_corporativo}
+                  value={contacto.correo_corporativo}
                   highlight
                 />
                 <Campo
                   icon={Mail}
                   label="Correo Personal"
-                  value={personal.correo_personal}
+                  value={contacto.correo_personal}
                 />
                 <Campo
                   icon={Phone}
                   label="Teléfono"
-                  value={personal.telefono}
+                  value={contacto.telefono}
                 />
                 <Campo
                   icon={MapPin}
                   label="Dirección"
-                  value={personal.direccion}
+                  value={direccion.domicilio}
+                />
+                <Campo
+                  icon={MapPin}
+                  label="Distrito"
+                  value={direccion.distrito}
+                />
+                <Campo
+                  icon={MapPin}
+                  label="Provincia"
+                  value={direccion.provincia}
+                />
+                <Campo
+                  icon={MapPin}
+                  label="Departamento"
+                  value={direccion.departamento}
                 />
               </div>
             </motion.div>
@@ -253,31 +294,64 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
                 <Campo
                   icon={Building2}
                   label="IPRESS Asignada"
-                  value={personal.ipress_asignada}
+                  value={data.ipress}
                   highlight
                 />
-                <Campo
-                  icon={Users}
-                  label="Área"
-                  value={personal.area}
-                />
-                <Campo
-                  icon={Award}
-                  label="Régimen Laboral"
-                  value={personal.regimen_laboral}
-                />
-                {tipo === 'CENATE' && (
+                
+                {isCenate && (
                   <>
                     <Campo
-                      icon={FileText}
-                      label="Colegiatura"
-                      value={personal.numero_colegiatura || personal.coleg_pers}
+                      icon={Users}
+                      label="Área"
+                      value={laboral.area}
+                    />
+                    <Campo
+                      icon={Award}
+                      label="Profesión"
+                      value={laboral.profesion}
+                    />
+                    <Campo
+                      icon={Award}
+                      label="Régimen Laboral"
+                      value={laboral.regimen_laboral}
                     />
                     <Campo
                       icon={FileText}
-                      label="Código Planilla"
-                      value={personal.codigo_planilla || personal.cod_plan_rem}
+                      label="Código de Planilla"
+                      value={laboral.codigo_planilla}
                     />
+                    <Campo
+                      icon={FileText}
+                      label="Número de Colegiatura"
+                      value={laboral.numero_colegiatura}
+                    />
+                    <Campo
+                      icon={FileText}
+                      label="RNE Especialista"
+                      value={laboral.rne_especialista}
+                    />
+                    {laboral.especialidades && laboral.especialidades.length > 0 && (
+                      <div className="flex items-start space-x-3 py-3 bg-indigo-50 -mx-4 px-4 rounded-lg">
+                        <div className="mt-0.5">
+                          <Award className="w-5 h-5 text-indigo-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-2">
+                            Especialidades
+                          </p>
+                          <div className="flex flex-wrap gap-2">
+                            {laboral.especialidades.map((esp, idx) => (
+                              <span
+                                key={idx}
+                                className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-100 text-indigo-800"
+                              >
+                                {esp}
+                              </span>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -298,25 +372,29 @@ const PersonalDetailCard = ({ personal, onClose, tipo = 'CENATE' }) => {
                 <div className="space-y-1">
                   <Campo
                     icon={User}
-                    label="Username"
+                    label="Nombre de Usuario"
                     value={personal.username}
                     highlight
                   />
                   <Campo
                     icon={Shield}
-                    label="Estado"
-                    value={personal.estado_usuario === 'A' ? 'Activo' : 'Inactivo'}
+                    label="Estado de Cuenta"
+                    value={personal.estado_usuario}
                   />
-                  <Campo
-                    icon={Calendar}
-                    label="Fecha de Registro"
-                    value={formatFecha(personal.fecha_creacion_usuario)}
-                  />
-                  <Campo
-                    icon={Calendar}
-                    label="Última Actualización"
-                    value={formatFecha(personal.ultima_actualizacion_usuario)}
-                  />
+                  {personal.fechas && (
+                    <>
+                      <Campo
+                        icon={Calendar}
+                        label="Fecha de Registro"
+                        value={formatFecha(personal.fechas.fecha_registro)}
+                      />
+                      <Campo
+                        icon={Calendar}
+                        label="Última Actualización"
+                        value={formatFecha(personal.fechas.ultima_actualizacion)}
+                      />
+                    </>
+                  )}
                 </div>
               </motion.div>
             )}
