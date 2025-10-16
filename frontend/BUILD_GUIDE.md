@@ -141,7 +141,7 @@ Verifica los imports en los archivos:
 ```bash
 # Verificar console del navegador (F12)
 # Posibles causas:
-# 1. Ruta de API incorrecta en .env
+# 1. Ruta de API incorrecta en .env.development
 # 2. CORS bloqueado
 # 3. Backend no está corriendo
 ```

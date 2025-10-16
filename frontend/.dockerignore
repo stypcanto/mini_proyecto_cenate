@@ -25,7 +25,7 @@ dist
 coverage
 
 # Archivos de entorno
-.env
+.env.development
 .env.*
 *.pem
 *.crt

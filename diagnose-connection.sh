@@ -68,11 +68,11 @@ else
     echo "  Verifica que tu backend tenga configuración CORS para http://localhost:3000"
 fi
 
-# 5. Verificar .env del frontend
+# 5. Verificar .env.development del frontend
 echo ""
 echo -e "${BLUE}5. Verificando .env del frontend...${NC}"
 if [ -f "frontend/.env" ]; then
-    API_URL=$(grep "REACT_APP_API_URL" frontend/.env | cut -d'=' -f2)
+    API_URL=$(grep "REACT_APP_API_URL" frontend/.env.development | cut -d'=' -f2)
     echo -e "  ${GREEN}✓${NC} Archivo .env encontrado"
     echo "  API_URL configurada: $API_URL"
     

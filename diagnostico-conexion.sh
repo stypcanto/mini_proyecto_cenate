@@ -48,12 +48,12 @@ else
 fi
 echo ""
 
-# 4. Verificar configuración .env
+# 4. Verificar configuración .env.development
 echo "4️⃣ Verificando configuración .env..."
 if [ -f "frontend/.env" ]; then
     echo -e "${GREEN}✅ Archivo .env encontrado${NC}"
     echo "   Contenido:"
-    cat frontend/.env | grep API_URL
+    cat frontend/.env.development | grep API_URL
 else
     echo -e "${RED}❌ Archivo .env NO encontrado${NC}"
     echo "   Crea el archivo frontend/.env con:"

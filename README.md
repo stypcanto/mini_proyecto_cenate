@@ -170,8 +170,8 @@ psql -U postgres -d maestro_cenate -f backend/sql/03_sistema_login_completo.sql
 cd backend
 
 # Copiar archivo de configuración
-cp .env.example .env
-# Editar .env con tus credenciales
+cp .env.development.example .env.development
+# Editar .env.development con tus credenciales
 
 # Compilar y ejecutar
 ./mvnw spring-boot:run

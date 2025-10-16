@@ -39,14 +39,18 @@ export JWT_TOKEN="tu_token_jwt_aqui"
 
 ### 2. Autenticarse:
 ```bash
-curl -X POST "$BASE_URL/api/auth/login" \
+curl -X POST "http://localhost:8080/api/auth/login" \
   -H "Content-Type: application/json" \
-  -d '{"username": "superadmin", "password": "tu_password"}'
+  -d '{"username":"scantor","password":"admin123"}' | jq .
 ```
 
 ### 3. Copiar token y exportar:
 ```bash
-export JWT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+export TOKEN=$(curl -s -X POST "http://localhost:8080/api/auth/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username":"scantor","password":"admin123"}' | jq -r '.token')
+echo "✅ Token guardado temporalmente en \$TOKEN"
+
 ```
 
 ### 4. Probar endpoints:

@@ -123,7 +123,7 @@ fetch('http://localhost:8080/api/auth/login', {
 ### Test 3: Verificar .env del frontend
 
 ```bash
-cat frontend/.env
+cat frontend/.env.development
 ```
 
 **Debe contener:**
@@ -296,11 +296,11 @@ else
     echo "   ❌ Frontend no activo - Iniciar con: npm start"
 fi
 
-# 3. Verificar .env
+# 3. Verificar .env.development
 echo "3️⃣ Verificando configuración..."
-if grep -q "REACT_APP_API_URL" frontend/.env 2>/dev/null; then
+if grep -q "REACT_APP_API_URL" frontend/.env.development 2>/dev/null; then
     echo "   ✅ .env configurado"
-    cat frontend/.env | grep API_URL
+    cat frontend/.env.development | grep API_URL
 else
     echo "   ❌ .env no encontrado o incorrecto"
 fi

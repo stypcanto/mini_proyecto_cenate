@@ -1,25 +1,31 @@
 // ========================================================================
-// 🌍 CONFIGURACIÓN GLOBAL DEL CLIENTE API - CENATE
+// 🌍 CONFIGURACIÓN GLOBAL DEL CLIENTE API - CENATE (CRA / Docker / Nginx)
 // ========================================================================
 
-// ✅ Detecta entorno y usa la URL correcta (compatible con CRA y Vite)
+/**
+ * 🧠 Detecta la URL base del backend según el entorno:
+ * - En desarrollo local: apunta a http://localhost:8080/api
+ * - En producción (Docker / Nginx): usa el proxy interno /api
+ */
 const getApiBaseUrl = () => {
-  // Intenta obtener desde variables de entorno
-  const envUrl =
-    import.meta?.env?.VITE_API_URL || process.env.REACT_APP_API_URL;
+  // 1️⃣ Intentar leer variable de entorno definida en .env o docker-compose
+  const envUrl = process.env.REACT_APP_API_URL;
 
-  // Si existe, limpia posibles barras finales
-  if (envUrl) {
-    const base = envUrl.trim().replace(/\/$/, "");
-    return base;
+  if (envUrl && envUrl.trim() !== "") {
+    return envUrl.trim().replace(/\/$/, ""); // limpia barra final
   }
 
-  // 🌐 Si no hay variable de entorno, decide según entorno:
-  // - En desarrollo local (CRA con npm start) → usa backend en localhost:8080
-  // - En Docker/Nginx o producción → usa proxy interno /api
-  const isLocalDev =
-    typeof window !== "undefined" && window.location.port !== "80";
-  return isLocalDev ? "http://localhost:8080/api" : "/api";
+  // 2️⃣ Detectar entorno de ejecución (CRA local vs Nginx)
+  const hostname = typeof window !== "undefined" ? window.location.hostname : "";
+
+  // Si está dentro de Docker/Nginx → usa proxy interno /api
+  // Si está ejecutándose con npm start (localhost:3000) → usa backend directo
+  if (hostname === "localhost" && window.location.port === "3000") {
+    return "http://localhost:8080/api";
+  }
+
+  // 🔁 Fallback por defecto (producción con Nginx)
+  return "/api";
 };
 
 // 🌐 Base de la API
@@ -71,7 +77,7 @@ export const handleResponse = async (response) => {
 };
 
 // ========================================================================
-// 🚀 PETICIÓN GENÉRICA (helper universal)
+// 🚀 PETICIÓN GENÉRICA UNIVERSAL
 // ========================================================================
 export const apiRequest = async (
   endpoint,
@@ -79,9 +85,7 @@ export const apiRequest = async (
   body = null,
   includeAuth = false
 ) => {
-  const url = `${API_BASE}${
-    endpoint.startsWith("/") ? endpoint : `/${endpoint}`
-  }`;
+  const url = `${API_BASE}${endpoint.startsWith("/") ? endpoint : `/${endpoint}`}`;
 
   const options = {
     method,
@@ -102,7 +106,7 @@ export const apiRequest = async (
 };
 
 // ========================================================================
-// ✅ Exportación adicional compatible con otros imports
+// 🪄 Exportación adicional (compatibilidad retro)
 // ========================================================================
-export const API_URL = API_BASE; // Alias usado en módulos antiguos
+export const API_URL = API_BASE;
 export default API_BASE;
