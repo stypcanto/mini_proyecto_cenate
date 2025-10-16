@@ -2,7 +2,7 @@
 // 📄 API DE TIPOS DE DOCUMENTO - CENATE
 // ========================================================================
 
-import { API_BASE, getHeaders, handleResponse } from "../config/api"; // ⚙️ usa ruta relativa, no alias "@/"
+import { API_BASE, getHeaders, handleResponse } from "@/lib/apiClient"; // ⚙️ usa ruta relativa, no alias "@/"
 
 // ========================================================================
 // 🧾 FUNCIONES CRUD DE TIPOS DE DOCUMENTO

@@ -5,7 +5,7 @@
 
 import { useState, useEffect } from "react";
 import axios from "axios";
-import { API_URL } from "@/config/api";
+import { API_URL } from "@/lib/apiClient";
 import toast from "react-hot-toast";
 
 export const useExamenes = () => {

@@ -22,7 +22,7 @@ import {
   Loader
 } from "lucide-react";
 import { usePersonalTotal } from "@/hooks/usePersonalTotal";
-import { API_BASE } from "@/config/api";
+import { API_BASE } from "@/lib/apiClient";
 import toast from "react-hot-toast";
 
 export default function UsuarioDetalleModal({ usuario, onClose }) {

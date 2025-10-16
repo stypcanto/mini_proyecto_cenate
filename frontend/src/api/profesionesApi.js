@@ -1,7 +1,7 @@
 // =====================================================================
 // 🧠 API PROFESIONES - Gestión de profesiones del personal (CENATE)
 // =====================================================================
-import { API_URL } from "@/config/api";
+import { API_URL } from "@/lib/apiClient";
 
 export const getProfesiones = async () => {
     const token = localStorage.getItem("token");

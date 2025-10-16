@@ -2,7 +2,7 @@
 // ✍️ API: Firmas Digitales - CENATE
 // ========================================================================
 
-import { API_BASE, getHeaders, handleResponse } from "@/config/api";
+import { API_BASE, getHeaders, handleResponse } from "@/lib/apiClient";
 
 // =============================================================
 // 📋 Obtener todas las firmas digitales

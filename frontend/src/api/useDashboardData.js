@@ -1,7 +1,7 @@
 // src/hooks/useDashboardData.js
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { API_URL } from "@/config/api";
+import { API_URL } from "@/lib/apiClient";
 
 const useDashboardData = () => {
   const [stats, setStats] = useState({

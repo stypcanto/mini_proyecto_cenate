@@ -2,7 +2,7 @@
 // 👥 API USUARIOS - CENATE (versión extendida y robusta)
 // ========================================================================
 
-import { API_BASE, getHeaders, handleResponse } from "../config/api";
+import { API_BASE, getHeaders, handleResponse } from "@/lib/apiClient";
 
 /**
  * 🔧 Asegura que la URL base termine correctamente en /api

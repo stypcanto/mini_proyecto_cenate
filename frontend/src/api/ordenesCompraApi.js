@@ -1,7 +1,7 @@
 // =====================================================================
 // 💼 API ÓRDENES DE COMPRA - Vinculadas al personal CNT
 // =====================================================================
-import { API_URL } from "@/config/api";
+import { API_URL } from "@/lib/apiClient";
 
 export const getOrdenesCompra = async () => {
     const token = localStorage.getItem("token");

@@ -2,7 +2,7 @@
 // 🛡️ API DE ROLES Y PERMISOS - CENATE
 // ========================================================================
 
-import { API_BASE, getHeaders, handleResponse } from "../config/api";
+import { API_BASE, getHeaders, handleResponse } from "@/lib/apiClient";
 
 /**
  * 📋 Obtener todos los roles del sistema

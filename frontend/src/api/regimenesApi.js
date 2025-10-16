@@ -2,7 +2,7 @@
 // ⚙️ API DE REGÍMENES LABORALES - CENATE
 // ========================================================================
 
-import { API_BASE, getHeaders, handleResponse } from "../config/api"; // ✅ usa ruta relativa (CRA compatible)
+import { API_BASE, getHeaders, handleResponse } from "@/lib/apiClient"; // ✅ usa ruta relativa (CRA compatible)
 
 /**
  * 📋 Obtener todos los regímenes laborales

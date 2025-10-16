@@ -1,82 +1,119 @@
 // ========================================================================
-// 🧠 useAuth.js — Hook de autenticación y autorización (CENATE)
-// 💎 Versión profesional optimizada (sin warnings de ESLint)
+// 🧠 HOOK DE AUTENTICACIÓN - useAuth()
+// ========================================================================
+// Este hook administra el estado de sesión del usuario:
+//  - login/logout usando src/api/auth.js
+//  - persistencia de token / roles / permisos
+//  - detección de sesión activa
 // ========================================================================
 
-import { useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
+import {
+  login as loginApi,
+  logout as logoutApi,
+  getCurrentUser,
+} from "@/api/auth";
 
-export default function useAuth() {
-    // ----------------------------------------------------------
-    // 🧩 Lectura segura desde localStorage
-    // ----------------------------------------------------------
-    const safeParse = useCallback((key) => {
-        try {
-            const value = localStorage.getItem(key);
-            return value ? JSON.parse(value) : [];
-        } catch (error) {
-            console.warn(`⚠️ Error al parsear ${key} en localStorage:`, error);
-            return [];
-        }
-    }, []);
+// ========================================================================
+// 🚀 useAuth() principal
+// ========================================================================
+export const useAuth = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(!!localStorage.getItem("token"));
 
-    // ----------------------------------------------------------
-    // 🧩 Datos base
-    // ----------------------------------------------------------
+  // ------------------------------------------------------------------------
+  // 🧩 Iniciar sesión
+  // ------------------------------------------------------------------------
+  const login = useCallback(async (username, password) => {
+    setLoading(true);
+    try {
+      const data = await loginApi(username, password);
+
+      // 🔐 Guardar token y datos básicos
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("username", username);
+      if (data.nombreCompleto) localStorage.setItem("nombreCompleto", data.nombreCompleto);
+      if (data.roles) localStorage.setItem("roles", JSON.stringify(data.roles));
+      if (data.permisos) localStorage.setItem("permisos", JSON.stringify(data.permisos));
+      if (data.userId) localStorage.setItem("userId", data.userId);
+
+      setUser(data);
+      setIsAuthenticated(true);
+      toast.success("Inicio de sesión exitoso ✅");
+
+      // 🔀 Redirección según rol principal
+      const rol = (data.roles?.[0] || "").toUpperCase();
+      const rutas = {
+        SUPERADMIN: "/admin",
+        ADMIN: "/admin",
+        MEDICO: "/roles/medico",
+        COORDINADOR: "/roles/coordinador",
+        COORDINACION: "/roles/coordinador",
+        ENFERMERIA: "/roles/externo",
+        EXTERNO: "/roles/externo",
+      };
+      navigate(rutas[rol] || "/user/dashboard", { replace: true });
+
+      return data;
+    } catch (error) {
+      toast.error(error.message || "Credenciales incorrectas.");
+      console.error("❌ Error al iniciar sesión:", error);
+      throw error;
+    } finally {
+      setLoading(false);
+    }
+  }, [navigate]);
+
+  // ------------------------------------------------------------------------
+  // 🚪 Cerrar sesión
+  // ------------------------------------------------------------------------
+  const logout = useCallback(() => {
+    logoutApi();
+    setUser(null);
+    setIsAuthenticated(false);
+    toast("Sesión cerrada", { icon: "🚪" });
+    navigate("/login", { replace: true });
+  }, [navigate]);
+
+  // ------------------------------------------------------------------------
+  // 🔁 Cargar usuario actual (si hay token)
+  // ------------------------------------------------------------------------
+  const loadUser = useCallback(async () => {
     const token = localStorage.getItem("token");
-    const username = localStorage.getItem("username");
-    const nombreCompleto = localStorage.getItem("nombreCompleto");
-    const rol = localStorage.getItem("rol");
+    if (!token) return;
 
-    const roles = safeParse("roles").map((r) => String(r).toUpperCase());
-    const permisos = safeParse("permisos").map((p) => String(p).toUpperCase());
+    try {
+      const profile = await getCurrentUser();
+      setUser(profile);
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.warn("⚠️ Token inválido o expirado. Cerrando sesión.");
+      logout();
+    }
+  }, [logout]);
 
-    const isAuthenticated = Boolean(token);
+  // ------------------------------------------------------------------------
+  // 🧭 Cargar usuario al iniciar la app
+  // ------------------------------------------------------------------------
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
 
-    // ----------------------------------------------------------
-    // 🔐 Lógica de roles y permisos (memoizada)
-    // ----------------------------------------------------------
-    const hasRole = useCallback(
-        (requiredRoles = []) => {
-            if (requiredRoles.includes("*")) return true;
-            const requiredUpper = requiredRoles.map((r) => r.toUpperCase());
-            return roles.some((r) => requiredUpper.includes(r));
-        },
-        [roles]
-    );
-
-    const hasPermission = useCallback(
-        (perm) => {
-            const permUpper = String(perm).toUpperCase();
-            return permisos.includes(permUpper) || roles.includes("SUPERADMIN");
-        },
-        [permisos, roles]
-    );
-
-    // ----------------------------------------------------------
-    // 💎 Resultado memoizado (sin advertencias)
-    // ----------------------------------------------------------
-    return useMemo(
-        () => ({
-            token,
-            username,
-            nombreCompleto,
-            rol,
-            roles,
-            permisos,
-            isAuthenticated,
-            hasRole,
-            hasPermission,
-        }),
-        [
-            token,
-            username,
-            nombreCompleto,
-            rol,
-            roles,
-            permisos,
-            isAuthenticated,
-            hasRole,
-            hasPermission,
-        ]
-    );
-}
+  // ------------------------------------------------------------------------
+  // 🎯 Valores retornados
+  // ------------------------------------------------------------------------
+  return useMemo(
+    () => ({
+      user,
+      loading,
+      isAuthenticated,
+      login,
+      logout,
+    }),
+    [user, loading, isAuthenticated, login, logout]
+  );
+};
