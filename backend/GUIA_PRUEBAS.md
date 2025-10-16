@@ -75,7 +75,180 @@ curl -X POST "$BASE_URL/api/permisos/check" \
   }'
 ```
 
-**Ver archivo completo**: `CURL_COMMANDS.md`
+
+### 5. Verificar que el backend responde desde fuera del contenedor
+```bash
+curl -X GET "http://localhost:8080/api/auth/me" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" | jq .
+```
+
+### 6. Probar si NGINX (frontend) está reenviando bien el tráfico
+```bash
+curl -X GET "http://localhost/api/auth/me" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" | jq .
+```
+
+### 7. Para verificar que el backend devuelve permisos correctamente:
+```bash
+curl -X GET "http://localhost:8080/api/usuarios" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" | jq .
+```
+
+### 8. Permisos
+```bash
+curl -X GET "http://localhost:8080/api/permisos" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 9. Usuarios
+```bash
+curl -X GET "http://localhost:8080/api/usuarios" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 10. Áreas
+```bash
+curl -X GET "http://localhost:8080/api/area" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 11. Profesiones
+```bash
+curl -X GET "http://localhost:8080/api/profesiones" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 12. Regímenes laborales
+```bash
+curl -X GET "http://localhost:8080/api/regimenes" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 13. Logs de auditoría
+```bash
+curl -X GET "http://localhost:8080/api/audit/logs" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 14. Personal CNT
+```bash
+curl -X GET "http://localhost:8080/api/personal" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 15. Asegurados (pacientes)
+```bash
+curl -X GET "http://localhost:8080/api/asegurados" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 16. Total de Usuarios
+```bash
+curl -X GET "http://localhost:8080/api/personal/total" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 16. Total de Usuarios
+```bash
+curl -X GET "http://localhost:8080/api/personal/total" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 16. Total de Usuarios
+```bash
+curl -X GET "http://localhost:8080/api/personal/total" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 16. Total de Usuarios
+```bash
+curl -X GET "http://localhost:8080/api/personal/total" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 16. Total de Usuarios
+```bash
+curl -X GET "http://localhost:8080/api/personal/total" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 16. Total de Usuarios
+```bash
+curl -X GET "http://localhost:8080/api/personal/total" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 16. Total de Usuarios
+```bash
+curl -X GET "http://localhost:8080/api/personal/total" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 17. Usuarios Internos
+```bash
+curl -X GET "http://localhost:8080/api/personal/detalle/1" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 18. Usuarios Externos
+```bash
+curl -X GET "http://localhost:8080/api/personal/detalle/4" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 19. Mes de cumpleanos
+```bash
+curl -X GET "http://localhost:8080/api/personal/cumpleaneros/mes/10" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 20. Dia de cumpleanos
+```bash
+curl -X GET "http://localhost:8080/api/personal/total" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+```
+
+### 21. listar rápidamente todos los endpoints disponibles
+```bash
+curl -s -X GET "http://localhost:8080/api" | jq .
+```
+
+
+### 22. GET básico auditoria
+```bash
+curl -X GET "http://localhost:8080/api/auditoria" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $JWT_TOKEN"
+```
+
+### 23. GET básico auditoria con parametro
+```bash
+curl -X GET "http://localhost:8080/api/auditoria?usuario=scantor" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $JWT_TOKEN"
+```
+
+### 24. POST de auditoría:
+```bash
+curl -X POST "http://localhost:8080/api/auditoria" \
+  -H "Content-Type: application/json" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -d '{
+    "usuario": "scantor",
+    "modulo": "dim_personal_externo",
+    "accion": "UPDATE",
+    "estado": "SUCCESS",
+    "detalle": "Cambio en correo y teléfono",
+    "ip": "192.168.1.77",
+    "dispositivo": "Mozilla/5.0 (Macintosh; Intel Mac OS X 15_5)"
+  }'
+```
+
+
+
 
 ---
 

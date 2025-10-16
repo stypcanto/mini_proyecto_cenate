@@ -73,28 +73,28 @@ Ejemplo 1 — Obtener todos los registros de auditoría
 
 curl -X GET http://localhost:8080/api/auditoria \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <tu_token_jwt>"
+  -H "Authorization: Bearer $JWT_TOKEN"
 
 
   Ejemplo 2 — Filtrar por usuario
 
   curl -X GET "http://localhost:8080/api/auditoria?usuario=scantor" \
     -H "Content-Type: application/json" \
-    -H "Authorization: Bearer <tu_token_jwt>"
+    -H "Authorization: Bearer $JWT_TOKEN"
 
 
  Ejemplo 3 — Filtrar por módulo o tipo de acción
 
  curl -X GET "http://localhost:8080/api/auditoria?modulo=dim_usuarios&accion=DELETE" \
    -H "Content-Type: application/json" \
-   -H "Authorization: Bearer <tu_token_jwt>"
+   -H "Authorization: Bearer $JWT_TOKEN"
 
 
 Ejemplo 4 — Registrar manualmente (si deseas probar inserciones)
 
 curl -X POST http://localhost:8080/api/auditoria \
   -H "Content-Type: application/json" \
-  -H "Authorization: Bearer <tu_token_jwt>" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -d '{
     "usuario": "scantor",
     "modulo": "dim_personal_externo",
