@@ -12,14 +12,14 @@ import {
   Users,
   Calendar,
 } from "lucide-react";
-import Layout from "@/components/layout/Layout";
+import HomeLayout from "@/components/layout/HomeLayout";
 
 const Home = () => {
   const patternSVG = `url("data:image/svg+xml,%3Csvg width='60' height='60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.4'%3E%3Cpath d='M30 0v4h-4v2h4v4h2V6h4V4h-4V0zm0 56v4h-4v-2h4v-4h2v4h4v2h-4zm-24-28v4H2v-2h4v-4h2v4h4v2H6zm48 0v4h-4v-2h4v-4h2v4h4v2h-4z'/%3E%3C/g%3E%3C/svg%3E")`;
 
   return (
-    <Layout>
-      <main className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
+    <HomeLayout>
+      <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white flex flex-col">
         {/* ========================= HERO ========================= */}
         <header className="bg-gradient-to-r from-[#2e63a6] via-[#2456a0] to-[#1d4f8a] text-white relative overflow-hidden shadow-lg">
           <div
@@ -224,8 +224,8 @@ const Home = () => {
             </div>
           </div>
         </section>
-      </main>
-    </Layout>
+      </div>
+    </HomeLayout>
   );
 };
 
