@@ -138,8 +138,15 @@ curl -X GET "http://localhost:8080/api/usuarios" \
 
 ### 8. Permisos
 ```bash
-curl -X GET "http://localhost:8080/api/permisos" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+curl -X GET "http://localhost:8080/api/admin/permisos" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq .
+
+curl -X GET "http://localhost:8080/api/admin/permisos/rol/1" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq .
+
+
 ```
 
 ### 9. Usuarios

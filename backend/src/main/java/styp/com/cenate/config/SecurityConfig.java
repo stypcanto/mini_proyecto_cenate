@@ -35,54 +35,40 @@ import java.util.List;
  * 🔐 CONFIGURACIÓN CENTRAL DE SEGURIDAD DEL SISTEMA CENATE
  * ============================================================================
  *
- * Este archivo define la configuración de seguridad principal:
- *  - Autenticación mediante JWT (stateless)
- *  - Autorización granular por roles y permisos MBAC
- *  - CORS global para frontend (React, Nginx, Docker)
- *  - Manejadores personalizados para errores 401 y 403
- *
- * Compatible con:
- *  ✅ Spring Boot 3.5.x
- *  ✅ Java 17+
- *  ✅ Frontend en React/Vite/Nginx
+ * Define:
+ *  - Autenticación mediante JWT
+ *  - Autorización basada en roles/permisos
+ *  - CORS global
+ *  - Manejo personalizado de errores 401 y 403
  * ============================================================================
  */
-
 @Configuration
 @EnableWebSecurity
-@EnableMethodSecurity // Permite el uso de @PreAuthorize en controladores si se necesita
+@EnableMethodSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    // =========================================================================
-    // 🧩 Dependencias inyectadas
-    // =========================================================================
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
-    // =========================================================================
-    // 🚧 Filtro principal de seguridad (SecurityFilterChain)
-    // =========================================================================
+    // ============================================================
+    // 🔰 CADENA PRINCIPAL DE FILTROS DE SEGURIDAD
+    // ============================================================
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                // 🔒 Desactiva CSRF (ya que usamos JWT) y habilita CORS global
                 .csrf(AbstractHttpConfigurer::disable)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-
-                // ⚠️ Manejo personalizado de errores 401 y 403
                 .exceptionHandling(ex -> ex
-                        .authenticationEntryPoint(new Http403ForbiddenEntryPoint()) // 401 → No autenticado
-                        .accessDeniedHandler(accessDeniedHandler()) // 403 → Acceso denegado
+                        .authenticationEntryPoint(new Http403ForbiddenEntryPoint())
+                        .accessDeniedHandler(accessDeniedHandler())
                 )
-
-                // 🧭 Configura las reglas de autorización por rutas
                 .authorizeHttpRequests(auth -> auth
 
                         // =====================================================
-                        // 🔓 ENDPOINTS PÚBLICOS (no requieren autenticación)
+                        // 🔓 ENDPOINTS PÚBLICOS
                         // =====================================================
-                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll() // Preflight requests (CORS)
+                        .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
                                 "/api/public/**",
@@ -95,7 +81,7 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // =====================================================
-                        // 📘 ENDPOINTS DE DATOS GENERALES (solo lectura)
+                        // 🩺 ENDPOINTS DE SOLO LECTURA (CATÁLOGOS)
                         // =====================================================
                         .requestMatchers(HttpMethod.GET,
                                 "/api/ipress/**",
@@ -109,7 +95,30 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // =====================================================
-                        // 👩‍⚕️ PERSONAL CNT (solo roles autorizados)
+                        // 🧩 MÓDULO DE PERMISOS / ADMINISTRACIÓN
+                        // =====================================================
+                        .requestMatchers(
+                                "/api/admin/permisos/**",    // ✅ tu nuevo controlador
+                                "/api/admin/**",             // admin en general
+                                "/api/roles/**",
+                                "/api/usuarios/**"
+                        ).hasAnyRole("SUPERADMIN", "ADMIN")
+
+                        // =====================================================
+                        // 🧰 MÓDULO MBAC Y SEGURIDAD INTERNA
+                        // =====================================================
+                        .requestMatchers(
+                                "/api/mbac/**",
+                                "/api/permisos/**",
+                                "/api/permiso/**"
+                        ).hasAnyAuthority(
+                                "ROLE_SUPERADMIN", "ROLE_ADMIN",
+                                "GESTIONAR_MODULOS", "GESTIONAR_PERMISOS",
+                                "EDITAR_PERMISOS", "CREAR_PERMISOS", "VER_PERMISOS"
+                        )
+
+                        // =====================================================
+                        // 👩‍⚕️ PERSONAL CNT
                         // =====================================================
                         .requestMatchers("/api/personal-cnt/**").hasAnyAuthority(
                                 "ROLE_SUPERADMIN", "ROLE_ADMIN",
@@ -121,24 +130,7 @@ public class SecurityConfig {
                         // 👨‍⚕️ PERSONAL EXTERNO
                         // =====================================================
                         .requestMatchers("/api/personal-externo/**").hasAnyAuthority(
-                                "ROLE_SUPERADMIN", "ROLE_ADMIN",
-                                "GESTIONAR_PERSONAL_EXTERNOS"
-                        )
-
-                        // =====================================================
-                        // 🧩 MÓDULO MBAC (permisos, auditorías, módulos)
-                        // =====================================================
-                        .requestMatchers("/api/mbac/**", "/api/permisos/**", "/api/permiso/**").hasAnyAuthority(
-                                "ROLE_SUPERADMIN", "ROLE_ADMIN",
-                                "GESTIONAR_MODULOS", "VER_PERMISOS",
-                                "EDITAR_PERMISOS", "CREAR_PERMISOS"
-                        )
-
-                        // =====================================================
-                        // 🧰 ADMINISTRACIÓN Y USUARIOS
-                        // =====================================================
-                        .requestMatchers("/api/admin/**", "/api/usuarios/**", "/api/roles/**").hasAnyAuthority(
-                                "ROLE_SUPERADMIN", "ROLE_ADMIN"
+                                "ROLE_SUPERADMIN", "ROLE_ADMIN", "GESTIONAR_PERSONAL_EXTERNOS"
                         )
 
                         // =====================================================
@@ -156,28 +148,20 @@ public class SecurityConfig {
                         )
 
                         // =====================================================
-                        // 🔒 TODO LO DEMÁS: requiere autenticación
+                        // 🔒 Cualquier otro endpoint requiere autenticación
                         // =====================================================
                         .anyRequest().authenticated()
                 )
-
-                // =============================================================
-                // 🚫 Sin sesiones (modo stateless por uso de JWT)
-                // =============================================================
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-
-                // =============================================================
-                // ⚙️ Proveedor de autenticación y filtro JWT
-                // =============================================================
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
 
-    // =========================================================================
-    // ⚠️ Manejador personalizado para respuestas HTTP 403 (acceso denegado)
-    // =========================================================================
+    // ============================================================
+    // ⚠️ HANDLER DE ACCESO DENEGADO (403)
+    // ============================================================
     @Bean
     public AccessDeniedHandler accessDeniedHandler() {
         return (request, response, accessDeniedException) -> {
@@ -185,74 +169,67 @@ public class SecurityConfig {
             response.setContentType("application/json");
             String message = """
             {
-                "status": 403,
-                "timestamp": "%s",
-                "path": "%s",
-                "message": "🚫 Acceso restringido: no tienes permisos para realizar esta acción.",
-                "tip": "Si crees que esto es un error, contacta al administrador del sistema."
+              "status": 403,
+              "timestamp": "%s",
+              "path": "%s",
+              "message": "🚫 Acceso restringido: no tienes permisos para realizar esta acción.",
+              "tip": "Si crees que esto es un error, contacta al administrador del sistema."
             }
             """.formatted(LocalDateTime.now(), request.getRequestURI());
             response.getWriter().write(message);
         };
     }
 
-    // =========================================================================
-    // 🌍 Configuración CORS GLOBAL
-    // =========================================================================
+    // ============================================================
+    // 🌍 CONFIGURACIÓN GLOBAL CORS
+    // ============================================================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-
-        // 🌐 Dominios permitidos (local + LAN + Docker)
         config.setAllowedOrigins(Arrays.asList(
                 "http://localhost",
                 "http://localhost:80",
                 "http://localhost:5173",
-                "http://localhost:3000",
                 "http://127.0.0.1",
                 "http://127.0.0.1:5173",
                 "http://10.0.89.13",
                 "http://10.0.89.239",
                 "http://10.0.89.239:5173"
         ));
-
-        // ✅ Métodos HTTP y cabeceras
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setExposedHeaders(List.of("Authorization"));
         config.setAllowCredentials(true);
-        config.setMaxAge(3600L); // 1 hora
-
-        // 🔁 Registro global
+        config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;
     }
 
-    // =========================================================================
-    // 🔐 Proveedor de autenticación (DaoAuthenticationProvider)
-    // =========================================================================
+    // ============================================================
+    // 🔐 PROVEEDOR DE AUTENTICACIÓN
+    // ============================================================
     @Bean
     public AuthenticationProvider authenticationProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();
-        provider.setUserDetailsService(userDetailsService); // usa UserDetailsServiceImpl
+        provider.setUserDetailsService(userDetailsService);
         provider.setPasswordEncoder(passwordEncoder());
         return provider;
     }
 
-    // =========================================================================
-    // ⚙️ Manager de autenticación (para AuthController)
-    // =========================================================================
+    // ============================================================
+    // ⚙️ AUTH MANAGER
+    // ============================================================
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration config) throws Exception {
         return config.getAuthenticationManager();
     }
 
-    // =========================================================================
-    // 🔑 Codificador de contraseñas (BCrypt)
-    // =========================================================================
+    // ============================================================
+    // 🔑 PASSWORD ENCODER
+    // ============================================================
     @Bean
     public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10); // fuerza 10 → seguro y razonablemente rápido
+        return new BCryptPasswordEncoder(10);
     }
 }
