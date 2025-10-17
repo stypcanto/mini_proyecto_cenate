@@ -37,7 +37,7 @@ public class Permiso {
     @JsonIgnore
     private Rol rol;
 
-    // 🔸 Flags de acceso
+    // 🔸 Permisos base
     @Builder.Default
     @Column(name = "puede_ver", nullable = false)
     private boolean puedeVer = false;
@@ -53,6 +53,19 @@ public class Permiso {
     @Builder.Default
     @Column(name = "puede_eliminar", nullable = false)
     private boolean puedeEliminar = false;
+
+    // 🔸 Permisos extendidos (🆕 agregar estos)
+    @Builder.Default
+    @Column(name = "puede_editar", nullable = false)
+    private boolean puedeEditar = false;
+
+    @Builder.Default
+    @Column(name = "puede_exportar", nullable = false)
+    private boolean puedeExportar = false;
+
+    @Builder.Default
+    @Column(name = "puede_aprobar", nullable = false)
+    private boolean puedeAprobar = false;
 
     // 🔸 Auditoría
     @CreationTimestamp

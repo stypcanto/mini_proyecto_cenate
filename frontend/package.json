@@ -17,6 +17,7 @@
     "lucide-react": "^0.263.1",
     "postcss": "^8.4.47",
     "react": "^18.3.1",
+    "react-app-rewired": "^2.2.1",
     "react-dom": "^18.3.1",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^6.28.0",
@@ -52,11 +53,13 @@
     ]
   },
   "devDependencies": {
-    "@craco/craco": "^7.1.0",
+    "@babel/plugin-transform-class-properties": "^7.27.1",
+    "@babel/plugin-transform-private-methods": "^7.27.1",
+    "@babel/plugin-transform-private-property-in-object": "^7.27.1",
+    "@craco/craco": "^5.9.0",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.19",
-    "customize-cra": "^1.0.0",
-    "react-app-rewired": "^2.2.1"
+    "customize-cra": "^1.0.0"
   },
   "resolutions": {
     "ajv": "6.12.6",

@@ -31,40 +31,58 @@ chmod +x test_mbac_api.sh
 
 ## 🚀 OPCIÓN 2: Comandos CURL Directos
 
-### 1. Configurar variables:
-```bash
-export BASE_URL="http://localhost:8080"
-export JWT_TOKEN="tu_token_jwt_aqui"
-```
-
-### 2. Autenticarse:
+### 🧩 1. Autenticarse y obtener token
 ```bash
 curl -X POST "http://localhost:8080/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"scantor","password":"admin123"}' | jq .
 ```
+Esto muestra el token, los roles, permisos, etc.
 
-### 3. Copiar token y exportar:
+### 🔐 2. Guardar el token automáticamente
 ```bash
-export TOKEN=$(curl -s -X POST "http://localhost:8080/api/auth/login" \
+
+export JWT_TOKEN=$(curl -s -X POST "http://localhost:8080/api/auth/login" \
   -H "Content-Type: application/json" \
   -d '{"username":"scantor","password":"admin123"}' | jq -r '.token')
-echo "✅ Token guardado temporalmente en \$TOKEN"
-
 ```
 
-### 4. Probar endpoints:
-```bash
-# Health check
-curl -X GET "$BASE_URL/api/permisos/health" \
-  -H "Authorization: Bearer $JWT_TOKEN"
+Puedes comprobarlo con:
+```
+echo $JWT_TOKEN
+```
 
-# Obtener permisos
+###  🌐 3. Definir la URL base del backend
+```bash
+export BASE_URL="http://localhost:8080"
+```
+###  🚀 4. Probar endpoints
+
+```bash
+# ================================
+# 🔹 1. Health check del módulo
+# ================================
+curl -X GET "$BASE_URL/api/permisos/health" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+
+Este endpoint /api/permisos/health actúa como un “ping de salud” o health check interno.
+Su función es confirmar que el microservicio o módulo de “Permisos”:
+	•	está levantado correctamente dentro del contenedor Spring Boot,
+	•	tiene su contexto inicializado,
+	•	puede procesar peticiones,
+	•	y está accesible a través de tu autenticación JWT.
+
+# ================================
+# 🔹 2. Obtener permisos de usuario
+# ================================
 curl -X GET "$BASE_URL/api/permisos/usuario/1" \
   -H "Authorization: Bearer $JWT_TOKEN" \
-  -H "Content-Type: application/json"
+  -H "Content-Type: application/json" | jq .
 
-# Verificar permiso
+# ================================
+# 🔹 3. Verificar un permiso específico
+# ================================
+
 curl -X POST "$BASE_URL/api/permisos/check" \
   -H "Authorization: Bearer $JWT_TOKEN" \
   -H "Content-Type: application/json" \
@@ -72,7 +90,28 @@ curl -X POST "$BASE_URL/api/permisos/check" \
     "userId": 1,
     "rutaPagina": "/roles/medico/pacientes",
     "accion": "ver"
-  }'
+  }' | jq .
+
+# ================================
+# 🔹 4. Para saber qué módulos tiene habilitados el usuario:
+# ================================
+curl -X GET "$BASE_URL/api/permisos/usuario/1/modulos" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+  
+# ================================
+# 🔹 5. Obtener páginas accesibles de un módulo
+# ================================
+ curl -X GET "$BASE_URL/api/permisos/usuario/1/modulo/1/paginas" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+ 
+ 
+ # ================================
+# 🔹 6. (Si quieres probar la nueva API /api/admin/permisos)
+# ================================
+curl -X GET "$BASE_URL/api/admin/permisos/rol/1" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+  
+  
 ```
 
 
@@ -169,23 +208,6 @@ curl -X GET "http://localhost:8080/api/personal/total" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 16. Total de Usuarios
-```bash
-curl -X GET "http://localhost:8080/api/personal/total" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-```
-
-### 16. Total de Usuarios
-```bash
-curl -X GET "http://localhost:8080/api/personal/total" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-```
-
-### 16. Total de Usuarios
-```bash
-curl -X GET "http://localhost:8080/api/personal/total" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-```
 
 ### 17. Usuarios Internos
 ```bash

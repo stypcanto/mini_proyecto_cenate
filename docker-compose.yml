@@ -1,9 +1,14 @@
+# ========================================================================
+# ⚙️ DOCKER COMPOSE - CENATE PLATFORM
+# Multi-stack: Spring Boot (backend) + React CRA + Nginx (frontend)
+# Compatible con Mac M1/M2 y entornos Linux
+# ========================================================================
 version: "3.9"
 
 services:
-  # ===============================
-  # 🧩 BACKEND (Spring Boot)
-  # ===============================
+  # ------------------------------------------------------------
+  # 🧩 BACKEND - SPRING BOOT (Java 17 / Gradle Build)
+  # ------------------------------------------------------------
   backend:
     build:
       context: ./backend
@@ -26,20 +31,22 @@ services:
         limits:
           memory: 1.5G
 
-  # ===============================
-  # 💻 FRONTEND (React CRA + Nginx)
-  # ===============================
+  # ------------------------------------------------------------
+  # 💻 FRONTEND - REACT + NGINX (Build con Node 18)
+  # ------------------------------------------------------------
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        REACT_APP_API_URL: "http://backend:8080/api"   # 👈 uso interno en red Docker
     container_name: cenate-frontend
     depends_on:
       - backend
     ports:
       - "80:80"
     environment:
-      - REACT_APP_API_URL=/api        # ✅ CRA usa este prefijo
+      - REACT_APP_API_URL=/api         # ✅ visible en navegador (proxy Nginx)
       - TZ=America/Lima
     networks:
       - cenate-net
@@ -49,9 +56,9 @@ services:
         limits:
           memory: 512M
 
-# ===============================
-# 🔗 RED DE CONEXIÓN INTERNA
-# ===============================
+# ========================================================================
+# 🌐 RED INTERNA DOCKER (aislada y eficiente)
+# ========================================================================
 networks:
   cenate-net:
     driver: bridge

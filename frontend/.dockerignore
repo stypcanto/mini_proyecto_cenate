@@ -1,43 +1,27 @@
-# =====================================
-# 🚫 .dockerignore para frontend (React)
-# =====================================
-
 # Control de versiones
 .git
 .gitignore
 
-# Archivos del sistema y del IDE
+# IDE y cachés
 .idea
 .vscode
 *.iml
+*.class
 *.log
 *.tmp
-*.bak
 *.swp
+*.bak
 *.DS_Store
 
-# Dependencias y builds
+# Builds y dependencias
 node_modules
-node_modules 2
 build
 dist
-.cache
-coverage
+out
 
-# Archivos de entorno
-.env.development
-.env.*
-*.pem
-*.crt
-*.key
-
-# Archivos innecesarios
-*.md
-*.pdf
-*.zip
-*.tar
-*.rar
-
-# Archivos propios de Docker
+# Otros
 Dockerfile
 docker-compose.yml
+.env*
+test/
+__pycache__/
