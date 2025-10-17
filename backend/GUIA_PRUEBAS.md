@@ -39,6 +39,13 @@ curl -X POST "http://localhost:8080/api/auth/login" \
 ```
 Esto muestra el token, los roles, permisos, etc.
 
+
+🧩 Validación de endpoints activos
+```bash
+curl -s http://localhost:8080/actuator/mappings | grep "api/"
+
+```
+
 ### 🔐 2. Guardar el token automáticamente
 ```bash
 
@@ -149,118 +156,198 @@ curl -X GET "http://localhost:8080/api/admin/permisos/rol/1" \
 
 ```
 
+
 ### 9. Usuarios
 ```bash
 curl -X GET "http://localhost:8080/api/usuarios" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 10. Áreas
+### 10. Roles
+
+✅ Listar todos los roles
+```bash
+curl -X GET "http://localhost:8080/api/admin/roles" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq .
+```
+🔎 Esto debería retornar un JSON con todos los roles de la tabla dim_roles.
+
+
+✅ Obtener un rol por ID
+```bash
+curl -X GET "http://localhost:8080/api/admin/roles/1" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq .
+```
+Reemplaza 1 con el ID real que quieras consultar (id_rol).
+
+
+✅ Crear un nuevo rol
+```bash
+curl -X POST "http://localhost:8080/api/admin/roles" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "descRol": "COORDINADOR_REGIONAL"
+  }' | jq .
+```
+Esto debería crear un nuevo registro en dim_roles.
+
+✅ Actualizar un rol existente
+```bash
+curl -X PUT "http://localhost:8080/api/admin/roles/1" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "descRol": "COORDINADOR_ACTUALIZADO"
+  }' | jq .
+```
+Modifica el campo desc_rol del rol con ID 1.
+
+✅ Eliminar un rol
+```bash
+curl -X DELETE "http://localhost:8080/api/admin/roles/1" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq .
+```
+
+✅ Listar permisos de un rol específico (por ejemplo, ADMIN)
+
+```bash
+curl -X GET "http://localhost:8080/api/admin/permisos/rol/2" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq .
+```
+Esto mostrará los permisos asignados al id_rol = 2 (ADMIN).
+
+✅ Actualizar un permiso específico (por ejemplo, habilitar puede_actualizar)
+```bash
+curl -X PUT "http://localhost:8080/api/admin/permisos/5" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "puede_actualizar": true,
+    "puede_eliminar": false
+  }' | jq .
+```
+👉 Reemplaza 5 con el id_permiso real que veas en tu base.
+
+✅ Crear un nuevo permiso para un rol
+```bash
+curl -X POST "http://localhost:8080/api/admin/permisos" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "descPermiso": "GESTIONAR_HORARIOS",
+    "idRol": 2,
+    "puede_ver": true,
+    "puede_crear": true,
+    "puede_actualizar": false,
+    "puede_eliminar": false
+  }' | jq .
+```
+
+✅ Eliminar un permiso
+```bash
+curl -X DELETE "http://localhost:8080/api/admin/permisos/10" \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json"
+```
+
+
+
+
+### 11. Áreas
 ```bash
 curl -X GET "http://localhost:8080/api/area" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
+Elimina el rol con ID 1 (si tu controlador lo permite).
 
-### 11. Profesiones
+
+
+### 12. Profesiones
 ```bash
 curl -X GET "http://localhost:8080/api/profesiones" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 12. Regímenes laborales
+### 13. Regímenes laborales
 ```bash
 curl -X GET "http://localhost:8080/api/regimenes" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 13. Logs de auditoría
+### 14. Logs de auditoría
 ```bash
 curl -X GET "http://localhost:8080/api/audit/logs" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 14. Personal CNT
+### 15. Personal CNT
 ```bash
 curl -X GET "http://localhost:8080/api/personal" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 15. Asegurados (pacientes)
+### 16. Asegurados (pacientes)
 ```bash
 curl -X GET "http://localhost:8080/api/asegurados" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 16. Total de Usuarios
+### 17. Total de Usuarios
 ```bash
 curl -X GET "http://localhost:8080/api/personal/total" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 16. Total de Usuarios
-```bash
-curl -X GET "http://localhost:8080/api/personal/total" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-```
-
-### 16. Total de Usuarios
-```bash
-curl -X GET "http://localhost:8080/api/personal/total" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-```
-
-### 16. Total de Usuarios
-```bash
-curl -X GET "http://localhost:8080/api/personal/total" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-```
-
-
-### 17. Usuarios Internos
+### 18. Usuarios Internos
 ```bash
 curl -X GET "http://localhost:8080/api/personal/detalle/1" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 18. Usuarios Externos
+### 19. Usuarios Externos
 ```bash
 curl -X GET "http://localhost:8080/api/personal/detalle/4" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 19. Mes de cumpleanos
+### 20. Mes de cumpleanos
 ```bash
 curl -X GET "http://localhost:8080/api/personal/cumpleaneros/mes/10" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 20. Dia de cumpleanos
+### 21. Dia de cumpleanos
 ```bash
 curl -X GET "http://localhost:8080/api/personal/total" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
 ```
 
-### 21. listar rápidamente todos los endpoints disponibles
+### 22. listar rápidamente todos los endpoints disponibles
 ```bash
 curl -s -X GET "http://localhost:8080/api" | jq .
 ```
 
 
-### 22. GET básico auditoria
+### 23. GET básico auditoria
 ```bash
 curl -X GET "http://localhost:8080/api/auditoria" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $JWT_TOKEN"
 ```
 
-### 23. GET básico auditoria con parametro
+### 24. GET básico auditoria con parametro
 ```bash
 curl -X GET "http://localhost:8080/api/auditoria?usuario=scantor" \
   -H "Content-Type: application/json" \
   -H "Authorization: Bearer $JWT_TOKEN"
 ```
 
-### 24. POST de auditoría:
+### 25. POST de auditoría:
 ```bash
 curl -X POST "http://localhost:8080/api/auditoria" \
   -H "Content-Type: application/json" \

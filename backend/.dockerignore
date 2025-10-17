@@ -1,8 +1,12 @@
-# Control de versiones
+# ================================
+# 🧩 OPTIMIZED DOCKERIGNORE - BACKEND (Spring Boot + Gradle)
+# ================================
+
+# 🧠 Git / Version control
 .git
 .gitignore
 
-# IDE y cachés
+# 🧰 IDEs & System files
 .idea
 .vscode
 *.iml
@@ -12,18 +16,40 @@
 *.swp
 *.bak
 *.DS_Store
+Thumbs.db
 
-# Builds
+# ⚙️ Gradle caches and build outputs
 .gradle
-build
+build/*
+!build/libs/
 out
 target
+.gradle-cache/
+.gradle-test-kit/
 
-# Otros
+# 📦 Node / Python extras (por si el proyecto incluye scripts)
 node_modules
-__pycache__
-test/
+__pycache__/
+venv/
+
+# 📄 Docs, notes y archivos innecesarios en build
 *.md
-.env*
+*.pdf
+*.docx
+*.pptx
+README*
+CHANGELOG*
+docs/
+doc/
+tests/
+test/
+
+# 🔐 Environment & secrets
+.env
+.env.*
+!.env.production    # ✅ Si deseas copiar el de producción
+
+# 🧱 Docker & Compose
 Dockerfile
 docker-compose.yml
+.dockerignore

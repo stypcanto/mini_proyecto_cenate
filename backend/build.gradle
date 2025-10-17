@@ -1,10 +1,17 @@
+/*
+ * ================================================================
+ * 🌐 CENATE BACKEND - SPRING BOOT (Gradle)
+ * Compatible con Java 17, Spring Boot 3.5.6 y PostgreSQL
+ * ================================================================
+ */
+
 plugins {
     id 'java'
     id 'org.springframework.boot' version '3.5.6'
     id 'io.spring.dependency-management' version '1.1.7'
 }
 
-group = 'styp.com'
+group = 'com.styp.cenate'
 version = '0.0.1-SNAPSHOT'
 description = 'CENATE API - Sistema de Gestión'
 
@@ -24,65 +31,69 @@ configurations {
     }
 }
 
+/* ================================================================
+   📦 DEPENDENCIAS
+   ================================================================ */
 dependencies {
-    /* ==========================
-       🔹 SPRING BOOT STARTERS
-       ========================== */
+    // 🔹 SPRING BOOT STARTERS
     implementation 'org.springframework.boot:spring-boot-starter-web'
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter-validation'
     implementation 'org.springframework.boot:spring-boot-starter-security'
 
-    /* ✅ ACTUATOR (para /actuator/health, /actuator/mappings, etc.) */
+    // 🔹 ACTUATOR (para healthcheck y monitoreo Docker)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
-    /* ==========================
-       🔹 AOP (para MBAC Permission Aspect)
-       ========================== */
+    // 🔹 AOP (para MBAC Permission Aspect)
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
-    /* ==========================
-       🔹 DATABASE
-       ========================== */
+    // 🔹 BASE DE DATOS
     runtimeOnly 'org.postgresql:postgresql'
 
-    /* ==========================
-       🔹 JWT
-       ========================== */
+    // 🔹 JWT (Autenticación segura)
     implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
 
-    /* ==========================
-       🔹 SWAGGER / OPENAPI
-       ========================== */
+    // 🔹 SWAGGER / OPENAPI
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
 
-    /* ==========================
-       🔹 MODEL MAPPER
-       ========================== */
+    // 🔹 MODEL MAPPER
     implementation 'org.modelmapper:modelmapper:3.2.0'
 
-    /* ==========================
-       🔹 LOMBOK
-       ========================== */
+    // 🔹 LOMBOK
     compileOnly 'org.projectlombok:lombok:1.18.40'
     annotationProcessor 'org.projectlombok:lombok:1.18.40'
     testCompileOnly 'org.projectlombok:lombok:1.18.40'
     testAnnotationProcessor 'org.projectlombok:lombok:1.18.40'
 
-    /* ==========================
-       🔹 TESTING
-       ========================== */
+    // 🔹 TESTING
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
     testImplementation 'org.springframework.security:spring-security-test'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
+/* ================================================================
+   ⚙️ CONFIGURACIÓN DE SPRING BOOT
+   ================================================================ */
 springBoot {
-    mainClass = 'styp.com.cenate.CenateApplication'
+    mainClass = 'com.styp.cenate.CenateApplication' // ✅ Clase principal real
 }
 
+/* ================================================================
+   🧩 CONFIGURACIÓN DE EMPAQUETADO (bootJar)
+   ================================================================ */
+bootJar {
+    manifest {
+        attributes(
+                'Main-Class': 'com.styp.cenate.CenateApplication'
+        )
+    }
+}
+
+/* ================================================================
+   🧱 TAREAS PERSONALIZADAS
+   ================================================================ */
 tasks.named('test') {
     useJUnitPlatform()
 }
@@ -94,7 +105,6 @@ tasks.register('cleanBuild') {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.compilerArgs += ['-parameters']
-    options.annotationProcessorPath = configurations.annotationProcessor
 }
 
 tasks.withType(Test).configureEach {

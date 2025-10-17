@@ -1,19 +1,18 @@
 # ========================================================================
 # ⚙️ DOCKER COMPOSE - CENATE PLATFORM
-# Multi-stack: Spring Boot (backend) + React CRA + Nginx (frontend)
-# Compatible con Mac M1/M2 y entornos Linux
+# Multi-stack: Spring Boot (backend) + React (Vite/CRA) + Nginx
+# Compatible con Mac M1/M2 (ARM64) y Linux AMD64
 # ========================================================================
-version: "3.9"
 
 services:
   # ------------------------------------------------------------
   # 🧩 BACKEND - SPRING BOOT (Java 17 / Gradle Build)
   # ------------------------------------------------------------
   backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
     container_name: cenate-backend
+    build:
+      context: ./backend          # 👈 Muy bien: el contexto es el correcto
+      dockerfile: Dockerfile
     environment:
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://10.0.89.13:5432/maestro_cenate}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
@@ -31,22 +30,25 @@ services:
         limits:
           memory: 1.5G
 
+    # 🚫 Asegúrate de NO tener montado ningún volumen hacia /app
+    volumes:
+      - ./backend/build/libs/cenate-0.0.1-SNAPSHOT.jar:/tmp/cenate-0.0.1-SNAPSHOT.jar:ro
+
   # ------------------------------------------------------------
-  # 💻 FRONTEND - REACT + NGINX (Build con Node 18)
+  # 💻 FRONTEND - REACT + NGINX
   # ------------------------------------------------------------
   frontend:
+    container_name: cenate-frontend
     build:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        REACT_APP_API_URL: "http://backend:8080/api"   # 👈 uso interno en red Docker
-    container_name: cenate-frontend
+        VITE_API_URL: "http://backend:8080/api"   # 🧭 URL interna entre contenedores
     depends_on:
       - backend
     ports:
       - "80:80"
     environment:
-      - REACT_APP_API_URL=/api         # ✅ visible en navegador (proxy Nginx)
       - TZ=America/Lima
     networks:
       - cenate-net
@@ -57,7 +59,7 @@ services:
           memory: 512M
 
 # ========================================================================
-# 🌐 RED INTERNA DOCKER (aislada y eficiente)
+# 🌐 RED INTERNA DOCKER
 # ========================================================================
 networks:
   cenate-net:

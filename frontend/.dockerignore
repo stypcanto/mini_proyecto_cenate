@@ -1,8 +1,12 @@
-# Control de versiones
+# ================================
+# 🧩 OPTIMIZED DOCKERIGNORE - FRONTEND
+# ================================
+
+# 🧠 Git / Version control
 .git
 .gitignore
 
-# IDE y cachés
+# 🧰 IDEs & System files
 .idea
 .vscode
 *.iml
@@ -12,16 +16,29 @@
 *.swp
 *.bak
 *.DS_Store
+Thumbs.db
 
-# Builds y dependencias
+# 📦 Dependencies & builds
 node_modules
 build
 dist
 out
+.cache
+coverage
 
-# Otros
+# 🧪 Tests & temporary folders
+test/
+tests/
+__tests__/
+__mocks__/
+__pycache__/
+
+# ⚙️ Docker / Infra
 Dockerfile
 docker-compose.yml
-.env*
-test/
-__pycache__/
+.dockerignore
+
+# 🔐 Environment files
+.env
+.env.*
+!.env.production   # ✅ permite copiar el de producción (si lo usas)
