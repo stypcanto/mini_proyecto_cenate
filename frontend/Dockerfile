@@ -6,19 +6,27 @@
 # ---------------------------
 # 🧩 Etapa 1: Build del frontend
 # ---------------------------
-FROM --platform=linux/amd64 node:18-alpine AS build
+FROM --platform=$BUILDPLATFORM node:18-alpine AS build
 WORKDIR /app
+
+# ------------------------------------------------------------
+# 🔧 Mejoras de red y cache para entornos CI/CD
+# ------------------------------------------------------------
+RUN npm config set fetch-retries 5 \
+ && npm config set fetch-retry-mintimeout 20000 \
+ && npm config set fetch-retry-maxtimeout 120000 \
+ && npm config set registry https://registry.npmjs.org/
 
 # ------------------------------------------------------------
 # ✅ Copiar solo lo necesario para aprovechar la cache
 # ------------------------------------------------------------
-COPY package.json package-lock.json ./
+COPY package*.json ./
 
 # ------------------------------------------------------------
 # ⚙️ Instalar dependencias con fallback inteligente
 # Si npm ci falla (por lock desactualizado), ejecuta npm install
 # ------------------------------------------------------------
-RUN npm ci --prefer-offline --no-audit --progress=false || \
+RUN npm ci --legacy-peer-deps --prefer-offline --no-audit --progress=false || \
     (echo "⚠️ npm ci falló, usando npm install..." && \
      npm install --legacy-peer-deps --no-audit --progress=false)
 
@@ -41,7 +49,8 @@ RUN npm run build
 # ---------------------------
 # 🌐 Etapa 2: Servidor Nginx
 # ---------------------------
-FROM --platform=linux/amd64 nginx:alpine
+FROM --platform=$TARGETPLATFORM nginx:alpine
+WORKDIR /usr/share/nginx/html
 
 # ------------------------------------------------------------
 # 🧹 Limpiar configuración por defecto y aplicar la nuestra
@@ -52,7 +61,7 @@ COPY default.conf /etc/nginx/conf.d/default.conf
 # ------------------------------------------------------------
 # 📁 Copiar build generado desde la etapa anterior
 # ------------------------------------------------------------
-COPY --from=build /app/build /usr/share/nginx/html
+COPY --from=build /app/build .
 
 # ------------------------------------------------------------
 # 🌎 Configuración final

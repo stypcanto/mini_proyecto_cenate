@@ -1,57 +1,62 @@
 # ============================================================
 # 🌱 Multi-stage Dockerfile para Spring Boot (Gradle)
-# Compatible con ARM (Apple Silicon) y AMD64
+# Compatible con Java 17 y arquitectura ARM/AMD64
 # ============================================================
 
 # ------------------------------------------------------------
 # 🏗️ STAGE 1: BUILD
 # ------------------------------------------------------------
-FROM --platform=$BUILDPLATFORM gradle:8.5-jdk17 AS build
+FROM gradle:8.5-jdk17 AS build
 
 WORKDIR /app
 
-# Copiar configuración Gradle
-COPY build.gradle settings.gradle gradlew ./
-COPY gradle gradle/
+# Copiar proyecto completo
+COPY . .
 
-# Descargar dependencias
-RUN ./gradlew dependencies --no-daemon || true
+# 🔧 Permisos para gradlew
+RUN chmod +x gradlew
 
-# Copiar código fuente
-COPY src src/
+# 🧱 Compilar el jar ejecutable (sin tests para acelerar)
+RUN ./gradlew clean bootJar -x test --no-daemon
 
-# Compilar y generar el JAR
-RUN ./gradlew clean bootJar -x test --no-daemon --refresh-dependencies
-
-# Verificar que se generó correctamente
-RUN ls -lh build/libs && echo "✅ Build completado con éxito"
+# 🔍 Verificar que el JAR contiene la clase principal
+RUN ls -lh build/libs && \
+    echo "Comprobando contenido del JAR..." && \
+    jar tf build/libs/*.jar | grep CenateApplication || echo "❌ No se encontró la clase principal"
 
 
 # ------------------------------------------------------------
 # 🚀 STAGE 2: RUNTIME
 # ------------------------------------------------------------
-FROM --platform=$TARGETPLATFORM eclipse-temurin:17-jre-jammy
+FROM eclipse-temurin:17-jre-jammy
 
 WORKDIR /app
 
-# Instalar utilidades
-RUN apt-get update && apt-get install -y curl unzip && rm -rf /var/lib/apt/lists/*
+# 🧩 Instalar herramientas útiles (curl, jq, column)
+RUN apt-get update && \
+    apt-get install -y curl jq bsdmainutils && \
+    rm -rf /var/lib/apt/lists/*
 
-# Copiar el JAR compilado
-COPY --from=build /app/build/libs/cenate-0.0.1-SNAPSHOT.jar /app/app.jar
+# Copiar el jar compilado desde el stage anterior
+COPY --from=build /app/build/libs/*.jar app.jar
 
-# Crear usuario seguro
+# Crear usuario no root
 RUN addgroup --system spring && adduser --system --ingroup spring spring
 USER spring:spring
 
-# Exponer puerto
+# Exponer el puerto
 EXPOSE 8080
-ENV TZ=America/Lima
-ENV JAVA_OPTS="-Xmx512m -Xms256m"
 
-# Healthcheck (opcional)
-HEALTHCHECK --interval=30s --timeout=3s --start-period=40s --retries=3 \
+# Establecer zona horaria
+ENV TZ=America/Lima
+
+# ============================================================
+# 🩺 HEALTHCHECK - Monitoreo de la API
+# ============================================================
+HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
   CMD curl -f http://localhost:8080/actuator/health || exit 1
 
-# ✅ ENTRYPOINT CORREGIDO
+# ============================================================
+# 🚀 ARRANQUE FINAL
+# ============================================================
 ENTRYPOINT ["java", "-jar", "/app/app.jar"]

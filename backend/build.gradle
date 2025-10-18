@@ -84,15 +84,15 @@ springBoot {
    🧩 CONFIGURACIÓN DE EMPAQUETADO (bootJar)
    ================================================================ */
 bootJar {
-    manifest {
-        attributes(
-                'Main-Class': 'com.styp.cenate.CenateApplication'
-        )
-    }
+    enabled = true
+}
+
+jar {
+    enabled = false
 }
 
 /* ================================================================
-   🧱 TAREAS PERSONALIZADAS
+   🧱 TAREAS PERSONALIZADAS Y COMPILACIÓN
    ================================================================ */
 tasks.named('test') {
     useJUnitPlatform()
