@@ -1,0 +1,205 @@
+{
+  "info": {
+    "name": "CENATE ESSALUD",
+    "description": "Colecci\u00f3n de endpoints para el backend de CENATE ESSALUD (localhost:8080).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"scantor\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/auth/login",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT_TOKEN}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/actuator/health",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "actuator",
+            "health"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Obtener Permisos Usuario",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT_TOKEN}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/permisos/usuario/1",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "permisos",
+            "usuario",
+            "1"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Check Permiso Espec\u00edfico",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT_TOKEN}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 1,\n  \"rutaPagina\": \"/roles/medico/pacientes\",\n  \"accion\": \"ver\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8080/api/permisos/check",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "permisos",
+            "check"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Listar Roles",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT_TOKEN}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/admin/roles",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "admin",
+            "roles"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Listar \u00c1reas",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT_TOKEN}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/area",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "area"
+          ]
+        }
+      }
+    },
+    {
+      "name": "Logs de Auditor\u00eda",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT_TOKEN}}"
+          }
+        ],
+        "url": {
+          "raw": "http://localhost:8080/api/audit/logs",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "audit",
+            "logs"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "JWT_TOKEN",
+      "value": ""
+    }
+  ]
+}

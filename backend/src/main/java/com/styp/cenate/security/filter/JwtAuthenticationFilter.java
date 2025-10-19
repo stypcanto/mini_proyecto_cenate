@@ -37,10 +37,30 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull FilterChain filterChain
     ) throws ServletException, IOException {
 
+        final String path = request.getServletPath();
+
+        // ============================================================
+        // 🔓 EXCLUSIÓN DE RUTAS PÚBLICAS (NO REQUIEREN TOKEN)
+        // ============================================================
+        if (path.startsWith("/api/auth")
+                || path.startsWith("/api/public")
+                || path.startsWith("/actuator")
+                || path.startsWith("/swagger")
+                || path.startsWith("/v3/api-docs")
+                || path.startsWith("/error")) {
+
+            log.debug("➡️ Ruta pública detectada: {}, se omite filtro JWT", path);
+            filterChain.doFilter(request, response);
+            return;
+        }
+
+        // ============================================================
+        // 🔑 VALIDACIÓN DE TOKEN JWT
+        // ============================================================
         final String authHeader = request.getHeader("Authorization");
 
-        // 🚫 Si no hay token JWT, continúa sin autenticación
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            log.trace("🚫 No se encontró encabezado Authorization en la solicitud.");
             filterChain.doFilter(request, response);
             return;
         }
@@ -48,10 +68,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         final String jwt = authHeader.substring(7);
 
         try {
-            // 🔍 Extraer usuario del token
             final String username = jwtService.extractUsername(jwt);
 
-            // ⚙️ Solo autenticar si no existe contexto previo
             if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
 
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);
@@ -77,23 +95,23 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         } catch (Exception e) {
             log.error("❌ Error al procesar JWT: {}", e.getMessage(), e);
 
-            // 🔄 En caso de error grave, limpiar el contexto de seguridad
+            // 🔄 Limpiar contexto de seguridad y devolver error
             SecurityContextHolder.clearContext();
-
-            // Opcional: devolver 401 si el token está dañado
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
             response.getWriter().write("""
             {
-                "status": 401,
-                "message": "Token inválido o expirado.",
-                "error": "%s"
+              "status": 401,
+              "message": "Token inválido o expirado.",
+              "error": "%s"
             }
             """.formatted(e.getMessage()));
             return;
         }
 
-        // Continuar con el resto de filtros
+        // ============================================================
+        // Continuar con la cadena de filtros
+        // ============================================================
         filterChain.doFilter(request, response);
     }
 }
