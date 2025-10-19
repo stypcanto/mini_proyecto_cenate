@@ -1,0 +1,100 @@
+{
+  "info": {
+    "name": "CENATE_ESSALUD_CORREGIDO",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Colecci\u00f3n Postman actualizada con endpoints funcionales del backend CENATE."
+  },
+  "item": [
+    {
+      "name": "\ud83d\udd10 Login (Obtener Token JWT)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"scantor\",\n  \"password\": \"admin123\"\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/auth/login",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "auth",
+            "login"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\ud83d\udccb Listar \u00c1reas (/api/admin/areas)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT_TOKEN}}"
+          }
+        ],
+        "url": {
+          "raw": "{{BASE_URL}}/api/admin/areas",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "admin",
+            "areas"
+          ]
+        }
+      }
+    },
+    {
+      "name": "\u2705 Verificar Permiso (/api/permisos/check)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{JWT_TOKEN}}"
+          },
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 1,\n  \"rutaPagina\": \"/roles/admin/areas\",\n  \"accion\": \"ver\"\n}"
+        },
+        "url": {
+          "raw": "{{BASE_URL}}/api/permisos/check",
+          "host": [
+            "{{BASE_URL}}"
+          ],
+          "path": [
+            "api",
+            "permisos",
+            "check"
+          ]
+        }
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "BASE_URL",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "JWT_TOKEN",
+      "value": ""
+    }
+  ]
+}
