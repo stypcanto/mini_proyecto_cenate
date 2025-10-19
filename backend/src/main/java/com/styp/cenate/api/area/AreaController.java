@@ -14,10 +14,10 @@ import java.util.List;
 
 /**
  * 🌐 Controlador REST para la gestión de áreas internas.
- * Endpoint base: /api/area
+ * Endpoint base: /api/admin/areas
  */
 @RestController
-@RequestMapping("/api/area")
+@RequestMapping("/api/admin/areas")  // ✅ NUEVA RUTA
 @RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(origins = {
