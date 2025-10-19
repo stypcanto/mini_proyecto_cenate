@@ -98,7 +98,8 @@ public class SecurityConfig {
                         // =====================================================
                         .requestMatchers(
                                 "/api/admin/permisos/**",
-                                "/api/admin/areas/**",       // ✅ añadido explícitamente
+                                "/api/admin/areas/**",
+                                "/api/area/**",               // ✅ añadido explícitamente
                                 "/api/admin/**",
                                 "/api/roles/**",
                                 "/api/usuarios/**"

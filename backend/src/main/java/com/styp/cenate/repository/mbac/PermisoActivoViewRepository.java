@@ -9,80 +9,105 @@ import com.styp.cenate.model.view.PermisoActivoView;
 import java.util.List;
 
 /**
- * Repositorio para consultar la vista vw_permisos_activos.
+ * Repositorio para consultar la vista permiso_activo_view.
  * Esta vista es de solo lectura y proporciona una consulta optimizada
  * de permisos activos por usuario.
- * 
- * @author CENATE Development Team
- * @version 1.0
+ *
+ * @author CENATE
+ * @version 2.0
  */
 @Repository
 public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivoView, Long> {
 
-    /**
-     * Obtiene todos los permisos activos de un usuario.
-     */
-    @Query(value = "SELECT * FROM vw_permisos_activos WHERE id_user = :userId", nativeQuery = true)
+    // ---------------------------------------------------------
+    // 🔹 1. Permisos por usuario
+    // ---------------------------------------------------------
+    @Query(value = "SELECT * FROM permiso_activo_view WHERE user_id = :userId", nativeQuery = true)
     List<PermisoActivoView> findByUserId(@Param("userId") Long userId);
 
-    /**
-     * Obtiene los permisos de un usuario para una página específica.
-     */
-    @Query(value = "SELECT * FROM vw_permisos_activos WHERE id_user = :userId AND ruta_pagina = :rutaPagina", 
-           nativeQuery = true)
-    List<PermisoActivoView> findByUserIdAndRutaPagina(@Param("userId") Long userId, 
-                                                        @Param("rutaPagina") String rutaPagina);
+    // ---------------------------------------------------------
+    // 🔹 2. Permisos por usuario y ruta
+    // ---------------------------------------------------------
+    @Query(value = """
+        SELECT * 
+        FROM permiso_activo_view 
+        WHERE user_id = :userId 
+          AND LOWER(ruta_pagina) = LOWER(:rutaPagina)
+    """, nativeQuery = true)
+    List<PermisoActivoView> findByUserIdAndRutaPagina(
+            @Param("userId") Long userId,
+            @Param("rutaPagina") String rutaPagina
+    );
 
-    /**
-     * Obtiene los permisos de un usuario para un módulo específico.
-     */
-    @Query(value = "SELECT * FROM vw_permisos_activos WHERE id_user = :userId AND id_modulo = :idModulo", 
-           nativeQuery = true)
-    List<PermisoActivoView> findByUserIdAndModuloId(@Param("userId") Long userId, 
-                                                     @Param("idModulo") Integer idModulo);
+    // ---------------------------------------------------------
+    // 🔹 3. Permisos por usuario y módulo
+    // ---------------------------------------------------------
+    @Query(value = """
+        SELECT * 
+        FROM permiso_activo_view 
+        WHERE user_id = :userId 
+          AND id_modulo = :idModulo
+    """, nativeQuery = true)
+    List<PermisoActivoView> findByUserIdAndModuloId(
+            @Param("userId") Long userId,
+            @Param("idModulo") Integer idModulo
+    );
 
-    /**
-     * Obtiene los permisos de un usuario por nombre de usuario.
-     */
-    @Query(value = "SELECT * FROM vw_permisos_activos WHERE usuario = :username", nativeQuery = true)
+    // ---------------------------------------------------------
+    // 🔹 4. Permisos por username
+    // ---------------------------------------------------------
+    @Query(value = "SELECT * FROM permiso_activo_view WHERE LOWER(usuario) = LOWER(:username)", nativeQuery = true)
     List<PermisoActivoView> findByUsername(@Param("username") String username);
 
-    /**
-     * Verifica si un usuario tiene un permiso específico en una página.
-     */
+    // ---------------------------------------------------------
+    // 🔹 5. Verificar si un usuario tiene un permiso específico
+    // ---------------------------------------------------------
     @Query(value = """
         SELECT CASE 
-            WHEN :accion = 'ver' THEN COALESCE(MAX(puede_ver::int), 0)
-            WHEN :accion = 'crear' THEN COALESCE(MAX(puede_crear::int), 0)
-            WHEN :accion = 'editar' THEN COALESCE(MAX(puede_editar::int), 0)
-            WHEN :accion = 'eliminar' THEN COALESCE(MAX(puede_eliminar::int), 0)
-            WHEN :accion = 'exportar' THEN COALESCE(MAX(puede_exportar::int), 0)
-            WHEN :accion = 'aprobar' THEN COALESCE(MAX(puede_aprobar::int), 0)
-            ELSE 0
-        END as tiene_permiso
-        FROM vw_permisos_activos 
-        WHERE id_user = :userId AND ruta_pagina = :rutaPagina
+            WHEN COUNT(*) > 0 THEN 1 
+            ELSE 0 
+        END
+        FROM permiso_activo_view pav
+        WHERE pav.user_id = :userId
+          AND LOWER(pav.ruta_pagina) = LOWER(:rutaPagina)
+          AND (
+              (:accion = 'ver' AND pav.puede_ver = TRUE) OR
+              (:accion = 'crear' AND pav.puede_crear = TRUE) OR
+              (:accion = 'editar' AND pav.puede_editar = TRUE) OR
+              (:accion = 'eliminar' AND pav.puede_eliminar = TRUE) OR
+              (:accion = 'exportar' AND pav.puede_exportar = TRUE) OR
+              (:accion = 'aprobar' AND pav.puede_aprobar = TRUE)
+          )
     """, nativeQuery = true)
-    Integer checkPermiso(@Param("userId") Long userId, 
-                        @Param("rutaPagina") String rutaPagina, 
-                        @Param("accion") String accion);
+    Integer checkPermiso(
+            @Param("userId") Long userId,
+            @Param("rutaPagina") String rutaPagina,
+            @Param("accion") String accion
+    );
 
-    /**
-     * Obtiene todos los módulos únicos a los que un usuario tiene acceso.
-     */
-    @Query(value = "SELECT DISTINCT modulo FROM vw_permisos_activos WHERE id_user = :userId ORDER BY modulo", 
-           nativeQuery = true)
+    // ---------------------------------------------------------
+    // 🔹 6. Módulos accesibles
+    // ---------------------------------------------------------
+    @Query(value = """
+        SELECT DISTINCT modulo 
+        FROM permiso_activo_view 
+        WHERE user_id = :userId 
+        ORDER BY modulo
+    """, nativeQuery = true)
     List<String> findModulosByUserId(@Param("userId") Long userId);
 
-    /**
-     * Obtiene todas las páginas de un módulo a las que un usuario tiene acceso.
-     */
+    // ---------------------------------------------------------
+    // 🔹 7. Páginas accesibles por módulo
+    // ---------------------------------------------------------
     @Query(value = """
         SELECT DISTINCT pagina 
-        FROM vw_permisos_activos 
-        WHERE id_user = :userId AND id_modulo = :idModulo 
+        FROM permiso_activo_view 
+        WHERE user_id = :userId 
+          AND id_modulo = :idModulo 
         ORDER BY pagina
     """, nativeQuery = true)
-    List<String> findPaginasByUserIdAndModuloId(@Param("userId") Long userId, 
-                                                 @Param("idModulo") Integer idModulo);
+    List<String> findPaginasByUserIdAndModuloId(
+            @Param("userId") Long userId,
+            @Param("idModulo") Integer idModulo
+    );
 }
