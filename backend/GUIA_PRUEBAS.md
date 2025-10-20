@@ -249,15 +249,31 @@ Elimina el rol con ID 1 (si tu controlador lo permite).
 
 
 ### 12. Profesiones
+1️⃣ Obtener todas las profesiones
 ```bash
 curl -X GET "http://localhost:8080/api/profesiones" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" | jq .
+
 ```
+
+2️⃣ Obtener solo las activas
+
+```bash
+curl -X GET "http://localhost:8080/api/profesiones/activas" \
+-H "Authorization: Bearer $JWT_TOKEN" \
+-H "Content-Type: application/json" | jq .
+```
+
+
+
 
 ### 13. Regímenes laborales
 ```bash
 curl -X GET "http://localhost:8080/api/regimenes" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json" | jq .
+
 ```
 
 ### 14. Logs de auditoría
