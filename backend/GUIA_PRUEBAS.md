@@ -278,8 +278,9 @@ curl -X GET "http://localhost:8080/api/regimenes" \
 
 ### 14. Logs de auditoría
 ```bash
-curl -X GET "http://localhost:8080/api/audit/logs" \
+curl -X GET "http://localhost:8080/api/admin/audit/logs" \
   -H "Authorization: Bearer $JWT_TOKEN" | jq .
+
 ```
 
 ### 15. Personal CNT

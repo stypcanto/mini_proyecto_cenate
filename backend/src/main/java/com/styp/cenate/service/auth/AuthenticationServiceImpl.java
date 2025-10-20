@@ -16,6 +16,7 @@ import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.PermisoRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.security.service.JwtService;
+import com.styp.cenate.service.auditlog.AuditLogService;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -29,12 +30,13 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final PermisoRepository permisoRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
+    private final AuditLogService auditLogService;
 
     // =========================================================
-    // 🔐 LOGIN (por usuario o correo)
+    // 🔐 LOGIN (CORREGIDO: ya NO es read-only)
     // =========================================================
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public LoginResponse login(LoginRequest request) {
         log.info("🔐 Intento de login para: {}", request.getUsername());
 
@@ -50,32 +52,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
             throw new RuntimeException("La cuenta está inactiva o bloqueada.");
         }
 
-        // ============================================
-        // 🧠 Si es SUPERADMIN → obtiene TODOS los permisos
-        // ============================================
+        // Roles y permisos
         Set<Rol> roles = user.getRoles();
-        List<Permiso> permisos;
+        List<Permiso> permisos = roles.stream()
+                .flatMap(r -> r.getPermisos().stream())
+                .distinct()
+                .collect(Collectors.toList());
 
+        // SUPERADMIN obtiene todos los permisos
         if (roles.stream().anyMatch(r -> r.getDescRol().equalsIgnoreCase("SUPERADMIN"))) {
-            log.info("🧠 Usuario SUPERADMIN detectado, otorgando todos los permisos existentes");
             permisos = permisoRepository.findAll();
-        } else {
-            permisos = roles.stream()
-                    .flatMap(r -> r.getPermisos().stream())
-                    .distinct()
-                    .collect(Collectors.toList());
         }
 
-        // ============================================
-        // Autoridades para el contexto de seguridad
-        // ============================================
+        // Construcción de autoridades
         List<GrantedAuthority> authorities = new ArrayList<>();
         roles.forEach(rol -> authorities.add(new SimpleGrantedAuthority("ROLE_" + rol.getDescRol())));
         permisos.forEach(p -> authorities.add(new SimpleGrantedAuthority(p.getDescPermiso())));
 
-        // ============================================
-        // Claims personalizados para el JWT
-        // ============================================
+        // Claims del token
         Map<String, Object> claims = new HashMap<>();
         claims.put("roles", roles.stream().map(Rol::getDescRol).toList());
         claims.put("permisos", permisos.stream().map(Permiso::getDescPermiso).toList());
@@ -83,12 +77,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         User userDetails = new User(user.getNameUser(), user.getPassUser(), authorities);
         String token = jwtService.generateToken(claims, userDetails);
 
-        // ============================================
-        // Rol principal y respuesta final
-        // ============================================
-        String rolPrincipal = roles.stream().findFirst()
+        String rolPrincipal = roles.stream()
+                .findFirst()
                 .map(Rol::getDescRol)
                 .orElse("SIN_ROL");
+
+        // 🧾 Registrar auditoría del login exitoso
+        try {
+            auditLogService.registrarEvento(
+                    user.getNameUser(),
+                    "LOGIN",
+                    "AUTH",
+                    "Usuario inició sesión exitosamente",
+                    "INFO",
+                    "SUCCESS"
+            );
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo registrar el log de login: {}", e.getMessage());
+        }
 
         return LoginResponse.builder()
                 .token(token)
@@ -100,34 +106,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .build();
     }
 
-    /**
-     * ✅ Busca usuario por correo (interno o externo)
-     */
-    private Optional<Usuario> buscarUsuarioPorCorreo(String correo) {
-        log.info("🔎 Buscando usuario por correo: {}", correo);
-        try {
-            boolean existe = usuarioRepository.existsByAnyEmail(correo);
-            if (!existe) return Optional.empty();
-
-            return usuarioRepository.findAll().stream()
-                    .filter(u -> correo.equalsIgnoreCase(obtenerCorreoUsuario(u)))
-                    .findFirst();
-
-        } catch (Exception e) {
-            log.error("⚠️ Error buscando usuario por correo: {}", e.getMessage());
-            return Optional.empty();
-        }
-    }
-
-    /**
-     * 🧩 Obtiene el correo del usuario desde las tablas relacionadas
-     */
-    private String obtenerCorreoUsuario(Usuario u) {
-        return null; // TODO: Integrar con dim_personal_cnt / dim_personal_externo
-    }
-
     // =========================================================
-    // 🧍 CREAR USUARIO (para pruebas o admin)
+    // 🧍 CREAR USUARIO
     // =========================================================
     @Override
     @Transactional
@@ -150,6 +130,20 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setStatUser("A");
 
         Usuario savedUser = usuarioRepository.save(user);
+
+        // 🧾 Registrar auditoría
+        try {
+            auditLogService.registrarEvento(
+                    savedUser.getNameUser(),
+                    "CREATE_USER",
+                    "AUTH",
+                    "Usuario creado exitosamente",
+                    "INFO",
+                    "SUCCESS"
+            );
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo registrar el log de creación de usuario: {}", e.getMessage());
+        }
 
         return UsuarioResponse.builder()
                 .idUser(savedUser.getIdUser())
@@ -191,12 +185,44 @@ public class AuthenticationServiceImpl implements AuthenticationService {
         user.setPassUser(passwordEncoder.encode(newPassword));
         usuarioRepository.save(user);
 
+        // 🧾 Registrar auditoría del cambio de contraseña
+        try {
+            auditLogService.registrarEvento(
+                    username,
+                    "CHANGE_PASSWORD",
+                    "AUTH",
+                    "Cambio de contraseña exitoso",
+                    "INFO",
+                    "SUCCESS"
+            );
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo registrar el log de cambio de contraseña: {}", e.getMessage());
+        }
+
         log.info("✅ Contraseña actualizada exitosamente para {}", username);
     }
 
     // =========================================================
-    // 🧠 Validación de seguridad de contraseña
+    // 🔎 MÉTODOS AUXILIARES
     // =========================================================
+    private Optional<Usuario> buscarUsuarioPorCorreo(String correo) {
+        log.info("🔎 Buscando usuario por correo: {}", correo);
+        try {
+            boolean existe = usuarioRepository.existsByAnyEmail(correo);
+            if (!existe) return Optional.empty();
+            return usuarioRepository.findAll().stream()
+                    .filter(u -> correo.equalsIgnoreCase(obtenerCorreoUsuario(u)))
+                    .findFirst();
+        } catch (Exception e) {
+            log.error("⚠️ Error buscando usuario por correo: {}", e.getMessage());
+            return Optional.empty();
+        }
+    }
+
+    private String obtenerCorreoUsuario(Usuario u) {
+        return null; // pendiente de integración con tablas de personal
+    }
+
     private boolean isPasswordSecure(String password) {
         return password.length() >= 8 &&
                 password.matches(".*[A-Z].*") &&
