@@ -9,12 +9,11 @@ import com.styp.cenate.model.view.PermisoActivoView;
 import java.util.List;
 
 /**
- * Repositorio para consultar la vista permiso_activo_view.
- * Esta vista es de solo lectura y proporciona una consulta optimizada
- * de permisos activos por usuario.
+ * 📘 Repositorio para consultar la vista {@code vw_permisos_activos}.
+ * Vista de solo lectura que optimiza la obtención de permisos activos por usuario.
  *
  * @author CENATE
- * @version 2.0
+ * @version 3.0
  */
 @Repository
 public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivoView, Long> {
@@ -22,7 +21,7 @@ public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivo
     // ---------------------------------------------------------
     // 🔹 1. Permisos por usuario
     // ---------------------------------------------------------
-    @Query(value = "SELECT * FROM permiso_activo_view WHERE user_id = :userId", nativeQuery = true)
+    @Query(value = "SELECT * FROM vw_permisos_activos WHERE id_user = :userId", nativeQuery = true)
     List<PermisoActivoView> findByUserId(@Param("userId") Long userId);
 
     // ---------------------------------------------------------
@@ -30,8 +29,8 @@ public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivo
     // ---------------------------------------------------------
     @Query(value = """
         SELECT * 
-        FROM permiso_activo_view 
-        WHERE user_id = :userId 
+        FROM vw_permisos_activos 
+        WHERE id_user = :userId 
           AND LOWER(ruta_pagina) = LOWER(:rutaPagina)
     """, nativeQuery = true)
     List<PermisoActivoView> findByUserIdAndRutaPagina(
@@ -44,8 +43,8 @@ public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivo
     // ---------------------------------------------------------
     @Query(value = """
         SELECT * 
-        FROM permiso_activo_view 
-        WHERE user_id = :userId 
+        FROM vw_permisos_activos 
+        WHERE id_user = :userId 
           AND id_modulo = :idModulo
     """, nativeQuery = true)
     List<PermisoActivoView> findByUserIdAndModuloId(
@@ -56,7 +55,7 @@ public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivo
     // ---------------------------------------------------------
     // 🔹 4. Permisos por username
     // ---------------------------------------------------------
-    @Query(value = "SELECT * FROM permiso_activo_view WHERE LOWER(usuario) = LOWER(:username)", nativeQuery = true)
+    @Query(value = "SELECT * FROM vw_permisos_activos WHERE LOWER(usuario) = LOWER(:username)", nativeQuery = true)
     List<PermisoActivoView> findByUsername(@Param("username") String username);
 
     // ---------------------------------------------------------
@@ -67,8 +66,8 @@ public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivo
             WHEN COUNT(*) > 0 THEN 1 
             ELSE 0 
         END
-        FROM permiso_activo_view pav
-        WHERE pav.user_id = :userId
+        FROM vw_permisos_activos pav
+        WHERE pav.id_user = :userId
           AND LOWER(pav.ruta_pagina) = LOWER(:rutaPagina)
           AND (
               (:accion = 'ver' AND pav.puede_ver = TRUE) OR
@@ -90,8 +89,8 @@ public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivo
     // ---------------------------------------------------------
     @Query(value = """
         SELECT DISTINCT modulo 
-        FROM permiso_activo_view 
-        WHERE user_id = :userId 
+        FROM vw_permisos_activos 
+        WHERE id_user = :userId 
         ORDER BY modulo
     """, nativeQuery = true)
     List<String> findModulosByUserId(@Param("userId") Long userId);
@@ -101,8 +100,8 @@ public interface PermisoActivoViewRepository extends JpaRepository<PermisoActivo
     // ---------------------------------------------------------
     @Query(value = """
         SELECT DISTINCT pagina 
-        FROM permiso_activo_view 
-        WHERE user_id = :userId 
+        FROM vw_permisos_activos 
+        WHERE id_user = :userId 
           AND id_modulo = :idModulo 
         ORDER BY pagina
     """, nativeQuery = true)

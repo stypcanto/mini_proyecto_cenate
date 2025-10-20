@@ -34,11 +34,11 @@ import java.util.List;
  * ============================================================================
  * 🔐 CONFIGURACIÓN CENTRAL DE SEGURIDAD DEL SISTEMA CENATE
  * ============================================================================
- * Define:
+ * Incluye:
  *  - Autenticación mediante JWT
- *  - Autorización basada en roles/permisos
+ *  - Autorización basada en roles (Spring) y permisos (MBAC)
  *  - CORS global
- *  - Manejo personalizado de errores 401 y 403
+ *  - Manejo personalizado de errores 401 / 403
  * ============================================================================
  */
 @Configuration
@@ -94,59 +94,47 @@ public class SecurityConfig {
                         ).permitAll()
 
                         // =====================================================
-                        // 🧩 MÓDULO DE ADMINISTRACIÓN Y GESTIÓN
+                        // 🧩 ADMINISTRACIÓN GENERAL
                         // =====================================================
                         .requestMatchers(
                                 "/api/admin/permisos/**",
                                 "/api/admin/areas/**",
-                                "/api/area/**",               // ✅ añadido explícitamente
+                                "/api/area/**",
                                 "/api/admin/**",
                                 "/api/roles/**",
                                 "/api/usuarios/**"
                         ).hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // =====================================================
-                        // 🧰 MÓDULO MBAC Y SEGURIDAD INTERNA
+                        // 🧠 MBAC (Módulo de permisos y control interno)
                         // =====================================================
+                        // 👉 Aquí estaba el error: antes usabas `hasAnyAuthority`
+                        // con ROLE_SUPERADMIN, lo que bloqueaba el endpoint.
                         .requestMatchers(
                                 "/api/mbac/**",
                                 "/api/permisos/**",
                                 "/api/permiso/**"
-                        ).hasAnyAuthority(
-                                "ROLE_SUPERADMIN", "ROLE_ADMIN",
-                                "GESTIONAR_MODULOS", "GESTIONAR_PERMISOS",
-                                "EDITAR_PERMISOS", "CREAR_PERMISOS", "VER_PERMISOS"
-                        )
+                        ).hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // =====================================================
                         // 👩‍⚕️ PERSONAL CNT
                         // =====================================================
-                        .requestMatchers("/api/personal-cnt/**").hasAnyAuthority(
-                                "ROLE_SUPERADMIN", "ROLE_ADMIN",
-                                "GESTIONAR_PERSONAL_CNT", "VER_PERSONAL_CNT",
-                                "CREAR_PERSONAL_CNT", "EDITAR_PERSONAL_CNT", "ELIMINAR_PERSONAL_CNT"
-                        )
+                        .requestMatchers("/api/personal-cnt/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // =====================================================
                         // 👨‍⚕️ PERSONAL EXTERNO
                         // =====================================================
-                        .requestMatchers("/api/personal-externo/**").hasAnyAuthority(
-                                "ROLE_SUPERADMIN", "ROLE_ADMIN", "GESTIONAR_PERSONAL_EXTERNOS"
-                        )
+                        .requestMatchers("/api/personal-externo/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // =====================================================
                         // 📊 DASHBOARD Y REPORTES
                         // =====================================================
-                        .requestMatchers("/api/dashboard/**").hasAnyAuthority(
-                                "ROLE_SUPERADMIN", "ROLE_ADMIN", "VER_REPORTES"
-                        )
+                        .requestMatchers("/api/dashboard/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // =====================================================
                         // 👩‍⚕️ PACIENTES / ASEGURADOS
                         // =====================================================
-                        .requestMatchers("/api/pacientes/**").hasAnyAuthority(
-                                "ROLE_SUPERADMIN", "ROLE_ADMIN", "VER_PACIENTES"
-                        )
+                        .requestMatchers("/api/pacientes/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // =====================================================
                         // 🔒 Cualquier otro endpoint requiere autenticación

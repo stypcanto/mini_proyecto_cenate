@@ -1,53 +1,53 @@
 package com.styp.cenate.model.view;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 import org.hibernate.annotations.Immutable;
-
 import java.time.LocalDateTime;
 
 /**
- * Entidad de solo lectura que mapea la vista vw_permisos_activos.
- * Esta vista proporciona una consulta optimizada de todos los permisos activos
- * para cada usuario, rol, módulo y página del sistema.
- * 
- * Se utiliza para verificaciones rápidas de autorización sin necesidad de
- * realizar múltiples joins en tiempo de ejecución.
- * 
- * @author CENATE Development Team
- * @version 1.0
+ * Entidad de solo lectura que mapea la vista SQL {@code vw_permisos_activos}.
+ *
+ * Contiene los permisos activos que tiene cada usuario combinando roles, módulos y páginas del sistema.
+ * Se usa para verificar autorizaciones MBAC sin realizar múltiples JOINs en tiempo real.
  */
 @Entity
 @Table(name = "vw_permisos_activos")
 @Immutable
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PermisoActivoView {
 
+    // ✅ Identificador único generado por la vista
     @Id
+    @Column(name = "id_permiso")
+    private Long idPermiso;
+
+    // 🔹 Usuario
     @Column(name = "id_user")
-    private Long idUser;
+    private Long userId;
 
     @Column(name = "usuario")
     private String usuario;
 
+    // 🔹 Rol
     @Column(name = "id_rol")
     private Integer idRol;
 
     @Column(name = "rol")
     private String rol;
 
+    // 🔹 Módulo
     @Column(name = "id_modulo")
     private Integer idModulo;
 
     @Column(name = "modulo")
     private String modulo;
 
+    // 🔹 Página
     @Column(name = "id_pagina")
     private Integer idPagina;
 
@@ -57,6 +57,7 @@ public class PermisoActivoView {
     @Column(name = "ruta_pagina")
     private String rutaPagina;
 
+    // 🔹 Permisos
     @Column(name = "puede_ver")
     private Boolean puedeVer;
 
@@ -75,6 +76,7 @@ public class PermisoActivoView {
     @Column(name = "puede_aprobar")
     private Boolean puedeAprobar;
 
+    // 🔹 Auditoría
     @Column(name = "autorizado_por")
     private Integer autorizadoPor;
 

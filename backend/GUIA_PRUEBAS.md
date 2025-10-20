@@ -82,7 +82,7 @@ Su función es confirmar que el microservicio o módulo de “Permisos”:
 # ================================
 # 🔹 2. Obtener permisos de usuario
 # ================================
-curl -X GET "$BASE_URL/api/permisos/usuario/1" \
+curl -X GET "http://localhost:8080/api/permisos/usuario/1" \
   -H "Authorization: Bearer $JWT_TOKEN" \
   -H "Content-Type: application/json" | jq .
 
@@ -90,7 +90,7 @@ curl -X GET "$BASE_URL/api/permisos/usuario/1" \
 # 🔹 3. Verificar un permiso específico
 # ================================
 
-curl -X POST "$BASE_URL/api/permisos/check" \
+curl -X POST "http://localhost:8080/api/permisos/check" \
   -H "Authorization: Bearer $JWT_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
