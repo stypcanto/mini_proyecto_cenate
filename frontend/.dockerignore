@@ -1,44 +1,42 @@
-# ================================
-# 🧩 OPTIMIZED DOCKERIGNORE - FRONTEND
-# ================================
+# ==========================================================
+# 🧹 Docker Ignore para FRONTEND (React + Nginx)
+# ==========================================================
 
-# 🧠 Git / Version control
-.git
-.gitignore
+# Node y dependencias locales
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-lock.yaml
 
-# 🧰 IDEs & System files
-.idea
-.vscode
-*.iml
-*.class
-*.log
-*.tmp
-*.swp
-*.bak
-*.DS_Store
+# Builds locales
+/build
+/dist
+/.next
+/.cache
+
+# Archivos de sistema
+.DS_Store
 Thumbs.db
 
-# 📦 Dependencies & builds
-node_modules
-build
-dist
-out
-.cache
-coverage
+# Entornos locales (manejar por Docker Compose)
+.env*
+.env.local
+.env.development*
+.env.production*
 
-# 🧪 Tests & temporary folders
-test/
-tests/
-__tests__/
-__mocks__/
-__pycache__/
+# Control de versiones
+.git
+.gitignore
+.gitattributes
 
-# ⚙️ Docker / Infra
-Dockerfile
-docker-compose.yml
-.dockerignore
+# Configuración de IDEs
+.vscode
+.idea
+*.swp
 
-# 🔐 Environment files
-.env
-.env.*
-!.env.production   # ✅ permite copiar el de producción (si lo usas)
+# Archivos temporales
+*.log
+*.tmp
+*.bak
+*.orig

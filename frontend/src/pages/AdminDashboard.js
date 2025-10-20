@@ -1,0 +1,219 @@
+import React from 'react';
+import Sidebar from '../components/Sidebar';
+import { useAuth } from '../context/AuthContext';
+import { 
+  Users, 
+  Shield, 
+  Activity, 
+  FileText, 
+  Bell, 
+  CheckCircle2,
+  Clock,
+  TrendingUp,
+  ChevronRight
+} from 'lucide-react';
+
+export default function AdminDashboard() {
+  const { user } = useAuth();
+
+  const stats = [
+    { icon: Users, label: 'Usuarios', value: '245', trend: '+12%', color: 'blue' },
+    { icon: Shield, label: 'Roles', value: '8', trend: '+2', color: 'purple' },
+    { icon: Activity, label: 'Permisos', value: '42', trend: '+5', color: 'green' },
+    { icon: FileText, label: 'Auditorías', value: '1.2K', trend: '+234', color: 'orange' },
+  ];
+
+  const quickActions = [
+    { icon: Users, label: 'Gestionar Usuarios', color: 'blue' },
+    { icon: Shield, label: 'Configurar Roles', color: 'purple' },
+    { icon: Activity, label: 'Ver Permisos', color: 'green' },
+    { icon: FileText, label: 'Auditoría', color: 'orange' },
+  ];
+
+  const recentActivity = [
+    { action: 'Nuevo usuario registrado', time: 'Hace 5 min', icon: Users },
+    { action: 'Rol actualizado', time: 'Hace 1 hora', icon: Shield },
+    { action: 'Configuración modificada', time: 'Hace 2 horas', icon: Activity },
+  ];
+
+  return (
+    <div className="flex h-screen bg-gray-50">
+      {/* Sidebar */}
+      <Sidebar />
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Top Header */}
+        <header className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="px-8 py-4 flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                Bienvenido de nuevo, {user?.nombreCompleto || user?.username}
+              </h1>
+              <p className="text-sm text-gray-500 mt-1">
+                Panel de Administración - CENATE
+              </p>
+            </div>
+            <button className="relative p-3 rounded-full hover:bg-gray-100 transition-colors">
+              <Bell size={20} className="text-gray-600" />
+              <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+            </button>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <main className="flex-1 overflow-y-auto p-8 bg-gradient-to-br from-gray-50 to-gray-100">
+          {/* Stats Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            {stats.map((stat, idx) => {
+              const Icon = stat.icon;
+              const bgColors = {
+                blue: 'bg-blue-50',
+                purple: 'bg-purple-50',
+                green: 'bg-green-50',
+                orange: 'bg-orange-50',
+              };
+              const textColors = {
+                blue: 'text-blue-600',
+                purple: 'text-purple-600',
+                green: 'text-green-600',
+                orange: 'text-orange-600',
+              };
+
+              return (
+                <div
+                  key={idx}
+                  className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1 cursor-pointer"
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <div className={`w-12 h-12 rounded-xl ${bgColors[stat.color]} flex items-center justify-center`}>
+                      <Icon size={24} className={textColors[stat.color]} />
+                    </div>
+                    <span className="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+                      {stat.trend}
+                    </span>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
+                  <p className="text-sm text-gray-500">{stat.label}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Grid 2 columnas */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Acciones Rápidas */}
+            <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                    <TrendingUp size={20} className="text-teal-600" />
+                    Acciones Rápidas
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {quickActions.map((action, idx) => {
+                    const Icon = action.icon;
+                    const bgColors = {
+                      blue: 'from-blue-50 to-blue-100 hover:from-blue-100 hover:to-blue-200',
+                      purple: 'from-purple-50 to-purple-100 hover:from-purple-100 hover:to-purple-200',
+                      green: 'from-green-50 to-green-100 hover:from-green-100 hover:to-green-200',
+                      orange: 'from-orange-50 to-orange-100 hover:from-orange-100 hover:to-orange-200',
+                    };
+
+                    return (
+                      <button
+                        key={idx}
+                        className={`group p-5 rounded-xl bg-gradient-to-br ${bgColors[action.color]} transition-all hover:scale-105 text-left`}
+                      >
+                        <Icon size={24} className="mb-3 text-gray-700 group-hover:scale-110 transition-transform" />
+                        <p className="text-sm font-semibold text-gray-900">
+                          {action.label}
+                        </p>
+                        <ChevronRight size={16} className="mt-2 text-gray-400 group-hover:text-gray-600 transition-colors" />
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Actividad Reciente */}
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                  <Clock size={20} className="text-teal-600" />
+                  Actividad Reciente
+                </h3>
+                <div className="space-y-4">
+                  {recentActivity.map((activity, idx) => {
+                    const Icon = activity.icon;
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center gap-4 p-4 rounded-xl hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-teal-50 to-cyan-50 flex items-center justify-center flex-shrink-0">
+                          <Icon size={18} className="text-teal-600" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{activity.action}</p>
+                          <p className="text-xs text-gray-500 flex items-center gap-1 mt-1">
+                            <Clock size={12} />
+                            {activity.time}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Estado del Sistema */}
+            <div className="lg:col-span-1 space-y-6">
+              <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  Estado del Sistema
+                </h3>
+                <div className="space-y-3">
+                  {[
+                    { label: 'Autenticación', status: 'Operativo' },
+                    { label: 'Base de Datos', status: 'Operativo' },
+                    { label: 'API Rest', status: 'Operativo' },
+                  ].map((item, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50"
+                    >
+                      <div className="flex items-center gap-3">
+                        <CheckCircle2 size={18} className="text-green-600" />
+                        <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                      </div>
+                      <span className="text-xs font-semibold text-green-600 bg-green-100 px-2 py-1 rounded-full">
+                        {item.status}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Info Card */}
+              <div className="bg-gradient-to-br from-teal-500 to-cyan-600 rounded-2xl p-6 text-white shadow-lg">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0">
+                    <CheckCircle2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold mb-1">Todo funcionando</h4>
+                    <p className="text-sm text-teal-50">
+                      Sistema operativo correctamente
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+    </div>
+  );
+}
