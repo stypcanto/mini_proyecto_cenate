@@ -1,4 +1,4 @@
-package com.styp.cenate.api.permiso;
+package com.styp.cenate.api.admin;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,10 +37,16 @@ public class PermisoController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<Permiso>> getAllPermisos() {
         log.info("📋 Solicitando todos los permisos del sistema (admin)");
+
         List<Permiso> permisos = permisoService.getAllPermisos();
-        return permisos.isEmpty()
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.ok(permisos);
+
+        if (permisos.isEmpty()) {
+            log.warn("⚠️ No se encontraron permisos registrados en el sistema.");
+            return ResponseEntity.noContent().build();
+        }
+
+        log.info("✅ {} permisos encontrados.", permisos.size());
+        return ResponseEntity.ok(permisos);
     }
 
     // ===========================================================
@@ -50,10 +56,16 @@ public class PermisoController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<Permiso>> getPermisosByRol(@PathVariable Integer idRol) {
         log.info("📜 Solicitando permisos del rol con ID: {}", idRol);
+
         List<Permiso> permisos = permisoService.getPermisosByRol(idRol);
-        return permisos.isEmpty()
-                ? ResponseEntity.noContent().build()
-                : ResponseEntity.ok(permisos);
+
+        if (permisos.isEmpty()) {
+            log.warn("⚠️ No se encontraron permisos para el rol ID: {}", idRol);
+            return ResponseEntity.noContent().build();
+        }
+
+        log.info("✅ {} permisos encontrados para el rol ID: {}", permisos.size(), idRol);
+        return ResponseEntity.ok(permisos);
     }
 
     // ===========================================================
@@ -69,12 +81,13 @@ public class PermisoController {
 
         try {
             Permiso actualizado = permisoService.updateCamposPermiso(id, cambios);
+            log.info("✅ Permiso ID {} actualizado correctamente.", id);
             return ResponseEntity.ok(actualizado);
         } catch (IllegalArgumentException e) {
             log.warn("⚠️ Permiso no encontrado: {}", id);
             return ResponseEntity.notFound().build();
         } catch (Exception e) {
-            log.error("❌ Error al actualizar permiso ID {}: {}", id, e.getMessage());
+            log.error("❌ Error al actualizar permiso ID {}: {}", id, e.getMessage(), e);
             return ResponseEntity.internalServerError().build();
         }
     }

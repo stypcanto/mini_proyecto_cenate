@@ -30,9 +30,7 @@ services:
         limits:
           memory: 1.5G
 
-    # 🚫 Asegúrate de NO tener montado ningún volumen hacia /app
-    volumes:
-      - ./backend/build/libs/cenate-0.0.1-SNAPSHOT.jar:/tmp/cenate-0.0.1-SNAPSHOT.jar:ro
+
 
   # ------------------------------------------------------------
   # 💻 FRONTEND - REACT + NGINX
