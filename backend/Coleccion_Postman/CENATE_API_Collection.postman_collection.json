@@ -1,0 +1,297 @@
+{
+  "info": {
+    "name": "CENATE \u2013 Backend API (v1.0)",
+    "_postman_id": "5e8a5e61-2025-10-19",
+    "description": "Colecci\u00f3n completa del backend CENATE. Incluye autenticaci\u00f3n, administraci\u00f3n, cat\u00e1logos maestros y gesti\u00f3n de personal.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "jwt_token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "1\ufe0f\u20e3 Autenticaci\u00f3n",
+      "item": [
+        {
+          "name": "Login de usuario",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"scantor\",\n  \"password\": \"admin123\"\n}"
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.token) {",
+                  "  pm.environment.set('jwt_token', jsonData.token);",
+                  "  console.log('\u2705 JWT guardado autom\u00e1ticamente');",
+                  "} else {",
+                  "  console.log('\u26a0\ufe0f No se encontr\u00f3 token en la respuesta');",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "2\ufe0f\u20e3 Administraci\u00f3n",
+      "item": [
+        {
+          "name": "Roles - Listar todos",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/roles",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "roles"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Auditor\u00eda - Logs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/audit/logs",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "admin",
+                "audit",
+                "logs"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "3\ufe0f\u20e3 Cat\u00e1logos Maestros",
+      "item": [
+        {
+          "name": "Profesiones - Todas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profesiones",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profesiones"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Profesiones - Activas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/profesiones/activas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "profesiones",
+                "activas"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Reg\u00edmenes Laborales",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/regimenes",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "regimenes"
+              ]
+            }
+          }
+        },
+        {
+          "name": "\u00c1reas",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/areas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "areas"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "4\ufe0f\u20e3 Gesti\u00f3n de Personal",
+      "item": [
+        {
+          "name": "Personal - Total",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/personal/total",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "personal",
+                "total"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Personal - Detalle por ID",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/personal/detalle/{{id_user}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "personal",
+                "detalle",
+                "{{id_user}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Cumplea\u00f1eros del Mes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{jwt_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/personal/cumpleaneros/mes/{{mes}}",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "personal",
+                "cumpleaneros",
+                "mes",
+                "{{mes}}"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -283,11 +283,6 @@ curl -X GET "http://localhost:8080/api/admin/audit/logs" \
 
 ```
 
-### 15. Personal CNT
-```bash
-curl -X GET "http://localhost:8080/api/personal" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-```
 
 ### 16. Asegurados (pacientes)
 ```bash
