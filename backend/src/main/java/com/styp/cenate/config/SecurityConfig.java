@@ -90,7 +90,8 @@ public class SecurityConfig {
                                 "/api/niveles/**",
                                 "/api/procedimientos/**",
                                 "/api/tipo-procedimientos/**",
-                                "/api/frm-transf-img/**"
+                                "/api/frm-transf-img/**",
+                                "/api/profesiones/**"
                         ).permitAll()
 
                         // =====================================================

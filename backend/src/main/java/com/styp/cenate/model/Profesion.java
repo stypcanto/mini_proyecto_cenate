@@ -26,17 +26,17 @@ public class Profesion {
     @Column(name = "desc_prof", nullable = false, length = 150)
     private String descProf;
 
-    @Builder.Default // ✅ Esto elimina el warning de Lombok
+    @Builder.Default
     @Column(name = "stat_prof", nullable = false, length = 1)
     private String statProf = "A"; // A=Activo, I=Inactivo
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createAt;
+    private LocalDateTime createdAt;   // ✅ corregido: nombre igual que en BD
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updateAt;
+    private LocalDateTime updatedAt;   // ✅ corregido: nombre igual que en BD
 
     public boolean isActivo() {
         return "A".equalsIgnoreCase(statProf);

@@ -122,19 +122,6 @@ curl -X GET "$BASE_URL/api/admin/permisos/rol/1" \
 ```
 
 
-### 5. Verificar que el backend responde desde fuera del contenedor
-```bash
-curl -X GET "http://localhost:8080/api/auth/me" \
-  -H "Authorization: Bearer $JWT_TOKEN" \
-  -H "Content-Type: application/json" | jq .
-```
-
-### 6. Probar si NGINX (frontend) está reenviando bien el tráfico
-```bash
-curl -X GET "http://localhost/api/auth/me" \
-  -H "Authorization: Bearer $JWT_TOKEN" \
-  -H "Content-Type: application/json" | jq .
-```
 
 ### 7. Para verificar que el backend devuelve permisos correctamente:
 ```bash
@@ -145,13 +132,11 @@ curl -X GET "http://localhost:8080/api/usuarios" \
 
 ### 8. Permisos
 ```bash
-curl -X GET "http://localhost:8080/api/admin/permisos" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" | jq .
+curl -X GET "$BASE_URL/api/admin/permisos" \      
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
 
-curl -X GET "http://localhost:8080/api/admin/permisos/rol/1" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" | jq .
+curl -X GET "$BASE_URL/api/admin/permisos/rol/1" \
+  -H "Authorization: Bearer $JWT_TOKEN" | jq .
 
 
 ```
@@ -167,9 +152,8 @@ curl -X GET "http://localhost:8080/api/usuarios" \
 
 ✅ Listar todos los roles
 ```bash
-curl -X GET "http://localhost:8080/api/admin/roles" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" | jq .
+
+
 ```
 🔎 Esto debería retornar un JSON con todos los roles de la tabla dim_roles.
 
@@ -177,7 +161,7 @@ curl -X GET "http://localhost:8080/api/admin/roles" \
 ✅ Obtener un rol por ID
 ```bash
 curl -X GET "http://localhost:8080/api/admin/roles/1" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -H "Content-Type: application/json" | jq .
 ```
 Reemplaza 1 con el ID real que quieras consultar (id_rol).
@@ -186,37 +170,34 @@ Reemplaza 1 con el ID real que quieras consultar (id_rol).
 ✅ Crear un nuevo rol
 ```bash
 curl -X POST "http://localhost:8080/api/admin/roles" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "descRol": "COORDINADOR_REGIONAL"
-  }' | jq .
+  -d '{"descRol": "COORDINADOR_REGIONAL"}' | jq .
 ```
 Esto debería crear un nuevo registro en dim_roles.
 
 ✅ Actualizar un rol existente
 ```bash
 curl -X PUT "http://localhost:8080/api/admin/roles/1" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{
-    "descRol": "COORDINADOR_ACTUALIZADO"
-  }' | jq .
+  -d '{"descRol": "COORDINADOR_ACTUALIZADO"}'
 ```
 Modifica el campo desc_rol del rol con ID 1.
 
 ✅ Eliminar un rol
 ```bash
-curl -X DELETE "http://localhost:8080/api/admin/roles/1" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" | jq .
+curl -X DELETE "http://localhost:8080/api/admin/roles/23" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "Content-Type: application/json"
+
 ```
 
 ✅ Listar permisos de un rol específico (por ejemplo, ADMIN)
 
 ```bash
 curl -X GET "http://localhost:8080/api/admin/permisos/rol/2" \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -H "Content-Type: application/json" | jq .
 ```
 Esto mostrará los permisos asignados al id_rol = 2 (ADMIN).
@@ -260,8 +241,8 @@ curl -X DELETE "http://localhost:8080/api/admin/permisos/10" \
 
 ### 11. Áreas
 ```bash
-curl -X GET "http://localhost:8080/api/area" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
+curl -X GET "http://localhost:8080/api/admin/areas" \ 
+  -H "Authorization: Bearer $JWT_TOKEN" | jq 
 ```
 Elimina el rol con ID 1 (si tu controlador lo permite).
 
