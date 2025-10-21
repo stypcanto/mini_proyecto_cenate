@@ -12,7 +12,7 @@ import { AuthProvider } from './context/AuthContext';
 
 // 🧱 Layout general
 import AppLayout from './components/AppLayout';
-import ProtectedRoute from './components/ProtectedRoute/ProtectedRoute';
+import ProtectedRoute from './components/security/ProtectedRoute';  // ✅ CORREGIDO
 
 // 🧩 Páginas principales
 import Login from './pages/Login';
@@ -23,7 +23,9 @@ import AdminDashboard from './pages/AdminDashboard';
 import UsersPage from './pages/UsersPage';
 import CrearUsuario from './pages/CrearUsuario';
 
+// ========================================================================
 // 🔒 Rutas protegidas MBAC
+// ========================================================================
 function AppRoutes() {
   return (
     <Routes>

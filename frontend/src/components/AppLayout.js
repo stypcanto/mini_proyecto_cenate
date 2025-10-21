@@ -1,7 +1,14 @@
+// ========================================================================
+// 🧩 AppLayout – Sistema MBAC CENATE
+// ------------------------------------------------------------------------
+// Estructura base del layout con Sidebar dinámico y control MBAC
+// Incluye ActionToolbar y RowActions para gestión granular de permisos.
+// ========================================================================
+
 import React from 'react';
 import DynamicSidebar from './DynamicSidebar';
 import { usePermissions } from '../hooks/usePermissions';
-import { PermissionGate } from './ProtectedRoute/ProtectedRoute';
+import { PermissionGate } from './security/PermissionGate'; // ✅ CORREGIDO
 import { Plus, Download, Trash2, Edit, Check } from 'lucide-react';
 
 /**

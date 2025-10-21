@@ -11,7 +11,7 @@ import { Camera, UserPlus, ArrowLeft, LockKeyhole } from "lucide-react";
 import toast from "react-hot-toast";
 import AppLayout from "../components/AppLayout";
 import { apiClient } from "../lib/apiClient";
-import { PermissionGate } from "../components/ProtectedRoute/ProtectedRoute";
+import { PermissionGate } from "../components/security/PermissionGate"; // ✅ CORREGIDO
 import { usePermissions } from "../hooks/usePermissions";
 
 export default function CrearUsuario() {
@@ -95,7 +95,7 @@ export default function CrearUsuario() {
   };
 
   // 🔒 Verificar permiso MBAC
-  const puedeCrear = tienePermiso("admin/users", "crear");
+  const puedeCrear = tienePermiso("/admin/users", "crear");
 
   return (
     <AppLayout title="Crear Usuario" currentPath="/admin/users">
