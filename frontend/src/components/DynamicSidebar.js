@@ -82,14 +82,14 @@ export const DynamicSidebar = () => {
   const modulos = agruparPorModulo(permisos);
 
   return (
-    <aside className="w-64 bg-white/95 backdrop-blur-xl shadow-xl border-r border-slate-200 min-h-screen flex flex-col justify-between">
+    <aside className="w-64 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl shadow-xl border-r border-slate-200 dark:border-slate-700 min-h-screen flex flex-col justify-between">
       {/* Header */}
       <div>
-        <div className="px-6 py-4 border-b border-slate-200 flex items-center gap-3">
-          <LayoutDashboard className="text-teal-600 w-6 h-6" />
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center gap-3">
+          <LayoutDashboard className="text-primary-600 dark:text-primary-400 w-6 h-6" />
           <div>
-            <p className="font-semibold text-slate-800">Portal CENATE</p>
-            <p className="text-xs text-slate-500">{user?.username}</p>
+            <p className="font-semibold text-slate-800 dark:text-slate-200">Portal CENATE</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">{user?.username}</p>
           </div>
         </div>
 
@@ -103,7 +103,7 @@ export const DynamicSidebar = () => {
             return (
               <div key={nombreModulo}>
                 {/* Encabezado del módulo */}
-                <div className={`flex items-center gap-2 font-semibold text-sm uppercase mb-2 text-${colorKey}-700`}>
+                <div className={`flex items-center gap-2 font-semibold text-sm uppercase mb-2 text-${colorKey}-700 dark:text-${colorKey}-400`}>
                   {icono}
                   {nombreModulo}
                 </div>
@@ -122,14 +122,14 @@ export const DynamicSidebar = () => {
                               `flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-all ${
                                 isActive || activa
                                   ? colorClass
-                                  : "text-slate-600 hover:bg-slate-100"
+                                  : "text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700"
                               }`
                             }
                           >
                             <span>{pagina.pagina}</span>
                             <ChevronRight
                               className={`w-4 h-4 ${
-                                activa ? "text-slate-700" : "text-slate-400"
+                                activa ? "text-slate-700 dark:text-slate-300" : "text-slate-400 dark:text-slate-500"
                               }`}
                             />
                           </NavLink>
@@ -144,12 +144,12 @@ export const DynamicSidebar = () => {
       </div>
 
       {/* Footer */}
-      <div className="border-t border-slate-200 p-4">
+      <div className="border-t border-slate-200 dark:border-slate-700 p-4">
         <button
           onClick={logout}
-          className="flex items-center justify-center gap-2 w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium rounded-lg py-2 transition-all"
+          className="flex items-center justify-center gap-2 w-full bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-300 font-medium rounded-lg py-2 transition-all"
         >
-          <LogOut className="w-5 h-5 text-slate-600" />
+          <LogOut className="w-5 h-5 text-slate-600 dark:text-slate-400" />
           Cerrar sesión
         </button>
       </div>

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Sun, Moon, Bell, UserCircle2, LogOut } from "lucide-react";
-import useAuth from "../../hooks/useAuth";
+import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 
 /**
@@ -8,7 +8,7 @@ import { useNavigate } from "react-router-dom";
  * Contiene el modo oscuro/claro, notificaciones y perfil de usuario.
  */
 export default function HeaderCenate() {
-  const { nombreCompleto, rol } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
@@ -29,8 +29,7 @@ export default function HeaderCenate() {
   const toggleTheme = () => setDarkMode(!darkMode);
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+    logout();
   };
 
   return (
@@ -56,27 +55,29 @@ export default function HeaderCenate() {
         {/* Modo oscuro / claro */}
         <button
           onClick={toggleTheme}
-          className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition"
+          className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-sm border border-white/20"
           title={darkMode ? "Modo Claro" : "Modo Oscuro"}
         >
           {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
         </button>
 
         {/* Notificaciones */}
-        <div className="relative cursor-pointer hover:scale-110 transition-transform">
-          <Bell className="w-5 h-5 text-white" />
-          <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-cenate-danger rounded-full"></span>
-        </div>
+        <button className="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all backdrop-blur-sm border border-white/20">
+          <Bell className="w-5 h-5" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+        </button>
 
         {/* Perfil de usuario */}
-        <div className="flex items-center gap-2">
-          <div className="hidden sm:flex flex-col text-right">
-            <span className="text-sm text-white font-medium leading-tight">
-              {nombreCompleto || "Usuario"}
+        <div className="flex items-center gap-4">
+          <div className="hidden sm:flex flex-col items-end">
+            <span className="text-sm text-white font-bold leading-tight drop-shadow-sm">
+              {user?.nombreCompleto || user?.username || "Usuario"}
             </span>
-            <span className="text-xs text-cenate-light/80">{rol || "Rol"}</span>
+            <span className="text-xs text-gray-300 font-medium">{user?.roles?.[0] || "Rol"}</span>
           </div>
-          <UserCircle2 className="w-8 h-8 text-white/90" />
+          <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center border-2 border-white/30">
+            <UserCircle2 className="w-6 h-6 text-white" />
+          </div>
         </div>
 
         {/* Logout */}

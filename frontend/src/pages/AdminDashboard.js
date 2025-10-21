@@ -7,7 +7,8 @@
 
 import React from "react";
 import { useAuth } from "../context/AuthContext";
-import AppLayout from "../components/AppLayout";
+import { useNavigate } from "react-router-dom";
+import AdminLayout from "../components/layout/AdminLayout";
 import {
   Users,
   Shield,
@@ -22,6 +23,7 @@ import {
 
 export default function AdminDashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const stats = [
     { icon: Users, label: "Usuarios", value: "245", trend: "+12%", color: "blue" },
@@ -31,10 +33,10 @@ export default function AdminDashboard() {
   ];
 
   const quickActions = [
-    { icon: Users, label: "Gestionar Usuarios", color: "blue" },
-    { icon: Shield, label: "Configurar Roles", color: "purple" },
-    { icon: Activity, label: "Ver Permisos", color: "green" },
-    { icon: FileText, label: "Auditoría", color: "orange" },
+    { icon: Users, label: "Gestionar Usuarios", color: "blue", path: "/admin/users" },
+    { icon: Shield, label: "Configurar Roles", color: "purple", path: "/admin/roles" },
+    { icon: Activity, label: "Ver Permisos", color: "green", path: "/admin/permisos" },
+    { icon: FileText, label: "Auditoría", color: "orange", path: "/admin/auditoria" },
   ];
 
   const recentActivity = [
@@ -44,21 +46,22 @@ export default function AdminDashboard() {
   ];
 
   return (
-    <AppLayout title="Panel de Administración" currentPath="/admin">
+    <AdminLayout>
+      <div className="p-8 bg-slate-900">
       {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
+          <h1 className="text-3xl font-bold text-white">
             Bienvenido, {user?.nombreCompleto || user?.username}
           </h1>
-          <p className="text-sm text-gray-500">
+          <p className="text-base text-gray-400 mt-1">
             Panel de Administración — CENATE
           </p>
         </div>
 
-        <button className="relative p-3 rounded-full hover:bg-gray-100 transition-colors">
-          <Bell size={20} className="text-gray-600" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+        <button className="relative p-3 rounded-xl hover:bg-slate-800 transition-colors">
+          <Bell size={20} className="text-gray-400" />
+          <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full ring-2 ring-slate-900"></span>
         </button>
       </div>
 
@@ -67,33 +70,45 @@ export default function AdminDashboard() {
         {stats.map((stat, idx) => {
           const Icon = stat.icon;
           const bg = {
-            blue: "bg-blue-50",
-            purple: "bg-purple-50",
-            green: "bg-green-50",
-            orange: "bg-orange-50",
+            blue: "bg-slate-800/50",
+            purple: "bg-slate-800/50",
+            green: "bg-slate-800/50",
+            orange: "bg-slate-800/50",
           }[stat.color];
           const text = {
-            blue: "text-blue-600",
-            purple: "text-purple-600",
-            green: "text-green-600",
-            orange: "text-orange-600",
+            blue: "text-blue-400",
+            purple: "text-purple-400",
+            green: "text-green-400",
+            orange: "text-orange-400",
+          }[stat.color];
+          const border = {
+            blue: "border-blue-500/30",
+            purple: "border-purple-500/30",
+            green: "border-green-500/30",
+            orange: "border-orange-500/30",
+          }[stat.color];
+          const iconBg = {
+            blue: "bg-blue-500/10",
+            purple: "bg-purple-500/10",
+            green: "bg-green-500/10",
+            orange: "bg-orange-500/10",
           }[stat.color];
 
           return (
             <div
               key={idx}
-              className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-all hover:-translate-y-1"
+              className={`${bg} rounded-2xl p-6 shadow-sm border-2 ${border} hover:shadow-lg transition-all hover:-translate-y-1 backdrop-blur-sm`}
             >
               <div className="flex items-start justify-between mb-4">
-                <div className={`w-12 h-12 rounded-xl ${bg} flex items-center justify-center`}>
+                <div className={`w-12 h-12 rounded-xl ${iconBg} flex items-center justify-center`}>
                   <Icon size={24} className={text} />
                 </div>
-                <span className="text-xs font-semibold text-green-600 bg-green-50 px-2.5 py-1 rounded-full">
+                <span className="text-xs font-semibold text-green-400 bg-green-500/10 px-2.5 py-1 rounded-full border border-green-500/30">
                   {stat.trend}
                 </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900 mb-1">{stat.value}</p>
-              <p className="text-sm text-gray-500">{stat.label}</p>
+              <p className="text-2xl font-bold text-white mb-1">{stat.value}</p>
+              <p className="text-sm text-gray-400">{stat.label}</p>
             </div>
           );
         })}
@@ -124,6 +139,7 @@ export default function AdminDashboard() {
                 return (
                   <button
                     key={idx}
+                    onClick={() => action.path && navigate(action.path)}
                     className={`group p-5 rounded-xl bg-gradient-to-br ${color} transition-all hover:scale-105 text-left`}
                   >
                     <Icon
@@ -220,6 +236,7 @@ export default function AdminDashboard() {
           </div>
         </div>
       </div>
-    </AppLayout>
+      </div>
+    </AdminLayout>
   );
 }

@@ -9,10 +9,11 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
 
 // 🧱 Layout general
 import AppLayout from './components/AppLayout';
-import ProtectedRoute from './components/security/ProtectedRoute';  // ✅ CORREGIDO
+import ProtectedRoute from './components/security/ProtectedRoute';
 
 // 🧩 Páginas principales
 import Login from './pages/Login';
@@ -22,6 +23,7 @@ import Dashboard from './pages/Dashboard';
 import AdminDashboard from './pages/AdminDashboard';
 import UsersPage from './pages/UsersPage';
 import CrearUsuario from './pages/CrearUsuario';
+import PermisosPage from './pages/admin/PermisosPage';
 
 // ========================================================================
 // 🔒 Rutas protegidas MBAC
@@ -49,9 +51,7 @@ function AppRoutes() {
         path="/admin"
         element={
           <ProtectedRoute requiredPath="/admin">
-            <AppLayout title="Panel de Administración" currentPath="/admin">
-              <AdminDashboard />
-            </AppLayout>
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />
@@ -80,6 +80,16 @@ function AppRoutes() {
         }
       />
 
+      {/* 🔐 Gestión de permisos MBAC */}
+      <Route
+        path="/admin/permisos"
+        element={
+          <ProtectedRoute requiredPath="/admin/permisos">
+            <PermisosPage />
+          </ProtectedRoute>
+        }
+      />
+
       {/* 🧭 Rutas base y fallback */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
@@ -93,24 +103,26 @@ function AppRoutes() {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#1e293b',
-              color: '#fff',
-              borderRadius: '12px',
-              padding: '16px',
-            },
-            success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
-            error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
-          }}
-        />
+      <ThemeProvider>
+        <AuthProvider>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: 'var(--toast-bg)',
+                color: 'var(--toast-color)',
+                borderRadius: '12px',
+                padding: '16px',
+              },
+              success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
+              error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+            }}
+          />
 
-        <AppRoutes />
-      </AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }

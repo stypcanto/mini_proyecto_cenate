@@ -7,6 +7,7 @@
 
 import React from 'react';
 import DynamicSidebar from './DynamicSidebar';
+import ThemeToggle from './ThemeToggle';
 import { usePermissions } from '../hooks/usePermissions';
 import { PermissionGate } from './security/PermissionGate'; // ✅ CORREGIDO
 import { Plus, Download, Trash2, Edit, Check } from 'lucide-react';
@@ -18,17 +19,18 @@ import { Plus, Download, Trash2, Edit, Check } from 'lucide-react';
  */
 const AppLayout = ({ children, currentPath = null, title = null }) => {
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden">
+    <div className="flex h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden transition-colors">
       <DynamicSidebar />
 
       <main className="flex-1 overflow-y-auto">
         {title && (
-          <div className="bg-white border-b border-slate-200 px-8 py-6">
-            <h1 className="text-2xl font-bold text-slate-900">{title}</h1>
+          <div className="bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 px-8 py-6 flex justify-between items-center">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">{title}</h1>
+            <ThemeToggle />
           </div>
         )}
 
-        <div className="p-8">{children}</div>
+        <div className="p-8 bg-slate-50 dark:bg-slate-900 min-h-full">{children}</div>
       </main>
     </div>
   );
@@ -54,21 +56,21 @@ export const ActionToolbar = ({
       label: 'Crear Nuevo',
       icon: Plus,
       onClick: onCrear,
-      className: 'bg-teal-600 text-white hover:bg-teal-700',
+      className: 'bg-primary-600 text-white hover:bg-primary-700 dark:bg-primary-500 dark:hover:bg-primary-600',
     },
     {
       action: 'exportar',
       label: 'Exportar',
       icon: Download,
       onClick: onExportar,
-      className: 'bg-slate-600 text-white hover:bg-slate-700',
+      className: 'bg-slate-600 text-white hover:bg-slate-700 dark:bg-slate-500 dark:hover:bg-slate-600',
     },
     {
       action: 'aprobar',
       label: 'Aprobar',
       icon: Check,
       onClick: onAprobar,
-      className: 'bg-green-600 text-white hover:bg-green-700',
+      className: 'bg-green-600 text-white hover:bg-green-700 dark:bg-green-500 dark:hover:bg-green-600',
     },
     ...customActions,
   ];
@@ -116,7 +118,7 @@ export const RowActions = ({ currentPath, onEdit, onDelete, item }) => {
       <PermissionGate path={currentPath} action="editar">
         <button
           onClick={() => onEdit(item)}
-          className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
           title="Editar"
         >
           <Edit className="w-4 h-4" />
@@ -126,7 +128,7 @@ export const RowActions = ({ currentPath, onEdit, onDelete, item }) => {
       <PermissionGate path={currentPath} action="eliminar">
         <button
           onClick={() => onDelete(item)}
-          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
           title="Eliminar"
         >
           <Trash2 className="w-4 h-4" />

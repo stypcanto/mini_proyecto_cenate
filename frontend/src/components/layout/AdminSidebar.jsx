@@ -15,7 +15,7 @@ import {
   Bell,
   ClipboardList,
 } from "lucide-react";
-import useAuth from "../../hooks/useAuth";
+import { useAuth } from "../../context/AuthContext";
 
 const AdminSidebar = () => {
   const location = useLocation();
@@ -23,11 +23,16 @@ const AdminSidebar = () => {
   const [isOpen, setIsOpen] = useState(true);
   const [expandedMenu, setExpandedMenu] = useState(null);
 
-  const { nombreCompleto, rol, hasPermission, hasRole } = useAuth();
+  const { user, logout, hasRole } = useAuth();
 
   const handleLogout = () => {
-    localStorage.clear();
-    navigate("/login");
+    logout();
+  };
+
+  // Función temporal para verificar permisos (mientras implementas el sistema completo)
+  const hasPermission = (permission) => {
+    // Por ahora, devuelve true para SUPERADMIN
+    return user?.roles?.includes('SUPERADMIN') || false;
   };
 
   const menuItems = [
@@ -54,6 +59,10 @@ const AdminSidebar = () => {
       title: "Roles y Permisos",
       icon: <ShieldCheck className="w-5 h-5" />,
       path: "/admin/roles",
+      submenu: [
+        { title: "Gestionar Roles", path: "/admin/roles" },
+        { title: "Permisos MBAC", path: "/admin/permisos" },
+      ],
       visible:
         hasPermission("GESTIONAR_PERMISOS") ||
         hasPermission("GESTIONAR_ROLES") ||
@@ -99,32 +108,31 @@ const AdminSidebar = () => {
       )}
 
       <aside
-        className={`fixed top-0 left-0 h-screen bg-gradient-to-b from-cenate-blue to-cenate-dark
+        className={`fixed top-0 left-0 h-screen bg-gradient-to-b from-slate-800 to-slate-900
+        dark:from-gray-900 dark:to-black
         text-white z-50 transition-all duration-300 ease-in-out shadow-2xl
         ${isOpen ? "w-64" : "w-0 lg:w-20"} overflow-hidden`}
       >
         <div className="flex flex-col h-full">
           {/* Header con perfil */}
-          <div className="p-6 border-b border-cenate-teal/40">
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 rounded-full bg-cenate-teal flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-lg">
-                    {nombreCompleto?.charAt(0)?.toUpperCase() || "U"}
-                  </span>
-                </div>
-                {isOpen && (
-                  <div>
-                    <p className="font-semibold text-sm text-white truncate w-36">
-                      {nombreCompleto || "Usuario"}
-                    </p>
-                    <p className="text-xs text-cenate-light/70">{rol || "Rol"}</p>
-                  </div>
-                )}
+          <div className="p-6 border-b border-gray-700 dark:border-gray-800">
+            <div className="flex items-center gap-4 mb-6">
+              <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center shadow-lg flex-shrink-0">
+                <span className="text-white font-bold text-lg">
+                  {user?.nombreCompleto?.charAt(0)?.toUpperCase() || user?.username?.charAt(0)?.toUpperCase() || "U"}
+                </span>
               </div>
+              {isOpen && (
+                <div className="flex-1 min-w-0">
+                  <p className="font-bold text-sm text-white truncate">
+                    {user?.nombreCompleto || user?.username || "Usuario"}
+                  </p>
+                  <p className="text-xs text-cenate-light/80 font-medium">{user?.roles?.[0] || "Rol"}</p>
+                </div>
+              )}
 
               {isOpen && (
-                <div className="relative cursor-pointer hover:scale-110 transition-transform">
+                <div className="relative cursor-pointer hover:scale-110 transition-transform flex-shrink-0">
                   <Bell className="w-5 h-5 text-cenate-light hover:text-white" />
                   <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-cenate-danger rounded-full"></span>
                 </div>
@@ -144,8 +152,8 @@ const AdminSidebar = () => {
                         onClick={() => toggleSubmenu(item.title)}
                         className={`w-full flex items-center justify-between px-4 py-3 rounded-lg transition-all duration-200 ${
                           isActive(item.path)
-                            ? "bg-cenate-teal text-white shadow-soft"
-                            : "text-slate-300 hover:bg-cenate-blue/50 hover:text-white"
+                            ? "bg-blue-500 text-white shadow-lg"
+                            : "text-gray-300 hover:bg-slate-700 hover:text-white"
                         }`}
                       >
                         <div className="flex items-center space-x-3">
@@ -175,8 +183,8 @@ const AdminSidebar = () => {
                               to={subitem.path}
                               className={`block px-4 py-2 rounded-lg text-sm transition-all duration-200 ${
                                 location.pathname === subitem.path
-                                  ? "bg-cenate-teal/70 text-white"
-                                  : "text-slate-400 hover:bg-cenate-blue/40 hover:text-white"
+                                  ? "bg-blue-500/70 text-white"
+                                  : "text-gray-400 hover:bg-slate-700 hover:text-white"
                               }`}
                             >
                               {subitem.title}
@@ -188,10 +196,10 @@ const AdminSidebar = () => {
                   ) : (
                     <Link
                       to={item.path}
-                      className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
                         isActive(item.path)
-                          ? "bg-cenate-teal text-white shadow-soft"
-                          : "text-slate-300 hover:bg-cenate-blue/50 hover:text-white"
+                          ? "bg-blue-500 text-white shadow-lg"
+                          : "text-gray-300 hover:bg-slate-700 hover:text-white"
                       }`}
                     >
                       {item.icon}
@@ -205,11 +213,11 @@ const AdminSidebar = () => {
           </nav>
 
           {/* Logout */}
-          <div className="p-4 border-t border-cenate-teal/40">
+          <div className="p-4 border-t border-gray-700 dark:border-gray-800">
             <button
-              onClick={handleLogout}
-              className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg
-                text-slate-300 hover:bg-cenate-danger hover:text-white transition-all duration-200"
+            onClick={handleLogout}
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg
+            text-gray-300 hover:bg-red-500 hover:text-white transition-all duration-200"
             >
               <LogOut className="w-5 h-5" />
               {isOpen && <span className="font-medium text-sm">Cerrar Sesión</span>}

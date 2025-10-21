@@ -2,6 +2,31 @@
 @tailwind components;
 @tailwind utilities;
 
+@import './Styles/improvements.css';
+
+/* Variables CSS para el sistema de temas */
+:root {
+  /* Modo claro (por defecto) */
+  --toast-bg: #1e293b;
+  --toast-color: #ffffff;
+  --bg-primary: #ffffff;
+  --bg-secondary: #f8fafc;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-color: #e2e8f0;
+}
+
+.dark {
+  /* Modo oscuro */
+  --toast-bg: #334155;
+  --toast-color: #f1f5f9;
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --border-color: #334155;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -14,4 +39,10 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Transiciones suaves para el cambio de tema */
+* {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
