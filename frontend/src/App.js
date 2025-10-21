@@ -1,96 +1,72 @@
 // ========================================================================
-// 🌐 App.js – Sistema MBAC CENATE (frontend)
+// 🌐 App.js – Sistema MBAC CENATE (versión definitiva sin duplicaciones)
 // ------------------------------------------------------------------------
-// Integra autenticación, protección de rutas y control de permisos
-// a nivel de módulos y acciones.
+// Corrige render doble de AppLayout. Usa un layout global con Outlet.
 // ========================================================================
 
-import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
+import React from "react";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 
-// 🧱 Layout general
-import AppLayout from './components/AppLayout';
-import ProtectedRoute from './components/security/ProtectedRoute';
+// 🧱 Layout global
+import AppLayout from "./components/AppLayout";
+import ProtectedRoute from "./components/security/ProtectedRoute";
 
-// 🧩 Páginas principales
-import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+// 🧩 Páginas públicas
+import Login from "./pages/Login";
 
-// 🧩 Páginas del administrador
-import AdminDashboard from './pages/AdminDashboard';
-import UsersPage from './pages/UsersPage';
-import CrearUsuario from './pages/CrearUsuario';
-import PermisosPage from './pages/admin/PermisosPage';
+// 🧩 Páginas internas
+import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+import UsersPage from "./pages/UsersPage";
+import CrearUsuario from "./pages/CrearUsuario";
+import PermisosPage from "./pages/admin/PermisosPage";
+import Profile from "./pages/user/Profile";
+import UserDashboard from "./pages/user/UserDashboard";
 
 // ========================================================================
-// 🔒 Rutas protegidas MBAC
+// 🧩 Layout protegido global
+// ========================================================================
+function ProtectedAppLayout() {
+  return (
+    <ProtectedRoute>
+      <AppLayout>
+        <Outlet />
+      </AppLayout>
+    </ProtectedRoute>
+  );
+}
+
+// ========================================================================
+// 🚏 Definición de rutas
 // ========================================================================
 function AppRoutes() {
   return (
     <Routes>
-      {/* 🔓 Público */}
+      {/* Público */}
       <Route path="/login" element={<Login />} />
 
-      {/* 🧭 Dashboard general */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute requiredPath="/dashboard">
-            <AppLayout title="Panel Principal" currentPath="/dashboard">
-              <Dashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+      {/* Área protegida (usa AppLayout una sola vez) */}
+      <Route element={<ProtectedAppLayout />}>
+        {/* Paneles principales */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
 
-      {/* 🧱 Panel de administrador */}
-      <Route
-        path="/admin"
-        element={
-          <ProtectedRoute requiredPath="/admin">
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      />
+        {/* Usuarios */}
+        <Route path="/admin/users" element={<UsersPage />} />
+        <Route path="/admin/users/create" element={<CrearUsuario />} />
 
-      {/* 👥 Gestión de usuarios */}
-      <Route
-        path="/admin/users"
-        element={
-          <ProtectedRoute requiredPath="/admin/users">
-            <AppLayout title="Gestión de Usuarios" currentPath="/admin/users">
-              <UsersPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+        {/* Permisos MBAC */}
+        <Route path="/admin/permisos" element={<PermisosPage />} />
 
-      {/* ➕ Crear usuario */}
-      <Route
-        path="/admin/users/create"
-        element={
-          <ProtectedRoute requiredPath="/admin/users/create">
-            <AppLayout title="Registrar Nuevo Usuario" currentPath="/admin/users/create">
-              <CrearUsuario />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+        {/* Páginas de usuario */}
+        <Route path="/user/profile" element={<Profile />} />
+        <Route path="/user/dashboard" element={<UserDashboard />} />
+      </Route>
 
-      {/* 🔐 Gestión de permisos MBAC */}
-      <Route
-        path="/admin/permisos"
-        element={
-          <ProtectedRoute requiredPath="/admin/permisos">
-            <PermisosPage />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* 🧭 Rutas base y fallback */}
+      {/* Rutas base y fallback */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
@@ -110,13 +86,13 @@ export default function App() {
             toastOptions={{
               duration: 3000,
               style: {
-                background: 'var(--toast-bg)',
-                color: 'var(--toast-color)',
-                borderRadius: '12px',
-                padding: '16px',
+                background: "var(--toast-bg)",
+                color: "var(--toast-color)",
+                borderRadius: "12px",
+                padding: "16px",
               },
-              success: { iconTheme: { primary: '#10b981', secondary: '#fff' } },
-              error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } },
+              success: { iconTheme: { primary: "#10b981", secondary: "#fff" } },
+              error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
             }}
           />
 

@@ -1,45 +1,52 @@
-import React from 'react';
+// ========================================================================
+// 💚 HeaderTemplate.jsx – Header global estilo iPhone (CENATE 2025)
+// ------------------------------------------------------------------------
+// • Degradado vertical #113820 → #1C5B36 (Apple-like, verde profesional)
+// • Barra fija, buscador translúcido y sombra sutil
+// • Compatible con modo oscuro y ThemeToggle
+// ========================================================================
 
-const Header_template = ({ children }) => {
+import React from "react";
+import { Search } from "lucide-react";
+import ThemeToggle from "../ThemeToggle";
+
+export default function HeaderTemplate({ title = "" }) {
   return (
-    <header className="relative bg-gradient-to-r from-[#0a5ba9] via-[#1d4f8a] to-[#2e63a6] text-white">
-      {/* Logos y título */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="flex items-center justify-between flex-wrap">
-          {/* Logo EsSalud */}
-          <div className="flex items-center">
-            <img 
-              src="/images/Logo ESSALUD Blanco.png" 
-              alt="EsSalud" 
-              className="h-16 md:h-20 object-contain"
-            />
-          </div>
+    <header
+      className="sticky top-0 z-40 w-full shadow-lg backdrop-blur-md border-b border-[var(--border-color)]"
+      style={{
+        background: "linear-gradient(to bottom, #113820 0%, #1C5B36 100%)", // 💚 Degradado vertical Apple
+        color: "white",
+      }}
+    >
+      <div className="flex items-center justify-between px-8 py-4">
+        {/* 🏷️ Título de la página */}
+        <h1
+          className="text-xl font-semibold tracking-wide drop-shadow-sm"
+          style={{
+            fontFamily: "Inter, -apple-system, sans-serif",
+            textShadow: "0 1px 2px rgba(0,0,0,0.25)",
+          }}
+        >
+          {title || "CENATE"}
+        </h1>
 
-          {/* Título Central */}
-          <div className="flex-1 text-center px-4">
-            <h1 className="text-2xl md:text-4xl font-bold">
-              Centro Nacional de Telemedicina
-            </h1>
-            <p className="text-sm md:text-lg mt-2 opacity-90">
-              CENATE - EsSalud
-            </p>
-          </div>
-
-          {/* Logo CENATE */}
-          <div className="flex items-center">
-            <img 
-              src="/images/Logo CENATE Blanco.png" 
-              alt="CENATE" 
-              className="h-16 md:h-20 object-contain"
-            />
-          </div>
+        {/* 🔍 Buscador estilo iOS */}
+        <div className="flex-1 max-w-md mx-8 relative">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/85 w-5 h-5" />
+          <input
+            type="text"
+            placeholder="Buscar..."
+            className="w-full pl-11 pr-4 py-2.5 rounded-full bg-white/20 text-white
+                       placeholder-white/75 outline-none focus:bg-white/30
+                       transition-all duration-300 backdrop-blur-sm
+                       border border-white/30 shadow-inner"
+          />
         </div>
-      </div>
 
-      {/* Contenido adicional (como el botón de login) */}
-      {children}
+        {/* 🌗 Botón para alternar tema */}
+        <ThemeToggle />
+      </div>
     </header>
   );
-};
-
-export default Header_template;
+}

@@ -1,90 +1,65 @@
-import React, { useEffect, useState } from "react";
-import { motion } from "framer-motion";
-import {
-    getPersonalCntByUsuario,
-    getPersonalExternoById,
-} from "../../api/personal";
-import { useAuth } from "../../hooks/useAuth";
-import { Edit3 } from "lucide-react";
-import PersonalCard from "../../components/ui/PersonalCard";
+// ========================================================================
+// 👤 Profile.jsx – Perfil de Usuario (versión final CENATE 2025)
+// ------------------------------------------------------------------------
+// Contenido interno sin layout duplicado. Compatible con AppLayout global.
+// Mantiene diseño Apple/macOS y tema improvements.css.
+// ========================================================================
 
-const Profile = () => {
-    const { user } = useAuth();
-    const [personal, setPersonal] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [isExterno, setIsExterno] = useState(false);
+import React from "react";
+import { User, Mail, Phone, ShieldCheck, CalendarDays } from "lucide-react";
+import { useAuth } from "../../context/AuthContext";
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                if (!user) return;
+export default function Profile() {
+  const { user } = useAuth();
 
-                // Detectar si es personal interno o externo según su rol
-                const esInterno =
-                    user.roles?.some((r) =>
-                        ["MEDICO", "ENFERMERIA", "OBSTETRA", "FARMACIA", "LABORATORIO"].includes(
-                            r
-                        )
-                    ) ?? false;
-
-                let data;
-                if (esInterno) {
-                    data = await getPersonalCntByUsuario(user.id);
-                } else {
-                    setIsExterno(true);
-                    data = await getPersonalExternoById(user.id);
-                }
-
-                setPersonal(data);
-            } catch (err) {
-                console.error("❌ Error al cargar perfil:", err);
-            } finally {
-                setLoading(false);
-            }
-        };
-
-        fetchData();
-    }, [user]);
-
-    if (loading)
-        return (
-            <div className="flex items-center justify-center h-screen bg-gray-50 text-gray-600">
-                Cargando perfil...
-            </div>
-        );
-
-    if (!personal)
-        return (
-            <div className="flex flex-col items-center justify-center h-screen text-gray-600">
-                <p>No se encontró información personal asociada.</p>
-            </div>
-        );
-
-    return (
-        <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-10 px-6">
-            <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="max-w-5xl mx-auto"
-            >
-                <div className="flex flex-col md:flex-row items-center justify-between mb-10">
-                    <div>
-                        <h1 className="text-4xl font-bold text-gray-800">Mi Perfil</h1>
-                        <p className="text-gray-500 mt-1">
-                            {isExterno ? "Profesional Externo" : "Personal CENATE"}
-                        </p>
-                    </div>
-
-                    <button className="flex items-center gap-2 px-5 py-2 bg-blue-600 text-white rounded-xl shadow hover:bg-blue-700 transition">
-                        <Edit3 className="w-5 h-5" />
-                        Editar Perfil
-                    </button>
-                </div>
-
-                <PersonalCard personal={personal} />
-            </motion.div>
+  return (
+    <div className="max-w-4xl mx-auto">
+      {/* Header */}
+      <div className="flex items-center gap-6 mb-10">
+        <div
+          className="w-24 h-24 rounded-full bg-gradient-to-tr from-[var(--color-primary)] to-[var(--color-info)]
+                     flex items-center justify-center text-4xl font-bold text-white shadow-lg"
+        >
+          {user?.username?.charAt(0).toUpperCase() || "U"}
         </div>
-    );
-};
+        <div>
+          <h1 className="text-3xl font-bold text-[var(--text-primary)]">
+            {user?.nombre_completo || "Usuario CENATE"}
+          </h1>
+          <p className="text-[var(--text-secondary)] mt-1">
+            {user?.rol || "Administrador"}
+          </p>
+        </div>
+      </div>
 
-export default Profile;
+      {/* Datos principales */}
+      <div
+        className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-card)]/80
+                   shadow-sm backdrop-blur-sm p-8 space-y-6 transition-all hover:shadow-lg"
+      >
+        <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-4 flex items-center gap-2">
+          <User className="w-5 h-5 text-[var(--color-primary)]" /> Información Personal
+        </h2>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-[var(--text-primary)]">
+          <InfoItem icon={Mail} label="Correo" value={user?.email || "No registrado"} />
+          <InfoItem icon={Phone} label="Teléfono" value={user?.telefono || "—"} />
+          <InfoItem icon={ShieldCheck} label="Rol" value={user?.rol || "Administrador"} />
+          <InfoItem icon={CalendarDays} label="Fecha de Registro" value={user?.fecha_registro || "2025-01-01"} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function InfoItem({ icon: Icon, label, value }) {
+  return (
+    <div className="flex items-start gap-3">
+      <Icon className="w-5 h-5 text-[var(--color-primary)] mt-1" />
+      <div>
+        <p className="text-sm text-[var(--text-secondary)]">{label}</p>
+        <p className="text-base font-semibold text-[var(--text-primary)]">{value}</p>
+      </div>
+    </div>
+  );
+}

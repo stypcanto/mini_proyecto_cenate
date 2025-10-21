@@ -1,8 +1,9 @@
 // ========================================================================
-// 🔐 ProtectedRoute.jsx – Protección de rutas MBAC (CRA compatible)
+// 🔐 ProtectedRoute.jsx – Sistema de protección MBAC (CENATE 2025)
 // ------------------------------------------------------------------------
-// Verifica autenticación y permisos RBAC basados en roles y acciones.
-// Incluye bypass automático para roles de alto nivel (SUPERADMIN, ADMIN).
+// Unifica protección de rutas, verificación de permisos RBAC,
+// y control de visibilidad (PermissionGate).
+// Compatible con CRA y React Router 6+.
 // ========================================================================
 
 import React from "react";
@@ -12,8 +13,13 @@ import { usePermissions } from "../../hooks/usePermissions";
 import { ShieldAlert, Loader2 } from "lucide-react";
 
 /**
- * Componente HOC para proteger rutas con RBAC
- * Verifica autenticación y permisos específicos de página
+ * ==========================================================
+ * 🔒 ProtectedRoute – Protege páginas completas
+ * ==========================================================
+ * Uso:
+ * <ProtectedRoute requiredPath="/admin/users" requiredAction="ver">
+ *    <UsersPage />
+ * </ProtectedRoute>
  */
 export const ProtectedRoute = ({
   children,
@@ -24,78 +30,83 @@ export const ProtectedRoute = ({
   const { isAuthenticated, initialized, user } = useAuth();
   const { verificarPermiso, loading } = usePermissions();
 
-  // 🌀 Loader mientras se inicializa
+  // 🌀 Mostrar loader mientras se inicializa autenticación o permisos
   if (!initialized || loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
+      <div className="min-h-screen bg-[var(--bg-main)] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
-          <p className="text-slate-600 font-medium">Verificando permisos...</p>
+          <Loader2 className="w-10 h-10 text-[var(--color-primary)] animate-spin mx-auto mb-4" />
+          <p className="text-[var(--text-secondary)] font-medium">
+            Verificando acceso...
+          </p>
         </div>
       </div>
     );
   }
 
-  // ❌ No autenticado → redirigir a login
+  // ❌ Si no está autenticado → redirigir a login
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  // ✅ Solo autenticación, sin permisos específicos
+  // ✅ Si no hay ruta requerida, permitir acceso libre (solo autenticación)
   if (!requiredPath) return children;
 
-  // 🔒 Verificar permisos del usuario
+  // 🔍 Verificar permiso RBAC
   let hasPermission = verificarPermiso(requiredPath, requiredAction);
 
-  // 🚀 Permitir acceso total a SUPERADMIN y ADMIN
+  // 🚀 Permitir acceso total a roles privilegiados
   const rolesUsuario = (user?.roles || []).map((r) => r.toUpperCase());
   if (rolesUsuario.includes("SUPERADMIN") || rolesUsuario.includes("ADMIN")) {
     hasPermission = true;
   }
 
-  // 🚫 Sin permiso → mostrar pantalla de acceso denegado
+  // 🚫 Sin permiso → pantalla elegante de “Acceso denegado”
   if (!hasPermission) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center p-6">
-        <div className="max-w-md w-full">
-          <div className="bg-white rounded-3xl shadow-2xl p-8 text-center">
-            <div className="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6">
-              <ShieldAlert className="w-10 h-10 text-red-600" />
-            </div>
+      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] p-6">
+        <div className="bg-[var(--bg-card)] rounded-3xl shadow-2xl p-10 max-w-md w-full text-center border border-[var(--border-color)]">
+          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--color-danger)]/10 flex items-center justify-center">
+            <ShieldAlert className="w-10 h-10 text-[var(--color-danger)]" />
+          </div>
 
-            <h2 className="text-2xl font-bold text-slate-900 mb-3">
-              Acceso Denegado
-            </h2>
-            <p className="text-slate-600 mb-2">
-              No tienes permisos para acceder a esta sección.
+          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
+            Acceso Denegado
+          </h2>
+          <p className="text-[var(--text-secondary)] mb-4">
+            No tienes permisos para acceder a esta sección.
+          </p>
+
+          <p className="text-xs text-[var(--text-secondary)]/80 mb-6">
+            Ruta solicitada:{" "}
+            <code className="bg-[var(--bg-hover)] px-2 py-1 rounded">
+              {requiredPath}
+            </code>
+          </p>
+
+          <div className="bg-[var(--bg-hover)] rounded-xl p-4 mb-6">
+            <p className="text-xs text-[var(--text-secondary)] mb-1">
+              Usuario actual
             </p>
-            <p className="text-sm text-slate-500 mb-8">
-              Ruta:
-              <code className="bg-slate-100 px-2 py-1 rounded ml-1">
-                {requiredPath}
-              </code>
+            <p className="font-semibold text-[var(--text-primary)]">
+              {user?.nombreCompleto || user?.username}
             </p>
-
-            <div className="bg-slate-50 rounded-xl p-4 mb-6">
-              <p className="text-xs text-slate-500 mb-1">Usuario actual</p>
-              <p className="font-semibold text-slate-900">
-                {user?.nombreCompleto || user?.username}
-              </p>
-              <p className="text-sm text-slate-600">
-                {rolesUsuario.join(", ")}{" "}
-                {rolesUsuario.includes("SUPERADMIN") && "(acceso total)"}
-              </p>
-            </div>
-
-            <a
-              href={fallbackPath}
-              className="inline-flex items-center justify-center w-full px-6 py-3 bg-teal-600 text-white font-semibold rounded-xl hover:bg-teal-700 transition-all duration-200 transform hover:scale-105"
-            >
-              Volver al Dashboard
-            </a>
-
-            <p className="text-xs text-slate-400 mt-6">
-              Si crees que esto es un error, contacta al administrador.
+            <p className="text-sm text-[var(--text-secondary)]">
+              {rolesUsuario.join(", ")}{" "}
+              {rolesUsuario.includes("SUPERADMIN") && "(acceso total)"}
             </p>
           </div>
+
+          <a
+            href={fallbackPath}
+            className="inline-flex items-center justify-center w-full px-6 py-3 rounded-xl
+                       font-semibold text-white bg-[var(--color-primary)] hover:brightness-110
+                       transition-all duration-200"
+          >
+            Volver al Dashboard
+          </a>
+
+          <p className="text-xs text-[var(--text-secondary)]/70 mt-6">
+            Si crees que esto es un error, contacta al administrador.
+          </p>
         </div>
       </div>
     );
@@ -106,7 +117,11 @@ export const ProtectedRoute = ({
 };
 
 /**
- * HOC para envolver componentes individuales con permisos
+ * ==========================================================
+ * 🎯 withPermission – HOC para envolver componentes individuales
+ * ==========================================================
+ * Uso:
+ * export default withPermission(MiComponente, "/admin/users", "editar");
  */
 export const withPermission = (
   Component,
@@ -125,8 +140,13 @@ export const withPermission = (
   };
 
 /**
- * Gate para mostrar/ocultar elementos según permisos
- * Uso: <PermissionGate path="/usuarios" action="crear">...</PermissionGate>
+ * ==========================================================
+ * 🧩 PermissionGate – Controla visibilidad dentro del layout
+ * ==========================================================
+ * Uso:
+ * <PermissionGate path="/usuarios" action="crear">
+ *   <button>Crear usuario</button>
+ * </PermissionGate>
  */
 export const PermissionGate = ({
   children,
@@ -140,7 +160,7 @@ export const PermissionGate = ({
   const hasPermission = verificarPermiso(path, action);
 
   if (!hasPermission) return fallback;
-  return children;
+  return <>{children}</>;
 };
 
 export default ProtectedRoute;

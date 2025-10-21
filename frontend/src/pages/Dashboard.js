@@ -1,8 +1,9 @@
 // ========================================================================
-// 🧭 Dashboard.jsx
+// 🧭 Dashboard.jsx – Versión final CENATE 2025
 // ------------------------------------------------------------------------
-// Redirección automática según el rol MBAC del usuario autenticado.
-// Cubre todos los roles (ADMIN, MEDICO, COORDINADOR, EXTERNO, etc.).
+// Redirección automática según rol MBAC dentro del layout global.
+// Compatible con SUPERADMIN, ADMIN, MEDICO, COORDINADOR, EXTERNO, CITAS,
+// LINEAMIENTOS y USER. Mantiene estilo Apple/CENATE.
 // ========================================================================
 
 import React, { useEffect } from "react";
@@ -15,16 +16,15 @@ export default function Dashboard() {
   const { user } = useAuth();
 
   useEffect(() => {
-    // 🚨 Si no hay sesión activa
     if (!user) {
       navigate("/login", { replace: true });
       return;
     }
 
-    // Normalizar rol principal
+    // Normalizar primer rol asignado
     const rol = (user.roles?.[0] || "").toUpperCase();
 
-    // 🔀 Mapa de rutas según roles MBAC
+    // Mapa de rutas MBAC
     const routes = {
       SUPERADMIN: "/admin",
       ADMIN: "/admin",
@@ -36,22 +36,39 @@ export default function Dashboard() {
       USER: "/user/dashboard",
     };
 
-    // Ruta por defecto si el rol no coincide
     const targetPath = routes[rol] || "/unauthorized";
 
-    // ⏩ Redirigir
-    navigate(targetPath, { replace: true });
+    // ⏩ Redirigir suavemente con pequeño delay para UX
+    const timer = setTimeout(() => navigate(targetPath, { replace: true }), 900);
+
+    return () => clearTimeout(timer);
   }, [user, navigate]);
 
+  // Loader unificado con diseño CENATE
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100 text-center px-6">
-      <Loader2 className="w-12 h-12 text-teal-600 animate-spin mx-auto mb-4" />
-      <p className="text-gray-600 text-lg font-medium">
-        Redirigiendo según tu rol...
-      </p>
-      <p className="text-sm text-gray-400 mt-2">
-        Por favor espera unos segundos.
-      </p>
+    <div
+      className="flex flex-col items-center justify-center py-20
+                 bg-[var(--bg-main)] text-[var(--text-primary)] transition-colors"
+    >
+      {/* Spinner */}
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-16 h-16 rounded-full flex items-center justify-center bg-gradient-to-tr from-[var(--color-primary)] to-[var(--color-info)] shadow-lg">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+        </div>
+
+        {/* Texto principal */}
+        <h2 className="text-xl font-bold mt-3 text-[var(--text-primary)]">
+          Redirigiendo según tu rol...
+        </h2>
+        <p className="text-sm text-[var(--text-secondary)]">
+          Por favor, espera unos segundos mientras cargamos tu entorno.
+        </p>
+      </div>
+
+      {/* Indicador visual Apple-like */}
+      <div className="mt-8 w-40 h-1.5 bg-[var(--border-color)] rounded-full overflow-hidden">
+        <div className="h-full w-1/2 bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-info)] animate-pulse"></div>
+      </div>
     </div>
   );
 }
