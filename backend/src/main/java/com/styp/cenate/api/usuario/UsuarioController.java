@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import com.styp.cenate.dto.UsuarioResponse;
 import com.styp.cenate.dto.UsuarioUpdateRequest;
+import com.styp.cenate.dto.UsuarioCreateRequest;
 import com.styp.cenate.service.usuario.UsuarioService;
 
 import java.util.List;
@@ -15,8 +16,6 @@ import java.util.Map;
 
 /**
  * 🎯 Controlador REST para la gestión interna de usuarios en el sistema CENATE.
- * - Los usuarios solo pueden ser creados a través de solicitudes (AccountRequest).
- * - Este controlador permite a los administradores ver, editar, activar o desactivar cuentas.
  */
 @RestController
 @RequestMapping("/api/usuarios")
@@ -88,6 +87,21 @@ public class UsuarioController {
     // ⚙️ GESTIÓN ADMINISTRATIVA
     // ============================================================
 
+    /** ✨ Crear nuevo usuario (solo SUPERADMIN y ADMIN) */
+    @PostMapping("/crear")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> createUser(@RequestBody UsuarioCreateRequest request) {
+        try {
+            log.info("✨ Creando nuevo usuario: {}", request.getUsername());
+            UsuarioResponse usuario = usuarioService.createUser(request);
+            return ResponseEntity.ok(usuario);
+        } catch (Exception e) {
+            log.error("❌ Error al crear usuario: {}", e.getMessage());
+            return ResponseEntity.badRequest()
+                    .body(Map.of("message", e.getMessage()));
+        }
+    }
+
     /** ✏️ Actualizar datos del usuario (estado, roles, datos personales o profesionales) */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
@@ -150,17 +164,5 @@ public class UsuarioController {
             return ResponseEntity.internalServerError()
                     .body(Map.of("message", "Error interno del servidor", "error", e.getMessage()));
         }
-    }
-
-    // ============================================================
-    // 🚫 BLOQUEO DE CREACIÓN DIRECTA
-    // ============================================================
-
-    @PostMapping
-    public ResponseEntity<Map<String, String>> createUserDisabled() {
-        return ResponseEntity.status(403)
-                .body(Map.of("message",
-                        "❌ La creación directa de usuarios está deshabilitada. " +
-                                "Las cuentas deben ser aprobadas por el SUPERADMIN mediante solicitud."));
     }
 }

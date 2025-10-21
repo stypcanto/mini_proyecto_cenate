@@ -3,13 +3,22 @@ package com.styp.cenate.api.area;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.ResponseEntity;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.UrlResource;
+import org.springframework.http.*;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
+import jakarta.annotation.PostConstruct;
+import java.io.IOException;
+import java.nio.file.*;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
 
 @RestController
 @RequestMapping("/api/personal")
@@ -24,6 +33,18 @@ public class PersonalTotalController {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Value("${app.upload.dir:${user.home}/cenate-uploads/personal}")
+    private String uploadDir;
+
+    @PostConstruct
+    private void initUploadDir() throws IOException {
+        Path path = Paths.get(uploadDir);
+        if (!Files.exists(path)) {
+            Files.createDirectories(path);
+            log.info("📂 Carpeta de uploads creada en: {}", uploadDir);
+        }
+    }
 
     // ===============================================================
     // 🧭 NIVEL 1 - LISTA BÁSICA UNIFICADA (CENATE + EXTERNO)
@@ -198,7 +219,8 @@ public class PersonalTotalController {
                             'provincia', pr.desc_prov,
                             'departamento', dep.desc_depart
                         ),
-                        'ipress', i.desc_ipress
+                        'ipress', i.desc_ipress,
+                        'foto', e.foto_ext
                     ),
                     'fechas', jsonb_build_object(
                         'fecha_registro', u.created_at,
@@ -229,6 +251,127 @@ public class PersonalTotalController {
         } catch (Exception e) {
             log.error("❌ Error al obtener detalle: {}", e.getMessage());
             return ResponseEntity.internalServerError().body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    // ===============================================================
+    // 📸 SUBIR FOTO DE PERFIL
+    // ===============================================================
+    @PostMapping("/{id}/foto")
+    @PreAuthorize("hasAnyAuthority('EDITAR_PERSONAL','CREAR_PERSONAL','SUPERADMIN')")
+    public ResponseEntity<Map<String, String>> uploadFoto(
+            @PathVariable Long id,
+            @RequestParam("foto") MultipartFile file) {
+        
+        log.info("📸 Subiendo foto para usuario ID: {}", id);
+
+        try {
+            // Validar que el archivo no esté vacío
+            if (file.isEmpty()) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "El archivo está vacío"));
+            }
+
+            // Validar que sea una imagen
+            String contentType = file.getContentType();
+            if (contentType == null || !contentType.startsWith("image/")) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "El archivo debe ser una imagen"));
+            }
+
+            // Validar tamaño (máximo 5MB)
+            if (file.getSize() > 5 * 1024 * 1024) {
+                return ResponseEntity.badRequest()
+                        .body(Map.of("message", "La imagen no debe superar los 5MB"));
+            }
+
+            // Generar nombre único para el archivo
+            String extension = "";
+            String originalFilename = file.getOriginalFilename();
+            if (originalFilename != null && originalFilename.contains(".")) {
+                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
+            }
+            String fileName = "user_" + id + "_" + UUID.randomUUID().toString() + extension;
+
+            // Guardar el archivo
+            Path uploadPath = Paths.get(uploadDir);
+            if (!Files.exists(uploadPath)) {
+                Files.createDirectories(uploadPath);
+            }
+
+            Path filePath = uploadPath.resolve(fileName);
+            Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
+
+            // Actualizar la base de datos
+            String updateSql = """
+                UPDATE dim_personal_cnt 
+                SET foto_pers = ? 
+                WHERE id_usuario = ?
+            """;
+            
+            int rowsAffected = jdbcTemplate.update(updateSql, fileName, id);
+            
+            if (rowsAffected == 0) {
+                // Intentar con personal externo
+                updateSql = """
+                    UPDATE dim_personal_externo 
+                    SET foto_ext = ? 
+                    WHERE id_user = ?
+                """;
+                rowsAffected = jdbcTemplate.update(updateSql, fileName, id);
+            }
+
+            if (rowsAffected > 0) {
+                log.info("✅ Foto guardada exitosamente: {}", fileName);
+                return ResponseEntity.ok(Map.of(
+                        "message", "Foto subida correctamente",
+                        "fileName", fileName,
+                        "url", "/api/personal/foto/" + fileName
+                ));
+            } else {
+                return ResponseEntity.notFound()
+                        .build();
+            }
+
+        } catch (IOException e) {
+            log.error("❌ Error al subir foto: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("message", "Error al guardar la foto: " + e.getMessage()));
+        }
+    }
+
+    // ===============================================================
+    // 🖼️ OBTENER FOTO DE PERFIL
+    // ===============================================================
+    @GetMapping("/foto/{fileName}")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Resource> getFoto(@PathVariable String fileName) {
+        log.info("🖼️ Obteniendo foto: {}", fileName);
+        
+        try {
+            Path filePath = Paths.get(uploadDir).resolve(fileName);
+            
+            if (!Files.exists(filePath)) {
+                log.warn("⚠️ Foto no encontrada: {}", fileName);
+                return ResponseEntity.notFound().build();
+            }
+
+            Resource resource = new UrlResource(filePath.toUri());
+            String contentType = Files.probeContentType(filePath);
+            
+            if (contentType == null) {
+                contentType = "application/octet-stream";
+            }
+
+            return ResponseEntity.ok()
+                    .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
+                    .contentType(MediaType.parseMediaType(contentType))
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
+                    .body(resource);
+
+        } catch (IOException e) {
+            log.error("❌ Error al obtener la foto: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
     }
 

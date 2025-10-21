@@ -1,106 +1,145 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
+import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 
-const AuthContext = createContext();
+// 🔹 Cambios importantes: rutas relativas (sin alias @)
+import { apiClient } from "../lib/apiClient";
+import {
+  saveToken,
+  getToken,
+  clearToken,
+  saveUser,
+  getUser,
+  clearUser,
+  decodeJwt,
+} from "../constants/auth";
+
+// Crear el contexto
+const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => getUser());
+  const [token, setToken] = useState(() => getToken());
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // Restaurar sesión al iniciar
+  // 🔹 Restaurar sesión desde localStorage
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userStr = localStorage.getItem('user');
-    
-    if (token && userStr) {
+    if (token && !user) {
       try {
-        setUser(JSON.parse(userStr));
+        const payload = decodeJwt(token);
+        if (payload) {
+          const restoredUser = {
+            id: payload.sub || payload.user_id,
+            username: payload.username || payload.preferred_username,
+            roles: payload.roles || [],
+            permisos: payload.permisos || [],
+            nombreCompleto: payload.nombre_completo || payload.name || "",
+          };
+          setUser(restoredUser);
+          saveUser(restoredUser);
+        }
       } catch (error) {
-        console.error('Error al restaurar sesión:', error);
-        localStorage.clear();
+        console.error("Error al restaurar sesión:", error);
+        clearUser();
+        clearToken();
       }
     }
     setInitialized(true);
-  }, []);
+  }, [token, user]);
 
-  // Login
-  const login = async (username, password) => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password })
-      });
+  // 🔹 Login con backend RBAC
+  const login = useCallback(
+    async (username, password) => {
+      setLoading(true);
+      try {
+        const data = await apiClient.post("/auth/login", { username, password });
 
-      const data = await response.json();
+        if (!data?.token) throw new Error("No se recibió token del servidor");
 
-      if (!response.ok) {
-        throw new Error(data.message || 'Error al iniciar sesión');
+        const jwt = data.token;
+        const payload = decodeJwt(jwt);
+
+        const userData = {
+          id: payload.sub || data.userId || data.id_user,
+          username: payload.username || username,
+          roles: payload.roles || data.roles || [],
+          permisos: payload.permisos || data.permisos || [],
+          nombreCompleto:
+            data.nombreCompleto || data.nombre_completo || username,
+          token: jwt,
+        };
+
+        saveToken(jwt);
+        saveUser(userData);
+        setUser(userData);
+        setToken(jwt);
+
+        toast.success(
+          `Bienvenido, ${userData.nombreCompleto || userData.username}`
+        );
+        navigate("/dashboard");
+        return { ok: true };
+      } catch (error) {
+        console.error("Error en login:", error);
+        toast.error(error.message || "Error al iniciar sesión");
+        return { ok: false, error: error.message };
+      } finally {
+        setLoading(false);
       }
+    },
+    [navigate]
+  );
 
-      if (!data.token) {
-        throw new Error('No se recibió token del servidor');
-      }
-
-      const userData = {
-        id_user: data.userId || data.id_user,
-        username: data.username || username,
-        roles: data.roles || [],
-        nombreCompleto: data.nombreCompleto || data.nombre_completo || username,
-        token: data.token,
-      };
-
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(userData));
-      setUser(userData);
-      
-      toast.success('¡Bienvenido!');
-      navigate('/dashboard');
-    } catch (error) {
-      console.error('Error en login:', error);
-      toast.error(error.message || 'Error al iniciar sesión');
-      throw error;
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Logout
-  const logout = () => {
-    localStorage.clear();
+  // 🔹 Logout global
+  const logout = useCallback(() => {
+    clearToken();
+    clearUser();
     setUser(null);
-    toast.success('Sesión cerrada');
-    navigate('/login');
-  };
+    setToken(null);
+    toast.success("Sesión cerrada");
+    navigate("/login");
+  }, [navigate]);
 
-  // Verificar rol
-  const hasRole = (roles) => {
-    if (!user?.roles) return false;
-    const rolesArray = Array.isArray(roles) ? roles : [roles];
-    return rolesArray.some(role => user.roles.includes(role));
-  };
+  // 🔹 Verificar rol
+  const hasRole = useCallback(
+    (roles) => {
+      if (!user?.roles) return false;
+      const rolesArray = Array.isArray(roles) ? roles : [roles];
+      return rolesArray.some((role) => user.roles.includes(role));
+    },
+    [user]
+  );
 
-  const value = {
-    user,
-    loading,
-    initialized,
-    isAuthenticated: !!user,
-    login,
-    logout,
-    hasRole,
-  };
+  // 🔹 Contexto expuesto
+  const value = useMemo(
+    () => ({
+      user,
+      token,
+      loading,
+      initialized,
+      isAuthenticated: !!user && !!token,
+      login,
+      logout,
+      hasRole,
+    }),
+    [user, token, loading, initialized, login, logout, hasRole]
+  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// Hook de acceso al contexto
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth debe usarse dentro de AuthProvider');
-  }
+  if (!context) throw new Error("useAuth debe usarse dentro de <AuthProvider>");
   return context;
 };
