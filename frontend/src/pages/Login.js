@@ -1,68 +1,155 @@
-import React, { useState } from 'react';
-import { Eye, EyeOff, LogIn, AlertCircle, Loader2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
+// ========================================================================
+// 💠 Login.jsx – Sistema CENATE 2025 (validación real con backend)
+// ------------------------------------------------------------------------
+// • Espera la respuesta del backend antes de mostrar éxito o error
+// • Asistente UX con mensajes dinámicos precisos
+// • Diseño institucional EsSalud – CENATE
+// ========================================================================
+
+import React, { useState } from "react";
+import {
+  Eye,
+  EyeOff,
+  LogIn,
+  AlertCircle,
+  Loader2,
+  UserPlus,
+  KeyRound,
+  Home,
+  Info,
+  CheckCircle2,
+} from "lucide-react";
+import { useAuth } from "../context/AuthContext";
+import { Link } from "react-router-dom";
 
 export default function Login() {
   const { login, loading } = useAuth();
-  const [formData, setFormData] = useState({ username: '', password: '' });
-  const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    username: "",
+    password: "",
+    remember: false,
+  });
   const [errors, setErrors] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
+  const [assistantMsg, setAssistantMsg] = useState(null);
+  const [msgType, setMsgType] = useState("info");
 
+  // ============================================================
+  // 📋 Validación de campos (previa al backend)
+  // ============================================================
   const validate = () => {
     const newErrors = {};
-    if (!formData.username.trim()) newErrors.username = 'Usuario requerido';
-    if (!formData.password) newErrors.password = 'Contraseña requerida';
+    if (!formData.username.trim()) newErrors.username = "Ingrese su usuario institucional";
+    if (!formData.password) newErrors.password = "Ingrese su contraseña";
+    else if (formData.password.length < 8)
+      newErrors.password = "La contraseña debe tener al menos 8 caracteres";
+
     setErrors(newErrors);
+    if (Object.keys(newErrors).length)
+      setAssistantMsg("⚠️ Por favor, complete los campos requeridos correctamente.");
     return Object.keys(newErrors).length === 0;
   };
 
+  // ============================================================
+  // 🧠 Enviar formulario y validar con backend real
+  // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
-    
+
     try {
-      await login(formData.username, formData.password);
-    } catch (error) {
-      // Error ya manejado en AuthContext
+      setAssistantMsg("🔍 Verificando credenciales...");
+      setMsgType("info");
+
+      const response = await login(formData.username, formData.password);
+
+      // ⚙️ login() devuelve { ok: true/false } según tu AuthContext
+      if (response?.ok) {
+        setMsgType("success");
+        setAssistantMsg("✅ Inicio de sesión exitoso. Redirigiendo...");
+      } else {
+        setMsgType("error");
+        setAssistantMsg("❌ Usuario o contraseña incorrectos. Intente nuevamente.");
+      }
+    } catch (err) {
+      console.error("Error de autenticación:", err);
+      setMsgType("error");
+      setAssistantMsg("❌ Error de conexión con el servidor. Intente más tarde.");
     }
   };
 
+  // ============================================================
+  // 💎 Render principal
+  // ============================================================
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4 relative overflow-hidden">
-      {/* Círculos decorativos de fondo */}
-      <div className="absolute top-0 left-0 w-96 h-96 bg-blue-400/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-      <div className="absolute bottom-0 right-0 w-96 h-96 bg-purple-400/20 rounded-full blur-3xl translate-x-1/2 translate-y-1/2"></div>
-      
+    <div
+      className="min-h-screen flex items-center justify-center bg-center bg-no-repeat bg-cover relative"
+      style={{
+        backgroundImage: "url('/images/fondo-portal-web-cenate-2025.png')",
+      }}
+    >
+      {/* Capa azul institucional */}
+      <div className="absolute inset-0 bg-[#0a5ba9]/40"></div>
+
       <div className="w-full max-w-md relative z-10">
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-white/20">
+        <div className="bg-white/95 rounded-3xl shadow-2xl p-8 backdrop-blur-lg border border-white/40">
           {/* Logo */}
-          <div className="text-center mb-8">
-            <div className="w-20 h-20 bg-gradient-to-br from-blue-500 via-blue-600 to-purple-600 rounded-3xl mx-auto mb-4 flex items-center justify-center shadow-lg">
-              <span className="text-white text-3xl font-bold">C</span>
-            </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-              Bienvenido
+          <div className="text-center mb-6">
+            <img
+              src="/images/LogoESSALUDAzul.png"
+              alt="Logo EsSalud"
+              className="mx-auto h-14 mb-8 drop-shadow-md"
+            />
+
+            <h1 className="text-2xl font-bold text-[#0a5ba9] mb-1">
+              Inicio de Sesión
             </h1>
-            <p className="text-gray-600 font-medium">Sistema CENATE</p>
+            <p className="text-sm text-gray-600">
+              Centro Nacional de Telemedicina – CENATE
+            </p>
           </div>
 
-          {/* Form */}
+          {/* Asistente UX */}
+          {assistantMsg && (
+            <div
+              className={`flex items-center gap-2 p-3 rounded-lg mb-4 text-sm ${
+                msgType === "success"
+                  ? "bg-green-50 text-green-700 border border-green-200"
+                  : msgType === "error"
+                  ? "bg-red-50 text-red-700 border border-red-200"
+                  : "bg-blue-50 text-blue-700 border border-blue-200"
+              }`}
+            >
+              {msgType === "success" ? (
+                <CheckCircle2 size={18} />
+              ) : msgType === "error" ? (
+                <AlertCircle size={18} />
+              ) : (
+                <Info size={18} />
+              )}
+              <span>{assistantMsg}</span>
+            </div>
+          )}
+
+          {/* Formulario */}
           <form onSubmit={handleSubmit} className="space-y-5">
             {/* Usuario */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Usuario
               </label>
               <input
                 type="text"
+                placeholder="Tu usuario institucional"
                 value={formData.username}
-                onChange={(e) => setFormData({...formData, username: e.target.value})}
-                className={`w-full px-4 py-3.5 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all ${
+                onChange={(e) =>
+                  setFormData({ ...formData, username: e.target.value })
+                }
+                className={`w-full px-4 py-3 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 ${
                   errors.username
-                    ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
-                    : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100'
+                    ? "border-red-400 focus:ring-red-100"
+                    : "border-gray-200 focus:border-[#0a5ba9] focus:ring-[#0a5ba9]/20"
                 }`}
-                placeholder="Tu usuario"
               />
               {errors.username && (
                 <div className="flex items-center gap-1 mt-2 text-red-600 text-sm">
@@ -74,25 +161,27 @@ export default function Login() {
 
             {/* Contraseña */}
             <div>
-              <label className="block text-sm font-semibold text-gray-700 mb-2">
+              <label className="block text-sm font-semibold text-gray-700 mb-1">
                 Contraseña
               </label>
               <div className="relative">
                 <input
-                  type={showPassword ? 'text' : 'password'}
-                  value={formData.password}
-                  onChange={(e) => setFormData({...formData, password: e.target.value})}
-                  className={`w-full px-4 py-3.5 pr-12 border-2 rounded-xl focus:outline-none focus:ring-4 transition-all ${
-                    errors.password
-                      ? 'border-red-300 focus:border-red-500 focus:ring-red-100'
-                      : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100'
-                  }`}
+                  type={showPassword ? "text" : "password"}
                   placeholder="Tu contraseña"
+                  value={formData.password}
+                  onChange={(e) =>
+                    setFormData({ ...formData, password: e.target.value })
+                  }
+                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 ${
+                    errors.password
+                      ? "border-red-400 focus:ring-red-100"
+                      : "border-gray-200 focus:border-[#0a5ba9] focus:ring-[#0a5ba9]/20"
+                  }`}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9] transition-colors"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
@@ -105,14 +194,29 @@ export default function Login() {
               )}
             </div>
 
-            {/* Botón */}
+            {/* Recordar usuario */}
+            <div className="flex items-center justify-between text-sm text-gray-600">
+              <label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={formData.remember}
+                  onChange={(e) =>
+                    setFormData({ ...formData, remember: e.target.checked })
+                  }
+                  className="w-4 h-4 accent-[#0a5ba9]"
+                />
+                Recordar usuario
+              </label>
+            </div>
+
+            {/* Botón principal */}
             <button
               type="submit"
               disabled={loading}
-              className={`w-full py-4 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-lg ${
+              className={`w-full py-3.5 mt-2 rounded-xl font-semibold text-white flex items-center justify-center gap-2 transition-all shadow-md ${
                 loading
-                  ? 'bg-blue-400 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-blue-600 via-blue-700 to-purple-600 hover:from-blue-700 hover:via-blue-800 hover:to-purple-700 hover:shadow-xl hover:scale-[1.02] active:scale-[0.98]'
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-[#0a5ba9] hover:bg-[#094580] hover:shadow-lg hover:scale-[1.01]"
               }`}
             >
               {loading ? (
@@ -129,19 +233,37 @@ export default function Login() {
             </button>
           </form>
 
+          {/* Acciones complementarias */}
+          <div className="mt-6 flex flex-col items-center text-sm text-gray-600 space-y-3">
+            <button className="text-[#0a5ba9] font-semibold hover:underline flex items-center gap-1">
+              <UserPlus size={15} /> Crear nueva cuenta
+            </button>
+            <button
+              onClick={() =>
+                alert("Función de recuperación de contraseña en desarrollo.")
+              }
+              className="hover:text-[#0a5ba9] flex items-center gap-1"
+            >
+              <KeyRound size={15} /> Olvidé mi contraseña
+            </button>
+            <Link
+              to="/"
+              className="hover:text-[#0a5ba9] flex items-center gap-1"
+            >
+              <Home size={15} /> Regresar al inicio
+            </Link>
+          </div>
+
           {/* Footer */}
-          <div className="mt-6 text-center">
-            <p className="text-sm text-gray-500">
-              Sistema seguro con autenticación JWT
-            </p>
+          <div className="mt-6 text-center text-gray-500 text-xs border-t pt-4">
+            <p>Sistema CENATE – EsSalud 2025</p>
+            <p>Autenticación segura con validaciones de servidor</p>
           </div>
         </div>
 
-        {/* Indicador de versión */}
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-500">
-            CENATE v1.0 - 2025
-          </p>
+        {/* Versión */}
+        <div className="mt-4 text-center text-white/90 text-sm drop-shadow">
+          CENATE v1.0 – Plataforma institucional
         </div>
       </div>
     </div>

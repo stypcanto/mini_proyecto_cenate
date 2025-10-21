@@ -1,3 +1,10 @@
+// ========================================================================
+// 🔐 AuthContext.jsx – Contexto global de autenticación MBAC CENATE
+// ------------------------------------------------------------------------
+// Maneja login, logout, restauración de sesión y control de roles.
+// Actualizado para redirigir correctamente a Home tras logout.
+// ========================================================================
+
 import React, {
   createContext,
   useContext,
@@ -8,8 +15,6 @@ import React, {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-
-// 🔹 Cambios importantes: rutas relativas (sin alias @)
 import { apiClient } from "../lib/apiClient";
 import {
   saveToken,
@@ -21,7 +26,7 @@ import {
   decodeJwt,
 } from "../constants/auth";
 
-// Crear el contexto
+// 🧩 Crear el contexto
 const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
@@ -31,7 +36,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(false);
   const [initialized, setInitialized] = useState(false);
 
-  // 🔹 Restaurar sesión desde localStorage
+  // ============================================================
+  // 🔁 Restaurar sesión desde localStorage
+  // ============================================================
   useEffect(() => {
     if (token && !user) {
       try {
@@ -56,7 +63,9 @@ export const AuthProvider = ({ children }) => {
     setInitialized(true);
   }, [token, user]);
 
-  // 🔹 Login con backend RBAC
+  // ============================================================
+  // 🔓 Login con backend RBAC
+  // ============================================================
   const login = useCallback(
     async (username, password) => {
       setLoading(true);
@@ -83,9 +92,9 @@ export const AuthProvider = ({ children }) => {
         setUser(userData);
         setToken(jwt);
 
-        toast.success(
-          `Bienvenido, ${userData.nombreCompleto || userData.username}`
-        );
+        toast.success(`Bienvenido, ${userData.nombreCompleto || userData.username}`);
+
+        // ✅ Redirige al dashboard según rol
         navigate("/dashboard");
         return { ok: true };
       } catch (error) {
@@ -99,17 +108,23 @@ export const AuthProvider = ({ children }) => {
     [navigate]
   );
 
-  // 🔹 Logout global
+  // ============================================================
+  // 🚪 Logout global (redirige al Home público)
+  // ============================================================
   const logout = useCallback(() => {
     clearToken();
     clearUser();
     setUser(null);
     setToken(null);
-    toast.success("Sesión cerrada");
-    navigate("/login");
+    toast("Sesión cerrada correctamente", { icon: "👋" });
+
+    // ✅ Ahora te devuelve a la página principal pública (Home.jsx)
+    navigate("/");
   }, [navigate]);
 
-  // 🔹 Verificar rol
+  // ============================================================
+  // 🧩 Verificar rol
+  // ============================================================
   const hasRole = useCallback(
     (roles) => {
       if (!user?.roles) return false;
@@ -119,7 +134,9 @@ export const AuthProvider = ({ children }) => {
     [user]
   );
 
-  // 🔹 Contexto expuesto
+  // ============================================================
+  // 📦 Contexto expuesto
+  // ============================================================
   const value = useMemo(
     () => ({
       user,
@@ -137,7 +154,9 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Hook de acceso al contexto
+// ============================================================
+// 🧠 Hook personalizado
+// ============================================================
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) throw new Error("useAuth debe usarse dentro de <AuthProvider>");
