@@ -28,7 +28,7 @@ export default function Home() {
         {/* Hero institucional */}
         <section className="relative w-full">
           <img
-            src="images/CENATEANGULAR.png"
+            src="/images/CENATEANGULAR.png"
             alt="Fondo institucional CENATE"
             className="w-full h-[400px] object-cover"
           />
