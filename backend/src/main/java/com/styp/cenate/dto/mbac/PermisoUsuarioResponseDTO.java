@@ -1,36 +1,32 @@
 package com.styp.cenate.dto.mbac;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 /**
- * DTO de respuesta para los permisos de un usuario por rol, módulo y página.
- * Este DTO es utilizado por el endpoint GET /api/permisos/usuario/{id}
- * 
- * @author CENATE Development Team
- * @version 1.0
+ * DTO que representa una fila de la vista vw_permisos_activos.
+ * Contiene todos los datos de permisos activos por usuario.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class PermisoUsuarioResponseDTO {
-    
-    @JsonProperty("rol")
+    private Long idUser;
+    private String usuario;
+    private Integer idRol;
     private String rol;
-    
-    @JsonProperty("modulo")
+    private Integer idModulo;
     private String modulo;
-    
-    @JsonProperty("pagina")
+    private Integer idPagina;
     private String pagina;
-    
-    @JsonProperty("rutaPagina")
     private String rutaPagina;
-    
-    @JsonProperty("permisos")
-    private PermisosDTO permisos;
+    private Long idPermiso;
+    private String descPermiso;
+    private Boolean puedeVer;
+    private Boolean puedeCrear;
+    private Boolean puedeActualizar;
+    private Boolean puedeEliminar;
+    private Boolean puedeEditar;
+    private Boolean puedeExportar;
+    private Boolean puedeAprobar;
 }

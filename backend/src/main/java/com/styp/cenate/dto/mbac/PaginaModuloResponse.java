@@ -1,27 +1,16 @@
 package com.styp.cenate.dto.mbac;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
-import java.util.List;
+import lombok.*;
 
 /**
- * DTO de respuesta para páginas de módulo.
- * 
- * @author CENATE Development Team
- * @version 1.1
+ * DTO que representa una página accesible dentro de un módulo.
  */
 @Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 public class PaginaModuloResponse {
     private Integer idPagina;
     private String nombrePagina;
     private String rutaPagina;
-    private String descripcion;
-    private Boolean activo;
-    private List<PermisoModularResponse> permisos;
 }

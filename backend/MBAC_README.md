@@ -333,7 +333,7 @@ void deberiaPermitirAccesoConPermisoValido() {
         .thenReturn(1);
     
     // Act
-    boolean resultado = permisosService.tienePermiso(userId, rutaPagina, accion);
+    boolean resultado = permisosService.validarPermiso(userId, rutaPagina, accion);
     
     // Assert
     assertTrue(resultado);

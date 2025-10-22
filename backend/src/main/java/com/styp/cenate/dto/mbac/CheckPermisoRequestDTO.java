@@ -1,30 +1,24 @@
 package com.styp.cenate.dto.mbac;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.*;
 
 /**
- * DTO para verificar permisos en una página específica.
- * Utilizado por el endpoint POST /api/permisos/check
- * 
- * @author CENATE Development Team
- * @version 1.0
+ * DTO de entrada para verificar un permiso específico.
  */
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
 public class CheckPermisoRequestDTO {
-    
-    @JsonProperty("userId")
+
+    @NotNull(message = "El ID de usuario es obligatorio")
     private Long userId;
-    
-    @JsonProperty("rutaPagina")
-    private String rutaPagina;
-    
-    @JsonProperty("accion")
-    private String accion; // ver, crear, editar, eliminar, exportar, aprobar
+
+    @NotBlank(message = "La página es obligatoria")
+    private String pagina;  // Ejemplo: "/roles/citas/agenda"
+
+    @NotBlank(message = "La acción es obligatoria")
+    private String accion;  // Ejemplo: "VER", "CREAR", "EDITAR"
 }
