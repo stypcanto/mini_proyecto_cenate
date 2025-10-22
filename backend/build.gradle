@@ -89,8 +89,18 @@ springBoot {
    ================================================================ */
 bootJar {
     enabled = true
+    archiveFileName = 'cenate-0.0.1-SNAPSHOT.jar'
+
+    // 🚫 EXCLUSIÓN DE CLASE OBSOLETA
+    // Se excluye PermisoActivoViewServiceImpl.class porque fue eliminada del código fuente,
+    // pero seguía siendo empacada desde un caché antiguo de Gradle,
+    // provocando un error de bean inexistente en tiempo de ejecución.
+    exclude("**/com/styp/cenate/api/admin/PermisoActivoViewServiceImpl.class")
 }
 
+/* ================================================================
+   🧱 CONFIGURACIÓN DEL JAR SECUNDARIO
+   ================================================================ */
 jar {
     enabled = false
 }
