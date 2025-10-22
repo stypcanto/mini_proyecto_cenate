@@ -1,4 +1,5 @@
 package com.styp.cenate.api.entidad;
+import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +17,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/frm-transf-img")
 @RequiredArgsConstructor
+@Slf4j
 public class FrmTransfImgController {
 
     private final FrmTransfImgService service;

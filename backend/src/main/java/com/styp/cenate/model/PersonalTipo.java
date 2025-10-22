@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,6 +12,7 @@ import com.styp.cenate.model.id.PersonalTipoId;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Data
 public class PersonalTipo {
 
     @EmbeddedId

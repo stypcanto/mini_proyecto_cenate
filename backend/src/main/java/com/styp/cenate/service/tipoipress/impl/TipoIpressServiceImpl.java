@@ -1,4 +1,5 @@
 package com.styp.cenate.service.tipoipress.impl;
+import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class TipoIpressServiceImpl implements TipoIpressService {
 
     private final TipoIpressRepository repository;

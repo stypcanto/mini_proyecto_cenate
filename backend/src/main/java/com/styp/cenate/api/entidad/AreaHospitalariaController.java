@@ -1,4 +1,5 @@
 package com.styp.cenate.api.entidad;
+import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -13,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/areas-hospitalarias")
 @RequiredArgsConstructor
+@Slf4j
 public class AreaHospitalariaController {
 
     private final AreaHospitalariaService service;

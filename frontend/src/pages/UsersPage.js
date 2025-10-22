@@ -68,10 +68,37 @@ export default function UsersPage() {
       u.numero_documento?.includes(searchTerm)
   );
 
+  const usuariosActivos = users.filter(
+    (u) => ["A", "ACTIVO"].includes(u.estado?.toUpperCase())
+  );
+  const usuariosInactivos = users.filter(
+    (u) => ["I", "INACTIVO"].includes(u.estado?.toUpperCase())
+  );
+
   const statsData = {
     total: users.length,
-    activos: users.filter((u) => u.estado_usuario === "ACTIVO").length,
-    inactivos: users.filter((u) => u.estado_usuario !== "ACTIVO").length,
+    activos: usuariosActivos.length,
+    inactivos: usuariosInactivos.length,
+  };
+
+  // ============================================================
+  // 🟢 Helpers: traducción y color de estado
+  // ============================================================
+  const getEstadoLabel = (estado) => {
+    if (!estado) return "—";
+    const value = estado.toUpperCase();
+    if (["A", "ACTIVO"].includes(value)) return "ACTIVO";
+    if (["I", "INACTIVO"].includes(value)) return "INACTIVO";
+    return value;
+  };
+
+  const getEstadoColor = (estado) => {
+    const value = estado?.toUpperCase();
+    if (["A", "ACTIVO"].includes(value))
+      return "bg-green-500/10 text-green-600 border-green-500/30";
+    if (["I", "INACTIVO"].includes(value))
+      return "bg-red-500/10 text-red-600 border-red-500/30";
+    return "bg-gray-500/10 text-gray-600 border-gray-500/30";
   };
 
   // ============================================================
@@ -167,7 +194,6 @@ export default function UsersPage() {
           <>
             <div className="overflow-x-auto">
               <table className="w-full border-collapse">
-                {/* 📊 Cabecera estilo macOS */}
                 <thead className="bg-gradient-to-b from-[#F9FAFB] to-[#F3F4F6] border-b border-[var(--border-color)]/70">
                   <tr>
                     {["Usuario", "Nombre Completo", "Documento", "Rol", "Estado", "Acciones"].map(
@@ -183,7 +209,6 @@ export default function UsersPage() {
                   </tr>
                 </thead>
 
-                {/* 📋 Cuerpo con efecto hover sutil */}
                 <tbody className="divide-y divide-[var(--border-color)]/40">
                   {filteredUsers.map((user, idx) => (
                     <tr
@@ -218,18 +243,16 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4">
                         <span className="px-3 py-1.5 text-[12px] font-semibold rounded-full border bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/30 shadow-sm">
-                          {user.roles}
+                          {user.roles || "—"}
                         </span>
                       </td>
                       <td className="px-6 py-4">
                         <span
-                          className={`px-3 py-1.5 text-[12px] font-semibold rounded-full border shadow-sm ${
-                            user.estado_usuario === "ACTIVO"
-                              ? "bg-green-500/10 text-green-600 border-green-500/30"
-                              : "bg-red-500/10 text-red-600 border-red-500/30"
-                          }`}
+                          className={`px-3 py-1.5 text-[12px] font-semibold rounded-full border shadow-sm ${getEstadoColor(
+                            user.estado
+                          )}`}
                         >
-                          {user.estado_usuario}
+                          {getEstadoLabel(user.estado)}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">

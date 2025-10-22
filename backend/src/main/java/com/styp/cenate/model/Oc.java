@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -15,6 +16,7 @@ import java.time.LocalDateTime;
 @Builder
 @ToString
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Data
 public class Oc {
 
     @Id

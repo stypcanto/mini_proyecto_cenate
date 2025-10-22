@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -20,6 +21,7 @@ import java.time.LocalDateTime;
 @Builder
 @ToString(exclude = "rol")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Data
 public class Permiso {
 
     @Id

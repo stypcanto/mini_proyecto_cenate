@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -21,6 +22,7 @@ import java.time.LocalDateTime;
 @Builder
 @ToString(exclude = "tipoDispositivo")
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Data
 public class FirmaDigital {
 
     @Id

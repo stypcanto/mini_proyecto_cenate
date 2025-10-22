@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Data
 public class RecuperacionCuenta {
 
     @Id

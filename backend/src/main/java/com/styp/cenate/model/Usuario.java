@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
@@ -27,6 +28,7 @@ import java.util.*;
 @Builder
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @ToString(exclude = {"roles", "personalCnt", "passUser"})
+@Data
 public class Usuario implements UserDetails {
 
     // ======================================================

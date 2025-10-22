@@ -1,87 +1,58 @@
 package com.styp.cenate.repository.mbac;
 
+import com.styp.cenate.model.PaginaModulo;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import com.styp.cenate.model.PaginaModulo;
 
 import java.util.List;
 import java.util.Optional;
 
 /**
- * Repositorio para la gestión de páginas de módulos.
- * 
- * @author CENATE Development Team
- * @version 1.1
+ * 🧩 Repositorio de Páginas Modulares MBAC
+ * Gestiona las rutas, nombres y módulos disponibles en el sistema.
+ * Incluye consultas extendidas para permisos y módulos relacionados.
  */
 @Repository
-public interface PaginaModuloRepository extends JpaRepository<PaginaModulo, Integer> {
+public interface PaginaModuloRepository extends JpaRepository<PaginaModulo, Long> {
 
-    /**
-     * Busca una página por su ruta.
-     */
-    Optional<PaginaModulo> findByRutaPagina(String rutaPagina);
+    // ===========================================================
+    // 🔹 Buscar páginas por módulo (básico)
+    // ===========================================================
+    @Query("SELECT p FROM PaginaModulo p WHERE p.moduloSistema.idModulo = :idModulo")
+    List<PaginaModulo> findByModuloId(@Param("idModulo") Long idModulo);
 
-    /**
-     * Busca todas las páginas activas de un módulo.
-     */
-    @Query("SELECT p FROM PaginaModulo p WHERE p.modulo.idModulo = :idModulo AND p.activo = true")
-    List<PaginaModulo> findByModuloIdAndActivoTrue(@Param("idModulo") Integer idModulo);
+    // ===========================================================
+    // 🔹 Buscar por ruta exacta (básico)
+    // ===========================================================
+    @Query("SELECT p FROM PaginaModulo p WHERE p.rutaPagina = :rutaPagina")
+    PaginaModulo findByRutaPagina(@Param("rutaPagina") String rutaPagina);
 
-    /**
-     * Busca todas las páginas activas.
-     */
-    List<PaginaModulo> findByActivoTrue();
+    // ===========================================================
+    // 🔹 Listar páginas activas
+    // ===========================================================
+    @Query("SELECT p FROM PaginaModulo p WHERE p.estado = 'A'")
+    List<PaginaModulo> findAllActive();
 
-    /**
-     * Verifica si existe una página con una ruta específica.
-     */
-    boolean existsByRutaPagina(String rutaPagina);
-
-    /**
-     * Busca páginas por nombre.
-     */
-    List<PaginaModulo> findByNombrePaginaContainingIgnoreCase(String nombrePagina);
-
-    /**
-     * Obtiene una página con su módulo asociado.
-     */
-    @Query("SELECT p FROM PaginaModulo p JOIN FETCH p.modulo WHERE p.idPagina = :idPagina")
-    Optional<PaginaModulo> findByIdWithModulo(@Param("idPagina") Integer idPagina);
-
-    /**
-     * Obtiene una página por ruta con su módulo asociado.
-     */
-    @Query("SELECT p FROM PaginaModulo p JOIN FETCH p.modulo WHERE p.rutaPagina = :rutaPagina")
-    Optional<PaginaModulo> findByRutaPaginaWithModulo(@Param("rutaPagina") String rutaPagina);
-
-    /**
-     * Obtiene las páginas activas de un módulo con sus permisos cargados.
-     * Incluye JOIN FETCH para evitar LazyInitializationException.
-     * 
-     * @param idModulo ID del módulo
-     * @return Lista de páginas con permisos cargados
-     */
-    @Query("SELECT DISTINCT p FROM PaginaModulo p " +
-           "LEFT JOIN FETCH p.permisos pm " +
-           "LEFT JOIN FETCH pm.rol " +
-           "WHERE p.modulo.idModulo = :idModulo " +
-           "AND p.activo = true " +
-           "AND (pm.activo = true OR pm IS NULL)")
+    // ===========================================================
+    // 🔹 Buscar páginas por módulo incluyendo sus permisos (extendido)
+    // ===========================================================
+    @Query("""
+        SELECT DISTINCT p FROM PaginaModulo p
+        LEFT JOIN FETCH p.permisosModulares pm
+        WHERE p.moduloSistema.idModulo = :idModulo
+    """)
     List<PaginaModulo> findByModuloIdWithPermisos(@Param("idModulo") Integer idModulo);
 
-    /**
-     * Obtiene una página por ruta con su módulo y permisos cargados.
-     * 
-     * @param rutaPagina Ruta de la página
-     * @return Página con módulo y permisos cargados
-     */
-    @Query("SELECT DISTINCT p FROM PaginaModulo p " +
-           "LEFT JOIN FETCH p.modulo " +
-           "LEFT JOIN FETCH p.permisos pm " +
-           "LEFT JOIN FETCH pm.rol " +
-           "WHERE p.rutaPagina = :rutaPagina " +
-           "AND (pm.activo = true OR pm IS NULL)")
-    Optional<PaginaModulo> findByRutaPaginaWithModuloAndPermisos(@Param("rutaPagina") String rutaPagina);
+    // ===========================================================
+    // 🔹 Buscar página por ruta incluyendo módulo y permisos (extendido)
+    // ===========================================================
+    @Query("""
+        SELECT p FROM PaginaModulo p
+        LEFT JOIN FETCH p.moduloSistema
+        LEFT JOIN FETCH p.permisosModulares
+        WHERE p.rutaPagina = :ruta
+    """)
+    Optional<PaginaModulo> findByRutaPaginaWithModuloAndPermisos(@Param("ruta") String ruta);
 }

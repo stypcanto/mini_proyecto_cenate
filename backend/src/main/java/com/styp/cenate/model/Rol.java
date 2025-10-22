@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -23,6 +24,7 @@ import java.util.Set;
 @Builder
 @ToString(exclude = {"permisos", "usuarios"}) // Evita recursión infinita al imprimir
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Data
 public class Rol {
 
     @Id

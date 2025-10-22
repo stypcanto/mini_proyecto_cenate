@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -23,6 +24,7 @@ import java.util.Set;
 @Builder
 @ToString(exclude = {"usuario", "area", "regimenLaboral", "tipoDocumento", "profesiones", "tipos", "ocs", "firmas"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@Data
 public class PersonalCnt {
 
     @Id

@@ -1,4 +1,5 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -18,6 +19,7 @@ import java.io.Serializable;
 @AllArgsConstructor
 @Builder
 @ToString(exclude = {"personal", "firmaDigital"})
+@Data
 public class PersonalFirma implements Serializable {
 
     @EmbeddedId

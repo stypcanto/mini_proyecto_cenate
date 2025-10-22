@@ -1,4 +1,5 @@
 package com.styp.cenate.service.profesion.impl;
+import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.ProfesionResponse;
 import com.styp.cenate.exception.ResourceNotFoundException;
@@ -14,6 +15,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class ProfesionServiceImpl implements ProfesionService {
 
     private final ProfesionRepository profesionRepository;

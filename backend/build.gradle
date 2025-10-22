@@ -61,7 +61,11 @@ dependencies {
     // 🔹 MODEL MAPPER
     implementation 'org.modelmapper:modelmapper:3.2.0'
 
-    // 🔹 LOMBOK
+    // 🔹 UTILIDADES COMUNES
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'commons-io:commons-io:2.15.1'
+
+    // 🔹 LOMBOK (para @Slf4j, @Getter, @Builder, etc.)
     compileOnly 'org.projectlombok:lombok:1.18.40'
     annotationProcessor 'org.projectlombok:lombok:1.18.40'
     testCompileOnly 'org.projectlombok:lombok:1.18.40'
@@ -112,4 +116,11 @@ tasks.withType(Test).configureEach {
     testLogging {
         events "passed", "skipped", "failed"
     }
+}
+
+/* ================================================================
+   ✅ OPTIMIZACIÓN PARA ENTORNOS DOCKER / CI
+   ================================================================ */
+tasks.withType(org.springframework.boot.gradle.tasks.bundling.BootJar) {
+    launchScript()
 }

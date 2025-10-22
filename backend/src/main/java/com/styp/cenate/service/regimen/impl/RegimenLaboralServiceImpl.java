@@ -1,11 +1,11 @@
 package com.styp.cenate.service.regimen.impl;
+import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.RegimenLaboralResponse;
 import com.styp.cenate.model.RegimenLaboral;
 import com.styp.cenate.repository.RegimenLaboralRepository;
 import com.styp.cenate.service.regimen.RegimenLaboralService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

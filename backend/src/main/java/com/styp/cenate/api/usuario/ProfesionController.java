@@ -1,4 +1,5 @@
 package com.styp.cenate.api.usuario;
+import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.ProfesionResponse;
 import com.styp.cenate.model.Profesion;
@@ -23,6 +24,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/profesiones")
 @RequiredArgsConstructor
+@Slf4j
 public class ProfesionController {
 
     private final ProfesionService profesionService;

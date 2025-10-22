@@ -1,4 +1,5 @@
 package com.styp.cenate.model.id;
+import lombok.Data;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Embeddable;
@@ -16,6 +17,7 @@ import java.util.Objects;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@Data
 public class PersonalOcId implements Serializable {
 
     @Column(name = "id_personal")

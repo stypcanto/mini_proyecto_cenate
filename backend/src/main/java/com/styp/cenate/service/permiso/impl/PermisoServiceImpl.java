@@ -1,102 +1,97 @@
 package com.styp.cenate.service.permiso.impl;
-
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
+import com.styp.cenate.exception.ResourceNotFoundException;
+import com.styp.cenate.model.Permiso;
+import com.styp.cenate.model.Usuario;
+import com.styp.cenate.repository.PermisoRepository;
+import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.mbac.PermisoModularRepository;
+import com.styp.cenate.service.permiso.PermisoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import com.styp.cenate.model.Permiso;
-import com.styp.cenate.repository.PermisoRepository;
-import com.styp.cenate.service.permiso.PermisoService;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * 🧩 Implementación del servicio de permisos
- * Gestiona la lectura, actualización y edición granular de permisos por rol.
+ * 🧩 Implementación del servicio MBAC/RBAC de permisos para CENATE.
+ * Gestiona la lógica de roles, usuarios y permisos activos.
  */
 @Service
 @RequiredArgsConstructor
 @Slf4j
 public class PermisoServiceImpl implements PermisoService {
 
+    private final UsuarioRepository usuarioRepository;
     private final PermisoRepository permisoRepository;
+    private final PermisoModularRepository permisoModularRepository;
 
-    // ==============================================================
-    // 🔍 Consultas
-    // ==============================================================
-
+    // ============================================================
+    // 🔹 Permisos por username (vista MBAC)
+    // ============================================================
     @Override
     @Transactional(readOnly = true)
-    public List<Permiso> getAllPermisos() {
-        log.info("📋 Obteniendo todos los permisos del sistema");
-        return permisoRepository.findAll();
+    public List<PermisoUsuarioResponseDTO> obtenerPermisosPorUsername(String username) {
+        log.info("🔍 Buscando permisos para el usuario '{}'", username);
+
+        Usuario usuario = usuarioRepository.findByNameUser(username)
+                .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + username));
+
+        List<PermisoUsuarioResponseDTO> permisos =
+                permisoModularRepository.findPermisosPorUsuarioId(usuario.getIdUser());
+
+        log.info("✅ Usuario '{}' tiene {} permisos asignados", username, permisos.size());
+        return permisos;
     }
 
+    // ============================================================
+    // 🔹 Permisos por rol
+    // ============================================================
     @Override
     @Transactional(readOnly = true)
     public List<Permiso> getPermisosByRol(Integer idRol) {
-        log.info("🔍 Buscando permisos asociados al rol ID: {}", idRol);
-        return permisoRepository.findByRol_IdRol(idRol);
+        log.info("🔍 Consultando permisos asociados al rol ID {}", idRol);
+        return permisoRepository.findByRolIdRol(idRol);
     }
 
-    // ==============================================================
-    // ✏️ Actualización completa
-    // ==============================================================
-
+    // ============================================================
+    // 🧩 Permisos activos (al menos un flag = true)
+    // ============================================================
     @Override
-    @Transactional
-    public Permiso updatePermiso(Long id, Permiso permisoActualizado) {
-        log.info("✏️ Actualizando permiso ID {}", id);
-
-        return permisoRepository.findById(id)
-                .map(p -> {
-                    // ✅ Actualizar flags principales
-                    p.setPuedeVer(permisoActualizado.isPuedeVer());
-                    p.setPuedeCrear(permisoActualizado.isPuedeCrear());
-                    p.setPuedeEditar(permisoActualizado.isPuedeEditar());
-                    p.setPuedeEliminar(permisoActualizado.isPuedeEliminar());
-                    p.setPuedeExportar(permisoActualizado.isPuedeExportar());
-                    p.setPuedeAprobar(permisoActualizado.isPuedeAprobar());
-
-                    Permiso actualizado = permisoRepository.save(p);
-                    log.info("✅ Permiso actualizado correctamente: {}", actualizado.getDescPermiso());
-                    return actualizado;
-                })
-                .orElseThrow(() -> new IllegalArgumentException("❌ Permiso no encontrado con ID: " + id));
+    @Transactional(readOnly = true)
+    public List<Permiso> getPermisosActivos() {
+        log.info("🧩 Listando permisos activos (al menos un permiso booleano TRUE)");
+        return permisoRepository.findAllActive();
     }
 
-    // ==============================================================
-    // ⚙️ Actualización parcial (campos dinámicos)
-    // ==============================================================
-
+    // ============================================================
+    // ✏️ Actualizar campos de un permiso
+    // ============================================================
     @Override
     @Transactional
-    public Permiso updateCamposPermiso(Long id, Map<String, Object> cambios) {
-        log.info("⚙️ Actualizando campos del permiso ID {}: {}", id, cambios);
+    public Permiso updateCamposPermiso(Long idPermiso, Map<String, Object> cambios) {
+        Permiso permiso = permisoRepository.findById(idPermiso)
+                .orElseThrow(() -> new IllegalArgumentException("Permiso no encontrado con ID: " + idPermiso));
 
-        return permisoRepository.findById(id)
-                .map(p -> {
-                    cambios.forEach((campo, valor) -> {
-                        try {
-                            switch (campo) {
-                                case "puedeVer" -> p.setPuedeVer((Boolean) valor);
-                                case "puedeCrear" -> p.setPuedeCrear((Boolean) valor);
-                                case "puedeEditar" -> p.setPuedeEditar((Boolean) valor);
-                                case "puedeEliminar" -> p.setPuedeEliminar((Boolean) valor);
-                                case "puedeExportar" -> p.setPuedeExportar((Boolean) valor);
-                                case "puedeAprobar" -> p.setPuedeAprobar((Boolean) valor);
-                                default -> log.warn("⚠️ Campo no reconocido: {}", campo);
-                            }
-                        } catch (ClassCastException e) {
-                            log.error("❌ Tipo de dato inválido para el campo '{}': {}", campo, valor);
-                        }
-                    });
+        cambios.forEach((campo, valor) -> {
+            switch (campo) {
+                case "descPermiso" -> permiso.setDescPermiso(valor.toString());
+                case "puedeVer" -> permiso.setPuedeVer(Boolean.parseBoolean(valor.toString()));
+                case "puedeCrear" -> permiso.setPuedeCrear(Boolean.parseBoolean(valor.toString()));
+                case "puedeActualizar" -> permiso.setPuedeActualizar(Boolean.parseBoolean(valor.toString()));
+                case "puedeEliminar" -> permiso.setPuedeEliminar(Boolean.parseBoolean(valor.toString()));
+                case "puedeEditar" -> permiso.setPuedeEditar(Boolean.parseBoolean(valor.toString()));
+                case "puedeExportar" -> permiso.setPuedeExportar(Boolean.parseBoolean(valor.toString()));
+                case "puedeAprobar" -> permiso.setPuedeAprobar(Boolean.parseBoolean(valor.toString()));
+                default -> throw new IllegalArgumentException("Campo no reconocido: " + campo);
+            }
+        });
 
-                    Permiso actualizado = permisoRepository.save(p);
-                    log.info("✅ Campos actualizados correctamente para permiso ID {}", id);
-                    return actualizado;
-                })
-                .orElseThrow(() -> new IllegalArgumentException("❌ Permiso no encontrado con ID: " + id));
+        permisoRepository.save(permiso);
+        log.info("✅ Permiso ID {} actualizado correctamente.", idPermiso);
+        return permiso;
     }
 }

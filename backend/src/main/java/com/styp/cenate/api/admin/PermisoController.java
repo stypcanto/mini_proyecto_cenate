@@ -1,57 +1,53 @@
 package com.styp.cenate.api.admin;
-
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+
+import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
+import com.styp.cenate.model.Permiso;
+import com.styp.cenate.service.permiso.PermisoService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
-import com.styp.cenate.model.Permiso;
-import com.styp.cenate.service.permiso.PermisoService;
 
 import java.util.List;
 import java.util.Map;
 
 /**
- * 🎯 Controlador REST para la administración de permisos del sistema.
- * Gestiona la tabla {@code dim_permisos} desde roles con privilegios elevados (SUPERADMIN, ADMIN).
- *
- * Endpoints principales:
- *  - GET /api/admin/permisos → Lista todos los permisos.
- *  - GET /api/admin/permisos/rol/{idRol} → Lista permisos por rol.
- *  - PUT /api/admin/permisos/{id} → Actualiza permisos específicos (por campos).
- *
- * @author CENATE
+ * 🎯 Controlador REST – Gestión de permisos MBAC/RBAC en el sistema CENATE
+ * ------------------------------------------------------------------------
+ * Incluye:
+ *  - Consultar permisos por usuario (username)
+ *  - Consultar permisos por rol
+ *  - Actualizar campos específicos de permisos
  */
 @RestController
-@RequestMapping("/api/admin/permisos")
+@RequestMapping("/api/permisos")
 @RequiredArgsConstructor
 @Slf4j
+@CrossOrigin(origins = {
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://10.0.89.13:3000",
+        "http://10.0.89.13:5173"
+})
 public class PermisoController {
 
     private final PermisoService permisoService;
 
-    // ===========================================================
-    // 📋 Obtener todos los permisos
-    // ===========================================================
-    @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
-    public ResponseEntity<List<Permiso>> getAllPermisos() {
-        log.info("📋 Solicitando todos los permisos del sistema (admin)");
-
-        List<Permiso> permisos = permisoService.getAllPermisos();
-
-        if (permisos.isEmpty()) {
-            log.warn("⚠️ No se encontraron permisos registrados en el sistema.");
-            return ResponseEntity.noContent().build();
-        }
-
-        log.info("✅ {} permisos encontrados.", permisos.size());
+    // ============================================================
+    // 🔹 Obtener permisos por USERNAME (para el frontend actual)
+    // ============================================================
+    @GetMapping("/usuario/{username}")
+    public ResponseEntity<List<PermisoUsuarioResponseDTO>> getPermisosPorUsuario(
+            @PathVariable String username) {
+        log.info("🔎 Consultando permisos del usuario '{}'", username);
+        List<PermisoUsuarioResponseDTO> permisos = permisoService.obtenerPermisosPorUsername(username);
         return ResponseEntity.ok(permisos);
     }
 
-    // ===========================================================
+    // ============================================================
     // 🧩 Obtener permisos por Rol
-    // ===========================================================
+    // ============================================================
     @GetMapping("/rol/{idRol}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<Permiso>> getPermisosByRol(@PathVariable Integer idRol) {
@@ -68,9 +64,9 @@ public class PermisoController {
         return ResponseEntity.ok(permisos);
     }
 
-    // ===========================================================
+    // ============================================================
     // ✏️ Actualizar campos específicos de un permiso
-    // ===========================================================
+    // ============================================================
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<Permiso> updatePermiso(

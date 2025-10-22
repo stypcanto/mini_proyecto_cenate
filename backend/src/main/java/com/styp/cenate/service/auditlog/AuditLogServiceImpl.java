@@ -1,10 +1,10 @@
 package com.styp.cenate.service.auditlog;
+import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.model.AuditLog;
 import com.styp.cenate.repository.AuditLogRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.*;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

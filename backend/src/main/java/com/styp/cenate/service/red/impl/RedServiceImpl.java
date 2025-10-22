@@ -1,4 +1,5 @@
 package com.styp.cenate.service.red.impl;
+import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -11,6 +12,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class RedServiceImpl implements RedService {
 
     private final RedRepository repository;

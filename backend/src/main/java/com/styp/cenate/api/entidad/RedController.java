@@ -1,4 +1,5 @@
 package com.styp.cenate.api.entidad;
+import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
@@ -13,6 +14,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/redes")
 @RequiredArgsConstructor
+@Slf4j
 public class RedController {
 
     private final RedService service;

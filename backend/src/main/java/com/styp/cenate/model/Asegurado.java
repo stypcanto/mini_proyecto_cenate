@@ -1,10 +1,12 @@
 package com.styp.cenate.model;
+import lombok.Data;
 
 import jakarta.persistence.*;
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "asegurados")
+@Data
 public class Asegurado {
 
     @Id

@@ -1,7 +1,7 @@
 package com.styp.cenate.service.rol.impl;
+import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import com.styp.cenate.model.Rol;
 import com.styp.cenate.repository.RolRepository;

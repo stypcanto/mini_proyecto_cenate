@@ -1,4 +1,5 @@
 package com.styp.cenate.config;
+import lombok.extern.slf4j.Slf4j;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.boot.web.servlet.error.ErrorController;
@@ -11,6 +12,7 @@ import java.time.LocalDateTime;
 import java.util.Map;
 
 @RestController
+@Slf4j
 public class CustomErrorController implements ErrorController {
 
     @RequestMapping("/error")
