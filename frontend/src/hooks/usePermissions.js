@@ -1,5 +1,5 @@
 // ========================================================================
-// 🎯 usePermissions.js – Sistema MBAC CENATE (versión completa)
+// 🎯 usePermissions.js – Sistema MBAC CENATE (versión completa corregida)
 // ------------------------------------------------------------------------
 // Gestiona permisos por ruta/acción según la respuesta del backend MBAC.
 // Compatible con ProtectedRoute.jsx, PermissionGate.jsx y Sidebar dinámico.
@@ -34,14 +34,15 @@ export const usePermissions = () => {
   // 🔹 1. Cargar permisos reales del backend MBAC
   // =====================================================
   const fetchPermisos = useCallback(async () => {
-    if (!isAuthenticated || !user?.username) return;
+    if (!isAuthenticated || !user?.id) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      // ✅ Usa el username como identificador temporal
-      const data = await apiClient.get(`/permisos/usuario/${user.username}`, true);
+      // 🔄 Nuevo endpoint MBAC: permisos activos por ID de usuario
+      console.log("🔄 Cargando permisos desde", `/mbac/permisos-activos/${user.id}`);
+      const data = await apiClient.get(`/mbac/permisos-activos/${user.id}`, true);
 
       if (!Array.isArray(data)) {
         throw new Error("Formato de permisos inválido (no es un array)");
@@ -69,7 +70,7 @@ export const usePermissions = () => {
   // 🔹 2. Efecto: recargar al cambiar usuario autenticado
   // =====================================================
   useEffect(() => {
-    if (isAuthenticated && user?.username) {
+    if (isAuthenticated && user?.id) {
       fetchPermisos();
     } else {
       setPermisos([]);
