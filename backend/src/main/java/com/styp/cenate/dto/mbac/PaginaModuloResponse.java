@@ -1,16 +1,25 @@
 package com.styp.cenate.dto.mbac;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * DTO que representa una página accesible dentro de un módulo.
+ * DTO para páginas accesibles dentro de un módulo.
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class PaginaModuloResponse {
-    private Integer idPagina;
-    private String nombrePagina;
-    private String rutaPagina;
+    private Integer idPagina;      // ID de la página
+    private String nombrePagina;   // Nombre visible
+    private String rutaPagina;     // Ruta frontend (ej: /admin/roles)
+    private Boolean ver;           // Permiso de lectura
+    private Boolean crear;         // Permiso de creación
+    private Boolean editar;        // Permiso de edición
+    private Boolean eliminar;      // Permiso de eliminación
+    private Boolean exportar;      // Permiso de exportación
+    private Boolean aprobar;       // Permiso de aprobación
 }

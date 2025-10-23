@@ -3,50 +3,115 @@ package com.styp.cenate.service.mbac.impl;
 import com.styp.cenate.dto.mbac.*;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.mbac.PermisoModularRepository;
 import com.styp.cenate.service.mbac.PermisosService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import java.util.List;
 
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 🧩 Servicio MBAC: Gestión de permisos por usuario, módulo y página
+ * Fuente de datos: vista vw_permisos_activos
+ */
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Transactional(readOnly = true)
 public class PermisosServiceImpl implements PermisosService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PermisoModularRepository permisoModularRepository;
 
+    // ===========================================================
+    // 🔹 1. Obtener todos los permisos por ID de usuario
+    // ===========================================================
     @Override
     public List<PermisoUsuarioResponseDTO> obtenerPermisosPorUsuario(Long idUser) {
-        throw new UnsupportedOperationException("Implementar obtenerPermisosPorUsuario(Long)");
+        List<PermisoUsuarioResponseDTO> permisos = permisoModularRepository.findPermisosPorUsuarioId(idUser);
+        log.info("✅ Permisos cargados para usuario ID {} -> {} registros", idUser, permisos.size());
+        return permisos;
     }
 
+    // ===========================================================
+    // 🔹 2. Obtener permisos por nombre de usuario
+    // ===========================================================
     @Override
     public List<PermisoUsuarioResponseDTO> obtenerPermisosPorUsername(String username) {
-        throw new UnsupportedOperationException("Implementar obtenerPermisosPorUsername(String)");
+        Long userId = obtenerUserIdPorUsername(username);
+        if (userId == null) {
+            log.warn("⚠️ Usuario '{}' no encontrado en la base de datos", username);
+            return Collections.emptyList();
+        }
+        return obtenerPermisosPorUsuario(userId);
     }
 
+    // ===========================================================
+    // 🔹 3. Obtener permisos por usuario y módulo específico
+    // ===========================================================
     @Override
     public List<PermisoUsuarioResponseDTO> obtenerPermisosPorUsuarioYModulo(Long idUser, Integer idModulo) {
-        throw new UnsupportedOperationException("Implementar obtenerPermisosPorUsuarioYModulo(Long,Integer)");
+        return obtenerPermisosPorUsuario(idUser).stream()
+                .filter(p -> Objects.nonNull(p.getNombreModulo()))
+                .filter(p -> p.getNombreModulo().hashCode() == idModulo.hashCode()) // Comparación simbólica si el módulo es String en la vista
+                .collect(Collectors.toList());
     }
 
+    // ===========================================================
+    // 🔹 4. Verificar si un permiso específico está permitido
+    // ===========================================================
     @Override
     public CheckPermisoResponseDTO verificarPermiso(CheckPermisoRequestDTO request) {
-        throw new UnsupportedOperationException("Implementar verificarPermiso(CheckPermisoRequestDTO)");
+        boolean permitido = tienePermiso(request.getIdUser(), request.getRutaPagina(), request.getAccion());
+        return new CheckPermisoResponseDTO(
+                request.getIdUser(),
+                request.getRutaPagina(),
+                request.getAccion(),
+                permitido
+        );
     }
 
+    // ===========================================================
+    // 🔹 5. Listar módulos accesibles por usuario
+    // ===========================================================
     @Override
     public List<ModuloSistemaResponse> obtenerModulosAccesiblesUsuario(Long idUser) {
-        throw new UnsupportedOperationException("Implementar obtenerModulosAccesiblesUsuario(Long)");
+        List<PermisoUsuarioResponseDTO> permisos = obtenerPermisosPorUsuario(idUser);
+        return permisos.stream()
+                .map(PermisoUsuarioResponseDTO::getNombreModulo)
+                .filter(Objects::nonNull)
+                .distinct()
+                .map(nombreModulo -> new ModuloSistemaResponse(null, nombreModulo, null, null, true))
+                .collect(Collectors.toList());
     }
 
+    // ===========================================================
+    // 🔹 6. Listar páginas accesibles dentro de un módulo
+    // ===========================================================
     @Override
     public List<PaginaModuloResponse> obtenerPaginasAccesiblesUsuario(Long idUser, Integer idModulo) {
-        throw new UnsupportedOperationException("Implementar obtenerPaginasAccesiblesUsuario(Long,Integer)");
+        List<PermisoUsuarioResponseDTO> permisos = obtenerPermisosPorUsuarioYModulo(idUser, idModulo);
+        return permisos.stream()
+                .map(p -> new PaginaModuloResponse(
+                        null,
+                        p.getNombrePagina(),
+                        p.getRutaPagina(),
+                        p.getVer(),
+                        p.getCrear(),
+                        p.getEditar(),
+                        p.getEliminar(),
+                        p.getExportar(),
+                        p.getAprobar()
+                ))
+                .collect(Collectors.toList());
     }
 
+    // ===========================================================
+    // 🔹 7. Obtener el ID de usuario a partir del username
+    // ===========================================================
     @Override
     public Long obtenerUserIdPorUsername(String username) {
         return usuarioRepository.findByNameUser(username)
@@ -54,16 +119,34 @@ public class PermisosServiceImpl implements PermisosService {
                 .orElse(null);
     }
 
+    // ===========================================================
+    // 🔹 8. Validar si un usuario tiene un permiso concreto
+    // ===========================================================
     @Override
     public boolean tienePermiso(Long idUser, String rutaPagina, String accion) {
-        // Mismo cuerpo que validarPermiso
-        log.debug("🔐 tienePermiso({}, {}, {})", idUser, rutaPagina, accion);
-        return false; // TODO: implementar lógica real con tu vista vw_permisos_activos
+        log.debug("🔐 Validando permiso: usuario={}, ruta={}, acción={}", idUser, rutaPagina, accion);
+
+        List<PermisoUsuarioResponseDTO> permisos = obtenerPermisosPorUsuario(idUser);
+        if (permisos.isEmpty()) return false;
+
+        return permisos.stream()
+                .filter(p -> rutaPagina.equalsIgnoreCase(p.getRutaPagina()))
+                .anyMatch(p -> switch (accion.toLowerCase()) {
+                    case "ver" -> Boolean.TRUE.equals(p.getVer());
+                    case "crear" -> Boolean.TRUE.equals(p.getCrear());
+                    case "editar", "actualizar" -> Boolean.TRUE.equals(p.getEditar());
+                    case "eliminar" -> Boolean.TRUE.equals(p.getEliminar());
+                    case "exportar" -> Boolean.TRUE.equals(p.getExportar());
+                    case "aprobar" -> Boolean.TRUE.equals(p.getAprobar());
+                    default -> false;
+                });
     }
 
+    // ===========================================================
+    // 🔹 9. Alias para compatibilidad con Aspect y Evaluator
+    // ===========================================================
     @Override
     public boolean validarPermiso(Long idUser, String rutaPagina, String accion) {
-        // Alias para compatibilidad con MBACPermissionAspect y MBACPermissionEvaluator
         return tienePermiso(idUser, rutaPagina, accion);
     }
 }

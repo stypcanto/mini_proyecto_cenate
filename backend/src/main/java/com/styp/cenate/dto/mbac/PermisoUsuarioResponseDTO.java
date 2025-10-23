@@ -1,32 +1,27 @@
 package com.styp.cenate.dto.mbac;
 
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * DTO que representa una fila de la vista vw_permisos_activos.
- * Contiene todos los datos de permisos activos por usuario.
+ * DTO para mapear permisos del usuario desde la vista vw_permisos_activos.
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class PermisoUsuarioResponseDTO {
-    private Long idUser;
-    private String usuario;
-    private Integer idRol;
-    private String rol;
-    private Integer idModulo;
-    private String modulo;
-    private Integer idPagina;
-    private String pagina;
-    private String rutaPagina;
-    private Long idPermiso;
-    private String descPermiso;
-    private Boolean puedeVer;
-    private Boolean puedeCrear;
-    private Boolean puedeActualizar;
-    private Boolean puedeEliminar;
-    private Boolean puedeEditar;
-    private Boolean puedeExportar;
-    private Boolean puedeAprobar;
+
+    private Long idPermiso;        // id_permiso
+    private String rutaPagina;     // ruta_pagina
+    private String nombrePagina;   // pagina
+    private String nombreModulo;   // modulo
+    private Boolean ver;           // puede_ver
+    private Boolean crear;         // puede_crear
+    private Boolean editar;        // puede_actualizar
+    private Boolean eliminar;      // puede_eliminar
+    private Boolean exportar;      // puede_exportar
+    private Boolean aprobar;       // puede_aprobar
 }

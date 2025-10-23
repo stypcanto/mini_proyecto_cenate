@@ -71,27 +71,24 @@ public interface PermisoModularRepository extends JpaRepository<PermisoModular, 
     List<PermisoModular> findByRolIdWithDetails(@Param("idRol") Integer idRol);
 
     // ===========================================================
-    // 🧠 Obtener permisos asignados a un usuario (a través del rol)
+    // 🧠 Obtener permisos asignados a un usuario
+    // (usando la vista vw_permisos_activos en la base de datos)
     // ===========================================================
-    @Query("""
-        SELECT new com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO(
-            pm.idPermisoModular,
-            pg.rutaPagina,
-            pg.nombrePagina,
-            m.nombreModulo,
-            pm.ver,
-            pm.crear,
-            pm.editar,
-            pm.eliminar,
-            pm.exportar,
-            pm.aprobar
-        )
-        FROM PermisoModular pm
-        JOIN pm.pagina pg
-        JOIN pg.modulo m
-        JOIN pm.rol r
-        JOIN Usuario u ON u.rol.idRol = r.idRol
-        WHERE u.idUser = :idUser
-    """)
+    @Query(value = """
+        SELECT 
+            id_permiso AS idPermiso,
+            ruta_pagina AS rutaPagina,
+            pagina AS nombrePagina,
+            modulo AS nombreModulo,
+            puede_ver AS ver,
+            puede_crear AS crear,
+            puede_actualizar AS editar,
+            puede_eliminar AS eliminar,
+            puede_exportar AS exportar,
+            puede_aprobar AS aprobar
+        FROM vw_permisos_activos
+        WHERE id_user = :idUser
+        """,
+            nativeQuery = true)
     List<PermisoUsuarioResponseDTO> findPermisosPorUsuarioId(@Param("idUser") Long idUser);
 }

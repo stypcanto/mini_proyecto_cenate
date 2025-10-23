@@ -1,24 +1,19 @@
 package com.styp.cenate.dto.mbac;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import lombok.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
- * DTO de entrada para verificar un permiso específico.
+ * Solicitud para verificar un permiso de usuario (MBAC)
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class CheckPermisoRequestDTO {
-
-    @NotNull(message = "El ID de usuario es obligatorio")
-    private Long userId;
-
-    @NotBlank(message = "La página es obligatoria")
-    private String pagina;  // Ejemplo: "/roles/citas/agenda"
-
-    @NotBlank(message = "La acción es obligatoria")
-    private String accion;  // Ejemplo: "VER", "CREAR", "EDITAR"
+    private Long idUser;         // ID del usuario
+    private String rutaPagina;   // Ruta de la página (ej: /admin/usuarios)
+    private String accion;       // Acción (ver, crear, editar, eliminar, exportar, aprobar)
 }
