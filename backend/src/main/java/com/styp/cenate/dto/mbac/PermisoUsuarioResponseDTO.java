@@ -1,27 +1,32 @@
 package com.styp.cenate.dto.mbac;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-
 /**
- * DTO para mapear permisos del usuario desde la vista vw_permisos_activos.
+ * 🎯 Proyección (interface) para mapear la vista SQL vw_permisos_activos.
+ * Compatible con consultas nativas en Spring Data JPA.
+ *
+ * Cada método corresponde a una columna de la vista:
+ *  - id_permiso → getIdPermiso()
+ *  - ruta_pagina → getRutaPagina()
+ *  - pagina → getNombrePagina()
+ *  - modulo → getNombreModulo()
+ *  - puede_ver → getVer()
+ *  - puede_crear → getCrear()
+ *  - puede_actualizar → getEditar()
+ *  - puede_eliminar → getEliminar()
+ *  - puede_exportar → getExportar()
+ *  - puede_aprobar → getAprobar()
  */
-@Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-public class PermisoUsuarioResponseDTO {
+public interface PermisoUsuarioResponseDTO {
 
-    private Long idPermiso;        // id_permiso
-    private String rutaPagina;     // ruta_pagina
-    private String nombrePagina;   // pagina
-    private String nombreModulo;   // modulo
-    private Boolean ver;           // puede_ver
-    private Boolean crear;         // puede_crear
-    private Boolean editar;        // puede_actualizar
-    private Boolean eliminar;      // puede_eliminar
-    private Boolean exportar;      // puede_exportar
-    private Boolean aprobar;       // puede_aprobar
+    Long getIdPermiso();
+    String getRutaPagina();
+    String getNombrePagina();
+    String getNombreModulo();
+
+    Boolean getVer();
+    Boolean getCrear();
+    Boolean getEditar();
+    Boolean getEliminar();
+    Boolean getExportar();
+    Boolean getAprobar();
 }
