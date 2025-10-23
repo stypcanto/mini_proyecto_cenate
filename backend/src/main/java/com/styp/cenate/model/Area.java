@@ -1,9 +1,8 @@
 package com.styp.cenate.model;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.extern.slf4j.Slf4j;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -17,20 +16,15 @@ import java.util.Set;
  */
 @Entity
 @Table(name = "dim_area")
-@Getter
-@Setter
+@Data                   // ✅ Genera getters, setters, equals, hashCode y toString
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@ToString(exclude = "personal")
-@Slf4j
-@Data
+@Slf4j                  // ✅ Habilita el uso de 'log.info', 'log.error', etc.
 public class Area {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     @Column(name = "id_area")
     private Long idArea;
 

@@ -1,4 +1,5 @@
 package com.styp.cenate.service.mbac.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Data
 public class AuditoriaServiceImpl implements AuditoriaService {
 
     private final AuditoriaModularViewRepository auditoriaRepository;

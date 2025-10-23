@@ -1,4 +1,5 @@
 package com.styp.cenate.service.permiso.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
@@ -23,6 +24,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class PermisoServiceImpl implements PermisoService {
 
     private final UsuarioRepository usuarioRepository;

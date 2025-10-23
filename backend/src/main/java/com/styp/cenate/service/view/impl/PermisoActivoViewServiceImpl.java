@@ -1,4 +1,6 @@
 package com.styp.cenate.service.view.impl;
+import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.mbac.PaginaModuloPermisosResponse;
 import com.styp.cenate.model.view.PermisoActivoView;
@@ -21,6 +23,8 @@ import java.util.stream.Collectors;
  * 🎯 Propósito: devolver permisos activos agrupados por página y módulo.
  */
 @Service
+@Slf4j
+@Data
 public class PermisoActivoViewServiceImpl implements PermisoActivoViewService {
 
     private static final Logger log = LoggerFactory.getLogger(PermisoActivoViewServiceImpl.class);

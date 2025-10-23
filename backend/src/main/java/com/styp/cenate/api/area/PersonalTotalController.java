@@ -1,4 +1,5 @@
 package com.styp.cenate.api.area;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -29,6 +30,7 @@ import java.util.concurrent.TimeUnit;
         "http://localhost:5173",
         "http://10.0.89.239:5173"
 })
+@Data
 public class PersonalTotalController {
 
     private final JdbcTemplate jdbcTemplate;

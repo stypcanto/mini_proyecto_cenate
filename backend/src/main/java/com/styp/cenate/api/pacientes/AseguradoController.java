@@ -1,4 +1,5 @@
 package com.styp.cenate.api;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +14,7 @@ import com.styp.cenate.repository.AseguradoRepository;
 @RequestMapping("/api/asegurados")
 @CrossOrigin(origins = "*")
 @Slf4j
+@Data
 public class AseguradoController {
 
     private final AseguradoRepository aseguradoRepository;

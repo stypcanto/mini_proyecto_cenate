@@ -1,4 +1,5 @@
 package com.styp.cenate.service.account.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.transaction.Transactional;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class AccountRequestServiceImpl implements AccountRequestService {
 
     private final AccountRequestRepository accountRequestRepository;

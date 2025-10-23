@@ -1,4 +1,5 @@
 package com.styp.cenate.service.profesion.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.ProfesionResponse;
@@ -16,6 +17,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class ProfesionServiceImpl implements ProfesionService {
 
     private final ProfesionRepository profesionRepository;

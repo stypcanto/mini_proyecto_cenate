@@ -1,4 +1,5 @@
 package com.styp.cenate.api.admin;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ import java.util.Map;
         "http://localhost:5173",
         "http://10.0.89.13:5173"
 })
+@Data
 public class AdminRecuperacionController {
 
     private final RecuperacionCuentaRepository recuperacionCuentaRepository;

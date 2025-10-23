@@ -1,4 +1,5 @@
 package com.styp.cenate.service.mbac.impl;
+import lombok.Data;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,6 +30,7 @@ import java.util.stream.Collectors;
 @Slf4j
 @Service
 @RequiredArgsConstructor
+@Data
 public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 
     private final ModuloSistemaRepository moduloRepo;

@@ -1,4 +1,5 @@
 package com.styp.cenate.api.entidad;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.List;
         "http://10.0.89.13:5173",
         "http://10.0.89.239:5173"
 })
+@Data
 public class IpressController {
 
     private final IpressService ipressService;

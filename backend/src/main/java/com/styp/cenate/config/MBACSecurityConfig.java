@@ -1,4 +1,5 @@
 package com.styp.cenate.config;
+import lombok.Data;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -24,6 +25,7 @@ import com.styp.cenate.security.mbac.MBACPermissionEvaluator;
 @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true)
 @EnableAspectJAutoProxy
 @RequiredArgsConstructor
+@Data
 public class MBACSecurityConfig {
 
     private final MBACPermissionEvaluator mbacPermissionEvaluator;

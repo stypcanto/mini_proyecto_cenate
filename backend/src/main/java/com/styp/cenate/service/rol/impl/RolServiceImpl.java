@@ -1,4 +1,5 @@
 package com.styp.cenate.service.rol.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -12,6 +13,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class RolServiceImpl implements RolService {
 
     private final RolRepository rolRepository;

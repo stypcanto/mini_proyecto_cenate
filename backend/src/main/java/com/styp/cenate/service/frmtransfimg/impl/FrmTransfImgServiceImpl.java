@@ -1,4 +1,5 @@
 package com.styp.cenate.service.frmtransfimg.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
+@Data
 public class FrmTransfImgServiceImpl implements FrmTransfImgService {
 
     private final FrmTransfImgRepository repository;

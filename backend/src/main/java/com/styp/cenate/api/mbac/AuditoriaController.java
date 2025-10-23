@@ -1,4 +1,5 @@
 package com.styp.cenate.api.mbac;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import io.swagger.v3.oas.annotations.Operation;
@@ -43,6 +44,7 @@ import java.util.Map;
 @Slf4j
 @Tag(name = "Auditoría MBAC", description = "Consulta de auditoría de permisos modulares")
 @SecurityRequirement(name = "bearerAuth")
+@Data
 public class AuditoriaController {
 
     private final AuditoriaService auditoriaService;

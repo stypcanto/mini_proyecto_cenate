@@ -1,7 +1,8 @@
 import React from "react";
-import { Card, CardContent } from "@/components/ui/card";
-import { FileChartColumn, Download } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "../../../components/ui/card";
+import { BarChart3 as FileChartColumn } from "lucide-react";
+import { Button } from "../../../components/ui/button";
+import { Download } from "lucide-react";
 
 export default function ModuloReportes() {
     const reportes = [

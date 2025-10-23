@@ -1,4 +1,5 @@
 package com.styp.cenate.security.mbac;
+import lombok.Data;
 
 import com.styp.cenate.service.mbac.PermisosService;
 import lombok.RequiredArgsConstructor;
@@ -17,6 +18,7 @@ import java.io.Serializable;
 @Slf4j
 @Component
 @RequiredArgsConstructor
+@Data
 public class MBACPermissionEvaluator implements PermissionEvaluator {
 
     private final PermisosService permisosService;

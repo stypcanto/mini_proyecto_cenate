@@ -1,4 +1,5 @@
 package com.styp.cenate.service.mbac.impl;
+import lombok.Data;
 
 import com.styp.cenate.dto.mbac.*;
 import com.styp.cenate.model.Usuario;
@@ -21,6 +22,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
+@Data
 public class PermisosServiceImpl implements PermisosService {
 
     private final UsuarioRepository usuarioRepository;

@@ -1,4 +1,5 @@
 package com.styp.cenate.api.personal;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.annotation.PostConstruct;
@@ -33,6 +34,7 @@ import java.util.concurrent.TimeUnit;
         "http://10.0.89.13:3000",
         "http://10.0.89.13:5173"
 })
+@Data
 public class PersonalCntController {
 
     private final PersonalCntService personalCntService;

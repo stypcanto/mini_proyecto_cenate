@@ -1,112 +1,310 @@
 // ========================================================================
-// 🌐 App.js – Sistema MBAC CENATE (versión definitiva sin duplicaciones)
+// 🛣️ App.js - Sistema MBAC CENATE (ACTUALIZADO)
 // ------------------------------------------------------------------------
-// Flujo: Home → Login → Dashboard → Logout → Home.
-// Incluye Home público, AppLayout único y rutas protegidas con Outlet.
+// Configuración de rutas con sistema MBAC completo
 // ========================================================================
 
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
-import { Toaster } from "react-hot-toast";
-
-// 🌈 Contextos globales
-import { AuthProvider } from "./context/AuthContext";   // ✅ Contexto de autenticación
-import { ThemeProvider } from "./context/ThemeContext"; // ✅ Contexto de tema
-
-// 🧱 Layout global y seguridad
-import AppLayout from "./components/AppLayout";
+import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "./context/AuthContext";
+import { ThemeProvider } from "./context/ThemeContext";
 import ProtectedRoute from "./components/security/ProtectedRoute";
+import AppLayout from "./components/AppLayout";
 
-// 🧩 Páginas públicas
-import Home from "./pages/Home";
+// ========== PÁGINAS EXISTENTES ==========
 import Login from "./pages/Login";
-
-// 🧩 Páginas internas protegidas
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import AdminDashboard from "./pages/AdminDashboard";
 import UsersPage from "./pages/UsersPage";
 import CrearUsuario from "./pages/CrearUsuario";
-import PermisosPage from "./pages/admin/PermisosPage";
-import Profile from "./pages/user/Profile";
 import UserDashboard from "./pages/user/UserDashboard";
+import Profile from "./pages/user/Profile";
+import Unauthorized from "./pages/Unauthorized";
 
-// ========================================================================
-// 🧩 Layout protegido – aplica AppLayout solo una vez
-// ========================================================================
-function ProtectedAppLayout() {
+// Roles existentes
+import DashboardMedico from "./pages/roles/medico/DashboardMedico";
+import ModuloCitas from "./pages/roles/medico/ModuloCitas";
+import ModuloPacientes from "./pages/roles/medico/ModuloPacientes";
+import ModuloIndicadores from "./pages/roles/medico/ModuloIndicadores";
+import DashboardCoordinador from "./pages/roles/coordinador/DashboardCoordinador";
+import ModuloAgenda from "./pages/roles/coordinador/ModuloAgenda";
+import DashboardExterno from "./pages/roles/externo/DashboardExterno";
+import ModuloReportes from "./pages/roles/externo/ModuloReportes";
+import DashboardCitas from "./pages/roles/citas/DashboardCitas";
+import LineamientosIpress from "./pages/roles/lineamientos/LineamientosIpress";
+
+// ========== NUEVAS PÁGINAS MBAC ==========
+import UsersManagement from "./pages/admin/UsersManagement";
+import RolesManagement from "./pages/admin/RolesManagement";
+import MBACControl from "./pages/admin/MBACControl";
+import AuditLog from "./pages/admin/AuditLog";
+import PermisosPage from "./pages/admin/PermisosPage";
+
+function App() {
   return (
-    <ProtectedRoute>
-      <AppLayout>
-        <Outlet />
-      </AppLayout>
-    </ProtectedRoute>
+    <Router>
+      <AuthProvider>
+        <ThemeProvider>
+          <Routes>
+            {/* ========== RUTA PÚBLICA ========== */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+
+            {/* ========== RUTAS PROTEGIDAS CON LAYOUT ========== */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Home />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Dashboard">
+                    <Dashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ========== RUTAS DE USUARIO ========== */}
+            <Route
+              path="/user/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Mi Dashboard">
+                    <UserDashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/user/profile"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Mi Perfil">
+                    <Profile />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ========== RUTAS DE ADMINISTRACIÓN ========== */}
+            <Route
+              path="/admin/dashboard"
+              element={
+                <ProtectedRoute requiredPermissions={["ADMIN_ACCESS"]}>
+                  <AppLayout title="Admin Dashboard">
+                    <AdminDashboard />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/users"
+              element={
+                <ProtectedRoute requiredPermissions={["MANAGE_USERS"]}>
+                  <AppLayout title="Usuarios">
+                    <UsersPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/crear-usuario"
+              element={
+                <ProtectedRoute requiredPermissions={["MANAGE_USERS"]}>
+                  <AppLayout title="Crear Usuario">
+                    <CrearUsuario />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ========== NUEVAS RUTAS MBAC ========== */}
+            <Route
+              path="/admin/usuarios"
+              element={
+                <ProtectedRoute requiredPermissions={["MANAGE_USERS"]}>
+                  <AppLayout title="Gestión de Usuarios">
+                    <UsersManagement />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/roles"
+              element={
+                <ProtectedRoute requiredPermissions={["MANAGE_ROLES"]}>
+                  <AppLayout title="Roles y Permisos">
+                    <RolesManagement />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/permisos"
+              element={
+                <ProtectedRoute requiredPermissions={["MANAGE_PERMISSIONS"]}>
+                  <AppLayout title="Control MBAC">
+                    <MBACControl />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/auditoria"
+              element={
+                <ProtectedRoute requiredPermissions={["VIEW_AUDIT"]}>
+                  <AppLayout title="Auditoría">
+                    <AuditLog />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin/configuracion"
+              element={
+                <ProtectedRoute requiredPermissions={["SYSTEM_SETTINGS"]}>
+                  <AppLayout title="Configuración">
+                    <PermisosPage />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ========== RUTAS DE ROLES ESPECÍFICOS ========== */}
+            {/* Médico */}
+            <Route
+              path="/medico/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Dashboard Médico">
+                    <DashboardMedico />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/medico/citas"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Citas">
+                    <ModuloCitas />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/medico/pacientes"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Pacientes">
+                    <ModuloPacientes />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/medico/indicadores"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Indicadores">
+                    <ModuloIndicadores />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Coordinador */}
+            <Route
+              path="/coordinador/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Dashboard Coordinador">
+                    <DashboardCoordinador />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/coordinador/agenda"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Agenda">
+                    <ModuloAgenda />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Externo */}
+            <Route
+              path="/externo/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Dashboard Externo">
+                    <DashboardExterno />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/externo/reportes"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Reportes">
+                    <ModuloReportes />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Citas */}
+            <Route
+              path="/citas/dashboard"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Dashboard Citas">
+                    <DashboardCitas />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* Lineamientos */}
+            <Route
+              path="/lineamientos/ipress"
+              element={
+                <ProtectedRoute>
+                  <AppLayout title="Lineamientos IPRESS">
+                    <LineamientosIpress />
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
+
+            {/* ========== REDIRECCIÓN POR DEFECTO ========== */}
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </ThemeProvider>
+      </AuthProvider>
+    </Router>
   );
 }
 
-// ========================================================================
-// 🚏 Definición de rutas
-// ========================================================================
-function AppRoutes() {
-  return (
-    <Routes>
-      {/* 🌍 Página principal pública */}
-      <Route path="/" element={<Home />} />
-
-      {/* 🔐 Login */}
-      <Route path="/login" element={<Login />} />
-
-      {/* 🔒 Área protegida (con AppLayout único) */}
-      <Route element={<ProtectedAppLayout />}>
-        {/* Paneles principales */}
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/admin" element={<AdminDashboard />} />
-
-        {/* Gestión de usuarios */}
-        <Route path="/admin/users" element={<UsersPage />} />
-        <Route path="/admin/users/create" element={<CrearUsuario />} />
-
-        {/* Permisos MBAC */}
-        <Route path="/admin/permisos" element={<PermisosPage />} />
-
-        {/* Área de usuario */}
-        <Route path="/user/profile" element={<Profile />} />
-        <Route path="/user/dashboard" element={<UserDashboard />} />
-      </Route>
-
-      {/* 🚦 Fallback para rutas inexistentes */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
-}
-
-// ========================================================================
-// 🚀 Aplicación principal
-// ========================================================================
-export default function App() {
-  return (
-    <BrowserRouter>
-      <ThemeProvider>
-        <AuthProvider>
-          {/* 🔔 Notificaciones globales */}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: "var(--toast-bg)",
-                color: "var(--toast-color)",
-                borderRadius: "12px",
-                padding: "16px",
-              },
-              success: { iconTheme: { primary: "#10b981", secondary: "#fff" } },
-              error: { iconTheme: { primary: "#ef4444", secondary: "#fff" } },
-            }}
-          />
-
-          {/* 🔗 Sistema de rutas */}
-          <AppRoutes />
-        </AuthProvider>
-      </ThemeProvider>
-    </BrowserRouter>
-  );
-}
+export default App;

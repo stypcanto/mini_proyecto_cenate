@@ -1,4 +1,5 @@
 package com.styp.cenate.service.usuario;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -24,6 +25,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class UsuarioServiceImpl implements UsuarioService {
 
     private final UsuarioRepository usuarioRepository;

@@ -1,4 +1,5 @@
 package com.styp.cenate.security.mbac;
+import lombok.Data;
 
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.UsuarioRepository;
@@ -32,6 +33,7 @@ import java.util.Optional;
 @Component
 @Slf4j
 @RequiredArgsConstructor
+@Data
 public class MBACPermissionAspect {
 
     private final PermisosService permisosService;

@@ -1,4 +1,5 @@
 package com.styp.cenate.api.mbac;
+import lombok.Data;
 
 import com.styp.cenate.dto.mbac.CheckPermisoRequestDTO;
 import com.styp.cenate.dto.mbac.CheckPermisoResponseDTO;
@@ -27,6 +28,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/mbac/permisos")
+@Data
 public class PermisosController {
 
     private final PermisosService permisosService;

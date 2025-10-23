@@ -1,4 +1,5 @@
 package com.styp.cenate.service.auditlog;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.model.AuditLog;
@@ -15,6 +16,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class AuditLogServiceImpl implements AuditLogService {
 
     private final AuditLogRepository auditLogRepository;

@@ -1,4 +1,5 @@
 package com.styp.cenate.api.admin;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
@@ -30,6 +31,7 @@ import java.util.Map;
         "http://10.0.89.13:3000",
         "http://10.0.89.13:5173"
 })
+@Data
 public class PermisoController {
 
     private final PermisoService permisoService;

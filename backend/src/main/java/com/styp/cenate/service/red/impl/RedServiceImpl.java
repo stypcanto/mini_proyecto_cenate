@@ -1,4 +1,5 @@
 package com.styp.cenate.service.red.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class RedServiceImpl implements RedService {
 
     private final RedRepository repository;

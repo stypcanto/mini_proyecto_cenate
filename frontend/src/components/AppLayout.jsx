@@ -1,14 +1,14 @@
 // ========================================================================
-// 🧩 AppLayout – Sistema MBAC CENATE (versión final sin duplicación)
+// 🧩 AppLayout – Sistema MBAC CENATE (versión final con MBACSidebar)
 // ------------------------------------------------------------------------
-// • Usa ResponsiveSidebar (que contiene DynamicSidebar) → sidebar único
+// • Usa MBACSidebar dinámico basado en permisos reales
 // • Incluye HeaderTemplate estilo iPhone (verde verdana Apple)
-// • Corrige render doble y mantiene el diseño limpio, moderno y fluido
+// • Sistema moderno y fluido con permisos MBAC integrados
 // ========================================================================
 
 import React from "react";
-import ResponsiveSidebar from "./layout/ResponsiveSidebar";
-import HeaderTemplate from "./Header/Header_template"; // ✅ Nuevo header Apple-like
+import MBACSidebar from "./layout/MBACSidebar";
+import HeaderTemplate from "./Header/Header_template"; // ✅ Header Apple-like
 
 export default function AppLayout({ children, title = "" }) {
   return (
@@ -19,8 +19,8 @@ export default function AppLayout({ children, title = "" }) {
         color: "var(--text-primary)",
       }}
     >
-      {/* ✅ Sidebar único */}
-      <ResponsiveSidebar />
+      {/* ✅ Sidebar dinámico MBAC */}
+      <MBACSidebar className="w-64 h-full" />
 
       {/* 🧱 Contenido principal */}
       <main className="flex-1 flex flex-col overflow-hidden">

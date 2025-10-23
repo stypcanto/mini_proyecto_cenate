@@ -1,4 +1,5 @@
 package com.styp.cenate.security.service;
+import lombok.Data;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -19,6 +20,7 @@ import java.util.function.Function;
  * Compatible con JJWT 0.12.x y Spring Boot 3.5.x.
  */
 @Service
+@Data
 public class JwtService {
 
     // 🔑 Clave secreta en Base64 (mínimo 256 bits)

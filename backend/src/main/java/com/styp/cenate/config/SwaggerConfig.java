@@ -1,4 +1,5 @@
 package com.styp.cenate.config;
+import lombok.Data;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -20,6 +21,7 @@ import org.springframework.context.annotation.Configuration;
  * accesible desde el botón "Authorize" en Swagger UI.
  */
 @Configuration
+@Data
 public class SwaggerConfig {
 
     private static final String SECURITY_SCHEME_NAME = "bearerAuth";

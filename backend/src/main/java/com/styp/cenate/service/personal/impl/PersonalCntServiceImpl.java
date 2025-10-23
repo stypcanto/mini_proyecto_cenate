@@ -1,4 +1,5 @@
 package com.styp.cenate.service.personal.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class PersonalCntServiceImpl implements PersonalCntService {
 
     private final PersonalCntRepository personalCntRepository;

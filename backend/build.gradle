@@ -50,10 +50,10 @@ dependencies {
     // 🔹 BASE DE DATOS
     runtimeOnly 'org.postgresql:postgresql'
 
-    // 🔹 JWT (Autenticación segura)
-    implementation 'io.jsonwebtoken:jjwt-api:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.3'
-    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.3'
+    // 🔹 JWT (Autenticación segura, versión moderna compatible con parserBuilder)
+    implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
 
     // 🔹 SWAGGER / OPENAPI
     implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
@@ -91,10 +91,7 @@ bootJar {
     enabled = true
     archiveFileName = 'cenate-0.0.1-SNAPSHOT.jar'
 
-    // 🚫 EXCLUSIÓN DE CLASE OBSOLETA
-    // Se excluye PermisoActivoViewServiceImpl.class porque fue eliminada del código fuente,
-    // pero seguía siendo empacada desde un caché antiguo de Gradle,
-    // provocando un error de bean inexistente en tiempo de ejecución.
+    // 🚫 EXCLUSIÓN DE CLASE OBSOLETA (para evitar conflictos en compilación)
     exclude("**/com/styp/cenate/api/admin/PermisoActivoViewServiceImpl.class")
 }
 

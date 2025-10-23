@@ -1,4 +1,5 @@
 package com.styp.cenate.config;
+import lombok.Data;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -45,6 +46,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Data
 public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;

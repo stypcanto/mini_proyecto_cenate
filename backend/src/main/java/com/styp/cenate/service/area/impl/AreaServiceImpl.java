@@ -1,4 +1,5 @@
 package com.styp.cenate.service.area.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class AreaServiceImpl implements AreaService {
 
     private final AreaRepository areaRepository;

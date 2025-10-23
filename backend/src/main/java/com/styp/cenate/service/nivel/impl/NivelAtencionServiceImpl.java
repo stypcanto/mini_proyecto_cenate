@@ -1,4 +1,5 @@
 package com.styp.cenate.service.nivel.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -13,6 +14,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class NivelAtencionServiceImpl implements NivelAtencionService {
 
     private final NivelAtencionRepository repository;

@@ -1,4 +1,5 @@
 package com.styp.cenate.api.usuario;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ import java.util.Map;
         "http://10.0.89.13:3000",
         "http://10.0.89.13:5173"
 })
+@Data
 public class UsuarioController {
 
     private final UsuarioService usuarioService;

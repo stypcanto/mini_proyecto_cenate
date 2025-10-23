@@ -1,4 +1,5 @@
 package com.styp.cenate.service.regimen.impl;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.RegimenLaboralResponse;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Data
 public class RegimenLaboralServiceImpl implements RegimenLaboralService {
 
     private final RegimenLaboralRepository regimenLaboralRepository;

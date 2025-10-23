@@ -1,4 +1,5 @@
 package com.styp.cenate.api.dashboard;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +31,7 @@ import java.util.*;
         "http://10.0.89.239"
 })
 @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+@Data
 public class DashboardController {
 
     private final UsuarioRepository usuarioRepository;

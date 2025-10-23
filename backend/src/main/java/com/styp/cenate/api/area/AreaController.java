@@ -1,4 +1,5 @@
 package com.styp.cenate.api.area;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -26,6 +27,7 @@ import java.util.List;
         "http://localhost"
 })
 @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+@Data
 public class AreaController {
 
     private final AreaService areaService;

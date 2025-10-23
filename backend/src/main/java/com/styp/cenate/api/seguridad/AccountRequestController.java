@@ -1,4 +1,5 @@
 package com.styp.cenate.api.seguridad;
+import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ import java.util.List;
         "http://10.0.89.13:3000",
         "http://10.0.89.13:5173"
 })
+@Data
 public class AccountRequestController {
 
     private final AccountRequestService accountRequestService;
