@@ -56,7 +56,7 @@ public class PermisosServiceImpl implements PermisosService {
     public List<PermisoUsuarioResponseDTO> obtenerPermisosPorUsuarioYModulo(Long idUser, Integer idModulo) {
         return obtenerPermisosPorUsuario(idUser).stream()
                 .filter(p -> Objects.nonNull(p.getNombreModulo()))
-                .filter(p -> p.getNombreModulo().hashCode() == idModulo.hashCode()) // Comparación simbólica si el módulo es String en la vista
+                .filter(p -> p.getNombreModulo().hashCode() == idModulo.hashCode()) // comparación simbólica
                 .collect(Collectors.toList());
     }
 
@@ -80,11 +80,19 @@ public class PermisosServiceImpl implements PermisosService {
     @Override
     public List<ModuloSistemaResponse> obtenerModulosAccesiblesUsuario(Long idUser) {
         List<PermisoUsuarioResponseDTO> permisos = obtenerPermisosPorUsuario(idUser);
+
         return permisos.stream()
                 .map(PermisoUsuarioResponseDTO::getNombreModulo)
                 .filter(Objects::nonNull)
                 .distinct()
-                .map(nombreModulo -> new ModuloSistemaResponse(null, nombreModulo, null, null, true))
+                .map(nombreModulo -> ModuloSistemaResponse.builder()
+                        .idModulo(null)
+                        .nombreModulo(nombreModulo)
+                        .descripcion(null)
+                        .icono(null)
+                        .activo(true)
+                        .build()
+                )
                 .collect(Collectors.toList());
     }
 
@@ -94,18 +102,20 @@ public class PermisosServiceImpl implements PermisosService {
     @Override
     public List<PaginaModuloResponse> obtenerPaginasAccesiblesUsuario(Long idUser, Integer idModulo) {
         List<PermisoUsuarioResponseDTO> permisos = obtenerPermisosPorUsuarioYModulo(idUser, idModulo);
+
         return permisos.stream()
-                .map(p -> new PaginaModuloResponse(
-                        null,
-                        p.getNombrePagina(),
-                        p.getRutaPagina(),
-                        p.getVer(),
-                        p.getCrear(),
-                        p.getEditar(),
-                        p.getEliminar(),
-                        p.getExportar(),
-                        p.getAprobar()
-                ))
+                .map(p -> PaginaModuloResponse.builder()
+                        .idPagina(null)
+                        .nombrePagina(p.getNombrePagina())
+                        .rutaPagina(p.getRutaPagina())
+                        .ver(p.getVer())
+                        .crear(p.getCrear())
+                        .editar(p.getEditar())
+                        .eliminar(p.getEliminar())
+                        .exportar(p.getExportar())
+                        .aprobar(p.getAprobar())
+                        .build()
+                )
                 .collect(Collectors.toList());
     }
 

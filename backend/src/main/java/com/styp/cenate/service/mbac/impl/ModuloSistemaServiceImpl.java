@@ -18,10 +18,13 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * 📦 Implementación del servicio para la gestión de módulos del sistema MBAC.
- * Mapea entidades a DTOs y evita problemas de lazy initialization.
+ * 📦 Servicio de gestión de módulos del sistema (MBAC).
+ * Mapea entidades a DTOs y evita problemas de LazyInitializationException.
  *
- * @author CENATE
+ * Responsable de devolver módulos activos y sus páginas asociadas.
+ *
+ * @author
+ *   CENATE Development Team
  */
 @Slf4j
 @Service
@@ -32,7 +35,7 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
     private final PaginaModuloRepository paginaRepo;
 
     // ============================================================
-    // 🔹 OBTENER TODOS LOS MÓDULOS
+    // 🔹 OBTENER TODOS LOS MÓDULOS ACTIVOS CON SUS PÁGINAS
     // ============================================================
     @Override
     @Transactional(readOnly = true)
@@ -47,7 +50,7 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
     }
 
     // ============================================================
-    // 🔹 OBTENER PÁGINAS POR MÓDULO
+    // 🔹 OBTENER PÁGINAS ACTIVAS POR MÓDULO
     // ============================================================
     @Override
     @Transactional(readOnly = true)
@@ -57,12 +60,13 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
         List<PaginaModulo> paginas = paginaRepo.findByModuloIdWithPermisos(idModulo);
 
         return paginas.stream()
+                .filter(PaginaModulo::getActivo) // ✅ solo páginas activas
                 .map(this::mapearAPaginaResponse)
                 .collect(Collectors.toList());
     }
 
     // ============================================================
-    // 🔹 BUSCAR PÁGINA POR RUTA
+    // 🔹 BUSCAR PÁGINA POR RUTA (con módulo y permisos)
     // ============================================================
     @Override
     @Transactional(readOnly = true)
@@ -70,6 +74,7 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
         log.info("🔍 Buscando página por ruta: {}", ruta);
 
         return paginaRepo.findByRutaPaginaWithModuloAndPermisos(ruta)
+                .filter(PaginaModulo::getActivo)
                 .map(this::mapearAPaginaResponse);
     }
 
@@ -80,7 +85,14 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
         return ModuloSistemaResponse.builder()
                 .idModulo(modulo.getIdModulo())
                 .nombreModulo(modulo.getNombreModulo())
-                // 🔻 Se eliminaron campos que no existen en tu DTO (createdAt, updatedAt, etc.)
+                .paginas(
+                        modulo.getPaginas() != null
+                                ? modulo.getPaginas().stream()
+                                .filter(PaginaModulo::getActivo)
+                                .map(this::mapearAPaginaResponse)
+                                .collect(Collectors.toList())
+                                : null
+                )
                 .build();
     }
 
@@ -89,7 +101,8 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
                 .idPagina(pagina.getIdPagina())
                 .nombrePagina(pagina.getNombrePagina())
                 .rutaPagina(pagina.getRutaPagina())
-                // 🔻 También se quitaron campos no definidos (descripcion, activo, permisos)
+                .descripcion(pagina.getDescripcion())
+                .activo(pagina.getActivo())
                 .build();
     }
 }
