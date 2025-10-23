@@ -1,12 +1,9 @@
 package com.styp.cenate.api.mbac;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.mbac.PaginaModuloPermisosResponse;
 import com.styp.cenate.service.view.PermisoActivoViewService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -24,11 +21,7 @@ import java.util.List;
 @RequestMapping("/api/mbac/permisos-activos")
 @RequiredArgsConstructor
 @Slf4j
-@Data
 public class PermisosActivosController {
-
-    // 🧭 Logger SLF4J estándar
-    private static final Logger log = LoggerFactory.getLogger(PermisosActivosController.class);
 
     private final PermisoActivoViewService permisoActivoViewService;
 

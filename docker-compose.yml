@@ -11,14 +11,21 @@ services:
   backend:
     container_name: cenate-backend
     build:
-      context: ./backend          # 👈 Muy bien: el contexto es el correcto
+      context: ./backend
       dockerfile: Dockerfile
     environment:
+      # 🗄️ Base de datos
       SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://10.0.89.13:5432/maestro_cenate}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-Essalud2025}
       SPRING_JPA_HIBERNATE_DDL_AUTO: none
       SPRING_JPA_SHOW_SQL: "true"
+
+      # 🔐 JWT
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+
+      # 🌍 Zona horaria
       TZ: America/Lima
     ports:
       - "8080:8080"
@@ -31,7 +38,6 @@ services:
           memory: 1.5G
 
 
-
   # ------------------------------------------------------------
   # 💻 FRONTEND - REACT + NGINX
   # ------------------------------------------------------------
@@ -41,7 +47,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        VITE_API_URL: "http://backend:8080/api"   # 🧭 URL interna entre contenedores
+        VITE_API_URL: "http://backend:8080/api"   # 🧭 Comunicación interna backend
     depends_on:
       - backend
     ports:
