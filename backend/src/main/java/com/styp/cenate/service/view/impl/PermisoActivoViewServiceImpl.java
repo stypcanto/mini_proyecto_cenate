@@ -1,39 +1,30 @@
 package com.styp.cenate.service.view.impl;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
 import com.styp.cenate.dto.mbac.PaginaModuloPermisosResponse;
 import com.styp.cenate.model.view.PermisoActivoView;
 import com.styp.cenate.repository.view.PermisoActivoViewRepository;
 import com.styp.cenate.service.view.PermisoActivoViewService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * 🧩 Implementación del servicio para obtener permisos activos de usuarios.
- * Conecta la vista vw_permisos_activos con el DTO PaginaModuloPermisosResponse.
+ * Conecta la vista vw_permisos_usuario_activos con el DTO PaginaModuloPermisosResponse.
  *
  * 📦 Capa: SERVICE → VIEW
- * 🧱 Fuente: vista SQL vw_permisos_activos
+ * 🧱 Fuente: vista SQL vw_permisos_usuario_activos
  * 🎯 Propósito: devolver permisos activos agrupados por página y módulo.
  */
 @Service
+@RequiredArgsConstructor
 @Slf4j
-@Data
 public class PermisoActivoViewServiceImpl implements PermisoActivoViewService {
 
-    private static final Logger log = LoggerFactory.getLogger(PermisoActivoViewServiceImpl.class);
-
     private final PermisoActivoViewRepository permisoActivoViewRepository;
-
-    public PermisoActivoViewServiceImpl(PermisoActivoViewRepository permisoActivoViewRepository) {
-        this.permisoActivoViewRepository = permisoActivoViewRepository;
-    }
 
     /**
      * 🔹 Obtiene los permisos activos del usuario desde la vista.
@@ -44,7 +35,7 @@ public class PermisoActivoViewServiceImpl implements PermisoActivoViewService {
     @Override
     @Transactional(readOnly = true)
     public List<PaginaModuloPermisosResponse> obtenerPermisosActivosPorUsuario(Long idUser) {
-        log.info("🔍 Consultando permisos activos desde vw_permisos_activos para el usuario ID: {}", idUser);
+        log.info("🔍 Consultando permisos activos desde vw_permisos_usuario_activos para el usuario ID: {}", idUser);
 
         List<PermisoActivoView> permisos = permisoActivoViewRepository.findByIdUser(idUser);
 
@@ -55,7 +46,7 @@ public class PermisoActivoViewServiceImpl implements PermisoActivoViewService {
 
         return permisos.stream()
                 .map(this::mapToResponse)
-                .collect(Collectors.toList());
+                .toList();
     }
 
     /**
@@ -67,12 +58,12 @@ public class PermisoActivoViewServiceImpl implements PermisoActivoViewService {
                 .nombrePagina(view.getPagina())
                 .rutaPagina(view.getRutaPagina())
                 .modulo(view.getModulo())
-                .puedeVer(view.getPuedeVer())
-                .puedeCrear(view.getPuedeCrear())
-                .puedeEditar(view.getPuedeEditar())
-                .puedeEliminar(view.getPuedeEliminar())
-                .puedeExportar(view.getPuedeExportar())
-                .puedeAprobar(view.getPuedeAprobar())
+                .puedeVer(Boolean.TRUE.equals(view.getPuedeVer()))
+                .puedeCrear(Boolean.TRUE.equals(view.getPuedeCrear()))
+                .puedeEditar(Boolean.TRUE.equals(view.getPuedeEditar()))
+                .puedeEliminar(Boolean.TRUE.equals(view.getPuedeEliminar()))
+                .puedeExportar(Boolean.TRUE.equals(view.getPuedeExportar()))
+                .puedeAprobar(Boolean.TRUE.equals(view.getPuedeAprobar()))
                 .build();
     }
 }

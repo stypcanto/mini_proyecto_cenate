@@ -1,10 +1,11 @@
 package com.styp.cenate.repository;
 
-import org.springframework.data.jpa.repository.JpaRepository;
 import com.styp.cenate.model.RecuperacionCuenta;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
 import java.util.List;
 
+@Repository
 public interface RecuperacionCuentaRepository extends JpaRepository<RecuperacionCuenta, Long> {
-    long countByEstado(String estado);
-    List<RecuperacionCuenta> findByEstado(String estado);
+    List<RecuperacionCuenta> findByEstadoIgnoreCase(String estado);
 }

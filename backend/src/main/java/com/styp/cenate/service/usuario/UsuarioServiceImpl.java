@@ -1,18 +1,19 @@
 package com.styp.cenate.service.usuario;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
-import jakarta.persistence.EntityNotFoundException;
-import lombok.RequiredArgsConstructor;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import com.styp.cenate.dto.UsuarioCreateRequest;
 import com.styp.cenate.dto.UsuarioResponse;
 import com.styp.cenate.dto.UsuarioUpdateRequest;
 import com.styp.cenate.model.*;
 import com.styp.cenate.repository.UsuarioRepository;
+import jakarta.persistence.EntityNotFoundException;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -181,7 +182,6 @@ public class UsuarioServiceImpl implements UsuarioService {
             base.setAreaTrabajo(p.getArea() != null ? p.getArea().getDescArea() : null);
             base.setFotoUrl(p.getFotoPers());
 
-            // ✅ Firmas digitales (ajustado a la nueva estructura)
             base.setFirmasDigitales(
                     p.getFirmas().stream()
                             .map(f -> f.getFirmaDigital() != null
@@ -190,14 +190,12 @@ public class UsuarioServiceImpl implements UsuarioService {
                             .collect(Collectors.toList())
             );
 
-            // ✅ Profesiones
             base.setProfesiones(
                     p.getProfesiones().stream()
                             .map(pp -> pp.getProfesion().getDescProf())
                             .collect(Collectors.toList())
             );
 
-            // ✅ Órdenes de compra
             base.setOrdenesCompra(
                     p.getOcs().stream()
                             .map(oc -> oc.getNumOc() != null ? oc.getNumOc() : "Sin OC")
@@ -229,7 +227,7 @@ public class UsuarioServiceImpl implements UsuarioService {
     }
 
     // =============================================================
-    // 🧩 FILTROS
+    // 🧭 FILTROS
     // =============================================================
     @Override
     @Transactional(readOnly = true)
@@ -249,6 +247,23 @@ public class UsuarioServiceImpl implements UsuarioService {
                         u.getRoles().stream().noneMatch(r -> roles.contains(r.getDescRol())))
                 .map(this::convertToResponse)
                 .toList();
+    }
+
+    // =============================================================
+    // 🧩 ROLES DEL USUARIO AUTENTICADO
+    // =============================================================
+    @Override
+    @Transactional(readOnly = true)
+    public List<String> getRolesByUsername(String username) {
+        Usuario usuario = usuarioRepository.findByNameUser(username)
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
+
+        List<String> roles = usuario.getRoles().stream()
+                .map(Rol::getDescRol)
+                .toList();
+
+        log.info("🔑 Roles obtenidos para usuario {} → {}", username, roles);
+        return roles;
     }
 
     // =============================================================

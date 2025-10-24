@@ -1,17 +1,18 @@
 package com.styp.cenate.api.usuario;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
+import com.styp.cenate.dto.UsuarioCreateRequest;
+import com.styp.cenate.dto.UsuarioResponse;
+import com.styp.cenate.dto.UsuarioUpdateRequest;
+import com.styp.cenate.service.usuario.UsuarioService;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
-import com.styp.cenate.dto.UsuarioResponse;
-import com.styp.cenate.dto.UsuarioUpdateRequest;
-import com.styp.cenate.dto.UsuarioCreateRequest;
-import com.styp.cenate.service.usuario.UsuarioService;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -53,19 +54,47 @@ public class UsuarioController {
         return ResponseEntity.ok(usuarioService.getUserById(id));
     }
 
-    /** 🔹 Obtener el usuario autenticado actual */
+    /** 🔹 Obtener el usuario autenticado actual (incluye roles) */
     @GetMapping("/me")
-    public ResponseEntity<UsuarioResponse> getCurrentUser(Authentication authentication) {
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
         String username = authentication.getName();
         log.info("👤 Consultando información del usuario autenticado: {}", username);
-        return ResponseEntity.ok(usuarioService.getUserByUsername(username));
+
+        try {
+            // ✅ Obtener información básica del usuario
+            var usuario = usuarioService.getUserByUsername(username);
+            if (usuario == null) {
+                log.warn("⚠️ Usuario {} no encontrado en la base de datos", username);
+                return ResponseEntity.status(404).body(Map.of("message", "Usuario no encontrado"));
+            }
+
+            // ✅ Obtener roles asociados
+            List<String> roles = usuarioService.getRolesByUsername(username);
+
+            // ✅ Construir respuesta completa
+            Map<String, Object> response = new HashMap<>();
+            response.put("idUser", usuario.getIdUser());
+            response.put("username", usuario.getUsername());
+            response.put("estado", usuario.getEstado());
+            response.put("activo", usuario.isActivo());
+            response.put("locked", usuario.isLocked());
+            response.put("roles", roles);
+
+            log.info("✅ Usuario autenticado encontrado: {} con roles {}", username, roles);
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener información del usuario autenticado {}: {}", username, e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(Map.of("message", "Error interno del servidor", "error", e.getMessage()));
+        }
     }
 
     // ============================================================
     // 🧭 CONSULTAS FILTRADAS
     // ============================================================
 
-    /** 🌐 Obtener usuarios EXTERNOS (INSTITUCION_EX, ASEGURADORA, REGULADOR) */
+    /** 🌐 Obtener usuarios EXTERNOS */
     @GetMapping("/externos")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<UsuarioResponse>> getExternalUsers() {
@@ -75,7 +104,7 @@ public class UsuarioController {
         );
     }
 
-    /** 🏥 Obtener usuarios INTERNOS (personal de CENATE, médicos, coordinadores, etc.) */
+    /** 🏥 Obtener usuarios INTERNOS */
     @GetMapping("/internos")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<UsuarioResponse>> getInternalUsers() {
@@ -89,7 +118,7 @@ public class UsuarioController {
     // ⚙️ GESTIÓN ADMINISTRATIVA
     // ============================================================
 
-    /** ✨ Crear nuevo usuario (solo SUPERADMIN y ADMIN) */
+    /** ✨ Crear nuevo usuario */
     @PostMapping("/crear")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<?> createUser(@RequestBody UsuarioCreateRequest request) {
@@ -104,7 +133,7 @@ public class UsuarioController {
         }
     }
 
-    /** ✏️ Actualizar datos del usuario (estado, roles, datos personales o profesionales) */
+    /** ✏️ Actualizar usuario */
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<UsuarioResponse> updateUser(
@@ -148,7 +177,7 @@ public class UsuarioController {
     }
 
     // ============================================================
-    // 🔍 CONSULTA DETALLADA (INCLUYE FOTO, FIRMA, PROFESIÓN, ETC.)
+    // 🔍 CONSULTA DETALLADA
     // ============================================================
 
     @GetMapping("/detalle/{username}")
