@@ -1,5 +1,5 @@
 // ========================================================================
-// 🎯 usePermissions.js – Sistema MBAC CENATE (versión completa corregida)
+// 🎯 usePermissions.js – Sistema MBAC CENATE (versión FINAL corregida)
 // ------------------------------------------------------------------------
 // Gestiona permisos por ruta/acción según la respuesta del backend MBAC.
 // Compatible con ProtectedRoute.jsx, PermissionGate.jsx y Sidebar dinámico.
@@ -10,7 +10,6 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../lib/apiClient";
 import {
-  transformarPermisos,
   tienePermisosRequeridos,
   filtrarRutasPermitidas,
   agruparPorModulo,
@@ -26,8 +25,33 @@ export const usePermissions = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Roles del usuario
-  const roles = (user?.roles || []).map((r) => r.toUpperCase());
+  // =====================================================
+  // 🔹 Roles del usuario (soporta objetos, arrays anidados y strings)
+  // =====================================================
+  const rolesRaw = user?.roles || [];
+  const roles = [];
+
+  for (const r of rolesRaw) {
+    if (!r) continue;
+    if (typeof r === "string") {
+      roles.push(r.toUpperCase());
+    } else if (typeof r === "object") {
+      if (Array.isArray(r)) {
+        r.forEach((sub) => {
+          if (typeof sub === "string") roles.push(sub.toUpperCase());
+          else if (sub?.authority)
+            roles.push(String(sub.authority).toUpperCase());
+          else if (sub?.roleName)
+            roles.push(String(sub.roleName).toUpperCase());
+        });
+      } else if (r?.authority) {
+        roles.push(String(r.authority).toUpperCase());
+      } else if (r?.roleName) {
+        roles.push(String(r.roleName).toUpperCase());
+      }
+    }
+  }
+
   const isSuperOrAdmin = roles.includes("SUPERADMIN") || roles.includes("ADMIN");
 
   // =====================================================
@@ -40,7 +64,6 @@ export const usePermissions = () => {
     setError(null);
 
     try {
-      // 🔄 Nuevo endpoint MBAC: permisos activos por ID de usuario
       console.log("🔄 Cargando permisos desde", `/mbac/permisos-activos/${user.id}`);
       const data = await apiClient.get(`/mbac/permisos-activos/${user.id}`, true);
 
@@ -48,16 +71,31 @@ export const usePermissions = () => {
         throw new Error("Formato de permisos inválido (no es un array)");
       }
 
-      // Normaliza y elimina duplicados
-      const transformed = transformarPermisos(data)
-        .map((p) => ({ ...p, path: normalizePath(p.path) }))
+      // 🔁 Normalizar según el formato MBAC (rutaPagina, modulo, acciones)
+      const transformed = data
+        .map((p) => ({
+          path: normalizePath(p.rutaPagina),
+          modulo: p.modulo || "general",
+          acciones: [
+            p.puedeVer && "ver",
+            p.puedeCrear && "crear",
+            p.puedeEditar && "editar",
+            p.puedeEliminar && "eliminar",
+            p.puedeExportar && "exportar",
+            p.puedeAprobar && "aprobar",
+          ].filter(Boolean),
+        }))
+        // Eliminar duplicados por path + acciones
         .filter(
-          (p, i, arr) => arr.findIndex((q) => q.path === p.path && q.acciones === p.acciones) === i
+          (p, i, arr) =>
+            arr.findIndex(
+              (q) => q.path === p.path && q.acciones.join() === p.acciones.join()
+            ) === i
         );
 
       setPermisos(transformed);
     } catch (err) {
-      console.error("Error cargando permisos:", err);
+      console.error("❌ Error cargando permisos:", err);
       setError(err.message || "Error al cargar permisos");
       if (String(err?.message).includes("401")) logout();
       setPermisos([]);
@@ -67,7 +105,7 @@ export const usePermissions = () => {
   }, [isAuthenticated, user, logout]);
 
   // =====================================================
-  // 🔹 2. Efecto: recargar al cambiar usuario autenticado
+  // 🔹 2. Recargar al cambiar usuario autenticado
   // =====================================================
   useEffect(() => {
     if (isAuthenticated && user?.id) {
@@ -78,7 +116,7 @@ export const usePermissions = () => {
   }, [isAuthenticated, user, fetchPermisos]);
 
   // =====================================================
-  // 🔹 3. Función: verificar permiso por ruta + acción
+  // 🔹 3. Verificar permiso por ruta + acción
   // =====================================================
   const tienePermiso = useCallback(
     (rutaPagina, accion = "ver") => {
@@ -95,7 +133,6 @@ export const usePermissions = () => {
   // =====================================================
   const getRutasPermitidas = useCallback(
     (accion = "ver") => {
-      // Si es SUPERADMIN o ADMIN y no hay permisos cargados, devolver base mínima
       if (isSuperOrAdmin && permisos.length === 0) {
         return [
           { path: "/dashboard", acciones: ["ver"], modulo: "general" },
@@ -134,13 +171,13 @@ export const usePermissions = () => {
   // 🔹 6. Retorno final del hook
   // =====================================================
   return {
-    permisos,
-    loading,
-    error,
-    tienePermiso,
-    verificarPermiso, // usado por ProtectedRoute.jsx
-    getRutasPermitidas,
-    getModulosAgrupados,
-    refetch: fetchPermisos,
+    permisos,            // Permisos normalizados [{path, acciones[], modulo}]
+    loading,             // Estado de carga
+    error,               // Mensaje de error
+    tienePermiso,        // Verifica permiso por ruta/acción
+    verificarPermiso,    // Alias para compatibilidad
+    getRutasPermitidas,  // Rutas filtradas por acción
+    getModulosAgrupados, // Agrupadas por módulo
+    refetch: fetchPermisos, // Recarga manual
   };
 };
