@@ -1,11 +1,10 @@
 // ========================================================================
-// 👥 UsersPage.jsx – Gestión de Usuarios (versión final CENATE 2025)
+// 👥 UsersPage.jsx – Gestión de Usuarios (CENATE MBAC 2025.10.25)
 // ------------------------------------------------------------------------
-// Diseño inspirado en macOS: limpio, balanceado y profesional.
-// Renderiza dentro de AppLayout (no incluye sidebar directamente).
+// Incluye: Filtro por mes de cumpleaños, IPRESS, UX empresarial EsSalud.
 // ========================================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
@@ -15,8 +14,11 @@ import {
   RefreshCw,
   UserPlus,
   Users,
+  Filter,
   Loader2,
-  AlertCircle,
+  ChevronLeft,
+  ChevronRight,
+  Cake,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiClient } from "../lib/apiClient";
@@ -26,18 +28,31 @@ export default function UsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filters, setFilters] = useState({
+    rol: "TODOS",
+    tipo: "TODOS",
+    estado: "TODOS",
+    mesCumple: "TODOS",
+  });
+  const [page, setPage] = useState(1);
+  const pageSize = 20;
 
   // ============================================================
   // 📦 Cargar usuarios desde API
   // ============================================================
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [filters.mesCumple]);
 
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const data = await apiClient.get("/personal/total", true);
+      let data;
+      if (filters.mesCumple !== "TODOS") {
+        data = await apiClient.get(`/personal/cumpleaneros/mes/${filters.mesCumple}`, true);
+      } else {
+        data = await apiClient.get("/personal/total", true);
+      }
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error al cargar usuarios:", err);
@@ -47,301 +62,274 @@ export default function UsersPage() {
     }
   };
 
-  const deleteUser = async (id) => {
-    if (!window.confirm("¿Estás seguro de eliminar este usuario?")) return;
-    try {
-      await apiClient.delete(`/usuarios/${id}`, true);
-      toast.success("Usuario eliminado correctamente");
-      fetchUsers();
-    } catch {
-      toast.error("Error al eliminar usuario");
-    }
-  };
+  // ============================================================
+  // 🔍 Filtros, búsqueda y paginación
+  // ============================================================
+  const filteredUsers = useMemo(() => {
+    return users
+      .filter((u) => {
+        const search = searchTerm.toLowerCase();
+        const matchesSearch =
+          u.nombre_completo?.toLowerCase().includes(search) ||
+          u.username?.toLowerCase().includes(search) ||
+          u.numero_documento?.includes(search);
+
+        const matchesRol =
+          filters.rol === "TODOS" ||
+          (u.roles && u.roles.toUpperCase().includes(filters.rol.toUpperCase()));
+
+        const matchesTipo =
+          filters.tipo === "TODOS" ||
+          (u.tipo_personal &&
+            u.tipo_personal.toUpperCase() === filters.tipo.toUpperCase());
+
+        const matchesEstado =
+          filters.estado === "TODOS" ||
+          (u.estado_usuario &&
+            u.estado_usuario.toUpperCase().startsWith(filters.estado[0]));
+
+        return matchesSearch && matchesRol && matchesTipo && matchesEstado;
+      })
+      .slice((page - 1) * pageSize, page * pageSize);
+  }, [users, searchTerm, filters, page]);
+
+  const totalPages = Math.ceil(users.length / pageSize);
 
   // ============================================================
-  // 🔍 Filtros y estadísticas
+  // 🎨 Helpers
   // ============================================================
-  const filteredUsers = users.filter(
-    (u) =>
-      u.nombre_completo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      u.numero_documento?.includes(searchTerm)
-  );
-
-  const usuariosActivos = users.filter(
-    (u) => ["A", "ACTIVO"].includes(u.estado?.toUpperCase())
-  );
-  const usuariosInactivos = users.filter(
-    (u) => ["I", "INACTIVO"].includes(u.estado?.toUpperCase())
-  );
-
-  const statsData = {
-    total: users.length,
-    activos: usuariosActivos.length,
-    inactivos: usuariosInactivos.length,
-  };
-
-  // ============================================================
-  // 🟢 Helpers: traducción y color de estado
-  // ============================================================
-  const getEstadoLabel = (estado) => {
-    if (!estado) return "—";
-    const value = estado.toUpperCase();
-    if (["A", "ACTIVO"].includes(value)) return "ACTIVO";
-    if (["I", "INACTIVO"].includes(value)) return "INACTIVO";
-    return value;
-  };
-
   const getEstadoColor = (estado) => {
-    const value = estado?.toUpperCase();
-    if (["A", "ACTIVO"].includes(value))
-      return "bg-green-500/10 text-green-600 border-green-500/30";
-    if (["I", "INACTIVO"].includes(value))
-      return "bg-red-500/10 text-red-600 border-red-500/30";
-    return "bg-gray-500/10 text-gray-600 border-gray-500/30";
+    if (!estado) return "bg-gray-400/10 text-gray-600 border-gray-300";
+    const val = estado.toUpperCase();
+    if (val.startsWith("A")) return "bg-green-500/10 text-green-600 border-green-500/30";
+    if (val.startsWith("I")) return "bg-red-500/10 text-red-600 border-red-500/30";
+    return "bg-gray-500/10 text-gray-600 border-gray-400";
   };
+
+  const meses = [
+    { nombre: "Todos", valor: "TODOS" },
+    { nombre: "Enero", valor: 1 },
+    { nombre: "Febrero", valor: 2 },
+    { nombre: "Marzo", valor: 3 },
+    { nombre: "Abril", valor: 4 },
+    { nombre: "Mayo", valor: 5 },
+    { nombre: "Junio", valor: 6 },
+    { nombre: "Julio", valor: 7 },
+    { nombre: "Agosto", valor: 8 },
+    { nombre: "Septiembre", valor: 9 },
+    { nombre: "Octubre", valor: 10 },
+    { nombre: "Noviembre", valor: 11 },
+    { nombre: "Diciembre", valor: 12 },
+  ];
 
   // ============================================================
   // 🧱 Render principal
   // ============================================================
   return (
-    <div className="p-8 bg-[var(--bg-main)] transition-colors">
-      {/* Header */}
-      <div className="flex items-center justify-between mb-10">
+    <div className="min-h-screen bg-gray-50">
+      {/* ===================================================== */}
+      {/* Encabezado institucional */}
+      {/* ===================================================== */}
+      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#1C5B36] text-white px-8 py-6 shadow-md flex justify-between items-center sticky top-0 z-30">
         <div className="flex items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[var(--color-primary)] to-[var(--color-info)] flex items-center justify-center shadow-lg">
-            <Users className="w-8 h-8 text-white" />
-          </div>
+          <Users className="w-8 h-8 text-white" />
           <div>
-            <h1 className="text-3xl font-bold text-[var(--text-primary)]">
-              Gestión de Usuarios
-            </h1>
-            <p className="text-base text-[var(--text-secondary)] mt-1">
+            <h1 className="text-2xl font-bold">Gestión de Usuarios</h1>
+            <p className="text-sm opacity-80">
               Administra los usuarios del sistema CENATE
             </p>
           </div>
         </div>
-
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate("/admin/users/create")}
-            className="px-5 py-3 rounded-xl font-semibold text-white flex items-center gap-2
-                       bg-gradient-to-r from-[var(--color-primary)] to-[var(--color-info)]
-                       hover:brightness-110 active:scale-95 shadow-md transition-all"
+            className="flex items-center gap-2 bg-white text-[#0A5BA9] font-semibold px-5 py-2.5 rounded-xl shadow-sm hover:bg-gray-100 transition-all"
           >
-            <UserPlus className="w-5 h-5" />
-            Crear Usuario
+            <UserPlus className="w-5 h-5" /> Crear Usuario
           </button>
           <button
             onClick={fetchUsers}
-            className="px-5 py-3 rounded-xl font-semibold flex items-center gap-2
-                       border border-[var(--border-color)] bg-[var(--bg-card)]
-                       text-[var(--text-primary)] hover:bg-[var(--bg-hover)]
-                       hover:shadow-md active:scale-95 transition-all"
+            className="flex items-center gap-2 border border-white/40 text-white px-5 py-2.5 rounded-xl hover:bg-white/10 transition-all"
           >
-            <RefreshCw className="w-4 h-4" />
-            Actualizar
+            <RefreshCw className="w-4 h-4" /> Actualizar
           </button>
         </div>
       </div>
 
-      {/* Estadísticas */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-        <StatCard label="Total Usuarios" value={statsData.total} color="var(--color-primary)" />
-        <StatCard label="Usuarios Activos" value={statsData.activos} color="var(--color-accent)" />
-        <StatCard label="Usuarios Inactivos" value={statsData.inactivos} color="#8B5CF6" />
-      </div>
+      {/* ===================================================== */}
+      {/* Filtros y búsqueda */}
+      {/* ===================================================== */}
+      <div className="p-6 flex flex-col md:flex-row items-center justify-between gap-4 bg-white border-b border-gray-200">
+        <div className="flex items-center gap-3 flex-wrap">
+          <Filter className="w-5 h-5 text-gray-500" />
+          {/* Filtros */}
+          <select
+            value={filters.rol}
+            onChange={(e) => setFilters({ ...filters, rol: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="TODOS">Todos los Roles</option>
+            <option value="SUPERADMIN">Superadmin</option>
+            <option value="ADMIN">Admin</option>
+            <option value="INSTITUCION_EX">Institución Externa</option>
+          </select>
 
-      {/* Buscador */}
-      <div className="mb-8">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--text-secondary)]/70" />
+          <select
+            value={filters.tipo}
+            onChange={(e) => setFilters({ ...filters, tipo: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="TODOS">Todos los Tipos</option>
+            <option value="CENATE">CENATE</option>
+            <option value="EXTERNO">Externo</option>
+          </select>
+
+          <select
+            value={filters.estado}
+            onChange={(e) => setFilters({ ...filters, estado: e.target.value })}
+            className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+          >
+            <option value="TODOS">Todos los Estados</option>
+            <option value="ACTIVO">Activo</option>
+            <option value="INACTIVO">Inactivo</option>
+          </select>
+
+          <div className="flex items-center gap-2">
+            <Cake className="w-5 h-5 text-pink-500" />
+            <select
+              value={filters.mesCumple}
+              onChange={(e) => setFilters({ ...filters, mesCumple: e.target.value })}
+              className="border border-gray-300 rounded-lg px-3 py-2 text-sm"
+            >
+              {meses.map((m) => (
+                <option key={m.valor} value={m.valor}>
+                  {m.nombre}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        {/* Búsqueda */}
+        <div className="relative w-full md:w-1/3">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Buscar por nombre, usuario o documento..."
+            placeholder="Buscar por nombre o documento..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-12 pr-4 py-3.5 rounded-2xl bg-[var(--bg-card)] border border-[var(--border-color)]
-                       text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]/70
-                       focus:ring-2 focus:ring-[var(--color-primary)]/40 focus:border-[var(--color-primary)]
-                       hover:bg-[var(--bg-hover)] shadow-sm transition-all duration-200"
+            className="w-full pl-10 pr-4 py-2.5 rounded-lg border border-gray-300 text-gray-700 focus:ring-2 focus:ring-[#0A5BA9]/40"
           />
         </div>
       </div>
 
-      {/* ============================================================ */}
-      {/* 🧾 Tabla de usuarios estilo Apple/macOS */}
-      {/* ============================================================ */}
-      <div className="rounded-2xl border border-[var(--border-color)] bg-[var(--bg-card)]/95 shadow-[0_4px_20px_rgba(0,0,0,0.03)] overflow-hidden backdrop-blur-sm">
-        {loading ? (
-          <div className="p-16 text-center">
-            <Loader2 className="w-10 h-10 animate-spin text-[var(--color-primary)] mx-auto mb-4" />
-            <p className="text-lg font-semibold text-[var(--text-secondary)]">
+      {/* ===================================================== */}
+      {/* Tabla de datos */}
+      {/* ===================================================== */}
+      <div className="p-6">
+        <div className="bg-white rounded-2xl shadow overflow-hidden border border-gray-200">
+          {loading ? (
+            <div className="p-10 text-center text-gray-500">
+              <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-[#0A5BA9]" />
               Cargando usuarios...
-            </p>
-          </div>
-        ) : filteredUsers.length === 0 ? (
-          <div className="p-16 text-center">
-            <AlertCircle className="w-10 h-10 text-[var(--text-secondary)] mx-auto mb-4" />
-            <p className="text-lg font-semibold text-[var(--text-primary)]">
-              No se encontraron usuarios
-            </p>
-            <p className="text-sm text-[var(--text-secondary)] mt-2">
-              Intenta con otros términos de búsqueda
-            </p>
-          </div>
-        ) : (
-          <>
-            <div className="overflow-x-auto">
-              <table className="w-full border-collapse">
-                <thead className="bg-gradient-to-b from-[#F9FAFB] to-[#F3F4F6] border-b border-[var(--border-color)]/70">
-                  <tr>
-                    {["Usuario", "Nombre Completo", "Documento", "Rol", "Estado", "Acciones"].map(
-                      (header, i) => (
-                        <th
-                          key={i}
-                          className="px-6 py-3 text-left text-[13px] font-semibold uppercase tracking-wide text-[var(--text-secondary)] border-r last:border-r-0 border-[var(--border-color)]/40 select-none"
-                        >
-                          {header}
-                        </th>
-                      )
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="p-10 text-center text-gray-500">
+              No se encontraron resultados.
+            </div>
+          ) : (
+            <table className="w-full border-collapse text-sm">
+              <thead className="bg-[#0A5BA9] text-white">
+                <tr>
+                  <th className="px-6 py-3 text-left font-semibold">Usuario</th>
+                  <th className="px-6 py-3 text-left font-semibold">Nombre Completo</th>
+                  <th className="px-6 py-3 text-left font-semibold">Documento</th>
+                  <th className="px-6 py-3 text-left font-semibold">Rol</th>
+                  <th className="px-6 py-3 text-left font-semibold">Tipo</th>
+                  <th className="px-6 py-3 text-left font-semibold">IPRESS Asignada</th>
+                  {filters.mesCumple !== "TODOS" && (
+                    <th className="px-6 py-3 text-left font-semibold">Cumpleaños</th>
+                  )}
+                  <th className="px-6 py-3 text-left font-semibold">Estado</th>
+                  <th className="px-6 py-3 text-left font-semibold">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {filteredUsers.map((u) => (
+                  <tr key={u.id_user || u.nombre_completo} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-3 font-medium">{u.username || "—"}</td>
+                    <td className="px-6 py-3">{u.nombre_completo}</td>
+                    <td className="px-6 py-3">{u.numero_documento || "—"}</td>
+                    <td className="px-6 py-3">{u.roles || "—"}</td>
+                    <td className="px-6 py-3">{u.tipo_personal || "—"}</td>
+                    <td className="px-6 py-3 text-gray-800">
+                      {u.ipress_asignada || u.ipress || "—"}
+                    </td>
+                    {filters.mesCumple !== "TODOS" && (
+                      <td className="px-6 py-3 text-gray-800">
+                        {u.dia ? `${u.dia} ${u.mes}` : "—"}
+                      </td>
                     )}
+                    <td className="px-6 py-3">
+                      <span
+                        className={`px-3 py-1 rounded-full border text-xs font-semibold ${getEstadoColor(
+                          u.estado_usuario
+                        )}`}
+                      >
+                        {u.estado_usuario || "—"}
+                      </span>
+                    </td>
+                    <td className="px-6 py-3 flex items-center gap-2">
+                      <ActionButton icon={Eye} color="#0A5BA9" tooltip="Ver detalles" />
+                      <ActionButton icon={Edit} color="#FBBF24" tooltip="Editar usuario" />
+                      <ActionButton icon={Trash2} color="#EF4444" tooltip="Eliminar usuario" />
+                    </td>
                   </tr>
-                </thead>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
 
-                <tbody className="divide-y divide-[var(--border-color)]/40">
-                  {filteredUsers.map((user, idx) => (
-                    <tr
-                      key={user.id_user}
-                      className={`transition-all duration-150 ${
-                        idx % 2 === 0
-                          ? "bg-[var(--bg-card)]/60"
-                          : "bg-[var(--bg-card)]/40"
-                      } hover:bg-[var(--color-primary)]/5`}
-                    >
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-3">
-                          <div
-                            className="w-9 h-9 rounded-full flex items-center justify-center text-white font-semibold shadow-sm"
-                            style={{
-                              background:
-                                "linear-gradient(to bottom right, var(--color-primary), var(--color-info))",
-                            }}
-                          >
-                            {user.username?.charAt(0).toUpperCase()}
-                          </div>
-                          <span className="font-semibold text-[var(--text-primary)] text-[15px]">
-                            {user.username}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-[var(--text-primary)] text-[15px]">
-                        {user.nombre_completo || "—"}
-                      </td>
-                      <td className="px-6 py-4 text-[var(--text-primary)] text-[15px]">
-                        {user.numero_documento || "N/A"}
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1.5 text-[12px] font-semibold rounded-full border bg-[var(--color-primary)]/10 text-[var(--color-primary)] border-[var(--color-primary)]/30 shadow-sm">
-                          {user.roles || "—"}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span
-                          className={`px-3 py-1.5 text-[12px] font-semibold rounded-full border shadow-sm ${getEstadoColor(
-                            user.estado
-                          )}`}
-                        >
-                          {getEstadoLabel(user.estado)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center gap-3 justify-center">
-                          <ActionButton
-                            icon={Eye}
-                            color="var(--color-primary)"
-                            onClick={() => navigate(`/admin/users/${user.id_user}`)}
-                            tooltip="Ver detalles"
-                          />
-                          <ActionButton
-                            icon={Edit}
-                            color="#FBBF24"
-                            onClick={() => navigate(`/admin/users/${user.id_user}/edit`)}
-                            tooltip="Editar"
-                          />
-                          <ActionButton
-                            icon={Trash2}
-                            color="var(--color-danger)"
-                            onClick={() => deleteUser(user.id_user)}
-                            tooltip="Eliminar"
-                          />
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Footer tabla */}
-            <div className="px-6 py-3 bg-[#F9FAFB] border-t border-[var(--border-color)]/70 text-[13px] text-[var(--text-secondary)]">
-              Mostrando{" "}
-              <span className="font-semibold text-[var(--color-primary)]">
-                {filteredUsers.length}
-              </span>{" "}
-              de{" "}
-              <span className="font-semibold text-[var(--color-primary)]">
-                {users.length}
-              </span>{" "}
-              usuarios
-            </div>
-          </>
+        {/* ===================================================== */}
+        {/* Paginación */}
+        {/* ===================================================== */}
+        {totalPages > 1 && (
+          <div className="flex justify-center items-center mt-6 gap-3">
+            <button
+              disabled={page === 1}
+              onClick={() => setPage(page - 1)}
+              className="p-2 rounded-lg border bg-white disabled:opacity-50"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <span className="text-gray-700 text-sm">
+              Página {page} de {totalPages}
+            </span>
+            <button
+              disabled={page === totalPages}
+              onClick={() => setPage(page + 1)}
+              className="p-2 rounded-lg border bg-white disabled:opacity-50"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         )}
       </div>
     </div>
   );
 }
 
-// ========================================================================
-// 📊 Subcomponentes
-// ========================================================================
-function StatCard({ label, value, color }) {
-  return (
-    <div
-      className="rounded-2xl p-6 border shadow-sm hover:shadow-lg transition-all duration-200"
-      style={{
-        backgroundColor: "var(--bg-card)",
-        borderColor: "var(--border-color)",
-      }}
-    >
-      <div className="flex items-center gap-3">
-        <div
-          className="w-12 h-12 rounded-xl flex items-center justify-center shadow-sm"
-          style={{ backgroundColor: `${color}20` }}
-        >
-          <Users size={22} style={{ color }} />
-        </div>
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-wider" style={{ color }}>
-            {label}
-          </p>
-          <p className="text-3xl font-bold text-[var(--text-primary)] mt-1">{value}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function ActionButton({ icon: Icon, color, onClick, tooltip }) {
+// ============================================================
+// 🎯 Subcomponente ActionButton
+// ============================================================
+function ActionButton({ icon: Icon, color, tooltip, onClick }) {
   return (
     <button
       onClick={onClick}
       title={tooltip}
-      className="p-2.5 rounded-lg transition-all hover:bg-[var(--bg-hover)]/70 hover:scale-105"
-      style={{
-        color,
-        backgroundColor: `${color}10`,
-      }}
+      className="p-2 rounded-lg hover:bg-gray-100 transition-all"
+      style={{ color }}
     >
       <Icon className="w-4 h-4" />
     </button>
