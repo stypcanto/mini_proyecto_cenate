@@ -50,7 +50,7 @@ dependencies {
     // 🔹 BASE DE DATOS
     runtimeOnly 'org.postgresql:postgresql'
 
-    // 🔹 JWT (Autenticación segura, versión moderna compatible con parserBuilder)
+    // 🔹 JWT (Autenticación segura)
     implementation 'io.jsonwebtoken:jjwt-api:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.12.5'
     runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.12.5'
@@ -65,7 +65,9 @@ dependencies {
     implementation 'org.apache.commons:commons-lang3:3.14.0'
     implementation 'commons-io:commons-io:2.15.1'
 
-    // 🔹 LOMBOK (para @Slf4j, @Getter, @Builder, etc.)
+    // ============================================================
+    // ✅ LOMBOK (activado correctamente)
+    // ============================================================
     compileOnly 'org.projectlombok:lombok:1.18.40'
     annotationProcessor 'org.projectlombok:lombok:1.18.40'
     testCompileOnly 'org.projectlombok:lombok:1.18.40'
@@ -81,7 +83,7 @@ dependencies {
    ⚙️ CONFIGURACIÓN DE SPRING BOOT
    ================================================================ */
 springBoot {
-    mainClass = 'com.styp.cenate.CenateApplication' // ✅ Clase principal real
+    mainClass = 'com.styp.cenate.CenateApplication'
 }
 
 /* ================================================================
@@ -90,8 +92,6 @@ springBoot {
 bootJar {
     enabled = true
     archiveFileName = 'cenate-0.0.1-SNAPSHOT.jar'
-
-    // 🚫 EXCLUSIÓN DE CLASE OBSOLETA (para evitar conflictos en compilación)
     exclude("**/com/styp/cenate/api/admin/PermisoActivoViewServiceImpl.class")
 }
 
