@@ -48,7 +48,16 @@ function buildHeaders(auth = false, isFormData = false) {
   if (!isFormData) headers["Content-Type"] = "application/json";
 
   const token = getToken();
-  if (auth && token) headers.Authorization = `Bearer ${token}`;
+  
+  // Log para debug
+  console.log("🔑 buildHeaders - auth:", auth, "| token exists:", !!token);
+  
+  if (auth && token) {
+    headers.Authorization = `Bearer ${token}`;
+    console.log("✅ Token agregado al header");
+  } else if (auth && !token) {
+    console.warn("⚠️ auth=true pero no hay token disponible");
+  }
 
   return headers;
 }
@@ -72,11 +81,25 @@ export const apiClient = {
   // ------------------------------------------------------
   post: async (endpoint, body, auth = false) => {
     const isFormData = body instanceof FormData;
+    const url = `${API_BASE}${endpoint}`;
+    
+    console.log("📤 POST Request:", {
+      url,
+      auth,
+      isFormData,
+      body: isFormData ? "FormData" : body
+    });
 
-    const res = await fetch(`${API_BASE}${endpoint}`, {
+    const res = await fetch(url, {
       method: "POST",
       headers: buildHeaders(auth, isFormData),
       body: isFormData ? body : JSON.stringify(body),
+    });
+    
+    console.log("📥 POST Response:", {
+      url,
+      status: res.status,
+      ok: res.ok
     });
 
     return handleResponse(res);

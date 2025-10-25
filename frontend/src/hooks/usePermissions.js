@@ -22,43 +22,58 @@ const normalizePath = (p) =>
 export const usePermissions = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const [permisos, setPermisos] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   // =====================================================
-  // 🔹 Roles del usuario (soporta objetos, arrays anidados y strings)
+  // 🔹 1. Normalizar roles del usuario
   // =====================================================
   const rolesRaw = user?.roles || [];
   const roles = [];
 
   for (const r of rolesRaw) {
     if (!r) continue;
-    if (typeof r === "string") {
-      roles.push(r.toUpperCase());
-    } else if (typeof r === "object") {
+    if (typeof r === "string") roles.push(r.toUpperCase());
+    else if (typeof r === "object") {
       if (Array.isArray(r)) {
         r.forEach((sub) => {
           if (typeof sub === "string") roles.push(sub.toUpperCase());
-          else if (sub?.authority)
-            roles.push(String(sub.authority).toUpperCase());
-          else if (sub?.roleName)
-            roles.push(String(sub.roleName).toUpperCase());
+          else if (sub?.authority) roles.push(String(sub.authority).toUpperCase());
+          else if (sub?.roleName) roles.push(String(sub.roleName).toUpperCase());
         });
-      } else if (r?.authority) {
-        roles.push(String(r.authority).toUpperCase());
-      } else if (r?.roleName) {
-        roles.push(String(r.roleName).toUpperCase());
-      }
+      } else if (r?.authority) roles.push(String(r.authority).toUpperCase());
+      else if (r?.roleName) roles.push(String(r.roleName).toUpperCase());
     }
   }
 
-  const isSuperOrAdmin = roles.includes("SUPERADMIN") || roles.includes("ADMIN");
+  const isSuperOrAdmin =
+    roles.includes("SUPERADMIN") ||
+    roles.includes("ADMIN") ||
+    roles.includes("ROLE_SUPERADMIN");
 
   // =====================================================
-  // 🔹 1. Cargar permisos reales del backend MBAC
+  // 🚀 2. Bypass automático para SUPERADMIN / ADMIN
+  // =====================================================
+  useEffect(() => {
+    if (isSuperOrAdmin) {
+      console.log("🚀 SUPERADMIN/ADMIN detectado - acceso total sin verificar permisos");
+      // Crear permisos globales ficticios
+      setPermisos([
+        {
+          path: "*",
+          modulo: "global",
+          acciones: ["ver", "crear", "editar", "eliminar", "exportar", "aprobar"],
+        },
+      ]);
+      setLoading(false);
+    }
+  }, [isSuperOrAdmin]);
+
+  // =====================================================
+  // 🔹 3. Cargar permisos reales del backend MBAC
   // =====================================================
   const fetchPermisos = useCallback(async () => {
-    if (!isAuthenticated || !user?.id) return;
+    if (!isAuthenticated || !user?.id || isSuperOrAdmin) return;
 
     setLoading(true);
     setError(null);
@@ -67,11 +82,8 @@ export const usePermissions = () => {
       console.log("🔄 Cargando permisos desde", `/mbac/permisos-activos/${user.id}`);
       const data = await apiClient.get(`/mbac/permisos-activos/${user.id}`, true);
 
-      if (!Array.isArray(data)) {
-        throw new Error("Formato de permisos inválido (no es un array)");
-      }
+      if (!Array.isArray(data)) throw new Error("Formato de permisos inválido");
 
-      // 🔁 Normalizar según el formato MBAC (rutaPagina, modulo, acciones)
       const transformed = data
         .map((p) => ({
           path: normalizePath(p.rutaPagina),
@@ -85,7 +97,6 @@ export const usePermissions = () => {
             p.puedeAprobar && "aprobar",
           ].filter(Boolean),
         }))
-        // Eliminar duplicados por path + acciones
         .filter(
           (p, i, arr) =>
             arr.findIndex(
@@ -102,26 +113,20 @@ export const usePermissions = () => {
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user, logout]);
+  }, [isAuthenticated, user?.id, logout, isSuperOrAdmin]);
 
-  // =====================================================
-  // 🔹 2. Recargar al cambiar usuario autenticado
-  // =====================================================
   useEffect(() => {
-    if (isAuthenticated && user?.id) {
-      fetchPermisos();
-    } else {
-      setPermisos([]);
-    }
-  }, [isAuthenticated, user, fetchPermisos]);
+    if (isAuthenticated && user?.id && !isSuperOrAdmin) fetchPermisos();
+  }, [isAuthenticated, user?.id, isSuperOrAdmin, fetchPermisos]);
 
   // =====================================================
-  // 🔹 3. Verificar permiso por ruta + acción
+  // 🔹 4. Verificar permiso por ruta + acción
   // =====================================================
   const tienePermiso = useCallback(
     (rutaPagina, accion = "ver") => {
-      if (isSuperOrAdmin) return true; // 🚀 acceso total
+      if (isSuperOrAdmin) return true;
       if (!Array.isArray(permisos)) return false;
+
       const ruta = normalizePath(rutaPagina);
       return tienePermisosRequeridos(permisos, ruta, [accion]);
     },
@@ -129,32 +134,15 @@ export const usePermissions = () => {
   );
 
   // =====================================================
-  // 🔹 4. Helpers adicionales
+  // 🔹 5. Helpers: rutas y módulos
   // =====================================================
   const getRutasPermitidas = useCallback(
-    (accion = "ver") => {
-      if (isSuperOrAdmin && permisos.length === 0) {
-        return [
-          { path: "/dashboard", acciones: ["ver"], modulo: "general" },
-          {
-            path: "/admin",
-            acciones: ["ver", "crear", "editar", "eliminar", "exportar", "aprobar"],
-            modulo: "admin",
-          },
-          {
-            path: "/admin/users",
-            acciones: ["ver", "crear", "editar", "eliminar"],
-            modulo: "admin",
-          },
-        ];
-      }
-
-      return filtrarRutasPermitidas(permisos, accion).map((p) => ({
+    (accion = "ver") =>
+      filtrarRutasPermitidas(permisos, accion).map((p) => ({
         ...p,
         path: normalizePath(p.path),
-      }));
-    },
-    [permisos, isSuperOrAdmin]
+      })),
+    [permisos]
   );
 
   const getModulosAgrupados = useCallback(
@@ -163,21 +151,15 @@ export const usePermissions = () => {
   );
 
   // =====================================================
-  // 🔹 5. Alias: compatibilidad con ProtectedRoute.jsx
-  // =====================================================
-  const verificarPermiso = tienePermiso;
-
-  // =====================================================
   // 🔹 6. Retorno final del hook
   // =====================================================
   return {
-    permisos,            // Permisos normalizados [{path, acciones[], modulo}]
-    loading,             // Estado de carga
-    error,               // Mensaje de error
-    tienePermiso,        // Verifica permiso por ruta/acción
-    verificarPermiso,    // Alias para compatibilidad
-    getRutasPermitidas,  // Rutas filtradas por acción
-    getModulosAgrupados, // Agrupadas por módulo
-    refetch: fetchPermisos, // Recarga manual
+    permisos,
+    loading,
+    error,
+    tienePermiso,
+    getRutasPermitidas,
+    getModulosAgrupados,
+    refetch: fetchPermisos,
   };
 };

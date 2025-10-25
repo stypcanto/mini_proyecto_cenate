@@ -1,8 +1,9 @@
 // ========================================================================
-// 💠 Login.jsx – Sistema CENATE 2025 (validación real con backend)
+// 💠 Login.jsx – Sistema CENATE 2025 (versión final con rutas activas)
 // ------------------------------------------------------------------------
-// • Espera la respuesta del backend antes de mostrar éxito o error
-// • Asistente UX con mensajes dinámicos precisos
+// • Valida credenciales con backend MBAC real
+// • Redirige al dashboard tras login exitoso
+// • Enlaces activos a CrearUsuario.js y PasswordRecovery.js
 // • Diseño institucional EsSalud – CENATE
 // ========================================================================
 
@@ -24,6 +25,7 @@ import { Link } from "react-router-dom";
 
 export default function Login() {
   const { login, loading } = useAuth();
+
   const [formData, setFormData] = useState({
     username: "",
     password: "",
@@ -35,23 +37,25 @@ export default function Login() {
   const [msgType, setMsgType] = useState("info");
 
   // ============================================================
-  // 📋 Validación de campos (previa al backend)
+  // 📋 Validación previa
   // ============================================================
   const validate = () => {
     const newErrors = {};
-    if (!formData.username.trim()) newErrors.username = "Ingrese su usuario institucional";
-    if (!formData.password) newErrors.password = "Ingrese su contraseña";
+    if (!formData.username.trim())
+      newErrors.username = "Ingrese su usuario institucional";
+    if (!formData.password)
+      newErrors.password = "Ingrese su contraseña";
     else if (formData.password.length < 8)
       newErrors.password = "La contraseña debe tener al menos 8 caracteres";
 
     setErrors(newErrors);
     if (Object.keys(newErrors).length)
-      setAssistantMsg("⚠️ Por favor, complete los campos requeridos correctamente.");
+      setAssistantMsg("⚠️ Complete los campos requeridos correctamente.");
     return Object.keys(newErrors).length === 0;
   };
 
   // ============================================================
-  // 🧠 Enviar formulario y validar con backend real
+  // 🧠 Enviar al backend
   // ============================================================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -63,10 +67,10 @@ export default function Login() {
 
       const response = await login(formData.username, formData.password);
 
-      // ⚙️ login() devuelve { ok: true/false } según tu AuthContext
       if (response?.ok) {
         setMsgType("success");
         setAssistantMsg("✅ Inicio de sesión exitoso. Redirigiendo...");
+        setTimeout(() => setAssistantMsg(null), 1500);
       } else {
         setMsgType("error");
         setAssistantMsg("❌ Usuario o contraseña incorrectos. Intente nuevamente.");
@@ -76,6 +80,15 @@ export default function Login() {
       setMsgType("error");
       setAssistantMsg("❌ Error de conexión con el servidor. Intente más tarde.");
     }
+  };
+
+  // ============================================================
+  // 🧹 Limpiar errores cuando el usuario escribe
+  // ============================================================
+  const handleChange = (field, value) => {
+    setFormData({ ...formData, [field]: value });
+    setErrors((prev) => ({ ...prev, [field]: undefined }));
+    if (assistantMsg && msgType !== "info") setAssistantMsg(null);
   };
 
   // ============================================================
@@ -100,7 +113,6 @@ export default function Login() {
               alt="Logo EsSalud"
               className="mx-auto h-14 mb-8 drop-shadow-md"
             />
-
             <h1 className="text-2xl font-bold text-[#0a5ba9] mb-1">
               Inicio de Sesión
             </h1>
@@ -142,9 +154,7 @@ export default function Login() {
                 type="text"
                 placeholder="Tu usuario institucional"
                 value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
+                onChange={(e) => handleChange("username", e.target.value)}
                 className={`w-full px-4 py-3 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 ${
                   errors.username
                     ? "border-red-400 focus:ring-red-100"
@@ -169,9 +179,7 @@ export default function Login() {
                   type={showPassword ? "text" : "password"}
                   placeholder="Tu contraseña"
                   value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
+                  onChange={(e) => handleChange("password", e.target.value)}
                   className={`w-full px-4 py-3 pr-12 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 ${
                     errors.password
                       ? "border-red-400 focus:ring-red-100"
@@ -235,17 +243,20 @@ export default function Login() {
 
           {/* Acciones complementarias */}
           <div className="mt-6 flex flex-col items-center text-sm text-gray-600 space-y-3">
-            <button className="text-[#0a5ba9] font-semibold hover:underline flex items-center gap-1">
+            <Link
+              to="/admin/crear-usuario"
+              className="text-[#0a5ba9] font-semibold hover:underline flex items-center gap-1"
+            >
               <UserPlus size={15} /> Crear nueva cuenta
-            </button>
-            <button
-              onClick={() =>
-                alert("Función de recuperación de contraseña en desarrollo.")
-              }
+            </Link>
+
+            <Link
+              to="/password-recovery"
               className="hover:text-[#0a5ba9] flex items-center gap-1"
             >
               <KeyRound size={15} /> Olvidé mi contraseña
-            </button>
+            </Link>
+
             <Link
               to="/"
               className="hover:text-[#0a5ba9] flex items-center gap-1"

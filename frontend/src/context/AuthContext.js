@@ -77,20 +77,52 @@ export const AuthProvider = ({ children }) => {
         const jwt = data.token;
         const payload = decodeJwt(jwt);
 
+        // 🔧 Extraer roles correctamente desde el array de objetos
+        const rolesArray = Array.isArray(data.roles) 
+          ? data.roles.map(r => typeof r === 'string' ? r : (r?.authority || r?.roleName || '')).filter(Boolean)
+          : [];
+
+        // ✅ Guardar token primero para poder hacer la llamada autenticada
+        saveToken(jwt);
+        setToken(jwt);
+
+        // 🔧 Obtener userId desde el endpoint /api/usuarios/me
+        let userId = null;
+        let nombreCompleto = username;
+        
+        try {
+          console.log("🔍 Obteniendo información del usuario autenticado...");
+          const userInfo = await apiClient.get("/usuarios/me", true);
+          
+          // 🔧 El backend devuelve 'idUser', no 'id'
+          userId = userInfo.idUser || userInfo.id || userInfo.idUsuario || userInfo.userId;
+          nombreCompleto = userInfo.nombreCompleto || userInfo.nombre_completo || username;
+          
+          console.log("✅ Usuario ID obtenido:", userId);
+          console.log("📦 Respuesta completa de /usuarios/me:", userInfo);
+        } catch (err) {
+          console.error("⚠️ Error obteniendo userId del endpoint /usuarios/me:", err);
+          // Si falla, intentar extraer del payload del token
+          userId = payload.user_id || payload.userId || payload.id;
+          
+          // Si aún es null, usar el username como ID temporal para SUPERADMIN
+          if (!userId && rolesArray.some(r => r.includes('SUPERADMIN') || r.includes('ADMIN'))) {
+            console.log("⚠️ Usando username como ID temporal para SUPERADMIN");
+            userId = username;
+          }
+        }
+
         const userData = {
-          id: payload.sub || data.userId || data.id_user,
-          username: payload.username || username,
-          roles: payload.roles || data.roles || [],
-          permisos: payload.permisos || data.permisos || [],
-          nombreCompleto:
-            data.nombreCompleto || data.nombre_completo || username,
+          id: userId,
+          username: payload.sub || username,
+          roles: rolesArray,
+          permisos: data.permisos || [],
+          nombreCompleto: nombreCompleto,
           token: jwt,
         };
 
-        saveToken(jwt);
         saveUser(userData);
         setUser(userData);
-        setToken(jwt);
 
         toast.success(`Bienvenido, ${userData.nombreCompleto || userData.username}`);
 
@@ -100,6 +132,8 @@ export const AuthProvider = ({ children }) => {
       } catch (error) {
         console.error("Error en login:", error);
         toast.error(error.message || "Error al iniciar sesión");
+        clearToken();
+        clearUser();
         return { ok: false, error: error.message };
       } finally {
         setLoading(false);

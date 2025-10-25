@@ -21,25 +21,46 @@ export default function Dashboard() {
       return;
     }
 
-    // Normalizar primer rol asignado
-    const rol = (user.roles?.[0] || "").toUpperCase();
+    // 🔍 Extraer TODOS los roles del usuario (no solo el primero)
+    const rolesArray = [];
+    if (user.roles && user.roles.length > 0) {
+      user.roles.forEach(r => {
+        if (typeof r === 'string') {
+          rolesArray.push(r.toUpperCase());
+        } else if (typeof r === 'object' && r !== null) {
+          const authority = (r.authority || r.roleName || "").toUpperCase();
+          if (authority) rolesArray.push(authority);
+        }
+      });
+    }
 
-    // Mapa de rutas MBAC
-    const routes = {
-      SUPERADMIN: "/admin",
-      ADMIN: "/admin",
-      MEDICO: "/roles/medico",
-      COORDINADOR: "/roles/coordinador",
-      EXTERNO: "/roles/externo",
-      CITAS: "/roles/citas",
-      LINEAMIENTOS: "/roles/lineamientos",
-      USER: "/user/dashboard",
-    };
+    console.log("📝 Todos los roles del usuario:", rolesArray);
 
-    const targetPath = routes[rol] || "/unauthorized";
+    // 🎯 Buscar el rol de mayor jerarquía
+    let targetPath = "/unauthorized";
+    
+    if (rolesArray.includes("SUPERADMIN") || rolesArray.includes("ROLE_SUPERADMIN")) {
+      targetPath = "/admin/dashboard";
+    } else if (rolesArray.includes("ADMIN")) {
+      targetPath = "/admin/dashboard";
+    } else if (rolesArray.includes("MEDICO")) {
+      targetPath = "/roles/medico/dashboard";
+    } else if (rolesArray.includes("COORDINADOR")) {
+      targetPath = "/roles/coordinador/dashboard";
+    } else if (rolesArray.includes("EXTERNO")) {
+      targetPath = "/roles/externo/dashboard";
+    } else if (rolesArray.includes("CITAS")) {
+      targetPath = "/roles/citas/dashboard";
+    } else if (rolesArray.includes("LINEAMIENTOS")) {
+      targetPath = "/roles/lineamientos/dashboard";
+    } else if (rolesArray.includes("USER")) {
+      targetPath = "/user/dashboard";
+    }
+
+    console.log("➡️ Redirigiendo a:", targetPath);
 
     // ⏩ Redirigir suavemente con pequeño delay para UX
-    const timer = setTimeout(() => navigate(targetPath, { replace: true }), 900);
+    const timer = setTimeout(() => navigate(targetPath, { replace: true }), 500);
 
     return () => clearTimeout(timer);
   }, [user, navigate]);
