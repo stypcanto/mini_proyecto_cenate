@@ -1,77 +1,13 @@
-# ==========================================================
-# 🧹 Docker Ignore para FRONTEND (React + Nginx)
-# ----------------------------------------------------------
-# Optimizado para builds rápidos y reproducibles
-# Compatible con Mac M1/M2 (ARM64) y Linux AMD64
-# ==========================================================
+# --- Java / Spring Boot ---
+backend/target/
+backend/build/
+*.class
 
-# ----------------------------------------------------------
-# 🧩 Node y dependencias locales
-# ----------------------------------------------------------
-node_modules
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-lock.yaml
+# --- Node / React ---
+frontend/node_modules/
+frontend/build/
 
-# ⚠️ Mantener package-lock.json para builds reproducibles
-# ❌ NO lo ignores (es necesario para caching de dependencias)
-
-# ----------------------------------------------------------
-# 🏗️ Builds locales (no se copian al contenedor)
-# ----------------------------------------------------------
-/build
-/dist
-/.next
-/.cache
-
-# ----------------------------------------------------------
-# 🧰 Archivos del sistema operativo
-# ----------------------------------------------------------
+# --- Sistema ---
 .DS_Store
-Thumbs.db
-
-# ----------------------------------------------------------
-# 🔐 Archivos de entorno (manejar por Docker Compose)
-# ----------------------------------------------------------
-.env
-.env.local
-.env.development
-.env.development.local
-.env.test
-.env.test.local
-.env.production
-.env.production.local
-
-# ----------------------------------------------------------
-# 🧭 Control de versiones
-# ----------------------------------------------------------
-.git
-.gitignore
-.gitattributes
-
-# ----------------------------------------------------------
-# 💻 Configuración de IDEs / editores
-# ----------------------------------------------------------
-.vscode
-.idea
-*.swp
-
-# ----------------------------------------------------------
-# 🗑️ Archivos temporales y de respaldo
-# ----------------------------------------------------------
 *.log
-*.tmp
-*.bak
-*.orig
-
-# ----------------------------------------------------------
-# ⚠️ IMPORTANTE: mantener estos archivos visibles
-# ----------------------------------------------------------
-!nginx.conf         # 👈 No lo ignores (Docker lo necesita)
-!package.json
-!package-lock.json
-!tailwind.config.js
-!postcss.config.js
-!public/
-!src/
+*.lock
