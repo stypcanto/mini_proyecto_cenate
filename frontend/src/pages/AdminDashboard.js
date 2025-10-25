@@ -1,269 +1,357 @@
 // ========================================================================
-// 🧠 AdminDashboard.jsx – Versión final CENATE 2025 (UI profesional)
+// 🎯 AdminDashboard.jsx – Panel de Administración CENATE 2025
 // ------------------------------------------------------------------------
-// • Colores institucionales EsSalud/CENATE con degradados suaves
-// • Contadores visibles en las acciones rápidas
-// • Inspirado en interfaz Apple/macOS con efectos de luz y sombra
+// Dashboard profesional con UX/UI espectacular para SUPERADMIN
+// Incluye estadísticas, acciones rápidas y navegación intuitiva
 // ========================================================================
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { apiClient } from "../lib/apiClient";
 import {
   Users,
   Shield,
   Activity,
   FileText,
-  Bell,
+  Settings,
+  TrendingUp,
+  AlertCircle,
   CheckCircle2,
   Clock,
-  TrendingUp,
+  BarChart3,
+  Lock,
+  Unlock,
   ChevronRight,
+  Calendar,
+  Database,
 } from "lucide-react";
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const [stats, setStats] = useState({
+    usuarios: 0,
+    roles: 0,
+    permisos: 0,
+    auditorias: 0,
+  });
+  const [loading, setLoading] = useState(true);
 
-  // 📊 Estadísticas generales
-  const stats = [
-    { icon: Users, label: "Usuarios", value: "245", trend: "+12%", color: "#0A5BA9" },
-    { icon: Shield, label: "Roles", value: "8", trend: "+2", color: "#7C3AED" },
-    { icon: Activity, label: "Permisos", value: "42", trend: "+5", color: "#2B844E" },
-    { icon: FileText, label: "Auditorías", value: "1.2K", trend: "+234", color: "#F59E0B" },
+  // Cargar estadísticas del sistema
+  useEffect(() => {
+    const loadStats = async () => {
+      try {
+        const usuarios = await apiClient.get("/usuarios", true);
+        const roles = await apiClient.get("/roles", true);
+        
+        setStats({
+          usuarios: usuarios?.length || 0,
+          roles: roles?.length || 0,
+          permisos: 42, // TODO: endpoint de permisos
+          auditorias: 1234, // TODO: endpoint de auditoría
+        });
+      } catch (error) {
+        console.error("Error cargando estadísticas:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadStats();
+  }, []);
+
+  // 📊 Tarjetas de estadísticas principales
+  const statsCards = [
+    {
+      icon: Users,
+      label: "Usuarios Activos",
+      value: stats.usuarios,
+      trend: "+12%",
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-50",
+      textColor: "text-blue-700",
+    },
+    {
+      icon: Shield,
+      label: "Roles del Sistema",
+      value: stats.roles,
+      trend: "+2",
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-50",
+      textColor: "text-purple-700",
+    },
+    {
+      icon: Activity,
+      label: "Permisos MBAC",
+      value: stats.permisos,
+      trend: "+5",
+      color: "from-green-500 to-green-600",
+      bgColor: "bg-green-50",
+      textColor: "text-green-700",
+    },
+    {
+      icon: FileText,
+      label: "Registros de Auditoría",
+      value: stats.auditorias,
+      trend: "+234",
+      color: "from-amber-500 to-amber-600",
+      bgColor: "bg-amber-50",
+      textColor: "text-amber-700",
+    },
   ];
 
   // ⚡ Acciones rápidas
   const quickActions = [
-    { icon: Users, label: "Gestionar Usuarios", color: "blue", path: "/admin/users" },
-    { icon: Shield, label: "Configurar Roles", color: "purple", path: "/admin/roles" },
-    { icon: Activity, label: "Ver Permisos", color: "green", path: "/admin/permisos" },
-    { icon: FileText, label: "Auditoría", color: "orange", path: "/admin/auditoria" },
+    {
+      icon: Users,
+      label: "Gestionar Usuarios",
+      description: "Crear, editar y administrar usuarios del sistema",
+      path: "/admin/users",
+      color: "blue",
+      bgGradient: "from-blue-500 to-blue-600",
+    },
+    {
+      icon: Shield,
+      label: "Gestión de Roles",
+      description: "Configurar roles y asignar permisos",
+      path: "/admin/roles",
+      color: "purple",
+      bgGradient: "from-purple-500 to-purple-600",
+    },
+    {
+      icon: Lock,
+      label: "Control MBAC",
+      description: "Sistema de permisos granulares",
+      path: "/admin/mbac",
+      color: "green",
+      bgGradient: "from-green-500 to-green-600",
+    },
+    {
+      icon: Activity,
+      label: "Ver Permisos",
+      description: "Explorar permisos del sistema",
+      path: "/admin/permisos",
+      color: "emerald",
+      bgGradient: "from-emerald-500 to-emerald-600",
+    },
+    {
+      icon: FileText,
+      label: "Auditoría",
+      description: "Revisar logs y actividad del sistema",
+      path: "/admin/auditoria",
+      color: "orange",
+      bgGradient: "from-orange-500 to-orange-600",
+    },
+    {
+      icon: Settings,
+      label: "Configuración",
+      description: "Ajustes generales del sistema",
+      path: "/admin/settings",
+      color: "gray",
+      bgGradient: "from-gray-500 to-gray-600",
+    },
   ];
 
-  // 🔢 Contadores (simulados, luego pueden venir del backend)
-  const counts = {
-    blue: 245, // Usuarios
-    purple: 8, // Roles
-    green: 42, // Permisos
-    orange: 1200, // Auditorías
-  };
-
-  // 🕒 Actividad reciente
+  // 🔔 Actividad reciente (mock data)
   const recentActivity = [
-    { action: "Nuevo usuario registrado", time: "Hace 5 min", icon: Users },
-    { action: "Rol actualizado", time: "Hace 1 hora", icon: Shield },
-    { action: "Configuración modificada", time: "Hace 2 horas", icon: Activity },
+    {
+      icon: CheckCircle2,
+      color: "text-green-600",
+      bgColor: "bg-green-100",
+      text: "Usuario 'jperez' creado exitosamente",
+      time: "Hace 5 minutos",
+    },
+    {
+      icon: AlertCircle,
+      color: "text-amber-600",
+      bgColor: "bg-amber-100",
+      text: "Intento de acceso no autorizado detectado",
+      time: "Hace 12 minutos",
+    },
+    {
+      icon: Lock,
+      color: "text-purple-600",
+      bgColor: "bg-purple-100",
+      text: "Permisos MBAC actualizados para rol MEDICO",
+      time: "Hace 1 hora",
+    },
+    {
+      icon: Users,
+      color: "text-blue-600",
+      bgColor: "bg-blue-100",
+      text: "10 nuevos usuarios registrados hoy",
+      time: "Hace 2 horas",
+    },
   ];
 
   return (
-    <div className="p-8 bg-[var(--bg-main)] transition-colors min-h-screen">
-      {/* HEADER */}
-      <div className="flex items-center justify-between mb-8">
+    <div className="space-y-6 p-6 animate-fadeIn">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-[var(--text-primary)]">
-            Bienvenido, {user?.nombreCompleto || user?.username || "Usuario"}
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl">
+              <Shield className="w-8 h-8 text-white" />
+            </div>
+            Panel de Administración
           </h1>
-          <p className="text-base text-[var(--text-secondary)] mt-1">
-            Panel de Administración — CENATE
+          <p className="text-gray-600 mt-2">
+            Bienvenido, <span className="font-semibold">{user?.nombreCompleto || user?.username}</span>
           </p>
         </div>
 
-        <button
-          type="button"
-          className="relative p-3 rounded-xl bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]
-                     transition-colors shadow-sm border border-[var(--border-color)]"
-        >
-          <Bell size={20} className="text-[var(--text-secondary)]" />
-          <span className="absolute top-2 right-2 w-2 h-2 bg-[var(--color-danger)] rounded-full ring-2 ring-[var(--bg-card)]" />
-        </button>
+        <div className="flex items-center gap-3">
+          <button className="flex items-center gap-2 px-4 py-2 bg-white border border-gray-300 rounded-xl hover:bg-gray-50 transition-all duration-200">
+            <Calendar className="w-5 h-5 text-gray-600" />
+            <span className="text-sm font-medium">Hoy</span>
+          </button>
+          <button className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-all duration-200">
+            <BarChart3 className="w-5 h-5" />
+            <span className="text-sm font-medium">Ver Reportes</span>
+          </button>
+        </div>
       </div>
 
-      {/* 📈 ESTADÍSTICAS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-        {stats.map((stat, idx) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={idx}
-              className="rounded-2xl p-6 border border-[var(--border-color)]
-                         shadow-sm bg-white hover:shadow-md hover:-translate-y-1 transition-all duration-300"
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{
-                    background: `${stat.color}15`,
-                  }}
-                >
-                  <Icon size={24} style={{ color: stat.color }} />
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statsCards.map((stat, index) => (
+          <div
+            key={index}
+            className="group bg-white rounded-2xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100"
+          >
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className={`p-3 ${stat.bgColor} rounded-xl`}>
+                  <stat.icon className={`w-6 h-6 ${stat.textColor}`} />
                 </div>
-                <span
-                  className="text-xs font-semibold px-2.5 py-1 rounded-full border"
-                  style={{
-                    color: stat.color,
-                    backgroundColor: `${stat.color}10`,
-                    borderColor: `${stat.color}30`,
-                  }}
-                >
+                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                  <TrendingUp className="w-4 h-4" />
                   {stat.trend}
-                </span>
+                </div>
               </div>
-              <p
-                className="text-2xl font-bold mb-1"
-                style={{
-                  color: "var(--text-primary)",
-                  textShadow: "0 1px 1px rgba(0,0,0,0.05)",
-                }}
-              >
-                {stat.value}
-              </p>
-              <p className="text-sm text-[var(--text-secondary)]">{stat.label}</p>
+
+              <div className="space-y-1">
+                <p className="text-3xl font-bold text-gray-900">
+                  {loading ? (
+                    <span className="inline-block w-16 h-8 bg-gray-200 animate-pulse rounded"></span>
+                  ) : (
+                    stat.value.toLocaleString()
+                  )}
+                </p>
+                <p className="text-sm text-gray-600">{stat.label}</p>
+              </div>
             </div>
-          );
-        })}
+
+            {/* Barra de progreso decorativa */}
+            <div className="h-1.5 w-full bg-gray-100">
+              <div className={`h-full bg-gradient-to-r ${stat.color} w-3/4 animate-slideInFromLeft`}></div>
+            </div>
+          </div>
+        ))}
       </div>
 
-      {/* ⚙️ CUERPO PRINCIPAL */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* ACCIONES RÁPIDAS + ACTIVIDAD */}
-        <div className="lg:col-span-2 space-y-6">
-          {/* 🚀 ACCIONES RÁPIDAS con contadores */}
-          <div className="rounded-2xl p-6 border border-[var(--border-color)] shadow-sm bg-[var(--bg-card)]">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-bold text-[var(--text-primary)] flex items-center gap-2">
-                <TrendingUp size={20} className="text-[var(--color-primary)]" />
-                Acciones Rápidas
-              </h3>
-            </div>
+      {/* Quick Actions */}
+      <div>
+        <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+          <Activity className="w-6 h-6 text-blue-600" />
+          Acciones Rápidas
+        </h2>
 
-            <div className="grid grid-cols-2 gap-4">
-              {quickActions.map((action, idx) => {
-                const Icon = action.icon;
-                const gradient = {
-                  blue: "from-[#0A5BA9] to-[#3B82F6]",
-                  purple: "from-[#8B5CF6] to-[#A78BFA]",
-                  green: "from-[#2B844E] to-[#4ADE80]",
-                  orange: "from-[#F59E0B] to-[#FBBF24]",
-                }[action.color];
-
-                const count = counts[action.color] ?? 0;
-
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    onClick={() => action.path && navigate(action.path)}
-                    className={`group p-6 rounded-2xl bg-gradient-to-br ${gradient} text-white
-                               shadow-md hover:shadow-lg hover:scale-[1.03] transition-all
-                               duration-300 flex flex-col justify-between relative overflow-hidden`}
-                  >
-                    {/* ✨ Brillo Apple */}
-                    <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-10 transition-opacity"></div>
-
-                    {/* 🔢 Contador superior derecho */}
-                    <div className="absolute top-3 right-3 bg-white/20 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-white shadow-sm">
-                      {count.toLocaleString("es-PE")}
-                    </div>
-
-                    {/* Icono */}
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center group-hover:bg-white/25 transition-all">
-                        <Icon size={22} className="text-white drop-shadow-sm" />
-                      </div>
-                    </div>
-
-                    {/* Texto */}
-                    <div>
-                      <p className="text-sm font-semibold leading-snug drop-shadow-sm">
-                        {action.label}
-                      </p>
-                      <ChevronRight
-                        size={16}
-                        className="mt-2 opacity-70 group-hover:translate-x-1 transition-transform"
-                      />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* 🕒 ACTIVIDAD RECIENTE */}
-          <div className="rounded-2xl p-6 border border-[var(--border-color)] shadow-sm bg-[var(--bg-card)]">
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4 flex items-center gap-2">
-              <Clock size={20} className="text-[var(--color-primary)]" />
-              Actividad Reciente
-            </h3>
-            <div className="space-y-4">
-              {recentActivity.map((activity, idx) => {
-                const Icon = activity.icon;
-                return (
-                  <div
-                    key={idx}
-                    className="flex items-center gap-4 p-4 rounded-xl hover:bg-[var(--bg-hover)] transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-[var(--bg-secondary)] flex items-center justify-center">
-                      <Icon size={18} className="text-[var(--color-primary)]" />
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-[var(--text-primary)]">
-                        {activity.action}
-                      </p>
-                      <p className="text-xs text-[var(--text-secondary)] flex items-center gap-1 mt-1">
-                        <Clock size={12} />
-                        {activity.time}
-                      </p>
-                    </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {quickActions.map((action, index) => (
+            <button
+              key={index}
+              onClick={() => navigate(action.path)}
+              className="group bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 overflow-hidden border border-gray-100 text-left"
+            >
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-3">
+                  <div className={`p-3 bg-gradient-to-br ${action.bgGradient} rounded-xl`}>
+                    <action.icon className="w-6 h-6 text-white" />
                   </div>
-                );
-              })}
-            </div>
+                  <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-gray-600 group-hover:translate-x-1 transition-all duration-200" />
+                </div>
+
+                <h3 className="font-bold text-gray-900 text-lg mb-1">{action.label}</h3>
+                <p className="text-sm text-gray-600">{action.description}</p>
+              </div>
+
+              <div className={`h-1 bg-gradient-to-r ${action.bgGradient} transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left`}></div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent Activity & System Status */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Recent Activity */}
+        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Clock className="w-6 h-6 text-blue-600" />
+            Actividad Reciente
+          </h2>
+
+          <div className="space-y-4">
+            {recentActivity.map((activity, index) => (
+              <div
+                key={index}
+                className="flex items-start gap-4 p-3 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                <div className={`p-2 ${activity.bgColor} rounded-lg flex-shrink-0`}>
+                  <activity.icon className={`w-5 h-5 ${activity.color}`} />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900">{activity.text}</p>
+                  <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
+                </div>
+              </div>
+            ))}
           </div>
+
+          <button className="w-full mt-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
+            Ver todas las actividades →
+          </button>
         </div>
 
-        {/* 💡 ESTADO DEL SISTEMA */}
-        <div className="space-y-6">
-          <div className="rounded-2xl p-6 border border-[var(--border-color)] shadow-sm bg-[var(--bg-card)]">
-            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-4">
-              Estado del Sistema
-            </h3>
-            <div className="space-y-3">
-              {[
-                { label: "Autenticación", status: "Operativo" },
-                { label: "Base de Datos", status: "Operativo" },
-                { label: "API Rest", status: "Operativo" },
-              ].map((item, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-100 hover:shadow-sm transition-all"
-                >
-                  <div className="flex items-center gap-3">
-                    <CheckCircle2 size={18} className="text-green-700" />
-                    <span className="text-sm font-medium text-green-800">
-                      {item.label}
-                    </span>
-                  </div>
-                  <span className="text-xs font-semibold text-green-900 bg-green-200 px-2 py-1 rounded-full">
-                    {item.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* System Status */}
+        <div className="bg-white rounded-2xl shadow-md p-6 border border-gray-100">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Database className="w-6 h-6 text-green-600" />
+            Estado del Sistema
+          </h2>
 
-          {/* 🟦 ESTADO GENERAL */}
-          <div className="bg-gradient-to-br from-[#0A5BA9] to-[#2563EB] rounded-2xl p-6 text-white shadow-md">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5" />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="font-medium text-gray-900">API Backend</span>
               </div>
-              <div>
-                <h4 className="font-bold mb-1">Todo funcionando</h4>
-                <p className="text-sm text-white/80">
-                  Sistema operativo correctamente
-                </p>
+              <span className="text-sm text-green-600 font-medium">Operativo</span>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="font-medium text-gray-900">Base de Datos</span>
               </div>
+              <span className="text-sm text-green-600 font-medium">Conectado</span>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-green-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="font-medium text-gray-900">Sistema MBAC</span>
+              </div>
+              <span className="text-sm text-green-600 font-medium">Activo</span>
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="font-medium text-gray-900">Última Sincronización</span>
+              </div>
+              <span className="text-sm text-blue-600 font-medium">Hace 2 min</span>
             </div>
           </div>
         </div>

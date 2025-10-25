@@ -32,6 +32,7 @@ import CrearUsuario from "./pages/CrearUsuario";
 
 // 🧩 Permisos RBAC
 import PermisosPage from "./pages/admin/PermisosPage";
+import MBACControl from "./pages/admin/MBACControl";
 
 // 🧩 Perfil de Usuario
 import Profile from "./pages/user/Profile";
@@ -116,6 +117,9 @@ function AppRoutes() {
             </ProtectedRoute>
           } 
         />
+        
+        {/* 🔒 Panel MBAC */}
+        <Route path="/admin/mbac" element={<MBACControl />} />
 
         {/* 👤 Perfil de usuario */}
         <Route path="/user/profile" element={<Profile />} />

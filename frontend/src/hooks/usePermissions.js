@@ -38,14 +38,25 @@ export const usePermissions = () => {
   // 🔹 1. Cargar permisos reales del backend MBAC
   // =====================================================
   const fetchPermisos = useCallback(async () => {
-    if (!isAuthenticated || !user?.username) return;
+    if (!isAuthenticated || !user?.username) {
+      console.warn("⚠️ No se puede cargar permisos: usuario no autenticado o sin username");
+      return;
+    }
 
     setLoading(true);
     setError(null);
 
     try {
-      // ✅ Usa el username como identificador temporal
-      const data = await apiClient.get(`/permisos/usuario/${user.username}`, true);
+      // ✅ Usa el username, NO el ID
+      const username = user.username || user.nombreUsuario || user.name_user;
+      
+      if (!username) {
+        throw new Error("Usuario sin username válido");
+      }
+
+      console.log("🔍 Cargando permisos para usuario:", username);
+      
+      const data = await apiClient.get(`/permisos/usuario/${username}`, true);
 
       if (!Array.isArray(data)) {
         throw new Error("Formato de permisos inválido (no es un array)");
@@ -58,9 +69,10 @@ export const usePermissions = () => {
           (p, i, arr) => arr.findIndex((q) => q.path === p.path && q.acciones === p.acciones) === i
         );
 
+      console.log("✅ Permisos cargados exitosamente:", transformed.length);
       setPermisos(transformed);
     } catch (err) {
-      console.error("Error cargando permisos:", err);
+      console.error("❌ Error cargando permisos:", err);
       setError(err.message || "Error al cargar permisos");
       if (String(err?.message).includes("401")) logout();
       setPermisos([]);

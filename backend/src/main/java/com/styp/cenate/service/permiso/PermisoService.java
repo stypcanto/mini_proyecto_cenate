@@ -18,6 +18,12 @@ public interface PermisoService {
     List<PermisoUsuarioResponseDTO> obtenerPermisosPorUsername(String username);
 
     /**
+     * 🎯 Obtiene los permisos activos de un usuario por su ID (✅ RECOMENDADO).
+     * Más eficiente para búsquedas en base de datos.
+     */
+    List<PermisoUsuarioResponseDTO> obtenerPermisosPorUserId(Integer idUser);
+
+    /**
      * 🔹 Obtiene todos los permisos asociados a un rol específico.
      */
     List<Permiso> getPermisosByRol(Integer idRol);

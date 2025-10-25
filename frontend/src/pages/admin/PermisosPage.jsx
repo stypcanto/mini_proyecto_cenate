@@ -36,15 +36,24 @@ export default function PermisosPage() {
     try {
       setLoading(true);
       setError(null);
-      const userId = 1; // 🔧 Reemplazar con user.id si corresponde
-      const data = await apiClient.get(`/permisos/usuario/${userId}`, true);
+      
+      // ✅ Usa el username del usuario autenticado
+      const username = user?.username || user?.nombreUsuario || user?.name_user;
+      
+      if (!username) {
+        throw new Error("Usuario no autenticado o sin username");
+      }
+      
+      console.log("🔍 Cargando permisos para:", username);
+      const data = await apiClient.get(`/permisos/usuario/${username}`, true);
+      
       setPermisos(data);
       const expanded = {};
-      data.forEach((p) => (expanded[p.modulo] = true));
+      data.forEach((p) => (expanded[p.nombreModulo || p.modulo] = true));
       setExpandedModules(expanded);
     } catch (err) {
       setError(err.message);
-      console.error("Error al cargar permisos:", err);
+      console.error("❌ Error al cargar permisos:", err);
     } finally {
       setLoading(false);
     }

@@ -37,9 +37,32 @@ public class PermisoController {
     private final PermisoService permisoService;
 
     // ============================================================
-    // 🔹 Obtener permisos por USERNAME (para el frontend actual)
+    // 🟢 Health check
     // ============================================================
-    @GetMapping("/usuario/{username}")
+    @GetMapping("/health")
+    public ResponseEntity<Map<String, String>> health() {
+        return ResponseEntity.ok(Map.of(
+            "status", "UP",
+            "service", "PermisoController",
+            "timestamp", java.time.LocalDateTime.now().toString()
+        ));
+    }
+
+    // ============================================================
+    // 🎯 Obtener permisos por ID de USUARIO (✅ RUTA PRINCIPAL - más rápido)
+    // ============================================================
+    @GetMapping("/usuario/{idUser}")
+    public ResponseEntity<List<PermisoUsuarioResponseDTO>> getPermisosPorUsuarioId(
+            @PathVariable Integer idUser) {
+        log.info("🔎 Consultando permisos del usuario ID: {}", idUser);
+        List<PermisoUsuarioResponseDTO> permisos = permisoService.obtenerPermisosPorUserId(idUser);
+        return ResponseEntity.ok(permisos);
+    }
+
+    // ============================================================
+    // 🔹 Obtener permisos por USERNAME (ruta alternativa para compatibilidad)
+    // ============================================================
+    @GetMapping("/usuario/username/{username}")
     public ResponseEntity<List<PermisoUsuarioResponseDTO>> getPermisosPorUsuario(
             @PathVariable String username) {
         log.info("🔎 Consultando permisos del usuario '{}'", username);
@@ -52,18 +75,31 @@ public class PermisoController {
     // ============================================================
     @GetMapping("/rol/{idRol}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
-    public ResponseEntity<List<Permiso>> getPermisosByRol(@PathVariable Integer idRol) {
+    public ResponseEntity<?> getPermisosByRol(@PathVariable Integer idRol) {
         log.info("📜 Solicitando permisos del rol con ID: {}", idRol);
 
-        List<Permiso> permisos = permisoService.getPermisosByRol(idRol);
+        try {
+            List<Permiso> permisos = permisoService.getPermisosByRol(idRol);
 
-        if (permisos.isEmpty()) {
-            log.warn("⚠️ No se encontraron permisos para el rol ID: {}", idRol);
-            return ResponseEntity.noContent().build();
+            if (permisos.isEmpty()) {
+                log.warn("⚠️ No se encontraron permisos para el rol ID: {}", idRol);
+                return ResponseEntity.ok(Map.of(
+                    "message", "No se encontraron permisos para este rol",
+                    "idRol", idRol,
+                    "permisos", permisos
+                ));
+            }
+
+            log.info("✅ {} permisos encontrados para el rol ID: {}", permisos.size(), idRol);
+            return ResponseEntity.ok(permisos);
+        } catch (Exception e) {
+            log.error("❌ Error al obtener permisos del rol {}: {}", idRol, e.getMessage(), e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                "error", "Error al obtener permisos",
+                "message", e.getMessage(),
+                "idRol", idRol
+            ));
         }
-
-        log.info("✅ {} permisos encontrados para el rol ID: {}", permisos.size(), idRol);
-        return ResponseEntity.ok(permisos);
     }
 
     // ============================================================

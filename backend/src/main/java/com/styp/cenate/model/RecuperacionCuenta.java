@@ -3,10 +3,10 @@
 // ------------------------------------------------------------------------
 // Representa las solicitudes de recuperación de contraseña registradas
 // por los usuarios del sistema MBAC CENATE.
-// Incluye trazabilidad por fecha y observación.
+// Incluye trazabilidad por fecha, estado y observaciones.
 // ========================================================================
 
-        package com.styp.cenate.model;
+package com.styp.cenate.model;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -19,28 +19,31 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString
 public class RecuperacionCuenta {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // 👤 Usuario o identificador institucional que solicitó la recuperación
+    /** 👤 Usuario o identificador institucional que solicitó la recuperación */
     @Column(nullable = false)
-    private String username;  // ⚙️ antes era "email", se cambia para alinearlo con el backend/login
+    private String username; // ⚙️ antes era "email", ahora se alinea con login MBAC
 
-    // 🕒 Fecha en la que se realizó la solicitud
-    @Column(name = "fecha_solicitud", nullable = false)
+    /** 🕒 Fecha en la que se realizó la solicitud */
+    @Builder.Default
+    @Column(name = "fecha_solicitud", nullable = false, updatable = false)
     private LocalDateTime fechaSolicitud = LocalDateTime.now();
 
-    // 🔄 Estado de la solicitud: PENDIENTE, ATENDIDO, RECHAZADO
-    @Column(nullable = false)
+    /** 🔄 Estado de la solicitud: PENDIENTE, ATENDIDO, RECHAZADO */
+    @Column(nullable = false, length = 20)
     private String estado;
 
-    // 🗒️ Observaciones opcionales del administrador o sistema
+    /** 🗒️ Observaciones opcionales del administrador o sistema */
+    @Column(length = 255)
     private String observacion;
 
-    // 🕓 Fecha de actualización (útil cuando cambia el estado)
+    /** 🕓 Fecha de última actualización (cuando cambia el estado) */
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 }

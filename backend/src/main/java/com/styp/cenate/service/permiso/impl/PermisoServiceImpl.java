@@ -1,4 +1,5 @@
 package com.styp.cenate.service.permiso.impl;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
@@ -43,9 +44,33 @@ public class PermisoServiceImpl implements PermisoService {
                 .orElseThrow(() -> new ResourceNotFoundException("Usuario no encontrado: " + username));
 
         List<PermisoUsuarioResponseDTO> permisos =
-                permisoModularRepository.findPermisosPorUsuarioId(usuario.getIdUser());
+                permisoModularRepository.findPermisosPorUsuarioId(usuario.getIdUser().longValue());
 
         log.info("✅ Usuario '{}' tiene {} permisos asignados", username, permisos.size());
+        return permisos;
+    }
+
+    // ============================================================
+    // 🎯 Permisos por ID de usuario (✅ Recomendado)
+    // ============================================================
+    @Override
+    @Transactional(readOnly = true)
+    public List<PermisoUsuarioResponseDTO> obtenerPermisosPorUserId(Integer idUser) {
+        log.info("🎯 Buscando permisos para el usuario con ID {}", idUser);
+
+        if (idUser == null || idUser <= 0) {
+            throw new IllegalArgumentException("El ID de usuario no es válido: " + idUser);
+        }
+
+        List<PermisoUsuarioResponseDTO> permisos =
+                permisoModularRepository.findPermisosPorUsuarioId(idUser.longValue());
+
+        if (permisos == null || permisos.isEmpty()) {
+            log.warn("⚠️ El usuario con ID {} no tiene permisos asignados o no existe en la vista MBAC.", idUser);
+        } else {
+            log.info("✅ Usuario con ID {} tiene {} permisos asignados", idUser, permisos.size());
+        }
+
         return permisos;
     }
 

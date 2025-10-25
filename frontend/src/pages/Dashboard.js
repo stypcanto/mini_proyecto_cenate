@@ -1,20 +1,18 @@
 // ========================================================================
 // 🧭 Dashboard.js – Redirección inteligente MBAC CENATE 2025
 // ------------------------------------------------------------------------
-// Redirige automáticamente usando los permisos reales del backend.
-// Prioridad: SUPERADMIN/ADMIN → Permisos del usuario → Fallback
+// Redirige automáticamente según rol del usuario
+// SUPERADMIN/ADMIN → /admin, otros roles → su dashboard específico
 // ========================================================================
 
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { usePermissions } from "../hooks/usePermissions";
 import { Loader2 } from "lucide-react";
 
 export default function Dashboard() {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { getRutasPermitidas, loading } = usePermissions();
 
   useEffect(() => {
     // Si no hay usuario → login
@@ -23,48 +21,43 @@ export default function Dashboard() {
       return;
     }
 
-    // Esperar a que carguen los permisos
-    if (loading) return;
+    // Normalizar roles
+    const roles = (user?.roles || []).map(r => {
+      if (typeof r === 'string') return r.replace('ROLE_', '').toUpperCase();
+      if (r?.authority) return r.authority.replace('ROLE_', '').toUpperCase();
+      return String(r || '').replace('ROLE_', '').toUpperCase();
+    }).filter(Boolean);
 
-    // 1. Si es SUPERADMIN o ADMIN → /admin
-    const roles = (user?.roles || []).map(r => 
-      typeof r === 'string' ? r.toUpperCase() : r.toString().toUpperCase()
-    );
+    console.log("🔍 Roles detectados:", roles);
+
+    // Mapeo de roles a rutas
+    let targetPath = "/unauthorized";
 
     if (roles.includes("SUPERADMIN") || roles.includes("ADMIN")) {
-      console.log("✅ Usuario es SUPERADMIN/ADMIN → redirigiendo a /admin");
-      navigate("/admin", { replace: true });
-      return;
+      targetPath = "/admin";
+    } else if (roles.includes("MEDICO")) {
+      targetPath = "/roles/medico/dashboard";
+    } else if (roles.includes("COORDINADOR")) {
+      targetPath = "/roles/coordinador/dashboard";
+    } else if (roles.includes("EXTERNO")) {
+      targetPath = "/roles/externo/dashboard";
+    } else if (roles.includes("CITAS")) {
+      targetPath = "/roles/citas/dashboard";
+    } else if (roles.includes("LINEAMIENTOS")) {
+      targetPath = "/roles/lineamientos/dashboard";
+    } else if (roles.includes("USER")) {
+      targetPath = "/user/dashboard";
     }
 
-    // 2. Obtener rutas permitidas del usuario
-    const rutasPermitidas = getRutasPermitidas("ver");
-    
-    console.log("📋 Rutas permitidas para el usuario:", rutasPermitidas);
+    console.log("➡️ Redirigiendo a:", targetPath);
 
-    // 3. Buscar la primera ruta con "dashboard" en el path
-    const dashboardRoute = rutasPermitidas.find(r => 
-      r.path?.toLowerCase().includes("dashboard")
-    );
+    // Pequeño delay para UX suave
+    const timer = setTimeout(() => {
+      navigate(targetPath, { replace: true });
+    }, 500);
 
-    if (dashboardRoute) {
-      console.log(`✅ Redirigiendo a: ${dashboardRoute.path}`);
-      navigate(dashboardRoute.path, { replace: true });
-      return;
-    }
-
-    // 4. Si no hay dashboard, usar la primera ruta disponible
-    if (rutasPermitidas.length > 0) {
-      console.log(`✅ Redirigiendo a primera ruta: ${rutasPermitidas[0].path}`);
-      navigate(rutasPermitidas[0].path, { replace: true });
-      return;
-    }
-
-    // 5. Si no hay permisos → unauthorized
-    console.warn("⚠️ Usuario sin permisos → /unauthorized");
-    navigate("/unauthorized", { replace: true });
-
-  }, [user, loading, navigate, getRutasPermitidas]);
+    return () => clearTimeout(timer);
+  }, [user, navigate]);
 
   // 💫 Loader con estilo CENATE
   return (
@@ -84,7 +77,7 @@ export default function Dashboard() {
             Configurando tu espacio de trabajo
           </h2>
           <p className="text-gray-600">
-            Cargando permisos y preferencias...
+            Detectando permisos y preparando tu dashboard...
           </p>
         </div>
 
