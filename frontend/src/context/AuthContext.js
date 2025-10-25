@@ -73,50 +73,61 @@ export const AuthProvider = ({ children }) => {
     setInitialized(true);
   }, [token, user]);
 
-  // ============================================================
-  // 🔓 Login con backend RBAC
-  // ============================================================
-  const login = useCallback(
-    async (username, password) => {
-      setLoading(true);
-      try {
-        const data = await apiClient.post("/auth/login", { username, password });
+ // ============================================================
+ // 🔓 Login con backend RBAC
+ // ============================================================
+ const login = useCallback(
+   async (username, password) => {
+     setLoading(true);
+     try {
+       const data = await apiClient.post("/auth/login", { username, password });
 
-        if (!data?.token) throw new Error("No se recibió token del servidor");
+       if (!data?.token) throw new Error("No se recibió token del servidor");
 
-        const jwt = data.token;
-        const payload = decodeJwt(jwt);
+       const jwt = data.token;
+       const payload = decodeJwt(jwt);
 
-        const userData = {
-          id: payload.sub || data.userId || data.id_user,
-          username: payload.username || username,
-          roles: normalizeRoles(payload.roles || data.roles || []),
-          permisos: payload.permisos || data.permisos || [],
-          nombreCompleto:
-            data.nombreCompleto || data.nombre_completo || username,
-          token: jwt,
-        };
+       const userData = {
+         id: payload.sub || data.userId || data.id_user,
+         username: payload.username || username,
+         roles: normalizeRoles(payload.roles || data.roles || []),
+         permisos: payload.permisos || data.permisos || [],
+         nombreCompleto:
+           data.nombreCompleto || data.nombre_completo || username,
+         token: jwt,
+       };
 
-        saveToken(jwt);
-        saveUser(userData);
-        setUser(userData);
-        setToken(jwt);
+       saveToken(jwt);
+       saveUser(userData);
+       setUser(userData);
+       setToken(jwt);
 
-        toast.success(`Bienvenido, ${userData.nombreCompleto || userData.username}`);
+       toast.success(`Bienvenido, ${userData.nombreCompleto || userData.username}`);
 
-        // ✅ Redirige al dashboard según rol
-        navigate("/dashboard");
-        return { ok: true };
-      } catch (error) {
-        console.error("Error en login:", error);
-        toast.error(error.message || "Error al iniciar sesión");
-        return { ok: false, error: error.message };
-      } finally {
-        setLoading(false);
-      }
-    },
-    [navigate]
-  );
+       // ✅ Redirige al dashboard según rol MBAC
+       if (userData.roles.includes("SUPERADMIN") || userData.roles.includes("ADMIN")) {
+         navigate("/admin/dashboard");
+       } else if (userData.roles.includes("MEDICO")) {
+         navigate("/roles/medico/dashboard");
+       } else if (userData.roles.includes("COORDINADOR")) {
+         navigate("/roles/coordinador/dashboard");
+       } else if (userData.roles.includes("EXTERNO")) {
+         navigate("/roles/externo/dashboard");
+       } else {
+         navigate("/user/dashboard");
+       }
+
+       return { ok: true };
+     } catch (error) {
+       console.error("Error en login:", error);
+       toast.error(error.message || "Error al iniciar sesión");
+       return { ok: false, error: error.message };
+     } finally {
+       setLoading(false);
+     }
+   },
+   [navigate]
+ );
 
   // ============================================================
   // 🚪 Logout global (redirige al Home público)
