@@ -42,9 +42,21 @@ export default function AdminDashboard() {
   // ============================================================
   useEffect(() => {
     const loadStats = async () => {
+      setLoading(true);
       try {
-        const usuarios = await apiClient.get("/usuarios", true);
-        const roles = await apiClient.get("/roles", true);
+        // Agregar timeout para evitar que la petición se cuelgue
+        const timeout = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 10000)
+        );
+
+        const usuariosPromise = apiClient.get("/usuarios", true);
+        const rolesPromise = apiClient.get("/admin/roles", true);
+
+        const [usuarios, roles] = await Promise.race([
+          Promise.all([usuariosPromise, rolesPromise]),
+          timeout
+        ]);
+
         setStats({
           usuarios: usuarios?.length || 0,
           roles: roles?.length || 0,
@@ -53,6 +65,14 @@ export default function AdminDashboard() {
         });
       } catch (error) {
         console.error("Error cargando estadísticas:", error);
+        
+        // Establecer valores por defecto en caso de error
+        setStats({
+          usuarios: 0,
+          roles: 0,
+          permisos: 0,
+          auditorias: 0,
+        });
       } finally {
         setLoading(false);
       }

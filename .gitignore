@@ -1,13 +1,84 @@
+# ============================================================
+# 🧩 CENATE PROJECT – .gitignore (Spring Boot + React + Docker)
+# ============================================================
+
 # --- Java / Spring Boot ---
 backend/target/
 backend/build/
 *.class
+*.jar
+*.war
+*.ear
+*.iml
+*.log
 
-# --- Node / React ---
+# --- IntelliJ / Eclipse / VSCode ---
+.idea/
+*.iml
+*.ipr
+*.iws
+.classpath
+.project
+.settings/
+.vscode/
+
+# --- Node / React (CRA o Vite) ---
 frontend/node_modules/
 frontend/build/
+frontend/dist/
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.production.local
+frontend/.env.test.local
+
+# --- Logs y temporales ---
+*.log
+*.pid
+*.seed
+*.pid.lock
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
 
 # --- Sistema ---
 .DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+Desktop.ini
+
+# --- Docker ---
+*.env
+.env.*
+docker-compose.override.yml
+*.bak
+*.tmp
+
+# --- MacOS cache ---
+__MACOSX/
+*.swp
+*.swo
+*.orig
+
+# --- Python / otros (si usas scripts auxiliares) ---
+*.pyc
+__pycache__/
+
+# --- Compilaciones temporales ---
+*.out
 *.log
+*.cache
 *.lock
+
+# --- Seguridad ---
+# Nunca subir llaves SSH, certificados ni contraseñas
+id_rsa*
+id_dsa*
+*.pem
+*.key
+*.crt
+*.p12
+secrets/
+credentials/

@@ -47,7 +47,6 @@ export const usePermissions = () => {
     setError(null);
 
     try {
-      // ✅ Usa el username, NO el ID
       const username = user.username || user.nombreUsuario || user.name_user;
       
       if (!username) {
@@ -56,7 +55,13 @@ export const usePermissions = () => {
 
       console.log("🔍 Cargando permisos para usuario:", username);
       
-      const data = await apiClient.get(`/permisos/usuario/${username}`, true);
+      // Agregar timeout para evitar que la petición se cuelgue indefinidamente
+      const timeout = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Timeout al cargar permisos")), 10000)
+      );
+      
+      const dataPromise = apiClient.get(`/mbac/permisos/usuario/nombre/${username}`, true);
+      const data = await Promise.race([dataPromise, timeout]);
 
       if (!Array.isArray(data)) {
         throw new Error("Formato de permisos inválido (no es un array)");
@@ -73,8 +78,17 @@ export const usePermissions = () => {
       setPermisos(transformed);
     } catch (err) {
       console.error("❌ Error cargando permisos:", err);
-      setError(err.message || "Error al cargar permisos");
-      if (String(err?.message).includes("401")) logout();
+      
+      // No hacer logout si es un error de red
+      if (!String(err?.message).includes("401") && 
+          !String(err?.message).includes("Unauthorized")) {
+        console.warn("Error de red o servidor, manteniendo sesión");
+        setError("No se pudieron cargar los permisos. Verifica tu conexión.");
+      } else {
+        setError(err.message || "Error al cargar permisos");
+        logout();
+      }
+      
       setPermisos([]);
     } finally {
       setLoading(false);

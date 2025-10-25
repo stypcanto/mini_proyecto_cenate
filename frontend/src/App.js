@@ -33,6 +33,7 @@ import CrearUsuario from "./pages/CrearUsuario";
 // 🧩 Permisos RBAC y Control MBAC
 import PermisosPage from "./pages/admin/PermisosPage";
 import MBACControl from "./pages/admin/MBACControl";
+import GestionUsuariosPermisos from "./pages/admin/GestionUsuariosPermisos";
 
 // 🧩 Perfil de Usuario
 import Profile from "./pages/user/Profile";
@@ -47,6 +48,7 @@ import ModuloIndicadores from "./pages/roles/medico/ModuloIndicadores";
 // 🧩 Módulos por Rol - Coordinador
 import DashboardCoordinador from "./pages/roles/coordinador/DashboardCoordinador";
 import ModuloAgenda from "./pages/roles/coordinador/ModuloAgenda";
+import AsignarGestorMedico from "./pages/roles/coordinador/AsignarGestorMedico"; // ✅ NUEVO MÓDULO
 
 // 🧩 Módulos por Rol - Externo
 import DashboardExterno from "./pages/roles/externo/DashboardExterno";
@@ -133,6 +135,16 @@ function AppRoutes() {
           }
         />
 
+        {/* 🛡️ Gestión de Usuarios y Permisos (SUPERADMIN) */}
+        <Route
+          path="/admin/usuarios-permisos"
+          element={
+            <ProtectedRoute requiredPath="/admin/usuarios-permisos" requiredAction="ver">
+              <GestionUsuariosPermisos />
+            </ProtectedRoute>
+          }
+        />
+
         {/* 👤 Perfil de usuario */}
         <Route path="/user/profile" element={<Profile />} />
         <Route path="/user/dashboard" element={<UserDashboard />} />
@@ -185,6 +197,15 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredPath="/roles/coordinador/agenda" requiredAction="ver">
               <ModuloAgenda />
+            </ProtectedRoute>
+          }
+        />
+        {/* ✅ NUEVA RUTA: Asignar Gestor de Turnos Médicos */}
+        <Route
+          path="/roles/coordinador/asignacion"
+          element={
+            <ProtectedRoute requiredPath="/roles/coordinador/asignacion" requiredAction="ver">
+              <AsignarGestorMedico />
             </ProtectedRoute>
           }
         />
@@ -254,12 +275,8 @@ export default function App() {
                 padding: "16px",
                 boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
               },
-              success: {
-                iconTheme: { primary: "#10b981", secondary: "white" },
-              },
-              error: {
-                iconTheme: { primary: "#ef4444", secondary: "white" },
-              },
+              success: { iconTheme: { primary: "#10b981", secondary: "white" } },
+              error: { iconTheme: { primary: "#ef4444", secondary: "white" } },
             }}
           />
 
