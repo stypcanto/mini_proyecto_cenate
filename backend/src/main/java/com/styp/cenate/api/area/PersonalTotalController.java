@@ -19,6 +19,14 @@ import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
+/**
+ * 🧩 Controlador REST para la gestión del personal (CENATE + EXTERNO)
+ * Incluye:
+ *   • Listado unificado
+ *   • Detalle individual
+ *   • Subida y consulta de fotos
+ *   • Cumpleañeros por mes / día
+ */
 @RestController
 @RequestMapping("/api/personal")
 @RequiredArgsConstructor
@@ -230,7 +238,7 @@ public class PersonalTotalController {
                 FROM dim_personal_externo e
                 LEFT JOIN dim_tipo_documento td ON td.id_tip_doc = e.id_tip_doc
                 LEFT JOIN dim_ipress i ON i.id_ipress = e.id_ipress
-                LEFT JOIN dim_distrito d ON d.id_dist = i.id_dist
+                LEFT JOIN dim_distrito d ON d.id_dist = e.id_dist
                 LEFT JOIN dim_provincia pr ON pr.id_prov = d.id_prov
                 LEFT JOIN dim_departamento dep ON dep.id_depart = pr.id_depart
                 LEFT JOIN dim_usuarios u ON u.id_user = e.id_user
@@ -255,7 +263,7 @@ public class PersonalTotalController {
     }
 
     // ===============================================================
-    // 📸 SUBIR FOTO DE PERFIL (SIN CAMBIOS)
+    // 📸 SUBIR FOTO DE PERFIL
     // ===============================================================
     @PostMapping("/{id}/foto")
     @PreAuthorize("hasAnyAuthority('EDITAR_PERSONAL','CREAR_PERSONAL','SUPERADMIN')")
