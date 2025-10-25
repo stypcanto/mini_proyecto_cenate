@@ -55,7 +55,7 @@ public class PersonalTotalController {
     }
 
     // ===============================================================
-    // 🧭 NIVEL 1 - LISTA BÁSICA UNIFICADA (CENATE + EXTERNO)
+    // 🧭 NIVEL 1 - LISTA UNIFICADA (CENATE + EXTERNO)
     // ===============================================================
     @GetMapping("/total")
     @PreAuthorize("hasAnyAuthority('VER_PERSONAL_CNT','SUPERADMIN')")
@@ -97,15 +97,14 @@ public class PersonalTotalController {
     }
 
     // ===============================================================
-    // 🧩 NIVEL 2 - DETALLE COMPLETO (CENATE o EXTERNO)
+    // 🧭 NIVEL 2 - DETALLE COMPLETO (CENATE o EXTERNO)
     // ===============================================================
     @GetMapping("/detalle/{id}")
     @PreAuthorize("hasAnyAuthority('VER_PERSONAL_CNT','SUPERADMIN')")
     public ResponseEntity<?> getDetallePersonal(@PathVariable Long id) {
         log.info("📊 Consultando detalle completo del personal con ID {}", id);
-
         try {
-            // 1️⃣ Intentar con personal interno (CNT)
+            // Intentar con personal interno (CENATE)
             String sqlCnt = """
                 SELECT jsonb_build_object(
                     'id_user', u.id_user,
@@ -115,8 +114,8 @@ public class PersonalTotalController {
                         FILTER (WHERE dr.desc_rol IS NOT NULL), '[]'::jsonb),
                     'personal', jsonb_build_object(
                         'id_personal', p.id_pers,
-                        'tipo_documento', td.desc_tip_doc,
                         'numero_documento', p.num_doc_pers,
+                        'tipo_documento', td.desc_tip_doc,
                         'nombres', p.nom_pers,
                         'apellido_paterno', p.ape_pater_pers,
                         'apellido_materno', p.ape_mater_pers,
@@ -125,7 +124,7 @@ public class PersonalTotalController {
                         'fecha_nacimiento', p.fech_naci_pers,
                         'edad_actual', DATE_PART('year', AGE(CURRENT_DATE, p.fech_naci_pers)),
                         'cumpleanos', jsonb_build_object(
-                            'mes', INITCAP(TO_CHAR(p.fech_naci_pers, 'TMMonth')),
+                            'mes', INITCAP(TO_CHAR(p.fech_naci_pers, 'TMMonth', 'es_PE')),
                             'dia', EXTRACT(DAY FROM p.fech_naci_pers)
                         ),
                         'contacto', jsonb_build_object(
@@ -143,29 +142,17 @@ public class PersonalTotalController {
                         'laboral', jsonb_build_object(
                             'area', a.desc_area,
                             'regimen_laboral', rl.desc_reg_lab,
-                            'profesion', 
-                                CASE 
-                                    WHEN prof.id_prof = 50 THEN pp.desc_prof_otro
-                                    ELSE prof.desc_prof 
-                                END,
-                            'especialidades',
-                                CASE WHEN prof.desc_prof ILIKE '%MEDICO%'
-                                    THEN COALESCE(jsonb_agg(DISTINCT e.desc_esp)
-                                    FILTER (WHERE e.desc_esp IS NOT NULL), '[]'::jsonb)
-                                    ELSE '[]'::jsonb
-                                END,
-                            'rne_especialista',
-                                CASE WHEN prof.desc_prof ILIKE '%MEDICO%'
-                                    THEN MAX(pp.rne_prof)
-                                    ELSE NULL
-                                END,
-                            'numero_colegiatura', p.coleg_pers,
+                            'profesion',
+                                CASE WHEN prof.id_prof = 50 THEN pp.desc_prof_otro ELSE prof.desc_prof END,
+                            'especialidad', esp.desc_esp,
+                            'rne_especialista', pp.rne_prof,
+                            'colegiatura', p.coleg_pers,
                             'codigo_planilla', p.cod_plan_rem
                         ),
                         'foto', p.foto_pers
                     ),
                     'fechas', jsonb_build_object(
-                        'fecha_registro', u.created_at,
+                        'registro', u.created_at,
                         'ultima_actualizacion', u.updated_at
                     )
                 ) AS detalle
@@ -177,7 +164,7 @@ public class PersonalTotalController {
                 LEFT JOIN dim_ipress i ON i.id_ipress = p.id_ipress
                 LEFT JOIN dim_personal_prof pp ON pp.id_pers = p.id_pers
                 LEFT JOIN dim_profesiones prof ON prof.id_prof = pp.id_prof
-                LEFT JOIN dim_especialidad e ON e.id_pers = p.id_pers
+                LEFT JOIN dim_especialidad esp ON esp.id_esp = pp.id_esp
                 LEFT JOIN dim_distrito d ON d.id_dist = p.id_dist
                 LEFT JOIN dim_provincia pr ON pr.id_prov = d.id_prov
                 LEFT JOIN dim_departamento dep ON dep.id_depart = pr.id_depart
@@ -185,19 +172,16 @@ public class PersonalTotalController {
                 LEFT JOIN dim_roles dr ON dr.id_rol = ur.id_rol
                 WHERE u.id_user = ?
                 GROUP BY u.id_user, p.id_pers, td.desc_tip_doc, a.desc_area, rl.desc_reg_lab,
-                         i.desc_ipress, prof.id_prof, prof.desc_prof, d.desc_dist, pr.desc_prov, dep.desc_depart, pp.desc_prof_otro
+                         i.desc_ipress, prof.id_prof, prof.desc_prof, esp.desc_esp, pp.desc_prof_otro, pp.rne_prof,
+                         d.desc_dist, pr.desc_prov, dep.desc_depart
             """;
 
             Map<String, Object> cnt = jdbcTemplate.queryForMap(sqlCnt, id);
-            if (cnt != null && cnt.containsKey("detalle") && cnt.get("detalle") != null) {
-                Map<String, Object> detalleCnt = objectMapper.readValue(cnt.get("detalle").toString(), Map.class);
-                Map<String, Object> personal = (Map<String, Object>) detalleCnt.get("personal");
-                if (personal != null && personal.get("nombres") != null) {
-                    return ResponseEntity.ok(detalleCnt);
-                }
+            if (cnt != null && cnt.get("detalle") != null) {
+                return ResponseEntity.ok(objectMapper.readValue(cnt.get("detalle").toString(), Map.class));
             }
 
-            // 2️⃣ Si no hay datos en CNT → buscar en EXTERNO
+            // Intentar con personal externo
             String sqlExt = """
                 SELECT jsonb_build_object(
                     'id_user', u.id_user,
@@ -207,8 +191,8 @@ public class PersonalTotalController {
                         FILTER (WHERE dr.desc_rol IS NOT NULL), '[]'::jsonb),
                     'personal', jsonb_build_object(
                         'id_personal', e.id_pers_ext,
-                        'tipo_documento', td.desc_tip_doc,
                         'numero_documento', e.num_doc_ext,
+                        'tipo_documento', td.desc_tip_doc,
                         'nombres', e.nom_ext,
                         'apellido_paterno', e.ape_pater_ext,
                         'apellido_materno', e.ape_mater_ext,
@@ -222,7 +206,7 @@ public class PersonalTotalController {
                             'telefono', e.movil_ext
                         ),
                         'direccion', jsonb_build_object(
-                            'domicilio', e.inst_ext,
+                            'institucion', e.inst_ext,
                             'distrito', d.desc_dist,
                             'provincia', pr.desc_prov,
                             'departamento', dep.desc_depart
@@ -231,7 +215,7 @@ public class PersonalTotalController {
                         'foto', e.foto_ext
                     ),
                     'fechas', jsonb_build_object(
-                        'fecha_registro', u.created_at,
+                        'registro', u.created_at,
                         'ultima_actualizacion', u.updated_at
                     )
                 ) AS detalle
@@ -263,24 +247,96 @@ public class PersonalTotalController {
     }
 
     // ===============================================================
-    // 📸 SUBIR FOTO DE PERFIL
+// 🎂 ENDPOINT DE CUMPLEAÑEROS (CENATE + EXTERNO) – VERSIÓN SEGURA
+// ===============================================================
+    @GetMapping("/cumpleaneros/mes/{mes}")
+    @PreAuthorize("hasAnyAuthority('VER_PERSONAL_CNT','SUPERADMIN')")
+    public ResponseEntity<List<Map<String, Object>>> getCumpleanerosPorMes(@PathVariable int mes) {
+        log.info("🎂 Buscando cumpleañeros del mes {}", mes);
+
+        String sql = """
+        SELECT 
+            v.id_usuario,
+            v.nombres,
+            v.apellido_paterno,
+            v.apellido_materno,
+            CONCAT(v.nombres, ' ', v.apellido_paterno, ' ', v.apellido_materno) AS nombre_completo,
+            v.numero_documento,
+            v.tipo_personal,
+            v.nombre_ipress,
+            CASE EXTRACT(MONTH FROM v.fecha_nacimiento)
+                WHEN 1 THEN 'Enero'
+                WHEN 2 THEN 'Febrero'
+                WHEN 3 THEN 'Marzo'
+                WHEN 4 THEN 'Abril'
+                WHEN 5 THEN 'Mayo'
+                WHEN 6 THEN 'Junio'
+                WHEN 7 THEN 'Julio'
+                WHEN 8 THEN 'Agosto'
+                WHEN 9 THEN 'Septiembre'
+                WHEN 10 THEN 'Octubre'
+                WHEN 11 THEN 'Noviembre'
+                WHEN 12 THEN 'Diciembre'
+            END AS mes_nombre,
+            EXTRACT(DAY FROM v.fecha_nacimiento) AS dia,
+            v.estado,
+            DATE_PART('year', AGE(CURRENT_DATE, v.fecha_nacimiento)) AS edad
+        FROM vw_personal_total v
+        WHERE EXTRACT(MONTH FROM v.fecha_nacimiento) = ?
+        ORDER BY dia, nombre_completo
+    """;
+
+        try {
+            List<Map<String, Object>> cumpleaneros = jdbcTemplate.queryForList(sql, mes);
+            if (cumpleaneros.isEmpty()) {
+                return ResponseEntity.ok(List.of(Map.of("mensaje", "🎈 No hay cumpleañeros registrados en este mes.")));
+            }
+            return ResponseEntity.ok(cumpleaneros);
+        } catch (Exception e) {
+            log.error("❌ Error al obtener cumpleañeros: {}", e.getMessage());
+            return ResponseEntity.internalServerError()
+                    .body(List.of(Map.of("error", e.getMessage())));
+        }
+    }
+
+    @GetMapping("/cumpleaneros/hoy")
+    @PreAuthorize("hasAnyAuthority('VER_PERSONAL_CNT','SUPERADMIN')")
+    public ResponseEntity<List<Map<String, Object>>> getCumpleanerosHoy() {
+        String sql = """
+            SELECT 
+                v.id_usuario,
+                v.nombres,
+                v.apellido_paterno,
+                v.apellido_materno,
+                CONCAT(v.nombres, ' ', v.apellido_paterno, ' ', v.apellido_materno) AS nombre_completo,
+                v.numero_documento,
+                v.tipo_personal,
+                v.nombre_ipress,
+                v.estado
+            FROM vw_personal_total v
+            WHERE EXTRACT(MONTH FROM v.fecha_nacimiento) = EXTRACT(MONTH FROM CURRENT_DATE)
+              AND EXTRACT(DAY FROM v.fecha_nacimiento) = EXTRACT(DAY FROM CURRENT_DATE)
+            ORDER BY nombre_completo
+        """;
+        return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
+    }
+
+    // ===============================================================
+    // 📸 SUBIR FOTO
     // ===============================================================
     @PostMapping("/{id}/foto")
     @PreAuthorize("hasAnyAuthority('EDITAR_PERSONAL','CREAR_PERSONAL','SUPERADMIN')")
     public ResponseEntity<Map<String, String>> uploadFoto(
             @PathVariable Long id,
             @RequestParam("foto") MultipartFile file) {
-        log.info("📸 Subiendo foto para usuario ID: {}", id);
         try {
             if (file.isEmpty()) {
                 return ResponseEntity.badRequest().body(Map.of("message", "El archivo está vacío"));
             }
-
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 return ResponseEntity.badRequest().body(Map.of("message", "El archivo debe ser una imagen"));
             }
-
             if (file.getSize() > 5 * 1024 * 1024) {
                 return ResponseEntity.badRequest().body(Map.of("message", "La imagen no debe superar los 5MB"));
             }
@@ -296,25 +352,18 @@ public class PersonalTotalController {
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            String updateSql = """
-                UPDATE dim_personal_cnt SET foto_pers = ? WHERE id_usuario = ?
-            """;
-            int rowsAffected = jdbcTemplate.update(updateSql, fileName, id);
-
-            if (rowsAffected == 0) {
+            String updateSql = "UPDATE dim_personal_cnt SET foto_pers = ? WHERE id_usuario = ?";
+            int rows = jdbcTemplate.update(updateSql, fileName, id);
+            if (rows == 0) {
                 updateSql = "UPDATE dim_personal_externo SET foto_ext = ? WHERE id_user = ?";
-                rowsAffected = jdbcTemplate.update(updateSql, fileName, id);
+                jdbcTemplate.update(updateSql, fileName, id);
             }
 
-            if (rowsAffected > 0) {
-                return ResponseEntity.ok(Map.of(
-                        "message", "Foto subida correctamente",
-                        "fileName", fileName,
-                        "url", "/api/personal/foto/" + fileName
-                ));
-            } else {
-                return ResponseEntity.notFound().build();
-            }
+            return ResponseEntity.ok(Map.of(
+                    "message", "Foto subida correctamente",
+                    "fileName", fileName,
+                    "url", "/api/personal/foto/" + fileName
+            ));
 
         } catch (IOException e) {
             log.error("❌ Error al subir foto: {}", e.getMessage());
@@ -329,7 +378,6 @@ public class PersonalTotalController {
     @GetMapping("/foto/{fileName}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> getFoto(@PathVariable String fileName) {
-        log.info("🖼️ Obteniendo foto: {}", fileName);
         try {
             Path filePath = Paths.get(uploadDir).resolve(fileName);
             if (!Files.exists(filePath)) return ResponseEntity.notFound().build();
@@ -347,37 +395,5 @@ public class PersonalTotalController {
             log.error("❌ Error al obtener la foto: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
         }
-    }
-
-    // ===============================================================
-    // 🎂 ENDPOINTS DE CUMPLEAÑEROS
-    // ===============================================================
-    @GetMapping("/cumpleaneros/mes/{mes}")
-    @PreAuthorize("hasAnyAuthority('VER_PERSONAL_CNT','SUPERADMIN')")
-    public ResponseEntity<List<Map<String, Object>>> getCumpleanerosPorMes(@PathVariable int mes) {
-        log.info("🎂 Buscando cumpleañeros del mes {}", mes);
-        String sql = """
-            SELECT nombre_completo, tipo_personal, TO_CHAR(fecha_nacimiento, 'TMMonth') AS mes,
-                   EXTRACT(DAY FROM fecha_nacimiento) AS dia, ipress
-            FROM vw_personal_total
-            WHERE EXTRACT(MONTH FROM fecha_nacimiento) = ?
-            ORDER BY dia, nombre_completo
-        """;
-        return ResponseEntity.ok(jdbcTemplate.queryForList(sql, mes));
-    }
-
-    @GetMapping("/cumpleaneros/hoy")
-    @PreAuthorize("hasAnyAuthority('VER_PERSONAL_CNT','SUPERADMIN')")
-    public ResponseEntity<List<Map<String, Object>>> getCumpleanerosHoy() {
-        log.info("🎉 Buscando cumpleañeros del día de hoy");
-        String sql = """
-            SELECT nombre_completo, tipo_personal, TO_CHAR(fecha_nacimiento, 'TMMonth') AS mes,
-                   EXTRACT(DAY FROM fecha_nacimiento) AS dia, ipress
-            FROM vw_personal_total
-            WHERE EXTRACT(MONTH FROM fecha_nacimiento) = EXTRACT(MONTH FROM CURRENT_DATE)
-              AND EXTRACT(DAY FROM fecha_nacimiento) = EXTRACT(DAY FROM CURRENT_DATE)
-            ORDER BY nombre_completo
-        """;
-        return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
     }
 }
