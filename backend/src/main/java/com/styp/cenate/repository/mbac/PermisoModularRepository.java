@@ -72,22 +72,24 @@ public interface PermisoModularRepository extends JpaRepository<PermisoModular, 
 
     // ===========================================================
     // 🧠 Obtener permisos asignados a un usuario
-    // (usando la vista vw_permisos_activos en la base de datos)
+    // (usando la vista vw_permisos_usuario_activos en la base de datos)
     // ===========================================================
     @Query(value = """
         SELECT 
-            id_permiso AS idPermiso,
+            CAST(id_permiso AS bigint) AS idPermiso,
             ruta_pagina AS rutaPagina,
             pagina AS nombrePagina,
             modulo AS nombreModulo,
             puede_ver AS ver,
             puede_crear AS crear,
-            puede_actualizar AS editar,
+            puede_editar AS editar,
             puede_eliminar AS eliminar,
             puede_exportar AS exportar,
             puede_aprobar AS aprobar
-        FROM vw_permisos_activos
-        WHERE id_user = :idUser
+        FROM vw_permisos_usuario_activos
+        WHERE CAST(id_user AS text) = CAST(:idUser AS text)
+        AND activo = true
+        ORDER BY id_modulo, id_pagina
         """,
             nativeQuery = true)
     List<PermisoUsuarioResponseDTO> findPermisosPorUsuarioId(@Param("idUser") Long idUser);

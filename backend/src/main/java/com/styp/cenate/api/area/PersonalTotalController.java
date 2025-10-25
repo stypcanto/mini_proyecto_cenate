@@ -1,9 +1,9 @@
 package com.styp.cenate.api.area;
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.Data;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
@@ -16,9 +16,7 @@ import org.springframework.web.multipart.MultipartFile;
 import jakarta.annotation.PostConstruct;
 import java.io.IOException;
 import java.nio.file.*;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 
 @RestController
@@ -137,7 +135,11 @@ public class PersonalTotalController {
                         'laboral', jsonb_build_object(
                             'area', a.desc_area,
                             'regimen_laboral', rl.desc_reg_lab,
-                            'profesion', prof.desc_prof,
+                            'profesion', 
+                                CASE 
+                                    WHEN prof.id_prof = 50 THEN pp.desc_prof_otro
+                                    ELSE prof.desc_prof 
+                                END,
                             'especialidades',
                                 CASE WHEN prof.desc_prof ILIKE '%MEDICO%'
                                     THEN COALESCE(jsonb_agg(DISTINCT e.desc_esp)
@@ -146,7 +148,7 @@ public class PersonalTotalController {
                                 END,
                             'rne_especialista',
                                 CASE WHEN prof.desc_prof ILIKE '%MEDICO%'
-                                    THEN MAX(pp.rne_especialista)
+                                    THEN MAX(pp.rne_prof)
                                     ELSE NULL
                                 END,
                             'numero_colegiatura', p.coleg_pers,
@@ -175,7 +177,7 @@ public class PersonalTotalController {
                 LEFT JOIN dim_roles dr ON dr.id_rol = ur.id_rol
                 WHERE u.id_user = ?
                 GROUP BY u.id_user, p.id_pers, td.desc_tip_doc, a.desc_area, rl.desc_reg_lab,
-                         i.desc_ipress, prof.desc_prof, d.desc_dist, pr.desc_prov, dep.desc_depart
+                         i.desc_ipress, prof.id_prof, prof.desc_prof, d.desc_dist, pr.desc_prov, dep.desc_depart, pp.desc_prof_otro
             """;
 
             Map<String, Object> cnt = jdbcTemplate.queryForMap(sqlCnt, id);
@@ -206,10 +208,6 @@ public class PersonalTotalController {
                         'genero', e.gen_ext,
                         'fecha_nacimiento', e.fech_naci_ext,
                         'edad_actual', DATE_PART('year', AGE(CURRENT_DATE, e.fech_naci_ext)),
-                        'cumpleanos', jsonb_build_object(
-                            'mes', INITCAP(TO_CHAR(e.fech_naci_ext, 'TMMonth')),
-                            'dia', EXTRACT(DAY FROM e.fech_naci_ext)
-                        ),
                         'contacto', jsonb_build_object(
                             'correo_corporativo', e.email_corp_ext,
                             'correo_personal', e.email_pers_ext,
@@ -257,82 +255,57 @@ public class PersonalTotalController {
     }
 
     // ===============================================================
-    // 📸 SUBIR FOTO DE PERFIL
+    // 📸 SUBIR FOTO DE PERFIL (SIN CAMBIOS)
     // ===============================================================
     @PostMapping("/{id}/foto")
     @PreAuthorize("hasAnyAuthority('EDITAR_PERSONAL','CREAR_PERSONAL','SUPERADMIN')")
     public ResponseEntity<Map<String, String>> uploadFoto(
             @PathVariable Long id,
             @RequestParam("foto") MultipartFile file) {
-        
         log.info("📸 Subiendo foto para usuario ID: {}", id);
-
         try {
-            // Validar que el archivo no esté vacío
             if (file.isEmpty()) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "El archivo está vacío"));
+                return ResponseEntity.badRequest().body(Map.of("message", "El archivo está vacío"));
             }
 
-            // Validar que sea una imagen
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "El archivo debe ser una imagen"));
+                return ResponseEntity.badRequest().body(Map.of("message", "El archivo debe ser una imagen"));
             }
 
-            // Validar tamaño (máximo 5MB)
             if (file.getSize() > 5 * 1024 * 1024) {
-                return ResponseEntity.badRequest()
-                        .body(Map.of("message", "La imagen no debe superar los 5MB"));
+                return ResponseEntity.badRequest().body(Map.of("message", "La imagen no debe superar los 5MB"));
             }
 
-            // Generar nombre único para el archivo
-            String extension = "";
-            String originalFilename = file.getOriginalFilename();
-            if (originalFilename != null && originalFilename.contains(".")) {
-                extension = originalFilename.substring(originalFilename.lastIndexOf("."));
-            }
-            String fileName = "user_" + id + "_" + UUID.randomUUID().toString() + extension;
+            String extension = Optional.ofNullable(file.getOriginalFilename())
+                    .filter(f -> f.contains("."))
+                    .map(f -> f.substring(f.lastIndexOf(".")))
+                    .orElse("");
+            String fileName = "user_" + id + "_" + UUID.randomUUID() + extension;
 
-            // Guardar el archivo
             Path uploadPath = Paths.get(uploadDir);
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
-            }
-
+            if (!Files.exists(uploadPath)) Files.createDirectories(uploadPath);
             Path filePath = uploadPath.resolve(fileName);
             Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
-            // Actualizar la base de datos
             String updateSql = """
-                UPDATE dim_personal_cnt 
-                SET foto_pers = ? 
-                WHERE id_usuario = ?
+                UPDATE dim_personal_cnt SET foto_pers = ? WHERE id_usuario = ?
             """;
-            
             int rowsAffected = jdbcTemplate.update(updateSql, fileName, id);
-            
+
             if (rowsAffected == 0) {
-                // Intentar con personal externo
-                updateSql = """
-                    UPDATE dim_personal_externo 
-                    SET foto_ext = ? 
-                    WHERE id_user = ?
-                """;
+                updateSql = "UPDATE dim_personal_externo SET foto_ext = ? WHERE id_user = ?";
                 rowsAffected = jdbcTemplate.update(updateSql, fileName, id);
             }
 
             if (rowsAffected > 0) {
-                log.info("✅ Foto guardada exitosamente: {}", fileName);
                 return ResponseEntity.ok(Map.of(
                         "message", "Foto subida correctamente",
                         "fileName", fileName,
                         "url", "/api/personal/foto/" + fileName
                 ));
             } else {
-                return ResponseEntity.notFound()
-                        .build();
+                return ResponseEntity.notFound().build();
             }
 
         } catch (IOException e) {
@@ -343,34 +316,25 @@ public class PersonalTotalController {
     }
 
     // ===============================================================
-    // 🖼️ OBTENER FOTO DE PERFIL
+    // 🖼️ OBTENER FOTO
     // ===============================================================
     @GetMapping("/foto/{fileName}")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Resource> getFoto(@PathVariable String fileName) {
         log.info("🖼️ Obteniendo foto: {}", fileName);
-        
         try {
             Path filePath = Paths.get(uploadDir).resolve(fileName);
-            
-            if (!Files.exists(filePath)) {
-                log.warn("⚠️ Foto no encontrada: {}", fileName);
-                return ResponseEntity.notFound().build();
-            }
+            if (!Files.exists(filePath)) return ResponseEntity.notFound().build();
 
             Resource resource = new UrlResource(filePath.toUri());
             String contentType = Files.probeContentType(filePath);
-            
-            if (contentType == null) {
-                contentType = "application/octet-stream";
-            }
+            if (contentType == null) contentType = "application/octet-stream";
 
             return ResponseEntity.ok()
                     .cacheControl(CacheControl.maxAge(7, TimeUnit.DAYS).cachePublic())
                     .contentType(MediaType.parseMediaType(contentType))
                     .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + "\"")
                     .body(resource);
-
         } catch (IOException e) {
             log.error("❌ Error al obtener la foto: {}", e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -384,75 +348,28 @@ public class PersonalTotalController {
     @PreAuthorize("hasAnyAuthority('VER_PERSONAL_CNT','SUPERADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getCumpleanerosPorMes(@PathVariable int mes) {
         log.info("🎂 Buscando cumpleañeros del mes {}", mes);
-
         String sql = """
-            SELECT
-                nombre_completo,
-                tipo_personal,
-                TO_CHAR(fecha_nacimiento, 'TMMonth') AS mes,
-                EXTRACT(DAY FROM fecha_nacimiento) AS dia,
-                ipress
-            FROM (
-                SELECT
-                    CONCAT(p.nom_pers, ' ', p.ape_pater_pers, ' ', p.ape_mater_pers) AS nombre_completo,
-                    'CENATE' AS tipo_personal,
-                    p.fech_naci_pers AS fecha_nacimiento,
-                    i.desc_ipress AS ipress
-                FROM dim_personal_cnt p
-                LEFT JOIN dim_ipress i ON i.id_ipress = p.id_ipress
-                WHERE EXTRACT(MONTH FROM p.fech_naci_pers) = ?
-                UNION
-                SELECT
-                    CONCAT(e.nom_ext, ' ', e.ape_pater_ext, ' ', e.ape_mater_ext) AS nombre_completo,
-                    'EXTERNO' AS tipo_personal,
-                    e.fech_naci_ext AS fecha_nacimiento,
-                    i.desc_ipress AS ipress
-                FROM dim_personal_externo e
-                LEFT JOIN dim_ipress i ON i.id_ipress = e.id_ipress
-                WHERE EXTRACT(MONTH FROM e.fech_naci_ext) = ?
-            ) t
+            SELECT nombre_completo, tipo_personal, TO_CHAR(fecha_nacimiento, 'TMMonth') AS mes,
+                   EXTRACT(DAY FROM fecha_nacimiento) AS dia, ipress
+            FROM vw_personal_total
+            WHERE EXTRACT(MONTH FROM fecha_nacimiento) = ?
             ORDER BY dia, nombre_completo
         """;
-
-        return ResponseEntity.ok(jdbcTemplate.queryForList(sql, mes, mes));
+        return ResponseEntity.ok(jdbcTemplate.queryForList(sql, mes));
     }
 
     @GetMapping("/cumpleaneros/hoy")
     @PreAuthorize("hasAnyAuthority('VER_PERSONAL_CNT','SUPERADMIN')")
     public ResponseEntity<List<Map<String, Object>>> getCumpleanerosHoy() {
         log.info("🎉 Buscando cumpleañeros del día de hoy");
-
         String sql = """
-            SELECT
-                nombre_completo,
-                tipo_personal,
-                TO_CHAR(fecha_nacimiento, 'TMMonth') AS mes,
-                EXTRACT(DAY FROM fecha_nacimiento) AS dia,
-                ipress
-            FROM (
-                SELECT
-                    CONCAT(p.nom_pers, ' ', p.ape_pater_pers, ' ', p.ape_mater_pers) AS nombre_completo,
-                    'CENATE' AS tipo_personal,
-                    p.fech_naci_pers AS fecha_nacimiento,
-                    i.desc_ipress AS ipress
-                FROM dim_personal_cnt p
-                LEFT JOIN dim_ipress i ON i.id_ipress = p.id_ipress
-                WHERE EXTRACT(MONTH FROM p.fech_naci_pers) = EXTRACT(MONTH FROM CURRENT_DATE)
-                  AND EXTRACT(DAY FROM p.fech_naci_pers) = EXTRACT(DAY FROM CURRENT_DATE)
-                UNION
-                SELECT
-                    CONCAT(e.nom_ext, ' ', e.ape_pater_ext, ' ', e.ape_mater_ext) AS nombre_completo,
-                    'EXTERNO' AS tipo_personal,
-                    e.fech_naci_ext AS fecha_nacimiento,
-                    i.desc_ipress AS ipress
-                FROM dim_personal_externo e
-                LEFT JOIN dim_ipress i ON i.id_ipress = e.id_ipress
-                WHERE EXTRACT(MONTH FROM e.fech_naci_ext) = EXTRACT(MONTH FROM CURRENT_DATE)
-                  AND EXTRACT(DAY FROM e.fech_naci_ext) = EXTRACT(DAY FROM CURRENT_DATE)
-            ) t
+            SELECT nombre_completo, tipo_personal, TO_CHAR(fecha_nacimiento, 'TMMonth') AS mes,
+                   EXTRACT(DAY FROM fecha_nacimiento) AS dia, ipress
+            FROM vw_personal_total
+            WHERE EXTRACT(MONTH FROM fecha_nacimiento) = EXTRACT(MONTH FROM CURRENT_DATE)
+              AND EXTRACT(DAY FROM fecha_nacimiento) = EXTRACT(DAY FROM CURRENT_DATE)
             ORDER BY nombre_completo
         """;
-
         return ResponseEntity.ok(jdbcTemplate.queryForList(sql));
     }
 }

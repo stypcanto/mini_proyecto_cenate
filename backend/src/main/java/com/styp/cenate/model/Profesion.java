@@ -1,27 +1,23 @@
 package com.styp.cenate.model;
-import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
 
 @Entity
 @Table(name = "dim_profesiones")
-@Getter
-@Setter
+@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Data
 public class Profesion {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
     @Column(name = "id_prof")
     private Long idProf;
 
@@ -30,15 +26,20 @@ public class Profesion {
 
     @Builder.Default
     @Column(name = "stat_prof", nullable = false, length = 1)
-    private String statProf = "A"; // A=Activo, I=Inactivo
+    private String statProf = "A"; // A = Activo, I = Inactivo
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime createdAt;   // ✅ corregido: nombre igual que en BD
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime updatedAt;   // ✅ corregido: nombre igual que en BD
+    private LocalDateTime updatedAt;
+
+    // 🔗 Especialidades asociadas
+    @Builder.Default
+    @OneToMany(mappedBy = "profesion", cascade = CascadeType.ALL, orphanRemoval = false)
+    private Set<Especialidad> especialidades = new HashSet<>();
 
     public boolean isActivo() {
         return "A".equalsIgnoreCase(statProf);

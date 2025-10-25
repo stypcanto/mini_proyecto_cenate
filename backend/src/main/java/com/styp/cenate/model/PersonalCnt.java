@@ -1,5 +1,4 @@
 package com.styp.cenate.model;
-import lombok.Data;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -14,6 +13,7 @@ import java.util.Set;
 /**
  * 🧑‍⚕️ Entidad que representa al personal del CENATE.
  * Incluye información personal, profesional, laboral y de auditoría.
+ * Tabla: dim_personal_cnt
  */
 @Entity
 @Table(name = "dim_personal_cnt")
@@ -22,11 +22,23 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"usuario", "area", "regimenLaboral", "tipoDocumento", "profesiones", "tipos", "ocs", "firmas"})
+@ToString(exclude = {
+        "usuario",
+        "area",
+        "regimenLaboral",
+        "tipoDocumento",
+        "profesiones",
+        "tipos",
+        "ocs",
+        "firmas",
+        "especialidades"
+})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
-@Data
 public class PersonalCnt {
 
+    // ==========================================================
+    // 🆔 Identificador principal
+    // ==========================================================
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
@@ -132,6 +144,13 @@ public class PersonalCnt {
     @Builder.Default
     @OneToMany(mappedBy = "personal", cascade = CascadeType.PERSIST, orphanRemoval = true)
     private Set<PersonalFirma> firmas = new HashSet<>();
+
+    // ==========================================================
+    // 🩺 Relación con Especialidades (1:N)
+    // ==========================================================
+    @Builder.Default
+    @OneToMany(mappedBy = "personalCnt", cascade = CascadeType.ALL, orphanRemoval = false)
+    private Set<Especialidad> especialidades = new HashSet<>();
 
     // ==========================================================
     // 🧩 Métodos utilitarios

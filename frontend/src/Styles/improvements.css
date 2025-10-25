@@ -1,42 +1,44 @@
 /* ==================================================================
    🎨 Estilos adicionales para mejorar la legibilidad y consistencia
    ================================================================== */
+
 :root {
-  --bg-main: #f8fafc;
-  --bg-card: rgba(255, 255, 255, 0.9);
-  --bg-hover: rgba(240, 245, 255, 0.7);
-  --text-primary: #111827;
-  --text-secondary: #6b7280;
+  /* 🌈 Colores base */
+  --bg-main: #f5f8fc;
+  --bg-secondary: #eef2f6;
+  --bg-sidebar: #1f2937;
+  --bg-card: #ffffff;
+  --bg-hover: #e3f2fd;
+
+  /* 🎨 Colores de texto */
+  --text-primary: #1e293b;
+  --text-secondary: #64748b;
+
+  /* 🧩 Colores de acento y sistema */
   --color-primary: #2563eb;
   --color-info: #3b82f6;
   --color-accent: #10b981;
   --color-danger: #ef4444;
-  --border-color: rgba(0, 0, 0, 0.08);
 
-  /* 🌈 Fondos */
-  --bg-main: #F5F8FC;
-  --bg-secondary: #EEF2F6;
-  --bg-sidebar: #1F2937;
-  --bg-card: #FFFFFF;
-  --bg-hover: #E3F2FD;
-
-  /* ⚙️ Tipografía y bordes */
-  --text-primary: #1E293B;
-  --text-secondary: #64748B;
-  --border-color: #E2E8F0;
+  /* ⚙️ Bordes y sombras */
+  --border-color: #e2e8f0;
   --radius-lg: 12px;
   --shadow-soft: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-elevated: 0 6px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* 🌙 Modo oscuro manual */
-:root.dark {
-    --bg-main: #0f172a;
-    --bg-card: rgba(30, 41, 59, 0.85);
-    --bg-hover: rgba(51, 65, 85, 0.6);
-    --text-primary: #f1f5f9;
-    --text-secondary: #94a3b8;
-    --border-color: rgba(255, 255, 255, 0.1);
+.dark {
+  --bg-main: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-sidebar: #111827;
+  --bg-card: rgba(30, 41, 59, 0.85);
+  --bg-hover: rgba(51, 65, 85, 0.6);
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+
+  --border-color: rgba(255, 255, 255, 0.1);
 }
 
 /* ✨ Mejores contrastes y animaciones */
@@ -59,12 +61,13 @@
 .hover-lift {
   transition: all 0.2s ease;
 }
+
 .hover-lift:hover {
   transform: translateY(-2px);
   box-shadow: var(--shadow-elevated);
 }
 
-/* Dark mode improvements (sistema) */
+/* 🌒 Modo oscuro del sistema (automático) */
 @media (prefers-color-scheme: dark) {
   .dark-text-shadow {
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);

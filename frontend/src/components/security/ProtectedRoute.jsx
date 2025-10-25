@@ -26,7 +26,6 @@ export const ProtectedRoute = ({
   requiredPath = null,
   requiredAction = "ver",
   fallbackPath = "/dashboard",
-  requireAdmin = false,
 }) => {
   const { isAuthenticated, initialized, user } = useAuth();
   const { verificarPermiso, loading } = usePermissions();
@@ -48,62 +47,21 @@ export const ProtectedRoute = ({
   // ❌ Si no está autenticado → redirigir a login
   if (!isAuthenticated) return <Navigate to="/login" replace />;
 
-  // 🔍 Extraer roles del usuario
-  const rolesUsuario = (user?.roles || []).map((r) => {
-    if (typeof r === 'string') return r.toUpperCase();
-    if (typeof r === 'object' && r !== null) {
-      return (r.authority || r.roleName || '').toUpperCase();
-    }
-    return '';
-  }).filter(Boolean);
-  
-  const isAdmin = rolesUsuario.includes("SUPERADMIN") || rolesUsuario.includes("ADMIN") || rolesUsuario.includes("ROLE_SUPERADMIN");
+  // ✅ Si no hay ruta requerida, permitir acceso libre (solo autenticación)
+  if (!requiredPath) return children;
 
-  // 🔒 Si requiere ser admin y no lo es → acceso denegado
-  if (requireAdmin && !isAdmin) {
-    console.log("❌ Acceso denegado: Se requiere rol ADMIN/SUPERADMIN");
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--bg-main)] p-6">
-        <div className="bg-[var(--bg-card)] rounded-3xl shadow-2xl p-10 max-w-md w-full text-center border border-[var(--border-color)]">
-          <div className="w-20 h-20 mx-auto mb-6 rounded-full bg-[var(--color-danger)]/10 flex items-center justify-center">
-            <ShieldAlert className="w-10 h-10 text-[var(--color-danger)]" />
-          </div>
-          <h2 className="text-2xl font-bold text-[var(--text-primary)] mb-2">
-            Acceso Denegado
-          </h2>
-          <p className="text-[var(--text-secondary)] mb-6">
-            Esta sección es solo para administradores.
-          </p>
-          <a
-            href={fallbackPath}
-            className="inline-flex items-center justify-center w-full px-6 py-3 rounded-xl
-                       font-semibold text-white bg-[var(--color-primary)] hover:brightness-110
-                       transition-all duration-200"
-          >
-            Volver al Dashboard
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  // ✅ Si no hay ruta requerida, permitir acceso (ya pasó verificación de admin si era necesaria)
-  if (!requiredPath) {
-    console.log("✅ Acceso permitido sin ruta requerida");
-    return children;
-  }
-
-  // 🔍 Verificar permiso MBAC
-  console.log("🔍 Verificando acceso a:", requiredPath, "Acción:", requiredAction);
-  
-  // 🚀 SUPERADMIN y ADMIN siempre tienen acceso
-  if (isAdmin) {
-    console.log("✅ Acceso concedido por rol privilegiado");
-    return children;
-  }
-  
+  // 🔍 Verificar permiso RBAC
   let hasPermission = verificarPermiso(requiredPath, requiredAction);
-  console.log("🔍 Resultado de verificación:", hasPermission);
+
+  // 🚀 Permitir acceso total a roles privilegiados
+  const rolesUsuario = (user?.roles || []).map((r) => {
+    if (typeof r === 'string') return r.replace('ROLE_', '').toUpperCase();
+    if (r?.authority) return r.authority.replace('ROLE_', '').toUpperCase();
+    return String(r || '').replace('ROLE_', '').toUpperCase();
+  }).filter(Boolean);
+  if (rolesUsuario.includes("SUPERADMIN") || rolesUsuario.includes("ADMIN")) {
+    hasPermission = true;
+  }
 
   // 🚫 Sin permiso → pantalla elegante de “Acceso denegado”
   if (!hasPermission) {

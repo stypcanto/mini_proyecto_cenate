@@ -1,53 +1,53 @@
-import React from "react";
+import React, { forwardRef } from 'react';
+import clsx from 'clsx';
 
-export const Card = React.forwardRef(({ children, className = "", ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={`bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-2xl shadow-sm transition-all duration-150 ${className}`}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-});
-Card.displayName = "Card";
+/**
+ * 🧩 Card Component System (CENATE UI)
+ * Componente base reutilizable con subcomponentes semánticos.
+ */
 
-export const CardHeader = React.forwardRef(({ children, className = "", ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={`px-6 py-4 border-b border-gray-200 dark:border-gray-700 ${className}`}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-});
-CardHeader.displayName = "CardHeader";
+export const Card = forwardRef(({ children, className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={clsx(
+      'bg-white dark:bg-[#0f172a] rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm',
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </div>
+));
+Card.displayName = 'Card';
 
-export const CardTitle = React.forwardRef(({ children, className = "", ...props }, ref) => {
-  return (
-    <h3
-      ref={ref}
-      className={`text-lg font-semibold text-gray-900 dark:text-white tracking-tight ${className}`}
-      {...props}
-    >
-      {children}
-    </h3>
-  );
-});
-CardTitle.displayName = "CardTitle";
+export const CardHeader = forwardRef(({ children, className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={clsx('px-6 py-4 border-b border-gray-200 dark:border-gray-700', className)}
+    {...props}
+  >
+    {children}
+  </div>
+));
+CardHeader.displayName = 'CardHeader';
 
-export const CardContent = React.forwardRef(({ children, className = "", ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={`px-6 py-4 text-gray-700 dark:text-gray-200 ${className}`}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-});
-CardContent.displayName = "CardContent";
+export const CardTitle = forwardRef(({ children, className, ...props }, ref) => (
+  <h3
+    ref={ref}
+    className={clsx(
+      'text-lg font-semibold text-gray-900 dark:text-gray-100 tracking-tight',
+      className
+    )}
+    {...props}
+  >
+    {children}
+  </h3>
+));
+CardTitle.displayName = 'CardTitle';
+
+export const CardContent = forwardRef(({ children, className, ...props }, ref) => (
+  <div ref={ref} className={clsx('px-6 py-4', className)} {...props}>
+    {children}
+  </div>
+));
+CardContent.displayName = 'CardContent';

@@ -1,332 +1,256 @@
 // ========================================================================
-// 🛣️ App.js - Sistema MBAC CENATE (versión estable 2025 FINAL)
+// 🌐 App.js – Sistema RBAC CENATE (Restaurado 2025)
 // ------------------------------------------------------------------------
-// Configuración de rutas protegidas con MBAC, JWT y roles jerárquicos.
-// Incluye redirección automática post-login mediante RoleRedirector.jsx.
+// Sistema completo de Login con RBAC (Role-Based Access Control)
+// Flujo: Home → Login → Dashboard (según permisos) → Logout → Home
 // ========================================================================
 
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
+
+// 🌈 Contextos globales
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
-import ProtectedRoute from "./components/security/ProtectedRoute";
+
+// 🧱 Layout y seguridad
 import AppLayout from "./components/AppLayout";
+import ProtectedRoute from "./components/security/ProtectedRoute";
 
-// 🔀 Redirección automática según rol
-import RoleRedirector from "./utils/RoleRedirector";
-
-// ========== PÁGINAS PRINCIPALES ==========
-import Login from "./pages/Login";
+// 🧩 Páginas públicas
 import Home from "./pages/Home";
-import Dashboard from "./pages/Dashboard";
-import AdminDashboard from "./pages/AdminDashboard";
-import UsersPage from "./pages/UsersPage";
-import CrearUsuario from "./pages/CrearUsuario";
-import UserDashboard from "./pages/user/UserDashboard";
-import Profile from "./pages/user/Profile";
+import Login from "./pages/Login";
 import Unauthorized from "./pages/Unauthorized";
 
-// ========== ROLES ==========
+// 🧩 Páginas de Dashboard
+import Dashboard from "./pages/Dashboard";
+import AdminDashboard from "./pages/AdminDashboard";
+
+// 🧩 Gestión de Usuarios
+import UsersPage from "./pages/UsersPage";
+import CrearUsuario from "./pages/CrearUsuario";
+
+// 🧩 Permisos RBAC
+import PermisosPage from "./pages/admin/PermisosPage";
+
+// 🧩 Perfil de Usuario
+import Profile from "./pages/user/Profile";
+import UserDashboard from "./pages/user/UserDashboard";
+
+// 🧩 Módulos por Rol - Médico
 import DashboardMedico from "./pages/roles/medico/DashboardMedico";
-import ModuloCitas from "./pages/roles/medico/ModuloCitas";
 import ModuloPacientes from "./pages/roles/medico/ModuloPacientes";
+import ModuloCitas from "./pages/roles/medico/ModuloCitas";
 import ModuloIndicadores from "./pages/roles/medico/ModuloIndicadores";
 
+// 🧩 Módulos por Rol - Coordinador
 import DashboardCoordinador from "./pages/roles/coordinador/DashboardCoordinador";
 import ModuloAgenda from "./pages/roles/coordinador/ModuloAgenda";
 
+// 🧩 Módulos por Rol - Externo
 import DashboardExterno from "./pages/roles/externo/DashboardExterno";
 import ModuloReportes from "./pages/roles/externo/ModuloReportes";
 
+// 🧩 Módulos - Citas
 import DashboardCitas from "./pages/roles/citas/DashboardCitas";
+
+// 🧩 Módulos - Lineamientos
 import LineamientosIpress from "./pages/roles/lineamientos/LineamientosIpress";
 
-// ========== ADMIN MBAC ==========
-import UsersManagement from "./pages/admin/UsersManagement";
-import RolesManagement from "./pages/admin/RolesManagement";
-import MBACControl from "./pages/admin/MBACControl";
-import AuditLog from "./pages/admin/AuditLog";
-import PermisosPage from "./pages/admin/PermisosPage";
+// ========================================================================
+// 🧩 Layout protegido – aplica AppLayout solo una vez
+// ========================================================================
+function ProtectedAppLayout() {
+  return (
+    <ProtectedRoute>
+      <AppLayout>
+        <Outlet />
+      </AppLayout>
+    </ProtectedRoute>
+  );
+}
 
-// ========== CONTEXTO DE AUTENTICACIÓN ==========
-import { useAuth } from "./context/AuthContext";
-
+// ========================================================================
+// 🚏 Definición de rutas
+// ========================================================================
 function AppRoutes() {
-  const { user } = useAuth();
-
   return (
     <Routes>
-      {/* ===============================================================
-          🧭 RUTA CENTRAL DE REDIRECCIÓN AUTOMÁTICA SEGÚN ROL
-          =============================================================== */}
-      <Route
-        path="/redirect"
-        element={
-          <ProtectedRoute>
-            <RoleRedirector roles={user?.roles || []} />
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ========== RUTAS PÚBLICAS ========== */}
+      {/* 🌍 Páginas públicas */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
-      {/* ========== DASHBOARD GENERAL ========== */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Dashboard General">
-              <Dashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+      {/* 🔒 Área protegida con AppLayout único */}
+      <Route element={<ProtectedAppLayout />}>
+        {/* Dashboard principal */}
+        <Route path="/dashboard" element={<Dashboard />} />
+        
+        {/* Panel de administración (solo para SUPERADMIN/ADMIN - sin MBAC) */}
+        <Route path="/admin" element={<AdminDashboard />} />
 
-      {/* ========== PERFIL Y USUARIO ========== */}
-      <Route
-        path="/user/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Mi Dashboard">
-              <UserDashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/user/profile"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Mi Perfil">
-              <Profile />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-
-      {/* ========== ADMINISTRACIÓN GENERAL ========== */}
-      <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Dashboard Administrativo">
-              <AdminDashboard />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/users"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Usuarios">
+        {/* 👥 Gestión de usuarios */}
+        <Route 
+          path="/admin/users" 
+          element={
+            <ProtectedRoute requiredPath="/admin/users" requiredAction="ver">
               <UsersPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/crear-usuario"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Crear Usuario">
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/users/create" 
+          element={
+            <ProtectedRoute requiredPath="/admin/users" requiredAction="crear">
               <CrearUsuario />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+            </ProtectedRoute>
+          } 
+        />
 
-      {/* ========== MÓDULOS MBAC (roles/permiso/auditoría) ========== */}
-      <Route
-        path="/admin/usuarios"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Gestión de Usuarios">
-              <UsersManagement />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/roles"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Gestión de Roles y Permisos">
-              <RolesManagement />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/permisos"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Control MBAC">
-              <MBACControl />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/auditoria"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Auditoría del Sistema">
-              <AuditLog />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/configuracion"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Configuración de Permisos">
+        {/* 🔐 Permisos RBAC */}
+        <Route 
+          path="/admin/permisos" 
+          element={
+            <ProtectedRoute requiredPath="/admin/permisos" requiredAction="ver">
               <PermisosPage />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+            </ProtectedRoute>
+          } 
+        />
 
-      {/* ========== ROLES MÉDICO ========== */}
-      <Route
-        path="/roles/medico/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Dashboard Médico">
+        {/* 👤 Perfil de usuario */}
+        <Route path="/user/profile" element={<Profile />} />
+        <Route path="/user/dashboard" element={<UserDashboard />} />
+
+        {/* 👨‍⚕️ Módulo Médico */}
+        <Route 
+          path="/roles/medico/dashboard" 
+          element={
+            <ProtectedRoute requiredPath="/roles/medico/dashboard" requiredAction="ver">
               <DashboardMedico />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles/medico/citas"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Módulo de Citas">
-              <ModuloCitas />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles/medico/pacientes"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Pacientes">
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/roles/medico/pacientes" 
+          element={
+            <ProtectedRoute requiredPath="/roles/medico/pacientes" requiredAction="ver">
               <ModuloPacientes />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles/medico/indicadores"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Indicadores">
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/roles/medico/citas" 
+          element={
+            <ProtectedRoute requiredPath="/roles/medico/citas" requiredAction="ver">
+              <ModuloCitas />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/roles/medico/indicadores" 
+          element={
+            <ProtectedRoute requiredPath="/roles/medico/indicadores" requiredAction="ver">
               <ModuloIndicadores />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+            </ProtectedRoute>
+          } 
+        />
 
-      {/* ========== COORDINADOR ========== */}
-      <Route
-        path="/roles/coordinador/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Dashboard Coordinador">
+        {/* 📊 Módulo Coordinador */}
+        <Route 
+          path="/roles/coordinador/dashboard" 
+          element={
+            <ProtectedRoute requiredPath="/roles/coordinador/dashboard" requiredAction="ver">
               <DashboardCoordinador />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles/coordinador/agenda"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Agenda">
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/roles/coordinador/agenda" 
+          element={
+            <ProtectedRoute requiredPath="/roles/coordinador/agenda" requiredAction="ver">
               <ModuloAgenda />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+            </ProtectedRoute>
+          } 
+        />
 
-      {/* ========== EXTERNO ========== */}
-      <Route
-        path="/roles/externo/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Dashboard Externo">
+        {/* 🌐 Módulo Externo */}
+        <Route 
+          path="/roles/externo/dashboard" 
+          element={
+            <ProtectedRoute requiredPath="/roles/externo/dashboard" requiredAction="ver">
               <DashboardExterno />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles/externo/reportes"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Reportes">
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/roles/externo/reportes" 
+          element={
+            <ProtectedRoute requiredPath="/roles/externo/reportes" requiredAction="ver">
               <ModuloReportes />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+            </ProtectedRoute>
+          } 
+        />
 
-      {/* ========== CITAS ========== */}
-      <Route
-        path="/roles/citas/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Dashboard de Citas">
+        {/* 📅 Módulo Citas */}
+        <Route 
+          path="/citas/dashboard" 
+          element={
+            <ProtectedRoute requiredPath="/citas/dashboard" requiredAction="ver">
               <DashboardCitas />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+            </ProtectedRoute>
+          } 
+        />
 
-      {/* ========== LINEAMIENTOS ========== */}
-      <Route
-        path="/roles/lineamientos/dashboard"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Lineamientos IPRESS">
+        {/* 📋 Lineamientos */}
+        <Route 
+          path="/lineamientos/ipress" 
+          element={
+            <ProtectedRoute requiredPath="/lineamientos/ipress" requiredAction="ver">
               <LineamientosIpress />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/roles/lineamientos/registro"
-        element={
-          <ProtectedRoute>
-            <AppLayout title="Registro de Lineamientos">
-              <LineamientosIpress />
-            </AppLayout>
-          </ProtectedRoute>
-        }
-      />
+            </ProtectedRoute>
+          } 
+        />
+      </Route>
 
-      {/* ========== REDIRECCIÓN POR DEFECTO ========== */}
-      <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      {/* 🚦 Fallback para rutas inexistentes */}
+      <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
 
-function App() {
+// ========================================================================
+// 🚀 Aplicación principal
+// ========================================================================
+export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <ThemeProvider>
+      <ThemeProvider>
+        <AuthProvider>
+          {/* 🔔 Notificaciones globales (estilo Apple) */}
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 3000,
+              style: {
+                background: "var(--toast-bg, #1e293b)",
+                color: "var(--toast-color, white)",
+                borderRadius: "12px",
+                padding: "16px",
+                boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+              },
+              success: {
+                iconTheme: { primary: "#10b981", secondary: "white" },
+              },
+              error: {
+                iconTheme: { primary: "#ef4444", secondary: "white" },
+              },
+            }}
+          />
+
+          {/* 🚏 Sistema de rutas */}
           <AppRoutes />
-        </ThemeProvider>
-      </AuthProvider>
+        </AuthProvider>
+      </ThemeProvider>
     </BrowserRouter>
   );
 }
-
-export default App;

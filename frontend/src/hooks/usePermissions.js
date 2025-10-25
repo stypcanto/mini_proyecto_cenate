@@ -1,5 +1,5 @@
 // ========================================================================
-// 🎯 usePermissions.js – Sistema MBAC CENATE (versión FINAL corregida)
+// 🎯 usePermissions.js – Sistema MBAC CENATE (versión completa)
 // ------------------------------------------------------------------------
 // Gestiona permisos por ruta/acción según la respuesta del backend MBAC.
 // Compatible con ProtectedRoute.jsx, PermissionGate.jsx y Sidebar dinámico.
@@ -10,6 +10,7 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../lib/apiClient";
 import {
+  transformarPermisos,
   tienePermisosRequeridos,
   filtrarRutasPermitidas,
   agruparPorModulo,
@@ -22,111 +23,70 @@ const normalizePath = (p) =>
 export const usePermissions = () => {
   const { user, isAuthenticated, logout } = useAuth();
   const [permisos, setPermisos] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // =====================================================
-  // 🔹 1. Normalizar roles del usuario
-  // =====================================================
-  const rolesRaw = user?.roles || [];
-  const roles = [];
-
-  for (const r of rolesRaw) {
-    if (!r) continue;
-    if (typeof r === "string") roles.push(r.toUpperCase());
-    else if (typeof r === "object") {
-      if (Array.isArray(r)) {
-        r.forEach((sub) => {
-          if (typeof sub === "string") roles.push(sub.toUpperCase());
-          else if (sub?.authority) roles.push(String(sub.authority).toUpperCase());
-          else if (sub?.roleName) roles.push(String(sub.roleName).toUpperCase());
-        });
-      } else if (r?.authority) roles.push(String(r.authority).toUpperCase());
-      else if (r?.roleName) roles.push(String(r.roleName).toUpperCase());
-    }
-  }
-
-  const isSuperOrAdmin =
-    roles.includes("SUPERADMIN") ||
-    roles.includes("ADMIN") ||
-    roles.includes("ROLE_SUPERADMIN");
+  // Roles del usuario (maneja tanto strings como objetos de Spring Security)
+  const roles = (user?.roles || []).map((r) => {
+    if (typeof r === 'string') return r.toUpperCase();
+    if (r?.authority) return r.authority.replace('ROLE_', '').toUpperCase();
+    return String(r || '').toUpperCase();
+  }).filter(Boolean);
+  const isSuperOrAdmin = roles.includes("SUPERADMIN") || roles.includes("ADMIN");
 
   // =====================================================
-  // 🚀 2. Bypass automático para SUPERADMIN / ADMIN
-  // =====================================================
-  useEffect(() => {
-    if (isSuperOrAdmin) {
-      console.log("🚀 SUPERADMIN/ADMIN detectado - acceso total sin verificar permisos");
-      // Crear permisos globales ficticios
-      setPermisos([
-        {
-          path: "*",
-          modulo: "global",
-          acciones: ["ver", "crear", "editar", "eliminar", "exportar", "aprobar"],
-        },
-      ]);
-      setLoading(false);
-    }
-  }, [isSuperOrAdmin]);
-
-  // =====================================================
-  // 🔹 3. Cargar permisos reales del backend MBAC
+  // 🔹 1. Cargar permisos reales del backend MBAC
   // =====================================================
   const fetchPermisos = useCallback(async () => {
-    if (!isAuthenticated || !user?.id || isSuperOrAdmin) return;
+    if (!isAuthenticated || !user?.username) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      console.log("🔄 Cargando permisos desde", `/mbac/permisos-activos/${user.id}`);
-      const data = await apiClient.get(`/mbac/permisos-activos/${user.id}`, true);
+      // ✅ Usa el username como identificador temporal
+      const data = await apiClient.get(`/permisos/usuario/${user.username}`, true);
 
-      if (!Array.isArray(data)) throw new Error("Formato de permisos inválido");
+      if (!Array.isArray(data)) {
+        throw new Error("Formato de permisos inválido (no es un array)");
+      }
 
-      const transformed = data
-        .map((p) => ({
-          path: normalizePath(p.rutaPagina),
-          modulo: p.modulo || "general",
-          acciones: [
-            p.puedeVer && "ver",
-            p.puedeCrear && "crear",
-            p.puedeEditar && "editar",
-            p.puedeEliminar && "eliminar",
-            p.puedeExportar && "exportar",
-            p.puedeAprobar && "aprobar",
-          ].filter(Boolean),
-        }))
+      // Normaliza y elimina duplicados
+      const transformed = transformarPermisos(data)
+        .map((p) => ({ ...p, path: normalizePath(p.path) }))
         .filter(
-          (p, i, arr) =>
-            arr.findIndex(
-              (q) => q.path === p.path && q.acciones.join() === p.acciones.join()
-            ) === i
+          (p, i, arr) => arr.findIndex((q) => q.path === p.path && q.acciones === p.acciones) === i
         );
 
       setPermisos(transformed);
     } catch (err) {
-      console.error("❌ Error cargando permisos:", err);
+      console.error("Error cargando permisos:", err);
       setError(err.message || "Error al cargar permisos");
       if (String(err?.message).includes("401")) logout();
       setPermisos([]);
     } finally {
       setLoading(false);
     }
-  }, [isAuthenticated, user?.id, logout, isSuperOrAdmin]);
-
-  useEffect(() => {
-    if (isAuthenticated && user?.id && !isSuperOrAdmin) fetchPermisos();
-  }, [isAuthenticated, user?.id, isSuperOrAdmin, fetchPermisos]);
+  }, [isAuthenticated, user, logout]);
 
   // =====================================================
-  // 🔹 4. Verificar permiso por ruta + acción
+  // 🔹 2. Efecto: recargar al cambiar usuario autenticado
+  // =====================================================
+  useEffect(() => {
+    if (isAuthenticated && user?.username) {
+      fetchPermisos();
+    } else {
+      setPermisos([]);
+    }
+  }, [isAuthenticated, user, fetchPermisos]);
+
+  // =====================================================
+  // 🔹 3. Función: verificar permiso por ruta + acción
   // =====================================================
   const tienePermiso = useCallback(
     (rutaPagina, accion = "ver") => {
-      if (isSuperOrAdmin) return true;
+      if (isSuperOrAdmin) return true; // 🚀 acceso total
       if (!Array.isArray(permisos)) return false;
-
       const ruta = normalizePath(rutaPagina);
       return tienePermisosRequeridos(permisos, ruta, [accion]);
     },
@@ -134,21 +94,44 @@ export const usePermissions = () => {
   );
 
   // =====================================================
-  // 🔹 5. Helpers: rutas y módulos
+  // 🔹 4. Helpers adicionales
   // =====================================================
   const getRutasPermitidas = useCallback(
-    (accion = "ver") =>
-      filtrarRutasPermitidas(permisos, accion).map((p) => ({
+    (accion = "ver") => {
+      // Si es SUPERADMIN o ADMIN y no hay permisos cargados, devolver base mínima
+      if (isSuperOrAdmin && permisos.length === 0) {
+        return [
+          { path: "/dashboard", acciones: ["ver"], modulo: "general" },
+          {
+            path: "/admin",
+            acciones: ["ver", "crear", "editar", "eliminar", "exportar", "aprobar"],
+            modulo: "admin",
+          },
+          {
+            path: "/admin/users",
+            acciones: ["ver", "crear", "editar", "eliminar"],
+            modulo: "admin",
+          },
+        ];
+      }
+
+      return filtrarRutasPermitidas(permisos, accion).map((p) => ({
         ...p,
         path: normalizePath(p.path),
-      })),
-    [permisos]
+      }));
+    },
+    [permisos, isSuperOrAdmin]
   );
 
   const getModulosAgrupados = useCallback(
     () => agruparPorModulo(getRutasPermitidas("ver")),
     [getRutasPermitidas]
   );
+
+  // =====================================================
+  // 🔹 5. Alias: compatibilidad con ProtectedRoute.jsx
+  // =====================================================
+  const verificarPermiso = tienePermiso;
 
   // =====================================================
   // 🔹 6. Retorno final del hook
@@ -158,6 +141,7 @@ export const usePermissions = () => {
     loading,
     error,
     tienePermiso,
+    verificarPermiso, // usado por ProtectedRoute.jsx
     getRutasPermitidas,
     getModulosAgrupados,
     refetch: fetchPermisos,

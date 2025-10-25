@@ -1,42 +1,56 @@
-import React from "react";
+import React, { forwardRef } from 'react';
+import clsx from 'clsx';
 
-export const Button = React.forwardRef(
+/**
+ * 🎯 CENATE UI – Button
+ * Botón reutilizable con variantes y tamaños personalizables.
+ * Compatible con modo oscuro y clases de Tailwind.
+ */
+
+export const Button = forwardRef(
   (
     {
       children,
-      className = "",
-      variant = "primary",
-      size = "md",
+      className,
+      variant = 'default',
+      size = 'default',
       disabled = false,
       ...props
     },
     ref
   ) => {
     const baseClasses =
-      "inline-flex items-center justify-center rounded-lg font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 transition-all duration-150 ease-in-out disabled:opacity-60 disabled:cursor-not-allowed";
+      'inline-flex items-center justify-center rounded-md font-medium transition-colors ' +
+      'focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none';
 
     const variantClasses = {
-      primary: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500",
-      secondary:
-        "bg-gray-100 text-gray-800 hover:bg-gray-200 focus:ring-gray-400",
+      default:
+        'bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500 dark:bg-blue-500 dark:hover:bg-blue-600',
       destructive:
-        "bg-red-600 text-white hover:bg-red-700 focus:ring-red-500",
+        'bg-red-600 text-white hover:bg-red-700 focus:ring-red-500 dark:bg-red-500 dark:hover:bg-red-600',
       outline:
-        "border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500",
-      ghost: "text-gray-700 hover:bg-gray-100 focus:ring-blue-500",
+        'border border-gray-300 bg-white text-gray-700 hover:bg-gray-50 focus:ring-blue-500 ' +
+        'dark:border-gray-700 dark:bg-transparent dark:text-gray-200 dark:hover:bg-gray-800',
+      ghost:
+        'text-gray-700 hover:bg-gray-100 focus:ring-blue-500 dark:text-gray-300 dark:hover:bg-gray-800',
     };
 
     const sizeClasses = {
-      sm: "px-3 py-1.5 text-xs",
-      md: "px-4 py-2 text-sm",
-      lg: "px-6 py-3 text-base",
+      default: 'px-4 py-2 text-sm',
+      sm: 'px-3 py-1.5 text-xs',
+      lg: 'px-6 py-3 text-base',
     };
 
     return (
       <button
         ref={ref}
         disabled={disabled}
-        className={`${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+        className={clsx(
+          baseClasses,
+          variantClasses[variant],
+          sizeClasses[size],
+          className
+        )}
         {...props}
       >
         {children}
@@ -45,4 +59,4 @@ export const Button = React.forwardRef(
   }
 );
 
-Button.displayName = "Button";
+Button.displayName = 'Button';
