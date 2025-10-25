@@ -4,7 +4,6 @@ import com.styp.cenate.dto.UsuarioCreateRequest;
 import com.styp.cenate.dto.UsuarioResponse;
 import com.styp.cenate.dto.UsuarioUpdateRequest;
 import com.styp.cenate.service.usuario.UsuarioService;
-import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -29,7 +28,6 @@ import java.util.Map;
         "http://10.0.89.13:3000",
         "http://10.0.89.13:5173"
 })
-@Data
 public class UsuarioController {
 
     private final UsuarioService usuarioService;
@@ -125,11 +123,10 @@ public class UsuarioController {
         try {
             log.info("✨ Creando nuevo usuario: {}", request.getUsername());
             UsuarioResponse usuario = usuarioService.createUser(request);
-            return ResponseEntity.ok(usuario);
+            return ResponseEntity.ok(Map.of("message", "Usuario creado correctamente", "usuario", usuario));
         } catch (Exception e) {
             log.error("❌ Error al crear usuario: {}", e.getMessage());
-            return ResponseEntity.badRequest()
-                    .body(Map.of("message", e.getMessage()));
+            return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
         }
     }
 
@@ -149,6 +146,7 @@ public class UsuarioController {
     @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
         usuarioService.deleteUser(id);
+        log.info("🗑️ Usuario con ID {} eliminado exitosamente", id);
         return ResponseEntity.ok(Map.of("message", "✅ Usuario eliminado exitosamente"));
     }
 

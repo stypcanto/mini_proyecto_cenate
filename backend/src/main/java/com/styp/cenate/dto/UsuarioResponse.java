@@ -1,19 +1,24 @@
+// ============================================================================
+// 🧩 UsuarioResponse.java – DTO de respuesta de usuario (CENATE 2025)
+// ----------------------------------------------------------------------------
+// Representa la respuesta completa de un usuario autenticado o consultado
+// en el sistema MBAC CENATE, incluyendo datos personales, roles y permisos.
+// ============================================================================
+
 package com.styp.cenate.dto;
 
-import lombok.Builder;
-import lombok.Data;
-
+import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
 
-/**
- * 🎯 DTO que representa la respuesta completa de un usuario del sistema CENATE.
- * Incluye datos personales, profesionales, auditoría, roles y permisos.
- */
-@Data
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
+@ToString
 public class UsuarioResponse {
 
     // ============================================================
@@ -61,8 +66,8 @@ public class UsuarioResponse {
     private String colegiatura;
     private String regimenLaboral;
     private String areaTrabajo;
-    private List<String> ordenesCompra; // OC vinculadas al personal
-    private List<String> firmasDigitales; // Firmas registradas (ej. jpg o PDF)
+    private List<String> ordenesCompra;     // OC vinculadas al personal
+    private List<String> firmasDigitales;   // Firmas registradas (ej. jpg o PDF)
 
     // ============================================================
     // 💬 Campo informativo opcional
