@@ -28,36 +28,42 @@ RUN npm install ajv@6 ajv-keywords@3 --save-dev --legacy-peer-deps
 # Copiar el resto del código fuente
 COPY . .
 
-# Compilar la aplicación React para producción
-RUN npm run build
+# ✅ Asegurar entorno de producción para build
+ENV NODE_ENV=production
 
+# 🔨 Compilar la aplicación React para producción
+RUN npm run build
 
 # ================================
 # 🚀 Etapa 2 - Servidor Nginx
 # ================================
 FROM nginx:alpine
 
-# Eliminar configuración por defecto
+# 🧹 Eliminar configuración por defecto
 RUN rm -rf /etc/nginx/conf.d/*
 
-# Copiar build generado por React
+# 📦 Copiar build generado por React
 COPY --from=build /app/build /usr/share/nginx/html
 
 # 🖼️ Copiar las imágenes del directorio public/images manualmente
 RUN mkdir -p /usr/share/nginx/html/images
 COPY ./public/images/. /usr/share/nginx/html/images/
 
-# ✅ Dar permisos de lectura a las imágenes (necesario para evitar 403 Forbidden)
+# ✅ Dar permisos de lectura a las imágenes (evita errores 403)
 RUN chmod -R 755 /usr/share/nginx/html/images
 
-# Copiar configuración personalizada de Nginx
+# ⚙️ Copiar configuración personalizada de Nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-# Variables de entorno opcionales
+# 🌎 Variables de entorno
 ENV TZ=America/Lima
+ENV NODE_ENV=production
+
+# 🔥 Limpieza y diagnóstico opcional
+RUN rm -rf /var/cache/apk/* /tmp/*
 
 # Exponer puerto
 EXPOSE 80
 
-# Iniciar Nginx en primer plano
+# 🚀 Iniciar Nginx en primer plano
 CMD ["nginx", "-g", "daemon off;"]
