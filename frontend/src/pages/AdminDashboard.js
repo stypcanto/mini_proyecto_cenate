@@ -48,7 +48,7 @@ export default function AdminDashboard() {
     { 
       icon: Users, 
       label: "Usuarios Totales", 
-      value: "245", 
+      value: "3", 
       trend: "+12%", 
       trendLabel: "vs mes anterior",
       color: "#0A5BA9",
@@ -99,10 +99,10 @@ export default function AdminDashboard() {
       icon: Users, 
       label: "Gestión de Usuarios", 
       description: "Crear, editar y administrar usuarios",
-      count: 245,
+      count: 3,
       color: "blue", 
       gradient: "from-blue-500 to-blue-600",
-      path: "/admin/users" 
+      path: "/admin/usuarios" 
     },
     { 
       icon: Shield, 

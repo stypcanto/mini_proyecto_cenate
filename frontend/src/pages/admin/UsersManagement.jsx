@@ -3,6 +3,7 @@
 // ========================================================================
 
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   FiSearch, FiPlus, FiEdit, FiTrash2, FiUser, FiMail, FiShield,
   FiCheck, FiX, FiFilter, FiEye, FiEyeOff, FiLock, FiAlertCircle,
@@ -13,6 +14,7 @@ import axios from "axios";
 const API_BASE_URL = "http://localhost:8080/api";
 
 export default function UsersManagement() {
+  const navigate = useNavigate();
   const [users, setUsers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRole, setFilterRole] = useState("all");
@@ -191,7 +193,7 @@ export default function UsersManagement() {
             Recargar
           </button>
           <button
-            onClick={() => setShowModal(true)}
+            onClick={() => navigate('/admin/crear-usuario')}
             className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl shadow-lg"
           >
             <FiPlus className="w-5 h-5" />

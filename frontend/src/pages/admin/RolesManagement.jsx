@@ -4,7 +4,8 @@
 // Página completa para administrar roles y permisos con sistema MBAC
 // ========================================================================
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 import {
   FiShield,
   FiUsers,
@@ -16,50 +17,57 @@ import {
   FiEye,
   FiLock,
   FiUnlock,
+  FiRefreshCw,
 } from "react-icons/fi";
 
 export default function RolesManagement() {
-  const [roles, setRoles] = useState([
-    {
-      id: 1,
-      name: "Administrador",
-      description: "Acceso completo al sistema",
-      users: 18,
-      permissions: 42,
-      color: "purple",
-      active: true,
-    },
-    {
-      id: 2,
-      name: "Médico",
-      description: "Acceso a pacientes y expedientes médicos",
-      users: 85,
-      permissions: 25,
-      color: "blue",
-      active: true,
-    },
-    {
-      id: 3,
-      name: "Enfermera",
-      description: "Acceso a pacientes y seguimiento",
-      users: 120,
-      permissions: 18,
-      color: "green",
-      active: true,
-    },
-    {
-      id: 4,
-      name: "Recepcionista",
-      description: "Gestión de citas y registros básicos",
-      users: 22,
-      permissions: 8,
-      color: "yellow",
-      active: true,
-    },
-  ]);
-
-  const [selectedRole, setSelectedRole] = useState(roles[0]);
+  const [roles, setRoles] = useState([]);
+  const [totalUsuarios, setTotalUsuarios] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState(null);
   const [showPermissions, setShowPermissions] = useState(true);
+
+  // Cargar roles y usuarios desde el backend
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("auth.token");
+        
+        // Cargar roles
+        const rolesResponse = await axios.get("http://localhost:8080/api/admin/roles", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        // Cargar usuarios totales
+        const usuariosResponse = await axios.get("http://localhost:8080/api/personal/total", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        console.log("✅ Roles cargados:", rolesResponse.data);
+        console.log("✅ Usuarios cargados:", usuariosResponse.data);
+
+        setTotalUsuarios(usuariosResponse.data.length);
+        setRoles(rolesResponse.data);
+        
+        // Seleccionar el primer rol por defecto
+        if (rolesResponse.data.length > 0) {
+          setSelectedRole(rolesResponse.data[0]);
+        }
+      } catch (error) {
+        console.error("❌ Error al cargar datos:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   const permissionCategories = [
     {
@@ -158,7 +166,7 @@ export default function RolesManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium">Total Roles</p>
-              <p className="text-3xl font-bold mt-1">8</p>
+              <p className="text-3xl font-bold mt-1">{roles.length}</p>
             </div>
             <FiShield className="w-12 h-12 opacity-30" />
           </div>
@@ -169,7 +177,7 @@ export default function RolesManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Usuarios Asignados</p>
-              <p className="text-3xl font-bold mt-1">245</p>
+              <p className="text-3xl font-bold mt-1">{totalUsuarios}</p>
             </div>
             <FiUsers className="w-12 h-12 opacity-30" />
           </div>
@@ -191,7 +199,7 @@ export default function RolesManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-yellow-100 text-sm font-medium">Roles Activos</p>
-              <p className="text-3xl font-bold mt-1">8</p>
+              <p className="text-3xl font-bold mt-1">{roles.length}</p>
             </div>
             <FiUnlock className="w-12 h-12 opacity-30" />
           </div>
@@ -203,80 +211,89 @@ export default function RolesManagement() {
         {/* Roles List */}
         <div className="lg:col-span-1 bg-white rounded-xl shadow-md p-6">
           <h2 className="text-xl font-bold text-gray-800 mb-4">Roles Disponibles</h2>
-          <div className="space-y-3">
-            {roles.map((role) => (
-              <div
-                key={role.id}
-                onClick={() => setSelectedRole(role)}
-                className={`p-4 rounded-lg cursor-pointer transition-all duration-200 ${
-                  selectedRole.id === role.id
-                    ? "bg-green-50 border-2 border-green-500 shadow-md"
-                    : "bg-gray-50 border-2 border-transparent hover:border-gray-300"
-                }`}
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <div className="flex items-center gap-3">
-                    <div
-                      className={`w-10 h-10 bg-gradient-to-br ${getColorClasses(
-                        role.color
-                      )} rounded-lg flex items-center justify-center text-white shadow-md`}
-                    >
-                      <FiShield className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-800">{role.name}</h3>
-                      <p className="text-xs text-gray-500">{role.permissions} permisos</p>
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <FiRefreshCw className="w-6 h-6 animate-spin text-blue-600" />
+              <span className="ml-2 text-gray-600">Cargando roles...</span>
+            </div>
+          ) : roles.length === 0 ? (
+            <p className="text-center text-gray-500 py-8">No hay roles disponibles</p>
+          ) : (
+            <div className="space-y-3">
+              {roles.map((role) => (
+                <div
+                  key={role.idRol}
+                  onClick={() => setSelectedRole(role)}
+                  className={`p-4 rounded-lg cursor-pointer transition-all duration-200 ${
+                    selectedRole?.idRol === role.idRol
+                      ? "bg-green-50 border-2 border-green-500 shadow-md"
+                      : "bg-gray-50 border-2 border-transparent hover:border-gray-300"
+                  }`}
+                >
+                  <div className="flex items-start justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div
+                        className={`w-10 h-10 bg-gradient-to-br ${role.admin ? 'from-purple-500 to-purple-600' : 'from-blue-500 to-blue-600'} rounded-lg flex items-center justify-center text-white shadow-md`}
+                      >
+                        <FiShield className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-gray-800">{role.descRol || role.nombreRol}</h3>
+                        <p className="text-xs text-gray-500">{role.admin ? 'Administrador' : 'Usuario'}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <p className="text-sm text-gray-600 mb-2">{role.description}</p>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-gray-500">{role.users} usuarios</span>
-                  {role.active ? (
+                  <p className="text-sm text-gray-600 mb-2">
+                    {role.admin ? 'Acceso completo al sistema' : 'Acceso limitado según permisos'}
+                  </p>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">-</span>
                     <span className="px-2 py-1 bg-green-100 text-green-800 rounded-full font-medium">
                       Activo
                     </span>
-                  ) : (
-                    <span className="px-2 py-1 bg-gray-100 text-gray-800 rounded-full font-medium">
-                      Inactivo
-                    </span>
-                  )}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Permissions Panel */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-md p-6">
           <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-3">
-              <div
-                className={`w-12 h-12 bg-gradient-to-br ${getColorClasses(
-                  selectedRole.color
-                )} rounded-xl flex items-center justify-center text-white shadow-lg`}
-              >
-                <FiShield className="w-6 h-6" />
+            {selectedRole ? (
+              <>
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-12 h-12 bg-gradient-to-br ${selectedRole.admin ? 'from-purple-500 to-purple-600' : 'from-blue-500 to-blue-600'} rounded-xl flex items-center justify-center text-white shadow-lg`}
+                  >
+                    <FiShield className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold text-gray-800">{selectedRole.descRol || selectedRole.nombreRol}</h2>
+                    <p className="text-gray-600">{selectedRole.admin ? 'Acceso completo al sistema' : 'Acceso limitado según permisos'}</p>
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
+                    <FiEdit className="w-5 h-5" />
+                  </button>
+                  <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
+                    <FiTrash2 className="w-5 h-5" />
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8 w-full">
+                <p className="text-gray-500">Selecciona un rol para ver sus permisos</p>
               </div>
-              <div>
-                <h2 className="text-2xl font-bold text-gray-800">{selectedRole.name}</h2>
-                <p className="text-gray-600">{selectedRole.description}</p>
-              </div>
-            </div>
-            <div className="flex gap-2">
-              <button className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-                <FiEdit className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors">
-                <FiTrash2 className="w-5 h-5" />
-              </button>
-            </div>
+            )}
           </div>
 
           <div className="border-t border-gray-200 pt-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-semibold text-gray-800">
-                Permisos Asignados ({selectedRole.permissions})
+                Permisos Asignados
               </h3>
               <button className="text-green-600 hover:text-green-700 font-medium text-sm">
                 Guardar Cambios

@@ -5,12 +5,13 @@
 // Mantiene diseño Apple/macOS, permisos MBAC y validaciones completas.
 // ========================================================================
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Camera, UserPlus, ArrowLeft, LockKeyhole } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiClient } from "../lib/apiClient";
 import { usePermissions } from "../hooks/usePermissions";
+import axios from "axios";
 
 export default function CrearUsuario() {
   const navigate = useNavigate();
@@ -18,6 +19,14 @@ export default function CrearUsuario() {
   const [photoPreview, setPhotoPreview] = useState(null);
   const [photoFile, setPhotoFile] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [roles, setRoles] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(true);
+  const [profesiones, setProfesiones] = useState([]);
+  const [loadingProfesiones, setLoadingProfesiones] = useState(true);
+  const [regimenes, setRegimenes] = useState([]);
+  const [loadingRegimenes, setLoadingRegimenes] = useState(true);
+  const [especialidades, setEspecialidades] = useState([]);
+  const [loadingEspecialidades, setLoadingEspecialidades] = useState(false);
 
   const [formData, setFormData] = useState({
     username: "",
@@ -34,7 +43,99 @@ export default function CrearUsuario() {
     correo_personal: "",
     correo_corporativo: "",
     rol: "MEDICO",
+    profesion: "",
+    regimen_laboral: "",
+    colegiatura: "",
+    especialidad: "",
+    rne: "",
   });
+
+  // ============================================================
+  // 📋 Cargar roles, profesiones y regímenes desde el backend
+  // ============================================================
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const token = localStorage.getItem("auth.token");
+        const headers = {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        };
+
+        // Cargar roles
+        const rolesResponse = await axios.get("http://localhost:8080/api/admin/roles", { headers });
+        console.log("✅ Roles cargados:", rolesResponse.data);
+        setRoles(rolesResponse.data);
+        if (rolesResponse.data.length > 0) {
+          setFormData(prev => ({ ...prev, rol: rolesResponse.data[0].nombreRol }));
+        }
+        setLoadingRoles(false);
+
+        // Cargar profesiones
+        const profesionesResponse = await axios.get("http://localhost:8080/api/profesiones", { headers });
+        console.log("✅ Profesiones cargadas:", profesionesResponse.data);
+        setProfesiones(profesionesResponse.data);
+        if (profesionesResponse.data.length > 0) {
+          setFormData(prev => ({ ...prev, profesion: profesionesResponse.data[0].idProf }));
+        }
+        setLoadingProfesiones(false);
+
+        // Cargar regímenes laborales
+        const regimenesResponse = await axios.get("http://localhost:8080/api/regimenes", { headers });
+        console.log("✅ Regímenes cargados:", regimenesResponse.data);
+        setRegimenes(regimenesResponse.data);
+        if (regimenesResponse.data.length > 0) {
+          setFormData(prev => ({ ...prev, regimen_laboral: regimenesResponse.data[0].idRegLab }));
+        }
+        setLoadingRegimenes(false);
+
+      } catch (error) {
+        console.error("❌ Error al cargar datos:", error);
+        toast.error("Error al cargar datos del sistema");
+        setLoadingRoles(false);
+        setLoadingProfesiones(false);
+        setLoadingRegimenes(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  // ============================================================
+  // 📋 Cargar especialidades cuando la profesión seleccionada es MÉDICO
+  // ============================================================
+  useEffect(() => {
+    const cargarEspecialidades = async () => {
+      const profesionSeleccionada = profesiones.find(p => p.idProf === parseInt(formData.profesion));
+      const esMedico = profesionSeleccionada?.descProf?.toUpperCase().includes('MEDICO');
+
+      if (esMedico) {
+        setLoadingEspecialidades(true);
+        try {
+          const token = localStorage.getItem("auth.token");
+          const response = await axios.get(`http://localhost:8080/api/especialidades/profesion/${formData.profesion}`, {
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json"
+            }
+          });
+          console.log("✅ Especialidades cargadas:", response.data);
+          setEspecialidades(response.data);
+        } catch (error) {
+          console.error("❌ Error al cargar especialidades:", error);
+        } finally {
+          setLoadingEspecialidades(false);
+        }
+      } else {
+        setEspecialidades([]);
+        setFormData(prev => ({ ...prev, especialidad: "", rne: "" }));
+      }
+    };
+
+    if (formData.profesion && profesiones.length > 0) {
+      cargarEspecialidades();
+    }
+  }, [formData.profesion, profesiones]);
 
   // ============================================================
   // 📸 Manejo de foto
@@ -90,7 +191,7 @@ export default function CrearUsuario() {
       }
 
       toast.success("Usuario creado exitosamente");
-      navigate("/admin/users");
+      navigate("/admin/usuarios");
     } catch (error) {
       toast.error(error.message || "Error al crear usuario");
     } finally {
@@ -119,7 +220,7 @@ export default function CrearUsuario() {
             No tienes permisos para crear usuarios.
           </p>
           <button
-            onClick={() => navigate("/admin/users")}
+            onClick={() => navigate("/admin/usuarios")}
             className="mt-6 px-6 py-2.5 rounded-lg border border-[var(--border-color)]
                        bg-[var(--bg-card)] hover:bg-[var(--bg-hover)] text-[var(--text-primary)]
                        transition-all"
@@ -166,7 +267,7 @@ export default function CrearUsuario() {
                 </div>
               </div>
               <button
-                onClick={() => navigate("/admin/users")}
+                onClick={() => navigate("/admin/usuarios")}
                 className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white font-semibold rounded-lg transition-all flex items-center gap-2 border border-white/30"
               >
                 <ArrowLeft size={18} />
@@ -295,13 +396,19 @@ export default function CrearUsuario() {
                   name="rol"
                   value={formData.rol}
                   onChange={handleChange}
+                  disabled={loadingRoles}
                 >
-                  <option value="MEDICO">Médico</option>
-                  <option value="ENFERMERO">Enfermero</option>
-                  <option value="ADMIN">Administrador</option>
-                  <option value="SUPERADMIN">Super Administrador</option>
-                  <option value="PERSONAL_CNT">Personal CNT</option>
-                  <option value="PERSONAL_EXTERNO">Personal Externo</option>
+                  {loadingRoles ? (
+                    <option>Cargando roles...</option>
+                  ) : roles.length === 0 ? (
+                    <option>No hay roles disponibles</option>
+                  ) : (
+                    roles.map(role => (
+                      <option key={role.idRol} value={role.nombreRol}>
+                        {role.descRol} {role.admin ? '(Admin)' : ''}
+                      </option>
+                    ))
+                  )}
                 </FormSelect>
               </div>
             </Section>
@@ -309,7 +416,7 @@ export default function CrearUsuario() {
             {/* Botones */}
             <div className="flex gap-3 justify-end pt-6 border-t border-[var(--border-color)]">
               <button
-                onClick={() => navigate("/admin/users")}
+                onClick={() => navigate("/admin/usuarios")}
                 type="button"
                 className="px-6 py-2.5 rounded-lg border border-[var(--border-color)]
                          bg-[var(--bg-card)] hover:bg-[var(--bg-hover)]
