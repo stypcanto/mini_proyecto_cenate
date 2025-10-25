@@ -113,22 +113,84 @@ curl -X POST "$BASE_URL/api/mbac/permisos/verificar" \
 
 
 ### 7. Para verificar que el backend devuelve permisos correctamente:
+
+## A. Consultar permisos por ID de usuario
 ```bash
-curl -X GET "http://localhost:8080/api/usuarios" \
-  -H "Authorization: Bearer $JWT_TOKEN" \
-  -H "Content-Type: application/json" | jq .
+curl -X GET http://localhost:8080/api/mbac/permisos/usuario/1 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq
 ```
 
-### 8. Permisos
+---
+
+## B.  Consultar permisos por username
 ```bash
-curl -X GET "$BASE_URL/api/admin/permisos" \      
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-
-curl -X GET "$BASE_URL/api/admin/permisos/rol/1" \
-  -H "Authorization: Bearer $JWT_TOKEN" | jq .
-
-
+curl -X GET http://localhost:8080/api/mbac/permisos/usuario/nombre/scantor \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq
 ```
+
+---
+
+## C.  Consultar permisos por usuario y módulo
+```bash
+curl -X GET http://localhost:8080/api/mbac/permisos/usuario/1/modulo/10 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq
+```
+
+---
+
+## D.  Verificar permiso específico
+```bash
+curl -X POST http://localhost:8080/api/mbac/permisos/verificar \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "idUser": 1,
+        "rutaPagina": "/admin/usuarios",
+        "accion": "CREAR"
+      }' | jq
+```
+
+---
+
+## E.  Listar módulos accesibles por usuario
+```bash
+curl -X GET http://localhost:8080/api/mbac/permisos/usuario/1/modulos \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq
+```
+
+---
+
+## F.  Listar páginas accesibles dentro de un módulo
+```bash
+curl -X GET http://localhost:8080/api/mbac/permisos/usuario/1/modulo/10/paginas \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" | jq
+```
+
+---
+
+## G.  Obtener ID de usuario por username (si está disponible)
+```bash
+curl -X GET "http://localhost:8080/api/usuarios/username/scantor/id" \
+  -H "Authorization: Bearer $TOKEN" | jq
+```
+
+
+
+## ✅ Checklist de validación
+| Endpoint | Espera Long | Compila | JWT protegido | Estado |
+|-----------|--------------|----------|----------------|---------|
+| `/usuario/{id}` | ✅ | ✅ | ✅ | 🟢 |
+| `/usuario/nombre/{username}` | ✅ | ✅ | ✅ | 🟢 |
+| `/usuario/{userId}/modulo/{idModulo}` | ✅ (conversión `.longValue()`) | ✅ | ✅ | 🟢 |
+| `/verificar` | ✅ | ✅ | ✅ | 🟢 |
+| `/usuario/{userId}/modulos` | ✅ | ✅ | ✅ | 🟢 |
+| `/usuario/{userId}/modulo/{idModulo}/paginas` | ✅ (conversión `.longValue()`) | ✅ | ✅ | 🟢 |
+
 
 
 ### 9. Usuarios
