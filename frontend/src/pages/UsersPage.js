@@ -37,30 +37,46 @@ export default function UsersPage() {
   const [page, setPage] = useState(1);
   const pageSize = 20;
 
-  // ============================================================
-  // 📦 Cargar usuarios desde API
-  // ============================================================
-  useEffect(() => {
-    fetchUsers();
-  }, [filters.mesCumple]);
+ // ============================================================
+ // 📦 Cargar usuarios desde API (corrige token y endpoint seguro)
+ // ============================================================
+ useEffect(() => {
+   fetchUsers();
+   // eslint-disable-next-line react-hooks/exhaustive-deps
+ }, [filters.mesCumple]);
 
-  const fetchUsers = async () => {
-    setLoading(true);
-    try {
-      let data;
-      if (filters.mesCumple !== "TODOS") {
-        data = await apiClient.get(`/personal/cumpleaneros/mes/${filters.mesCumple}`, true);
-      } else {
-        data = await apiClient.get("/personal/total", true);
-      }
-      setUsers(Array.isArray(data) ? data : []);
-    } catch (err) {
-      console.error("Error al cargar usuarios:", err);
-      toast.error("Error al cargar usuarios");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchUsers = async () => {
+   setLoading(true);
+   try {
+     let endpoint = "/personal/total";
+
+     // 👇 Validación robusta del mes (numérico y distinto de "TODOS")
+     if (filters.mesCumple && filters.mesCumple !== "TODOS") {
+       const mes = parseInt(filters.mesCumple);
+       if (!isNaN(mes) && mes >= 1 && mes <= 12) {
+         endpoint = `/personal/cumpleaneros/mes/${mes}`;
+       }
+     }
+
+     // ✅ Llama al backend con autenticación activa (usa JWT actual)
+     const data = await apiClient.get(endpoint, true);
+
+     if (Array.isArray(data)) {
+       setUsers(data);
+     } else if (data && data.mensaje) {
+       // Si el backend devuelve "🎈 No hay cumpleañeros..."
+       toast(data.mensaje, { icon: "🎂" });
+       setUsers([]);
+     } else {
+       setUsers([]);
+     }
+   } catch (err) {
+     console.error("❌ Error al cargar usuarios:", err);
+     toast.error("Error al cargar usuarios desde el servidor");
+   } finally {
+     setLoading(false);
+   }
+ };
 
   // ============================================================
   // 🔍 Filtros, búsqueda y paginación
