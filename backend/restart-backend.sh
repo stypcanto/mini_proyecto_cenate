@@ -1,0 +1,26 @@
+#!/bin/bash
+
+echo "🛑 Deteniendo el backend actual..."
+# Buscar y matar el proceso de Spring Boot
+pkill -f "CenateApplication" || echo "No hay procesos de backend corriendo"
+
+echo "🧹 Limpiando archivos compilados..."
+cd /Users/styp/Documents/CENATE/Chatbot/API_Springboot/cenate/backend
+./gradlew clean
+
+echo "🔨 Compilando el proyecto..."
+./gradlew build -x test
+
+if [ $? -eq 0 ]; then
+    echo "✅ Compilación exitosa"
+    echo "🚀 Iniciando el backend..."
+    ./gradlew bootRun &
+    
+    echo "⏳ Esperando a que el servidor inicie (30 segundos)..."
+    sleep 30
+    
+    echo "✅ Backend reiniciado. Verifica los logs arriba."
+    echo "📍 Prueba: http://10.0.89.239:8080/api/asegurados?page=0&size=5"
+else
+    echo "❌ Error en la compilación. Revisa los errores arriba."
+fi

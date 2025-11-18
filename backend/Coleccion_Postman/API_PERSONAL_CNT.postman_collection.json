@@ -1,0 +1,765 @@
+{
+	"info": {
+		"_postman_id": "9813ac7e-cab9-4b1a-8859-d43dd19b287b",
+		"name": "API_PERSONAL_CNT",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21759398"
+	},
+	"item": [
+		{
+			"name": "ORIGEN_PERSONAL",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/origen-personal",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"origen-personal"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "LOGIN",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"let json = pm.response.json();\r",
+							"pm.environment.set(\"token\", json.token);"
+						],
+						"type": "text/javascript",
+						"packages": {},
+						"requests": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"70073164\",\r\n  \"password\": \"@Erick12345678\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ORIGEN_PERSONAL_ACTIVOS",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/origen-personal/activos",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"origen-personal",
+						"activos"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ORIGEN_PERSONAL_OBTENER_X_ID",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/origen-personal/1",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"origen-personal",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ORIGEN_PERSONAL_GUARDAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"idOrigen\": \"300\",\r\n    \"descOrigen\": \"Pruebas\",\r\n    \"estado\": \"A\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/origen-personal",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"origen-personal"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ORIGEN_PERSONAL_ACTUALIZAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"descOrigen\": \"Pruebas A\",\r\n    \"estado\": \"A\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/origen-personal/5",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"origen-personal",
+						"5"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ORIGEN_PERSONAL_ELIMINAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/origen-personal/5",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"origen-personal",
+						"5"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ESSI_CONSULTAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/servicio-essi",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"servicio-essi"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ESSI_CONSULTAR_ACTIVOS",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/servicio-essi/activos",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"servicio-essi",
+						"activos"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ESSI_OBTENER_X_ID",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/servicio-essi/1",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"servicio-essi",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ESSI_GUARDAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"codServicio\": \"Prueba\",\r\n    \"descServicio\": \"Esto es una prueba\",\r\n    \"esCenate\": true,\r\n    \"estado\": \"A\",\r\n    \"esAperturaNuevos\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/servicio-essi",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"servicio-essi"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ESSI_ACTUALIZAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"codServicio\": \"Prueba\",\r\n    \"descServicio\": \"Esto es una pruebaA\",\r\n    \"esCenate\": true,\r\n    \"estado\": \"A\",\r\n    \"createdAt\": \"2025-11-14T00:23:04.8396917-05:00\",\r\n    \"updatedAt\": \"2025-11-14T00:23:04.8396917-05:00\",\r\n    \"esAperturaNuevos\": true\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/servicio-essi/107",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"servicio-essi",
+						"107"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ESSI_ELIMINAR_X_ID",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/servicio-essi/107",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"servicio-essi",
+						"107"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PERSONAL_TIPO_LISTADO",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{URL_SERVIDOR}}api/personal-tipo",
+					"host": [
+						"{{URL_SERVIDOR}}api"
+					],
+					"path": [
+						"personal-tipo"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PERSONAL_TIPO_OBTENER_X_TIPO_ID",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/personal-tipo/tipo/2",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"personal-tipo",
+						"tipo",
+						"2"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PERSONAL_TIPO_OBTENER_X_PERSONAL_ID",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/personal-tipo/personal/1",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"personal-tipo",
+						"personal",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PERSONAL_TIPO_GUARDAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"idPers\": 94,\r\n    \"idTipoPers\": 1\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/personal-tipo",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"personal-tipo"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PERSONAL_TIPO_ELIMINAR",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:9090/api/personal-tipo/1/1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9090",
+					"path": [
+						"api",
+						"personal-tipo",
+						"1",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TIPOS_PERSONAL_LISTAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/tipos-personal",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"tipos-personal"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TIPOS_PERSONAL_ACTIVOS",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/tipos-personal/activos",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"tipos-personal",
+						"activos"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TIPOS_PERSONAL_OBTENER_X_ID",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/tipos-personal/1",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"tipos-personal",
+						"1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TIPOS_PERSONAL_GUARDAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"idTipPers\": 4,\r\n    \"descTipPers\": \"Locador\",\r\n    \"statTipPers\": \"A\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/tipos-personal",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"tipos-personal"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TIPOS_PERSONAL_ACTUALIZAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"descTipPers\": \"RESIDENTE\",\r\n    \"statTipPers\": \"A\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/tipos-personal/6",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"tipos-personal",
+						"6"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "TIPOS_PERSONAL_ELIMINAR_X_ID",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{base_url_desarrollo}}api/tipos-personal/6",
+					"host": [
+						"{{base_url_desarrollo}}api"
+					],
+					"path": [
+						"tipos-personal",
+						"6"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

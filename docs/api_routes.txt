@@ -1,0 +1,262 @@
+============================================================
+📘 CENATE API ROUTES - Generado el 2025-10-18 09:38:22
+============================================================
+
+🧩 Módulo: admin
+------------------------------------------------------------
+GET      /api/admin/areas
+POST     /api/admin/areas
+DELETE   /api/admin/areas/{id}
+GET      /api/admin/areas/{id}
+PUT      /api/admin/areas/{id}
+GET      /api/admin/audit/estadisticas
+GET      /api/admin/audit/logs
+GET      /api/admin/audit/logs/buscar
+GET      /api/admin/audit/logs/fechas
+GET      /api/admin/audit/logs/recientes
+GET      /api/admin/audit/logs/usuario/{username}
+GET      /api/admin/dashboard/resumen
+GET      /api/admin/dashboard/stats
+GET      /api/admin/permisos
+GET      /api/admin/permisos/rol/{idRol}
+PUT      /api/admin/permisos/{id}
+GET      /api/admin/recuperacion
+DELETE   /api/admin/recuperacion/{id}
+PUT      /api/admin/recuperacion/{id}/estado
+GET      /api/admin/roles
+POST     /api/admin/roles
+DELETE   /api/admin/roles/{id}
+GET      /api/admin/roles/{id}
+PUT      /api/admin/roles/{id}
+
+
+🧩 Módulo: root
+------------------------------------------------------------
+GET      /actuator
+GET      /api-docs
+GET      /api-docs.yaml
+ANY      /error
+GET      /swagger-ui.html
+
+
+🧩 Módulo: mbac
+------------------------------------------------------------
+GET      /api/mbac/modulos
+GET      /api/mbac/modulos/buscar
+GET      /api/mbac/modulos/{id}/paginas
+
+
+🧩 Módulo: auth
+------------------------------------------------------------
+PUT      /api/auth/change-password
+POST     /api/auth/forgot-password
+POST     /api/auth/login
+GET      /api/auth/recoveries
+GET      /api/auth/recoveries/pending-count
+
+
+🧩 Módulo: account-requests
+------------------------------------------------------------
+POST     /api/account-requests
+GET      /api/account-requests/pendientes
+PUT      /api/account-requests/{id}/aprobar
+PUT      /api/account-requests/{id}/rechazar
+
+
+🧩 Módulo: mappings
+------------------------------------------------------------
+GET      /actuator/mappings
+
+
+🧩 Módulo: ipress
+------------------------------------------------------------
+GET      /api/ipress
+GET      /api/ipress/activas
+GET      /api/ipress/buscar
+GET      /api/ipress/{id}
+
+
+🧩 Módulo: swagger-config
+------------------------------------------------------------
+GET      /api-docs/swagger-config
+
+
+🧩 Módulo: personal
+------------------------------------------------------------
+GET      /api/personal/cumpleaneros/hoy
+GET      /api/personal/cumpleaneros/mes/{mes}
+GET      /api/personal/detalle/{id}
+GET      /api/personal/total
+
+
+🧩 Módulo: personal-cnt
+------------------------------------------------------------
+GET      /api/personal-cnt
+POST     /api/personal-cnt
+GET      /api/personal-cnt/detalle
+DELETE   /api/personal-cnt/{id}
+GET      /api/personal-cnt/{id}
+PUT      /api/personal-cnt/{id}
+GET      /api/personal-cnt/{id}/foto
+
+
+🧩 Módulo: procedimientos
+------------------------------------------------------------
+GET      /api/procedimientos
+POST     /api/procedimientos
+DELETE   /api/procedimientos/{id}
+GET      /api/procedimientos/{id}
+PUT      /api/procedimientos/{id}
+
+
+🧩 Módulo: tipos-procedimiento
+------------------------------------------------------------
+GET      /api/tipos-procedimiento
+POST     /api/tipos-procedimiento
+DELETE   /api/tipos-procedimiento/{id}
+GET      /api/tipos-procedimiento/{id}
+PUT      /api/tipos-procedimiento/{id}
+
+
+🧩 Módulo: personal-externo
+------------------------------------------------------------
+GET      /api/personal-externo
+POST     /api/personal-externo
+GET      /api/personal-externo/ipress/{idIpress}
+GET      /api/personal-externo/search
+GET      /api/personal-externo/usuario/{idUsuario}
+DELETE   /api/personal-externo/{id}
+GET      /api/personal-externo/{id}
+PUT      /api/personal-externo/{id}
+
+
+🧩 Módulo: niveles-atencion
+------------------------------------------------------------
+GET      /api/niveles-atencion
+POST     /api/niveles-atencion
+DELETE   /api/niveles-atencion/{id}
+GET      /api/niveles-atencion/{id}
+PUT      /api/niveles-atencion/{id}
+
+
+🧩 Módulo: redes
+------------------------------------------------------------
+GET      /api/redes
+POST     /api/redes
+DELETE   /api/redes/{id}
+GET      /api/redes/{id}
+PUT      /api/redes/{id}
+
+
+🧩 Módulo: asegurados
+------------------------------------------------------------
+GET      /api/asegurados
+GET      /api/asegurados/doc/{docPaciente}
+GET      /api/asegurados/id/{pkAsegurado}
+
+
+🧩 Módulo: usuarios
+------------------------------------------------------------
+GET      /api/usuarios
+POST     /api/usuarios
+GET      /api/usuarios/detalle/{username}
+GET      /api/usuarios/externos
+GET      /api/usuarios/internos
+GET      /api/usuarios/me
+DELETE   /api/usuarios/{id}
+GET      /api/usuarios/{id}
+PUT      /api/usuarios/{id}
+PUT      /api/usuarios/{id}/activate
+PUT      /api/usuarios/{id}/deactivate
+PUT      /api/usuarios/{id}/unlock
+
+
+🧩 Módulo: info
+------------------------------------------------------------
+GET      /actuator/info
+
+
+🧩 Módulo: regimenes-laborales
+------------------------------------------------------------
+GET      /api/regimenes-laborales
+POST     /api/regimenes-laborales
+DELETE   /api/regimenes-laborales/{id}
+GET      /api/regimenes-laborales/{id}
+PUT      /api/regimenes-laborales/{id}
+
+
+🧩 Módulo: health
+------------------------------------------------------------
+GET      /actuator/health
+GET      /actuator/health/**
+GET      /api/health
+
+
+🧩 Módulo: tipo-ipress
+------------------------------------------------------------
+GET      /api/tipo-ipress
+POST     /api/tipo-ipress
+DELETE   /api/tipo-ipress/{id}
+GET      /api/tipo-ipress/{id}
+PUT      /api/tipo-ipress/{id}
+
+
+🧩 Módulo: tipos-documento
+------------------------------------------------------------
+GET      /api/tipos-documento
+POST     /api/tipos-documento
+GET      /api/tipos-documento/activos
+DELETE   /api/tipos-documento/{id}
+GET      /api/tipos-documento/{id}
+PUT      /api/tipos-documento/{id}
+
+
+🧩 Módulo: auditoria
+------------------------------------------------------------
+GET      /api/auditoria/accion/{accion}
+GET      /api/auditoria/buscar
+GET      /api/auditoria/health
+GET      /api/auditoria/modulo/{modulo}
+GET      /api/auditoria/modulos
+GET      /api/auditoria/rango
+GET      /api/auditoria/resumen
+GET      /api/auditoria/ultimos
+GET      /api/auditoria/username/{username}
+GET      /api/auditoria/usuario/{userId}
+GET      /api/auditoria/usuario/{userId}/rango
+
+
+🧩 Módulo: frm-transf-img
+------------------------------------------------------------
+GET      /api/frm-transf-img
+POST     /api/frm-transf-img
+DELETE   /api/frm-transf-img/{id}
+GET      /api/frm-transf-img/{id}
+PUT      /api/frm-transf-img/{id}
+
+
+🧩 Módulo: areas-hospitalarias
+------------------------------------------------------------
+GET      /api/areas-hospitalarias
+POST     /api/areas-hospitalarias
+DELETE   /api/areas-hospitalarias/{id}
+GET      /api/areas-hospitalarias/{id}
+PUT      /api/areas-hospitalarias/{id}
+
+
+🧩 Módulo: test
+------------------------------------------------------------
+GET      /api/test
+
+
+🧩 Módulo: permisos
+------------------------------------------------------------
+POST     /api/permisos/check
+GET      /api/permisos/health
+GET      /api/permisos/usuario/username/{username}
+GET      /api/permisos/usuario/{id}
+GET      /api/permisos/usuario/{userId}/modulo/{idModulo}
+GET      /api/permisos/usuario/{userId}/modulo/{idModulo}/paginas
+GET      /api/permisos/usuario/{userId}/modulos
+
+

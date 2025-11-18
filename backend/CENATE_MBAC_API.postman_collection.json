@@ -1,0 +1,462 @@
+{
+  "info": {
+    "name": "CENATE - MBAC API Tests",
+    "description": "Colección completa de pruebas para el sistema MBAC (Modular-Based Access Control) de CENATE",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "jwtToken",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwtToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "01 - Autenticación",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.collectionVariables.set(\"jwtToken\", jsonData.token);",
+                  "    pm.environment.set(\"jwtToken\", jsonData.token);",
+                  "    console.log(\"Token guardado: \" + jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"superadmin\",\n  \"password\": \"tu_password_aqui\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - API Permisos",
+      "item": [
+        {
+          "name": "Health Check Permisos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "health"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Permisos por User ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/usuario/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "usuario", "1"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Permisos por Username",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/usuario/username/superadmin",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "usuario", "username", "superadmin"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Permisos por Usuario y Módulo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/usuario/1/modulo/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "usuario", "1", "modulo", "1"]
+            }
+          }
+        },
+        {
+          "name": "Verificar Permiso (Permitido)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 1,\n  \"rutaPagina\": \"/roles/medico/pacientes\",\n  \"accion\": \"ver\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "check"]
+            }
+          }
+        },
+        {
+          "name": "Verificar Permiso (Denegado)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userId\": 3,\n  \"rutaPagina\": \"/roles/superadmin/permisos\",\n  \"accion\": \"eliminar\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/check",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "check"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Módulos Accesibles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/usuario/1/modulos",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "usuario", "1", "modulos"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Páginas Accesibles",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/usuario/1/modulo/1/paginas",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "usuario", "1", "modulo", "1", "paginas"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - API Auditoría",
+      "item": [
+        {
+          "name": "Health Check Auditoría",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "health"]
+            }
+          }
+        },
+        {
+          "name": "Obtener Auditoría Modular",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/modulos?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "modulos"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Auditoría por Usuario",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/usuario/1?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "usuario", "1"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Auditoría por Username",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/username/superadmin?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "username", "superadmin"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Auditoría por Módulo",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/modulo/dim_permisos_modulares?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "modulo", "dim_permisos_modulares"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Auditoría por Acción INSERT",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/accion/INSERT?page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "accion", "INSERT"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Auditoría por Rango de Fechas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/rango?fechaInicio=2025-10-01T00:00:00&fechaFin=2025-10-31T23:59:59&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "rango"],
+              "query": [
+                {
+                  "key": "fechaInicio",
+                  "value": "2025-10-01T00:00:00"
+                },
+                {
+                  "key": "fechaFin",
+                  "value": "2025-10-31T23:59:59"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Resumen Estadístico",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/resumen",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "resumen"]
+            }
+          }
+        },
+        {
+          "name": "Últimos N Eventos",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/ultimos?limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "ultimos"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Búsqueda por Texto",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/auditoria/buscar?texto=puede_ver&page=0&size=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "auditoria", "buscar"],
+              "query": [
+                {
+                  "key": "texto",
+                  "value": "puede_ver"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Pruebas de Seguridad",
+      "item": [
+        {
+          "name": "Sin Token (debe fallar 401)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/usuario/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "usuario", "1"]
+            }
+          }
+        },
+        {
+          "name": "Token Inválido (debe fallar 401)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "token_invalido_123",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/usuario/1",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "usuario", "1"]
+            }
+          }
+        },
+        {
+          "name": "Usuario Inexistente (debe fallar 404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/permisos/usuario/99999",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "permisos", "usuario", "99999"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

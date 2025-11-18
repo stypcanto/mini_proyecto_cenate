@@ -1,0 +1,193 @@
+/*
+ * ================================================================
+ * 🌐 CENATE BACKEND - SPRING BOOT (Gradle)
+ * Compatible con Java 17, Spring Boot 3.5.6 y PostgreSQL
+ * ================================================================
+ */
+
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.5.6'
+    id 'io.spring.dependency-management' version '1.1.7'
+}
+
+group = 'com.styp.cenate'
+version = '0.0.1-SNAPSHOT'
+description = 'CENATE API - Sistema de Gestión'
+
+java {
+    toolchain {
+        languageVersion = JavaLanguageVersion.of(17)
+    }
+}
+
+repositories {
+    mavenCentral()
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+/* ================================================================
+   📦 DEPENDENCIAS
+   ================================================================ */
+dependencies {
+    // 🔹 SPRING BOOT STARTERS
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-validation'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    // 🔹 DEVTOOLS (🚀 recarga automática en desarrollo)
+    developmentOnly 'org.springframework.boot:spring-boot-devtools'
+
+    // 🔹 ACTUATOR (para healthcheck y monitoreo Docker)
+    implementation 'org.springframework.boot:spring-boot-starter-actuator'
+
+    // 🔹 AOP (para MBAC Permission Aspect)
+    implementation 'org.springframework.boot:spring-boot-starter-aop'
+
+    // 🔹 BASE DE DATOS
+    runtimeOnly 'org.postgresql:postgresql'
+
+    // 🔹 JWT (Autenticación segura)
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly 'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // 🔹 SWAGGER / OPENAPI
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.7.0'
+
+    // 🔹 MODEL MAPPER
+    implementation 'org.modelmapper:modelmapper:3.2.0'
+
+    // 🔹 UTILIDADES COMUNES
+    implementation 'org.apache.commons:commons-lang3:3.14.0'
+    implementation 'commons-io:commons-io:2.15.1'
+
+    // ============================================================
+    // ✅ LOMBOK (activado correctamente)
+    // ============================================================
+    compileOnly 'org.projectlombok:lombok:1.18.40'
+    annotationProcessor 'org.projectlombok:lombok:1.18.40'
+    testCompileOnly 'org.projectlombok:lombok:1.18.40'
+    testAnnotationProcessor 'org.projectlombok:lombok:1.18.40'
+
+    // 🔹 TESTING
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testImplementation 'org.springframework.security:spring-security-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+/* ================================================================
+   ⚙️ CONFIGURACIÓN DE SPRING BOOT
+   ================================================================ */
+springBoot {
+    mainClass = 'com.styp.cenate.CenateApplication'
+
+}
+
+/* ================================================================
+   🧩 CONFIGURACIÓN DE EMPAQUETADO (bootJar)
+   ================================================================ */
+bootJar {
+    enabled = true
+    archiveFileName = 'cenate-0.0.1-SNAPSHOT.jar'
+    exclude("**/com/styp/cenate/api/admin/PermisoActivoViewServiceImpl.class")
+}
+
+/* ================================================================
+   🧱 CONFIGURACIÓN DEL JAR SECUNDARIO
+   ================================================================ */
+jar {
+    enabled = false
+}
+
+/* ================================================================
+   🧱 TAREAS PERSONALIZADAS Y COMPILACIÓN
+   ================================================================ */
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+tasks.register('cleanBuild') {
+    dependsOn 'clean', 'build'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    options.compilerArgs += ['-parameters']
+}
+
+tasks.withType(Test).configureEach {
+    systemProperty "spring.profiles.active", "test"
+    testLogging {
+        events "passed", "skipped", "failed"
+    }
+}
+
+/* ================================================================
+   ✅ OPTIMIZACIÓN PARA ENTORNOS DOCKER / CI
+   ================================================================ */
+tasks.withType(org.springframework.boot.gradle.tasks.bundling.BootJar) {
+    launchScript()
+}
+
+
+task runGenerateHash(type: JavaExec) {
+    group = 'utility'
+    description = 'Genera hash BCrypt para contraseñas'
+    classpath = sourceSets.main.runtimeClasspath
+    main = 'com.styp.cenate.utils.GenerarHash'
+}
+
+
+
+
+
+// =================== Javadoc ===================
+tasks.withType(Javadoc).configureEach {
+    options.encoding = 'UTF-8'
+    options.charSet = 'UTF-8'
+    options.memberLevel = JavadocMemberLevel.PROTECTED   // PUBLIC/PROTECTED/PACKAGE/PRIVATE
+    options.author = true
+    options.version = true
+    options.links("https://docs.oracle.com/en/java/javase/17/docs/api/") // Enlaza a API Java 17
+
+    // Evita warnings ruidosos (opcional)
+    options.addBooleanOption('Xdoclint:none', true)
+
+    // Excluir paquetes de infraestructura si no quieres documentarlos
+    exclude('**/config/**', '**/security/**', '**/dto/internal/**')
+}
+
+// Carpeta de salida más “predecible”
+tasks.javadoc {
+    destinationDir = file("$buildDir/docs/javadoc")
+}
+
+// Si quieres que `./gradlew build` también genere javadoc:
+tasks.build {
+    dependsOn tasks.javadoc
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

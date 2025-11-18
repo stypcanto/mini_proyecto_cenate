@@ -1,0 +1,1595 @@
+// Modal de Actualización de Usuario - VERSIÓN COMPLETA CON LÓGICA CONDICIONAL
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Edit, Shield, Save, User, Mail, Briefcase, GraduationCap, RefreshCw, Key, Building2, Check, Camera, Image as ImageIcon, XCircle } from 'lucide-react';
+import FormField from '../modals/FormField';
+import SelectField from '../modals/SelectField';
+import api from '../../../../services/apiClient';
+import MonthYearPicker from '../../../../components/common/MonthYearPicker';
+import { getFotoUrl } from '../../../../utils/apiUrlHelper';
+
+const ActualizarModel = ({ user, onClose, onSuccess }) => {
+  const [selectedTab, setSelectedTab] = useState('personal');
+  const [loading, setLoading] = useState(false);
+  const [ipress, setIpress] = useState([]);
+  const [loadingIpress, setLoadingIpress] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
+  
+  // Estado para foto
+  const [fotoSeleccionada, setFotoSeleccionada] = useState(null);
+  const [fotoPreview, setFotoPreview] = useState(null);
+  const [fotoActual, setFotoActual] = useState(user?.foto_url || user?.foto_pers || null);
+  const fileInputRef = useRef(null);
+
+  // Función helper para obtener el ID del usuario de forma segura
+  const getUserId = () => {
+    if (!user) {
+      console.error('User object is null or undefined');
+      return null;
+    }
+
+    // Lista exhaustiva de posibles nombres de propiedades para el ID
+    const possibleIdProps = [
+      'id_usuario', 'idUsuario', 'id', 'idUser',
+      'userId', 'user_id', 'ID', 'Id',
+      'id_user', 'ID_USUARIO', 'IDUSUARIO'
+    ];
+
+    // Primero intenta propiedades directas
+    for (const prop of possibleIdProps) {
+      if (user[prop] !== undefined && user[prop] !== null) {
+        console.log(`ID encontrado en user.${prop}:`, user[prop]);
+        return user[prop];
+      }
+    }
+
+    // Intenta buscar en propiedades anidadas comunes
+    if (user.data) {
+      for (const prop of possibleIdProps) {
+        if (user.data[prop] !== undefined && user.data[prop] !== null) {
+          console.log(`ID encontrado en user.data.${prop}:`, user.data[prop]);
+          return user.data[prop];
+        }
+      }
+    }
+
+    // Si nada funciona, busca cualquier propiedad que tenga "id" en el nombre
+    const allProps = Object.keys(user);
+    const idProp = allProps.find(prop =>
+      prop.toLowerCase().includes('id') &&
+      typeof user[prop] === 'number'
+    );
+
+    if (idProp) {
+      console.log(`ID encontrado buscando "id" en propiedades: user.${idProp}:`, user[idProp]);
+      return user[idProp];
+    }
+
+    console.error('No se pudo encontrar el ID del usuario en ninguna propiedad');
+    console.error('Propiedades disponibles:', Object.keys(user));
+    console.error('Usuario completo:', user);
+    return null;
+  };
+
+  // Estados para roles
+  const [roles, setRoles] = useState([]);
+  const [loadingRoles, setLoadingRoles] = useState(true);
+  const [currentUserRoles, setCurrentUserRoles] = useState([]);
+
+  // Estados para catálogos profesionales
+  const [profesiones, setProfesiones] = useState([]);
+  const [especialidades, setEspecialidades] = useState([]);
+  const [regimenesLaborales, setRegimenesLaborales] = useState([]);
+  const [areas, setAreas] = useState([]);
+  const [tiposProfesional, setTiposProfesional] = useState([]); // 🆕 Tipos de profesional
+  const [loadingCatalogos, setLoadingCatalogos] = useState(false);
+
+  const [formData, setFormData] = useState({
+    // Datos Básicos
+    username: user?.username || '',
+
+    // Datos Personales
+    tipo_documento: user.tipo_documento || 'DNI',
+    numero_documento: user.numero_documento || '',
+    nombres: user.nombres || user.nombre_completo?.split(' ').slice(2).join(' ') || '',
+    fecha_nacimiento: user.fecha_nacimiento || '',
+    genero: user.genero || '',
+    correo_institucional: user.correo_corporativo || user.correo_institucional || '',
+    apellido_paterno: user.apellido_paterno || user.nombre_completo?.split(' ')[0] || '',
+    apellido_materno: user.apellido_materno || user.nombre_completo?.split(' ')[1] || '',
+    correo_personal: user.correo_personal || '',
+    telefono: user.telefono || '',
+    tipo_personal: user.tipo_personal || 'Interno',
+    id_ipress: user.idIpress || user.id_ipress || '',
+    direccion: user.direccion || '',
+
+    // Datos Profesionales
+    id_profesion: user.id_profesion || '',
+    desc_prof_otro: user.desc_prof_otro || '',
+    colegiatura: user.colegiatura || '',
+    tiene_especialidad_medica: user.tiene_especialidad_medica || (user.id_especialidad ? 'SI' : ''),
+    id_especialidad: user.id_especialidad || '',
+    rne: user.rne || '',
+
+    // Datos Laborales
+    id_regimen_laboral: user.id_regimen_laboral || '',
+    id_tip_pers: user.id_tip_pers || '', // 🆕 Tipo de profesional
+    codigo_planilla: user.codigo_planilla || '',
+    periodo_ingreso: user.periodo_ingreso || '',
+    id_area: user.id_area || '',
+    // 🔥 CORRECCIÓN: Mantener el estado actual del usuario, por defecto ACTIVO
+    estado: user.estado_usuario === 'INACTIVO' || user.estado_usuario === 'I' ? 'I' : 'A',
+
+    // Roles
+    roles: user?.roles ? (Array.isArray(user.roles) ? user.roles : [user.roles]) : []
+  });
+
+  const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    console.log('=== DEBUGGING MODAL EDITAR USUARIO ===');
+    console.log('Usuario recibido en modal:', user);
+    console.log('Tipo de user:', typeof user);
+    console.log('Propiedades de user:', user ? Object.keys(user) : 'user es null/undefined');
+    console.log('Valores de user:', user ? Object.entries(user).slice(0, 10) : 'user es null/undefined');
+    console.log('🔴 ESTADO DEL USUARIO:', user?.estado_usuario);
+    console.log('🔴 ACTIVO:', user?.activo);
+    console.log('🔴 ESTADO INICIAL CALCULADO:', user?.estado_usuario === 'INACTIVO' || user?.estado_usuario === 'I' ? 'I' : 'A');
+    console.log('🔵 DATOS PROFESIONALES:');
+    console.log('  - id_profesion:', user?.id_profesion);
+    console.log('  - colegiatura:', user?.colegiatura);
+    console.log('  - id_especialidad:', user?.id_especialidad);
+    console.log('  - rne:', user?.rne);
+    console.log('🟢 DATOS LABORALES:');
+    console.log('  - id_regimen_laboral:', user?.id_regimen_laboral);
+    console.log('  - codigo_planilla:', user?.codigo_planilla);
+    console.log('  - id_area:', user?.id_area);
+    console.log('  - periodo_ingreso:', user?.periodo_ingreso);
+
+    const detectedId = getUserId();
+    console.log('ID detectado:', detectedId);
+    console.log('=====================================');
+
+    cargarIpress();
+    cargarCatalogos();
+    cargarRoles();
+    
+    // Cargar foto actual si existe
+    if (user?.foto_url || user?.foto_pers) {
+      const fotoUrl = user.foto_url || user.foto_pers;
+      // Usar helper centralizado para construir URL
+      const fotoUrlFinal = getFotoUrl(fotoUrl);
+      if (fotoUrlFinal) {
+        setFotoActual(fotoUrlFinal);
+      }
+    }
+  }, [user]);
+
+  const cargarIpress = async () => {
+    try {
+      setLoadingIpress(true);
+      const response = await api.get('/ipress');
+      setIpress(Array.isArray(response) ? response : response.data || []);
+    } catch (error) {
+      console.error('Error al cargar IPRESS:', error);
+    } finally {
+      setLoadingIpress(false);
+    }
+  };
+
+  const cargarCatalogos = async () => {
+    try {
+      setLoadingCatalogos(true);
+      //epy
+      const [profRes, espRes, regRes, areaRes, tiposRes] = await Promise.all([
+        api.get('/profesiones').catch((err) => { console.error('Error profesiones:', err); return { data: [] }; }),
+        api.get('/servicio-essi').catch((err) => { console.error('Error especialidades:', err); return { data: [] }; }), // ✅ Usar mismo endpoint que CrearUsuarioModal
+        api.get('/regimenes').catch((err) => { console.error('Error regimenes:', err); return { data: [] }; }),
+        api.get('/admin/areas').catch((err) => { console.error('Error areas:', err); return { data: [] }; }),
+        api.get('/tipos-personal').catch((err) => { console.error('Error tipos personal:', err); return { data: [] }; }) // 🆕 Tipos de profesional
+      ]);
+
+      console.log('Profesiones:', profRes);
+      console.log('Especialidades:', espRes);
+      console.log('Regímenes:', regRes);
+      console.log('Áreas:', areaRes);
+
+      // Función helper para extraer datos de diferentes estructuras de respuesta
+      const extractData = (response) => {
+        if (Array.isArray(response)) return response;
+        if (response?.data && Array.isArray(response.data)) return response.data;
+        if (response?.content && Array.isArray(response.content)) return response.content;
+        return [];
+      };
+
+      // Extraer y ordenar datos
+      const profData = extractData(profRes);
+      const profOrdenadas = profData.sort((a, b) => {
+        const descA = ((a.descProf || a.desc_prof || a.nombre) || '').toLowerCase();
+        const descB = ((b.descProf || b.desc_prof || b.nombre) || '').toLowerCase();
+        return descA.localeCompare(descB);
+      });
+
+      const espData = extractData(espRes);
+      const espOrdenadas = espData.sort((a, b) => {
+        // ✅ Usar mismo mapeo que CrearUsuarioModal: descServicio
+        const descA = ((a.descServicio || a.descripcion || a.descEsp || a.desc_esp || a.nombre) || '').toLowerCase();
+        const descB = ((b.descServicio || b.descripcion || b.descEsp || b.desc_esp || b.nombre) || '').toLowerCase();
+        return descA.localeCompare(descB);
+      });
+
+      const regData = extractData(regRes);
+      const regOrdenados = regData.sort((a, b) => {
+        const descA = ((a.descRegLab || a.desc_reg_lab || a.descripcion || a.nombre) || '').toLowerCase();
+        const descB = ((b.descRegLab || b.desc_reg_lab || b.descripcion || b.nombre) || '').toLowerCase();
+        return descA.localeCompare(descB);
+      });
+
+      const areaData = extractData(areaRes);
+      const areasOrdenadas = areaData.sort((a, b) => {
+        const descA = ((a.descArea || a.desc_area || a.nombre || a.descripcion) || '').toLowerCase();
+        const descB = ((b.descArea || b.desc_area || b.nombre || b.descripcion) || '').toLowerCase();
+        return descA.localeCompare(descB);
+      });
+
+      const tiposData = extractData(tiposRes);
+      const tiposOrdenados = tiposData.sort((a, b) => {
+        const descA = ((a.descTipPers || a.desc_tip_pers || a.nombre || a.descripcion) || '').toLowerCase();
+        const descB = ((b.descTipPers || b.desc_tip_pers || b.nombre || b.descripcion) || '').toLowerCase();
+        return descA.localeCompare(descB);
+      });
+
+      console.log('🔥 Profesiones ordenadas:', profOrdenadas.length);
+      console.log('🔥 Especialidades ordenadas:', espOrdenadas.length);
+      console.log('🔥 Regímenes ordenados:', regOrdenados.length);
+      console.log('🔥 Áreas ordenadas:', areasOrdenadas.length);
+      console.log('🔥 Tipos de profesional ordenados:', tiposOrdenados.length);
+
+      setProfesiones(profOrdenadas);
+      setEspecialidades(espOrdenadas);
+      setRegimenesLaborales(regOrdenados);
+      setAreas(areasOrdenadas);
+      setTiposProfesional(tiposOrdenados);
+
+    } catch (error) {
+      console.error('Error al cargar catálogos:', error);
+    } finally {
+      setLoadingCatalogos(false);
+    }
+  };
+
+  const cargarRoles = async () => {
+    try {
+      const userResponse = await api.get('/auth/me');
+      setCurrentUserRoles(userResponse.roles || []);
+
+      const rolesResponse = await api.get('/admin/roles');
+      setRoles(Array.isArray(rolesResponse) ? rolesResponse : []);
+      setLoadingRoles(false);
+    } catch (error) {
+      console.error('Error al cargar roles:', error);
+      setLoadingRoles(false);
+    }
+  };
+
+  const handleRoleToggle = (roleName) => {
+    const isPrivileged = ['ADMIN', 'SUPERADMIN'].includes(roleName);
+    const isSuperAdmin = currentUserRoles.includes('SUPERADMIN');
+
+    if (isPrivileged && !isSuperAdmin) {
+      alert('Solo SUPERADMIN puede asignar roles privilegiados');
+      return;
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      roles: prev.roles.includes(roleName)
+        ? prev.roles.filter(r => r !== roleName)
+        : [...prev.roles, roleName]
+    }));
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: null }));
+    }
+  };
+
+  // Constante para el tamaño máximo permitido (5MB)
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB en bytes
+
+  // Función para formatear el tamaño del archivo
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
+  };
+
+  // Manejar selección de foto
+  const handleFotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validar que sea una imagen
+      if (!file.type.startsWith('image/')) {
+        alert('⚠️ Por favor selecciona un archivo de imagen válido (JPG, PNG, GIF, etc.)');
+        return;
+      }
+      
+      // Validar tamaño (máximo 5MB)
+      const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+      if (file.size > MAX_FILE_SIZE) {
+        alert(
+          `⚠️ La imagen es demasiado grande.\n\n` +
+          `Tamaño del archivo: ${formatFileSize(file.size)}\n` +
+          `Tamaño máximo permitido: 5 MB\n\n` +
+          `Por favor selecciona una imagen más pequeña.`
+        );
+        return;
+      }
+      
+      setFotoSeleccionada(file);
+      
+      // Crear preview
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  // Eliminar foto seleccionada
+  const handleEliminarFoto = () => {
+    setFotoSeleccionada(null);
+    setFotoPreview(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  // Eliminar foto actual del servidor
+  const handleEliminarFotoActual = async () => {
+    if (!window.confirm('¿Estás seguro de que deseas eliminar la foto actual?')) {
+      return;
+    }
+    
+    try {
+      const userId = getUserId();
+      if (!userId) {
+        alert('❌ Error: No se pudo obtener el ID del usuario');
+        return;
+      }
+      
+      setLoading(true);
+      await api.delete(`/personal/foto/${userId}`);
+      setFotoActual(null);
+      setFotoSeleccionada(null);
+      setFotoPreview(null);
+      alert('✅ Foto eliminada exitosamente');
+    } catch (error) {
+      console.error('Error al eliminar foto:', error);
+      alert('❌ Error al eliminar la foto: ' + (error.message || 'Error desconocido'));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const validateTab = (tab) => {
+    const newErrors = {};
+
+    if (tab === 'personal') {
+      if (!formData.username?.trim()) newErrors.username = 'Campo obligatorio';
+      if (!formData.numero_documento?.trim()) newErrors.numero_documento = 'Campo obligatorio';
+      if (!formData.nombres?.trim()) newErrors.nombres = 'Campo obligatorio';
+      if (!formData.apellido_paterno?.trim()) newErrors.apellido_paterno = 'Campo obligatorio';
+      if (!formData.apellido_materno?.trim()) newErrors.apellido_materno = 'Campo obligatorio';
+      if (!formData.correo_personal?.trim()) newErrors.correo_personal = 'Campo obligatorio';
+    }
+
+    if (tab === 'profesional') {
+      // Validar si seleccionó OTRO y no especificó
+      const profesionSeleccionada = profesiones.find(p => 
+        p.idProf === parseInt(formData.id_profesion)
+      );
+      if (profesionSeleccionada?.descProf?.toUpperCase().includes('OTRO') && !formData.desc_prof_otro?.trim()) {
+        newErrors.desc_prof_otro = 'Debe especificar la profesión';
+      }
+
+      // Si es MEDICINA, Colegiatura es obligatoria
+      const esMedicina = profesionSeleccionada?.descProf?.toUpperCase().includes('MEDICINA');
+      if (esMedicina && !formData.colegiatura?.trim()) {
+        newErrors.colegiatura = 'La colegiatura es obligatoria para profesionales de medicina';
+      }
+
+      // Si tiene especialidad médica = SI, entonces Especialidad y RNE son obligatorios
+      if (esMedicina && formData.tiene_especialidad_medica === 'SI') {
+        if (!formData.id_especialidad) {
+          newErrors.id_especialidad = 'Debe seleccionar una especialidad';
+        }
+        if (!formData.rne?.trim()) {
+          newErrors.rne = 'El RNE es obligatorio';
+        }
+      }
+    }
+
+    if (tab === 'laboral') {
+      // Validar Código de Planilla si es régimen 728 o CAS
+      const regimenSeleccionado = regimenesLaborales.find(r => 
+        r.idRegLab === parseInt(formData.id_regimen_laboral)
+      );
+      const requiereCodigoPlanilla = regimenSeleccionado?.descRegLab?.toUpperCase().includes('728') || 
+                                      regimenSeleccionado?.descRegLab?.toUpperCase().includes('CAS');
+      
+      if (requiereCodigoPlanilla && !formData.codigo_planilla?.trim()) {
+        newErrors.codigo_planilla = 'El código de planilla es obligatorio para este régimen laboral';
+      }
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleNextOrSubmit = async (e) => {
+    e.preventDefault();
+
+    if (selectedTab === 'personal') {
+      if (!validateTab('personal')) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+      }
+      setSelectedTab('profesional');
+      return;
+    }
+
+    if (selectedTab === 'profesional') {
+      if (!validateTab('profesional')) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+      }
+      setSelectedTab('laboral');
+      return;
+    }
+
+    if (selectedTab === 'laboral') {
+      if (!validateTab('laboral')) {
+        alert('Por favor complete todos los campos obligatorios');
+        return;
+      }
+      setSelectedTab('roles');
+      return;
+    }
+
+    if (selectedTab === 'roles') {
+      if (formData.roles.length === 0) {
+        alert('Debe seleccionar al menos un rol');
+        return;
+      }
+
+      setLoading(true);
+      await handleSubmit();
+    }
+  };
+
+  // 🔥 FUNCIÓN HELPER: Mapear tipo de documento a ID
+  const getTipoDocumentoId = (tipoDoc) => {
+    const mapping = {
+      'DNI': 1,
+      'CE': 2,
+      'PASAPORTE': 3
+    };
+    return mapping[tipoDoc] || 1; // Por defecto DNI
+  };
+
+  const handleSubmit = async () => {
+    try {
+      const userId = getUserId();
+
+      if (!userId) {
+        alert('❌ Error: No se pudo obtener el ID del usuario');
+        console.error('Usuario recibido:', user);
+        return;
+      }
+
+      console.log('🔄 Iniciando actualización de usuario ID:', userId);
+      console.log('📋 Datos del formulario completos:', formData);
+      console.log('🔴 ESTADO EN FORMDATA:', formData.estado);
+      console.log('🔴 TIPO DE ESTADO:', typeof formData.estado);
+      console.log('🔵 DATOS PROFESIONALES EN FORMDATA:');
+      console.log('  - id_profesion:', formData.id_profesion, '(tipo:', typeof formData.id_profesion, ')');
+      console.log('  - colegiatura:', formData.colegiatura);
+      console.log('  - id_especialidad:', formData.id_especialidad, '(tipo:', typeof formData.id_especialidad, ')');
+      console.log('  - rne:', formData.rne);
+      console.log('🟢 DATOS LABORALES EN FORMDATA:');
+      console.log('  - id_regimen_laboral:', formData.id_regimen_laboral, '(tipo:', typeof formData.id_regimen_laboral, ')');
+      console.log('  - codigo_planilla:', formData.codigo_planilla);
+      console.log('  - id_area:', formData.id_area, '(tipo:', typeof formData.id_area, ')');
+      console.log('  - periodo_ingreso:', formData.periodo_ingreso);
+
+      // 🔥 MAPEAR TIPO DE DOCUMENTO A ID
+      const idTipDoc = getTipoDocumentoId(formData.tipo_documento);
+      console.log('🆔 Tipo de documento mapeado:', formData.tipo_documento, '→', idTipDoc);
+
+      const dataToSend = {
+        nombres: formData.nombres,
+        apellidoPaterno: formData.apellido_paterno,
+        apellidoMaterno: formData.apellido_materno,
+        numeroDocumento: formData.numero_documento,
+        idTipDoc: idTipDoc,  // ✅ ENVIAR ID EN LUGAR DE STRING
+        genero: formData.genero,
+        fechaNacimiento: formData.fecha_nacimiento,
+        telefono: formData.telefono,
+        correoPersonal: formData.correo_personal,
+        correoInstitucional: formData.correo_institucional,
+        direccion: formData.direccion,
+        idProfesion: formData.id_profesion && formData.id_profesion !== '' ? parseInt(formData.id_profesion) : null,
+        descProfOtro: formData.desc_prof_otro || null,
+        colegiatura: formData.colegiatura || null,
+        idEspecialidad: formData.id_especialidad && formData.id_especialidad !== '' ? parseInt(formData.id_especialidad) : null,
+        rne: formData.rne || null,
+        idRegimenLaboral: formData.id_regimen_laboral && formData.id_regimen_laboral !== '' ? parseInt(formData.id_regimen_laboral) : null,
+        idTipPers: formData.id_tip_pers && formData.id_tip_pers !== '' ? parseInt(formData.id_tip_pers) : null, // 🆕 Tipo de profesional
+        codigoPlanilla: formData.codigo_planilla || null,
+        periodoIngreso: formData.periodo_ingreso || null,
+        idIpress: formData.id_ipress && formData.id_ipress !== '' ? parseInt(formData.id_ipress) : null,
+        idArea: formData.id_area && formData.id_area !== '' ? parseInt(formData.id_area) : null,
+        estado: formData.estado || 'A'  // ✅ POR DEFECTO ACTIVO
+      };
+
+      console.log('📤 Datos personales a enviar:', dataToSend);
+      const personalResponse = await api.put(`/usuarios/personal/${userId}`, dataToSend);
+      console.log('✅ Respuesta actualización personal:', personalResponse);
+
+      const usuarioData = {
+        username: formData.username,
+        roles: formData.roles
+      };
+      console.log('📤 Datos de usuario a enviar:', usuarioData);
+      const usuarioResponse = await api.put(`/usuarios/id/${userId}`, usuarioData);
+      console.log('✅ Respuesta actualización usuario:', usuarioResponse);
+
+      // Si hay foto seleccionada, subirla
+      if (fotoSeleccionada) {
+        try {
+          console.log('📸 Subiendo foto para usuario ID:', userId);
+          await api.uploadFile(`/personal/foto/${userId}`, fotoSeleccionada);
+          console.log('✅ Foto subida exitosamente');
+        } catch (error) {
+          console.error('⚠️ Error al subir la foto:', error);
+          // No bloquear el flujo si falla la subida de foto
+          alert(
+            `✅ Usuario actualizado exitosamente\n\n` +
+            `⚠️ Advertencia: No se pudo subir la foto. Puedes intentar subirla más tarde.\n\n` +
+            `Error: ${error.message || 'Error desconocido'}`
+          );
+          if (onSuccess) {
+            await onSuccess();
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+          onClose();
+          return;
+        }
+      }
+
+      alert('✅ Usuario actualizado exitosamente' + (fotoSeleccionada ? ' con foto' : ''));
+      
+      console.log('🔄 Llamando a onSuccess para recargar datos...');
+      if (onSuccess) {
+        await onSuccess();
+      }
+      
+      // Pequeño delay para asegurar que el backend procese los cambios
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      onClose();
+    } catch (error) {
+      console.error('❌ Error al actualizar usuario:', error);
+      console.error('❌ Detalles del error:', error.response?.data);
+      alert(`❌ Error: ${error.response?.data?.message || error.message}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    try {
+      setLoading(true);
+
+      const userId = getUserId();
+
+      if (!userId) {
+        alert('❌ Error: No se pudo obtener el ID del usuario');
+        console.error('Usuario recibido:', user);
+        setLoading(false);
+        return;
+      }
+
+      console.log('🔄 Reseteando contraseña para usuario ID:', userId);
+      
+      await api.put(`/usuarios/id/${userId}/reset-password`, { 
+        newPassword: '@Cenate2025' 
+      });
+
+      alert('✅ Contraseña reseteada exitosamente a @Cenate2025\n\n🔑 El usuario deberá cambiarla en su próximo inicio de sesión.');
+      setShowResetConfirm(false);
+      
+      if (onSuccess) onSuccess();
+
+    } catch (error) {
+      console.error('❌ Error al resetear contraseña:', error);
+      
+      const errorMsg = error.response?.data?.message || 
+                      error.response?.data?.error || 
+                      error.message || 
+                      'Error desconocido';
+      
+      alert(`❌ Error al resetear la contraseña\n\n${errorMsg}\n\nVerifica la consola para más detalles.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 🔥 OBTENER LA PROFESIÓN SELECCIONADA
+  const profesionSeleccionada = profesiones.find(p => 
+    p.idProf === parseInt(formData.id_profesion)
+  );
+  const esMedicina = profesionSeleccionada?.descProf?.toUpperCase().includes('MEDICINA') || false;
+  const esOtroProfesion = profesionSeleccionada?.descProf?.toUpperCase().includes('OTRO') || false;
+
+  // 🔥 OBTENER EL RÉGIMEN LABORAL SELECCIONADO
+  const regimenSeleccionado = regimenesLaborales.find(r => 
+    r.idRegLab === parseInt(formData.id_regimen_laboral)
+  );
+  const requiereCodigoPlanilla = regimenSeleccionado?.descRegLab?.toUpperCase().includes('728') || 
+                                  regimenSeleccionado?.descRegLab?.toUpperCase().includes('CAS') || 
+                                  false;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl my-4 overflow-hidden flex flex-col max-h-[90vh]">
+
+        {/* Header */}
+        <div className="bg-gradient-to-r from-blue-700 to-blue-600 px-6 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center">
+                <User className="w-6 h-6 text-white" />
+              </div>
+              <div className="text-white">
+                <h2 className="text-xl font-bold">Editar Usuario</h2>
+                <p className="text-blue-100 text-sm">Usuario: @{user?.username}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 text-white rounded-xl transition-all">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 mt-4 overflow-x-auto">
+            <button
+              onClick={() => setSelectedTab('personal')}
+              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                selectedTab === 'personal'
+                  ? 'bg-white text-blue-900'
+                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+              }`}
+            >
+              Datos Personales
+            </button>
+            <button
+              onClick={() => setSelectedTab('profesional')}
+              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                selectedTab === 'profesional'
+                  ? 'bg-white text-blue-900'
+                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+              }`}
+            >
+              Datos Profesionales
+            </button>
+            <button
+              onClick={() => setSelectedTab('laboral')}
+              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                selectedTab === 'laboral'
+                  ? 'bg-white text-blue-900'
+                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+              }`}
+            >
+              Datos Laborales
+            </button>
+            <button
+              onClick={() => setSelectedTab('roles')}
+              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                selectedTab === 'roles'
+                  ? 'bg-white text-blue-900'
+                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+              }`}
+            >
+              Roles del Sistema
+            </button>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <form onSubmit={handleNextOrSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-6 overflow-y-auto flex-1">
+
+            {/* Pestaña Datos Personales */}
+            {selectedTab === 'personal' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <User className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Información Personal</h3>
+                </div>
+
+                {/* Username y Resetear Contraseña */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Nombre de Usuario <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      name="username"
+                      value={formData.username}
+                      onChange={handleChange}
+                      className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                        errors.username ? 'border-red-500' : ''
+                      }`}
+                      placeholder="Ej: jgarcia"
+                    />
+                    {errors.username && (
+                      <p className="text-red-500 text-xs mt-1">{errors.username}</p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Contraseña
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setShowResetConfirm(true)}
+                      className="w-full px-4 py-2.5 bg-amber-50 border-2 border-amber-300 text-amber-700 rounded-xl hover:bg-amber-100 transition-all flex items-center justify-center gap-2 font-medium"
+                    >
+                      <RefreshCw className="w-4 h-4" />
+                      Resetear a @Cenate2025
+                    </button>
+                  </div>
+                </div>
+
+                {/* Resto de campos personales */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SelectField
+                    label="Tipo de Documento"
+                    name="tipo_documento"
+                    value={formData.tipo_documento}
+                    onChange={handleChange}
+                    options={[
+                      { value: 'DNI', label: 'DNI' },
+                      { value: 'CE', label: 'Carnet de Extranjería' },
+                      { value: 'PASAPORTE', label: 'Pasaporte' }
+                    ]}
+                    required
+                  />
+
+                  <FormField
+                    label="Número de Documento"
+                    name="numero_documento"
+                    value={formData.numero_documento}
+                    onChange={handleChange}
+                    placeholder="12345678"
+                    required
+                    readOnly
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <FormField
+                    label="Nombres"
+                    name="nombres"
+                    value={formData.nombres}
+                    onChange={handleChange}
+                    placeholder="Juan Carlos"
+                    required
+                    error={errors.nombres}
+                  />
+
+                  <FormField
+                    label="Apellido Paterno"
+                    name="apellido_paterno"
+                    value={formData.apellido_paterno}
+                    onChange={handleChange}
+                    placeholder="García"
+                    required
+                    error={errors.apellido_paterno}
+                  />
+
+                  <FormField
+                    label="Apellido Materno"
+                    name="apellido_materno"
+                    value={formData.apellido_materno}
+                    onChange={handleChange}
+                    placeholder="López"
+                    required
+                    error={errors.apellido_materno}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <SelectField
+                    label="Género"
+                    name="genero"
+                    value={formData.genero}
+                    onChange={handleChange}
+                    options={[
+                      { value: 'M', label: 'Masculino' },
+                      { value: 'F', label: 'Femenino' }
+                    ]}
+                    required
+                  />
+
+                  <FormField
+                    label="Fecha de Nacimiento"
+                    name="fecha_nacimiento"
+                    type="date"
+                    value={formData.fecha_nacimiento}
+                    onChange={handleChange}
+                    required
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    label="Correo Personal"
+                    name="correo_personal"
+                    type="email"
+                    value={formData.correo_personal}
+                    onChange={handleChange}
+                    placeholder="ejemplo@mail.com"
+                    required
+                    error={errors.correo_personal}
+                  />
+
+                  <FormField
+                    label="Correo Institucional"
+                    name="correo_institucional"
+                    type="email"
+                    value={formData.correo_institucional}
+                    onChange={handleChange}
+                    placeholder="ejemplo@essalud.gob.pe"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormField
+                    label="Teléfono"
+                    name="telefono"
+                    type="tel"
+                    value={formData.telefono}
+                    onChange={handleChange}
+                    placeholder="999888777"
+                    required
+                  />
+
+                  <FormField
+                    label="Dirección"
+                    name="direccion"
+                    value={formData.direccion}
+                    onChange={handleChange}
+                    placeholder="Av. Ejemplo 123, Lima"
+                  />
+                </div>
+
+                {/* Campo de Foto */}
+                <div className="mt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Camera className="w-5 h-5 text-blue-600" />
+                    Foto de Perfil
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Vista previa de la foto actual o nueva */}
+                    {(fotoPreview || fotoActual) && (
+                      <div className="relative inline-block">
+                        <div className="w-32 h-32 rounded-xl overflow-hidden border-2 border-blue-300 shadow-md">
+                          <img
+                            src={fotoPreview || fotoActual}
+                            alt="Foto de perfil"
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              // Si falla cargar la foto, ocultar la imagen
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        </div>
+                        {fotoPreview && (
+                          <button
+                            type="button"
+                            onClick={handleEliminarFoto}
+                            className="absolute -top-2 -right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all"
+                            title="Cancelar nueva foto"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        {fotoActual && !fotoPreview && (
+                          <button
+                            type="button"
+                            onClick={handleEliminarFotoActual}
+                            disabled={loading}
+                            className="absolute -top-2 -right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-full shadow-lg transition-all disabled:opacity-50"
+                            title="Eliminar foto actual"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        )}
+                        {fotoSeleccionada && (
+                          <div className="mt-2 p-2 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-xs font-medium text-blue-900">
+                              📷 Foto seleccionada: {fotoSeleccionada.name}
+                            </p>
+                            <p className="text-xs text-blue-700 mt-1">
+                              Tamaño: <strong>{formatFileSize(fotoSeleccionada.size)}</strong> de {formatFileSize(MAX_FILE_SIZE)} máximo
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {/* Input de archivo */}
+                    <div>
+                      <label
+                        htmlFor="foto"
+                        className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-xl cursor-pointer transition-all ${
+                          fotoPreview || fotoActual
+                            ? 'border-blue-300 bg-blue-50'
+                            : 'border-gray-300 bg-gray-50 hover:border-blue-400 hover:bg-blue-50'
+                        }`}
+                      >
+                        <input
+                          ref={fileInputRef}
+                          id="foto"
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFotoChange}
+                          className="hidden"
+                        />
+                        <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                          {fotoPreview || fotoActual ? (
+                            <>
+                              <ImageIcon className="w-8 h-8 text-blue-600 mb-2" />
+                              <p className="text-sm font-medium text-blue-700">
+                                {fotoPreview ? 'Cambiar foto' : 'Subir nueva foto'}
+                              </p>
+                            </>
+                          ) : (
+                            <>
+                              <Camera className="w-8 h-8 text-gray-400 mb-2" />
+                              <p className="mb-2 text-sm text-gray-500">
+                                <span className="font-semibold">Haz clic para subir</span> o arrastra y suelta
+                              </p>
+                              <p className="text-xs text-gray-600 font-medium">
+                                PNG, JPG o GIF
+                              </p>
+                              <p className="text-xs text-gray-500 mt-1">
+                                📏 Tamaño máximo: <strong className="text-emerald-600">5 MB</strong>
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-2">
+                        {fotoActual 
+                          ? 'La foto actual se reemplazará al guardar los cambios'
+                          : 'La foto es opcional y se puede agregar más tarde'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Pestaña Datos Profesionales - CON LÓGICA CONDICIONAL */}
+            {selectedTab === 'profesional' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Briefcase className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Información Profesional</h3>
+                </div>
+
+                {loadingCatalogos ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <p className="text-sm text-gray-500">Cargando catálogos...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* Campo Profesión - SIEMPRE VISIBLE */}
+                      <SelectField
+                        label="Profesión"
+                        name="id_profesion"
+                        value={formData.id_profesion}
+                        onChange={(e) => {
+                          const newProfId = e.target.value && e.target.value !== '' ? parseInt(e.target.value) : null;
+                          const profesionSeleccionada = profesiones.find(p => 
+                            p.idProf === newProfId
+                          );
+                          const esOtro = profesionSeleccionada?.descProf?.toUpperCase().includes('OTRO');
+                          const esMed = profesionSeleccionada?.descProf?.toUpperCase().includes('MEDICINA');
+                          
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            id_profesion: newProfId,
+                            desc_prof_otro: esOtro ? prev.desc_prof_otro : '',
+                            colegiatura: esMed ? prev.colegiatura : '',
+                            tiene_especialidad_medica: esMed ? prev.tiene_especialidad_medica : '',
+                            id_especialidad: esMed ? prev.id_especialidad : null,
+                            rne: esMed ? prev.rne : ''
+                          }));
+                        }}
+                        options={[
+                          ...profesiones.map(prof => ({
+                            value: prof.idProf,
+                            label: prof.descProf
+                          }))
+                        ]}
+                        error={errors.id_profesion}
+                      />
+
+                      {/* Campo ESPECIFICAR - Solo si seleccionó OTRO */}
+                      {esOtroProfesion && (
+                        <FormField
+                          label="Especificar Profesión"
+                          name="desc_prof_otro"
+                          value={formData.desc_prof_otro}
+                          onChange={handleChange}
+                          placeholder="Ej: Arquitecto, Contador, etc."
+                          required
+                          error={errors.desc_prof_otro}
+                        />
+                      )}
+
+                      {/* Campo Colegiatura - Obligatorio si es MEDICINA */}
+                      {esMedicina ? (
+                        <div>
+                          <label htmlFor="colegiatura" className="block text-sm font-medium text-gray-700 mb-2">
+                            Colegiatura <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            id="colegiatura"
+                            name="colegiatura"
+                            type="text"
+                            required
+                            value={formData.colegiatura}
+                            onChange={handleChange}
+                            placeholder="Ej: CMP 12345"
+                            className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              errors.colegiatura ? 'border-red-500' : ''
+                            }`}
+                          />
+                          {errors.colegiatura && (
+                            <p className="text-red-500 text-xs mt-1">{errors.colegiatura}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            ⚠️ Campo obligatorio para profesionales de medicina
+                          </p>
+                        </div>
+                      ) : (
+                        <FormField
+                          label="Número de Colegiatura"
+                          name="colegiatura"
+                          value={formData.colegiatura}
+                          onChange={handleChange}
+                          placeholder="CMP 12345, CEP 56789, etc."
+                        />
+                      )}
+
+                      {/* Campo ¿Tiene Especialidad Médica? - Solo visible cuando se selecciona MEDICINA */}
+                      {esMedicina && (
+                        <div>
+                          <label htmlFor="tiene_especialidad_medica" className="block text-sm font-medium text-gray-700 mb-2">
+                            ¿El Profesional cuenta con especialidad médica?
+                          </label>
+                          <select
+                            id="tiene_especialidad_medica"
+                            name="tiene_especialidad_medica"
+                            value={formData.tiene_especialidad_medica}
+                            onChange={(e) => {
+                              const valor = e.target.value;
+                              setFormData(prev => ({
+                                ...prev,
+                                tiene_especialidad_medica: valor,
+                                id_especialidad: valor === 'SI' ? prev.id_especialidad : null,
+                                rne: valor === 'SI' ? prev.rne : ''
+                              }));
+                            }}
+                            className="w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          >
+                            <option value="">Seleccione una opción...</option>
+                            <option value="SI">Sí</option>
+                            <option value="NO">No</option>
+                          </select>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Campos MÉDICOS - Solo si es MEDICINA Y tiene_especialidad_medica = 'SI' */}
+                    {esMedicina && formData.tiene_especialidad_medica === 'SI' && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div>
+                          <label htmlFor="id_especialidad" className="block text-sm font-medium text-gray-700 mb-2">
+                            Especialidad <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            id="id_especialidad"
+                            name="id_especialidad"
+                            required
+                            value={formData.id_especialidad || ''}
+                            onChange={handleChange}
+                            className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              errors.id_especialidad ? 'border-red-500' : ''
+                            }`}
+                          >
+                            <option value="">Seleccione una especialidad...</option>
+                            {especialidades.map(esp => (
+                              <option key={esp.idServicio || esp.idEsp} value={esp.idServicio || esp.idEsp}>
+                                {esp.descServicio || esp.descripcion}
+                              </option>
+                            ))}
+                          </select>
+                          {errors.id_especialidad && (
+                            <p className="text-red-500 text-xs mt-1">{errors.id_especialidad}</p>
+                          )}
+                        </div>
+
+                        <div>
+                          <label htmlFor="rne" className="block text-sm font-medium text-gray-700 mb-2">
+                            RNE <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            id="rne"
+                            name="rne"
+                            type="text"
+                            required
+                            value={formData.rne}
+                            onChange={handleChange}
+                            placeholder="Registro Nacional de Especialidad"
+                            className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              errors.rne ? 'border-red-500' : ''
+                            }`}
+                          />
+                          {errors.rne && (
+                            <p className="text-red-500 text-xs mt-1">{errors.rne}</p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Pestaña Datos Laborales */}
+            {selectedTab === 'laboral' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                  <h3 className="text-lg font-semibold text-gray-900">Información Laboral</h3>
+                </div>
+
+                {loadingCatalogos ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <p className="text-sm text-gray-500">Cargando catálogos...</p>
+                  </div>
+                ) : (
+                  <>
+                    {/* 🆕 NUEVO: Selector de Tipo de Personal e IPRESS */}
+                    <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl mb-4">
+                      <h4 className="text-sm font-semibold text-blue-900 mb-3 uppercase tracking-wide flex items-center gap-2">
+                        <Building2 className="w-4 h-4" />
+                        🏢 Asignación de IPRESS
+                      </h4>
+                      
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {/* Selector de Tipo de Personal */}
+                        <div>
+                          <label htmlFor="tipo_personal_laboral" className="block text-sm font-medium text-gray-700 mb-2">
+                            Tipo de Personal <span className="text-red-500">*</span>
+                          </label>
+                          <select
+                            id="tipo_personal_laboral"
+                            value={formData.id_ipress === 2 || ipress.find(ip => ip.idIpress === formData.id_ipress)?.descIpress?.includes('CENATE') ? 'INTERNO' : 'EXTERNO'}
+                            onChange={(e) => {
+                              const tipo = e.target.value;
+                              if (tipo === 'INTERNO') {
+                                // Buscar la IPRESS de CENATE (código 739 o que contenga "CENATE" en el nombre)
+                                const cenateIpress = ipress.find(ip => 
+                                  ip.codIpress === '739' || 
+                                  ip.descIpress?.toUpperCase().includes('CENATE') ||
+                                  ip.descIpress?.toUpperCase().includes('NACIONAL DE TELEMEDICINA')
+                                );
+                                if (cenateIpress) {
+                                  setFormData(prev => ({ ...prev, id_ipress: cenateIpress.idIpress }));
+                                } else {
+                                  alert('⚠️ No se encontró la IPRESS de CENATE en el sistema');
+                                }
+                              } else {
+                                // Si cambia a EXTERNO, limpiar la selección para que el usuario elija
+                                setFormData(prev => ({ ...prev, id_ipress: '' }));
+                              }
+                            }}
+                            className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium text-sm"
+                          >
+                            <option value="INTERNO">INTERNO - Centro Nacional de Telemedicina</option>
+                            <option value="EXTERNO">EXTERNO - Otra IPRESS</option>
+                          </select>
+                          <p className="text-xs text-blue-600 mt-1">
+                            💡 <strong>INTERNO:</strong> Trabaja en CENATE | <strong>EXTERNO:</strong> Trabaja en otra institución
+                          </p>
+                        </div>
+
+                        {/* IPRESS - Dinámico según el tipo */}
+                        <div>
+                          <label htmlFor="id_ipress" className="block text-sm font-medium text-gray-700 mb-2">
+                            IPRESS <span className="text-red-500">*</span>
+                          </label>
+                          {formData.id_ipress === 2 || ipress.find(ip => ip.idIpress === formData.id_ipress)?.descIpress?.includes('CENATE') ? (
+                            /* Mostrar IPRESS de CENATE (readonly) */
+                            <div className="w-full px-4 py-3 border-2 border-emerald-300 bg-emerald-50 rounded-xl">
+                              <div className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0">
+                                  <Building2 className="w-4 h-4 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                  <p className="font-bold text-emerald-900 text-xs">
+                                    {ipress.find(ip => ip.idIpress === formData.id_ipress)?.codIpress || '739'} - 
+                                    {ipress.find(ip => ip.idIpress === formData.id_ipress)?.descIpress || 'Centro Nacional de Telemedicina'}
+                                  </p>
+                                  <p className="text-xs text-emerald-700">✅ Asignación automática para personal INTERNO</p>
+                                </div>
+                              </div>
+                            </div>
+                          ) : (
+                            /* Dropdown para seleccionar IPRESS (solo EXTERNOS) */
+                            <>
+                              <select
+                                id="id_ipress"
+                                name="id_ipress"
+                                value={formData.id_ipress || ''}
+                                onChange={handleChange}
+                                required
+                                className="w-full px-4 py-2.5 border-2 border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white font-medium text-sm"
+                              >
+                                <option value="">Seleccione una IPRESS...</option>
+                                {ipress
+                                  .filter(ip => 
+                                    ip.codIpress !== '739' && 
+                                    !ip.descIpress?.toUpperCase().includes('CENATE') &&
+                                    !ip.descIpress?.toUpperCase().includes('NACIONAL DE TELEMEDICINA')
+                                  )
+                                  .map(ip => (
+                                    <option key={ip.idIpress} value={ip.idIpress}>
+                                      {ip.codIpress || ''} - {ip.descIpress || ip.nombreIpress || 'Sin descripción'}
+                                    </option>
+                                  ))}
+                              </select>
+                              <p className="text-xs text-orange-600 mt-1">
+                                ⚠️ Debe seleccionar la IPRESS donde trabaja actualmente
+                              </p>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Resto de campos laborales */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {/* 🆕 NUEVO: Tipo de Profesional */}
+                      <SelectField
+                        label="Tipo de Profesional"
+                        name="id_tip_pers"
+                        value={formData.id_tip_pers}
+                        onChange={handleChange}
+                        options={[
+                          ...tiposProfesional.map(tipo => ({
+                            value: tipo.idTipPers || tipo.id_tip_pers,
+                            label: tipo.descTipPers || tipo.desc_tip_pers
+                          }))
+                        ]}
+                        error={errors.id_tip_pers}
+                      />
+                      
+                      <SelectField
+                        label="Régimen Laboral"
+                        name="id_regimen_laboral"
+                        value={formData.id_regimen_laboral}
+                        onChange={(e) => {
+                          handleChange(e);
+                          // Limpiar código de planilla si cambia a un régimen que no lo requiere
+                          const newRegimenId = e.target.value ? parseInt(e.target.value) : null;
+                          const nuevoRegimen = regimenesLaborales.find(r => r.idRegLab === newRegimenId);
+                          const requiere = nuevoRegimen?.descRegLab?.toUpperCase().includes('728') || 
+                                          nuevoRegimen?.descRegLab?.toUpperCase().includes('CAS');
+                          if (!requiere) {
+                            setFormData(prev => ({ ...prev, codigo_planilla: '' }));
+                          }
+                        }}
+                        options={[
+                          ...regimenesLaborales.map(reg => ({
+                            value: reg.idRegLab,
+                            label: reg.descRegLab
+                          }))
+                        ]}
+                        error={errors.id_regimen_laboral}
+                      />
+
+                      {/* Campo Código de Planilla - Solo visible y obligatorio para 728 y CAS */}
+                      {requiereCodigoPlanilla && (
+                        <div>
+                          <label htmlFor="codigo_planilla" className="block text-sm font-medium text-gray-700 mb-2">
+                            Código de Planilla <span className="text-red-500">*</span>
+                          </label>
+                          <input
+                            id="codigo_planilla"
+                            name="codigo_planilla"
+                            type="text"
+                            required
+                            value={formData.codigo_planilla}
+                            onChange={handleChange}
+                            placeholder="PLN-2024-001"
+                            className={`w-full px-4 py-2.5 border rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
+                              errors.codigo_planilla ? 'border-red-500' : ''
+                            }`}
+                          />
+                          {errors.codigo_planilla && (
+                            <p className="text-red-500 text-xs mt-1">{errors.codigo_planilla}</p>
+                          )}
+                          <p className="text-xs text-gray-500 mt-1">
+                            ⚠️ Campo obligatorio para régimen {regimenSeleccionado?.descRegLab}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <SelectField
+                        label="Área de Trabajo"
+                        name="id_area"
+                        value={formData.id_area}
+                        onChange={handleChange}
+                        options={[
+                          ...areas.map(area => ({
+                            value: area.idArea,
+                            label: area.descArea
+                          }))
+                        ]}
+                        error={errors.id_area}
+                      />
+
+                       <MonthYearPicker
+                         label="Periodo de Ingreso"
+                         value={formData.periodo_ingreso}
+                         onChange={(value) => setFormData({ ...formData, periodo_ingreso: value })}
+                       />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <SelectField
+                        label="Estado Laboral"
+                        name="estado"
+                        value={formData.estado}
+                        onChange={handleChange}
+                        options={[
+                          { value: 'A', label: 'Activo' },
+                          { value: 'I', label: 'Inactivo' }
+                        ]}
+                        required
+                      />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Pestaña Roles */}
+            {selectedTab === 'roles' && (
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <Shield className="w-5 h-5 text-blue-600" />
+                  Roles del Sistema <span className="text-red-500">*</span>
+                </h3>
+
+                <div className="p-4 bg-amber-50 border-2 border-amber-300 rounded-xl mb-4 flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-amber-500 text-white flex items-center justify-center text-xs font-bold flex-shrink-0 mt-0.5">
+                    !
+                  </div>
+                  <div>
+                    <p className="font-semibold text-amber-900 text-sm">Debe seleccionar al menos un rol</p>
+                    <p className="text-xs text-amber-700 mt-1">Los roles determinan los permisos y accesos del usuario</p>
+                  </div>
+                </div>
+
+                {loadingRoles ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block w-8 h-8 border-3 border-blue-600 border-t-transparent rounded-full animate-spin mb-2"></div>
+                    <p className="text-sm text-gray-500">Cargando roles...</p>
+                  </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+                      {roles.map(role => {
+                        const isSelected = formData.roles.includes(role.nombreRol);
+                        const isPrivileged = ['ADMIN', 'SUPERADMIN'].includes(role.nombreRol);
+
+                        return (
+                          <label
+                            key={role.idRol}
+                            className={`flex items-center gap-3 p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                              isSelected
+                                ? 'border-blue-500 bg-blue-50 shadow-sm'
+                                : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => handleRoleToggle(role.nombreRol)}
+                              className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-sm text-gray-900">
+                                  {role.nombreRol}
+                                </span>
+                                {isPrivileged && (
+                                  <span className="px-2 py-0.5 text-xs font-bold rounded-full bg-amber-100 text-amber-700">
+                                    🔑
+                                  </span>
+                                )}
+                              </div>
+                              {role.areaTrabajo && (
+                                <span className="text-xs text-gray-500">{role.areaTrabajo}</span>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })}
+                    </div>
+
+                    {formData.roles.length > 0 && (
+                      <div className="p-4 bg-green-50 border border-green-200 rounded-xl">
+                        <p className="text-sm font-semibold text-green-700 mb-2">
+                          Roles seleccionados ({formData.roles.length}):
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {formData.roles.map(rol => (
+                            <span key={rol} className="px-3 py-1 bg-green-100 text-green-700 rounded-full text-sm font-medium">
+                              {rol}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+            <div className="text-sm text-gray-500">
+              <span className="text-red-500">*</span> Campos obligatorios
+            </div>
+            <div className="flex gap-3">
+              {selectedTab !== 'personal' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const tabs = ['personal', 'profesional', 'laboral', 'roles'];
+                    const currentIndex = tabs.indexOf(selectedTab);
+                    if (currentIndex > 0) {
+                      setSelectedTab(tabs[currentIndex - 1]);
+                    }
+                  }}
+                  disabled={loading}
+                  className="px-6 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-300 rounded-xl transition-all font-medium disabled:opacity-50"
+                >
+                  ← Anterior
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="px-6 py-2.5 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-300 rounded-xl transition-all font-medium disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-6 py-2.5 bg-gradient-to-r from-blue-700 to-blue-600 hover:from-blue-600 hover:to-blue-500 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50 flex items-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Guardando...
+                  </>
+                ) : selectedTab === 'roles' ? (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Guardar Cambios
+                  </>
+                ) : (
+                  'Siguiente →'
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+
+      {/* Modal de confirmación resetear contraseña */}
+      {showResetConfirm && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
+                <Key className="w-6 h-6 text-amber-600" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Resetear Contraseña</h3>
+                <p className="text-sm text-gray-600">¿Estás seguro de continuar?</p>
+              </div>
+            </div>
+
+            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-4">
+              <p className="text-sm text-amber-900 font-medium mb-2">
+                Se establecerá la contraseña temporal:
+              </p>
+              <div className="bg-white px-4 py-3 rounded-lg border border-amber-200">
+                <code className="text-amber-700 font-mono font-bold text-lg">@Cenate2025</code>
+              </div>
+              <p className="text-xs text-amber-700 mt-2">
+                ⚠️ El usuario deberá cambiarla en su próximo inicio de sesión
+              </p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowResetConfirm(false)}
+                disabled={loading}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleResetPassword}
+                disabled={loading}
+                className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Reseteando...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="w-4 h-4" />
+                    Confirmar Reset
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default ActualizarModel;

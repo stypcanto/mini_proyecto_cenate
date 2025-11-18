@@ -1,0 +1,430 @@
+{
+	"info": {
+		"_postman_id": "b1b91d5f-59c2-4077-88de-9566e9b0840c",
+		"name": "API_CHATBOT",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21759398"
+	},
+	"item": [
+		{
+			"name": "api/auth/login",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"eparionay\",\r\n  \"password\": \"@Cenate2025\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "chatbot/documento/{documento}",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/chatbot/documento/00000650",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"chatbot",
+						"documento",
+						"00000650"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "chatbot/atencioncenate?documento=",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/chatbot/atencioncenate?documento=00000650",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"chatbot",
+						"atencioncenate"
+					],
+					"query": [
+						{
+							"key": "documento",
+							"value": "00000650"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/chatbot/atencioncenate/buscar?documento=xx&servicio=xx",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/chatbot/atencioncenate/buscar?documento=00000650&servicio=ENFERMERIA",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"chatbot",
+						"atencioncenate",
+						"buscar"
+					],
+					"query": [
+						{
+							"key": "documento",
+							"value": "00000650"
+						},
+						{
+							"key": "servicio",
+							"value": "ENFERMERIA"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/chatbot/atencionglobal/xx",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/chatbot/atencionglobal/00000006",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"chatbot",
+						"atencionglobal",
+						"00000006"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/chatbot/atencionglobal/doc-codservicio?documento=xx&codServicio=xx",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/chatbot/atencionglobal/doc-codservicio?documento=00000006&codServicio=B81",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"chatbot",
+						"atencionglobal",
+						"doc-codservicio"
+					],
+					"query": [
+						{
+							"key": "documento",
+							"value": "00000006"
+						},
+						{
+							"key": "codServicio",
+							"value": "B81"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/chatbot/atencionglobal/doc-nomservicio?documento=xx&servicio=xx",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/chatbot/atencionglobal/doc-nomservicio?documento=00000006&servicio=ENFERMERIA",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"chatbot",
+						"atencionglobal",
+						"doc-nomservicio"
+					],
+					"query": [
+						{
+							"key": "documento",
+							"value": "00000006"
+						},
+						{
+							"key": "servicio",
+							"value": "ENFERMERIA"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/chatbot/atencionglobal/doc-nomserviciolike?documento=xx&servicio=xx",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/chatbot/atencionglobal/doc-nomserviciolike?documento=00000006&servicio=ENFERMER",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"chatbot",
+						"atencionglobal",
+						"doc-nomserviciolike"
+					],
+					"query": [
+						{
+							"key": "documento",
+							"value": "00000006"
+						},
+						{
+							"key": "servicio",
+							"value": "ENFERMER"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "api/sesion/recuperar",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"e@gmail.com\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/sesion/recuperar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"sesion",
+						"recuperar"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "/api/disponibilidad/por-servicio?servicio=CARDIOLOGIA",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/disponibilidad/por-servicio?servicio=CARDIOLOGIA",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"disponibilidad",
+						"por-servicio"
+					],
+					"query": [
+						{
+							"key": "servicio",
+							"value": "CARDIOLOGIA"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8080/api/solicitud",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"periodo\": \"202511\",\r\n  \"docPaciente\": \"00000650\",\r\n  \"nombresPaciente\": \"Carlos Enrique Rojas Mendoza\",\r\n  \"sexo\": \"M\",\r\n  \"edad\": 42,\r\n  \"telefono\": \"987456321\",\r\n  \"fechaCita\": \"2025-11-03\",\r\n  \"horaCita\": \"08:00:00\",\r\n  \"fechaSolicitud\": \"2025-11-07T09:00:00-05:00\",\r\n  \"estadoSolicitud\": \"PENDIENTE\",\r\n  \"observacion\": \"Primera consulta médica del paciente.\",\r\n  \"idServicio\": 13,\r\n  \"idActividad\": 6,\r\n  \"idSubactividad\": 472,\r\n  \"idAreaHospitalaria\": 1,\r\n  \"idPersonal\": 20\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/solicitud",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitud"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8080/api/solicitud/3",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"periodo\": \"202511\",\r\n  \"docPaciente\": \"47589632\",\r\n  \"nombresPaciente\": \"Carlos Enrique Rojas Mendoza\",\r\n  \"sexo\": \"M\",\r\n  \"edad\": 42,\r\n  \"telefono\": \"987456321\",\r\n  \"fechaCita\": \"2025-11-18\",\r\n  \"horaCita\": \"10:30:00\",\r\n  \"fechaSolicitud\": \"2025-11-07T09:00:00-05:00\",\r\n  \"fechaActualiza\": \"2025-11-08T15:30:00-05:00\",\r\n  \"estadoSolicitud\": \"CONFIRMADA\",\r\n  \"observacion\": \"Paciente confirmó la cita y se notificó al especialista.\",\r\n  \"idServicio\": 1,\r\n  \"idActividad\": 1,\r\n  \"idSubactividad\": 290,\r\n  \"idAreaHospitalaria\": 1,\r\n  \"idPersonal\": 1\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/solicitud/3",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitud",
+						"3"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8080/api/solicitud/estado/4",
+			"request": {
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n\r\n  \"estadoSolicitud\": \"CANCELADA\",\r\n  \"observacion\": \"cancelado por motivo personal\"\r\n\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/solicitud/estado/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitud",
+						"estado",
+						"4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8080/api/servicio-essi",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/servicio-essi",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"servicio-essi"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

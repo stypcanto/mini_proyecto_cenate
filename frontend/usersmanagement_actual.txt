@@ -1,0 +1,2223 @@
+import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { 
+  User, 
+  X, 
+  Calendar, 
+  Cake, 
+  MapPin, 
+  Mail, 
+  Phone, 
+  Briefcase, 
+  Building,
+  Search,
+  Edit,
+  Trash2,
+  Eye,
+  UserPlus,
+  Filter,
+  RefreshCw,
+  ChevronDown,
+  Circle,
+  Users,
+  Shield,
+  Check,
+  Copy,
+  Download,
+  Upload,
+  List,
+  Grid3x3,
+  FileText,
+  GraduationCap,
+  Stethoscope,
+  Menu,
+  AlertTriangle
+} from 'lucide-react';
+import api from '../../services/apiClient';
+
+const UsersManagement = () => {
+  // ============================================================
+  // 🎯 ESTADOS PRINCIPALES - TODOS AL INICIO
+  // ============================================================
+  const [activeTab, setActiveTab] = useState('usuarios');
+  const [viewMode, setViewMode] = useState('table'); // 'table' o 'cards'
+  const [users, setUsers] = useState([]);
+  const [selectedRows, setSelectedRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [showDetalleModal, setShowDetalleModal] = useState(false);
+  const [showCrearUsuarioModal, setShowCrearUsuarioModal] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [userToDelete, setUserToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [filters, setFilters] = useState({
+    rol: '',
+    institucion: '',
+    estado: '',
+    mesCumpleanos: ''
+  });
+
+  // ============================================================
+  // 🔄 CARGA DE DATOS
+  // ============================================================
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
+  const loadUsers = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await api.get('/personal/total');
+      setUsers(response);
+    } catch (err) {
+      console.error('Error al cargar usuarios:', err);
+      setError('Error al cargar los usuarios. Por favor, intente nuevamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // ============================================================
+  // 📊 ESTADÍSTICAS
+  // ============================================================
+  const stats = useMemo(() => {
+    const total = users.length;
+    const internos = users.filter(u => u.tipo_personal === 'CENATE').length;
+    const externos = users.filter(u => u.tipo_personal === 'EXTERNO').length;
+    const conAccesoAdmin = users.filter(u => 
+      u.roles && (u.roles.includes('SUPERADMIN') || u.roles.includes('ADMIN'))
+    ).length;
+    return { total, internos, externos, conAccesoAdmin };
+  }, [users]);
+
+  // ============================================================
+  // 🔍 FILTRADO DE USUARIOS
+  // ============================================================
+  const filteredUsers = useMemo(() => {
+    let filtered = users;
+
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(u => 
+        u.nombre_completo?.toLowerCase().includes(searchLower) ||
+        u.username?.toLowerCase().includes(searchLower) ||
+        u.numero_documento?.includes(searchTerm) ||
+        u.nombre_ipress?.toLowerCase().includes(searchLower)
+      );
+    }
+
+    if (filters.rol) filtered = filtered.filter(u => u.roles === filters.rol);
+    if (filters.institucion !== '') {
+      if (filters.institucion === 'CENATE') {
+        filtered = filtered.filter(u => u.tipo_personal === 'CENATE');
+      } else if (filters.institucion === 'EXTERNO') {
+        filtered = filtered.filter(u => u.tipo_personal === 'EXTERNO');
+      }
+    }
+    if (filters.estado) filtered = filtered.filter(u => u.estado_usuario === filters.estado);
+    if (filters.mesCumpleanos) filtered = filtered.filter(u => u.mes_cumpleanos === filters.mesCumpleanos);
+
+    return filtered;
+  }, [users, searchTerm, filters]);
+
+  const uniqueRoles = useMemo(() => {
+    const roles = [...new Set(users.map(u => u.roles).filter(Boolean))];
+    return roles;
+  }, [users]);
+
+  const meses = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+
+  // ============================================================
+  // ✅ MANEJO DE SELECCIÓN DE FILAS
+  // ============================================================
+  const handleSelectAll = useCallback((e) => {
+    if (e.target.checked) {
+      setSelectedRows(filteredUsers.map(u => u.id_user));
+    } else {
+      setSelectedRows([]);
+    }
+  }, [filteredUsers]);
+
+  const handleSelectRow = useCallback((userId) => {
+    setSelectedRows(prev => 
+      prev.includes(userId)
+        ? prev.filter(id => id !== userId)
+        : [...prev, userId]
+    );
+  }, []);
+
+  // ============================================================
+  // 🎬 ACCIONES
+  // ============================================================
+  const handleVerDetalle = (user) => {
+    setSelectedUser(user);
+    setShowDetalleModal(true);
+  };
+
+  const limpiarFiltros = () => {
+    setFilters({ rol: '', institucion: '', estado: '', mesCumpleanos: '' });
+    setSearchTerm('');
+  };
+
+  const handleEliminarSeleccionados = () => {
+    if (selectedRows.length === 0) {
+      alert('No hay usuarios seleccionados');
+      return;
+    }
+    setUserToDelete({ ids: selectedRows, isMultiple: true, count: selectedRows.length });
+    setShowDeleteModal(true);
+  };
+
+  const handleEliminarUsuario = (user) => {
+    setUserToDelete({ user, isMultiple: false });
+    setShowDeleteModal(true);
+  };
+
+  const confirmarEliminar = async () => {
+    if (!userToDelete) return;
+
+    setIsDeleting(true);
+    try {
+      if (userToDelete.isMultiple) {
+        // Eliminar múltiples usuarios
+        await Promise.all(
+          userToDelete.ids.map(id => api.delete(`/usuarios/id/${id}`))
+        );
+        alert(`✅ ${userToDelete.count} usuario(s) eliminado(s) exitosamente`);
+        setSelectedRows([]);
+      } else {
+        // Eliminar un solo usuario
+        await api.delete(`/usuarios/id/${userToDelete.user.id_user}`);
+        alert(`✅ Usuario "${userToDelete.user.nombre_completo || userToDelete.user.username}" eliminado exitosamente`);
+      }
+      
+      // Recargar la lista de usuarios
+      await loadUsers();
+      setShowDeleteModal(false);
+      setUserToDelete(null);
+    } catch (error) {
+      console.error('Error al eliminar usuario(s):', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error al eliminar';
+      alert(`❌ Error: ${errorMessage}`);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // ============================================================
+  // 🎨 RENDERIZADO CONDICIONAL - LOADING Y ERROR
+  // ============================================================
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-3 border-gray-300 border-t-cenate-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 font-medium">Cargando usuarios...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 p-4">
+        <div className="bg-white border border-red-100 rounded-2xl p-8 max-w-md shadow-sm w-full">
+          <div className="w-12 h-12 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-6 h-6 text-red-500" />
+          </div>
+          <h3 className="text-gray-900 font-semibold text-center mb-2">Error al cargar</h3>
+          <p className="text-gray-600 text-center text-sm mb-6">{error}</p>
+          <button
+            onClick={loadUsers}
+            className="w-full px-6 py-3 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // ============================================================
+  // 🎨 RENDER PRINCIPAL
+  // ============================================================
+  return (
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-5">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex-1">
+              <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 mb-1">Administración del Sistema</h1>
+              <p className="text-xs sm:text-sm text-gray-500 hidden sm:block">Gestión de usuarios, roles, áreas y regímenes laborales</p>
+            </div>
+            
+            {/* Mobile menu button */}
+            <button 
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+            >
+              <Menu className="w-6 h-6" />
+            </button>
+          </div>
+
+          {/* Tabs Navigation - Desktop */}
+          <div className="hidden lg:flex gap-2 overflow-x-auto">
+            <TabButton
+              active={activeTab === 'usuarios'}
+              onClick={() => setActiveTab('usuarios')}
+              icon={<Users className="w-4 h-4" />}
+              label="Usuarios"
+            />
+            <TabButton
+              active={activeTab === 'areas'}
+              onClick={() => setActiveTab('areas')}
+              icon={<Building className="w-4 h-4" />}
+              label="Áreas"
+            />
+            <TabButton
+              active={activeTab === 'regimenes'}
+              onClick={() => setActiveTab('regimenes')}
+              icon={<Briefcase className="w-4 h-4" />}
+              label="Regímenes"
+            />
+            <TabButton
+              active={activeTab === 'profesion'}
+              onClick={() => setActiveTab('profesion')}
+              icon={<GraduationCap className="w-4 h-4" />}
+              label="Profesión"
+            />
+            <TabButton
+              active={activeTab === 'especialidad'}
+              onClick={() => setActiveTab('especialidad')}
+              icon={<Stethoscope className="w-4 h-4" />}
+              label="Especialidad"
+            />
+          </div>
+
+          {/* Tabs Navigation - Mobile Dropdown */}
+          {mobileMenuOpen && (
+            <div className="lg:hidden mt-4 space-y-2 border-t pt-4">
+              <MobileTabButton
+                active={activeTab === 'usuarios'}
+                onClick={() => { setActiveTab('usuarios'); setMobileMenuOpen(false); }}
+                icon={<Users className="w-4 h-4" />}
+                label="Usuarios"
+              />
+              <MobileTabButton
+                active={activeTab === 'areas'}
+                onClick={() => { setActiveTab('areas'); setMobileMenuOpen(false); }}
+                icon={<Building className="w-4 h-4" />}
+                label="Áreas"
+              />
+              <MobileTabButton
+                active={activeTab === 'regimenes'}
+                onClick={() => { setActiveTab('regimenes'); setMobileMenuOpen(false); }}
+                icon={<Briefcase className="w-4 h-4" />}
+                label="Regímenes"
+              />
+              <MobileTabButton
+                active={activeTab === 'profesion'}
+                onClick={() => { setActiveTab('profesion'); setMobileMenuOpen(false); }}
+                icon={<GraduationCap className="w-4 h-4" />}
+                label="Profesión"
+              />
+              <MobileTabButton
+                active={activeTab === 'especialidad'}
+                onClick={() => { setActiveTab('especialidad'); setMobileMenuOpen(false); }}
+                icon={<Stethoscope className="w-4 h-4" />}
+                label="Especialidad"
+              />
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        {activeTab === 'usuarios' ? (
+          <>
+            {/* Estadísticas */}
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
+              <StatCard
+                title="Total Usuarios"
+                value={stats.total}
+                icon={<Users className="w-5 h-5 sm:w-6 sm:h-6" />}
+                color="blue"
+              />
+              <StatCard
+                title="Internos CENATE"
+                value={stats.internos}
+                icon={<Building className="w-5 h-5 sm:w-6 sm:h-6" />}
+                color="green"
+              />
+              <StatCard
+                title="Externos"
+                value={stats.externos}
+                icon={<MapPin className="w-5 h-5 sm:w-6 sm:h-6" />}
+                color="orange"
+              />
+              <StatCard
+                title="Con Acceso Admin"
+                value={stats.conAccesoAdmin}
+                icon={<Shield className="w-5 h-5 sm:w-6 sm:h-6" />}
+                color="purple"
+              />
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-0 mb-4 sm:mb-5">
+              <div className="flex flex-wrap gap-2 sm:gap-3">
+                <button
+                  onClick={() => setShowCrearUsuarioModal(true)}
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors shadow-sm text-sm flex-1 sm:flex-none"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  <span className="font-medium">Nuevo</span>
+                </button>
+                <button
+                  onClick={handleEliminarSeleccionados}
+                  disabled={selectedRows.length === 0}
+                  className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed text-sm flex-1 sm:flex-none"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  <span className="font-medium hidden sm:inline">Eliminar</span>
+                </button>
+                <button className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-cenate-600 text-white rounded-xl hover:bg-cenate-700 transition-colors shadow-sm text-sm">
+                  <Download className="w-4 h-4" />
+                  <span className="font-medium">Exportar</span>
+                </button>
+                <button className="hidden sm:flex items-center gap-2 px-4 py-2.5 bg-gray-700 text-white rounded-xl hover:bg-gray-800 transition-colors shadow-sm text-sm">
+                  <Upload className="w-4 h-4" />
+                  <span className="font-medium">Importar</span>
+                </button>
+              </div>
+
+              {/* View Toggle and Search */}
+              <div className="flex items-center gap-2 sm:gap-3">
+                {/* View Mode Toggle */}
+                <div className="flex gap-1 bg-white border border-gray-200 rounded-xl p-1">
+                  <button
+                    onClick={() => setViewMode('table')}
+                    className={`p-2 rounded-lg transition-all ${
+                      viewMode === 'table' 
+                        ? 'bg-cenate-600 text-white' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                    title="Vista de tabla"
+                  >
+                    <List className="w-4 h-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('cards')}
+                    className={`p-2 rounded-lg transition-all ${
+                      viewMode === 'cards' 
+                        ? 'bg-cenate-600 text-white' 
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                    title="Vista de tarjetas"
+                  >
+                    <Grid3x3 className="w-4 h-4" />
+                  </button>
+                </div>
+
+                {/* Search */}
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Buscar..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 sm:py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-cenate-500 focus:border-transparent transition-all text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Filtros Avanzados */}
+            <div className="bg-[#0A5BA9] rounded-xl shadow-sm mb-4 sm:mb-5 overflow-hidden">
+              <button
+                onClick={() => setShowFilters(!showFilters)}
+                className="w-full flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 hover:bg-[#0A5BA9]/90 transition-colors"
+              >
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <Filter className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  <div className="text-left">
+                    <p className="font-semibold text-white text-xs sm:text-sm">Filtros Avanzados</p>
+                    <p className="text-[10px] sm:text-xs text-blue-100 hidden sm:block">Click para configurar filtros</p>
+                  </div>
+                </div>
+                <ChevronDown className={`w-4 h-4 sm:w-5 sm:h-5 text-white transition-transform ${showFilters ? 'rotate-180' : ''}`} />
+              </button>
+
+              {showFilters && (
+                <div className="px-4 sm:px-6 pb-4 sm:pb-6 bg-white">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 pt-4">
+                    {/* Rol */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-2">Rol</label>
+                      <select
+                        value={filters.rol}
+                        onChange={(e) => setFilters({...filters, rol: e.target.value})}
+                        className="w-full px-3 py-2 sm:py-2.5 bg-white text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-cenate-500 text-sm"
+                      >
+                        <option value="">Todos los Roles</option>
+                        {uniqueRoles.map(rol => (
+                          <option key={rol} value={rol}>{rol}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Institución */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-2">Institución</label>
+                      <select
+                        value={filters.institucion}
+                        onChange={(e) => setFilters({...filters, institucion: e.target.value})}
+                        className="w-full px-3 py-2 sm:py-2.5 bg-white text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+                      >
+                        <option value="">Todas</option>
+                        <option value="CENATE">CENATE</option>
+                        <option value="EXTERNO">Externo</option>
+                      </select>
+                    </div>
+
+                    {/* Estado */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-2">Estado</label>
+                      <select
+                        value={filters.estado}
+                        onChange={(e) => setFilters({...filters, estado: e.target.value})}
+                        className="w-full px-3 py-2 sm:py-2.5 bg-white text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+                      >
+                        <option value="">Todos</option>
+                        <option value="ACTIVO">Activos</option>
+                        <option value="INACTIVO">Inactivos</option>
+                      </select>
+                    </div>
+
+                    {/* Mes de Cumpleaños */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-xs font-medium text-gray-700 mb-2">
+                        <Cake className="w-3.5 h-3.5" />
+                        Mes de Cumpleaños
+                      </label>
+                      <select
+                        value={filters.mesCumpleanos}
+                        onChange={(e) => setFilters({...filters, mesCumpleanos: e.target.value})}
+                        className="w-full px-3 py-2 sm:py-2.5 bg-white text-gray-900 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 text-sm"
+                      >
+                        <option value="">Todos</option>
+                        {meses.map((mes) => (
+                          <option key={mes} value={mes}>{mes}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {Object.values(filters).some(v => v !== '') && (
+                    <button
+                      onClick={limpiarFiltros}
+                      className="mt-4 px-4 py-2 text-sm font-medium text-cenate-600 hover:bg-cenate-50 rounded-lg transition-colors"
+                    >
+                      Limpiar Filtros
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Vista Condicional: Tabla o Cards */}
+            {viewMode === 'table' ? (
+              <UsersTable 
+                users={filteredUsers}
+                selectedRows={selectedRows}
+                onSelectAll={handleSelectAll}
+                onSelectRow={handleSelectRow}
+                onViewDetail={handleVerDetalle}
+                onDelete={handleEliminarUsuario}
+              />
+            ) : (
+              <UsersCards 
+                users={filteredUsers}
+                selectedRows={selectedRows}
+                onSelectRow={handleSelectRow}
+                onViewDetail={handleVerDetalle}
+                onDelete={handleEliminarUsuario}
+              />
+            )}
+          </>
+        ) : (
+          <PlaceholderTab tab={activeTab} />
+        )}
+      </div>
+
+      {/* Modales */}
+      {showDetalleModal && selectedUser && (
+        <VerDetalleModal user={selectedUser} onClose={() => setShowDetalleModal(false)} />
+      )}
+
+      {showCrearUsuarioModal && (
+        <CrearUsuarioModalOptimizado 
+          onClose={() => setShowCrearUsuarioModal(false)} 
+          onSuccess={loadUsers} 
+        />
+      )}
+
+      {showDeleteModal && userToDelete && (
+        <ConfirmDeleteModal 
+          userToDelete={userToDelete}
+          isDeleting={isDeleting}
+          onConfirm={confirmarEliminar}
+          onCancel={() => {
+            setShowDeleteModal(false);
+            setUserToDelete(null);
+          }}
+        />
+      )}
+    </div>
+  );
+};
+
+// ============================================================
+// 🧩 COMPONENTES AUXILIARES
+// ============================================================
+
+// Tab Button Desktop
+const TabButton = ({ active, onClick, icon, label }) => (
+  <button
+    onClick={onClick}
+    className={`flex items-center gap-2 px-3 sm:px-4 py-2 sm:py-2.5 rounded-t-xl font-medium text-xs sm:text-sm transition-all whitespace-nowrap ${
+      active
+        ? 'bg-white text-cenate-600 shadow-sm border-b-2 border-cenate-600'
+        : 'bg-transparent text-gray-600 hover:bg-gray-50'
+    }`}
+  >
+    {icon}
+    <span>{label}</span>
+  </button>
+);
+
+// Mobile Tab Button
+const MobileTabButton = ({ active, onClick, icon, label }) => (
+  <button
+    onClick={onClick}
+    className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl font-medium text-sm transition-all ${
+      active
+        ? 'bg-cenate-600 text-white'
+        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+    }`}
+  >
+    {icon}
+    <span>{label}</span>
+  </button>
+);
+
+// Stat Card
+const StatCard = ({ title, value, icon, color }) => {
+  const colorClasses = {
+    blue: 'from-cenate-50 to-cenate-100/50 border-cenate-200/50 hover:border-cenate-300',
+    green: 'from-emerald-50 to-emerald-100/50 border-emerald-200/50 hover:border-emerald-300',
+    orange: 'from-orange-50 to-orange-100/50 border-orange-200/50 hover:border-orange-300',
+    purple: 'from-purple-50 to-purple-100/50 border-purple-200/50 hover:border-purple-300'
+  };
+
+  const iconColorClasses = {
+    blue: 'bg-cenate-500/10 text-cenate-600',
+    green: 'bg-emerald-500/10 text-emerald-600',
+    orange: 'bg-orange-500/10 text-orange-600',
+    purple: 'bg-purple-500/10 text-purple-600'
+  };
+
+  const textColorClasses = {
+    blue: 'text-cenate-900',
+    green: 'text-emerald-900',
+    orange: 'text-orange-900',
+    purple: 'text-purple-900'
+  };
+
+  const subtitleColorClasses = {
+    blue: 'text-cenate-700',
+    green: 'text-emerald-700',
+    orange: 'text-orange-700',
+    purple: 'text-purple-700'
+  };
+
+  return (
+    <div className={`bg-gradient-to-br ${colorClasses[color]} rounded-2xl p-3 sm:p-5 border transition-colors`}>
+      <div className="flex items-center justify-between mb-2 sm:mb-3">
+        <div className={`w-9 h-9 sm:w-11 sm:h-11 ${iconColorClasses[color]} rounded-xl flex items-center justify-center backdrop-blur-sm`}>
+          {icon}
+        </div>
+      </div>
+      <p className={`text-2xl sm:text-3xl font-semibold ${textColorClasses[color]} mb-1`}>{value}</p>
+      <p className={`text-xs sm:text-sm ${subtitleColorClasses[color]} font-medium`}>{title}</p>
+    </div>
+  );
+};
+
+// Users Table
+const UsersTable = ({ users, selectedRows, onSelectAll, onSelectRow, onViewDetail, onDelete }) => {
+  const allSelected = users.length > 0 && selectedRows.length === users.length;
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+      {/* Header */}
+      <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-gray-200 bg-gray-50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Users className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+            <p className="font-semibold text-gray-900 text-sm sm:text-base">Lista de Usuarios</p>
+            <span className="px-2 sm:px-2.5 py-0.5 sm:py-1 bg-cenate-100 rounded-lg text-[10px] sm:text-xs font-medium text-cenate-700">
+              {users.length}
+            </span>
+          </div>
+          {selectedRows.length > 0 && (
+            <p className="text-xs sm:text-sm text-gray-600">
+              {selectedRows.length} seleccionado{selectedRows.length > 1 ? 's' : ''}
+            </p>
+          )}
+        </div>
+      </div>
+
+      {/* Table - Desktop */}
+      <div className="hidden md:block overflow-x-auto">
+        <table className="w-full">
+          <thead className="bg-gray-50 border-b border-gray-100">
+            <tr>
+              <th className="px-4 py-3 text-left">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  onChange={onSelectAll}
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                />
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Usuario</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Nombre Completo</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Documento</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Rol</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Tipo</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">IPRESS</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">Estado</th>
+              <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">Acción</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {users.length === 0 ? (
+              <tr>
+                <td colSpan="9" className="px-6 py-16 text-center">
+                  <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium mb-1">No se encontraron usuarios</p>
+                  <p className="text-gray-400 text-sm">Intenta ajustar los filtros de búsqueda</p>
+                </td>
+              </tr>
+            ) : (
+              users.map((user) => (
+                <tr key={user.id_user} className="hover:bg-gray-50 transition-colors">
+                  {/* Checkbox */}
+                  <td className="px-4 py-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.includes(user.id_user)}
+                      onChange={() => onSelectRow(user.id_user)}
+                      className="w-4 h-4 text-cenate-600 bg-gray-100 border-gray-300 rounded focus:ring-cenate-500"
+                    />
+                  </td>
+
+                  {/* Avatar y Username */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 bg-gradient-to-br from-cenate-500 to-cenate-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm flex-shrink-0">
+                        {user.nombres?.charAt(0) || user.username?.charAt(0) || 'U'}
+                      </div>
+                      <div className="text-xs text-gray-500">@{user.username}</div>
+                    </div>
+                  </td>
+
+                  {/* Nombre Completo */}
+                  <td className="px-4 py-3">
+                    <div className="font-medium text-gray-900 text-sm">
+                      {user.nombre_completo || '—'}
+                    </div>
+                  </td>
+
+                  {/* Documento */}
+                  <td className="px-4 py-3">
+                    {user.numero_documento ? (
+                      <div>
+                        <div className="text-xs font-medium text-gray-500">{user.tipo_documento || 'DNI'}</div>
+                        <div className="text-sm text-gray-900">{user.numero_documento}</div>
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm">—</span>
+                    )}
+                  </td>
+
+                  {/* Rol */}
+                  <td className="px-4 py-3">
+                    <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-gray-100 text-gray-700">
+                      {user.roles || 'USER'}
+                    </span>
+                  </td>
+
+                  {/* Tipo */}
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium ${
+                      user.tipo_personal === 'CENATE' 
+                        ? 'bg-emerald-50 text-emerald-700' 
+                        : 'bg-orange-50 text-orange-700'
+                    }`}>
+                      {user.tipo_personal === 'CENATE' && <Building className="w-3 h-3" />}
+                      {user.tipo_personal === 'EXTERNO' && <MapPin className="w-3 h-3" />}
+                      {user.tipo_personal}
+                    </span>
+                  </td>
+
+                  {/* IPRESS */}
+                  <td className="px-4 py-3">
+                    <div className="text-sm text-gray-900 max-w-xs truncate">
+                      {user.nombre_ipress || <span className="text-gray-400">—</span>}
+                    </div>
+                  </td>
+
+                  {/* Estado con Toggle */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox" 
+                          checked={user.estado_usuario === 'ACTIVO'}
+                          onChange={() => {}}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+                      </label>
+                      <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                        user.estado_usuario === 'ACTIVO' 
+                          ? 'text-emerald-700' 
+                          : 'text-gray-600'
+                      }`}>
+                        <Circle className={`w-2 h-2 ${user.estado_usuario === 'ACTIVO' ? 'fill-emerald-500' : 'fill-gray-400'}`} />
+                        {user.estado_usuario}
+                      </span>
+                    </div>
+                  </td>
+
+                  {/* Acciones */}
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-center gap-1">
+                      <button
+                        onClick={() => onViewDetail(user)}
+                        className="p-2 hover:bg-cenate-50 text-gray-600 hover:text-cenate-600 rounded-lg transition-all"
+                        title="Ver detalles"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </button>
+                      <button
+                        className="p-2 hover:bg-gray-100 text-gray-600 rounded-lg transition-all"
+                        title="Editar"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => onDelete(user)}
+                        className="p-2 hover:bg-red-50 text-gray-600 hover:text-red-600 rounded-lg transition-all"
+                        title="Eliminar"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Mobile List */}
+      <div className="md:hidden divide-y divide-gray-100">
+        {users.length === 0 ? (
+          <div className="px-6 py-16 text-center">
+            <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <p className="text-gray-600 font-medium mb-1">No se encontraron usuarios</p>
+            <p className="text-gray-400 text-sm">Intenta ajustar los filtros de búsqueda</p>
+          </div>
+        ) : (
+          users.map((user) => (
+            <div key={user.id_user} className="p-4 hover:bg-gray-50">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  checked={selectedRows.includes(user.id_user)}
+                  onChange={() => onSelectRow(user.id_user)}
+                  className="mt-1 w-4 h-4 text-cenate-600 bg-gray-100 border-gray-300 rounded focus:ring-cenate-500"
+                />
+                <div className="w-10 h-10 bg-gradient-to-br from-cenate-500 to-cenate-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-sm flex-shrink-0">
+                  {user.nombres?.charAt(0) || user.username?.charAt(0) || 'U'}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-gray-900 text-sm truncate">
+                    {user.nombre_completo || user.username}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-0.5">@{user.username}</div>
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                      {user.roles || 'USER'}
+                    </span>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                      user.tipo_personal === 'CENATE' 
+                        ? 'bg-emerald-50 text-emerald-700' 
+                        : 'bg-orange-50 text-orange-700'
+                    }`}>
+                      {user.tipo_personal}
+                    </span>
+                    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium ${
+                      user.estado_usuario === 'ACTIVO' 
+                        ? 'bg-emerald-50 text-emerald-700' 
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      <Circle className={`w-1.5 h-1.5 ${user.estado_usuario === 'ACTIVO' ? 'fill-emerald-500' : 'fill-gray-400'}`} />
+                      {user.estado_usuario}
+                    </span>
+                  </div>
+                </div>
+                <button
+                  onClick={() => onViewDetail(user)}
+                  className="p-2 hover:bg-blue-50 text-gray-600 hover:text-blue-600 rounded-lg transition-all flex-shrink-0"
+                >
+                  <Eye className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Footer */}
+      {users.length > 0 && (
+        <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200">
+          <p className="text-xs sm:text-sm text-gray-600">
+            Mostrando <span className="font-semibold">{users.length}</span> de <span className="font-semibold">{users.length}</span> registros
+          </p>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Users Cards View
+const UsersCards = ({ users, selectedRows, onSelectRow, onViewDetail, onDelete }) => {
+  if (users.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 sm:p-16 text-center">
+        <User className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300 mx-auto mb-3" />
+        <p className="text-gray-600 font-medium mb-1 text-sm sm:text-base">No se encontraron usuarios</p>
+        <p className="text-gray-400 text-xs sm:text-sm">Intenta ajustar los filtros de búsqueda</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+      {users.map((user) => (
+        <div
+          key={user.id_user}
+          className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow"
+        >
+          {/* Header con gradient */}
+          <div className="bg-gradient-to-r from-cenate-600 to-cenate-700 px-4 sm:px-6 py-3 sm:py-4 relative">
+            {/* Checkbox en la esquina */}
+            <div className="absolute top-3 sm:top-4 left-3 sm:left-4">
+              <input
+                type="checkbox"
+                checked={selectedRows.includes(user.id_user)}
+                onChange={() => onSelectRow(user.id_user)}
+                className="w-4 h-4 sm:w-5 sm:h-5 text-cenate-600 bg-white/20 border-white/50 rounded focus:ring-cenate-500"
+              />
+            </div>
+
+            {/* Acciones en la esquina derecha */}
+            <div className="absolute top-3 sm:top-4 right-3 sm:right-4 flex gap-1">
+              <button
+                onClick={() => onViewDetail(user)}
+                className="p-1.5 sm:p-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all backdrop-blur-sm"
+                title="Ver detalles"
+              >
+                <Eye className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+              <button
+                className="p-1.5 sm:p-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-all backdrop-blur-sm"
+                title="Editar"
+              >
+                <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              </button>
+            </div>
+
+            {/* Avatar y datos principales */}
+            <div className="flex flex-col items-center pt-3 sm:pt-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center text-cenate-600 font-bold text-xl sm:text-2xl shadow-lg mb-2 sm:mb-3">
+                {user.nombres?.charAt(0) || user.username?.charAt(0) || 'U'}
+              </div>
+              <h3 className="text-white font-bold text-base sm:text-lg text-center line-clamp-1">
+                {user.nombre_completo || user.username}
+              </h3>
+              <p className="text-cenate-100 text-xs sm:text-sm mt-1">@{user.username}</p>
+            </div>
+          </div>
+
+          {/* Body con información */}
+          <div className="px-4 sm:px-6 py-3 sm:py-4 space-y-2 sm:space-y-3">
+            {/* Badges */}
+            <div className="flex flex-wrap gap-1.5 sm:gap-2">
+              <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 bg-gray-100 text-gray-700 rounded-lg text-[10px] sm:text-xs font-medium">
+                {user.roles || 'USER'}
+              </span>
+              <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-medium ${
+                user.tipo_personal === 'CENATE' 
+                  ? 'bg-emerald-50 text-emerald-700' 
+                  : 'bg-orange-50 text-orange-700'
+              }`}>
+                {user.tipo_personal}
+              </span>
+              <span className={`px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg text-[10px] sm:text-xs font-medium ${
+                user.estado_usuario === 'ACTIVO' 
+                  ? 'bg-emerald-50 text-emerald-700' 
+                  : 'bg-gray-100 text-gray-600'
+              }`}>
+                {user.estado_usuario}
+              </span>
+            </div>
+
+            {/* Información */}
+            <div className="space-y-1.5 sm:space-y-2 text-xs sm:text-sm">
+              {user.numero_documento && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="font-medium">{user.tipo_documento || 'DNI'}:</span>
+                  <span className="truncate">{user.numero_documento}</span>
+                </div>
+              )}
+              {user.nombre_ipress && (
+                <div className="flex items-start gap-2 text-gray-600">
+                  <Building className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0 flex-1">
+                    <p className="font-medium text-[10px] sm:text-xs text-gray-500">IPRESS</p>
+                    <p className="text-gray-900 line-clamp-2">{user.nombre_ipress}</p>
+                  </div>
+                </div>
+              )}
+              {user.correo_institucional && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Mail className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span className="truncate">{user.correo_institucional}</span>
+                </div>
+              )}
+              {user.telefono && (
+                <div className="flex items-center gap-2 text-gray-600">
+                  <Phone className="w-3.5 h-3.5 sm:w-4 sm:h-4 flex-shrink-0" />
+                  <span>{user.telefono}</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Footer con botones */}
+          <div className="px-4 sm:px-6 py-3 sm:py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+            <label className="flex items-center gap-1.5 sm:gap-2 cursor-pointer">
+              <span className="text-[10px] sm:text-xs text-gray-600 font-medium">Estado del usuario</span>
+            </label>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={user.estado_usuario === 'ACTIVO'}
+                onChange={() => {}}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 sm:w-11 sm:h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-emerald-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 sm:after:h-5 sm:after:w-5 after:transition-all peer-checked:bg-emerald-600"></div>
+            </label>
+          </div>
+
+          <div className="px-4 sm:px-6 pb-3 sm:pb-4 flex gap-2">
+            <button
+            onClick={() => onViewDetail(user)}
+            className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 bg-cenate-600 hover:bg-cenate-700 text-white rounded-xl transition-all text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2"
+            >
+              <Edit className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Actualizar
+            </button>
+            <button className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-all text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2">
+              <Shield className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Permisos
+            </button>
+            <button
+              onClick={() => onDelete(user)}
+              className="flex-1 px-3 py-2 sm:px-4 sm:py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all text-xs sm:text-sm font-medium flex items-center justify-center gap-1.5 sm:gap-2"
+              title="Eliminar usuario"
+            >
+              <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              Eliminar
+            </button>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
+// Placeholder para tabs no implementados
+const PlaceholderTab = ({ tab }) => {
+  const tabConfig = {
+    areas: {
+      icon: <Building className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300" />,
+      title: 'Gestión de Áreas',
+      description: 'Aquí podrás administrar todas las áreas de la organización',
+      subtitle: 'Tabla CRUD en desarrollo'
+    },
+    regimenes: {
+      icon: <Briefcase className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300" />,
+      title: 'Gestión de Regímenes Laborales',
+      description: 'Aquí podrás administrar todos los regímenes laborales',
+      subtitle: 'Tabla CRUD en desarrollo'
+    },
+    profesion: {
+      icon: <GraduationCap className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300" />,
+      title: 'Gestión de Profesiones',
+      description: 'Aquí podrás administrar todas las profesiones del personal médico',
+      subtitle: 'Tabla CRUD en desarrollo'
+    },
+    especialidad: {
+      icon: <Stethoscope className="w-10 h-10 sm:w-12 sm:h-12 text-gray-300" />,
+      title: 'Gestión de Especialidades Médicas',
+      description: 'Aquí podrás administrar todas las especialidades médicas',
+      subtitle: 'Tabla CRUD en desarrollo'
+    }
+  };
+
+  const config = tabConfig[tab] || {};
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-8 sm:p-16 text-center">
+      {config.icon}
+      <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mt-4 mb-2">{config.title}</h3>
+      <p className="text-gray-600 mb-1 text-sm sm:text-base">{config.description}</p>
+      <p className="text-gray-400 text-xs sm:text-sm">{config.subtitle}</p>
+    </div>
+  );
+};
+
+// ============================================================
+// 🚀 COMPONENTE DE CAMPO NUMÉRICO OPTIMIZADO CON DEBOUNCING
+// ============================================================
+const NumericInput = React.memo(({ name, value, onChange, ...props }) => {
+  const [localValue, setLocalValue] = useState(value || '');
+  const timeoutRef = useRef(null);
+
+  useEffect(() => {
+    setLocalValue(value || '');
+  }, [value]);
+
+  const handleChange = useCallback((e) => {
+    const newValue = e.target.value;
+    setLocalValue(newValue);
+    
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+    
+    const syntheticEvent = {
+      target: {
+        name: name,
+        value: newValue
+      }
+    };
+    
+    timeoutRef.current = setTimeout(() => {
+      onChange(syntheticEvent);
+    }, 500);
+  }, [name, onChange]);
+
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current);
+      }
+    };
+  }, []);
+
+  return (
+    <input
+      {...props}
+      name={name}
+      value={localValue}
+      onChange={handleChange}
+      inputMode="numeric"
+      pattern="[0-9]*"
+    />
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.value === nextProps.value && 
+         prevProps.name === nextProps.name;
+});
+
+NumericInput.displayName = 'NumericInput';
+
+// ============================================================
+// 🎯 COMPONENTES DE FORMULARIO OPTIMIZADOS
+// ============================================================
+const FormField = React.memo(({ label, name, type = 'text', required = false, numeric = false, value, onChange, errors, ...props }) => (
+  <div>
+    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    {numeric ? (
+      <NumericInput
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm ${
+          errors[name] ? 'border-red-500' : 'border-gray-300'
+        }`}
+        {...props}
+      />
+    ) : (
+      <input
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm ${
+          errors[name] ? 'border-red-500' : 'border-gray-300'
+        }`}
+        {...props}
+      />
+    )}
+    {errors[name] && (
+      <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
+    )}
+  </div>
+));
+
+FormField.displayName = 'FormField';
+
+const SelectField = React.memo(({ label, name, options, required = false, value, onChange, errors }) => (
+  <div>
+    <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1.5">
+      {label}
+      {required && <span className="text-red-500 ml-1">*</span>}
+    </label>
+    <select
+      name={name}
+      value={value}
+      onChange={onChange}
+      className={`w-full px-3 sm:px-4 py-2 sm:py-2.5 border rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all text-sm ${
+        errors[name] ? 'border-red-500' : 'border-gray-300'
+      }`}
+    >
+      <option value="">Seleccionar...</option>
+      {options.map(opt => (
+        <option key={opt.value} value={opt.value}>{opt.label}</option>
+      ))}
+    </select>
+    {errors[name] && (
+      <p className="text-red-500 text-xs mt-1">{errors[name]}</p>
+    )}
+  </div>
+));
+
+SelectField.displayName = 'SelectField';
+
+// ============================================================
+// 🚀 MODAL OPTIMIZADO DE CREACIÓN DE USUARIO
+// ============================================================
+const CrearUsuarioModalOptimizado = ({ onClose, onSuccess }) => {
+  // TODOS los hooks deben estar aquí al inicio, sin condiciones
+  const [selectedTab, setSelectedTab] = useState('personal');
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    tipo_documento: 'DNI',
+    numero_documento: '',
+    nombres: '',
+    fecha_nacimiento: '',
+    genero: '',
+    correo_institucional: '',
+    apellido_paterno: '',
+    apellido_materno: '',
+    correo_personal: '',
+    telefono: '',
+    direccion: '',
+    distrito: '',
+    provincia: '',
+    departamento: '',
+    profesion: '',
+    colegiatura: '',
+    especialidad: '',
+    rne: '',
+    tipo_personal: 'CENATE',
+    regimen_laboral: '',
+    codigo_planilla: '',
+    periodo_ingreso: '',
+    ipress: '',
+    area: ''
+  });
+  const [errors, setErrors] = useState({});
+
+  const username = useMemo(() => {
+    const { nombres, apellido_paterno, apellido_materno } = formData;
+    
+    if (!nombres || !apellido_paterno) return '';
+    
+    const primeraLetraNombre = nombres.trim().charAt(0).toLowerCase();
+    const apellidoPaternoCompleto = apellido_paterno.trim().toLowerCase();
+    const primeraLetraMaterna = apellido_materno ? apellido_materno.trim().charAt(0).toLowerCase() : '';
+    
+    return `${primeraLetraNombre}${apellidoPaternoCompleto}${primeraLetraMaterna}`;
+  }, [formData.nombres, formData.apellido_paterno, formData.apellido_materno]);
+
+  const passwordTemporal = '@Cenate2025';
+
+  const copiarUsuario = useCallback(async () => {
+    if (!username) {
+      alert('Por favor, completa los datos personales primero para generar el usuario');
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(username);
+      const btn = document.getElementById('copy-username-btn');
+      if (btn) {
+        btn.classList.add('bg-green-500');
+        setTimeout(() => btn.classList.remove('bg-green-500'), 1000);
+      }
+    } catch (err) {
+      console.error('Error al copiar:', err);
+    }
+  }, [username]);
+
+  const copiarContrasena = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(passwordTemporal);
+      const btn = document.getElementById('copy-password-btn');
+      if (btn) {
+        btn.classList.add('bg-green-500');
+        setTimeout(() => btn.classList.remove('bg-green-500'), 1000);
+      }
+    } catch (err) {
+      console.error('Error al copiar:', err);
+    }
+  }, [passwordTemporal]);
+
+  const handleChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  }, []);
+
+  const validateForm = useCallback(() => {
+    const newErrors = {};
+    
+    if (!formData.numero_documento.trim()) newErrors.numero_documento = 'Campo obligatorio';
+    if (!formData.nombres.trim()) newErrors.nombres = 'Campo obligatorio';
+    if (!formData.fecha_nacimiento) newErrors.fecha_nacimiento = 'Campo obligatorio';
+    if (!formData.genero) newErrors.genero = 'Campo obligatorio';
+    if (!formData.correo_institucional.trim()) newErrors.correo_institucional = 'Campo obligatorio';
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (formData.correo_institucional && !emailRegex.test(formData.correo_institucional)) {
+      newErrors.correo_institucional = 'Formato de correo inválido';
+    }
+    
+    if (formData.correo_personal && !emailRegex.test(formData.correo_personal)) {
+      newErrors.correo_personal = 'Formato de correo inválido';
+    }
+    
+    if (formData.tipo_documento === 'DNI' && formData.numero_documento.length !== 8) {
+      newErrors.numero_documento = 'El DNI debe tener 8 dígitos';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  }, [formData]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+    
+    setLoading(true);
+    
+    try {
+      const dataToSend = {
+        username: username,
+        password: passwordTemporal,
+        nombres: formData.nombres,
+        apellido_paterno: formData.apellido_paterno || '',
+        apellido_materno: formData.apellido_materno || '',
+        numero_documento: formData.numero_documento,
+        tipo_documento: formData.tipo_documento,
+        genero: formData.genero,
+        fecha_nacimiento: formData.fecha_nacimiento,
+        telefono: formData.telefono || '',
+        correo_personal: formData.correo_personal || '',
+        correo_corporativo: formData.correo_institucional,
+        rol: 'MEDICO',
+        estado: 'ACTIVO',
+        ipress: formData.ipress || '',
+        area: formData.area || '',
+        profesion: formData.profesion || '',
+        regimen_laboral: formData.regimen_laboral || '',
+        codigo_planilla: formData.codigo_planilla || ''
+      };
+      
+      await api.post('/usuarios/crear', dataToSend);
+      
+      alert(
+        `✅ Usuario creado exitosamente\n\n` +
+        `Username: ${username}\n` +
+        `Password temporal: ${passwordTemporal}\n\n` +
+        `⚠️ IMPORTANTE: El usuario debe cambiar su contraseña en el primer inicio de sesión.`
+      );
+      
+      onSuccess();
+      onClose();
+    } catch (error) {
+      console.error('Error al crear usuario:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Error al crear el usuario';
+      alert(`❌ Error: ${errorMessage}\n\nPor favor, intente nuevamente.`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-6xl my-4 overflow-hidden flex flex-col max-h-[95vh]">
+        
+        {/* Header */}
+        <div className="bg-gradient-to-r from-emerald-700 via-emerald-600 to-emerald-700 px-4 sm:px-8 py-4 sm:py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 sm:gap-6">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20">
+                <UserPlus className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              </div>
+              
+              <div className="text-white">
+                <h2 className="text-lg sm:text-2xl font-bold">Nuevo Usuario</h2>
+                <p className="text-emerald-100 text-xs sm:text-sm mt-1 hidden sm:block">Completa los datos para crear un nuevo usuario</p>
+              </div>
+            </div>
+            
+            <button onClick={onClose} className="p-2 hover:bg-white/10 text-white rounded-xl transition-all">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 mt-4 sm:mt-6 overflow-x-auto">
+            <button
+              onClick={() => setSelectedTab('personal')}
+              className={`px-4 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                selectedTab === 'personal'
+                  ? 'bg-white text-emerald-900 shadow-lg'
+                  : 'bg-emerald-800/40 text-emerald-100 hover:bg-emerald-800/60'
+              }`}
+            >
+              Datos Personales
+            </button>
+            <button
+              onClick={() => setSelectedTab('profesional')}
+              className={`px-4 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                selectedTab === 'profesional'
+                  ? 'bg-white text-emerald-900 shadow-lg'
+                  : 'bg-emerald-800/40 text-emerald-100 hover:bg-emerald-800/60'
+              }`}
+            >
+              Datos Profesionales
+            </button>
+          </div>
+        </div>
+
+        {/* Form Content */}
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="p-4 sm:p-8 overflow-y-auto flex-1">
+            {selectedTab === 'personal' && (
+              <div className="space-y-6 sm:space-y-8">
+                {/* Información Personal */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                    Información Personal
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <SelectField
+                      label="Tipo de Documento"
+                      name="tipo_documento"
+                      required
+                      value={formData.tipo_documento}
+                      onChange={handleChange}
+                      errors={errors}
+                      options={[
+                        { value: 'DNI', label: 'DNI' },
+                        { value: 'CE', label: 'Carnet de Extranjería' },
+                        { value: 'PASAPORTE', label: 'Pasaporte' }
+                      ]}
+                    />
+                    <FormField
+                      label="Número de Documento"
+                      name="numero_documento"
+                      required
+                      numeric={true}
+                      value={formData.numero_documento}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: 12345678"
+                      maxLength={formData.tipo_documento === 'DNI' ? 8 : 20}
+                    />
+                    <FormField
+                      label="Nombres"
+                      name="nombres"
+                      required
+                      value={formData.nombres}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: Juan Carlos"
+                    />
+                    <FormField
+                      label="Apellido Paterno"
+                      name="apellido_paterno"
+                      value={formData.apellido_paterno}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Opcional"
+                    />
+                    <FormField
+                      label="Apellido Materno"
+                      name="apellido_materno"
+                      value={formData.apellido_materno}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Opcional"
+                    />
+                    <SelectField
+                      label="Género"
+                      name="genero"
+                      required
+                      value={formData.genero}
+                      onChange={handleChange}
+                      errors={errors}
+                      options={[
+                        { value: 'M', label: 'Masculino' },
+                        { value: 'F', label: 'Femenino' },
+                        { value: 'OTRO', label: 'Otro' }
+                      ]}
+                    />
+                    <FormField
+                      label="Fecha de Nacimiento"
+                      name="fecha_nacimiento"
+                      type="date"
+                      required
+                      value={formData.fecha_nacimiento}
+                      onChange={handleChange}
+                      errors={errors}
+                    />
+                  </div>
+                </div>
+
+                {/* Información de Contacto */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                    <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                    Información de Contacto
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                    <FormField
+                      label="Correo Institucional"
+                      name="correo_institucional"
+                      type="email"
+                      required
+                      value={formData.correo_institucional}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="usuario@essalud.gob.pe"
+                    />
+                    <FormField
+                      label="Correo Personal"
+                      name="correo_personal"
+                      type="email"
+                      value={formData.correo_personal}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="usuario@gmail.com"
+                    />
+                    <FormField
+                      label="Teléfono"
+                      name="telefono"
+                      numeric={true}
+                      value={formData.telefono}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: 987654321"
+                      maxLength={9}
+                    />
+                    <FormField
+                      label="Dirección"
+                      name="direccion"
+                      value={formData.direccion}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Calle, Número, etc."
+                    />
+                    <FormField
+                      label="Distrito"
+                      name="distrito"
+                      value={formData.distrito}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: Miraflores"
+                    />
+                    <FormField
+                      label="Provincia"
+                      name="provincia"
+                      value={formData.provincia}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: Lima"
+                    />
+                    <FormField
+                      label="Departamento"
+                      name="departamento"
+                      value={formData.departamento}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: Lima"
+                    />
+                  </div>
+                </div>
+
+                {/* Credenciales Autogeneradas */}
+                <div className="bg-gradient-to-br from-teal-50 via-emerald-50 to-teal-50 rounded-2xl p-4 sm:p-6 border-2 border-emerald-200">
+                  <div className="flex items-center gap-2 sm:gap-3 mb-3 sm:mb-4">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-emerald-600 rounded-xl flex items-center justify-center">
+                      <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                    </div>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-bold text-emerald-900">Credenciales de Acceso</h3>
+                      <p className="text-[10px] sm:text-xs text-emerald-700">Generadas automáticamente</p>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4 mb-3 sm:mb-4">
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-emerald-900 mb-2">
+                        Usuario
+                      </label>
+                      <div className="relative flex gap-2">
+                        <input
+                          type="text"
+                          value={username || 'Se generará automáticamente...'}
+                          readOnly
+                          className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-white border-2 border-emerald-200 rounded-xl text-emerald-900 font-mono font-semibold text-xs sm:text-sm focus:outline-none cursor-not-allowed"
+                        />
+                        <button
+                          type="button"
+                          id="copy-username-btn"
+                          onClick={copiarUsuario}
+                          disabled={!username}
+                          className="px-3 sm:px-4 py-2 sm:py-3 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-xl transition-all flex items-center gap-2"
+                          title="Copiar usuario"
+                        >
+                          <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-emerald-700 mt-1.5 flex items-center gap-1">
+                        <span className="font-medium">Fórmula:</span> Primera letra nombre + apellido paterno + primera letra materna
+                      </p>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-xs sm:text-sm font-semibold text-emerald-900 mb-2">
+                        Contraseña Temporal
+                      </label>
+                      <div className="relative flex gap-2">
+                        <input
+                          type="text"
+                          value={passwordTemporal}
+                          readOnly
+                          className="flex-1 px-3 sm:px-4 py-2 sm:py-3 bg-white border-2 border-emerald-200 rounded-xl text-emerald-900 font-mono font-semibold text-xs sm:text-sm focus:outline-none cursor-not-allowed"
+                        />
+                        <button
+                          type="button"
+                          id="copy-password-btn"
+                          onClick={copiarContrasena}
+                          className="px-3 sm:px-4 py-2 sm:py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl transition-all flex items-center gap-2"
+                          title="Copiar contraseña"
+                        >
+                          <Copy className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                        </button>
+                      </div>
+                      <p className="text-[10px] sm:text-xs text-emerald-700 mt-1.5">
+                        Contraseña estándar para todos los usuarios
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Nota Importante */}
+                  <div className="bg-amber-50 border-2 border-amber-300 rounded-xl p-3 sm:p-4">
+                    <div className="flex gap-2 sm:gap-3">
+                      <div className="flex-shrink-0 mt-0.5">
+                        <div className="w-6 h-6 sm:w-8 sm:h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                          <span className="text-white text-base sm:text-lg font-bold">⚠️</span>
+                        </div>
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="text-xs sm:text-sm font-bold text-amber-900 mb-2">IMPORTANTE - Credenciales Temporales</h4>
+                        <ul className="text-[10px] sm:text-xs text-amber-800 space-y-1 sm:space-y-1.5">
+                          <li className="flex items-start gap-1 sm:gap-2">
+                            <span className="text-amber-600 font-bold mt-0.5">•</span>
+                            <span>Estas credenciales son <strong>temporales</strong> y solo deben usarse para el <strong>primer inicio de sesión</strong>.</span>
+                          </li>
+                          <li className="flex items-start gap-1 sm:gap-2">
+                            <span className="text-amber-600 font-bold mt-0.5">•</span>
+                            <span>El sistema <strong>requerirá al usuario cambiar su contraseña</strong> inmediatamente después del primer acceso.</span>
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {selectedTab === 'profesional' && (
+              <div className="space-y-6 sm:space-y-8">
+                {/* Información Profesional */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                    <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                    Información Profesional
+                  </h3>
+                  <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">Completa estos campos solo si el usuario es personal médico/profesional de salud</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <FormField
+                      label="Profesión"
+                      name="profesion"
+                      value={formData.profesion}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: Médico Cirujano"
+                    />
+                    <FormField
+                      label="Colegiatura"
+                      name="colegiatura"
+                      value={formData.colegiatura}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: CMP 12345"
+                    />
+                    <FormField
+                      label="Especialidad"
+                      name="especialidad"
+                      value={formData.especialidad}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: Cardiología"
+                    />
+                    <FormField
+                      label="RNE"
+                      name="rne"
+                      value={formData.rne}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Registro Nacional"
+                    />
+                  </div>
+                </div>
+
+                {/* Información Laboral */}
+                <div>
+                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-600" />
+                    Información Laboral
+                  </h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                    <SelectField
+                      label="Tipo de Personal"
+                      name="tipo_personal"
+                      value={formData.tipo_personal}
+                      onChange={handleChange}
+                      errors={errors}
+                      options={[
+                        { value: 'CENATE', label: 'CENATE' },
+                        { value: 'EXTERNO', label: 'Externo' }
+                      ]}
+                    />
+                    <FormField
+                      label="Régimen Laboral"
+                      name="regimen_laboral"
+                      value={formData.regimen_laboral}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Ej: CAS, Nombrado, etc."
+                    />
+                    <FormField
+                      label="Código de Planilla"
+                      name="codigo_planilla"
+                      value={formData.codigo_planilla}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="Opcional"
+                    />
+                    <FormField
+                      label="Periodo de Ingreso"
+                      name="periodo_ingreso"
+                      type="month"
+                      value={formData.periodo_ingreso}
+                      onChange={handleChange}
+                      errors={errors}
+                      placeholder="MM/AAAA"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer con botones */}
+          <div className="px-4 sm:px-8 py-3 sm:py-4 bg-gray-50 border-t border-gray-200 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-3 sm:gap-0">
+            <div className="text-xs sm:text-sm text-gray-500 text-center sm:text-left">
+              <span className="text-red-500">*</span> Campos obligatorios
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                disabled={loading}
+                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-300 rounded-xl transition-all text-sm font-medium disabled:opacity-50 order-2 sm:order-1"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                disabled={loading}
+                className="px-4 sm:px-6 py-2 sm:py-2.5 bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-emerald-500 text-white rounded-xl transition-all text-sm font-medium shadow-lg disabled:opacity-50 flex items-center justify-center gap-2 order-1 sm:order-2"
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Creando...
+                  </>
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    Crear Usuario
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// 📋 MODAL DE VER DETALLES DE USUARIO
+// ============================================================
+const VerDetalleModal = ({ user, onClose }) => {
+  // TODOS los hooks al inicio
+  const [activeTab, setActiveTab] = useState('personales');
+
+  // Si no hay usuario, retornamos null DESPUÉS de los hooks
+  if (!user) return null;
+
+  const InfoCard = ({ label, value, icon: Icon }) => (
+    <div className="bg-white border border-gray-200 rounded-xl p-3 sm:p-4">
+      <div className="flex items-center gap-2 mb-2">
+        {Icon && <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-500" />}
+        <p className="text-[10px] sm:text-xs font-medium text-gray-500 uppercase tracking-wide">{label}</p>
+      </div>
+      <p className="text-xs sm:text-sm font-medium text-gray-900">
+        {value || <span className="text-gray-400 italic font-normal">s/n</span>}
+      </p>
+    </div>
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-7xl my-4 overflow-hidden flex flex-col max-h-[95vh]">
+        {/* Header */}
+        <div className="bg-gradient-to-r from-cenate-600 to-cenate-700 px-4 sm:px-8 py-4 sm:py-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3 sm:gap-4">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 bg-white rounded-full flex items-center justify-center text-cenate-600 font-bold text-xl sm:text-2xl shadow-lg">
+                {user.nombres?.charAt(0) || user.username?.charAt(0) || 'U'}
+              </div>
+              <div>
+                <h2 className="text-lg sm:text-2xl font-semibold text-white">
+                  {user.nombre_completo || user.username}
+                </h2>
+                <p className="text-cenate-100 text-xs sm:text-sm mt-1">@{user.username}</p>
+              </div>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-white/10 text-white rounded-xl transition-all">
+              <X className="w-5 h-5 sm:w-6 sm:h-6" />
+            </button>
+          </div>
+        </div>
+
+        {/* Badges y Tabs */}
+        <div className="bg-cenate-600 px-4 sm:px-8 pb-0">
+          <div className="flex items-center justify-between mb-3 sm:mb-4 overflow-x-auto">
+            <div className="flex gap-1.5 sm:gap-2 flex-nowrap">
+              <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap ${
+                user.estado_usuario === 'ACTIVO' 
+                  ? 'bg-emerald-500 text-white' 
+                  : 'bg-gray-200 text-gray-600'
+              }`}>
+                {user.estado_usuario}
+              </span>
+              <span className="px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium bg-cenate-500 text-white whitespace-nowrap">
+                {user.roles || 'USER'}
+              </span>
+              <span className={`px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-medium whitespace-nowrap ${
+                user.tipo_personal === 'CENATE' 
+                  ? 'bg-cenate-400 text-white' 
+                  : 'bg-cenate-400 text-white'
+              }`}>
+                {user.tipo_personal}
+              </span>
+            </div>
+          </div>
+
+          {/* Tabs */}
+          <div className="flex gap-2 overflow-x-auto pb-px">
+            <button
+              onClick={() => setActiveTab('personales')}
+              className={`px-4 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                activeTab === 'personales'
+                  ? 'bg-white text-cenate-900'
+                  : 'bg-cenate-700 text-cenate-100 hover:bg-cenate-600'
+              }`}
+            >
+              Datos Personales
+            </button>
+            <button
+              onClick={() => setActiveTab('profesionales')}
+              className={`px-4 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                activeTab === 'profesionales'
+                  ? 'bg-white text-cenate-900'
+                  : 'bg-cenate-700 text-cenate-100 hover:bg-cenate-600'
+              }`}
+            >
+              Datos Profesionales
+            </button>
+            <button
+              onClick={() => setActiveTab('sistema')}
+              className={`px-4 sm:px-6 py-2 sm:py-3 font-medium text-xs sm:text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                activeTab === 'sistema'
+                  ? 'bg-white text-cenate-900'
+                  : 'bg-cenate-700 text-cenate-100 hover:bg-cenate-600'
+              }`}
+            >
+              Información del Sistema
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-4 sm:p-8 overflow-y-auto flex-1 bg-gray-50">
+          {activeTab === 'personales' && (
+            <div className="space-y-4 sm:space-y-6">
+              {/* Información Personal */}
+              <div>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-2 border-b border-gray-200">
+                  <User className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase">Información Personal</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <InfoCard label="Documento" value={user.numero_documento ? `${user.tipo_documento || 'DNI'}: ${user.numero_documento}` : null} />
+                  <InfoCard label="Nombres" value={user.nombres} />
+                  <InfoCard label="Apellido Paterno" value={user.apellido_paterno} />
+                  <InfoCard label="Apellido Materno" value={user.apellido_materno} />
+                  <InfoCard label="Género" value={user.genero === 'M' ? 'Masculino' : user.genero === 'F' ? 'Femenino' : user.genero} />
+                  <InfoCard label="Fecha de Nacimiento" value={user.fecha_nacimiento} icon={Calendar} />
+                  <InfoCard label="Edad" value={user.edad ? `${user.edad} años` : null} />
+                  <InfoCard label="Cumpleaños" value={user.dia_cumpleanos && user.mes_cumpleanos ? `${user.dia_cumpleanos} de ${user.mes_cumpleanos}` : null} icon={Cake} />
+                </div>
+              </div>
+
+              {/* Información de Contacto */}
+              <div>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-2 border-b border-gray-200">
+                  <Mail className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase">Información de Contacto</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <InfoCard label="Correo Institucional" value={user.correo_institucional} icon={Mail} />
+                  <InfoCard label="Correo Personal" value={user.correo_personal} icon={Mail} />
+                  <InfoCard label="Teléfono" value={user.telefono} icon={Phone} />
+                  <InfoCard label="Dirección" value={user.direccion} icon={MapPin} />
+                  <InfoCard label="Distrito" value={user.distrito} />
+                  <InfoCard label="Provincia" value={user.provincia} />
+                  <InfoCard label="Departamento" value={user.departamento} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'profesionales' && (
+            <div className="space-y-4 sm:space-y-6">
+              {/* Información Profesional */}
+              <div>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-2 border-b border-gray-200">
+                  <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase">Información Profesional</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <InfoCard label="Profesión" value={user.profesion} />
+                  <InfoCard label="Colegiatura" value={user.colegiatura} />
+                  <InfoCard label="Especialidad" value={user.especialidad} />
+                  <InfoCard label="RNE" value={user.rne} />
+                </div>
+              </div>
+
+              {/* Información Laboral */}
+              <div>
+                <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-2 border-b border-gray-200">
+                  <Briefcase className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                  <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase">Información Laboral</h3>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                  <InfoCard label="IPRESS" value={user.nombre_ipress} icon={Building} />
+                  <InfoCard label="Área" value={user.nombre_area} />
+                  <InfoCard label="Régimen Laboral" value={user.regimen_laboral} />
+                  <InfoCard label="Código de Planilla" value={user.codigo_planilla} />
+                  <InfoCard label="Periodo de Ingreso" value={user.periodo_ingreso} icon={Calendar} />
+                  <InfoCard label="Tipo de Personal" value={user.tipo_personal} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'sistema' && (
+            <div>
+              <div className="flex items-center gap-2 mb-3 sm:mb-4 pb-2 border-b border-gray-200">
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5 text-gray-600" />
+                <h3 className="text-xs sm:text-sm font-semibold text-gray-900 uppercase">Información del Sistema</h3>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <InfoCard label="Usuario" value={user.username} />
+                <InfoCard label="ID de Usuario" value={user.id_user?.toString()} />
+                <InfoCard label="Rol" value={user.roles} />
+                <InfoCard label="Estado" value={user.estado_usuario} />
+                <InfoCard label="Fecha de Registro" value={user.fecha_creacion_usuario} icon={Calendar} />
+                <InfoCard label="Última Actualización" value={user.ultima_actualizacion_usuario} icon={Calendar} />
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div className="bg-white border-t border-gray-200 px-4 sm:px-8 py-3 sm:py-4 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-2 sm:gap-0">
+          <button className="px-4 sm:px-6 py-2 sm:py-2.5 bg-cenate-600 hover:bg-cenate-700 text-white rounded-xl transition-colors text-xs sm:text-sm font-medium flex items-center justify-center gap-2 order-2 sm:order-1">
+            <Download className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            Exportar PDF
+          </button>
+          <button onClick={onClose} className="px-4 sm:px-6 py-2 sm:py-2.5 bg-cenate-900 hover:bg-cenate-800 text-white rounded-xl transition-colors text-xs sm:text-sm font-medium order-1 sm:order-2">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ============================================================
+// 🗑️ MODAL DE CONFIRMACIÓN DE ELIMINACIÓN
+// ============================================================
+const ConfirmDeleteModal = ({ userToDelete, isDeleting, onConfirm, onCancel }) => {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-scale-in">
+        {/* Header con gradiente */}
+        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-5">
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
+              <AlertTriangle className="w-7 h-7 text-white" />
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-white">Confirmar Eliminación</h3>
+              <p className="text-red-100 text-sm mt-1">Esta acción no se puede deshacer</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Body */}
+        <div className="p-6">
+          {userToDelete.isMultiple ? (
+            <div className="space-y-4">
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-amber-900 mb-2">Advertencia Crítica</h4>
+                    <p className="text-sm text-amber-800">
+                      Estás a punto de eliminar <strong className="font-bold">{userToDelete.count} usuario(s)</strong>.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                <h4 className="text-sm font-bold text-red-900 mb-2">⚠️ IMPORTANTE</h4>
+                <ul className="text-sm text-red-800 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span>Se eliminarán todos los datos personales de los usuarios</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span>Se eliminarán todos los registros asociados (citas, historiales, etc.)</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span>Los usuarios ya no podrán acceder al sistema</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span><strong>Esta acción es PERMANENTE y no se puede deshacer</strong></span>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Info del usuario */}
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex items-center gap-4 mb-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-red-600 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-sm">
+                    {userToDelete.user.nombres?.charAt(0) || userToDelete.user.username?.charAt(0) || 'U'}
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="font-bold text-gray-900">
+                      {userToDelete.user.nombre_completo || userToDelete.user.username}
+                    </h4>
+                    <p className="text-sm text-gray-500">@{userToDelete.user.username}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <div>
+                    <span className="text-gray-500">Documento:</span>
+                    <p className="font-medium text-gray-900">{userToDelete.user.numero_documento || 'N/A'}</p>
+                  </div>
+                  <div>
+                    <span className="text-gray-500">Rol:</span>
+                    <p className="font-medium text-gray-900">{userToDelete.user.roles || 'USER'}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="flex-shrink-0 mt-0.5">
+                    <div className="w-8 h-8 bg-amber-500 rounded-lg flex items-center justify-center">
+                      <AlertTriangle className="w-5 h-5 text-white" />
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-bold text-amber-900 mb-2">Advertencia Crítica</h4>
+                    <p className="text-sm text-amber-800">
+                      Estás a punto de eliminar permanentemente este usuario.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-red-50 border-2 border-red-200 rounded-xl p-4">
+                <h4 className="text-sm font-bold text-red-900 mb-2">⚠️ IMPORTANTE - Datos que se eliminarán:</h4>
+                <ul className="text-sm text-red-800 space-y-2">
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span>Todos los datos personales y profesionales</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span>Historial de citas médicas y consultas</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span>Registros de pacientes atendidos</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span>Permisos y roles asignados</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span>Acceso al sistema permanentemente revocado</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <span className="text-red-600 font-bold mt-0.5">•</span>
+                    <span><strong>Esta acción es IRREVERSIBLE</strong></span>
+                  </li>
+                </ul>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-3">
+                <p className="text-xs text-blue-800">
+                  💡 <strong>Sugerencia:</strong> Si solo deseas desactivar temporalmente al usuario, 
+                  considera cambiar su estado a "Inactivo" en lugar de eliminarlo.
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer con botones */}
+        <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex gap-3">
+          <button
+            onClick={onCancel}
+            disabled={isDeleting}
+            className="flex-1 px-4 py-3 bg-white hover:bg-gray-50 text-gray-700 border-2 border-gray-300 rounded-xl transition-all font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Cancelar
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isDeleting}
+            className="flex-1 px-4 py-3 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          >
+            {isDeleting ? (
+              <>
+                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <span>Eliminando...</span>
+              </>
+            ) : (
+              <>
+                <Trash2 className="w-5 h-5" />
+                <span>Sí, Eliminar {userToDelete.isMultiple ? `${userToDelete.count} Usuarios` : 'Usuario'}</span>
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default UsersManagement;

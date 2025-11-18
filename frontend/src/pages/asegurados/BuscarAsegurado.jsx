@@ -1,0 +1,1146 @@
+// ========================================================================
+// 🔍 BuscarAsegurado.jsx – Lista de Asegurados (CENATE 2025)
+// ------------------------------------------------------------------------
+// Lista completa de asegurados con paginación desde el backend
+// Búsqueda unificada por DNI o nombre
+// ========================================================================
+
+import React, { useState, useEffect } from "react";
+import {
+  Search,
+  Users,
+  IdCard,
+  Phone,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Loader,
+  User,
+  Shield,
+  Eye,
+  X,
+  Building2,
+  MapPinned,
+  Network,
+  Cake,
+  Edit,
+  Plus,
+  Save,
+  Trash2,
+} from "lucide-react";
+import { apiClient } from "../../lib/apiClient";
+import toast from "react-hot-toast";
+
+export default function BuscarAsegurado() {
+  const [asegurados, setAsegurados] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchValue, setSearchValue] = useState("");
+  const [debouncedSearchValue, setDebouncedSearchValue] = useState("");
+  
+  // Estados para acordeón de filtros
+  const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
+
+  // ✅ Estados para los filtros
+  const [redes, setRedes] = useState([]);
+  const [ipress, setIpress] = useState([]);
+  const [todasIpress, setTodasIpress] = useState([]);
+  const [selectedRed, setSelectedRed] = useState("");
+  const [selectedIpress, setSelectedIpress] = useState("");
+  const [loadingFiltros, setLoadingFiltros] = useState(false);
+  
+  // Paginación desde el backend
+  const [currentPage, setCurrentPage] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [totalElements, setTotalElements] = useState(0);
+  const pageSize = 25;
+  
+  // Modal de detalles
+  const [showModal, setShowModal] = useState(false);
+  const [detalleAsegurado, setDetalleAsegurado] = useState(null);
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
+  
+  // Modal de formulario (crear/editar)
+  const [showFormModal, setShowFormModal] = useState(false);
+  const [modoFormulario, setModoFormulario] = useState('crear');
+  const [formularioData, setFormularioData] = useState({
+    docPaciente: '',
+    paciente: '',
+    fecnacimpaciente: '',
+    sexo: 'M',
+    tipoPaciente: 'TITULAR',
+    telFijo: '',
+    tipoSeguro: 'TITULAR',
+    casAdscripcion: '',
+    periodo: new Date().getFullYear().toString()
+  });
+  const [loadingForm, setLoadingForm] = useState(false);
+
+  // ✅ Cargar filtros al iniciar
+  useEffect(() => {
+    cargarRedes();
+    cargarIpress();
+  }, []);
+  
+  // ✅ Cargar IPRESS cuando cambia la Red seleccionada
+  useEffect(() => {
+    if (selectedRed) {
+      cargarIpress(selectedRed);
+      setSelectedIpress("");
+    } else {
+      cargarIpress();
+      setSelectedIpress("");
+    }
+  }, [selectedRed]);
+  
+  // ✅ Resetear página cuando cambian los filtros
+  useEffect(() => {
+    if (selectedRed || selectedIpress) {
+      setCurrentPage(0);
+    }
+  }, [selectedRed, selectedIpress]);
+
+  // ✅ Debounce para la búsqueda
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchValue(searchValue);
+      if (searchValue.trim()) {
+        setCurrentPage(0);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchValue]);
+
+  // Cargar asegurados con paginación
+  useEffect(() => {
+    cargarAsegurados();
+  }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress]);
+
+  const cargarAsegurados = async () => {
+    try {
+      setLoading(true);
+      
+      let response;
+      
+      if (debouncedSearchValue.trim()) {
+        let params = `q=${encodeURIComponent(debouncedSearchValue)}&page=${currentPage}&size=${pageSize}`;
+        if (selectedRed) params += `&idRed=${selectedRed}`;
+        if (selectedIpress) params += `&codIpress=${encodeURIComponent(selectedIpress)}`;
+        
+        response = await apiClient.get(`/asegurados/buscar?${params}`, true);
+      } else {
+        response = await apiClient.get(`/asegurados?page=${currentPage}&size=${pageSize}`, true);
+      }
+      
+      setAsegurados(response.content || []);
+      setTotalPages(response.totalPages || 0);
+      setTotalElements(response.totalElements || 0);
+      
+      if (currentPage === 0 && debouncedSearchValue.trim()) {
+        toast.success(`${response.totalElements || 0} resultados encontrados`);
+      }
+    } catch (error) {
+      console.error("Error al cargar asegurados:", error);
+      toast.error("Error al cargar la lista de asegurados");
+      setAsegurados([]);
+      setTotalPages(0);
+      setTotalElements(0);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const cargarRedes = async () => {
+    try {
+      setLoadingFiltros(true);
+      const response = await apiClient.get('/asegurados/filtros/redes', true);
+      setRedes(response || []);
+    } catch (error) {
+      console.error('Error al cargar redes:', error);
+      toast.error('Error al cargar las redes');
+    } finally {
+      setLoadingFiltros(false);
+    }
+  };
+  
+  const cargarIpress = async (idRed = null) => {
+    try {
+      setLoadingFiltros(true);
+      const url = idRed ? `/asegurados/filtros/ipress?idRed=${idRed}` : '/asegurados/filtros/ipress';
+      const response = await apiClient.get(url, true);
+      
+      if (idRed) {
+        setIpress(response || []);
+      } else {
+        setIpress(response || []);
+        setTodasIpress(response || []);
+      }
+    } catch (error) {
+      console.error('Error al cargar IPRESS:', error);
+      toast.error('Error al cargar las IPRESS');
+    } finally {
+      setLoadingFiltros(false);
+    }
+  };
+  
+  const limpiarFiltros = () => {
+    setSelectedRed("");
+    setSelectedIpress("");
+    setSearchValue("");
+    setCurrentPage(0);
+  };
+
+  const aseguradosFiltrados = asegurados;
+
+  const handlePreviousPage = () => {
+    if (currentPage > 0) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages - 1) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+  
+  const obtenerDetalles = async (pkAsegurado) => {
+    try {
+      setLoadingDetalle(true);
+      const response = await apiClient.get(`/asegurados/detalle/${pkAsegurado}`, true);
+      setDetalleAsegurado(response);
+      setShowModal(true);
+    } catch (error) {
+      console.error("Error al obtener detalles:", error);
+      toast.error("Error al cargar los detalles del asegurado");
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
+  
+  const cerrarModal = () => {
+    setShowModal(false);
+    setDetalleAsegurado(null);
+  };
+  
+  const abrirFormularioCrear = () => {
+    setModoFormulario('crear');
+    setFormularioData({
+      docPaciente: '',
+      paciente: '',
+      fecnacimpaciente: '',
+      sexo: 'M',
+      tipoPaciente: 'TITULAR',
+      telFijo: '',
+      tipoSeguro: 'TITULAR',
+      casAdscripcion: '',
+      periodo: new Date().getFullYear().toString()
+    });
+    if (todasIpress.length === 0) {
+      cargarIpress();
+    }
+    setShowFormModal(true);
+  };
+  
+  const abrirFormularioEditar = async (pkAsegurado) => {
+    try {
+      setLoadingDetalle(true);
+      
+      if (todasIpress.length === 0) {
+        await cargarIpress();
+      }
+      
+      const response = await apiClient.get(`/asegurados/detalle/${pkAsegurado}`, true);
+      
+      let fechaFormateada = '';
+      if (response.asegurado.fecnacimpaciente) {
+        const fecha = new Date(response.asegurado.fecnacimpaciente);
+        const offsetMs = fecha.getTimezoneOffset() * 60 * 1000;
+        const fechaLocal = new Date(fecha.getTime() + offsetMs);
+        fechaFormateada = fechaLocal.toISOString().split('T')[0];
+      }
+      
+      setModoFormulario('editar');
+      setFormularioData({
+        pkAsegurado: response.asegurado.pkAsegurado,
+        docPaciente: response.asegurado.docPaciente || '',
+        paciente: response.asegurado.paciente || '',
+        fecnacimpaciente: fechaFormateada,
+        sexo: response.asegurado.sexo || 'M',
+        tipoPaciente: response.asegurado.tipoPaciente || 'TITULAR',
+        telFijo: response.asegurado.telFijo || '',
+        tipoSeguro: response.asegurado.tipoSeguro || 'TITULAR',
+        casAdscripcion: response.asegurado.casAdscripcion || '',
+        periodo: response.asegurado.periodo || new Date().getFullYear().toString()
+      });
+      setShowFormModal(true);
+    } catch (error) {
+      console.error("Error al cargar datos del asegurado:", error);
+      toast.error("Error al cargar los datos del asegurado");
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
+  
+  const cerrarFormulario = () => {
+    setShowFormModal(false);
+    setFormularioData({
+      docPaciente: '',
+      paciente: '',
+      fecnacimpaciente: '',
+      sexo: 'M',
+      tipoPaciente: 'TITULAR',
+      telFijo: '',
+      tipoSeguro: 'TITULAR',
+      casAdscripcion: '',
+      periodo: new Date().getFullYear().toString()
+    });
+  };
+  
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    const finalValue = name === 'paciente' ? value.toUpperCase() : value;
+    
+    setFormularioData(prev => ({
+      ...prev,
+      [name]: finalValue
+    }));
+  };
+  
+  const guardarAsegurado = async (e) => {
+    e.preventDefault();
+    
+    if (!formularioData.docPaciente || !formularioData.paciente || 
+        !formularioData.fecnacimpaciente || !formularioData.telFijo || 
+        !formularioData.casAdscripcion || !formularioData.periodo) {
+      toast.error('Por favor completa todos los campos obligatorios (marcados con *)');
+      return;
+    }
+    
+    try {
+      setLoadingForm(true);
+      
+      if (modoFormulario === 'crear') {
+        await apiClient.post('/asegurados', formularioData, true);
+        toast.success('Asegurado creado exitosamente');
+      } else {
+        await apiClient.put(`/asegurados/${formularioData.pkAsegurado}`, formularioData, true);
+        toast.success('Asegurado actualizado exitosamente');
+      }
+      
+      cerrarFormulario();
+      cargarAsegurados();
+    } catch (error) {
+      console.error('Error al guardar asegurado:', error);
+      const errorMsg = error.response?.data?.message || 'Error al guardar el asegurado';
+      toast.error(errorMsg);
+    } finally {
+      setLoadingForm(false);
+    }
+  };
+  
+  const eliminarAsegurado = async (pkAsegurado, nombrePaciente) => {
+    if (!window.confirm(`¿Estás seguro de eliminar al asegurado ${nombrePaciente}?`)) {
+      return;
+    }
+    
+    try {
+      await apiClient.delete(`/asegurados/${pkAsegurado}`, true);
+      toast.success('Asegurado eliminado exitosamente');
+      cargarAsegurados();
+    } catch (error) {
+      console.error('Error al eliminar asegurado:', error);
+      toast.error('Error al eliminar el asegurado');
+    }
+  };
+
+  const startIndex = currentPage * pageSize + 1;
+  const endIndex = Math.min((currentPage + 1) * pageSize, totalElements);
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-emerald-600 p-2 rounded-lg">
+              <Users className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-slate-900">
+                Lista de Asegurados
+              </h1>
+              <p className="text-sm text-slate-600">
+                Total: {totalElements.toLocaleString()} registrados
+              </p>
+            </div>
+          </div>
+
+          <div className="flex gap-2">
+            <button
+              onClick={abrirFormularioCrear}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg 
+                       text-sm font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+            >
+              <Plus className="w-4 h-4" />
+              Agregar
+            </button>
+            <button
+              onClick={cargarAsegurados}
+              disabled={loading}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-2 rounded-lg 
+                       text-sm font-medium transition-all shadow-md hover:shadow-lg disabled:opacity-50"
+            >
+              {loading ? "Cargando..." : "Actualizar"}
+            </button>
+          </div>
+        </div>
+
+        {/* Filtros Colapsables */}
+        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+          <button
+            onClick={() => setFiltrosAbiertos(!filtrosAbiertos)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Network className="w-4 h-4 text-emerald-600" />
+              <h3 className="text-base font-semibold text-slate-900">
+                Filtros y Búsqueda
+              </h3>
+              {(selectedRed || selectedIpress || searchValue) && (
+                <span className="bg-emerald-100 text-emerald-800 text-xs font-medium px-2 py-0.5 rounded-full">
+                  Activos
+                </span>
+              )}
+            </div>
+            <div className="flex items-center gap-2">
+              {(selectedRed || selectedIpress || searchValue) && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    limpiarFiltros();
+                  }}
+                  className="text-xs text-emerald-600 hover:text-emerald-700 font-medium px-2 py-1 hover:bg-emerald-50 rounded"
+                >
+                  Limpiar
+                </button>
+              )}
+              <ChevronRight 
+                className={`w-5 h-5 text-slate-400 transition-transform ${
+                  filtrosAbiertos ? 'rotate-90' : ''
+                }`} 
+              />
+            </div>
+          </button>
+
+          {filtrosAbiertos && (
+            <div className="px-4 pb-4 space-y-4 border-t border-slate-100">
+              {/* Filtros por Red e IPRESS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                    <Network className="w-3 h-3 inline mr-1" />
+                    Filtrar por Red
+                  </label>
+                  <select
+                    value={selectedRed}
+                    onChange={(e) => setSelectedRed(e.target.value)}
+                    disabled={loadingFiltros}
+                    className="w-full px-3 py-2 text-sm border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100
+                             transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Todas las redes</option>
+                    {redes.map((red) => (
+                      <option key={red.idRed} value={red.idRed}>
+                        {red.descRed}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                    <Building2 className="w-3 h-3 inline mr-1" />
+                    Filtrar por IPRESS
+                  </label>
+                  <select
+                    value={selectedIpress}
+                    onChange={(e) => setSelectedIpress(e.target.value)}
+                    disabled={!selectedRed || loadingFiltros}
+                    className="w-full px-3 py-2 text-sm border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100
+                             transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">
+                      {selectedRed ? 'Todas las IPRESS de esta red' : 'Selecciona una red primero'}
+                    </option>
+                    {ipress.map((i) => (
+                      <option key={i.codIpress} value={i.codIpress}>
+                        {i.descIpress} (Cód: {i.codIpress})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Búsqueda Unificada */}
+              <div>
+                <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                  <Search className="w-3 h-3 inline mr-1" />
+                  Buscar Asegurado
+                </label>
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                  <input
+                    type="text"
+                    value={searchValue}
+                    onChange={(e) => setSearchValue(e.target.value)}
+                    placeholder="Buscar por DNI o nombre completo..."
+                    className="w-full pl-10 pr-3 py-2 text-sm border-2 border-slate-200 rounded-lg text-slate-900 
+                             focus:outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 
+                             transition-all"
+                  />
+                  {searchValue !== debouncedSearchValue && searchValue.trim() && (
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                      <Loader className="w-4 h-4 text-emerald-600 animate-spin" />
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-slate-500 mt-1.5">
+                  💡 Búsqueda en toda la base de datos. La búsqueda se realiza automáticamente mientras escribes.
+                </p>
+              </div>
+
+              {/* Indicador de filtros activos */}
+              {(selectedRed || selectedIpress) && (
+                <div className="flex flex-wrap gap-2 pt-2 border-t border-slate-100">
+                  {selectedRed && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-emerald-100 text-emerald-800 rounded-full text-xs font-medium">
+                      <Network className="w-3 h-3" />
+                      {redes.find(r => r.idRed === parseInt(selectedRed))?.descRed}
+                    </span>
+                  )}
+                  {selectedIpress && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                      <Building2 className="w-3 h-3" />
+                      {ipress.find(i => i.codIpress === selectedIpress)?.descIpress}
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Tabla de asegurados */}
+        {loading ? (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+            <Loader className="w-12 h-12 text-emerald-600 animate-spin mx-auto mb-4" />
+            <p className="text-slate-600 font-medium">Cargando asegurados...</p>
+          </div>
+        ) : aseguradosFiltrados.length === 0 ? (
+          <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-12 text-center">
+            <Users className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-slate-900 mb-2">
+              No se encontraron asegurados
+            </h3>
+            <p className="text-slate-600">
+              {searchValue
+                ? "No se encontraron resultados. Intenta con otro término de búsqueda."
+                : "No hay asegurados registrados"}
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Tabla */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-12">
+                        N°
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-32">
+                        <IdCard className="w-3.5 h-3.5 inline mr-1" />
+                        DNI
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-64">
+                        <User className="w-3.5 h-3.5 inline mr-1" />
+                        Nombre Completo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-32">
+                        <Phone className="w-3.5 h-3.5 inline mr-1" />
+                        Teléfono
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold w-64">
+                        <Building2 className="w-3.5 h-3.5 inline mr-1" />
+                        IPRESS
+                      </th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold w-36">
+                        ACCIONES
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {aseguradosFiltrados.map((asegurado, index) => {
+                      const globalIndex = currentPage * pageSize + index + 1;
+                      return (
+                        <tr
+                          key={asegurado.pkAsegurado || index}
+                          className="hover:bg-emerald-50 transition-colors"
+                        >
+                          <td className="px-4 py-3 text-sm text-slate-600">
+                            {globalIndex}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="bg-emerald-100 p-1.5 rounded-lg">
+                                <IdCard className="w-3.5 h-3.5 text-emerald-700" />
+                              </div>
+                              <span className="font-medium text-sm text-slate-900">
+                                {asegurado.docPaciente || "No registrado"}
+                              </span>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="font-medium text-sm text-slate-900 truncate" title={asegurado.paciente}>
+                              {asegurado.paciente || "No especificado"}
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
+                              {asegurado.sexo === 'M' ? '👨' : 
+                               asegurado.sexo === 'F' ? '👩' : ''}
+                              {asegurado.tipoPaciente && (
+                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">
+                                  {asegurado.tipoPaciente}
+                                </span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 text-sm text-slate-600">
+                            {asegurado.telFijo || "No registrado"}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm">
+                              <div className="font-medium text-sm text-slate-900 truncate" title={asegurado.nombreIpress}>
+                                {asegurado.nombreIpress || "No registrado"}
+                              </div>
+                              <div className="text-xs text-slate-500 mt-0.5">
+                                Código: {asegurado.casAdscripcion || "N/A"}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center justify-center gap-1.5">
+                              {/* Botón Ver */}
+                              <button
+                                onClick={() => obtenerDetalles(asegurado.pkAsegurado)}
+                                disabled={loadingDetalle}
+                                className="group relative p-2 bg-white border-2 border-emerald-600 text-emerald-600 
+                                         rounded-lg hover:bg-emerald-600 hover:text-white transition-all duration-200 
+                                         disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                title="Ver detalles"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </button>
+                              
+                              {/* Botón Editar */}
+                              <button
+                                onClick={() => abrirFormularioEditar(asegurado.pkAsegurado)}
+                                disabled={loadingDetalle}
+                                className="group relative p-2 bg-white border-2 border-blue-600 text-blue-600 
+                                         rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 
+                                         disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                title="Editar"
+                              >
+                                <Edit className="w-4 h-4" />
+                              </button>
+                              
+                              {/* Botón Eliminar */}
+                              <button
+                                onClick={() => eliminarAsegurado(asegurado.pkAsegurado, asegurado.paciente)}
+                                className="group relative p-2 bg-white border-2 border-red-600 text-red-600 
+                                         rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 
+                                         shadow-sm hover:shadow-md"
+                                title="Eliminar"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Controles de paginación */}
+            <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-4">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-slate-600">
+                  Mostrando{" "}
+                  <span className="font-semibold text-slate-900">
+                    {startIndex}
+                  </span>{" "}
+                  -{" "}
+                  <span className="font-semibold text-slate-900">
+                    {endIndex}
+                  </span>{" "}
+                  de{" "}
+                  <span className="font-semibold text-slate-900">
+                    {totalElements.toLocaleString()}
+                  </span>{" "}
+                  asegurados
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePreviousPage}
+                    disabled={currentPage === 0}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 
+                             text-slate-700 font-medium transition-all
+                             hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft className="w-4 h-4" />
+                    Anterior
+                  </button>
+
+                  <div className="flex items-center gap-1">
+                    <span className="px-4 py-2 text-sm font-medium text-slate-900">
+                      Página {currentPage + 1} de {totalPages}
+                    </span>
+                  </div>
+
+                  <button
+                    onClick={handleNextPage}
+                    disabled={currentPage >= totalPages - 1}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg border border-slate-300 
+                             text-slate-700 font-medium transition-all
+                             hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    Siguiente
+                    <ChevronRight className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+      
+      {/* Modal de Detalles */}
+      {showModal && detalleAsegurado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-emerald-600 to-emerald-700 px-6 py-4 rounded-t-2xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Detalles del Asegurado</h2>
+              </div>
+              <button
+                onClick={cerrarModal}
+                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            
+            <div className="p-6 space-y-6">
+              <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <IdCard className="w-5 h-5 text-emerald-600" />
+                  Información de Paciente
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">DNI</label>
+                    <p className="text-lg font-semibold text-slate-900 mt-1">
+                      {detalleAsegurado.asegurado.docPaciente || "No registrado"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Nombre Completo</label>
+                    <p className="text-lg font-semibold text-slate-900 mt-1">
+                      {detalleAsegurado.asegurado.paciente || "No especificado"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Fecha de Nacimiento</label>
+                    <p className="text-base text-slate-900 mt-1">
+                      {detalleAsegurado.asegurado.fecnacimpaciente
+                        ? new Date(detalleAsegurado.asegurado.fecnacimpaciente).toLocaleDateString('es-PE', {
+                            day: '2-digit',
+                            month: 'long',
+                            year: 'numeric'
+                          })
+                        : "No registrado"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Edad</label>
+                    <p className="text-base text-slate-900 mt-1">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        <Cake className="w-4 h-4 mr-1" />
+                        {detalleAsegurado.asegurado.edad ? `${detalleAsegurado.asegurado.edad} años` : "No calculado"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Sexo</label>
+                    <p className="text-base text-slate-900 mt-1">
+                      {detalleAsegurado.asegurado.sexo === 'M' ? '👨 Masculino' : 
+                       detalleAsegurado.asegurado.sexo === 'F' ? '👩 Femenino' : 'No especificado'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Teléfono</label>
+                    <p className="text-base text-slate-900 mt-1 flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-emerald-600" />
+                      {detalleAsegurado.asegurado.telFijo || "No registrado"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Tipo de Paciente</label>
+                    <p className="text-base text-slate-900 mt-1">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-slate-200 text-slate-800">
+                        {detalleAsegurado.asegurado.tipoPaciente || "No especificado"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Tipo de Seguro</label>
+                    <p className="text-base text-slate-900 mt-1">
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
+                        detalleAsegurado.asegurado.tipoSeguro === 'TITULAR' 
+                          ? 'bg-blue-100 text-blue-800' 
+                          : detalleAsegurado.asegurado.tipoSeguro === 'CONYUGE'
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-slate-100 text-slate-800'
+                      }`}>
+                        {detalleAsegurado.asegurado.tipoSeguro || "No especificado"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Periodo</label>
+                    <p className="text-base text-slate-900 mt-1">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
+                        {detalleAsegurado.asegurado.periodo || "No especificado"}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200">
+                <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                  <Building2 className="w-5 h-5 text-emerald-600" />
+                  Información de IPRESS (Centro de Adscripción)
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Código de Adscripción</label>
+                    <p className="text-lg font-semibold text-slate-900 mt-1">
+                      {detalleAsegurado.ipress.codAdscripcion || "No registrado"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Nombre de IPRESS</label>
+                    <p className="text-lg font-semibold text-slate-900 mt-1">
+                      {detalleAsegurado.ipress.nombreIpress || "No registrado"}
+                    </p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-slate-600 flex items-center gap-2">
+                      <MapPinned className="w-4 h-4 text-emerald-600" />
+                      Dirección
+                    </label>
+                    <p className="text-base text-slate-900 mt-1">
+                      {detalleAsegurado.ipress.direccionIpress || "No registrado"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Tipo de IPRESS</label>
+                    <p className="text-base text-slate-900 mt-1">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+                        {detalleAsegurado.ipress.tipoIpress || "No especificado"}
+                      </span>
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Nivel de Atención</label>
+                    <p className="text-base text-slate-900 mt-1">
+                      <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
+                        {detalleAsegurado.ipress.nivelAtencion || "No especificado"}
+                      </span>
+                    </p>
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="text-sm font-medium text-slate-600 flex items-center gap-2">
+                      <Network className="w-4 h-4 text-emerald-600" />
+                      Red Asistencial
+                    </label>
+                    <p className="text-base text-slate-900 mt-1">
+                      {detalleAsegurado.ipress.nombreRed || "No registrado"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="sticky bottom-0 bg-slate-50 px-6 py-4 rounded-b-2xl border-t border-slate-200 flex justify-end">
+              <button
+                onClick={cerrarModal}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2.5 rounded-lg 
+                         font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2"
+              >
+                <X className="w-4 h-4" />
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Modal de Formulario (Crear/Editar) */}
+      {showFormModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 rounded-t-2xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  {modoFormulario === 'crear' ? (
+                    <Plus className="w-6 h-6 text-white" />
+                  ) : (
+                    <Edit className="w-6 h-6 text-white" />
+                  )}
+                </div>
+                <h2 className="text-2xl font-bold text-white">
+                  {modoFormulario === 'crear' ? 'Agregar Nuevo Asegurado' : 'Editar Asegurado'}
+                </h2>
+              </div>
+              <button
+                onClick={cerrarFormulario}
+                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+            
+            <form onSubmit={guardarAsegurado} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <IdCard className="w-4 h-4 inline mr-1" />
+                    DNI <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="docPaciente"
+                    value={formularioData.docPaciente}
+                    onChange={handleInputChange}
+                    required
+                    maxLength="8"
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                    placeholder="12345678"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <User className="w-4 h-4 inline mr-1" />
+                    Nombre Completo <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="paciente"
+                    value={formularioData.paciente}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                    placeholder="Juan Pérez García"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Calendar className="w-4 h-4 inline mr-1" />
+                    Fecha de Nacimiento <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="fecnacimpaciente"
+                    value={formularioData.fecnacimpaciente}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    Sexo <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    name="sexo"
+                    value={formularioData.sexo}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                  >
+                    <option value="M">Masculino</option>
+                    <option value="F">Femenino</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <User className="w-4 h-4 inline mr-1" />
+                    Tipo de Paciente <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    name="tipoPaciente"
+                    value={formularioData.tipoPaciente}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                  >
+                    <option value="TITULAR">Titular</option>
+                    <option value="DEPENDIENTE">Dependiente</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Phone className="w-4 h-4 inline mr-1" />
+                    Teléfono <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="telFijo"
+                    value={formularioData.telFijo}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                    placeholder="999888777"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Shield className="w-4 h-4 inline mr-1" />
+                    Tipo de Seguro <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    name="tipoSeguro"
+                    value={formularioData.tipoSeguro}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                  >
+                    <option value="TITULAR">Titular</option>
+                    <option value="CONYUGE">Cónyuge</option>
+                    <option value="HIJO">Hijo</option>
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Building2 className="w-4 h-4 inline mr-1" />
+                    IPRESS <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    name="casAdscripcion"
+                    value={formularioData.casAdscripcion}
+                    onChange={handleInputChange}
+                    required
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                  >
+                    <option value="">Selecciona una IPRESS</option>
+                    {todasIpress.map((i) => (
+                      <option key={i.codIpress} value={i.codIpress}>
+                        {i.descIpress} - Cód: {i.codIpress}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Calendar className="w-4 h-4 inline mr-1" />
+                    Periodo <span className="text-red-600">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="periodo"
+                    value={formularioData.periodo}
+                    onChange={handleInputChange}
+                    required
+                    maxLength="4"
+                    pattern="[0-9]{4}"
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                    placeholder="2025"
+                  />
+                </div>
+              </div>
+              
+              <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={cerrarFormulario}
+                  className="px-6 py-2.5 border-2 border-slate-300 text-slate-700 rounded-lg 
+                           font-medium transition-all hover:bg-slate-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={loadingForm}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg 
+                           font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2
+                           disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loadingForm ? (
+                    <>
+                      <Loader className="w-5 h-5 animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-5 h-5" />
+                      {modoFormulario === 'crear' ? 'Crear Asegurado' : 'Guardar Cambios'}
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+// Force reload Fri Nov  7 22:57:06 -05 2025
