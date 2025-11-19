@@ -1,12 +1,14 @@
-package com.styp.cenate.repository;
+package com.styp.cenate.repository.segu;
+
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+
 import com.styp.cenate.model.Rol;
-import java.util.List;
-import java.util.Optional;
 
 @Repository
 public interface RolRepository extends JpaRepository<Rol, Integer> {
@@ -38,4 +40,7 @@ public interface RolRepository extends JpaRepository<Rol, Integer> {
      * @return Lista de roles encontrados
      */
     List<Rol> findByDescRolInAndStatRol(List<String> descRol, String statRol);
+
+    List<Rol> findByActivoTrueOrderByNivelJerarquiaAsc();
+
 }

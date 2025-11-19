@@ -10,10 +10,8 @@ import com.styp.cenate.model.Rol;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.DimOrigenPersonalRepository;
-import com.styp.cenate.repository.RolRepository;
+import com.styp.cenate.repository.segu.RolRepository;
 import com.styp.cenate.service.mbac.PermisosService;
-import com.styp.cenate.service.personal.DimOrigenPersonalService;
-
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +19,6 @@ import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.*;

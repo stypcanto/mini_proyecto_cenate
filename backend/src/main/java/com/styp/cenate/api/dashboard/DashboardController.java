@@ -7,7 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.styp.cenate.repository.AuditLogRepository;
-import com.styp.cenate.repository.RolRepository;
+import com.styp.cenate.repository.segu.RolRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.mbac.PermisoModularRepository;
