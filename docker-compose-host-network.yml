@@ -1,0 +1,58 @@
+# ========================================================================
+# ⚙️ DOCKER COMPOSE - CENATE PLATFORM (HOST NETWORK MODE)
+# Usa la red del host para poder acceder a PostgreSQL en 10.0.89.13
+# ========================================================================
+
+services:
+  # ------------------------------------------------------------
+  # 🧩 BACKEND - SPRING BOOT (Java 17 / Gradle Build)
+  # ------------------------------------------------------------
+  backend:
+    container_name: cenate-backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    environment:
+      # 🗄️ Base de datos
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://10.0.89.13:5432/maestro_cenate}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-Essalud2025}
+      SPRING_JPA_HIBERNATE_DDL_AUTO: none
+      SPRING_JPA_SHOW_SQL: "true"
+
+      # 🔐 JWT
+      JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+      JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
+
+      # 🌍 Zona horaria
+      TZ: America/Lima
+    # ⚠️ CAMBIO CRÍTICO: Usar la red del host
+    network_mode: host
+    volumes:
+      # 📸 Volumen para archivos subidos (EXTERNO - fuera del proyecto Docker)
+      - /var/cenate-uploads:/app/uploads
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 2.5G
+
+
+  # ------------------------------------------------------------
+  # 💻 FRONTEND - REACT + NGINX
+  # ------------------------------------------------------------
+  frontend:
+    container_name: cenate-frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NODE_ENV: production
+    network_mode: host
+    environment:
+      - TZ=America/Lima
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
