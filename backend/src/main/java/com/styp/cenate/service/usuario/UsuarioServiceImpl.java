@@ -111,7 +111,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 			personalCnt.setApePaterPers(request.getApellido_paterno());
 			personalCnt.setApeMaterPers(request.getApellido_materno());
 			personalCnt.setNumDocPers(request.getNumero_documento());
-			
+
 			// 🔒 Validar y normalizar género (debe ser 1 carácter: M, F, u otro)
 			String genero = request.getGenero();
 			if (genero != null && !genero.isBlank()) {
@@ -131,11 +131,11 @@ public class UsuarioServiceImpl implements UsuarioService {
 				personalCnt.setGenPers(null);
 				log.warn("⚠️ Género no proporcionado, se establecerá como NULL");
 			}
-			
+
 			personalCnt.setEmailPers(request.getCorreo_personal());
 			personalCnt.setEmailCorpPers(request.getCorreo_corporativo());
 			personalCnt.setMovilPers(request.getTelefono());
-			
+
 			// 🔒 Asegurar que stat_pers sea exactamente 1 carácter
 			personalCnt.setStatPers("A"); // Activo por defecto (1 carácter)
 			personalCnt.setUsuario(usuario); // Asociar con el usuario
@@ -158,8 +158,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 			if (request.getId_origen() != null || request.getId_origen() != 0) {
 				repositorioOrigenPersonal.findById(request.getId_origen()).ifPresentOrElse(
-						personalCnt::setOrigenPersonal, () -> log.warn("No existe origen {}:  ", request.getId_origen())
-				);
+						personalCnt::setOrigenPersonal,
+						() -> log.warn("No existe origen {}:  ", request.getId_origen()));
 
 			}
 
@@ -218,15 +218,26 @@ public class UsuarioServiceImpl implements UsuarioService {
 					personalCnt.setPerPers(periodoIngreso);
 					log.info("✅ Periodo de ingreso asignado: {}", periodoIngreso);
 				} else {
-					log.warn("⚠️ Periodo de ingreso con formato inválido: {}. Debe ser YYYYMM (6 dígitos). Se usará el periodo actual.", periodoIngreso);
+					log.warn(
+							"⚠️ Periodo de ingreso con formato inválido: {}. Debe ser YYYYMM (6 dígitos). Se usará el periodo actual.",
+							periodoIngreso);
 					// No cambiar el periodo, se mantiene el asignado anteriormente (periodoActual)
 				}
 			}
 
-			// 🆕 Asignar colegiatura
+			// Asignar colegiatura
 			if (request.getColegiatura() != null && !request.getColegiatura().isBlank()) {
 				personalCnt.setColegPers(request.getColegiatura());
-				log.info("✅ Colegiatura asignada: {}", request.getColegiatura());
+				log.info("Colegiatura asignada: {}", request.getColegiatura());
+			}
+
+			if (request.getId_especialidad() != null) {
+
+				dimServicioEssiRepository.findById(request.getId_especialidad())
+				.ifPresent(servicio -> {
+					personalCnt.setServicioEssi(servicio);
+				});
+				
 			}
 
 			personalCntRepository.save(personalCnt);
@@ -247,11 +258,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 				// Crear el nuevo registro de profesión
 				com.styp.cenate.model.PersonalProf personalProf = com.styp.cenate.model.PersonalProf.builder()
-						.id(profId)
-						.personal(personalCnt)
-						.profesion(profesion)
-						.estado("A")
-						.build();
+						.id(profId).personal(personalCnt).profesion(profesion).estado("A").build();
 
 				// Asignar desc_prof_otro si existe
 				if (request.getDesc_prof_otro() != null && !request.getDesc_prof_otro().isBlank()) {
@@ -264,16 +271,18 @@ public class UsuarioServiceImpl implements UsuarioService {
 				// Actualizar especialidad en dim_personal_prof usando dim_servicio_essi
 				if (request.getId_especialidad() != null) {
 					log.info("🩺 Asignando especialidad para personal ID: {}", personalCnt.getIdPers());
-					
+
 					// Buscar el servicio ESSI (especialidad) por ID
 					com.styp.cenate.model.DimServicioEssi servicioEssi = dimServicioEssiRepository
 							.findById(request.getId_especialidad()).orElse(null);
 					if (servicioEssi != null) {
 						// Asignar el servicio ESSI al registro de PersonalProf
 						personalProf.setServicioEssi(servicioEssi);
-						log.info("✅ Especialidad asignada: {} (ID: {})", servicioEssi.getDescServicio(), servicioEssi.getIdServicio());
+						log.info("✅ Especialidad asignada: {} (ID: {})", servicioEssi.getDescServicio(),
+								servicioEssi.getIdServicio());
 					} else {
-						log.warn("⚠️ Especialidad/Servicio ESSI no encontrado con ID: {}", request.getId_especialidad());
+						log.warn("⚠️ Especialidad/Servicio ESSI no encontrado con ID: {}",
+								request.getId_especialidad());
 						personalProf.setServicioEssi(null);
 					}
 				}
@@ -292,25 +301,23 @@ public class UsuarioServiceImpl implements UsuarioService {
 			// 🆕 CREAR TIPO DE PROFESIONAL (dim_personal_tipo)
 			if (request.getId_tip_pers() != null && personalCnt.getIdPers() != null) {
 				log.info("👔 Asignando tipo de profesional para personal ID: {}", personalCnt.getIdPers());
-				
+
 				// Buscar el tipo de profesional
 				com.styp.cenate.model.DimTipoPersonal tipoPersonal = dimTipoPersonalRepository
 						.findById(request.getId_tip_pers()).orElse(null);
-				
+
 				if (tipoPersonal != null) {
 					// Crear el ID compuesto
 					com.styp.cenate.model.id.PersonalTipoId tipoId = new com.styp.cenate.model.id.PersonalTipoId(
 							personalCnt.getIdPers(), request.getId_tip_pers());
-					
+
 					// Crear el nuevo registro de tipo de profesional
 					com.styp.cenate.model.PersonalTipo personalTipo = com.styp.cenate.model.PersonalTipo.builder()
-							.id(tipoId)
-							.personal(personalCnt)
-							.tipoPersonal(tipoPersonal)
-							.build();
-					
+							.id(tipoId).personal(personalCnt).tipoPersonal(tipoPersonal).build();
+
 					personalTipoRepository.save(personalTipo);
-					log.info("✅ Tipo de profesional asignado: {} (ID: {})", tipoPersonal.getDescTipPers(), tipoPersonal.getIdTipPers());
+					log.info("✅ Tipo de profesional asignado: {} (ID: {})", tipoPersonal.getDescTipPers(),
+							tipoPersonal.getIdTipPers());
 				} else {
 					log.warn("⚠️ Tipo de profesional no encontrado con ID: {}", request.getId_tip_pers());
 				}
@@ -339,17 +346,17 @@ public class UsuarioServiceImpl implements UsuarioService {
 	public List<UsuarioResponse> getAllPersonal() {
 		log.info("📋 Obteniendo TODO el personal de CENATE (con y sin usuario)");
 
-		// 📊 Obtener TODOS los registros de personal con relaciones cargadas (optimizado)
+		// 📊 Obtener TODOS los registros de personal con relaciones cargadas
+		// (optimizado)
 		// Esto evita queries N+1 al cargar todas las relaciones en una sola query
 		List<PersonalCnt> todoElPersonal = personalCntRepository.findAllWithRelations();
 		log.info("📄 Se encontraron {} registros de personal en total", todoElPersonal.size());
 
-		// 🚀 OPTIMIZACIÓN: Obtener IDs de usuarios con usuario para cargar permisos en batch
+		// 🚀 OPTIMIZACIÓN: Obtener IDs de usuarios con usuario para cargar permisos en
+		// batch
 		List<Long> userIdsConUsuario = todoElPersonal.stream()
 				.filter(p -> p.getUsuario() != null && p.getUsuario().getIdUser() != null)
-				.map(p -> p.getUsuario().getIdUser())
-				.distinct()
-				.collect(Collectors.toList());
+				.map(p -> p.getUsuario().getIdUser()).distinct().collect(Collectors.toList());
 
 		// 🚀 Cargar todos los permisos de una vez (en lugar de una query por usuario)
 		Map<Long, Set<String>> permisosMap = new HashMap<>();
@@ -358,8 +365,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 			for (Long userId : userIdsConUsuario) {
 				try {
 					List<PermisoUsuarioResponseDTO> permisos = permisosService.obtenerPermisosPorUsuario(userId);
-					Set<String> rutas = permisos.stream()
-							.map(PermisoUsuarioResponseDTO::getRutaPagina)
+					Set<String> rutas = permisos.stream().map(PermisoUsuarioResponseDTO::getRutaPagina)
 							.collect(Collectors.toSet());
 					permisosMap.put(userId, rutas);
 				} catch (Exception e) {
@@ -371,70 +377,71 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		// Convertir a response usando el map de permisos
 		final Map<Long, Set<String>> permisosFinal = permisosMap;
-		return todoElPersonal.stream()
-				.map(p -> convertPersonalCntToResponse(p, permisosFinal))
+		return todoElPersonal.stream().map(p -> convertPersonalCntToResponse(p, permisosFinal))
 				.collect(Collectors.toList());
 	}
 
 	@Override
 	@Transactional(readOnly = true)
 	public Map<String, Object> getAllPersonal(int page, int size, String sortBy, String direction) {
-		log.info("📋 Obteniendo personal de CENATE con paginación - Página: {}, Tamaño: {}, Orden: {} {}", 
-				page, size, sortBy, direction);
+		log.info("📋 Obteniendo personal de CENATE con paginación - Página: {}, Tamaño: {}, Orden: {} {}", page, size,
+				sortBy, direction);
 
 		// Validar parámetros
-		if (page < 0) page = 0;
-		if (size < 1) size = 7; // Default: 7 usuarios por página
-		if (size > 100) size = 100; // Límite máximo
+		if (page < 0)
+			page = 0;
+		if (size < 1)
+			size = 7; // Default: 7 usuarios por página
+		if (size > 100)
+			size = 100; // Límite máximo
 
 		// Crear Pageable con ordenamiento
-		org.springframework.data.domain.Sort.Direction sortDirection = 
-				"desc".equalsIgnoreCase(direction) 
-					? org.springframework.data.domain.Sort.Direction.DESC 
-					: org.springframework.data.domain.Sort.Direction.ASC;
-		
+		org.springframework.data.domain.Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction)
+				? org.springframework.data.domain.Sort.Direction.DESC
+				: org.springframework.data.domain.Sort.Direction.ASC;
+
 		// Mapear campo de ordenamiento
 		String sortField = mapSortField(sortBy);
-		
-		// Si el campo de ordenamiento es de una relación, usar un campo seguro por defecto
+
+		// Si el campo de ordenamiento es de una relación, usar un campo seguro por
+		// defecto
 		// y ordenar en memoria si es necesario (para evitar problemas con @EntityGraph)
 		org.springframework.data.domain.Sort sort;
 		try {
 			sort = org.springframework.data.domain.Sort.by(sortDirection, sortField);
 		} catch (Exception e) {
 			log.warn("⚠️ Error al crear sort con campo '{}', usando idPers por defecto: {}", sortField, e.getMessage());
-			sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC, "idPers");
+			sort = org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.ASC,
+					"idPers");
 		}
-		
-		org.springframework.data.domain.Pageable pageable = 
-				org.springframework.data.domain.PageRequest.of(page, size, sort);
+
+		org.springframework.data.domain.Pageable pageable = org.springframework.data.domain.PageRequest.of(page, size,
+				sort);
 
 		// 📊 Obtener página de personal con relaciones cargadas (optimizado)
-		org.springframework.data.domain.Page<PersonalCnt> personalPage = 
-				personalCntRepository.findAllWithRelations(pageable);
-		
-		log.info("📄 Página {}/{} - {} registros de {} total", 
-				page + 1, personalPage.getTotalPages(), 
-				personalPage.getNumberOfElements(), 
-				personalPage.getTotalElements());
+		org.springframework.data.domain.Page<PersonalCnt> personalPage = personalCntRepository
+				.findAllWithRelations(pageable);
 
-		// 🚀 OPTIMIZACIÓN: Obtener IDs de usuarios con usuario para cargar permisos en batch
+		log.info("📄 Página {}/{} - {} registros de {} total", page + 1, personalPage.getTotalPages(),
+				personalPage.getNumberOfElements(), personalPage.getTotalElements());
+
+		// 🚀 OPTIMIZACIÓN: Obtener IDs de usuarios con usuario para cargar permisos en
+		// batch
 		List<PersonalCnt> personalList = personalPage.getContent();
-		
-		// 🚀 VALIDACIÓN: Limitar explícitamente a 'size' usuarios para garantizar paginación correcta
+
+		// 🚀 VALIDACIÓN: Limitar explícitamente a 'size' usuarios para garantizar
+		// paginación correcta
 		if (personalList.size() > size) {
-			log.warn("⚠️ El servidor devolvió {} usuarios pero se solicitó {}. Limitando a {}", 
-					personalList.size(), size, size);
+			log.warn("⚠️ El servidor devolvió {} usuarios pero se solicitó {}. Limitando a {}", personalList.size(),
+					size, size);
 			personalList = personalList.subList(0, Math.min(size, personalList.size()));
 		}
-		
+
 		log.info("📊 Usuarios a procesar: {} (solicitados: {})", personalList.size(), size);
-		
+
 		List<Long> userIdsConUsuario = personalList.stream()
 				.filter(p -> p.getUsuario() != null && p.getUsuario().getIdUser() != null)
-				.map(p -> p.getUsuario().getIdUser())
-				.distinct()
-				.collect(Collectors.toList());
+				.map(p -> p.getUsuario().getIdUser()).distinct().collect(Collectors.toList());
 
 		// 🚀 OPTIMIZACIÓN CRÍTICA: Cargar TODOS los permisos en UNA SOLA QUERY
 		Map<Long, Set<String>> permisosMap = new HashMap<>();
@@ -442,18 +449,18 @@ public class UsuarioServiceImpl implements UsuarioService {
 			log.info("🚀 Cargando permisos en batch para {} usuarios (UNA SOLA QUERY)", userIdsConUsuario.size());
 			try {
 				// 🚀 UNA SOLA QUERY para todos los usuarios en lugar de N queries
-				Map<Long, List<PermisoUsuarioResponseDTO>> permisosPorUsuario = 
-						permisosService.obtenerPermisosPorUsuarios(userIdsConUsuario);
-				
+				Map<Long, List<PermisoUsuarioResponseDTO>> permisosPorUsuario = permisosService
+						.obtenerPermisosPorUsuarios(userIdsConUsuario);
+
 				// Convertir a Set<String> de rutas
 				for (Long userId : userIdsConUsuario) {
-					List<PermisoUsuarioResponseDTO> permisos = permisosPorUsuario.getOrDefault(userId, Collections.emptyList());
-					Set<String> rutas = permisos.stream()
-							.map(PermisoUsuarioResponseDTO::getRutaPagina)
+					List<PermisoUsuarioResponseDTO> permisos = permisosPorUsuario.getOrDefault(userId,
+							Collections.emptyList());
+					Set<String> rutas = permisos.stream().map(PermisoUsuarioResponseDTO::getRutaPagina)
 							.collect(Collectors.toSet());
 					permisosMap.put(userId, rutas);
 				}
-				
+
 				log.info("✅ Permisos cargados para {} usuarios en una sola query", permisosMap.size());
 			} catch (Exception e) {
 				log.error("❌ Error al cargar permisos en batch: {}", e.getMessage(), e);
@@ -466,17 +473,15 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		// Convertir a response usando el map de permisos
 		final Map<Long, Set<String>> permisosFinal = permisosMap;
-		List<UsuarioResponse> content = personalList.stream()
-				.map(p -> convertPersonalCntToResponse(p, permisosFinal))
+		List<UsuarioResponse> content = personalList.stream().map(p -> convertPersonalCntToResponse(p, permisosFinal))
 				.collect(Collectors.toList());
 
 		// 🚀 GARANTÍA FINAL: Limitar contenido a exactamente 'size' usuarios
 		if (content.size() > size) {
-			log.warn("⚠️ El contenido tiene {} usuarios pero se debe limitar a {}. Recortando.", 
-					content.size(), size);
+			log.warn("⚠️ El contenido tiene {} usuarios pero se debe limitar a {}. Recortando.", content.size(), size);
 			content = content.subList(0, Math.min(size, content.size()));
 		}
-		
+
 		log.info("✅ Respuesta final: {} usuarios (solicitados: {})", content.size(), size);
 
 		// Construir respuesta paginada
@@ -496,27 +501,23 @@ public class UsuarioServiceImpl implements UsuarioService {
 	}
 
 	/**
-	 * Mapea el campo de ordenamiento del frontend al campo de la entidad
-	 * Nota: Evitamos campos de relaciones (como usuario.nameUser) para evitar problemas con @EntityGraph
+	 * Mapea el campo de ordenamiento del frontend al campo de la entidad Nota:
+	 * Evitamos campos de relaciones (como usuario.nameUser) para evitar problemas
+	 * con @EntityGraph
 	 */
 	private String mapSortField(String sortBy) {
-		Map<String, String> fieldMap = Map.of(
-				"idPers", "idPers",
-				"id_pers", "idPers",
-				"nombreCompleto", "nomPers",
-				"nombre_completo", "nomPers",
-				"username", "idPers", // Usar idPers como fallback (el ordenamiento por username se hará en memoria si es necesario)
-				"estado", "statPers",
-				"estado_usuario", "statPers",
-				"numeroDocumento", "numDocPers",
-				"numero_documento", "numDocPers"
-		);
+		Map<String, String> fieldMap = Map.of("idPers", "idPers", "id_pers", "idPers", "nombreCompleto", "nomPers",
+				"nombre_completo", "nomPers", "username", "idPers", // Usar idPers como fallback (el ordenamiento por
+																	// username se hará en memoria si es necesario)
+				"estado", "statPers", "estado_usuario", "statPers", "numeroDocumento", "numDocPers", "numero_documento",
+				"numDocPers");
 		return fieldMap.getOrDefault(sortBy, "idPers");
 	}
 
 	/**
 	 * 🔄 Convierte un registro de PersonalCnt a UsuarioResponse Funciona tanto para
 	 * personal CON usuario como SIN usuario
+	 * 
 	 * @param permisosMap Map opcional de permisos por userId (para optimización)
 	 */
 	private UsuarioResponse convertPersonalCntToResponse(PersonalCnt personalCnt, Map<Long, Set<String>> permisosMap) {
@@ -791,12 +792,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 					personal.getIdPers(), request.getIdProfesion());
 
 			// Crear el nuevo registro de profesión
-			com.styp.cenate.model.PersonalProf personalProf = com.styp.cenate.model.PersonalProf.builder()
-					.id(profId)
-					.personal(personal)
-					.profesion(profesion)
-					.estado("A")
-					.build();
+			com.styp.cenate.model.PersonalProf personalProf = com.styp.cenate.model.PersonalProf.builder().id(profId)
+					.personal(personal).profesion(profesion).estado("A").build();
 
 			log.info("✅ Nueva profesión asignada: {}", profesion.getDescProf());
 
@@ -805,14 +802,15 @@ public class UsuarioServiceImpl implements UsuarioService {
 			// Actualizar especialidad en dim_personal_prof usando dim_servicio_essi
 			if (request.getIdEspecialidad() != null) {
 				log.info("🩺 Actualizando especialidad para personal ID: {}", personal.getIdPers());
-				
+
 				// Buscar el servicio ESSI (especialidad) por ID
 				com.styp.cenate.model.DimServicioEssi servicioEssi = dimServicioEssiRepository
 						.findById(request.getIdEspecialidad()).orElse(null);
 				if (servicioEssi != null) {
 					// Asignar el servicio ESSI al registro de PersonalProf
 					personalProf.setServicioEssi(servicioEssi);
-					log.info("✅ Especialidad actualizada: {} (ID: {})", servicioEssi.getDescServicio(), servicioEssi.getIdServicio());
+					log.info("✅ Especialidad actualizada: {} (ID: {})", servicioEssi.getDescServicio(),
+							servicioEssi.getIdServicio());
 				} else {
 					log.warn("⚠️ Especialidad/Servicio ESSI no encontrado con ID: {}", request.getIdEspecialidad());
 					personalProf.setServicioEssi(null);
@@ -892,30 +890,27 @@ public class UsuarioServiceImpl implements UsuarioService {
 		// 🔥 ACTUALIZAR TIPO DE PROFESIONAL (dim_personal_tipo)
 		if (request.getIdTipPers() != null && personal.getIdPers() != null) {
 			log.info("👔 Actualizando tipo de profesional para personal ID: {}", personal.getIdPers());
-			
+
 			// Primero, eliminar todos los tipos anteriores del personal
 			personalTipoRepository.deleteByPersonal_IdPers(personal.getIdPers());
 			log.info("🗑️ Tipos de profesional anteriores eliminados para el personal ID: {}", personal.getIdPers());
-			
+
 			// Buscar el tipo de profesional
 			com.styp.cenate.model.DimTipoPersonal tipoPersonal = dimTipoPersonalRepository
-					.findById(request.getIdTipPers())
-					.orElseThrow(() -> new IllegalArgumentException(
+					.findById(request.getIdTipPers()).orElseThrow(() -> new IllegalArgumentException(
 							"Tipo de profesional no encontrado con ID: " + request.getIdTipPers()));
-			
+
 			// Crear el ID compuesto para el nuevo registro
 			com.styp.cenate.model.id.PersonalTipoId tipoId = new com.styp.cenate.model.id.PersonalTipoId(
 					personal.getIdPers(), request.getIdTipPers());
-			
+
 			// Crear el nuevo registro de tipo de profesional
-			com.styp.cenate.model.PersonalTipo personalTipo = com.styp.cenate.model.PersonalTipo.builder()
-					.id(tipoId)
-					.personal(personal)
-					.tipoPersonal(tipoPersonal)
-					.build();
-			
+			com.styp.cenate.model.PersonalTipo personalTipo = com.styp.cenate.model.PersonalTipo.builder().id(tipoId)
+					.personal(personal).tipoPersonal(tipoPersonal).build();
+
 			personalTipoRepository.save(personalTipo);
-			log.info("✅ Tipo de profesional actualizado: {} (ID: {})", tipoPersonal.getDescTipPers(), tipoPersonal.getIdTipPers());
+			log.info("✅ Tipo de profesional actualizado: {} (ID: {})", tipoPersonal.getDescTipPers(),
+					tipoPersonal.getIdTipPers());
 		} else if (request.getIdTipPers() == null && personal.getIdPers() != null) {
 			// Si no se envía tipo de profesional, eliminar los existentes
 			personalTipoRepository.deleteByPersonal_IdPers(personal.getIdPers());
@@ -1219,7 +1214,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 	 * relación con dim_personal_cnt → INTERNO - Si existe relación con
 	 * dim_personal_externo → EXTERNO - Si no existe ninguna relación →
 	 * SIN_CLASIFICAR
-	 * @param permisosMap Map opcional de permisos por userId (null = cargar normalmente)
+	 * 
+	 * @param permisosMap Map opcional de permisos por userId (null = cargar
+	 *                    normalmente)
 	 */
 	private UsuarioResponse convertToResponse(Usuario usuario) {
 		return convertToResponse(usuario, null);
@@ -1388,25 +1385,27 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		if (personalCnt != null && personalCnt.getIdPers() != null) {
 			log.debug("🔍 Buscando datos profesionales para personal ID: {}", personalCnt.getIdPers());
-			
+
 			// 🚀 OPTIMIZACIÓN: Usar la relación ya cargada (evita query N+1)
-			// Las profesiones ya están cargadas mediante @EntityGraph en findAllWithRelations()
+			// Las profesiones ya están cargadas mediante @EntityGraph en
+			// findAllWithRelations()
 			Set<com.styp.cenate.model.PersonalProf> profesiones = personalCnt.getProfesiones();
-			
+
 			if (profesiones != null && !profesiones.isEmpty()) {
 				// Tomar el primer registro (profesión principal)
 				com.styp.cenate.model.PersonalProf profPrincipal = profesiones.iterator().next();
-				
+
 				if (profPrincipal.getProfesion() != null) {
 					idProfesion = profPrincipal.getProfesion().getIdProf();
 					nombreProfesion = profPrincipal.getProfesion().getDescProf();
 				}
-				
+
 				// La colegiatura está en PersonalCnt, no en PersonalProf
 				colegiatura = personalCnt.getColegPers();
 				rne = profPrincipal.getRneProf();
-				
-				// Buscar especialidad asociada al personal desde dim_personal_prof -> dim_servicio_essi
+
+				// Buscar especialidad asociada al personal desde dim_personal_prof ->
+				// dim_servicio_essi
 				if (profPrincipal.getServicioEssi() != null) {
 					com.styp.cenate.model.DimServicioEssi servicioEssi = profPrincipal.getServicioEssi();
 					idEspecialidad = servicioEssi.getIdServicio();
@@ -1415,12 +1414,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 				} else {
 					log.debug("ℹ️ No hay especialidad registrada para {}", usuario.getNameUser());
 				}
-				
-				log.debug("✅ Datos profesionales cargados para {}: Profesión={}, Especialidad={}, RNE={}", 
-					usuario.getNameUser(), nombreProfesion, nombreEspecialidad, rne);
+
+				log.debug("✅ Datos profesionales cargados para {}: Profesión={}, Especialidad={}, RNE={}",
+						usuario.getNameUser(), nombreProfesion, nombreEspecialidad, rne);
 			} else {
 				log.debug("ℹ️ No hay datos profesionales registrados para {}", usuario.getNameUser());
-				// Si no hay datos profesionales, intentar obtener la colegiatura de PersonalCnt directamente
+				// Si no hay datos profesionales, intentar obtener la colegiatura de PersonalCnt
+				// directamente
 				colegiatura = personalCnt.getColegPers();
 			}
 		}
@@ -1428,12 +1428,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 		// ============================================================
 		// 💼 MAPEO DE DATOS LABORALES ADICIONALES
 		// ============================================================
-		Long idRegimenLaboral = personalCnt != null && personalCnt.getRegimenLaboral() != null 
-			? personalCnt.getRegimenLaboral().getIdRegLab() : null;
+		Long idRegimenLaboral = personalCnt != null && personalCnt.getRegimenLaboral() != null
+				? personalCnt.getRegimenLaboral().getIdRegLab()
+				: null;
 		String nombreRegimen = regimenLaboral;
 
-		Long idArea = personalCnt != null && personalCnt.getArea() != null 
-			? personalCnt.getArea().getIdArea() : null;
+		Long idArea = personalCnt != null && personalCnt.getArea() != null ? personalCnt.getArea().getIdArea() : null;
 		String nombreArea = areaTrabajo;
 
 		String codigoPlanilla = personalCnt != null ? personalCnt.getCodPlanRem() : null;
@@ -1447,21 +1447,21 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		if (personalCnt != null && personalCnt.getIdPers() != null) {
 			log.debug("🔍 Buscando tipo de profesional para personal ID: {}", personalCnt.getIdPers());
-			
+
 			// 🚀 OPTIMIZACIÓN: Usar la relación ya cargada (evita query N+1)
-			// Los tipos profesionales ya están cargados mediante @EntityGraph en findAllWithRelations()
+			// Los tipos profesionales ya están cargados mediante @EntityGraph en
+			// findAllWithRelations()
 			Set<com.styp.cenate.model.PersonalTipo> tiposProfesionales = personalCnt.getTipos();
-			
+
 			if (tiposProfesionales != null && !tiposProfesionales.isEmpty()) {
 				// Tomar el primer tipo de profesional
 				com.styp.cenate.model.PersonalTipo tipoProfPrincipal = tiposProfesionales.iterator().next();
-				
+
 				if (tipoProfPrincipal.getTipoPersonal() != null) {
 					idTipoProfesional = tipoProfPrincipal.getTipoPersonal().getIdTipPers();
 					nombreTipoProfesional = tipoProfPrincipal.getTipoPersonal().getDescTipPers();
-					
-					log.debug("✅ Tipo profesional cargado para {}: {}", 
-						usuario.getNameUser(), nombreTipoProfesional);
+
+					log.debug("✅ Tipo profesional cargado para {}: {}", usuario.getNameUser(), nombreTipoProfesional);
 				}
 			} else {
 				log.debug("ℹ️ No hay tipo de profesional registrado para {}", usuario.getNameUser());
@@ -1485,41 +1485,26 @@ public class UsuarioServiceImpl implements UsuarioService {
 				.lastLoginAt(usuario.getLastLoginAt()).createAt(usuario.getCreateAt()).updateAt(usuario.getUpdateAt())
 				.roles(roles).permisos(permisos)
 				// Datos personales
-				.idPersonal(personalCnt != null ? personalCnt.getIdPers() : null)
-				.nombreCompleto(nombreCompleto).nombres(nombres).apellidoPaterno(apellidoPaterno)
-				.apellidoMaterno(apellidoMaterno).numeroDocumento(numeroDocumento).tipoDocumento(tipoDocumento)
-				.correoPersonal(correoPersonal).correoCorporativo(correoCorporativo)
-				.correoInstitucional(correoCorporativo)
-				.telefono(telefono)
+				.idPersonal(personalCnt != null ? personalCnt.getIdPers() : null).nombreCompleto(nombreCompleto)
+				.nombres(nombres).apellidoPaterno(apellidoPaterno).apellidoMaterno(apellidoMaterno)
+				.numeroDocumento(numeroDocumento).tipoDocumento(tipoDocumento).correoPersonal(correoPersonal)
+				.correoCorporativo(correoCorporativo).correoInstitucional(correoCorporativo).telefono(telefono)
 				.direccion(direccion).genero(genero).fechaNacimiento(fechaNacimiento).fotoUrl(fotoUrl)
 				// ✨ DATOS PROFESIONALES (NUEVOS)
-				.idProfesion(idProfesion)
-				.nombreProfesion(nombreProfesion)
-				.profesionPrincipal(nombreProfesion)
-				.colegiatura(colegiatura)
-				.idEspecialidad(idEspecialidad)
-				.nombreEspecialidad(nombreEspecialidad)
-				.rne(rne)
+				.idProfesion(idProfesion).nombreProfesion(nombreProfesion).profesionPrincipal(nombreProfesion)
+				.colegiatura(colegiatura).idEspecialidad(idEspecialidad).nombreEspecialidad(nombreEspecialidad).rne(rne)
 				// ✨ DATOS LABORALES ADICIONALES (NUEVOS)
-				.idRegimenLaboral(idRegimenLaboral)
-				.regimenLaboral(regimenLaboral)
-				.nombreRegimen(nombreRegimen)
-				.idArea(idArea)
-				.areaTrabajo(areaTrabajo)
-				.nombreArea(nombreArea)
-				.codigoPlanilla(codigoPlanilla)
+				.idRegimenLaboral(idRegimenLaboral).regimenLaboral(regimenLaboral).nombreRegimen(nombreRegimen)
+				.idArea(idArea).areaTrabajo(areaTrabajo).nombreArea(nombreArea).codigoPlanilla(codigoPlanilla)
 				.periodoIngreso(periodoIngreso)
 				// ✨ TIPO DE PROFESIONAL (NUEVO)
-				.idTipoProfesional(idTipoProfesional)
-				.nombreTipoProfesional(nombreTipoProfesional)
-				.descTipPers(nombreTipoProfesional)
-				.tipoProfesionalDesc(nombreTipoProfesional)
+				.idTipoProfesional(idTipoProfesional).nombreTipoProfesional(nombreTipoProfesional)
+				.descTipPers(nombreTipoProfesional).tipoProfesionalDesc(nombreTipoProfesional)
 				.id_tip_pers(idTipoProfesional) // 🔥 Campo adicional para compatibilidad con frontend
 				// IPRESS
 				.idIpress(idIpress).nombreIpress(ipressNombre).codigoIpress(ipressCodigo)
 				// 🎯 TIPO DE PERSONAL
-				.tipoPersonal(tipoPersonal)
-				.tipoPersonalDetalle(tipoPersonal)
+				.tipoPersonal(tipoPersonal).tipoPersonalDetalle(tipoPersonal)
 				.message("Usuario " + (esActivo ? "activo" : "inactivo")).build();
 	}
 
