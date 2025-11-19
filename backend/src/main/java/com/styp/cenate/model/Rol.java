@@ -5,6 +5,10 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.styp.cenate.model.Area;
+import com.styp.cenate.model.Permiso;
+import com.styp.cenate.model.Usuario;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -73,6 +77,12 @@ public class Rol {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+    
+    @Column(name = "activo")
+    private boolean activo;
+    
+    @Column(name = "nivel_jerarquia")
+    private Integer nivelJerarquia;
 
     // ==========================================================
     // 🧩 Métodos utilitarios
