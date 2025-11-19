@@ -6,20 +6,38 @@
 // ============================================================================
 package com.styp.cenate.model;
 
-import com.fasterxml.jackson.annotation.JsonManagedReference;
-import com.fasterxml.jackson.annotation.JsonBackReference;
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDateTime;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "dim_paginas_modulo")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
+
 public class PaginaModulo {
+	
 
     // ============================================================
     // 🔹 Identificadores y relaciones
@@ -55,6 +73,10 @@ public class PaginaModulo {
 
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
+   
+    @Column(name = "orden")
+    private Integer orden;
+    
 
     // ============================================================
     // 🔗 Relación con Permisos Modulares
@@ -72,8 +94,14 @@ public class PaginaModulo {
         updatedAt = LocalDateTime.now();
     }
 
-    @PreUpdate
+    private static Boolean $default$activo() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@PreUpdate
     protected void onUpdate() {
         updatedAt = LocalDateTime.now();
     }
+    
 }

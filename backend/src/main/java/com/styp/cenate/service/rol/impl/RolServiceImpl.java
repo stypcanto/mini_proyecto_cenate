@@ -5,7 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import com.styp.cenate.model.Rol;
-import com.styp.cenate.repository.RolRepository;
+import com.styp.cenate.repository.segu.RolRepository;
 import com.styp.cenate.service.rol.RolService;
 
 import java.util.List;
