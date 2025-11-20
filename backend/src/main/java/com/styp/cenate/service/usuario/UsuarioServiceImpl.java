@@ -854,6 +854,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 		}
 		
 		
+		
+		
+		
+		
+		
+		
+		
 		if( request.getIdEspecialidad() != null) {
 			DimServicioEssi servicioEssi = dimServicioEssiRepository
 					.findById(request.getIdEspecialidad()).orElse(null);
@@ -863,6 +870,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 			} 
 			
 		}
+		
+		
+		
 		
 		
 		
