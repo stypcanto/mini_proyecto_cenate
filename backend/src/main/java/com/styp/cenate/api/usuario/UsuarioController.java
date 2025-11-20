@@ -36,7 +36,7 @@ public class UsuarioController {
 	// 🧩 NUEVO ENDPOINT: Listar roles del usuario por username
 	// ============================================================
 	@GetMapping("/roles/{username}")
-	public ResponseEntity<List<RolResponse>> getRolesPorUsuario(@PathVariable String username) {
+	public ResponseEntity<List<RolResponse>> getRolesPorUsuario(@PathVariable("username") String username) {
 		log.info("🎯 Consultando roles asociados al usuario '{}'", username);
 		List<RolResponse> roles = usuarioService.obtenerRolesPorUsername(username);
 		return ResponseEntity.ok(roles);

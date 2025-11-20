@@ -1,28 +1,38 @@
 package com.styp.cenate.service.usuario;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.styp.cenate.dto.UsuarioCreateRequest;
 import com.styp.cenate.dto.UsuarioResponse;
 import com.styp.cenate.dto.UsuarioUpdateRequest;
 import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
 import com.styp.cenate.dto.mbac.RolResponse;
+import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Rol;
 import com.styp.cenate.model.Usuario;
-import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.DimOrigenPersonalRepository;
+import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.segu.RolRepository;
 import com.styp.cenate.service.mbac.PermisosService;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.userdetails.UsernameNotFoundException;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * 💼 Servicio principal para la gestión de usuarios del sistema CENATE (MBAC
@@ -714,6 +724,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Transactional
 	public UsuarioResponse actualizarDatosPersonal(Long id, com.styp.cenate.dto.PersonalUpdateRequest request) {
 		log.info("✏️ Actualizando datos completos para usuario ID: {}", id);
+		log.info("Datos para actualizar : {}", request.toString());
+		
 
 		Usuario usuario = usuarioRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
@@ -772,6 +784,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 		if (request.getColegiatura() != null && !request.getColegiatura().isBlank()) {
 			personal.setColegPers(request.getColegiatura());
 		}
+		
+		
+		
+		
 
 		// 🔥 ACTUALIZAR O CREAR DATOS PROFESIONALES EN dim_personal_prof
 		if (request.getIdProfesion() != null) {
@@ -806,11 +822,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 				// Buscar el servicio ESSI (especialidad) por ID
 				com.styp.cenate.model.DimServicioEssi servicioEssi = dimServicioEssiRepository
 						.findById(request.getIdEspecialidad()).orElse(null);
+				log.info("servicioEssi :::   " + servicioEssi.getCodServicio() + "-- "+ servicioEssi.getDescServicio());
 				if (servicioEssi != null) {
 					// Asignar el servicio ESSI al registro de PersonalProf
 					personalProf.setServicioEssi(servicioEssi);
 					log.info("✅ Especialidad actualizada: {} (ID: {})", servicioEssi.getDescServicio(),
-							servicioEssi.getIdServicio());
+							servicioEssi.getIdServicio());	
+					
 				} else {
 					log.warn("⚠️ Especialidad/Servicio ESSI no encontrado con ID: {}", request.getIdEspecialidad());
 					personalProf.setServicioEssi(null);
@@ -820,6 +838,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 				personalProf.setServicioEssi(null);
 				log.info("🗑️ Especialidad limpiada para personal ID: {}", personal.getIdPers());
 			}
+			
 
 			// Actualizar RNE
 			if (request.getRne() != null && !request.getRne().trim().isEmpty()) {
@@ -833,6 +852,20 @@ public class UsuarioServiceImpl implements UsuarioService {
 			personalProfRepository.save(personalProf);
 			log.info("✅ dim_personal_prof actualizado correctamente");
 		}
+		
+		
+		if( request.getIdEspecialidad() != null) {
+			DimServicioEssi servicioEssi = dimServicioEssiRepository
+					.findById(request.getIdEspecialidad()).orElse(null);
+			
+			if (servicioEssi != null) {
+				personal.setServicioEssi(servicioEssi);	
+			} 
+			
+		}
+		
+		
+		
 
 		// 🔥 ACTUALIZAR DATOS LABORALES EN dim_personal_cnt
 		if (request.getIdRegimenLaboral() != null) {
