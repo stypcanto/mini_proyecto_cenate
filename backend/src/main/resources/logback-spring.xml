@@ -2,7 +2,7 @@
 <configuration>
     
     <!-- Propiedades -->
-    <property name="LOG_PATH" value="./logs"/>
+    <property name="LOG_PATH" value="/app/logs"/>
     <property name="LOG_FILE" value="cenate-backend"/>
     
     <!-- Patrón de log -->
