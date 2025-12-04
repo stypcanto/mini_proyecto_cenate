@@ -4,7 +4,7 @@
 
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen)
 ![Java](https://img.shields.io/badge/Java-17-orange)
-![React](https://img.shields.io/badge/React-18-blue)
+![React](https://img.shields.io/badge/React-19-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14-blue)
 ![License](https://img.shields.io/badge/License-Proprietary-red)
 
@@ -86,11 +86,14 @@
 - **Build:** Maven / Gradle
 
 ### Frontend
-- **Framework:** React 18
-- **Routing:** React Router v6
+- **Framework:** React 19.2.0
+- **Routing:** React Router 7.9.4
 - **State Management:** Context API
-- **Styling:** CSS3 (sin frameworks adicionales)
-- **Build Tool:** Vite / Create React App
+- **HTTP Client:** Axios 1.12.2
+- **Styling:** CSS3 + TailwindCSS 3.4.18
+- **Build Tool:** Create React App (react-scripts 5.0.1)
+- **Visualización:** Recharts 3.3.0
+- **PDF:** jsPDF 2.5.2
 
 ### Base de Datos
 - **Motor:** PostgreSQL 14+
@@ -146,14 +149,14 @@
 
 ### Requisitos Previos
 - Java 17+
-- Node.js 16+
+- Node.js 20+
 - PostgreSQL 14+
-- Maven o Gradle
+- Gradle 8.5+
 
 ### 1. Clonar el Repositorio
 ```bash
-git clone https://github.com/tu-org/cenate.git
-cd cenate
+git clone https://github.com/stypcanto/mini_proyecto_cenate.git
+cd mini_proyecto_cenate
 ```
 
 ### 2. Configurar Base de Datos
@@ -165,36 +168,54 @@ createdb maestro_cenate
 psql -U postgres -d maestro_cenate -f backend/sql/03_sistema_login_completo.sql
 ```
 
-### 3. Configurar Backend
+### 3. Ejecutar Backend (Terminal 1)
 ```bash
 cd backend
 
-# Copiar archivo de configuración
+# Copiar archivo de configuración (opcional)
 cp .env.example .env
-# Editar .env con tus credenciales
 
-# Compilar y ejecutar
-./mvnw spring-boot:run
+# Compilar y ejecutar con Gradle
+./gradlew bootRun
 ```
 
-### 4. Configurar Frontend
+El backend estará disponible en: **http://localhost:8080**
+
+### 4. Ejecutar Frontend (Terminal 2)
 ```bash
 cd frontend
 
-# Instalar dependencias
+# Instalar dependencias (solo la primera vez)
 npm install
 
-# Copiar componentes de ejemplo
-cp -r ejemplos/* src/
-
-# Ejecutar
-npm run dev
+# Ejecutar en modo desarrollo
+npm start
 ```
 
-### 5. Acceder al Sistema
-- **Frontend:** http://localhost:3000 o http://localhost:5173
-- **Backend:** http://localhost:8080
-- **API Docs:** http://localhost:8080/api/auth/health
+El frontend estará disponible en: **http://localhost:3000**
+
+### 5. Alternativa con Docker
+```bash
+# Levantar todos los servicios (backend + frontend + PostgreSQL)
+docker-compose up -d
+
+# Para Mac M1/M2
+docker-compose -f docker-compose-mac-fixed.yml up -d
+
+# Ver logs
+docker-compose logs -f backend
+docker-compose logs -f frontend
+```
+
+### 6. URLs de Acceso
+
+| Servicio | URL |
+|----------|-----|
+| Frontend (Dev) | http://localhost:3000 |
+| Backend API | http://localhost:8080 |
+| Swagger UI | http://localhost:8080/swagger-ui.html |
+| API Docs | http://localhost:8080/api-docs |
+| Health Check | http://localhost:8080/api/auth/health |
 
 ---
 
@@ -355,11 +376,11 @@ Resultado esperado:
 ### Desarrollo
 
 ```bash
-# Backend
-cd backend && ./mvnw spring-boot:run
+# Terminal 1 - Backend
+cd backend && ./gradlew bootRun
 
-# Frontend
-cd frontend && npm run dev
+# Terminal 2 - Frontend
+cd frontend && npm start
 ```
 
 ### Producción
@@ -367,20 +388,27 @@ cd frontend && npm run dev
 #### Backend
 ```bash
 cd backend
-./mvnw clean package
-java -jar target/cenate-0.0.1-SNAPSHOT.jar
+./gradlew clean bootJar
+java -Xms512m -Xmx1536m -jar build/libs/cenate-0.0.1-SNAPSHOT.jar
 ```
 
 #### Frontend
 ```bash
 cd frontend
-npm run build
-# Servir dist/ con nginx o servidor web
+npm run build:production
+# Servir build/ con nginx o servidor web
 ```
 
-### Docker (Próximamente)
+### Docker
 ```bash
+# Construir y ejecutar todos los servicios
 docker-compose up -d
+
+# Verificar estado
+docker-compose ps
+
+# Ver logs en tiempo real
+docker-compose logs -f
 ```
 
 ---
@@ -450,10 +478,11 @@ docker-compose up -d
 **Backend no inicia:**
 ```bash
 # Verificar PostgreSQL
-sudo systemctl status postgresql
+sudo systemctl status postgresql  # Linux
+brew services list                # macOS
 
-# Ver logs
-./mvnw spring-boot:run
+# Ver logs detallados
+cd backend && ./gradlew bootRun --info
 ```
 
 **Frontend no conecta:**
@@ -470,9 +499,9 @@ WHERE name_user = 'superadmin';
 
 ### Contacto
 
-- **Email:**  cenate.analista@cenate.essalud.gob.pe
-- **Issues:** [GitHub Issues](https://github.com/tu-org/cenate/issues)
-- **Wiki:** [Documentación Completa](https://github.com/tu-org/cenate/wiki)
+- **Email:** cenate.analista@cenate.essalud.gob.pe
+- **Issues:** [GitHub Issues](https://github.com/stypcanto/mini_proyecto_cenate/issues)
+- **Wiki:** [Documentación Completa](https://github.com/stypcanto/mini_proyecto_cenate/wiki)
 
 
 ### ️1️⃣ Login de usuario
