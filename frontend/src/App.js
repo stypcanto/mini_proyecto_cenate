@@ -64,6 +64,8 @@ import ModuloReportes from "./pages/roles/externo/ModuloReportes";
 
 // 🧩 Módulos - Citas
 import DashboardCitas from "./pages/roles/citas/DashboardCitas";
+import GestionPacientes from "./pages/roles/citas/GestionPacientes";
+import GestionAsegurado from "./pages/roles/citas/GestionAsegurado";
 
 // 🧩 Módulos - Lineamientos
 import LineamientosIpress from "./pages/roles/lineamientos/LineamientosIpress";
@@ -336,6 +338,26 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredPath="/citas/dashboard" requiredAction="ver">
               <DashboardCitas />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 👥 Gestión de Pacientes - Telemedicina */}
+        <Route
+          path="/citas/gestion-pacientes"
+          element={
+            <ProtectedRoute requiredPath="/citas/gestion-pacientes" requiredAction="ver">
+              <GestionPacientes />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 👥 Gestión del Asegurado - Vinculado a tabla asegurados */}
+        <Route
+          path="/citas/gestion-asegurado"
+          element={
+            <ProtectedRoute requiredPath="/citas/gestion-asegurado" requiredAction="ver">
+              <GestionAsegurado />
             </ProtectedRoute>
           }
         />

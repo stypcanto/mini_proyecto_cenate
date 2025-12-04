@@ -1,4 +1,4 @@
-# 🏥 CENATE - Sistema de Autenticación y Autorización
+# CENATE - Sistema de Telemedicina
 
 <div align="center">
 
@@ -6,76 +6,57 @@
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![React](https://img.shields.io/badge/React-19-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14-blue)
-![License](https://img.shields.io/badge/License-Proprietary-red)
 
-**Sistema completo de login con roles y permisos para el Centro Nacional de Telemedicina**
+**Sistema completo de gestión para el Centro Nacional de Telemedicina - EsSalud**
 
 [Instalación](#-instalación-rápida) •
-[Documentación](#-documentación) •
-[API](#-api-rest) •
-[Demo](#-demo)
+[API REST](#-api-rest-completa) •
+[Documentación](#-documentación)
 
 </div>
 
 ---
 
-## 📋 Tabla de Contenidos
+## Tabla de Contenidos
 
 - [Características](#-características)
-- [Tecnologías](#️-tecnologías)
+- [Tecnologías](#-tecnologías)
 - [Arquitectura](#-arquitectura)
 - [Instalación Rápida](#-instalación-rápida)
-- [Credenciales](#-credenciales-iniciales)
-- [Documentación](#-documentación)
-- [API REST](#-api-rest)
-- [Frontend](#-frontend)
+- [Credenciales Iniciales](#-credenciales-iniciales)
+- [API REST Completa](#-api-rest-completa)
 - [Testing](#-testing)
 - [Despliegue](#-despliegue)
-- [Roadmap](#-roadmap)
-- [Soporte](#-soporte)
 
 ---
 
-## ✨ Características
+## Características
 
-### Autenticación
-- ✅ Login con JWT (JSON Web Tokens)
-- ✅ Registro de usuarios
-- ✅ Cambio de contraseña
-- ✅ Bloqueo automático por intentos fallidos
-- ✅ Sesiones con expiración configurable
-
-### Autorización
-- ✅ 5 Roles pre-configurados (SUPERADMIN, ADMIN, ESPECIALISTA, RADIOLOGO, USUARIO)
-- ✅ 18 Permisos granulares
-- ✅ Control de acceso basado en roles (RBAC)
-- ✅ Permisos por endpoint
-- ✅ Protección de rutas en frontend
+### Autenticación y Seguridad
+- Login con JWT (JSON Web Tokens)
+- Sistema MBAC (Control de Acceso Basado en Módulos)
+- Bloqueo automático por intentos fallidos
+- Auditoría completa de acciones
 
 ### Gestión de Usuarios
-- ✅ CRUD completo de usuarios
-- ✅ Activar/Desactivar usuarios
-- ✅ Desbloquear usuarios
-- ✅ Asignación de roles
-- ✅ Panel de administración
+- CRUD completo de usuarios
+- 5 Roles pre-configurados (SUPERADMIN, ADMIN, ESPECIALISTA, RADIOLOGO, USUARIO)
+- Permisos granulares por módulo y página
+- Gestión de personal interno y externo
 
-### Seguridad
-- ✅ Contraseñas encriptadas con BCrypt
-- ✅ Validación de fortaleza de contraseña
-- ✅ CORS configurado
-- ✅ Rate limiting en login
-- ✅ Auditoría de acciones
+### Gestión de Pacientes
+- Integración con tabla de asegurados (5M+ registros)
+- Gestión de pacientes para telemedicina
+- Búsqueda por DNI, condición, gestora, IPRESS
 
 ### Frontend
-- ✅ Dashboard adaptativo según permisos
-- ✅ Diseño responsive (móvil, tablet, desktop)
-- ✅ Menú lateral dinámico
-- ✅ Animaciones y transiciones
-- ✅ Feedback visual inmediato
+- Dashboard adaptativo según permisos
+- Diseño responsive
+- Menú lateral dinámico
 
 ---
 
-## 🛠️ Tecnologías
+## Tecnologías
 
 ### Backend
 - **Framework:** Spring Boot 3.5.6
@@ -83,75 +64,49 @@
 - **Seguridad:** Spring Security + JWT
 - **Base de Datos:** PostgreSQL 14+
 - **ORM:** JPA/Hibernate
-- **Build:** Maven / Gradle
 
 ### Frontend
-- **Framework:** React 19.2.0
-- **Routing:** React Router 7.9.4
-- **State Management:** Context API
-- **HTTP Client:** Axios 1.12.2
-- **Styling:** CSS3 + TailwindCSS 3.4.18
-- **Build Tool:** Create React App (react-scripts 5.0.1)
-- **Visualización:** Recharts 3.3.0
-- **PDF:** jsPDF 2.5.2
-
-### Base de Datos
-- **Motor:** PostgreSQL 14+
-- **Schema:** maestro_cenate
-- **Tablas:** 5 principales
-- **Relaciones:** N:M optimizadas
+- **Framework:** React 19
+- **Routing:** React Router 7
+- **HTTP Client:** Axios
+- **Styling:** TailwindCSS
 
 ---
 
-## 🏗️ Arquitectura
+## Arquitectura
 
 ```
 ┌─────────────────────────────────────┐
-│         FRONTEND (React)             │
-│  ┌─────────┐  ┌─────────────────┐  │
-│  │  Login  │  │    Dashboard     │  │
-│  └─────────┘  └─────────────────┘  │
-│  ┌──────────────────────────────┐  │
-│  │   Protected Routes + Auth    │  │
-│  └──────────────────────────────┘  │
+│         FRONTEND (React)            │
+│  Puerto: 3000 / 3001                │
 └──────────────┬──────────────────────┘
                │ HTTP/REST + JWT
                ▼
 ┌──────────────────────────────────────┐
 │      BACKEND (Spring Boot)           │
-│  ┌────────────────────────────────┐ │
-│  │    Security Filter Chain       │ │
-│  │  (JWT Auth + Role Validation)  │ │
-│  └────────────────────────────────┘ │
-│  ┌────────────┐  ┌──────────────┐  │
-│  │Controllers │  │   Services   │  │
-│  └────────────┘  └──────────────┘  │
-│  ┌─────────────────────────────────┐
-│  │         Repositories             │
-│  └─────────────────────────────────┘
-└──────────────┬──────────────────────┘
+│  Puerto: 8080                        │
+│  ┌────────────────────────────────┐  │
+│  │    Security Filter Chain       │  │
+│  │  (JWT Auth + MBAC Validation)  │  │
+│  └────────────────────────────────┘  │
+└──────────────┬───────────────────────┘
                │ JDBC
                ▼
 ┌──────────────────────────────────────┐
-│       PostgreSQL Database             │
-│  ┌─────────┐  ┌─────────┐           │
-│  │ Usuarios│  │  Roles  │           │
-│  └─────────┘  └─────────┘           │
-│  ┌─────────────────────┐             │
-│  │      Permisos       │             │
-│  └─────────────────────┘             │
+│       PostgreSQL Database            │
+│  Servidor: 10.0.89.13:5432           │
+│  Base de datos: Datos_Cenate         │
 └──────────────────────────────────────┘
 ```
 
 ---
 
-## 🚀 Instalación Rápida
+## Instalación Rápida
 
 ### Requisitos Previos
 - Java 17+
 - Node.js 20+
 - PostgreSQL 14+
-- Gradle 8.5+
 
 ### 1. Clonar el Repositorio
 ```bash
@@ -159,222 +114,920 @@ git clone https://github.com/stypcanto/mini_proyecto_cenate.git
 cd mini_proyecto_cenate
 ```
 
-### 2. Configurar Base de Datos
-```bash
-# Crear base de datos
-createdb maestro_cenate
-
-# Ejecutar script SQL
-psql -U postgres -d maestro_cenate -f backend/sql/03_sistema_login_completo.sql
-```
-
-### 3. Ejecutar Backend (Terminal 1)
+### 2. Ejecutar Backend
 ```bash
 cd backend
-
-# Copiar archivo de configuración (opcional)
-cp .env.example .env
-
-# Compilar y ejecutar con Gradle
 ./gradlew bootRun
 ```
+Backend disponible en: **http://localhost:8080**
 
-El backend estará disponible en: **http://localhost:8080**
-
-### 4. Ejecutar Frontend (Terminal 2)
+### 3. Ejecutar Frontend
 ```bash
 cd frontend
-
-# Instalar dependencias (solo la primera vez)
 npm install
-
-# Ejecutar en modo desarrollo
 npm start
 ```
-
-El frontend estará disponible en: **http://localhost:3000**
-
-### 5. Alternativa con Docker
-```bash
-# Levantar todos los servicios (backend + frontend + PostgreSQL)
-docker-compose up -d
-
-# Para Mac M1/M2
-docker-compose -f docker-compose-mac-fixed.yml up -d
-
-# Ver logs
-docker-compose logs -f backend
-docker-compose logs -f frontend
-```
-
-### 6. URLs de Acceso
-
-| Servicio | URL |
-|----------|-----|
-| Frontend (Dev) | http://localhost:3000 |
-| Backend API | http://localhost:8080 |
-| Swagger UI | http://localhost:8080/swagger-ui.html |
-| API Docs | http://localhost:8080/api-docs |
-| Health Check | http://localhost:8080/api/auth/health |
+Frontend disponible en: **http://localhost:3000**
 
 ---
 
-## 🔑 Credenciales Iniciales
+## Credenciales Iniciales
 
 ```
-Username: superadmin
-Password: SuperAdmin2024!
+Username: 44914706
+Password: @Cenate2025
 ```
-
-**⚠️ IMPORTANTE:** Cambiar esta contraseña después del primer login.
 
 ---
 
-## 📚 Documentación
+## API REST Completa
 
-Toda la documentación está en el directorio raíz del proyecto:
+### Base URL
+```
+http://localhost:8080/api
+```
 
-- **[INSTALACION_COMPLETA.md](INSTALACION_COMPLETA.md)** - Guía de instalación paso a paso
-- **[RESUMEN_EJECUTIVO.md](RESUMEN_EJECUTIVO.md)** - Resumen del proyecto
-- **[backend/SISTEMA_LOGIN_GUIA_COMPLETA.md](backend/SISTEMA_LOGIN_GUIA_COMPLETA.md)** - Documentación técnica backend
-- **[frontend/ejemplos/README_FRONTEND.md](frontend/ejemplos/README_FRONTEND.md)** - Documentación técnica frontend
+### Headers Requeridos
+```
+Content-Type: application/json
+Authorization: Bearer {token}  // Para endpoints protegidos
+```
 
 ---
 
-## 📡 API REST
+## 1. AUTENTICACIÓN (`/api/auth`)
 
-### Endpoints Públicos
-
-#### Login
+### Login
 ```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-    "username": "superadmin",
-    "password": "SuperAdmin2024!"
-  }'
-```
+POST /api/auth/login
+Content-Type: application/json
 
-#### Health Check
-```bash
-curl http://localhost:8080/api/auth/health
-```
-
-### Endpoints Protegidos (requieren JWT)
-
-#### Obtener Usuario Actual
-```bash
-curl http://localhost:8080/api/usuarios/me \
-  -H "Authorization: Bearer {tu_token}"
-```
-
-#### Listar Usuarios (Admin)
-```bash
-curl http://localhost:8080/api/usuarios \
-  -H "Authorization: Bearer {tu_token}"
-```
-
-#### Cambiar Contraseña
-```bash
-curl -X POST http://localhost:8080/api/auth/change-password \
-  -H "Authorization: Bearer {tu_token}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "currentPassword": "SuperAdmin2024!",
-    "newPassword": "NewPassword2024!",
-    "confirmPassword": "NewPassword2024!"
-  }'
-```
-
-### Colección de Postman
-
-Importar `backend/CENATE_API_Collection.postman_collection.json` en Postman para probar todos los endpoints.
-
----
-
-## 🎨 Frontend
-
-### Componentes Principales
-
-- **LoginPanel** - Página de inicio de sesión
-- **Dashboard** - Panel principal con menú dinámico
-- **UsersAdmin** - Gestión de usuarios
-- **ChangePassword** - Cambio de contraseña
-- **ProtectedRoute** - HOC para proteger rutas
-
-### Uso de AuthContext
-
-```jsx
-import { useAuth } from './AuthContext';
-
-function MyComponent() {
-  const { user, hasPermission, logout } = useAuth();
-
-  if (hasPermission('GESTIONAR_USUARIOS')) {
-    return <AdminPanel />;
-  }
-
-  return <UserPanel />;
+{
+  "username": "44914706",
+  "password": "@Cenate2025"
 }
 ```
 
-### Proteger Rutas
-
-```jsx
-<Route 
-  path="/admin/usuarios" 
-  element={
-    <ProtectedRoute roles={['SUPERADMIN', 'ADMIN']}>
-      <UsersAdmin />
-    </ProtectedRoute>
-  } 
-/>
+**Respuesta:**
+```json
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "type": "Bearer",
+  "userId": 1,
+  "username": "44914706",
+  "roles": ["SUPERADMIN"],
+  "permisos": [],
+  "message": "Login exitoso"
+}
 ```
 
----
-
-## 🧪 Testing
-
-### Tests Automatizados (Backend)
-
+### Cambiar Contraseña
 ```bash
-cd backend
-chmod +x test_api.sh
-./test_api.sh
+PUT /api/auth/change-password
+Authorization: Bearer {token}
+
+{
+  "currentPassword": "contraseña_actual",
+  "newPassword": "nueva_contraseña",
+  "confirmPassword": "nueva_contraseña"
+}
 ```
 
-Resultado esperado:
-```
-🧪 Iniciando Tests del Sistema de Login
-✅ PASS - Backend está disponible
-✅ PASS - Login exitoso con SUPERADMIN
-...
-📊 RESUMEN: ✅ 15/15 tests exitosos (100%)
+### Obtener Usuario Actual
+```bash
+GET /api/auth/me
+Authorization: Bearer {token}
 ```
 
-### Tests Manuales
+### Completar Primer Acceso
+```bash
+POST /api/auth/completar-primer-acceso
+Authorization: Bearer {token}
 
-1. **Login Flow**
-   - Login exitoso
-   - Login con credenciales incorrectas
-   - Bloqueo después de 5 intentos
-
-2. **Gestión de Usuarios**
-   - Crear usuario
-   - Activar/Desactivar
-   - Eliminar (solo SUPERADMIN)
-
-3. **Permisos**
-   - Acceso según rol
-   - Protección de rutas
-   - Menú dinámico
+{
+  "email": "usuario@cenate.gob.pe",
+  "telefono": "999888777"
+}
+```
 
 ---
 
-## 🌐 Despliegue
+## 2. USUARIOS (`/api/usuarios`)
+
+### Listar Todos los Usuarios
+```bash
+GET /api/usuarios
+Authorization: Bearer {token}
+```
+
+### Obtener Usuario por ID
+```bash
+GET /api/usuarios/id/{id}
+Authorization: Bearer {token}
+```
+
+### Crear Usuario
+```bash
+POST /api/usuarios/crear
+Authorization: Bearer {token}
+
+{
+  "username": "nuevo_usuario",
+  "password": "password123",
+  "email": "usuario@cenate.gob.pe"
+}
+```
+
+### Crear Usuario con Roles (SUPERADMIN)
+```bash
+POST /api/usuarios/crear-con-roles
+Authorization: Bearer {token}
+
+{
+  "username": "nuevo_usuario",
+  "password": "password123",
+  "roles": ["ADMIN", "ESPECIALISTA"]
+}
+```
+
+### Actualizar Usuario
+```bash
+PUT /api/usuarios/id/{id}
+Authorization: Bearer {token}
+
+{
+  "email": "nuevo_email@cenate.gob.pe",
+  "telefono": "999888777"
+}
+```
+
+### Eliminar Usuario
+```bash
+DELETE /api/usuarios/id/{id}
+Authorization: Bearer {token}
+```
+
+### Activar/Desactivar Usuario
+```bash
+PUT /api/usuarios/id/{id}/activate
+PUT /api/usuarios/id/{id}/deactivate
+Authorization: Bearer {token}
+```
+
+### Desbloquear Usuario
+```bash
+PUT /api/usuarios/id/{id}/unlock
+Authorization: Bearer {token}
+```
+
+### Reset de Contraseña
+```bash
+PUT /api/usuarios/id/{id}/reset-password
+Authorization: Bearer {token}
+
+{
+  "newPassword": "nueva_contraseña"
+}
+```
+
+---
+
+## 3. GESTIÓN DE PACIENTES (`/api/gestion-pacientes`)
+
+> **NUEVO:** Sistema de gestión de pacientes vinculado a la tabla `asegurados` (5M+ registros)
+
+### Listar Gestiones
+```bash
+GET /api/gestion-pacientes
+Authorization: Bearer {token}
+```
+
+**Respuesta:**
+```json
+[
+  {
+    "idGestion": 1,
+    "pkAsegurado": "40133680-202304",
+    "numDoc": "40133680",
+    "apellidosNombres": "CAMARGO CHIPANA EDUARDO MIGUEL",
+    "sexo": "M",
+    "edad": 46,
+    "telefono": "991074841",
+    "tipoPaciente": "ASEGURADO ADSCRITO AL C.A.",
+    "tipoSeguro": "TITULAR",
+    "ipress": "CAP III SAN JUAN DE MIRAFLORES",
+    "condicion": "Pendiente",
+    "gestora": "ELLEN ZAMUDIO",
+    "observaciones": null,
+    "origen": "IPRESS",
+    "seleccionadoTelemedicina": false,
+    "fechaCreacion": "2025-12-04T12:19:38",
+    "fechaActualizacion": "2025-12-04T12:19:38"
+  }
+]
+```
+
+### Buscar Asegurado por DNI (para agregar a gestión)
+```bash
+GET /api/gestion-pacientes/asegurado/{dni}
+Authorization: Bearer {token}
+```
+
+**Ejemplo:**
+```bash
+GET /api/gestion-pacientes/asegurado/40133680
+```
+
+**Respuesta:** Devuelve datos del asegurado desde la tabla `asegurados` sin crear gestión.
+
+### Crear Gestión de Paciente
+```bash
+POST /api/gestion-pacientes
+Authorization: Bearer {token}
+
+{
+  "pkAsegurado": "40133680-202304",
+  "condicion": "Pendiente",
+  "gestora": "ELLEN ZAMUDIO",
+  "origen": "IPRESS",
+  "observaciones": "Paciente referido para telemedicina"
+}
+```
+
+### Actualizar Gestión
+```bash
+PUT /api/gestion-pacientes/{id}
+Authorization: Bearer {token}
+
+{
+  "condicion": "Citado",
+  "gestora": "MARIA LOPEZ",
+  "observaciones": "Cita programada para 15/12/2025"
+}
+```
+
+### Eliminar Gestión
+```bash
+DELETE /api/gestion-pacientes/{id}
+Authorization: Bearer {token}
+```
+
+### Buscar por Documento
+```bash
+GET /api/gestion-pacientes/documento/{numDoc}
+Authorization: Bearer {token}
+```
+
+### Buscar por Condición
+```bash
+GET /api/gestion-pacientes/condicion/{condicion}
+Authorization: Bearer {token}
+```
+
+**Condiciones válidas:** `Pendiente`, `Citado`, `Reprogramación Fallida`, `Atendido`, `No Contactado`
+
+### Buscar por Gestora
+```bash
+GET /api/gestion-pacientes/gestora/{gestora}
+Authorization: Bearer {token}
+```
+
+### Buscar por IPRESS
+```bash
+GET /api/gestion-pacientes/ipress/{codIpress}
+Authorization: Bearer {token}
+```
+
+### Listar Seleccionados para Telemedicina
+```bash
+GET /api/gestion-pacientes/telemedicina
+Authorization: Bearer {token}
+```
+
+### Seleccionar para Telemedicina
+```bash
+PUT /api/gestion-pacientes/{id}/telemedicina
+Authorization: Bearer {token}
+
+{
+  "seleccionado": true
+}
+```
+
+### Seleccionar Múltiples para Telemedicina
+```bash
+PUT /api/gestion-pacientes/telemedicina/multiple
+Authorization: Bearer {token}
+
+{
+  "ids": [1, 2, 3, 4, 5],
+  "seleccionado": true
+}
+```
+
+### Actualizar Condición
+```bash
+PUT /api/gestion-pacientes/{id}/condicion
+Authorization: Bearer {token}
+
+{
+  "condicion": "Citado",
+  "observaciones": "Cita confirmada por teléfono"
+}
+```
+
+---
+
+## 4. ASEGURADOS (`/api/asegurados`)
+
+### Listar Asegurados (Paginado)
+```bash
+GET /api/asegurados?page=0&size=20
+Authorization: Bearer {token}
+```
+
+### Buscar por DNI
+```bash
+GET /api/asegurados/doc/{docPaciente}
+Authorization: Bearer {token}
+```
+
+### Búsqueda Avanzada
+```bash
+GET /api/asegurados/buscar?nombre=GARCIA&page=0&size=20
+Authorization: Bearer {token}
+```
+
+### Detalles Completos
+```bash
+GET /api/asegurados/detalle/{pkAsegurado}
+Authorization: Bearer {token}
+```
+
+### Estadísticas Dashboard
+```bash
+GET /api/asegurados/dashboard/estadisticas
+Authorization: Bearer {token}
+```
+
+---
+
+## 5. PERSONAL (`/api/personal`)
+
+### Listar Todo el Personal
+```bash
+GET /api/personal
+Authorization: Bearer {token}
+```
+
+### Personal CENATE (CNT)
+```bash
+GET /api/personal/cnt
+Authorization: Bearer {token}
+```
+
+### Personal Externo
+```bash
+GET /api/personal/externo
+Authorization: Bearer {token}
+```
+
+### Buscar por Documento
+```bash
+GET /api/personal/buscar/{numeroDocumento}
+Authorization: Bearer {token}
+```
+
+### Crear Personal
+```bash
+POST /api/personal/crear
+Authorization: Bearer {token}
+
+{
+  "numDoc": "12345678",
+  "nombre": "Juan",
+  "apellidoPaterno": "Pérez",
+  "apellidoMaterno": "García",
+  "idTipoPersonal": 1,
+  "idIpress": 2
+}
+```
+
+---
+
+## 6. PERSONAL EXTERNO (`/api/personal-externo`)
+
+### Listar Personal Externo
+```bash
+GET /api/personal-externo
+Authorization: Bearer {token}
+```
+
+### Obtener por ID
+```bash
+GET /api/personal-externo/{id}
+Authorization: Bearer {token}
+```
+
+### Búsqueda por Término
+```bash
+GET /api/personal-externo/search?query=MARIA
+Authorization: Bearer {token}
+```
+
+### Por IPRESS
+```bash
+GET /api/personal-externo/ipress/{idIpress}
+Authorization: Bearer {token}
+```
+
+### Por Usuario
+```bash
+GET /api/personal-externo/usuario/{idUsuario}
+Authorization: Bearer {token}
+```
+
+---
+
+## 7. PERMISOS MBAC (`/api/permisos`)
+
+### Obtener Permisos de Usuario
+```bash
+GET /api/permisos/usuario/{userId}
+Authorization: Bearer {token}
+```
+
+### Módulos Accesibles
+```bash
+GET /api/permisos/usuario/{userId}/modulos
+Authorization: Bearer {token}
+```
+
+### Páginas por Módulo
+```bash
+GET /api/permisos/usuario/{userId}/modulo/{idModulo}/paginas
+Authorization: Bearer {token}
+```
+
+### Verificar Permiso Específico
+```bash
+POST /api/permisos/check
+Authorization: Bearer {token}
+
+{
+  "userId": 1,
+  "moduloId": 2,
+  "paginaId": 3,
+  "accion": "CREAR"
+}
+```
+
+### Crear Permiso (ADMIN)
+```bash
+POST /api/permisos
+Authorization: Bearer {token}
+
+{
+  "idUser": 5,
+  "idModulo": 2,
+  "idPagina": 3,
+  "canCreate": true,
+  "canRead": true,
+  "canUpdate": false,
+  "canDelete": false
+}
+```
+
+---
+
+## 8. ROLES (`/api/admin/roles`)
+
+### Listar Roles
+```bash
+GET /api/admin/roles
+Authorization: Bearer {token}
+```
+
+### Crear Rol
+```bash
+POST /api/admin/roles
+Authorization: Bearer {token}
+
+{
+  "nombre": "COORDINADOR",
+  "descripcion": "Coordinador de área"
+}
+```
+
+### Actualizar Rol
+```bash
+PUT /api/admin/roles/{id}
+Authorization: Bearer {token}
+```
+
+### Eliminar Rol
+```bash
+DELETE /api/admin/roles/{id}
+Authorization: Bearer {token}
+```
+
+---
+
+## 9. MÓDULOS Y PÁGINAS (`/api/mbac`)
+
+### Listar Módulos
+```bash
+GET /api/mbac/modulos
+Authorization: Bearer {token}
+```
+
+### Listar Páginas
+```bash
+GET /api/mbac/paginas
+Authorization: Bearer {token}
+```
+
+### Permisos Activos del Usuario
+```bash
+GET /api/mbac/permisos-activos/{idUser}
+Authorization: Bearer {token}
+```
+
+---
+
+## 10. MENÚ USUARIO (`/api/menu-usuario`)
+
+### Obtener Menú del Usuario
+```bash
+GET /api/menu-usuario/usuario/{idUser}
+Authorization: Bearer {token}
+```
+
+---
+
+## 11. IPRESS (`/api/ipress`)
+
+### IPRESS Públicas (Sin autenticación)
+```bash
+GET /api/ipress/publicas
+```
+
+### Listar Todas
+```bash
+GET /api/ipress
+Authorization: Bearer {token}
+```
+
+### Solo Activas
+```bash
+GET /api/ipress/activas
+Authorization: Bearer {token}
+```
+
+### Buscar por Nombre
+```bash
+GET /api/ipress/buscar?nombre=HOSPITAL
+Authorization: Bearer {token}
+```
+
+---
+
+## 12. CATÁLOGOS
+
+### Tipos de Documento
+```bash
+GET /api/tipos-documento
+GET /api/tipos-documento/activos
+Authorization: Bearer {token}
+```
+
+### Profesiones
+```bash
+GET /api/profesiones
+GET /api/profesiones/activas
+Authorization: Bearer {token}
+```
+
+### Especialidades
+```bash
+GET /api/especialidad
+Authorization: Bearer {token}
+```
+
+### Regímenes Laborales
+```bash
+GET /api/regimenes/publicos  # Sin autenticación
+GET /api/regimenes           # Con autenticación
+Authorization: Bearer {token}
+```
+
+### Niveles de Atención
+```bash
+GET /api/niveles-atencion
+Authorization: Bearer {token}
+```
+
+### Tipos de Procedimiento
+```bash
+GET /api/tipos-procedimiento
+Authorization: Bearer {token}
+```
+
+### Áreas Hospitalarias
+```bash
+GET /api/areas-hospitalarias
+Authorization: Bearer {token}
+```
+
+### Redes Asistenciales
+```bash
+GET /api/redes
+Authorization: Bearer {token}
+```
+
+---
+
+## 13. UBICACIÓN (`/api/ubicacion`)
+
+### Departamentos
+```bash
+GET /api/ubicacion/departamentos
+Authorization: Bearer {token}
+```
+
+### Provincias por Departamento
+```bash
+GET /api/ubicacion/provincias/{idDepartamento}
+Authorization: Bearer {token}
+```
+
+### Distritos por Provincia
+```bash
+GET /api/ubicacion/distritos/{idProvincia}
+Authorization: Bearer {token}
+```
+
+---
+
+## 14. CHATBOT (`/api/chatbot`)
+
+### Consultar Paciente
+```bash
+GET /api/chatbot/documento/{documento}
+```
+
+### Atenciones CENATE
+```bash
+GET /api/chatbot/atencioncenate
+GET /api/chatbot/atencioncenate/buscar?documento=12345678&servicio=CARDIOLOGIA
+```
+
+### Atenciones Globales
+```bash
+GET /api/chatbot/atencionglobal/{documento}
+GET /api/chatbot/atencionglobal/doc-nomservicio?documento=12345678&servicio=MEDICINA
+```
+
+---
+
+## 15. SOLICITUDES (`/api/solicitud`)
+
+### Crear Solicitud de Cita
+```bash
+POST /api/solicitud
+
+{
+  "docPaciente": "12345678",
+  "servicio": "CARDIOLOGIA",
+  "fechaSolicitada": "2025-12-15"
+}
+```
+
+### Obtener Solicitud
+```bash
+GET /api/solicitud/{id}
+```
+
+### Solicitudes por Paciente
+```bash
+GET /api/solicitud/paciente/{docPaciente}
+```
+
+### Actualizar Estado
+```bash
+PUT /api/solicitud/estado/{id}
+
+{
+  "estado": "CONFIRMADA"
+}
+```
+
+---
+
+## 16. DISPONIBILIDAD (`/api/disponibilidad`)
+
+### Por Servicio
+```bash
+GET /api/disponibilidad/por-servicio?servicio=CARDIOLOGIA
+```
+
+### Por ID de Servicio
+```bash
+GET /api/disponibilidad/por-id-servicio?idServicio=5
+```
+
+---
+
+## 17. AUDITORÍA (`/api/auditoria`)
+
+### Auditoría Modular (Paginada)
+```bash
+GET /api/auditoria/modulos?page=0&size=20
+Authorization: Bearer {token}
+```
+
+### Por Usuario
+```bash
+GET /api/auditoria/usuario/{userId}
+Authorization: Bearer {token}
+```
+
+### Por Rango de Fechas
+```bash
+GET /api/auditoria/rango?desde=2025-01-01&hasta=2025-12-31
+Authorization: Bearer {token}
+```
+
+### Resumen
+```bash
+GET /api/auditoria/resumen
+Authorization: Bearer {token}
+```
+
+### Últimos Eventos
+```bash
+GET /api/auditoria/ultimos?cantidad=10
+Authorization: Bearer {token}
+```
+
+---
+
+## 18. DASHBOARD (`/api/admin/dashboard`)
+
+### Estadísticas Completas
+```bash
+GET /api/admin/dashboard/stats
+Authorization: Bearer {token}
+```
+
+### Resumen Rápido
+```bash
+GET /api/admin/dashboard/resumen
+Authorization: Bearer {token}
+```
+
+---
+
+## 19. ÁREAS (`/api/admin/areas`)
+
+### Listar Áreas
+```bash
+GET /api/admin/areas
+Authorization: Bearer {token}
+```
+
+### CRUD de Áreas
+```bash
+POST /api/admin/areas
+PUT /api/admin/areas/{id}
+DELETE /api/admin/areas/{id}
+Authorization: Bearer {token}
+```
+
+---
+
+## 20. RECUPERACIÓN DE CONTRASEÑA (`/api/admin/recuperacion`)
+
+### Solicitar Recuperación
+```bash
+POST /api/admin/recuperacion/solicitar
+
+{
+  "username": "usuario",
+  "email": "usuario@cenate.gob.pe"
+}
+```
+
+### Listar Solicitudes (ADMIN)
+```bash
+GET /api/admin/recuperacion
+Authorization: Bearer {token}
+```
+
+### Actualizar Estado
+```bash
+PUT /api/admin/recuperacion/{id}/estado
+
+{
+  "estado": "APROBADA"
+}
+```
+
+---
+
+## 21. REGISTRO DE USUARIOS (`/api/auth`)
+
+### Solicitar Registro
+```bash
+POST /api/auth/solicitar-registro
+
+{
+  "numDoc": "12345678",
+  "nombre": "Juan",
+  "apellidos": "Pérez García",
+  "email": "juan.perez@cenate.gob.pe",
+  "telefono": "999888777"
+}
+```
+
+### Listar Solicitudes Pendientes (ADMIN)
+```bash
+GET /api/admin/solicitudes-registro/pendientes
+Authorization: Bearer {token}
+```
+
+### Aprobar Solicitud
+```bash
+PUT /api/admin/solicitudes-registro/{id}/aprobar
+Authorization: Bearer {token}
+```
+
+### Rechazar Solicitud
+```bash
+PUT /api/admin/solicitudes-registro/{id}/rechazar
+Authorization: Bearer {token}
+
+{
+  "motivo": "Documento no válido"
+}
+```
+
+---
+
+## 22. HEALTH CHECK
+
+### Backend Status
+```bash
+GET /api/health
+GET /api/test
+GET /api/permisos/health
+```
+
+---
+
+## Códigos de Respuesta HTTP
+
+| Código | Descripción |
+|--------|-------------|
+| 200 | OK - Operación exitosa |
+| 201 | Created - Recurso creado |
+| 204 | No Content - Sin contenido (DELETE exitoso) |
+| 400 | Bad Request - Datos inválidos |
+| 401 | Unauthorized - Token inválido o expirado |
+| 403 | Forbidden - Sin permisos |
+| 404 | Not Found - Recurso no encontrado |
+| 409 | Conflict - Conflicto (ej: duplicado) |
+| 500 | Internal Server Error |
+
+---
+
+## Testing
+
+### Verificar Backend
+```bash
+curl http://localhost:8080/api/health
+```
+
+### Test de Login
+```bash
+curl -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username": "44914706", "password": "@Cenate2025"}'
+```
+
+### Test de Endpoint Protegido
+```bash
+TOKEN="eyJhbGciOiJIUzI1NiJ9..."
+
+curl http://localhost:8080/api/usuarios \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+---
+
+## Despliegue
 
 ### Desarrollo
-
 ```bash
 # Terminal 1 - Backend
 cd backend && ./gradlew bootRun
@@ -384,306 +1037,53 @@ cd frontend && npm start
 ```
 
 ### Producción
-
-#### Backend
 ```bash
+# Backend
 cd backend
 ./gradlew clean bootJar
 java -Xms512m -Xmx1536m -jar build/libs/cenate-0.0.1-SNAPSHOT.jar
-```
 
-#### Frontend
-```bash
+# Frontend
 cd frontend
-npm run build:production
-# Servir build/ con nginx o servidor web
+npm run build
+# Servir build/ con nginx
 ```
 
 ### Docker
 ```bash
-# Construir y ejecutar todos los servicios
 docker-compose up -d
-
-# Verificar estado
-docker-compose ps
-
-# Ver logs en tiempo real
-docker-compose logs -f
 ```
 
 ---
 
-## 🗺️ Roadmap
-
-### Versión 1.1 (Próxima)
-- [ ] Recuperación de contraseña por email
-- [ ] Perfil de usuario editable
-- [ ] Refresh tokens
-- [ ] Paginación en lista de usuarios
-
-### Versión 1.2
-- [ ] Auditoría completa de acciones
-- [ ] 2FA (Two-Factor Authentication)
-- [ ] Dashboard con estadísticas
-- [ ] Notificaciones en tiempo real
-
-### Versión 2.0
-- [ ] Integración con Active Directory
-- [ ] Single Sign-On (SSO)
-- [ ] App móvil (React Native)
-- [ ] Analytics avanzado
-
----
-
-## 👥 Roles del Sistema
-
-| Rol | Usuarios | Permisos | Descripción |
-|-----|----------|----------|-------------|
-| **SUPERADMIN** | 1 | 18/18 | Control total del sistema |
-| **ADMIN** | Variable | 17/18 | Administrador general |
-| **ESPECIALISTA** | Variable | 4/18 | Médico especialista |
-| **RADIOLOGO** | Variable | 3/18 | Médico radiólogo |
-| **USUARIO** | Variable | 2/18 | Usuario básico |
-
----
-
-## 🛡️ Seguridad
-
-- ✅ JWT con expiración (24h por defecto)
-- ✅ Contraseñas BCrypt (cost factor 10)
-- ✅ Bloqueo automático (5 intentos / 30 min)
-- ✅ CORS configurado
-- ✅ HTTPS recomendado en producción
-- ✅ Validación de entrada
-- ✅ SQL Injection protegido (JPA)
-- ✅ XSS protegido (React)
-
----
-
-## 📊 Estadísticas del Proyecto
-
-- **Total de Archivos:** 40+
-- **Líneas de Código:** ~5,500
-- **Endpoints API:** 13
-- **Componentes React:** 8
-- **Páginas de Documentación:** 50+
-- **Tests Automatizados:** 15
-
----
-
-## 🐛 Soporte
+## Soporte
 
 ### Problemas Comunes
 
 **Backend no inicia:**
 ```bash
 # Verificar PostgreSQL
-sudo systemctl status postgresql  # Linux
-brew services list                # macOS
-
-# Ver logs detallados
-cd backend && ./gradlew bootRun --info
+sudo systemctl status postgresql
 ```
-
-**Frontend no conecta:**
-1. Verificar que backend está en http://localhost:8080
-2. Revisar CORS en SecurityConfig.java
-3. Ver consola del navegador (F12)
 
 **Usuario bloqueado:**
 ```sql
-UPDATE dim_usuarios 
-SET failed_attempts = 0, locked_until = NULL 
-WHERE name_user = 'superadmin';
+UPDATE dim_usuarios
+SET failed_attempts = 0, locked_until = NULL
+WHERE name_user = 'usuario';
 ```
 
-### Contacto
-
-- **Email:** cenate.analista@cenate.essalud.gob.pe
-- **Issues:** [GitHub Issues](https://github.com/stypcanto/mini_proyecto_cenate/issues)
-- **Wiki:** [Documentación Completa](https://github.com/stypcanto/mini_proyecto_cenate/wiki)
-
-
-### ️1️⃣ Login de usuario
-
-Este endpoint genera un token JWT válido para autenticación.
-
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username": "scantor", "password": "admin123"}'
-
-```
-
-Respuesta esperada:
-```json
-{
-  "token": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzY2FudG9yIiwiaWF0IjoxNzU5OTg1Mjg1LCJleHAiOjE3NjAwNzE2ODV9.cHFuqyKtLd3ygYYeTmmXgdD1GyORbeAI6E5uJ170_sA",
-  "type": "Bearer",
-  "userId": 1,
-  "username": "scantor",
-  "roles": ["SUPERADMIN"],
-  "permisos": [],
-  "message": "Login exitoso"
-}
-```
-Guarda el valor del campo token, ya que será necesario para acceder a los endpoints protegidos.
-
-### ️2️⃣ Consultar lista de usuarios (endpoint protegido)
-
-Para acceder a los recursos protegidos, se debe incluir el token JWT en el encabezado Authorization.
-
-```bash
-curl -X GET http://localhost:8080/api/usuarios \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJzY2FudG9yIiwiaWF0IjoxNzU5OTg1MjAwLCJleHAiOjE3NjAwNzE2MDB9.uwfA1R0upa6EMiyqlBs9eFI6DxLgdecjWRS_3ISZvFk"
-
-```
-
-Respuesta esperada:
-
-```json
-[
-  {
-    "idUser": 1,
-    "username": "scantor",
-    "estado": "ACTIVO",
-    "roles": ["SUPERADMIN"],
-    "permisos": [],
-    "lastLoginAt": null,
-    "createAt": "2025-10-09T02:06:13.670604",
-    "updateAt": "2025-10-09T04:12:37.512542",
-    "failedAttempts": 0,
-    "locked": false
-  }
-]
-
-```
-
-## Testing
-```sql
- SELECT * FROM dim_personal_externo LIMIT 10;
-```
-
-```sql
-SELECT 
-    pe.id_pers_ext,
-    pe.num_doc_ext,
-    pe.nom_ext || ' ' || pe.ape_pater_ext || ' ' || pe.ape_mater_ext AS nombre_completo,
-    pe.id_user,
-    u.name_user,
-    i.desc_ipress
-FROM dim_personal_externo pe
-LEFT JOIN dim_usuarios u ON pe.id_user = u.id_user
-LEFT JOIN dim_ipress i ON pe.id_ipress = i.id_ipress;
-
-
-```
-Esto ya sería perfecto para alimentar una tabla en tu interfaz React, por ejemplo en un módulo de gestión de personal externo.
-```sql
-SELECT 
-    pe.id_pers_ext,
-    pe.num_doc_ext,
-    pe.nom_ext || ' ' || pe.ape_pater_ext || ' ' || pe.ape_mater_ext AS nombre_completo,
-    pe.id_user,
-    u.name_user,
-    i.desc_ipress
-FROM dim_personal_externo pe
-LEFT JOIN dim_usuarios u ON pe.id_user = u.id_user
-LEFT JOIN dim_ipress i ON pe.id_ipress = i.id_ipress
-ORDER BY nombre_completo ASC;
-
-```
-
-1️⃣ Obtener todo el personal externo:
-
-```bash
-curl -X GET http://localhost:8080/api/personal-externo \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
-
-```
-
-2️⃣ Obtener personal externo por ID:
-
-```bash
-curl -X GET http://localhost:8080/api/personal-externo/2 \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
-
-```
-
-3️⃣ Buscar personal externo:
-
-```bash
-curl -X GET "http://localhost:8080/api/personal-externo/search?query=MARIA" \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
-
-```
-
-4️⃣ Obtener personal externo por usuario:
-
-```bash
-curl -X GET http://localhost:8080/api/personal-externo/usuario/4 \
-     -H "Content-Type: application/json" \
-     -H "Authorization: Bearer eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJtZ29uemFsZXNfaHNqIiwiaWF0IjoxNzYwMTI4MzM1LCJleHAiOjE3NjAyMTQ3MzV9.TS3-hmSYv8ffrcw6DImO4Mr7VpS_tVRi-azHViIcDSA"
-
-```
-# 🔐 Pruebas del Endpoint `/api/auth/change-password`
-
-Este documento describe todas las pruebas realizadas para verificar el correcto funcionamiento del cambio de contraseña en el módulo de autenticación del sistema **CENATE Backend**.
+**Token expirado:**
+- Los tokens expiran en 24 horas
+- Realizar nuevo login para obtener token fresco
 
 ---
 
-## ⚙️ Información general
+## Licencia
 
-- **Endpoint:** `PUT /api/auth/change-password`
-- **Autenticación:** JWT Bearer Token
-- **Content-Type:** `application/json`
-- **Módulo:** `AuthenticationService`
-- **Controlador:** `AuthController`
-- **Estado:** ✅ **Funcional y validado**
-
----
-
-## 🧾 Requisitos previos
-
-Antes de probar el cambio de contraseña, se debe iniciar sesión para obtener un token válido.
-
-```bash
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{
-        "username": "admin_test",
-        "password": "admin20253"
-      }'
-  ```
-
-Respuesta esperada:
-
-```bash
-{
-  "type": "Bearer",
-  "token": "<TOKEN_JWT_GENERADO>",
-  "userId": 5,
-  "username": "admin_test",
-  "roles": ["SUPERADMIN"],
-  "permisos": [],
-  "message": "Login exitoso"
-}
-```
-
-
-
-## 📄 Licencia
-
-Este proyecto es propiedad de EsSalud Perú - CENATE.  
+Este proyecto es propiedad de EsSalud Perú - CENATE.
 Todos los derechos reservados © 2025
 
 ---
 
-## 🙏 Agradecimientos
-
-Desarrollado por el Ing. Styp Canto Rondón 🧑🏻‍💻
-
-
+Desarrollado por el Ing. Styp Canto Rondón

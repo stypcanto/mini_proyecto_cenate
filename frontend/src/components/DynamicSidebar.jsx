@@ -172,6 +172,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
       bgColor: "bg-cyan-500/10",
       items: [
         { label: "Dashboard", path: "/citas/dashboard", icon: LayoutDashboard },
+        { label: "Gestión del Asegurado", path: "/citas/gestion-asegurado", icon: Users },
        // { label: "Agenda", path: "/citas/agenda", icon: Calendar },
       ],
     },

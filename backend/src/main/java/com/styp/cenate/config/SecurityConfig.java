@@ -238,10 +238,12 @@ public class SecurityConfig {
             "http://localhost",           // Frontend Docker (puerto 80)
             "http://localhost:80",        // Frontend Docker explícito
             "http://localhost:3000",      // Frontend desarrollo
+            "http://localhost:3001",      // Frontend desarrollo alternativo
             "http://localhost:8080",      // Backend directo
             "http://127.0.0.1",           // Localhost alternativo
             "http://127.0.0.1:80",        // Docker alternativo
             "http://127.0.0.1:3000",      // Desarrollo alternativo
+            "http://127.0.0.1:3001",      // Desarrollo alternativo
             "http://127.0.0.1:8080",       // Backend alternativo
             "http://191.101.78.197:5678",
             "http://127.0.0.1:5500",

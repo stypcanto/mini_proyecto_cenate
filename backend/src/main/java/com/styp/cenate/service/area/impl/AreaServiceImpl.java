@@ -59,7 +59,7 @@ public class AreaServiceImpl implements AreaService {
 
         Area area = new Area();
         area.setDescArea(desc != null ? desc.trim().toUpperCase() : null);
-        area.setStatArea(stat != null ? stat.toUpperCase() : "A");
+        area.setStatArea(convertEstado(stat));
 
         Area saved = areaRepository.save(area);
         log.info("✅ Área creada con ID: {}", saved.getIdArea());
@@ -78,7 +78,7 @@ public class AreaServiceImpl implements AreaService {
                 .orElseThrow(() -> new IllegalArgumentException("Área no encontrada con ID: " + id));
 
         area.setDescArea(desc != null ? desc.trim().toUpperCase() : area.getDescArea());
-        area.setStatArea(stat != null ? stat.toUpperCase() : area.getStatArea());
+        area.setStatArea(stat != null ? convertEstado(stat) : area.getStatArea());
 
         Area updated = areaRepository.save(area);
         log.info("🔄 Área actualizada: {}", updated.getDescArea());
@@ -110,5 +110,17 @@ public class AreaServiceImpl implements AreaService {
                 .createdAt(area.getCreatedAt())
                 .updatedAt(area.getUpdatedAt())
                 .build();
+    }
+
+    // ============================================================
+    // 🔹 CONVERSIÓN DE ESTADO (1/0 o A/I)
+    // ============================================================
+    private String convertEstado(String stat) {
+        if (stat == null) return "A";
+        String s = stat.trim().toUpperCase();
+        // Si viene "1" lo convierte a "A", si viene "0" lo convierte a "I"
+        if ("1".equals(s) || "A".equals(s) || "ACTIVO".equals(s)) return "A";
+        if ("0".equals(s) || "I".equals(s) || "INACTIVO".equals(s)) return "I";
+        return "A"; // Por defecto activo
     }
 }

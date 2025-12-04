@@ -5,16 +5,20 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.OffsetDateTime;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-
 public class EspecialidadDTO {
-	
-	
-	private Long idEsp;
-	
-	private String descripcion;
 
+	private Long idServicio;
+	private String codServicio;
+	private String descripcion;
+	private Boolean esCenate;
+	private String estado;
+	private Boolean esAperturaNuevos;
+	private OffsetDateTime createdAt;
+	private OffsetDateTime updatedAt;
 }

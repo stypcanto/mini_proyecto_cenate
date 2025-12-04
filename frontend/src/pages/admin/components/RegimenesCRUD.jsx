@@ -1,87 +1,87 @@
 // ========================================================================
-// 🏢 AreasCRUD.jsx – CRUD de Áreas (CENATE 2025)
+// RegimenesCRUD.jsx – CRUD de Regímenes Laborales (CENATE 2025)
 // ------------------------------------------------------------------------
-// Componente para gestionar áreas internas de CENATE
+// Componente para gestionar regímenes laborales de CENATE
 // ========================================================================
 
 import React, { useState, useEffect } from 'react';
 import {
-  Building,
+  Landmark,
   Plus,
   Edit,
   Trash2,
+  Search,
   RefreshCw,
   Loader2,
   X,
   Save,
   AlertCircle,
-  Eye,
-  Search
+  Eye
 } from 'lucide-react';
-import { areaService } from '../../../services/areaService';
+import { regimenService } from '../../../services/regimenService';
 
-export default function AreasCRUD() {
-  console.log('🏢 AreasCRUD: Componente renderizado');
+export default function RegimenesCRUD() {
+  console.log('RegimenesCRUD: Componente renderizado');
 
-  const [areas, setAreas] = useState([]);
+  const [regimenes, setRegimenes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
-  const [selectedArea, setSelectedArea] = useState(null);
+  const [selectedRegimen, setSelectedRegimen] = useState(null);
   const [formData, setFormData] = useState({
-    descArea: '',
-    statArea: '1'
+    descRegLab: '',
+    statRegLab: 'A'
   });
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // ============================================================
-  // 📦 Cargar Áreas
+  // Cargar Regímenes
   // ============================================================
-  const loadAreas = async () => {
-    console.log('🏢 AreasCRUD: Iniciando carga de áreas...');
+  const loadRegimenes = async () => {
+    console.log('RegimenesCRUD: Iniciando carga de regímenes...');
     setLoading(true);
     setError(null);
     try {
-      const data = await areaService.obtenerTodas();
-      console.log('🏢 AreasCRUD: Áreas recibidas:', data);
-      setAreas(data);
+      const data = await regimenService.obtenerTodos();
+      console.log('RegimenesCRUD: Regímenes recibidos:', data);
+      setRegimenes(data);
     } catch (err) {
-      console.error('🏢 AreasCRUD: Error al cargar áreas:', err);
-      setError('No se pudieron cargar las áreas. ' + (err.message || ''));
+      console.error('RegimenesCRUD: Error al cargar regímenes:', err);
+      setError('No se pudieron cargar los regímenes. ' + (err.message || ''));
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadAreas();
+    loadRegimenes();
   }, []);
 
   // ============================================================
-  // 🔍 Filtrar Áreas
+  // Filtrar Regímenes
   // ============================================================
-  const filteredAreas = areas.filter(area =>
-    area.descArea?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    area.statArea?.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRegimenes = regimenes.filter(regimen =>
+    regimen.descRegLab?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    regimen.statRegLab?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // ============================================================
-  // ➕ Abrir Modal (Crear/Editar)
+  // Abrir Modal (Crear/Editar)
   // ============================================================
-  const handleOpenModal = (area = null) => {
-    if (area) {
-      setSelectedArea(area);
+  const handleOpenModal = (regimen = null) => {
+    if (regimen) {
+      setSelectedRegimen(regimen);
       setFormData({
-        descArea: area.descArea || '',
-        statArea: area.statArea === 'A' ? '1' : '0'
+        descRegLab: regimen.descRegLab || '',
+        statRegLab: regimen.statRegLab || 'A'
       });
     } else {
-      setSelectedArea(null);
+      setSelectedRegimen(null);
       setFormData({
-        descArea: '',
-        statArea: '1'
+        descRegLab: '',
+        statRegLab: 'A'
       });
     }
     setShowModal(true);
@@ -89,101 +89,93 @@ export default function AreasCRUD() {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setSelectedArea(null);
+    setSelectedRegimen(null);
     setFormData({
-      descArea: '',
-      statArea: '1'
+      descRegLab: '',
+      statRegLab: 'A'
     });
   };
 
   // ============================================================
-  // 💾 Guardar Área
+  // Guardar Régimen
   // ============================================================
-  const handleSave = async (e) => {
-    e.preventDefault();
-    
-    if (!formData.descArea.trim()) {
-      alert('La descripción del área es requerida');
+  const handleSave = async () => {
+    if (!formData.descRegLab.trim()) {
+      alert('La descripción es obligatoria');
       return;
     }
 
     setSaving(true);
     try {
-      if (selectedArea) {
-        // Actualizar
-        await areaService.actualizar(selectedArea.idArea, formData);
+      if (selectedRegimen) {
+        await regimenService.actualizar(selectedRegimen.idRegLab, formData);
       } else {
-        // Crear
-        await areaService.crear(formData);
+        await regimenService.crear(formData);
       }
       handleCloseModal();
-      loadAreas();
+      loadRegimenes();
     } catch (err) {
-      console.error('Error al guardar área:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Error al guardar el área';
-      alert(errorMessage);
+      console.error('Error al guardar régimen:', err);
+      alert('Error al guardar: ' + (err.message || 'Error desconocido'));
     } finally {
       setSaving(false);
     }
   };
 
   // ============================================================
-  // 🗑️ Eliminar Área
+  // Eliminar Régimen
   // ============================================================
   const handleDelete = async (id) => {
     try {
-      await areaService.eliminar(id);
+      await regimenService.eliminar(id);
       setDeleteConfirm(null);
-      loadAreas();
+      loadRegimenes();
     } catch (err) {
-      console.error('Error al eliminar área:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Error al eliminar el área';
-      alert(errorMessage);
-      setDeleteConfirm(null);
+      console.error('Error al eliminar régimen:', err);
+      alert('Error al eliminar: ' + (err.message || 'Error desconocido'));
     }
   };
 
   // ============================================================
-  // ⚡ Toggle Estado
+  // Toggle Estado
   // ============================================================
-  const handleToggleEstado = async (area) => {
+  const handleToggleEstado = async (regimen) => {
     try {
-      const nuevoEstado = area.statArea === 'A' ? '0' : '1';
-      await areaService.actualizar(area.idArea, {
-        descArea: area.descArea,
-        statArea: nuevoEstado
+      const nuevoEstado = regimen.statRegLab === 'A' ? 'I' : 'A';
+      await regimenService.actualizar(regimen.idRegLab, {
+        descRegLab: regimen.descRegLab,
+        statRegLab: nuevoEstado
       });
-      loadAreas();
+      loadRegimenes();
     } catch (err) {
-      console.error('Error al cambiar estado del área:', err);
-      const errorMessage = err.response?.data?.message || err.message || 'Error al cambiar el estado';
-      alert(errorMessage);
+      console.error('Error al cambiar estado:', err);
+      alert('Error al cambiar estado: ' + (err.message || 'Error desconocido'));
     }
   };
 
   // ============================================================
-  // 🎨 Render
+  // Render
   // ============================================================
   return (
-    <div>
+    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-lg p-6 border border-slate-100 dark:border-slate-800">
       {/* Header */}
       <div className="mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-3 bg-gradient-to-br from-[#0A5BA9] to-[#2563EB] rounded-2xl shadow-lg">
-            <Building className="w-6 h-6 text-white" />
+            <Landmark className="w-6 h-6 text-white" />
           </div>
           <div>
             <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-              Gestión de Áreas
+              Gestión de Regímenes
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Administra las áreas internas de CENATE
+              Administra los regímenes laborales de CENATE
             </p>
           </div>
         </div>
         <div className="flex gap-2">
           <button
-            onClick={loadAreas}
+            onClick={loadRegimenes}
             className="flex items-center gap-2 px-4 py-2.5 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition-all font-medium shadow-sm"
             disabled={loading}
           >
@@ -195,7 +187,7 @@ export default function AreasCRUD() {
             className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] hover:from-[#2563EB] hover:to-[#3B82F6] text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
           >
             <Plus className="w-4 h-4" />
-            Nueva Área
+            Nuevo Régimen
           </button>
         </div>
       </div>
@@ -206,7 +198,7 @@ export default function AreasCRUD() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
           <input
             type="text"
-            placeholder="Buscar áreas..."
+            placeholder="Buscar regímenes..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all"
@@ -219,7 +211,7 @@ export default function AreasCRUD() {
         <div className="flex flex-col items-center justify-center py-20">
           <Loader2 className="w-12 h-12 text-[#0A5BA9] animate-spin mb-4" />
           <p className="text-slate-600 dark:text-slate-400 font-medium">
-            Cargando áreas...
+            Cargando regímenes...
           </p>
         </div>
       ) : error ? (
@@ -229,20 +221,20 @@ export default function AreasCRUD() {
             {error}
           </p>
           <button
-            onClick={loadAreas}
+            onClick={loadRegimenes}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-medium"
           >
             Reintentar
           </button>
         </div>
-      ) : filteredAreas.length === 0 ? (
+      ) : filteredRegimenes.length === 0 ? (
         <div className="bg-slate-50 dark:bg-slate-800/50 border-2 border-slate-200 dark:border-slate-700 rounded-2xl p-12 text-center">
-          <Building className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
+          <Landmark className="w-16 h-16 text-slate-300 dark:text-slate-600 mx-auto mb-4" />
           <p className="text-slate-600 dark:text-slate-400 font-medium mb-2">
-            {searchTerm ? 'No se encontraron áreas' : 'No hay áreas registradas'}
+            {searchTerm ? 'No se encontraron regímenes' : 'No hay regímenes registrados'}
           </p>
           <p className="text-sm text-slate-500 dark:text-slate-500 mb-4">
-            {searchTerm ? 'Intenta con otro término de búsqueda' : 'Comienza creando tu primera área'}
+            {searchTerm ? 'Intenta con otro término de búsqueda' : 'Comienza creando tu primer régimen'}
           </p>
           {!searchTerm && (
             <button
@@ -250,7 +242,7 @@ export default function AreasCRUD() {
               className="px-6 py-3 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-5 h-5 inline mr-2" />
-              Crear Primera Área
+              Crear Primer Régimen
             </button>
           )}
         </div>
@@ -275,17 +267,17 @@ export default function AreasCRUD() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {filteredAreas.map((area, index) => (
-                  <tr key={area.idArea} className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                {filteredRegimenes.map((regimen, index) => (
+                  <tr key={regimen.idRegLab} className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
                     <td className="px-6 py-4">
                       <p className="text-sm font-semibold text-gray-900">
-                        {area.descArea}
+                        {regimen.descRegLab}
                       </p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="text-sm text-gray-600">
-                        {area.createdAt
-                          ? new Date(area.createdAt).toLocaleDateString('es-PE', {
+                        {regimen.createAt
+                          ? new Date(regimen.createAt).toLocaleDateString('es-PE', {
                               year: 'numeric',
                               month: '2-digit',
                               day: '2-digit'
@@ -296,21 +288,21 @@ export default function AreasCRUD() {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center justify-center">
                         <button
-                          onClick={() => handleToggleEstado(area)}
+                          onClick={() => handleToggleEstado(regimen)}
                           className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                            area.statArea === 'A'
+                            regimen.statRegLab === 'A'
                               ? 'bg-emerald-500 focus:ring-emerald-500'
                               : 'bg-gray-300 focus:ring-gray-400'
                           }`}
                         >
                           <span
                             className={`inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
-                              area.statArea === 'A' ? 'translate-x-6' : 'translate-x-1'
+                              regimen.statRegLab === 'A' ? 'translate-x-6' : 'translate-x-1'
                             }`}
                           />
                         </button>
-                        <span className={`ml-2 text-xs font-semibold ${area.statArea === 'A' ? 'text-emerald-600' : 'text-gray-500'}`}>
-                          {area.statArea === 'A' ? 'ACTIVO' : 'INACTIVO'}
+                        <span className={`ml-2 text-xs font-semibold ${regimen.statRegLab === 'A' ? 'text-emerald-600' : 'text-gray-500'}`}>
+                          {regimen.statRegLab === 'A' ? 'ACTIVO' : 'INACTIVO'}
                         </span>
                       </div>
                     </td>
@@ -319,7 +311,7 @@ export default function AreasCRUD() {
                         {/* Botón Ver Detalle */}
                         <div className="relative group">
                           <button
-                            onClick={() => handleOpenModal(area)}
+                            onClick={() => handleOpenModal(regimen)}
                             className="p-2 rounded-lg text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all duration-200"
                           >
                             <Eye className="w-4 h-4" />
@@ -332,7 +324,7 @@ export default function AreasCRUD() {
                         {/* Botón Editar */}
                         <div className="relative group">
                           <button
-                            onClick={() => handleOpenModal(area)}
+                            onClick={() => handleOpenModal(regimen)}
                             className="p-2 rounded-lg text-blue-500 hover:bg-blue-50 hover:text-blue-700 transition-all duration-200"
                           >
                             <Edit className="w-4 h-4" />
@@ -345,7 +337,7 @@ export default function AreasCRUD() {
                         {/* Botón Eliminar */}
                         <div className="relative group">
                           <button
-                            onClick={() => setDeleteConfirm(area.idArea)}
+                            onClick={() => setDeleteConfirm(regimen.idRegLab)}
                             className="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 transition-all duration-200"
                           >
                             <Trash2 className="w-4 h-4" />
@@ -364,121 +356,103 @@ export default function AreasCRUD() {
         </div>
       )}
 
-      {/* Modal de Crear/Editar */}
+      {/* Modal Crear/Editar */}
       {showModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-6 py-4 flex items-center justify-between rounded-t-3xl">
-              <div>
-                <h3 className="text-xl font-bold text-white">
-                  {selectedArea ? '✏️ Editar Área' : '➕ Nueva Área'}
-                </h3>
-                <p className="text-blue-100 text-sm mt-1">
-                  {selectedArea ? 'Modifica los datos del área' : 'Crea una nueva área'}
-                </p>
-              </div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white">
+                {selectedRegimen ? 'Editar Régimen' : 'Nuevo Régimen'}
+              </h3>
               <button
                 onClick={handleCloseModal}
-                className="p-2 hover:bg-white/20 rounded-xl transition-colors text-white"
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-5 h-5 text-slate-500" />
               </button>
             </div>
 
-            {/* Form */}
-            <form onSubmit={handleSave} className="p-6 space-y-4">
+            <div className="p-6 space-y-4">
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  Descripción <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
+                  Descripción *
                 </label>
                 <input
                   type="text"
-                  value={formData.descArea}
-                  onChange={(e) => setFormData({ ...formData, descArea: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all"
-                  placeholder="Ej: TELECONSULTAS, ADMINISTRACIÓN..."
-                  required
+                  value={formData.descRegLab}
+                  onChange={(e) => setFormData({ ...formData, descRegLab: e.target.value })}
+                  placeholder="Ej: Contratado, Nombrado, CAS..."
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
                   Estado
                 </label>
                 <select
-                  value={formData.statArea}
-                  onChange={(e) => setFormData({ ...formData, statArea: e.target.value })}
-                  className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all"
+                  value={formData.statRegLab}
+                  onChange={(e) => setFormData({ ...formData, statRegLab: e.target.value })}
+                  className="w-full px-4 py-3 bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all"
                 >
-                  <option value="1">Activa</option>
-                  <option value="0">Inactiva</option>
+                  <option value="A">Activo</option>
+                  <option value="I">Inactivo</option>
                 </select>
               </div>
-
-              {/* Actions */}
-              <div className="flex justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={handleCloseModal}
-                  className="px-5 py-2.5 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all"
-                  disabled={saving}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] hover:from-[#2563EB] hover:to-[#3B82F6] text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={saving}
-                >
-                  {saving ? (
-                    <>
-                      <Loader2 className="w-5 h-5 animate-spin" />
-                      Guardando...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-5 h-5" />
-                      Guardar
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Modal de Confirmación de Eliminación */}
-      {deleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-md w-full p-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="p-3 bg-red-100 dark:bg-red-900/20 rounded-full">
-                <AlertCircle className="w-6 h-6 text-red-600" />
-              </div>
-              <div>
-                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
-                  ¿Eliminar área?
-                </h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">
-                  Esta acción no se puede deshacer
-                </p>
-              </div>
             </div>
-            <div className="flex justify-end gap-3">
+
+            <div className="flex gap-3 p-6 border-t border-slate-200 dark:border-slate-700">
               <button
-                onClick={() => setDeleteConfirm(null)}
-                className="px-4 py-2 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-100 dark:hover:bg-slate-700 rounded-xl transition-all"
+                onClick={handleCloseModal}
+                className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition-all font-medium"
               >
                 Cancelar
               </button>
               <button
-                onClick={() => handleDelete(deleteConfirm)}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-xl transition-all"
+                onClick={handleSave}
+                disabled={saving}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] hover:from-[#2563EB] hover:to-[#3B82F6] text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50"
               >
-                Eliminar
+                {saving ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  <Save className="w-5 h-5" />
+                )}
+                {saving ? 'Guardando...' : 'Guardar'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmar Eliminación */}
+      {deleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm p-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-red-600" />
+              </div>
+              <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">
+                Confirmar Eliminación
+              </h3>
+              <p className="text-slate-600 dark:text-slate-400 mb-6">
+                ¿Estás seguro de eliminar este régimen? Esta acción no se puede deshacer.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm(null)}
+                  className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 rounded-xl transition-all font-medium"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => handleDelete(deleteConfirm)}
+                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-medium"
+                >
+                  Eliminar
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -1,14 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    
-    <!-- Propiedades -->
-    <property name="LOG_PATH" value="/app/logs"/>
+
+    <!-- Propiedades - usa variable de entorno LOG_PATH si existe, sino usa ./logs -->
+    <property name="LOG_PATH" value="${LOG_PATH:-./logs}"/>
     <property name="LOG_FILE" value="cenate-backend"/>
-    
+
     <!-- Patrón de log -->
-    <property name="LOG_PATTERN" 
+    <property name="LOG_PATTERN"
               value="%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"/>
-    
+
     <!-- Console Appender -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
@@ -16,7 +16,7 @@
             <charset>UTF-8</charset>
         </encoder>
     </appender>
-    
+
     <!-- File Appender - Log General -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${LOG_FILE}.log</file>
@@ -24,11 +24,11 @@
             <pattern>${LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
-        
+
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Archivos diarios -->
             <fileNamePattern>${LOG_PATH}/${LOG_FILE}-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy 
+            <timeBasedFileNamingAndTriggeringPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <!-- Máximo 10MB por archivo -->
                 <maxFileSize>10MB</maxFileSize>
@@ -39,7 +39,7 @@
             <totalSizeCap>500MB</totalSizeCap>
         </rollingPolicy>
     </appender>
-    
+
     <!-- File Appender - Solo Errores -->
     <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <file>${LOG_PATH}/${LOG_FILE}-error.log</file>
@@ -52,29 +52,29 @@
             <pattern>${LOG_PATTERN}</pattern>
             <charset>UTF-8</charset>
         </encoder>
-        
+
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <fileNamePattern>${LOG_PATH}/${LOG_FILE}-error-%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <timeBasedFileNamingAndTriggeringPolicy 
+            <timeBasedFileNamingAndTriggeringPolicy
                 class="ch.qos.logback.core.rolling.SizeAndTimeBasedFNATP">
                 <maxFileSize>10MB</maxFileSize>
             </timeBasedFileNamingAndTriggeringPolicy>
             <maxHistory>60</maxHistory>
         </rollingPolicy>
     </appender>
-    
+
     <!-- Loggers específicos -->
     <logger name="com.styp.cenate" level="DEBUG"/>
     <logger name="org.springframework.web" level="INFO"/>
     <logger name="org.springframework.security" level="DEBUG"/>
     <logger name="org.hibernate.SQL" level="DEBUG"/>
     <logger name="org.hibernate.type.descriptor.sql.BasicBinder" level="TRACE"/>
-    
+
     <!-- Root Logger -->
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
         <appender-ref ref="FILE"/>
         <appender-ref ref="ERROR_FILE"/>
     </root>
-    
+
 </configuration>

@@ -21,7 +21,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"especialidades", "personales"})
+@ToString(exclude = {"personales"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Profesion {
 
@@ -58,11 +58,6 @@ public class Profesion {
     // ==========================================================
     // 🔗 Relaciones
     // ==========================================================
-
-    /** Especialidades asociadas a la profesión */
-    @Builder.Default
-    @OneToMany(mappedBy = "profesion", cascade = CascadeType.ALL, orphanRemoval = false, fetch = FetchType.LAZY)
-    private Set<Especialidad> especialidades = new HashSet<>();
 
     /** Profesionales con esta profesión (tabla intermedia dim_personal_prof) */
     @Builder.Default

@@ -9,11 +9,11 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 public class GenerarHash {
 
     public static void main(String[] args) {
-        // Inicializa el encoder BCrypt con fuerza 10
-        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(10);
+        // Inicializa el encoder BCrypt con fuerza 12 (igual que SecurityConfig)
+        BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
         // Cambia esta contraseña por la que quieras generar el hash
-        String password = "admin123";
+        String password = "@Rodrigo28";
 
         // Genera el hash
         String hashed = encoder.encode(password);
@@ -21,5 +21,7 @@ public class GenerarHash {
         // Imprime resultados en consola
         System.out.println("Password original: " + password);
         System.out.println("Hash BCrypt generado: " + hashed);
+        System.out.println("\n-- SQL para actualizar:");
+        System.out.println("UPDATE dim_usuarios SET pass_user = '" + hashed + "' WHERE name_user = '44914706';");
     }
 }

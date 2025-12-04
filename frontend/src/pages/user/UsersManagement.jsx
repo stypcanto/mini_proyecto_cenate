@@ -1,5 +1,6 @@
 // src/pages/admin/users/UsersManagement.jsx
 import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { Building } from 'lucide-react';
 import api from '../../services/apiClient';
 import TabsNavigation from './components/TabsNavigation';
 import FiltersPanel from './components/FiltersPanel';
@@ -11,6 +12,10 @@ import VerDetalleModal from './components/common/VerDetalleModal';
 import ConfirmDeleteModal from './components/common/ConfirmDeleteModal';
 import PaginationControls from './components/PaginationControls';
 import { useToast } from '../../components/ui/Toast';
+import AreasCRUD from '../admin/components/AreasCRUD';
+import RegimenesCRUD from '../admin/components/RegimenesCRUD';
+import ProfesionesCRUD from '../admin/components/ProfesionesCRUD';
+import EspecialidadesCRUD from '../admin/components/EspecialidadesCRUD';
 
 // ============================================================
 // 🔧 FUNCIONES AUXILIARES PARA TIPO DE PERSONAL
@@ -718,6 +723,51 @@ const UsersManagement = () => {
           onConfirm={confirmarEliminar}
           onCancel={() => setShowDeleteModal(false)}
         />
+      )}
+
+      {/* Tab de Áreas */}
+      {activeTab === 'areas' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <AreasCRUD />
+        </div>
+      )}
+
+      {/* Tab de Regímenes */}
+      {activeTab === 'regimenes' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <RegimenesCRUD />
+        </div>
+      )}
+
+      {/* Tab de Profesiones */}
+      {activeTab === 'profesion' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <ProfesionesCRUD />
+        </div>
+      )}
+
+      {/* Tab de Especialidades */}
+      {activeTab === 'especialidad' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <EspecialidadesCRUD />
+        </div>
+      )}
+
+      {/* Placeholder para otras tabs futuras */}
+      {activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200">
+            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <Building className="w-8 h-8 text-gray-400" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">
+              Gestión de {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+            </h3>
+            <p className="text-gray-500 mb-4">
+              Módulo en desarrollo
+            </p>
+          </div>
+        </div>
       )}
       </div>
     </>

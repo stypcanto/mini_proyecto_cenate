@@ -34,6 +34,7 @@ import {
 } from 'lucide-react';
 import api from '../../services/apiClient';
 import ProfesionCRUD from './components/ProfesionCRUD';
+import AreasCRUD from './components/AreasCRUD';
 
 
 // ============================================================
@@ -698,11 +699,15 @@ const GestionUsuariosPermisos = () => {  // Estados principales
           <ProfesionCRUD />
         )}
 
-        {/* Placeholder para otras tabs */}
-        {activeTab !== 'usuarios' && activeTab !== 'profesion' && (
+        {/* Tab de Áreas */}
+        {activeTab === 'areas' && (
+          <AreasCRUD />
+        )}
+
+        {/* Placeholder para otras tabs (regimenes y especialidad) */}
+        {activeTab !== 'usuarios' && activeTab !== 'profesion' && activeTab !== 'areas' && (
           <div className="text-center py-20">
             <div className="w-16 h-16 bg-gray-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              {activeTab === 'areas' && <Building className="w-8 h-8 text-gray-400" />}
               {activeTab === 'regimenes' && <Briefcase className="w-8 h-8 text-gray-400" />}
               {activeTab === 'especialidad' && <UserPlus className="w-8 h-8 text-gray-400" />}
             </div>
