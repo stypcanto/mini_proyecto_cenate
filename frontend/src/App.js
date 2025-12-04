@@ -14,6 +14,7 @@ import { Toaster } from "react-hot-toast";
 // 🌈 Contextos globales
 import { AuthProvider } from "./context/AuthContext";
 import { ThemeProvider } from "./context/ThemeContext";
+import { PermisosProvider } from "./context/PermisosContext";
 
 // 🧱 Layout y seguridad
 import AppLayout from "./components/AppLayout";
@@ -402,25 +403,28 @@ export default function App() {
     <BrowserRouter>
       <ThemeProvider>
         <AuthProvider>
-          {/* 🔔 Notificaciones globales (estilo Apple / MBAC UI) */}
-          <Toaster
-            position="top-right"
-            toastOptions={{
-              duration: 3000,
-              style: {
-                background: "var(--toast-bg, #1e293b)",
-                color: "var(--toast-color, white)",
-                borderRadius: "12px",
-                padding: "16px",
-                boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
-              },
-              success: { iconTheme: { primary: "#10b981", secondary: "white" } },
-              error: { iconTheme: { primary: "#ef4444", secondary: "white" } },
-            }}
-          />
+          {/* 🛡️ Proveedor de permisos MBAC */}
+          <PermisosProvider>
+            {/* 🔔 Notificaciones globales (estilo Apple / MBAC UI) */}
+            <Toaster
+              position="top-right"
+              toastOptions={{
+                duration: 3000,
+                style: {
+                  background: "var(--toast-bg, #1e293b)",
+                  color: "var(--toast-color, white)",
+                  borderRadius: "12px",
+                  padding: "16px",
+                  boxShadow: "0 10px 40px rgba(0,0,0,0.3)",
+                },
+                success: { iconTheme: { primary: "#10b981", secondary: "white" } },
+                error: { iconTheme: { primary: "#ef4444", secondary: "white" } },
+              }}
+            />
 
-          {/* 🚏 Sistema de rutas MBAC */}
-          <AppRoutes />
+            {/* 🚏 Sistema de rutas MBAC */}
+            <AppRoutes />
+          </PermisosProvider>
         </AuthProvider>
       </ThemeProvider>
     </BrowserRouter>

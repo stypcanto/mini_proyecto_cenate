@@ -10,6 +10,8 @@ public interface AreaService {
 
     List<AreaResponse> getAllAreas();
 
+    List<AreaResponse> getAreasActivas();
+
     AreaResponse getAreaById(Long id);
 
     AreaResponse createArea(String desc, String stat);

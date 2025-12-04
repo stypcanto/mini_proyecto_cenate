@@ -76,9 +76,20 @@ public class MBACPermissionAspect {
             throw new AccessDeniedException("Usuario no encontrado");
         }
 
-        Long userId = usuarioOpt.get().getIdUser();
+        Usuario usuario = usuarioOpt.get();
+        Long userId = usuario.getIdUser();
 
-        // Verificar permiso activo
+        // 🔑 SUPERADMIN y ADMIN tienen acceso total (bypass MBAC)
+        boolean esSuperAdmin = authentication.getAuthorities().stream()
+                .anyMatch(auth -> auth.getAuthority().equals("ROLE_SUPERADMIN") ||
+                                  auth.getAuthority().equals("ROLE_ADMIN"));
+
+        if (esSuperAdmin) {
+            log.info("✅ Acceso SUPERADMIN/ADMIN concedido → Usuario: {}, Página: {}, Acción: {}", username, pagina, accion);
+            return joinPoint.proceed();
+        }
+
+        // Verificar permiso activo para usuarios normales
         boolean tienePermiso = permisosService.validarPermiso(userId, pagina, accion);
 
         if (!tienePermiso) {

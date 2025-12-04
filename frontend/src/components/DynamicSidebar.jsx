@@ -47,7 +47,6 @@ import {
   Network,
   Server,
   Eye,
-  KeyRound,
   Layout,
 } from "lucide-react";
 
@@ -112,9 +111,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
       items: [
         { label: "Dashboard Admin", path: "/admin/dashboard", icon: LayoutDashboard },
         { label: "Gestión de Usuarios", path: "/admin/users", icon: Users },
-        { label: "Control MBAC", path: "/admin/mbac", icon: KeyRound },
         { label: "Solicitudes de Registros", path: "/admin/solicitudes", icon: FileCheck },
-        { label: "Roles y Permisos", path: "/admin/permisos", icon: Shield },
         { label: "CMS Dashboard Médico", path: "/admin/dashboard-medico/cms", icon: Layout },
         { label: "Logs del Sistema", path: "/admin/logs", icon: Eye },
       ],

@@ -4,6 +4,7 @@ import com.styp.cenate.dto.UsuarioCreateRequest;
 import com.styp.cenate.dto.UsuarioResponse;
 import com.styp.cenate.dto.UsuarioUpdateRequest;
 import com.styp.cenate.service.usuario.UsuarioService;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +50,7 @@ public class UsuarioController {
 	/** 🔹 Obtener todos los usuarios */
 	@GetMapping
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+	@CheckMBACPermission(pagina = "/admin/users", accion = "ver", mensajeDenegado = "No tiene permiso para ver usuarios")
 	public ResponseEntity<List<UsuarioResponse>> getAllUsers() {
 		log.info("📋 Consultando todos los usuarios registrados");
 		return ResponseEntity.ok(usuarioService.getAllUsers());
@@ -137,6 +139,7 @@ public class UsuarioController {
 	/** ✨ Crear nuevo usuario (Con roles básicos - ADMIN/USER) */
 	@PostMapping("/crear")
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+	@CheckMBACPermission(pagina = "/admin/users", accion = "crear", mensajeDenegado = "No tiene permiso para crear usuarios")
 	public ResponseEntity<?> createUser(@RequestBody UsuarioCreateRequest request) {
 		try {
 			
@@ -201,6 +204,7 @@ public class UsuarioController {
 	/** ✏️ Actualizar usuario */
 	@PutMapping("/id/{id}")
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+	@CheckMBACPermission(pagina = "/admin/users", accion = "editar", mensajeDenegado = "No tiene permiso para editar usuarios")
 	public ResponseEntity<UsuarioResponse> updateUser(@PathVariable Long id,
 			@RequestBody UsuarioUpdateRequest request) {
 		log.info("✏️ Actualizando usuario con ID: {}", id);
@@ -210,11 +214,12 @@ public class UsuarioController {
 	/** ❌ Eliminar usuario */
 	@DeleteMapping("/id/{id}")
 	@PreAuthorize("hasRole('SUPERADMIN')")
+	@CheckMBACPermission(pagina = "/admin/users", accion = "eliminar", mensajeDenegado = "No tiene permiso para eliminar usuarios")
 	public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
-		log.info("*".repeat(1000) + ": " +  id);
+		log.info("Eliminando usuario con ID: {}", id);
 		usuarioService.deleteUser(id);
-		log.info("🗑️ Usuario con ID {} eliminado exitosamente", id);
-		return ResponseEntity.ok(Map.of("message", "✅ Usuario eliminado exitosamente"));
+		log.info("Usuario con ID {} eliminado exitosamente", id);
+		return ResponseEntity.ok(Map.of("message", "Usuario eliminado exitosamente"));
 	}
 
 	/** 🟢 Activar usuario */
@@ -357,5 +362,17 @@ public class UsuarioController {
 			log.error("❌ Error al actualizar datos: {}", e.getMessage());
 			return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
 		}
+	}
+
+	// ============================================================
+	// 🎯 CONSULTA POR ROL
+	// ============================================================
+
+	/** 🔹 Obtener usuarios activos por rol(es) */
+	@GetMapping("/por-rol")
+	public ResponseEntity<List<UsuarioResponse>> getUsuariosPorRol(@RequestParam("roles") List<String> roles) {
+		log.info("🎯 Consultando usuarios con roles: {}", roles);
+		List<UsuarioResponse> usuarios = usuarioService.getUsuariosByRoles(roles);
+		return ResponseEntity.ok(usuarios);
 	}
 }

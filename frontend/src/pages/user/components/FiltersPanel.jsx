@@ -1,9 +1,14 @@
 // src/pages/admin/users/components/FiltersPanel.jsx
 import React, { useState, useMemo } from 'react';
 import { Search, Filter, ChevronDown, UserPlus, X, Trash2, Download, Upload, LayoutGrid, List, Sparkles, RefreshCw } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 
-const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUser, selectedCount = 0, onDeleteSelected, viewMode, setViewMode, roles = [], onRefresh }) => {
+const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUser, selectedCount = 0, onDeleteSelected, viewMode, setViewMode, roles = [], areas = [], onRefresh }) => {
+  const { user: currentUser } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
+
+  // Verificar si es SUPERADMIN (único que puede eliminar usuarios)
+  const esSuperAdmin = currentUser?.roles?.includes('SUPERADMIN');
 
   const meses = useMemo(() => [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -13,7 +18,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
   const hasActiveFilters = Object.values(filters).some((v) => v !== '') || searchTerm;
 
   const limpiarFiltros = () => {
-    setFilters({ rol: '', institucion: '', estado: '', mesCumpleanos: '' });
+    setFilters({ rol: '', institucion: '', estado: '', mesCumpleanos: '', area: '' });
     setSearchTerm('');
   };
 
@@ -24,6 +29,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
     if (filters.institucion) count++;
     if (filters.estado) count++;
     if (filters.mesCumpleanos) count++;
+    if (filters.area) count++;
     return count;
   }, [filters, searchTerm]);
 
@@ -35,6 +41,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
     if (filters.institucion) list.push({ key: 'institucion', label: 'Tipo', value: filters.institucion });
     if (filters.estado) list.push({ key: 'estado', label: 'Estado', value: filters.estado });
     if (filters.mesCumpleanos) list.push({ key: 'mesCumpleanos', label: 'Mes', value: filters.mesCumpleanos });
+    if (filters.area) list.push({ key: 'area', label: 'Área', value: filters.area });
     return list;
   }, [filters, searchTerm]);
 
@@ -60,19 +67,22 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
             Nuevo Usuario
           </button>
           
-          <button
-            onClick={onDeleteSelected}
-            disabled={selectedCount === 0}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm relative"
-          >
-            <Trash2 className="w-4 h-4" strokeWidth={2.5} />
-            Eliminar
-            {selectedCount > 0 && (
-              <span className="absolute -top-2 -right-2 min-w-[22px] h-5 px-1.5 bg-white text-red-600 rounded-full text-xs font-bold flex items-center justify-center shadow-lg border-2 border-red-500 animate-pulse">
-                {selectedCount}
-              </span>
-            )}
-          </button>
+          {/* Solo SUPERADMIN puede ver el botón de eliminar */}
+          {esSuperAdmin && (
+            <button
+              onClick={onDeleteSelected}
+              disabled={selectedCount === 0}
+              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm relative"
+            >
+              <Trash2 className="w-4 h-4" strokeWidth={2.5} />
+              Eliminar
+              {selectedCount > 0 && (
+                <span className="absolute -top-2 -right-2 min-w-[22px] h-5 px-1.5 bg-white text-red-600 rounded-full text-xs font-bold flex items-center justify-center shadow-lg border-2 border-red-500 animate-pulse">
+                  {selectedCount}
+                </span>
+              )}
+            </button>
+          )}
           
           <button
             className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium"
@@ -248,7 +258,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
             )}
 
             {/* Grid de filtros - Cards estilo Apple */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
               {/* Rol */}
               <div className="group relative">
                 <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-purple-50/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
@@ -305,6 +315,38 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   {filters.institucion && (
                     <div className="mt-2 px-2 py-1 bg-emerald-50 border border-emerald-200 rounded-lg">
                       <span className="text-xs text-emerald-700 font-medium">{filters.institucion}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Área */}
+              <div className="group relative">
+                <div className="absolute inset-0 bg-gradient-to-br from-indigo-50/50 to-violet-50/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-xl"></div>
+                <div className="relative bg-white/90 backdrop-blur-sm rounded-2xl p-4 border border-gray-200/60 hover:border-indigo-300/60 hover:shadow-lg transition-all duration-300">
+                  <label className="block mb-2.5 text-xs font-bold text-gray-600 uppercase tracking-wider">
+                    Área
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={filters.area}
+                      onChange={(e) => setFilters({ ...filters, area: e.target.value })}
+                      className="w-full px-4 py-2.5 bg-white/80 border-2 border-gray-200 rounded-xl text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition-all duration-200 appearance-none cursor-pointer hover:border-gray-300 hover:bg-white shadow-sm"
+                    >
+                      <option value="">Todas las Áreas</option>
+                      {areas.map((area) => (
+                        <option key={area.idArea} value={area.descArea}>
+                          {area.descArea}
+                        </option>
+                      ))}
+                    </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <ChevronDown className="w-4 h-4 text-gray-400" strokeWidth={2} />
+                    </div>
+                  </div>
+                  {filters.area && (
+                    <div className="mt-2 px-2 py-1 bg-indigo-50 border border-indigo-200 rounded-lg">
+                      <span className="text-xs text-indigo-700 font-medium">{filters.area}</span>
                     </div>
                   )}
                 </div>

@@ -16,6 +16,8 @@ import AreasCRUD from '../admin/components/AreasCRUD';
 import RegimenesCRUD from '../admin/components/RegimenesCRUD';
 import ProfesionesCRUD from '../admin/components/ProfesionesCRUD';
 import EspecialidadesCRUD from '../admin/components/EspecialidadesCRUD';
+import RolesCRUD from '../admin/components/RolesCRUD';
+import { areaService } from '../../services/areaService';
 
 // ============================================================
 // 🔧 FUNCIONES AUXILIARES PARA TIPO DE PERSONAL
@@ -72,7 +74,8 @@ const UsersManagement = () => {
     rol: '',
     institucion: '',
     estado: '',
-    mesCumpleanos: ''
+    mesCumpleanos: '',
+    area: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -88,6 +91,7 @@ const UsersManagement = () => {
   const [roles, setRoles] = useState([]);
   const [ipressMap, setIpressMap] = useState({});
   const [ipressList, setIpressList] = useState([]);
+  const [areas, setAreas] = useState([]);
   
   // 🆕 Toast para notificaciones
   const { showToast, ToastComponent } = useToast();
@@ -159,12 +163,12 @@ const UsersManagement = () => {
       const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
       const mesIndex = meses.indexOf(filters.mesCumpleanos);
-      
+
       if (mesIndex !== -1) {
         filtered = filtered.filter(user => {
           const fechaNacimiento = user.fecha_nacimiento || user.fech_naci_pers;
           if (!fechaNacimiento) return false;
-          
+
           try {
             let date;
             if (typeof fechaNacimiento === 'string') {
@@ -174,7 +178,7 @@ const UsersManagement = () => {
             } else {
               date = new Date(fechaNacimiento);
             }
-            
+
             if (isNaN(date.getTime())) return false;
             return date.getMonth() === mesIndex;
           } catch (e) {
@@ -182,6 +186,14 @@ const UsersManagement = () => {
           }
         });
       }
+    }
+
+    // 🔍 Filtro por Área
+    if (filters.area && filters.area !== '') {
+      filtered = filtered.filter(user => {
+        const areaUsuario = user.nombre_area || user.nombreArea || user.desc_area || user.descArea || user.area_trabajo || user.areaTrabajo || user.area || '';
+        return areaUsuario.toUpperCase().includes(filters.area.toUpperCase());
+      });
     }
 
     return filtered;
@@ -199,11 +211,12 @@ const UsersManagement = () => {
   // 🚀 PAGINACIÓN LOCAL: Paginar los resultados filtrados
   // ============================================================
   const paginatedUsers = useMemo(() => {
-    const hasActiveFilters = searchTerm || 
+    const hasActiveFilters = searchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
-                             (filters.mesCumpleanos && filters.mesCumpleanos !== '');
+                             (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
+                             (filters.area && filters.area !== '');
     
     // Si hay filtros activos, paginar localmente sobre los resultados filtrados
     // Si no hay filtros, usar todos los usuarios (ya vienen paginados del servidor)
@@ -230,11 +243,12 @@ const UsersManagement = () => {
       const currentSearchTerm = searchTermRef.current;
       
       // 🔍 Si hay filtros activos, cargar TODOS los usuarios para buscar en toda la base de datos
-      const hasActiveFilters = currentSearchTerm || 
+      const hasActiveFilters = currentSearchTerm ||
                                (currentFilters.rol && currentFilters.rol !== '') ||
                                (currentFilters.institucion && currentFilters.institucion !== '') ||
                                (currentFilters.estado && currentFilters.estado !== '') ||
-                               (currentFilters.mesCumpleanos && currentFilters.mesCumpleanos !== '');
+                               (currentFilters.mesCumpleanos && currentFilters.mesCumpleanos !== '') ||
+                               (currentFilters.area && currentFilters.area !== '');
       
       // Si hay filtros, cargar TODOS los usuarios (1000) para buscar en toda la base de datos
       // Si no hay filtros, usar paginación normal (7 usuarios)
@@ -369,10 +383,25 @@ const UsersManagement = () => {
     }
   }, []);
 
+  const loadAreas = useCallback(async () => {
+    try {
+      const response = await areaService.obtenerActivas();
+      console.log('✅ Áreas cargadas:', response);
+      // Ordenar alfabéticamente
+      const areasOrdenadas = Array.isArray(response)
+        ? response.sort((a, b) => (a.descArea || '').localeCompare(b.descArea || '', 'es'))
+        : [];
+      setAreas(areasOrdenadas);
+    } catch (error) {
+      console.error('❌ Error al cargar áreas:', error);
+    }
+  }, []);
+
   useEffect(() => {
     loadUsers();
     loadRoles();
-  }, [loadUsers, loadRoles]);
+    loadAreas();
+  }, [loadUsers, loadRoles, loadAreas]);
 
   // 🚀 Resetear a primera página cuando cambian filtros o búsqueda (sin recargar del servidor)
   useEffect(() => {
@@ -383,28 +412,30 @@ const UsersManagement = () => {
 
   // 🚀 Cargar todos los usuarios cuando se activan filtros por primera vez
   useEffect(() => {
-    const hasActiveFilters = searchTerm || 
+    const hasActiveFilters = searchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
-                             (filters.mesCumpleanos && filters.mesCumpleanos !== '');
-    
+                             (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
+                             (filters.area && filters.area !== '');
+
     // Si hay filtros activos y tenemos menos de 100 usuarios cargados, cargar todos
     if (hasActiveFilters && users.length < 100) {
       console.log('🔍 Filtros activos detectados, cargando todos los usuarios para buscar en toda la base de datos...');
       loadUsers(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos]); // Solo cuando cambian los filtros
+  }, [searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area]); // Solo cuando cambian los filtros
 
   // 🚀 Actualizar totales cuando hay filtros activos (basándose en filteredUsers)
   useEffect(() => {
-    const hasActiveFilters = searchTerm || 
+    const hasActiveFilters = searchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
-                             (filters.mesCumpleanos && filters.mesCumpleanos !== '');
-    
+                             (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
+                             (filters.area && filters.area !== '');
+
     if (hasActiveFilters) {
       // Calcular totales basándose en los resultados filtrados
       const filteredCount = filteredUsers.length;
@@ -443,18 +474,19 @@ const UsersManagement = () => {
 
   // 🚀 Actualizar totales cuando hay filtros activos
   useEffect(() => {
-    const hasActiveFilters = searchTerm || 
+    const hasActiveFilters = searchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
-                             (filters.mesCumpleanos && filters.mesCumpleanos !== '');
-    
+                             (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
+                             (filters.area && filters.area !== '');
+
     if (hasActiveFilters) {
       // Calcular totales basados en usuarios filtrados
       const filtered = applyFilters(users);
       const totalFiltered = filtered.length;
       const totalPagesFiltered = Math.ceil(totalFiltered / pageSize);
-      
+
       setTotalElements(totalFiltered);
       setTotalPages(totalPagesFiltered);
     }
@@ -639,6 +671,7 @@ const UsersManagement = () => {
             viewMode={viewMode}
             setViewMode={setViewMode}
             roles={roles}
+            areas={areas}
             onRefresh={handleRefresh}
           />
 
@@ -753,8 +786,15 @@ const UsersManagement = () => {
         </div>
       )}
 
+      {/* Tab de Roles */}
+      {activeTab === 'roles' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <RolesCRUD />
+        </div>
+      )}
+
       {/* Placeholder para otras tabs futuras */}
-      {activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && (
+      {activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && (
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200">
             <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">

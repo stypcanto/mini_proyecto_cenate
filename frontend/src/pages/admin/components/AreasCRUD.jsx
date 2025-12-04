@@ -60,12 +60,14 @@ export default function AreasCRUD() {
   }, []);
 
   // ============================================================
-  // 🔍 Filtrar Áreas
+  // 🔍 Filtrar y Ordenar Áreas (alfabéticamente)
   // ============================================================
-  const filteredAreas = areas.filter(area =>
-    area.descArea?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    area.statArea?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredAreas = areas
+    .filter(area =>
+      area.descArea?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      area.statArea?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => (a.descArea || '').localeCompare(b.descArea || '', 'es'));
 
   // ============================================================
   // ➕ Abrir Modal (Crear/Editar)
@@ -192,7 +194,7 @@ export default function AreasCRUD() {
           </button>
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] hover:from-[#2563EB] hover:to-[#3B82F6] text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#0A5BA9] hover:bg-[#084a8a] text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
           >
             <Plus className="w-4 h-4" />
             Nueva Área
@@ -247,7 +249,7 @@ export default function AreasCRUD() {
           {!searchTerm && (
             <button
               onClick={() => handleOpenModal()}
-              className="px-6 py-3 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
+              className="px-6 py-3 bg-[#0A5BA9] hover:bg-[#084a8a] text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-5 h-5 inline mr-2" />
               Crear Primera Área
@@ -258,7 +260,7 @@ export default function AreasCRUD() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-900 to-blue-800">
+              <thead className="bg-[#0A5BA9]">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Descripción
@@ -278,7 +280,7 @@ export default function AreasCRUD() {
                 {filteredAreas.map((area, index) => (
                   <tr key={area.idArea} className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm text-gray-900">
                         {area.descArea}
                       </p>
                     </td>
@@ -369,7 +371,7 @@ export default function AreasCRUD() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
           <div className="bg-white dark:bg-slate-800 rounded-3xl shadow-2xl max-w-md w-full">
             {/* Header */}
-            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-6 py-4 flex items-center justify-between rounded-t-3xl">
+            <div className="bg-[#0A5BA9] px-6 py-4 flex items-center justify-between rounded-t-3xl">
               <div>
                 <h3 className="text-xl font-bold text-white">
                   {selectedArea ? '✏️ Editar Área' : '➕ Nueva Área'}
@@ -428,7 +430,7 @@ export default function AreasCRUD() {
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] hover:from-[#2563EB] hover:to-[#3B82F6] text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-5 py-2.5 bg-[#0A5BA9] hover:bg-[#084a8a] text-white font-semibold rounded-xl transition-all shadow-lg hover:shadow-xl flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   disabled={saving}
                 >
                   {saving ? (

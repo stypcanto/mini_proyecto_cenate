@@ -20,11 +20,13 @@
 ## Tabla de Contenidos
 
 - [Características](#-características)
+- [Componentes Frontend - Sistema MBAC](#componentes-frontend---sistema-mbac)
 - [Tecnologías](#-tecnologías)
 - [Arquitectura](#-arquitectura)
 - [Instalación Rápida](#-instalación-rápida)
 - [Credenciales Iniciales](#-credenciales-iniciales)
 - [API REST Completa](#-api-rest-completa)
+- [Sistema MBAC](#9-sistema-mbac---control-de-acceso-modular-apimbac)
 - [Testing](#-testing)
 - [Despliegue](#-despliegue)
 
@@ -43,6 +45,14 @@
 - 5 Roles pre-configurados (SUPERADMIN, ADMIN, ESPECIALISTA, RADIOLOGO, USUARIO)
 - Permisos granulares por módulo y página
 - Gestión de personal interno y externo
+- **Sistema MBAC integrado:** Gestión de roles y permisos directamente desde el modal de edición de usuario
+- **Visualización de permisos:** Vista detallada de módulos, páginas y acciones permitidas por usuario
+
+### Gestión de Catálogos (Panel Admin)
+- **Áreas:** CRUD completo de áreas organizacionales
+- **Regímenes:** Gestión de regímenes laborales (CAS, 728, etc.)
+- **Profesiones:** Administración de profesiones del personal
+- **Especialidades:** Catálogo de servicios médicos (ESSI) con indicadores CENATE
 
 ### Gestión de Pacientes
 - Integración con tabla de asegurados (5M+ registros)
@@ -53,6 +63,80 @@
 - Dashboard adaptativo según permisos
 - Diseño responsive
 - Menú lateral dinámico
+- **Gestión de Permisos integrada en Usuarios:** Edición y visualización de permisos por usuario
+
+---
+
+## Componentes Frontend - Sistema MBAC
+
+### Estructura de Componentes
+
+```
+frontend/src/pages/user/
+├── UsersManagement.jsx              # Página principal de gestión de usuarios
+├── components/
+│   ├── PermisosUsuarioPanel.jsx     # Panel para editar permisos de usuario
+│   ├── VerPermisosUsuarioModal.jsx  # Modal para visualizar permisos (standalone)
+│   └── common/
+│       ├── ActualizarModel.jsx      # Modal de edición (incluye tab Permisos)
+│       └── VerDetalleModal.jsx      # Modal de visualización (incluye tab Permisos)
+```
+
+### PermisosUsuarioPanel
+
+Panel integrado en el modal de edición de usuario para gestionar roles y permisos granulares.
+
+**Props:**
+| Prop | Tipo | Descripción |
+|------|------|-------------|
+| `userId` | number | ID del usuario a editar |
+| `userRoles` | array | Roles actuales del usuario |
+| `onRolesChange` | function | Callback cuando cambian los roles |
+| `token` | string | Token JWT (opcional, usa localStorage como fallback) |
+| `readOnly` | boolean | Modo solo lectura (default: false) |
+
+**Características:**
+- Muestra todos los roles disponibles como botones seleccionables
+- Agrupa módulos con sus páginas en secciones expandibles
+- Checkboxes para cada permiso: Ver, Crear, Editar, Eliminar, Exportar, Aprobar
+- Botones de "Seleccionar todo" / "Quitar todo" por módulo y página
+- Guarda automáticamente al confirmar el modal
+
+### VerDetalleModal - Pestaña Permisos
+
+Nueva pestaña en el modal de visualización de usuario que muestra:
+
+1. **Estadísticas rápidas:**
+   - Total de módulos con acceso
+   - Total de páginas accesibles
+   - Total de permisos activos
+
+2. **Roles asignados:** Lista visual con badges
+
+3. **Acceso a Módulos y Páginas:**
+   - Vista expandible por módulo
+   - Permisos activos con iconos coloridos
+   - Ruta de cada página
+
+### Flujo de Edición de Usuario
+
+```
+1. Usuario hace clic en "Editar" → Se abre ActualizarModel
+2. Navega por pestañas: Personal → Profesional → Laboral → Roles → Permisos
+3. En pestaña "Permisos":
+   - Selecciona/deselecciona roles
+   - Configura permisos granulares por página
+4. Clic en "Guardar Cambios" → Se guardan todos los datos
+
+```
+
+### Flujo de Visualización de Usuario
+
+```
+1. Usuario hace clic en "Ver" → Se abre VerDetalleModal
+2. Navega a pestaña "Permisos"
+3. Ve estadísticas, roles y permisos detallados (solo lectura)
+```
 
 ---
 
@@ -70,6 +154,7 @@
 - **Routing:** React Router 7
 - **HTTP Client:** Axios
 - **Styling:** TailwindCSS
+- **Iconos:** Lucide React
 
 ---
 
@@ -633,23 +718,261 @@ Authorization: Bearer {token}
 
 ---
 
-## 9. MÓDULOS Y PÁGINAS (`/api/mbac`)
+## 9. SISTEMA MBAC - Control de Acceso Modular (`/api/mbac`)
 
-### Listar Módulos
+> **Sistema MBAC (Modular-Based Access Control):** Permite gestionar el acceso granular a módulos, páginas y acciones específicas del sistema.
+
+### Arquitectura MBAC
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    SISTEMA MBAC                              │
+├─────────────────────────────────────────────────────────────┤
+│  MÓDULOS (ej: Gestión de Usuarios, Citas, Reportes)         │
+│    └── PÁGINAS (ej: /admin/users, /citas/nueva)             │
+│          └── PERMISOS (ver, crear, editar, eliminar,        │
+│                        exportar, aprobar)                    │
+├─────────────────────────────────────────────────────────────┤
+│  ROLES → asignan permisos predefinidos a usuarios           │
+│  PERMISOS INDIVIDUALES → permisos específicos por usuario   │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Módulos del Sistema
+
+#### Listar Módulos
 ```bash
 GET /api/mbac/modulos
 Authorization: Bearer {token}
 ```
 
-### Listar Páginas
+**Respuesta:**
+```json
+[
+  {
+    "idModulo": 1,
+    "nombreModulo": "Gestión de Usuarios",
+    "descripcion": "Administración de usuarios del sistema",
+    "rutaBase": "/admin/users",
+    "activo": true,
+    "orden": 1
+  }
+]
+```
+
+#### Obtener Módulo por ID
+```bash
+GET /api/mbac/modulos/{id}
+Authorization: Bearer {token}
+```
+
+#### Crear Módulo
+```bash
+POST /api/mbac/modulos
+Authorization: Bearer {token}
+
+{
+  "nombreModulo": "Nuevo Módulo",
+  "descripcion": "Descripción del módulo",
+  "rutaBase": "/nuevo-modulo",
+  "activo": true,
+  "orden": 5
+}
+```
+
+#### Actualizar Módulo
+```bash
+PUT /api/mbac/modulos/{id}
+Authorization: Bearer {token}
+
+{
+  "nombreModulo": "Módulo Actualizado",
+  "descripcion": "Nueva descripción",
+  "activo": true
+}
+```
+
+#### Eliminar Módulo
+```bash
+DELETE /api/mbac/modulos/{id}
+Authorization: Bearer {token}
+```
+
+### Páginas del Sistema
+
+#### Listar Todas las Páginas
 ```bash
 GET /api/mbac/paginas
 Authorization: Bearer {token}
 ```
 
-### Permisos Activos del Usuario
+**Respuesta:**
+```json
+[
+  {
+    "idPagina": 1,
+    "idModulo": 1,
+    "nombrePagina": "Lista de Usuarios",
+    "rutaPagina": "/admin/users",
+    "descripcion": "Página principal de gestión de usuarios",
+    "orden": 1,
+    "activo": true
+  }
+]
+```
+
+### Roles del Sistema
+
+#### Listar Roles
 ```bash
-GET /api/mbac/permisos-activos/{idUser}
+GET /api/mbac/roles
+Authorization: Bearer {token}
+```
+
+**Respuesta:**
+```json
+[
+  {
+    "idRol": 1,
+    "descRol": "SUPERADMIN",
+    "descripcion": "Administrador con acceso total",
+    "idArea": null,
+    "nivelJerarquia": 1,
+    "activo": true
+  },
+  {
+    "idRol": 2,
+    "descRol": "ADMIN",
+    "descripcion": "Administrador del sistema",
+    "idArea": 1,
+    "nivelJerarquia": 2,
+    "activo": true
+  }
+]
+```
+
+### Permisos Rol-Módulo
+
+#### Listar Permisos por Rol y Módulo
+```bash
+GET /api/mbac/permisos-rol-modulo
+Authorization: Bearer {token}
+```
+
+**Respuesta:**
+```json
+[
+  {
+    "idPermisoRolModulo": 1,
+    "idRol": 2,
+    "descRol": "ADMIN",
+    "idModulo": 1,
+    "nombreModulo": "Gestión de Usuarios",
+    "puedeVer": true,
+    "puedeCrear": true,
+    "puedeEditar": true,
+    "puedeEliminar": false
+  }
+]
+```
+
+#### Crear Permiso Rol-Módulo
+```bash
+POST /api/mbac/permisos-rol-modulo
+Authorization: Bearer {token}
+
+{
+  "idRol": 2,
+  "idModulo": 1,
+  "puedeVer": true,
+  "puedeCrear": true,
+  "puedeEditar": true,
+  "puedeEliminar": false
+}
+```
+
+#### Actualizar Permiso Rol-Módulo
+```bash
+PUT /api/mbac/permisos-rol-modulo/{id}
+Authorization: Bearer {token}
+
+{
+  "puedeVer": true,
+  "puedeCrear": true,
+  "puedeEditar": true,
+  "puedeEliminar": true
+}
+```
+
+#### Eliminar Permiso Rol-Módulo
+```bash
+DELETE /api/mbac/permisos-rol-modulo/{id}
+Authorization: Bearer {token}
+```
+
+### Permisos Rol-Página (Granular)
+
+#### Listar Permisos por Rol y Página
+```bash
+GET /api/mbac/permisos-rol-pagina
+Authorization: Bearer {token}
+```
+
+**Respuesta:**
+```json
+[
+  {
+    "idPermisoRolPagina": 1,
+    "idRol": 2,
+    "descRol": "ADMIN",
+    "idPagina": 1,
+    "nombrePagina": "Lista de Usuarios",
+    "rutaPagina": "/admin/users",
+    "ver": true,
+    "crear": true,
+    "editar": true,
+    "eliminar": false,
+    "exportar": true,
+    "aprobar": false
+  }
+]
+```
+
+#### Crear Permiso Rol-Página
+```bash
+POST /api/mbac/permisos-rol-pagina
+Authorization: Bearer {token}
+
+{
+  "idRol": 2,
+  "idPagina": 1,
+  "ver": true,
+  "crear": true,
+  "editar": true,
+  "eliminar": false,
+  "exportar": true,
+  "aprobar": false
+}
+```
+
+#### Actualizar Permiso Rol-Página
+```bash
+PUT /api/mbac/permisos-rol-pagina/{id}
+Authorization: Bearer {token}
+
+{
+  "ver": true,
+  "crear": true,
+  "editar": true,
+  "eliminar": true,
+  "exportar": true,
+  "aprobar": true
+}
+```
+
+#### Eliminar Permiso Rol-Página
+```bash
+DELETE /api/mbac/permisos-rol-pagina/{id}
 Authorization: Bearer {token}
 ```
 
@@ -692,7 +1015,9 @@ Authorization: Bearer {token}
 
 ---
 
-## 12. CATÁLOGOS
+## 12. CATÁLOGOS (CRUD Completo)
+
+> **Panel de Administración:** Todos los catálogos pueden gestionarse desde `/admin/users` en las pestañas correspondientes.
 
 ### Tipos de Documento
 ```bash
@@ -701,23 +1026,152 @@ GET /api/tipos-documento/activos
 Authorization: Bearer {token}
 ```
 
-### Profesiones
+### Profesiones (CRUD)
 ```bash
+# Listar todas
 GET /api/profesiones
+Authorization: Bearer {token}
+
+# Listar activas
 GET /api/profesiones/activas
 Authorization: Bearer {token}
-```
 
-### Especialidades
-```bash
-GET /api/especialidad
+# Obtener por ID
+GET /api/profesiones/{id}
+Authorization: Bearer {token}
+
+# Crear
+POST /api/profesiones
+Authorization: Bearer {token}
+{
+  "descProf": "MÉDICO CIRUJANO",
+  "statProf": "A"
+}
+
+# Actualizar
+PUT /api/profesiones/{id}
+Authorization: Bearer {token}
+{
+  "descProf": "MÉDICO CIRUJANO GENERAL",
+  "statProf": "A"
+}
+
+# Eliminar
+DELETE /api/profesiones/{id}
 Authorization: Bearer {token}
 ```
 
-### Regímenes Laborales
+### Especialidades (CRUD)
 ```bash
-GET /api/regimenes/publicos  # Sin autenticación
-GET /api/regimenes           # Con autenticación
+# Listar todas (incluyendo inactivas)
+GET /api/especialidades
+Authorization: Bearer {token}
+
+# Listar activas
+GET /api/especialidades/activas
+Authorization: Bearer {token}
+
+# Obtener por ID
+GET /api/especialidades/{id}
+Authorization: Bearer {token}
+
+# Crear
+POST /api/especialidades
+Authorization: Bearer {token}
+{
+  "codServicio": "CARD",
+  "descripcion": "CARDIOLOGÍA",
+  "esCenate": true,
+  "estado": "A",
+  "esAperturaNuevos": false
+}
+
+# Actualizar
+PUT /api/especialidades/{id}
+Authorization: Bearer {token}
+{
+  "codServicio": "CARD",
+  "descripcion": "CARDIOLOGÍA GENERAL",
+  "esCenate": true,
+  "estado": "A",
+  "esAperturaNuevos": true
+}
+
+# Eliminar
+DELETE /api/especialidades/{id}
+Authorization: Bearer {token}
+```
+
+### Regímenes Laborales (CRUD)
+```bash
+# Públicos (sin autenticación)
+GET /api/regimenes/publicos
+
+# Listar todos
+GET /api/regimenes
+Authorization: Bearer {token}
+
+# Listar activos
+GET /api/regimenes/activos
+Authorization: Bearer {token}
+
+# Obtener por ID
+GET /api/regimenes/{id}
+Authorization: Bearer {token}
+
+# Crear
+POST /api/regimenes
+Authorization: Bearer {token}
+{
+  "descRegimen": "CAS - CONTRATO ADMINISTRATIVO DE SERVICIOS",
+  "statRegimen": "A"
+}
+
+# Actualizar
+PUT /api/regimenes/{id}
+Authorization: Bearer {token}
+{
+  "descRegimen": "CAS - DECRETO LEGISLATIVO 1057",
+  "statRegimen": "A"
+}
+
+# Eliminar
+DELETE /api/regimenes/{id}
+Authorization: Bearer {token}
+```
+
+### Áreas (CRUD)
+```bash
+# Listar todas
+GET /api/admin/areas
+Authorization: Bearer {token}
+
+# Listar activas
+GET /api/admin/areas/activas
+Authorization: Bearer {token}
+
+# Obtener por ID
+GET /api/admin/areas/{id}
+Authorization: Bearer {token}
+
+# Crear
+POST /api/admin/areas
+Authorization: Bearer {token}
+{
+  "descArea": "ÁREA DE TELEMEDICINA",
+  "statArea": "A"
+}
+
+# Actualizar
+PUT /api/admin/areas/{id}
+Authorization: Bearer {token}
+{
+  "descArea": "ÁREA DE TELEMEDICINA Y TELECONSULTA",
+  "statArea": "A"
+}
+
+# Eliminar
+DELETE /api/admin/areas/{id}
 Authorization: Bearer {token}
 ```
 

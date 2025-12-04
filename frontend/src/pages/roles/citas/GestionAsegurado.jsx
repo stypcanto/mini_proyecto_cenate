@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import gestionPacientesService from "../../../services/gestionPacientesService";
+import { mbacApi } from "../../../services/mbacApi";
+import { useAuth } from "../../../context/AuthContext";
 
 // Opciones de condición
 const CONDICIONES = [
@@ -30,6 +32,9 @@ const CONDICIONES = [
 ];
 
 export default function GestionAsegurado() {
+    // Hook de autenticación para obtener el token
+    const { token } = useAuth();
+
     // Estados para la lista de gestiones
     const [gestiones, setGestiones] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -38,12 +43,20 @@ export default function GestionAsegurado() {
     const [filterGestora, setFilterGestora] = useState("");
     const [selectedIds, setSelectedIds] = useState([]);
 
+    // Estado para usuarios del sistema (gestoras)
+    const [usuariosSistema, setUsuariosSistema] = useState([]);
+
     // Estados para búsqueda de asegurado
     const [showBuscarModal, setShowBuscarModal] = useState(false);
     const [dniBusqueda, setDniBusqueda] = useState("");
     const [aseguradoEncontrado, setAseguradoEncontrado] = useState(null);
     const [buscandoAsegurado, setBuscandoAsegurado] = useState(false);
     const [errorBusqueda, setErrorBusqueda] = useState("");
+
+    // Estados para autocompletado
+    const [sugerencias, setSugerencias] = useState([]);
+    const [mostrarSugerencias, setMostrarSugerencias] = useState(false);
+    const [buscandoSugerencias, setBuscandoSugerencias] = useState(false);
 
     // Estados para el formulario de agregar
     const [formGestion, setFormGestion] = useState({
@@ -71,9 +84,73 @@ export default function GestionAsegurado() {
         }
     }, []);
 
+    // Cargar usuarios del sistema con rol ADMISION para el selector de gestoras
+    const cargarUsuarios = useCallback(async () => {
+        try {
+            if (!token) return;
+            let data = [];
+            try {
+                // Intentar filtrar solo usuarios con rol ADMISION desde el backend
+                data = await mbacApi.listarUsuariosPorRol(['ADMISION'], token);
+                console.log("✅ Usuarios con rol ADMISION cargados desde backend:", data?.length || 0, data);
+            } catch (rolError) {
+                console.warn("⚠️ Endpoint por rol no disponible, filtrando en frontend...");
+                // Fallback: cargar todos los usuarios y filtrar por rol ADMISION en frontend
+                const todosUsuarios = await mbacApi.listarUsuariosActivos(token);
+                // Filtrar solo usuarios que tengan el rol ADMISION
+                data = (todosUsuarios || []).filter(usuario =>
+                    usuario.roles && (
+                        Array.isArray(usuario.roles)
+                            ? usuario.roles.includes('ADMISION')
+                            : usuario.roles.has?.('ADMISION') || Object.values(usuario.roles).includes('ADMISION')
+                    )
+                );
+                console.log("✅ Usuarios con rol ADMISION filtrados en frontend:", data?.length || 0, data);
+            }
+            // Filtrar usuarios que tengan nombre real (excluir usuarios de sistema como "Gestor Citas", "IA Cenate", "Chatbot")
+            const usuariosReales = (data || []).filter(usuario => {
+                const apellidoPaterno = usuario.apellido_paterno || usuario.apellidoPaterno || '';
+                const apellidoMaterno = usuario.apellido_materno || usuario.apellidoMaterno || '';
+                const nombres = usuario.nombres || '';
+                const username = usuario.username || usuario.name_user || '';
+
+                // Excluir usuarios de sistema por username
+                const usuariosSistema = ['gestor_citas', 'gestorcitas', 'chatbot', 'ia_cenate', 'iacenate', 'admin', 'system'];
+                if (usuariosSistema.some(u => username.toLowerCase().includes(u))) {
+                    return false;
+                }
+
+                // Debe tener apellido paterno real (no repetido como "Gestor Citas Gestor Citas")
+                if (apellidoPaterno && apellidoPaterno === apellidoMaterno && apellidoPaterno === nombres) {
+                    return false;
+                }
+
+                // Debe tener al menos apellido paterno y nombres para ser un usuario real
+                return apellidoPaterno.trim() !== '' && nombres.trim() !== '';
+            });
+            // Ordenar por nombre completo
+            const usuariosOrdenados = usuariosReales.sort((a, b) => {
+                const apellidoPaternoA = a.apellido_paterno || a.apellidoPaterno || '';
+                const apellidoMaternoA = a.apellido_materno || a.apellidoMaterno || '';
+                const nombresA = a.nombres || '';
+                const apellidoPaternoB = b.apellido_paterno || b.apellidoPaterno || '';
+                const apellidoMaternoB = b.apellido_materno || b.apellidoMaterno || '';
+                const nombresB = b.nombres || '';
+                const nombreA = `${apellidoPaternoA} ${apellidoMaternoA} ${nombresA}`.trim();
+                const nombreB = `${apellidoPaternoB} ${apellidoMaternoB} ${nombresB}`.trim();
+                return nombreA.localeCompare(nombreB);
+            });
+            console.log("✅ Usuarios filtrados y ordenados:", usuariosOrdenados.length);
+            setUsuariosSistema(usuariosOrdenados);
+        } catch (error) {
+            console.error("Error al cargar usuarios con rol ADMISION:", error);
+        }
+    }, [token]);
+
     useEffect(() => {
         cargarGestiones();
-    }, [cargarGestiones]);
+        cargarUsuarios();
+    }, [cargarGestiones, cargarUsuarios]);
 
     // Filtrar gestiones
     const gestionesFiltradas = gestiones.filter((g) => {
@@ -91,6 +168,69 @@ export default function GestionAsegurado() {
 
     // Gestoras únicas para el filtro
     const gestorasUnicas = [...new Set(gestiones.map((g) => g.gestora).filter(Boolean))];
+
+    // Función para obtener nombre completo del usuario (maneja snake_case y camelCase)
+    const getNombreCompletoUsuario = (usuario) => {
+        if (!usuario) return '';
+        const apellidoPaterno = usuario.apellido_paterno || usuario.apellidoPaterno || '';
+        const apellidoMaterno = usuario.apellido_materno || usuario.apellidoMaterno || '';
+        const nombres = usuario.nombres || '';
+        // Formato: "NOMBRES APELLIDO_PATERNO APELLIDO_MATERNO"
+        return `${nombres} ${apellidoPaterno} ${apellidoMaterno}`.trim();
+    };
+
+    // Buscar sugerencias de autocompletado (con debounce)
+    const buscarSugerencias = useCallback(async (query) => {
+        if (!query || query.length < 3) {
+            setSugerencias([]);
+            setMostrarSugerencias(false);
+            return;
+        }
+
+        setBuscandoSugerencias(true);
+        try {
+            const resultados = await gestionPacientesService.autocompletarAsegurados(query, 8);
+            setSugerencias(resultados);
+            setMostrarSugerencias(resultados.length > 0);
+        } catch (error) {
+            console.error("Error al buscar sugerencias:", error);
+            setSugerencias([]);
+        } finally {
+            setBuscandoSugerencias(false);
+        }
+    }, []);
+
+    // Efecto para debounce en la búsqueda
+    useEffect(() => {
+        const timeoutId = setTimeout(() => {
+            if (dniBusqueda && dniBusqueda.length >= 3) {
+                buscarSugerencias(dniBusqueda);
+            } else {
+                setSugerencias([]);
+                setMostrarSugerencias(false);
+            }
+        }, 300); // 300ms de debounce
+
+        return () => clearTimeout(timeoutId);
+    }, [dniBusqueda, buscarSugerencias]);
+
+    // Seleccionar una sugerencia
+    const handleSeleccionarSugerencia = (asegurado) => {
+        setDniBusqueda(asegurado.docPaciente);
+        setAseguradoEncontrado({
+            pkAsegurado: asegurado.pkAsegurado,
+            numDoc: asegurado.docPaciente,
+            apellidosNombres: asegurado.paciente,
+            sexo: asegurado.sexo,
+            edad: asegurado.edad,
+            telefono: asegurado.telFijo,
+            tipoPaciente: asegurado.tipoPaciente,
+            ipress: asegurado.nombreIpress
+        });
+        setSugerencias([]);
+        setMostrarSugerencias(false);
+        setErrorBusqueda("");
+    };
 
     // Buscar asegurado por DNI
     const handleBuscarAsegurado = async () => {
@@ -150,6 +290,8 @@ export default function GestionAsegurado() {
             setShowBuscarModal(false);
             setDniBusqueda("");
             setAseguradoEncontrado(null);
+            setSugerencias([]);
+            setMostrarSugerencias(false);
             setFormGestion({
                 condicion: "Pendiente",
                 gestora: "",
@@ -302,7 +444,7 @@ export default function GestionAsegurado() {
                     Gestión del Asegurado
                 </h1>
                 <div className="flex gap-2">
-                    <Button onClick={() => setShowBuscarModal(true)} className="gap-2 bg-[#0A5BA9] hover:bg-[#084a8a] text-white">
+                    <Button onClick={() => setShowBuscarModal(true)} className="gap-2 !bg-[#0A5BA9] hover:!bg-[#084a8a] text-white rounded-full">
                         <UserPlus className="w-4 h-4" />
                         Agregar Asegurado
                     </Button>
@@ -373,34 +515,38 @@ export default function GestionAsegurado() {
 
                         {/* Acciones masivas */}
                         <div className="flex gap-2">
-                            <Button
-                                variant="outline"
-                                size="sm"
+                            <button
                                 onClick={() => handleSeleccionarTelemedicina(true)}
                                 disabled={selectedIds.length === 0}
-                                className="gap-1 text-emerald-600 border-emerald-500 hover:bg-emerald-50"
+                                className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                                    selectedIds.length > 0
+                                        ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm hover:shadow-md'
+                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                }`}
                             >
                                 <Check className="w-4 h-4" />
                                 Seleccionar ({selectedIds.length})
-                            </Button>
-                            <Button
-                                variant="outline"
-                                size="sm"
+                            </button>
+                            <button
                                 onClick={() => handleSeleccionarTelemedicina(false)}
                                 disabled={selectedIds.length === 0}
-                                className="gap-1 text-orange-600 border-orange-500 hover:bg-orange-50"
+                                className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium rounded-lg transition-all ${
+                                    selectedIds.length > 0
+                                        ? 'bg-red-500 text-white hover:bg-red-600 shadow-sm hover:shadow-md'
+                                        : 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                }`}
                             >
                                 <X className="w-4 h-4" />
                                 Quitar
-                            </Button>
+                            </button>
                         </div>
                     </div>
                 </CardContent>
             </Card>
 
             {/* Tabla de gestiones */}
-            <Card>
-                <CardContent className="p-0 overflow-x-auto">
+            <div className="bg-white rounded-[10px] shadow-sm border border-gray-100 overflow-hidden">
+                <div className="overflow-x-auto">
                     {loading ? (
                         <div className="p-8 text-center text-gray-500">Cargando...</div>
                     ) : gestionesFiltradas.length === 0 ? (
@@ -411,9 +557,9 @@ export default function GestionAsegurado() {
                         </div>
                     ) : (
                         <table className="w-full text-sm">
-                            <thead className="bg-[#0A5BA9] sticky top-0">
+                            <thead className="bg-[#0A5BA9]">
                                 <tr>
-                                    <th className="p-3 text-left">
+                                    <th className="px-4 py-4 text-left">
                                         <input
                                             type="checkbox"
                                             checked={selectedIds.length === gestionesFiltradas.length && gestionesFiltradas.length > 0}
@@ -421,19 +567,19 @@ export default function GestionAsegurado() {
                                             className="w-4 h-4 rounded border-white/30 text-[#0A5BA9] focus:ring-white"
                                         />
                                     </th>
-                                    <th className="p-3 text-left font-semibold text-white">NUM.DOC</th>
-                                    <th className="p-3 text-left font-semibold text-white">APELLIDOS Y NOMBRES</th>
-                                    <th className="p-3 text-center font-semibold text-white">SEXO</th>
-                                    <th className="p-3 text-center font-semibold text-white">EDAD</th>
-                                    <th className="p-3 text-left font-semibold text-white">TELÉFONO</th>
-                                    <th className="p-3 text-left font-semibold text-white">TIPO PACIENTE</th>
-                                    <th className="p-3 text-left font-semibold text-white">IPRESS</th>
-                                    <th className="p-3 text-left font-semibold text-white">CONDICIÓN</th>
-                                    <th className="p-3 text-left font-semibold text-white">GESTORA</th>
-                                    <th className="p-3 text-left font-semibold text-white">OBSERVACIONES</th>
-                                    <th className="p-3 text-left font-semibold text-white">FECHA ACT.</th>
-                                    <th className="p-3 text-center font-semibold text-white">WHATSAPP</th>
-                                    <th className="p-3 text-center font-semibold text-white">ACCIONES</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">NUM.DOC</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">APELLIDOS Y NOMBRES</th>
+                                    <th className="px-4 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">SEXO</th>
+                                    <th className="px-4 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">EDAD</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">TELÉFONO</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">TIPO PACIENTE</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">IPRESS</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">CONDICIÓN</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">GESTORA</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">OBSERVACIONES</th>
+                                    <th className="px-4 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">FECHA ACT.</th>
+                                    <th className="px-4 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">WHATSAPP</th>
+                                    <th className="px-4 py-4 text-center text-xs font-semibold text-white uppercase tracking-wider">ACCIONES</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -531,8 +677,8 @@ export default function GestionAsegurado() {
                             </tbody>
                         </table>
                     )}
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             {/* Resumen */}
             <div className="mt-4 flex justify-between items-center text-sm text-slate-600">
@@ -549,13 +695,41 @@ export default function GestionAsegurado() {
 
             {/* Modal de búsqueda de asegurado */}
             {showBuscarModal && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div className="p-6 border-b border-slate-200 sticky top-0 bg-white">
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                            setShowBuscarModal(false);
+                            setDniBusqueda("");
+                            setAseguradoEncontrado(null);
+                            setErrorBusqueda("");
+                            setSugerencias([]);
+                            setMostrarSugerencias(false);
+                        }
+                    }}
+                    tabIndex={-1}
+                    ref={(el) => el && el.focus()}
+                >
+                    <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+                        <div className="p-6 border-b border-slate-200 sticky top-0 bg-white flex items-center justify-between">
                             <h2 className="text-xl font-bold flex items-center gap-2 text-slate-800">
                                 <UserPlus className="w-5 h-5 text-[#0A5BA9]" />
                                 Agregar Asegurado a Gestión
                             </h2>
+                            <button
+                                onClick={() => {
+                                    setShowBuscarModal(false);
+                                    setDniBusqueda("");
+                                    setAseguradoEncontrado(null);
+                                    setErrorBusqueda("");
+                                    setSugerencias([]);
+                                    setMostrarSugerencias(false);
+                                }}
+                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                title="Cerrar (ESC)"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
 
                         <div className="p-6 space-y-6">
@@ -574,11 +748,36 @@ export default function GestionAsegurado() {
                                             onChange={(e) => {
                                                 setDniBusqueda(e.target.value.replace(/\D/g, ''));
                                                 setErrorBusqueda("");
+                                                setAseguradoEncontrado(null);
                                             }}
                                             onKeyPress={(e) => e.key === 'Enter' && handleBuscarAsegurado()}
+                                            onFocus={() => sugerencias.length > 0 && setMostrarSugerencias(true)}
                                             maxLength={15}
                                             className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent"
                                         />
+                                        {/* Lista de sugerencias de autocompletado */}
+                                        {mostrarSugerencias && sugerencias.length > 0 && (
+                                            <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                                                {buscandoSugerencias && (
+                                                    <div className="px-4 py-2 text-sm text-gray-500 flex items-center gap-2">
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                        Buscando...
+                                                    </div>
+                                                )}
+                                                {sugerencias.map((asegurado, index) => (
+                                                    <button
+                                                        key={asegurado.pkAsegurado || index}
+                                                        type="button"
+                                                        onClick={() => handleSeleccionarSugerencia(asegurado)}
+                                                        className="w-full px-4 py-2 text-left hover:bg-[#0A5BA9]/10 border-b border-slate-100 last:border-b-0 transition-colors"
+                                                    >
+                                                        <span className="font-mono text-[#0A5BA9] font-medium">{asegurado.docPaciente}</span>
+                                                        <span className="mx-2 text-gray-400">-</span>
+                                                        <span className="text-gray-700">{asegurado.paciente}</span>
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        )}
                                     </div>
                                     <Button
                                         onClick={handleBuscarAsegurado}
@@ -666,24 +865,32 @@ export default function GestionAsegurado() {
                                             <label className="block text-sm font-medium text-slate-700 mb-1">
                                                 Gestora
                                             </label>
-                                            <input
-                                                type="text"
+                                            <select
                                                 value={formGestion.gestora}
                                                 onChange={(e) => setFormGestion({ ...formGestion, gestora: e.target.value })}
-                                                placeholder="Nombre de la gestora"
                                                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent"
-                                            />
+                                            >
+                                                <option value="">Seleccionar gestora...</option>
+                                                {/* Mostrar valor actual si no coincide con ningún usuario */}
+                                                {formGestion.gestora && !usuariosSistema.some(u => getNombreCompletoUsuario(u) === formGestion.gestora) && (
+                                                    <option value={formGestion.gestora}>{formGestion.gestora} (actual)</option>
+                                                )}
+                                                {usuariosSistema.map((usuario) => (
+                                                    <option key={usuario.id} value={getNombreCompletoUsuario(usuario)}>
+                                                        {getNombreCompletoUsuario(usuario)}
+                                                    </option>
+                                                ))}
+                                            </select>
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-slate-700 mb-1">
-                                                Origen
+                                                Origen (IPRESS)
                                             </label>
                                             <input
                                                 type="text"
-                                                value={formGestion.origen}
-                                                onChange={(e) => setFormGestion({ ...formGestion, origen: e.target.value })}
-                                                placeholder="Ej: IPRESS, Referencia, etc."
-                                                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent"
+                                                value={aseguradoEncontrado?.ipress || '-'}
+                                                readOnly
+                                                className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 cursor-not-allowed"
                                             />
                                         </div>
                                         <div className="col-span-2">
@@ -712,6 +919,8 @@ export default function GestionAsegurado() {
                                     setDniBusqueda("");
                                     setAseguradoEncontrado(null);
                                     setErrorBusqueda("");
+                                    setSugerencias([]);
+                                    setMostrarSugerencias(false);
                                 }}
                                 className="border-slate-300 text-slate-600 hover:bg-slate-100"
                             >
@@ -732,16 +941,38 @@ export default function GestionAsegurado() {
 
             {/* Modal de edición */}
             {showEditModal && editingGestion && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                <div
+                    className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
+                    onKeyDown={(e) => {
+                        if (e.key === 'Escape') {
+                            setShowEditModal(false);
+                            setEditingGestion(null);
+                        }
+                    }}
+                    tabIndex={-1}
+                    ref={(el) => el && el.focus()}
+                >
                     <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg">
-                        <div className="p-6 border-b border-slate-200">
-                            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                                <Edit2 className="w-5 h-5 text-[#0A5BA9]" />
-                                Editar Gestión
-                            </h2>
-                            <p className="text-sm text-slate-500 mt-1">
-                                {editingGestion.apellidosNombres} - DNI: {editingGestion.numDoc}
-                            </p>
+                        <div className="p-6 border-b border-slate-200 flex items-start justify-between">
+                            <div>
+                                <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                    <Edit2 className="w-5 h-5 text-[#0A5BA9]" />
+                                    Editar Gestión
+                                </h2>
+                                <p className="text-sm text-slate-500 mt-1">
+                                    {editingGestion.apellidosNombres} - DNI: {editingGestion.numDoc}
+                                </p>
+                            </div>
+                            <button
+                                onClick={() => {
+                                    setShowEditModal(false);
+                                    setEditingGestion(null);
+                                }}
+                                className="p-2 text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded-lg transition-colors"
+                                title="Cerrar (ESC)"
+                            >
+                                <X className="w-5 h-5" />
+                            </button>
                         </div>
 
                         <div className="p-6 space-y-4">
@@ -765,12 +996,22 @@ export default function GestionAsegurado() {
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
                                     Gestora
                                 </label>
-                                <input
-                                    type="text"
+                                <select
                                     value={formGestion.gestora}
                                     onChange={(e) => setFormGestion({ ...formGestion, gestora: e.target.value })}
                                     className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent"
-                                />
+                                >
+                                    <option value="">Seleccionar gestora...</option>
+                                    {/* Mostrar valor actual si no coincide con ningún usuario */}
+                                    {formGestion.gestora && !usuariosSistema.some(u => getNombreCompletoUsuario(u) === formGestion.gestora) && (
+                                        <option value={formGestion.gestora}>{formGestion.gestora} (actual)</option>
+                                    )}
+                                    {usuariosSistema.map((usuario) => (
+                                        <option key={usuario.id} value={getNombreCompletoUsuario(usuario)}>
+                                            {getNombreCompletoUsuario(usuario)}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <div>
                                 <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -778,9 +1019,9 @@ export default function GestionAsegurado() {
                                 </label>
                                 <input
                                     type="text"
-                                    value={formGestion.origen}
-                                    onChange={(e) => setFormGestion({ ...formGestion, origen: e.target.value })}
-                                    className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent"
+                                    value={editingGestion.ipress || '-'}
+                                    readOnly
+                                    className="w-full px-3 py-2 border border-slate-200 rounded-lg bg-slate-50 text-slate-600 cursor-not-allowed"
                                 />
                             </div>
                             <div>

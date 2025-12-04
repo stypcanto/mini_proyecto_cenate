@@ -56,4 +56,4 @@ __pycache__/
 docker-data/
 
 backend/bin/
-*.class
+*.class*.hprof

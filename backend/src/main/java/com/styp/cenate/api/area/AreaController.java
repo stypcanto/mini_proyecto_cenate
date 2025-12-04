@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import com.styp.cenate.dto.AreaRequest;
 import com.styp.cenate.dto.AreaResponse;
 import com.styp.cenate.service.area.AreaService;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
 
 import java.util.List;
 
@@ -42,6 +43,12 @@ public class AreaController {
         return ResponseEntity.ok(areaService.getAllAreas());
     }
 
+    @GetMapping("/activas")
+    public ResponseEntity<List<AreaResponse>> getAreasActivas() {
+        log.info("📋 Consultando áreas activas...");
+        return ResponseEntity.ok(areaService.getAreasActivas());
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<AreaResponse> getAreaById(@PathVariable Long id) {
         log.info("🔍 Consultando área por ID: {}", id);
@@ -54,8 +61,9 @@ public class AreaController {
 
     @PostMapping
     @PreAuthorize("hasRole('SUPERADMIN')")
+    @CheckMBACPermission(pagina = "/admin/mbac", accion = "crear", mensajeDenegado = "No tiene permiso para crear áreas")
     public ResponseEntity<AreaResponse> createArea(@RequestBody AreaRequest request) {
-        log.info("🧩 Creando nueva área: {} (estado={})", request.getDescArea(), request.getStatArea());
+        log.info("Creando nueva área: {} (estado={})", request.getDescArea(), request.getStatArea());
         AreaResponse nuevaArea = areaService.createArea(request.getDescArea(), request.getStatArea());
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaArea);
     }
@@ -66,8 +74,9 @@ public class AreaController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
+    @CheckMBACPermission(pagina = "/admin/mbac", accion = "editar", mensajeDenegado = "No tiene permiso para editar áreas")
     public ResponseEntity<AreaResponse> updateArea(@PathVariable Long id, @RequestBody AreaRequest request) {
-        log.info("✏️ Actualizando área (ID: {}) → Nueva descripción: '{}', Estado: {}", id, request.getDescArea(), request.getStatArea());
+        log.info("Actualizando área (ID: {}) -> Nueva descripción: '{}', Estado: {}", id, request.getDescArea(), request.getStatArea());
         AreaResponse actualizada = areaService.updateArea(id, request.getDescArea(), request.getStatArea());
         return ResponseEntity.ok(actualizada);
     }
@@ -78,8 +87,9 @@ public class AreaController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('SUPERADMIN')")
+    @CheckMBACPermission(pagina = "/admin/mbac", accion = "eliminar", mensajeDenegado = "No tiene permiso para eliminar áreas")
     public ResponseEntity<Void> deleteArea(@PathVariable Long id) {
-        log.warn("🗑️ Eliminando área con ID: {}", id);
+        log.warn("Eliminando área con ID: {}", id);
         areaService.deleteArea(id);
         return ResponseEntity.noContent().build();
     }

@@ -1,6 +1,7 @@
 // src/pages/admin/users/components/UsersTable.jsx
 import React from 'react';
 import { Users, Eye, Edit, Trash2, Circle, MapPin, Building, UserPlus, AlertCircle } from 'lucide-react';
+import { useAuth } from '../../../context/AuthContext';
 
 // ============================================================
 // 🔧 FUNCIONES AUXILIARES PARA TIPO DE PERSONAL
@@ -29,6 +30,11 @@ const getTipoPersonal = (user) => {
 };
 
 const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, onToggleEstado, onCreateUser, selectedUsers = [], onSelectAll, onSelectUser, showBirthdayColumn = false }) => {
+  const { user: currentUser } = useAuth();
+
+  // Verificar si es SUPERADMIN (único que puede eliminar usuarios)
+  const esSuperAdmin = currentUser?.roles?.includes('SUPERADMIN');
+
   // Función para obtener las iniciales del usuario
   const getInitials = (username) => {
     if (!username) return '?';
@@ -303,13 +309,16 @@ const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
                         >
                           <Edit className="w-4 h-4" strokeWidth={2} />
                         </button>
-                        <button
-                          onClick={() => onDelete(user)}
-                          className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors duration-150"
-                          title="Eliminar"
-                        >
-                          <Trash2 className="w-4 h-4" strokeWidth={2} />
-                        </button>
+                        {/* Solo SUPERADMIN puede eliminar usuarios */}
+                        {esSuperAdmin && (
+                          <button
+                            onClick={() => onDelete(user)}
+                            className="p-1.5 text-red-600 hover:bg-red-50 rounded transition-colors duration-150"
+                            title="Eliminar"
+                          >
+                            <Trash2 className="w-4 h-4" strokeWidth={2} />
+                          </button>
+                        )}
                       </div>
                     )}
                   </td>

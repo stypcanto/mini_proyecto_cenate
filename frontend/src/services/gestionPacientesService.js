@@ -97,6 +97,15 @@ const gestionPacientesService = {
         return await apiClient.get(`${BASE_ENDPOINT}/asegurado/${dni}`);
     },
 
+    /**
+     * Autocompletar asegurados (busca por DNI o nombre)
+     * Retorna lista de asegurados que coinciden con el término de búsqueda
+     */
+    autocompletarAsegurados: async (query, limit = 10) => {
+        const response = await apiClient.get(`/asegurados/buscar?q=${encodeURIComponent(query)}&size=${limit}`);
+        return response.content || [];
+    },
+
     // ========================================================================
     // Gestión de Telemedicina
     // ========================================================================

@@ -22,6 +22,27 @@ class AreaService {
   }
 
   /**
+   * Obtener áreas activas
+   * @returns {Promise<Array>} Lista de áreas activas
+   */
+  async obtenerActivas() {
+    try {
+      const data = await apiClient.get("/admin/areas/activas", true);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("❌ Error al obtener áreas activas:", error);
+      // Fallback: obtener todas y filtrar activas
+      try {
+        const todas = await this.obtenerTodas();
+        return todas.filter(area => area.statArea === "1" || area.statArea === 1);
+      } catch (fallbackError) {
+        console.error("❌ Error en fallback de áreas:", fallbackError);
+        return [];
+      }
+    }
+  }
+
+  /**
    * Obtener un área por ID
    * @param {number} id - ID del área
    * @returns {Promise<Object>} Área encontrada

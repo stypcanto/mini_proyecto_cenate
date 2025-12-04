@@ -1,6 +1,7 @@
 // Modal de Actualización de Usuario - VERSIÓN COMPLETA CON LÓGICA CONDICIONAL
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Edit, Shield, Save, User, Mail, Briefcase, GraduationCap, RefreshCw, Key, Building2, Check, Camera, Image as ImageIcon, XCircle } from 'lucide-react';
+import { X, Edit, Shield, Save, User, Mail, Briefcase, GraduationCap, RefreshCw, Key, Building2, Check, Camera, Image as ImageIcon, XCircle, Lock } from 'lucide-react';
+import PermisosUsuarioPanel from '../PermisosUsuarioPanel';
 import FormField from '../modals/FormField';
 import SelectField from '../modals/SelectField';
 import api from '../../../../services/apiClient';
@@ -467,7 +468,11 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
         alert('Debe seleccionar al menos un rol');
         return;
       }
+      setSelectedTab('permisos');
+      return;
+    }
 
+    if (selectedTab === 'permisos') {
       setLoading(true);
       await handleSubmit();
     }
@@ -708,6 +713,19 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
               }`}
             >
               Roles del Sistema
+            </button>
+            <button
+              onClick={() => setSelectedTab('permisos')}
+              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                selectedTab === 'permisos'
+                  ? 'bg-white text-blue-900'
+                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+              }`}
+            >
+              <span className="flex items-center gap-1.5">
+                <Lock className="w-3.5 h-3.5" />
+                Permisos
+              </span>
             </button>
           </div>
         </div>
@@ -1477,6 +1495,17 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                 )}
               </div>
             )}
+
+            {/* Pestaña Permisos */}
+            {selectedTab === 'permisos' && (
+              <div>
+                <PermisosUsuarioPanel
+                  userId={getUserId()}
+                  userRoles={formData.roles}
+                  readOnly={false}
+                />
+              </div>
+            )}
           </div>
 
           {/* Footer */}
@@ -1489,7 +1518,7 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                 <button
                   type="button"
                   onClick={() => {
-                    const tabs = ['personal', 'profesional', 'laboral', 'roles'];
+                    const tabs = ['personal', 'profesional', 'laboral', 'roles', 'permisos'];
                     const currentIndex = tabs.indexOf(selectedTab);
                     if (currentIndex > 0) {
                       setSelectedTab(tabs[currentIndex - 1]);
@@ -1519,7 +1548,7 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Guardando...
                   </>
-                ) : selectedTab === 'roles' ? (
+                ) : selectedTab === 'permisos' ? (
                   <>
                     <Check className="w-4 h-4" />
                     Guardar Cambios

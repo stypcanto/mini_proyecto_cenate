@@ -60,12 +60,14 @@ export default function RegimenesCRUD() {
   }, []);
 
   // ============================================================
-  // Filtrar Regímenes
+  // Filtrar y Ordenar Regímenes (alfabéticamente)
   // ============================================================
-  const filteredRegimenes = regimenes.filter(regimen =>
-    regimen.descRegLab?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    regimen.statRegLab?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredRegimenes = regimenes
+    .filter(regimen =>
+      regimen.descRegLab?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      regimen.statRegLab?.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+    .sort((a, b) => (a.descRegLab || '').localeCompare(b.descRegLab || '', 'es'));
 
   // ============================================================
   // Abrir Modal (Crear/Editar)
@@ -184,7 +186,7 @@ export default function RegimenesCRUD() {
           </button>
           <button
             onClick={() => handleOpenModal()}
-            className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] hover:from-[#2563EB] hover:to-[#3B82F6] text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
+            className="flex items-center gap-2 px-4 py-2.5 bg-[#0A5BA9] hover:bg-[#084a8a] text-white rounded-xl transition-all font-medium shadow-lg hover:shadow-xl"
           >
             <Plus className="w-4 h-4" />
             Nuevo Régimen
@@ -239,7 +241,7 @@ export default function RegimenesCRUD() {
           {!searchTerm && (
             <button
               onClick={() => handleOpenModal()}
-              className="px-6 py-3 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
+              className="px-6 py-3 bg-[#0A5BA9] hover:bg-[#084a8a] text-white rounded-xl font-medium shadow-lg hover:shadow-xl transition-all"
             >
               <Plus className="w-5 h-5 inline mr-2" />
               Crear Primer Régimen
@@ -250,7 +252,7 @@ export default function RegimenesCRUD() {
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gradient-to-r from-blue-900 to-blue-800">
+              <thead className="bg-[#0A5BA9]">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Descripción
@@ -270,7 +272,7 @@ export default function RegimenesCRUD() {
                 {filteredRegimenes.map((regimen, index) => (
                   <tr key={regimen.idRegLab} className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
                     <td className="px-6 py-4">
-                      <p className="text-sm font-semibold text-gray-900">
+                      <p className="text-sm text-gray-900">
                         {regimen.descRegLab}
                       </p>
                     </td>
@@ -411,7 +413,7 @@ export default function RegimenesCRUD() {
               <button
                 onClick={handleSave}
                 disabled={saving}
-                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] hover:from-[#2563EB] hover:to-[#3B82F6] text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50"
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-[#0A5BA9] hover:bg-[#084a8a] text-white rounded-xl transition-all font-medium shadow-lg disabled:opacity-50"
               >
                 {saving ? (
                   <Loader2 className="w-5 h-5 animate-spin" />

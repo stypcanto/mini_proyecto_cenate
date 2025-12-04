@@ -2,6 +2,7 @@ package com.styp.cenate.api.gestionpaciente;
 
 import com.styp.cenate.dto.GestionPacienteDTO;
 import com.styp.cenate.service.gestionpaciente.IGestionPacienteService;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
@@ -31,6 +32,7 @@ public class GestionPacienteController {
     // ========================================================================
 
     @GetMapping
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "ver", mensajeDenegado = "No tiene permiso para ver pacientes")
     public ResponseEntity<List<GestionPacienteDTO>> listar() {
         log.info("GET /api/gestion-pacientes - Listando todos los pacientes");
         List<GestionPacienteDTO> lista = servicio.listar();
@@ -46,6 +48,7 @@ public class GestionPacienteController {
     }
 
     @PostMapping
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "crear", mensajeDenegado = "No tiene permiso para crear pacientes")
     public ResponseEntity<GestionPacienteDTO> crear(@Valid @RequestBody GestionPacienteDTO dto) {
         log.info("POST /api/gestion-pacientes - Creando paciente: {}", dto.getNumDoc());
         GestionPacienteDTO creado = servicio.guardar(dto);
@@ -53,6 +56,7 @@ public class GestionPacienteController {
     }
 
     @PutMapping("/{id}")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "editar", mensajeDenegado = "No tiene permiso para editar pacientes")
     public ResponseEntity<GestionPacienteDTO> actualizar(
         @PathVariable @Min(1) Long id,
         @Valid @RequestBody GestionPacienteDTO dto
@@ -63,6 +67,7 @@ public class GestionPacienteController {
     }
 
     @DeleteMapping("/{id}")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "eliminar", mensajeDenegado = "No tiene permiso para eliminar pacientes")
     public ResponseEntity<Void> eliminar(@PathVariable @Min(1) Long id) {
         log.info("DELETE /api/gestion-pacientes/{} - Eliminando paciente", id);
         servicio.eliminar(id);

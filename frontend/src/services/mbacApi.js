@@ -128,6 +128,16 @@ export const mbacApi = {
     return res.data;
   },
 
+  async listarUsuariosPorRol(roles, token) {
+    // Spring espera múltiples parámetros roles=X&roles=Y para List<String>
+    const rolesArray = Array.isArray(roles) ? roles : [roles];
+    const rolesParams = rolesArray.map(r => `roles=${encodeURIComponent(r)}`).join('&');
+    const res = await api.get(`/api/usuarios/por-rol?${rolesParams}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    return res.data;
+  },
+
   // ============================================================
   // 🧩 GESTIÓN DE ROLES
   // ============================================================

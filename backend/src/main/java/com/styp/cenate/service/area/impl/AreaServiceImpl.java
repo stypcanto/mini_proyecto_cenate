@@ -38,6 +38,18 @@ public class AreaServiceImpl implements AreaService {
     }
 
     // ============================================================
+    // 🔹 CONSULTAR ACTIVAS
+    // ============================================================
+    @Override
+    @Transactional(readOnly = true)
+    public List<AreaResponse> getAreasActivas() {
+        log.info("📋 Obteniendo áreas activas...");
+        return areaRepository.findByStatAreaOrderByDescAreaAsc("A").stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
+    // ============================================================
     // 🔹 CONSULTAR POR ID
     // ============================================================
     @Override
