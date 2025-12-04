@@ -6,11 +6,11 @@
 // ========================================================================
 
 import React, { useState } from "react";
-import { 
-  KeyRound, 
-  Eye, 
-  EyeOff, 
-  CheckCircle2, 
+import {
+  KeyRound,
+  Eye,
+  EyeOff,
+  CheckCircle2,
   AlertCircle,
   Loader2,
   Lock,
@@ -97,6 +97,14 @@ export default function PrimerAccesoModal({ username, onCompleted }) {
       setMessage("🔄 Cambiando tu contraseña...");
       setMessageType("info");
 
+      if (formData.passwordActual === formData.passwordNueva) {
+        setMessageType("error");
+        setMessage("❌ Las contraseñas no pueden ser iguales");
+        setLoading(false);
+        return;
+      }
+
+
       // Usar el endpoint de cambio de contraseña
       const response = await apiClient.put(
         "/auth/change-password",
@@ -130,7 +138,7 @@ export default function PrimerAccesoModal({ username, onCompleted }) {
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[1000] flex items-center justify-center p-4">
       <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
-        
+
         {/* Header */}
         <div className="bg-gradient-to-r from-[#0a5ba9] to-[#0d6ecc] px-6 py-5">
           <div className="flex items-center gap-3">
@@ -164,169 +172,163 @@ export default function PrimerAccesoModal({ username, onCompleted }) {
         {/* Contenido */}
         <div className="px-6 pb-6 max-h-[60vh] overflow-y-auto">
           <div className="space-y-4 mt-5">
-              <div className="flex items-center gap-2 mb-4">
-                <KeyRound className="w-5 h-5 text-[#0a5ba9]" />
-                <h3 className="text-lg font-semibold text-gray-900">
-                  Cambiar Contraseña
-                </h3>
+            <div className="flex items-center gap-2 mb-4">
+              <KeyRound className="w-5 h-5 text-[#0a5ba9]" />
+              <h3 className="text-lg font-semibold text-gray-900">
+                Cambiar Contraseña
+              </h3>
+            </div>
+
+            {/* Contraseña actual */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Contraseña Actual <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPasswords.current ? "text" : "password"}
+                  value={formData.passwordActual}
+                  onChange={(e) => setFormData({ ...formData, passwordActual: e.target.value })}
+                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] ${errors.passwordActual ? "border-red-500" : "border-gray-200"
+                    }`}
+                  placeholder="Ingresa tu contraseña temporal"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9]"
+                >
+                  {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+              {errors.passwordActual && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.passwordActual}
+                </p>
+              )}
+            </div>
+
+            {/* Nueva contraseña */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Nueva Contraseña <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPasswords.new ? "text" : "password"}
+                  value={formData.passwordNueva}
+                  onChange={(e) => setFormData({ ...formData, passwordNueva: e.target.value })}
+                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] ${errors.passwordNueva ? "border-red-500" : "border-gray-200"
+                    }`}
+                  placeholder="Mínimo 8 caracteres"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9]"
+                >
+                  {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
 
-              {/* Contraseña actual */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Contraseña Actual <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPasswords.current ? "text" : "password"}
-                    value={formData.passwordActual}
-                    onChange={(e) => setFormData({ ...formData, passwordActual: e.target.value })}
-                    className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] ${
-                      errors.passwordActual ? "border-red-500" : "border-gray-200"
-                    }`}
-                    placeholder="Ingresa tu contraseña temporal"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, current: !showPasswords.current })}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9]"
-                  >
-                    {showPasswords.current ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.passwordActual && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.passwordActual}
-                  </p>
-                )}
-              </div>
-
-              {/* Nueva contraseña */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nueva Contraseña <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPasswords.new ? "text" : "password"}
-                    value={formData.passwordNueva}
-                    onChange={(e) => setFormData({ ...formData, passwordNueva: e.target.value })}
-                    className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] ${
-                      errors.passwordNueva ? "border-red-500" : "border-gray-200"
-                    }`}
-                    placeholder="Mínimo 8 caracteres"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, new: !showPasswords.new })}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9]"
-                  >
-                    {showPasswords.new ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                
-                {/* Indicador de fortaleza */}
-                {formData.passwordNueva && (
-                  <div className="mt-2">
-                    <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className={`h-full transition-all duration-300 ${
-                            passwordStrength(formData.passwordNueva).level === "strong" ? "bg-green-500 w-full" :
+              {/* Indicador de fortaleza */}
+              {formData.passwordNueva && (
+                <div className="mt-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full transition-all duration-300 ${passwordStrength(formData.passwordNueva).level === "strong" ? "bg-green-500 w-full" :
                             passwordStrength(formData.passwordNueva).level === "medium" ? "bg-yellow-500 w-2/3" :
-                            "bg-red-500 w-1/3"
+                              "bg-red-500 w-1/3"
                           }`}
-                        ></div>
-                      </div>
-                      <span className={`text-xs font-medium ${
-                        passwordStrength(formData.passwordNueva).level === "strong" ? "text-green-600" :
+                      ></div>
+                    </div>
+                    <span className={`text-xs font-medium ${passwordStrength(formData.passwordNueva).level === "strong" ? "text-green-600" :
                         passwordStrength(formData.passwordNueva).level === "medium" ? "text-yellow-600" :
-                        "text-red-600"
+                          "text-red-600"
                       }`}>
-                        {passwordStrength(formData.passwordNueva).text}
-                      </span>
-                    </div>
+                      {passwordStrength(formData.passwordNueva).text}
+                    </span>
                   </div>
-                )}
+                </div>
+              )}
 
-                {errors.passwordNueva && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.passwordNueva}
-                  </p>
-                )}
+              {errors.passwordNueva && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.passwordNueva}
+                </p>
+              )}
 
-                {/* Requisitos */}
-                <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                  <p className="text-xs font-medium text-gray-700 mb-2">La contraseña debe contener:</p>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div className={`flex items-center gap-1 ${formData.passwordNueva.length >= 8 ? "text-green-600" : "text-gray-500"}`}>
-                      <CheckCircle2 className="w-3 h-3" />
-                      Mínimo 8 caracteres
-                    </div>
-                    <div className={`flex items-center gap-1 ${/[A-Z]/.test(formData.passwordNueva) ? "text-green-600" : "text-gray-500"}`}>
-                      <CheckCircle2 className="w-3 h-3" />
-                      Una mayúscula
-                    </div>
-                    <div className={`flex items-center gap-1 ${/[a-z]/.test(formData.passwordNueva) ? "text-green-600" : "text-gray-500"}`}>
-                      <CheckCircle2 className="w-3 h-3" />
-                      Una minúscula
-                    </div>
-                    <div className={`flex items-center gap-1 ${/\d/.test(formData.passwordNueva) ? "text-green-600" : "text-gray-500"}`}>
-                      <CheckCircle2 className="w-3 h-3" />
-                      Un número
-                    </div>
-                    <div className={`flex items-center gap-1 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.passwordNueva) ? "text-green-600" : "text-gray-500"}`}>
-                      <CheckCircle2 className="w-3 h-3" />
-                      Un símbolo (!@#...)
-                    </div>
+              {/* Requisitos */}
+              <div className="mt-3 p-3 bg-gray-50 rounded-lg">
+                <p className="text-xs font-medium text-gray-700 mb-2">La contraseña debe contener:</p>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className={`flex items-center gap-1 ${formData.passwordNueva.length >= 8 ? "text-green-600" : "text-gray-500"}`}>
+                    <CheckCircle2 className="w-3 h-3" />
+                    Mínimo 8 caracteres
+                  </div>
+                  <div className={`flex items-center gap-1 ${/[A-Z]/.test(formData.passwordNueva) ? "text-green-600" : "text-gray-500"}`}>
+                    <CheckCircle2 className="w-3 h-3" />
+                    Una mayúscula
+                  </div>
+                  <div className={`flex items-center gap-1 ${/[a-z]/.test(formData.passwordNueva) ? "text-green-600" : "text-gray-500"}`}>
+                    <CheckCircle2 className="w-3 h-3" />
+                    Una minúscula
+                  </div>
+                  <div className={`flex items-center gap-1 ${/\d/.test(formData.passwordNueva) ? "text-green-600" : "text-gray-500"}`}>
+                    <CheckCircle2 className="w-3 h-3" />
+                    Un número
+                  </div>
+                  <div className={`flex items-center gap-1 ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.passwordNueva) ? "text-green-600" : "text-gray-500"}`}>
+                    <CheckCircle2 className="w-3 h-3" />
+                    Un símbolo (!@#...)
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Confirmar contraseña */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirmar Nueva Contraseña <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <input
-                    type={showPasswords.confirm ? "text" : "password"}
-                    value={formData.passwordConfirmacion}
-                    onChange={(e) => setFormData({ ...formData, passwordConfirmacion: e.target.value })}
-                    className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] ${
-                      errors.passwordConfirmacion ? "border-red-500" : "border-gray-200"
+            {/* Confirmar contraseña */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Confirmar Nueva Contraseña <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <input
+                  type={showPasswords.confirm ? "text" : "password"}
+                  value={formData.passwordConfirmacion}
+                  onChange={(e) => setFormData({ ...formData, passwordConfirmacion: e.target.value })}
+                  className={`w-full px-4 py-3 pr-12 border-2 rounded-xl focus:ring-2 focus:ring-[#0a5ba9]/20 focus:border-[#0a5ba9] ${errors.passwordConfirmacion ? "border-red-500" : "border-gray-200"
                     }`}
-                    placeholder="Repite la nueva contraseña"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
-                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9]"
-                  >
-                    {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                  </button>
-                </div>
-                {errors.passwordConfirmacion && (
-                  <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
-                    <AlertCircle className="w-3 h-3" />
-                    {errors.passwordConfirmacion}
-                  </p>
-                )}
+                  placeholder="Repite la nueva contraseña"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPasswords({ ...showPasswords, confirm: !showPasswords.confirm })}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-[#0a5ba9]"
+                >
+                  {showPasswords.confirm ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
               </div>
+              {errors.passwordConfirmacion && (
+                <p className="text-red-500 text-xs mt-1 flex items-center gap-1">
+                  <AlertCircle className="w-3 h-3" />
+                  {errors.passwordConfirmacion}
+                </p>
+              )}
+            </div>
           </div>
 
           {/* Mensaje de estado */}
           {message && (
-            <div className={`mt-4 p-4 rounded-xl border-2 flex items-center gap-3 ${
-              messageType === "success" ? "bg-green-50 border-green-300 text-green-700" :
-              messageType === "error" ? "bg-red-50 border-red-300 text-red-700" :
-              "bg-blue-50 border-blue-300 text-blue-700"
-            }`}>
+            <div className={`mt-4 p-4 rounded-xl border-2 flex items-center gap-3 ${messageType === "success" ? "bg-green-50 border-green-300 text-green-700" :
+                messageType === "error" ? "bg-red-50 border-red-300 text-red-700" :
+                  "bg-blue-50 border-blue-300 text-blue-700"
+              }`}>
               {messageType === "success" ? <CheckCircle2 className="w-5 h-5" /> :
-               messageType === "error" ? <AlertCircle className="w-5 h-5" /> :
-               <Info className="w-5 h-5" />}
+                messageType === "error" ? <AlertCircle className="w-5 h-5" /> :
+                  <Info className="w-5 h-5" />}
               <span className="text-sm font-medium">{message}</span>
             </div>
           )}

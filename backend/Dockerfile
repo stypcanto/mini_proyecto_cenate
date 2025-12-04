@@ -45,8 +45,15 @@ RUN apt-get update && \
 # Copiar el jar compilado desde el stage anterior
 COPY --from=build /app/build/libs/*.jar app.jar
 
+
+# CREAR LA CARPETA DE LOGS Y DAR PERMISOS
+RUN mkdir -p /app/logs && \
+    addgroup --system spring && adduser --system --ingroup spring spring && \
+    chown -R spring:spring /app/logs
+
+
 # Crear usuario no root
-RUN addgroup --system spring && adduser --system --ingroup spring spring
+# RUN addgroup --system spring && adduser --system --ingroup spring spring
 USER spring:spring
 
 # Exponer el puerto

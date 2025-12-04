@@ -36,7 +36,7 @@ public class UsuarioController {
 	// 🧩 NUEVO ENDPOINT: Listar roles del usuario por username
 	// ============================================================
 	@GetMapping("/roles/{username}")
-	public ResponseEntity<List<RolResponse>> getRolesPorUsuario(@PathVariable String username) {
+	public ResponseEntity<List<RolResponse>> getRolesPorUsuario(@PathVariable("username") String username) {
 		log.info("🎯 Consultando roles asociados al usuario '{}'", username);
 		List<RolResponse> roles = usuarioService.obtenerRolesPorUsername(username);
 		return ResponseEntity.ok(roles);
@@ -57,10 +57,10 @@ public class UsuarioController {
 	/** 🔹 Obtener TODO el personal de CENATE (con y sin usuario) - Paginado */
 	@GetMapping("/all-personal")
 	public ResponseEntity<Map<String, Object>> getAllPersonal(
-			@RequestParam(defaultValue = "0") int page,
-			@RequestParam(defaultValue = "7") int size,  // 7 usuarios por página por defecto
-			@RequestParam(defaultValue = "idPers") String sortBy,
-			@RequestParam(defaultValue = "asc") String direction
+			@RequestParam(name="page", defaultValue = "0") int page,
+			@RequestParam(name="size", defaultValue = "7") int size,  // 7 usuarios por página por defecto
+			@RequestParam(name="sortBy", defaultValue = "idPers") String sortBy,
+			@RequestParam(name="direction", defaultValue = "asc") String direction
 	) {
 		log.info("📋 Consultando personal de CENATE - Página: {}, Tamaño: {}, Orden: {} {}", 
 				page, size, sortBy, direction);
@@ -139,8 +139,14 @@ public class UsuarioController {
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
 	public ResponseEntity<?> createUser(@RequestBody UsuarioCreateRequest request) {
 		try {
+			
+			log.info("Datos de Usuario :  {} ", request.toString());
 
 			log.info("Origen de Usuario :" + request.getId_origen() + "******************" + "*".repeat(50));
+			log.info("Especialidad : " + request.getId_especialidad());
+			log.info("Profesion : " + request.getProfesion());
+			
+			
 			log.info("✨ Creando nuevo usuario: {}", request.getUsername());
 
 			// Validar que no se intenten asignar roles privilegiados sin permiso SUPERADMIN
@@ -155,6 +161,8 @@ public class UsuarioController {
 				}
 			}
 //            UsuarioResponse usuario = usuarioService.createUser(null);
+//			request.setId_especialidad(13L);
+			
 			UsuarioResponse usuario = usuarioService.createUser(request);
 			return ResponseEntity.ok(Map.of("message", "Usuario creado correctamente", "usuario", usuario));
 		} catch (Exception e) {
@@ -260,7 +268,7 @@ public class UsuarioController {
 	// ============================================================
 
 	@GetMapping("/detalle/{username}")
-	public ResponseEntity<?> obtenerDetalleUsuario(@PathVariable String username) {
+	public ResponseEntity<?> obtenerDetalleUsuario(@PathVariable("username") String username) {
 		try {
 			log.info("🔍 Consultando detalle extendido del usuario: {}", username);
 			UsuarioResponse detalle = usuarioService.obtenerDetalleUsuarioExtendido(username);
@@ -300,7 +308,7 @@ public class UsuarioController {
 	/** 🔄 Resetear contraseña (Solo ADMIN/SUPERADMIN) */
 	@PutMapping("/id/{id}/reset-password")
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
-	public ResponseEntity<?> resetPassword(@PathVariable Long id, @RequestBody Map<String, String> request,
+	public ResponseEntity<?> resetPassword(@PathVariable("id") Long id, @RequestBody Map<String, String> request,
 			Authentication authentication) {
 		try {
 			String adminUsername = authentication.getName();
@@ -336,7 +344,7 @@ public class UsuarioController {
 	/** ✏️ Actualizar datos personales, profesionales y laborales */
 	@PutMapping("/personal/{id}")
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
-	public ResponseEntity<?> actualizarDatosPersonal(@PathVariable Long id,
+	public ResponseEntity<?> actualizarDatosPersonal(@PathVariable("id") Long id,
 			@RequestBody com.styp.cenate.dto.PersonalUpdateRequest request) {
 		try {
 			log.info("✏️ Actualizando datos completos del usuario ID: {}", id);

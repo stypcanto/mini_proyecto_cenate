@@ -645,7 +645,7 @@ export default function MBACControl() {
     { id: "roles", label: "Roles", icon: Users },
     { id: "modulos", label: "Módulos", icon: Database },
     { id: "permisos-crud", label: "Permisos CRUD", icon: Settings },
-    { id: "usuarios", label: "Usuarios", icon: Users },
+    //{ id: "usuarios", label: "Usuarios", icon: Users },
     { id: "auditoria", label: "Auditoría", icon: Activity },
   ];
 
@@ -1287,60 +1287,7 @@ export default function MBACControl() {
               </div>
             )}
 
-            {/* TAB: USUARIOS */}
-            {activeTab === "usuarios" && (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-bold text-gray-800">Gestión de Usuarios</h2>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    Crear Usuario
-                  </button>
-                </div>
-                <div className="overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">ID</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Nombre</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Email</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Rol</th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
-                          Último Acceso
-                        </th>
-                        <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">Estado</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200">
-                      {usuarios.map((user) => (
-                        <tr key={user.id} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 font-semibold">#{user.id}</td>
-                          <td className="px-6 py-4 font-semibold text-gray-800">{user.name}</td>
-                          <td className="px-6 py-4 text-gray-600">{user.email}</td>
-                          <td className="px-6 py-4">
-                            <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">
-                              {user.role}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 text-gray-600">{user.lastLogin}</td>
-                          <td className="px-6 py-4">
-                            <span
-                              className={`px-3 py-1 rounded-full text-sm ${
-                                user.status === "active"
-                                  ? "bg-green-100 text-green-800"
-                                  : "bg-red-100 text-red-800"
-                              }`}
-                            >
-                              {user.status === "active" ? "Activo" : "Inactivo"}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )}
+    
 
             {/* TAB: AUDITORÍA */}
             {activeTab === "auditoria" && (
