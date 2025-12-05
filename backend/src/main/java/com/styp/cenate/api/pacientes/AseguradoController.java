@@ -488,14 +488,15 @@ public class AseguradoController {
             
             StringBuilder sql = new StringBuilder("""
                 SELECT DISTINCT
+                    di.id_ipress,
                     di.cod_ipress,
                     di.desc_ipress,
                     di.id_red,
                     dr.desc_red as nombre_red
                 FROM dim_ipress di
-                INNER JOIN dim_red dr ON di.id_red = dr.id_red
-                INNER JOIN asegurados a ON di.cod_ipress = a.cas_adscripcion
+                LEFT JOIN dim_red dr ON di.id_red = dr.id_red
                 WHERE di.desc_ipress IS NOT NULL
+                  AND di.stat_ipress = 'A'
             """);
             
             List<Object> params = new ArrayList<>();
@@ -511,10 +512,12 @@ public class AseguradoController {
             
             // Formatear para camelCase
             ipress.forEach(i -> {
+                i.put("idIpress", i.get("id_ipress"));
                 i.put("codIpress", i.get("cod_ipress"));
                 i.put("descIpress", i.get("desc_ipress"));
                 i.put("idRed", i.get("id_red"));
                 i.put("nombreRed", i.get("nombre_red"));
+                i.remove("id_ipress");
                 i.remove("cod_ipress");
                 i.remove("desc_ipress");
                 i.remove("id_red");

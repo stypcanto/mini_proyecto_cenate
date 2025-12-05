@@ -91,26 +91,32 @@ const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
   const formatBirthday = (fechaNacimiento) => {
     if (!fechaNacimiento) return '—';
     try {
-      // Manejar diferentes formatos de fecha
-      let date;
+      let day, month;
+
       if (typeof fechaNacimiento === 'string') {
-        // Si es string, puede venir como "YYYY-MM-DD" o "YYYY-MM-DDTHH:mm:ss"
-        date = new Date(fechaNacimiento);
+        // Si es string "YYYY-MM-DD", extraer directamente los componentes
+        // para evitar problemas de zona horaria con new Date()
+        const parts = fechaNacimiento.split('T')[0].split('-');
+        if (parts.length >= 3) {
+          day = parseInt(parts[2], 10);
+          month = parseInt(parts[1], 10) - 1; // Mes es 0-indexado
+        } else {
+          return '—';
+        }
       } else if (Array.isArray(fechaNacimiento)) {
         // Si es array [year, month, day] del backend Java
-        date = new Date(fechaNacimiento[0], fechaNacimiento[1] - 1, fechaNacimiento[2]);
+        day = fechaNacimiento[2];
+        month = fechaNacimiento[1] - 1; // Mes es 0-indexado
       } else {
-        date = new Date(fechaNacimiento);
+        return '—';
       }
 
-      // Verificar que la fecha es válida
-      if (isNaN(date.getTime())) return '—';
+      // Verificar que los valores son válidos
+      if (isNaN(day) || isNaN(month) || month < 0 || month > 11) return '—';
 
-      const day = date.getDate();
       const monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
                           'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
-      const month = monthNames[date.getMonth()];
-      return `${day} de ${month}`;
+      return `${day} de ${monthNames[month]}`;
     } catch (e) {
       console.error('Error al formatear fecha:', e);
       return '—';

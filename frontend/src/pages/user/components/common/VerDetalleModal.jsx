@@ -177,25 +177,44 @@ const VerDetalleModal = ({ user, onClose, token }) => {
     return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase();
   };
 
+  // Función auxiliar para parsear fecha sin problemas de zona horaria
+  const parseFecha = (fecha) => {
+    if (!fecha) return null;
+
+    let year, month, day;
+
+    if (typeof fecha === 'string') {
+      // Si es string "YYYY-MM-DD", extraer directamente los componentes
+      const parts = fecha.split('T')[0].split('-');
+      if (parts.length >= 3) {
+        year = parseInt(parts[0], 10);
+        month = parseInt(parts[1], 10);
+        day = parseInt(parts[2], 10);
+      }
+    } else if (Array.isArray(fecha)) {
+      // Si es array [year, month, day] del backend Java
+      year = fecha[0];
+      month = fecha[1];
+      day = fecha[2];
+    }
+
+    if (!year || !month || !day || isNaN(year) || isNaN(month) || isNaN(day)) {
+      return null;
+    }
+
+    return { year, month, day };
+  };
+
   // Calcular edad
   const calcularEdad = (fechaNacimiento) => {
-    if (!fechaNacimiento) return null;
+    const fecha = parseFecha(fechaNacimiento);
+    if (!fecha) return null;
+
     try {
-      let date;
-      if (typeof fechaNacimiento === 'string') {
-        date = new Date(fechaNacimiento);
-      } else if (Array.isArray(fechaNacimiento)) {
-        date = new Date(fechaNacimiento[0], fechaNacimiento[1] - 1, fechaNacimiento[2]);
-      } else {
-        date = new Date(fechaNacimiento);
-      }
-      
-      if (isNaN(date.getTime())) return null;
-      
       const hoy = new Date();
-      let edad = hoy.getFullYear() - date.getFullYear();
-      const mes = hoy.getMonth() - date.getMonth();
-      if (mes < 0 || (mes === 0 && hoy.getDate() < date.getDate())) {
+      let edad = hoy.getFullYear() - fecha.year;
+      const mesDiff = (hoy.getMonth() + 1) - fecha.month;
+      if (mesDiff < 0 || (mesDiff === 0 && hoy.getDate() < fecha.day)) {
         edad--;
       }
       return edad;
@@ -206,24 +225,13 @@ const VerDetalleModal = ({ user, onClose, token }) => {
 
   // Formatear fecha de cumpleaños
   const formatearCumpleanos = (fechaNacimiento) => {
-    if (!fechaNacimiento) return '—';
+    const fecha = parseFecha(fechaNacimiento);
+    if (!fecha) return '—';
+
     try {
-      let date;
-      if (typeof fechaNacimiento === 'string') {
-        date = new Date(fechaNacimiento);
-      } else if (Array.isArray(fechaNacimiento)) {
-        date = new Date(fechaNacimiento[0], fechaNacimiento[1] - 1, fechaNacimiento[2]);
-      } else {
-        date = new Date(fechaNacimiento);
-      }
-      
-      if (isNaN(date.getTime())) return '—';
-      
-      const dia = date.getDate();
-      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
                      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-      const mes = meses[date.getMonth()];
-      return `${dia} de ${mes}`;
+      return `${fecha.day} de ${meses[fecha.month - 1]}`;
     } catch (e) {
       return '—';
     }
@@ -231,24 +239,14 @@ const VerDetalleModal = ({ user, onClose, token }) => {
 
   // Formatear fecha completa
   const formatearFechaCompleta = (fecha) => {
-    if (!fecha) return '—';
+    const parsed = parseFecha(fecha);
+    if (!parsed) return '—';
+
     try {
-      let date;
-      if (typeof fecha === 'string') {
-        date = new Date(fecha);
-      } else if (Array.isArray(fecha)) {
-        date = new Date(fecha[0], fecha[1] - 1, fecha[2]);
-      } else {
-        date = new Date(fecha);
-      }
-      
-      if (isNaN(date.getTime())) return '—';
-      
-      return date.toLocaleDateString('es-PE', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit'
-      });
+      // Formatear como DD/MM/YYYY
+      const day = String(parsed.day).padStart(2, '0');
+      const month = String(parsed.month).padStart(2, '0');
+      return `${day}/${month}/${parsed.year}`;
     } catch (e) {
       return '—';
     }

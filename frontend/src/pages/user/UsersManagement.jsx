@@ -170,17 +170,19 @@ const UsersManagement = () => {
           if (!fechaNacimiento) return false;
 
           try {
-            let date;
+            let month;
             if (typeof fechaNacimiento === 'string') {
-              date = new Date(fechaNacimiento);
+              // Extraer el mes directamente del string para evitar problemas de zona horaria
+              const parts = fechaNacimiento.split('T')[0].split('-');
+              if (parts.length >= 2) {
+                month = parseInt(parts[1], 10) - 1; // Mes es 0-indexado
+              }
             } else if (Array.isArray(fechaNacimiento)) {
-              date = new Date(fechaNacimiento[0], fechaNacimiento[1] - 1, fechaNacimiento[2]);
-            } else {
-              date = new Date(fechaNacimiento);
+              month = fechaNacimiento[1] - 1; // Mes es 0-indexado
             }
 
-            if (isNaN(date.getTime())) return false;
-            return date.getMonth() === mesIndex;
+            if (month === undefined || isNaN(month)) return false;
+            return month === mesIndex;
           } catch (e) {
             return false;
           }
