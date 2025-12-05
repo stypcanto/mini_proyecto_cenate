@@ -50,6 +50,18 @@ public interface PermisoModularRepository extends JpaRepository<PermisoModular, 
      */
     boolean existsByIdRolAndIdPagina(Integer idRol, Integer idPagina);
 
+    /**
+     * Busca un permiso existente por usuario y página (sin filtrar por activo para UPSERT).
+     */
+    @Query("SELECT p FROM PermisoModular p WHERE p.idUser = :idUser AND p.idPagina = :idPagina")
+    Optional<PermisoModular> findByIdUserAndIdPagina(@Param("idUser") Long idUser, @Param("idPagina") Integer idPagina);
+
+    /**
+     * Busca todos los permisos de un usuario.
+     */
+    @Query("SELECT p FROM PermisoModular p WHERE p.idUser = :idUser AND p.activo = true")
+    List<PermisoModular> findByIdUserAndActivoTrue(@Param("idUser") Long idUser);
+
     // =========================================================================
     // 🔹 CONSULTAS AVANZADAS (VISTA SQL)
     // =========================================================================
@@ -135,4 +147,9 @@ public interface PermisoModularRepository extends JpaRepository<PermisoModular, 
      */
     @Query("SELECT p FROM PermisoModular p ORDER BY p.idModulo, p.idPagina")
     List<PermisoModular> findAllOrdenado();
+
+    /**
+     * Elimina todos los permisos asociados a una página (para eliminación en cascada).
+     */
+    void deleteByIdPagina(Integer idPagina);
 }

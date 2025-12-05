@@ -10,10 +10,22 @@ import {
   Edit,
   Trash2,
   Plus,
+  Users,
+  ChevronDown,
+  ChevronRight,
+  Eye,
+  PlusCircle,
+  Pencil,
+  Trash,
+  Download,
+  Upload,
+  CheckCircle,
+  Save,
+  RefreshCw,
 } from "lucide-react";
 
 export default function MBACControl() {
-  const [activeTab, setActiveTab] = useState("modulos");
+  const [activeTab, setActiveTab] = useState("config-rol");
 
   // Estados para módulos
   const [modulos, setModulos] = useState([]);
@@ -81,6 +93,15 @@ export default function MBACControl() {
     puedeAprobar: false,
     activo: true,
   });
+
+  // Estados para Personalización de Rol
+  const [rolSeleccionadoConfig, setRolSeleccionadoConfig] = useState("");
+  const [modulosConPaginas, setModulosConPaginas] = useState([]);
+  const [permisosRolConfig, setPermisosRolConfig] = useState({});
+  const [loadingConfig, setLoadingConfig] = useState(false);
+  const [savingConfig, setSavingConfig] = useState(false);
+  const [expandedModulos, setExpandedModulos] = useState({});
+  const [hasChanges, setHasChanges] = useState(false);
 
   // ============================================
   // FUNCIONES PARA MÓDULOS
@@ -469,14 +490,296 @@ export default function MBACControl() {
         console.error("Error cargando roles y páginas:", error);
       }
     };
-    if (activeTab === "permisos-crud") {
+    if (activeTab === "permisos-crud" || activeTab === "config-rol") {
       fetchRolesYPaginas();
     }
   }, [activeTab]);
 
+  // ============================================
+  // FUNCIONES PARA PERSONALIZACIÓN DE ROL
+  // ============================================
+
+  // Cargar módulos con sus páginas
+  const fetchModulosConPaginas = async () => {
+    try {
+      const [modulosRes, paginasRes] = await Promise.all([
+        apiClient.get("/mbac/modulos", true),
+        apiClient.get("/mbac/paginas", true),
+      ]);
+
+      // Agrupar páginas por módulo
+      const modulosAgrupados = modulosRes.map(mod => ({
+        ...mod,
+        paginas: paginasRes.filter(pag => pag.idModulo === mod.idModulo)
+      }));
+
+      setModulosConPaginas(modulosAgrupados);
+    } catch (error) {
+      console.error("Error cargando módulos con páginas:", error);
+    }
+  };
+
+  // Cargar permisos actuales del rol seleccionado
+  const cargarPermisosDelRol = async (idRol) => {
+    if (!idRol) {
+      setPermisosRolConfig({});
+      return;
+    }
+
+    try {
+      setLoadingConfig(true);
+      const permisos = await apiClient.get("/mbac/permisos-rol-pagina", true);
+
+      // Filtrar por el rol seleccionado y crear un mapa
+      const permisosDelRol = {};
+      permisos
+        .filter(p => p.idRol === Number(idRol))
+        .forEach(p => {
+          permisosDelRol[p.idPagina] = {
+            idPermiso: p.idPermiso,
+            puedeVer: p.puedeVer || false,
+            puedeCrear: p.puedeCrear || false,
+            puedeEditar: p.puedeEditar || false,
+            puedeEliminar: p.puedeEliminar || false,
+            puedeExportar: p.puedeExportar || false,
+            puedeImportar: p.puedeImportar || false,
+            puedeAprobar: p.puedeAprobar || false,
+            activo: p.activo !== false,
+          };
+        });
+
+      setPermisosRolConfig(permisosDelRol);
+      setHasChanges(false);
+    } catch (error) {
+      console.error("Error cargando permisos del rol:", error);
+    } finally {
+      setLoadingConfig(false);
+    }
+  };
+
+  // Manejar cambio de rol seleccionado
+  const handleRolConfigChange = (idRol) => {
+    if (hasChanges) {
+      if (!window.confirm("Tienes cambios sin guardar. ¿Deseas continuar?")) {
+        return;
+      }
+    }
+    setRolSeleccionadoConfig(idRol);
+    cargarPermisosDelRol(idRol);
+  };
+
+  // Toggle expandir/colapsar módulo
+  const toggleModuloExpanded = (idModulo) => {
+    setExpandedModulos(prev => ({
+      ...prev,
+      [idModulo]: !prev[idModulo]
+    }));
+  };
+
+  // Expandir todos los módulos
+  const expandirTodos = () => {
+    const expanded = {};
+    modulosConPaginas.forEach(mod => {
+      expanded[mod.idModulo] = true;
+    });
+    setExpandedModulos(expanded);
+  };
+
+  // Colapsar todos los módulos
+  const colapsarTodos = () => {
+    setExpandedModulos({});
+  };
+
+  // Actualizar un permiso específico
+  const actualizarPermiso = (idPagina, campo, valor) => {
+    setPermisosRolConfig(prev => ({
+      ...prev,
+      [idPagina]: {
+        ...(prev[idPagina] || {
+          puedeVer: false,
+          puedeCrear: false,
+          puedeEditar: false,
+          puedeEliminar: false,
+          puedeExportar: false,
+          puedeImportar: false,
+          puedeAprobar: false,
+          activo: true,
+        }),
+        [campo]: valor,
+      }
+    }));
+    setHasChanges(true);
+  };
+
+  // Dar acceso completo a una página
+  const darAccesoCompleto = (idPagina) => {
+    setPermisosRolConfig(prev => ({
+      ...prev,
+      [idPagina]: {
+        ...(prev[idPagina] || {}),
+        puedeVer: true,
+        puedeCrear: true,
+        puedeEditar: true,
+        puedeEliminar: true,
+        puedeExportar: true,
+        puedeImportar: true,
+        puedeAprobar: true,
+        activo: true,
+      }
+    }));
+    setHasChanges(true);
+  };
+
+  // Quitar todos los permisos de una página
+  const quitarAcceso = (idPagina) => {
+    setPermisosRolConfig(prev => ({
+      ...prev,
+      [idPagina]: {
+        ...(prev[idPagina] || {}),
+        puedeVer: false,
+        puedeCrear: false,
+        puedeEditar: false,
+        puedeEliminar: false,
+        puedeExportar: false,
+        puedeImportar: false,
+        puedeAprobar: false,
+        activo: false,
+      }
+    }));
+    setHasChanges(true);
+  };
+
+  // Dar acceso completo a todo el módulo
+  const darAccesoModulo = (idModulo) => {
+    const modulo = modulosConPaginas.find(m => m.idModulo === idModulo);
+    if (!modulo) return;
+
+    const nuevosPermisos = { ...permisosRolConfig };
+    modulo.paginas.forEach(pag => {
+      nuevosPermisos[pag.idPagina] = {
+        ...(nuevosPermisos[pag.idPagina] || {}),
+        puedeVer: true,
+        puedeCrear: true,
+        puedeEditar: true,
+        puedeEliminar: true,
+        puedeExportar: true,
+        puedeImportar: true,
+        puedeAprobar: true,
+        activo: true,
+      };
+    });
+    setPermisosRolConfig(nuevosPermisos);
+    setHasChanges(true);
+  };
+
+  // Quitar acceso a todo el módulo
+  const quitarAccesoModulo = (idModulo) => {
+    const modulo = modulosConPaginas.find(m => m.idModulo === idModulo);
+    if (!modulo) return;
+
+    const nuevosPermisos = { ...permisosRolConfig };
+    modulo.paginas.forEach(pag => {
+      nuevosPermisos[pag.idPagina] = {
+        ...(nuevosPermisos[pag.idPagina] || {}),
+        puedeVer: false,
+        puedeCrear: false,
+        puedeEditar: false,
+        puedeEliminar: false,
+        puedeExportar: false,
+        puedeImportar: false,
+        puedeAprobar: false,
+        activo: false,
+      };
+    });
+    setPermisosRolConfig(nuevosPermisos);
+    setHasChanges(true);
+  };
+
+  // Guardar todos los cambios
+  const guardarConfiguracion = async () => {
+    if (!rolSeleccionadoConfig) {
+      alert("Seleccione un rol primero");
+      return;
+    }
+
+    try {
+      setSavingConfig(true);
+
+      // Preparar los datos para guardar
+      const permisosAGuardar = [];
+
+      modulosConPaginas.forEach(modulo => {
+        modulo.paginas.forEach(pagina => {
+          const permisoActual = permisosRolConfig[pagina.idPagina];
+          if (permisoActual) {
+            permisosAGuardar.push({
+              idPermiso: permisoActual.idPermiso || null,
+              idRol: Number(rolSeleccionadoConfig),
+              idPagina: pagina.idPagina,
+              puedeVer: permisoActual.puedeVer || false,
+              puedeCrear: permisoActual.puedeCrear || false,
+              puedeEditar: permisoActual.puedeEditar || false,
+              puedeEliminar: permisoActual.puedeEliminar || false,
+              puedeExportar: permisoActual.puedeExportar || false,
+              puedeImportar: permisoActual.puedeImportar || false,
+              puedeAprobar: permisoActual.puedeAprobar || false,
+              activo: permisoActual.activo !== false,
+            });
+          }
+        });
+      });
+
+      // Guardar cada permiso (crear o actualizar)
+      for (const permiso of permisosAGuardar) {
+        if (permiso.idPermiso) {
+          await apiClient.put(`/mbac/permisos-rol-pagina/${permiso.idPermiso}`, permiso, true);
+        } else {
+          await apiClient.post("/mbac/permisos-rol-pagina", permiso, true);
+        }
+      }
+
+      alert("Configuración guardada exitosamente");
+      setHasChanges(false);
+
+      // Recargar permisos
+      await cargarPermisosDelRol(rolSeleccionadoConfig);
+    } catch (error) {
+      console.error("Error guardando configuración:", error);
+      alert(`Error al guardar: ${error.message}`);
+    } finally {
+      setSavingConfig(false);
+    }
+  };
+
+  // Cargar datos cuando se activa la pestaña
+  useEffect(() => {
+    if (activeTab === "config-rol") {
+      fetchModulosConPaginas();
+    }
+  }, [activeTab]);
+
+  // Verificar si una página tiene algún permiso activo
+  const tieneAlgunPermiso = (idPagina) => {
+    const p = permisosRolConfig[idPagina];
+    if (!p) return false;
+    return p.puedeVer || p.puedeCrear || p.puedeEditar || p.puedeEliminar || p.puedeExportar || p.puedeAprobar;
+  };
+
+  // Contar permisos activos en un módulo
+  const contarPermisosModulo = (idModulo) => {
+    const modulo = modulosConPaginas.find(m => m.idModulo === idModulo);
+    if (!modulo) return { total: 0, conAcceso: 0 };
+
+    let conAcceso = 0;
+    modulo.paginas.forEach(pag => {
+      if (tieneAlgunPermiso(pag.idPagina)) conAcceso++;
+    });
+
+    return { total: modulo.paginas.length, conAcceso };
+  };
+
   const tabs = [
-    { id: "modulos", label: "Módulos", icon: Database },
-    { id: "permisos-crud", label: "Permisos CRUD", icon: Settings },
+    { id: "config-rol", label: "Personalización de Rol", icon: Users },
   ];
 
   return (
@@ -901,6 +1204,281 @@ export default function MBACControl() {
                     </div>
                   )}
                 </div>
+              </div>
+            )}
+
+            {/* TAB: PERSONALIZACIÓN DE ROL */}
+            {activeTab === "config-rol" && (
+              <div className="space-y-6">
+                {/* Header con selector de rol */}
+                <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200">
+                  <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                      <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+                        <Users className="w-6 h-6 text-indigo-600" />
+                        Personalización de Permisos por Rol
+                      </h2>
+                      <p className="text-sm text-gray-600 mt-1">
+                        Configure los permisos predeterminados que tendrá cada rol al asignarse a un usuario
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                      <label className="text-sm font-medium text-gray-700">Seleccionar Rol:</label>
+                      <select
+                        value={rolSeleccionadoConfig}
+                        onChange={(e) => handleRolConfigChange(e.target.value)}
+                        className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent min-w-[200px]"
+                      >
+                        <option value="">-- Seleccione un rol --</option>
+                        {rolesDisponibles.map((rol) => (
+                          <option key={rol.idRol} value={rol.idRol}>
+                            {rol.descRol || `Rol ${rol.idRol}`}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Acciones rápidas */}
+                  {rolSeleccionadoConfig && (
+                    <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t border-indigo-200">
+                      <button
+                        onClick={expandirTodos}
+                        className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1"
+                      >
+                        <ChevronDown className="w-4 h-4" />
+                        Expandir todos
+                      </button>
+                      <button
+                        onClick={colapsarTodos}
+                        className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                        Colapsar todos
+                      </button>
+                      <div className="flex-1" />
+                      {hasChanges && (
+                        <span className="text-sm text-amber-600 font-medium">
+                          * Tienes cambios sin guardar
+                        </span>
+                      )}
+                      <button
+                        onClick={() => cargarPermisosDelRol(rolSeleccionadoConfig)}
+                        disabled={loadingConfig}
+                        className="px-3 py-1.5 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 flex items-center gap-1"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${loadingConfig ? 'animate-spin' : ''}`} />
+                        Recargar
+                      </button>
+                      <button
+                        onClick={guardarConfiguracion}
+                        disabled={savingConfig || !hasChanges}
+                        className={`px-4 py-1.5 text-sm rounded-lg flex items-center gap-1 ${
+                          hasChanges
+                            ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+                            : 'bg-gray-200 text-gray-500 cursor-not-allowed'
+                        }`}
+                      >
+                        <Save className={`w-4 h-4 ${savingConfig ? 'animate-pulse' : ''}`} />
+                        {savingConfig ? 'Guardando...' : 'Guardar cambios'}
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Contenido principal */}
+                {!rolSeleccionadoConfig ? (
+                  <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
+                    <Users className="w-16 h-16 text-gray-300 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600">Seleccione un rol</h3>
+                    <p className="text-gray-500 mt-2">
+                      Elija un rol del menú superior para configurar sus permisos predeterminados
+                    </p>
+                  </div>
+                ) : loadingConfig ? (
+                  <div className="bg-white rounded-xl p-12 text-center border border-gray-200">
+                    <RefreshCw className="w-12 h-12 text-indigo-400 mx-auto mb-4 animate-spin" />
+                    <p className="text-gray-600">Cargando configuración...</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {/* Leyenda */}
+                    <div className="bg-white rounded-lg p-4 border border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-700 mb-2">Leyenda de permisos:</h4>
+                      <div className="flex flex-wrap gap-4 text-xs">
+                        <span className="flex items-center gap-1"><Eye className="w-3.5 h-3.5 text-blue-500" /> Ver</span>
+                        <span className="flex items-center gap-1"><PlusCircle className="w-3.5 h-3.5 text-green-500" /> Crear</span>
+                        <span className="flex items-center gap-1"><Pencil className="w-3.5 h-3.5 text-amber-500" /> Editar</span>
+                        <span className="flex items-center gap-1"><Trash className="w-3.5 h-3.5 text-red-500" /> Eliminar</span>
+                        <span className="flex items-center gap-1"><Download className="w-3.5 h-3.5 text-purple-500" /> Exportar</span>
+                        <span className="flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5 text-teal-500" /> Aprobar</span>
+                      </div>
+                    </div>
+
+                    {/* Lista de módulos y páginas */}
+                    {modulosConPaginas.map((modulo) => {
+                      const stats = contarPermisosModulo(modulo.idModulo);
+                      const isExpanded = expandedModulos[modulo.idModulo];
+
+                      return (
+                        <div key={modulo.idModulo} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+                          {/* Header del módulo */}
+                          <div
+                            className={`flex items-center justify-between p-4 cursor-pointer transition-colors ${
+                              stats.conAcceso > 0 ? 'bg-indigo-50 hover:bg-indigo-100' : 'bg-gray-50 hover:bg-gray-100'
+                            }`}
+                            onClick={() => toggleModuloExpanded(modulo.idModulo)}
+                          >
+                            <div className="flex items-center gap-3">
+                              {isExpanded ? (
+                                <ChevronDown className="w-5 h-5 text-gray-500" />
+                              ) : (
+                                <ChevronRight className="w-5 h-5 text-gray-500" />
+                              )}
+                              <Database className={`w-5 h-5 ${stats.conAcceso > 0 ? 'text-indigo-600' : 'text-gray-400'}`} />
+                              <div>
+                                <h3 className="font-semibold text-gray-800">
+                                  {modulo.nombreModulo}
+                                </h3>
+                                <p className="text-xs text-gray-500">
+                                  {stats.conAcceso} de {stats.total} páginas con acceso
+                                </p>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => darAccesoModulo(modulo.idModulo)}
+                                className="px-3 py-1 text-xs bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors"
+                              >
+                                Dar acceso total
+                              </button>
+                              <button
+                                onClick={() => quitarAccesoModulo(modulo.idModulo)}
+                                className="px-3 py-1 text-xs bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors"
+                              >
+                                Quitar acceso
+                              </button>
+                            </div>
+                          </div>
+
+                          {/* Páginas del módulo */}
+                          {isExpanded && modulo.paginas.length > 0 && (
+                            <div className="border-t border-gray-200">
+                              <table className="w-full">
+                                <thead className="bg-gray-50">
+                                  <tr>
+                                    <th className="px-4 py-2 text-left text-xs font-semibold text-gray-600">Página</th>
+                                    <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600 w-12">
+                                      <Eye className="w-4 h-4 mx-auto text-blue-500" title="Ver" />
+                                    </th>
+                                    <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600 w-12">
+                                      <PlusCircle className="w-4 h-4 mx-auto text-green-500" title="Crear" />
+                                    </th>
+                                    <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600 w-12">
+                                      <Pencil className="w-4 h-4 mx-auto text-amber-500" title="Editar" />
+                                    </th>
+                                    <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600 w-12">
+                                      <Trash className="w-4 h-4 mx-auto text-red-500" title="Eliminar" />
+                                    </th>
+                                    <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600 w-12">
+                                      <Download className="w-4 h-4 mx-auto text-purple-500" title="Exportar" />
+                                    </th>
+                                    <th className="px-2 py-2 text-center text-xs font-semibold text-gray-600 w-12">
+                                      <CheckCircle className="w-4 h-4 mx-auto text-teal-500" title="Aprobar" />
+                                    </th>
+                                    <th className="px-4 py-2 text-center text-xs font-semibold text-gray-600">Acciones</th>
+                                  </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                  {modulo.paginas.map((pagina) => {
+                                    const permisos = permisosRolConfig[pagina.idPagina] || {};
+                                    const tieneAcceso = tieneAlgunPermiso(pagina.idPagina);
+                                    // Contar cuántos permisos tiene activos
+                                    const permisosActivos = ['puedeVer', 'puedeCrear', 'puedeEditar', 'puedeEliminar', 'puedeExportar', 'puedeAprobar']
+                                      .filter(campo => permisos[campo]).length;
+
+                                    return (
+                                      <tr
+                                        key={pagina.idPagina}
+                                        className={`transition-colors ${tieneAcceso ? 'bg-green-50 border-l-4 border-l-green-500' : 'bg-gray-50/50 border-l-4 border-l-gray-300'}`}
+                                      >
+                                        <td className="px-4 py-3">
+                                          <div className="flex items-center gap-3">
+                                            {/* Indicador de estado */}
+                                            <div className={`flex-shrink-0 px-2 py-1 rounded-full text-xs font-semibold ${
+                                              tieneAcceso
+                                                ? 'bg-green-100 text-green-800'
+                                                : 'bg-gray-200 text-gray-500'
+                                            }`}>
+                                              {tieneAcceso ? `${permisosActivos}/6` : 'Sin acceso'}
+                                            </div>
+                                            <div>
+                                              <span className={`font-medium text-sm ${tieneAcceso ? 'text-gray-900' : 'text-gray-500'}`}>
+                                                {pagina.nombrePagina}
+                                              </span>
+                                              <p className="text-xs text-gray-400">{pagina.rutaPagina}</p>
+                                            </div>
+                                          </div>
+                                        </td>
+                                        {['puedeVer', 'puedeCrear', 'puedeEditar', 'puedeEliminar', 'puedeExportar', 'puedeAprobar'].map((campo) => (
+                                          <td key={campo} className="px-2 py-3 text-center">
+                                            <input
+                                              type="checkbox"
+                                              checked={permisos[campo] || false}
+                                              onChange={(e) => actualizarPermiso(pagina.idPagina, campo, e.target.checked)}
+                                              className={`h-5 w-5 rounded cursor-pointer ${
+                                                permisos[campo]
+                                                  ? 'text-green-600 border-green-400 focus:ring-green-500'
+                                                  : 'text-gray-400 border-gray-300 focus:ring-gray-400'
+                                              }`}
+                                            />
+                                          </td>
+                                        ))}
+                                        <td className="px-4 py-3">
+                                          <div className="flex justify-center gap-1">
+                                            <button
+                                              onClick={() => darAccesoCompleto(pagina.idPagina)}
+                                              className="px-2 py-1 text-xs bg-green-500 text-white rounded hover:bg-green-600 font-medium"
+                                              title="Dar acceso completo"
+                                            >
+                                              Todo
+                                            </button>
+                                            <button
+                                              onClick={() => quitarAcceso(pagina.idPagina)}
+                                              className="px-2 py-1 text-xs bg-gray-400 text-white rounded hover:bg-gray-500 font-medium"
+                                              title="Quitar acceso"
+                                            >
+                                              Ninguno
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    );
+                                  })}
+                                </tbody>
+                              </table>
+                            </div>
+                          )}
+
+                          {isExpanded && modulo.paginas.length === 0 && (
+                            <div className="p-4 text-center text-gray-500 text-sm border-t border-gray-200">
+                              Este módulo no tiene páginas configuradas
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+
+                    {modulosConPaginas.length === 0 && (
+                      <div className="bg-white rounded-xl p-8 text-center border border-gray-200">
+                        <Database className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <p className="text-gray-500">No hay módulos configurados en el sistema</p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>

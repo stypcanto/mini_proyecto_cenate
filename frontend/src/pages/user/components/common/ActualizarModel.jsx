@@ -14,12 +14,15 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
   const [ipress, setIpress] = useState([]);
   const [loadingIpress, setLoadingIpress] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
-  
+
   // Estado para foto
   const [fotoSeleccionada, setFotoSeleccionada] = useState(null);
   const [fotoPreview, setFotoPreview] = useState(null);
   const [fotoActual, setFotoActual] = useState(user?.foto_url || user?.foto_pers || null);
   const fileInputRef = useRef(null);
+
+  // Ref para el panel de permisos
+  const permisosRef = useRef(null);
 
   // Función helper para obtener el ID del usuario de forma segura
   const getUserId = () => {
@@ -576,6 +579,27 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
           onClose();
           return;
         }
+      }
+
+      // Guardar permisos si hay cambios
+      if (permisosRef.current && permisosRef.current.hayCambios()) {
+        console.log('🔐 Guardando permisos modulares...');
+        const resultadoPermisos = await permisosRef.current.guardarPermisos();
+        if (!resultadoPermisos.success) {
+          console.error('⚠️ Error al guardar permisos:', resultadoPermisos.message);
+          alert(
+            `✅ Usuario actualizado exitosamente\n\n` +
+            `⚠️ Advertencia: No se pudieron guardar algunos permisos.\n\n` +
+            `Error: ${resultadoPermisos.message}`
+          );
+          if (onSuccess) {
+            await onSuccess();
+          }
+          await new Promise(resolve => setTimeout(resolve, 500));
+          onClose();
+          return;
+        }
+        console.log('✅ Permisos guardados exitosamente');
       }
 
       alert('✅ Usuario actualizado exitosamente' + (fotoSeleccionada ? ' con foto' : ''));
@@ -1500,6 +1524,7 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
             {selectedTab === 'permisos' && (
               <div>
                 <PermisosUsuarioPanel
+                  ref={permisosRef}
                   userId={getUserId()}
                   userRoles={formData.roles}
                   readOnly={false}

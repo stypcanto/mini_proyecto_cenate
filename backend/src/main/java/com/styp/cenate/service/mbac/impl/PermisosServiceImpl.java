@@ -8,12 +8,18 @@
 package com.styp.cenate.service.mbac.impl;
 
 import com.styp.cenate.dto.mbac.*;
+import com.styp.cenate.model.PaginaModulo;
 import com.styp.cenate.model.PermisoModular;
+import com.styp.cenate.model.Rol;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.model.segu.SeguPermisosRolPagina;
 import com.styp.cenate.model.view.ModuloView;
 import com.styp.cenate.model.view.PermisoActivoView;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.mbac.PermisoModularRepository;
+import com.styp.cenate.repository.segu.PaginaRepository;
+import com.styp.cenate.repository.segu.PermisoRolPaginaRepository;
+import com.styp.cenate.repository.segu.RolRepository;
 import com.styp.cenate.repository.view.ModuloViewRepository;
 import com.styp.cenate.repository.view.PermisoActivoViewRepository;
 import com.styp.cenate.service.mbac.PermisosService;
@@ -36,6 +42,9 @@ public class PermisosServiceImpl implements PermisosService {
     private final PermisoModularRepository permisoModularRepository;
     private final ModuloViewRepository moduloViewRepository;
     private final PermisoActivoViewRepository permisoActivoViewRepository;
+    private final RolRepository rolRepository;
+    private final PermisoRolPaginaRepository permisoRolPaginaRepository;
+    private final PaginaRepository paginaRepository;
 
     // ===========================================================
     // 🔹 1. Obtener permisos activos (vista consolidada)
@@ -168,7 +177,81 @@ public class PermisosServiceImpl implements PermisosService {
     }
 
     // ===========================================================
-    // 🔹 6. Eliminar / revocar un permiso
+    // 🔹 6. Guardar o Actualizar permiso (UPSERT)
+    // ===========================================================
+    @Override
+    public PermisoUsuarioResponseDTO guardarOActualizarPermiso(PermisoUsuarioRequestDTO request) {
+        log.info("🔄 Upsert permiso MBAC → usuario={}, página={}", request.getIdUser(), request.getIdPagina());
+
+        // Buscar si ya existe un permiso para este usuario y página
+        var permisoExistente = permisoModularRepository.findByIdUserAndIdPagina(
+                request.getIdUser(),
+                request.getIdPagina()
+        );
+
+        PermisoModular permiso;
+        if (permisoExistente.isPresent()) {
+            // Actualizar permiso existente
+            permiso = permisoExistente.get();
+            permiso.setPuedeVer(request.getVer());
+            permiso.setPuedeCrear(request.getCrear());
+            permiso.setPuedeEditar(request.getEditar());
+            permiso.setPuedeEliminar(request.getEliminar());
+            permiso.setPuedeExportar(request.getExportar());
+            permiso.setPuedeAprobar(request.getAprobar());
+            permiso.setActivo(true); // Reactivar si estaba inactivo
+            log.info("✏️ Actualizando permiso existente ID {}", permiso.getIdPermiso());
+        } else {
+            // Crear nuevo permiso
+            permiso = PermisoModular.builder()
+                    .idUser(request.getIdUser())
+                    .idRol(request.getIdRol() != null ? request.getIdRol() : 1) // Default al primer rol si no se especifica
+                    .idModulo(request.getIdModulo())
+                    .idPagina(request.getIdPagina())
+                    .accion(request.getAccion() != null ? request.getAccion() : "all")
+                    .puedeVer(request.getVer())
+                    .puedeCrear(request.getCrear())
+                    .puedeEditar(request.getEditar())
+                    .puedeEliminar(request.getEliminar())
+                    .puedeExportar(request.getExportar())
+                    .puedeAprobar(request.getAprobar())
+                    .activo(true)
+                    .build();
+            log.info("🆕 Creando nuevo permiso para usuario {} en página {}", request.getIdUser(), request.getIdPagina());
+        }
+
+        permiso = permisoModularRepository.save(permiso);
+
+        return PermisoUsuarioResponseDTO.builder()
+                .idPermiso(permiso.getIdPermiso().longValue())
+                .idPagina(permiso.getIdPagina())
+                .rutaPagina(request.getRutaPagina())
+                .ver(permiso.getPuedeVer())
+                .crear(permiso.getPuedeCrear())
+                .editar(permiso.getPuedeEditar())
+                .eliminar(permiso.getPuedeEliminar())
+                .exportar(permiso.getPuedeExportar())
+                .aprobar(permiso.getPuedeAprobar())
+                .build();
+    }
+
+    // ===========================================================
+    // 🔹 6b. Guardar permisos en batch
+    // ===========================================================
+    @Override
+    public List<PermisoUsuarioResponseDTO> guardarPermisosBatch(Long idUser, List<PermisoUsuarioRequestDTO> permisos) {
+        log.info("📦 Guardando {} permisos en batch para usuario {}", permisos.size(), idUser);
+
+        return permisos.stream()
+                .map(p -> {
+                    p.setIdUser(idUser); // Asegurar que el idUser es correcto
+                    return guardarOActualizarPermiso(p);
+                })
+                .collect(Collectors.toList());
+    }
+
+    // ===========================================================
+    // 🔹 7. Eliminar / revocar un permiso
     // ===========================================================
     @Override
     public void eliminarPermiso(Integer idPermiso) {
@@ -334,6 +417,88 @@ public class PermisosServiceImpl implements PermisosService {
         }
 
         log.info("✅ Permisos agrupados para {} usuarios", resultado.size());
+        return resultado;
+    }
+
+    // ===========================================================
+    // 🔹 14. Obtener permisos predeterminados por roles
+    // ===========================================================
+    @Override
+    @Transactional(readOnly = true)
+    public List<PermisoUsuarioResponseDTO> obtenerPermisosPredefiidosPorRoles(List<String> nombresRoles) {
+        if (nombresRoles == null || nombresRoles.isEmpty()) {
+            log.warn("⚠️ Lista de roles vacía, retornando lista vacía de permisos");
+            return new java.util.ArrayList<>();
+        }
+
+        log.info("🔍 Buscando permisos predeterminados para roles: {}", nombresRoles);
+
+        // 1. Obtener IDs de los roles por nombre
+        List<Rol> roles = rolRepository.findByDescRolInAndActive(nombresRoles);
+        if (roles.isEmpty()) {
+            log.warn("⚠️ No se encontraron roles activos para: {}", nombresRoles);
+            return new java.util.ArrayList<>();
+        }
+
+        List<Integer> roleIds = roles.stream()
+                .map(Rol::getIdRol)
+                .collect(Collectors.toList());
+
+        log.info("📋 IDs de roles encontrados: {}", roleIds);
+
+        // 2. Obtener permisos predeterminados de la tabla segu_permisos_rol_pagina
+        List<SeguPermisosRolPagina> permisosRol = permisoRolPaginaRepository.findByIdRolInAndActivoTrue(roleIds);
+        log.info("📦 {} permisos predeterminados encontrados", permisosRol.size());
+
+        // 3. Obtener todas las páginas para mapear idPagina -> rutaPagina
+        List<PaginaModulo> todasLasPaginas = paginaRepository.findByActivoTrueOrderByOrdenAsc();
+        java.util.Map<Integer, PaginaModulo> paginasMap = todasLasPaginas.stream()
+                .collect(Collectors.toMap(PaginaModulo::getIdPagina, p -> p));
+
+        // 4. Consolidar permisos (si hay múltiples roles, usar OR para cada permiso)
+        java.util.Map<Integer, PermisoUsuarioResponseDTO> permisosConsolidados = new java.util.HashMap<>();
+
+        for (SeguPermisosRolPagina permisoRol : permisosRol) {
+            Integer idPagina = permisoRol.getIdPagina();
+            PaginaModulo pagina = paginasMap.get(idPagina);
+
+            if (pagina == null) {
+                log.warn("⚠️ Página no encontrada para ID: {}", idPagina);
+                continue;
+            }
+
+            PermisoUsuarioResponseDTO permisoExistente = permisosConsolidados.get(idPagina);
+
+            if (permisoExistente == null) {
+                // Crear nuevo permiso
+                permisoExistente = PermisoUsuarioResponseDTO.builder()
+                        .idPagina(idPagina)
+                        .rutaPagina(pagina.getRutaPagina())
+                        .nombrePagina(pagina.getNombrePagina())
+                        .nombreModulo(pagina.getModulo() != null ? pagina.getModulo().getNombreModulo() : null)
+                        .ver(Boolean.TRUE.equals(permisoRol.getPuedeVer()))
+                        .crear(Boolean.TRUE.equals(permisoRol.getPuedeCrear()))
+                        .editar(Boolean.TRUE.equals(permisoRol.getPuedeEditar()))
+                        .eliminar(Boolean.TRUE.equals(permisoRol.getPuedeEliminar()))
+                        .exportar(Boolean.TRUE.equals(permisoRol.getPuedeExportar()))
+                        .aprobar(Boolean.TRUE.equals(permisoRol.getPuedeAprobar()))
+                        .build();
+            } else {
+                // Consolidar con OR (si algún rol tiene el permiso, se activa)
+                permisoExistente.setVer(permisoExistente.getVer() || Boolean.TRUE.equals(permisoRol.getPuedeVer()));
+                permisoExistente.setCrear(permisoExistente.getCrear() || Boolean.TRUE.equals(permisoRol.getPuedeCrear()));
+                permisoExistente.setEditar(permisoExistente.getEditar() || Boolean.TRUE.equals(permisoRol.getPuedeEditar()));
+                permisoExistente.setEliminar(permisoExistente.getEliminar() || Boolean.TRUE.equals(permisoRol.getPuedeEliminar()));
+                permisoExistente.setExportar(permisoExistente.getExportar() || Boolean.TRUE.equals(permisoRol.getPuedeExportar()));
+                permisoExistente.setAprobar(permisoExistente.getAprobar() || Boolean.TRUE.equals(permisoRol.getPuedeAprobar()));
+            }
+
+            permisosConsolidados.put(idPagina, permisoExistente);
+        }
+
+        List<PermisoUsuarioResponseDTO> resultado = new java.util.ArrayList<>(permisosConsolidados.values());
+        log.info("✅ {} permisos predeterminados consolidados para roles: {}", resultado.size(), nombresRoles);
+
         return resultado;
     }
 }

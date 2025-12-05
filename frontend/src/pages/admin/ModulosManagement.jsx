@@ -92,7 +92,13 @@ export default function ModulosManagement() {
     try {
       const data = await moduloService.obtenerTodos();
       const sorted = Array.isArray(data)
-        ? data.sort((a, b) => (a.nombreModulo || '').localeCompare(b.nombreModulo || '', 'es'))
+        ? data.sort((a, b) => {
+            // Ordenar por campo 'orden' (nulls al final), luego por nombre
+            const ordenA = a.orden ?? Number.MAX_SAFE_INTEGER;
+            const ordenB = b.orden ?? Number.MAX_SAFE_INTEGER;
+            if (ordenA !== ordenB) return ordenA - ordenB;
+            return (a.nombreModulo || '').localeCompare(b.nombreModulo || '', 'es');
+          })
         : [];
       setModulos(sorted);
     } catch (err) {

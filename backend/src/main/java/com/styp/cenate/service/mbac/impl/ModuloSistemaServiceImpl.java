@@ -21,6 +21,7 @@ import com.styp.cenate.model.segu.SeguPermisosRolModulo;
 import com.styp.cenate.model.segu.SeguPermisosRolPagina;
 import com.styp.cenate.repository.mbac.ModuloSistemaRepository;
 import com.styp.cenate.repository.mbac.PaginaModuloRepository;
+import com.styp.cenate.repository.mbac.PermisoModularRepository;
 import com.styp.cenate.repository.segu.PermisoRolModuloRepository;
 import com.styp.cenate.repository.segu.PermisoRolPaginaRepository;
 import com.styp.cenate.repository.segu.RolRepository;
@@ -49,6 +50,7 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 	private final RolRepository rolRepo;
 	private final PermisoRolModuloRepository permisoRolModuloRepository;
 	private final PermisoRolPaginaRepository permisoRolPaginaRepository;
+	private final PermisoModularRepository permisoModularRepository;
 
 	@Override
 	public List<ModuloSistemaDTO> listado() {
@@ -67,7 +69,10 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 		ModuloSistema entity = moduloRepo.findById(id).orElseThrow(() -> new RuntimeException("Módulo no encontrado"));
 		entity.setNombreModulo(dto.getNombreModulo());
 		entity.setDescripcion(dto.getDescripcion());
+		entity.setIcono(dto.getIcono());
 		entity.setRutaBase(dto.getRutaBase());
+		entity.setActivo(dto.isActivo());
+		entity.setOrden(dto.getOrden());
 		entity = moduloRepo.save(entity);
 		return ModuloSistemaMapper.toDTO(entity);
 	}
@@ -125,8 +130,21 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 	}
 
 	@Override
+	@Transactional
 	public void eliminarPagina(Integer id) {
+		log.info("🗑️ Eliminando página ID: {} con sus permisos asociados", id);
+
+		// Primero eliminar permisos asociados en segu_permisos_rol_pagina
+		permisoRolPaginaRepository.deleteByIdPagina(id);
+		log.info("✅ Permisos rol-página eliminados para página ID: {}", id);
+
+		// Eliminar permisos modulares asociados
+		permisoModularRepository.deleteByIdPagina(id);
+		log.info("✅ Permisos modulares eliminados para página ID: {}", id);
+
+		// Finalmente eliminar la página
 		paginaRepo.deleteById(id);
+		log.info("✅ Página ID: {} eliminada correctamente", id);
 	}
 
 	@Override
@@ -197,14 +215,12 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 
 	@Override
 	public PermisoRolPaginaDTO crearPermisoRolPagina(PermisoRolPaginaDTO dto) {
-		// Verificar si ya existe
-		permisoRolPaginaRepository.findByIdRolAndIdPagina(dto.getIdRol(), dto.getIdPagina()).ifPresent(p -> {
-			throw new RuntimeException("Ya existe un permiso para este rol y página");
-		});
+		// UPSERT: Si ya existe, actualizar; si no, crear
+		SeguPermisosRolPagina entity = permisoRolPaginaRepository
+				.findByIdRolAndIdPagina(dto.getIdRol(), dto.getIdPagina())
+				.orElse(new SeguPermisosRolPagina());
 
-		SeguPermisosRolPagina entity = new SeguPermisosRolPagina();
 		mapearDTOAPermisoRP(dto, entity);
-
 		entity = permisoRolPaginaRepository.save(entity);
 		return convertirPermisoRPADTO(entity);
 	}
@@ -316,14 +332,14 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 	private void mapearDTOAPermisoRP(PermisoRolPaginaDTO dto, SeguPermisosRolPagina entity) {
 		entity.setIdRol(dto.getIdRol());
 		entity.setIdPagina(dto.getIdPagina());
-		entity.setPuedeVer(dto.getPuedeVer());
-		entity.setPuedeCrear(dto.getPuedeCrear());
-		entity.setPuedeEditar(dto.getPuedeEditar());
-		entity.setPuedeEliminar(dto.getPuedeEliminar());
-		entity.setPuedeExportar(dto.getPuedeExportar());
-		entity.setPuedeImportar(dto.getPuedeImportar());
-		entity.setPuedeAprobar(dto.getPuedeAprobar());
-		entity.setActivo(dto.getActivo());
+		entity.setPuedeVer(dto.getPuedeVer() != null ? dto.getPuedeVer() : false);
+		entity.setPuedeCrear(dto.getPuedeCrear() != null ? dto.getPuedeCrear() : false);
+		entity.setPuedeEditar(dto.getPuedeEditar() != null ? dto.getPuedeEditar() : false);
+		entity.setPuedeEliminar(dto.getPuedeEliminar() != null ? dto.getPuedeEliminar() : false);
+		entity.setPuedeExportar(dto.getPuedeExportar() != null ? dto.getPuedeExportar() : false);
+		entity.setPuedeImportar(dto.getPuedeImportar() != null ? dto.getPuedeImportar() : false);
+		entity.setPuedeAprobar(dto.getPuedeAprobar() != null ? dto.getPuedeAprobar() : false);
+		entity.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
 		entity.setAutorizadoPor(dto.getAutorizadoPor());
 	}
 

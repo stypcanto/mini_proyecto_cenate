@@ -52,6 +52,17 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByNameUserWithRoles(@Param("nameUser") String nameUser);
 
     /**
+     * 🚀 Carga un usuario por ID junto con sus roles asociados.
+     */
+    @Query("""
+        SELECT DISTINCT u
+        FROM Usuario u
+        LEFT JOIN FETCH u.roles r
+        WHERE u.idUser = :idUser
+    """)
+    Optional<Usuario> findByIdWithRoles(@Param("idUser") Long idUser);
+
+    /**
      * 🚀 Carga todos los usuarios con sus roles y permisos (para gestión MBAC).
      */
     @Query("""

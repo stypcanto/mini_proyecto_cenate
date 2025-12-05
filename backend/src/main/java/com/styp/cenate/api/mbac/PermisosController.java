@@ -105,6 +105,31 @@ public class PermisosController {
     }
 
     // ============================================================
+    // 🔹 3b. GUARDAR O ACTUALIZAR PERMISO (UPSERT)
+    // ============================================================
+    @PostMapping("/upsert")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<PermisoUsuarioResponseDTO> guardarOActualizarPermiso(
+            @RequestBody PermisoUsuarioRequestDTO request) {
+        log.info("🔄 [MBAC] POST /api/permisos/upsert -> Guardando o actualizando permiso");
+        PermisoUsuarioResponseDTO resultado = permisosService.guardarOActualizarPermiso(request);
+        return ResponseEntity.ok(resultado);
+    }
+
+    // ============================================================
+    // 🔹 3c. GUARDAR PERMISOS EN BATCH PARA UN USUARIO
+    // ============================================================
+    @PostMapping("/batch/{userId}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<List<PermisoUsuarioResponseDTO>> guardarPermisosBatch(
+            @PathVariable Long userId,
+            @RequestBody List<PermisoUsuarioRequestDTO> permisos) {
+        log.info("📦 [MBAC] POST /api/permisos/batch/{} -> Guardando {} permisos", userId, permisos.size());
+        List<PermisoUsuarioResponseDTO> resultados = permisosService.guardarPermisosBatch(userId, permisos);
+        return ResponseEntity.ok(resultados);
+    }
+
+    // ============================================================
     // 🔹 4. ACTUALIZAR PERMISO EXISTENTE
     // ============================================================
     @PutMapping("/{id}")
@@ -227,7 +252,7 @@ public class PermisosController {
             @RequestParam String ruta,
             @RequestParam String accion) {
         log.info("🔍 [MBAC] GET /api/permisos/check/{} -> ruta={}, accion={}", userIdentifier, ruta, accion);
-        
+
         try {
             Long userId = Long.parseLong(userIdentifier);
             boolean tienePermiso = permisosService.validarPermiso(userId, ruta, accion);
@@ -239,6 +264,24 @@ public class PermisosController {
             }
             boolean tienePermiso = permisosService.validarPermiso(userId, ruta, accion);
             return ResponseEntity.ok(tienePermiso);
+        }
+    }
+
+    // ============================================================
+    // 🔹 13. OBTENER PERMISOS PREDETERMINADOS POR ROLES
+    // ============================================================
+    @PostMapping("/roles/predeterminados")
+    public ResponseEntity<List<PermisoUsuarioResponseDTO>> obtenerPermisosPredefiidosPorRoles(
+            @RequestBody List<String> nombresRoles) {
+        log.info("📦 [MBAC] POST /api/permisos/roles/predeterminados -> roles={}", nombresRoles);
+
+        try {
+            List<PermisoUsuarioResponseDTO> permisos = permisosService.obtenerPermisosPredefiidosPorRoles(nombresRoles);
+            log.info("✅ {} permisos predeterminados encontrados para roles: {}", permisos.size(), nombresRoles);
+            return ResponseEntity.ok(permisos);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo permisos predeterminados para roles: {}", nombresRoles, e);
+            throw e;
         }
     }
 }

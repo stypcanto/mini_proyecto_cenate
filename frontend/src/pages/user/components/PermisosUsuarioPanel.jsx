@@ -4,7 +4,7 @@
 // Diseño UX/UI mejorado con tabla visual de permisos
 // ============================================================
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useImperativeHandle, forwardRef } from 'react';
 import {
   Shield,
   ChevronDown,
@@ -15,13 +15,15 @@ import {
   Eye,
   Plus,
   Edit3,
+  Pencil,
   Trash2,
   Download,
   CheckCircle,
   AlertCircle,
   RefreshCw,
   ToggleLeft,
-  ToggleRight
+  ToggleRight,
+  RotateCcw
 } from 'lucide-react';
 import axios from 'axios';
 import { getToken } from '../../../constants/auth';
@@ -38,15 +40,26 @@ const PERMISOS_CONFIG = [
   { key: 'aprobar', label: 'Aprobar', icon: CheckCircle, bgActive: 'bg-emerald-500', bgIcon: 'bg-emerald-500', textIcon: 'text-emerald-500' },
 ];
 
-const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, readOnly = false }) => {
+const PermisosUsuarioPanel = forwardRef(({
+  userId,
+  userRoles = [],
+  onRolesChange,
+  token,
+  readOnly = false,
+  onPermisosChange  // Callback para notificar cambios de permisos al padre
+}, ref) => {
   // Estados
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [loadingRolePermisos, setLoadingRolePermisos] = useState(false);
   const [error, setError] = useState(null);
 
   // Datos
   const [rolesSeleccionados, setRolesSeleccionados] = useState(userRoles);
+  const [rolesAnteriores, setRolesAnteriores] = useState(userRoles); // Para detectar cambios de roles
   const [modulos, setModulos] = useState([]);
   const [permisosUsuario, setPermisosUsuario] = useState({});
+  const [permisosOriginales, setPermisosOriginales] = useState({}); // Para detectar cambios
   const [modulosExpandidos, setModulosExpandidos] = useState({});
 
   // UI State
@@ -89,12 +102,6 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
       }));
 
       setModulos(modulosConPaginas);
-
-      // Expandir primer módulo con páginas
-      const primerModuloConPaginas = modulosConPaginas.find(m => m.paginas.length > 0);
-      if (primerModuloConPaginas) {
-        setModulosExpandidos({ [primerModuloConPaginas.idModulo]: true });
-      }
     } catch (err) {
       console.error('Error al cargar módulos:', err);
       throw err;
@@ -127,10 +134,151 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
       });
 
       setPermisosUsuario(permisosMap);
+      setPermisosOriginales(JSON.parse(JSON.stringify(permisosMap))); // Copia profunda
     } catch (err) {
       console.error('Error al cargar permisos:', err);
     }
   }, [userId, getHeaders]);
+
+  // Cargar permisos predeterminados por roles
+  const cargarPermisosPredeterminadosPorRoles = useCallback(async (roles) => {
+    if (!roles || roles.length === 0) {
+      console.log('⚠️ No hay roles para cargar permisos predeterminados');
+      return;
+    }
+
+    setLoadingRolePermisos(true);
+    try {
+      console.log('🔍 Cargando permisos predeterminados para roles:', roles);
+      const response = await axios.post(
+        `${API_URL}/api/permisos/roles/predeterminados`,
+        roles,
+        { headers: getHeaders() }
+      );
+
+      const permisosPredeterminados = response.data || [];
+      console.log('📦 Permisos predeterminados recibidos:', permisosPredeterminados.length);
+
+      if (permisosPredeterminados.length === 0) {
+        console.log('⚠️ No se encontraron permisos predeterminados para estos roles');
+        return;
+      }
+
+      // Convertir a mapa por ruta
+      const permisosMap = {};
+      permisosPredeterminados.forEach(permiso => {
+        const ruta = permiso.rutaPagina || permiso.ruta_pagina;
+        if (ruta) {
+          permisosMap[ruta] = {
+            ver: permiso.ver || permiso.puedeVer || false,
+            crear: permiso.crear || permiso.puedeCrear || false,
+            editar: permiso.editar || permiso.puedeEditar || false,
+            eliminar: permiso.eliminar || permiso.puedeEliminar || false,
+            exportar: permiso.exportar || permiso.puedeExportar || false,
+            aprobar: permiso.aprobar || permiso.puedeAprobar || false,
+          };
+        }
+      });
+
+      console.log('✅ Aplicando permisos predeterminados:', Object.keys(permisosMap).length, 'rutas');
+      setPermisosUsuario(permisosMap);
+    } catch (err) {
+      console.error('❌ Error al cargar permisos predeterminados:', err);
+    } finally {
+      setLoadingRolePermisos(false);
+    }
+  }, [getHeaders]);
+
+  // Guardar permisos en el backend usando endpoint batch
+  const guardarPermisos = useCallback(async () => {
+    if (!userId || readOnly) return { success: true, message: 'Sin cambios' };
+
+    setSaving(true);
+    try {
+      // Buscar información de páginas para obtener idModulo e idPagina
+      const paginasMap = {};
+      modulos.forEach(modulo => {
+        modulo.paginas.forEach(pagina => {
+          paginasMap[pagina.rutaPagina] = {
+            idPagina: pagina.idPagina,
+            idModulo: modulo.idModulo
+          };
+        });
+      });
+
+      // Preparar los permisos a guardar
+      const permisosAGuardar = [];
+
+      Object.entries(permisosUsuario).forEach(([rutaPagina, permisos]) => {
+        const paginaInfo = paginasMap[rutaPagina];
+        if (!paginaInfo) {
+          console.warn(`No se encontró información para la ruta: ${rutaPagina}`);
+          return;
+        }
+
+        // Solo guardar si hay al menos un permiso activo
+        const tienePermisos = Object.values(permisos).some(v => v === true);
+        if (tienePermisos) {
+          permisosAGuardar.push({
+            idUser: userId,
+            idModulo: paginaInfo.idModulo,
+            idPagina: paginaInfo.idPagina,
+            rutaPagina: rutaPagina,
+            accion: 'all',
+            ver: permisos.ver || false,
+            crear: permisos.crear || false,
+            editar: permisos.editar || false,
+            eliminar: permisos.eliminar || false,
+            exportar: permisos.exportar || false,
+            aprobar: permisos.aprobar || false
+          });
+        }
+      });
+
+      console.log('📤 Permisos a guardar:', permisosAGuardar);
+
+      if (permisosAGuardar.length > 0) {
+        // Usar endpoint batch para guardar todos los permisos de una vez
+        await axios.post(
+          `${API_URL}/api/permisos/batch/${userId}`,
+          permisosAGuardar,
+          { headers: getHeaders() }
+        );
+        console.log('✅ Permisos guardados exitosamente');
+      }
+
+      // Actualizar permisos originales
+      setPermisosOriginales(JSON.parse(JSON.stringify(permisosUsuario)));
+
+      return { success: true, message: 'Permisos guardados correctamente' };
+    } catch (err) {
+      console.error('Error al guardar permisos:', err);
+      return { success: false, message: err.response?.data?.message || err.message };
+    } finally {
+      setSaving(false);
+    }
+  }, [userId, readOnly, modulos, permisosUsuario, getHeaders]);
+
+  // Verificar si hay cambios sin guardar
+  const hayCambios = useCallback(() => {
+    return JSON.stringify(permisosUsuario) !== JSON.stringify(permisosOriginales);
+  }, [permisosUsuario, permisosOriginales]);
+
+  // Exponer métodos al componente padre via ref
+  useImperativeHandle(ref, () => ({
+    guardarPermisos,
+    hayCambios,
+    getPermisos: () => permisosUsuario,
+    isSaving: () => saving,
+    cargarPermisosPredeterminadosPorRoles // Exponer para que el padre pueda llamarlo
+  }), [guardarPermisos, hayCambios, permisosUsuario, saving, cargarPermisosPredeterminadosPorRoles]);
+
+  // Notificar cambios al padre
+  useEffect(() => {
+    if (onPermisosChange) {
+      onPermisosChange(permisosUsuario, hayCambios());
+    }
+  }, [permisosUsuario, onPermisosChange, hayCambios]);
 
   // Cargar datos iniciales
   useEffect(() => {
@@ -157,10 +305,50 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
     }
   }, [token, userId, cargarModulos, cargarPermisosUsuario]);
 
-  // Sincronizar roles externos
+  // Sincronizar roles externos y detectar cambios
   useEffect(() => {
     setRolesSeleccionados(userRoles);
-  }, [userRoles]);
+
+    // Detectar si los roles cambiaron (nuevo rol agregado o rol removido)
+    const rolesActualesSet = new Set(userRoles);
+    const rolesAnterioresSet = new Set(rolesAnteriores);
+
+    // Verificar si hay diferencias
+    const hayNuevosRoles = userRoles.some(rol => !rolesAnterioresSet.has(rol));
+    const hayRolesRemovidos = rolesAnteriores.some(rol => !rolesActualesSet.has(rol));
+
+    if (hayNuevosRoles || hayRolesRemovidos) {
+      console.log('🔄 Cambio de roles detectado:', {
+        anteriores: rolesAnteriores,
+        actuales: userRoles,
+        nuevos: userRoles.filter(r => !rolesAnterioresSet.has(r)),
+        removidos: rolesAnteriores.filter(r => !rolesActualesSet.has(r))
+      });
+
+      if (hayNuevosRoles && userRoles.length > 0) {
+        // Siempre cargar los permisos predeterminados cuando hay nuevos roles
+        cargarPermisosPredeterminadosPorRoles(userRoles);
+      }
+
+      // Actualizar roles anteriores
+      setRolesAnteriores(userRoles);
+    }
+  }, [userRoles, rolesAnteriores, cargarPermisosPredeterminadosPorRoles]);
+
+  // Cargar permisos predeterminados en la carga inicial si el usuario no tiene permisos
+  useEffect(() => {
+    // Solo ejecutar después de que se cargaron los permisos del usuario
+    if (!loading && userRoles.length > 0) {
+      const permisosUsuarioVacios = Object.keys(permisosUsuario).length === 0;
+      const permisosOriginalesVacios = Object.keys(permisosOriginales).length === 0;
+
+      // Si no hay permisos del usuario pero tiene roles, cargar los predeterminados
+      if (permisosUsuarioVacios && permisosOriginalesVacios) {
+        console.log('📋 Usuario sin permisos, cargando predeterminados para roles:', userRoles);
+        cargarPermisosPredeterminadosPorRoles(userRoles);
+      }
+    }
+  }, [loading, userRoles, permisosUsuario, permisosOriginales, cargarPermisosPredeterminadosPorRoles]);
 
   // Toggle módulo expandido
   const toggleModulo = (idModulo) => {
@@ -187,16 +375,19 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
   };
 
   // Toggle todos los permisos de una página
+  // Si tiene al menos un permiso activo -> quita todos
+  // Si no tiene ninguno -> activa todos
   const handleToggleAllPagina = (rutaPagina) => {
     if (readOnly) return;
 
     const permisosActuales = permisosUsuario[rutaPagina] || {};
-    const todosActivos = PERMISOS_CONFIG.every(p => permisosActuales[p.key]);
+    const tieneAlgunPermiso = Object.values(permisosActuales).some(v => v === true);
 
     setPermisosUsuario(prev => ({
       ...prev,
       [rutaPagina]: PERMISOS_CONFIG.reduce((acc, p) => {
-        acc[p.key] = !todosActivos;
+        // Si tiene algún permiso, quitar todos. Si no tiene ninguno, activar todos.
+        acc[p.key] = !tieneAlgunPermiso;
         return acc;
       }, {})
     }));
@@ -244,6 +435,15 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
     });
   };
 
+  // Verificar si el módulo tiene al menos un permiso activo (tiene acceso)
+  const moduloTieneAcceso = (modulo) => {
+    if (modulo.paginas.length === 0) return false;
+    return modulo.paginas.some(pagina => {
+      const permisos = permisosUsuario[pagina.rutaPagina] || {};
+      return Object.values(permisos).some(v => v === true);
+    });
+  };
+
   // Verificar si todos los permisos de una página están activos
   const paginaTodoActivo = (rutaPagina) => {
     const permisos = permisosUsuario[rutaPagina] || {};
@@ -255,6 +455,15 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
       <div className="flex items-center justify-center py-16">
         <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
         <span className="ml-3 text-gray-600">Cargando permisos...</span>
+      </div>
+    );
+  }
+
+  if (loadingRolePermisos) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <Loader2 className="w-8 h-8 animate-spin text-emerald-600" />
+        <span className="ml-3 text-gray-600">Aplicando permisos predeterminados del rol...</span>
       </div>
     );
   }
@@ -322,33 +531,79 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
 
       {/* Sección de Permisos - Diseño de Tabla */}
       <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-        <div className="px-4 py-3 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-200 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <FolderOpen className="w-5 h-5 text-emerald-600" />
-            <span className="font-semibold text-gray-900">Permisos por Módulo</span>
+        {/* Header con título y descripción */}
+        <div className="px-4 py-4 bg-gradient-to-r from-emerald-50 to-teal-50 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-3">
+              <FolderOpen className="w-5 h-5 text-emerald-600" />
+              <span className="font-semibold text-gray-900">Acceso a Páginas del Sistema</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                cargarPermisosUsuario();
+                cargarModulos();
+              }}
+              className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+              title="Recargar"
+            >
+              <RefreshCw className="w-4 h-4" />
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => {
-              cargarPermisosUsuario();
-              cargarModulos();
-            }}
-            className="p-1.5 text-gray-500 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-            title="Recargar"
-          >
-            <RefreshCw className="w-4 h-4" />
-          </button>
+          <p className="text-sm text-gray-600">
+            Selecciona las páginas a las que el usuario tendrá acceso. Los permisos están agrupados por módulos.
+          </p>
+          <div className="flex flex-wrap gap-4 mt-3 text-xs text-gray-500">
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-blue-500 flex items-center justify-center">
+                <Eye className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span>Ver</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-green-500 flex items-center justify-center">
+                <Plus className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span>Crear</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-amber-500 flex items-center justify-center">
+                <Pencil className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span>Editar</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-red-500 flex items-center justify-center">
+                <Trash2 className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span>Eliminar</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-purple-500 flex items-center justify-center">
+                <Download className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span>Exportar</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <div className="w-4 h-4 rounded bg-emerald-500 flex items-center justify-center">
+                <CheckCircle className="w-2.5 h-2.5 text-white" />
+              </div>
+              <span>Aprobar</span>
+            </div>
+          </div>
         </div>
 
         <div className="divide-y divide-gray-100">
-          {modulos.map((modulo) => {
+          {/* Ordenar módulos alfabéticamente */}
+          {[...modulos].sort((a, b) => a.nombreModulo.localeCompare(b.nombreModulo)).map((modulo) => {
             const isExpanded = modulosExpandidos[modulo.idModulo];
             const cantidadPermisos = contarPermisosModulo(modulo);
+            const tieneAcceso = moduloTieneAcceso(modulo);
             const todoActivo = moduloTodoActivo(modulo);
             const tienePaginas = modulo.paginas.length > 0;
 
             return (
-              <div key={modulo.idModulo}>
+              <div key={modulo.idModulo} className={tieneAcceso ? 'bg-emerald-50/30' : ''}>
                 {/* Header del Módulo */}
                 <div
                   className={`flex items-center justify-between px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors ${
@@ -357,6 +612,8 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
                   onClick={() => tienePaginas && toggleModulo(modulo.idModulo)}
                 >
                   <div className="flex items-center gap-3 flex-1">
+                    {/* Indicador visual de acceso */}
+                    <div className={`w-1 h-10 rounded-full ${tieneAcceso ? 'bg-emerald-500' : 'bg-gray-200'}`}></div>
                     {tienePaginas ? (
                       isExpanded ? (
                         <ChevronDown className="w-4 h-4 text-emerald-600" />
@@ -367,7 +624,7 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
                       <div className="w-4" />
                     )}
                     <div>
-                      <p className="font-medium text-gray-900">{modulo.nombreModulo}</p>
+                      <p className={`font-medium ${tieneAcceso ? 'text-gray-900' : 'text-gray-500'}`}>{modulo.nombreModulo}</p>
                       <p className="text-xs text-gray-500">{modulo.descripcion}</p>
                     </div>
                   </div>
@@ -380,29 +637,52 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
                         </span>
                         {cantidadPermisos > 0 && (
                           <span className="px-2 py-0.5 bg-emerald-100 text-emerald-700 text-xs font-medium rounded-full">
-                            {cantidadPermisos} activos
+                            {cantidadPermisos} permisos
                           </span>
                         )}
                         {!readOnly && (
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleToggleAllModulo(modulo);
-                            }}
-                            className={`p-1 rounded transition-colors ${
-                              todoActivo
-                                ? 'text-emerald-600 hover:bg-emerald-50'
-                                : 'text-gray-400 hover:bg-gray-100'
-                            }`}
-                            title={todoActivo ? 'Quitar todos' : 'Activar todos'}
-                          >
-                            {todoActivo ? (
-                              <ToggleRight className="w-5 h-5" />
-                            ) : (
-                              <ToggleLeft className="w-5 h-5" />
+                          <div className="flex items-center gap-1">
+                            {/* Botón resetear a permisos del rol */}
+                            {tieneAcceso && userRoles.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  cargarPermisosPredeterminadosPorRoles(userRoles);
+                                }}
+                                className="p-1.5 rounded-lg text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-all"
+                                title="Resetear a permisos del rol"
+                              >
+                                <RotateCcw className="w-4 h-4" />
+                              </button>
                             )}
-                          </button>
+                            {/* Botón de acceso */}
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleAllModulo(modulo);
+                              }}
+                              className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
+                                tieneAcceso
+                                  ? 'bg-emerald-500 text-white hover:bg-emerald-600 shadow-sm'
+                                  : 'bg-gray-100 text-gray-500 hover:bg-gray-200 border border-gray-300'
+                              }`}
+                              title={tieneAcceso ? 'Quitar todos los permisos' : 'Activar todos los permisos'}
+                            >
+                              {tieneAcceso ? (
+                                <>
+                                  <Eye className="w-4 h-4" />
+                                  <span className="text-xs font-medium">Con acceso</span>
+                                </>
+                              ) : (
+                                <>
+                                  <ToggleLeft className="w-4 h-4" />
+                                  <span className="text-xs font-medium">Sin acceso</span>
+                                </>
+                              )}
+                            </button>
+                          </div>
                         )}
                       </>
                     )}
@@ -411,86 +691,110 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
 
                 {/* Contenido Expandido - Tabla de Permisos */}
                 {isExpanded && tienePaginas && (
-                  <div className="bg-gray-50/50 border-t border-gray-100">
-                    {/* Header de la tabla */}
-                    <div className="grid grid-cols-[1fr,repeat(6,48px),40px] gap-1 px-4 py-2 bg-gray-100 text-xs font-semibold text-gray-600 uppercase tracking-wide">
-                      <div className="pl-2">Página</div>
-                      {PERMISOS_CONFIG.map(({ key, label, icon: Icon, textIcon }) => (
-                        <div key={key} className="text-center" title={label}>
-                          <Icon className={`w-3.5 h-3.5 mx-auto ${textIcon}`} />
+                  <div className="ml-6 mr-2 mb-3 mt-1 rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+                    {/* Header de la tabla - Estilo destacado */}
+                    <div className="flex items-center px-4 py-3 bg-gradient-to-r from-slate-100 to-slate-50 border-b-2 border-slate-200">
+                      <div className="flex-1 min-w-[180px] flex items-center gap-2">
+                        <div className="w-1.5 h-5 bg-blue-500 rounded-full"></div>
+                        <span className="text-xs font-bold text-slate-600 uppercase tracking-wider">Página</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {PERMISOS_CONFIG.map(({ key, label, icon: Icon, bgIcon }) => (
+                          <div key={key} className="w-9 flex justify-center" title={label}>
+                            <div className={`w-6 h-6 rounded-md ${bgIcon} bg-opacity-20 flex items-center justify-center`}>
+                              <Icon className={`w-3.5 h-3.5 ${bgIcon.replace('bg-', 'text-')}`} />
+                            </div>
+                          </div>
+                        ))}
+                        {/* Columna de acceso - solo título */}
+                        <div className="w-9 flex justify-center" title="Acceso a la página">
+                          <span className="text-xs font-medium text-gray-500">On/Off</span>
                         </div>
-                      ))}
-                      <div className="text-center">Todo</div>
+                      </div>
                     </div>
 
                     {/* Filas de páginas */}
                     {modulo.paginas.map((pagina, idx) => {
                       const permisos = permisosUsuario[pagina.rutaPagina] || {};
                       const todoActivo = paginaTodoActivo(pagina.rutaPagina);
-                      const tieneAlguno = Object.values(permisos).some(v => v);
+                      const tieneAlguno = Object.values(permisos).some(v => v === true);
+                      const isLast = idx === modulo.paginas.length - 1;
 
                       return (
                         <div
                           key={pagina.idPagina}
-                          className={`grid grid-cols-[1fr,repeat(6,48px),40px] gap-1 px-4 py-2 items-center border-t border-gray-100 hover:bg-white transition-colors ${
-                            tieneAlguno ? 'bg-emerald-50/30' : ''
+                          className={`flex items-center px-4 py-3 transition-all duration-150 ${
+                            !isLast ? 'border-b border-gray-100' : ''
+                          } ${
+                            tieneAlguno
+                              ? 'bg-emerald-50/40 hover:bg-emerald-50/70'
+                              : 'bg-white hover:bg-gray-50/80'
                           }`}
                         >
-                          {/* Nombre de página */}
-                          <div className="pl-2">
-                            <p className="text-sm font-medium text-gray-800 truncate" title={pagina.nombrePagina}>
-                              {pagina.nombrePagina}
-                            </p>
-                            <p className="text-xs text-gray-400 truncate" title={pagina.rutaPagina}>
-                              {pagina.rutaPagina}
-                            </p>
+                          {/* Indicador visual + Nombre de página */}
+                          <div className="flex-1 min-w-[180px] pr-4 flex items-start gap-3">
+                            <div className={`w-1 h-10 rounded-full mt-0.5 ${
+                              tieneAlguno ? 'bg-emerald-400' : 'bg-gray-200'
+                            }`}></div>
+                            <div className="flex-1">
+                              <p className={`text-sm font-medium truncate ${
+                                tieneAlguno ? 'text-gray-800' : 'text-gray-600'
+                              }`} title={pagina.nombrePagina}>
+                                {pagina.nombrePagina}
+                              </p>
+                              <p className="text-xs text-gray-400 truncate" title={pagina.rutaPagina}>
+                                {pagina.rutaPagina}
+                              </p>
+                            </div>
                           </div>
 
                           {/* Checkboxes de permisos */}
-                          {PERMISOS_CONFIG.map(({ key, bgActive }) => {
-                            const isActive = permisos[key] || false;
+                          <div className="flex items-center gap-1">
+                            {PERMISOS_CONFIG.map(({ key, bgActive }) => {
+                              const isActive = permisos[key] || false;
 
-                            return (
-                              <div key={key} className="flex justify-center">
-                                <button
-                                  type="button"
-                                  onClick={() => handlePermisoToggle(pagina.rutaPagina, key)}
-                                  disabled={readOnly}
-                                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                                    readOnly ? 'cursor-default' : 'cursor-pointer'
-                                  } ${
-                                    isActive
-                                      ? `${bgActive} text-white shadow-sm`
-                                      : 'bg-gray-200 text-gray-400 hover:bg-gray-300'
-                                  }`}
-                                >
-                                  {isActive && <Check className="w-4 h-4" />}
-                                </button>
-                              </div>
-                            );
-                          })}
+                              return (
+                                <div key={key} className="w-9 flex justify-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => handlePermisoToggle(pagina.rutaPagina, key)}
+                                    disabled={readOnly}
+                                    className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 ${
+                                      readOnly ? 'cursor-default' : 'cursor-pointer hover:scale-105'
+                                    } ${
+                                      isActive
+                                        ? `${bgActive} text-white shadow-md`
+                                        : 'bg-gray-100 text-gray-300 hover:bg-gray-200 border border-gray-200'
+                                    }`}
+                                  >
+                                    {isActive && <Check className="w-4 h-4" />}
+                                  </button>
+                                </div>
+                              );
+                            })}
 
-                          {/* Toggle todo */}
-                          <div className="flex justify-center">
-                            <button
-                              type="button"
-                              onClick={() => handleToggleAllPagina(pagina.rutaPagina)}
-                              disabled={readOnly}
-                              className={`p-1 rounded transition-colors ${
-                                readOnly ? 'cursor-default' : 'cursor-pointer'
-                              } ${
-                                todoActivo
-                                  ? 'text-emerald-600 hover:bg-emerald-100'
-                                  : 'text-gray-400 hover:bg-gray-200'
-                              }`}
-                              title={todoActivo ? 'Quitar todos' : 'Activar todos'}
-                            >
-                              {todoActivo ? (
-                                <ToggleRight className="w-5 h-5" />
-                              ) : (
-                                <ToggleLeft className="w-5 h-5" />
-                              )}
-                            </button>
+                            {/* Toggle acceso - Se activa si tiene al menos un permiso */}
+                            <div className="w-9 flex justify-center">
+                              <button
+                                type="button"
+                                onClick={() => handleToggleAllPagina(pagina.rutaPagina)}
+                                disabled={readOnly}
+                                className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-150 border ${
+                                  readOnly ? 'cursor-default' : 'cursor-pointer hover:scale-105'
+                                } ${
+                                  tieneAlguno
+                                    ? 'text-emerald-600 bg-emerald-100 border-emerald-300 hover:bg-emerald-200'
+                                    : 'text-gray-400 bg-gray-50 border-gray-200 hover:bg-gray-100'
+                                }`}
+                                title={tieneAlguno ? 'Quitar todos los permisos' : 'Activar todos los permisos'}
+                              >
+                                {tieneAlguno ? (
+                                  <ToggleRight className="w-4 h-4" />
+                                ) : (
+                                  <ToggleLeft className="w-4 h-4" />
+                                )}
+                              </button>
+                            </div>
                           </div>
                         </div>
                       );
@@ -523,6 +827,8 @@ const PermisosUsuarioPanel = ({ userId, userRoles = [], onRolesChange, token, re
       </div>
     </div>
   );
-};
+});
+
+PermisosUsuarioPanel.displayName = 'PermisosUsuarioPanel';
 
 export default PermisosUsuarioPanel;

@@ -9,10 +9,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 
 public class ModuloSistemaDTO {
-	
+
 	private Integer idModulo;
 	private String nombreModulo;
 	private String descripcion;
+	private String icono;
 	private String rutaBase;
 	private boolean activo;
 	private Integer orden;

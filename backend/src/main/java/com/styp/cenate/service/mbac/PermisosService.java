@@ -74,9 +74,22 @@ public interface PermisosService {
     /** Actualiza un permiso existente */
     PermisoUsuarioResponseDTO actualizarPermiso(Integer idPermiso, PermisoUsuarioRequestDTO request);
 
+    /** Crea o actualiza un permiso (upsert) - Usado por el panel de permisos */
+    PermisoUsuarioResponseDTO guardarOActualizarPermiso(PermisoUsuarioRequestDTO request);
+
+    /** Guarda múltiples permisos en batch para un usuario */
+    List<PermisoUsuarioResponseDTO> guardarPermisosBatch(Long idUser, List<PermisoUsuarioRequestDTO> permisos);
+
     /** Elimina un permiso por su ID */
     void eliminarPermiso(Integer idPermiso);
 
     /** Lista todos los permisos registrados */
     List<PermisoUsuarioResponseDTO> listarPermisos();
+
+    // ============================================================
+    // 🔹 PERMISOS PREDETERMINADOS POR ROL
+    // ============================================================
+
+    /** Obtiene los permisos predeterminados para una lista de nombres de roles */
+    List<PermisoUsuarioResponseDTO> obtenerPermisosPredefiidosPorRoles(List<String> nombresRoles);
 }

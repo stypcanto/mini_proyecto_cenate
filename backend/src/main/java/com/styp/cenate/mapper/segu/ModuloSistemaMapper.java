@@ -10,7 +10,7 @@ public class ModuloSistemaMapper {
 
 	public static ModuloSistemaDTO toDTO(ModuloSistema entity) {
 		ModuloSistemaDTO dto = new ModuloSistemaDTO(entity.getIdModulo(), entity.getNombreModulo(),
-				entity.getDescripcion(), entity.getRutaBase(), entity.getActivo(), entity.getOrden());
+				entity.getDescripcion(), entity.getIcono(), entity.getRutaBase(), entity.getActivo(), entity.getOrden());
 		return dto;
 	}
 
@@ -19,10 +19,9 @@ public class ModuloSistemaMapper {
 			return null;
 		}
 		return ModuloSistema.builder().idModulo(dto.getIdModulo()).nombreModulo(dto.getNombreModulo())
-				.descripcion(dto.getDescripcion()).rutaBase(dto.getRutaBase()).activo(dto.isActivo())
+				.descripcion(dto.getDescripcion()).icono(dto.getIcono()).rutaBase(dto.getRutaBase()).activo(dto.isActivo())
 				.orden(dto.getOrden())
 				.build();
-		// Otros campos no se actualizan.
 	}
 
 	public static void updateEntityFromDto(ModuloSistemaDTO dto, ModuloSistema entity) {
@@ -31,10 +30,10 @@ public class ModuloSistemaMapper {
 		}
 		entity.setNombreModulo(dto.getNombreModulo());
 		entity.setDescripcion(dto.getDescripcion());
+		entity.setIcono(dto.getIcono());
 		entity.setRutaBase(dto.getRutaBase());
 		entity.setActivo(dto.isActivo());
 		entity.setOrden(dto.getOrden());
-		// Otros campos no se actualizan.
 	}
 
 	public static List<ModuloSistemaDTO> toDtoList(List<ModuloSistema> entities) {
