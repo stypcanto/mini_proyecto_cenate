@@ -30,6 +30,11 @@ public interface ModuloSistemaService {
 	
 	//Paginas
 	List<PaginaDTO> listarPaginas();
+	PaginaDTO obtenerPagina(Integer id);
+	PaginaDTO guardarPagina(PaginaDTO dto);
+	PaginaDTO actualizarPagina(Integer id, PaginaDTO dto);
+	void eliminarPagina(Integer id);
+	List<PaginaDTO> listarPaginasPorModulo(Integer idModulo);
 	
 	// ========================================
     // PERMISOS ROL-MODULO

@@ -97,6 +97,34 @@ public class ModuloSistemaController {
 		return ResponseEntity.ok(mbacService.listarPaginas());
 	}
 
+	@GetMapping("/paginas/{id}")
+	public ResponseEntity<PaginaDTO> obtenerPagina(@PathVariable("id") Integer id) {
+		return ResponseEntity.ok(mbacService.obtenerPagina(id));
+	}
+
+	@PostMapping("/paginas")
+	public ResponseEntity<PaginaDTO> crearPagina(@RequestBody PaginaDTO dto) {
+		log.info("Creando página: {}", dto.toString());
+		PaginaDTO creada = mbacService.guardarPagina(dto);
+		return ResponseEntity.ok(creada);
+	}
+
+	@PutMapping("/paginas/{id}")
+	public ResponseEntity<PaginaDTO> actualizarPagina(@PathVariable("id") Integer id, @RequestBody PaginaDTO dto) {
+		return ResponseEntity.ok(mbacService.actualizarPagina(id, dto));
+	}
+
+	@DeleteMapping("/paginas/{id}")
+	public ResponseEntity<Void> eliminarPagina(@PathVariable("id") Integer id) {
+		mbacService.eliminarPagina(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	@GetMapping("/modulos/{idModulo}/paginas")
+	public ResponseEntity<List<PaginaDTO>> listarPaginasPorModulo(@PathVariable("idModulo") Integer idModulo) {
+		return ResponseEntity.ok(mbacService.listarPaginasPorModulo(idModulo));
+	}
+
 	// ========================================
 	// PERMISOS ROL-MÓDULO
 	// ========================================

@@ -1,18 +1,16 @@
 // ========================================================================
-// 🌐 DynamicSidebar.jsx – Menú dinámico MBAC CENATE 2025
+// DynamicSidebar.jsx - Menu dinamico RBAC CENATE 2025
 // ------------------------------------------------------------------------
-// - Menú dinámico basado en permisos (usePermissions)
-// - Logo de CENATE en la parte superior
-// - Compatible con SUPERADMIN / ADMIN y roles MBAC personalizados
-// - ✅ Funcionalidad de colapsar/expandir sidebar con tooltips
-// - Estado del Sistema solo visible para SuperAdmin
-// - Nota: Perfil de usuario y opciones están en el Header
+// - Menu dinamico basado en permisos RBAC (usePermissions)
+// - Iconos cargados desde la base de datos (dim_modulos_sistema.icono)
+// - Compatible con SUPERADMIN / ADMIN y roles personalizados
+// - Funcionalidad de colapsar/expandir sidebar con tooltips
 // ========================================================================
 
 import React, { useState, useMemo, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import usePermissions from "../hooks/usePermissions"; // ✅ default import
+import usePermissions from "../hooks/usePermissions";
 import {
   LayoutDashboard,
   Users,
@@ -48,11 +46,73 @@ import {
   Server,
   Eye,
   Layout,
+  Layers,
+  BoxSelect,
+  Folder,
 } from "lucide-react";
+
+// Mapeo de nombres de iconos a componentes de Lucide
+const iconMap = {
+  'Settings': Settings,
+  'Users': Users,
+  'Building2': Building2,
+  'CalendarCheck': CalendarCheck,
+  'UserCog': UserCog,
+  'UsersCog': UserCog,  // Alias por si está mal escrito en BD
+  'Hospital': Hospital,
+  'ClipboardList': ClipboardList,
+  'Stethoscope': Stethoscope,
+  'BarChart3': BarChart3,
+  'Search': Search,
+  'HeartPulse': HeartPulse,
+  'UsersRound': UsersRound,
+  'UserCheck': UserCheck,
+  'ClipboardCheck': ClipboardCheck,
+  'FileSearch': FileSearch,
+  'FileBarChart': FileBarChart,
+  'LayoutDashboard': LayoutDashboard,
+  'FileText': FileText,
+  'Calendar': Calendar,
+  'TrendingUp': TrendingUp,
+  'Network': Network,
+  'Eye': Eye,
+  'Layout': Layout,
+  'Shield': Shield,
+  'Lock': Lock,
+  'Database': Database,
+  'Server': Server,
+  'Folder': Folder,
+  'FileCheck': FileCheck,
+  'Activity': Activity,
+  'Layers': Layers,
+  'BoxSelect': BoxSelect,
+};
+
+const getIconComponent = (iconName) => {
+  console.log('Icon name received:', iconName, '| Found:', !!iconMap[iconName]);
+  if (!iconName) return Folder;
+  return iconMap[iconName] || Folder;
+};
+
+// Colores por defecto para modulos dinamicos
+const moduleColors = [
+  { color: "text-blue-400", bgColor: "bg-blue-500/10" },
+  { color: "text-emerald-400", bgColor: "bg-emerald-500/10" },
+  { color: "text-green-400", bgColor: "bg-green-500/10" },
+  { color: "text-purple-400", bgColor: "bg-purple-500/10" },
+  { color: "text-amber-400", bgColor: "bg-amber-500/10" },
+  { color: "text-cyan-400", bgColor: "bg-cyan-500/10" },
+  { color: "text-indigo-400", bgColor: "bg-indigo-500/10" },
+  { color: "text-rose-400", bgColor: "bg-rose-500/10" },
+  { color: "text-teal-400", bgColor: "bg-teal-500/10" },
+  { color: "text-orange-400", bgColor: "bg-orange-500/10" },
+];
+
+const getModuleColor = (index) => moduleColors[index % moduleColors.length];
 
 export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) {
   const { user } = useAuth();
-  const { getModulosAgrupados, loading } = usePermissions(user.id);
+  const { getModulosConDetalle, loading } = usePermissions(user.id);
   const location = useLocation();
   const [openSections, setOpenSections] = useState({});
 
@@ -69,7 +129,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   const toggleSection = (key) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
 
-  // Cuando está colapsado, cerrar todas las secciones
+  // Cuando esta colapsado, cerrar todas las secciones
   useEffect(() => {
     if (collapsed) {
       setOpenSections({});
@@ -77,181 +137,67 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   }, [collapsed]);
 
   // ============================================================
-  // 🧭 Obtener módulos permitidos (según permisos MBAC)
+  // Obtener modulos permitidos (segun permisos RBAC)
   // ============================================================
 
   const modulosPermitidos = useMemo(() => {
-    console.log({
-      "es admin": isSuperAdmin
-    })
-
-    if (isSuperAdmin) 
-      return null;
-
-    const agrupados = getModulosAgrupados();
-     console.log({
-      "agrupados": agrupados
-    })
-
-    return agrupados;
-  }, [getModulosAgrupados, isSuperAdmin]);
+    // Todos los usuarios (incluido admin) usan permisos de la BD
+    const modulosDetalle = getModulosConDetalle();
+    return modulosDetalle;
+  }, [getModulosConDetalle]);
 
 
 
   // ============================================================
-  // 🧱 Definición base del menú (para Superadmin)
-  // ============================================================
-  const fullMenu = {
-
-    admin: {
-      title: "Administración",
-      icon: UserCog,
-      color: "text-blue-400",
-      bgColor: "bg-blue-500/10",
-      items: [
-        { label: "Dashboard Admin", path: "/admin/dashboard", icon: LayoutDashboard },
-        { label: "Gestión de Usuarios", path: "/admin/users", icon: Users },
-        { label: "Solicitudes de Registros", path: "/admin/solicitudes", icon: FileCheck },
-        { label: "CMS Dashboard Médico", path: "/admin/dashboard-medico/cms", icon: Layout },
-        { label: "Logs del Sistema", path: "/admin/logs", icon: Eye },
-      ],
-    },
-
-
-    asegurados: {
-      title: "Listado de Asegurados",
-      icon: Search,
-      color: "text-emerald-400",
-      bgColor: "bg-emerald-500/10",
-      items: [
-        { label: "Buscar Asegurado", path: "/asegurados/buscar", icon: Search },
-        { label: "Dashboard", path: "/asegurados/dashboard", icon: BarChart3 },
-      ],
-    },
-    medico: {
-      title: "Panel Médico",
-      icon: HeartPulse,
-      color: "text-green-400",
-      bgColor: "bg-green-500/10",
-      items: [
-        { label: "Dashboard Médico", path: "/roles/medico/dashboard", icon: LayoutDashboard },
-        { label: "Pacientes", path: "/roles/medico/pacientes", icon: UsersRound },
-        { label: "Citas Médicas", path: "/roles/medico/citas", icon: CalendarCheck },
-        { label: "Indicadores", path: "/roles/medico/indicadores", icon: TrendingUp },
-      ],
-    },
-    coordinador: {
-      title: "Panel Coordinador",
-      icon: ClipboardCheck,
-      color: "text-purple-400",
-      bgColor: "bg-purple-500/10",
-      items: [
-        { label: "Dashboard", path: "/roles/coordinador/dashboard", icon: LayoutDashboard },
-        { label: "Agenda Médica", path: "/roles/coordinador/agenda", icon: Calendar },
-        { label: "Asignar Gestor", path: "/roles/coordinador/asignacion", icon: UserCheck },
-        { label: "Sistema de Coordinación", path: "/roles/coordinador/sistema-coordinacion", icon: Network },
-      ],
-    },
-    externo: {
-      title: "Personal Externo",
-      icon: UserCheck,
-      color: "text-amber-400",
-      bgColor: "bg-amber-500/10",
-      items: [
-        { label: "Dashboard", path: "/roles/externo/dashboard", icon: LayoutDashboard },
-        { label: "Reportes", path: "/roles/externo/reportes", icon: FileBarChart },
-      ],
-    },
-    citas: {
-      title: "Gestión de Citas",
-      icon: CalendarCheck,
-      color: "text-cyan-400",
-      bgColor: "bg-cyan-500/10",
-      items: [
-        { label: "Dashboard", path: "/citas/dashboard", icon: LayoutDashboard },
-        { label: "Gestión del Asegurado", path: "/citas/gestion-asegurado", icon: Users },
-       // { label: "Agenda", path: "/citas/agenda", icon: Calendar },
-      ],
-    },
-    lineamientos: {
-      title: "Lineamientos IPRESS",
-      icon: FileSearch,
-      color: "text-indigo-400",
-      bgColor: "bg-indigo-500/10",
-      items: [
-        { label: "Dashboard", path: "/lineamientos/ipress", icon: LayoutDashboard },
-       // { label: "Registro", path: "/lineamientos/registro", icon: FileCheck },
-      ],
-    },
-    ipress: {
-        title: "IPRESS",
-        icon: Hospital,
-        color: "text-blue-400",
-        bgColor: "bg-blue-500/10",
-        items: [
-          { label: "Listado de IPRESS", path: "/ipress/listado", icon: Hospital },
-        ],
-      },
-  };
-
-  // ============================================================
-  // 🧩 Render principal
+  // Render principal - Menu dinamico desde la BD
   // ============================================================
 
   return (
     <div className={`w-full h-full flex flex-col bg-gradient-to-b from-[#0f172a] to-[#1e293b] text-white transition-all duration-300 ${collapsed ? 'items-center' : ''}`} style={{ overflow: 'visible', position: 'relative' }}>
-      {/* 🏥 Logo CENATE - En el espacio donde estaba el usuario */}
+      {/* Logo CENATE */}
       <div className="flex-shrink-0 border-b border-slate-700/50 transition-all duration-300">
         <div className={`flex items-center justify-center gap-3 transition-all duration-300 ${collapsed ? 'px-3 py-4' : 'px-5 py-5'}`}>
           {!collapsed ? (
-            <>
-              {/* Logo completo en modo expandido */}
-              <div className="flex items-center gap-3 w-full">
-                <img
-                  src="/images/LogoCENATEBlanco.png"
-                  alt="Logo CENATE"
-                  className="h-10 w-auto object-contain drop-shadow-lg"
-                />
-                {/* 🔘 Botón para colapsar/expandir (solo en desktop) */}
-                {onToggleCollapse && (
-                  <button
-                    onClick={onToggleCollapse}
-                    className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-700/50 transition-all duration-200 ml-auto z-10"
-                    aria-label="Colapsar menú"
-                    title="Colapsar menú"
-                  >
-                    <ChevronLeft className="w-5 h-5 text-slate-300" />
-                  </button>
-                )}
-          </div>
-            </>
+            <div className="flex items-center gap-3 w-full">
+              <img
+                src="/images/LogoCENATEBlanco.png"
+                alt="Logo CENATE"
+                className="h-10 w-auto object-contain drop-shadow-lg"
+              />
+              {onToggleCollapse && (
+                <button
+                  onClick={onToggleCollapse}
+                  className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg hover:bg-slate-700/50 transition-all duration-200 ml-auto z-10"
+                  aria-label="Colapsar menu"
+                  title="Colapsar menu"
+                >
+                  <ChevronLeft className="w-5 h-5 text-slate-300" />
+                </button>
+              )}
+            </div>
           ) : (
-            <>
-              {/* Logo compacto en modo colapsado */}
-              <div className="relative w-full flex items-center justify-center">
-                <img
-                  src="/images/LogoCENATEBlanco.png"
-                  alt="Logo CENATE"
-                  className="h-8 w-auto object-contain drop-shadow-lg"
-                />
-                {/* 🔘 Botón para expandir (solo en desktop) */}
-                {onToggleCollapse && (
-                  <button
-                    onClick={onToggleCollapse}
-                    className="absolute top-0 right-0 hidden lg:flex items-center justify-center w-6 h-6 rounded-lg hover:bg-slate-700/50 transition-all duration-200 z-10 bg-slate-800/80"
-                    aria-label="Expandir menú"
-                    title="Expandir menú"
-                  >
-                    <ChevronRight className="w-4 h-4 text-slate-300" />
-                  </button>
-                )}
-          </div>
-            </>
+            <div className="relative w-full flex items-center justify-center">
+              <img
+                src="/images/LogoCENATEBlanco.png"
+                alt="Logo CENATE"
+                className="h-8 w-auto object-contain drop-shadow-lg"
+              />
+              {onToggleCollapse && (
+                <button
+                  onClick={onToggleCollapse}
+                  className="absolute top-0 right-0 hidden lg:flex items-center justify-center w-6 h-6 rounded-lg hover:bg-slate-700/50 transition-all duration-200 z-10 bg-slate-800/80"
+                  aria-label="Expandir menu"
+                  title="Expandir menu"
+                >
+                  <ChevronRight className="w-4 h-4 text-slate-300" />
+                </button>
+              )}
+            </div>
           )}
         </div>
       </div>
 
-      {/* 📋 Menú de navegación - Flex-1 para ocupar el espacio disponible */}
+      {/* Menu de navegacion dinamico */}
       <nav className={`flex-1 py-4 space-y-2 scrollbar-thin scrollbar-thumb-slate-700 scrollbar-track-transparent transition-all duration-300 ${collapsed ? 'px-2' : 'px-4'}`} style={{ overflowY: 'auto', overflowX: 'visible', position: 'relative' }}>
         {loading && (
           <p className={`text-center text-slate-400 text-sm ${collapsed ? 'text-xs' : ''}`}>
@@ -259,65 +205,60 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
           </p>
         )}
 
-          {isSuperAdmin
-            ? Object.entries(fullMenu).map(([key, section]) => (
-                <SidebarSection
-                  key={key}
-                  section={section}
-                  openSections={openSections}
-                  toggleSection={toggleSection}
-                  location={location}
-                  collapsed={collapsed}
-                />
-              ))
-            : modulosPermitidos &&
-              Object.entries(modulosPermitidos).map(([modulo, rutas]) => (
-                <DynamicSection
-                  key={modulo}
-                  title={modulo}
-                  rutas={rutas}
-                  location={location}
-                  toggleSection={toggleSection}
-                  openSections={openSections}
-                  collapsed={collapsed}
-                />
-              ))}
+        {!loading && modulosPermitidos && modulosPermitidos.length === 0 && (
+          <p className="text-center text-slate-500 text-sm px-2">
+            No tienes modulos asignados
+          </p>
+        )}
+
+        {!loading && modulosPermitidos && modulosPermitidos.map((modulo, index) => (
+          <DynamicModuleSection
+            key={modulo.idModulo || index}
+            modulo={modulo}
+            colorConfig={getModuleColor(index)}
+            location={location}
+            toggleSection={toggleSection}
+            openSections={openSections}
+            collapsed={collapsed}
+            getIconComponent={getIconComponent}
+          />
+        ))}
       </nav>
 
-      {/* 🧮 Estado del Sistema (solo para SuperAdmin) */}
+      {/* Estado del Sistema (solo para SuperAdmin) */}
       {isSuperAdmin && (
-      <div className="flex-shrink-0 border-t border-slate-700 bg-slate-900/40">
+        <div className="flex-shrink-0 border-t border-slate-700 bg-slate-900/40">
           {!collapsed && (
             <div className="p-3">
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-medium mb-2">
-              <Database className="w-4 h-4" />
-              <span>Estado del Sistema</span>
-            </div>
-            <div className="space-y-1.5 text-xs text-slate-400">
-              <div className="flex justify-between">
-                <span>Módulos activos</span>
-                <span className="text-green-400 font-bold">6/6</span>
+              <div className="flex items-center gap-2 text-slate-400 text-xs font-medium mb-2">
+                <Database className="w-4 h-4" />
+                <span>Estado del Sistema</span>
               </div>
-              <div className="flex justify-between">
-                <span>Sistema</span>
-                <span className="flex items-center gap-1 text-green-400 font-bold">
-                  <TrendingUp className="w-3 h-3" /> 100%
-                </span>
+              <div className="space-y-1.5 text-xs text-slate-400">
+                <div className="flex justify-between">
+                  <span>Modulos activos</span>
+                  <span className="text-green-400 font-bold">{modulosPermitidos?.length || 0}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Sistema</span>
+                  <span className="flex items-center gap-1 text-green-400 font-bold">
+                    <TrendingUp className="w-3 h-3" /> OK
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
           {collapsed && (
-            <TooltipWrapper collapsed={collapsed} text="Módulos activos: 6/6">
+            <TooltipWrapper collapsed={collapsed} text={`Modulos: ${modulosPermitidos?.length || 0}`}>
               <div className="p-2 flex justify-center">
                 <div className="flex flex-col items-center gap-1">
                   <Database className="w-4 h-4 text-green-400" />
-                  <span className="text-green-400 text-xs font-bold">6/6</span>
+                  <span className="text-green-400 text-xs font-bold">{modulosPermitidos?.length || 0}</span>
                 </div>
               </div>
             </TooltipWrapper>
           )}
-      </div>
+        </div>
       )}
 
 
@@ -386,12 +327,13 @@ function TooltipWrapper({ children, collapsed, text }) {
   );
 }
 
-function SidebarSection({ section, openSections, toggleSection, location, collapsed }) {
-  const SectionIcon = section.icon;
-  const isOpen = openSections[section.title.toLowerCase()];
-  const hasActiveChild = section.items.some((i) => location.pathname === i.path);
-  
-  // Hooks siempre deben estar al inicio, fuera de condicionales
+// Componente para renderizar modulos dinamicos con iconos de la BD
+function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, openSections, collapsed, getIconComponent }) {
+  const { nombreModulo, icono, paginas } = modulo;
+  const ModuleIcon = getIconComponent(icono);
+  const isOpen = openSections[nombreModulo];
+  const hasActiveChild = paginas.some((p) => location.pathname === p.ruta);
+
   const [tooltipPosition, setTooltipPosition] = React.useState({ top: 0, left: 0 });
   const [showTooltip, setShowTooltip] = React.useState(false);
   const linkRef = React.useRef(null);
@@ -412,30 +354,29 @@ function SidebarSection({ section, openSections, toggleSection, location, collap
   };
 
   if (collapsed) {
-    const firstItem = section.items[0];
+    const firstPage = paginas[0];
 
     return (
       <>
         <div className="relative mb-2" style={{ overflow: 'visible', position: 'static' }}>
           <NavLink
             ref={linkRef}
-            to={firstItem?.path || "#"}
+            to={firstPage?.ruta || "#"}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
             className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all mx-auto hover:bg-slate-800/60 ${
               hasActiveChild
-                ? `${section.bgColor} ${section.color}`
+                ? `${colorConfig.bgColor} ${colorConfig.color}`
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            <SectionIcon className="w-5 h-5" />
+            <ModuleIcon className="w-5 h-5" />
           </NavLink>
         </div>
-        {/* Tooltip cuando está colapsado - Fixed position */}
         {showTooltip && (
-          <div 
+          <div
             className="fixed px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-2xl whitespace-nowrap pointer-events-none border border-slate-700 transition-opacity duration-200"
-            style={{ 
+            style={{
               zIndex: 10000,
               top: `${tooltipPosition.top}px`,
               left: `${tooltipPosition.left}px`,
@@ -444,8 +385,7 @@ function SidebarSection({ section, openSections, toggleSection, location, collap
               opacity: 1,
             }}
           >
-            {section.title}
-            {/* Flecha del tooltip */}
+            {nombreModulo}
             <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-r-[6px] border-r-slate-900 border-b-[6px] border-b-transparent"></div>
           </div>
         )}
@@ -456,141 +396,32 @@ function SidebarSection({ section, openSections, toggleSection, location, collap
   return (
     <div className="space-y-1">
       <button
-        onClick={() => toggleSection(section.title.toLowerCase())}
+        onClick={() => toggleSection(nombreModulo)}
         className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all group ${
           hasActiveChild
-            ? `${section.bgColor} ${section.color}`
+            ? `${colorConfig.bgColor} ${colorConfig.color}`
             : "hover:bg-slate-800/60 text-slate-300"
         }`}
       >
         <div className="flex items-center gap-3">
-          <SectionIcon
+          <ModuleIcon
             className={`w-5 h-5 ${
-              hasActiveChild ? section.color : "text-slate-400 group-hover:text-white"
+              hasActiveChild ? colorConfig.color : "text-slate-400 group-hover:text-white"
             }`}
           />
-          <span className="font-semibold text-sm">{section.title}</span>
+          <span className="font-semibold text-sm truncate">{nombreModulo}</span>
         </div>
         {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
       </button>
 
       {isOpen && (
         <div className="ml-3 pl-3 border-l-2 border-slate-700/50 space-y-1 animate-fadeIn">
-          {section.items.map((item, idx) => {
-            const ItemIcon = item.icon;
-            const isActive = location.pathname === item.path;
+          {paginas.map((pagina, idx) => {
+            const isActive = location.pathname === pagina.ruta;
             return (
               <NavLink
-                key={idx}
-                to={item.path}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-[#0A5BA9] text-white shadow-md"
-                    : "hover:bg-slate-800/60 text-slate-400 hover:text-white"
-                }`}
-              >
-                <ItemIcon className="w-4 h-4" />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-function DynamicSection({ title, rutas, location, toggleSection, openSections, collapsed }) {
-  const isOpen = openSections[title];
-  const hasActiveChild = rutas.some((r) => location.pathname === r.path);
-
-  // Hooks siempre deben estar al inicio, fuera de condicionales
-  const [tooltipPosition, setTooltipPosition] = React.useState({ top: 0, left: 0 });
-  const [showTooltip, setShowTooltip] = React.useState(false);
-  const linkRef = React.useRef(null);
-
-  const handleMouseEnter = () => {
-    if (linkRef.current) {
-      const rect = linkRef.current.getBoundingClientRect();
-      setTooltipPosition({
-        top: rect.top + rect.height / 2,
-        left: rect.right + 12,
-      });
-      setShowTooltip(true);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setShowTooltip(false);
-  };
-
-  if (collapsed) {
-    const firstRuta = rutas[0];
-
-    return (
-      <>
-        <div className="relative mb-2" style={{ overflow: 'visible', position: 'static' }}>
-          <NavLink
-            ref={linkRef}
-            to={firstRuta?.path || "#"}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            className={`flex items-center justify-center w-10 h-10 rounded-xl transition-all mx-auto hover:bg-slate-800/60 ${
-              hasActiveChild
-                ? "bg-[#0A5BA9]/10 text-blue-300"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            <ClipboardList className="w-5 h-5" />
-          </NavLink>
-        </div>
-        {/* Tooltip cuando está colapsado - Fixed position */}
-        {showTooltip && (
-          <div 
-            className="fixed px-3 py-2 bg-slate-900 text-white text-sm font-medium rounded-lg shadow-2xl whitespace-nowrap pointer-events-none border border-slate-700 transition-opacity duration-200"
-            style={{ 
-              zIndex: 10000,
-              top: `${tooltipPosition.top}px`,
-              left: `${tooltipPosition.left}px`,
-              transform: 'translateY(-50%)',
-              backdropFilter: 'blur(8px)',
-              opacity: 1,
-            }}
-          >
-            {title}
-            {/* Flecha del tooltip */}
-            <div className="absolute right-full top-1/2 -translate-y-1/2 w-0 h-0 border-t-[6px] border-t-transparent border-r-[6px] border-r-slate-900 border-b-[6px] border-b-transparent"></div>
-          </div>
-        )}
-      </>
-    );
-  }
-
-  return (
-    <div className="space-y-1">
-      <button
-        onClick={() => toggleSection(title)}
-        className={`w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all ${
-          hasActiveChild
-            ? "bg-[#0A5BA9]/10 text-blue-300"
-            : "hover:bg-slate-800/60 text-slate-300"
-        }`}
-      >
-        <div className="flex items-center gap-3">
-          <ClipboardList className="w-5 h-5" />
-          <span className="font-semibold text-sm truncate">{title}</span>
-        </div>
-        {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
-      </button>
-
-      {isOpen && (
-        <div className="ml-3 pl-3 border-l-2 border-slate-700/50 space-y-1 animate-fadeIn">
-          {rutas.map((r, idx) => {
-            const isActive = location.pathname === r.path;
-            return (
-              <NavLink
-                key={idx}
-                to={r.path}
+                key={pagina.idPagina || idx}
+                to={pagina.ruta}
                 className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
                   isActive
                     ? "bg-[#0A5BA9] text-white shadow-md"
@@ -598,7 +429,7 @@ function DynamicSection({ title, rutas, location, toggleSection, openSections, c
                 }`}
               >
                 <FileText className="w-4 h-4" />
-                <span className="truncate">{r.pagina}</span>
+                <span className="truncate">{pagina.nombre}</span>
               </NavLink>
             );
           })}

@@ -40,6 +40,9 @@ import GestionUsuariosPermisos from "./pages/admin/GestionUsuariosPermisos";
 import LogsDelSistema from "./pages/admin/LogsDelSistema";
 import AprobacionSolicitudes from "./pages/admin/AprobacionSolicitudes";
 import DashboardMedicoCMS from "./pages/admin/DashboardMedicoCMS";
+import ModulosManagement from "./pages/admin/ModulosManagement";
+import PaginasManagement from "./pages/admin/PaginasManagement";
+import DescripcionRBAC from "./pages/admin/DescripcionRBAC";
 
 // 🧩 Perfil de Usuario
 import UserDashboard from "./pages/user/UserDashboard"; // 🧭 Inicio personal
@@ -207,6 +210,37 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+
+        {/* 📖 Descripción RBAC */}
+        <Route
+          path="/admin/gestion-modulos/descripcion"
+          element={
+            <ProtectedRoute requiredPath="/admin/gestion-modulos/descripcion" requiredAction="ver">
+              <DescripcionRBAC />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 📦 Gestión de Módulos */}
+        <Route
+          path="/admin/modulos"
+          element={
+            <ProtectedRoute requiredPath="/admin/modulos" requiredAction="ver">
+              <ModulosManagement />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 📄 Gestión de Páginas */}
+        <Route
+          path="/admin/paginas"
+          element={
+            <ProtectedRoute requiredPath="/admin/paginas" requiredAction="ver">
+              <PaginasManagement />
+            </ProtectedRoute>
+          }
+        />
+
         {/* 👤 Área de usuario */}
         <Route
           path="/user/dashboard"

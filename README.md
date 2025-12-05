@@ -20,6 +20,7 @@
 ## Tabla de Contenidos
 
 - [Características](#-características)
+- [Sistema RBAC - Control de Acceso](#-sistema-rbac---control-de-acceso-basado-en-roles)
 - [Componentes Frontend - Sistema MBAC](#componentes-frontend---sistema-mbac)
 - [Tecnologías](#-tecnologías)
 - [Arquitectura](#-arquitectura)
@@ -64,6 +65,320 @@
 - Diseño responsive
 - Menú lateral dinámico
 - **Gestión de Permisos integrada en Usuarios:** Edición y visualización de permisos por usuario
+
+---
+
+## Sistema RBAC - Control de Acceso Basado en Roles
+
+El sistema implementa un control de acceso granular basado en roles (RBAC) que permite gestionar qué usuarios pueden ver qué módulos y páginas, y qué acciones pueden realizar en cada una.
+
+### Arquitectura de Tablas RBAC
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        MODELO DE DATOS RBAC                                  │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌──────────────────┐         ┌──────────────────┐                          │
+│  │   dim_usuarios   │         │    dim_roles     │                          │
+│  │  (id_user, ...)  │         │ (id_rol, desc_rol)│                         │
+│  └────────┬─────────┘         └────────┬─────────┘                          │
+│           │                            │                                     │
+│           │         ┌──────────────────┴──────────────────┐                 │
+│           │         │                                      │                 │
+│           ▼         ▼                                      ▼                 │
+│  ┌──────────────────────┐                    ┌─────────────────────────┐    │
+│  │   rel_user_roles     │                    │ segu_permisos_rol_modulo│    │
+│  │ (id_user, id_rol)    │                    │ (id_rol, id_modulo,     │    │
+│  │                      │                    │  puede_ver, activo)     │    │
+│  └──────────────────────┘                    └───────────┬─────────────┘    │
+│                                                          │                   │
+│                                                          ▼                   │
+│                                              ┌─────────────────────────┐    │
+│                                              │  dim_modulos_sistema    │    │
+│                                              │ (id_modulo, nombre,     │    │
+│                                              │  icono, ruta_base)      │    │
+│                                              └───────────┬─────────────┘    │
+│                                                          │                   │
+│                                                          ▼                   │
+│                                              ┌─────────────────────────┐    │
+│                                              │   dim_paginas_modulo    │    │
+│                                              │ (id_pagina, id_modulo,  │    │
+│                                              │  nombre, ruta_pagina)   │    │
+│                                              └───────────┬─────────────┘    │
+│                                                          │                   │
+│                                                          ▼                   │
+│                                              ┌─────────────────────────┐    │
+│                                              │ segu_permisos_rol_pagina│    │
+│                                              │ (id_rol, id_pagina,     │    │
+│                                              │  puede_ver, puede_crear,│    │
+│                                              │  puede_editar,          │    │
+│                                              │  puede_eliminar,        │    │
+│                                              │  puede_exportar)        │    │
+│                                              └─────────────────────────┘    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Gestión de Módulos - Master del Sistema RBAC
+
+**Gestión de Módulos** es el controlador central del sistema RBAC. Desde ahí se administra todo el control de acceso:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    GESTIÓN DE MÓDULOS (Master)                   │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  1. MÓDULOS (/admin/modulos)                                     │
+│     └── Crear, editar, eliminar módulos del sistema              │
+│         (dim_modulos_sistema)                                    │
+│                                                                  │
+│  2. PÁGINAS (/admin/paginas)                                     │
+│     └── Crear, editar, eliminar páginas dentro de cada módulo    │
+│         (dim_paginas_modulo)                                     │
+│                                                                  │
+│  3. CONTROL MBAC (/admin/mbac)                                   │
+│     └── Asignar permisos de módulos a roles                      │
+│         (segu_permisos_rol_modulo)                               │
+│     └── Asignar permisos de páginas a roles                      │
+│         (segu_permisos_rol_pagina)                               │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    GESTIÓN DE USUARIOS                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                  │
+│  4. Crear usuario → Asignar ROL(es)                              │
+│     └── El usuario hereda los permisos del rol                   │
+│     └── Ve solo los módulos/páginas que su rol permite           │
+│                                                                  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Ejemplo Práctico de Uso
+
+1. **Creas un módulo** "Reportes Médicos" con icono `BarChart3`
+2. **Creas páginas** dentro del módulo: "Dashboard", "Exportar", "Histórico"
+3. **Asignas permisos** al rol "MEDICO": puede ver y exportar, pero no eliminar
+4. **Creas un usuario** y le asignas el rol "MEDICO"
+5. **El usuario** inicia sesión y ve solo "Reportes Médicos" en su sidebar con las 3 páginas
+
+### Resumen de Acciones y Tablas
+
+| Acción | Tabla Afectada |
+|--------|----------------|
+| Crear módulo | `dim_modulos_sistema` |
+| Crear página | `dim_paginas_modulo` |
+| Asignar módulo a rol | `segu_permisos_rol_modulo` |
+| Asignar permisos página a rol | `segu_permisos_rol_pagina` |
+| Asignar rol a usuario | `rel_user_roles` |
+
+### Descripción de Tablas
+
+| Tabla | Descripción | Campos Clave |
+|-------|-------------|--------------|
+| `dim_modulos_sistema` | Módulos del sistema (menú principal) | `id_modulo`, `nombre_modulo`, `icono`, `ruta_base`, `activo`, `orden` |
+| `dim_paginas_modulo` | Páginas/submenús de cada módulo | `id_pagina`, `id_modulo`, `nombre_pagina`, `ruta_pagina`, `activo` |
+| `dim_roles` | Roles del sistema | `id_rol`, `desc_rol`, `descripcion`, `activo` |
+| `segu_permisos_rol_modulo` | Permisos de rol sobre módulos | `id_rol`, `id_modulo`, `puede_ver`, `activo` |
+| `segu_permisos_rol_pagina` | Permisos granulares de rol sobre páginas | `id_rol`, `id_pagina`, `puede_ver`, `puede_crear`, `puede_editar`, `puede_eliminar`, `puede_exportar` |
+| `rel_user_roles` | Relación usuarios-roles | `id_user`, `id_rol` |
+
+### Flujo del Sidebar Dinámico
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    FLUJO: CARGA DEL SIDEBAR DINÁMICO                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. Usuario inicia sesión                                                    │
+│     │                                                                        │
+│     ▼                                                                        │
+│  2. Frontend llama: GET /api/menu-usuario/usuario/{userId}                   │
+│     │                                                                        │
+│     ▼                                                                        │
+│  3. Backend ejecuta función SQL: fn_seguridad_obtener_menu_usuario_vf        │
+│     │                                                                        │
+│     │   a) Obtiene roles del usuario (rel_user_roles)                        │
+│     │   b) Filtra módulos accesibles (segu_permisos_rol_modulo)              │
+│     │   c) Filtra páginas con permisos (segu_permisos_rol_pagina)            │
+│     │   d) Agrupa páginas por módulo en JSON                                 │
+│     │                                                                        │
+│     ▼                                                                        │
+│  4. Respuesta JSON con módulos y páginas permitidas                          │
+│     │                                                                        │
+│     ▼                                                                        │
+│  5. Hook usePermissions procesa la respuesta                                 │
+│     │                                                                        │
+│     ▼                                                                        │
+│  6. DynamicSidebar renderiza el menú con iconos de Lucide                    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Iconos Disponibles para Módulos
+
+El campo `icono` en `dim_modulos_sistema` acepta los siguientes nombres de iconos de Lucide:
+
+| Icono | Nombre | Uso Recomendado |
+|-------|--------|-----------------|
+| ⚙️ | `Settings` | Configuración, Administración |
+| 👥 | `Users` | Gestión de Usuarios |
+| 🏢 | `Building2` | Áreas, Instituciones |
+| 📅 | `CalendarCheck` | Citas, Agenda |
+| 👤 | `UserCog` | Configuración de Usuario |
+| 🏥 | `Hospital` | IPRESS, Salud |
+| 📋 | `ClipboardList` | Listas, Reportes |
+| 🩺 | `Stethoscope` | Médico, Salud |
+| 📊 | `BarChart3` | Estadísticas, Analítica |
+| 🔍 | `Search` | Búsqueda |
+| ❤️ | `HeartPulse` | Salud, Pacientes |
+| 👥 | `UsersRound` | Grupos, Equipos |
+| ✓ | `UserCheck` | Verificación |
+| 📝 | `ClipboardCheck` | Validación |
+| 📄 | `FileSearch` | Documentos |
+| 📈 | `FileBarChart` | Reportes |
+| 📁 | `Folder` | General (por defecto) |
+| 🔒 | `Shield` | Seguridad |
+| 🔐 | `Lock` | Acceso |
+| 💾 | `Database` | Base de datos |
+| 🖥️ | `Server` | Sistema |
+| 📂 | `Layers` | Módulos |
+
+### Páginas de Gestión RBAC
+
+| Ruta Frontend | Componente | Función |
+|---------------|------------|---------|
+| `/admin/modulos` | `ModulosManagement.jsx` | CRUD de módulos (`dim_modulos_sistema`) |
+| `/admin/paginas` | `PaginasManagement.jsx` | CRUD de páginas (`dim_paginas_modulo`) |
+| `/admin/mbac` | `MBACControl.jsx` | Panel integrado de control MBAC |
+
+### Endpoints API RBAC
+
+#### Módulos del Sistema
+```bash
+GET    /api/mbac/modulos          # Listar todos los módulos
+GET    /api/mbac/modulos/{id}     # Obtener módulo por ID
+POST   /api/mbac/modulos          # Crear módulo
+PUT    /api/mbac/modulos/{id}     # Actualizar módulo
+DELETE /api/mbac/modulos/{id}     # Eliminar módulo
+```
+
+#### Páginas de Módulos
+```bash
+GET    /api/mbac/paginas                      # Listar todas las páginas
+GET    /api/mbac/paginas/{id}                 # Obtener página por ID
+POST   /api/mbac/paginas                      # Crear página
+PUT    /api/mbac/paginas/{id}                 # Actualizar página
+DELETE /api/mbac/paginas/{id}                 # Eliminar página
+GET    /api/mbac/modulos/{idModulo}/paginas   # Páginas por módulo
+```
+
+#### Roles
+```bash
+GET    /api/mbac/roles            # Listar todos los roles
+```
+
+#### Permisos Rol-Módulo
+```bash
+GET    /api/mbac/permisos-rol-modulo          # Listar permisos rol-módulo
+POST   /api/mbac/permisos-rol-modulo          # Crear permiso
+PUT    /api/mbac/permisos-rol-modulo/{id}     # Actualizar permiso
+DELETE /api/mbac/permisos-rol-modulo/{id}     # Eliminar permiso
+```
+
+#### Permisos Rol-Página (Granulares)
+```bash
+GET    /api/mbac/permisos-rol-pagina          # Listar permisos rol-página
+POST   /api/mbac/permisos-rol-pagina          # Crear permiso
+PUT    /api/mbac/permisos-rol-pagina/{id}     # Actualizar permiso
+DELETE /api/mbac/permisos-rol-pagina/{id}     # Eliminar permiso
+```
+
+#### Menú de Usuario
+```bash
+GET    /api/menu-usuario/usuario/{userId}     # Obtener menú dinámico del usuario
+```
+
+### Servicios Frontend
+
+| Servicio | Archivo | Descripción |
+|----------|---------|-------------|
+| `moduloService` | `services/moduloService.js` | CRUD de módulos |
+| `paginaModuloService` | `services/paginaModuloService.js` | CRUD de páginas |
+| `usePermissions` | `hooks/usePermissions.js` | Hook para obtener permisos del usuario |
+
+### Ejemplo: Agregar un Nuevo Módulo
+
+1. **Insertar el módulo en la base de datos:**
+```sql
+INSERT INTO dim_modulos_sistema (nombre_modulo, ruta_base, descripcion, icono, activo, orden)
+VALUES ('Mi Nuevo Módulo', '/mi-modulo', 'Descripción del módulo', 'Folder', true, 15);
+```
+
+2. **Crear páginas para el módulo:**
+```sql
+INSERT INTO dim_paginas_modulo (id_modulo, nombre_pagina, ruta_pagina, descripcion, activo, orden)
+VALUES
+((SELECT id_modulo FROM dim_modulos_sistema WHERE nombre_modulo = 'Mi Nuevo Módulo'),
+ 'Dashboard', '/mi-modulo/dashboard', 'Página principal', true, 1);
+```
+
+3. **Asignar permisos al rol SUPERADMIN:**
+```sql
+-- Permiso de módulo
+INSERT INTO segu_permisos_rol_modulo (id_rol, id_modulo, puede_ver, activo)
+SELECT 1, id_modulo, true, true FROM dim_modulos_sistema WHERE nombre_modulo = 'Mi Nuevo Módulo';
+
+-- Permiso de página
+INSERT INTO segu_permisos_rol_pagina (id_rol, id_pagina, puede_ver, puede_crear, puede_editar, puede_eliminar, puede_exportar, activo)
+SELECT 1, id_pagina, true, true, true, true, true, true
+FROM dim_paginas_modulo WHERE id_modulo = (SELECT id_modulo FROM dim_modulos_sistema WHERE nombre_modulo = 'Mi Nuevo Módulo');
+```
+
+4. **Agregar ruta en `App.js`:**
+```javascript
+<Route
+  path="/mi-modulo/dashboard"
+  element={
+    <ProtectedRoute requiredPath="/mi-modulo/dashboard" requiredAction="ver">
+      <MiNuevoModuloDashboard />
+    </ProtectedRoute>
+  }
+/>
+```
+
+5. **Cerrar sesión y volver a entrar** para ver el nuevo módulo en el sidebar.
+
+### Función SQL: fn_seguridad_obtener_menu_usuario_vf
+
+Esta función PostgreSQL obtiene el menú dinámico del usuario basándose en sus roles y permisos:
+
+```sql
+-- La función realiza:
+-- 1. Obtiene los roles del usuario desde rel_user_roles
+-- 2. Filtra módulos con puede_ver = true en segu_permisos_rol_modulo
+-- 3. Filtra páginas con puede_ver = true en segu_permisos_rol_pagina
+-- 4. Agrupa las páginas por módulo en formato JSON
+-- 5. Retorna: id_modulo, nombre_modulo, descripcion, icono, ruta_base, orden, paginas (JSON)
+```
+
+### Troubleshooting RBAC
+
+**Módulo no aparece en el sidebar:**
+1. Verificar que el módulo tenga `activo = true` en `dim_modulos_sistema`
+2. Verificar permiso en `segu_permisos_rol_modulo` para el rol del usuario
+3. Verificar que tenga al menos una página con permiso en `segu_permisos_rol_pagina`
+
+**Icono muestra Folder por defecto:**
+1. Verificar que el nombre del icono sea exacto (case-sensitive)
+2. Verificar que el icono esté en el `iconMap` de `DynamicSidebar.jsx`
+
+**Página da error 404:**
+1. Verificar que la ruta en `dim_paginas_modulo.ruta_pagina` coincida con la ruta en `App.js`
+2. Verificar que el componente esté importado en `App.js`
 
 ---
 

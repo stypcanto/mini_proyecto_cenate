@@ -1,14 +1,13 @@
 // ========================================================================
-// 🔐 usePermissions.js - Hook para gestionar permisos MBAC
+// usePermissions.js - Hook para gestionar permisos RBAC
 // ========================================================================
 import { useState, useEffect, useCallback } from 'react';
 import { apiClient } from '../lib/apiClient';
-import { data } from 'react-router-dom';
 
 /**
  * Hook personalizado para gestionar permisos del usuario
  * @param {number} userId - ID del usuario
- * @returns {Object} - { permisos, loading, error, refetch }
+ * @returns {Object} - { permisos, loading, error, refetch, getModulosConDetalle }
  */
 export const usePermissions = (userId) => {
   const [permisos, setPermisos] = useState([]);
@@ -25,18 +24,15 @@ export const usePermissions = (userId) => {
     try {
       setLoading(true);
       setError(null);
-      console.log(`🔍 Cargando permisos para usuario ID: ${userId}`);
-      
-      // ✅ RUTA CORREGIDA: /api/permisos/usuario/{id} (SIN /mbac/)
-      // Usar el apiClient con auth=true (segundo parámetro)
-      //const response = await apiClient.get(`/permisos/usuario/${userId}`, true);
+      console.log(`Cargando permisos para usuario ID: ${userId}`);
+
       const datos = await apiClient.get(`/api/menu-usuario/usuario/${userId}`, true)
 
-      console.log('✅ Permisos cargados:', datos.length);
+      console.log('Permisos cargados:', datos?.length || 0);
       setModulos(Array.isArray(datos)? datos:[]);
       setPermisos(datos || []);
     } catch (err) {
-      console.error('❌ Error cargando permisos:', err.message);
+      console.error('Error cargando permisos:', err.message);
       setError(err);
       setPermisos([]);
       setModulos([]);
@@ -49,22 +45,18 @@ export const usePermissions = (userId) => {
     fetchPermisos();
   }, [fetchPermisos]);
 
-
+  // Retorna modulos agrupados (formato simplificado para compatibilidad)
   const getModulosAgrupados = useCallback(()=>{
     const agrupados = {};
-    console.log(modulos);
     modulos.forEach((x) =>{
-
       const titulo = x.nombreModulo;
-      const base   = x.rutaBase;
       if (!agrupados[titulo]){
         agrupados[titulo] = [];
       }
       (x.paginas || [])
-        .filter(  (p) => p.puedeVer)
+        .filter((p) => p.puedeVer || p.puede_ver)
         .forEach((p)=> {
           agrupados[titulo].push({
-            //path: `${base}${p.ruta}`,
             path: p.ruta,
             pagina: p.nombre
           })
@@ -73,13 +65,40 @@ export const usePermissions = (userId) => {
     return agrupados;
   }, [modulos]);
 
+  // Retorna modulos con detalles completos (icono, descripcion, paginas con permisos)
+  const getModulosConDetalle = useCallback(() => {
+    return modulos.map((m) => ({
+      idModulo: m.idModulo,
+      nombreModulo: m.nombreModulo,
+      descripcion: m.descripcion,
+      icono: m.icono,
+      rutaBase: m.rutaBase,
+      orden: m.orden,
+      paginas: (m.paginas || [])
+        .filter((p) => p.puedeVer || p.puede_ver)
+        .map((p) => ({
+          idPagina: p.id_pagina || p.idPagina,
+          nombre: p.nombre,
+          ruta: p.ruta,
+          orden: p.orden,
+          puedeVer: p.puedeVer || p.puede_ver || false,
+          puedeCrear: p.puedeCrear || p.puede_crear || false,
+          puedeEditar: p.puedeEditar || p.puede_editar || false,
+          puedeEliminar: p.puedeEliminar || p.puede_eliminar || false,
+          puedeExportar: p.puedeExportar || p.puede_exportar || false,
+          puedeImportar: p.puedeImportar || p.puede_importar || false,
+          puedeAprobar: p.puedeAprobar || p.puede_aprobar || false,
+        }))
+    })).filter(m => m.paginas.length > 0);
+  }, [modulos]);
 
   return {
     modulos,
     loading,
     error,
     refetch: fetchPermisos,
-    getModulosAgrupados
+    getModulosAgrupados,
+    getModulosConDetalle
   };
 };
 

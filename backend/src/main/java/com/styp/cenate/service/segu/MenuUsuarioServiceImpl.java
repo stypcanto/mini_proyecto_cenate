@@ -36,7 +36,7 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 			List<PaginaMenuDTO> paginas = parsePaginas(fila.getPaginas());
 
 			MenuUsuarioDTO dto = new MenuUsuarioDTO(fila.getIdModulo(), fila.getNombreModulo(), fila.getDescripcion(),
-					fila.getDescripcion(), fila.getRutaBase(), fila.getOrden(), paginas);
+					fila.getIcono(), fila.getRutaBase(), fila.getOrden(), paginas);
 			resultado.add(dto);
 		}
 		return resultado;

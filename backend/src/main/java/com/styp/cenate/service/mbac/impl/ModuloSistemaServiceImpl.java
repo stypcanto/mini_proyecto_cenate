@@ -100,6 +100,54 @@ public class ModuloSistemaServiceImpl implements ModuloSistemaService {
 		return paginaRepo.findAll().stream().map(this::convertirPaginaADTO).collect(Collectors.toList());
 	}
 
+	@Override
+	public PaginaDTO obtenerPagina(Integer id) {
+		return paginaRepo.findById(id)
+				.map(this::convertirPaginaADTO)
+				.orElseThrow(() -> new RuntimeException("Página no encontrada"));
+	}
+
+	@Override
+	public PaginaDTO guardarPagina(PaginaDTO dto) {
+		PaginaModulo entity = new PaginaModulo();
+		mapearDTOAPagina(dto, entity);
+		entity = paginaRepo.save(entity);
+		return convertirPaginaADTO(entity);
+	}
+
+	@Override
+	public PaginaDTO actualizarPagina(Integer id, PaginaDTO dto) {
+		PaginaModulo entity = paginaRepo.findById(id)
+				.orElseThrow(() -> new RuntimeException("Página no encontrada"));
+		mapearDTOAPagina(dto, entity);
+		entity = paginaRepo.save(entity);
+		return convertirPaginaADTO(entity);
+	}
+
+	@Override
+	public void eliminarPagina(Integer id) {
+		paginaRepo.deleteById(id);
+	}
+
+	@Override
+	public List<PaginaDTO> listarPaginasPorModulo(Integer idModulo) {
+		return paginaRepo.findByModuloId(idModulo).stream()
+				.map(this::convertirPaginaADTO)
+				.collect(Collectors.toList());
+	}
+
+	private void mapearDTOAPagina(PaginaDTO dto, PaginaModulo entity) {
+		// Obtener el módulo
+		ModuloSistema modulo = moduloRepo.findById(dto.getIdModulo())
+				.orElseThrow(() -> new RuntimeException("Módulo no encontrado"));
+		entity.setModulo(modulo);
+		entity.setNombrePagina(dto.getNombrePagina());
+		entity.setRutaPagina(dto.getRutaPagina());
+		entity.setDescripcion(dto.getDescripcion());
+		entity.setOrden(dto.getOrden());
+		entity.setActivo(dto.getActivo() != null ? dto.getActivo() : true);
+	}
+
 	// ========================================
 	// PERMISOS ROL-MÓDULO
 	// ========================================
