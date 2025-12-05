@@ -124,7 +124,9 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
       : String(r).toUpperCase()
   );
 
-  const isSuperAdmin = roles.includes("SUPERADMIN") || roles.includes("ADMIN");
+  const isSuperAdmin = roles.includes("SUPERADMIN");
+  const isAdmin = roles.includes("ADMIN");
+  const isPrivileged = isSuperAdmin || isAdmin;
 
   const toggleSection = (key) =>
     setOpenSections((prev) => ({ ...prev, [key]: !prev[key] }));
@@ -143,8 +145,19 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   const modulosPermitidos = useMemo(() => {
     // Todos los usuarios (incluido admin) usan permisos de la BD
     const modulosDetalle = getModulosConDetalle();
+
+    // Si es ADMIN (pero NO SUPERADMIN), filtrar la página de Control MBAC
+    if (isAdmin && !isSuperAdmin) {
+      return modulosDetalle.map(modulo => ({
+        ...modulo,
+        paginas: modulo.paginas.filter(pagina =>
+          pagina.ruta !== '/admin/mbac'
+        )
+      })).filter(modulo => modulo.paginas.length > 0); // Eliminar módulos sin páginas
+    }
+
     return modulosDetalle;
-  }, [getModulosConDetalle]);
+  }, [getModulosConDetalle, isAdmin, isSuperAdmin]);
 
 
 
@@ -225,8 +238,8 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         ))}
       </nav>
 
-      {/* Estado del Sistema (solo para SuperAdmin) */}
-      {isSuperAdmin && (
+      {/* Estado del Sistema (solo para usuarios privilegiados) */}
+      {isPrivileged && (
         <div className="flex-shrink-0 border-t border-slate-700 bg-slate-900/40">
           {!collapsed && (
             <div className="p-3">

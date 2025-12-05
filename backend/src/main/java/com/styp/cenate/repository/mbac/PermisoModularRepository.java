@@ -152,4 +152,9 @@ public interface PermisoModularRepository extends JpaRepository<PermisoModular, 
      * Elimina todos los permisos asociados a una página (para eliminación en cascada).
      */
     void deleteByIdPagina(Integer idPagina);
+
+    /**
+     * Elimina todos los permisos de un usuario (para resetear permisos al cambiar rol).
+     */
+    void deleteByIdUser(Long idUser);
 }

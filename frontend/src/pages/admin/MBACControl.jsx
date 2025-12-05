@@ -484,7 +484,11 @@ export default function MBACControl() {
           apiClient.get("/mbac/roles", true),
           apiClient.get("/mbac/paginas", true),
         ]);
-        setRolesDisponibles(rolesRes);
+        // Ordenar roles alfabéticamente por descRol
+        const rolesOrdenados = rolesRes.sort((a, b) =>
+          (a.descRol || '').localeCompare(b.descRol || '')
+        );
+        setRolesDisponibles(rolesOrdenados);
         setPaginasDisponibles(paginasRes);
       } catch (error) {
         console.error("Error cargando roles y páginas:", error);
@@ -1213,13 +1217,14 @@ export default function MBACControl() {
                 {/* Header con selector de rol */}
                 <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-6 rounded-xl border border-indigo-200">
                   <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-                    <div>
+                    <div className="max-w-2xl">
                       <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
                         <Users className="w-6 h-6 text-indigo-600" />
                         Personalización de Permisos por Rol
                       </h2>
-                      <p className="text-sm text-gray-600 mt-1">
-                        Configure los permisos predeterminados que tendrá cada rol al asignarse a un usuario
+                      <p className="text-sm text-gray-600 mt-2">
+                        Estandarice los permisos predeterminados para cada rol del sistema. Cuando un usuario sea asignado a un rol,
+                        heredará automáticamente estos permisos como base, agilizando la gestión de accesos.
                       </p>
                     </div>
 

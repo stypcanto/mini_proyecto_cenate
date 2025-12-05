@@ -236,12 +236,18 @@ public class PermisosServiceImpl implements PermisosService {
     }
 
     // ===========================================================
-    // 🔹 6b. Guardar permisos en batch
+    // 🔹 6b. Guardar permisos en batch (con limpieza de permisos anteriores)
     // ===========================================================
     @Override
     public List<PermisoUsuarioResponseDTO> guardarPermisosBatch(Long idUser, List<PermisoUsuarioRequestDTO> permisos) {
         log.info("📦 Guardando {} permisos en batch para usuario {}", permisos.size(), idUser);
 
+        // 1. IMPORTANTE: Eliminar todos los permisos anteriores del usuario
+        // Esto asegura que al cambiar de rol, los permisos del rol anterior se eliminen
+        log.info("🗑️ Eliminando permisos anteriores del usuario {}", idUser);
+        permisoModularRepository.deleteByIdUser(idUser);
+
+        // 2. Crear los nuevos permisos
         return permisos.stream()
                 .map(p -> {
                     p.setIdUser(idUser); // Asegurar que el idUser es correcto

@@ -20,6 +20,7 @@ export const ProtectedRoute = ({
   children,
   requiredPath = null,
   requiredAction = "ver",
+  requiredRoles = null, // Nueva prop: array de roles requeridos (ej: ["SUPERADMIN"])
   fallbackPath = "/user/dashboard",
 }) => {
   const { isAuthenticated, initialized, user } = useAuth();
@@ -39,10 +40,16 @@ export const ProtectedRoute = ({
       .filter(Boolean);
   }, [user?.roles]);
 
-  // Verificar si es usuario privilegiado
+  // Verificar si es usuario privilegiado (SUPERADMIN o ADMIN)
   const isPrivileged = useMemo(() => {
     return rolesUsuario.includes("SUPERADMIN") || rolesUsuario.includes("ADMIN");
   }, [rolesUsuario]);
+
+  // Verificar si tiene los roles requeridos específicos
+  const tieneRolRequerido = useMemo(() => {
+    if (!requiredRoles || requiredRoles.length === 0) return true;
+    return requiredRoles.some(rol => rolesUsuario.includes(rol.toUpperCase()));
+  }, [requiredRoles, rolesUsuario]);
 
   // 🌀 Loader mientras se inicializa
   if (!initialized) {
@@ -63,7 +70,15 @@ export const ProtectedRoute = ({
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  // ✅ SuperAdmin/Admin tienen acceso total
+  // 🔒 Si hay roles requeridos específicos, verificar primero
+  if (requiredRoles && requiredRoles.length > 0) {
+    if (!tieneRolRequerido) {
+      return <AccesoDenegado ruta={rutaVerificar} usuario={user} roles={rolesUsuario} fallbackPath={fallbackPath} />;
+    }
+    return children;
+  }
+
+  // ✅ SuperAdmin/Admin tienen acceso total (solo si no hay roles específicos requeridos)
   if (isPrivileged) {
     return children;
   }

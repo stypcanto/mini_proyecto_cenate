@@ -157,11 +157,11 @@ function AppRoutes() {
           }
         />
 
-        {/* ⚙️ Panel MBAC */}
+        {/* ⚙️ Panel MBAC - Solo SUPERADMIN */}
         <Route
           path="/admin/mbac"
           element={
-            <ProtectedRoute requiredPath="/admin/mbac" requiredAction="ver">
+            <ProtectedRoute requiredPath="/admin/mbac" requiredAction="ver" requiredRoles={["SUPERADMIN"]}>
               <MBACControl />
             </ProtectedRoute>
           }
