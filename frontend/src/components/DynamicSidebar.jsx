@@ -142,18 +142,27 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   // Obtener modulos permitidos (segun permisos RBAC)
   // ============================================================
 
+  // Módulos y rutas exclusivas de SUPERADMIN
+  const MODULOS_SUPERADMIN = ['Gestión de Módulos', 'Asegurados', 'Gestión de Pacientes'];
+  const RUTAS_SUPERADMIN = ['/admin/mbac'];
+
   const modulosPermitidos = useMemo(() => {
     // Todos los usuarios (incluido admin) usan permisos de la BD
     const modulosDetalle = getModulosConDetalle();
 
-    // Si es ADMIN (pero NO SUPERADMIN), filtrar la página de Control MBAC
+    // Si es ADMIN (pero NO SUPERADMIN), filtrar módulos y páginas exclusivas de SUPERADMIN
     if (isAdmin && !isSuperAdmin) {
-      return modulosDetalle.map(modulo => ({
-        ...modulo,
-        paginas: modulo.paginas.filter(pagina =>
-          pagina.ruta !== '/admin/mbac'
-        )
-      })).filter(modulo => modulo.paginas.length > 0); // Eliminar módulos sin páginas
+      return modulosDetalle
+        // Filtrar módulos completos exclusivos de SUPERADMIN
+        .filter(modulo => !MODULOS_SUPERADMIN.includes(modulo.nombreModulo))
+        // Filtrar páginas exclusivas de SUPERADMIN dentro de otros módulos
+        .map(modulo => ({
+          ...modulo,
+          paginas: modulo.paginas.filter(pagina =>
+            !RUTAS_SUPERADMIN.includes(pagina.ruta)
+          )
+        }))
+        .filter(modulo => modulo.paginas.length > 0);
     }
 
     return modulosDetalle;

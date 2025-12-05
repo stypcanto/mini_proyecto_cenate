@@ -12,6 +12,27 @@ const normalizeRoles = (roles) => {
     .filter(Boolean);
 };
 
+// Verificar si el usuario tiene sesión invalidada (roles cambiados por admin)
+const isSessionInvalidated = (userId) => {
+  try {
+    const invalidSessions = JSON.parse(localStorage.getItem('invalidatedSessions') || '[]');
+    return invalidSessions.includes(Number(userId));
+  } catch {
+    return false;
+  }
+};
+
+// Limpiar sesión invalidada después de re-login
+const clearInvalidatedSession = (userId) => {
+  try {
+    const invalidSessions = JSON.parse(localStorage.getItem('invalidatedSessions') || '[]');
+    const updated = invalidSessions.filter(id => id !== Number(userId));
+    localStorage.setItem('invalidatedSessions', JSON.stringify(updated));
+  } catch (e) {
+    console.error('Error al limpiar sesión invalidada:', e);
+  }
+};
+
 // Contexto
 const AuthContext = createContext(null);
 
@@ -40,6 +61,17 @@ export const AuthProvider = ({ children }) => {
             throw new Error("ID de usuario inválido en el token");
           }
 
+          // Verificar si la sesión fue invalidada por cambio de roles
+          if (isSessionInvalidated(userId)) {
+            console.log("⚠️ Sesión invalidada por cambio de roles. Forzando logout...");
+            clearUser();
+            clearToken();
+            clearInvalidatedSession(userId);
+            toast("Tus roles fueron modificados. Por favor, inicia sesión nuevamente.", { icon: "🔄", duration: 5000 });
+            setInitialized(true);
+            return;
+          }
+
           const restoredUser = {
             id: Number(userId),
             username: payload.username || payload.preferred_username || payload.sub,
@@ -62,6 +94,40 @@ export const AuthProvider = ({ children }) => {
     }
     setInitialized(true);
   }, [token, user]);
+
+  // Verificar periódicamente si la sesión fue invalidada (cada 10 segundos)
+  useEffect(() => {
+    if (!user?.id) return;
+
+    const checkInvalidation = () => {
+      if (isSessionInvalidated(user.id)) {
+        console.log("⚠️ Sesión invalidada detectada. Cerrando sesión...");
+        clearUser();
+        clearToken();
+        clearInvalidatedSession(user.id);
+        setUser(null);
+        setToken(null);
+        toast("Tus roles fueron modificados por un administrador. Por favor, inicia sesión nuevamente.", { icon: "🔄", duration: 6000 });
+        navigate("/login", { replace: true });
+      }
+    };
+
+    // Verificar cada 10 segundos
+    const interval = setInterval(checkInvalidation, 10000);
+
+    // También verificar al cambiar de pestaña/ventana
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        checkInvalidation();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [user?.id, navigate]);
 
   // Login
   const login = useCallback(async (username, password) => {
@@ -101,6 +167,9 @@ export const AuthProvider = ({ children }) => {
       setUser(userData);
       setToken(jwt);
 
+      // Limpiar cualquier marca de sesión invalidada después de login exitoso
+      clearInvalidatedSession(userData.id);
+
       toast.success(`Bienvenido, ${userData.nombreCompleto || userData.username}`);
       return { ok: true, user: userData, roles: userData.roles };
     } catch (error) {
@@ -122,6 +191,49 @@ export const AuthProvider = ({ children }) => {
     navigate("/", { replace: true });
   }, [navigate]);
 
+  // Refrescar datos del usuario actual (para actualizar roles después de cambios)
+  const refreshUser = useCallback(async () => {
+    if (!user?.id || !token) return;
+
+    try {
+      console.log("🔄 Refrescando datos del usuario...");
+      // Usar el endpoint /me que devuelve los roles actualizados
+      const response = await apiClient.get(`/usuarios/me`, true);
+
+      if (response) {
+        const rolesActualizados = normalizeRoles(response.roles || []);
+        console.log("📋 Roles actualizados desde backend:", rolesActualizados);
+
+        const updatedUser = {
+          ...user,
+          roles: rolesActualizados,
+          nombreCompleto: response.nombreCompleto || response.nombre_completo || user.nombreCompleto,
+        };
+
+        setUser(updatedUser);
+        saveUser(updatedUser);
+        console.log("✅ Usuario actualizado:", updatedUser);
+      }
+    } catch (error) {
+      console.error("❌ Error al refrescar usuario:", error);
+    }
+  }, [user, token]);
+
+  // Actualizar usuario manualmente (para uso desde otros componentes)
+  const updateUser = useCallback((newUserData) => {
+    if (!newUserData) return;
+
+    const updatedUser = {
+      ...user,
+      ...newUserData,
+      roles: newUserData.roles ? normalizeRoles(newUserData.roles) : user?.roles,
+    };
+
+    setUser(updatedUser);
+    saveUser(updatedUser);
+    console.log("✅ Usuario actualizado manualmente:", updatedUser);
+  }, [user]);
+
   const hasRole = useCallback((roles) => {
     if (!user?.roles) return false;
     const list = Array.isArray(roles) ? roles : [roles];
@@ -132,8 +244,8 @@ export const AuthProvider = ({ children }) => {
   const value = useMemo(() => ({
     user, token, loading, initialized,
     isAuthenticated: !!user && !!token,
-    login, logout, hasRole
-  }), [user, token, loading, initialized, login, logout, hasRole]);
+    login, logout, hasRole, refreshUser, updateUser
+  }), [user, token, loading, initialized, login, logout, hasRole, refreshUser, updateUser]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

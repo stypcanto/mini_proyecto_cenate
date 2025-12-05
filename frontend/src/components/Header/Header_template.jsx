@@ -83,8 +83,30 @@ export default function HeaderTemplate({ title = "CENATE" }) {
       : String(r).toUpperCase()
   );
 
-  const isSuperAdmin = roles.includes("SUPERADMIN") || roles.includes("ADMIN");
-  const rolMostrar = isSuperAdmin ? "Superadministrador" : roles.join(", ") || "Usuario";
+  const isSuperAdmin = roles.includes("SUPERADMIN");
+  const isAdmin = roles.includes("ADMIN");
+  const isPrivileged = isSuperAdmin || isAdmin;
+
+  // Mostrar el rol correcto (simplificado para header)
+  const getRolMostrar = () => {
+    if (roles.length > 1) return "Multirol";
+    if (isSuperAdmin) return "Superadministrador";
+    if (isAdmin) return "Administrador";
+    if (roles.length === 1) return roles[0];
+    return "Usuario";
+  };
+  const rolMostrar = getRolMostrar();
+
+  // Obtener lista de roles formateada para el menú desplegable
+  const getRolesFormateados = () => {
+    return roles.map(rol => {
+      if (rol === "SUPERADMIN") return "Superadministrador";
+      if (rol === "ADMIN") return "Administrador";
+      return rol.charAt(0) + rol.slice(1).toLowerCase();
+    });
+  };
+  const rolesFormateados = getRolesFormateados();
+  const esMultirol = roles.length > 1;
 
   return (
     <header
@@ -174,8 +196,8 @@ export default function HeaderTemplate({ title = "CENATE" }) {
                 </span>
               </div>
 
-              {/* Indicador de estado (solo para SuperAdmin) */}
-              {isSuperAdmin && (
+              {/* Indicador de estado (para usuarios privilegiados) */}
+              {isPrivileged && (
                 <div className="hidden md:block w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-lg shadow-green-400/50 ml-1" />
               )}
 
@@ -194,7 +216,7 @@ export default function HeaderTemplate({ title = "CENATE" }) {
                   className="fixed inset-0 z-40" 
                   onClick={() => setShowUserMenu(false)}
                 />
-                <div className="absolute right-0 top-full mt-2 w-64 bg-white rounded-2xl shadow-2xl border border-slate-200/50 py-1.5 z-50 overflow-hidden backdrop-blur-xl">
+                <div className="absolute right-0 top-full mt-2 w-72 bg-white rounded-2xl shadow-2xl border border-slate-200/50 py-1.5 z-50 overflow-hidden backdrop-blur-xl">
                   {/* Información del usuario */}
                   <div className="px-4 py-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 to-white">
                     <div className="flex items-center gap-3 mb-2">
@@ -215,6 +237,25 @@ export default function HeaderTemplate({ title = "CENATE" }) {
                         <p className="text-xs text-slate-500 truncate">{rolMostrar}</p>
                       </div>
                     </div>
+
+                    {/* Leyenda de roles para usuarios multirol */}
+                    {esMultirol && (
+                      <div className="mt-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg">
+                        <p className="text-xs font-semibold text-blue-800 mb-1.5">
+                          Roles asignados:
+                        </p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {rolesFormateados.map((rol, index) => (
+                            <span
+                              key={index}
+                              className="px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-full"
+                            >
+                              {rol}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   
                   {/* Opciones del menú */}

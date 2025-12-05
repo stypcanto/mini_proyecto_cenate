@@ -7,8 +7,11 @@ import SelectField from '../modals/SelectField';
 import api from '../../../../services/apiClient';
 import MonthYearPicker from '../../../../components/common/MonthYearPicker';
 import { getFotoUrl } from '../../../../utils/apiUrlHelper';
+import { useAuth } from '../../../../context/AuthContext';
+import { clearToken, clearUser } from '../../../../constants/auth';
 
 const ActualizarModel = ({ user, onClose, onSuccess }) => {
+  const { user: currentUser } = useAuth();
   const [selectedTab, setSelectedTab] = useState('personal');
   const [loading, setLoading] = useState(false);
   const [ipress, setIpress] = useState([]);
@@ -602,16 +605,58 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
         console.log('✅ Permisos guardados exitosamente');
       }
 
-      alert('✅ Usuario actualizado exitosamente' + (fotoSeleccionada ? ' con foto' : ''));
-      
+      // Verificar si se cambiaron los roles
+      const rolesOriginales = user?.roles ? (Array.isArray(user.roles) ? user.roles : [user.roles]) : [];
+      const rolesNuevos = formData.roles;
+      const rolesOriginalesSet = new Set(rolesOriginales.map(r => String(r).toUpperCase()));
+      const rolesNuevosSet = new Set(rolesNuevos.map(r => String(r).toUpperCase()));
+
+      const cambiaron = rolesOriginalesSet.size !== rolesNuevosSet.size ||
+                        [...rolesOriginalesSet].some(r => !rolesNuevosSet.has(r)) ||
+                        [...rolesNuevosSet].some(r => !rolesOriginalesSet.has(r));
+
+      console.log('🔄 Roles originales:', [...rolesOriginalesSet]);
+      console.log('🔄 Roles nuevos:', [...rolesNuevosSet]);
+      console.log('🔄 ¿Cambiaron los roles?:', cambiaron);
+
+      // Si el usuario editado es el usuario actual, cerrar sesión para que recargue roles
+      const editedUserId = getUserId();
+      const currentUserId = currentUser?.id;
+
+      console.log('🔍 Comparando IDs:', { editedUserId, currentUserId, tipoEditado: typeof editedUserId, tipoActual: typeof currentUserId });
+
+      if (currentUserId && editedUserId && Number(currentUserId) === Number(editedUserId)) {
+        alert('✅ Usuario actualizado exitosamente.\n\n🔄 Se cerrará la sesión para aplicar los cambios de rol.\nPor favor, vuelve a iniciar sesión.');
+        onClose();
+        // Limpiar sesión y redirigir al login
+        clearToken();
+        clearUser();
+        window.location.href = '/login';
+        return;
+      }
+
+      // Si se cambiaron los roles de OTRO usuario, marcar su sesión como invalidada
+      if (cambiaron && editedUserId) {
+        try {
+          // Guardar en localStorage que este usuario necesita re-login
+          const invalidSessions = JSON.parse(localStorage.getItem('invalidatedSessions') || '[]');
+          if (!invalidSessions.includes(Number(editedUserId))) {
+            invalidSessions.push(Number(editedUserId));
+            localStorage.setItem('invalidatedSessions', JSON.stringify(invalidSessions));
+            console.log('🔒 Sesión del usuario', editedUserId, 'marcada como invalidada');
+          }
+        } catch (e) {
+          console.error('Error al marcar sesión como invalidada:', e);
+        }
+      }
+
+      alert('✅ Usuario actualizado exitosamente' + (fotoSeleccionada ? ' con foto' : '') + (cambiaron ? '\n\n📌 Nota: El usuario deberá cerrar sesión y volver a ingresar para que los cambios de rol surtan efecto.' : ''));
+
       console.log('🔄 Llamando a onSuccess para recargar datos...');
       if (onSuccess) {
         await onSuccess();
       }
-      
-      // Pequeño delay para asegurar que el backend procese los cambios
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
+
       onClose();
     } catch (error) {
       console.error('❌ Error al actualizar usuario:', error);

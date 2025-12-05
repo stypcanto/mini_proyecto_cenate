@@ -792,8 +792,8 @@ export default function MBACControl() {
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h1 className="text-3xl font-bold text-gray-800">Control MBAC</h1>
-            <p className="text-gray-600 mt-1">Control de Acceso Basado en Modelo - Gestión de Módulos y Permisos</p>
+            <h1 className="text-3xl font-bold text-gray-800">Sistema General de Gestión de Módulos</h1>
+            <p className="text-gray-600 mt-1">Gestión de Módulos y Permisos del Sistema</p>
           </div>
         </div>
 
