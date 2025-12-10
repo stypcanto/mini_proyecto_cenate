@@ -1,17 +1,18 @@
 package com.styp.cenate.service.personal.impl;
+
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.styp.cenate.dto.PersonalRequest;
-import com.styp.cenate.dto.PersonalResponse;
+import com.styp.cenate.dto.*;
 import com.styp.cenate.exception.BusinessException;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.model.Ipress;
 import com.styp.cenate.model.PersonalExterno;
+import com.styp.cenate.model.Red;
+import com.styp.cenate.model.Macroregion;
 import com.styp.cenate.model.TipoDocumento;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.PersonalExternoRepository;
@@ -26,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 🧩 Implementación del servicio de Personal Externo
  * Gestiona CRUD, validaciones y conversión a DTO.
+ * Incluye información de IPRESS, Red y Macroregión.
  */
 @Service
 @RequiredArgsConstructor
@@ -212,9 +214,58 @@ public class PersonalExternoServiceImpl implements PersonalExternoService {
     }
 
     // ============================================================
-    // 🔹 Conversión de entidad a DTO
+    // 🔹 Conversión de entidad a DTO (con IPRESS, Red, Macroregión)
     // ============================================================
     private PersonalResponse convertToResponse(PersonalExterno personal) {
+        Ipress ipress = personal.getIpress();
+        Red red = ipress != null ? ipress.getRed() : null;
+        Macroregion macro = red != null ? red.getMacroregion() : null;
+
+        // Construir MacroregionResponse
+        MacroregionResponse macroResponse = null;
+        if (macro != null) {
+            macroResponse = MacroregionResponse.builder()
+                    .idMacro(macro.getIdMacro())
+                    .descMacro(macro.getDescMacro())
+                    .statMacro(macro.getStatMacro())
+                    .build();
+        }
+
+        // Construir RedResponse
+        RedResponse redResponse = null;
+        if (red != null) {
+            redResponse = RedResponse.builder()
+                    .idRed(red.getId())
+                    .codRed(red.getCodigo())
+                    .descRed(red.getDescripcion())
+                    .macroregion(macroResponse)
+                    .idMacro(macro != null ? macro.getIdMacro() : null)
+                    .build();
+        }
+
+        // Construir IpressResponse
+        IpressResponse ipressResponse = null;
+        if (ipress != null) {
+            ipressResponse = IpressResponse.builder()
+                    .idIpress(ipress.getIdIpress())
+                    .codIpress(ipress.getCodIpress())
+                    .descIpress(ipress.getDescIpress())
+                    .red(redResponse)
+                    .idRed(red != null ? red.getId() : null)
+                    .idNivAten(ipress.getIdNivAten())
+                    .idModAten(ipress.getIdModAten())
+                    .idTipIpress(ipress.getIdTipIpress())
+                    .idDist(ipress.getIdDist())
+                    .direcIpress(ipress.getDirecIpress())
+                    .latIpress(ipress.getLatIpress())
+                    .longIpress(ipress.getLongIpress())
+                    .gmapsUrlIpress(ipress.getGmapsUrlIpress())
+                    .statIpress(ipress.getStatIpress())
+                    .createAt(ipress.getCreateAt())
+                    .updateAt(ipress.getUpdateAt())
+                    .build();
+        }
+
         return PersonalResponse.builder()
                 .idPersonal(personal.getIdPersExt())
                 .tipoPersonal("EXTERNO")
@@ -230,22 +281,27 @@ public class PersonalExternoServiceImpl implements PersonalExternoService {
                 .emailPersonal(personal.getEmailPersExt())
                 .emailCorporativo(personal.getEmailCorpExt())
                 .idUsuario(personal.getIdUser())
-                .institucion(personal.getIpress() != null ? personal.getIpress().getDescIpress() : null)
-                // ✅ Auditoría coherente con DTO (OffsetDateTime)
+                .institucion(ipress != null ? ipress.getDescIpress() : null)
+                // 🏥 Nuevos campos de IPRESS, Red y Macroregión
+                .ipress(ipressResponse)
+                .descIpress(ipress != null ? ipress.getDescIpress() : null)
+                .descRed(red != null ? red.getDescripcion() : null)
+                .descMacroregion(macro != null ? macro.getDescMacro() : null)
+                // Auditoría
                 .createdAt(personal.getCreatedAt())
                 .updatedAt(personal.getUpdatedAt())
                 .build();
     }
 
-	@Override
-	public Long getUsuarioXCorreo(String correo) {
-		 return personalExternoRepository.findByEmailCorpExt(correo)
-			        .map(p -> Long.valueOf(p.getIdUsuario()))
-			        .orElse(null);
-	}
+    @Override
+    public Long getUsuarioXCorreo(String correo) {
+        return personalExternoRepository.findByEmailCorpExt(correo)
+                .map(p -> Long.valueOf(p.getIdUsuario()))
+                .orElse(null);
+    }
 
-	@Override
-	public boolean existsByEmailCorpExt(String emailCorpPers) {
-		return personalExternoRepository.existsByEmailCorpExt(emailCorpPers);
-	}
+    @Override
+    public boolean existsByEmailCorpExt(String emailCorpPers) {
+        return personalExternoRepository.existsByEmailCorpExt(emailCorpPers);
+    }
 }

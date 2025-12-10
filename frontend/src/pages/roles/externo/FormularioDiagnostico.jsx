@@ -79,6 +79,29 @@ export default function FormularioDiagnostico() {
         return palabras.length >= 2 && palabras.every(p => p.length >= 2);
     };
 
+    // Formatear número con separador de miles (formato: 1'000,000)
+    const formatearNumero = (valor) => {
+        if (!valor) return "";
+        const numero = valor.toString().replace(/\D/g, '');
+        // Primero agregamos comas cada 3 dígitos desde la derecha
+        let formateado = numero.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        // Luego reemplazamos la coma de millones por apóstrofe
+        const partes = formateado.split(",");
+        if (partes.length > 2) {
+            // Más de miles (millones o más)
+            const millones = partes.slice(0, -2).join("'");
+            const miles = partes.slice(-2).join(",");
+            formateado = millones + "'" + miles;
+        }
+        return formateado;
+    };
+
+    // Manejar cambio de número formateado
+    const handleNumeroFormateado = (section, field, value) => {
+        const soloNumeros = value.replace(/\D/g, '');
+        handleInputChange(section, field, soloNumeros);
+    };
+
     // Manejar validación en tiempo real
     const handleValidatedInputChange = (section, field, value, validationType) => {
         let valorProcesado = value;
@@ -878,12 +901,12 @@ export default function FormularioDiagnostico() {
                                             Población adscrita:
                                         </label>
                                         <input
-                                            type="number"
-                                            value={formData.datosGenerales.poblacionAdscrita || ""}
-                                            onChange={(e) => handleInputChange("datosGenerales", "poblacionAdscrita", e.target.value)}
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={formatearNumero(formData.datosGenerales.poblacionAdscrita)}
+                                            onChange={(e) => handleNumeroFormateado("datosGenerales", "poblacionAdscrita", e.target.value)}
                                             className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all"
                                             placeholder="0"
-                                            min="0"
                                         />
                                     </div>
                                     <div>
@@ -892,12 +915,12 @@ export default function FormularioDiagnostico() {
                                             Promedio de atenciones mensuales:
                                         </label>
                                         <input
-                                            type="number"
-                                            value={formData.datosGenerales.atencionesMenuales || ""}
-                                            onChange={(e) => handleInputChange("datosGenerales", "atencionesMenuales", e.target.value)}
+                                            type="text"
+                                            inputMode="numeric"
+                                            value={formatearNumero(formData.datosGenerales.atencionesMenuales)}
+                                            onChange={(e) => handleNumeroFormateado("datosGenerales", "atencionesMenuales", e.target.value)}
                                             className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all"
                                             placeholder="0"
-                                            min="0"
                                         />
                                     </div>
                                 </div>

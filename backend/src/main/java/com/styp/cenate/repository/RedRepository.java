@@ -12,7 +12,7 @@ public interface RedRepository extends JpaRepository<Red, Long> {
     /**
      * 🔹 Busca todas las redes que pertenecen a una macroregión específica.
      */
-    List<Red> findByIdMacro(Long idMacro);
+    List<Red> findByMacroregion_IdMacro(Long idMacro);
 
     /**
      * 🔹 Verifica si ya existe una red con la misma descripción (ignora mayúsculas/minúsculas).

@@ -4,7 +4,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * DTO para dim_red (Red de salud).
+ * 🏥 DTO de respuesta para Red Asistencial
  */
 @Data
 @NoArgsConstructor
@@ -14,7 +14,13 @@ public class RedResponse {
     private Long idRed;
     private String codRed;
     private String descRed;
+
+    // Macroregión anidada (objeto completo)
+    private MacroregionResponse macroregion;
+
+    // Mantener idMacro para compatibilidad
     private Long idMacro;
+
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

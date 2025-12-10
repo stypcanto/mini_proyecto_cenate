@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * DTO de respuesta para IPRESS (Instituciones Prestadoras de Servicios de Salud)
+ * 🏥 DTO de respuesta para IPRESS (Instituciones Prestadoras de Servicios de Salud)
  */
 @Data
 @NoArgsConstructor
@@ -17,8 +17,13 @@ public class IpressResponse {
     private String codIpress;
     private String descIpress;
 
-    // Relaciones (IDs)
+    // Red Asistencial (objeto completo con Macroregión)
+    private RedResponse red;
+
+    // Mantener idRed para compatibilidad
     private Long idRed;
+
+    // Otros IDs de relaciones
     private Long idNivAten;
     private Long idModAten;
     private Long idTipIpress;

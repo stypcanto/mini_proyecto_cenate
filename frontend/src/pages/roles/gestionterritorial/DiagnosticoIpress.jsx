@@ -386,93 +386,88 @@ export default function DiagnosticoIpress() {
         </div>
       </div>
 
-      {/* Tabla */}
+      {/* Tabla - Diseño limpio estilo bancario */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* Título de la tabla */}
+        <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
+          <h3 className="text-sm font-semibold text-gray-700">Últimos Diagnósticos Registrados</h3>
+          <p className="text-xs text-gray-500 mt-0.5">Total de registros: {datosFiltrados.length}</p>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  IPRESS
+              <tr className="bg-cenate-600">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  Código
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Red
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Estado
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Progreso
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                   Fecha Envío
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                  Acciones
+                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  IPRESS
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  Red Asistencial
+                </th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">
+                  Progreso
+                </th>
+                <th className="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                  N°
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {datosPaginados.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-4 py-12 text-center">
+                  <td colSpan="6" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
-                      <XCircle className="w-12 h-12 text-gray-300" />
-                      <p className="text-gray-500">No se encontraron diagnósticos</p>
+                      <XCircle className="w-10 h-10 text-gray-300" />
+                      <p className="text-gray-400 text-sm">No se encontraron diagnósticos</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                datosPaginados.map((diagnostico) => (
+                datosPaginados.map((diagnostico, index) => (
                   <tr
                     key={diagnostico.id}
-                    className="hover:bg-gray-50 transition-colors"
+                    className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors"
                   >
-                    <td className="px-4 py-4">
-                      <div>
-                        <p className="font-medium text-gray-800">{diagnostico.descIpress}</p>
-                        <p className="text-sm text-gray-500">{diagnostico.codIpress}</p>
-                      </div>
+                    <td className="px-6 py-3.5">
+                      <span className="text-sm text-gray-600">{diagnostico.codIpress}</span>
                     </td>
-                    <td className="px-4 py-4">
-                      <span className="text-gray-700">{getNombreRed(diagnostico.idRed)}</span>
+                    <td className="px-6 py-3.5">
+                      <span className="text-sm text-gray-600">
+                        {diagnostico.fechaEnvio
+                          ? new Date(diagnostico.fechaEnvio).toLocaleDateString("es-PE")
+                          : "-"}
+                      </span>
                     </td>
-                    <td className="px-4 py-4">
-                      {getEstadoBadge(diagnostico.estado)}
+                    <td className="px-6 py-3.5">
+                      <button
+                        onClick={() => verDetalle(diagnostico)}
+                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
+                      >
+                        {diagnostico.descIpress}
+                      </button>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-gradient-to-r from-cenate-500 to-cenate-600 rounded-full transition-all"
-                            style={{ width: `${diagnostico.porcentajeCompletado}%` }}
-                          />
-                        </div>
-                        <span className="text-sm font-medium text-gray-600 w-12">
-                          {diagnostico.porcentajeCompletado}%
-                        </span>
-                      </div>
+                    <td className="px-6 py-3.5">
+                      <span className="text-sm text-gray-600">{getNombreRed(diagnostico.idRed)}</span>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-2 text-gray-600">
-                        <Calendar className="w-4 h-4 text-gray-400" />
-                        <span className="text-sm">
-                          {diagnostico.fechaEnvio
-                            ? new Date(diagnostico.fechaEnvio).toLocaleDateString("es-PE")
-                            : "Sin enviar"}
-                        </span>
-                      </div>
+                    <td className="px-6 py-3.5 text-right">
+                      <span className={`text-sm font-medium ${
+                        diagnostico.porcentajeCompletado === 100
+                          ? "text-emerald-600"
+                          : diagnostico.porcentajeCompletado >= 50
+                            ? "text-gray-700"
+                            : "text-amber-600"
+                      }`}>
+                        {diagnostico.porcentajeCompletado}%
+                      </span>
                     </td>
-                    <td className="px-4 py-4">
-                      <div className="flex justify-center">
-                        <button
-                          onClick={() => verDetalle(diagnostico)}
-                          className="p-2 rounded-lg bg-cenate-100 text-cenate-600 hover:bg-cenate-200 transition-colors"
-                          title="Ver detalle"
-                        >
-                          <Eye className="w-4 h-4" />
-                        </button>
-                      </div>
+                    <td className="px-6 py-3.5 text-center">
+                      <span className="text-sm text-gray-500">{diagnostico.id}</span>
                     </td>
                   </tr>
                 ))
@@ -483,22 +478,22 @@ export default function DiagnosticoIpress() {
 
         {/* Paginación */}
         {totalPaginas > 1 && (
-          <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200 bg-gray-50">
-            <p className="text-sm text-gray-600">
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-white">
+            <p className="text-xs text-gray-500">
               Página {paginaActual} de {totalPaginas}
             </p>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setPaginaActual((prev) => Math.max(1, prev - 1))}
                 disabled={paginaActual === 1}
-                className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronLeft className="w-4 h-4" />
               </button>
               <button
                 onClick={() => setPaginaActual((prev) => Math.min(totalPaginas, prev + 1))}
                 disabled={paginaActual === totalPaginas}
-                className="p-2 rounded-lg border border-gray-300 bg-white text-gray-600 hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="p-1.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
               >
                 <ChevronRight className="w-4 h-4" />
               </button>

@@ -40,7 +40,7 @@ public class RedServiceImpl implements RedService {
         Red existente = obtenerPorId(id);
         existente.setCodigo(red.getCodigo());
         existente.setDescripcion(red.getDescripcion());
-        existente.setIdMacro(red.getIdMacro());
+        existente.setMacroregion(red.getMacroregion());
         return repository.save(existente);
     }
 

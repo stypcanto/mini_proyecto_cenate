@@ -67,6 +67,12 @@ public class PersonalResponse {
     // ==========================================================
     private String institucion;
 
+    // 🏥 IPRESS con Red y Macroregión (para externos)
+    private IpressResponse ipress;
+    private String descIpress;     // Nombre de la IPRESS
+    private String descRed;        // Nombre de la Red
+    private String descMacroregion; // Nombre de la Macroregión
+
     // ==========================================================
     // 🔹 DATOS DE USUARIO
     // ==========================================================

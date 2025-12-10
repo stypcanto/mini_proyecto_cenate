@@ -6,6 +6,10 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.OffsetDateTime;
 
+/**
+ * 🏥 Entidad que representa una Red Asistencial de salud.
+ * Tabla: dim_red
+ */
 @Entity
 @Table(name = "dim_red")
 @Data
@@ -25,8 +29,12 @@ public class Red {
     @Column(name = "desc_red", nullable = false)
     private String descripcion;
 
-    @Column(name = "id_macro", nullable = false)
-    private Long idMacro;
+    /**
+     * Macroregión a la que pertenece esta Red
+     */
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_macro", nullable = false)
+    private Macroregion macroregion;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
