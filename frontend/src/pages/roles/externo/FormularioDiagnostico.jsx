@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../services/apiClient";
+import formularioDiagnosticoService from "../../../services/formularioDiagnosticoService";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import toast from "react-hot-toast";
 import {
     ClipboardList,
     ArrowRight,
@@ -26,7 +28,8 @@ import {
     FileDown,
     Eye,
     Download,
-    Printer
+    Printer,
+    Loader2
 } from "lucide-react";
 
 // Configuración de las pestañas del formulario (las primeras 7 son editables)
@@ -59,6 +62,13 @@ export default function FormularioDiagnostico() {
     const [tabsCompletados, setTabsCompletados] = useState({});
     const pdfPreviewRef = useRef(null);
     const [errores, setErrores] = useState({});
+
+    // Estados para integración con backend
+    const [idFormulario, setIdFormulario] = useState(null);
+    const [estadoFormulario, setEstadoFormulario] = useState(null); // BORRADOR, ENVIADO, etc.
+    const [guardando, setGuardando] = useState(false);
+    const [enviando, setEnviando] = useState(false);
+    const [cargandoBorrador, setCargandoBorrador] = useState(false);
 
     // Funciones de validación
     const validarEmail = (email) => {
@@ -141,7 +151,7 @@ export default function FormularioDiagnostico() {
         }));
     };
 
-    // Cargar datos del usuario (IPRESS)
+    // Cargar datos del usuario (IPRESS) y borrador existente
     useEffect(() => {
         const cargarDatosUsuario = async () => {
             if (user?.username) {
@@ -149,6 +159,12 @@ export default function FormularioDiagnostico() {
                     const response = await api.get(`/usuarios/detalle/${user.username}`);
                     if (response) {
                         setDatosUsuario(response);
+
+                        // Intentar cargar borrador existente
+                        const idIpress = response.id_ipress || response.personalExterno?.ipress?.idIpress;
+                        if (idIpress) {
+                            cargarBorradorExistente(idIpress);
+                        }
                     }
                 } catch (error) {
                     console.error("Error cargando datos del usuario:", error);
@@ -157,6 +173,36 @@ export default function FormularioDiagnostico() {
         };
         cargarDatosUsuario();
     }, [user]);
+
+    // Función para cargar borrador existente
+    const cargarBorradorExistente = async (idIpress) => {
+        setCargandoBorrador(true);
+        try {
+            const borrador = await formularioDiagnosticoService.obtenerBorradorPorIpress(idIpress);
+            if (borrador) {
+                // Transformar datos del backend al formato frontend
+                const datosTransformados = formularioDiagnosticoService.transformarParaFrontend(borrador);
+                if (datosTransformados) {
+                    setIdFormulario(datosTransformados.idFormulario);
+                    setEstadoFormulario(datosTransformados.estado);
+                    setFormData({
+                        datosGenerales: datosTransformados.datosGenerales || {},
+                        recursosHumanos: datosTransformados.recursosHumanos || {},
+                        infraestructura: datosTransformados.infraestructura || {},
+                        equipamiento: datosTransformados.equipamiento || {},
+                        conectividad: datosTransformados.conectividad || {},
+                        servicios: datosTransformados.servicios || {},
+                        necesidades: datosTransformados.necesidades || {}
+                    });
+                    toast.success("Se cargó el borrador existente");
+                }
+            }
+        } catch (error) {
+            console.error("Error cargando borrador:", error);
+        } finally {
+            setCargandoBorrador(false);
+        }
+    };
 
     // Manejar cambios en los campos del formulario
     const handleInputChange = (section, field, value) => {
@@ -190,10 +236,66 @@ export default function FormularioDiagnostico() {
         }
     };
 
-    // Guardar progreso
-    const handleSaveProgress = () => {
-        localStorage.setItem("formulario_diagnostico_progress", JSON.stringify(formData));
-        alert("Progreso guardado correctamente");
+    // Guardar progreso en el backend
+    const handleSaveProgress = async () => {
+        const idIpress = datosUsuario?.id_ipress || datosUsuario?.personalExterno?.ipress?.idIpress;
+        if (!idIpress) {
+            toast.error("No se pudo identificar la IPRESS del usuario");
+            return;
+        }
+
+        setGuardando(true);
+        try {
+            // Transformar datos al formato del backend
+            const datosParaBackend = formularioDiagnosticoService.transformarParaBackend(
+                formData,
+                idIpress,
+                idFormulario
+            );
+
+            // Guardar en el backend
+            const response = await formularioDiagnosticoService.guardarBorrador(datosParaBackend);
+
+            if (response) {
+                setIdFormulario(response.idFormulario);
+                setEstadoFormulario(response.estado);
+                toast.success("Progreso guardado correctamente");
+            }
+        } catch (error) {
+            console.error("Error guardando progreso:", error);
+            toast.error("Error al guardar el progreso. Intente nuevamente.");
+            // Fallback: guardar en localStorage
+            localStorage.setItem("formulario_diagnostico_progress", JSON.stringify(formData));
+        } finally {
+            setGuardando(false);
+        }
+    };
+
+    // Enviar formulario (cambiar estado a ENVIADO)
+    const handleEnviarFormulario = async () => {
+        if (!idFormulario) {
+            // Primero guardar el formulario
+            await handleSaveProgress();
+        }
+
+        if (!idFormulario) {
+            toast.error("Debe guardar el formulario antes de enviarlo");
+            return;
+        }
+
+        setEnviando(true);
+        try {
+            const response = await formularioDiagnosticoService.enviar(idFormulario);
+            if (response) {
+                setEstadoFormulario(response.estado);
+                toast.success("Formulario enviado correctamente");
+            }
+        } catch (error) {
+            console.error("Error enviando formulario:", error);
+            toast.error("Error al enviar el formulario. Intente nuevamente.");
+        } finally {
+            setEnviando(false);
+        }
     };
 
     // Generar vista previa del PDF
@@ -1789,48 +1891,6 @@ export default function FormularioDiagnostico() {
                             </div>
                         </div>
 
-                        {/* 6.2 Especialidades médicas */}
-                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] px-6 py-4">
-                                <h3 className="text-lg font-semibold text-white">6.2 ESPECIALIDADES MÉDICAS DISPONIBLES</h3>
-                            </div>
-                            <div className="p-6">
-                                <p className="text-gray-700 mb-4">Seleccione las especialidades médicas que ofrecen servicios de Telesalud:</p>
-                                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                                    {[
-                                        "Medicina Interna", "Cardiología", "Neumología", "Endocrinología",
-                                        "Neurología", "Gastroenterología", "Nefrología", "Dermatología",
-                                        "Psiquiatría", "Pediatría", "Ginecología", "Traumatología",
-                                        "Oftalmología", "Otorrinolaringología", "Urología", "Oncología"
-                                    ].map((esp) => {
-                                        const fieldId = esp.toLowerCase().replace(/\s/g, "_").normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-                                        return (
-                                            <label key={fieldId} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg hover:bg-blue-50 cursor-pointer transition-colors">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={formData.servicios[`esp_${fieldId}`] || false}
-                                                    onChange={(e) => handleInputChange("servicios", `esp_${fieldId}`, e.target.checked)}
-                                                    className="w-4 h-4 text-[#0A5BA9] rounded"
-                                                />
-                                                <span className="text-sm text-gray-700">{esp}</span>
-                                            </label>
-                                        );
-                                    })}
-                                </div>
-                                <div className="mt-4">
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        Otras especialidades (especifique):
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={formData.servicios.otrasEspecialidades || ""}
-                                        onChange={(e) => handleInputChange("servicios", "otrasEspecialidades", e.target.value)}
-                                        className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9]"
-                                        placeholder="Ej: Reumatología, Infectología..."
-                                    />
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 )}
 
@@ -2296,8 +2356,26 @@ export default function FormularioDiagnostico() {
                     </div>
                 )}
 
+                {/* Indicador de estado del formulario */}
+                {estadoFormulario && (
+                    <div className={`mt-4 p-3 rounded-lg flex items-center gap-2 ${
+                        estadoFormulario === "BORRADOR" ? "bg-yellow-50 text-yellow-700 border border-yellow-200" :
+                        estadoFormulario === "ENVIADO" ? "bg-green-50 text-green-700 border border-green-200" :
+                        "bg-gray-50 text-gray-700 border border-gray-200"
+                    }`}>
+                        {estadoFormulario === "BORRADOR" && <AlertCircle className="w-5 h-5" />}
+                        {estadoFormulario === "ENVIADO" && <CheckCircle2 className="w-5 h-5" />}
+                        <span className="font-medium">
+                            Estado: {estadoFormulario === "BORRADOR" ? "Borrador (no enviado)" :
+                                    estadoFormulario === "ENVIADO" ? "Formulario enviado" :
+                                    estadoFormulario}
+                        </span>
+                        {idFormulario && <span className="text-sm opacity-70 ml-2">(ID: {idFormulario})</span>}
+                    </div>
+                )}
+
                 {/* Barra de acciones */}
-                <div className="mt-8 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+                <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
                         <button
                             onClick={() => {
@@ -2317,21 +2395,50 @@ export default function FormularioDiagnostico() {
                             {activeTab !== "vista-previa" && (
                                 <button
                                     onClick={handleSaveProgress}
-                                    className="flex items-center gap-2 px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium rounded-lg transition-all"
+                                    disabled={guardando || estadoFormulario === "ENVIADO"}
+                                    className={`flex items-center gap-2 px-5 py-2.5 font-medium rounded-lg transition-all ${
+                                        guardando || estadoFormulario === "ENVIADO"
+                                            ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                                            : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                                    }`}
                                 >
-                                    <Save className="w-4 h-4" />
-                                    Guardar Progreso
+                                    {guardando ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <Save className="w-4 h-4" />
+                                    )}
+                                    {guardando ? "Guardando..." : "Guardar Progreso"}
                                 </button>
                             )}
 
                             {activeTab === "vista-previa" ? (
-                                <button
-                                    onClick={handleDescargarPDF}
-                                    className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all shadow-lg"
-                                >
-                                    <Download className="w-4 h-4" />
-                                    Descargar PDF
-                                </button>
+                                <div className="flex items-center gap-3">
+                                    <button
+                                        onClick={handleDescargarPDF}
+                                        className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all shadow-lg"
+                                    >
+                                        <Download className="w-4 h-4" />
+                                        Descargar PDF
+                                    </button>
+                                    {estadoFormulario !== "ENVIADO" && (
+                                        <button
+                                            onClick={handleEnviarFormulario}
+                                            disabled={enviando}
+                                            className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-all shadow-lg ${
+                                                enviando
+                                                    ? "bg-blue-400 cursor-not-allowed"
+                                                    : "bg-[#0A5BA9] hover:bg-[#094580]"
+                                            } text-white`}
+                                        >
+                                            {enviando ? (
+                                                <Loader2 className="w-4 h-4 animate-spin" />
+                                            ) : (
+                                                <Send className="w-4 h-4" />
+                                            )}
+                                            {enviando ? "Enviando..." : "Enviar Formulario"}
+                                        </button>
+                                    )}
+                                </div>
                             ) : activeTab === "necesidades" ? (
                                 <button
                                     onClick={handleGenerarPDF}

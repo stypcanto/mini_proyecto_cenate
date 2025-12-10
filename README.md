@@ -28,6 +28,7 @@
 - [Credenciales Iniciales](#-credenciales-iniciales)
 - [API REST Completa](#-api-rest-completa)
 - [Sistema MBAC](#9-sistema-mbac---control-de-acceso-modular-apimbac)
+- [Formulario Diagnóstico Telesalud](#23-formulario-de-diagnóstico-situacional-de-telesalud-apiformulario-diagnostico)
 - [Testing](#-testing)
 - [Despliegue](#-despliegue)
 
@@ -1845,6 +1846,495 @@ WHERE name_user = 'usuario';
 **Token expirado:**
 - Los tokens expiran en 24 horas
 - Realizar nuevo login para obtener token fresco
+
+---
+
+## 23. FORMULARIO DE DIAGNÓSTICO SITUACIONAL DE TELESALUD (`/api/formulario-diagnostico`)
+
+> **Módulo para la recolección de datos de diagnóstico situacional de Telesalud en las IPRESS**
+
+### Descripción General
+
+Este módulo permite a los usuarios externos (personal de IPRESS) completar un formulario de diagnóstico situacional que evalúa:
+- Datos generales de la IPRESS
+- Recursos humanos disponibles
+- Infraestructura física y tecnológica
+- Equipamiento informático y biomédico
+- Conectividad y sistemas de información
+- Servicios de telesalud implementados
+- Necesidades identificadas
+
+### Arquitectura de Tablas
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│               MODELO DE DATOS - FORMULARIO DIAGNÓSTICO                       │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌────────────────────────┐                                                  │
+│  │  form_diag_formulario  │ ◄── Tabla principal (PK: id_formulario)         │
+│  │  - id_ipress (FK)      │                                                  │
+│  │  - anio                │                                                  │
+│  │  - estado              │                                                  │
+│  │  - fecha_creacion      │                                                  │
+│  │  - fecha_envio         │                                                  │
+│  └───────────┬────────────┘                                                  │
+│              │                                                               │
+│   ┌──────────┴──────────────────────────────────────────────────────┐       │
+│   │                    TABLAS HIJAS (1:1)                            │       │
+│   ├──────────────────────────────────────────────────────────────────┤       │
+│   │  form_diag_datos_generales   │ Director, Responsable, Población │       │
+│   │  form_diag_recursos_humanos  │ Coordinador, Capacitación        │       │
+│   │  form_diag_infra_fis         │ 9 criterios físicos              │       │
+│   │  form_diag_infra_tec         │ 5 criterios tecnológicos         │       │
+│   │  form_diag_conectividad_sist │ Internet, Sistemas, Seguridad    │       │
+│   └──────────────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│   ┌──────────────────────────────────────────────────────────────────┐       │
+│   │                    TABLAS HIJAS (1:N)                            │       │
+│   ├──────────────────────────────────────────────────────────────────┤       │
+│   │  form_diag_equipamiento      │ FK → cat_equipamiento            │       │
+│   │  form_diag_servicio          │ FK → cat_servicio_telesalud      │       │
+│   │  form_diag_necesidad         │ FK → cat_necesidad               │       │
+│   │  form_diag_nec_capacitacion  │ Temas de capacitación            │       │
+│   │  form_diag_rh_apoyo          │ FK → cat_categoria_profesional   │       │
+│   └──────────────────────────────────────────────────────────────────┘       │
+│                                                                              │
+│   ┌──────────────────────────────────────────────────────────────────┐       │
+│   │                    TABLAS DE CATÁLOGOS                           │       │
+│   ├──────────────────────────────────────────────────────────────────┤       │
+│   │  form_diag_cat_equipamiento         │ 24 items (INF/BIO)        │       │
+│   │  form_diag_cat_categoria_profesional│ 10 categorías             │       │
+│   │  form_diag_cat_servicio_telesalud   │ 7 servicios               │       │
+│   │  form_diag_cat_necesidad            │ INF_FIS / INF_TEC         │       │
+│   │  form_diag_cat_prioridad            │ ALTA / MEDIA / BAJA       │       │
+│   │  form_diag_cat_estado_equipo        │ BUENO / REGULAR / MALO    │       │
+│   └──────────────────────────────────────────────────────────────────┘       │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Flujo de Vinculación Usuario → IPRESS → Formulario
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    CADENA DE VINCULACIÓN                                     │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│   dim_usuarios (Usuario)                                                     │
+│        │                                                                     │
+│        │ id_user (FK 1:1)                                                    │
+│        ▼                                                                     │
+│   dim_personal_externo (PersonalExterno)                                     │
+│        │                                                                     │
+│        │ id_ipress (FK N:1)                                                  │
+│        ▼                                                                     │
+│   dim_ipress (Ipress) ◄────────────────── form_diag_formulario              │
+│        │                                         │                           │
+│        │ id_red (FK N:1)                         │ id_ipress (FK)           │
+│        ▼                                         │                           │
+│   dim_red (Red)                                  │                           │
+│        │                                         │                           │
+│        │ id_macroregion (FK N:1)                 │                           │
+│        ▼                                         │                           │
+│   dim_macroregion (Macroregion)                  │                           │
+│                                                  ▼                           │
+│                                    form_diag_* (tablas hijas)               │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Ejemplo concreto:**
+1. Usuario `jperez` se autentica (personal externo de H.I ALTO MAYO)
+2. Frontend obtiene datos: `GET /api/usuarios/detalle/jperez` → `{ id_ipress: 123, nombre_ipress: "H.I ALTO MAYO" }`
+3. Al guardar formulario, se envía `idIpress: 123`
+4. El formulario queda vinculado SOLO a esa IPRESS
+
+### Estados del Formulario
+
+| Estado | Descripción | Acciones Permitidas |
+|--------|-------------|---------------------|
+| `EN_PROCESO` | Borrador, en edición | Ver, Editar, Eliminar |
+| `ENVIADO` | Enviado para revisión | Ver (solo lectura) |
+| `APROBADO` | Aprobado por gestión territorial | Ver |
+| `RECHAZADO` | Rechazado, requiere corrección | Ver, Editar |
+
+### API Endpoints
+
+#### Gestión de Formularios
+
+```bash
+# Crear nuevo formulario
+POST /api/formulario-diagnostico
+Authorization: Bearer {token}
+{
+  "idIpress": 123,
+  "anio": 2025,
+  "datosGenerales": { ... },
+  "recursosHumanos": { ... },
+  "infraestructura": { ... },
+  "equipamiento": [ ... ],
+  "conectividad": { ... },
+  "servicios": [ ... ],
+  "necesidades": { ... }
+}
+
+# Actualizar formulario existente
+PUT /api/formulario-diagnostico/{id}
+Authorization: Bearer {token}
+
+# Guardar borrador (crear o actualizar)
+POST /api/formulario-diagnostico/borrador
+Authorization: Bearer {token}
+
+# Enviar formulario (cambiar estado a ENVIADO)
+POST /api/formulario-diagnostico/{id}/enviar
+Authorization: Bearer {token}
+
+# Obtener formulario por ID
+GET /api/formulario-diagnostico/{id}
+Authorization: Bearer {token}
+
+# Obtener borrador activo por IPRESS
+GET /api/formulario-diagnostico/borrador/ipress/{idIpress}
+Authorization: Bearer {token}
+
+# Listar todos los formularios
+GET /api/formulario-diagnostico
+Authorization: Bearer {token}
+
+# Listar por IPRESS
+GET /api/formulario-diagnostico/ipress/{idIpress}
+Authorization: Bearer {token}
+
+# Listar por Red Asistencial
+GET /api/formulario-diagnostico/red/{idRed}
+Authorization: Bearer {token}
+
+# Listar por estado
+GET /api/formulario-diagnostico/estado/{estado}
+Authorization: Bearer {token}
+
+# Listar por año
+GET /api/formulario-diagnostico/anio/{anio}
+Authorization: Bearer {token}
+
+# Eliminar formulario (solo EN_PROCESO)
+DELETE /api/formulario-diagnostico/{id}
+Authorization: Bearer {token}
+
+# Verificar si existe formulario en proceso
+GET /api/formulario-diagnostico/existe-en-proceso/ipress/{idIpress}
+Authorization: Bearer {token}
+```
+
+### Estructura del Request
+
+```json
+{
+  "idFormulario": null,
+  "idIpress": 123,
+  "anio": 2025,
+  "observaciones": "",
+
+  "datosGenerales": {
+    "directorNombre": "Dr. Juan Pérez García",
+    "directorCorreo": "director@ipress.gob.pe",
+    "directorTelefono": "999888777",
+    "responsableNombre": "Lic. María López",
+    "responsableCorreo": "telesalud@ipress.gob.pe",
+    "responsableTelefono": "999777666",
+    "poblacionAdscrita": 50000,
+    "atencionesMenuales": 1200
+  },
+
+  "recursosHumanos": {
+    "coordTelesalud": true,
+    "coordNombreCompleto": "Lic. Ana Torres",
+    "coordCorreo": "ana.torres@ipress.gob.pe",
+    "coordCelular": "999666555",
+    "personalApoyo": true,
+    "capacitacionTic": true,
+    "normativa": true,
+    "alfabetizacion": true,
+    "planCapacitacion": false,
+    "capacitacionesAnio": 3,
+    "necesidadesCapacitacion": "Capacitación en teleconsulta"
+  },
+
+  "infraestructura": {
+    "espacioFisico": true,
+    "privacidad": true,
+    "escritorio": true,
+    "sillas": true,
+    "estantes": false,
+    "archivero": false,
+    "iluminacion": true,
+    "ventilacion": true,
+    "aireAcondicionado": false,
+    "numAmbientes": 2,
+    "hardware": true,
+    "software": true,
+    "redes": true,
+    "almacenamiento": false,
+    "serviciosTec": true
+  },
+
+  "equipamiento": [
+    {
+      "idEquipamiento": 1,
+      "disponible": true,
+      "cantidad": 5,
+      "idEstadoEquipo": 1,
+      "observaciones": "Equipos nuevos"
+    }
+  ],
+
+  "conectividad": {
+    "internet": true,
+    "estable": true,
+    "energiaAlt": false,
+    "puntosRed": true,
+    "wifi": true,
+    "tipoConexion": "Fibra óptica",
+    "proveedor": "Movistar",
+    "velocidadContratada": 100,
+    "velocidadReal": 80,
+    "numPuntosRed": 10,
+    "essi": true,
+    "pacs": false,
+    "anatpat": false,
+    "videoconferencia": true,
+    "citasLinea": true,
+    "otroSistema": "",
+    "confidencialidad": true,
+    "integridad": true,
+    "disponibilidad": true,
+    "contingencia": false,
+    "backup": true,
+    "consentimiento": true,
+    "ley29733": true
+  },
+
+  "servicios": [
+    {
+      "idServicio": 2,
+      "disponible": true,
+      "observaciones": "Teleconsulta activa"
+    }
+  ],
+
+  "necesidades": {
+    "necesidades": [
+      {
+        "idNecesidad": 1,
+        "cantidadRequerida": 2,
+        "idPrioridad": 1
+      }
+    ],
+    "capacitacion": [
+      {
+        "temaCapacitacion": "Teleconsulta avanzada",
+        "poblacionObjetivo": "Personal de salud",
+        "numParticipantes": 20,
+        "idPrioridad": 1
+      }
+    ]
+  }
+}
+```
+
+### Catálogos Disponibles
+
+#### Equipamiento (form_diag_cat_equipamiento)
+
+| ID | Código | Descripción | Tipo |
+|----|--------|-------------|------|
+| 1 | 4.1.1 | Computadora de escritorio | INF |
+| 2 | 4.1.2 | Computadora portátil (laptop) | INF |
+| 3 | 4.1.3 | Monitor | INF |
+| 4 | 4.1.4 | Cable HDMI | INF |
+| 5 | 4.1.5 | Cámara web HD 1080p | INF |
+| 6 | 4.1.6 | Micrófono | INF |
+| 7 | 4.1.7 | Parlantes/audífonos | INF |
+| 8 | 4.1.8 | Impresora | INF |
+| 9 | 4.1.9 | Escáner | INF |
+| 10 | 4.1.10 | Router/Switch de red | INF |
+| 11+ | 4.2.x | Equipamiento biomédico | BIO |
+
+#### Categorías Profesionales (form_diag_cat_categoria_profesional)
+
+| ID | Nombre |
+|----|--------|
+| 1 | Médicos especialistas |
+| 2 | Médicos generales |
+| 3 | Enfermeras(os) |
+| 4 | Obstetras |
+| 5 | Tecnólogos médicos |
+| 6 | Psicólogos |
+| 7 | Nutricionistas |
+| 8 | Trabajadores sociales |
+| 9 | Otros profesionales de salud |
+| 10 | Personal técnico de salud |
+
+#### Servicios de Telesalud (form_diag_cat_servicio_telesalud)
+
+| ID | Código | Descripción |
+|----|--------|-------------|
+| 1 | 6.1.1 | Servicios de Telesalud incorporados oficialmente |
+| 2 | 6.1.2 | Teleconsulta |
+| 3 | 6.1.3 | Teleorientación |
+| 4 | 6.1.4 | Telemonitoreo |
+| 5 | 6.1.5 | Teleinterconsulta |
+| 6 | 6.1.6 | Televigilancia |
+| 7 | 6.1.7 | Teletriage |
+
+#### Prioridades (form_diag_cat_prioridad)
+
+| ID | Código | Nombre |
+|----|--------|--------|
+| 1 | ALTA | Alta |
+| 2 | MEDIA | Media |
+| 3 | BAJA | Baja |
+
+#### Estados de Equipo (form_diag_cat_estado_equipo)
+
+| ID | Código | Nombre |
+|----|--------|--------|
+| 1 | BUENO | Bueno |
+| 2 | REGULAR | Regular |
+| 3 | MALO | Malo |
+
+### Frontend - Estructura del Formulario
+
+El formulario está organizado en 7 pestañas editables + vista previa:
+
+```javascript
+const TABS_CONFIG = [
+  { id: "datos-generales",  label: "Datos Generales",  icon: FileText },
+  { id: "recursos-humanos", label: "Recursos Humanos", icon: Users },
+  { id: "infraestructura",  label: "Infraestructura",  icon: Building2 },
+  { id: "equipamiento",     label: "Equipamiento",     icon: Monitor },
+  { id: "conectividad",     label: "Conectividad",     icon: Wifi },
+  { id: "servicios",        label: "Servicios",        icon: Stethoscope },
+  { id: "necesidades",      label: "Necesidades",      icon: FileQuestion },
+  { id: "vista-previa",     label: "Vista Previa",     icon: Eye, isPreview: true },
+];
+```
+
+### Frontend - Servicio
+
+Archivo: `frontend/src/services/formularioDiagnosticoService.js`
+
+```javascript
+import formularioDiagnosticoService from './services/formularioDiagnosticoService';
+
+// Guardar borrador
+await formularioDiagnosticoService.guardarBorrador(formData, idIpress);
+
+// Obtener borrador existente
+const borrador = await formularioDiagnosticoService.obtenerBorradorPorIpress(idIpress);
+
+// Enviar formulario
+await formularioDiagnosticoService.enviar(idFormulario);
+
+// Listar por red (para gestión territorial)
+const formularios = await formularioDiagnosticoService.listarPorRed(idRed);
+```
+
+### Backend - Estructura de Archivos
+
+```
+backend/src/main/java/com/styp/cenate/
+├── model/formdiag/
+│   ├── FormDiagFormulario.java          # Entidad principal
+│   ├── FormDiagDatosGenerales.java      # Datos generales (1:1)
+│   ├── FormDiagRecursosHumanos.java     # Recursos humanos (1:1)
+│   ├── FormDiagInfraFis.java            # Infraestructura física (1:1)
+│   ├── FormDiagInfraTec.java            # Infraestructura tecnológica (1:1)
+│   ├── FormDiagConectividadSist.java    # Conectividad y sistemas (1:1)
+│   ├── FormDiagEquipamiento.java        # Equipamiento (1:N)
+│   ├── FormDiagServicio.java            # Servicios (1:N)
+│   ├── FormDiagNecesidad.java           # Necesidades (1:N)
+│   ├── FormDiagNecCapacitacion.java     # Necesidades capacitación (1:N)
+│   ├── FormDiagRhApoyo.java             # Personal de apoyo (1:N)
+│   ├── FormDiagCatEquipamiento.java     # Catálogo equipamiento
+│   ├── FormDiagCatCategoriaProfesional.java
+│   ├── FormDiagCatServicioTelesalud.java
+│   ├── FormDiagCatNecesidad.java
+│   ├── FormDiagCatPrioridad.java
+│   └── FormDiagCatEstadoEquipo.java
+├── repository/formdiag/
+│   ├── FormDiagFormularioRepository.java
+│   ├── FormDiagDatosGeneralesRepository.java
+│   ├── FormDiagRecursosHumanosRepository.java
+│   ├── FormDiagInfraFisRepository.java
+│   ├── FormDiagInfraTecRepository.java
+│   ├── FormDiagConectividadSistRepository.java
+│   ├── FormDiagEquipamientoRepository.java
+│   ├── FormDiagServicioRepository.java
+│   ├── FormDiagNecesidadRepository.java
+│   ├── FormDiagNecCapacitacionRepository.java
+│   └── FormDiagRhApoyoRepository.java
+├── dto/formdiag/
+│   ├── FormDiagRequest.java             # DTO de entrada
+│   ├── FormDiagResponse.java            # DTO de salida completo
+│   └── FormDiagListResponse.java        # DTO de lista resumido
+├── service/formdiag/
+│   ├── FormDiagService.java             # Interface del servicio
+│   └── impl/FormDiagServiceImpl.java    # Implementación
+└── api/formdiag/
+    └── FormDiagController.java          # Controlador REST
+```
+
+### Ejemplo de Uso - Flujo Completo
+
+```bash
+# 1. Usuario externo inicia sesión
+POST /api/auth/login
+{ "username": "jperez", "password": "***" }
+# Respuesta incluye token JWT
+
+# 2. Frontend obtiene datos del usuario (incluye idIpress)
+GET /api/usuarios/detalle/jperez
+Authorization: Bearer {token}
+# Respuesta: { id_ipress: 123, nombre_ipress: "H.I ALTO MAYO", ... }
+
+# 3. Verificar si existe borrador
+GET /api/formulario-diagnostico/borrador/ipress/123
+Authorization: Bearer {token}
+# Si existe: retorna formulario. Si no: 204 No Content
+
+# 4. Guardar progreso (crear o actualizar borrador)
+POST /api/formulario-diagnostico/borrador
+Authorization: Bearer {token}
+{
+  "idIpress": 123,
+  "datosGenerales": { "directorNombre": "Dr. Juan Pérez", ... }
+}
+# Respuesta: formulario con idFormulario asignado
+
+# 5. Enviar formulario final
+POST /api/formulario-diagnostico/5/enviar
+Authorization: Bearer {token}
+# Respuesta: formulario con estado = "ENVIADO"
+
+# 6. Gestión territorial lista formularios de su red
+GET /api/formulario-diagnostico/red/10
+Authorization: Bearer {token}
+# Respuesta: lista de formularios de todas las IPRESS de la red
+```
+
+### Seguridad y Aislamiento de Datos
+
+| Aspecto | Implementación |
+|---------|----------------|
+| **Autenticación** | JWT obligatorio en todos los endpoints |
+| **Vinculación IPRESS** | `id_ipress` viene del `PersonalExterno` del usuario autenticado |
+| **Aislamiento** | Cada formulario tiene `id_ipress` específico, no modificable |
+| **Unicidad** | Solo UN formulario `EN_PROCESO` por IPRESS por año |
+| **Permisos de edición** | Solo se pueden editar formularios en estado `EN_PROCESO` |
+| **Permisos de eliminación** | Solo se pueden eliminar formularios en estado `EN_PROCESO` |
 
 ---
 
