@@ -1,9 +1,8 @@
 // ========================================================================
-// 🗺️ DiagnosticoIpress.jsx – Consulta de Diagnósticos IPRESS (CENATE 2025)
+// DiagnosticoIpress.jsx - Consulta de Diagnosticos IPRESS (CENATE 2025)
 // ------------------------------------------------------------------------
-// Panel para visualizar los diagnósticos llenados por las IPRESS
-// Filtros por Red e IPRESS, vista de resultados y exportación
-// Tema claro con colores institucionales CENATE
+// Panel para visualizar los diagnosticos llenados por las IPRESS
+// Muestra estado de firma, permite ver/descargar PDF
 // ========================================================================
 
 import React, { useState, useEffect, useMemo } from "react";
@@ -11,7 +10,8 @@ import {
   Building2, Search, Download, FileSpreadsheet,
   ChevronLeft, ChevronRight, Filter, Loader,
   Network, ClipboardList, Eye, CheckCircle2,
-  AlertCircle, Calendar, FileText, XCircle, RefreshCw
+  AlertCircle, Calendar, FileText, XCircle, RefreshCw,
+  Shield, FileCheck, User, Fingerprint, ExternalLink
 } from "lucide-react";
 import toast from "react-hot-toast";
 import aseguradosService from "../../../services/aseguradosService";
@@ -31,13 +31,14 @@ export default function DiagnosticoIpress() {
   // Modal de detalle
   const [modalDetalle, setModalDetalle] = useState(false);
   const [diagnosticoSeleccionado, setDiagnosticoSeleccionado] = useState(null);
+  const [cargandoPdf, setCargandoPdf] = useState(false);
 
-  // Paginación
+  // Paginacion
   const [paginaActual, setPaginaActual] = useState(1);
   const [itemsPorPagina] = useState(10);
 
   // ================================================================
-  // 📡 CARGAR DATOS
+  // CARGAR DATOS
   // ================================================================
   useEffect(() => {
     cargarDatos();
@@ -56,14 +57,13 @@ export default function DiagnosticoIpress() {
       setRedes(redesData || []);
       setIpress(ipressData || []);
 
-      // Cargar diagnósticos (ajustar endpoint según tu backend)
+      // Cargar diagnosticos reales del backend
       try {
-        const diagnosticosData = await api.get("/diagnosticos-ipress");
+        const diagnosticosData = await api.get("/formulario-diagnostico");
         setDiagnosticos(diagnosticosData || []);
       } catch (error) {
-        // Si no existe el endpoint, usar datos de ejemplo
-        console.log("Endpoint de diagnósticos no disponible, usando datos de ejemplo");
-        setDiagnosticos(generarDatosEjemplo(ipressData));
+        console.log("Error al cargar diagnosticos:", error);
+        setDiagnosticos([]);
       }
 
       toast.success("Datos cargados correctamente");
@@ -75,32 +75,8 @@ export default function DiagnosticoIpress() {
     }
   };
 
-  // Datos de ejemplo mientras no exista el endpoint
-  const generarDatosEjemplo = (ipressList) => {
-    if (!ipressList || ipressList.length === 0) return [];
-
-    const estados = ["completado", "pendiente", "en_revision"];
-    return ipressList.slice(0, 15).map((ipr, index) => ({
-      id: index + 1,
-      idIpress: ipr.idIpress,
-      codIpress: ipr.codIpress,
-      descIpress: ipr.descIpress,
-      idRed: ipr.idRed,
-      estado: estados[index % 3],
-      fechaEnvio: new Date(2025, Math.floor(Math.random() * 12), Math.floor(Math.random() * 28) + 1).toISOString(),
-      porcentajeCompletado: Math.floor(Math.random() * 40) + 60,
-      datosGenerales: { completado: true },
-      recursosHumanos: { completado: index % 2 === 0 },
-      infraestructura: { completado: index % 3 === 0 },
-      equipamiento: { completado: true },
-      conectividad: { completado: index % 2 === 0 },
-      servicios: { completado: true },
-      necesidades: { completado: index % 4 === 0 }
-    }));
-  };
-
   // ================================================================
-  // 🔍 FILTRADO
+  // FILTRADO
   // ================================================================
   const ipressFiltradas = useMemo(() => {
     if (!redSeleccionada) return ipress;
@@ -114,8 +90,9 @@ export default function DiagnosticoIpress() {
       const termino = busqueda.toLowerCase();
       resultado = resultado.filter(
         (item) =>
-          item.descIpress?.toLowerCase().includes(termino) ||
-          item.codIpress?.toLowerCase().includes(termino)
+          item.nombreIpress?.toLowerCase().includes(termino) ||
+          item.codigoIpress?.toLowerCase().includes(termino) ||
+          item.nombreFirmante?.toLowerCase().includes(termino)
       );
     }
 
@@ -135,7 +112,7 @@ export default function DiagnosticoIpress() {
   }, [diagnosticos, busqueda, redSeleccionada, ipressSeleccionada, estadoFiltro]);
 
   // ================================================================
-  // 📊 PAGINACIÓN
+  // PAGINACION
   // ================================================================
   const totalPaginas = Math.ceil(datosFiltrados.length / itemsPorPagina);
   const datosPaginados = useMemo(() => {
@@ -144,66 +121,169 @@ export default function DiagnosticoIpress() {
   }, [datosFiltrados, paginaActual, itemsPorPagina]);
 
   // ================================================================
-  // 🎨 HELPERS
+  // HELPERS
   // ================================================================
   const getEstadoBadge = (estado) => {
     const config = {
-      completado: {
+      FIRMADO: {
+        bg: "bg-purple-100",
+        text: "text-purple-700",
+        border: "border-purple-200",
+        icon: <Shield size={14} />,
+        label: "Firmado"
+      },
+      ENVIADO: {
         bg: "bg-emerald-100",
         text: "text-emerald-700",
         border: "border-emerald-200",
         icon: <CheckCircle2 size={14} />,
-        label: "Completado"
+        label: "Enviado"
       },
-      pendiente: {
+      EN_PROCESO: {
         bg: "bg-amber-100",
         text: "text-amber-700",
         border: "border-amber-200",
         icon: <AlertCircle size={14} />,
-        label: "Pendiente"
+        label: "En Proceso"
       },
-      en_revision: {
+      APROBADO: {
         bg: "bg-blue-100",
         text: "text-blue-700",
         border: "border-blue-200",
-        icon: <Eye size={14} />,
-        label: "En Revisión"
+        icon: <FileCheck size={14} />,
+        label: "Aprobado"
+      },
+      RECHAZADO: {
+        bg: "bg-red-100",
+        text: "text-red-700",
+        border: "border-red-200",
+        icon: <XCircle size={14} />,
+        label: "Rechazado"
       }
     };
 
-    const { bg, text, border, icon, label } = config[estado] || config.pendiente;
+    const c = config[estado] || config.EN_PROCESO;
 
     return (
-      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${bg} ${text} ${border}`}>
-        {icon}
-        {label}
+      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${c.bg} ${c.text} ${c.border}`}>
+        {c.icon}
+        {c.label}
       </span>
     );
   };
 
-  const getNombreRed = (idRed) => {
-    const red = redes.find(r => r.idRed === idRed);
-    return red?.descRed || "Sin red";
+  const getFirmaBadge = (diagnostico) => {
+    if (diagnostico.firmaDigital || diagnostico.fechaFirma) {
+      return (
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-700">
+            <Fingerprint size={12} />
+            Firmado
+          </span>
+          {diagnostico.nombreFirmante && (
+            <span className="text-xs text-gray-500">{diagnostico.nombreFirmante}</span>
+          )}
+        </div>
+      );
+    }
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-500">
+        <AlertCircle size={12} />
+        Sin firma
+      </span>
+    );
   };
 
-  const verDetalle = (diagnostico) => {
+  const verDetalle = async (diagnostico) => {
     setDiagnosticoSeleccionado(diagnostico);
     setModalDetalle(true);
   };
 
-  const exportarExcel = () => {
-    toast.success("Exportando a Excel...");
+  const descargarPdf = async (idFormulario) => {
+    setCargandoPdf(true);
+    try {
+      const token = localStorage.getItem('auth.token');
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+      const response = await fetch(`${baseUrl}/formulario-diagnostico/${idFormulario}/pdf`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al descargar PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `formulario_${idFormulario}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      toast.success("PDF descargado correctamente");
+    } catch (error) {
+      console.error("Error descargando PDF:", error);
+      toast.error("No se pudo descargar el PDF");
+    } finally {
+      setCargandoPdf(false);
+    }
   };
 
+  const verPdf = async (idFormulario) => {
+    setCargandoPdf(true);
+    try {
+      const token = localStorage.getItem('auth.token');
+      const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+      const response = await fetch(`${baseUrl}/formulario-diagnostico/${idFormulario}/pdf`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al obtener PDF');
+      }
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank');
+    } catch (error) {
+      console.error("Error abriendo PDF:", error);
+      toast.error("No hay PDF disponible para este formulario");
+    } finally {
+      setCargandoPdf(false);
+    }
+  };
+
+  const exportarExcel = () => {
+    toast.success("Exportando a Excel...");
+    // Implementar exportacion a Excel
+  };
+
+  // Estadisticas
+  const stats = useMemo(() => ({
+    total: diagnosticos.length,
+    firmados: diagnosticos.filter(d => d.estado === "FIRMADO" || d.firmaDigital).length,
+    enviados: diagnosticos.filter(d => d.estado === "ENVIADO").length,
+    enProceso: diagnosticos.filter(d => d.estado === "EN_PROCESO").length
+  }), [diagnosticos]);
+
   // ================================================================
-  // 🖼️ RENDER
+  // RENDER
   // ================================================================
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <Loader className="w-12 h-12 text-cenate-600 animate-spin" />
-          <p className="text-gray-600">Cargando diagnósticos...</p>
+          <Loader className="w-12 h-12 text-blue-600 animate-spin" />
+          <p className="text-gray-600">Cargando diagnosticos...</p>
         </div>
       </div>
     );
@@ -214,12 +294,12 @@ export default function DiagnosticoIpress() {
       {/* Header */}
       <div className="mb-6">
         <div className="flex items-center gap-3 mb-1">
-          <div className="p-2.5 rounded-xl bg-cenate-600 shadow-lg shadow-cenate-600/20">
+          <div className="p-2.5 rounded-xl bg-blue-600 shadow-lg shadow-blue-600/20">
             <ClipboardList className="w-6 h-6 text-white" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-gray-800">Diagnóstico de las IPRESS</h1>
-            <p className="text-gray-500 text-sm">Consulta y seguimiento de formularios de diagnóstico</p>
+            <h1 className="text-2xl font-bold text-gray-800">Diagnostico de las IPRESS</h1>
+            <p className="text-gray-500 text-sm">Consulta y seguimiento de formularios de diagnostico</p>
           </div>
         </div>
       </div>
@@ -228,12 +308,23 @@ export default function DiagnosticoIpress() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-cenate-100">
-              <FileText className="w-5 h-5 text-cenate-600" />
+            <div className="p-2.5 rounded-lg bg-blue-100">
+              <FileText className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-800">{diagnosticos.length}</p>
-              <p className="text-sm text-gray-500">Total Diagnósticos</p>
+              <p className="text-2xl font-bold text-gray-800">{stats.total}</p>
+              <p className="text-sm text-gray-500">Total Diagnosticos</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-lg bg-purple-100">
+              <Shield className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-2xl font-bold text-gray-800">{stats.firmados}</p>
+              <p className="text-sm text-gray-500">Firmados</p>
             </div>
           </div>
         </div>
@@ -243,10 +334,8 @@ export default function DiagnosticoIpress() {
               <CheckCircle2 className="w-5 h-5 text-emerald-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-800">
-                {diagnosticos.filter(d => d.estado === "completado").length}
-              </p>
-              <p className="text-sm text-gray-500">Completados</p>
+              <p className="text-2xl font-bold text-gray-800">{stats.enviados}</p>
+              <p className="text-sm text-gray-500">Enviados</p>
             </div>
           </div>
         </div>
@@ -256,23 +345,8 @@ export default function DiagnosticoIpress() {
               <AlertCircle className="w-5 h-5 text-amber-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-800">
-                {diagnosticos.filter(d => d.estado === "pendiente").length}
-              </p>
-              <p className="text-sm text-gray-500">Pendientes</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-lg bg-blue-100">
-              <Eye className="w-5 h-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-gray-800">
-                {diagnosticos.filter(d => d.estado === "en_revision").length}
-              </p>
-              <p className="text-sm text-gray-500">En Revisión</p>
+              <p className="text-2xl font-bold text-gray-800">{stats.enProceso}</p>
+              <p className="text-sm text-gray-500">En Proceso</p>
             </div>
           </div>
         </div>
@@ -287,18 +361,18 @@ export default function DiagnosticoIpress() {
           <h2 className="text-base font-semibold text-gray-700">Filtros</h2>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          {/* Búsqueda */}
+          {/* Busqueda */}
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <input
               type="text"
-              placeholder="Buscar IPRESS..."
+              placeholder="Buscar IPRESS o firmante..."
               value={busqueda}
               onChange={(e) => {
                 setBusqueda(e.target.value);
                 setPaginaActual(1);
               }}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-cenate-500 focus:border-cenate-500 transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
             />
           </div>
 
@@ -312,7 +386,7 @@ export default function DiagnosticoIpress() {
                 setIpressSeleccionada("");
                 setPaginaActual(1);
               }}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-cenate-500 focus:border-cenate-500 appearance-none cursor-pointer transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer transition-all"
             >
               <option value="">Todas las Redes</option>
               {redes.map((red) => (
@@ -332,7 +406,7 @@ export default function DiagnosticoIpress() {
                 setIpressSeleccionada(e.target.value);
                 setPaginaActual(1);
               }}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-cenate-500 focus:border-cenate-500 appearance-none cursor-pointer transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer transition-all"
             >
               <option value="">Todas las IPRESS</option>
               {ipressFiltradas.map((ipr) => (
@@ -352,12 +426,14 @@ export default function DiagnosticoIpress() {
                 setEstadoFiltro(e.target.value);
                 setPaginaActual(1);
               }}
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-cenate-500 focus:border-cenate-500 appearance-none cursor-pointer transition-all"
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer transition-all"
             >
               <option value="">Todos los Estados</option>
-              <option value="completado">Completado</option>
-              <option value="pendiente">Pendiente</option>
-              <option value="en_revision">En Revisión</option>
+              <option value="FIRMADO">Firmado</option>
+              <option value="ENVIADO">Enviado</option>
+              <option value="EN_PROCESO">En Proceso</option>
+              <option value="APROBADO">Aprobado</option>
+              <option value="RECHAZADO">Rechazado</option>
             </select>
           </div>
         </div>
@@ -366,12 +442,12 @@ export default function DiagnosticoIpress() {
       {/* Acciones */}
       <div className="flex justify-between items-center mb-4">
         <p className="text-gray-600">
-          Mostrando <span className="text-gray-800 font-semibold">{datosFiltrados.length}</span> diagnósticos
+          Mostrando <span className="text-gray-800 font-semibold">{datosFiltrados.length}</span> diagnosticos
         </p>
         <div className="flex gap-2">
           <button
             onClick={cargarDatos}
-            className="flex items-center gap-2 px-4 py-2 bg-cenate-600 hover:bg-cenate-700 text-white rounded-lg transition-colors shadow-sm"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors shadow-sm"
           >
             <RefreshCw className="w-4 h-4" />
             Actualizar
@@ -386,88 +462,134 @@ export default function DiagnosticoIpress() {
         </div>
       </div>
 
-      {/* Tabla - Diseño limpio estilo bancario */}
+      {/* Tabla */}
       <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
-        {/* Título de la tabla */}
         <div className="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
-          <h3 className="text-sm font-semibold text-gray-700">Últimos Diagnósticos Registrados</h3>
+          <h3 className="text-sm font-semibold text-gray-700">Diagnosticos Registrados</h3>
           <p className="text-xs text-gray-500 mt-0.5">Total de registros: {datosFiltrados.length}</p>
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="bg-cenate-600">
-                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                  Código
+              <tr className="bg-blue-600">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                  Fecha Envío
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
                   IPRESS
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                  Red Asistencial
+                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  Red
                 </th>
-                <th className="px-6 py-3 text-right text-xs font-semibold text-white uppercase tracking-wider">
-                  Progreso
+                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  Estado
                 </th>
-                <th className="px-6 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
-                  N°
+                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  Firma
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                  Fecha Envio
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-semibold text-white uppercase tracking-wider">
+                  Acciones
                 </th>
               </tr>
             </thead>
             <tbody>
               {datosPaginados.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center">
+                  <td colSpan="7" className="px-6 py-12 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <XCircle className="w-10 h-10 text-gray-300" />
-                      <p className="text-gray-400 text-sm">No se encontraron diagnósticos</p>
+                      <p className="text-gray-400 text-sm">No se encontraron diagnosticos</p>
                     </div>
                   </td>
                 </tr>
               ) : (
-                datosPaginados.map((diagnostico, index) => (
+                datosPaginados.map((diagnostico) => (
                   <tr
-                    key={diagnostico.id}
+                    key={diagnostico.idFormulario}
                     className="border-b border-gray-100 hover:bg-blue-50/30 transition-colors"
                   >
-                    <td className="px-6 py-3.5">
-                      <span className="text-sm text-gray-600">{diagnostico.codIpress}</span>
+                    <td className="px-4 py-3">
+                      <span className="text-sm font-medium text-gray-700">#{diagnostico.idFormulario}</span>
                     </td>
-                    <td className="px-6 py-3.5">
-                      <span className="text-sm text-gray-600">
-                        {diagnostico.fechaEnvio
-                          ? new Date(diagnostico.fechaEnvio).toLocaleDateString("es-PE")
-                          : "-"}
-                      </span>
+                    <td className="px-4 py-3">
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{diagnostico.nombreIpress}</p>
+                        <p className="text-xs text-gray-500">{diagnostico.codigoIpress}</p>
+                      </div>
                     </td>
-                    <td className="px-6 py-3.5">
-                      <button
-                        onClick={() => verDetalle(diagnostico)}
-                        className="text-sm text-blue-600 hover:text-blue-800 hover:underline transition-colors text-left"
-                      >
-                        {diagnostico.descIpress}
-                      </button>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-600">{diagnostico.nombreRed || "-"}</span>
                     </td>
-                    <td className="px-6 py-3.5">
-                      <span className="text-sm text-gray-600">{getNombreRed(diagnostico.idRed)}</span>
+                    <td className="px-4 py-3">
+                      {getEstadoBadge(diagnostico.estado)}
                     </td>
-                    <td className="px-6 py-3.5 text-right">
-                      <span className={`text-sm font-medium ${
-                        diagnostico.porcentajeCompletado === 100
-                          ? "text-emerald-600"
-                          : diagnostico.porcentajeCompletado >= 50
-                            ? "text-gray-700"
-                            : "text-amber-600"
-                      }`}>
-                        {diagnostico.porcentajeCompletado}%
-                      </span>
+                    <td className="px-4 py-3">
+                      {getFirmaBadge(diagnostico)}
                     </td>
-                    <td className="px-6 py-3.5 text-center">
-                      <span className="text-sm text-gray-500">{diagnostico.id}</span>
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-gray-600">
+                        {diagnostico.fechaEnvio ? (
+                          <>
+                            <div>{new Date(diagnostico.fechaEnvio).toLocaleDateString("es-PE", {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric'
+                            })}</div>
+                            <div className="text-xs text-gray-400">
+                              {new Date(diagnostico.fechaEnvio).toLocaleTimeString("es-PE", {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </div>
+                          </>
+                        ) : "-"}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center justify-center gap-1">
+                        {/* Ver detalle */}
+                        <div className="relative group">
+                          <button
+                            onClick={() => verDetalle(diagnostico)}
+                            className="p-1.5 rounded-lg text-blue-600 hover:bg-blue-100 transition-colors"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            Ver detalle
+                          </span>
+                        </div>
+                        {/* Ver PDF */}
+                        <div className="relative group">
+                          <button
+                            onClick={() => verPdf(diagnostico.idFormulario)}
+                            disabled={cargandoPdf}
+                            className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-100 transition-colors disabled:opacity-50"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </button>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            Ver PDF
+                          </span>
+                        </div>
+                        {/* Descargar PDF */}
+                        <div className="relative group">
+                          <button
+                            onClick={() => descargarPdf(diagnostico.idFormulario)}
+                            disabled={cargandoPdf}
+                            className="p-1.5 rounded-lg text-purple-600 hover:bg-purple-100 transition-colors disabled:opacity-50"
+                          >
+                            <Download className="w-4 h-4" />
+                          </button>
+                          <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs font-medium text-white bg-gray-800 rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-10">
+                            Descargar PDF
+                          </span>
+                        </div>
+                      </div>
                     </td>
                   </tr>
                 ))
@@ -476,11 +598,11 @@ export default function DiagnosticoIpress() {
           </table>
         </div>
 
-        {/* Paginación */}
+        {/* Paginacion */}
         {totalPaginas > 1 && (
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-100 bg-white">
             <p className="text-xs text-gray-500">
-              Página {paginaActual} de {totalPaginas}
+              Pagina {paginaActual} de {totalPaginas}
             </p>
             <div className="flex items-center gap-1">
               <button
@@ -505,11 +627,11 @@ export default function DiagnosticoIpress() {
       {/* Modal Detalle */}
       {modalDetalle && diagnosticoSeleccionado && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-cenate-600 to-cenate-700">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-600 to-blue-700">
               <div>
-                <h3 className="text-xl font-bold text-white">Detalle del Diagnóstico</h3>
-                <p className="text-cenate-100">{diagnosticoSeleccionado.descIpress}</p>
+                <h3 className="text-xl font-bold text-white">Detalle del Diagnostico</h3>
+                <p className="text-blue-100">{diagnosticoSeleccionado.nombreIpress}</p>
               </div>
               <button
                 onClick={() => setModalDetalle(false)}
@@ -520,47 +642,100 @@ export default function DiagnosticoIpress() {
             </div>
             <div className="p-6 overflow-y-auto max-h-[60vh]">
               <div className="space-y-4">
+                {/* Info basica */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                    <p className="text-sm text-gray-500 mb-1">Código IPRESS</p>
-                    <p className="text-gray-800 font-medium">{diagnosticoSeleccionado.codIpress}</p>
+                    <p className="text-sm text-gray-500 mb-1">Codigo IPRESS</p>
+                    <p className="text-gray-800 font-medium">{diagnosticoSeleccionado.codigoIpress}</p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
                     <p className="text-sm text-gray-500 mb-1">Red</p>
-                    <p className="text-gray-800 font-medium">{getNombreRed(diagnosticoSeleccionado.idRed)}</p>
+                    <p className="text-gray-800 font-medium">{diagnosticoSeleccionado.nombreRed || "-"}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm text-gray-500 mb-1">Macroregion</p>
+                    <p className="text-gray-800 font-medium">{diagnosticoSeleccionado.nombreMacroregion || "-"}</p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm text-gray-500 mb-1">Estado</p>
+                    {getEstadoBadge(diagnosticoSeleccionado.estado)}
                   </div>
                 </div>
 
-                <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                  <p className="text-sm text-gray-500 mb-3">Secciones del Formulario</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {[
-                      { key: "datosGenerales", label: "Datos Generales" },
-                      { key: "recursosHumanos", label: "Recursos Humanos" },
-                      { key: "infraestructura", label: "Infraestructura" },
-                      { key: "equipamiento", label: "Equipamiento" },
-                      { key: "conectividad", label: "Conectividad" },
-                      { key: "servicios", label: "Servicios" },
-                      { key: "necesidades", label: "Necesidades" }
-                    ].map((seccion) => (
-                      <div
-                        key={seccion.key}
-                        className={`flex items-center gap-2 p-2.5 rounded-lg border ${
-                          diagnosticoSeleccionado[seccion.key]?.completado
-                            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
-                        }`}
-                      >
-                        {diagnosticoSeleccionado[seccion.key]?.completado ? (
-                          <CheckCircle2 className="w-4 h-4" />
-                        ) : (
-                          <AlertCircle className="w-4 h-4" />
-                        )}
-                        <span className="text-sm font-medium">{seccion.label}</span>
+                {/* Info de firma */}
+                {(diagnosticoSeleccionado.firmaDigital || diagnosticoSeleccionado.fechaFirma) && (
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Shield className="w-5 h-5 text-purple-600" />
+                      <p className="text-sm font-semibold text-purple-800">Informacion de Firma Digital</p>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-xs text-purple-600">Firmante</p>
+                        <p className="text-sm font-medium text-gray-800">{diagnosticoSeleccionado.nombreFirmante || "-"}</p>
                       </div>
-                    ))}
+                      <div>
+                        <p className="text-xs text-purple-600">DNI</p>
+                        <p className="text-sm font-medium text-gray-800">{diagnosticoSeleccionado.dniFirmante || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-purple-600">Fecha de Firma</p>
+                        <p className="text-sm font-medium text-gray-800">
+                          {diagnosticoSeleccionado.fechaFirma
+                            ? new Date(diagnosticoSeleccionado.fechaFirma).toLocaleString("es-PE")
+                            : "-"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-purple-600">Entidad Certificadora</p>
+                        <p className="text-sm font-medium text-gray-800">{diagnosticoSeleccionado.entidadCertificadora || "-"}</p>
+                      </div>
+                    </div>
+                    {diagnosticoSeleccionado.hashDocumento && (
+                      <div className="mt-3 pt-3 border-t border-purple-200">
+                        <p className="text-xs text-purple-600">Hash SHA-256</p>
+                        <p className="text-xs font-mono text-gray-600 break-all">{diagnosticoSeleccionado.hashDocumento}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Fechas */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm text-gray-500 mb-1">Fecha Creacion</p>
+                    <p className="text-gray-800 font-medium">
+                      {diagnosticoSeleccionado.fechaCreacion
+                        ? new Date(diagnosticoSeleccionado.fechaCreacion).toLocaleString("es-PE")
+                        : "-"}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm text-gray-500 mb-1">Fecha Envio</p>
+                    <p className="text-gray-800 font-medium">
+                      {diagnosticoSeleccionado.fechaEnvio
+                        ? new Date(diagnosticoSeleccionado.fechaEnvio).toLocaleString("es-PE")
+                        : "-"}
+                    </p>
                   </div>
                 </div>
+
+                {/* Datos generales */}
+                {diagnosticoSeleccionado.datosGenerales && (
+                  <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm font-semibold text-gray-700 mb-3">Datos Generales</p>
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-gray-500">Director</p>
+                        <p className="font-medium">{diagnosticoSeleccionado.datosGenerales.directorNombre || "-"}</p>
+                      </div>
+                      <div>
+                        <p className="text-gray-500">Responsable Telesalud</p>
+                        <p className="font-medium">{diagnosticoSeleccionado.datosGenerales.responsableNombre || "-"}</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
             <div className="flex justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
@@ -571,7 +746,17 @@ export default function DiagnosticoIpress() {
                 Cerrar
               </button>
               <button
-                className="px-4 py-2 rounded-lg bg-cenate-600 text-white hover:bg-cenate-700 transition-colors flex items-center gap-2 shadow-sm"
+                onClick={() => verPdf(diagnosticoSeleccionado.idFormulario)}
+                disabled={cargandoPdf}
+                className="px-4 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
+              >
+                <Eye className="w-4 h-4" />
+                Ver PDF
+              </button>
+              <button
+                onClick={() => descargarPdf(diagnosticoSeleccionado.idFormulario)}
+                disabled={cargandoPdf}
+                className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors flex items-center gap-2 shadow-sm disabled:opacity-50"
               >
                 <Download className="w-4 h-4" />
                 Descargar PDF

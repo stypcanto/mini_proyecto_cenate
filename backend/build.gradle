@@ -141,7 +141,7 @@ task runGenerateHash(type: JavaExec) {
     group = 'utility'
     description = 'Genera hash BCrypt para contraseñas'
     classpath = sourceSets.main.runtimeClasspath
-    main = 'com.styp.cenate.utils.GenerarHash'
+    mainClass.set('com.styp.cenate.utils.GenerarHash')
 }
 
 

@@ -12,8 +12,7 @@ const formularioDiagnosticoService = {
      * @param {string} username - Usuario que registra
      * @returns {Promise} - Respuesta del servidor
      */
-    guardarBorrador: async (formData, idIpress, username) => {
-        const request = transformarParaBackend(formData, idIpress);
+    guardarBorrador: async (request) => {
         return api.post('/formulario-diagnostico/borrador', request);
     },
 
@@ -25,8 +24,7 @@ const formularioDiagnosticoService = {
      * @returns {Promise}
      */
     actualizar: async (idFormulario, formData, idIpress) => {
-        const request = transformarParaBackend(formData, idIpress);
-        request.idFormulario = idFormulario;
+        const request = transformarParaBackendInterno(formData, idIpress, idFormulario);
         return api.put(`/formulario-diagnostico/${idFormulario}`, request);
     },
 
@@ -57,6 +55,26 @@ const formularioDiagnosticoService = {
     obtenerBorradorPorIpress: async (idIpress) => {
         try {
             const response = await api.get(`/formulario-diagnostico/borrador/ipress/${idIpress}`);
+            if (response.data) {
+                return transformarParaFrontend(response.data);
+            }
+            return null;
+        } catch (error) {
+            if (error.response && error.response.status === 204) {
+                return null;
+            }
+            throw error;
+        }
+    },
+
+    /**
+     * Obtener el último formulario por IPRESS (cualquier estado)
+     * @param {number} idIpress - ID de la IPRESS
+     * @returns {Promise}
+     */
+    obtenerUltimoPorIpress: async (idIpress) => {
+        try {
+            const response = await api.get(`/formulario-diagnostico/ultimo/ipress/${idIpress}`);
             if (response.data) {
                 return transformarParaFrontend(response.data);
             }
@@ -112,6 +130,17 @@ const formularioDiagnosticoService = {
     existeEnProcesoActual: async (idIpress) => {
         const response = await api.get(`/formulario-diagnostico/existe-en-proceso/ipress/${idIpress}`);
         return response.data;
+    },
+
+    /**
+     * Transforma datos del frontend al formato del backend
+     * @param {Object} formData - Datos del formulario
+     * @param {number} idIpress - ID de la IPRESS
+     * @param {number} idFormulario - ID del formulario (opcional)
+     * @returns {Object} - Request para el backend
+     */
+    transformarParaBackend: (formData, idIpress, idFormulario = null) => {
+        return transformarParaBackendInterno(formData, idIpress, idFormulario);
     }
 };
 
@@ -178,10 +207,11 @@ const PRIORIDAD_IDS = {
 /**
  * Transforma los datos del formulario del frontend al formato del backend
  */
-function transformarParaBackend(formData, idIpress) {
+function transformarParaBackendInterno(formData, idIpress, idFormulario = null) {
     const request = {
         idIpress: idIpress,
         anio: new Date().getFullYear(),
+        idFormulario: idFormulario,
     };
 
     // Datos Generales

@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
+import ReactDOM from "react-dom";
 import { useAuth } from "../../../context/AuthContext";
 import api from "../../../services/apiClient";
 import formularioDiagnosticoService from "../../../services/formularioDiagnosticoService";
+import firmaDigitalService from "../../../services/firmaDigitalService";
+import FirmaDigitalModal from "../../../components/modals/FirmaDigitalModal";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import toast from "react-hot-toast";
@@ -29,8 +32,135 @@ import {
     Eye,
     Download,
     Printer,
-    Loader2
+    Loader2,
+    Edit2,
+    Trash2,
+    ChevronDown,
+    Shield
 } from "lucide-react";
+
+// Componente de selector numérico profesional con dropdown usando portal
+const NumberSelector = ({ value, onChange, min = 0, max = 100, className = "", placeholder = "0" }) => {
+    const [isOpen, setIsOpen] = React.useState(false);
+    const [searchValue, setSearchValue] = React.useState("");
+    const [position, setPosition] = React.useState({ top: 0, left: 0, width: 0 });
+    const buttonRef = React.useRef(null);
+    const dropdownRef = React.useRef(null);
+
+    const options = Array.from({ length: max - min + 1 }, (_, i) => min + i);
+    const filteredOptions = searchValue
+        ? options.filter(num => num.toString().includes(searchValue))
+        : options;
+
+    React.useEffect(() => {
+        const handleClickOutside = (event) => {
+            if (buttonRef.current && !buttonRef.current.contains(event.target) &&
+                dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+                setIsOpen(false);
+                setSearchValue("");
+            }
+        };
+        const handleScroll = (event) => {
+            // Ignorar scroll dentro del dropdown
+            if (dropdownRef.current && dropdownRef.current.contains(event.target)) {
+                return;
+            }
+            if (isOpen) setIsOpen(false);
+        };
+        document.addEventListener("mousedown", handleClickOutside);
+        window.addEventListener("scroll", handleScroll, true);
+        return () => {
+            document.removeEventListener("mousedown", handleClickOutside);
+            window.removeEventListener("scroll", handleScroll, true);
+        };
+    }, [isOpen]);
+
+    const handleToggle = () => {
+        if (!isOpen && buttonRef.current) {
+            const rect = buttonRef.current.getBoundingClientRect();
+            setPosition({
+                top: rect.bottom + 4,
+                left: rect.left,
+                width: rect.width
+            });
+        }
+        setIsOpen(!isOpen);
+        setSearchValue("");
+    };
+
+    const handleSelect = (num) => {
+        onChange({ target: { value: num.toString() } });
+        setIsOpen(false);
+        setSearchValue("");
+    };
+
+    return (
+        <>
+            <div className={`relative ${className}`}>
+                <button
+                    ref={buttonRef}
+                    type="button"
+                    onClick={handleToggle}
+                    className="w-full px-3 py-2 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all flex items-center justify-between gap-2 text-left hover:bg-yellow-100"
+                >
+                    <span className={value !== "" && value !== undefined ? "text-gray-900 font-medium" : "text-gray-400"}>
+                        {value !== "" && value !== undefined ? value : placeholder}
+                    </span>
+                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                </button>
+            </div>
+
+            {isOpen && ReactDOM.createPortal(
+                <div
+                    ref={dropdownRef}
+                    className="bg-white border border-gray-300 rounded-lg shadow-2xl"
+                    style={{
+                        position: 'fixed',
+                        top: position.top,
+                        left: position.left,
+                        width: Math.max(position.width, 140),
+                        zIndex: 99999
+                    }}
+                >
+                    <div className="p-2 border-b border-gray-200 bg-gray-50 rounded-t-lg">
+                        <input
+                            type="text"
+                            placeholder="Buscar..."
+                            value={searchValue}
+                            onChange={(e) => setSearchValue(e.target.value)}
+                            onClick={(e) => e.stopPropagation()}
+                            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 bg-white"
+                            autoFocus
+                        />
+                    </div>
+                    <div className="max-h-52 overflow-y-auto bg-white rounded-b-lg">
+                        {filteredOptions.length > 0 ? (
+                            filteredOptions.map((num) => (
+                                <button
+                                    key={num}
+                                    type="button"
+                                    onClick={() => handleSelect(num)}
+                                    className={`w-full px-4 py-2.5 text-left text-sm transition-colors border-b border-gray-100 last:border-b-0 ${
+                                        String(value) === String(num)
+                                            ? "bg-[#0A5BA9] text-white font-medium"
+                                            : "text-gray-700 hover:bg-blue-50"
+                                    }`}
+                                >
+                                    {num}
+                                </button>
+                            ))
+                        ) : (
+                            <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                                No hay resultados
+                            </div>
+                        )}
+                    </div>
+                </div>,
+                document.body
+            )}
+        </>
+    );
+};
 
 // Configuración de las pestañas del formulario (las primeras 7 son editables)
 const TABS_CONFIG = [
@@ -65,10 +195,15 @@ export default function FormularioDiagnostico() {
 
     // Estados para integración con backend
     const [idFormulario, setIdFormulario] = useState(null);
-    const [estadoFormulario, setEstadoFormulario] = useState(null); // BORRADOR, ENVIADO, etc.
+    const [estadoFormulario, setEstadoFormulario] = useState(null); // BORRADOR, ENVIADO, FIRMADO, etc.
     const [guardando, setGuardando] = useState(false);
     const [enviando, setEnviando] = useState(false);
     const [cargandoBorrador, setCargandoBorrador] = useState(false);
+
+    // Estados para firma digital
+    const [mostrarModalFirma, setMostrarModalFirma] = useState(false);
+    const [pdfParaFirmar, setPdfParaFirmar] = useState(null);
+    const [formularioFirmado, setFormularioFirmado] = useState(false);
 
     // Funciones de validación
     const validarEmail = (email) => {
@@ -174,31 +309,41 @@ export default function FormularioDiagnostico() {
         cargarDatosUsuario();
     }, [user]);
 
-    // Función para cargar borrador existente
+    // Función para cargar formulario existente (borrador o enviado)
     const cargarBorradorExistente = async (idIpress) => {
         setCargandoBorrador(true);
         try {
-            const borrador = await formularioDiagnosticoService.obtenerBorradorPorIpress(idIpress);
-            if (borrador) {
-                // Transformar datos del backend al formato frontend
-                const datosTransformados = formularioDiagnosticoService.transformarParaFrontend(borrador);
-                if (datosTransformados) {
-                    setIdFormulario(datosTransformados.idFormulario);
-                    setEstadoFormulario(datosTransformados.estado);
-                    setFormData({
-                        datosGenerales: datosTransformados.datosGenerales || {},
-                        recursosHumanos: datosTransformados.recursosHumanos || {},
-                        infraestructura: datosTransformados.infraestructura || {},
-                        equipamiento: datosTransformados.equipamiento || {},
-                        conectividad: datosTransformados.conectividad || {},
-                        servicios: datosTransformados.servicios || {},
-                        necesidades: datosTransformados.necesidades || {}
-                    });
+            // Primero buscar borrador en proceso
+            let formulario = await formularioDiagnosticoService.obtenerBorradorPorIpress(idIpress);
+
+            // Si no hay borrador, buscar el último formulario (cualquier estado)
+            if (!formulario) {
+                formulario = await formularioDiagnosticoService.obtenerUltimoPorIpress(idIpress);
+            }
+
+            if (formulario) {
+                setIdFormulario(formulario.idFormulario);
+                setEstadoFormulario(formulario.estado);
+                setFormData({
+                    datosGenerales: formulario.datosGenerales || {},
+                    recursosHumanos: formulario.recursosHumanos || {},
+                    infraestructura: formulario.infraestructura || {},
+                    equipamiento: formulario.equipamiento || {},
+                    conectividad: formulario.conectividad || {},
+                    servicios: formulario.servicios || {},
+                    necesidades: formulario.necesidades || {}
+                });
+
+                if (formulario.estado === "ENVIADO") {
+                    setCurrentView("formulario");
+                    setActiveTab("vista-previa");
+                    toast.info("Ya tiene un formulario enviado. Puede revisarlo en la vista previa.");
+                } else if (formulario.estado === "EN_PROCESO") {
                     toast.success("Se cargó el borrador existente");
                 }
             }
         } catch (error) {
-            console.error("Error cargando borrador:", error);
+            console.error("Error cargando formulario:", error);
         } finally {
             setCargandoBorrador(false);
         }
@@ -218,6 +363,7 @@ export default function FormularioDiagnostico() {
     // Navegar entre tabs
     const handleTabChange = (tabId) => {
         setActiveTab(tabId);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
     // Ir al siguiente tab
@@ -225,6 +371,7 @@ export default function FormularioDiagnostico() {
         const currentIndex = TABS_CONFIG.findIndex(t => t.id === activeTab);
         if (currentIndex < TABS_CONFIG.length - 1) {
             setActiveTab(TABS_CONFIG[currentIndex + 1].id);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
@@ -233,15 +380,16 @@ export default function FormularioDiagnostico() {
         const currentIndex = TABS_CONFIG.findIndex(t => t.id === activeTab);
         if (currentIndex > 0) {
             setActiveTab(TABS_CONFIG[currentIndex - 1].id);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     };
 
-    // Guardar progreso en el backend
-    const handleSaveProgress = async () => {
+    // Guardar progreso en el backend (incluye PDF)
+    const handleSaveProgress = async (incluirPdf = true) => {
         const idIpress = datosUsuario?.id_ipress || datosUsuario?.personalExterno?.ipress?.idIpress;
         if (!idIpress) {
             toast.error("No se pudo identificar la IPRESS del usuario");
-            return;
+            return false;
         }
 
         setGuardando(true);
@@ -253,6 +401,16 @@ export default function FormularioDiagnostico() {
                 idFormulario
             );
 
+            // Generar PDF y agregarlo si se requiere
+            if (incluirPdf) {
+                try {
+                    const pdfBase64 = await generarPdfBase64();
+                    datosParaBackend.pdfBase64 = pdfBase64;
+                } catch (pdfError) {
+                    console.warn("No se pudo generar PDF:", pdfError);
+                }
+            }
+
             // Guardar en el backend
             const response = await formularioDiagnosticoService.guardarBorrador(datosParaBackend);
 
@@ -260,35 +418,47 @@ export default function FormularioDiagnostico() {
                 setIdFormulario(response.idFormulario);
                 setEstadoFormulario(response.estado);
                 toast.success("Progreso guardado correctamente");
+                return response.idFormulario; // Retornar el ID para uso inmediato
             }
+            return null;
         } catch (error) {
             console.error("Error guardando progreso:", error);
             toast.error("Error al guardar el progreso. Intente nuevamente.");
             // Fallback: guardar en localStorage
             localStorage.setItem("formulario_diagnostico_progress", JSON.stringify(formData));
+            return null;
         } finally {
             setGuardando(false);
         }
     };
 
-    // Enviar formulario (cambiar estado a ENVIADO)
-    const handleEnviarFormulario = async () => {
-        if (!idFormulario) {
-            // Primero guardar el formulario
-            await handleSaveProgress();
-        }
-
-        if (!idFormulario) {
-            toast.error("Debe guardar el formulario antes de enviarlo");
+    // Enviar formulario SIN firma (cambiar estado a ENVIADO)
+    const handleEnviarSinFirma = async () => {
+        // Confirmar acción
+        if (!window.confirm("¿Está seguro de enviar el formulario SIN firma digital?\n\nEl formulario quedará registrado pero sin validación de firma.")) {
             return;
         }
 
         setEnviando(true);
         try {
-            const response = await formularioDiagnosticoService.enviar(idFormulario);
+            // Primero guardar con PDF si no tiene ID
+            let formularioId = idFormulario;
+            if (!formularioId) {
+                formularioId = await handleSaveProgress(true);
+                if (!formularioId) {
+                    toast.error("Debe guardar el formulario antes de enviarlo");
+                    return;
+                }
+            } else {
+                // Actualizar con el PDF más reciente
+                await handleSaveProgress(true);
+            }
+
+            // Enviar (cambiar estado)
+            const response = await formularioDiagnosticoService.enviar(formularioId);
             if (response) {
                 setEstadoFormulario(response.estado);
-                toast.success("Formulario enviado correctamente");
+                toast.success("Formulario enviado correctamente (sin firma)");
             }
         } catch (error) {
             console.error("Error enviando formulario:", error);
@@ -298,304 +468,489 @@ export default function FormularioDiagnostico() {
         }
     };
 
+    // Generar PDF como Base64 para firma/envío
+    const generarPdfBase64 = () => {
+        return new Promise((resolve) => {
+            const doc = crearDocumentoPDF();
+            const pdfOutput = doc.output('datauristring');
+            const base64 = pdfOutput.split(',')[1];
+            resolve(base64);
+        });
+    };
+
+    // Abrir modal de firma digital
+    const handleAbrirModalFirma = async () => {
+        let formularioId = idFormulario;
+
+        if (!formularioId) {
+            // Primero guardar el formulario
+            const nuevoId = await handleSaveProgress();
+            if (!nuevoId) {
+                toast.error("Debe guardar el formulario antes de firmarlo");
+                return;
+            }
+            formularioId = nuevoId;
+        }
+
+        try {
+            setEnviando(true);
+            // Generar el PDF para firmar
+            const pdfBase64 = await generarPdfBase64();
+            setPdfParaFirmar(pdfBase64);
+            setMostrarModalFirma(true);
+        } catch (error) {
+            console.error("Error generando PDF para firma:", error);
+            toast.error("Error al preparar el documento para firma");
+        } finally {
+            setEnviando(false);
+        }
+    };
+
+    // Callback cuando la firma es exitosa
+    const handleFirmaExitosa = (resultado) => {
+        setFormularioFirmado(true);
+        setEstadoFormulario("FIRMADO");
+        toast.success("Documento firmado y enviado correctamente");
+        console.log("Firma exitosa:", resultado);
+    };
+
     // Generar vista previa del PDF
     const handleGenerarPDF = () => {
         setVistaPreviaHabilitada(true);
         setActiveTab("vista-previa");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    // Descargar PDF
-    const handleDescargarPDF = () => {
+    // Crear documento PDF completo - Diseño Ejecutivo Profesional
+    const crearDocumentoPDF = () => {
         const doc = new jsPDF('p', 'mm', 'a4');
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
-        const margin = 15;
+        const margin = 10;
         let currentY = margin;
 
-        const nombreIpress = datosUsuario?.nombre_ipress || datosUsuario?.personalExterno?.ipress?.nombre || datosUsuario?.personalCnt?.ipress?.nombre || "IPRESS";
-        const redAsistencial = datosUsuario?.nombre_red || datosUsuario?.personalExterno?.ipress?.redAsistencial?.nombre || datosUsuario?.personalCnt?.ipress?.redAsistencial?.nombre || "";
-        const macroregion = datosUsuario?.nombre_macroregion || "";
-        const fechaActual = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
+        const nombreIpress = datosUsuario?.nombre_ipress || "-";
+        const redAsistencial = datosUsuario?.nombre_red || "-";
+        const macroregion = datosUsuario?.nombre_macroregion || "-";
+        const fechaActual = new Date().toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
-        // Función para agregar encabezado en cada página
-        const addHeader = (pageNum) => {
-            // Fondo del encabezado
+        const formatValue = (val) => val === "si" ? "Sí" : val === "no" ? "No" : val || "-";
+        const capitalizeFirst = (str) => str ? str.charAt(0).toUpperCase() + str.slice(1) : "-";
+
+        // Header compacto
+        const addHeader = () => {
             doc.setFillColor(10, 91, 169);
-            doc.rect(0, 0, pageWidth, 35, 'F');
-
-            // Título
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(14);
-            doc.setFont('helvetica', 'bold');
-            doc.text("DIAGNÓSTICO SITUACIONAL DE TELESALUD", pageWidth / 2, 12, { align: 'center' });
-
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(`IPRESS: ${nombreIpress}`, pageWidth / 2, 20, { align: 'center' });
-            doc.text(`Red Asistencial: ${redAsistencial}`, pageWidth / 2, 26, { align: 'center' });
-
-            // Número de página
-            doc.setFontSize(8);
-            doc.text(`Página ${pageNum} de 6`, pageWidth - margin, 32, { align: 'right' });
-
-            return 45; // Retorna la posición Y después del header
-        };
-
-        // Función para agregar pie de página
-        const addFooter = () => {
-            doc.setFillColor(10, 91, 169);
-            doc.rect(0, pageHeight - 15, pageWidth, 15, 'F');
-            doc.setTextColor(255, 255, 255);
-            doc.setFontSize(8);
-            doc.text("CENATE - Centro Nacional de Telemedicina", pageWidth / 2, pageHeight - 8, { align: 'center' });
-            doc.text(fechaActual, pageWidth - margin, pageHeight - 8, { align: 'right' });
-        };
-
-        // Función auxiliar para agregar sección con título
-        const addSectionTitle = (title, y) => {
-            doc.setFillColor(10, 91, 169);
-            doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+            doc.rect(0, 0, pageWidth, 18, 'F');
             doc.setTextColor(255, 255, 255);
             doc.setFontSize(11);
             doc.setFont('helvetica', 'bold');
-            doc.text(title, margin + 3, y + 5.5);
-            doc.setTextColor(0, 0, 0);
-            return y + 12;
+            doc.text("DIAGNÓSTICO SITUACIONAL DE TELESALUD", pageWidth / 2, 8, { align: 'center' });
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`${nombreIpress} | ${redAsistencial} | ${macroregion}`, pageWidth / 2, 14, { align: 'center' });
+            return 22;
         };
 
-        // Función para agregar fila de datos
-        const addDataRow = (label, value, y, labelWidth = 70) => {
+        // Footer compacto
+        const addFooter = (pageNum, totalPages) => {
+            doc.setDrawColor(10, 91, 169);
+            doc.setLineWidth(0.5);
+            doc.line(margin, pageHeight - 8, pageWidth - margin, pageHeight - 8);
+            doc.setTextColor(100);
+            doc.setFontSize(7);
+            doc.text(`CENATE | ${fechaActual}`, margin, pageHeight - 4);
+            doc.text(`Página ${pageNum} de ${totalPages}`, pageWidth - margin, pageHeight - 4, { align: 'right' });
+        };
+
+        // Título de sección
+        const addSection = (title, y) => {
+            doc.setFillColor(10, 91, 169);
+            doc.rect(margin, y, pageWidth - 2 * margin, 7, 'F');
+            doc.setTextColor(255, 255, 255);
+            doc.setFontSize(9);
             doc.setFont('helvetica', 'bold');
-            doc.setFontSize(9);
-            doc.text(label + ":", margin, y);
-            doc.setFont('helvetica', 'normal');
-            const displayValue = value || "No especificado";
-            doc.text(String(displayValue), margin + labelWidth, y);
-            return y + 6;
+            doc.text(title, margin + 2, y + 5);
+            return y + 10;
         };
 
-        // ==================== PÁGINA 1: DATOS GENERALES ====================
-        currentY = addHeader(1);
-        currentY = addSectionTitle("I. DATOS GENERALES DEL ESTABLECIMIENTO DE SALUD", currentY);
+        // Subtítulo
+        const addSubSection = (title, y) => {
+            doc.setTextColor(10, 91, 169);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text(title, margin, y);
+            doc.setTextColor(0);
+            return y + 5;
+        };
 
-        currentY = addDataRow("Nombre IPRESS", nombreIpress, currentY);
-        currentY = addDataRow("Red Asistencial", redAsistencial, currentY);
-        currentY = addDataRow("Macroregión", macroregion, currentY);
-        currentY = addDataRow("Categoría", formData.datosGenerales.categoria, currentY);
-        currentY = addDataRow("Tipo de Establecimiento", formData.datosGenerales.tipoEstablecimiento, currentY);
-        currentY = addDataRow("Ubicación", formData.datosGenerales.ubicacion, currentY);
-        currentY = addDataRow("Departamento", formData.datosGenerales.departamento, currentY);
-        currentY = addDataRow("Provincia", formData.datosGenerales.provincia, currentY);
-        currentY = addDataRow("Distrito", formData.datosGenerales.distrito, currentY);
-        currentY = addDataRow("Dirección", formData.datosGenerales.direccion, currentY);
-        currentY = addDataRow("Teléfono", formData.datosGenerales.telefono, currentY);
-        currentY = addDataRow("Correo Electrónico", formData.datosGenerales.correo, currentY);
-        currentY = addDataRow("Director/Jefe", formData.datosGenerales.director, currentY);
-
-        addFooter();
-
-        // ==================== PÁGINA 2: RECURSOS HUMANOS ====================
-        doc.addPage();
-        currentY = addHeader(2);
-        currentY = addSectionTitle("II. RECURSOS HUMANOS", currentY);
-
-        // Tabla de profesionales
-        const rhData = [
-            ["Médicos", formData.recursosHumanos.medicos || "0", formData.recursosHumanos.medicosCapacitados || "0"],
-            ["Enfermeras", formData.recursosHumanos.enfermeras || "0", formData.recursosHumanos.enfermerasCapacitadas || "0"],
-            ["Obstetras", formData.recursosHumanos.obstetras || "0", formData.recursosHumanos.obstetrasCapacitados || "0"],
-            ["Técnicos de Enfermería", formData.recursosHumanos.tecnicos || "0", formData.recursosHumanos.tecnicosCapacitados || "0"],
-            ["Personal Administrativo", formData.recursosHumanos.administrativos || "0", formData.recursosHumanos.administrativosCapacitados || "0"],
-            ["Personal Informático", formData.recursosHumanos.informaticos || "0", formData.recursosHumanos.informaticosCapacitados || "0"],
-        ];
-
-        autoTable(doc, {
-            startY: currentY,
-            head: [["PROFESIONAL", "CANTIDAD TOTAL", "CAPACITADOS EN TELESALUD"]],
-            body: rhData,
-            theme: 'grid',
-            headStyles: { fillColor: [10, 91, 169], fontSize: 9 },
-            bodyStyles: { fontSize: 9 },
-            margin: { left: margin, right: margin },
-            columnStyles: {
-                0: { cellWidth: 80 },
-                1: { cellWidth: 40, halign: 'center' },
-                2: { cellWidth: 50, halign: 'center' }
+        // Check si necesita nueva página
+        const checkNewPage = (y, needed = 40) => {
+            if (y > pageHeight - needed) {
+                doc.addPage();
+                return addHeader();
             }
-        });
+            return y;
+        };
 
-        currentY = doc.lastAutoTable.finalY + 10;
-        currentY = addDataRow("Responsable de Telesalud", formData.recursosHumanos.responsableTelesalud, currentY);
-        currentY = addDataRow("Cargo", formData.recursosHumanos.cargoResponsable, currentY);
-        currentY = addDataRow("Teléfono de contacto", formData.recursosHumanos.telefonoResponsable, currentY);
-        currentY = addDataRow("Correo del responsable", formData.recursosHumanos.correoResponsable, currentY);
+        // ==================== PÁGINA 1 ====================
+        currentY = addHeader();
 
-        addFooter();
+        // DATOS GENERALES + RECURSOS HUMANOS en misma página
+        currentY = addSection("I. DATOS GENERALES DE LA IPRESS", currentY);
 
-        // ==================== PÁGINA 3: INFRAESTRUCTURA ====================
-        doc.addPage();
-        currentY = addHeader(3);
-        currentY = addSectionTitle("III. INFRAESTRUCTURA", currentY);
-
-        const infraData = [
-            ["Teleconsultorio exclusivo", formData.infraestructura.teleconsultorio || "No", formData.infraestructura.teleconsultorioArea || "-"],
-            ["Ambiente compartido", formData.infraestructura.ambienteCompartido || "No", formData.infraestructura.ambienteCompartidoArea || "-"],
-            ["Sala de espera", formData.infraestructura.salaEspera || "No", formData.infraestructura.salaEsperaArea || "-"],
-            ["Ambiente administrativo", formData.infraestructura.ambienteAdmin || "No", formData.infraestructura.ambienteAdminArea || "-"],
+        const datosGeneralesTable = [
+            [{ content: 'IPRESS', styles: { fontStyle: 'bold' } }, nombreIpress, { content: 'Red', styles: { fontStyle: 'bold' } }, redAsistencial],
+            [{ content: 'Macroregión', styles: { fontStyle: 'bold' } }, macroregion, { content: 'Fecha', styles: { fontStyle: 'bold' } }, fechaActual],
         ];
+        autoTable(doc, { startY: currentY, body: datosGeneralesTable, theme: 'plain', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
+        currentY = doc.lastAutoTable.finalY + 4;
 
-        autoTable(doc, {
-            startY: currentY,
-            head: [["AMBIENTE", "DISPONIBLE", "ÁREA (m²)"]],
-            body: infraData,
-            theme: 'grid',
-            headStyles: { fillColor: [10, 91, 169], fontSize: 9 },
-            bodyStyles: { fontSize: 9 },
-            margin: { left: margin, right: margin }
-        });
-
-        currentY = doc.lastAutoTable.finalY + 10;
-        currentY = addDataRow("Conexión eléctrica estable", formData.infraestructura.conexionElectrica, currentY);
-        currentY = addDataRow("Sistema de UPS/Respaldo", formData.infraestructura.sistemaUPS, currentY);
-        currentY = addDataRow("Aire acondicionado", formData.infraestructura.aireAcondicionado, currentY);
-        currentY = addDataRow("Iluminación adecuada", formData.infraestructura.iluminacion, currentY);
-        currentY = addDataRow("Ventilación adecuada", formData.infraestructura.ventilacion, currentY);
-
-        addFooter();
-
-        // ==================== PÁGINA 4: EQUIPAMIENTO ====================
-        doc.addPage();
-        currentY = addHeader(4);
-        currentY = addSectionTitle("IV. EQUIPAMIENTO", currentY);
-
-        currentY = addSectionTitle("4.1 Equipos Informáticos", currentY);
-        const equipInfoData = [
-            ["Computadoras de escritorio", formData.equipamiento.computadoras || "0", formData.equipamiento.computadorasOperativas || "0"],
-            ["Laptops", formData.equipamiento.laptops || "0", formData.equipamiento.laptopsOperativas || "0"],
-            ["Monitores", formData.equipamiento.monitores || "0", formData.equipamiento.monitoresOperativos || "0"],
-            ["Cámaras web HD", formData.equipamiento.camaras || "0", formData.equipamiento.camarasOperativas || "0"],
-            ["Audífonos/Micrófonos", formData.equipamiento.audifonos || "0", formData.equipamiento.audifonosOperativos || "0"],
-            ["Impresoras", formData.equipamiento.impresoras || "0", formData.equipamiento.impresorasOperativas || "0"],
-        ];
-
-        autoTable(doc, {
-            startY: currentY,
-            head: [["EQUIPO", "CANTIDAD", "OPERATIVOS"]],
-            body: equipInfoData,
-            theme: 'grid',
-            headStyles: { fillColor: [10, 91, 169], fontSize: 9 },
-            bodyStyles: { fontSize: 9 },
-            margin: { left: margin, right: margin }
-        });
-
-        currentY = doc.lastAutoTable.finalY + 8;
-        currentY = addSectionTitle("4.2 Equipos Biomédicos Digitales", currentY);
-        const equipBioData = [
-            ["Estetoscopio digital", formData.equipamiento.estetoscopio || "No", formData.equipamiento.estetoscopioOperativo || "-"],
-            ["Otoscopio digital", formData.equipamiento.otoscopio || "No", formData.equipamiento.otoscopioOperativo || "-"],
-            ["Dermatoscopio digital", formData.equipamiento.dermatoscopio || "No", formData.equipamiento.dermatoscopioOperativo || "-"],
-            ["Electrocardiógrafo digital", formData.equipamiento.electrocardiografo || "No", formData.equipamiento.electrocardiografoOperativo || "-"],
-            ["Pulsioxímetro", formData.equipamiento.pulsioximetro || "No", formData.equipamiento.pulsioximetroOperativo || "-"],
-        ];
-
-        autoTable(doc, {
-            startY: currentY,
-            head: [["EQUIPO BIOMÉDICO", "DISPONIBLE", "OPERATIVO"]],
-            body: equipBioData,
-            theme: 'grid',
-            headStyles: { fillColor: [10, 91, 169], fontSize: 9 },
-            bodyStyles: { fontSize: 9 },
-            margin: { left: margin, right: margin }
-        });
-
-        addFooter();
-
-        // ==================== PÁGINA 5: CONECTIVIDAD Y SERVICIOS ====================
-        doc.addPage();
-        currentY = addHeader(5);
-        currentY = addSectionTitle("V. CONECTIVIDAD", currentY);
-
-        currentY = addDataRow("Tipo de conexión", formData.conectividad.tipoConexion, currentY);
-        currentY = addDataRow("Proveedor de internet", formData.conectividad.proveedor, currentY);
-        currentY = addDataRow("Velocidad contratada (Mbps)", formData.conectividad.velocidad, currentY);
-        currentY = addDataRow("Velocidad real (Mbps)", formData.conectividad.velocidadReal, currentY);
-        currentY = addDataRow("Estabilidad de conexión", formData.conectividad.estabilidad, currentY);
-        currentY = addDataRow("Acceso a VPN institucional", formData.conectividad.vpn, currentY);
-        currentY = addDataRow("Red LAN disponible", formData.conectividad.redLan, currentY);
-        currentY = addDataRow("WiFi disponible", formData.conectividad.wifi, currentY);
-
-        currentY += 5;
-        currentY = addSectionTitle("VI. SERVICIOS DE TELESALUD", currentY);
-
-        currentY = addDataRow("Teleconsulta", formData.servicios.teleconsulta, currentY);
-        currentY = addDataRow("Teleorientación", formData.servicios.teleorientacion, currentY);
-        currentY = addDataRow("Telemonitoreo", formData.servicios.telemonitoreo, currentY);
-        currentY = addDataRow("Teleinterconsulta", formData.servicios.teleinterconsulta, currentY);
-        currentY = addDataRow("Teletriaje", formData.servicios.teletriaje, currentY);
-        currentY = addDataRow("Telediagnóstico", formData.servicios.telediagnostico, currentY);
-        currentY = addDataRow("Teleapoyo diagnóstico", formData.servicios.teleapoyo, currentY);
-        currentY = addDataRow("Especialidades con telesalud", formData.servicios.especialidades, currentY);
-
-        addFooter();
-
-        // ==================== PÁGINA 6: NECESIDADES Y REQUERIMIENTOS ====================
-        doc.addPage();
-        currentY = addHeader(6);
-        currentY = addSectionTitle("VII. NECESIDADES Y REQUERIMIENTOS", currentY);
-
-        currentY = addSectionTitle("7.1 Infraestructura Física", currentY);
-        const needsInfra = [
-            ["Espacio físico para teleconsultorio", formData.necesidades.infra_espacioFisico_cant || "0", formData.necesidades.infra_espacioFisico_prior || "-"],
-            ["Escritorio ergonómico", formData.necesidades.infra_escritorio_cant || "0", formData.necesidades.infra_escritorio_prior || "-"],
-            ["Sillas ergonómicas", formData.necesidades.infra_sillas_cant || "0", formData.necesidades.infra_sillas_prior || "-"],
-            ["Aire acondicionado", formData.necesidades.infra_aireAcond_cant || "0", formData.necesidades.infra_aireAcond_prior || "-"],
-        ];
-
-        autoTable(doc, {
-            startY: currentY,
-            head: [["REQUERIMIENTO", "CANTIDAD", "PRIORIDAD"]],
-            body: needsInfra,
-            theme: 'grid',
-            headStyles: { fillColor: [10, 91, 169], fontSize: 8 },
-            bodyStyles: { fontSize: 8 },
-            margin: { left: margin, right: margin },
-            tableWidth: 'auto'
-        });
-
-        currentY = doc.lastAutoTable.finalY + 5;
-        currentY = addSectionTitle("7.2 Equipamiento Informático", currentY);
-        const needsEquip = [
-            ["Computadoras", formData.necesidades.equip_computadora_cant || "0", formData.necesidades.equip_computadora_prior || "-"],
-            ["Laptops", formData.necesidades.equip_laptop_cant || "0", formData.necesidades.equip_laptop_prior || "-"],
-            ["Cámaras web HD", formData.necesidades.equip_camaraWeb_cant || "0", formData.necesidades.equip_camaraWeb_prior || "-"],
-            ["Monitor", formData.necesidades.equip_monitor_cant || "0", formData.necesidades.equip_monitor_prior || "-"],
-        ];
-
-        autoTable(doc, {
-            startY: currentY,
-            head: [["REQUERIMIENTO", "CANTIDAD", "PRIORIDAD"]],
-            body: needsEquip,
-            theme: 'grid',
-            headStyles: { fillColor: [10, 91, 169], fontSize: 8 },
-            bodyStyles: { fontSize: 8 },
-            margin: { left: margin, right: margin }
-        });
-
-        currentY = doc.lastAutoTable.finalY + 5;
-
-        // Observaciones
-        if (formData.necesidades.observacionesGenerales) {
-            currentY = addSectionTitle("7.4 Observaciones Generales", currentY);
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(9);
-            const splitText = doc.splitTextToSize(formData.necesidades.observacionesGenerales, pageWidth - 2 * margin);
-            doc.text(splitText, margin, currentY);
+        // Director y Responsable en columnas
+        const contactosData = [];
+        if (formData.datosGenerales.directorNombre || formData.datosGenerales.responsableNombre) {
+            contactosData.push([
+                { content: 'Director IPRESS', styles: { fontStyle: 'bold', fillColor: [240, 245, 250] } },
+                { content: 'Responsable Telesalud', styles: { fontStyle: 'bold', fillColor: [240, 245, 250] } }
+            ]);
+            contactosData.push([
+                formData.datosGenerales.directorNombre || "-",
+                formData.datosGenerales.responsableNombre || "-"
+            ]);
+            if (formData.datosGenerales.directorCorreo || formData.datosGenerales.responsableCorreo) {
+                contactosData.push([
+                    formData.datosGenerales.directorCorreo || "-",
+                    formData.datosGenerales.responsableCorreo || "-"
+                ]);
+            }
+            if (formData.datosGenerales.directorTelefono || formData.datosGenerales.responsableTelefono) {
+                contactosData.push([
+                    formData.datosGenerales.directorTelefono || "-",
+                    formData.datosGenerales.responsableTelefono || "-"
+                ]);
+            }
+        }
+        if (contactosData.length > 0) {
+            autoTable(doc, { startY: currentY, body: contactosData, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: (pageWidth - 2 * margin) / 2 }, 1: { cellWidth: (pageWidth - 2 * margin) / 2 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
         }
 
-        addFooter();
+        // Población
+        if (formData.datosGenerales.poblacionAdscrita || formData.datosGenerales.promedioAtenciones) {
+            const poblacionRow = [];
+            if (formData.datosGenerales.poblacionAdscrita) poblacionRow.push([{ content: 'Población adscrita', styles: { fontStyle: 'bold' } }, formatearNumero(formData.datosGenerales.poblacionAdscrita)]);
+            if (formData.datosGenerales.promedioAtenciones) poblacionRow.push([{ content: 'Atenciones/mes', styles: { fontStyle: 'bold' } }, formatearNumero(formData.datosGenerales.promedioAtenciones)]);
+            if (poblacionRow.length > 0) {
+                autoTable(doc, { startY: currentY, body: [poblacionRow.flat()], theme: 'plain', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
+                currentY = doc.lastAutoTable.finalY + 5;
+            }
+        }
 
-        // Guardar el PDF
-        doc.save(`Diagnostico_Telesalud_${nombreIpress.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.pdf`);
+        // RECURSOS HUMANOS
+        currentY = addSection("II. RECURSOS HUMANOS PARA TELESALUD", currentY);
+
+        const rhPreguntas = [];
+        if (formData.recursosHumanos.coordTelesalud) rhPreguntas.push(["¿Coordinador Telesalud?", formatValue(formData.recursosHumanos.coordTelesalud)]);
+        if (formData.recursosHumanos.personalApoyo) rhPreguntas.push(["¿Personal de apoyo?", formatValue(formData.recursosHumanos.personalApoyo)]);
+
+        if (rhPreguntas.length > 0) {
+            autoTable(doc, { startY: currentY, body: [rhPreguntas.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 0: { fontStyle: 'bold' }, 2: { fontStyle: 'bold' } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // Personal de apoyo compacto (2 columnas)
+        if (formData.recursosHumanos.personalApoyo === "si") {
+            const personalItems = [
+                { label: "Médicos especialistas", id: "medicosEspecialistas" }, { label: "Médicos generales", id: "medicosGenerales" },
+                { label: "Enfermeras(os)", id: "enfermeras" }, { label: "Obstetras", id: "obstetras" },
+                { label: "Tecnólogos médicos", id: "tecnologos" }, { label: "Psicólogos", id: "psicologos" },
+                { label: "Nutricionistas", id: "nutricionistas" }, { label: "Trabajadores sociales", id: "trabajadoresSociales" },
+                { label: "Personal TIC", id: "soporteTic" }, { label: "Administrativo", id: "administrativo" },
+            ].filter(item => formData.recursosHumanos[item.id]);
+
+            if (personalItems.length > 0) {
+                currentY = addSubSection("Personal de Apoyo", currentY);
+                const personalRows = [];
+                for (let i = 0; i < personalItems.length; i += 2) {
+                    const row = [personalItems[i].label, formData.recursosHumanos[personalItems[i].id]];
+                    if (personalItems[i + 1]) {
+                        row.push(personalItems[i + 1].label, formData.recursosHumanos[personalItems[i + 1].id]);
+                    } else {
+                        row.push("", "");
+                    }
+                    personalRows.push(row);
+                }
+                autoTable(doc, { startY: currentY, body: personalRows, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 18, halign: 'center' }, 2: { cellWidth: 45 }, 3: { cellWidth: 18, halign: 'center' } } });
+                currentY = doc.lastAutoTable.finalY + 4;
+            }
+        }
+
+        // Capacitación compacta
+        const capacitacion = [];
+        if (formData.recursosHumanos.capacitacionTic) capacitacion.push(["Capacitación TIC", formatValue(formData.recursosHumanos.capacitacionTic)]);
+        if (formData.recursosHumanos.normativa) capacitacion.push(["Conoce normativa", formatValue(formData.recursosHumanos.normativa)]);
+        if (formData.recursosHumanos.alfabetizacion) capacitacion.push(["Alfabetización digital", formatValue(formData.recursosHumanos.alfabetizacion)]);
+        if (formData.recursosHumanos.planCapacitacion) capacitacion.push(["Plan capacitación", formatValue(formData.recursosHumanos.planCapacitacion)]);
+
+        if (capacitacion.length > 0) {
+            currentY = addSubSection("Capacitación", currentY);
+            const capRows = [];
+            for (let i = 0; i < capacitacion.length; i += 2) {
+                const row = [...capacitacion[i]];
+                if (capacitacion[i + 1]) row.push(...capacitacion[i + 1]);
+                else row.push("", "");
+                capRows.push(row);
+            }
+            autoTable(doc, { startY: currentY, body: capRows, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: 42 }, 1: { cellWidth: 18, halign: 'center' }, 2: { cellWidth: 42 }, 3: { cellWidth: 18, halign: 'center' } } });
+            currentY = doc.lastAutoTable.finalY + 5;
+        }
+
+        // INFRAESTRUCTURA
+        currentY = checkNewPage(currentY, 50);
+        currentY = addSection("III. INFRAESTRUCTURA", currentY);
+
+        const infraItems = [
+            { label: "Espacio físico Teleconsultorio", id: "espacioFisico" }, { label: "Privacidad paciente", id: "privacidad" },
+            { label: "Escritorio ergonómico", id: "escritorio" }, { label: "Sillas ergonómicas", id: "sillas" },
+            { label: "Estantes equipos", id: "estantes" }, { label: "Archivero con llave", id: "archivero" },
+            { label: "Iluminación adecuada", id: "iluminacion" }, { label: "Ventilación adecuada", id: "ventilacion" },
+            { label: "Aire acondicionado", id: "aireAcondicionado" },
+        ].filter(item => formData.infraestructura[item.id]);
+
+        if (infraItems.length > 0) {
+            currentY = addSubSection("Infraestructura Física", currentY);
+            const infraRows = [];
+            for (let i = 0; i < infraItems.length; i += 3) {
+                const row = [infraItems[i].label, formatValue(formData.infraestructura[infraItems[i].id])];
+                if (infraItems[i + 1]) row.push(infraItems[i + 1].label, formatValue(formData.infraestructura[infraItems[i + 1].id]));
+                else row.push("", "");
+                if (infraItems[i + 2]) row.push(infraItems[i + 2].label, formatValue(formData.infraestructura[infraItems[i + 2].id]));
+                else row.push("", "");
+                infraRows.push(row);
+            }
+            autoTable(doc, { startY: currentY, body: infraRows, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 15 }, 3: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 15 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        if (formData.infraestructura.numAmbientes) {
+            doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.text(`N° ambientes Telesalud: ${formData.infraestructura.numAmbientes}`, margin, currentY); currentY += 5;
+        }
+
+        // Infraestructura Tecnológica
+        const infraTec = [
+            { label: "Hardware", id: "hardware" }, { label: "Software", id: "software" }, { label: "Redes", id: "redes" },
+            { label: "Almacenamiento", id: "almacenamiento" }, { label: "Servicios TI", id: "serviciosTec" },
+        ].filter(item => formData.infraestructura[item.id]);
+
+        if (infraTec.length > 0) {
+            currentY = addSubSection("Infraestructura Tecnológica", currentY);
+            const tecRows = infraTec.map(item => [item.label, formatValue(formData.infraestructura[item.id])]);
+            autoTable(doc, { startY: currentY, body: [tecRows.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
+            currentY = doc.lastAutoTable.finalY + 5;
+        }
+
+        addFooter(1, 3);
+
+        // ==================== PÁGINA 2: EQUIPAMIENTO + CONECTIVIDAD ====================
+        doc.addPage();
+        currentY = addHeader();
+        currentY = addSection("IV. EQUIPAMIENTO", currentY);
+
+        // Equipamiento Informático
+        const equipInfoNames = ["PC Escritorio", "Laptop", "Monitor", "Cable HDMI", "Cámara web HD", "Micrófono", "Parlantes", "Impresora", "Escáner", "Router/Switch"];
+        const equipInfoData = equipInfoNames.map((equipo, index) => {
+            const fieldId = `equipInfo${index}`;
+            const disp = formData.equipamiento[`${fieldId}_disponible`];
+            const cant = formData.equipamiento[`${fieldId}_cantidad`];
+            const estado = formData.equipamiento[`${fieldId}_estado`];
+            if (!disp && !cant && !estado) return null;
+            return [equipo, formatValue(disp), cant || "-", capitalizeFirst(estado)];
+        }).filter(row => row !== null);
+
+        if (equipInfoData.length > 0) {
+            currentY = addSubSection("Equipamiento Informático", currentY);
+            autoTable(doc, { startY: currentY, head: [["Equipo", "Disp", "Cant", "Estado"]], body: equipInfoData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: 45 }, 1: { halign: 'center', cellWidth: 18 }, 2: { halign: 'center', cellWidth: 18 }, 3: { halign: 'center', cellWidth: 25 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // Equipamiento Biomédico
+        const equipBioNames = ["Pulsioxímetro", "Dermatoscopio", "Ecógrafo", "Electrocardiógrafo", "Gases arteriales", "Estetoscopio", "Fonendoscopio", "Monitor vitales", "Otoscopio", "Oxímetro", "Retinógrafo", "Tensiómetro", "Videocolposcopio", "Estación móvil"];
+        const equipBioData = equipBioNames.map((equipo, index) => {
+            const fieldId = `equipBio${index}`;
+            const disp = formData.equipamiento[`${fieldId}_disponible`];
+            const cant = formData.equipamiento[`${fieldId}_cantidad`];
+            const estado = formData.equipamiento[`${fieldId}_estado`];
+            if (!disp && !cant && !estado) return null;
+            return [equipo, formatValue(disp), cant || "-", capitalizeFirst(estado)];
+        }).filter(row => row !== null);
+
+        if (equipBioData.length > 0) {
+            currentY = addSubSection("Equipamiento Biomédico Digital", currentY);
+            autoTable(doc, { startY: currentY, head: [["Equipo", "Disp", "Cant", "Estado"]], body: equipBioData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: 45 }, 1: { halign: 'center', cellWidth: 18 }, 2: { halign: 'center', cellWidth: 18 }, 3: { halign: 'center', cellWidth: 25 } } });
+            currentY = doc.lastAutoTable.finalY + 5;
+        }
+
+        // CONECTIVIDAD
+        currentY = checkNewPage(currentY, 50);
+        currentY = addSection("V. CONECTIVIDAD Y SISTEMAS", currentY);
+
+        const conectItems = [
+            { label: "Acceso internet", id: "internet" }, { label: "Conexión estable", id: "estable" },
+            { label: "Energía alternativa", id: "energiaAlt" }, { label: "Puntos red", id: "puntosRed" }, { label: "WiFi institucional", id: "wifi" },
+        ].filter(item => formData.conectividad[item.id]);
+
+        if (conectItems.length > 0) {
+            const conectRows = conectItems.map(item => [item.label, formatValue(formData.conectividad[item.id])]);
+            autoTable(doc, { startY: currentY, body: [conectRows.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // Detalles conexión en línea
+        const detalles = [];
+        if (formData.conectividad.tipoConexion) detalles.push(`Tipo: ${formData.conectividad.tipoConexion}`);
+        if (formData.conectividad.proveedor) detalles.push(`Proveedor: ${formData.conectividad.proveedor}`);
+        if (formData.conectividad.velocidadContratada) detalles.push(`Vel. contratada: ${formData.conectividad.velocidadContratada} Mbps`);
+        if (formData.conectividad.velocidadReal) detalles.push(`Vel. real: ${formData.conectividad.velocidadReal} Mbps`);
+        if (detalles.length > 0) {
+            doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.text(detalles.join(" | "), margin, currentY); currentY += 6;
+        }
+
+        // Sistemas de Información
+        const sistemas = [
+            { label: "ESSI", id: "essi" }, { label: "PACS", id: "pacs" }, { label: "ANATPAT", id: "anatpat" },
+            { label: "Videoconf.", id: "videoconferencia" }, { label: "Citas online", id: "citasLinea" },
+        ].filter(item => formData.conectividad[item.id]);
+
+        if (sistemas.length > 0) {
+            currentY = addSubSection("Sistemas de Información", currentY);
+            const sisRows = sistemas.map(item => [item.label, formatValue(formData.conectividad[item.id])]);
+            autoTable(doc, { startY: currentY, body: [sisRows.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // Seguridad compacta
+        const seguridad = [
+            { label: "Confidencialidad", id: "confidencialidad" }, { label: "Integridad", id: "integridad" },
+            { label: "Disponibilidad", id: "disponibilidad" }, { label: "Contingencia", id: "contingencia" },
+            { label: "Backup", id: "backup" }, { label: "Consentimiento", id: "consentimiento" }, { label: "Ley 29733", id: "ley29733" },
+        ].filter(item => formData.conectividad[item.id]);
+
+        if (seguridad.length > 0) {
+            currentY = addSubSection("Seguridad de Información", currentY);
+            const segRows = seguridad.map(item => [item.label, formatValue(formData.conectividad[item.id])]);
+            autoTable(doc, { startY: currentY, body: [segRows.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
+            currentY = doc.lastAutoTable.finalY + 5;
+        }
+
+        // SERVICIOS DE TELESALUD
+        currentY = checkNewPage(currentY, 40);
+        currentY = addSection("VI. SERVICIOS DE TELESALUD", currentY);
+
+        const servicios = [
+            { label: "RENIPRESS", id: "incorporoServicios" }, { label: "Teleconsulta", id: "teleconsulta" },
+            { label: "Teleorientación", id: "teleorientacion" }, { label: "Telemonitoreo", id: "telemonitoreo" },
+            { label: "Teleinterconsulta", id: "teleinterconsulta" }, { label: "Teleurgencia", id: "teleurgencia" },
+            { label: "Teletriaje", id: "teletriaje" }, { label: "Telerradiografía", id: "telerradiografia" },
+            { label: "Telemamografía", id: "telemamografia" }, { label: "Teletomografía", id: "teletomografia" },
+            { label: "Telecapacitación", id: "telecapacitacion" }, { label: "TeleIEC", id: "teleiec" },
+        ].filter(item => formData.servicios[item.id]);
+
+        if (servicios.length > 0) {
+            const servRows = [];
+            for (let i = 0; i < servicios.length; i += 4) {
+                const row = [];
+                for (let j = 0; j < 4; j++) {
+                    if (servicios[i + j]) row.push(servicios[i + j].label, formatValue(formData.servicios[servicios[i + j].id]));
+                    else row.push("", "");
+                }
+                servRows.push(row);
+            }
+            autoTable(doc, { startY: currentY, body: servRows, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 15 }, 3: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 15 } } });
+            currentY = doc.lastAutoTable.finalY + 5;
+        }
+
+        addFooter(2, 3);
+
+        // ==================== PÁGINA 3: NECESIDADES ====================
+        doc.addPage();
+        currentY = addHeader();
+        currentY = addSection("VII. NECESIDADES Y REQUERIMIENTOS", currentY);
+
+        // Infraestructura Física
+        const needsInfra = [
+            { label: "Espacio físico", id: "espacioFisico" }, { label: "Escritorio", id: "escritorio" },
+            { label: "Sillas", id: "sillas" }, { label: "Estantes", id: "estantes" },
+            { label: "Archivero", id: "archivero" }, { label: "Luz eléctrica", id: "luzElectrica" },
+            { label: "Ventilación", id: "ventilacion" }, { label: "Aire acond.", id: "aireAcond" },
+        ].filter(item => formData.necesidades[`infra_${item.id}_cant`] || formData.necesidades[`infra_${item.id}_prior`]);
+
+        if (needsInfra.length > 0) {
+            currentY = addSubSection("Infraestructura Física", currentY);
+            const infraNeedData = needsInfra.map(item => [item.label, formData.necesidades[`infra_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`infra_${item.id}_prior`])]);
+            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: infraNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 22 }, 2: { halign: 'center', cellWidth: 28 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // Equipamiento Informático
+        const needsEquip = [
+            { label: "Computadora", id: "computadora" }, { label: "Laptop", id: "laptop" },
+            { label: "Monitor", id: "monitor" }, { label: "Cámara web", id: "camaraWeb" },
+            { label: "Micrófono", id: "microfono" }, { label: "Parlantes", id: "parlantes" },
+            { label: "Impresora", id: "impresora" }, { label: "Escáner", id: "escaner" },
+            { label: "Router", id: "router" }, { label: "UPS", id: "ups" },
+        ].filter(item => formData.necesidades[`equip_${item.id}_cant`] || formData.necesidades[`equip_${item.id}_prior`]);
+
+        if (needsEquip.length > 0) {
+            currentY = addSubSection("Equipamiento Informático", currentY);
+            const equipNeedData = needsEquip.map(item => [item.label, formData.necesidades[`equip_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`equip_${item.id}_prior`])]);
+            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: equipNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 22 }, 2: { halign: 'center', cellWidth: 28 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // Equipamiento Biomédico
+        const needsBio = [
+            { label: "Pulsioxímetro", id: "pulsioximetro" }, { label: "Estetoscopio", id: "estetoscopio" },
+            { label: "Tensiómetro", id: "tensiometro" }, { label: "Otoscopio", id: "otoscopio" },
+            { label: "Dermatoscopio", id: "dermatoscopio" }, { label: "Electrocardiógrafo", id: "electrocardiografo" },
+            { label: "Ecógrafo", id: "ecografo" }, { label: "Estación móvil", id: "estacionMovil" },
+        ].filter(item => formData.necesidades[`bio_${item.id}_cant`] || formData.necesidades[`bio_${item.id}_prior`]);
+
+        if (needsBio.length > 0) {
+            currentY = addSubSection("Equipamiento Biomédico", currentY);
+            const bioNeedData = needsBio.map(item => [item.label, formData.necesidades[`bio_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`bio_${item.id}_prior`])]);
+            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: bioNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 22 }, 2: { halign: 'center', cellWidth: 28 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // Observaciones
+        if (formData.necesidades.necesidadesConectividad || formData.necesidades.necesidadesCapacitacionFinal || formData.necesidades.observacionesGenerales) {
+            currentY = addSubSection("Observaciones", currentY);
+            doc.setFontSize(8);
+            if (formData.necesidades.necesidadesConectividad) {
+                doc.setFont('helvetica', 'bold'); doc.text("Conectividad: ", margin, currentY);
+                doc.setFont('helvetica', 'normal'); doc.text(formData.necesidades.necesidadesConectividad.substring(0, 100), margin + 25, currentY); currentY += 6;
+            }
+            if (formData.necesidades.necesidadesCapacitacionFinal) {
+                doc.setFont('helvetica', 'bold'); doc.text("Capacitación: ", margin, currentY);
+                doc.setFont('helvetica', 'normal'); doc.text(formData.necesidades.necesidadesCapacitacionFinal.substring(0, 100), margin + 25, currentY); currentY += 6;
+            }
+            if (formData.necesidades.observacionesGenerales) {
+                doc.setFont('helvetica', 'bold'); doc.text("General: ", margin, currentY);
+                doc.setFont('helvetica', 'normal');
+                const obsText = doc.splitTextToSize(formData.necesidades.observacionesGenerales, pageWidth - 2 * margin - 18);
+                doc.text(obsText, margin + 18, currentY);
+            }
+        }
+
+        addFooter(3, 3);
+
+        return doc;
+    };
+
+    // Abrir PDF en nueva pestaña
+    const handleDescargarPDF = () => {
+        const doc = crearDocumentoPDF();
+        const pdfBlob = doc.output('blob');
+        window.open(URL.createObjectURL(pdfBlob), '_blank');
     };
 
     const instrucciones = [
@@ -879,7 +1234,7 @@ export default function FormularioDiagnostico() {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 <span className="text-[#0A5BA9] font-bold mr-2">1.3</span>
-                                                Nombre y Apellido completo:
+                                                Nombre y Apellido completo: <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="text"
@@ -899,7 +1254,7 @@ export default function FormularioDiagnostico() {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 <span className="text-[#0A5BA9] font-bold mr-2">1.4</span>
-                                                Correo:
+                                                Correo: <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="email"
@@ -919,7 +1274,7 @@ export default function FormularioDiagnostico() {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 <span className="text-[#0A5BA9] font-bold mr-2">1.5</span>
-                                                Tel/Cel Director:
+                                                Tel/Cel Director: <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="tel"
@@ -949,7 +1304,7 @@ export default function FormularioDiagnostico() {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 <span className="text-[#0A5BA9] font-bold mr-2">1.6</span>
-                                                Nombre y Apellido completo:
+                                                Nombre y Apellido completo: <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="text"
@@ -969,7 +1324,7 @@ export default function FormularioDiagnostico() {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 <span className="text-[#0A5BA9] font-bold mr-2">1.7</span>
-                                                Correo:
+                                                Correo: <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="email"
@@ -989,7 +1344,7 @@ export default function FormularioDiagnostico() {
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
                                                 <span className="text-[#0A5BA9] font-bold mr-2">1.8</span>
-                                                Tel/Cel Responsable o Coordinador:
+                                                Tel/Cel Responsable o Coordinador: <span className="text-red-500">*</span>
                                             </label>
                                             <input
                                                 type="tel"
@@ -1015,7 +1370,7 @@ export default function FormularioDiagnostico() {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <span className="text-[#0A5BA9] font-bold mr-2">1.9</span>
-                                            Población adscrita:
+                                            Población adscrita: <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -1029,7 +1384,7 @@ export default function FormularioDiagnostico() {
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <span className="text-[#0A5BA9] font-bold mr-2">1.10</span>
-                                            Promedio de atenciones mensuales:
+                                            Promedio de atenciones mensuales: <span className="text-red-500">*</span>
                                         </label>
                                         <input
                                             type="text"
@@ -1061,7 +1416,7 @@ export default function FormularioDiagnostico() {
                                 <div>
                                     <p className="text-gray-700 mb-3">
                                         <span className="text-[#0A5BA9] font-bold mr-2">2.1.1</span>
-                                        ¿La IPRESS designa, mediante documento formal, a un Coordinador de Telesalud o profesional de la salud responsable de la implementación y articulación de los servicios de Telesalud en el establecimiento de salud?
+                                        ¿La IPRESS designa, mediante documento formal, a un Coordinador de Telesalud o profesional de la salud responsable de la implementación y articulación de los servicios de Telesalud en el establecimiento de salud? <span className="text-red-500">*</span>
                                     </p>
                                     <div className="flex gap-6">
                                         <label className="flex items-center gap-2 cursor-pointer">
@@ -1093,7 +1448,7 @@ export default function FormularioDiagnostico() {
                                 <div>
                                     <p className="text-gray-700 mb-3">
                                         <span className="text-[#0A5BA9] font-bold mr-2">2.1.2</span>
-                                        Durante la prestación de dichos servicios, ¿la IPRESS asigna un personal de apoyo, conformado por profesionales, técnicos o auxiliares de la salud, personal de soporte TIC o administrativo, encargado de garantizar una atención adecuada y oportuna al usuario?
+                                        Durante la prestación de dichos servicios, ¿la IPRESS asigna un personal de apoyo, conformado por profesionales, técnicos o auxiliares de la salud, personal de soporte TIC o administrativo, encargado de garantizar una atención adecuada y oportuna al usuario? <span className="text-red-500">*</span>
                                     </p>
                                     <div className="flex gap-6">
                                         <label className="flex items-center gap-2 cursor-pointer">
@@ -1151,12 +1506,12 @@ export default function FormularioDiagnostico() {
                                                         <tr key={item.id} className={index % 2 === 0 ? "bg-gray-50" : "bg-white"}>
                                                             <td className="px-4 py-3 border-b border-gray-200">{item.label}</td>
                                                             <td className="px-4 py-3 border-b border-gray-200 text-center">
-                                                                <input
-                                                                    type="number"
-                                                                    min="0"
+                                                                <NumberSelector
                                                                     value={formData.recursosHumanos[item.id] || ""}
                                                                     onChange={(e) => handleInputChange("recursosHumanos", item.id, e.target.value)}
-                                                                    className="w-20 px-3 py-2 bg-yellow-50 border-2 border-yellow-300 rounded-lg text-center focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20"
+                                                                    min={0}
+                                                                    max={50}
+                                                                    className="w-24 mx-auto"
                                                                 />
                                                             </td>
                                                         </tr>
@@ -1182,7 +1537,7 @@ export default function FormularioDiagnostico() {
                                     <table className="w-full border-collapse">
                                         <thead>
                                             <tr className="bg-[#0A5BA9] text-white">
-                                                <th className="px-4 py-3 text-left font-medium">PREGUNTA</th>
+                                                <th className="px-4 py-3 text-left font-medium">PREGUNTA <span className="text-red-300">*</span></th>
                                                 <th className="px-4 py-3 text-center font-medium w-20">SÍ</th>
                                                 <th className="px-4 py-3 text-center font-medium w-20">NO</th>
                                             </tr>
@@ -1229,15 +1584,14 @@ export default function FormularioDiagnostico() {
                                 <div>
                                     <label className="block text-gray-700 mb-2">
                                         <span className="text-[#0A5BA9] font-bold mr-2">2.2.5</span>
-                                        ¿Cuántas capacitaciones en Telesalud se han realizado en el último año?
+                                        ¿Cuántas capacitaciones en Telesalud se han realizado en el último año? <span className="text-red-500">*</span>
                                     </label>
-                                    <input
-                                        type="number"
-                                        min="0"
+                                    <NumberSelector
                                         value={formData.recursosHumanos.capacitacionesAnio || ""}
                                         onChange={(e) => handleInputChange("recursosHumanos", "capacitacionesAnio", e.target.value)}
-                                        className="w-full max-w-xs px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20"
-                                        placeholder="0"
+                                        min={0}
+                                        max={50}
+                                        className="w-full max-w-xs"
                                     />
                                 </div>
 
@@ -1245,7 +1599,7 @@ export default function FormularioDiagnostico() {
                                 <div>
                                     <label className="block text-gray-700 mb-2">
                                         <span className="text-[#0A5BA9] font-bold mr-2">2.2.6</span>
-                                        Principales necesidades(temas) de capacitación identificadas:
+                                        Principales necesidades(temas) de capacitación identificadas: <span className="text-red-500">*</span>
                                     </label>
                                     <textarea
                                         value={formData.recursosHumanos.necesidadesCapacitacion || ""}
@@ -1278,7 +1632,7 @@ export default function FormularioDiagnostico() {
                                         <table className="w-full border-collapse">
                                             <thead>
                                                 <tr className="bg-[#0A5BA9] text-white">
-                                                    <th className="px-4 py-3 text-left font-medium">PREGUNTA</th>
+                                                    <th className="px-4 py-3 text-left font-medium">PREGUNTA <span className="text-red-300">*</span></th>
                                                     <th className="px-4 py-3 text-center font-medium w-20">SÍ</th>
                                                     <th className="px-4 py-3 text-center font-medium w-20">NO</th>
                                                 </tr>
@@ -1330,15 +1684,14 @@ export default function FormularioDiagnostico() {
                                     <div className="mt-6">
                                         <label className="block text-gray-700 mb-2">
                                             <span className="text-[#0A5BA9] font-bold mr-2">3.1.10</span>
-                                            Número de ambientes/consultorios destinados a Telesalud:
+                                            Número de ambientes/consultorios destinados a Telesalud: <span className="text-red-500">*</span>
                                         </label>
-                                        <input
-                                            type="number"
-                                            min="0"
+                                        <NumberSelector
                                             value={formData.infraestructura.numAmbientes || ""}
                                             onChange={(e) => handleInputChange("infraestructura", "numAmbientes", e.target.value)}
-                                            className="w-full max-w-xs px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20"
-                                            placeholder="0"
+                                            min={0}
+                                            max={20}
+                                            className="w-full max-w-xs"
                                         />
                                     </div>
                                 </div>
@@ -1357,7 +1710,7 @@ export default function FormularioDiagnostico() {
                                     <table className="w-full border-collapse">
                                         <thead>
                                             <tr className="bg-[#0A5BA9] text-white">
-                                                <th className="px-4 py-3 text-left font-medium">PREGUNTA</th>
+                                                <th className="px-4 py-3 text-left font-medium">PREGUNTA <span className="text-red-300">*</span></th>
                                                 <th className="px-4 py-3 text-center font-medium w-20">SÍ</th>
                                                 <th className="px-4 py-3 text-center font-medium w-20">NO</th>
                                             </tr>
@@ -1423,7 +1776,7 @@ export default function FormularioDiagnostico() {
                                             <tr className="bg-[#0A5BA9] text-white">
                                                 <th className="px-3 py-3 text-center font-medium w-16">N°</th>
                                                 <th className="px-3 py-3 text-left font-medium">EQUIPO/DISPOSITIVO</th>
-                                                <th className="px-3 py-3 text-center font-medium w-28">¿DISPONIBLE?</th>
+                                                <th className="px-3 py-3 text-center font-medium w-28">¿DISPONIBLE? <span className="text-red-300">*</span></th>
                                                 <th className="px-3 py-3 text-center font-medium w-24">CANTIDAD</th>
                                                 <th className="px-3 py-3 text-center font-medium w-32">ESTADO</th>
                                                 <th className="px-3 py-3 text-left font-medium w-48">OBSERVACIONES</th>
@@ -1443,37 +1796,56 @@ export default function FormularioDiagnostico() {
                                                 "Router/Switch de red"
                                             ].map((equipo, index) => {
                                                 const fieldId = `equipInfo${index}`;
+                                                const disponible = formData.equipamiento[`${fieldId}_disponible`];
+                                                const isEnabled = disponible === "si";
                                                 return (
-                                                    <tr key={index} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
+                                                    <tr key={index} className={disponible === "si" ? "bg-green-50" : (index % 2 === 0 ? "bg-blue-50" : "bg-white")}>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">
                                                             4.1.{index + 1}
                                                         </td>
                                                         <td className="px-3 py-2 border-b border-gray-200">{equipo}</td>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center">
-                                                            <select
-                                                                value={formData.equipamiento[`${fieldId}_disponible`] || ""}
-                                                                onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
-                                                                className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
-                                                            >
-                                                                <option value="">Sel.</option>
-                                                                <option value="si">Sí</option>
-                                                                <option value="no">No</option>
-                                                            </select>
+                                                            <div className="flex justify-center gap-3">
+                                                                <label className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded ${disponible === "si" ? "bg-green-200 text-green-800 font-medium" : ""}`}>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`${fieldId}_disponible`}
+                                                                        value="si"
+                                                                        checked={disponible === "si"}
+                                                                        onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
+                                                                        className="w-4 h-4 text-green-600"
+                                                                    />
+                                                                    <span className="text-sm">Sí</span>
+                                                                </label>
+                                                                <label className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded ${disponible === "no" ? "bg-gray-200 text-gray-700 font-medium" : ""}`}>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`${fieldId}_disponible`}
+                                                                        value="no"
+                                                                        checked={disponible === "no"}
+                                                                        onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
+                                                                        className="w-4 h-4 text-gray-600"
+                                                                    />
+                                                                    <span className="text-sm">No</span>
+                                                                </label>
+                                                            </div>
                                                         </td>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center">
-                                                            <input
-                                                                type="number"
-                                                                min="0"
+                                                            <NumberSelector
                                                                 value={formData.equipamiento[`${fieldId}_cantidad`] || ""}
                                                                 onChange={(e) => handleInputChange("equipamiento", `${fieldId}_cantidad`, e.target.value)}
-                                                                className="w-16 px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-center text-sm focus:border-[#0A5BA9]"
+                                                                min={0}
+                                                                max={50}
+                                                                className="w-20"
+                                                                disabled={!isEnabled}
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center">
                                                             <select
                                                                 value={formData.equipamiento[`${fieldId}_estado`] || ""}
                                                                 onChange={(e) => handleInputChange("equipamiento", `${fieldId}_estado`, e.target.value)}
-                                                                className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
+                                                                disabled={!isEnabled}
+                                                                className={`w-full px-2 py-1.5 border-2 rounded text-sm ${isEnabled ? "bg-yellow-50 border-yellow-300 focus:border-[#0A5BA9]" : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"}`}
                                                             >
                                                                 <option value="">Seleccionar...</option>
                                                                 <option value="bueno">Bueno</option>
@@ -1486,7 +1858,8 @@ export default function FormularioDiagnostico() {
                                                                 type="text"
                                                                 value={formData.equipamiento[`${fieldId}_obs`] || ""}
                                                                 onChange={(e) => handleInputChange("equipamiento", `${fieldId}_obs`, e.target.value)}
-                                                                className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
+                                                                disabled={!isEnabled}
+                                                                className={`w-full px-2 py-1.5 border-2 rounded text-sm ${isEnabled ? "bg-yellow-50 border-yellow-300 focus:border-[#0A5BA9]" : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"}`}
                                                                 placeholder="..."
                                                             />
                                                         </td>
@@ -1513,7 +1886,7 @@ export default function FormularioDiagnostico() {
                                             <tr className="bg-[#0A5BA9] text-white">
                                                 <th className="px-3 py-3 text-center font-medium w-16">N°</th>
                                                 <th className="px-3 py-3 text-left font-medium">EQUIPO/DISPOSITIVO</th>
-                                                <th className="px-3 py-3 text-center font-medium w-28">¿DISPONIBLE?</th>
+                                                <th className="px-3 py-3 text-center font-medium w-28">¿DISPONIBLE? <span className="text-red-300">*</span></th>
                                                 <th className="px-3 py-3 text-center font-medium w-24">CANTIDAD</th>
                                                 <th className="px-3 py-3 text-center font-medium w-32">ESTADO</th>
                                                 <th className="px-3 py-3 text-left font-medium w-48">OBSERVACIONES</th>
@@ -1537,37 +1910,56 @@ export default function FormularioDiagnostico() {
                                                 "Estación móvil de telemedicina"
                                             ].map((equipo, index) => {
                                                 const fieldId = `equipBio${index}`;
+                                                const disponible = formData.equipamiento[`${fieldId}_disponible`];
+                                                const isEnabled = disponible === "si";
                                                 return (
-                                                    <tr key={index} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
+                                                    <tr key={index} className={disponible === "si" ? "bg-green-50" : (index % 2 === 0 ? "bg-blue-50" : "bg-white")}>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">
                                                             4.2.{index + 1}
                                                         </td>
                                                         <td className="px-3 py-2 border-b border-gray-200">{equipo}</td>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center">
-                                                            <select
-                                                                value={formData.equipamiento[`${fieldId}_disponible`] || ""}
-                                                                onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
-                                                                className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
-                                                            >
-                                                                <option value="">Sel.</option>
-                                                                <option value="si">Sí</option>
-                                                                <option value="no">No</option>
-                                                            </select>
+                                                            <div className="flex justify-center gap-3">
+                                                                <label className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded ${disponible === "si" ? "bg-green-200 text-green-800 font-medium" : ""}`}>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`${fieldId}_disponible`}
+                                                                        value="si"
+                                                                        checked={disponible === "si"}
+                                                                        onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
+                                                                        className="w-4 h-4 text-green-600"
+                                                                    />
+                                                                    <span className="text-sm">Sí</span>
+                                                                </label>
+                                                                <label className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded ${disponible === "no" ? "bg-gray-200 text-gray-700 font-medium" : ""}`}>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`${fieldId}_disponible`}
+                                                                        value="no"
+                                                                        checked={disponible === "no"}
+                                                                        onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
+                                                                        className="w-4 h-4 text-gray-600"
+                                                                    />
+                                                                    <span className="text-sm">No</span>
+                                                                </label>
+                                                            </div>
                                                         </td>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center">
-                                                            <input
-                                                                type="number"
-                                                                min="0"
+                                                            <NumberSelector
                                                                 value={formData.equipamiento[`${fieldId}_cantidad`] || ""}
                                                                 onChange={(e) => handleInputChange("equipamiento", `${fieldId}_cantidad`, e.target.value)}
-                                                                className="w-16 px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-center text-sm focus:border-[#0A5BA9]"
+                                                                min={0}
+                                                                max={50}
+                                                                className="w-20"
+                                                                disabled={!isEnabled}
                                                             />
                                                         </td>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center">
                                                             <select
                                                                 value={formData.equipamiento[`${fieldId}_estado`] || ""}
                                                                 onChange={(e) => handleInputChange("equipamiento", `${fieldId}_estado`, e.target.value)}
-                                                                className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
+                                                                disabled={!isEnabled}
+                                                                className={`w-full px-2 py-1.5 border-2 rounded text-sm ${isEnabled ? "bg-yellow-50 border-yellow-300 focus:border-[#0A5BA9]" : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"}`}
                                                             >
                                                                 <option value="">Seleccionar...</option>
                                                                 <option value="bueno">Bueno</option>
@@ -1580,7 +1972,8 @@ export default function FormularioDiagnostico() {
                                                                 type="text"
                                                                 value={formData.equipamiento[`${fieldId}_obs`] || ""}
                                                                 onChange={(e) => handleInputChange("equipamiento", `${fieldId}_obs`, e.target.value)}
-                                                                className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
+                                                                disabled={!isEnabled}
+                                                                className={`w-full px-2 py-1.5 border-2 rounded text-sm ${isEnabled ? "bg-yellow-50 border-yellow-300 focus:border-[#0A5BA9]" : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"}`}
                                                                 placeholder="..."
                                                             />
                                                         </td>
@@ -1682,28 +2075,37 @@ export default function FormularioDiagnostico() {
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <span className="text-[#0A5BA9] font-bold mr-2">5.1.8</span>Velocidad contratada (Mbps):
                                         </label>
-                                        <input type="number" min="0"
+                                        <NumberSelector
                                             value={formData.conectividad.velocidadContratada || ""}
                                             onChange={(e) => handleInputChange("conectividad", "velocidadContratada", e.target.value)}
-                                            className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9]" />
+                                            min={0}
+                                            max={1000}
+                                            className="w-full"
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <span className="text-[#0A5BA9] font-bold mr-2">5.1.9</span>Velocidad real promedio (Mbps):
                                         </label>
-                                        <input type="number" min="0"
+                                        <NumberSelector
                                             value={formData.conectividad.velocidadReal || ""}
                                             onChange={(e) => handleInputChange("conectividad", "velocidadReal", e.target.value)}
-                                            className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9]" />
+                                            min={0}
+                                            max={1000}
+                                            className="w-full"
+                                        />
                                     </div>
                                     <div>
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <span className="text-[#0A5BA9] font-bold mr-2">5.1.10</span>N° de puntos de red:
                                         </label>
-                                        <input type="number" min="0"
+                                        <NumberSelector
                                             value={formData.conectividad.numPuntosRed || ""}
                                             onChange={(e) => handleInputChange("conectividad", "numPuntosRed", e.target.value)}
-                                            className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9]" />
+                                            min={0}
+                                            max={100}
+                                            className="w-full"
+                                        />
                                     </div>
                                 </div>
                             </div>
@@ -1839,7 +2241,7 @@ export default function FormularioDiagnostico() {
                                             <tr className="bg-[#0A5BA9] text-white">
                                                 <th className="px-3 py-3 text-center font-medium w-20">N°</th>
                                                 <th className="px-3 py-3 text-left font-medium">SERVICIO DE TELESALUD</th>
-                                                <th className="px-3 py-3 text-center font-medium w-24">SÍ/NO</th>
+                                                <th className="px-3 py-3 text-center font-medium w-28">SÍ/NO <span className="text-red-300">*</span></th>
                                                 <th className="px-3 py-3 text-left font-medium w-48">OBSERVACIONES</th>
                                             </tr>
                                         </thead>
@@ -1857,34 +2259,54 @@ export default function FormularioDiagnostico() {
                                                 { id: "teletomografia", num: "6.1.10", label: "Teletomografía" },
                                                 { id: "telecapacitacion", num: "6.1.11", label: "Telecapacitación" },
                                                 { id: "teleiec", num: "6.1.12", label: "TeleIEC (Información, Educación, Comunicación)" },
-                                            ].map((item, index) => (
-                                                <tr key={item.id} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
-                                                    <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">
-                                                        {item.num}
-                                                    </td>
-                                                    <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
-                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
-                                                        <select
-                                                            value={formData.servicios[item.id] || ""}
-                                                            onChange={(e) => handleInputChange("servicios", item.id, e.target.value)}
-                                                            className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
-                                                        >
-                                                            <option value="">Sel.</option>
-                                                            <option value="si">Sí</option>
-                                                            <option value="no">No</option>
-                                                        </select>
-                                                    </td>
-                                                    <td className="px-3 py-3 border-b border-gray-200">
-                                                        <input
-                                                            type="text"
-                                                            value={formData.servicios[`${item.id}_obs`] || ""}
-                                                            onChange={(e) => handleInputChange("servicios", `${item.id}_obs`, e.target.value)}
-                                                            className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
-                                                            placeholder="..."
-                                                        />
-                                                    </td>
-                                                </tr>
-                                            ))}
+                                            ].map((item, index) => {
+                                                const valor = formData.servicios[item.id];
+                                                const isEnabled = valor === "si";
+                                                return (
+                                                    <tr key={item.id} className={valor === "si" ? "bg-green-50" : (index % 2 === 0 ? "bg-blue-50" : "bg-white")}>
+                                                        <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">
+                                                            {item.num}
+                                                        </td>
+                                                        <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
+                                                        <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                            <div className="flex justify-center gap-3">
+                                                                <label className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded ${valor === "si" ? "bg-green-200 text-green-800 font-medium" : ""}`}>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`servicio_${item.id}`}
+                                                                        value="si"
+                                                                        checked={valor === "si"}
+                                                                        onChange={(e) => handleInputChange("servicios", item.id, e.target.value)}
+                                                                        className="w-4 h-4 text-green-600"
+                                                                    />
+                                                                    <span className="text-sm">Sí</span>
+                                                                </label>
+                                                                <label className={`flex items-center gap-1 cursor-pointer px-2 py-1 rounded ${valor === "no" ? "bg-gray-200 text-gray-700 font-medium" : ""}`}>
+                                                                    <input
+                                                                        type="radio"
+                                                                        name={`servicio_${item.id}`}
+                                                                        value="no"
+                                                                        checked={valor === "no"}
+                                                                        onChange={(e) => handleInputChange("servicios", item.id, e.target.value)}
+                                                                        className="w-4 h-4 text-gray-600"
+                                                                    />
+                                                                    <span className="text-sm">No</span>
+                                                                </label>
+                                                            </div>
+                                                        </td>
+                                                        <td className="px-3 py-3 border-b border-gray-200">
+                                                            <input
+                                                                type="text"
+                                                                value={formData.servicios[`${item.id}_obs`] || ""}
+                                                                onChange={(e) => handleInputChange("servicios", `${item.id}_obs`, e.target.value)}
+                                                                disabled={!isEnabled}
+                                                                className={`w-full px-2 py-1.5 border-2 rounded text-sm ${isEnabled ? "bg-yellow-50 border-yellow-300 focus:border-[#0A5BA9]" : "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"}`}
+                                                                placeholder="..."
+                                                            />
+                                                        </td>
+                                                    </tr>
+                                                );
+                                            })}
                                         </tbody>
                                     </table>
                                 </div>
@@ -1937,11 +2359,13 @@ export default function FormularioDiagnostico() {
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
-                                                        <input type="number" min="0"
+                                                        <NumberSelector
                                                             value={formData.necesidades[`infra_${item.id}_cant`] || ""}
                                                             onChange={(e) => handleInputChange("necesidades", `infra_${item.id}_cant`, e.target.value)}
-                                                            className="w-20 px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-center text-sm focus:border-[#0A5BA9]"
-                                                            placeholder="0" />
+                                                            min={0}
+                                                            max={20}
+                                                            className="w-24"
+                                                        />
                                                     </td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
                                                         <select
@@ -1996,11 +2420,13 @@ export default function FormularioDiagnostico() {
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
-                                                        <input type="number" min="0"
+                                                        <NumberSelector
                                                             value={formData.necesidades[`equip_${item.id}_cant`] || ""}
                                                             onChange={(e) => handleInputChange("necesidades", `equip_${item.id}_cant`, e.target.value)}
-                                                            className="w-20 px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-center text-sm focus:border-[#0A5BA9]"
-                                                            placeholder="0" />
+                                                            min={0}
+                                                            max={20}
+                                                            className="w-24"
+                                                        />
                                                     </td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
                                                         <select
@@ -2053,11 +2479,13 @@ export default function FormularioDiagnostico() {
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
-                                                        <input type="number" min="0"
+                                                        <NumberSelector
                                                             value={formData.necesidades[`bio_${item.id}_cant`] || ""}
                                                             onChange={(e) => handleInputChange("necesidades", `bio_${item.id}_cant`, e.target.value)}
-                                                            className="w-20 px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-center text-sm focus:border-[#0A5BA9]"
-                                                            placeholder="0" />
+                                                            min={0}
+                                                            max={20}
+                                                            className="w-24"
+                                                        />
                                                     </td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
                                                         <select
@@ -2143,36 +2571,43 @@ export default function FormularioDiagnostico() {
                             </div>
                         </div>
 
-                        {/* Contenido de Vista Previa - Página 1: Datos Generales */}
+                        {/* Página 1: Datos Generales */}
                         <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
                             <div className="bg-[#0A5BA9] px-6 py-3 flex justify-between items-center">
-                                <span className="text-white font-bold">Página 1 de 6</span>
+                                <span className="text-white font-bold">Página 1 de 7</span>
                                 <span className="text-white/80 text-sm">I. DATOS GENERALES</span>
                             </div>
                             <div className="p-6">
                                 <div className="text-center mb-6 pb-4 border-b-2 border-[#0A5BA9]">
                                     <h2 className="text-xl font-bold text-[#0A5BA9]">DIAGNÓSTICO SITUACIONAL DE TELESALUD</h2>
-                                    <p className="text-gray-600 mt-2">
-                                        <strong>IPRESS:</strong> {datosUsuario?.nombre_ipress || "No especificado"}
-                                    </p>
-                                    <p className="text-gray-600">
-                                        <strong>Red Asistencial:</strong> {datosUsuario?.nombre_red || "No especificado"}
-                                    </p>
-                                    <p className="text-gray-600">
-                                        <strong>Macroregión:</strong> {datosUsuario?.nombre_macroregion || "No especificado"}
-                                    </p>
+                                    <p className="text-gray-600 mt-2"><strong>IPRESS:</strong> {datosUsuario?.nombre_ipress || "No especificado"}</p>
+                                    <p className="text-gray-600"><strong>Red Asistencial:</strong> {datosUsuario?.nombre_red || "No especificado"}</p>
+                                    <p className="text-gray-600"><strong>Macroregión:</strong> {datosUsuario?.nombre_macroregion || "No especificado"}</p>
                                 </div>
-                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">I. DATOS GENERALES DEL ESTABLECIMIENTO</h3>
+
+                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">I. DATOS GENERALES DE LA IPRESS</h3>
+
+                                <div className="mb-6">
+                                    <h4 className="font-semibold text-gray-700 mb-3 border-b pb-2">Datos del Director de la IPRESS</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <div><strong>1.3 Nombre completo:</strong> {formData.datosGenerales.directorNombre || "No especificado"}</div>
+                                        <div><strong>1.4 Correo:</strong> {formData.datosGenerales.directorCorreo || "No especificado"}</div>
+                                        <div><strong>1.5 Teléfono:</strong> {formData.datosGenerales.directorTelefono || "No especificado"}</div>
+                                    </div>
+                                </div>
+
+                                <div className="mb-6">
+                                    <h4 className="font-semibold text-gray-700 mb-3 border-b pb-2">Datos del Responsable/Coordinador de Telesalud</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                        <div><strong>1.6 Nombre completo:</strong> {formData.datosGenerales.responsableNombre || "No especificado"}</div>
+                                        <div><strong>1.7 Correo:</strong> {formData.datosGenerales.responsableCorreo || "No especificado"}</div>
+                                        <div><strong>1.8 Teléfono:</strong> {formData.datosGenerales.responsableTelefono || "No especificado"}</div>
+                                    </div>
+                                </div>
+
                                 <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div><strong>Categoría:</strong> {formData.datosGenerales.categoria || "No especificado"}</div>
-                                    <div><strong>Tipo:</strong> {formData.datosGenerales.tipoEstablecimiento || "No especificado"}</div>
-                                    <div><strong>Departamento:</strong> {formData.datosGenerales.departamento || "No especificado"}</div>
-                                    <div><strong>Provincia:</strong> {formData.datosGenerales.provincia || "No especificado"}</div>
-                                    <div><strong>Distrito:</strong> {formData.datosGenerales.distrito || "No especificado"}</div>
-                                    <div><strong>Dirección:</strong> {formData.datosGenerales.direccion || "No especificado"}</div>
-                                    <div><strong>Teléfono:</strong> {formData.datosGenerales.telefono || "No especificado"}</div>
-                                    <div><strong>Correo:</strong> {formData.datosGenerales.correo || "No especificado"}</div>
-                                    <div className="col-span-2"><strong>Director/Jefe:</strong> {formData.datosGenerales.director || "No especificado"}</div>
+                                    <div><strong>1.9 Población adscrita:</strong> {formData.datosGenerales.poblacionAdscrita ? formatearNumero(formData.datosGenerales.poblacionAdscrita) : "No especificado"}</div>
+                                    <div><strong>1.10 Promedio atenciones mensuales:</strong> {formData.datosGenerales.promedioAtenciones ? formatearNumero(formData.datosGenerales.promedioAtenciones) : "No especificado"}</div>
                                 </div>
                             </div>
                         </div>
@@ -2180,38 +2615,64 @@ export default function FormularioDiagnostico() {
                         {/* Página 2: Recursos Humanos */}
                         <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
                             <div className="bg-[#0A5BA9] px-6 py-3 flex justify-between items-center">
-                                <span className="text-white font-bold">Página 2 de 6</span>
+                                <span className="text-white font-bold">Página 2 de 7</span>
                                 <span className="text-white/80 text-sm">II. RECURSOS HUMANOS</span>
                             </div>
                             <div className="p-6">
-                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">II. RECURSOS HUMANOS</h3>
-                                <table className="w-full text-sm border-collapse mb-6">
-                                    <thead>
-                                        <tr className="bg-[#0A5BA9] text-white">
-                                            <th className="px-4 py-2 text-left">Profesional</th>
-                                            <th className="px-4 py-2 text-center">Cantidad</th>
-                                            <th className="px-4 py-2 text-center">Capacitados</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        {[
-                                            { label: "Médicos", cant: "medicos", cap: "medicosCapacitados" },
-                                            { label: "Enfermeras", cant: "enfermeras", cap: "enfermerasCapacitadas" },
-                                            { label: "Obstetras", cant: "obstetras", cap: "obstetrasCapacitados" },
-                                            { label: "Técnicos", cant: "tecnicos", cap: "tecnicosCapacitados" },
-                                            { label: "Administrativos", cant: "administrativos", cap: "administrativosCapacitados" },
-                                        ].map((item, idx) => (
-                                            <tr key={item.label} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
-                                                <td className="px-4 py-2 border">{item.label}</td>
-                                                <td className="px-4 py-2 border text-center">{formData.recursosHumanos[item.cant] || "0"}</td>
-                                                <td className="px-4 py-2 border text-center">{formData.recursosHumanos[item.cap] || "0"}</td>
-                                            </tr>
-                                        ))}
-                                    </tbody>
-                                </table>
+                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">II. RECURSOS HUMANOS PARA TELESALUD</h3>
+
+                                <div className="grid grid-cols-2 gap-4 text-sm mb-6">
+                                    <div className="p-3 bg-gray-50 rounded"><strong>2.1.1 ¿Designa Coordinador de Telesalud?</strong> {formData.recursosHumanos.coordTelesalud === "si" ? "Sí" : formData.recursosHumanos.coordTelesalud === "no" ? "No" : "-"}</div>
+                                    <div className="p-3 bg-gray-50 rounded"><strong>2.1.2 ¿Asigna personal de apoyo?</strong> {formData.recursosHumanos.personalApoyo === "si" ? "Sí" : formData.recursosHumanos.personalApoyo === "no" ? "No" : "-"}</div>
+                                </div>
+
+                                {formData.recursosHumanos.personalApoyo === "si" && (
+                                    <div className="mb-6">
+                                        <h4 className="font-semibold text-gray-700 mb-3">Personal de Apoyo por Categoría</h4>
+                                        <table className="w-full text-sm border-collapse">
+                                            <thead>
+                                                <tr className="bg-[#0A5BA9] text-white">
+                                                    <th className="px-4 py-2 text-left">Categoría Profesional</th>
+                                                    <th className="px-4 py-2 text-center">Cantidad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {[
+                                                    { label: "Médicos especialistas", id: "medicosEspecialistas" },
+                                                    { label: "Médicos generales", id: "medicosGenerales" },
+                                                    { label: "Enfermeras(os)", id: "enfermeras" },
+                                                    { label: "Obstetras", id: "obstetras" },
+                                                    { label: "Tecnólogos médicos", id: "tecnologos" },
+                                                    { label: "Psicólogos", id: "psicologos" },
+                                                    { label: "Nutricionistas", id: "nutricionistas" },
+                                                    { label: "Trabajadores sociales", id: "trabajadoresSociales" },
+                                                    { label: "Otros profesionales de salud", id: "otrosProfesionales" },
+                                                    { label: "Personal técnico de salud", id: "tecnicoSalud" },
+                                                    { label: "Personal de soporte TIC", id: "soporteTic" },
+                                                    { label: "Personal administrativo", id: "administrativo" },
+                                                ].filter(item => formData.recursosHumanos[item.id]).map((item, idx) => (
+                                                    <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                        <td className="px-4 py-2 border">{item.label}</td>
+                                                        <td className="px-4 py-2 border text-center">{formData.recursosHumanos[item.id]}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                )}
+
+                                <h4 className="font-semibold text-gray-700 mb-3 border-b pb-2">2.2 Capacitación y Competencias</h4>
+                                <div className="grid grid-cols-2 gap-3 text-sm mb-4">
+                                    <div className="p-2 bg-gray-50 rounded"><strong>2.2.1 Capacitación en TIC:</strong> {formData.recursosHumanos.capacitacionTic === "si" ? "Sí" : formData.recursosHumanos.capacitacionTic === "no" ? "No" : "-"}</div>
+                                    <div className="p-2 bg-gray-50 rounded"><strong>2.2.2 Conoce normativa:</strong> {formData.recursosHumanos.normativa === "si" ? "Sí" : formData.recursosHumanos.normativa === "no" ? "No" : "-"}</div>
+                                    <div className="p-2 bg-gray-50 rounded"><strong>2.2.3 Alfabetización digital:</strong> {formData.recursosHumanos.alfabetizacion === "si" ? "Sí" : formData.recursosHumanos.alfabetizacion === "no" ? "No" : "-"}</div>
+                                    <div className="p-2 bg-gray-50 rounded"><strong>2.2.4 Plan de capacitación:</strong> {formData.recursosHumanos.planCapacitacion === "si" ? "Sí" : formData.recursosHumanos.planCapacitacion === "no" ? "No" : "-"}</div>
+                                </div>
                                 <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div><strong>Responsable de Telesalud:</strong> {formData.recursosHumanos.responsableTelesalud || "No especificado"}</div>
-                                    <div><strong>Cargo:</strong> {formData.recursosHumanos.cargoResponsable || "No especificado"}</div>
+                                    <div><strong>2.2.5 Capacitaciones en el año:</strong> {formData.recursosHumanos.capacitacionesAnio || "0"}</div>
+                                    {formData.recursosHumanos.necesidadesCapacitacion && (
+                                        <div className="col-span-2"><strong>2.2.6 Necesidades de capacitación:</strong> {formData.recursosHumanos.necesidadesCapacitacion}</div>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -2219,71 +2680,257 @@ export default function FormularioDiagnostico() {
                         {/* Página 3: Infraestructura */}
                         <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
                             <div className="bg-[#0A5BA9] px-6 py-3 flex justify-between items-center">
-                                <span className="text-white font-bold">Página 3 de 6</span>
+                                <span className="text-white font-bold">Página 3 de 7</span>
                                 <span className="text-white/80 text-sm">III. INFRAESTRUCTURA</span>
                             </div>
                             <div className="p-6">
                                 <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">III. INFRAESTRUCTURA</h3>
+
+                                <h4 className="font-semibold text-gray-700 mb-3">3.1 Infraestructura Física</h4>
                                 <table className="w-full text-sm border-collapse mb-6">
                                     <thead>
                                         <tr className="bg-[#0A5BA9] text-white">
-                                            <th className="px-4 py-2 text-left">Ambiente</th>
-                                            <th className="px-4 py-2 text-center">Disponible</th>
-                                            <th className="px-4 py-2 text-center">Área (m²)</th>
+                                            <th className="px-4 py-2 text-left">Criterio</th>
+                                            <th className="px-4 py-2 text-center w-24">Respuesta</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {[
-                                            { label: "Teleconsultorio exclusivo", disp: "teleconsultorio", area: "teleconsultorioArea" },
-                                            { label: "Ambiente compartido", disp: "ambienteCompartido", area: "ambienteCompartidoArea" },
-                                            { label: "Sala de espera", disp: "salaEspera", area: "salaEsperaArea" },
-                                            { label: "Ambiente administrativo", disp: "ambienteAdmin", area: "ambienteAdminArea" },
+                                            { label: "3.1.1 Espacio físico para Teleconsultorio", id: "espacioFisico" },
+                                            { label: "3.1.2 Garantiza privacidad del paciente", id: "privacidad" },
+                                            { label: "3.1.3 Escritorio ergonómico", id: "escritorio" },
+                                            { label: "3.1.4 Sillas ergonómicas", id: "sillas" },
+                                            { label: "3.1.5 Estantes para equipos", id: "estantes" },
+                                            { label: "3.1.6 Archivero con llave", id: "archivero" },
+                                            { label: "3.1.7 Iluminación adecuada", id: "iluminacion" },
+                                            { label: "3.1.8 Ventilación adecuada", id: "ventilacion" },
+                                            { label: "3.1.9 Aire acondicionado", id: "aireAcondicionado" },
                                         ].map((item, idx) => (
-                                            <tr key={item.label} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                            <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
                                                 <td className="px-4 py-2 border">{item.label}</td>
-                                                <td className="px-4 py-2 border text-center">{formData.infraestructura[item.disp] || "-"}</td>
-                                                <td className="px-4 py-2 border text-center">{formData.infraestructura[item.area] || "-"}</td>
+                                                <td className="px-4 py-2 border text-center">{formData.infraestructura[item.id] === "si" ? "Sí" : formData.infraestructura[item.id] === "no" ? "No" : "-"}</td>
                                             </tr>
                                         ))}
                                     </tbody>
                                 </table>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div><strong>Conexión eléctrica estable:</strong> {formData.infraestructura.conexionElectrica || "-"}</div>
-                                    <div><strong>Sistema UPS:</strong> {formData.infraestructura.sistemaUPS || "-"}</div>
-                                    <div><strong>Aire acondicionado:</strong> {formData.infraestructura.aireAcondicionado || "-"}</div>
-                                    <div><strong>Ventilación:</strong> {formData.infraestructura.ventilacion || "-"}</div>
-                                </div>
+                                <div className="mb-6 text-sm"><strong>3.1.10 N° de ambientes para Telesalud:</strong> {formData.infraestructura.numAmbientes || "0"}</div>
+
+                                <h4 className="font-semibold text-gray-700 mb-3">3.2 Infraestructura Tecnológica</h4>
+                                <table className="w-full text-sm border-collapse">
+                                    <thead>
+                                        <tr className="bg-[#0A5BA9] text-white">
+                                            <th className="px-4 py-2 text-left">Criterio</th>
+                                            <th className="px-4 py-2 text-center w-24">Respuesta</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            { label: "3.2.1 Hardware (servidores, computadoras, equipos de red)", id: "hardware" },
+                                            { label: "3.2.2 Software (sistemas operativos, aplicaciones)", id: "software" },
+                                            { label: "3.2.3 Redes (cableado, redes inalámbricas)", id: "redes" },
+                                            { label: "3.2.4 Almacenamiento de datos", id: "almacenamiento" },
+                                            { label: "3.2.5 Servicios (seguridad informática, soporte)", id: "serviciosTec" },
+                                        ].map((item, idx) => (
+                                            <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                <td className="px-4 py-2 border">{item.label}</td>
+                                                <td className="px-4 py-2 border text-center">{formData.infraestructura[item.id] === "si" ? "Sí" : formData.infraestructura[item.id] === "no" ? "No" : "-"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
                         {/* Página 4: Equipamiento */}
                         <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
                             <div className="bg-[#0A5BA9] px-6 py-3 flex justify-between items-center">
-                                <span className="text-white font-bold">Página 4 de 6</span>
+                                <span className="text-white font-bold">Página 4 de 7</span>
                                 <span className="text-white/80 text-sm">IV. EQUIPAMIENTO</span>
                             </div>
                             <div className="p-6">
-                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">IV. EQUIPAMIENTO INFORMÁTICO</h3>
+                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">IV. EQUIPAMIENTO</h3>
+
+                                <h4 className="font-semibold text-gray-700 mb-3">4.1 Equipamiento Informático</h4>
                                 <table className="w-full text-sm border-collapse mb-6">
                                     <thead>
                                         <tr className="bg-[#0A5BA9] text-white">
-                                            <th className="px-4 py-2 text-left">Equipo</th>
-                                            <th className="px-4 py-2 text-center">Cantidad</th>
-                                            <th className="px-4 py-2 text-center">Operativos</th>
+                                            <th className="px-3 py-2 text-left">Equipo</th>
+                                            <th className="px-3 py-2 text-center w-20">Disp.</th>
+                                            <th className="px-3 py-2 text-center w-16">Cant.</th>
+                                            <th className="px-3 py-2 text-center w-20">Estado</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {[
-                                            { label: "Computadoras", cant: "computadoras", op: "computadorasOperativas" },
-                                            { label: "Laptops", cant: "laptops", op: "laptopsOperativas" },
-                                            { label: "Monitores", cant: "monitores", op: "monitoresOperativos" },
-                                            { label: "Cámaras web", cant: "camaras", op: "camarasOperativas" },
-                                            { label: "Impresoras", cant: "impresoras", op: "impresorasOperativas" },
+                                            "Computadora de escritorio", "Laptop", "Monitor", "Cable HDMI", "Cámara web HD",
+                                            "Micrófono", "Parlantes/audífonos", "Impresora", "Escáner", "Router/Switch"
+                                        ].map((equipo, index) => {
+                                            const fieldId = `equipInfo${index}`;
+                                            const disp = formData.equipamiento[`${fieldId}_disponible`];
+                                            const cant = formData.equipamiento[`${fieldId}_cantidad`];
+                                            const estado = formData.equipamiento[`${fieldId}_estado`];
+                                            if (!disp && !cant && !estado) return null;
+                                            return (
+                                                <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : ""}>
+                                                    <td className="px-3 py-2 border">{equipo}</td>
+                                                    <td className="px-3 py-2 border text-center">{disp === "si" ? "Sí" : disp === "no" ? "No" : "-"}</td>
+                                                    <td className="px-3 py-2 border text-center">{cant || "-"}</td>
+                                                    <td className="px-3 py-2 border text-center capitalize">{estado || "-"}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+
+                                <h4 className="font-semibold text-gray-700 mb-3">4.2 Equipamiento Biomédico Digital</h4>
+                                <table className="w-full text-sm border-collapse">
+                                    <thead>
+                                        <tr className="bg-[#0A5BA9] text-white">
+                                            <th className="px-3 py-2 text-left">Equipo</th>
+                                            <th className="px-3 py-2 text-center w-20">Disp.</th>
+                                            <th className="px-3 py-2 text-center w-16">Cant.</th>
+                                            <th className="px-3 py-2 text-center w-20">Estado</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            "Pulsioxímetro digital", "Dermatoscopio digital", "Ecógrafo digital", "Electrocardiógrafo digital",
+                                            "Equipo de gases arteriales", "Estetoscopio digital", "Fonendoscopio digital",
+                                            "Monitor de funciones vitales", "Otoscopio digital", "Oxímetro digital",
+                                            "Retinógrafo digital", "Tensiómetro digital", "Videocolposcopio", "Estación móvil de telemedicina"
+                                        ].map((equipo, index) => {
+                                            const fieldId = `equipBio${index}`;
+                                            const disp = formData.equipamiento[`${fieldId}_disponible`];
+                                            const cant = formData.equipamiento[`${fieldId}_cantidad`];
+                                            const estado = formData.equipamiento[`${fieldId}_estado`];
+                                            if (!disp && !cant && !estado) return null;
+                                            return (
+                                                <tr key={index} className={index % 2 === 0 ? "bg-gray-50" : ""}>
+                                                    <td className="px-3 py-2 border">{equipo}</td>
+                                                    <td className="px-3 py-2 border text-center">{disp === "si" ? "Sí" : disp === "no" ? "No" : "-"}</td>
+                                                    <td className="px-3 py-2 border text-center">{cant || "-"}</td>
+                                                    <td className="px-3 py-2 border text-center capitalize">{estado || "-"}</td>
+                                                </tr>
+                                            );
+                                        })}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        {/* Página 5: Conectividad */}
+                        <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
+                            <div className="bg-[#0A5BA9] px-6 py-3 flex justify-between items-center">
+                                <span className="text-white font-bold">Página 5 de 7</span>
+                                <span className="text-white/80 text-sm">V. CONECTIVIDAD Y SISTEMAS</span>
+                            </div>
+                            <div className="p-6">
+                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">V. CONECTIVIDAD Y SISTEMAS DE INFORMACIÓN</h3>
+
+                                {/* 5.1 Conectividad - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">5.1 Conectividad y Servicios</h4>
+                                <table className="w-full text-sm border-collapse mb-4">
+                                    <thead>
+                                        <tr className="bg-[#0A5BA9] text-white">
+                                            <th className="px-4 py-2 text-left">Criterio</th>
+                                            <th className="px-4 py-2 text-center w-24">Respuesta</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            { label: "5.1.1 ¿Cuenta con acceso a internet?", id: "internet" },
+                                            { label: "5.1.2 ¿La conexión es estable y permanente?", id: "estable" },
+                                            { label: "5.1.3 ¿Sistema alternativo de energía eléctrica?", id: "energiaAlt" },
+                                            { label: "5.1.4 ¿Cuenta con puntos de red suficientes?", id: "puntosRed" },
+                                            { label: "5.1.5 ¿Cuenta con red WiFi institucional?", id: "wifi" },
                                         ].map((item, idx) => (
-                                            <tr key={item.label} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                            <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
                                                 <td className="px-4 py-2 border">{item.label}</td>
-                                                <td className="px-4 py-2 border text-center">{formData.equipamiento[item.cant] || "0"}</td>
-                                                <td className="px-4 py-2 border text-center">{formData.equipamiento[item.op] || "0"}</td>
+                                                <td className="px-4 py-2 border text-center font-medium">{formData.conectividad[item.id] === "si" ? "Sí" : formData.conectividad[item.id] === "no" ? "No" : "-"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+
+                                {/* Datos de conexión - Cards */}
+                                <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                                    <h5 className="font-medium text-gray-700 mb-3">Detalles de la Conexión a Internet</h5>
+                                    <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                                        <div className="bg-white p-3 rounded border border-gray-200">
+                                            <span className="text-gray-500 block text-xs mb-1">5.1.6 Tipo de conexión</span>
+                                            <strong className="text-gray-800">{formData.conectividad.tipoConexion || "No especificado"}</strong>
+                                        </div>
+                                        <div className="bg-white p-3 rounded border border-gray-200">
+                                            <span className="text-gray-500 block text-xs mb-1">5.1.7 Proveedor</span>
+                                            <strong className="text-gray-800">{formData.conectividad.proveedor || "No especificado"}</strong>
+                                        </div>
+                                        <div className="bg-white p-3 rounded border border-gray-200">
+                                            <span className="text-gray-500 block text-xs mb-1">5.1.8 Velocidad contratada</span>
+                                            <strong className="text-gray-800">{formData.conectividad.velocidadContratada ? `${formData.conectividad.velocidadContratada} Mbps` : "No especificado"}</strong>
+                                        </div>
+                                        <div className="bg-white p-3 rounded border border-gray-200">
+                                            <span className="text-gray-500 block text-xs mb-1">5.1.9 Velocidad real promedio</span>
+                                            <strong className="text-gray-800">{formData.conectividad.velocidadReal ? `${formData.conectividad.velocidadReal} Mbps` : "No especificado"}</strong>
+                                        </div>
+                                        <div className="bg-white p-3 rounded border border-gray-200">
+                                            <span className="text-gray-500 block text-xs mb-1">5.1.10 N° puntos de red</span>
+                                            <strong className="text-gray-800">{formData.conectividad.numPuntosRed || "No especificado"}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* 5.2 Sistemas de Información - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">5.2 Sistemas de Información</h4>
+                                <table className="w-full text-sm border-collapse mb-4">
+                                    <thead>
+                                        <tr className="bg-[#0A5BA9] text-white">
+                                            <th className="px-4 py-2 text-left">Sistema</th>
+                                            <th className="px-4 py-2 text-center w-24">Disponible</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            { label: "5.2.1 ESSI (Registro y trazabilidad de atenciones)", id: "essi" },
+                                            { label: "5.2.2 PACS (Sistema de imágenes médicas)", id: "pacs" },
+                                            { label: "5.2.3 ANATPAT (Anatomía patológica)", id: "anatpat" },
+                                            { label: "5.2.4 Sistema de videoconferencia", id: "videoconferencia" },
+                                            { label: "5.2.5 Sistema de citas en línea", id: "citasLinea" },
+                                        ].map((item, idx) => (
+                                            <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                <td className="px-4 py-2 border">{item.label}</td>
+                                                <td className="px-4 py-2 border text-center font-medium">{formData.conectividad[item.id] === "si" ? "Sí" : formData.conectividad[item.id] === "no" ? "No" : "-"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                                {formData.conectividad.otroSistema && (
+                                    <div className="text-sm mb-6 bg-blue-50 p-3 rounded border border-blue-200">
+                                        <strong>5.2.6 Otro sistema interoperable autorizado:</strong> {formData.conectividad.otroSistema}
+                                    </div>
+                                )}
+
+                                {/* 5.3 Seguridad - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">5.3 Seguridad de la Información y Protección de Datos</h4>
+                                <table className="w-full text-sm border-collapse">
+                                    <thead>
+                                        <tr className="bg-[#0A5BA9] text-white">
+                                            <th className="px-4 py-2 text-left">Criterio de Seguridad</th>
+                                            <th className="px-4 py-2 text-center w-24">Cumple</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            { label: "5.3.1 Mecanismos de confidencialidad de la información", id: "confidencialidad" },
+                                            { label: "5.3.2 Mecanismos de integridad de la información", id: "integridad" },
+                                            { label: "5.3.3 Mecanismos de disponibilidad de la información", id: "disponibilidad" },
+                                            { label: "5.3.4 Planes de contingencia para pérdida de datos", id: "contingencia" },
+                                            { label: "5.3.5 Respaldo (backup) de información", id: "backup" },
+                                            { label: "5.3.6 Formato de Consentimiento Informado para Telemedicina", id: "consentimiento" },
+                                            { label: "5.3.7 Cumplimiento Ley N° 29733 (Protección de Datos Personales)", id: "ley29733" },
+                                        ].map((item, idx) => (
+                                            <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                <td className="px-4 py-2 border">{item.label}</td>
+                                                <td className="px-4 py-2 border text-center font-medium">{formData.conectividad[item.id] === "si" ? "Sí" : formData.conectividad[item.id] === "no" ? "No" : "-"}</td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -2291,66 +2938,217 @@ export default function FormularioDiagnostico() {
                             </div>
                         </div>
 
-                        {/* Página 5: Conectividad y Servicios */}
+                        {/* Página 6: Servicios */}
                         <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
                             <div className="bg-[#0A5BA9] px-6 py-3 flex justify-between items-center">
-                                <span className="text-white font-bold">Página 5 de 6</span>
-                                <span className="text-white/80 text-sm">V. CONECTIVIDAD Y VI. SERVICIOS</span>
+                                <span className="text-white font-bold">Página 6 de 7</span>
+                                <span className="text-white/80 text-sm">VI. SERVICIOS DE TELESALUD</span>
                             </div>
                             <div className="p-6">
-                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">V. CONECTIVIDAD</h3>
-                                <div className="grid grid-cols-2 gap-4 text-sm mb-6">
-                                    <div><strong>Tipo de conexión:</strong> {formData.conectividad.tipoConexion || "-"}</div>
-                                    <div><strong>Proveedor:</strong> {formData.conectividad.proveedor || "-"}</div>
-                                    <div><strong>Velocidad contratada:</strong> {formData.conectividad.velocidad || "-"} Mbps</div>
-                                    <div><strong>Velocidad real:</strong> {formData.conectividad.velocidadReal || "-"} Mbps</div>
-                                    <div><strong>Estabilidad:</strong> {formData.conectividad.estabilidad || "-"}</div>
-                                    <div><strong>VPN institucional:</strong> {formData.conectividad.vpn || "-"}</div>
-                                </div>
                                 <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">VI. SERVICIOS DE TELESALUD</h3>
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                    <div><strong>Teleconsulta:</strong> {formData.servicios.teleconsulta || "-"}</div>
-                                    <div><strong>Teleorientación:</strong> {formData.servicios.teleorientacion || "-"}</div>
-                                    <div><strong>Telemonitoreo:</strong> {formData.servicios.telemonitoreo || "-"}</div>
-                                    <div><strong>Teleinterconsulta:</strong> {formData.servicios.teleinterconsulta || "-"}</div>
-                                    <div><strong>Telediagnóstico:</strong> {formData.servicios.telediagnostico || "-"}</div>
-                                    <div><strong>Especialidades:</strong> {formData.servicios.especialidades || "-"}</div>
-                                </div>
+                                <table className="w-full text-sm border-collapse">
+                                    <thead>
+                                        <tr className="bg-[#0A5BA9] text-white">
+                                            <th className="px-4 py-2 text-left">Servicio</th>
+                                            <th className="px-4 py-2 text-center w-20">Implementado</th>
+                                            <th className="px-4 py-2 text-left">Observaciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {[
+                                            { label: "6.1.1 Servicios incorporados en RENIPRESS", id: "incorporoServicios" },
+                                            { label: "6.1.2 Teleconsulta", id: "teleconsulta" },
+                                            { label: "6.1.3 Teleorientación", id: "teleorientacion" },
+                                            { label: "6.1.4 Telemonitoreo", id: "telemonitoreo" },
+                                            { label: "6.1.5 Teleinterconsulta", id: "teleinterconsulta" },
+                                            { label: "6.1.6 Teleurgencia", id: "teleurgencia" },
+                                            { label: "6.1.7 Teletriaje", id: "teletriaje" },
+                                            { label: "6.1.8 Telerradiografía", id: "telerradiografia" },
+                                            { label: "6.1.9 Telemamografía", id: "telemamografia" },
+                                            { label: "6.1.10 Teletomografía", id: "teletomografia" },
+                                            { label: "6.1.11 Telecapacitación", id: "telecapacitacion" },
+                                            { label: "6.1.12 TeleIEC", id: "teleiec" },
+                                        ].map((item, idx) => (
+                                            <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                <td className="px-4 py-2 border">{item.label}</td>
+                                                <td className="px-4 py-2 border text-center">{formData.servicios[item.id] === "si" ? "Sí" : formData.servicios[item.id] === "no" ? "No" : "-"}</td>
+                                                <td className="px-4 py-2 border">{formData.servicios[`${item.id}_obs`] || "-"}</td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
-                        {/* Página 6: Necesidades */}
+                        {/* Página 7: Necesidades */}
                         <div className="bg-white rounded-xl shadow-lg border-2 border-gray-200 overflow-hidden">
                             <div className="bg-[#0A5BA9] px-6 py-3 flex justify-between items-center">
-                                <span className="text-white font-bold">Página 6 de 6</span>
+                                <span className="text-white font-bold">Página 7 de 7</span>
                                 <span className="text-white/80 text-sm">VII. NECESIDADES Y REQUERIMIENTOS</span>
                             </div>
                             <div className="p-6">
-                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">VII. NECESIDADES Y REQUERIMIENTOS</h3>
-                                <div className="space-y-4">
-                                    <div>
-                                        <h4 className="font-semibold text-gray-700 mb-2">7.1 Infraestructura Física</h4>
-                                        <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <div className="bg-gray-50 p-2 rounded">Espacio físico: {formData.necesidades.infra_espacioFisico_cant || "0"} ({formData.necesidades.infra_espacioFisico_prior || "-"})</div>
-                                            <div className="bg-gray-50 p-2 rounded">Escritorio: {formData.necesidades.infra_escritorio_cant || "0"} ({formData.necesidades.infra_escritorio_prior || "-"})</div>
-                                            <div className="bg-gray-50 p-2 rounded">Sillas: {formData.necesidades.infra_sillas_cant || "0"} ({formData.necesidades.infra_sillas_prior || "-"})</div>
+                                <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">VII. NECESIDADES Y REQUERIMIENTOS PARA IMPLEMENTACIÓN DE TELESALUD</h3>
+
+                                {/* 7.1 Infraestructura Física - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.1 Necesidades de Infraestructura Física</h4>
+                                {(() => {
+                                    const infraItems = [
+                                        { label: "Espacio físico para Teleconsultorio", id: "espacioFisico", num: "7.1.1" },
+                                        { label: "Escritorio ergonómico", id: "escritorio", num: "7.1.2" },
+                                        { label: "Sillas ergonómicas", id: "sillas", num: "7.1.3" },
+                                        { label: "Estantes para equipos", id: "estantes", num: "7.1.4" },
+                                        { label: "Archivero con llave", id: "archivero", num: "7.1.5" },
+                                        { label: "Instalación de luz eléctrica", id: "luzElectrica", num: "7.1.6" },
+                                        { label: "Sistema de ventilación", id: "ventilacion", num: "7.1.7" },
+                                        { label: "Aire acondicionado", id: "aireAcond", num: "7.1.8" },
+                                    ].filter(item => formData.necesidades[`infra_${item.id}_cant`] || formData.necesidades[`infra_${item.id}_prior`]);
+
+                                    return infraItems.length > 0 ? (
+                                        <table className="w-full text-sm border-collapse mb-6">
+                                            <thead>
+                                                <tr className="bg-[#0A5BA9] text-white">
+                                                    <th className="px-4 py-2 text-left">Requerimiento</th>
+                                                    <th className="px-4 py-2 text-center w-24">Cantidad</th>
+                                                    <th className="px-4 py-2 text-center w-24">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {infraItems.map((item, idx) => (
+                                                    <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                        <td className="px-4 py-2 border">{item.num} {item.label}</td>
+                                                        <td className="px-4 py-2 border text-center font-medium">{formData.necesidades[`infra_${item.id}_cant`] || "0"}</td>
+                                                        <td className="px-4 py-2 border text-center">
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                                formData.necesidades[`infra_${item.id}_prior`] === "alta" ? "bg-red-100 text-red-700" :
+                                                                formData.necesidades[`infra_${item.id}_prior`] === "media" ? "bg-yellow-100 text-yellow-700" :
+                                                                formData.necesidades[`infra_${item.id}_prior`] === "baja" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                                                            }`}>
+                                                                {formData.necesidades[`infra_${item.id}_prior`] ? formData.necesidades[`infra_${item.id}_prior`].charAt(0).toUpperCase() + formData.necesidades[`infra_${item.id}_prior`].slice(1) : "-"}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de infraestructura física.</p>;
+                                })()}
+
+                                {/* 7.2 Equipamiento Informático - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.2 Necesidades de Equipamiento Informático</h4>
+                                {(() => {
+                                    const equipItems = [
+                                        { label: "Computadora de escritorio", id: "computadora", num: "7.2.1" },
+                                        { label: "Computadora portátil (laptop)", id: "laptop", num: "7.2.2" },
+                                        { label: "Monitor", id: "monitor", num: "7.2.3" },
+                                        { label: "Cámara web HD (1080p)", id: "camaraWeb", num: "7.2.4" },
+                                        { label: "Micrófono", id: "microfono", num: "7.2.5" },
+                                        { label: "Parlantes/Audífonos", id: "parlantes", num: "7.2.6" },
+                                        { label: "Impresora", id: "impresora", num: "7.2.7" },
+                                        { label: "Escáner", id: "escaner", num: "7.2.8" },
+                                        { label: "Router/Switch de red", id: "router", num: "7.2.9" },
+                                        { label: "UPS/Estabilizador", id: "ups", num: "7.2.10" },
+                                    ].filter(item => formData.necesidades[`equip_${item.id}_cant`] || formData.necesidades[`equip_${item.id}_prior`]);
+
+                                    return equipItems.length > 0 ? (
+                                        <table className="w-full text-sm border-collapse mb-6">
+                                            <thead>
+                                                <tr className="bg-[#0A5BA9] text-white">
+                                                    <th className="px-4 py-2 text-left">Requerimiento</th>
+                                                    <th className="px-4 py-2 text-center w-24">Cantidad</th>
+                                                    <th className="px-4 py-2 text-center w-24">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {equipItems.map((item, idx) => (
+                                                    <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                        <td className="px-4 py-2 border">{item.num} {item.label}</td>
+                                                        <td className="px-4 py-2 border text-center font-medium">{formData.necesidades[`equip_${item.id}_cant`] || "0"}</td>
+                                                        <td className="px-4 py-2 border text-center">
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                                formData.necesidades[`equip_${item.id}_prior`] === "alta" ? "bg-red-100 text-red-700" :
+                                                                formData.necesidades[`equip_${item.id}_prior`] === "media" ? "bg-yellow-100 text-yellow-700" :
+                                                                formData.necesidades[`equip_${item.id}_prior`] === "baja" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                                                            }`}>
+                                                                {formData.necesidades[`equip_${item.id}_prior`] ? formData.necesidades[`equip_${item.id}_prior`].charAt(0).toUpperCase() + formData.necesidades[`equip_${item.id}_prior`].slice(1) : "-"}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de equipamiento informático.</p>;
+                                })()}
+
+                                {/* 7.3 Equipamiento Biomédico - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.3 Necesidades de Equipamiento Biomédico Digital</h4>
+                                {(() => {
+                                    const bioItems = [
+                                        { label: "Pulsioxímetro digital", id: "pulsioximetro", num: "7.3.1" },
+                                        { label: "Estetoscopio digital", id: "estetoscopio", num: "7.3.2" },
+                                        { label: "Tensiómetro digital", id: "tensiometro", num: "7.3.3" },
+                                        { label: "Otoscopio digital", id: "otoscopio", num: "7.3.4" },
+                                        { label: "Dermatoscopio digital", id: "dermatoscopio", num: "7.3.5" },
+                                        { label: "Electrocardiógrafo digital", id: "electrocardiografo", num: "7.3.6" },
+                                        { label: "Ecógrafo digital", id: "ecografo", num: "7.3.7" },
+                                        { label: "Estación móvil de telemedicina", id: "estacionMovil", num: "7.3.8" },
+                                    ].filter(item => formData.necesidades[`bio_${item.id}_cant`] || formData.necesidades[`bio_${item.id}_prior`]);
+
+                                    return bioItems.length > 0 ? (
+                                        <table className="w-full text-sm border-collapse mb-6">
+                                            <thead>
+                                                <tr className="bg-[#0A5BA9] text-white">
+                                                    <th className="px-4 py-2 text-left">Requerimiento</th>
+                                                    <th className="px-4 py-2 text-center w-24">Cantidad</th>
+                                                    <th className="px-4 py-2 text-center w-24">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {bioItems.map((item, idx) => (
+                                                    <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                        <td className="px-4 py-2 border">{item.num} {item.label}</td>
+                                                        <td className="px-4 py-2 border text-center font-medium">{formData.necesidades[`bio_${item.id}_cant`] || "0"}</td>
+                                                        <td className="px-4 py-2 border text-center">
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                                formData.necesidades[`bio_${item.id}_prior`] === "alta" ? "bg-red-100 text-red-700" :
+                                                                formData.necesidades[`bio_${item.id}_prior`] === "media" ? "bg-yellow-100 text-yellow-700" :
+                                                                formData.necesidades[`bio_${item.id}_prior`] === "baja" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                                                            }`}>
+                                                                {formData.necesidades[`bio_${item.id}_prior`] ? formData.necesidades[`bio_${item.id}_prior`].charAt(0).toUpperCase() + formData.necesidades[`bio_${item.id}_prior`].slice(1) : "-"}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de equipamiento biomédico.</p>;
+                                })()}
+
+                                {/* 7.4 Otras Necesidades */}
+                                {(formData.necesidades.necesidadesConectividad || formData.necesidades.necesidadesCapacitacionFinal || formData.necesidades.observacionesGenerales) && (
+                                    <div className="space-y-4">
+                                        <h4 className="font-semibold text-gray-700">7.4 Otras Necesidades y Observaciones</h4>
+                                        <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                                            {formData.necesidades.necesidadesConectividad && (
+                                                <div className="bg-white p-4 rounded border border-gray-200">
+                                                    <span className="text-xs text-gray-500 block mb-1">7.4.1 Necesidades de Conectividad</span>
+                                                    <p className="text-sm text-gray-800">{formData.necesidades.necesidadesConectividad}</p>
+                                                </div>
+                                            )}
+                                            {formData.necesidades.necesidadesCapacitacionFinal && (
+                                                <div className="bg-white p-4 rounded border border-gray-200">
+                                                    <span className="text-xs text-gray-500 block mb-1">7.4.2 Necesidades de Capacitación</span>
+                                                    <p className="text-sm text-gray-800">{formData.necesidades.necesidadesCapacitacionFinal}</p>
+                                                </div>
+                                            )}
+                                            {formData.necesidades.observacionesGenerales && (
+                                                <div className="bg-white p-4 rounded border border-blue-200 border-l-4 border-l-[#0A5BA9]">
+                                                    <span className="text-xs text-gray-500 block mb-1">7.4.3 Observaciones Generales</span>
+                                                    <p className="text-sm text-gray-800">{formData.necesidades.observacionesGenerales}</p>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
-                                    <div>
-                                        <h4 className="font-semibold text-gray-700 mb-2">7.2 Equipamiento Informático</h4>
-                                        <div className="grid grid-cols-3 gap-2 text-sm">
-                                            <div className="bg-gray-50 p-2 rounded">Computadoras: {formData.necesidades.equip_computadora_cant || "0"} ({formData.necesidades.equip_computadora_prior || "-"})</div>
-                                            <div className="bg-gray-50 p-2 rounded">Laptops: {formData.necesidades.equip_laptop_cant || "0"} ({formData.necesidades.equip_laptop_prior || "-"})</div>
-                                            <div className="bg-gray-50 p-2 rounded">Cámaras: {formData.necesidades.equip_camaraWeb_cant || "0"} ({formData.necesidades.equip_camaraWeb_prior || "-"})</div>
-                                        </div>
-                                    </div>
-                                    {formData.necesidades.observacionesGenerales && (
-                                        <div>
-                                            <h4 className="font-semibold text-gray-700 mb-2">7.4 Observaciones Generales</h4>
-                                            <p className="text-sm bg-gray-50 p-3 rounded">{formData.necesidades.observacionesGenerales}</p>
-                                        </div>
-                                    )}
-                                </div>
+                                )}
                             </div>
                         </div>
                     </div>
@@ -2377,19 +3175,71 @@ export default function FormularioDiagnostico() {
                 {/* Barra de acciones */}
                 <div className="mt-4 bg-white rounded-xl shadow-sm border border-gray-100 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-4">
-                        <button
-                            onClick={() => {
-                                if (activeTab === "vista-previa") {
-                                    setActiveTab("necesidades");
-                                } else {
-                                    setCurrentView("instrucciones");
-                                }
-                            }}
-                            className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
-                        >
-                            <ArrowLeft className="w-4 h-4" />
-                            {activeTab === "vista-previa" ? "Volver al Formulario" : "Volver a Instrucciones"}
-                        </button>
+                        <div className="flex items-center gap-2">
+                            {activeTab === "vista-previa" ? (
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setActiveTab("necesidades");
+                                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                                    >
+                                        <Edit2 className="w-4 h-4" />
+                                        Editar Formulario
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            if (window.confirm("¿Está seguro de descartar el formulario? Se perderán todos los datos ingresados.")) {
+                                                setFormData({
+                                                    fechaDiagnostico: new Date().toISOString().split("T")[0],
+                                                    responsableTecnico: { nombre: "", cargo: "", correo: "", telefono: "" },
+                                                    responsableAdministrativo: { nombre: "", cargo: "", correo: "", telefono: "" },
+                                                    profesionales: [],
+                                                    tecnicos: [],
+                                                    administrativos: [],
+                                                    teleoperadores: [],
+                                                    ambientes: { cantidad: "", espacioAdecuado: "", observaciones: "" },
+                                                    mobiliario: { escritorios: "", sillas: "", otroMobiliario: "", observaciones: "" },
+                                                    condiciones: { iluminacion: "", ventilacion: "", privacidad: "", accesibilidad: "", observaciones: "" },
+                                                    equipos: { computadoras: { cantidad: 0, estado: "-" }, laptops: { cantidad: 0, estado: "-" }, tablets: { cantidad: 0, estado: "-" }, impresoras: { cantidad: 0, estado: "-" }, scanners: { cantidad: 0, estado: "-" } },
+                                                    videoconferencia: { camarasWeb: { cantidad: 0, estado: "-" }, microfonos: { cantidad: 0, estado: "-" }, parlantes: { cantidad: 0, estado: "-" }, audifonos: { cantidad: 0, estado: "-" } },
+                                                    medico: { estetoscopioDigital: { cantidad: 0, estado: "-" }, dermatoscopio: { cantidad: 0, estado: "-" }, otoscopio: { cantidad: 0, estado: "-" }, tensiometroDigital: { cantidad: 0, estado: "-" }, pulsioximetro: { cantidad: 0, estado: "-" }, glucometro: { cantidad: 0, estado: "-" }, termometroDigital: { cantidad: 0, estado: "-" }, electrocardiografo: { cantidad: 0, estado: "-" } },
+                                                    conectividad: { tipoConexion: "", proveedor: "", velocidadContratada: "", velocidadReal: "", estabilidad: "", vpn: "" },
+                                                    serviciosTelesalud: { teleconsulta: false, teleorientacion: false, telemonitoreo: false, teleinterconsulta: false, telediagnostico: false, especialidades: "" },
+                                                    necesidades: {
+                                                        infraestructura: { espacioFisico: { cantidad: 0, prioridad: "-" }, escritorios: { cantidad: 0, prioridad: "-" }, sillas: { cantidad: 0, prioridad: "-" } },
+                                                        equipamiento: { computadoras: { cantidad: 0, prioridad: "-" }, laptops: { cantidad: 0, prioridad: "-" }, camaras: { cantidad: 0, prioridad: "-" } },
+                                                        conectividad: { mejoraAnchoBanda: false, instalacionVPN: false, otrasNecesidades: "" },
+                                                        capacitacion: { telesalud: false, equiposMedicos: false, plataformas: false, otrasCapacitaciones: "" },
+                                                        observacionesGenerales: ""
+                                                    }
+                                                });
+                                                setIdFormulario(null);
+                                                setEstadoFormulario("NUEVO");
+                                                setVistaPreviaHabilitada(false);
+                                                setActiveTab("datos-generales");
+                                                setCurrentView("instrucciones");
+                                                window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                toast.success("Formulario descartado correctamente");
+                                            }
+                                        }}
+                                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                                    >
+                                        <Trash2 className="w-4 h-4" />
+                                        Descartar Formulario
+                                    </button>
+                                </>
+                            ) : (
+                                <button
+                                    onClick={() => setCurrentView("instrucciones")}
+                                    className="flex items-center gap-2 px-4 py-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all"
+                                >
+                                    <ArrowLeft className="w-4 h-4" />
+                                    Volver a Instrucciones
+                                </button>
+                            )}
+                        </div>
 
                         <div className="flex items-center gap-3">
                             {activeTab !== "vista-previa" && (
@@ -2417,26 +3267,56 @@ export default function FormularioDiagnostico() {
                                         onClick={handleDescargarPDF}
                                         className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all shadow-lg"
                                     >
-                                        <Download className="w-4 h-4" />
-                                        Descargar PDF
+                                        <FileDown className="w-4 h-4" />
+                                        Generar PDF
                                     </button>
-                                    {estadoFormulario !== "ENVIADO" && (
-                                        <button
-                                            onClick={handleEnviarFormulario}
-                                            disabled={enviando}
-                                            className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-all shadow-lg ${
-                                                enviando
-                                                    ? "bg-blue-400 cursor-not-allowed"
-                                                    : "bg-[#0A5BA9] hover:bg-[#094580]"
-                                            } text-white`}
-                                        >
-                                            {enviando ? (
-                                                <Loader2 className="w-4 h-4 animate-spin" />
-                                            ) : (
-                                                <Send className="w-4 h-4" />
-                                            )}
-                                            {enviando ? "Enviando..." : "Enviar Formulario"}
-                                        </button>
+                                    {estadoFormulario !== "ENVIADO" && estadoFormulario !== "FIRMADO" && (
+                                        <>
+                                            <button
+                                                onClick={handleEnviarSinFirma}
+                                                disabled={enviando}
+                                                className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-all shadow-lg ${
+                                                    enviando
+                                                        ? "bg-blue-400 cursor-not-allowed"
+                                                        : "bg-blue-600 hover:bg-blue-700"
+                                                } text-white`}
+                                            >
+                                                {enviando ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Send className="w-4 h-4" />
+                                                )}
+                                                Enviar sin Firma
+                                            </button>
+                                            <button
+                                                onClick={handleAbrirModalFirma}
+                                                disabled={enviando}
+                                                className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-all shadow-lg ${
+                                                    enviando
+                                                        ? "bg-purple-400 cursor-not-allowed"
+                                                        : "bg-purple-600 hover:bg-purple-700"
+                                                } text-white`}
+                                            >
+                                                {enviando ? (
+                                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                                ) : (
+                                                    <Shield className="w-4 h-4" />
+                                                )}
+                                                Firmar y Enviar
+                                            </button>
+                                        </>
+                                    )}
+                                    {estadoFormulario === "FIRMADO" && (
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-purple-100 text-purple-700 rounded-lg">
+                                            <Shield className="w-4 h-4" />
+                                            <span className="font-medium">Formulario Firmado</span>
+                                        </div>
+                                    )}
+                                    {estadoFormulario === "ENVIADO" && (
+                                        <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg">
+                                            <CheckCircle2 className="w-4 h-4" />
+                                            <span className="font-medium">Formulario Enviado</span>
+                                        </div>
                                     )}
                                 </div>
                             ) : activeTab === "necesidades" ? (
@@ -2464,5 +3344,22 @@ export default function FormularioDiagnostico() {
     );
 
     // ========== RENDER PRINCIPAL ==========
-    return currentView === "instrucciones" ? renderInstrucciones() : renderFormulario();
+    return (
+        <>
+            {currentView === "instrucciones" ? renderInstrucciones() : renderFormulario()}
+
+            {/* Modal de Firma Digital */}
+            <FirmaDigitalModal
+                isOpen={mostrarModalFirma}
+                onClose={() => setMostrarModalFirma(false)}
+                onFirmaExitosa={handleFirmaExitosa}
+                idFormulario={idFormulario}
+                pdfBase64={pdfParaFirmar}
+                datosUsuario={{
+                    nombreCompleto: datosUsuario?.nombre_completo || user?.name || "Usuario",
+                    dni: datosUsuario?.dni || user?.dni || ""
+                }}
+            />
+        </>
+    );
 }

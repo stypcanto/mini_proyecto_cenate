@@ -48,6 +48,53 @@ public class FormDiagFormulario {
     @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
 
+    // ==================== CAMPOS DE FIRMA DIGITAL ====================
+
+    /** PDF firmado almacenado como BYTEA */
+    @Column(name = "pdf_firmado")
+    @org.hibernate.annotations.JdbcTypeCode(java.sql.Types.VARBINARY)
+    private byte[] pdfFirmado;
+
+    /** Firma digital en formato Base64 */
+    @Column(name = "firma_digital", columnDefinition = "TEXT")
+    private String firmaDigital;
+
+    /** Certificado X.509 del firmante en Base64 */
+    @Column(name = "certificado_firmante", columnDefinition = "TEXT")
+    private String certificadoFirmante;
+
+    /** Hash SHA-256 del documento firmado */
+    @Column(name = "hash_documento", length = 64)
+    private String hashDocumento;
+
+    /** Timestamp de la firma */
+    @Column(name = "fecha_firma")
+    private LocalDateTime fechaFirma;
+
+    /** DNI del firmante extraído del certificado */
+    @Column(name = "dni_firmante", length = 20)
+    private String dniFirmante;
+
+    /** Nombre del firmante extraído del certificado */
+    @Column(name = "nombre_firmante", length = 200)
+    private String nombreFirmante;
+
+    /** Entidad certificadora (RENIEC, etc.) */
+    @Column(name = "entidad_certificadora", length = 100)
+    private String entidadCertificadora;
+
+    /** Número de serie del certificado */
+    @Column(name = "numero_serie_certificado", length = 100)
+    private String numeroSerieCertificado;
+
+    /** Tamaño del PDF en bytes */
+    @Column(name = "pdf_tamanio")
+    private Long pdfTamanio;
+
+    /** Nombre original del archivo PDF */
+    @Column(name = "pdf_nombre", length = 255)
+    private String pdfNombre;
+
     @PrePersist
     protected void onCreate() {
         if (fechaCreacion == null) {

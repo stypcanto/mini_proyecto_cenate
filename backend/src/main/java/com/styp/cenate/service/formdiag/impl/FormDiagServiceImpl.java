@@ -65,6 +65,11 @@ public class FormDiagServiceImpl implements FormDiagService {
         // Guardar secciones
         guardarSecciones(idFormulario, request, formulario);
 
+        // Guardar PDF si se proporciona
+        if (request.getPdfBase64() != null && !request.getPdfBase64().isEmpty()) {
+            guardarPdfSinFirma(formulario, request.getPdfBase64());
+        }
+
         return obtenerPorId(idFormulario);
     }
 
@@ -84,6 +89,11 @@ public class FormDiagServiceImpl implements FormDiagService {
 
         // Actualizar secciones
         guardarSecciones(idFormulario, request, formulario);
+
+        // Guardar PDF si se proporciona
+        if (request.getPdfBase64() != null && !request.getPdfBase64().isEmpty()) {
+            guardarPdfSinFirma(formulario, request.getPdfBase64());
+        }
 
         return obtenerPorId(idFormulario);
     }
@@ -207,6 +217,44 @@ public class FormDiagServiceImpl implements FormDiagService {
 
     // ==================== MÉTODOS PRIVADOS ====================
 
+    /**
+     * Guarda el PDF sin firma digital
+     */
+    private void guardarPdfSinFirma(FormDiagFormulario formulario, String pdfBase64) {
+        try {
+            byte[] pdfBytes = java.util.Base64.getDecoder().decode(pdfBase64);
+            formulario.setPdfFirmado(pdfBytes);
+            formulario.setPdfTamanio((long) pdfBytes.length);
+            formulario.setPdfNombre(generarNombrePdf(formulario));
+
+            // Calcular hash del documento
+            java.security.MessageDigest digest = java.security.MessageDigest.getInstance("SHA-256");
+            byte[] hash = digest.digest(pdfBytes);
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            formulario.setHashDocumento(hexString.toString());
+
+            formularioRepo.save(formulario);
+            log.info("PDF guardado para formulario {}, tamaño: {} bytes", formulario.getIdFormulario(), pdfBytes.length);
+        } catch (Exception e) {
+            log.error("Error al guardar PDF sin firma: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Genera un nombre único para el PDF
+     */
+    private String generarNombrePdf(FormDiagFormulario formulario) {
+        String ipressCode = formulario.getIpress().getCodIpress();
+        String timestamp = java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss")
+                .format(LocalDateTime.now());
+        return String.format("DIAG_%s_%s.pdf", ipressCode, timestamp);
+    }
+
     private void guardarSecciones(Integer idFormulario, FormDiagRequest request, FormDiagFormulario formulario) {
         // Datos Generales
         if (request.getDatosGenerales() != null) {
@@ -248,7 +296,7 @@ public class FormDiagServiceImpl implements FormDiagService {
         FormDiagDatosGenerales entity = datosGeneralesRepo.findByIdFormulario(idFormulario)
                 .orElse(new FormDiagDatosGenerales());
 
-        entity.setIdFormulario(idFormulario);
+        // Solo setear formulario - @MapsId deriva el ID automáticamente
         entity.setFormulario(formulario);
         entity.setDirectorNombre(dto.getDirectorNombre());
         entity.setDirectorCorreo(dto.getDirectorCorreo());
@@ -266,7 +314,7 @@ public class FormDiagServiceImpl implements FormDiagService {
         FormDiagRecursosHumanos entity = recursosHumanosRepo.findByIdFormulario(idFormulario)
                 .orElse(new FormDiagRecursosHumanos());
 
-        entity.setIdFormulario(idFormulario);
+        // Solo setear formulario - @MapsId deriva el ID automáticamente
         entity.setFormulario(formulario);
         entity.setCoordDesignado(dto.getCoordTelesalud());
         entity.setCoordNombreCompleto(dto.getCoordNombreCompleto());
@@ -288,7 +336,7 @@ public class FormDiagServiceImpl implements FormDiagService {
         FormDiagInfraFis infraFis = infraFisRepo.findByIdFormulario(idFormulario)
                 .orElse(new FormDiagInfraFis());
 
-        infraFis.setIdFormulario(idFormulario);
+        // Solo setear formulario - @MapsId deriva el ID automáticamente
         infraFis.setFormulario(formulario);
         infraFis.setEspacioFisico(dto.getEspacioFisico());
         infraFis.setPrivacidad(dto.getPrivacidad());
@@ -307,7 +355,7 @@ public class FormDiagServiceImpl implements FormDiagService {
         FormDiagInfraTec infraTec = infraTecRepo.findByIdFormulario(idFormulario)
                 .orElse(new FormDiagInfraTec());
 
-        infraTec.setIdFormulario(idFormulario);
+        // Solo setear formulario - @MapsId deriva el ID automáticamente
         infraTec.setFormulario(formulario);
         infraTec.setHardware(dto.getHardware());
         infraTec.setSoftware(dto.getSoftware());
@@ -342,7 +390,7 @@ public class FormDiagServiceImpl implements FormDiagService {
         FormDiagConectividadSist entity = conectividadRepo.findByIdFormulario(idFormulario)
                 .orElse(new FormDiagConectividadSist());
 
-        entity.setIdFormulario(idFormulario);
+        // Solo setear formulario - @MapsId deriva el ID automáticamente
         entity.setFormulario(formulario);
         entity.setAccesoInternet(dto.getInternet());
         entity.setConexionEstable(dto.getEstable());
@@ -637,11 +685,21 @@ public class FormDiagServiceImpl implements FormDiagService {
     private FormDiagListResponse mapToListResponse(FormDiagFormulario formulario) {
         Ipress ipress = formulario.getIpress();
 
+        // Obtener datos generales si existen
+        FormDiagListResponse.DatosGeneralesResumen datosGeneralesResumen = null;
+        if (formulario.getDatosGenerales() != null) {
+            datosGeneralesResumen = FormDiagListResponse.DatosGeneralesResumen.builder()
+                    .directorNombre(formulario.getDatosGenerales().getDirectorNombre())
+                    .responsableNombre(formulario.getDatosGenerales().getRespTelesaludNombre())
+                    .build();
+        }
+
         return FormDiagListResponse.builder()
                 .idFormulario(formulario.getIdFormulario())
                 .idIpress(ipress.getIdIpress())
                 .nombreIpress(ipress.getDescIpress())
                 .codigoIpress(ipress.getCodIpress())
+                .idRed(ipress.getRed() != null ? ipress.getRed().getId() : null)
                 .nombreRed(ipress.getRed() != null ? ipress.getRed().getDescripcion() : null)
                 .nombreMacroregion(ipress.getRed() != null && ipress.getRed().getMacroregion() != null
                         ? ipress.getRed().getMacroregion().getDescMacro() : null)
@@ -650,6 +708,18 @@ public class FormDiagServiceImpl implements FormDiagService {
                 .usuarioRegistro(formulario.getUsuarioRegistro())
                 .fechaCreacion(formulario.getFechaCreacion())
                 .fechaEnvio(formulario.getFechaEnvio())
+                // Campos de firma
+                .tieneFirma(formulario.getFirmaDigital() != null || formulario.getFechaFirma() != null)
+                .firmaDigital(formulario.getFirmaDigital())
+                .dniFirmante(formulario.getDniFirmante())
+                .nombreFirmante(formulario.getNombreFirmante())
+                .fechaFirma(formulario.getFechaFirma())
+                .entidadCertificadora(formulario.getEntidadCertificadora())
+                .hashDocumento(formulario.getHashDocumento())
+                .pdfTamanio(formulario.getPdfTamanio())
+                .pdfNombre(formulario.getPdfNombre())
+                // Datos generales
+                .datosGenerales(datosGeneralesResumen)
                 .build();
     }
 }

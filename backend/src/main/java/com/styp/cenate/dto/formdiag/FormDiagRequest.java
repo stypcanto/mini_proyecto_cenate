@@ -21,6 +21,9 @@ public class FormDiagRequest {
     private Integer anio;
     private String observaciones;
 
+    /** PDF en formato Base64 (para guardar sin firma) */
+    private String pdfBase64;
+
     private DatosGeneralesDto datosGenerales;
     private RecursosHumanosDto recursosHumanos;
     private InfraestructuraDto infraestructura;

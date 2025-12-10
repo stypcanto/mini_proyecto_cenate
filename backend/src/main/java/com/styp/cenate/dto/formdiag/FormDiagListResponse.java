@@ -20,6 +20,7 @@ public class FormDiagListResponse {
     private Long idIpress;
     private String nombreIpress;
     private String codigoIpress;
+    private Long idRed;
     private String nombreRed;
     private String nombreMacroregion;
     private Integer anio;
@@ -27,4 +28,27 @@ public class FormDiagListResponse {
     private String usuarioRegistro;
     private LocalDateTime fechaCreacion;
     private LocalDateTime fechaEnvio;
+
+    // Campos de firma digital
+    private Boolean tieneFirma;
+    private String firmaDigital;
+    private String dniFirmante;
+    private String nombreFirmante;
+    private LocalDateTime fechaFirma;
+    private String entidadCertificadora;
+    private String hashDocumento;
+    private Long pdfTamanio;
+    private String pdfNombre;
+
+    // Datos generales resumidos
+    private DatosGeneralesResumen datosGenerales;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class DatosGeneralesResumen {
+        private String directorNombre;
+        private String responsableNombre;
+    }
 }

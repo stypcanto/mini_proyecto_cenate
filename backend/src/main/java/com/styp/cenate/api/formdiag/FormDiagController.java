@@ -1,12 +1,17 @@
 package com.styp.cenate.api.formdiag;
 
+import com.styp.cenate.dto.formdiag.FirmaDigitalRequest;
+import com.styp.cenate.dto.formdiag.FirmaDigitalResponse;
 import com.styp.cenate.dto.formdiag.FormDiagListResponse;
 import com.styp.cenate.dto.formdiag.FormDiagRequest;
 import com.styp.cenate.dto.formdiag.FormDiagResponse;
+import com.styp.cenate.service.formdiag.FirmaDigitalService;
 import com.styp.cenate.service.formdiag.FormDiagService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -24,6 +29,7 @@ import java.util.List;
 public class FormDiagController {
 
     private final FormDiagService formDiagService;
+    private final FirmaDigitalService firmaDigitalService;
 
     /**
      * Crear un nuevo formulario de diagnóstico
@@ -102,6 +108,19 @@ public class FormDiagController {
     }
 
     /**
+     * Obtener el último formulario por IPRESS (cualquier estado)
+     */
+    @GetMapping("/ultimo/ipress/{idIpress}")
+    public ResponseEntity<FormDiagResponse> obtenerUltimoPorIpress(@PathVariable("idIpress") Long idIpress) {
+        log.info("GET /api/formulario-diagnostico/ultimo/ipress/{} - Obteniendo último formulario", idIpress);
+        FormDiagResponse response = formDiagService.obtenerUltimoPorIpress(idIpress);
+        if (response == null) {
+            return ResponseEntity.noContent().build();
+        }
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * Listar todos los formularios
      */
     @GetMapping
@@ -169,5 +188,62 @@ public class FormDiagController {
         log.info("GET /api/formulario-diagnostico/existe-en-proceso/ipress/{} - Verificando", idIpress);
         boolean existe = formDiagService.existeEnProcesoActual(idIpress);
         return ResponseEntity.ok(existe);
+    }
+
+    // ==================== ENDPOINTS DE FIRMA DIGITAL ====================
+
+    /**
+     * Firmar un formulario de diagnóstico con certificado digital
+     */
+    @PostMapping("/{id}/firmar")
+    public ResponseEntity<FirmaDigitalResponse> firmarFormulario(
+            @PathVariable("id") Integer id,
+            @RequestBody FirmaDigitalRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+        log.info("POST /api/formulario-diagnostico/{}/firmar - Firmando formulario", id);
+        request.setIdFormulario(id);
+        String username = userDetails != null ? userDetails.getUsername() : "anonymous";
+        FirmaDigitalResponse response = firmaDigitalService.firmarFormulario(request, username);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Verificar la firma digital de un formulario
+     */
+    @GetMapping("/{id}/verificar-firma")
+    public ResponseEntity<FirmaDigitalResponse> verificarFirma(@PathVariable("id") Integer id) {
+        log.info("GET /api/formulario-diagnostico/{}/verificar-firma - Verificando firma", id);
+        FirmaDigitalResponse response = firmaDigitalService.verificarFirma(id);
+        return ResponseEntity.ok(response);
+    }
+
+    /**
+     * Descargar el PDF firmado de un formulario
+     */
+    @GetMapping("/{id}/pdf")
+    public ResponseEntity<byte[]> descargarPdfFirmado(@PathVariable("id") Integer id) {
+        log.info("GET /api/formulario-diagnostico/{}/pdf - Descargando PDF firmado", id);
+        byte[] pdf = firmaDigitalService.obtenerPdfFirmado(id);
+
+        if (pdf == null || pdf.length == 0) {
+            return ResponseEntity.notFound().build();
+        }
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_PDF);
+        headers.setContentDispositionFormData("attachment", "formulario_" + id + "_firmado.pdf");
+        headers.setContentLength(pdf.length);
+
+        return new ResponseEntity<>(pdf, headers, HttpStatus.OK);
+    }
+
+    /**
+     * Verificar si un formulario está firmado
+     */
+    @GetMapping("/{id}/esta-firmado")
+    public ResponseEntity<Boolean> estaFirmado(@PathVariable("id") Integer id) {
+        log.info("GET /api/formulario-diagnostico/{}/esta-firmado - Verificando", id);
+        boolean firmado = firmaDigitalService.estaFirmado(id);
+        return ResponseEntity.ok(firmado);
     }
 }
