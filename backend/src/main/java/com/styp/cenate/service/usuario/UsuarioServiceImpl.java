@@ -613,12 +613,16 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Override
 	@Transactional(readOnly = true)
 	public UsuarioResponse obtenerDetalleUsuarioExtendido(String username) {
-		Usuario usuario = usuarioRepository.findByNameUserWithRoles(username)
+		// Usar el nuevo método que carga todos los datos incluyendo PersonalExterno e IPRESS
+		Usuario usuario = usuarioRepository.findByNameUserWithFullDetails(username)
 				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado: " + username));
 
 		UsuarioResponse base = convertToResponse(usuario);
 		PersonalCnt p = usuario.getPersonalCnt();
+		com.styp.cenate.model.PersonalExterno pe = usuario.getPersonalExterno();
+
 		if (p != null) {
+			// Personal interno (CENATE)
 			base.setNombreCompleto(p.getNombreCompleto());
 			base.setCorreoPersonal(p.getEmailPers());
 			base.setCorreoCorporativo(p.getEmailCorpPers());
@@ -627,6 +631,25 @@ public class UsuarioServiceImpl implements UsuarioService {
 			base.setRegimenLaboral(p.getRegimenLaboral() != null ? p.getRegimenLaboral().getDescRegLab() : null);
 			base.setAreaTrabajo(p.getArea() != null ? p.getArea().getDescArea() : null);
 			base.setFotoUrl(p.getFotoPers());
+			if (p.getIpress() != null) {
+				base.setIdIpress(p.getIpress().getIdIpress());
+				base.setNombreIpress(p.getIpress().getDescIpress());
+				base.setCodigoIpress(p.getIpress().getCodIpress());
+			}
+		} else if (pe != null) {
+			// Personal externo (IPRESS)
+			base.setNombreCompleto(pe.getNombreCompleto());
+			base.setCorreoPersonal(pe.getEmailExt());
+			base.setCorreoCorporativo(pe.getEmailCorpExt());
+			base.setNumeroDocumento(pe.getNumDocExt());
+			base.setTipoDocumento(pe.getTipoDocumento() != null ? pe.getTipoDocumento().getDescTipDoc() : null);
+			base.setTelefono(pe.getMovilExt());
+			base.setTipoPersonal("EXTERNO");
+			if (pe.getIpress() != null) {
+				base.setIdIpress(pe.getIpress().getIdIpress());
+				base.setNombreIpress(pe.getIpress().getDescIpress());
+				base.setCodigoIpress(pe.getIpress().getCodIpress());
+			}
 		}
 		return base;
 	}

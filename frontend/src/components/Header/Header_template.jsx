@@ -21,47 +21,72 @@ export default function HeaderTemplate({ title = "CENATE" }) {
   const [showUserMenu, setShowUserMenu] = React.useState(false);
   const [fotoUrl, setFotoUrl] = useState(null);
   const [fotoError, setFotoError] = useState(false);
+  const [nombreIpress, setNombreIpress] = useState(null);
 
-  // Obtener foto del usuario
+  // Obtener foto y datos del usuario
   useEffect(() => {
-    const cargarFotoUsuario = async () => {
-      if (!user?.id) return;
-      
+    const cargarDatosUsuario = async () => {
+      if (!user?.id && !user?.username) return;
+
       try {
-        // Intentar obtener los datos completos del usuario desde all-personal
+        // Primero intentar obtener datos completos desde el endpoint de detalle
+        if (user?.username) {
+          const detalleResponse = await api.get(`/usuarios/detalle/${user.username}`);
+          if (detalleResponse) {
+            // Obtener foto
+            if (detalleResponse.foto_url) {
+              const fotoUrlFinal = getFotoUrl(detalleResponse.foto_url);
+              if (fotoUrlFinal) {
+                setFotoUrl(fotoUrlFinal);
+              }
+            }
+            // Obtener nombre de la IPRESS
+            if (detalleResponse.nombre_ipress) {
+              setNombreIpress(detalleResponse.nombre_ipress);
+            }
+            return; // Si encontramos datos, no seguir buscando
+          }
+        }
+
+        // Fallback: buscar en all-personal
         const response = await api.get(`/usuarios/all-personal`);
         const usuarios = Array.isArray(response) ? response : (response?.content || []);
         const usuarioCompleto = usuarios.find(u => {
           const idUsuario = u.id_user || u.idUsuario || u.id;
           return idUsuario === user.id;
         });
-        
+
         if (usuarioCompleto?.foto_url || usuarioCompleto?.foto_pers) {
           const fotoUrlValue = usuarioCompleto.foto_url || usuarioCompleto.foto_pers;
-          
+
           // Usar helper centralizado para construir URL
           const fotoUrlFinal = getFotoUrl(fotoUrlValue);
           if (fotoUrlFinal) {
             setFotoUrl(fotoUrlFinal);
           }
         }
+
+        // Obtener nombre de la IPRESS si existe
+        if (usuarioCompleto?.nombre_ipress) {
+          setNombreIpress(usuarioCompleto.nombre_ipress);
+        }
       } catch (error) {
-        console.error('⚠️ Error al cargar foto del usuario:', error);
+        console.error('⚠️ Error al cargar datos del usuario:', error);
         setFotoError(true);
       }
     };
 
-    cargarFotoUsuario();
-    
-    // Recargar foto cuando el usuario cambia o cada 30 segundos (para actualizar después de subir foto)
+    cargarDatosUsuario();
+
+    // Recargar datos cuando el usuario cambia o cada 30 segundos (para actualizar después de subir foto)
     const interval = setInterval(() => {
-      if (user?.id) {
-        cargarFotoUsuario();
+      if (user?.id || user?.username) {
+        cargarDatosUsuario();
       }
     }, 30000); // 30 segundos
 
     return () => clearInterval(interval);
-  }, [user?.id]);
+  }, [user?.id, user?.username]);
 
   // Función para obtener iniciales
   const getInitials = (nombre) => {
@@ -191,9 +216,23 @@ export default function HeaderTemplate({ title = "CENATE" }) {
                 <span className="text-sm font-semibold text-white truncate max-w-[140px]" title={nombreMostrar}>
                   {nombreMostrar}
                 </span>
-                <span className="text-xs text-white/75 truncate max-w-[140px] font-medium" title={rolMostrar}>
-                  {rolMostrar}
-                </span>
+                {/* Si es INSTITUCION_EX y tiene IPRESS, solo mostrar IPRESS. Sino, mostrar rol */}
+                {roles.includes("INSTITUCION_EX") && nombreIpress ? (
+                  <span className="text-xs text-white/90 font-semibold truncate max-w-[140px]" title={nombreIpress}>
+                    {nombreIpress}
+                  </span>
+                ) : (
+                  <>
+                    <span className="text-xs text-white/75 truncate max-w-[140px] font-medium" title={rolMostrar}>
+                      {rolMostrar}
+                    </span>
+                    {nombreIpress && (
+                      <span className="text-xs text-white/90 font-semibold truncate max-w-[140px]" title={nombreIpress}>
+                        {nombreIpress}
+                      </span>
+                    )}
+                  </>
+                )}
               </div>
 
               {/* Indicador de estado (para usuarios privilegiados) */}
@@ -234,7 +273,17 @@ export default function HeaderTemplate({ title = "CENATE" }) {
                       </div>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-semibold text-slate-900 truncate">{nombreMostrar}</p>
-                        <p className="text-xs text-slate-500 truncate">{rolMostrar}</p>
+                        {/* Si es INSTITUCION_EX y tiene IPRESS, solo mostrar IPRESS. Sino, mostrar rol */}
+                        {roles.includes("INSTITUCION_EX") && nombreIpress ? (
+                          <p className="text-xs text-slate-600 font-semibold truncate">{nombreIpress}</p>
+                        ) : (
+                          <>
+                            <p className="text-xs text-slate-500 truncate">{rolMostrar}</p>
+                            {nombreIpress && (
+                              <p className="text-xs text-slate-600 font-semibold truncate">{nombreIpress}</p>
+                            )}
+                          </>
+                        )}
                       </div>
                     </div>
 

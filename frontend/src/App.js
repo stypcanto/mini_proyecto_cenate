@@ -65,6 +65,10 @@ import SistemaCoordinacionMedica from "./pages/roles/coordinador/SistemaCoordina
 // 🧩 Módulos por Rol - Externo
 import DashboardExterno from "./pages/roles/externo/DashboardExterno";
 import ModuloReportes from "./pages/roles/externo/ModuloReportes";
+import FormularioDiagnostico from "./pages/roles/externo/FormularioDiagnostico";
+
+// 🗺️ Módulos - Gestión Territorial
+import DiagnosticoIpress from "./pages/roles/gestionterritorial/DiagnosticoIpress";
 
 // 🧩 Módulos - Citas
 import DashboardCitas from "./pages/roles/citas/DashboardCitas";
@@ -366,6 +370,14 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/roles/externo/formulario-diagnostico"
+          element={
+            <ProtectedRoute requiredPath="/roles/externo/formulario-diagnostico" requiredAction="ver">
+              <FormularioDiagnostico />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 📅 Módulo Citas */}
         <Route
@@ -420,6 +432,16 @@ function AppRoutes() {
         {/* 👥 Módulo de Asegurados */}
         <Route path="/asegurados/buscar" element={<BuscarAsegurado />} />
         <Route path="/asegurados/dashboard" element={<DashboardAsegurados />} />
+
+        {/* 🗺️ Gestión Territorial */}
+        <Route
+          path="/roles/gestionterritorial/diagnosticoipress"
+          element={
+            <ProtectedRoute requiredPath="/roles/gestionterritorial/diagnosticoipress" requiredAction="ver">
+              <DiagnosticoIpress />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
 
