@@ -558,10 +558,32 @@ public class UsuarioServiceImpl implements UsuarioService {
 		String ipressNombre = null;
 		String ipressCodigo = null;
 		Long idIpress = null;
+		// Red y Macroregión
+		Long idRed = null;
+		String nombreRed = null;
+		String codigoRed = null;
+		Long idMacroregion = null;
+		String nombreMacroregion = null;
+
 		if (personalCnt.getIpress() != null) {
 			idIpress = personalCnt.getIpress().getIdIpress();
 			ipressNombre = personalCnt.getIpress().getDescIpress();
 			ipressCodigo = personalCnt.getIpress().getCodIpress();
+
+			// Extraer Red de la IPRESS
+			if (personalCnt.getIpress().getRed() != null) {
+				var red = personalCnt.getIpress().getRed();
+				idRed = red.getId();
+				nombreRed = red.getDescripcion();
+				codigoRed = red.getCodigo();
+
+				// Extraer Macroregión de la Red
+				if (red.getMacroregion() != null) {
+					var macro = red.getMacroregion();
+					idMacroregion = macro.getIdMacro();
+					nombreMacroregion = macro.getDescMacro();
+				}
+			}
 		}
 
 		// Determinar si está activo basado en el estado de personal
@@ -571,13 +593,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 				// 🔴 NO hay datos de usuario
 				.idUser(null).username(personalCnt.getNumDocPers()) // Usar el DNI como username temporal
 				.estado(personalCnt.getStatPers()).activo(esActivo).estadoUsuario(esActivo ? "ACTIVO" : "INACTIVO")
-				.locked(false).requiereCambioPassword(false).failedAttempts(0).roles(Collections.emptySet()) // Sin
-																												// roles
-																												// porque
-																												// no
-																												// tiene
-																												// usuario
-				.permisos(Collections.emptySet()) // Sin permisos
+				.locked(false).requiereCambioPassword(false).failedAttempts(0).roles(Collections.emptySet())
+				.permisos(Collections.emptySet())
 				// Datos personales
 				.nombreCompleto(nombreCompleto).nombres(personalCnt.getNomPers())
 				.apellidoPaterno(personalCnt.getApePaterPers()).apellidoMaterno(personalCnt.getApeMaterPers())
@@ -590,6 +607,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 				.regimenLaboral(regimenLaboral).areaTrabajo(areaTrabajo)
 				// IPRESS
 				.idIpress(idIpress).nombreIpress(ipressNombre).codigoIpress(ipressCodigo)
+				// Red y Macroregión
+				.idRed(idRed).nombreRed(nombreRed).codigoRed(codigoRed)
+				.idMacroregion(idMacroregion).nombreMacroregion(nombreMacroregion)
 				// Tipo de personal
 				.tipoPersonal("INTERNO").message("⚠️ Sin cuenta de usuario").build();
 	}
@@ -1362,6 +1382,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 		String ipressNombre = null;
 		String ipressCodigo = null;
 		Long idIpress = null;
+		// Red y Macroregión
+		Long idRed = null;
+		String nombreRed = null;
+		String codigoRed = null;
+		Long idMacroregion = null;
+		String nombreMacroregion = null;
 		String genero = null;
 		LocalDate fechaNacimiento = null;
 		String nombres = null;
@@ -1409,6 +1435,21 @@ public class UsuarioServiceImpl implements UsuarioService {
 				idIpress = personalCnt.getIpress().getIdIpress();
 				ipressNombre = personalCnt.getIpress().getDescIpress();
 				ipressCodigo = personalCnt.getIpress().getCodIpress();
+
+				// 🌐 Extraer Red de la IPRESS
+				if (personalCnt.getIpress().getRed() != null) {
+					var red = personalCnt.getIpress().getRed();
+					idRed = red.getId();
+					nombreRed = red.getDescripcion();
+					codigoRed = red.getCodigo();
+
+					// 🗺️ Extraer Macroregión de la Red
+					if (red.getMacroregion() != null) {
+						var macro = red.getMacroregion();
+						idMacroregion = macro.getIdMacro();
+						nombreMacroregion = macro.getDescMacro();
+					}
+				}
 			}
 		}
 
@@ -1436,6 +1477,21 @@ public class UsuarioServiceImpl implements UsuarioService {
 				idIpress = personalExterno.getIpress().getIdIpress();
 				ipressNombre = personalExterno.getIpress().getDescIpress();
 				ipressCodigo = personalExterno.getIpress().getCodIpress();
+
+				// 🌐 Extraer Red de la IPRESS
+				if (personalExterno.getIpress().getRed() != null) {
+					var red = personalExterno.getIpress().getRed();
+					idRed = red.getId();
+					nombreRed = red.getDescripcion();
+					codigoRed = red.getCodigo();
+
+					// 🗺️ Extraer Macroregión de la Red
+					if (red.getMacroregion() != null) {
+						var macro = red.getMacroregion();
+						idMacroregion = macro.getIdMacro();
+						nombreMacroregion = macro.getDescMacro();
+					}
+				}
 			}
 		}
 
@@ -1569,6 +1625,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 				.id_tip_pers(idTipoProfesional) // 🔥 Campo adicional para compatibilidad con frontend
 				// IPRESS
 				.idIpress(idIpress).nombreIpress(ipressNombre).codigoIpress(ipressCodigo)
+				// 🌐 Red y Macroregión
+				.idRed(idRed).nombreRed(nombreRed).codigoRed(codigoRed)
+				.idMacroregion(idMacroregion).nombreMacroregion(nombreMacroregion)
 				// 🎯 TIPO DE PERSONAL
 				.tipoPersonal(tipoPersonal).tipoPersonalDetalle(tipoPersonal)
 				.message("Usuario " + (esActivo ? "activo" : "inactivo")).build();

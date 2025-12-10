@@ -210,8 +210,9 @@ export default function FormularioDiagnostico() {
         const margin = 15;
         let currentY = margin;
 
-        const nombreIpress = datosUsuario?.personalExterno?.ipress?.nombre || datosUsuario?.personalCnt?.ipress?.nombre || "IPRESS";
-        const redAsistencial = datosUsuario?.personalExterno?.ipress?.redAsistencial?.nombre || datosUsuario?.personalCnt?.ipress?.redAsistencial?.nombre || "";
+        const nombreIpress = datosUsuario?.nombre_ipress || datosUsuario?.personalExterno?.ipress?.nombre || datosUsuario?.personalCnt?.ipress?.nombre || "IPRESS";
+        const redAsistencial = datosUsuario?.nombre_red || datosUsuario?.personalExterno?.ipress?.redAsistencial?.nombre || datosUsuario?.personalCnt?.ipress?.redAsistencial?.nombre || "";
+        const macroregion = datosUsuario?.nombre_macroregion || "";
         const fechaActual = new Date().toLocaleDateString('es-PE', { year: 'numeric', month: 'long', day: 'numeric' });
 
         // Función para agregar encabezado en cada página
@@ -277,6 +278,7 @@ export default function FormularioDiagnostico() {
 
         currentY = addDataRow("Nombre IPRESS", nombreIpress, currentY);
         currentY = addDataRow("Red Asistencial", redAsistencial, currentY);
+        currentY = addDataRow("Macroregión", macroregion, currentY);
         currentY = addDataRow("Categoría", formData.datosGenerales.categoria, currentY);
         currentY = addDataRow("Tipo de Establecimiento", formData.datosGenerales.tipoEstablecimiento, currentY);
         currentY = addDataRow("Ubicación", formData.datosGenerales.ubicacion, currentY);
@@ -746,7 +748,20 @@ export default function FormularioDiagnostico() {
                                         </label>
                                         <input
                                             type="text"
-                                            value={datosUsuario?.red_asistencial || "Red Asistencial"}
+                                            value={datosUsuario?.nombre_red || ""}
+                                            readOnly
+                                            className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-600 cursor-not-allowed"
+                                        />
+                                    </div>
+                                    {/* Campo 1.2b - Macroregión */}
+                                    <div>
+                                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                                            <span className="text-[#0A5BA9] font-bold mr-2">1.2b</span>
+                                            Macroregión:
+                                        </label>
+                                        <input
+                                            type="text"
+                                            value={datosUsuario?.nombre_macroregion || ""}
                                             readOnly
                                             className="w-full px-4 py-3 bg-gray-100 border border-gray-200 rounded-lg text-gray-600 cursor-not-allowed"
                                         />
@@ -2078,10 +2093,13 @@ export default function FormularioDiagnostico() {
                                 <div className="text-center mb-6 pb-4 border-b-2 border-[#0A5BA9]">
                                     <h2 className="text-xl font-bold text-[#0A5BA9]">DIAGNÓSTICO SITUACIONAL DE TELESALUD</h2>
                                     <p className="text-gray-600 mt-2">
-                                        <strong>IPRESS:</strong> {datosUsuario?.personalExterno?.ipress?.nombre || datosUsuario?.personalCnt?.ipress?.nombre || "No especificado"}
+                                        <strong>IPRESS:</strong> {datosUsuario?.nombre_ipress || "No especificado"}
                                     </p>
                                     <p className="text-gray-600">
-                                        <strong>Red Asistencial:</strong> {datosUsuario?.personalExterno?.ipress?.redAsistencial?.nombre || datosUsuario?.personalCnt?.ipress?.redAsistencial?.nombre || "No especificado"}
+                                        <strong>Red Asistencial:</strong> {datosUsuario?.nombre_red || "No especificado"}
+                                    </p>
+                                    <p className="text-gray-600">
+                                        <strong>Macroregión:</strong> {datosUsuario?.nombre_macroregion || "No especificado"}
                                     </p>
                                 </div>
                                 <h3 className="text-lg font-bold text-[#0A5BA9] mb-4 bg-blue-50 px-4 py-2 rounded">I. DATOS GENERALES DEL ESTABLECIMIENTO</h3>

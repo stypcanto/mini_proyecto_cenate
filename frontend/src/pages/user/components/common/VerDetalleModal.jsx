@@ -674,22 +674,32 @@ const VerDetalleModal = ({ user, onClose, token }) => {
                   </h3>
                 </div>
                 
-                {/* Siempre mostrar IPRESS y Tipo de Personal (datos básicos) */}
+                {/* Siempre mostrar Red, IPRESS, Macroregión y Tipo de Personal (datos básicos) */}
                 <div className="mb-6">
                   <h4 className="text-sm font-semibold text-slate-700 mb-4 uppercase tracking-wide flex items-center gap-2">
                     <Building2 className="w-4 h-4 text-[#0A5BA9]" />
                     Información Básica Laboral
                   </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                    <InfoField 
+                    <InfoField
                       icon={Building2}
-                      label="IPRESS" 
-                      value={user.nombre_ipress} 
+                      label="Red Asistencial"
+                      value={user.nombre_red || user.desc_red || user.descRed}
                     />
-                    <InfoField 
+                    <InfoField
+                      icon={Building2}
+                      label="IPRESS"
+                      value={user.nombre_ipress || user.desc_ipress || user.descIpress}
+                    />
+                    <InfoField
+                      icon={MapPin}
+                      label="Macroregión"
+                      value={user.nombre_macroregion || user.desc_macro || user.descMacro}
+                    />
+                    <InfoField
                       icon={UserCog}
-                      label="Tipo de Personal" 
-                      value={user.tipo_personal || user.tipo_personal_detalle || (user.id_ipress === 2 ? 'INTERNO' : 'EXTERNO')} 
+                      label="Tipo de Personal"
+                      value={user.tipo_personal || user.tipo_personal_detalle || (user.id_ipress === 2 ? 'INTERNO' : 'EXTERNO')}
                     />
                   </div>
                 </div>

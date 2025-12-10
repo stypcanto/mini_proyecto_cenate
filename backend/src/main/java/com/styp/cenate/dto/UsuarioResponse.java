@@ -170,6 +170,24 @@ public class UsuarioResponse {
     private String codigoIpress;
 
     // ============================================================
+    // 🌐 DATOS DE RED Y MACROREGIÓN ✨
+    // ============================================================
+    @JsonProperty("id_red")
+    private Long idRed;
+
+    @JsonProperty("nombre_red")
+    private String nombreRed;
+
+    @JsonProperty("codigo_red")
+    private String codigoRed;
+
+    @JsonProperty("id_macroregion")
+    private Long idMacroregion;
+
+    @JsonProperty("nombre_macroregion")
+    private String nombreMacroregion;
+
+    // ============================================================
     // 📋 TIPO DE PERSONAL (NUEVO) ✨
     // ============================================================
     /**

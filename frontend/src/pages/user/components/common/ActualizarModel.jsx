@@ -15,8 +15,15 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
   const [selectedTab, setSelectedTab] = useState('personal');
   const [loading, setLoading] = useState(false);
   const [ipress, setIpress] = useState([]);
+  const [ipressAll, setIpressAll] = useState([]); // Todas las IPRESS sin filtrar
   const [loadingIpress, setLoadingIpress] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+
+  // Estados para Red y Macroregión (externos)
+  const [redes, setRedes] = useState([]);
+  const [loadingRedes, setLoadingRedes] = useState(false);
+  const [redSeleccionada, setRedSeleccionada] = useState(null);
+  const [macroregionInfo, setMacroregionInfo] = useState(null);
 
   // Estado para foto
   const [fotoSeleccionada, setFotoSeleccionada] = useState(null);
@@ -106,6 +113,7 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
     correo_personal: user.correo_personal || '',
     telefono: user.telefono || '',
     tipo_personal: user.tipo_personal || 'Interno',
+    id_red: user.id_red || null, // Red seleccionada (para externos)
     id_ipress: user.idIpress || user.id_ipress || '',
     direccion: user.direccion || '',
 
@@ -169,7 +177,144 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
         setFotoActual(fotoUrlFinal);
       }
     }
+
+    // Si el usuario es EXTERNO, cargar Redes y todas las IPRESS
+    const esExterno = !ipress.find(ip => ip.idIpress === (user?.idIpress || user?.id_ipress))?.descIpress?.toUpperCase().includes('CENATE') &&
+                     (user?.idIpress || user?.id_ipress) !== 2;
+    if (esExterno) {
+      cargarRedes();
+      cargarTodasIpress();
+    }
   }, [user]);
+
+  // Cargar Redes y IPRESS cuando el tipo de personal cambie a EXTERNO (desde UI)
+  useEffect(() => {
+    // Detectar si es externo basándose en la IPRESS actual
+    const ipressActual = ipress.find(ip => ip.idIpress === parseInt(formData.id_ipress));
+    const esCenate = ipressActual?.descIpress?.toUpperCase().includes('CENATE') ||
+                     ipressActual?.codIpress === '739' ||
+                     parseInt(formData.id_ipress) === 2;
+
+    if (!esCenate && formData.id_ipress && ipress.length > 0 && redes.length === 0) {
+      cargarRedes();
+      cargarTodasIpress();
+    }
+  }, [formData.id_ipress, ipress]);
+
+  // Inicializar id_red basándose en la IPRESS del usuario al cargar
+  useEffect(() => {
+    if (ipressAll.length > 0 && formData.id_ipress && !formData.id_red) {
+      const ipressUsuario = ipressAll.find(ip => ip.idIpress === parseInt(formData.id_ipress));
+      if (ipressUsuario) {
+        const redId = ipressUsuario.idRed || ipressUsuario.red?.idRed || ipressUsuario.red?.id;
+        if (redId) {
+          console.log('🔵 Inicializando id_red desde IPRESS del usuario:', redId);
+          setFormData(prev => ({ ...prev, id_red: redId }));
+        }
+      }
+    }
+  }, [ipressAll, formData.id_ipress]);
+
+  // Filtrar IPRESS cuando cambia la Red seleccionada
+  useEffect(() => {
+    if (formData.id_red && ipressAll.length > 0) {
+      const redId = parseInt(formData.id_red);
+      // Buscar por id_red O por idRed (compatibilidad con diferentes formatos)
+      const ipressFiltradas = ipressAll.filter(ip => {
+        const ipressRedId = ip.idRed || ip.red?.idRed || ip.red?.id;
+        return ipressRedId === redId;
+      });
+      console.log('🔍 IPRESS filtradas por Red', redId, ':', ipressFiltradas.length);
+
+      // Si no hay IPRESS para esta Red, buscar una IPRESS con el MISMO nombre que la Red
+      if (ipressFiltradas.length === 0) {
+        const redSelec = redes.find(r => (r.id || r.idRed) === redId);
+        if (redSelec) {
+          const nombreRedOriginal = (redSelec.descripcion || redSelec.descRed || '').toUpperCase().trim();
+
+          // Normalizar nombre (expandir abreviaturas comunes)
+          const normalizarNombre = (nombre) => {
+            return nombre
+              .replace(/INSTIT\./g, 'INSTITUTO')
+              .replace(/INST\./g, 'INSTITUTO')
+              .replace(/HOSP\./g, 'HOSPITAL')
+              .replace(/NAC\./g, 'NACIONAL')
+              .replace(/CLIN\./g, 'CLINICA')
+              .replace(/CTR\./g, 'CENTRO')
+              .trim();
+          };
+
+          const nombreRed = normalizarNombre(nombreRedOriginal);
+          console.log('🔍 Red sin IPRESS asociadas. Red:', nombreRed);
+
+          // Extraer palabras clave significativas
+          const palabrasIgnorar = ['DE', 'LA', 'EL', 'LOS', 'LAS', 'DEL', 'Y', 'EN'];
+          const getPalabrasClave = (texto) => {
+            return normalizarNombre(texto).split(' ').filter(p => p.length > 2 && !palabrasIgnorar.includes(p));
+          };
+
+          const palabrasClaveRed = getPalabrasClave(nombreRed);
+
+          // Buscar IPRESS con coincidencia
+          const ipressSimilar = ipressAll.find(ip => {
+            const nombreIpressOriginal = (ip.descIpress || '').toUpperCase().trim();
+            const nombreIpress = normalizarNombre(nombreIpressOriginal);
+
+            // 1. Coincidencia exacta (normalizada)
+            if (nombreIpress === nombreRed) return true;
+
+            // 2. Uno contiene al otro
+            if (nombreIpress.includes(nombreRed) || nombreRed.includes(nombreIpress)) return true;
+
+            // 3. Coincidencia por palabras clave (al menos 3 palabras deben coincidir)
+            const palabrasClaveIpress = getPalabrasClave(nombreIpress);
+            const coincidencias = palabrasClaveRed.filter(p => palabrasClaveIpress.includes(p));
+            if (coincidencias.length >= 3 || (coincidencias.length >= 2 && palabrasClaveRed.length <= 3)) {
+              return true;
+            }
+
+            return false;
+          });
+
+          if (ipressSimilar) {
+            console.log('✅ IPRESS encontrada:', ipressSimilar.descIpress);
+            setIpress([ipressSimilar]);
+            // Auto-seleccionar esta IPRESS
+            setFormData(prev => ({ ...prev, id_ipress: ipressSimilar.idIpress }));
+          } else {
+            console.log('⚠️ No existe IPRESS con nombre similar a:', nombreRed);
+            setIpress([]);
+          }
+        }
+      } else {
+        setIpress(ipressFiltradas);
+        // Verificar si la IPRESS actual sigue en la lista filtrada
+        if (formData.id_ipress) {
+          const existeEnFiltro = ipressFiltradas.some(ip => ip.idIpress === parseInt(formData.id_ipress));
+          if (!existeEnFiltro) {
+            // La IPRESS actual no pertenece a esta Red, limpiar
+            setFormData(prev => ({ ...prev, id_ipress: null }));
+            setMacroregionInfo(null);
+          }
+        }
+      }
+    }
+  }, [formData.id_red, ipressAll, redes]);
+
+  // Actualizar Macroregión cuando cambia la IPRESS seleccionada
+  useEffect(() => {
+    if (formData.id_ipress && ipressAll.length > 0) {
+      const ipressSeleccionada = ipressAll.find(ip => ip.idIpress === parseInt(formData.id_ipress));
+      if (ipressSeleccionada?.red?.macroregion) {
+        setMacroregionInfo(ipressSeleccionada.red.macroregion);
+        console.log('🗺️ Macroregión encontrada:', ipressSeleccionada.red.macroregion);
+      } else {
+        setMacroregionInfo(null);
+      }
+    } else {
+      setMacroregionInfo(null);
+    }
+  }, [formData.id_ipress, ipressAll]);
 
   const cargarIpress = async () => {
     try {
@@ -180,6 +325,56 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
       console.error('Error al cargar IPRESS:', error);
     } finally {
       setLoadingIpress(false);
+    }
+  };
+
+  // Cargar todas las IPRESS (para filtrar por Red)
+  const cargarTodasIpress = async () => {
+    try {
+      setLoadingIpress(true);
+      console.log('🔍 Cargando todas las IPRESS desde /ipress...');
+      const ipressResponse = await api.get('/ipress');
+      console.log('✅ IPRESS cargadas:', ipressResponse);
+
+      const ipressData = Array.isArray(ipressResponse) ? ipressResponse : [];
+      const ipressFiltered = ipressData.filter(ip =>
+        ip.codIpress !== '739' &&
+        !ip.descIpress?.toUpperCase().includes('CENTRO NACIONAL DE TELEMEDICINA')
+      );
+
+      console.log('🏥 Total IPRESS (sin CENATE):', ipressFiltered.length);
+      setIpressAll(ipressFiltered);
+      setIpress([]); // Se llenará cuando se seleccione una Red
+      setLoadingIpress(false);
+    } catch (error) {
+      console.error('❌ Error al cargar IPRESS:', error);
+      setLoadingIpress(false);
+    }
+  };
+
+  // Cargar Redes desde el backend
+  const cargarRedes = async () => {
+    try {
+      setLoadingRedes(true);
+      console.log('🔍 Cargando Redes desde /redes...');
+      const redesResponse = await api.get('/redes');
+      console.log('✅ Redes cargadas:', redesResponse);
+
+      const redesData = Array.isArray(redesResponse) ? redesResponse : [];
+      // Ordenar alfabéticamente por descripción
+      const redesOrdenadas = redesData.sort((a, b) => {
+        const descA = (a.descripcion || a.descRed || '').toLowerCase();
+        const descB = (b.descripcion || b.descRed || '').toLowerCase();
+        return descA.localeCompare(descB);
+      });
+
+      console.log('🏥 Total Redes:', redesOrdenadas.length);
+      setRedes(redesOrdenadas);
+      setLoadingRedes(false);
+    } catch (error) {
+      console.error('❌ Error al cargar Redes:', error);
+      setRedes([]);
+      setLoadingRedes(false);
     }
   };
 
@@ -1273,13 +1468,13 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                   </div>
                 ) : (
                   <>
-                    {/* 🆕 NUEVO: Selector de Tipo de Personal e IPRESS */}
+                    {/* Selector de Tipo de Personal e IPRESS */}
                     <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl mb-4">
                       <h4 className="text-sm font-semibold text-blue-900 mb-3 uppercase tracking-wide flex items-center gap-2">
                         <Building2 className="w-4 h-4" />
-                        🏢 Asignación de IPRESS
+                        Asignación de IPRESS
                       </h4>
-                      
+
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Selector de Tipo de Personal */}
                         <div>
@@ -1288,24 +1483,37 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                           </label>
                           <select
                             id="tipo_personal_laboral"
-                            value={formData.id_ipress === 2 || ipress.find(ip => ip.idIpress === formData.id_ipress)?.descIpress?.includes('CENATE') ? 'INTERNO' : 'EXTERNO'}
+                            value={(() => {
+                              // Determinar si es INTERNO basándose en la IPRESS
+                              const ipressActual = ipress.find(ip => ip.idIpress === parseInt(formData.id_ipress));
+                              const esCenate = ipressActual?.descIpress?.toUpperCase().includes('CENATE') ||
+                                             ipressActual?.codIpress === '739' ||
+                                             parseInt(formData.id_ipress) === 2;
+                              return esCenate ? 'INTERNO' : 'EXTERNO';
+                            })()}
                             onChange={(e) => {
                               const tipo = e.target.value;
                               if (tipo === 'INTERNO') {
-                                // Buscar la IPRESS de CENATE (código 739 o que contenga "CENATE" en el nombre)
-                                const cenateIpress = ipress.find(ip => 
-                                  ip.codIpress === '739' || 
+                                // Buscar la IPRESS de CENATE
+                                const cenateIpress = ipress.find(ip =>
+                                  ip.codIpress === '739' ||
                                   ip.descIpress?.toUpperCase().includes('CENATE') ||
                                   ip.descIpress?.toUpperCase().includes('NACIONAL DE TELEMEDICINA')
                                 );
                                 if (cenateIpress) {
-                                  setFormData(prev => ({ ...prev, id_ipress: cenateIpress.idIpress }));
+                                  setFormData(prev => ({ ...prev, id_ipress: cenateIpress.idIpress, id_red: null }));
+                                  setRedSeleccionada(null);
+                                  setMacroregionInfo(null);
                                 } else {
-                                  alert('⚠️ No se encontró la IPRESS de CENATE en el sistema');
+                                  alert('No se encontró la IPRESS de CENATE en el sistema');
                                 }
                               } else {
-                                // Si cambia a EXTERNO, limpiar la selección para que el usuario elija
-                                setFormData(prev => ({ ...prev, id_ipress: '' }));
+                                // Si cambia a EXTERNO, cargar Redes y limpiar selecciones
+                                cargarRedes();
+                                cargarTodasIpress();
+                                setFormData(prev => ({ ...prev, id_ipress: null, id_red: null }));
+                                setRedSeleccionada(null);
+                                setMacroregionInfo(null);
                               }
                             }}
                             className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white font-medium text-sm"
@@ -1314,17 +1522,22 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                             <option value="EXTERNO">EXTERNO - Otra IPRESS</option>
                           </select>
                           <p className="text-xs text-blue-600 mt-1">
-                            💡 <strong>INTERNO:</strong> Trabaja en CENATE | <strong>EXTERNO:</strong> Trabaja en otra institución
+                            <strong>INTERNO:</strong> Trabaja en CENATE | <strong>EXTERNO:</strong> Trabaja en otra institución
                           </p>
                         </div>
 
-                        {/* IPRESS - Dinámico según el tipo */}
-                        <div>
-                          <label htmlFor="id_ipress" className="block text-sm font-medium text-gray-700 mb-2">
-                            IPRESS <span className="text-red-500">*</span>
-                          </label>
-                          {formData.id_ipress === 2 || ipress.find(ip => ip.idIpress === formData.id_ipress)?.descIpress?.includes('CENATE') ? (
-                            /* Mostrar IPRESS de CENATE (readonly) */
+                        {/* IPRESS para INTERNO */}
+                        {(() => {
+                          const ipressActual = ipress.find(ip => ip.idIpress === parseInt(formData.id_ipress));
+                          const esCenate = ipressActual?.descIpress?.toUpperCase().includes('CENATE') ||
+                                         ipressActual?.codIpress === '739' ||
+                                         parseInt(formData.id_ipress) === 2;
+                          return esCenate;
+                        })() && (
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              IPRESS <span className="text-red-500">*</span>
+                            </label>
                             <div className="w-full px-4 py-3 border-2 border-emerald-300 bg-emerald-50 rounded-xl">
                               <div className="flex items-center gap-2">
                                 <div className="w-8 h-8 rounded-full bg-emerald-600 flex items-center justify-center flex-shrink-0">
@@ -1332,44 +1545,136 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                                 </div>
                                 <div className="flex-1">
                                   <p className="font-bold text-emerald-900 text-xs">
-                                    {ipress.find(ip => ip.idIpress === formData.id_ipress)?.codIpress || '739'} - 
-                                    {ipress.find(ip => ip.idIpress === formData.id_ipress)?.descIpress || 'Centro Nacional de Telemedicina'}
+                                    {ipress.find(ip => ip.idIpress === parseInt(formData.id_ipress))?.codIpress || '739'} -
+                                    {ipress.find(ip => ip.idIpress === parseInt(formData.id_ipress))?.descIpress || 'Centro Nacional de Telemedicina'}
                                   </p>
-                                  <p className="text-xs text-emerald-700">✅ Asignación automática para personal INTERNO</p>
+                                  <p className="text-xs text-emerald-700">Asignación automática para personal INTERNO</p>
                                 </div>
                               </div>
                             </div>
-                          ) : (
-                            /* Dropdown para seleccionar IPRESS (solo EXTERNOS) */
-                            <>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Sección EXTERNO: Red → IPRESS → Macroregión */}
+                      {(() => {
+                        const ipressActual = ipress.find(ip => ip.idIpress === parseInt(formData.id_ipress));
+                        const esCenate = ipressActual?.descIpress?.toUpperCase().includes('CENATE') ||
+                                       ipressActual?.codIpress === '739' ||
+                                       parseInt(formData.id_ipress) === 2;
+                        return !esCenate;
+                      })() && (
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          {/* Selector de Red */}
+                          <div>
+                            <label htmlFor="id_red" className="block text-sm font-medium text-gray-700 mb-2">
+                              Red Asistencial <span className="text-red-500">*</span>
+                            </label>
+                            {loadingRedes ? (
+                              <div className="w-full px-4 py-2 border-2 border-gray-300 rounded-xl bg-gray-50 flex items-center justify-center">
+                                <div className="inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                <span className="text-sm text-gray-500">Cargando Redes...</span>
+                              </div>
+                            ) : (
+                              <select
+                                id="id_red"
+                                name="id_red"
+                                value={formData.id_red || ''}
+                                onChange={(e) => {
+                                  const redId = e.target.value ? parseInt(e.target.value) : null;
+                                  setFormData(prev => ({ ...prev, id_red: redId, id_ipress: null }));
+                                  const redSel = redes.find(r => (r.id || r.idRed) === redId);
+                                  setRedSeleccionada(redSel);
+                                  setMacroregionInfo(null);
+                                }}
+                                className={`w-full px-4 py-2 border-2 rounded-xl transition-all focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                                  errors.id_red ? 'border-red-500' : 'border-gray-300'
+                                }`}
+                              >
+                                <option value="">Seleccione una Red...</option>
+                                {redes.map(red => (
+                                  <option key={red.id || red.idRed} value={red.id || red.idRed}>
+                                    {red.codigo || red.codRed || ''} - {red.descripcion || red.descRed || 'Sin descripción'}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
+                            {errors.id_red && (
+                              <p className="text-red-500 text-sm mt-1">{errors.id_red}</p>
+                            )}
+                          </div>
+
+                          {/* Selector de IPRESS (filtrado por Red) */}
+                          <div>
+                            <label htmlFor="id_ipress" className="block text-sm font-medium text-gray-700 mb-2">
+                              IPRESS de Procedencia <span className="text-red-500">*</span>
+                            </label>
+                            {loadingIpress ? (
+                              <div className="w-full px-4 py-2 border-2 border-gray-300 rounded-xl bg-gray-50 flex items-center justify-center">
+                                <div className="inline-block w-4 h-4 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin mr-2"></div>
+                                <span className="text-sm text-gray-500">Cargando IPRESS...</span>
+                              </div>
+                            ) : (
                               <select
                                 id="id_ipress"
                                 name="id_ipress"
-                                value={formData.id_ipress || ''}
-                                onChange={handleChange}
                                 required
-                                className="w-full px-4 py-2.5 border-2 border-orange-300 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 bg-white font-medium text-sm"
+                                disabled={!formData.id_red}
+                                value={formData.id_ipress || ''}
+                                onChange={(e) => setFormData(prev => ({ ...prev, id_ipress: e.target.value ? parseInt(e.target.value) : null }))}
+                                className={`w-full px-4 py-2 border-2 rounded-xl transition-all focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
+                                  errors.id_ipress ? 'border-red-500' : 'border-gray-300'
+                                } ${!formData.id_red ? 'bg-gray-100 cursor-not-allowed' : ''}`}
                               >
-                                <option value="">Seleccione una IPRESS...</option>
-                                {ipress
-                                  .filter(ip => 
-                                    ip.codIpress !== '739' && 
-                                    !ip.descIpress?.toUpperCase().includes('CENATE') &&
-                                    !ip.descIpress?.toUpperCase().includes('NACIONAL DE TELEMEDICINA')
-                                  )
-                                  .map(ip => (
-                                    <option key={ip.idIpress} value={ip.idIpress}>
-                                      {ip.codIpress || ''} - {ip.descIpress || ip.nombreIpress || 'Sin descripción'}
-                                    </option>
-                                  ))}
+                                <option value="">
+                                  {!formData.id_red ? 'Primero seleccione una Red...' : 'Seleccione una IPRESS...'}
+                                </option>
+                                {ipress.map(ip => (
+                                  <option key={ip.idIpress} value={ip.idIpress}>
+                                    {ip.codIpress || ''} - {ip.descIpress || 'Sin descripción'}
+                                  </option>
+                                ))}
                               </select>
-                              <p className="text-xs text-orange-600 mt-1">
-                                ⚠️ Debe seleccionar la IPRESS donde trabaja actualmente
-                              </p>
-                            </>
-                          )}
+                            )}
+                            {errors.id_ipress && (
+                              <p className="text-red-500 text-sm mt-1">{errors.id_ipress}</p>
+                            )}
+                            {formData.id_red && ipress.length === 0 && !loadingIpress && (
+                              <p className="text-amber-600 text-sm mt-1">No hay IPRESS disponibles para esta Red</p>
+                            )}
+                          </div>
+
+                          {/* Macroregión (solo lectura) */}
+                          <div className="md:col-span-2">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              Macroregión
+                            </label>
+                            <div className={`w-full px-4 py-3 border-2 rounded-xl ${
+                              macroregionInfo ? 'border-blue-300 bg-blue-50' : 'border-gray-200 bg-gray-50'
+                            }`}>
+                              {macroregionInfo ? (
+                                <div className="flex items-center gap-2">
+                                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                                    <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  </div>
+                                  <div className="flex-1">
+                                    <p className="font-semibold text-blue-900 text-sm">
+                                      {macroregionInfo.descMacro || 'Sin nombre'}
+                                    </p>
+                                    <p className="text-xs text-blue-600">Asignada automáticamente según IPRESS</p>
+                                  </div>
+                                </div>
+                              ) : (
+                                <p className="text-gray-400 text-sm italic">
+                                  Se mostrará automáticamente al seleccionar una IPRESS
+                                </p>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
 
                     {/* Resto de campos laborales */}
