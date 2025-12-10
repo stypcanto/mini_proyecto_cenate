@@ -2,14 +2,14 @@ import React, { useState, useEffect, useMemo, useCallback, useRef } from 'react'
 import { getFotoUrl as buildFotoUrl } from '../../utils/apiUrlHelper';
 
 import {
-  User, 
-  X, 
-  Calendar, 
-  Cake, 
-  MapPin, 
-  Mail, 
-  Phone, 
-  Briefcase, 
+  User,
+  X,
+  Calendar,
+  Cake,
+  MapPin,
+  Mail,
+  Phone,
+  Briefcase,
   Building,
   Search,
   Edit,
@@ -178,7 +178,8 @@ const TableAvatar = ({ user }) => {
   );
 };
 
-const GestionUsuariosPermisos = () => {  // Estados principales
+const GestionUsuariosPermisos = () => {
+  // Estados principales
   const [activeTab, setActiveTab] = useState('usuarios');
   const [users, setUsers] = useState([]);
   const [selectedRows, setSelectedRows] = useState([]);

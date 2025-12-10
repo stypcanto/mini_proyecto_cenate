@@ -58,6 +58,65 @@ export default function FormularioDiagnostico() {
     });
     const [tabsCompletados, setTabsCompletados] = useState({});
     const pdfPreviewRef = useRef(null);
+    const [errores, setErrores] = useState({});
+
+    // Funciones de validación
+    const validarEmail = (email) => {
+        if (!email) return true; // Campo vacío es válido (no es requerido)
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return regex.test(email);
+    };
+
+    const validarTelefono = (telefono) => {
+        if (!telefono) return true; // Campo vacío es válido
+        const soloNumeros = telefono.replace(/\s/g, '');
+        return /^\d{9}$/.test(soloNumeros);
+    };
+
+    const validarNombreCompleto = (nombre) => {
+        if (!nombre) return true; // Campo vacío es válido
+        const palabras = nombre.trim().split(/\s+/);
+        return palabras.length >= 2 && palabras.every(p => p.length >= 2);
+    };
+
+    // Manejar validación en tiempo real
+    const handleValidatedInputChange = (section, field, value, validationType) => {
+        let valorProcesado = value;
+
+        // Para teléfono, solo permitir números
+        if (validationType === "telefono") {
+            valorProcesado = value.replace(/\D/g, '').slice(0, 9);
+        }
+
+        handleInputChange(section, field, valorProcesado);
+
+        let esValido = true;
+        let mensajeError = "";
+
+        if (valorProcesado) {
+            switch (validationType) {
+                case "email":
+                    esValido = validarEmail(valorProcesado);
+                    mensajeError = esValido ? "" : "Ingrese un correo válido (ejemplo@dominio.com)";
+                    break;
+                case "telefono":
+                    esValido = valorProcesado.length === 9;
+                    mensajeError = esValido ? "" : "El teléfono debe tener 9 dígitos";
+                    break;
+                case "nombreCompleto":
+                    esValido = validarNombreCompleto(valorProcesado);
+                    mensajeError = esValido ? "" : "Ingrese nombre y apellido (mínimo 2 palabras)";
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        setErrores(prev => ({
+            ...prev,
+            [`${section}.${field}`]: mensajeError
+        }));
+    };
 
     // Cargar datos del usuario (IPRESS)
     useEffect(() => {
@@ -477,18 +536,6 @@ export default function FormularioDiagnostico() {
             <div className="relative z-10 max-w-5xl mx-auto px-4 py-6">
                 {/* Header con gradiente institucional */}
                 <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] rounded-2xl shadow-2xl p-8 mb-8 relative overflow-hidden">
-                    {/* Patrón decorativo */}
-                    <div className="absolute top-0 right-0 w-64 h-64 opacity-10">
-                        <svg viewBox="0 0 200 200" className="w-full h-full">
-                            <defs>
-                                <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-                                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="white" strokeWidth="1"/>
-                                </pattern>
-                            </defs>
-                            <rect width="100%" height="100%" fill="url(#grid)" />
-                        </svg>
-                    </div>
-
                     <div className="flex items-center justify-between relative">
                         <div className="flex items-center gap-4">
                             <div className="p-4 bg-white/20 rounded-2xl backdrop-blur-sm">
@@ -503,11 +550,6 @@ export default function FormularioDiagnostico() {
                                 </p>
                             </div>
                         </div>
-                        <img
-                            src="/images/LogoCENATEBlanco.png"
-                            alt="CENATE"
-                            className="h-16 hidden md:block opacity-90"
-                        />
                     </div>
                 </div>
 
@@ -702,10 +744,17 @@ export default function FormularioDiagnostico() {
                                             <input
                                                 type="text"
                                                 value={formData.datosGenerales.directorNombre || ""}
-                                                onChange={(e) => handleInputChange("datosGenerales", "directorNombre", e.target.value)}
-                                                className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all"
+                                                onChange={(e) => handleValidatedInputChange("datosGenerales", "directorNombre", e.target.value, "nombreCompleto")}
+                                                className={`w-full px-4 py-3 bg-yellow-50 border-2 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all ${
+                                                    errores["datosGenerales.directorNombre"]
+                                                        ? "border-red-400 focus:border-red-500"
+                                                        : "border-yellow-300 focus:border-[#0A5BA9]"
+                                                }`}
                                                 placeholder="Ingrese nombre completo"
                                             />
+                                            {errores["datosGenerales.directorNombre"] && (
+                                                <p className="text-red-500 text-xs mt-1">{errores["datosGenerales.directorNombre"]}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -715,10 +764,17 @@ export default function FormularioDiagnostico() {
                                             <input
                                                 type="email"
                                                 value={formData.datosGenerales.directorCorreo || ""}
-                                                onChange={(e) => handleInputChange("datosGenerales", "directorCorreo", e.target.value)}
-                                                className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all"
+                                                onChange={(e) => handleValidatedInputChange("datosGenerales", "directorCorreo", e.target.value, "email")}
+                                                className={`w-full px-4 py-3 bg-yellow-50 border-2 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all ${
+                                                    errores["datosGenerales.directorCorreo"]
+                                                        ? "border-red-400 focus:border-red-500"
+                                                        : "border-yellow-300 focus:border-[#0A5BA9]"
+                                                }`}
                                                 placeholder="correo@ejemplo.com"
                                             />
+                                            {errores["datosGenerales.directorCorreo"] && (
+                                                <p className="text-red-500 text-xs mt-1">{errores["datosGenerales.directorCorreo"]}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -728,10 +784,18 @@ export default function FormularioDiagnostico() {
                                             <input
                                                 type="tel"
                                                 value={formData.datosGenerales.directorTelefono || ""}
-                                                onChange={(e) => handleInputChange("datosGenerales", "directorTelefono", e.target.value)}
-                                                className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all"
-                                                placeholder="999 999 999"
+                                                onChange={(e) => handleValidatedInputChange("datosGenerales", "directorTelefono", e.target.value, "telefono")}
+                                                className={`w-full px-4 py-3 bg-yellow-50 border-2 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all ${
+                                                    errores["datosGenerales.directorTelefono"]
+                                                        ? "border-red-400 focus:border-red-500"
+                                                        : "border-yellow-300 focus:border-[#0A5BA9]"
+                                                }`}
+                                                placeholder="999999999"
+                                                maxLength={9}
                                             />
+                                            {errores["datosGenerales.directorTelefono"] && (
+                                                <p className="text-red-500 text-xs mt-1">{errores["datosGenerales.directorTelefono"]}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
@@ -750,10 +814,17 @@ export default function FormularioDiagnostico() {
                                             <input
                                                 type="text"
                                                 value={formData.datosGenerales.responsableNombre || ""}
-                                                onChange={(e) => handleInputChange("datosGenerales", "responsableNombre", e.target.value)}
-                                                className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all"
+                                                onChange={(e) => handleValidatedInputChange("datosGenerales", "responsableNombre", e.target.value, "nombreCompleto")}
+                                                className={`w-full px-4 py-3 bg-yellow-50 border-2 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all ${
+                                                    errores["datosGenerales.responsableNombre"]
+                                                        ? "border-red-400 focus:border-red-500"
+                                                        : "border-yellow-300 focus:border-[#0A5BA9]"
+                                                }`}
                                                 placeholder="Ingrese nombre completo"
                                             />
+                                            {errores["datosGenerales.responsableNombre"] && (
+                                                <p className="text-red-500 text-xs mt-1">{errores["datosGenerales.responsableNombre"]}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -763,10 +834,17 @@ export default function FormularioDiagnostico() {
                                             <input
                                                 type="email"
                                                 value={formData.datosGenerales.responsableCorreo || ""}
-                                                onChange={(e) => handleInputChange("datosGenerales", "responsableCorreo", e.target.value)}
-                                                className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all"
+                                                onChange={(e) => handleValidatedInputChange("datosGenerales", "responsableCorreo", e.target.value, "email")}
+                                                className={`w-full px-4 py-3 bg-yellow-50 border-2 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all ${
+                                                    errores["datosGenerales.responsableCorreo"]
+                                                        ? "border-red-400 focus:border-red-500"
+                                                        : "border-yellow-300 focus:border-[#0A5BA9]"
+                                                }`}
                                                 placeholder="correo@ejemplo.com"
                                             />
+                                            {errores["datosGenerales.responsableCorreo"] && (
+                                                <p className="text-red-500 text-xs mt-1">{errores["datosGenerales.responsableCorreo"]}</p>
+                                            )}
                                         </div>
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -776,10 +854,18 @@ export default function FormularioDiagnostico() {
                                             <input
                                                 type="tel"
                                                 value={formData.datosGenerales.responsableTelefono || ""}
-                                                onChange={(e) => handleInputChange("datosGenerales", "responsableTelefono", e.target.value)}
-                                                className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all"
-                                                placeholder="999 999 999"
+                                                onChange={(e) => handleValidatedInputChange("datosGenerales", "responsableTelefono", e.target.value, "telefono")}
+                                                className={`w-full px-4 py-3 bg-yellow-50 border-2 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all ${
+                                                    errores["datosGenerales.responsableTelefono"]
+                                                        ? "border-red-400 focus:border-red-500"
+                                                        : "border-yellow-300 focus:border-[#0A5BA9]"
+                                                }`}
+                                                placeholder="999999999"
+                                                maxLength={9}
                                             />
+                                            {errores["datosGenerales.responsableTelefono"] && (
+                                                <p className="text-red-500 text-xs mt-1">{errores["datosGenerales.responsableTelefono"]}</p>
+                                            )}
                                         </div>
                                     </div>
                                 </div>

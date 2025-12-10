@@ -8,10 +8,9 @@
 // ========================================================================
 
 import React, { useState, useEffect } from "react";
-import { Search, ChevronDown } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import ThemeToggle from "../ThemeToggle";
 import api from "../../services/apiClient";
 import { getFotoUrl } from "../../utils/apiUrlHelper";
 
@@ -154,36 +153,9 @@ export default function HeaderTemplate({ title = "CENATE" }) {
           {title}
         </h1>
 
-        {/* 🔍 Buscador institucional - Diseño profesional tipo LinkedIn */}
-        <div className="flex-1 max-w-lg mx-4 relative hidden lg:block">
-          <div className="relative group">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-white/60 w-5 h-5 transition-all duration-200 group-hover:text-white/80 group-focus-within:text-white z-10 pointer-events-none" />
-            <input
-              type="text"
-              placeholder="Buscar en CENATE..."
-              className="w-full pl-12 pr-4 py-2.5 rounded-lg bg-white/15 text-white text-sm font-medium
-                         placeholder-white/60 outline-none 
-                         border border-white/20 shadow-sm
-                         hover:bg-white/20 hover:border-white/30
-                         focus:bg-white/25 focus:border-white/40 focus:shadow-md
-                         focus:ring-2 focus:ring-white/30 focus:ring-offset-0
-                         transition-all duration-200 backdrop-blur-md
-                         placeholder:font-normal"
-            />
-            {/* Indicador de búsqueda activa */}
-            <div className="absolute right-3 top-1/2 -translate-y-1/2 opacity-0 group-focus-within:opacity-100 transition-opacity duration-200 pointer-events-none">
-              <div className="text-xs text-white/50 font-medium">Ctrl+K</div>
-            </div>
-          </div>
-        </div>
 
-        {/* 👤 Sección derecha: Tema + Usuario */}
+        {/* 👤 Sección derecha: Usuario */}
         <div className="flex items-center gap-4 flex-shrink-0">
-          {/* 🌗 Alternar tema - Estilo mejorado para header azul */}
-          <div className="hidden sm:block">
-            <ThemeToggle variant="header" />
-          </div>
-
           {/* 👤 Perfil de usuario - Diseño profesional tipo LinkedIn */}
           <div className="relative">
             <button
