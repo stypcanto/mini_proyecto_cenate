@@ -110,6 +110,7 @@ public class ChatBotController {
         objPaciente.setDocumento(entidad.getDocPaciente());
         objPaciente.setNombre(entidad.getPaciente());
         objPaciente.setSexo(entidad.getSexo());
+        
         objPaciente.setTieneCobertura(true);
         objPaciente.setEsPacienteCenate(esPacienteCenate);
         objPaciente.setEsPacienteNuevo(esPacienteNuevo);

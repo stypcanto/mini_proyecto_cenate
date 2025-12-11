@@ -85,7 +85,7 @@ public class SecurityConfig {
                         
                         
                         // =====================================================
-                        // ENDPOINTS DE CITA (POST/PUT) -Inicio
+                        // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT
                         // =====================================================
                         
                         //.requestMatchers(HttpMethod.POST, "/api/solicitud").permitAll()
@@ -97,13 +97,22 @@ public class SecurityConfig {
                         // Disponibilidad
                         .requestMatchers(HttpMethod.GET, "/api/v1/chatbot/disponibilidad/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v2/chatbot/disponibilidad/**").permitAll()
-                        
                         // Solicitud de Cita
                         .requestMatchers(HttpMethod.POST, "/api/v1/chatbot/solicitud").permitAll()
                         
                         // =====================================================
-                        // ENDPOINTS DE CITA (POST/PUT) -Fin
+                        // ENDPOINTS DE CITA (POST/PUT) -Fin CHATBOT
                         // =====================================================
+                        
+                        // =====================================================
+                        // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT WEB
+                        // =====================================================
+                        .requestMatchers("/api/v1/chatbot/**").permitAll()
+                        
+                        // =====================================================
+                        // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT WEB
+                        // =====================================================
+                        
                         
 
                         // =====================================================
@@ -127,7 +136,7 @@ public class SecurityConfig {
                                 "/api/chatbot/**", // Agregando chatbot-ini
                                 "/api/asegurados/**", // Agregando asegurados - PÚBLICO
                                 "/api/disponibilidad/**",
-                                "/api/servicio-essi",
+                                "/api/servicio-essi/**",
                                 "/api/admin/dashboard-medico/cards/activas" // ✅ Cards activas del dashboard médico (público)
                         ).permitAll()
                         
