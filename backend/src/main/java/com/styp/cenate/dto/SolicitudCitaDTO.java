@@ -37,7 +37,10 @@ public class SolicitudCitaDTO {
 	@NotBlank(message = "El nombre del paciente es obligatorio")
 	private String nombresPaciente;
 
+	@Pattern(regexp = "^[MFfm]$", message="Ingrese el sexo de manera correcta")
 	private String sexo;
+	
+	
 	@PositiveOrZero(message = "La edad debe ser 0 o un número positivo")
 	private Integer edad;
 	@Size(min = 9, max = 12, message = "El telefono debe tener entre 9 y 12 caracteres")
@@ -50,9 +53,9 @@ public class SolicitudCitaDTO {
 	@NotNull(message = "La hora de solicitud es obligatoria")
 	@JsonFormat(pattern = "HH:mm:ss")
 	private LocalTime horaCita;
-	private OffsetDateTime fechaSolicitud;
-	private OffsetDateTime fechaActualiza;
-	private String estadoSolicitud;
+//	private OffsetDateTime fechaSolicitud;
+//	private OffsetDateTime fechaActualiza;
+//	private String estadoSolicitud;
 	private String observacion;
 
 	// Relaciones

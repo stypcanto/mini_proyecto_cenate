@@ -3,8 +3,6 @@ package com.styp.cenate.service.chatbot.solicitudcita;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,19 +12,22 @@ import org.springframework.transaction.annotation.Transactional;
 import com.styp.cenate.dto.SolicitudCitaDTO;
 import com.styp.cenate.exception.RegistroCitaExistenteException;
 import com.styp.cenate.mapper.SolicitudCitaMapper;
-import com.styp.cenate.model.SolicitudCita;
+import com.styp.cenate.model.chatbot.SolicitudCita;
 import com.styp.cenate.repository.ActividadEssiRepository;
 import com.styp.cenate.repository.AreaHospitalariaRepository;
-import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
-import com.styp.cenate.repository.SolicitudCitaRepository;
+import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.SubactividadEssiRepository;
+import com.styp.cenate.repository.chatbot.DimEstadoCitaRepository;
+import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
 
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Service
 @Transactional
 @Slf4j
+@RequiredArgsConstructor
 public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 
 	private final SolicitudCitaMapper solicitudCitaMapper;
@@ -37,19 +38,7 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 	private final DimServicioEssiRepository servicioRepo;
 	private final ActividadEssiRepository actividadRepo;
 	private final SubactividadEssiRepository subactividadRepo;
-
-	public SolicitudCitaServiceImpl(SolicitudCitaRepository solicitudRepo, PersonalCntRepository personalRepo,
-			AreaHospitalariaRepository areaRepo, DimServicioEssiRepository servicioRepo,
-			ActividadEssiRepository actividadRepo, SubactividadEssiRepository subactividadRepo,
-			SolicitudCitaMapper solicitudCitaMapper) {
-		this.solicitudRepo = solicitudRepo;
-		this.personalRepo = personalRepo;
-		this.areaRepo = areaRepo;
-		this.servicioRepo = servicioRepo;
-		this.actividadRepo = actividadRepo;
-		this.subactividadRepo = subactividadRepo;
-		this.solicitudCitaMapper = solicitudCitaMapper;
-	}
+	private final DimEstadoCitaRepository estadoCitaRepo;
 
 	@Override
 	public SolicitudCitaDTO guardar(SolicitudCitaDTO dto) {
@@ -62,6 +51,15 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 		}
 
 		attachRelationsWithRepositories(entity, dto);
+// CON RELACION
+//		Long estadoDefecto = 2L; // RESERVADO
+//		DimEstadoCita estado = estadoCitaRepo.findById(estadoDefecto)
+//				.orElseThrow(() -> new IllegalArgumentException("Estado de cita no encontrado: " + estadoDefecto));
+//
+//		entity.setEstadoCita(estado);
+		// SIN RELACION
+		entity.setIdEstadoCita(2L);
+
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(entity));
 	}
 
@@ -78,9 +76,8 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 		existente.setTelefono(dto.getTelefono());
 		existente.setFechaCita(dto.getFechaCita());
 		existente.setHoraCita(dto.getHoraCita());
-		existente.setFechaSolicitud(dto.getFechaSolicitud());
-		existente.setFechaActualiza(dto.getFechaActualiza());
-		existente.setEstadoSolicitud(dto.getEstadoSolicitud());
+//		existente.setFechaSolicitud(dto.getFechaSolicitud());
+//		existente.setFechaActualiza(dto.getFechaActualiza());
 		existente.setObservacion(dto.getObservacion());
 		attachRelationsWithRepositories(existente, dto);
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(existente));
@@ -183,7 +180,7 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 	public SolicitudCitaDTO actualizarEstado(Long id, String estado, String observacion) {
 		SolicitudCita solicitud = solicitudRepo.findById(id)
 				.orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + id));
-		solicitud.setEstadoSolicitud(estado);
+
 		solicitud.setObservacion(observacion);
 		solicitud.setFechaActualiza(OffsetDateTime.now());
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(solicitud));
@@ -203,8 +200,5 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 		}
 		return solicitudRepo.existsByPersonal_IdPersAndFechaCitaAndHoraCita(idPers, fechaCita, horaCita);
 	}
-
-	
-
 
 }

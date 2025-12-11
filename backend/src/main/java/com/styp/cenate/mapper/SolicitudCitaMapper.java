@@ -6,7 +6,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.styp.cenate.dto.SolicitudCitaDTO;
-import com.styp.cenate.model.SolicitudCita;
+import com.styp.cenate.model.chatbot.SolicitudCita;
 
 @Component
 public class SolicitudCitaMapper {
@@ -21,8 +21,7 @@ public class SolicitudCitaMapper {
 				.docPaciente(entity.getDocPaciente()).nombresPaciente(entity.getNombresPaciente())
 				.sexo(entity.getSexo()).edad(entity.getEdad()).telefono(entity.getTelefono())
 				.fechaCita(entity.getFechaCita()).horaCita(entity.getHoraCita())
-				.fechaSolicitud(entity.getFechaSolicitud()).fechaActualiza(entity.getFechaActualiza())
-				.estadoSolicitud(entity.getEstadoSolicitud()).observacion(entity.getObservacion())
+				.observacion(entity.getObservacion())
 
 				.idPersonal(entity.getPersonal() != null ? entity.getPersonal().getIdPers() : null)
 				.nombrePersonal(entity.getPersonal() != null ? entity.getPersonal().getNombreCompleto() : null)
@@ -57,9 +56,6 @@ public class SolicitudCitaMapper {
 		entity.setTelefono(dto.getTelefono());
 		entity.setFechaCita(dto.getFechaCita());
 		entity.setHoraCita(dto.getHoraCita());
-		entity.setFechaSolicitud(dto.getFechaSolicitud());
-		entity.setFechaActualiza(dto.getFechaActualiza());
-		entity.setEstadoSolicitud(dto.getEstadoSolicitud());
 		entity.setObservacion(dto.getObservacion());
 
 		//  Relaciones se asignan en el ServiceImpl (attachRelationsWithRepositories)

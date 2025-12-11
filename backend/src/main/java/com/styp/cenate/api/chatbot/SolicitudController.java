@@ -63,7 +63,7 @@ public class SolicitudController {
 		// @Validated → permite validar @Positive en @PathVariable
 		// @Valid → valida el DTO completo
 		log.info("Actualizando SolicitudCita id={} (docPaciente={}, estado={})", id, dto.getDocPaciente(),
-				dto.getEstadoSolicitud());
+				0);
 		var actualizado = servicio.actualizar(id, dto);
 		return ResponseEntity.ok(actualizado);
 	}
