@@ -9,17 +9,22 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.styp.cenate.dto.SolicitudCitaDTO;
+import com.styp.cenate.dto.chatbot.SolicitudCitaRequestDTO;
+import com.styp.cenate.dto.chatbot.SolicitudCitaResponseDTO;
+import com.styp.cenate.exception.AseguradoNoEncontradoException;
 import com.styp.cenate.exception.RegistroCitaExistenteException;
 import com.styp.cenate.mapper.SolicitudCitaMapper;
+import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.chatbot.SolicitudCita;
 import com.styp.cenate.repository.ActividadEssiRepository;
 import com.styp.cenate.repository.AreaHospitalariaRepository;
+import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.SubactividadEssiRepository;
 import com.styp.cenate.repository.chatbot.DimEstadoCitaRepository;
 import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
+import com.styp.cenate.utils.CalculoFechas;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,7 +36,6 @@ import lombok.extern.slf4j.Slf4j;
 public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 
 	private final SolicitudCitaMapper solicitudCitaMapper;
-
 	private final SolicitudCitaRepository solicitudRepo;
 	private final PersonalCntRepository personalRepo;
 	private final AreaHospitalariaRepository areaRepo;
@@ -39,10 +43,20 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 	private final ActividadEssiRepository actividadRepo;
 	private final SubactividadEssiRepository subactividadRepo;
 	private final DimEstadoCitaRepository estadoCitaRepo;
+	private final AseguradoRepository aseguradoRepo;
 
 	@Override
-	public SolicitudCitaDTO guardar(SolicitudCitaDTO dto) {
+	public SolicitudCitaResponseDTO guardar(SolicitudCitaRequestDTO dto) {
 		SolicitudCita entity = SolicitudCitaMapper.toEntity(dto);
+		
+		// buscar datos del asegurado.
+		Asegurado asegurado = aseguradoRepo.findByDocPaciente(dto.getDocPaciente())
+				.orElseThrow(() -> new AseguradoNoEncontradoException("No existe el paciente"));
+		
+		entity.setNombresPaciente(asegurado.getPaciente());
+		entity.setEdad(CalculoFechas.calcularEdad(asegurado.getFecnacimpaciente()));
+		entity.setSexo(asegurado.getSexo());
+		
 		// Validar existencia de cita
 		boolean existencia = existeCitaPorPersonalYFechaHora(dto.getIdPersonal(), dto.getFechaCita(),
 				dto.getHoraCita());
@@ -51,28 +65,23 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 		}
 
 		attachRelationsWithRepositories(entity, dto);
-// CON RELACION
-//		Long estadoDefecto = 2L; // RESERVADO
-//		DimEstadoCita estado = estadoCitaRepo.findById(estadoDefecto)
-//				.orElseThrow(() -> new IllegalArgumentException("Estado de cita no encontrado: " + estadoDefecto));
-//
-//		entity.setEstadoCita(estado);
-		// SIN RELACION
 		entity.setIdEstadoCita(2L);
 
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(entity));
 	}
+	
+	
 
 	@Override
-	public SolicitudCitaDTO actualizar(Long idSolicitud, SolicitudCitaDTO dto) {
+	public SolicitudCitaResponseDTO actualizar(Long idSolicitud, SolicitudCitaRequestDTO dto) {
 		SolicitudCita existente = solicitudRepo.findById(idSolicitud)
 				.orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + idSolicitud));
 
 		existente.setPeriodo(dto.getPeriodo());
 		existente.setDocPaciente(dto.getDocPaciente());
-		existente.setNombresPaciente(dto.getNombresPaciente());
-		existente.setSexo(dto.getSexo());
-		existente.setEdad(dto.getEdad());
+//		existente.setNombresPaciente(dto.getNombresPaciente());
+//		existente.setSexo(dto.getSexo());
+//		existente.setEdad(dto.getEdad());
 		existente.setTelefono(dto.getTelefono());
 		existente.setFechaCita(dto.getFechaCita());
 		existente.setHoraCita(dto.getHoraCita());
@@ -93,53 +102,53 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<SolicitudCitaDTO> listar() {
+	public List<SolicitudCitaRequestDTO> listar() {
 		return null;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public Optional<SolicitudCitaDTO> buscarPorId(Long idSolicitud) {
+	public Optional<SolicitudCitaResponseDTO> buscarPorId(Long idSolicitud) {
 		return solicitudRepo.findById(idSolicitud).map(SolicitudCitaMapper::toDto);
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<SolicitudCitaDTO> buscarPorDocPaciente(String docPaciente) {
+	public List<SolicitudCitaResponseDTO> buscarPorDocPaciente(String docPaciente) {
 		return SolicitudCitaMapper.toDtoList(solicitudRepo.findByDocPaciente(docPaciente));
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<SolicitudCitaDTO> buscarPorEstado(String estadoSolicitud) {
+	public List<SolicitudCitaResponseDTO> buscarPorEstado(String estadoSolicitud) {
 		return null;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<SolicitudCitaDTO> buscarPorIdServicio(Long idServicio) {
+	public List<SolicitudCitaResponseDTO> buscarPorIdServicio(Long idServicio) {
 		return null;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<SolicitudCitaDTO> buscarPorPeriodoYServicio(String periodo, Long idServicio) {
+	public List<SolicitudCitaResponseDTO> buscarPorPeriodoYServicio(String periodo, Long idServicio) {
 		return null;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<SolicitudCitaDTO> buscarPorActividadOSubactividad(Long idActividad, Long idSubactividad) {
+	public List<SolicitudCitaResponseDTO> buscarPorActividadOSubactividad(Long idActividad, Long idSubactividad) {
 		return null;
 	}
 
 	@Override
 	@Transactional(readOnly = true)
-	public List<SolicitudCitaDTO> buscarPorIdPersonal(Long idPers) {
+	public List<SolicitudCitaResponseDTO> buscarPorIdPersonal(Long idPers) {
 		return null;
 	}
 
-	private void attachRelationsWithRepositories(SolicitudCita entity, SolicitudCitaDTO dto) {
+	private void attachRelationsWithRepositories(SolicitudCita entity, SolicitudCitaRequestDTO dto) {
 		if (dto.getIdPersonal() != null) {
 			entity.setPersonal(personalRepo.findById(dto.getIdPersonal())
 					.orElseThrow(() -> new IllegalArgumentException("Personal no existe: " + dto.getIdPersonal())));
@@ -177,7 +186,7 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 	}
 
 	@Override
-	public SolicitudCitaDTO actualizarEstado(Long id, String estado, String observacion) {
+	public SolicitudCitaResponseDTO actualizarEstado(Long id, String estado, String observacion) {
 		SolicitudCita solicitud = solicitudRepo.findById(id)
 				.orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + id));
 
@@ -186,7 +195,7 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(solicitud));
 	}
 
-	private void validarCamposObligatorios(SolicitudCitaDTO dto) {
+	private void validarCamposObligatorios(SolicitudCitaRequestDTO dto) {
 		if (dto.getPeriodo() == null || dto.getPeriodo().isBlank())
 			throw new IllegalArgumentException("Periodo es obligatorio");
 		if (dto.getDocPaciente() == null || dto.getDocPaciente().isBlank())

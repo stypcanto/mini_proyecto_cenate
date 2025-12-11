@@ -14,7 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.styp.cenate.dto.SolicitudCitaDTO;
+import com.styp.cenate.dto.chatbot.SolicitudCitaRequestDTO;
+import com.styp.cenate.dto.chatbot.SolicitudCitaResponseDTO;
 import com.styp.cenate.service.chatbot.solicitudcita.ISolicitudCitaService;
 
 import jakarta.validation.Valid;
@@ -45,7 +46,7 @@ public class SolicitudController {
 	 */
 
 	@PostMapping
-	public ResponseEntity<SolicitudCitaDTO> guardar(@Valid @RequestBody SolicitudCitaDTO dto) {
+	public ResponseEntity<SolicitudCitaResponseDTO> guardar(@Valid @RequestBody SolicitudCitaRequestDTO dto) {
 		log.info("Creando SolicitudCita para docPaciente={}, servicio={}, actividad={}, subactividad={}",
 				dto.getDocPaciente(), dto.getIdServicio(), dto.getIdActividad(), dto.getIdSubactividad());
 		var creado = servicio.guardar(dto);
@@ -58,8 +59,8 @@ public class SolicitudController {
 	 * según tu lógica).
 	 */
 	@PutMapping("/{id}")
-	public ResponseEntity<SolicitudCitaDTO> actualizar(@PathVariable @Min(1) Long id,
-			@Valid @RequestBody SolicitudCitaDTO dto) {
+	public ResponseEntity<SolicitudCitaResponseDTO> actualizar(@PathVariable @Min(1) Long id,
+			@Valid @RequestBody SolicitudCitaRequestDTO dto) {
 		// @Validated → permite validar @Positive en @PathVariable
 		// @Valid → valida el DTO completo
 		log.info("Actualizando SolicitudCita id={} (docPaciente={}, estado={})", id, dto.getDocPaciente(),
@@ -69,7 +70,7 @@ public class SolicitudController {
 	}
 
 	@PutMapping("/estado/{id}")
-	public ResponseEntity<SolicitudCitaDTO> actualizarEstado(@PathVariable Long id,
+	public ResponseEntity<SolicitudCitaResponseDTO> actualizarEstado(@PathVariable Long id,
 			@RequestBody Map<String, String> body) {
 
 		String estado = body.get("estadoSolicitud");
@@ -80,17 +81,17 @@ public class SolicitudController {
 	}
 
 	@GetMapping("/{id}")
-	public ResponseEntity<SolicitudCitaDTO> obtenerPorId(@PathVariable @Min(1) Long id) {
+	public ResponseEntity<SolicitudCitaResponseDTO> obtenerPorId(@PathVariable @Min(1) Long id) {
 		return servicio.buscarPorId(id).map(ResponseEntity::ok)
 				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
 	}
 
 	@GetMapping("/paciente/{docPaciente}")
-	public ResponseEntity<List<SolicitudCitaDTO>> listarPorDocPaciente(
+	public ResponseEntity<List<SolicitudCitaResponseDTO>> listarPorDocPaciente(
 			@PathVariable @NotBlank(message = "El documento es obligatorio") @Size(min = 8, max = 15, message = "El documento debe tener entre 8 y 15 caracteres") String docPaciente) {
 
 		log.info(" Buscando solicitudes por docPaciente={}", docPaciente);
-		List<SolicitudCitaDTO> resultados = servicio.buscarPorDocPaciente(docPaciente);
+		List<SolicitudCitaResponseDTO> resultados = servicio.buscarPorDocPaciente(docPaciente);
 		if (resultados.isEmpty()) {
 			return ResponseEntity.noContent().build();
 		}
