@@ -48,6 +48,17 @@ public class FormDiagFormulario {
     @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
 
+    // ==================== CAMPOS DE NECESIDADES (OBSERVACIONES) ====================
+
+    @Column(name = "necesidades_conectividad", columnDefinition = "TEXT")
+    private String necesidadesConectividad;
+
+    @Column(name = "necesidades_capacitacion", columnDefinition = "TEXT")
+    private String necesidadesCapacitacion;
+
+    @Column(name = "observaciones_generales", columnDefinition = "TEXT")
+    private String observacionesGenerales;
+
     // ==================== CAMPOS DE FIRMA DIGITAL ====================
 
     /** PDF firmado almacenado como BYTEA */

@@ -194,8 +194,10 @@ public class FormDiagServiceImpl implements FormDiagService {
         FormDiagFormulario formulario = formularioRepo.findById(idFormulario)
                 .orElseThrow(() -> new EntityNotFoundException("Formulario no encontrado: " + idFormulario));
 
-        if (!"EN_PROCESO".equals(formulario.getEstado())) {
-            throw new IllegalStateException("Solo se pueden eliminar formularios en estado EN_PROCESO");
+        // Permitir eliminar formularios en estado EN_PROCESO, ENVIADO o FIRMADO
+        String estado = formulario.getEstado();
+        if (!"EN_PROCESO".equals(estado) && !"ENVIADO".equals(estado) && !"FIRMADO".equals(estado)) {
+            throw new IllegalStateException("Solo se pueden eliminar formularios en estado EN_PROCESO, ENVIADO o FIRMADO");
         }
 
         // Eliminar registros relacionados
@@ -288,7 +290,7 @@ public class FormDiagServiceImpl implements FormDiagService {
 
         // Necesidades
         if (request.getNecesidades() != null) {
-            guardarNecesidades(idFormulario, request.getNecesidades());
+            guardarNecesidades(idFormulario, request.getNecesidades(), formulario);
         }
     }
 
@@ -437,7 +439,7 @@ public class FormDiagServiceImpl implements FormDiagService {
         }
     }
 
-    private void guardarNecesidades(Integer idFormulario, FormDiagRequest.NecesidadesDto dto) {
+    private void guardarNecesidades(Integer idFormulario, FormDiagRequest.NecesidadesDto dto, FormDiagFormulario formulario) {
         // Eliminar necesidades existentes
         necesidadRepo.deleteByIdFormulario(idFormulario);
         necCapacitacionRepo.deleteByIdFormulario(idFormulario);
@@ -470,6 +472,12 @@ public class FormDiagServiceImpl implements FormDiagService {
                 necCapacitacionRepo.save(entity);
             }
         }
+
+        // Guardar campos de texto de necesidades en el formulario
+        formulario.setNecesidadesConectividad(dto.getNecesidadesConectividad());
+        formulario.setNecesidadesCapacitacion(dto.getNecesidadesCapacitacion());
+        formulario.setObservacionesGenerales(dto.getObservacionesGenerales());
+        formularioRepo.save(formulario);
     }
 
     // ==================== MAPEO A DTOs ====================
@@ -528,7 +536,7 @@ public class FormDiagServiceImpl implements FormDiagService {
         }
 
         // Mapear necesidades
-        FormDiagResponse.NecesidadesDto necesidadesDto = mapNecesidades(idFormulario);
+        FormDiagResponse.NecesidadesDto necesidadesDto = mapNecesidades(idFormulario, formulario);
         if (necesidadesDto != null) {
             builder.necesidades(necesidadesDto);
         }
@@ -645,11 +653,16 @@ public class FormDiagServiceImpl implements FormDiagService {
                 .build();
     }
 
-    private FormDiagResponse.NecesidadesDto mapNecesidades(Integer idFormulario) {
+    private FormDiagResponse.NecesidadesDto mapNecesidades(Integer idFormulario, FormDiagFormulario formulario) {
         List<FormDiagNecesidad> necesidades = necesidadRepo.findByIdFormulario(idFormulario);
         List<FormDiagNecCapacitacion> capacitaciones = necCapacitacionRepo.findByIdFormulario(idFormulario);
 
-        if (necesidades.isEmpty() && capacitaciones.isEmpty()) {
+        // Verificar si hay datos (incluyendo los campos de texto del formulario)
+        boolean hayDatosTexto = formulario.getNecesidadesConectividad() != null ||
+                formulario.getNecesidadesCapacitacion() != null ||
+                formulario.getObservacionesGenerales() != null;
+
+        if (necesidades.isEmpty() && capacitaciones.isEmpty() && !hayDatosTexto) {
             return null;
         }
 
@@ -679,6 +692,9 @@ public class FormDiagServiceImpl implements FormDiagService {
         return FormDiagResponse.NecesidadesDto.builder()
                 .necesidades(necList)
                 .capacitacion(capList)
+                .necesidadesConectividad(formulario.getNecesidadesConectividad())
+                .necesidadesCapacitacion(formulario.getNecesidadesCapacitacion())
+                .observacionesGenerales(formulario.getObservacionesGenerales())
                 .build();
     }
 

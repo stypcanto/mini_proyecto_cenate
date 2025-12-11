@@ -36,11 +36,15 @@ import {
     Edit2,
     Trash2,
     ChevronDown,
-    Shield
+    Shield,
+    Home,
+    Clock,
+    FileCheck,
+    ExternalLink
 } from "lucide-react";
 
 // Componente de selector numérico profesional con dropdown usando portal
-const NumberSelector = ({ value, onChange, min = 0, max = 100, className = "", placeholder = "0" }) => {
+const NumberSelector = ({ value, onChange, min = 0, max = 100, className = "", placeholder = "0", disabled = false }) => {
     const [isOpen, setIsOpen] = React.useState(false);
     const [searchValue, setSearchValue] = React.useState("");
     const [position, setPosition] = React.useState({ top: 0, left: 0, width: 0 });
@@ -76,6 +80,7 @@ const NumberSelector = ({ value, onChange, min = 0, max = 100, className = "", p
     }, [isOpen]);
 
     const handleToggle = () => {
+        if (disabled) return; // No hacer nada si está deshabilitado
         if (!isOpen && buttonRef.current) {
             const rect = buttonRef.current.getBoundingClientRect();
             setPosition({
@@ -101,16 +106,21 @@ const NumberSelector = ({ value, onChange, min = 0, max = 100, className = "", p
                     ref={buttonRef}
                     type="button"
                     onClick={handleToggle}
-                    className="w-full px-3 py-2 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20 transition-all flex items-center justify-between gap-2 text-left hover:bg-yellow-100"
+                    disabled={disabled}
+                    className={`w-full px-3 py-2 border-2 rounded-lg transition-all flex items-center justify-between gap-2 text-left ${
+                        disabled
+                            ? "bg-gray-100 border-gray-200 text-gray-400 cursor-not-allowed"
+                            : "bg-yellow-50 border-yellow-300 hover:bg-yellow-100 focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/20"
+                    }`}
                 >
-                    <span className={value !== "" && value !== undefined ? "text-gray-900 font-medium" : "text-gray-400"}>
+                    <span className={value !== "" && value !== undefined && !disabled ? "text-gray-900 font-medium" : "text-gray-400"}>
                         {value !== "" && value !== undefined ? value : placeholder}
                     </span>
-                    <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform duration-200 ${isOpen ? "rotate-180" : ""}`} />
+                    <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${disabled ? "text-gray-300" : "text-gray-500"} ${isOpen ? "rotate-180" : ""}`} />
                 </button>
             </div>
 
-            {isOpen && ReactDOM.createPortal(
+            {isOpen && !disabled && ReactDOM.createPortal(
                 <div
                     ref={dropdownRef}
                     className="bg-white border border-gray-300 rounded-lg shadow-2xl"
@@ -204,6 +214,10 @@ export default function FormularioDiagnostico() {
     const [mostrarModalFirma, setMostrarModalFirma] = useState(false);
     const [pdfParaFirmar, setPdfParaFirmar] = useState(null);
     const [formularioFirmado, setFormularioFirmado] = useState(false);
+
+    // Estado para documentos enviados (historial)
+    const [documentosEnviados, setDocumentosEnviados] = useState([]);
+    const [cargandoDocumentos, setCargandoDocumentos] = useState(false);
 
     // Funciones de validación
     const validarEmail = (email) => {
@@ -299,6 +313,7 @@ export default function FormularioDiagnostico() {
                         const idIpress = response.id_ipress || response.personalExterno?.ipress?.idIpress;
                         if (idIpress) {
                             cargarBorradorExistente(idIpress);
+                            cargarDocumentosEnviados(idIpress);
                         }
                     }
                 } catch (error) {
@@ -309,19 +324,120 @@ export default function FormularioDiagnostico() {
         cargarDatosUsuario();
     }, [user]);
 
-    // Función para cargar formulario existente (borrador o enviado)
+    // Función para cargar documentos enviados del usuario
+    const cargarDocumentosEnviados = async (idIpress) => {
+        setCargandoDocumentos(true);
+        try {
+            const response = await formularioDiagnosticoService.listarPorIpress(idIpress);
+            // Filtrar solo los enviados o firmados
+            const enviados = (response || []).filter(doc =>
+                doc.estado === "ENVIADO" || doc.estado === "FIRMADO"
+            );
+            // Ordenar por ID ascendente (del más antiguo al más reciente)
+            enviados.sort((a, b) => a.idFormulario - b.idFormulario);
+            setDocumentosEnviados(enviados);
+        } catch (error) {
+            console.error("Error cargando documentos enviados:", error);
+            setDocumentosEnviados([]);
+        } finally {
+            setCargandoDocumentos(false);
+        }
+    };
+
+    // Función para ver el PDF real del backend
+    const verPdfBackend = async (idFormulario) => {
+        try {
+            const token = localStorage.getItem('auth.token');
+            const baseUrl = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
+
+            const response = await fetch(`${baseUrl}/formulario-diagnostico/${idFormulario}/pdf`, {
+                method: 'GET',
+                headers: {
+                    'Authorization': `Bearer ${token}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error('Error al obtener PDF');
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            window.open(url, '_blank');
+        } catch (error) {
+            console.error("Error abriendo PDF:", error);
+            toast.error("No hay PDF disponible para este formulario");
+        }
+    };
+
+    // Función para eliminar un documento enviado
+    const handleEliminarDocumento = async (documento) => {
+        const confirmacion = window.confirm(
+            `¿Está seguro de eliminar el Formulario #${documento.idFormulario}?\n\nEsta acción eliminará permanentemente todos los datos del formulario y no se puede deshacer.`
+        );
+
+        if (!confirmacion) return;
+
+        try {
+            await formularioDiagnosticoService.eliminar(documento.idFormulario);
+            toast.success(`Formulario #${documento.idFormulario} eliminado correctamente`);
+
+            // Recargar la lista de documentos
+            const idIpress = datosUsuario?.id_ipress || datosUsuario?.personalExterno?.ipress?.idIpress;
+            if (idIpress) {
+                cargarDocumentosEnviados(idIpress);
+            }
+        } catch (error) {
+            console.error("Error eliminando formulario:", error);
+            toast.error("No se pudo eliminar el formulario. " + (error.message || ""));
+        }
+    };
+
+    // Función para ver un documento enviado específico
+    const verDocumentoEnviado = async (documento) => {
+        setIdFormulario(documento.idFormulario);
+        setEstadoFormulario(documento.estado);
+
+        // Verificar si tiene firma
+        if (documento.fechaFirma || documento.firmaDigital || documento.estado === "FIRMADO") {
+            setFormularioFirmado(true);
+        } else {
+            setFormularioFirmado(false);
+        }
+
+        // Cargar los datos del formulario
+        try {
+            const formularioCompleto = await formularioDiagnosticoService.obtenerPorId(documento.idFormulario);
+            if (formularioCompleto) {
+                setFormData({
+                    datosGenerales: formularioCompleto.datosGenerales || {},
+                    recursosHumanos: formularioCompleto.recursosHumanos || {},
+                    infraestructura: formularioCompleto.infraestructura || {},
+                    equipamiento: formularioCompleto.equipamiento || {},
+                    conectividad: formularioCompleto.conectividad || {},
+                    servicios: formularioCompleto.servicios || {},
+                    necesidades: formularioCompleto.necesidades || {}
+                });
+            }
+        } catch (error) {
+            console.error("Error cargando formulario:", error);
+        }
+
+        setVistaPreviaHabilitada(true);
+        setActiveTab("vista-previa");
+        setCurrentView("formulario");
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+
+    // Función para cargar SOLO borrador en proceso (no formularios enviados)
     const cargarBorradorExistente = async (idIpress) => {
         setCargandoBorrador(true);
         try {
-            // Primero buscar borrador en proceso
-            let formulario = await formularioDiagnosticoService.obtenerBorradorPorIpress(idIpress);
+            // Solo buscar borrador EN_PROCESO
+            const formulario = await formularioDiagnosticoService.obtenerBorradorPorIpress(idIpress);
 
-            // Si no hay borrador, buscar el último formulario (cualquier estado)
-            if (!formulario) {
-                formulario = await formularioDiagnosticoService.obtenerUltimoPorIpress(idIpress);
-            }
-
-            if (formulario) {
+            // Solo cargar si es un borrador EN_PROCESO
+            if (formulario && formulario.estado === "EN_PROCESO") {
                 setIdFormulario(formulario.idFormulario);
                 setEstadoFormulario(formulario.estado);
                 setFormData({
@@ -333,15 +449,11 @@ export default function FormularioDiagnostico() {
                     servicios: formulario.servicios || {},
                     necesidades: formulario.necesidades || {}
                 });
-
-                if (formulario.estado === "ENVIADO") {
-                    setCurrentView("formulario");
-                    setActiveTab("vista-previa");
-                    toast.info("Ya tiene un formulario enviado. Puede revisarlo en la vista previa.");
-                } else if (formulario.estado === "EN_PROCESO") {
-                    toast.success("Se cargó el borrador existente");
-                }
+                setFormularioFirmado(false);
+                toast.success("Se cargó el borrador existente. Puede continuar donde lo dejó.");
             }
+            // Si no hay borrador EN_PROCESO, el usuario puede comenzar uno nuevo
+            // Los formularios enviados se pueden ver desde "Documentos Enviados"
         } catch (error) {
             console.error("Error cargando formulario:", error);
         } finally {
@@ -527,6 +639,7 @@ export default function FormularioDiagnostico() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const pageHeight = doc.internal.pageSize.getHeight();
         const margin = 10;
+        const contentWidth = pageWidth - 2 * margin; // 190mm disponible
         let currentY = margin;
 
         const nombreIpress = datosUsuario?.nombre_ipress || "-";
@@ -634,11 +747,12 @@ export default function FormularioDiagnostico() {
             currentY = doc.lastAutoTable.finalY + 4;
         }
 
-        // Población
-        if (formData.datosGenerales.poblacionAdscrita || formData.datosGenerales.promedioAtenciones) {
+        // Población y Atenciones
+        const atencionesMensuales = formData.datosGenerales.atencionesMenuales || formData.datosGenerales.promedioAtenciones;
+        if (formData.datosGenerales.poblacionAdscrita || atencionesMensuales) {
             const poblacionRow = [];
             if (formData.datosGenerales.poblacionAdscrita) poblacionRow.push([{ content: 'Población adscrita', styles: { fontStyle: 'bold' } }, formatearNumero(formData.datosGenerales.poblacionAdscrita)]);
-            if (formData.datosGenerales.promedioAtenciones) poblacionRow.push([{ content: 'Atenciones/mes', styles: { fontStyle: 'bold' } }, formatearNumero(formData.datosGenerales.promedioAtenciones)]);
+            if (atencionesMensuales) poblacionRow.push([{ content: 'Promedio atenciones mensuales', styles: { fontStyle: 'bold' } }, formatearNumero(atencionesMensuales)]);
             if (poblacionRow.length > 0) {
                 autoTable(doc, { startY: currentY, body: [poblacionRow.flat()], theme: 'plain', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
                 currentY = doc.lastAutoTable.finalY + 5;
@@ -646,198 +760,642 @@ export default function FormularioDiagnostico() {
         }
 
         // RECURSOS HUMANOS
-        currentY = addSection("II. RECURSOS HUMANOS PARA TELESALUD", currentY);
+        currentY = addSection("II. RECURSOS HUMANOS PARA TELESALUD (Ref. NTS N° 235, numeral 6.3.1)", currentY);
 
-        const rhPreguntas = [];
-        if (formData.recursosHumanos.coordTelesalud) rhPreguntas.push(["¿Coordinador Telesalud?", formatValue(formData.recursosHumanos.coordTelesalud)]);
-        if (formData.recursosHumanos.personalApoyo) rhPreguntas.push(["¿Personal de apoyo?", formatValue(formData.recursosHumanos.personalApoyo)]);
+        // 2.1 Coordinador y Personal de apoyo - Preguntas completas
+        currentY = addSubSection("2.1 Designación de Responsables", currentY);
 
-        if (rhPreguntas.length > 0) {
-            autoTable(doc, { startY: currentY, body: [rhPreguntas.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 0: { fontStyle: 'bold' }, 2: { fontStyle: 'bold' } } });
-            currentY = doc.lastAutoTable.finalY + 4;
-        }
+        const preguntasRH = [
+            {
+                num: "2.1.1",
+                pregunta: "¿La IPRESS designa, mediante documento formal, a un Coordinador de Telesalud o profesional de la salud responsable de la implementación y articulación de los servicios de Telesalud?",
+                valor: formData.recursosHumanos.coordTelesalud
+            },
+            {
+                num: "2.1.2",
+                pregunta: "¿Durante la prestación de dichos servicios, la IPRESS asigna un personal de apoyo, conformado por profesionales, técnicos o auxiliares de la salud, personal de soporte TIC o administrativo?",
+                valor: formData.recursosHumanos.personalApoyo
+            }
+        ];
 
-        // Personal de apoyo compacto (2 columnas)
-        if (formData.recursosHumanos.personalApoyo === "si") {
-            const personalItems = [
-                { label: "Médicos especialistas", id: "medicosEspecialistas" }, { label: "Médicos generales", id: "medicosGenerales" },
-                { label: "Enfermeras(os)", id: "enfermeras" }, { label: "Obstetras", id: "obstetras" },
-                { label: "Tecnólogos médicos", id: "tecnologos" }, { label: "Psicólogos", id: "psicologos" },
-                { label: "Nutricionistas", id: "nutricionistas" }, { label: "Trabajadores sociales", id: "trabajadoresSociales" },
-                { label: "Personal TIC", id: "soporteTic" }, { label: "Administrativo", id: "administrativo" },
-            ].filter(item => formData.recursosHumanos[item.id]);
-
-            if (personalItems.length > 0) {
-                currentY = addSubSection("Personal de Apoyo", currentY);
-                const personalRows = [];
-                for (let i = 0; i < personalItems.length; i += 2) {
-                    const row = [personalItems[i].label, formData.recursosHumanos[personalItems[i].id]];
-                    if (personalItems[i + 1]) {
-                        row.push(personalItems[i + 1].label, formData.recursosHumanos[personalItems[i + 1].id]);
-                    } else {
-                        row.push("", "");
-                    }
-                    personalRows.push(row);
+        const rhTableData = preguntasRH.map(p => [
+            { content: p.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+            p.pregunta,
+            {
+                content: p.valor === "si" ? "Sí" : (p.valor === "no" ? "No" : "-"),
+                styles: {
+                    halign: 'center',
+                    fontStyle: 'bold',
+                    fillColor: p.valor === "si" ? [200, 230, 200] : (p.valor === "no" ? [230, 200, 200] : null)
                 }
-                autoTable(doc, { startY: currentY, body: personalRows, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 18, halign: 'center' }, 2: { cellWidth: 45 }, 3: { cellWidth: 18, halign: 'center' } } });
-                currentY = doc.lastAutoTable.finalY + 4;
             }
+        ]);
+
+        autoTable(doc, {
+            startY: currentY,
+            head: [[
+                { content: "N°", styles: { halign: 'center' } },
+                { content: "PREGUNTA", styles: { halign: 'center' } },
+                { content: "RESPUESTA", styles: { halign: 'center' } }
+            ]],
+            body: rhTableData,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 3, valign: 'middle' },
+            headStyles: { fillColor: [10, 91, 169], fontSize: 8, fontStyle: 'bold', halign: 'center' },
+            margin: { left: margin, right: margin },
+            tableWidth: contentWidth,
+            columnStyles: {
+                0: { cellWidth: 15, halign: 'center' },
+                1: { cellWidth: 145 },
+                2: { cellWidth: 30, halign: 'center' }
+            }
+        });
+        currentY = doc.lastAutoTable.finalY + 5;
+
+        // 2.2 CAPACITACIÓN Y COMPETENCIAS - Tabla con preguntas completas
+        currentY = checkNewPage(currentY, 60);
+        currentY = addSubSection("2.2 Capacitación y Competencias", currentY);
+
+        const preguntasCapacitacion = [
+            {
+                num: "2.2.1",
+                pregunta: "¿El personal ha recibido capacitación en uso de TIC para Telesalud?",
+                valor: formData.recursosHumanos.capacitacionTic
+            },
+            {
+                num: "2.2.2",
+                pregunta: "¿El personal conoce la normativa vigente de Telesalud?",
+                valor: formData.recursosHumanos.normativa
+            },
+            {
+                num: "2.2.3",
+                pregunta: "¿El personal tiene competencias en alfabetización digital?",
+                valor: formData.recursosHumanos.alfabetizacion
+            },
+            {
+                num: "2.2.4",
+                pregunta: "¿Existe un plan de capacitación en Telesalud?",
+                valor: formData.recursosHumanos.planCapacitacion
+            }
+        ];
+
+        const capTableData = preguntasCapacitacion.map(p => [
+            { content: p.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169] } },
+            p.pregunta,
+            { content: p.valor === "si" ? "X" : "", styles: { halign: 'center', fontStyle: 'bold', fillColor: p.valor === "si" ? [200, 230, 200] : null } },
+            { content: p.valor === "no" ? "X" : "", styles: { halign: 'center', fontStyle: 'bold', fillColor: p.valor === "no" ? [230, 200, 200] : null } }
+        ]);
+
+        autoTable(doc, {
+            startY: currentY,
+            head: [[
+                { content: "N°", styles: { halign: 'center' } },
+                { content: "PREGUNTA", styles: { halign: 'center' } },
+                { content: "SÍ", styles: { halign: 'center' } },
+                { content: "NO", styles: { halign: 'center' } }
+            ]],
+            body: capTableData,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 3, valign: 'middle' },
+            headStyles: { fillColor: [10, 91, 169], fontSize: 8, fontStyle: 'bold', halign: 'center' },
+            margin: { left: margin, right: margin },
+            tableWidth: contentWidth,
+            columnStyles: {
+                0: { cellWidth: 15, halign: 'center' },
+                1: { cellWidth: 145 },
+                2: { cellWidth: 15, halign: 'center' },
+                3: { cellWidth: 15, halign: 'center' }
+            }
+        });
+        currentY = doc.lastAutoTable.finalY + 5;
+
+        // 2.2.5 y 2.2.6 - Capacitaciones en el año y necesidades (usando tabla)
+        const datosAdicionales = [];
+        if (formData.recursosHumanos.capacitacionesAnio) {
+            datosAdicionales.push([
+                { content: "2.2.5", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                "¿Cuántas capacitaciones en Telesalud se han realizado en el último año?",
+                { content: String(formData.recursosHumanos.capacitacionesAnio), styles: { halign: 'center', fillColor: [255, 250, 205], fontStyle: 'bold' } }
+            ]);
+        }
+        if (formData.recursosHumanos.necesidadesCapacitacion) {
+            datosAdicionales.push([
+                { content: "2.2.6", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                "Principales necesidades (temas) de capacitación identificadas:",
+                { content: formData.recursosHumanos.necesidadesCapacitacion, styles: { fillColor: [255, 250, 205] } }
+            ]);
         }
 
-        // Capacitación compacta
-        const capacitacion = [];
-        if (formData.recursosHumanos.capacitacionTic) capacitacion.push(["Capacitación TIC", formatValue(formData.recursosHumanos.capacitacionTic)]);
-        if (formData.recursosHumanos.normativa) capacitacion.push(["Conoce normativa", formatValue(formData.recursosHumanos.normativa)]);
-        if (formData.recursosHumanos.alfabetizacion) capacitacion.push(["Alfabetización digital", formatValue(formData.recursosHumanos.alfabetizacion)]);
-        if (formData.recursosHumanos.planCapacitacion) capacitacion.push(["Plan capacitación", formatValue(formData.recursosHumanos.planCapacitacion)]);
-
-        if (capacitacion.length > 0) {
-            currentY = addSubSection("Capacitación", currentY);
-            const capRows = [];
-            for (let i = 0; i < capacitacion.length; i += 2) {
-                const row = [...capacitacion[i]];
-                if (capacitacion[i + 1]) row.push(...capacitacion[i + 1]);
-                else row.push("", "");
-                capRows.push(row);
-            }
-            autoTable(doc, { startY: currentY, body: capRows, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: 42 }, 1: { cellWidth: 18, halign: 'center' }, 2: { cellWidth: 42 }, 3: { cellWidth: 18, halign: 'center' } } });
+        if (datosAdicionales.length > 0) {
+            autoTable(doc, {
+                startY: currentY,
+                body: datosAdicionales,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 3, valign: 'middle' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 110 },
+                    2: { cellWidth: 65 }
+                }
+            });
             currentY = doc.lastAutoTable.finalY + 5;
         }
+
+        // Resetear color de texto
+        doc.setTextColor(0, 0, 0);
 
         // INFRAESTRUCTURA
-        currentY = checkNewPage(currentY, 50);
-        currentY = addSection("III. INFRAESTRUCTURA", currentY);
+        currentY = checkNewPage(currentY, 80);
+        currentY = addSection("III. INFRAESTRUCTURA (Ref. NTS N° 235, numeral 6.3.2)", currentY);
 
-        const infraItems = [
-            { label: "Espacio físico Teleconsultorio", id: "espacioFisico" }, { label: "Privacidad paciente", id: "privacidad" },
-            { label: "Escritorio ergonómico", id: "escritorio" }, { label: "Sillas ergonómicas", id: "sillas" },
-            { label: "Estantes equipos", id: "estantes" }, { label: "Archivero con llave", id: "archivero" },
-            { label: "Iluminación adecuada", id: "iluminacion" }, { label: "Ventilación adecuada", id: "ventilacion" },
-            { label: "Aire acondicionado", id: "aireAcondicionado" },
-        ].filter(item => formData.infraestructura[item.id]);
+        // 3.1 INFRAESTRUCTURA FÍSICA - Preguntas completas
+        currentY = addSubSection("3.1 Infraestructura Física", currentY);
 
-        if (infraItems.length > 0) {
-            currentY = addSubSection("Infraestructura Física", currentY);
-            const infraRows = [];
-            for (let i = 0; i < infraItems.length; i += 3) {
-                const row = [infraItems[i].label, formatValue(formData.infraestructura[infraItems[i].id])];
-                if (infraItems[i + 1]) row.push(infraItems[i + 1].label, formatValue(formData.infraestructura[infraItems[i + 1].id]));
-                else row.push("", "");
-                if (infraItems[i + 2]) row.push(infraItems[i + 2].label, formatValue(formData.infraestructura[infraItems[i + 2].id]));
-                else row.push("", "");
-                infraRows.push(row);
+        const preguntasInfraFisica = [
+            { num: "3.1.1", pregunta: "¿Cuenta con espacio físico destinado para Telesalud/Teleconsultorio?", id: "espacioFisico" },
+            { num: "3.1.2", pregunta: "¿Los espacios garantizan privacidad del paciente?", id: "privacidad" },
+            { num: "3.1.3", pregunta: "¿Cuenta con escritorio ergonómico?", id: "escritorio" },
+            { num: "3.1.4", pregunta: "¿Cuenta con sillas ergonómicas?", id: "sillas" },
+            { num: "3.1.5", pregunta: "¿Cuenta con estantes para equipos?", id: "estantes" },
+            { num: "3.1.6", pregunta: "¿Cuenta con archivero con llave?", id: "archivero" },
+            { num: "3.1.7", pregunta: "¿Cuenta con iluminación adecuada?", id: "iluminacion" },
+            { num: "3.1.8", pregunta: "¿Cuenta con ventilación adecuada?", id: "ventilacion" },
+            { num: "3.1.9", pregunta: "¿Cuenta con aire acondicionado?", id: "aireAcondicionado" },
+        ];
+
+        const infraFisicaData = preguntasInfraFisica.map(p => [
+            { content: p.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+            p.pregunta,
+            { content: formData.infraestructura[p.id] === "si" ? "X" : "", styles: { halign: 'center', fontStyle: 'bold', fillColor: formData.infraestructura[p.id] === "si" ? [200, 230, 200] : null } },
+            { content: formData.infraestructura[p.id] === "no" ? "X" : "", styles: { halign: 'center', fontStyle: 'bold', fillColor: formData.infraestructura[p.id] === "no" ? [230, 200, 200] : null } }
+        ]);
+
+        autoTable(doc, {
+            startY: currentY,
+            head: [[
+                { content: "N°", styles: { halign: 'center' } },
+                { content: "PREGUNTA", styles: { halign: 'center' } },
+                { content: "SÍ", styles: { halign: 'center' } },
+                { content: "NO", styles: { halign: 'center' } }
+            ]],
+            body: infraFisicaData,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+            headStyles: { fillColor: [10, 91, 169], fontSize: 7, fontStyle: 'bold', halign: 'center' },
+            margin: { left: margin, right: margin },
+            tableWidth: contentWidth,
+            columnStyles: {
+                0: { cellWidth: 15, halign: 'center' },
+                1: { cellWidth: 145 },
+                2: { cellWidth: 15, halign: 'center' },
+                3: { cellWidth: 15, halign: 'center' }
             }
-            autoTable(doc, { startY: currentY, body: infraRows, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 15 }, 3: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 15 } } });
-            currentY = doc.lastAutoTable.finalY + 4;
-        }
+        });
+        currentY = doc.lastAutoTable.finalY + 3;
 
+        // 3.1.10 Número de ambientes
         if (formData.infraestructura.numAmbientes) {
-            doc.setFontSize(8); doc.setFont('helvetica', 'bold'); doc.text(`N° ambientes Telesalud: ${formData.infraestructura.numAmbientes}`, margin, currentY); currentY += 5;
+            autoTable(doc, {
+                startY: currentY,
+                body: [[
+                    { content: "3.1.10", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                    "Número de ambientes/consultorios destinados a Telesalud:",
+                    { content: String(formData.infraestructura.numAmbientes), styles: { halign: 'center', fillColor: [255, 250, 205], fontStyle: 'bold' } }
+                ]],
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 145 },
+                    2: { cellWidth: 30, halign: 'center' }
+                }
+            });
+            currentY = doc.lastAutoTable.finalY + 3;
         }
 
-        // Infraestructura Tecnológica
-        const infraTec = [
-            { label: "Hardware", id: "hardware" }, { label: "Software", id: "software" }, { label: "Redes", id: "redes" },
-            { label: "Almacenamiento", id: "almacenamiento" }, { label: "Servicios TI", id: "serviciosTec" },
-        ].filter(item => formData.infraestructura[item.id]);
+        // 3.2 INFRAESTRUCTURA TECNOLÓGICA - Preguntas completas
+        currentY = checkNewPage(currentY, 50);
+        currentY = addSubSection("3.2 Infraestructura Tecnológica", currentY);
 
-        if (infraTec.length > 0) {
-            currentY = addSubSection("Infraestructura Tecnológica", currentY);
-            const tecRows = infraTec.map(item => [item.label, formatValue(formData.infraestructura[item.id])]);
-            autoTable(doc, { startY: currentY, body: [tecRows.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
-            currentY = doc.lastAutoTable.finalY + 5;
-        }
+        const preguntasInfraTec = [
+            { num: "3.2.1", pregunta: "¿Cuenta con Hardware: Dispositivos físicos como servidores, computadoras, equipos de red (routers, switches) y sistemas de almacenamiento?", id: "hardware" },
+            { num: "3.2.2", pregunta: "¿Cuenta con Software: Incluye los sistemas operativos, programas, aplicaciones y el software necesario para la gestión y ejecución de tareas?", id: "software" },
+            { num: "3.2.3", pregunta: "¿Cuenta con Redes: Conjunto de sistemas de comunicación (cableado estructurado, redes inalámbricas, etc.) que permiten la interconexión entre equipos y el intercambio de información?", id: "redes" },
+            { num: "3.2.4", pregunta: "¿Cuenta con Almacenamiento: Sistemas y tecnologías para guardar datos y asegurar su acceso y seguridad?", id: "almacenamiento" },
+            { num: "3.2.5", pregunta: "¿Cuenta con Servicios: Elementos como la seguridad informática, la gestión de rendimiento y los servicios de soporte que garantizan el funcionamiento óptimo del sistema?", id: "serviciosTec" },
+        ];
 
-        addFooter(1, 3);
+        const infraTecData = preguntasInfraTec.map(p => [
+            { content: p.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+            p.pregunta,
+            { content: formData.infraestructura[p.id] === "si" ? "X" : "", styles: { halign: 'center', fontStyle: 'bold', fillColor: formData.infraestructura[p.id] === "si" ? [200, 230, 200] : null } },
+            { content: formData.infraestructura[p.id] === "no" ? "X" : "", styles: { halign: 'center', fontStyle: 'bold', fillColor: formData.infraestructura[p.id] === "no" ? [230, 200, 200] : null } }
+        ]);
 
-        // ==================== PÁGINA 2: EQUIPAMIENTO + CONECTIVIDAD ====================
-        doc.addPage();
-        currentY = addHeader();
-        currentY = addSection("IV. EQUIPAMIENTO", currentY);
+        autoTable(doc, {
+            startY: currentY,
+            head: [[
+                { content: "N°", styles: { halign: 'center' } },
+                { content: "PREGUNTA", styles: { halign: 'center' } },
+                { content: "SÍ", styles: { halign: 'center' } },
+                { content: "NO", styles: { halign: 'center' } }
+            ]],
+            body: infraTecData,
+            theme: 'grid',
+            styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+            headStyles: { fillColor: [10, 91, 169], fontSize: 7, fontStyle: 'bold', halign: 'center' },
+            margin: { left: margin, right: margin },
+            tableWidth: contentWidth,
+            columnStyles: {
+                0: { cellWidth: 15, halign: 'center' },
+                1: { cellWidth: 145 },
+                2: { cellWidth: 15, halign: 'center' },
+                3: { cellWidth: 15, halign: 'center' }
+            }
+        });
+        currentY = doc.lastAutoTable.finalY + 3;
 
-        // Equipamiento Informático
-        const equipInfoNames = ["PC Escritorio", "Laptop", "Monitor", "Cable HDMI", "Cámara web HD", "Micrófono", "Parlantes", "Impresora", "Escáner", "Router/Switch"];
-        const equipInfoData = equipInfoNames.map((equipo, index) => {
+        // EQUIPAMIENTO
+        currentY = checkNewPage(currentY, 60);
+        currentY = addSection("IV. EQUIPAMIENTO (Ref. NTS N° 235, numeral 6.3.3)", currentY);
+
+        // 4.1 EQUIPAMIENTO INFORMÁTICO PARA TELESALUD
+        const equipInfoCompleto = [
+            { num: "4.1.1", nombre: "Computadora de escritorio" },
+            { num: "4.1.2", nombre: "Computadora portátil (laptop)" },
+            { num: "4.1.3", nombre: "Monitor" },
+            { num: "4.1.4", nombre: "Cable HDMI" },
+            { num: "4.1.5", nombre: "Cámara web HD (resolución mínima de 1080p)" },
+            { num: "4.1.6", nombre: "Micrófono" },
+            { num: "4.1.7", nombre: "Parlantes/audífonos" },
+            { num: "4.1.8", nombre: "Impresora" },
+            { num: "4.1.9", nombre: "Escáner" },
+            { num: "4.1.10", nombre: "Router/Switch de red" }
+        ];
+
+        const equipInfoData = equipInfoCompleto.map((equipo, index) => {
             const fieldId = `equipInfo${index}`;
             const disp = formData.equipamiento[`${fieldId}_disponible`];
             const cant = formData.equipamiento[`${fieldId}_cantidad`];
             const estado = formData.equipamiento[`${fieldId}_estado`];
-            if (!disp && !cant && !estado) return null;
-            return [equipo, formatValue(disp), cant || "-", capitalizeFirst(estado)];
-        }).filter(row => row !== null);
+            const obs = formData.equipamiento[`${fieldId}_obs`];
+            // Solo incluir si tiene datos registrados
+            if (!disp) return null;
+            return [
+                { content: equipo.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                equipo.nombre,
+                { content: disp === "si" ? "Sí" : "No", styles: { halign: 'center', fillColor: disp === "si" ? [200, 230, 200] : [230, 200, 200] } },
+                { content: cant || "-", styles: { halign: 'center' } },
+                { content: capitalizeFirst(estado) || "-", styles: { halign: 'center' } },
+                { content: obs || "-", styles: { fontSize: 6 } }
+            ];
+        }).filter(item => item !== null);
 
         if (equipInfoData.length > 0) {
-            currentY = addSubSection("Equipamiento Informático", currentY);
-            autoTable(doc, { startY: currentY, head: [["Equipo", "Disp", "Cant", "Estado"]], body: equipInfoData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: 45 }, 1: { halign: 'center', cellWidth: 18 }, 2: { halign: 'center', cellWidth: 18 }, 3: { halign: 'center', cellWidth: 25 } } });
-            currentY = doc.lastAutoTable.finalY + 4;
+            currentY = addSubSection("4.1 Equipamiento Informático para Telesalud", currentY);
+            autoTable(doc, {
+                startY: currentY,
+                head: [[
+                    { content: "N°", styles: { halign: 'center' } },
+                    { content: "EQUIPO/DISPOSITIVO", styles: { halign: 'center' } },
+                    { content: "DISP.", styles: { halign: 'center' } },
+                    { content: "CANT.", styles: { halign: 'center' } },
+                    { content: "ESTADO", styles: { halign: 'center' } },
+                    { content: "OBSERVACIONES", styles: { halign: 'center' } }
+                ]],
+                body: equipInfoData,
+                theme: 'striped',
+                styles: { fontSize: 6, cellPadding: 1.5, valign: 'middle' },
+                headStyles: { fillColor: [10, 91, 169], fontSize: 6, fontStyle: 'bold' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 60 },
+                    2: { cellWidth: 15, halign: 'center' },
+                    3: { cellWidth: 15, halign: 'center' },
+                    4: { cellWidth: 20, halign: 'center' },
+                    5: { cellWidth: 65 }
+                }
+            });
+            currentY = doc.lastAutoTable.finalY + 3;
         }
 
-        // Equipamiento Biomédico
-        const equipBioNames = ["Pulsioxímetro", "Dermatoscopio", "Ecógrafo", "Electrocardiógrafo", "Gases arteriales", "Estetoscopio", "Fonendoscopio", "Monitor vitales", "Otoscopio", "Oxímetro", "Retinógrafo", "Tensiómetro", "Videocolposcopio", "Estación móvil"];
-        const equipBioData = equipBioNames.map((equipo, index) => {
+        // 4.2 EQUIPAMIENTO BIOMÉDICO DIGITAL
+        currentY = checkNewPage(currentY, 60);
+
+        const equipBioCompleto = [
+            { num: "4.2.1", nombre: "Pulsioxímetro digital" },
+            { num: "4.2.2", nombre: "Dermatoscopio digital" },
+            { num: "4.2.3", nombre: "Ecógrafo digital" },
+            { num: "4.2.4", nombre: "Electrocardiógrafo digital" },
+            { num: "4.2.5", nombre: "Equipo de gases arteriales digital" },
+            { num: "4.2.6", nombre: "Estetoscopio digital" },
+            { num: "4.2.7", nombre: "Fonendoscopio digital" },
+            { num: "4.2.8", nombre: "Monitor de funciones vitales" },
+            { num: "4.2.9", nombre: "Otoscopio digital" },
+            { num: "4.2.10", nombre: "Oxímetro digital" },
+            { num: "4.2.11", nombre: "Retinógrafo digital" },
+            { num: "4.2.12", nombre: "Tensiómetro digital" },
+            { num: "4.2.13", nombre: "Videocolposcopio" },
+            { num: "4.2.14", nombre: "Estación móvil de telemedicina" }
+        ];
+
+        const equipBioData = equipBioCompleto.map((equipo, index) => {
             const fieldId = `equipBio${index}`;
             const disp = formData.equipamiento[`${fieldId}_disponible`];
             const cant = formData.equipamiento[`${fieldId}_cantidad`];
             const estado = formData.equipamiento[`${fieldId}_estado`];
-            if (!disp && !cant && !estado) return null;
-            return [equipo, formatValue(disp), cant || "-", capitalizeFirst(estado)];
-        }).filter(row => row !== null);
+            const obs = formData.equipamiento[`${fieldId}_obs`];
+            // Solo incluir si tiene datos registrados
+            if (!disp) return null;
+            return [
+                { content: equipo.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                equipo.nombre,
+                { content: disp === "si" ? "Sí" : "No", styles: { halign: 'center', fillColor: disp === "si" ? [200, 230, 200] : [230, 200, 200] } },
+                { content: cant || "-", styles: { halign: 'center' } },
+                { content: capitalizeFirst(estado) || "-", styles: { halign: 'center' } },
+                { content: obs || "-", styles: { fontSize: 6 } }
+            ];
+        }).filter(item => item !== null);
 
         if (equipBioData.length > 0) {
-            currentY = addSubSection("Equipamiento Biomédico Digital", currentY);
-            autoTable(doc, { startY: currentY, head: [["Equipo", "Disp", "Cant", "Estado"]], body: equipBioData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 0: { cellWidth: 45 }, 1: { halign: 'center', cellWidth: 18 }, 2: { halign: 'center', cellWidth: 18 }, 3: { halign: 'center', cellWidth: 25 } } });
-            currentY = doc.lastAutoTable.finalY + 5;
+            currentY = addSubSection("4.2 Equipamiento Biomédico Digital", currentY);
+            autoTable(doc, {
+                startY: currentY,
+                head: [[
+                    { content: "N°", styles: { halign: 'center' } },
+                    { content: "EQUIPO/DISPOSITIVO", styles: { halign: 'center' } },
+                    { content: "DISP.", styles: { halign: 'center' } },
+                    { content: "CANT.", styles: { halign: 'center' } },
+                    { content: "ESTADO", styles: { halign: 'center' } },
+                    { content: "OBSERVACIONES", styles: { halign: 'center' } }
+                ]],
+                body: equipBioData,
+                theme: 'striped',
+                styles: { fontSize: 6, cellPadding: 1.5, valign: 'middle' },
+                headStyles: { fillColor: [10, 91, 169], fontSize: 6, fontStyle: 'bold' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 60 },
+                    2: { cellWidth: 15, halign: 'center' },
+                    3: { cellWidth: 15, halign: 'center' },
+                    4: { cellWidth: 20, halign: 'center' },
+                    5: { cellWidth: 65 }
+                }
+            });
+            currentY = doc.lastAutoTable.finalY + 3;
         }
 
-        // CONECTIVIDAD
-        currentY = checkNewPage(currentY, 50);
-        currentY = addSection("V. CONECTIVIDAD Y SISTEMAS", currentY);
+        // CONECTIVIDAD Y SISTEMAS DE INFORMACIÓN
+        currentY = checkNewPage(currentY, 80);
+        currentY = addSection("V. CONECTIVIDAD Y SISTEMAS DE INFORMACIÓN (Ref. NTS N° 235, numerales 6.3.4 y 6.3.5)", currentY);
 
-        const conectItems = [
-            { label: "Acceso internet", id: "internet" }, { label: "Conexión estable", id: "estable" },
-            { label: "Energía alternativa", id: "energiaAlt" }, { label: "Puntos red", id: "puntosRed" }, { label: "WiFi institucional", id: "wifi" },
-        ].filter(item => formData.conectividad[item.id]);
+        // 5.1 CONECTIVIDAD Y SERVICIOS
+        currentY = addSubSection("5.1 Conectividad y Servicios", currentY);
 
-        if (conectItems.length > 0) {
-            const conectRows = conectItems.map(item => [item.label, formatValue(formData.conectividad[item.id])]);
-            autoTable(doc, { startY: currentY, body: [conectRows.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
-            currentY = doc.lastAutoTable.finalY + 4;
+        const conectividadPreguntas = [
+            { num: "5.1.1", pregunta: "¿Cuenta con acceso a internet?", id: "internet" },
+            { num: "5.1.2", pregunta: "¿La conexión es estable y permanente?", id: "estable" },
+            { num: "5.1.3", pregunta: "¿Cuenta con sistema alternativo de energía eléctrica?", id: "energiaAlt" },
+            { num: "5.1.4", pregunta: "¿Cuenta con puntos de red suficientes?", id: "puntosRed" },
+            { num: "5.1.5", pregunta: "¿Cuenta con red WiFi institucional?", id: "wifi" }
+        ];
+
+        const conectData = conectividadPreguntas
+            .filter(item => formData.conectividad[item.id])
+            .map(item => [
+                { content: item.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                item.pregunta,
+                { content: formData.conectividad[item.id] === "si" ? "Sí" : "No", styles: { halign: 'center', fillColor: formData.conectividad[item.id] === "si" ? [200, 230, 200] : [230, 200, 200] } },
+                { content: formData.conectividad[item.id] === "si" ? "" : "", styles: { halign: 'center', fillColor: formData.conectividad[item.id] === "no" ? [230, 200, 200] : null } }
+            ]);
+
+        if (conectData.length > 0) {
+            autoTable(doc, {
+                startY: currentY,
+                head: [[
+                    { content: "N°", styles: { halign: 'center' } },
+                    { content: "PREGUNTA", styles: { halign: 'center' } },
+                    { content: "SÍ", styles: { halign: 'center' } },
+                    { content: "NO", styles: { halign: 'center' } }
+                ]],
+                body: conectData,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+                headStyles: { fillColor: [10, 91, 169], fontSize: 7, fontStyle: 'bold', halign: 'center' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 145 },
+                    2: { cellWidth: 15, halign: 'center' },
+                    3: { cellWidth: 15, halign: 'center' }
+                },
+                didParseCell: function(data) {
+                    if (data.section === 'body') {
+                        const rowIndex = data.row.index;
+                        const colIndex = data.column.index;
+                        const item = conectividadPreguntas.filter(i => formData.conectividad[i.id])[rowIndex];
+                        if (item) {
+                            const value = formData.conectividad[item.id];
+                            if (colIndex === 2) {
+                                data.cell.text = value === "si" ? ["X"] : [""];
+                                data.cell.styles.fillColor = value === "si" ? [200, 230, 200] : null;
+                            } else if (colIndex === 3) {
+                                data.cell.text = value === "no" ? ["X"] : [""];
+                                data.cell.styles.fillColor = value === "no" ? [230, 200, 200] : null;
+                            }
+                        }
+                    }
+                }
+            });
+            currentY = doc.lastAutoTable.finalY + 3;
         }
 
-        // Detalles conexión en línea
-        const detalles = [];
-        if (formData.conectividad.tipoConexion) detalles.push(`Tipo: ${formData.conectividad.tipoConexion}`);
-        if (formData.conectividad.proveedor) detalles.push(`Proveedor: ${formData.conectividad.proveedor}`);
-        if (formData.conectividad.velocidadContratada) detalles.push(`Vel. contratada: ${formData.conectividad.velocidadContratada} Mbps`);
-        if (formData.conectividad.velocidadReal) detalles.push(`Vel. real: ${formData.conectividad.velocidadReal} Mbps`);
-        if (detalles.length > 0) {
-            doc.setFontSize(8); doc.setFont('helvetica', 'normal'); doc.text(detalles.join(" | "), margin, currentY); currentY += 6;
+        // Detalles de conexión (5.1.6 - 5.1.10)
+        const detallesConexion = [];
+        if (formData.conectividad.tipoConexion) detallesConexion.push(["5.1.6", "Tipo de conexión a internet:", formData.conectividad.tipoConexion]);
+        if (formData.conectividad.proveedor) detallesConexion.push(["5.1.7", "Proveedor de servicio de internet:", formData.conectividad.proveedor]);
+        if (formData.conectividad.velocidadContratada) detallesConexion.push(["5.1.8", "Velocidad contratada (Mbps):", formData.conectividad.velocidadContratada + " Mbps"]);
+        if (formData.conectividad.velocidadReal) detallesConexion.push(["5.1.9", "Velocidad real promedio (Mbps):", formData.conectividad.velocidadReal + " Mbps"]);
+        if (formData.conectividad.numPuntosRed) detallesConexion.push(["5.1.10", "N° de puntos de red:", formData.conectividad.numPuntosRed]);
+
+        if (detallesConexion.length > 0) {
+            const detallesData = detallesConexion.map(item => [
+                { content: item[0], styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                item[1],
+                { content: item[2], styles: { fillColor: [255, 255, 200] } }
+            ]);
+            autoTable(doc, {
+                startY: currentY,
+                body: detallesData,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 85 },
+                    2: { cellWidth: 90 }
+                }
+            });
+            currentY = doc.lastAutoTable.finalY + 3;
         }
 
-        // Sistemas de Información
-        const sistemas = [
-            { label: "ESSI", id: "essi" }, { label: "PACS", id: "pacs" }, { label: "ANATPAT", id: "anatpat" },
-            { label: "Videoconf.", id: "videoconferencia" }, { label: "Citas online", id: "citasLinea" },
-        ].filter(item => formData.conectividad[item.id]);
+        // 5.2 SISTEMAS DE INFORMACIÓN
+        currentY = checkNewPage(currentY, 60);
+        currentY = addSubSection("5.2 Sistemas de Información", currentY);
 
-        if (sistemas.length > 0) {
-            currentY = addSubSection("Sistemas de Información", currentY);
-            const sisRows = sistemas.map(item => [item.label, formatValue(formData.conectividad[item.id])]);
-            autoTable(doc, { startY: currentY, body: [sisRows.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
-            currentY = doc.lastAutoTable.finalY + 4;
+        const sistemasPreguntas = [
+            { num: "5.2.1", pregunta: "¿Cuenta con ESSI, que permita el registro, la trazabilidad, continuidad y legalidad de las atenciones por Telesalud?", id: "essi" },
+            { num: "5.2.2", pregunta: "¿Cuenta con PACS, autorizado por la institución, que permita el registro, la trazabilidad, continuidad y legalidad de las atenciones por Telesalud?", id: "pacs" },
+            { num: "5.2.3", pregunta: "¿Cuenta con ANATPAT autorizado por la institución?", id: "anatpat" },
+            { num: "5.2.4", pregunta: "¿Cuenta con sistema de videoconferencia?", id: "videoconferencia" },
+            { num: "5.2.5", pregunta: "¿Cuenta con sistema de citas en línea?", id: "citasLinea" }
+        ];
+
+        const sistemasData = sistemasPreguntas
+            .filter(item => formData.conectividad[item.id])
+            .map(item => [
+                { content: item.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                item.pregunta,
+                { content: "X", styles: { halign: 'center' } },
+                { content: "", styles: { halign: 'center' } }
+            ]);
+
+        if (sistemasData.length > 0) {
+            autoTable(doc, {
+                startY: currentY,
+                head: [[
+                    { content: "N°", styles: { halign: 'center' } },
+                    { content: "PREGUNTA", styles: { halign: 'center' } },
+                    { content: "SÍ", styles: { halign: 'center' } },
+                    { content: "NO", styles: { halign: 'center' } }
+                ]],
+                body: sistemasData,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+                headStyles: { fillColor: [10, 91, 169], fontSize: 7, fontStyle: 'bold', halign: 'center' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 145 },
+                    2: { cellWidth: 15, halign: 'center' },
+                    3: { cellWidth: 15, halign: 'center' }
+                },
+                didParseCell: function(data) {
+                    if (data.section === 'body') {
+                        const rowIndex = data.row.index;
+                        const colIndex = data.column.index;
+                        const item = sistemasPreguntas.filter(i => formData.conectividad[i.id])[rowIndex];
+                        if (item) {
+                            const value = formData.conectividad[item.id];
+                            if (colIndex === 2) {
+                                data.cell.text = value === "si" ? ["X"] : [""];
+                                data.cell.styles.fillColor = value === "si" ? [200, 230, 200] : null;
+                            } else if (colIndex === 3) {
+                                data.cell.text = value === "no" ? ["X"] : [""];
+                                data.cell.styles.fillColor = value === "no" ? [230, 200, 200] : null;
+                            }
+                        }
+                    }
+                }
+            });
+            currentY = doc.lastAutoTable.finalY + 3;
         }
 
-        // Seguridad compacta
-        const seguridad = [
-            { label: "Confidencialidad", id: "confidencialidad" }, { label: "Integridad", id: "integridad" },
-            { label: "Disponibilidad", id: "disponibilidad" }, { label: "Contingencia", id: "contingencia" },
-            { label: "Backup", id: "backup" }, { label: "Consentimiento", id: "consentimiento" }, { label: "Ley 29733", id: "ley29733" },
-        ].filter(item => formData.conectividad[item.id]);
+        // 5.2.6 Otro sistema interoperable
+        if (formData.conectividad.otroSistema) {
+            autoTable(doc, {
+                startY: currentY,
+                body: [[
+                    { content: "5.2.6", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                    "¿Cuenta con otro sistema interoperable autorizado?",
+                    { content: formData.conectividad.otroSistema, styles: { fillColor: [255, 255, 200] } }
+                ]],
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 85 },
+                    2: { cellWidth: 90 }
+                }
+            });
+            currentY = doc.lastAutoTable.finalY + 3;
+        }
 
-        if (seguridad.length > 0) {
-            currentY = addSubSection("Seguridad de Información", currentY);
-            const segRows = seguridad.map(item => [item.label, formatValue(formData.conectividad[item.id])]);
-            autoTable(doc, { startY: currentY, body: [segRows.flat()], theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin } });
+        // 5.3 SEGURIDAD DE LA INFORMACIÓN Y PROTECCIÓN DE DATOS
+        currentY = checkNewPage(currentY, 60);
+        currentY = addSubSection("5.3 Seguridad de la Información y Protección de Datos", currentY);
+
+        const seguridadPreguntas = [
+            { num: "5.3.1", pregunta: "¿Cuenta con mecanismos de confidencialidad de la información?", id: "confidencialidad" },
+            { num: "5.3.2", pregunta: "¿Cuenta con mecanismos de integridad de la información?", id: "integridad" },
+            { num: "5.3.3", pregunta: "¿Cuenta con mecanismos de disponibilidad de la información?", id: "disponibilidad" },
+            { num: "5.3.4", pregunta: "¿Implementa planes de contingencia para pérdida de datos?", id: "contingencia" },
+            { num: "5.3.5", pregunta: "¿Cuenta con respaldo (backup) de información?", id: "backup" },
+            { num: "5.3.6", pregunta: "¿Cuenta con formato de Consentimiento Informado para Telemedicina?", id: "consentimiento" },
+            { num: "5.3.7", pregunta: "¿Cumple con la Ley N° 29733 de Protección de Datos Personales?", id: "ley29733" }
+        ];
+
+        const seguridadData = seguridadPreguntas
+            .filter(item => formData.conectividad[item.id])
+            .map(item => [
+                { content: item.num, styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center' } },
+                item.pregunta,
+                { content: "X", styles: { halign: 'center' } },
+                { content: "", styles: { halign: 'center' } }
+            ]);
+
+        if (seguridadData.length > 0) {
+            autoTable(doc, {
+                startY: currentY,
+                head: [[
+                    { content: "N°", styles: { halign: 'center' } },
+                    { content: "PREGUNTA", styles: { halign: 'center' } },
+                    { content: "SÍ", styles: { halign: 'center' } },
+                    { content: "NO", styles: { halign: 'center' } }
+                ]],
+                body: seguridadData,
+                theme: 'grid',
+                styles: { fontSize: 7, cellPadding: 2, valign: 'middle' },
+                headStyles: { fillColor: [10, 91, 169], fontSize: 7, fontStyle: 'bold', halign: 'center' },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 15, halign: 'center' },
+                    1: { cellWidth: 145 },
+                    2: { cellWidth: 15, halign: 'center' },
+                    3: { cellWidth: 15, halign: 'center' }
+                },
+                didParseCell: function(data) {
+                    if (data.section === 'body') {
+                        const rowIndex = data.row.index;
+                        const colIndex = data.column.index;
+                        const item = seguridadPreguntas.filter(i => formData.conectividad[i.id])[rowIndex];
+                        if (item) {
+                            const value = formData.conectividad[item.id];
+                            if (colIndex === 2) {
+                                data.cell.text = value === "si" ? ["X"] : [""];
+                                data.cell.styles.fillColor = value === "si" ? [200, 230, 200] : null;
+                            } else if (colIndex === 3) {
+                                data.cell.text = value === "no" ? ["X"] : [""];
+                                data.cell.styles.fillColor = value === "no" ? [230, 200, 200] : null;
+                            }
+                        }
+                    }
+                }
+            });
             currentY = doc.lastAutoTable.finalY + 5;
         }
 
@@ -845,26 +1403,45 @@ export default function FormularioDiagnostico() {
         currentY = checkNewPage(currentY, 40);
         currentY = addSection("VI. SERVICIOS DE TELESALUD", currentY);
 
-        const servicios = [
-            { label: "RENIPRESS", id: "incorporoServicios" }, { label: "Teleconsulta", id: "teleconsulta" },
-            { label: "Teleorientación", id: "teleorientacion" }, { label: "Telemonitoreo", id: "telemonitoreo" },
-            { label: "Teleinterconsulta", id: "teleinterconsulta" }, { label: "Teleurgencia", id: "teleurgencia" },
-            { label: "Teletriaje", id: "teletriaje" }, { label: "Telerradiografía", id: "telerradiografia" },
-            { label: "Telemamografía", id: "telemamografia" }, { label: "Teletomografía", id: "teletomografia" },
-            { label: "Telecapacitación", id: "telecapacitacion" }, { label: "TeleIEC", id: "teleiec" },
-        ].filter(item => formData.servicios[item.id]);
+        const serviciosCompletos = [
+            { label: "Servicios incorporados en RENIPRESS", id: "incorporoServicios" },
+            { label: "Teleconsulta", id: "teleconsulta" },
+            { label: "Teleorientación", id: "teleorientacion" },
+            { label: "Telemonitoreo", id: "telemonitoreo" },
+            { label: "Teleinterconsulta", id: "teleinterconsulta" },
+            { label: "Teleurgencia", id: "teleurgencia" },
+            { label: "Teletriaje", id: "teletriaje" },
+            { label: "Telerradiografía", id: "telerradiografia" },
+            { label: "Telemamografía", id: "telemamografia" },
+            { label: "Teletomografía", id: "teletomografia" },
+            { label: "Telecapacitación", id: "telecapacitacion" },
+            { label: "TeleIEC", id: "teleiec" },
+        ];
 
-        if (servicios.length > 0) {
-            const servRows = [];
-            for (let i = 0; i < servicios.length; i += 4) {
-                const row = [];
-                for (let j = 0; j < 4; j++) {
-                    if (servicios[i + j]) row.push(servicios[i + j].label, formatValue(formData.servicios[servicios[i + j].id]));
-                    else row.push("", "");
+        const serviciosData = serviciosCompletos
+            .filter(item => formData.servicios[item.id])
+            .map(item => [
+                item.label,
+                formatValue(formData.servicios[item.id]),
+                formData.servicios[`${item.id}_obs`] || "-"
+            ]);
+
+        if (serviciosData.length > 0) {
+            autoTable(doc, {
+                startY: currentY,
+                head: [["Servicio", "Estado", "Observaciones"]],
+                body: serviciosData,
+                theme: 'striped',
+                styles: { fontSize: 8, cellPadding: 2.5 },
+                headStyles: { fillColor: [10, 91, 169], fontSize: 8 },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: {
+                    0: { cellWidth: 60 },
+                    1: { halign: 'center', cellWidth: 25 },
+                    2: { cellWidth: 105 }
                 }
-                servRows.push(row);
-            }
-            autoTable(doc, { startY: currentY, body: servRows, theme: 'grid', styles: { fontSize: 8, cellPadding: 2.5 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 15 }, 3: { halign: 'center', cellWidth: 15 }, 5: { halign: 'center', cellWidth: 15 }, 7: { halign: 'center', cellWidth: 15 } } });
+            });
             currentY = doc.lastAutoTable.finalY + 5;
         }
 
@@ -886,7 +1463,7 @@ export default function FormularioDiagnostico() {
         if (needsInfra.length > 0) {
             currentY = addSubSection("Infraestructura Física", currentY);
             const infraNeedData = needsInfra.map(item => [item.label, formData.necesidades[`infra_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`infra_${item.id}_prior`])]);
-            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: infraNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 22 }, 2: { halign: 'center', cellWidth: 28 } } });
+            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: infraNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
             currentY = doc.lastAutoTable.finalY + 4;
         }
 
@@ -902,7 +1479,7 @@ export default function FormularioDiagnostico() {
         if (needsEquip.length > 0) {
             currentY = addSubSection("Equipamiento Informático", currentY);
             const equipNeedData = needsEquip.map(item => [item.label, formData.necesidades[`equip_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`equip_${item.id}_prior`])]);
-            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: equipNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 22 }, 2: { halign: 'center', cellWidth: 28 } } });
+            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: equipNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
             currentY = doc.lastAutoTable.finalY + 4;
         }
 
@@ -917,27 +1494,96 @@ export default function FormularioDiagnostico() {
         if (needsBio.length > 0) {
             currentY = addSubSection("Equipamiento Biomédico", currentY);
             const bioNeedData = needsBio.map(item => [item.label, formData.necesidades[`bio_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`bio_${item.id}_prior`])]);
-            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: bioNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, columnStyles: { 1: { halign: 'center', cellWidth: 22 }, 2: { halign: 'center', cellWidth: 28 } } });
+            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: bioNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
             currentY = doc.lastAutoTable.finalY + 4;
         }
 
-        // Observaciones
-        if (formData.necesidades.necesidadesConectividad || formData.necesidades.necesidadesCapacitacionFinal || formData.necesidades.observacionesGenerales) {
-            currentY = addSubSection("Observaciones", currentY);
-            doc.setFontSize(8);
+        // 7.4 OTRAS NECESIDADES Y OBSERVACIONES
+        if (formData.necesidades.necesidadesConectividad || formData.necesidades.necesidadesCapacitacion || formData.necesidades.observacionesGenerales) {
+            currentY = checkNewPage(currentY, 60);
+            currentY = addSubSection("7.4 Otras Necesidades y Observaciones", currentY);
+
+            // 7.4.1 Necesidades de conectividad
             if (formData.necesidades.necesidadesConectividad) {
-                doc.setFont('helvetica', 'bold'); doc.text("Conectividad: ", margin, currentY);
-                doc.setFont('helvetica', 'normal'); doc.text(formData.necesidades.necesidadesConectividad.substring(0, 100), margin + 25, currentY); currentY += 6;
+                autoTable(doc, {
+                    startY: currentY,
+                    body: [[
+                        { content: "7.4.1", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
+                        { content: "Necesidades de conectividad (internet, puntos de red, etc.):", styles: { fontStyle: 'bold' } }
+                    ]],
+                    theme: 'plain',
+                    styles: { fontSize: 8, cellPadding: 1 },
+                    margin: { left: margin, right: margin },
+                    tableWidth: contentWidth,
+                    columnStyles: { 0: { cellWidth: 15 }, 1: { cellWidth: 175 } }
+                });
+                currentY = doc.lastAutoTable.finalY + 1;
+
+                autoTable(doc, {
+                    startY: currentY,
+                    body: [[{ content: formData.necesidades.necesidadesConectividad, styles: { fillColor: [255, 255, 200], minCellHeight: 15 } }]],
+                    theme: 'grid',
+                    styles: { fontSize: 8, cellPadding: 4 },
+                    margin: { left: margin, right: margin },
+                    tableWidth: contentWidth
+                });
+                currentY = doc.lastAutoTable.finalY + 4;
             }
-            if (formData.necesidades.necesidadesCapacitacionFinal) {
-                doc.setFont('helvetica', 'bold'); doc.text("Capacitación: ", margin, currentY);
-                doc.setFont('helvetica', 'normal'); doc.text(formData.necesidades.necesidadesCapacitacionFinal.substring(0, 100), margin + 25, currentY); currentY += 6;
+
+            // 7.4.2 Necesidades de capacitación
+            if (formData.necesidades.necesidadesCapacitacion) {
+                currentY = checkNewPage(currentY, 40);
+                autoTable(doc, {
+                    startY: currentY,
+                    body: [[
+                        { content: "7.4.2", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
+                        { content: "Necesidades de capacitación del personal:", styles: { fontStyle: 'bold' } }
+                    ]],
+                    theme: 'plain',
+                    styles: { fontSize: 8, cellPadding: 1 },
+                    margin: { left: margin, right: margin },
+                    tableWidth: contentWidth,
+                    columnStyles: { 0: { cellWidth: 15 }, 1: { cellWidth: 175 } }
+                });
+                currentY = doc.lastAutoTable.finalY + 1;
+
+                autoTable(doc, {
+                    startY: currentY,
+                    body: [[{ content: formData.necesidades.necesidadesCapacitacion, styles: { fillColor: [255, 255, 200], minCellHeight: 15 } }]],
+                    theme: 'grid',
+                    styles: { fontSize: 8, cellPadding: 4 },
+                    margin: { left: margin, right: margin },
+                    tableWidth: contentWidth
+                });
+                currentY = doc.lastAutoTable.finalY + 4;
             }
+
+            // 7.4.3 Observaciones generales
             if (formData.necesidades.observacionesGenerales) {
-                doc.setFont('helvetica', 'bold'); doc.text("General: ", margin, currentY);
-                doc.setFont('helvetica', 'normal');
-                const obsText = doc.splitTextToSize(formData.necesidades.observacionesGenerales, pageWidth - 2 * margin - 18);
-                doc.text(obsText, margin + 18, currentY);
+                currentY = checkNewPage(currentY, 40);
+                autoTable(doc, {
+                    startY: currentY,
+                    body: [[
+                        { content: "7.4.3", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
+                        { content: "Observaciones generales y comentarios adicionales:", styles: { fontStyle: 'bold' } }
+                    ]],
+                    theme: 'plain',
+                    styles: { fontSize: 8, cellPadding: 1 },
+                    margin: { left: margin, right: margin },
+                    tableWidth: contentWidth,
+                    columnStyles: { 0: { cellWidth: 15 }, 1: { cellWidth: 175 } }
+                });
+                currentY = doc.lastAutoTable.finalY + 1;
+
+                autoTable(doc, {
+                    startY: currentY,
+                    body: [[{ content: formData.necesidades.observacionesGenerales, styles: { fillColor: [255, 255, 200], minCellHeight: 15 } }]],
+                    theme: 'grid',
+                    styles: { fontSize: 8, cellPadding: 4 },
+                    margin: { left: margin, right: margin },
+                    tableWidth: contentWidth
+                });
+                currentY = doc.lastAutoTable.finalY + 4;
             }
         }
 
@@ -1114,6 +1760,120 @@ export default function FormularioDiagnostico() {
                         </div>
                     </div>
                 </div>
+
+                {/* Sección de Documentos Enviados */}
+                {documentosEnviados.length > 0 && (
+                    <div className="mt-8 bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
+                        <div className="bg-gradient-to-r from-emerald-600 to-emerald-700 px-8 py-5 border-b border-emerald-500">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-white/20 rounded-xl">
+                                    <FileCheck className="w-6 h-6 text-white" />
+                                </div>
+                                <div>
+                                    <h2 className="text-xl font-bold text-white">
+                                        Documentos Enviados
+                                    </h2>
+                                    <p className="text-emerald-100 text-sm">
+                                        Historial de formularios enviados por su IPRESS
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="p-6">
+                            {cargandoDocumentos ? (
+                                <div className="flex items-center justify-center py-8">
+                                    <Loader2 className="w-8 h-8 text-emerald-600 animate-spin" />
+                                    <span className="ml-3 text-gray-600">Cargando documentos...</span>
+                                </div>
+                            ) : (
+                                <div className="space-y-3">
+                                    {documentosEnviados.map((doc) => (
+                                        <div
+                                            key={doc.idFormulario}
+                                            className="flex items-center justify-between p-4 bg-gradient-to-r from-gray-50 to-white rounded-xl border border-gray-200 hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                                        >
+                                            <div className="flex items-center gap-4">
+                                                <div className={`p-3 rounded-xl ${
+                                                    doc.estado === "FIRMADO"
+                                                        ? "bg-purple-100"
+                                                        : "bg-emerald-100"
+                                                }`}>
+                                                    {doc.estado === "FIRMADO" ? (
+                                                        <Shield className="w-5 h-5 text-purple-600" />
+                                                    ) : (
+                                                        <FileText className="w-5 h-5 text-emerald-600" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <p className="font-semibold text-gray-800">
+                                                        Formulario #{doc.idFormulario}
+                                                    </p>
+                                                    <div className="flex items-center gap-3 mt-1">
+                                                        <span className="flex items-center gap-1 text-sm text-gray-500">
+                                                            <Calendar className="w-4 h-4" />
+                                                            {doc.fechaEnvio
+                                                                ? new Date(doc.fechaEnvio).toLocaleDateString("es-PE", {
+                                                                    day: '2-digit',
+                                                                    month: '2-digit',
+                                                                    year: 'numeric'
+                                                                })
+                                                                : "Sin fecha"}
+                                                        </span>
+                                                        <span className="flex items-center gap-1 text-sm text-gray-500">
+                                                            <Clock className="w-4 h-4" />
+                                                            {doc.fechaEnvio
+                                                                ? new Date(doc.fechaEnvio).toLocaleTimeString("es-PE", {
+                                                                    hour: '2-digit',
+                                                                    minute: '2-digit'
+                                                                })
+                                                                : "--:--"}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div className="flex items-center gap-3">
+                                                {/* Badge de estado */}
+                                                <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
+                                                    doc.estado === "FIRMADO"
+                                                        ? "bg-purple-100 text-purple-700"
+                                                        : doc.fechaFirma || doc.firmaDigital
+                                                            ? "bg-purple-100 text-purple-700"
+                                                            : "bg-amber-100 text-amber-700"
+                                                }`}>
+                                                    {doc.estado === "FIRMADO"
+                                                        ? "Firmado"
+                                                        : doc.fechaFirma || doc.firmaDigital
+                                                            ? "Enviado con Firma"
+                                                            : "Enviado sin Firma"}
+                                                </span>
+
+                                                {/* Botón Ver PDF (del backend) */}
+                                                <button
+                                                    onClick={() => verPdfBackend(doc.idFormulario)}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                                                >
+                                                    <ExternalLink className="w-4 h-4" />
+                                                    Ver PDF
+                                                </button>
+
+                                                {/* Botón Eliminar */}
+                                                <button
+                                                    onClick={() => handleEliminarDocumento(doc)}
+                                                    className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-medium rounded-lg transition-colors shadow-sm"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Eliminar
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                )}
 
                 {/* Footer institucional */}
                 <div className="mt-8 text-center">
@@ -1798,6 +2558,23 @@ export default function FormularioDiagnostico() {
                                                 const fieldId = `equipInfo${index}`;
                                                 const disponible = formData.equipamiento[`${fieldId}_disponible`];
                                                 const isEnabled = disponible === "si";
+
+                                                const handleDisponibleChange = (value) => {
+                                                    handleInputChange("equipamiento", `${fieldId}_disponible`, value);
+                                                    if (value === "si") {
+                                                        // Si selecciona Sí, establecer cantidad mínima de 1
+                                                        const cantidadActual = formData.equipamiento[`${fieldId}_cantidad`];
+                                                        if (!cantidadActual || parseInt(cantidadActual) < 1) {
+                                                            handleInputChange("equipamiento", `${fieldId}_cantidad`, "1");
+                                                        }
+                                                    } else {
+                                                        // Si selecciona No, limpiar cantidad, estado y observaciones
+                                                        handleInputChange("equipamiento", `${fieldId}_cantidad`, "");
+                                                        handleInputChange("equipamiento", `${fieldId}_estado`, "");
+                                                        handleInputChange("equipamiento", `${fieldId}_obs`, "");
+                                                    }
+                                                };
+
                                                 return (
                                                     <tr key={index} className={disponible === "si" ? "bg-green-50" : (index % 2 === 0 ? "bg-blue-50" : "bg-white")}>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">
@@ -1812,7 +2589,7 @@ export default function FormularioDiagnostico() {
                                                                         name={`${fieldId}_disponible`}
                                                                         value="si"
                                                                         checked={disponible === "si"}
-                                                                        onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
+                                                                        onChange={() => handleDisponibleChange("si")}
                                                                         className="w-4 h-4 text-green-600"
                                                                     />
                                                                     <span className="text-sm">Sí</span>
@@ -1823,7 +2600,7 @@ export default function FormularioDiagnostico() {
                                                                         name={`${fieldId}_disponible`}
                                                                         value="no"
                                                                         checked={disponible === "no"}
-                                                                        onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
+                                                                        onChange={() => handleDisponibleChange("no")}
                                                                         className="w-4 h-4 text-gray-600"
                                                                     />
                                                                     <span className="text-sm">No</span>
@@ -1834,7 +2611,7 @@ export default function FormularioDiagnostico() {
                                                             <NumberSelector
                                                                 value={formData.equipamiento[`${fieldId}_cantidad`] || ""}
                                                                 onChange={(e) => handleInputChange("equipamiento", `${fieldId}_cantidad`, e.target.value)}
-                                                                min={0}
+                                                                min={isEnabled ? 1 : 0}
                                                                 max={50}
                                                                 className="w-20"
                                                                 disabled={!isEnabled}
@@ -1912,6 +2689,23 @@ export default function FormularioDiagnostico() {
                                                 const fieldId = `equipBio${index}`;
                                                 const disponible = formData.equipamiento[`${fieldId}_disponible`];
                                                 const isEnabled = disponible === "si";
+
+                                                const handleDisponibleChangeBio = (value) => {
+                                                    handleInputChange("equipamiento", `${fieldId}_disponible`, value);
+                                                    if (value === "si") {
+                                                        // Si selecciona Sí, establecer cantidad mínima de 1
+                                                        const cantidadActual = formData.equipamiento[`${fieldId}_cantidad`];
+                                                        if (!cantidadActual || parseInt(cantidadActual) < 1) {
+                                                            handleInputChange("equipamiento", `${fieldId}_cantidad`, "1");
+                                                        }
+                                                    } else {
+                                                        // Si selecciona No, limpiar cantidad, estado y observaciones
+                                                        handleInputChange("equipamiento", `${fieldId}_cantidad`, "");
+                                                        handleInputChange("equipamiento", `${fieldId}_estado`, "");
+                                                        handleInputChange("equipamiento", `${fieldId}_obs`, "");
+                                                    }
+                                                };
+
                                                 return (
                                                     <tr key={index} className={disponible === "si" ? "bg-green-50" : (index % 2 === 0 ? "bg-blue-50" : "bg-white")}>
                                                         <td className="px-3 py-2 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">
@@ -1926,7 +2720,7 @@ export default function FormularioDiagnostico() {
                                                                         name={`${fieldId}_disponible`}
                                                                         value="si"
                                                                         checked={disponible === "si"}
-                                                                        onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
+                                                                        onChange={() => handleDisponibleChangeBio("si")}
                                                                         className="w-4 h-4 text-green-600"
                                                                     />
                                                                     <span className="text-sm">Sí</span>
@@ -1937,7 +2731,7 @@ export default function FormularioDiagnostico() {
                                                                         name={`${fieldId}_disponible`}
                                                                         value="no"
                                                                         checked={disponible === "no"}
-                                                                        onChange={(e) => handleInputChange("equipamiento", `${fieldId}_disponible`, e.target.value)}
+                                                                        onChange={() => handleDisponibleChangeBio("no")}
                                                                         className="w-4 h-4 text-gray-600"
                                                                     />
                                                                     <span className="text-sm">No</span>
@@ -1948,7 +2742,7 @@ export default function FormularioDiagnostico() {
                                                             <NumberSelector
                                                                 value={formData.equipamiento[`${fieldId}_cantidad`] || ""}
                                                                 onChange={(e) => handleInputChange("equipamiento", `${fieldId}_cantidad`, e.target.value)}
-                                                                min={0}
+                                                                min={isEnabled ? 1 : 0}
                                                                 max={50}
                                                                 className="w-20"
                                                                 disabled={!isEnabled}
@@ -2607,7 +3401,7 @@ export default function FormularioDiagnostico() {
 
                                 <div className="grid grid-cols-2 gap-4 text-sm">
                                     <div><strong>1.9 Población adscrita:</strong> {formData.datosGenerales.poblacionAdscrita ? formatearNumero(formData.datosGenerales.poblacionAdscrita) : "No especificado"}</div>
-                                    <div><strong>1.10 Promedio atenciones mensuales:</strong> {formData.datosGenerales.promedioAtenciones ? formatearNumero(formData.datosGenerales.promedioAtenciones) : "No especificado"}</div>
+                                    <div><strong>1.10 Promedio atenciones mensuales:</strong> {(formData.datosGenerales.atencionesMenuales || formData.datosGenerales.promedioAtenciones) ? formatearNumero(formData.datosGenerales.atencionesMenuales || formData.datosGenerales.promedioAtenciones) : "No especificado"}</div>
                                 </div>
                             </div>
                         </div>
@@ -3178,57 +3972,80 @@ export default function FormularioDiagnostico() {
                         <div className="flex items-center gap-2">
                             {activeTab === "vista-previa" ? (
                                 <>
-                                    <button
-                                        onClick={() => {
-                                            setActiveTab("necesidades");
-                                            window.scrollTo({ top: 0, behavior: 'smooth' });
-                                        }}
-                                        className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
-                                    >
-                                        <Edit2 className="w-4 h-4" />
-                                        Editar Formulario
-                                    </button>
-                                    <button
-                                        onClick={() => {
-                                            if (window.confirm("¿Está seguro de descartar el formulario? Se perderán todos los datos ingresados.")) {
-                                                setFormData({
-                                                    fechaDiagnostico: new Date().toISOString().split("T")[0],
-                                                    responsableTecnico: { nombre: "", cargo: "", correo: "", telefono: "" },
-                                                    responsableAdministrativo: { nombre: "", cargo: "", correo: "", telefono: "" },
-                                                    profesionales: [],
-                                                    tecnicos: [],
-                                                    administrativos: [],
-                                                    teleoperadores: [],
-                                                    ambientes: { cantidad: "", espacioAdecuado: "", observaciones: "" },
-                                                    mobiliario: { escritorios: "", sillas: "", otroMobiliario: "", observaciones: "" },
-                                                    condiciones: { iluminacion: "", ventilacion: "", privacidad: "", accesibilidad: "", observaciones: "" },
-                                                    equipos: { computadoras: { cantidad: 0, estado: "-" }, laptops: { cantidad: 0, estado: "-" }, tablets: { cantidad: 0, estado: "-" }, impresoras: { cantidad: 0, estado: "-" }, scanners: { cantidad: 0, estado: "-" } },
-                                                    videoconferencia: { camarasWeb: { cantidad: 0, estado: "-" }, microfonos: { cantidad: 0, estado: "-" }, parlantes: { cantidad: 0, estado: "-" }, audifonos: { cantidad: 0, estado: "-" } },
-                                                    medico: { estetoscopioDigital: { cantidad: 0, estado: "-" }, dermatoscopio: { cantidad: 0, estado: "-" }, otoscopio: { cantidad: 0, estado: "-" }, tensiometroDigital: { cantidad: 0, estado: "-" }, pulsioximetro: { cantidad: 0, estado: "-" }, glucometro: { cantidad: 0, estado: "-" }, termometroDigital: { cantidad: 0, estado: "-" }, electrocardiografo: { cantidad: 0, estado: "-" } },
-                                                    conectividad: { tipoConexion: "", proveedor: "", velocidadContratada: "", velocidadReal: "", estabilidad: "", vpn: "" },
-                                                    serviciosTelesalud: { teleconsulta: false, teleorientacion: false, telemonitoreo: false, teleinterconsulta: false, telediagnostico: false, especialidades: "" },
-                                                    necesidades: {
-                                                        infraestructura: { espacioFisico: { cantidad: 0, prioridad: "-" }, escritorios: { cantidad: 0, prioridad: "-" }, sillas: { cantidad: 0, prioridad: "-" } },
-                                                        equipamiento: { computadoras: { cantidad: 0, prioridad: "-" }, laptops: { cantidad: 0, prioridad: "-" }, camaras: { cantidad: 0, prioridad: "-" } },
-                                                        conectividad: { mejoraAnchoBanda: false, instalacionVPN: false, otrasNecesidades: "" },
-                                                        capacitacion: { telesalud: false, equiposMedicos: false, plataformas: false, otrasCapacitaciones: "" },
-                                                        observacionesGenerales: ""
+                                    {/* Solo mostrar Editar y Descartar si NO está enviado ni firmado */}
+                                    {estadoFormulario !== "ENVIADO" && estadoFormulario !== "FIRMADO" && (
+                                        <>
+                                            <button
+                                                onClick={() => {
+                                                    setActiveTab("necesidades");
+                                                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                }}
+                                                className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                                            >
+                                                <Edit2 className="w-4 h-4" />
+                                                Editar Formulario
+                                            </button>
+                                            <button
+                                                onClick={() => {
+                                                    if (window.confirm("¿Está seguro de descartar el formulario? Se perderán todos los datos ingresados.")) {
+                                                        setFormData({
+                                                            fechaDiagnostico: new Date().toISOString().split("T")[0],
+                                                            responsableTecnico: { nombre: "", cargo: "", correo: "", telefono: "" },
+                                                            responsableAdministrativo: { nombre: "", cargo: "", correo: "", telefono: "" },
+                                                            profesionales: [],
+                                                            tecnicos: [],
+                                                            administrativos: [],
+                                                            teleoperadores: [],
+                                                            ambientes: { cantidad: "", espacioAdecuado: "", observaciones: "" },
+                                                            mobiliario: { escritorios: "", sillas: "", otroMobiliario: "", observaciones: "" },
+                                                            condiciones: { iluminacion: "", ventilacion: "", privacidad: "", accesibilidad: "", observaciones: "" },
+                                                            equipos: { computadoras: { cantidad: 0, estado: "-" }, laptops: { cantidad: 0, estado: "-" }, tablets: { cantidad: 0, estado: "-" }, impresoras: { cantidad: 0, estado: "-" }, scanners: { cantidad: 0, estado: "-" } },
+                                                            videoconferencia: { camarasWeb: { cantidad: 0, estado: "-" }, microfonos: { cantidad: 0, estado: "-" }, parlantes: { cantidad: 0, estado: "-" }, audifonos: { cantidad: 0, estado: "-" } },
+                                                            medico: { estetoscopioDigital: { cantidad: 0, estado: "-" }, dermatoscopio: { cantidad: 0, estado: "-" }, otoscopio: { cantidad: 0, estado: "-" }, tensiometroDigital: { cantidad: 0, estado: "-" }, pulsioximetro: { cantidad: 0, estado: "-" }, glucometro: { cantidad: 0, estado: "-" }, termometroDigital: { cantidad: 0, estado: "-" }, electrocardiografo: { cantidad: 0, estado: "-" } },
+                                                            conectividad: { tipoConexion: "", proveedor: "", velocidadContratada: "", velocidadReal: "", estabilidad: "", vpn: "" },
+                                                            serviciosTelesalud: { teleconsulta: false, teleorientacion: false, telemonitoreo: false, teleinterconsulta: false, telediagnostico: false, especialidades: "" },
+                                                            necesidades: {
+                                                                infraestructura: { espacioFisico: { cantidad: 0, prioridad: "-" }, escritorios: { cantidad: 0, prioridad: "-" }, sillas: { cantidad: 0, prioridad: "-" } },
+                                                                equipamiento: { computadoras: { cantidad: 0, prioridad: "-" }, laptops: { cantidad: 0, prioridad: "-" }, camaras: { cantidad: 0, prioridad: "-" } },
+                                                                conectividad: { mejoraAnchoBanda: false, instalacionVPN: false, otrasNecesidades: "" },
+                                                                capacitacion: { telesalud: false, equiposMedicos: false, plataformas: false, otrasCapacitaciones: "" },
+                                                                observacionesGenerales: ""
+                                                            }
+                                                        });
+                                                        setIdFormulario(null);
+                                                        setEstadoFormulario("NUEVO");
+                                                        setVistaPreviaHabilitada(false);
+                                                        setActiveTab("datos-generales");
+                                                        setCurrentView("instrucciones");
+                                                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                                                        toast.success("Formulario descartado correctamente");
                                                     }
-                                                });
-                                                setIdFormulario(null);
-                                                setEstadoFormulario("NUEVO");
-                                                setVistaPreviaHabilitada(false);
-                                                setActiveTab("datos-generales");
+                                                }}
+                                                className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                                Descartar Formulario
+                                            </button>
+                                        </>
+                                    )}
+                                    {/* Botón Regresar a Inicio cuando está enviado o firmado */}
+                                    {(estadoFormulario === "ENVIADO" || estadoFormulario === "FIRMADO") && (
+                                        <button
+                                            onClick={() => {
+                                                // Recargar documentos enviados
+                                                const idIpress = datosUsuario?.id_ipress || datosUsuario?.personalExterno?.ipress?.idIpress;
+                                                if (idIpress) {
+                                                    cargarDocumentosEnviados(idIpress);
+                                                }
                                                 setCurrentView("instrucciones");
                                                 window.scrollTo({ top: 0, behavior: 'smooth' });
-                                                toast.success("Formulario descartado correctamente");
-                                            }
-                                        }}
-                                        className="flex items-center gap-2 px-4 py-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all"
-                                    >
-                                        <Trash2 className="w-4 h-4" />
-                                        Descartar Formulario
-                                    </button>
+                                            }}
+                                            className="flex items-center gap-2 px-4 py-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all"
+                                        >
+                                            <Home className="w-4 h-4" />
+                                            Regresar a Inicio
+                                        </button>
+                                    )}
                                 </>
                             ) : (
                                 <button
@@ -3263,13 +4080,16 @@ export default function FormularioDiagnostico() {
 
                             {activeTab === "vista-previa" ? (
                                 <div className="flex items-center gap-3">
-                                    <button
-                                        onClick={handleDescargarPDF}
-                                        className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all shadow-lg"
-                                    >
-                                        <FileDown className="w-4 h-4" />
-                                        Generar PDF
-                                    </button>
+                                    {/* Solo mostrar Previsualizar PDF si NO está enviado ni firmado */}
+                                    {estadoFormulario !== "ENVIADO" && estadoFormulario !== "FIRMADO" && (
+                                        <button
+                                            onClick={handleDescargarPDF}
+                                            className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all shadow-lg"
+                                        >
+                                            <Eye className="w-4 h-4" />
+                                            Previsualizar PDF
+                                        </button>
+                                    )}
                                     {estadoFormulario !== "ENVIADO" && estadoFormulario !== "FIRMADO" && (
                                         <>
                                             <button
@@ -3313,10 +4133,43 @@ export default function FormularioDiagnostico() {
                                         </div>
                                     )}
                                     {estadoFormulario === "ENVIADO" && (
-                                        <div className="flex items-center gap-2 px-4 py-2 bg-green-100 text-green-700 rounded-lg">
-                                            <CheckCircle2 className="w-4 h-4" />
-                                            <span className="font-medium">Formulario Enviado</span>
-                                        </div>
+                                        <>
+                                            {!formularioFirmado && (
+                                                <button
+                                                    onClick={handleAbrirModalFirma}
+                                                    disabled={enviando}
+                                                    className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-all shadow-lg ${
+                                                        enviando
+                                                            ? "bg-purple-400 cursor-not-allowed"
+                                                            : "bg-purple-600 hover:bg-purple-700"
+                                                    } text-white`}
+                                                >
+                                                    {enviando ? (
+                                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                                    ) : (
+                                                        <Shield className="w-4 h-4" />
+                                                    )}
+                                                    Regularizar Firma
+                                                </button>
+                                            )}
+                                            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
+                                                formularioFirmado
+                                                    ? "bg-purple-100 text-purple-700"
+                                                    : "bg-amber-100 text-amber-700"
+                                            }`}>
+                                                {formularioFirmado ? (
+                                                    <>
+                                                        <Shield className="w-4 h-4" />
+                                                        <span className="font-medium">Enviado y Firmado</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <AlertCircle className="w-4 h-4" />
+                                                        <span className="font-medium">Enviado sin Firma</span>
+                                                    </>
+                                                )}
+                                            </div>
+                                        </>
                                     )}
                                 </div>
                             ) : activeTab === "necesidades" ? (
@@ -3324,8 +4177,8 @@ export default function FormularioDiagnostico() {
                                     onClick={handleGenerarPDF}
                                     className="flex items-center gap-2 px-6 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-all"
                                 >
-                                    <FileDown className="w-4 h-4" />
-                                    Generar PDF
+                                    <CheckCircle2 className="w-4 h-4" />
+                                    Terminar Formulario
                                 </button>
                             ) : (
                                 <button

@@ -161,6 +161,9 @@ public class FormDiagRequest {
     public static class NecesidadesDto {
         private List<NecesidadItemDto> necesidades;
         private List<CapacitacionDto> capacitacion;
+        private String necesidadesConectividad;
+        private String necesidadesCapacitacion;
+        private String observacionesGenerales;
     }
 
     @Data

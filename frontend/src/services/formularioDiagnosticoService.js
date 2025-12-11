@@ -44,7 +44,7 @@ const formularioDiagnosticoService = {
      */
     obtenerPorId: async (idFormulario) => {
         const response = await api.get(`/formulario-diagnostico/${idFormulario}`);
-        return transformarParaFrontend(response.data);
+        return transformarParaFrontend(response);
     },
 
     /**
@@ -55,12 +55,12 @@ const formularioDiagnosticoService = {
     obtenerBorradorPorIpress: async (idIpress) => {
         try {
             const response = await api.get(`/formulario-diagnostico/borrador/ipress/${idIpress}`);
-            if (response.data) {
-                return transformarParaFrontend(response.data);
+            if (response) {
+                return transformarParaFrontend(response);
             }
             return null;
         } catch (error) {
-            if (error.response && error.response.status === 204) {
+            if (error.message && error.message.includes('204')) {
                 return null;
             }
             throw error;
@@ -75,12 +75,12 @@ const formularioDiagnosticoService = {
     obtenerUltimoPorIpress: async (idIpress) => {
         try {
             const response = await api.get(`/formulario-diagnostico/ultimo/ipress/${idIpress}`);
-            if (response.data) {
-                return transformarParaFrontend(response.data);
+            if (response) {
+                return transformarParaFrontend(response);
             }
             return null;
         } catch (error) {
-            if (error.response && error.response.status === 204) {
+            if (error.message && error.message.includes('204')) {
                 return null;
             }
             throw error;
@@ -186,13 +186,18 @@ const ESTADO_EQUIPO_IDS = {
 
 // Mapeo de servicios a id_servicio
 const SERVICIOS_IDS = {
-    'incorporadoOficial': 1,
+    'incorporoServicios': 1,
     'teleconsulta': 2,
     'teleorientacion': 3,
     'telemonitoreo': 4,
     'teleinterconsulta': 5,
-    'televigilancia': 6,
-    'teletriage': 7,
+    'teleurgencia': 6,
+    'teletriaje': 7,
+    'telerradiografia': 8,
+    'telemamografia': 9,
+    'teletomografia': 10,
+    'telecapacitacion': 11,
+    'teleiec': 12,
 };
 
 // Mapeo de prioridades
@@ -354,7 +359,7 @@ function transformarParaBackendInterno(formData, idIpress, idFormulario = null) 
                 serviciosList.push({
                     idServicio: SERVICIOS_IDS[key],
                     disponible: toBool(disponible),
-                    observaciones: serv[`${key}_observaciones`] || '',
+                    observaciones: serv[`${key}_obs`] || '',
                 });
             }
         });
@@ -368,6 +373,9 @@ function transformarParaBackendInterno(formData, idIpress, idFormulario = null) 
         request.necesidades = {
             necesidades: [],
             capacitacion: [],
+            necesidadesConectividad: nec.necesidadesConectividad || '',
+            necesidadesCapacitacion: nec.necesidadesCapacitacion || '',
+            observacionesGenerales: nec.observacionesGenerales || '',
         };
 
         // Necesidades de infraestructura y equipamiento
@@ -417,6 +425,8 @@ function transformarParaFrontend(response) {
     if (response.datosGenerales) {
         const dg = response.datosGenerales;
         formData.datosGenerales = {
+            // Nombres usados en la vista previa
+            directorNombre: dg.directorNombre || '',
             directorNombreCompleto: dg.directorNombre || '',
             directorCorreo: dg.directorCorreo || '',
             directorTelefono: dg.directorTelefono || '',
@@ -424,6 +434,7 @@ function transformarParaFrontend(response) {
             responsableCorreo: dg.responsableCorreo || '',
             responsableTelefono: dg.responsableTelefono || '',
             poblacionAdscrita: dg.poblacionAdscrita || '',
+            promedioAtenciones: dg.atencionesMenuales || '',
             atencionesMenuales: dg.atencionesMenuales || '',
         };
     }
@@ -546,7 +557,7 @@ function transformarParaFrontend(response) {
             const key = ID_TO_SERVICIO[serv.idServicio];
             if (key) {
                 formData.servicios[key] = fromBool(serv.disponible);
-                formData.servicios[`${key}_observaciones`] = serv.observaciones || '';
+                formData.servicios[`${key}_obs`] = serv.observaciones || '';
             }
         });
     }
@@ -559,7 +570,62 @@ function transformarParaFrontend(response) {
             capacitacion: [],
         };
 
-        // Necesidades de infraestructura
+        // Mapeo de nombreNecesidad a campos del frontend
+        const NECESIDAD_FIELD_MAP = {
+            // Infraestructura Física
+            'Espacio físico': 'infra_espacioFisico',
+            'Espacio físico para Teleconsultorio': 'infra_espacioFisico',
+            'Escritorio': 'infra_escritorio',
+            'Escritorio ergonómico': 'infra_escritorio',
+            'Sillas': 'infra_sillas',
+            'Sillas ergonómicas': 'infra_sillas',
+            'Estantes': 'infra_estantes',
+            'Estantes para equipos': 'infra_estantes',
+            'Archivero': 'infra_archivero',
+            'Archivero con llave': 'infra_archivero',
+            'Luz eléctrica': 'infra_luzElectrica',
+            'Instalación de luz eléctrica': 'infra_luzElectrica',
+            'Ventilación': 'infra_ventilacion',
+            'Sistema de ventilación': 'infra_ventilacion',
+            'Aire acondicionado': 'infra_aireAcond',
+            'Aire acond.': 'infra_aireAcond',
+            // Equipamiento Informático
+            'Computadora': 'equip_computadora',
+            'Computadora de escritorio': 'equip_computadora',
+            'Laptop': 'equip_laptop',
+            'Computadora portátil': 'equip_laptop',
+            'Computadora portátil (laptop)': 'equip_laptop',
+            'Monitor': 'equip_monitor',
+            'Cámara web': 'equip_camaraWeb',
+            'Cámara web HD': 'equip_camaraWeb',
+            'Cámara web HD (1080p)': 'equip_camaraWeb',
+            'Micrófono': 'equip_microfono',
+            'Parlantes': 'equip_parlantes',
+            'Parlantes/Audífonos': 'equip_parlantes',
+            'Impresora': 'equip_impresora',
+            'Escáner': 'equip_escaner',
+            'Router': 'equip_router',
+            'Router/Switch de red': 'equip_router',
+            'UPS': 'equip_ups',
+            'UPS/Estabilizador': 'equip_ups',
+            // Equipamiento Biomédico
+            'Pulsioxímetro': 'bio_pulsioximetro',
+            'Estetoscopio': 'bio_estetoscopio',
+            'Estetoscopio digital': 'bio_estetoscopio',
+            'Tensiómetro': 'bio_tensiometro',
+            'Tensiómetro digital': 'bio_tensiometro',
+            'Otoscopio': 'bio_otoscopio',
+            'Otoscopio digital': 'bio_otoscopio',
+            'Dermatoscopio': 'bio_dermatoscopio',
+            'Dermatoscopio digital': 'bio_dermatoscopio',
+            'Electrocardiógrafo': 'bio_electrocardiografo',
+            'Ecógrafo': 'bio_ecografo',
+            'Ecógrafo digital': 'bio_ecografo',
+            'Estación móvil': 'bio_estacionMovil',
+            'Estación móvil de telemedicina': 'bio_estacionMovil',
+        };
+
+        // Necesidades de infraestructura y equipamiento
         if (nec.necesidades && Array.isArray(nec.necesidades)) {
             formData.necesidades.necesidadesItems = nec.necesidades.map(n => ({
                 idNecesidad: n.idNecesidad,
@@ -568,6 +634,26 @@ function transformarParaFrontend(response) {
                 cantidadRequerida: n.cantidadRequerida || '',
                 prioridad: n.prioridad || '',
             }));
+
+            // También mapear a campos individuales para la vista previa
+            nec.necesidades.forEach(n => {
+                const fieldBase = NECESIDAD_FIELD_MAP[n.nombreNecesidad];
+                if (fieldBase) {
+                    formData.necesidades[`${fieldBase}_cant`] = n.cantidadRequerida || '';
+                    formData.necesidades[`${fieldBase}_prior`] = (n.prioridad || '').toLowerCase();
+                }
+            });
+        }
+
+        // Campos de texto de necesidades
+        if (nec.necesidadesConectividad) {
+            formData.necesidades.necesidadesConectividad = nec.necesidadesConectividad;
+        }
+        if (nec.necesidadesCapacitacion) {
+            formData.necesidades.necesidadesCapacitacion = nec.necesidadesCapacitacion;
+        }
+        if (nec.observacionesGenerales) {
+            formData.necesidades.observacionesGenerales = nec.observacionesGenerales;
         }
 
         // Necesidades de capacitación
