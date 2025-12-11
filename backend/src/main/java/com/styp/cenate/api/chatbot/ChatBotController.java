@@ -125,7 +125,8 @@ public class ChatBotController {
                 .toList();
 
         if (esPacienteNuevo) {
-            objPaciente.setListarServiciosDefecto(serviciosDefecto);
+            //objPaciente.setListarServiciosDefecto(serviciosDefecto);
+            objPaciente.setListarServiciosDisponibles(new HashSet<>(serviciosDefecto));
             return ResponseEntity.ok(objPaciente);
         }
         

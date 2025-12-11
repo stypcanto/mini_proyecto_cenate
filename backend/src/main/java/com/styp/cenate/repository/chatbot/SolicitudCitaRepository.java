@@ -1,4 +1,4 @@
-package com.styp.cenate.repository;
+package com.styp.cenate.repository.chatbot;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -7,7 +7,7 @@ import java.util.List;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import com.styp.cenate.model.SolicitudCita;
+import com.styp.cenate.model.chatbot.SolicitudCita;
 
 @Repository
 public interface SolicitudCitaRepository extends JpaRepository<SolicitudCita, Long> {
@@ -15,8 +15,8 @@ public interface SolicitudCitaRepository extends JpaRepository<SolicitudCita, Lo
 	// Buscar por documento del paciente
 	List<SolicitudCita> findByDocPaciente(String docPaciente);
 
-	// Buscar por estado de solicitud
-	List<SolicitudCita> findByEstadoSolicitud(String estadoSolicitud);
+//	// Buscar por estado de solicitud
+//	List<SolicitudCita> findByEstadoSolicitud(String estadoSolicitud);
 
 	// Buscar por servicio (usando la relación)
 	List<SolicitudCita> findByServicio_IdServicio(Long idServicio);

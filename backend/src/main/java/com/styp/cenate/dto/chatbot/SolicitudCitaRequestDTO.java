@@ -1,4 +1,4 @@
-package com.styp.cenate.dto;
+package com.styp.cenate.dto.chatbot;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
@@ -21,7 +21,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class SolicitudCitaDTO {
+public class SolicitudCitaRequestDTO {
 
 	private Long idSolicitud;
 
@@ -34,12 +34,15 @@ public class SolicitudCitaDTO {
 	@NotNull(message = "El documento de paciente es obligatorio")
 	@Pattern(regexp = "^[0-9]+$", message = "El documento solo debe contener números")
 	private String docPaciente;
-	@NotBlank(message = "El nombre del paciente es obligatorio")
-	private String nombresPaciente;
+//	@NotBlank(message = "El nombre del paciente es obligatorio")
+//	private String nombresPaciente;
 
-	private String sexo;
-	@PositiveOrZero(message = "La edad debe ser 0 o un número positivo")
-	private Integer edad;
+//	@Pattern(regexp = "^[MFfm]$", message="Ingrese el sexo de manera correcta")
+//	private String sexo;
+
+//	@PositiveOrZero(message = "La edad debe ser 0 o un número positivo")
+//	private Integer edad;
+	
 	@Size(min = 9, max = 12, message = "El telefono debe tener entre 9 y 12 caracteres")
 	private String telefono;
 
@@ -50,9 +53,9 @@ public class SolicitudCitaDTO {
 	@NotNull(message = "La hora de solicitud es obligatoria")
 	@JsonFormat(pattern = "HH:mm:ss")
 	private LocalTime horaCita;
-	private OffsetDateTime fechaSolicitud;
-	private OffsetDateTime fechaActualiza;
-	private String estadoSolicitud;
+//	private OffsetDateTime fechaSolicitud;
+//	private OffsetDateTime fechaActualiza;
+//	private String estadoSolicitud;
 	private String observacion;
 
 	// Relaciones
@@ -76,4 +79,5 @@ public class SolicitudCitaDTO {
 	@Positive(message = "El idSubactividad debe ser un número positivo")
 	private Long idSubactividad; // SubactividadEssi
 	private String descSubactividad;
+
 }

@@ -1,10 +1,32 @@
-package com.styp.cenate.model;
+package com.styp.cenate.model.chatbot;
 
-import jakarta.persistence.*;
-import lombok.*;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+
+import com.styp.cenate.model.ActividadEssi;
+import com.styp.cenate.model.AreaHospitalaria;
+import com.styp.cenate.model.DimServicioEssi;
+import com.styp.cenate.model.PersonalCnt;
+import com.styp.cenate.model.SubactividadEssi;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.ForeignKey;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.PrePersist;
+import jakarta.persistence.PreUpdate;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Table(name = "solicitud_cita")
@@ -45,11 +67,11 @@ public class SolicitudCita {
     @Column(name = "telefono", length = 15)
     private String telefono;
 
-    @Column(name = "fecha_solicitud", columnDefinition = "timestamptz")
+    @Column(name = "fecha_solicitud", columnDefinition = "timestamptz", updatable = false)
     private OffsetDateTime fechaSolicitud;
 
-    @Column(name = "estado_solicitud", length = 20)
-    private String estadoSolicitud;
+//    @Column(name = "estado_solicitud", length = 20)
+//    private String estadoSolicitud;
 
     @Column(name = "observacion", columnDefinition = "text")
     private String observacion;
@@ -82,4 +104,29 @@ public class SolicitudCita {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "id_subactividad", foreignKey = @ForeignKey(name = "fk_solicitud_subactividad"))
     private SubactividadEssi subactividad;
+    
+    // Campo primitivo 
+    @Column(name = "id_estado_cita", nullable = false)
+    private Long idEstadoCita;
+    
+    // Relación con la tabla (solo si la necesitamos)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_estado_cita", nullable = false,  insertable = false,
+    	    updatable = false)
+    private DimEstadoCita estadoCita;
+    
+    
+    @PrePersist
+    public void prePersist() {
+        this.fechaSolicitud = OffsetDateTime.now(ZoneOffset.of("-05:00"));
+        this.fechaActualiza = OffsetDateTime.now(ZoneOffset.of("-05:00"));
+    }
+
+    @PreUpdate
+    public void preUpdate() {
+        this.fechaActualiza = OffsetDateTime.now(ZoneOffset.of("-05:00"));
+    }
+    
+    
+    
 }

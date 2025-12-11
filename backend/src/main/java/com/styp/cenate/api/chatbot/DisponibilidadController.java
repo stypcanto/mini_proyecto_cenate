@@ -14,7 +14,7 @@ import com.styp.cenate.service.personal.DimServicioEssiService;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/disponibilidad")
+@RequestMapping("/api/v1/chatbot/disponibilidad")
 @Slf4j
 public class DisponibilidadController {
 

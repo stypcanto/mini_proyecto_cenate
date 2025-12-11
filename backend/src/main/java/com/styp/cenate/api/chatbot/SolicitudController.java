@@ -1,6 +1,5 @@
 package com.styp.cenate.api.chatbot;
 
-
 import java.util.List;
 import java.util.Map;
 
@@ -15,7 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.styp.cenate.dto.SolicitudCitaDTO;
+import com.styp.cenate.dto.chatbot.SolicitudCitaRequestDTO;
+import com.styp.cenate.dto.chatbot.SolicitudCitaResponseDTO;
 import com.styp.cenate.service.chatbot.solicitudcita.ISolicitudCitaService;
 
 import jakarta.validation.Valid;
@@ -25,43 +25,28 @@ import jakarta.validation.constraints.Size;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/solicitud")
+@RequestMapping("/api/v1/chatbot/solicitud")
 @Slf4j
 @Validated // habilita validación en parámetros simples
 public class SolicitudController {
 
 	private final ISolicitudCitaService servicio;
-	
 
 	public SolicitudController(ISolicitudCitaService servicio) {
 		this.servicio = servicio;
 	}
-	
-	  /**
-     * Guarda una nueva solicitud de cita.
-     * Ejemplo JSON:
-     * {
-     *   "periodo":"202511",
-     *   "docPaciente":"45781234",
-     *   "nombresPaciente":"Juan Pérez",
-     *   "sexo":"M",
-     *   "edad":32,
-     *   "telefono":"999999999",
-     *   "fechaCita":"2025-11-10",
-     *   "horaCita":"09:30:00",
-     *   "fechaSolicitud":"2025-11-07T12:00:00-05:00",
-     *   "estadoSolicitud":"PENDIENTE",
-     *   "observacion":"Primera vez",
-     *   "idServicio":5,
-     *   "idActividad":2,
-     *   "idSubactividad":1,
-     *   "idAreaHospitalaria":4,
-     *   "idPersonal":8
-     * }
-     */
+
+	/**
+	 * Guarda una nueva solicitud de cita. Ejemplo JSON: { "periodo":"202511",
+	 * "docPaciente":"45781234", "nombresPaciente":"Juan Pérez", "sexo":"M",
+	 * "edad":32, "telefono":"999999999", "fechaCita":"2025-11-10",
+	 * "horaCita":"09:30:00", "fechaSolicitud":"2025-11-07T12:00:00-05:00",
+	 * "estadoSolicitud":"PENDIENTE", "observacion":"Primera vez", "idServicio":5,
+	 * "idActividad":2, "idSubactividad":1, "idAreaHospitalaria":4, "idPersonal":8 }
+	 */
 
 	@PostMapping
-	public ResponseEntity<SolicitudCitaDTO> guardar(@Valid @RequestBody SolicitudCitaDTO dto) {
+	public ResponseEntity<SolicitudCitaResponseDTO> guardar(@Valid @RequestBody SolicitudCitaRequestDTO dto) {
 		log.info("Creando SolicitudCita para docPaciente={}, servicio={}, actividad={}, subactividad={}",
 				dto.getDocPaciente(), dto.getIdServicio(), dto.getIdActividad(), dto.getIdSubactividad());
 		var creado = servicio.guardar(dto);
@@ -74,54 +59,43 @@ public class SolicitudController {
 	 * según tu lógica).
 	 */
 	@PutMapping("/{id}")
-	public ResponseEntity<SolicitudCitaDTO> actualizar(@PathVariable @Min(1) Long id,
-			@Valid @RequestBody SolicitudCitaDTO dto) {
-		 // @Validated → permite validar @Positive en @PathVariable
+	public ResponseEntity<SolicitudCitaResponseDTO> actualizar(@PathVariable @Min(1) Long id,
+			@Valid @RequestBody SolicitudCitaRequestDTO dto) {
+		// @Validated → permite validar @Positive en @PathVariable
 		// @Valid → valida el DTO completo
 		log.info("Actualizando SolicitudCita id={} (docPaciente={}, estado={})", id, dto.getDocPaciente(),
-				dto.getEstadoSolicitud());
+				0);
 		var actualizado = servicio.actualizar(id, dto);
 		return ResponseEntity.ok(actualizado);
 	}
-	
+
 	@PutMapping("/estado/{id}")
-	public ResponseEntity<SolicitudCitaDTO> actualizarEstado(
-	        @PathVariable Long id,
-	        @RequestBody Map<String, String> body) {
+	public ResponseEntity<SolicitudCitaResponseDTO> actualizarEstado(@PathVariable Long id,
+			@RequestBody Map<String, String> body) {
 
-	    String estado = body.get("estadoSolicitud");
-	    String observacion = body.get("observacion");
+		String estado = body.get("estadoSolicitud");
+		String observacion = body.get("observacion");
 
-	    var actualizado = servicio.actualizarEstado(id, estado, observacion);
-	    return ResponseEntity.ok(actualizado);
+		var actualizado = servicio.actualizarEstado(id, estado, observacion);
+		return ResponseEntity.ok(actualizado);
 	}
-	
-	
 
 	@GetMapping("/{id}")
-	public ResponseEntity<SolicitudCitaDTO> obtenerPorId(@PathVariable @Min(1) Long id) {
+	public ResponseEntity<SolicitudCitaResponseDTO> obtenerPorId(@PathVariable @Min(1) Long id) {
 		return servicio.buscarPorId(id).map(ResponseEntity::ok)
 				.orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).build());
 	}
-	
-	
-	 @GetMapping("/paciente/{docPaciente}")
-	    public ResponseEntity<List<SolicitudCitaDTO>> listarPorDocPaciente(
-	            @PathVariable
-	            @NotBlank(message = "El documento es obligatorio")
-	            @Size(min = 8, max = 15, message = "El documento debe tener entre 8 y 15 caracteres")
-	            String docPaciente) {
 
-	        log.info(" Buscando solicitudes por docPaciente={}", docPaciente);
-	        List<SolicitudCitaDTO> resultados = servicio.buscarPorDocPaciente(docPaciente);
-	        if (resultados.isEmpty()) {
-	            return ResponseEntity.noContent().build();
-	        }
-	        return ResponseEntity.ok(resultados);
-	    }
-	
-	
-	
-	
+	@GetMapping("/paciente/{docPaciente}")
+	public ResponseEntity<List<SolicitudCitaResponseDTO>> listarPorDocPaciente(
+			@PathVariable @NotBlank(message = "El documento es obligatorio") @Size(min = 8, max = 15, message = "El documento debe tener entre 8 y 15 caracteres") String docPaciente) {
+
+		log.info(" Buscando solicitudes por docPaciente={}", docPaciente);
+		List<SolicitudCitaResponseDTO> resultados = servicio.buscarPorDocPaciente(docPaciente);
+		if (resultados.isEmpty()) {
+			return ResponseEntity.noContent().build();
+		}
+		return ResponseEntity.ok(resultados);
+	}
 
 }

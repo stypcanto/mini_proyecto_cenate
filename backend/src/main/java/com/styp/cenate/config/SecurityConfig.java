@@ -85,10 +85,25 @@ public class SecurityConfig {
                         
                         
                         // =====================================================
-                        // ENDPOINTS DE CITA (POST/PUT)
+                        // ENDPOINTS DE CITA (POST/PUT) -Inicio
                         // =====================================================
-                        .requestMatchers(HttpMethod.POST, "/api/solicitud").permitAll()
-                        .requestMatchers(HttpMethod.PUT,  "/api/solicitud/**").permitAll()
+                        
+                        //.requestMatchers(HttpMethod.POST, "/api/solicitud").permitAll()
+                        //.requestMatchers(HttpMethod.PUT,  "/api/solicitud/**").permitAll()
+                        
+                        // Consulta de Paciente
+                        .requestMatchers(HttpMethod.GET, "/api/chatbot").permitAll()
+    
+                        // Disponibilidad
+                        .requestMatchers(HttpMethod.GET, "/api/v1/chatbot/disponibilidad/**").permitAll()
+                        .requestMatchers(HttpMethod.GET, "/api/v2/chatbot/disponibilidad/**").permitAll()
+                        
+                        // Solicitud de Cita
+                        .requestMatchers(HttpMethod.POST, "/api/v1/chatbot/solicitud").permitAll()
+                        
+                        // =====================================================
+                        // ENDPOINTS DE CITA (POST/PUT) -Fin
+                        // =====================================================
                         
 
                         // =====================================================
