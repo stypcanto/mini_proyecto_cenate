@@ -27,7 +27,7 @@ public class ChatBotPacienteDTO {
 	private boolean esPacienteNuevo = true;
 	private List<ChatBotServicioDTO> listaAtencionesCenate;
 	//private List<ChatBotServicioDTO> listaAtencionesGlobales;
-	private List<ChatBotServicioDTO> listarServiciosDefecto;
+//	private List<ChatBotServicioDTO> listarServiciosDefecto;
 	private Set<ChatBotServicioDTO> listarServiciosDisponibles;
 	
 
