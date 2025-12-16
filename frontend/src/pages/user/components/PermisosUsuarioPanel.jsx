@@ -28,7 +28,7 @@ import {
 import axios from 'axios';
 import { getToken } from '../../../constants/auth';
 
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080/api';
 
 // Configuración de permisos con clases explícitas para Tailwind
 const PERMISOS_CONFIG = [
