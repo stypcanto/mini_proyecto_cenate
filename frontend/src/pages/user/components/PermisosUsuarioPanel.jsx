@@ -28,7 +28,7 @@ import {
 import axios from 'axios';
 import { getToken } from '../../../constants/auth';
 
-const API_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:8080';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 // Configuración de permisos con clases explícitas para Tailwind
 const PERMISOS_CONFIG = [
@@ -78,8 +78,8 @@ const PermisosUsuarioPanel = forwardRef(({
   const cargarModulos = useCallback(async () => {
     try {
       const [modulosRes, paginasRes] = await Promise.all([
-        axios.get(`${API_URL}/api/mbac/modulos`, { headers: getHeaders() }),
-        axios.get(`${API_URL}/api/mbac/paginas`, { headers: getHeaders() })
+        axios.get(`${API_URL}/mbac/modulos`, { headers: getHeaders() }),
+        axios.get(`${API_URL}/mbac/paginas`, { headers: getHeaders() })
       ]);
 
       const modulosData = modulosRes.data || [];
@@ -114,7 +114,7 @@ const PermisosUsuarioPanel = forwardRef(({
 
     try {
       const response = await axios.get(
-        `${API_URL}/api/permisos/usuario/${userId}`,
+        `${API_URL}/permisos/usuario/${userId}`,
         { headers: getHeaders() }
       );
 
@@ -151,7 +151,7 @@ const PermisosUsuarioPanel = forwardRef(({
     try {
       console.log('🔍 Cargando permisos predeterminados para roles:', roles);
       const response = await axios.post(
-        `${API_URL}/api/permisos/roles/predeterminados`,
+        `${API_URL}/permisos/roles/predeterminados`,
         roles,
         { headers: getHeaders() }
       );
@@ -240,7 +240,7 @@ const PermisosUsuarioPanel = forwardRef(({
       if (permisosAGuardar.length > 0) {
         // Usar endpoint batch para guardar todos los permisos de una vez
         await axios.post(
-          `${API_URL}/api/permisos/batch/${userId}`,
+          `${API_URL}/permisos/batch/${userId}`,
           permisosAGuardar,
           { headers: getHeaders() }
         );
