@@ -59,6 +59,28 @@ public class FormDiagFormulario {
     @Column(name = "observaciones_generales", columnDefinition = "TEXT")
     private String observacionesGenerales;
 
+    // ==================== CAMPOS DE SUFICIENCIA (NECESIDADES) ====================
+
+    /** ¿La infraestructura física es suficiente? (si/no/parcial) */
+    @Column(name = "nec_infra_fis_suficiente", length = 10)
+    private String necInfraFisSuficiente;
+
+    /** Observaciones de infraestructura física */
+    @Column(name = "nec_infra_fis_observaciones", columnDefinition = "TEXT")
+    private String necInfraFisObservaciones;
+
+    /** ¿La infraestructura tecnológica es adecuada? (si/no/parcial) */
+    @Column(name = "nec_infra_tec_adecuada", length = 10)
+    private String necInfraTecAdecuada;
+
+    /** ¿El equipamiento informático es adecuado? (si/no/parcial) */
+    @Column(name = "nec_equip_info_adecuado", length = 10)
+    private String necEquipInfoAdecuado;
+
+    /** ¿El equipamiento biomédico es adecuado? (si/no/parcial) */
+    @Column(name = "nec_equip_bio_adecuado", length = 10)
+    private String necEquipBioAdecuado;
+
     // ==================== CAMPOS DE FIRMA DIGITAL ====================
 
     /** PDF firmado almacenado como BYTEA */

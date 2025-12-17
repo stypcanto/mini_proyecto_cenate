@@ -1454,61 +1454,246 @@ export default function FormularioDiagnostico() {
 
         // Infraestructura Física
         const needsInfra = [
-            { label: "Espacio físico", id: "espacioFisico" }, { label: "Escritorio", id: "escritorio" },
-            { label: "Sillas", id: "sillas" }, { label: "Estantes", id: "estantes" },
-            { label: "Archivero", id: "archivero" }, { label: "Luz eléctrica", id: "luzElectrica" },
-            { label: "Ventilación", id: "ventilacion" }, { label: "Aire acond.", id: "aireAcond" },
+            { label: "Espacio físico para Teleconsultorio", id: "espacioFisico" },
+            { label: "Escritorio ergonómico", id: "escritorio" },
+            { label: "Sillas ergonómicas", id: "sillas" },
+            { label: "Estantes para equipos", id: "estantes" },
+            { label: "Archivero con llave", id: "archivero" },
+            { label: "Instalación de luz eléctrica", id: "luzElectrica" },
+            { label: "Sistema de ventilación", id: "ventilacion" },
+            { label: "Aire acondicionado", id: "aireAcond" },
         ].filter(item => formData.necesidades[`infra_${item.id}_cant`] || formData.necesidades[`infra_${item.id}_prior`]);
 
         if (needsInfra.length > 0) {
-            currentY = addSubSection("Infraestructura Física", currentY);
+            currentY = addSubSection("7.1 Infraestructura Física", currentY);
             const infraNeedData = needsInfra.map(item => [item.label, formData.necesidades[`infra_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`infra_${item.id}_prior`])]);
             autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: infraNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
+            currentY = doc.lastAutoTable.finalY + 2;
+        }
+
+        // Pregunta de suficiencia - Infraestructura Física
+        if (formData.necesidades.infraFisicaSuficiente) {
+            const suficienteText = formData.necesidades.infraFisicaSuficiente === 'si' ? 'Sí' :
+                                   formData.necesidades.infraFisicaSuficiente === 'no' ? 'No' : 'Parcial';
+            autoTable(doc, {
+                startY: currentY,
+                body: [[
+                    { content: "¿La infraestructura física es suficiente?", styles: { fontStyle: 'bold' } },
+                    { content: suficienteText, styles: { halign: 'center', fillColor: suficienteText === 'Sí' ? [200, 250, 200] : suficienteText === 'No' ? [250, 200, 200] : [255, 250, 200] } }
+                ]],
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 2.5 },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: { 0: { cellWidth: 150 }, 1: { cellWidth: 40 } }
+            });
+            currentY = doc.lastAutoTable.finalY + 1;
+
+            if (formData.necesidades.infraFisicaObservaciones) {
+                autoTable(doc, {
+                    startY: currentY,
+                    body: [[
+                        { content: "Observaciones:", styles: { fontStyle: 'bold', cellWidth: 30 } },
+                        { content: formData.necesidades.infraFisicaObservaciones }
+                    ]],
+                    theme: 'plain',
+                    styles: { fontSize: 8, cellPadding: 2 },
+                    margin: { left: margin, right: margin },
+                    tableWidth: contentWidth
+                });
+                currentY = doc.lastAutoTable.finalY + 2;
+            }
+        }
+        currentY += 2;
+
+        // 7.2 Infraestructura Tecnológica
+        const needsInfraTec = [
+            { label: "Equipo de Computo", id: "equipoComputo" },
+            { label: "Equipos de red (routers, switches)", id: "equiposRed" },
+            { label: "Software para gestión de teleconsulta", id: "softwareAtencion" },
+            { label: "Aplicaciones de seguimiento y monitoreo", id: "aplicacionesMonitoreo" },
+            { label: "Servicios de soporte", id: "serviciosSoporte" },
+        ].filter(item => formData.necesidades[`infraTec_${item.id}_cant`] || formData.necesidades[`infraTec_${item.id}_prior`]);
+
+        if (needsInfraTec.length > 0) {
+            currentY = addSubSection("7.2 Infraestructura Tecnológica", currentY);
+            const infraTecData = needsInfraTec.map(item => [item.label, formData.necesidades[`infraTec_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`infraTec_${item.id}_prior`])]);
+            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: infraTecData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
+            currentY = doc.lastAutoTable.finalY + 2;
+        }
+
+        // Pregunta de suficiencia - Infraestructura Tecnológica
+        if (formData.necesidades.infraTecAdecuada) {
+            if (needsInfraTec.length === 0) {
+                currentY = addSubSection("7.2 Infraestructura Tecnológica", currentY);
+            }
+            const adecuadaText = formData.necesidades.infraTecAdecuada === 'si' ? 'Sí' :
+                                 formData.necesidades.infraTecAdecuada === 'no' ? 'No' : 'Parcial';
+            autoTable(doc, {
+                startY: currentY,
+                body: [[
+                    { content: "¿La infraestructura tecnológica es adecuada?", styles: { fontStyle: 'bold' } },
+                    { content: adecuadaText, styles: { halign: 'center', fillColor: adecuadaText === 'Sí' ? [200, 250, 200] : adecuadaText === 'No' ? [250, 200, 200] : [255, 250, 200] } }
+                ]],
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 2.5 },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: { 0: { cellWidth: 150 }, 1: { cellWidth: 40 } }
+            });
             currentY = doc.lastAutoTable.finalY + 4;
         }
 
         // Equipamiento Informático
         const needsEquip = [
-            { label: "Computadora", id: "computadora" }, { label: "Laptop", id: "laptop" },
-            { label: "Monitor", id: "monitor" }, { label: "Cámara web", id: "camaraWeb" },
-            { label: "Micrófono", id: "microfono" }, { label: "Parlantes", id: "parlantes" },
-            { label: "Impresora", id: "impresora" }, { label: "Escáner", id: "escaner" },
-            { label: "Router", id: "router" }, { label: "UPS", id: "ups" },
+            { label: "Computadora de escritorio", id: "computadora" },
+            { label: "Laptop", id: "laptop" },
+            { label: "Monitor", id: "monitor" },
+            { label: "Cable HDMI", id: "cableHdmi" },
+            { label: "Cámara web HD", id: "camaraWeb" },
+            { label: "Micrófono", id: "microfono" },
+            { label: "Parlantes/Audífonos", id: "parlantes" },
+            { label: "Impresora", id: "impresora" },
+            { label: "Escáner", id: "escaner" },
+            { label: "Router/Switch de red", id: "router" },
         ].filter(item => formData.necesidades[`equip_${item.id}_cant`] || formData.necesidades[`equip_${item.id}_prior`]);
 
         if (needsEquip.length > 0) {
-            currentY = addSubSection("Equipamiento Informático", currentY);
+            currentY = addSubSection("7.3 Equipamiento Informático", currentY);
             const equipNeedData = needsEquip.map(item => [item.label, formData.necesidades[`equip_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`equip_${item.id}_prior`])]);
             autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: equipNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
+            currentY = doc.lastAutoTable.finalY + 2;
+        }
+
+        // Pregunta de suficiencia - Equipamiento Informático
+        if (formData.necesidades.equipInfoAdecuado) {
+            const adecuadoText = formData.necesidades.equipInfoAdecuado === 'si' ? 'Sí' :
+                                 formData.necesidades.equipInfoAdecuado === 'no' ? 'No' : 'Parcial';
+            autoTable(doc, {
+                startY: currentY,
+                body: [[
+                    { content: "¿El equipamiento informático es adecuado?", styles: { fontStyle: 'bold' } },
+                    { content: adecuadoText, styles: { halign: 'center', fillColor: adecuadoText === 'Sí' ? [200, 250, 200] : adecuadoText === 'No' ? [250, 200, 200] : [255, 250, 200] } }
+                ]],
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 2.5 },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: { 0: { cellWidth: 150 }, 1: { cellWidth: 40 } }
+            });
             currentY = doc.lastAutoTable.finalY + 4;
         }
 
         // Equipamiento Biomédico
         const needsBio = [
-            { label: "Pulsioxímetro", id: "pulsioximetro" }, { label: "Estetoscopio", id: "estetoscopio" },
-            { label: "Tensiómetro", id: "tensiometro" }, { label: "Otoscopio", id: "otoscopio" },
-            { label: "Dermatoscopio", id: "dermatoscopio" }, { label: "Electrocardiógrafo", id: "electrocardiografo" },
-            { label: "Ecógrafo", id: "ecografo" }, { label: "Estación móvil", id: "estacionMovil" },
+            { label: "Pulsioxímetro digital", id: "pulsioximetro" },
+            { label: "Dermatoscopio digital", id: "dermatoscopio" },
+            { label: "Ecógrafo digital", id: "ecografo" },
+            { label: "Electrocardiógrafo digital", id: "electrocardiografo" },
+            { label: "Equipo de gases arteriales digital", id: "gasesArteriales" },
+            { label: "Estetoscopio digital", id: "estetoscopio" },
+            { label: "Fonendoscopio digital", id: "fonendoscopio" },
+            { label: "Monitor de funciones vitales", id: "monitorVitales" },
+            { label: "Otoscopio digital", id: "otoscopio" },
+            { label: "Oxímetro digital", id: "oximetro" },
+            { label: "Retinógrafo digital", id: "retinografo" },
+            { label: "Tensiómetro digital", id: "tensiometro" },
+            { label: "Videocolposcopio", id: "videocolposcopio" },
+            { label: "Estación móvil de telemedicina", id: "estacionMovil" },
         ].filter(item => formData.necesidades[`bio_${item.id}_cant`] || formData.necesidades[`bio_${item.id}_prior`]);
 
         if (needsBio.length > 0) {
-            currentY = addSubSection("Equipamiento Biomédico", currentY);
+            currentY = addSubSection("7.4 Equipamiento Biomédico", currentY);
             const bioNeedData = needsBio.map(item => [item.label, formData.necesidades[`bio_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`bio_${item.id}_prior`])]);
             autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: bioNeedData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
+            currentY = doc.lastAutoTable.finalY + 2;
+        }
+
+        // Pregunta de suficiencia - Equipamiento Biomédico
+        if (formData.necesidades.equipBioAdecuado) {
+            const adecuadoText = formData.necesidades.equipBioAdecuado === 'si' ? 'Sí' :
+                                 formData.necesidades.equipBioAdecuado === 'no' ? 'No' : 'Parcial';
+            autoTable(doc, {
+                startY: currentY,
+                body: [[
+                    { content: "¿El equipamiento biomédico es adecuado?", styles: { fontStyle: 'bold' } },
+                    { content: adecuadoText, styles: { halign: 'center', fillColor: adecuadoText === 'Sí' ? [200, 250, 200] : adecuadoText === 'No' ? [250, 200, 200] : [255, 250, 200] } }
+                ]],
+                theme: 'grid',
+                styles: { fontSize: 8, cellPadding: 2.5 },
+                margin: { left: margin, right: margin },
+                tableWidth: contentWidth,
+                columnStyles: { 0: { cellWidth: 150 }, 1: { cellWidth: 40 } }
+            });
             currentY = doc.lastAutoTable.finalY + 4;
         }
 
-        // 7.4 OTRAS NECESIDADES Y OBSERVACIONES
-        if (formData.necesidades.necesidadesConectividad || formData.necesidades.necesidadesCapacitacion || formData.necesidades.observacionesGenerales) {
-            currentY = checkNewPage(currentY, 60);
-            currentY = addSubSection("7.4 Otras Necesidades y Observaciones", currentY);
+        // 7.5 Conectividad
+        const needsConect = [
+            { label: "Instalación de internet", id: "instalacionInternet" },
+            { label: "Puntos de red", id: "puntosRed" },
+            { label: "Módem WiFi", id: "modemWifi" },
+            { label: "Internet satelital", id: "internetSatelital" },
+        ].filter(item => formData.necesidades[`conect_${item.id}_cant`] || formData.necesidades[`conect_${item.id}_prior`]);
 
-            // 7.4.1 Necesidades de conectividad
+        if (needsConect.length > 0) {
+            currentY = checkNewPage(currentY, 40);
+            currentY = addSubSection("7.5 Conectividad", currentY);
+            const conectData = needsConect.map(item => [item.label, formData.necesidades[`conect_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`conect_${item.id}_prior`])]);
+            autoTable(doc, { startY: currentY, head: [["Requerimiento", "Cant", "Prioridad"]], body: conectData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // 7.6 Recursos Humanos
+        const needsRRHH = [
+            { label: "Médicos especialistas", id: "medicosEspecialistas" },
+            { label: "Médicos generales", id: "medicosGenerales" },
+            { label: "Enfermeras(os)", id: "enfermeras" },
+            { label: "Obstetras", id: "obstetras" },
+            { label: "Tecnólogos médicos", id: "tecnologosMedicos" },
+            { label: "Psicólogos", id: "psicologos" },
+            { label: "Nutricionistas", id: "nutricionistas" },
+            { label: "Trabajadores sociales", id: "trabajadoresSociales" },
+            { label: "Otros profesionales de salud", id: "otrosProfesionales" },
+            { label: "Personal técnico de salud", id: "personalTecnico" },
+            { label: "Personal de soporte TIC", id: "personalTic" },
+            { label: "Personal administrativo", id: "personalAdmin" },
+        ].filter(item => formData.necesidades[`rrhh_${item.id}_cant`] || formData.necesidades[`rrhh_${item.id}_prior`]);
+
+        if (needsRRHH.length > 0) {
+            currentY = checkNewPage(currentY, 60);
+            currentY = addSubSection("7.6 Recursos Humanos", currentY);
+            const rrhhData = needsRRHH.map(item => [item.label, formData.necesidades[`rrhh_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`rrhh_${item.id}_prior`])]);
+            autoTable(doc, { startY: currentY, head: [["Rol", "Cant", "Prioridad"]], body: rrhhData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // 7.7 Capacitación para Telesalud
+        const needsCapac = [
+            { label: "Uso de plataformas de telesalud", id: "usoPlataformas" },
+            { label: "Seguridad de la información", id: "seguridadInfo" },
+            { label: "Protocolos clínicos", id: "protocolosClinicos" },
+        ].filter(item => formData.necesidades[`capac_${item.id}_cant`] || formData.necesidades[`capac_${item.id}_prior`]);
+
+        if (needsCapac.length > 0) {
+            currentY = checkNewPage(currentY, 40);
+            currentY = addSubSection("7.7 Capacitación para Telesalud", currentY);
+            const capacData = needsCapac.map(item => [item.label, formData.necesidades[`capac_${item.id}_cant`] || "0", capitalizeFirst(formData.necesidades[`capac_${item.id}_prior`])]);
+            autoTable(doc, { startY: currentY, head: [["Capacitación", "Participantes", "Prioridad"]], body: capacData, theme: 'striped', styles: { fontSize: 8, cellPadding: 2.5 }, headStyles: { fillColor: [10, 91, 169], fontSize: 8 }, margin: { left: margin, right: margin }, tableWidth: contentWidth, columnStyles: { 0: { cellWidth: 130 }, 1: { halign: 'center', cellWidth: 30 }, 2: { halign: 'center', cellWidth: 30 } } });
+            currentY = doc.lastAutoTable.finalY + 4;
+        }
+
+        // 7.8 OBSERVACIONES Y COMENTARIOS ADICIONALES
+        if (formData.necesidades.necesidadesConectividad || formData.necesidades.necesidadesCapacitacion || formData.necesidades.observacionesGenerales || formData.necesidades.observacionesFinales) {
+            currentY = checkNewPage(currentY, 60);
+            currentY = addSubSection("7.8 Observaciones y Comentarios Adicionales", currentY);
+
+            // Necesidades de conectividad
             if (formData.necesidades.necesidadesConectividad) {
                 autoTable(doc, {
                     startY: currentY,
                     body: [[
-                        { content: "7.4.1", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
+                        { content: "7.8.1", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
                         { content: "Necesidades de conectividad (internet, puntos de red, etc.):", styles: { fontStyle: 'bold' } }
                     ]],
                     theme: 'plain',
@@ -1530,13 +1715,13 @@ export default function FormularioDiagnostico() {
                 currentY = doc.lastAutoTable.finalY + 4;
             }
 
-            // 7.4.2 Necesidades de capacitación
+            // 7.8.2 Necesidades de capacitación
             if (formData.necesidades.necesidadesCapacitacion) {
                 currentY = checkNewPage(currentY, 40);
                 autoTable(doc, {
                     startY: currentY,
                     body: [[
-                        { content: "7.4.2", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
+                        { content: "7.8.2", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
                         { content: "Necesidades de capacitación del personal:", styles: { fontStyle: 'bold' } }
                     ]],
                     theme: 'plain',
@@ -1558,13 +1743,13 @@ export default function FormularioDiagnostico() {
                 currentY = doc.lastAutoTable.finalY + 4;
             }
 
-            // 7.4.3 Observaciones generales
-            if (formData.necesidades.observacionesGenerales) {
+            // 7.8.3 Observaciones generales
+            if (formData.necesidades.observacionesGenerales || formData.necesidades.observacionesFinales) {
                 currentY = checkNewPage(currentY, 40);
                 autoTable(doc, {
                     startY: currentY,
                     body: [[
-                        { content: "7.4.3", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
+                        { content: "7.8.3", styles: { fontStyle: 'bold', textColor: [10, 91, 169], halign: 'center', valign: 'top' } },
                         { content: "Observaciones generales y comentarios adicionales:", styles: { fontStyle: 'bold' } }
                     ]],
                     theme: 'plain',
@@ -1577,7 +1762,7 @@ export default function FormularioDiagnostico() {
 
                 autoTable(doc, {
                     startY: currentY,
-                    body: [[{ content: formData.necesidades.observacionesGenerales, styles: { fillColor: [255, 255, 200], minCellHeight: 15 } }]],
+                    body: [[{ content: formData.necesidades.observacionesGenerales || formData.necesidades.observacionesFinales, styles: { fillColor: [255, 255, 200], minCellHeight: 15 } }]],
                     theme: 'grid',
                     styles: { fontSize: 8, cellPadding: 4 },
                     margin: { left: margin, right: margin },
@@ -2857,11 +3042,50 @@ export default function FormularioDiagnostico() {
                                         <label className="block text-sm font-medium text-gray-700 mb-2">
                                             <span className="text-[#0A5BA9] font-bold mr-2">5.1.7</span>Proveedor de servicio de internet:
                                         </label>
-                                        <input type="text"
-                                            value={formData.conectividad.proveedor || ""}
-                                            onChange={(e) => handleInputChange("conectividad", "proveedor", e.target.value)}
+                                        <select
+                                            value={formData.conectividad.proveedorSeleccionado || ""}
+                                            onChange={(e) => {
+                                                handleInputChange("conectividad", "proveedorSeleccionado", e.target.value);
+                                                if (e.target.value !== "Otro") {
+                                                    handleInputChange("conectividad", "proveedor", e.target.value);
+                                                    handleInputChange("conectividad", "proveedorOtro", "");
+                                                } else {
+                                                    handleInputChange("conectividad", "proveedor", "");
+                                                }
+                                            }}
                                             className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9]"
-                                            placeholder="Ej: Movistar, Claro..." />
+                                        >
+                                            <option value="">Seleccione un proveedor...</option>
+                                            <option value="Movistar">Movistar (Telefónica)</option>
+                                            <option value="Claro">Claro (América Móvil)</option>
+                                            <option value="Entel">Entel Perú</option>
+                                            <option value="Bitel">Bitel</option>
+                                            <option value="WiNet">WiNet (Win Perú)</option>
+                                            <option value="Optical Networks">Optical Networks</option>
+                                            <option value="Fiberlux">Fiberlux</option>
+                                            <option value="GTD Perú">GTD Perú</option>
+                                            <option value="Netline">Netline</option>
+                                            <option value="StarGlobal">StarGlobal</option>
+                                            <option value="CableMás">CableMás</option>
+                                            <option value="HughesNet">HughesNet (Satelital)</option>
+                                            <option value="DirectTV">DirectTV (Satelital)</option>
+                                            <option value="América Móvil Perú">América Móvil Perú</option>
+                                            <option value="Telecable">Telecable</option>
+                                            <option value="Cable Perú">Cable Perú</option>
+                                            <option value="Cableonda">Cableonda</option>
+                                            <option value="Red Científica Peruana">Red Científica Peruana</option>
+                                            <option value="Otro">Otro (especificar)</option>
+                                        </select>
+                                        {formData.conectividad.proveedorSeleccionado === "Otro" && (
+                                            <input type="text"
+                                                value={formData.conectividad.proveedorOtro || ""}
+                                                onChange={(e) => {
+                                                    handleInputChange("conectividad", "proveedorOtro", e.target.value);
+                                                    handleInputChange("conectividad", "proveedor", e.target.value);
+                                                }}
+                                                className="w-full mt-2 px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9]"
+                                                placeholder="Ingrese el nombre del proveedor..." />
+                                        )}
                                     </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -3134,8 +3358,8 @@ export default function FormularioDiagnostico() {
                                             <tr className="bg-[#0A5BA9] text-white">
                                                 <th className="px-3 py-3 text-center font-medium w-20">N°</th>
                                                 <th className="px-3 py-3 text-left font-medium">DESCRIPCIÓN DEL REQUERIMIENTO</th>
-                                                <th className="px-3 py-3 text-center font-medium w-32">CANTIDAD REQUERIDA</th>
                                                 <th className="px-3 py-3 text-center font-medium w-36">PRIORIDAD (Alta/Media/Baja)</th>
+                                                <th className="px-3 py-3 text-center font-medium w-32">CANTIDAD REQUERIDA</th>
                                             </tr>
                                         </thead>
                                         <tbody>
@@ -3153,15 +3377,6 @@ export default function FormularioDiagnostico() {
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
-                                                        <NumberSelector
-                                                            value={formData.necesidades[`infra_${item.id}_cant`] || ""}
-                                                            onChange={(e) => handleInputChange("necesidades", `infra_${item.id}_cant`, e.target.value)}
-                                                            min={0}
-                                                            max={20}
-                                                            className="w-24"
-                                                        />
-                                                    </td>
-                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
                                                         <select
                                                             value={formData.necesidades[`infra_${item.id}_prior`] || ""}
                                                             onChange={(e) => handleInputChange("necesidades", `infra_${item.id}_prior`, e.target.value)}
@@ -3173,18 +3388,79 @@ export default function FormularioDiagnostico() {
                                                             <option value="baja">Baja</option>
                                                         </select>
                                                     </td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <NumberSelector
+                                                            value={formData.necesidades[`infra_${item.id}_cant`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `infra_${item.id}_cant`, e.target.value)}
+                                                            min={0}
+                                                            max={20}
+                                                            className="w-24"
+                                                        />
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Pregunta adicional - Infraestructura física suficiente */}
+                                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="flex flex-wrap items-center gap-4 mb-2">
+                                        <span className="text-gray-700">¿La infraestructura física es suficiente?</span>
+                                        <div className="flex items-center gap-4">
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necInfraFisicaSuficiente"
+                                                    value="si"
+                                                    checked={formData.necesidades.infraFisicaSuficiente === "si"}
+                                                    onChange={(e) => handleInputChange("necesidades", "infraFisicaSuficiente", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>Sí</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necInfraFisicaSuficiente"
+                                                    value="no"
+                                                    checked={formData.necesidades.infraFisicaSuficiente === "no"}
+                                                    onChange={(e) => handleInputChange("necesidades", "infraFisicaSuficiente", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>No</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necInfraFisicaSuficiente"
+                                                    value="parcial"
+                                                    checked={formData.necesidades.infraFisicaSuficiente === "parcial"}
+                                                    onChange={(e) => handleInputChange("necesidades", "infraFisicaSuficiente", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>Parcial</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label className="block text-gray-700 text-sm mb-1">Observaciones:</label>
+                                        <input
+                                            type="text"
+                                            value={formData.necesidades.infraFisicaObservaciones || ""}
+                                            onChange={(e) => handleInputChange("necesidades", "infraFisicaObservaciones", e.target.value)}
+                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:border-[#0A5BA9] focus:ring-1 focus:ring-[#0A5BA9]"
+                                            placeholder=""
+                                        />
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* 7.2 Necesidades de Equipamiento Informático */}
+                        {/* 7.2 Infraestructura Tecnológica */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] px-6 py-4">
-                                <h3 className="text-lg font-semibold text-white">7.2 NECESIDADES DE EQUIPAMIENTO INFORMÁTICO</h3>
+                                <h3 className="text-lg font-semibold text-white">7.2 INFRAESTRUCTURA TECNOLÓGICA</h3>
                             </div>
                             <div className="p-6">
                                 <div className="overflow-x-auto">
@@ -3193,35 +3469,124 @@ export default function FormularioDiagnostico() {
                                             <tr className="bg-[#0A5BA9] text-white">
                                                 <th className="px-3 py-3 text-center font-medium w-20">N°</th>
                                                 <th className="px-3 py-3 text-left font-medium">DESCRIPCIÓN DEL REQUERIMIENTO</th>
+                                                <th className="px-3 py-3 text-center font-medium w-36">PRIORIDAD (Alta/Media/Baja)</th>
                                                 <th className="px-3 py-3 text-center font-medium w-32">CANTIDAD REQUERIDA</th>
-                                                <th className="px-3 py-3 text-center font-medium w-36">PRIORIDAD</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {[
-                                                { id: "computadora", num: "7.2.1", label: "Computadora de escritorio" },
-                                                { id: "laptop", num: "7.2.2", label: "Computadora portátil (laptop)" },
-                                                { id: "monitor", num: "7.2.3", label: "Monitor" },
-                                                { id: "camaraWeb", num: "7.2.4", label: "Cámara web HD (resolución mínima 1080p)" },
-                                                { id: "microfono", num: "7.2.5", label: "Micrófono" },
-                                                { id: "parlantes", num: "7.2.6", label: "Parlantes/Audífonos" },
-                                                { id: "impresora", num: "7.2.7", label: "Impresora" },
-                                                { id: "escaner", num: "7.2.8", label: "Escáner" },
-                                                { id: "router", num: "7.2.9", label: "Router/Switch de red" },
-                                                { id: "ups", num: "7.2.10", label: "UPS/Estabilizador" },
+                                                { id: "equipoComputo", num: "7.2.1", label: "Equipo de Computo" },
+                                                { id: "equiposRed", num: "7.2.2", label: "Equipos de red (routers, switches)" },
+                                                { id: "softwareAtencion", num: "7.2.3", label: "Software necesario para la gestión y ejecución de la teleconsulta" },
+                                                { id: "aplicacionesMonitoreo", num: "7.2.4", label: "Aplicaciones para el seguimiento y monitoreo de los servicios" },
+                                                { id: "serviciosSoporte", num: "7.2.5", label: "Servicios de soporte que garantizan el funcionamiento" },
                                             ].map((item, index) => (
                                                 <tr key={item.id} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <select
+                                                            value={formData.necesidades[`infraTec_${item.id}_prior`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `infraTec_${item.id}_prior`, e.target.value)}
+                                                            className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
+                                                        >
+                                                            <option value="">Seleccionar...</option>
+                                                            <option value="alta">Alta</option>
+                                                            <option value="media">Media</option>
+                                                            <option value="baja">Baja</option>
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
                                                         <NumberSelector
-                                                            value={formData.necesidades[`equip_${item.id}_cant`] || ""}
-                                                            onChange={(e) => handleInputChange("necesidades", `equip_${item.id}_cant`, e.target.value)}
+                                                            value={formData.necesidades[`infraTec_${item.id}_cant`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `infraTec_${item.id}_cant`, e.target.value)}
                                                             min={0}
                                                             max={20}
                                                             className="w-24"
                                                         />
                                                     </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Pregunta adicional - Infraestructura tecnológica adecuada */}
+                                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <span className="text-gray-700">¿La infraestructura tecnológica es adecuada?</span>
+                                        <div className="flex items-center gap-4">
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necInfraTecAdecuada"
+                                                    value="si"
+                                                    checked={formData.necesidades.infraTecAdecuada === "si"}
+                                                    onChange={(e) => handleInputChange("necesidades", "infraTecAdecuada", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>Sí</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necInfraTecAdecuada"
+                                                    value="no"
+                                                    checked={formData.necesidades.infraTecAdecuada === "no"}
+                                                    onChange={(e) => handleInputChange("necesidades", "infraTecAdecuada", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>No</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necInfraTecAdecuada"
+                                                    value="parcial"
+                                                    checked={formData.necesidades.infraTecAdecuada === "parcial"}
+                                                    onChange={(e) => handleInputChange("necesidades", "infraTecAdecuada", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>Parcial</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 7.3 Necesidades de Equipamiento Informático */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] px-6 py-4">
+                                <h3 className="text-lg font-semibold text-white">7.3 NECESIDADES DE EQUIPAMIENTO INFORMÁTICO</h3>
+                            </div>
+                            <div className="p-6">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse text-sm">
+                                        <thead>
+                                            <tr className="bg-[#0A5BA9] text-white">
+                                                <th className="px-3 py-3 text-center font-medium w-20">N°</th>
+                                                <th className="px-3 py-3 text-left font-medium">DESCRIPCIÓN DEL REQUERIMIENTO</th>
+                                                <th className="px-3 py-3 text-center font-medium w-36">PRIORIDAD</th>
+                                                <th className="px-3 py-3 text-center font-medium w-32">CANTIDAD REQUERIDA</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[
+                                                { id: "computadora", num: "7.3.1", label: "Computadora de escritorio" },
+                                                { id: "laptop", num: "7.3.2", label: "Computadora portátil (laptop)" },
+                                                { id: "monitor", num: "7.3.3", label: "Monitor" },
+                                                { id: "cableHdmi", num: "7.3.4", label: "Cable HDMI" },
+                                                { id: "camaraWeb", num: "7.3.5", label: "Cámara web HD (resolución mínima 1080p)" },
+                                                { id: "microfono", num: "7.3.6", label: "Micrófono" },
+                                                { id: "parlantes", num: "7.3.7", label: "Parlantes/Audífonos" },
+                                                { id: "impresora", num: "7.3.8", label: "Impresora" },
+                                                { id: "escaner", num: "7.3.9", label: "Escáner" },
+                                                { id: "router", num: "7.3.10", label: "Router/Switch de red" },
+                                            ].map((item, index) => (
+                                                <tr key={item.id} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
+                                                    <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
                                                         <select
                                                             value={formData.necesidades[`equip_${item.id}_prior`] || ""}
@@ -3234,18 +3599,69 @@ export default function FormularioDiagnostico() {
                                                             <option value="baja">Baja</option>
                                                         </select>
                                                     </td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <NumberSelector
+                                                            value={formData.necesidades[`equip_${item.id}_cant`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `equip_${item.id}_cant`, e.target.value)}
+                                                            min={0}
+                                                            max={20}
+                                                            className="w-24"
+                                                        />
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
                                     </table>
                                 </div>
+
+                                {/* Pregunta adicional - Equipamiento informático adecuado */}
+                                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <span className="text-gray-700">¿El equipamiento informático es adecuado?</span>
+                                        <div className="flex items-center gap-4">
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necEquipInfoAdecuado"
+                                                    value="si"
+                                                    checked={formData.necesidades.equipInfoAdecuado === "si"}
+                                                    onChange={(e) => handleInputChange("necesidades", "equipInfoAdecuado", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>Sí</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necEquipInfoAdecuado"
+                                                    value="no"
+                                                    checked={formData.necesidades.equipInfoAdecuado === "no"}
+                                                    onChange={(e) => handleInputChange("necesidades", "equipInfoAdecuado", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>No</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necEquipInfoAdecuado"
+                                                    value="parcial"
+                                                    checked={formData.necesidades.equipInfoAdecuado === "parcial"}
+                                                    onChange={(e) => handleInputChange("necesidades", "equipInfoAdecuado", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>Parcial</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        {/* 7.3 Necesidades de Equipamiento Biomédico */}
+                        {/* 7.4 Necesidades de Equipamiento Biomédico */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] px-6 py-4">
-                                <h3 className="text-lg font-semibold text-white">7.3 NECESIDADES DE EQUIPAMIENTO BIOMÉDICO DIGITAL</h3>
+                                <h3 className="text-lg font-semibold text-white">7.4 EQUIPAMIENTO BIOMÉDICO DIGITAL</h3>
                             </div>
                             <div className="p-6">
                                 <div className="overflow-x-auto">
@@ -3254,33 +3670,30 @@ export default function FormularioDiagnostico() {
                                             <tr className="bg-[#0A5BA9] text-white">
                                                 <th className="px-3 py-3 text-center font-medium w-20">N°</th>
                                                 <th className="px-3 py-3 text-left font-medium">DESCRIPCIÓN DEL REQUERIMIENTO</th>
-                                                <th className="px-3 py-3 text-center font-medium w-32">CANTIDAD REQUERIDA</th>
                                                 <th className="px-3 py-3 text-center font-medium w-36">PRIORIDAD</th>
+                                                <th className="px-3 py-3 text-center font-medium w-32">CANTIDAD REQUERIDA</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {[
-                                                { id: "pulsioximetro", num: "7.3.1", label: "Pulsioxímetro digital" },
-                                                { id: "estetoscopio", num: "7.3.2", label: "Estetoscopio digital" },
-                                                { id: "tensiometro", num: "7.3.3", label: "Tensiómetro digital" },
-                                                { id: "otoscopio", num: "7.3.4", label: "Otoscopio digital" },
-                                                { id: "dermatoscopio", num: "7.3.5", label: "Dermatoscopio digital" },
-                                                { id: "electrocardiografo", num: "7.3.6", label: "Electrocardiógrafo digital" },
-                                                { id: "ecografo", num: "7.3.7", label: "Ecógrafo digital" },
-                                                { id: "estacionMovil", num: "7.3.8", label: "Estación móvil de telemedicina" },
+                                                { id: "pulsioximetro", num: "7.4.1", label: "Pulsioxímetro digital" },
+                                                { id: "dermatoscopio", num: "7.4.2", label: "Dermatoscopio digital" },
+                                                { id: "ecografo", num: "7.4.3", label: "Ecógrafo digital" },
+                                                { id: "electrocardiografo", num: "7.4.4", label: "Electrocardiógrafo digital" },
+                                                { id: "gasesArteriales", num: "7.4.5", label: "Equipo de gases arteriales digital" },
+                                                { id: "estetoscopio", num: "7.4.6", label: "Estetoscopio digital" },
+                                                { id: "fonendoscopio", num: "7.4.7", label: "Fonendoscopio digital" },
+                                                { id: "monitorVitales", num: "7.4.8", label: "Monitor de funciones vitales" },
+                                                { id: "otoscopio", num: "7.4.9", label: "Otoscopio digital" },
+                                                { id: "oximetro", num: "7.4.10", label: "Oxímetro digital" },
+                                                { id: "retinografo", num: "7.4.11", label: "Retinógrafo digital" },
+                                                { id: "tensiometro", num: "7.4.12", label: "Tensiómetro digital" },
+                                                { id: "videocolposcopio", num: "7.4.13", label: "Videocolposcopio" },
+                                                { id: "estacionMovil", num: "7.4.14", label: "Estación móvil de telemedicina" },
                                             ].map((item, index) => (
                                                 <tr key={item.id} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
                                                     <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
-                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
-                                                        <NumberSelector
-                                                            value={formData.necesidades[`bio_${item.id}_cant`] || ""}
-                                                            onChange={(e) => handleInputChange("necesidades", `bio_${item.id}_cant`, e.target.value)}
-                                                            min={0}
-                                                            max={20}
-                                                            className="w-24"
-                                                        />
-                                                    </td>
                                                     <td className="px-3 py-3 border-b border-gray-200 text-center">
                                                         <select
                                                             value={formData.necesidades[`bio_${item.id}_prior`] || ""}
@@ -3293,6 +3706,112 @@ export default function FormularioDiagnostico() {
                                                             <option value="baja">Baja</option>
                                                         </select>
                                                     </td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <NumberSelector
+                                                            value={formData.necesidades[`bio_${item.id}_cant`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `bio_${item.id}_cant`, e.target.value)}
+                                                            min={0}
+                                                            max={20}
+                                                            className="w-24"
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
+
+                                {/* Pregunta adicional - Equipamiento biomédico adecuado */}
+                                <div className="mt-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                    <div className="flex flex-wrap items-center gap-4">
+                                        <span className="text-gray-700">¿El equipamiento biomédico es adecuado?</span>
+                                        <div className="flex items-center gap-4">
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necEquipBioAdecuado"
+                                                    value="si"
+                                                    checked={formData.necesidades.equipBioAdecuado === "si"}
+                                                    onChange={(e) => handleInputChange("necesidades", "equipBioAdecuado", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>Sí</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necEquipBioAdecuado"
+                                                    value="no"
+                                                    checked={formData.necesidades.equipBioAdecuado === "no"}
+                                                    onChange={(e) => handleInputChange("necesidades", "equipBioAdecuado", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>No</span>
+                                            </label>
+                                            <label className="flex items-center gap-1 cursor-pointer">
+                                                <input
+                                                    type="radio"
+                                                    name="necEquipBioAdecuado"
+                                                    value="parcial"
+                                                    checked={formData.necesidades.equipBioAdecuado === "parcial"}
+                                                    onChange={(e) => handleInputChange("necesidades", "equipBioAdecuado", e.target.value)}
+                                                    className="w-4 h-4 text-[#0A5BA9]"
+                                                />
+                                                <span>Parcial</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 7.5 Conectividad */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] px-6 py-4">
+                                <h3 className="text-lg font-semibold text-white">7.5 CONECTIVIDAD</h3>
+                            </div>
+                            <div className="p-6">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse text-sm">
+                                        <thead>
+                                            <tr className="bg-[#0A5BA9] text-white">
+                                                <th className="px-3 py-3 text-center font-medium w-20">N°</th>
+                                                <th className="px-3 py-3 text-left font-medium">DESCRIPCIÓN DEL REQUERIMIENTO</th>
+                                                <th className="px-3 py-3 text-center font-medium w-36">PRIORIDAD</th>
+                                                <th className="px-3 py-3 text-center font-medium w-32">CANTIDAD REQUERIDA</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[
+                                                { id: "instalacionInternet", num: "7.5.1", label: "Instalación de internet" },
+                                                { id: "puntosRed", num: "7.5.2", label: "Puntos de red" },
+                                                { id: "modemWifi", num: "7.5.3", label: "Módem WiFi" },
+                                                { id: "internetSatelital", num: "7.5.4", label: "Internet satelital" },
+                                            ].map((item, index) => (
+                                                <tr key={item.id} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
+                                                    <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <select
+                                                            value={formData.necesidades[`conect_${item.id}_prior`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `conect_${item.id}_prior`, e.target.value)}
+                                                            className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
+                                                        >
+                                                            <option value="">Seleccionar...</option>
+                                                            <option value="alta">Alta</option>
+                                                            <option value="media">Media</option>
+                                                            <option value="baja">Baja</option>
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <NumberSelector
+                                                            value={formData.necesidades[`conect_${item.id}_cant`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `conect_${item.id}_cant`, e.target.value)}
+                                                            min={0}
+                                                            max={20}
+                                                            className="w-24"
+                                                        />
+                                                    </td>
                                                 </tr>
                                             ))}
                                         </tbody>
@@ -3301,51 +3820,136 @@ export default function FormularioDiagnostico() {
                             </div>
                         </div>
 
-                        {/* 7.4 Otras necesidades */}
+                        {/* 7.6 Recursos Humanos */}
                         <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                             <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] px-6 py-4">
-                                <h3 className="text-lg font-semibold text-white">7.4 OTRAS NECESIDADES Y OBSERVACIONES</h3>
+                                <h3 className="text-lg font-semibold text-white">7.6 RECURSOS HUMANOS</h3>
                             </div>
-                            <div className="p-6 space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <span className="text-[#0A5BA9] font-bold mr-2">7.4.1</span>
-                                        Necesidades de conectividad (internet, puntos de red, etc.):
-                                    </label>
-                                    <textarea
-                                        value={formData.necesidades.necesidadesConectividad || ""}
-                                        onChange={(e) => handleInputChange("necesidades", "necesidadesConectividad", e.target.value)}
-                                        className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] resize-none"
-                                        rows={3}
-                                        placeholder="Describa las necesidades de conectividad..."
-                                    />
+                            <div className="p-6">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse text-sm">
+                                        <thead>
+                                            <tr className="bg-[#0A5BA9] text-white">
+                                                <th className="px-3 py-3 text-center font-medium w-20">N°</th>
+                                                <th className="px-3 py-3 text-left font-medium">ROL</th>
+                                                <th className="px-3 py-3 text-center font-medium w-36">PRIORIDAD</th>
+                                                <th className="px-3 py-3 text-center font-medium w-32">CANTIDAD REQUERIDA</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[
+                                                { id: "medicosEspecialistas", num: "7.6.1", label: "Médicos especialistas" },
+                                                { id: "medicosGenerales", num: "7.6.2", label: "Médicos generales" },
+                                                { id: "enfermeras", num: "7.6.3", label: "Enfermeras(os)" },
+                                                { id: "obstetras", num: "7.6.4", label: "Obstetras" },
+                                                { id: "tecnologosMedicos", num: "7.6.5", label: "Tecnólogos médicos" },
+                                                { id: "psicologos", num: "7.6.6", label: "Psicólogos" },
+                                                { id: "nutricionistas", num: "7.6.7", label: "Nutricionistas" },
+                                                { id: "trabajadoresSociales", num: "7.6.8", label: "Trabajadores sociales" },
+                                                { id: "otrosProfesionales", num: "7.6.9", label: "Otros profesionales de salud" },
+                                                { id: "personalTecnico", num: "7.6.10", label: "Personal técnico de salud" },
+                                                { id: "personalTic", num: "7.6.11", label: "Personal de soporte TIC" },
+                                                { id: "personalAdmin", num: "7.6.12", label: "Personal administrativo" },
+                                            ].map((item, index) => (
+                                                <tr key={item.id} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
+                                                    <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <select
+                                                            value={formData.necesidades[`rrhh_${item.id}_prior`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `rrhh_${item.id}_prior`, e.target.value)}
+                                                            className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
+                                                        >
+                                                            <option value="">Seleccionar...</option>
+                                                            <option value="alta">Alta</option>
+                                                            <option value="media">Media</option>
+                                                            <option value="baja">Baja</option>
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <NumberSelector
+                                                            value={formData.necesidades[`rrhh_${item.id}_cant`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `rrhh_${item.id}_cant`, e.target.value)}
+                                                            min={0}
+                                                            max={50}
+                                                            className="w-24"
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <span className="text-[#0A5BA9] font-bold mr-2">7.4.2</span>
-                                        Necesidades de capacitación del personal:
-                                    </label>
-                                    <textarea
-                                        value={formData.necesidades.necesidadesCapacitacion || ""}
-                                        onChange={(e) => handleInputChange("necesidades", "necesidadesCapacitacion", e.target.value)}
-                                        className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] resize-none"
-                                        rows={3}
-                                        placeholder="Describa las necesidades de capacitación..."
-                                    />
+                            </div>
+                        </div>
+
+                        {/* 7.7 Capacitación para Telesalud */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] px-6 py-4">
+                                <h3 className="text-lg font-semibold text-white">7.7 CAPACITACIÓN PARA TELESALUD</h3>
+                            </div>
+                            <div className="p-6">
+                                <div className="overflow-x-auto">
+                                    <table className="w-full border-collapse text-sm">
+                                        <thead>
+                                            <tr className="bg-[#0A5BA9] text-white">
+                                                <th className="px-3 py-3 text-center font-medium w-20">N°</th>
+                                                <th className="px-3 py-3 text-left font-medium">CAPACITACIÓN</th>
+                                                <th className="px-3 py-3 text-center font-medium w-36">PRIORIDAD</th>
+                                                <th className="px-3 py-3 text-center font-medium w-32">PARTICIPANTES</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {[
+                                                { id: "usoPlataformas", num: "7.7.1", label: "Uso de plataformas de telesalud" },
+                                                { id: "seguridadInfo", num: "7.7.2", label: "Seguridad de la información" },
+                                                { id: "protocolosClinicos", num: "7.7.3", label: "Protocolos clínicos" },
+                                            ].map((item, index) => (
+                                                <tr key={item.id} className={index % 2 === 0 ? "bg-blue-50" : "bg-white"}>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center font-medium text-[#0A5BA9]">{item.num}</td>
+                                                    <td className="px-3 py-3 border-b border-gray-200">{item.label}</td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <select
+                                                            value={formData.necesidades[`capac_${item.id}_prior`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `capac_${item.id}_prior`, e.target.value)}
+                                                            className="w-full px-2 py-1.5 bg-yellow-50 border-2 border-yellow-300 rounded text-sm focus:border-[#0A5BA9]"
+                                                        >
+                                                            <option value="">Seleccionar...</option>
+                                                            <option value="alta">Alta</option>
+                                                            <option value="media">Media</option>
+                                                            <option value="baja">Baja</option>
+                                                        </select>
+                                                    </td>
+                                                    <td className="px-3 py-3 border-b border-gray-200 text-center">
+                                                        <NumberSelector
+                                                            value={formData.necesidades[`capac_${item.id}_cant`] || ""}
+                                                            onChange={(e) => handleInputChange("necesidades", `capac_${item.id}_cant`, e.target.value)}
+                                                            min={0}
+                                                            max={100}
+                                                            className="w-24"
+                                                        />
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
                                 </div>
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                                        <span className="text-[#0A5BA9] font-bold mr-2">7.4.3</span>
-                                        Observaciones generales y comentarios adicionales:
-                                    </label>
-                                    <textarea
-                                        value={formData.necesidades.observacionesGenerales || ""}
-                                        onChange={(e) => handleInputChange("necesidades", "observacionesGenerales", e.target.value)}
-                                        className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] resize-none"
-                                        rows={4}
-                                        placeholder="Escriba cualquier observación o comentario adicional..."
-                                    />
-                                </div>
+                            </div>
+                        </div>
+
+                        {/* 7.8 Observaciones Finales */}
+                        <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] px-6 py-4">
+                                <h3 className="text-lg font-semibold text-white">7.8 OBSERVACIONES Y COMENTARIOS ADICIONALES</h3>
+                            </div>
+                            <div className="p-6">
+                                <textarea
+                                    value={formData.necesidades.observacionesFinales || ""}
+                                    onChange={(e) => handleInputChange("necesidades", "observacionesFinales", e.target.value)}
+                                    className="w-full px-4 py-3 bg-yellow-50 border-2 border-yellow-300 rounded-lg focus:border-[#0A5BA9] resize-none"
+                                    rows={4}
+                                    placeholder="Escriba cualquier observación o comentario adicional sobre las necesidades de telesalud..."
+                                />
                             </div>
                         </div>
                     </div>
@@ -3827,20 +4431,103 @@ export default function FormularioDiagnostico() {
                                     ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de infraestructura física.</p>;
                                 })()}
 
-                                {/* 7.2 Equipamiento Informático - Tabla */}
-                                <h4 className="font-semibold text-gray-700 mb-3">7.2 Necesidades de Equipamiento Informático</h4>
+                                {/* Pregunta de suficiencia - Infraestructura Física */}
+                                {(formData.necesidades.infraFisicaSuficiente || formData.necesidades.infraFisicaObservaciones) && (
+                                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="flex items-center gap-4 mb-2">
+                                            <span className="text-sm font-medium text-gray-700">¿La infraestructura física es suficiente?</span>
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                formData.necesidades.infraFisicaSuficiente === 'si' ? 'bg-green-100 text-green-700' :
+                                                formData.necesidades.infraFisicaSuficiente === 'no' ? 'bg-red-100 text-red-700' :
+                                                formData.necesidades.infraFisicaSuficiente === 'parcial' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+                                            }`}>
+                                                {formData.necesidades.infraFisicaSuficiente === 'si' ? 'Sí' :
+                                                 formData.necesidades.infraFisicaSuficiente === 'no' ? 'No' :
+                                                 formData.necesidades.infraFisicaSuficiente === 'parcial' ? 'Parcial' : '-'}
+                                            </span>
+                                        </div>
+                                        {formData.necesidades.infraFisicaObservaciones && (
+                                            <div className="mt-2">
+                                                <span className="text-xs text-gray-500">Observaciones:</span>
+                                                <p className="text-sm text-gray-700 mt-1">{formData.necesidades.infraFisicaObservaciones}</p>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
+                                {/* 7.2 Infraestructura Tecnológica - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.2 Necesidades de Infraestructura Tecnológica</h4>
+                                {(() => {
+                                    const infraTecItems = [
+                                        { label: "Equipo de Computo", id: "equipoComputo", num: "7.2.1" },
+                                        { label: "Equipos de red (routers, switches)", id: "equiposRed", num: "7.2.2" },
+                                        { label: "Software necesario para la gestión y ejecución de la teleconsulta", id: "softwareAtencion", num: "7.2.3" },
+                                        { label: "Aplicaciones para el seguimiento y monitoreo de los servicios", id: "aplicacionesMonitoreo", num: "7.2.4" },
+                                        { label: "Servicios de soporte que garantizan el funcionamiento", id: "serviciosSoporte", num: "7.2.5" },
+                                    ].filter(item => formData.necesidades[`infraTec_${item.id}_cant`] || formData.necesidades[`infraTec_${item.id}_prior`]);
+
+                                    return infraTecItems.length > 0 ? (
+                                        <table className="w-full text-sm border-collapse mb-6">
+                                            <thead>
+                                                <tr className="bg-[#0A5BA9] text-white">
+                                                    <th className="px-4 py-2 text-left">Requerimiento</th>
+                                                    <th className="px-4 py-2 text-center w-24">Cantidad</th>
+                                                    <th className="px-4 py-2 text-center w-24">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {infraTecItems.map((item, idx) => (
+                                                    <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                        <td className="px-4 py-2 border">{item.num} {item.label}</td>
+                                                        <td className="px-4 py-2 border text-center font-medium">{formData.necesidades[`infraTec_${item.id}_cant`] || "0"}</td>
+                                                        <td className="px-4 py-2 border text-center">
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                                formData.necesidades[`infraTec_${item.id}_prior`] === "alta" ? "bg-red-100 text-red-700" :
+                                                                formData.necesidades[`infraTec_${item.id}_prior`] === "media" ? "bg-yellow-100 text-yellow-700" :
+                                                                formData.necesidades[`infraTec_${item.id}_prior`] === "baja" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                                                            }`}>
+                                                                {formData.necesidades[`infraTec_${item.id}_prior`] ? formData.necesidades[`infraTec_${item.id}_prior`].charAt(0).toUpperCase() + formData.necesidades[`infraTec_${item.id}_prior`].slice(1) : "-"}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de infraestructura tecnológica.</p>;
+                                })()}
+
+                                {/* Pregunta de suficiencia - Infraestructura Tecnológica */}
+                                {formData.necesidades.infraTecAdecuada && (
+                                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-sm font-medium text-gray-700">¿La infraestructura tecnológica es adecuada?</span>
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                formData.necesidades.infraTecAdecuada === 'si' ? 'bg-green-100 text-green-700' :
+                                                formData.necesidades.infraTecAdecuada === 'no' ? 'bg-red-100 text-red-700' :
+                                                formData.necesidades.infraTecAdecuada === 'parcial' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+                                            }`}>
+                                                {formData.necesidades.infraTecAdecuada === 'si' ? 'Sí' :
+                                                 formData.necesidades.infraTecAdecuada === 'no' ? 'No' :
+                                                 formData.necesidades.infraTecAdecuada === 'parcial' ? 'Parcial' : '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 7.3 Equipamiento Informático - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.3 Necesidades de Equipamiento Informático</h4>
                                 {(() => {
                                     const equipItems = [
-                                        { label: "Computadora de escritorio", id: "computadora", num: "7.2.1" },
-                                        { label: "Computadora portátil (laptop)", id: "laptop", num: "7.2.2" },
-                                        { label: "Monitor", id: "monitor", num: "7.2.3" },
-                                        { label: "Cámara web HD (1080p)", id: "camaraWeb", num: "7.2.4" },
-                                        { label: "Micrófono", id: "microfono", num: "7.2.5" },
-                                        { label: "Parlantes/Audífonos", id: "parlantes", num: "7.2.6" },
-                                        { label: "Impresora", id: "impresora", num: "7.2.7" },
-                                        { label: "Escáner", id: "escaner", num: "7.2.8" },
-                                        { label: "Router/Switch de red", id: "router", num: "7.2.9" },
-                                        { label: "UPS/Estabilizador", id: "ups", num: "7.2.10" },
+                                        { label: "Computadora de escritorio", id: "computadora", num: "7.3.1" },
+                                        { label: "Computadora portátil (laptop)", id: "laptop", num: "7.3.2" },
+                                        { label: "Monitor", id: "monitor", num: "7.3.3" },
+                                        { label: "Cable HDMI", id: "cableHdmi", num: "7.3.4" },
+                                        { label: "Cámara web HD (resolución mínima 1080p)", id: "camaraWeb", num: "7.3.5" },
+                                        { label: "Micrófono", id: "microfono", num: "7.3.6" },
+                                        { label: "Parlantes/Audífonos", id: "parlantes", num: "7.3.7" },
+                                        { label: "Impresora", id: "impresora", num: "7.3.8" },
+                                        { label: "Escáner", id: "escaner", num: "7.3.9" },
+                                        { label: "Router/Switch de red", id: "router", num: "7.3.10" },
                                     ].filter(item => formData.necesidades[`equip_${item.id}_cant`] || formData.necesidades[`equip_${item.id}_prior`]);
 
                                     return equipItems.length > 0 ? (
@@ -3873,18 +4560,42 @@ export default function FormularioDiagnostico() {
                                     ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de equipamiento informático.</p>;
                                 })()}
 
-                                {/* 7.3 Equipamiento Biomédico - Tabla */}
-                                <h4 className="font-semibold text-gray-700 mb-3">7.3 Necesidades de Equipamiento Biomédico Digital</h4>
+                                {/* Pregunta de suficiencia - Equipamiento Informático */}
+                                {formData.necesidades.equipInfoAdecuado && (
+                                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-sm font-medium text-gray-700">¿El equipamiento informático es adecuado?</span>
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                formData.necesidades.equipInfoAdecuado === 'si' ? 'bg-green-100 text-green-700' :
+                                                formData.necesidades.equipInfoAdecuado === 'no' ? 'bg-red-100 text-red-700' :
+                                                formData.necesidades.equipInfoAdecuado === 'parcial' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+                                            }`}>
+                                                {formData.necesidades.equipInfoAdecuado === 'si' ? 'Sí' :
+                                                 formData.necesidades.equipInfoAdecuado === 'no' ? 'No' :
+                                                 formData.necesidades.equipInfoAdecuado === 'parcial' ? 'Parcial' : '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 7.4 Equipamiento Biomédico - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.4 Necesidades de Equipamiento Biomédico Digital</h4>
                                 {(() => {
                                     const bioItems = [
-                                        { label: "Pulsioxímetro digital", id: "pulsioximetro", num: "7.3.1" },
-                                        { label: "Estetoscopio digital", id: "estetoscopio", num: "7.3.2" },
-                                        { label: "Tensiómetro digital", id: "tensiometro", num: "7.3.3" },
-                                        { label: "Otoscopio digital", id: "otoscopio", num: "7.3.4" },
-                                        { label: "Dermatoscopio digital", id: "dermatoscopio", num: "7.3.5" },
-                                        { label: "Electrocardiógrafo digital", id: "electrocardiografo", num: "7.3.6" },
-                                        { label: "Ecógrafo digital", id: "ecografo", num: "7.3.7" },
-                                        { label: "Estación móvil de telemedicina", id: "estacionMovil", num: "7.3.8" },
+                                        { label: "Pulsioxímetro digital", id: "pulsioximetro", num: "7.4.1" },
+                                        { label: "Dermatoscopio digital", id: "dermatoscopio", num: "7.4.2" },
+                                        { label: "Ecógrafo digital", id: "ecografo", num: "7.4.3" },
+                                        { label: "Electrocardiógrafo digital", id: "electrocardiografo", num: "7.4.4" },
+                                        { label: "Equipo de gases arteriales digital", id: "gasesArteriales", num: "7.4.5" },
+                                        { label: "Estetoscopio digital", id: "estetoscopio", num: "7.4.6" },
+                                        { label: "Fonendoscopio digital", id: "fonendoscopio", num: "7.4.7" },
+                                        { label: "Monitor de funciones vitales", id: "monitorVitales", num: "7.4.8" },
+                                        { label: "Otoscopio digital", id: "otoscopio", num: "7.4.9" },
+                                        { label: "Oxímetro digital", id: "oximetro", num: "7.4.10" },
+                                        { label: "Retinógrafo digital", id: "retinografo", num: "7.4.11" },
+                                        { label: "Tensiómetro digital", id: "tensiometro", num: "7.4.12" },
+                                        { label: "Videocolposcopio", id: "videocolposcopio", num: "7.4.13" },
+                                        { label: "Estación móvil de telemedicina", id: "estacionMovil", num: "7.4.14" },
                                     ].filter(item => formData.necesidades[`bio_${item.id}_cant`] || formData.necesidades[`bio_${item.id}_prior`]);
 
                                     return bioItems.length > 0 ? (
@@ -3917,27 +4628,172 @@ export default function FormularioDiagnostico() {
                                     ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de equipamiento biomédico.</p>;
                                 })()}
 
-                                {/* 7.4 Otras Necesidades */}
-                                {(formData.necesidades.necesidadesConectividad || formData.necesidades.necesidadesCapacitacionFinal || formData.necesidades.observacionesGenerales) && (
+                                {/* Pregunta de suficiencia - Equipamiento Biomédico */}
+                                {formData.necesidades.equipBioAdecuado && (
+                                    <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                        <div className="flex items-center gap-4">
+                                            <span className="text-sm font-medium text-gray-700">¿El equipamiento biomédico es adecuado?</span>
+                                            <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                                formData.necesidades.equipBioAdecuado === 'si' ? 'bg-green-100 text-green-700' :
+                                                formData.necesidades.equipBioAdecuado === 'no' ? 'bg-red-100 text-red-700' :
+                                                formData.necesidades.equipBioAdecuado === 'parcial' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-500'
+                                            }`}>
+                                                {formData.necesidades.equipBioAdecuado === 'si' ? 'Sí' :
+                                                 formData.necesidades.equipBioAdecuado === 'no' ? 'No' :
+                                                 formData.necesidades.equipBioAdecuado === 'parcial' ? 'Parcial' : '-'}
+                                            </span>
+                                        </div>
+                                    </div>
+                                )}
+
+                                {/* 7.5 Conectividad - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.5 Necesidades de Conectividad</h4>
+                                {(() => {
+                                    const conectItems = [
+                                        { label: "Instalación de internet", id: "instalacionInternet", num: "7.5.1" },
+                                        { label: "Puntos de red", id: "puntosRed", num: "7.5.2" },
+                                        { label: "Módem WiFi", id: "modemWifi", num: "7.5.3" },
+                                        { label: "Internet satelital", id: "internetSatelital", num: "7.5.4" },
+                                    ].filter(item => formData.necesidades[`conect_${item.id}_cant`] || formData.necesidades[`conect_${item.id}_prior`]);
+
+                                    return conectItems.length > 0 ? (
+                                        <table className="w-full text-sm border-collapse mb-6">
+                                            <thead>
+                                                <tr className="bg-[#0A5BA9] text-white">
+                                                    <th className="px-4 py-2 text-left">Requerimiento</th>
+                                                    <th className="px-4 py-2 text-center w-24">Cantidad</th>
+                                                    <th className="px-4 py-2 text-center w-24">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {conectItems.map((item, idx) => (
+                                                    <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                        <td className="px-4 py-2 border">{item.num} {item.label}</td>
+                                                        <td className="px-4 py-2 border text-center font-medium">{formData.necesidades[`conect_${item.id}_cant`] || "0"}</td>
+                                                        <td className="px-4 py-2 border text-center">
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                                formData.necesidades[`conect_${item.id}_prior`] === "alta" ? "bg-red-100 text-red-700" :
+                                                                formData.necesidades[`conect_${item.id}_prior`] === "media" ? "bg-yellow-100 text-yellow-700" :
+                                                                formData.necesidades[`conect_${item.id}_prior`] === "baja" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                                                            }`}>
+                                                                {formData.necesidades[`conect_${item.id}_prior`] ? formData.necesidades[`conect_${item.id}_prior`].charAt(0).toUpperCase() + formData.necesidades[`conect_${item.id}_prior`].slice(1) : "-"}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de conectividad.</p>;
+                                })()}
+
+                                {/* 7.6 Recursos Humanos - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.6 Necesidades de Recursos Humanos</h4>
+                                {(() => {
+                                    const rrhhItems = [
+                                        { label: "Médicos especialistas", id: "medicosEspecialistas", num: "7.6.1" },
+                                        { label: "Médicos generales", id: "medicosGenerales", num: "7.6.2" },
+                                        { label: "Enfermeras(os)", id: "enfermeras", num: "7.6.3" },
+                                        { label: "Obstetras", id: "obstetras", num: "7.6.4" },
+                                        { label: "Tecnólogos médicos", id: "tecnologosMedicos", num: "7.6.5" },
+                                        { label: "Psicólogos", id: "psicologos", num: "7.6.6" },
+                                        { label: "Nutricionistas", id: "nutricionistas", num: "7.6.7" },
+                                        { label: "Trabajadores sociales", id: "trabajadoresSociales", num: "7.6.8" },
+                                        { label: "Otros profesionales de salud", id: "otrosProfesionales", num: "7.6.9" },
+                                        { label: "Personal técnico de salud", id: "personalTecnico", num: "7.6.10" },
+                                        { label: "Personal de soporte TIC", id: "personalTic", num: "7.6.11" },
+                                        { label: "Personal administrativo", id: "personalAdmin", num: "7.6.12" },
+                                    ].filter(item => formData.necesidades[`rrhh_${item.id}_cant`] || formData.necesidades[`rrhh_${item.id}_prior`]);
+
+                                    return rrhhItems.length > 0 ? (
+                                        <table className="w-full text-sm border-collapse mb-6">
+                                            <thead>
+                                                <tr className="bg-[#0A5BA9] text-white">
+                                                    <th className="px-4 py-2 text-left">Rol</th>
+                                                    <th className="px-4 py-2 text-center w-24">Cantidad</th>
+                                                    <th className="px-4 py-2 text-center w-24">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {rrhhItems.map((item, idx) => (
+                                                    <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                        <td className="px-4 py-2 border">{item.num} {item.label}</td>
+                                                        <td className="px-4 py-2 border text-center font-medium">{formData.necesidades[`rrhh_${item.id}_cant`] || "0"}</td>
+                                                        <td className="px-4 py-2 border text-center">
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                                formData.necesidades[`rrhh_${item.id}_prior`] === "alta" ? "bg-red-100 text-red-700" :
+                                                                formData.necesidades[`rrhh_${item.id}_prior`] === "media" ? "bg-yellow-100 text-yellow-700" :
+                                                                formData.necesidades[`rrhh_${item.id}_prior`] === "baja" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                                                            }`}>
+                                                                {formData.necesidades[`rrhh_${item.id}_prior`] ? formData.necesidades[`rrhh_${item.id}_prior`].charAt(0).toUpperCase() + formData.necesidades[`rrhh_${item.id}_prior`].slice(1) : "-"}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de recursos humanos.</p>;
+                                })()}
+
+                                {/* 7.7 Capacitación para Telesalud - Tabla */}
+                                <h4 className="font-semibold text-gray-700 mb-3">7.7 Capacitación para Telesalud</h4>
+                                {(() => {
+                                    const capacItems = [
+                                        { label: "Uso de plataformas de telesalud", id: "usoPlataformas", num: "7.7.1" },
+                                        { label: "Seguridad de la información", id: "seguridadInfo", num: "7.7.2" },
+                                        { label: "Protocolos clínicos", id: "protocolosClinicos", num: "7.7.3" },
+                                    ].filter(item => formData.necesidades[`capac_${item.id}_cant`] || formData.necesidades[`capac_${item.id}_prior`]);
+
+                                    return capacItems.length > 0 ? (
+                                        <table className="w-full text-sm border-collapse mb-6">
+                                            <thead>
+                                                <tr className="bg-[#0A5BA9] text-white">
+                                                    <th className="px-4 py-2 text-left">Capacitación</th>
+                                                    <th className="px-4 py-2 text-center w-24">Participantes</th>
+                                                    <th className="px-4 py-2 text-center w-24">Prioridad</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {capacItems.map((item, idx) => (
+                                                    <tr key={item.id} className={idx % 2 === 0 ? "bg-gray-50" : ""}>
+                                                        <td className="px-4 py-2 border">{item.num} {item.label}</td>
+                                                        <td className="px-4 py-2 border text-center font-medium">{formData.necesidades[`capac_${item.id}_cant`] || "0"}</td>
+                                                        <td className="px-4 py-2 border text-center">
+                                                            <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                                                formData.necesidades[`capac_${item.id}_prior`] === "alta" ? "bg-red-100 text-red-700" :
+                                                                formData.necesidades[`capac_${item.id}_prior`] === "media" ? "bg-yellow-100 text-yellow-700" :
+                                                                formData.necesidades[`capac_${item.id}_prior`] === "baja" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-500"
+                                                            }`}>
+                                                                {formData.necesidades[`capac_${item.id}_prior`] ? formData.necesidades[`capac_${item.id}_prior`].charAt(0).toUpperCase() + formData.necesidades[`capac_${item.id}_prior`].slice(1) : "-"}
+                                                            </span>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    ) : <p className="text-sm text-gray-500 mb-6 italic">No se registraron necesidades de capacitación.</p>;
+                                })()}
+
+                                {/* 7.8 Observaciones y Comentarios Adicionales */}
+                                {(formData.necesidades.necesidadesConectividad || formData.necesidades.necesidadesCapacitacion || formData.necesidades.observacionesGenerales || formData.necesidades.observacionesFinales) && (
                                     <div className="space-y-4">
-                                        <h4 className="font-semibold text-gray-700">7.4 Otras Necesidades y Observaciones</h4>
+                                        <h4 className="font-semibold text-gray-700">7.8 Observaciones y Comentarios Adicionales</h4>
                                         <div className="bg-gray-50 rounded-lg p-4 space-y-4">
                                             {formData.necesidades.necesidadesConectividad && (
                                                 <div className="bg-white p-4 rounded border border-gray-200">
-                                                    <span className="text-xs text-gray-500 block mb-1">7.4.1 Necesidades de Conectividad</span>
+                                                    <span className="text-xs text-gray-500 block mb-1">Necesidades de Conectividad</span>
                                                     <p className="text-sm text-gray-800">{formData.necesidades.necesidadesConectividad}</p>
                                                 </div>
                                             )}
-                                            {formData.necesidades.necesidadesCapacitacionFinal && (
+                                            {formData.necesidades.necesidadesCapacitacion && (
                                                 <div className="bg-white p-4 rounded border border-gray-200">
-                                                    <span className="text-xs text-gray-500 block mb-1">7.4.2 Necesidades de Capacitación</span>
-                                                    <p className="text-sm text-gray-800">{formData.necesidades.necesidadesCapacitacionFinal}</p>
+                                                    <span className="text-xs text-gray-500 block mb-1">Necesidades de Capacitación</span>
+                                                    <p className="text-sm text-gray-800">{formData.necesidades.necesidadesCapacitacion}</p>
                                                 </div>
                                             )}
-                                            {formData.necesidades.observacionesGenerales && (
+                                            {(formData.necesidades.observacionesGenerales || formData.necesidades.observacionesFinales) && (
                                                 <div className="bg-white p-4 rounded border border-blue-200 border-l-4 border-l-[#0A5BA9]">
-                                                    <span className="text-xs text-gray-500 block mb-1">7.4.3 Observaciones Generales</span>
-                                                    <p className="text-sm text-gray-800">{formData.necesidades.observacionesGenerales}</p>
+                                                    <span className="text-xs text-gray-500 block mb-1">Observaciones Generales</span>
+                                                    <p className="text-sm text-gray-800">{formData.necesidades.observacionesGenerales || formData.necesidades.observacionesFinales}</p>
                                                 </div>
                                             )}
                                         </div>

@@ -207,6 +207,87 @@ const PRIORIDAD_IDS = {
     'Baja': 3,
 };
 
+// Mapeo de prioridades desde valores en minúsculas
+const PRIORIDAD_IDS_LOWER = {
+    'alta': 1,
+    'media': 2,
+    'baja': 3,
+};
+
+// ==================== MAPEO DE NECESIDADES A IDs DE CATÁLOGO ====================
+
+// 7.2 Infraestructura Tecnológica (IDs 9-13)
+const NECESIDAD_INF_TEC_IDS = {
+    'equipoComputo': 9,
+    'equiposRed': 10,
+    'softwareAtencion': 11,
+    'aplicacionesMonitoreo': 12,
+    'serviciosSoporte': 13,
+};
+
+// 7.3 Equipamiento Informático (IDs 14-23)
+const NECESIDAD_EQUIP_INFO_IDS = {
+    'computadora': 14,
+    'laptop': 15,
+    'monitor': 16,
+    'cableHdmi': 17,
+    'camaraWeb': 18,
+    'microfono': 19,
+    'parlantes': 20,
+    'impresora': 21,
+    'escaner': 22,
+    'router': 23,
+};
+
+// 7.4 Equipamiento Biomédico (IDs 201-214)
+const NECESIDAD_EQUIP_BIO_IDS = {
+    'pulsioximetro': 201,
+    'dermatoscopio': 202,
+    'ecografo': 203,
+    'electrocardiografo': 204,
+    'gasesArteriales': 205,
+    'estetoscopio': 206,
+    'fonendoscopio': 207,
+    'monitorVitales': 208,
+    'otoscopio': 209,
+    'oximetro': 210,
+    'retinografo': 211,
+    'tensiometro': 212,
+    'videocolposcopio': 213,
+    'estacionMovil': 214,
+};
+
+// 7.6 Recursos Humanos (IDs 42-53)
+const NECESIDAD_RRHH_IDS = {
+    'medicosEspecialistas': 42,
+    'medicosGenerales': 43,
+    'enfermeras': 44,
+    'obstetras': 45,
+    'tecnologosMedicos': 46,
+    'psicologos': 47,
+    'nutricionistas': 48,
+    'trabajadoresSociales': 49,
+    'otrosProfesionales': 50,
+    'personalTecnico': 51,
+    'personalTic': 52,
+    'personalAdmin': 53,
+};
+
+// 7.5 Conectividad (IDs 38-41)
+const NECESIDAD_CONECT_IDS = {
+    'instalacionInternet': 38,
+    'puntosRed': 39,
+    'modemWifi': 40,
+    'internetSatelital': 41,
+};
+
+// 7.7 Capacitación para Telesalud (IDs 54-56)
+const NECESIDAD_CAPAC_IDS = {
+    'usoPlataformas': 54,
+    'seguridadInfo': 55,
+    'protocolosClinicos': 56,
+};
+
 // ==================== FUNCIONES DE TRANSFORMACIÓN ====================
 
 /**
@@ -370,21 +451,111 @@ function transformarParaBackendInterno(formData, idIpress, idFormulario = null) 
     // Necesidades
     if (formData.necesidades) {
         const nec = formData.necesidades;
+        const necesidadesList = [];
+
+        // 7.2 Infraestructura Tecnológica
+        Object.keys(NECESIDAD_INF_TEC_IDS).forEach(key => {
+            const cant = nec[`infraTec_${key}_cant`];
+            const prior = nec[`infraTec_${key}_prior`];
+            if (cant || prior) {
+                necesidadesList.push({
+                    idNecesidad: NECESIDAD_INF_TEC_IDS[key],
+                    cantidadRequerida: parseInt(cant) || 0,
+                    idPrioridad: PRIORIDAD_IDS_LOWER[prior] || null,
+                });
+            }
+        });
+
+        // 7.3 Equipamiento Informático
+        Object.keys(NECESIDAD_EQUIP_INFO_IDS).forEach(key => {
+            const cant = nec[`equip_${key}_cant`];
+            const prior = nec[`equip_${key}_prior`];
+            if (cant || prior) {
+                necesidadesList.push({
+                    idNecesidad: NECESIDAD_EQUIP_INFO_IDS[key],
+                    cantidadRequerida: parseInt(cant) || 0,
+                    idPrioridad: PRIORIDAD_IDS_LOWER[prior] || null,
+                });
+            }
+        });
+
+        // 7.4 Equipamiento Biomédico
+        Object.keys(NECESIDAD_EQUIP_BIO_IDS).forEach(key => {
+            const cant = nec[`bio_${key}_cant`];
+            const prior = nec[`bio_${key}_prior`];
+            if (cant || prior) {
+                necesidadesList.push({
+                    idNecesidad: NECESIDAD_EQUIP_BIO_IDS[key],
+                    cantidadRequerida: parseInt(cant) || 0,
+                    idPrioridad: PRIORIDAD_IDS_LOWER[prior] || null,
+                });
+            }
+        });
+
+        // 7.6 Recursos Humanos
+        Object.keys(NECESIDAD_RRHH_IDS).forEach(key => {
+            const cant = nec[`rrhh_${key}_cant`];
+            const prior = nec[`rrhh_${key}_prior`];
+            if (cant || prior) {
+                necesidadesList.push({
+                    idNecesidad: NECESIDAD_RRHH_IDS[key],
+                    cantidadRequerida: parseInt(cant) || 0,
+                    idPrioridad: PRIORIDAD_IDS_LOWER[prior] || null,
+                });
+            }
+        });
+
+        // 7.5 Conectividad
+        Object.keys(NECESIDAD_CONECT_IDS).forEach(key => {
+            const cant = nec[`conect_${key}_cant`];
+            const prior = nec[`conect_${key}_prior`];
+            if (cant || prior) {
+                necesidadesList.push({
+                    idNecesidad: NECESIDAD_CONECT_IDS[key],
+                    cantidadRequerida: parseInt(cant) || 0,
+                    idPrioridad: PRIORIDAD_IDS_LOWER[prior] || null,
+                });
+            }
+        });
+
+        // 7.7 Capacitación para Telesalud
+        Object.keys(NECESIDAD_CAPAC_IDS).forEach(key => {
+            const cant = nec[`capac_${key}_cant`];
+            const prior = nec[`capac_${key}_prior`];
+            if (cant || prior) {
+                necesidadesList.push({
+                    idNecesidad: NECESIDAD_CAPAC_IDS[key],
+                    cantidadRequerida: parseInt(cant) || 0,
+                    idPrioridad: PRIORIDAD_IDS_LOWER[prior] || null,
+                });
+            }
+        });
+
         request.necesidades = {
-            necesidades: [],
+            necesidades: necesidadesList,
             capacitacion: [],
             necesidadesConectividad: nec.necesidadesConectividad || '',
             necesidadesCapacitacion: nec.necesidadesCapacitacion || '',
-            observacionesGenerales: nec.observacionesGenerales || '',
+            observacionesGenerales: nec.observacionesGenerales || nec.observacionesFinales || '',
+            // Campos de suficiencia
+            infraFisicaSuficiente: nec.infraFisicaSuficiente || '',
+            infraFisicaObservaciones: nec.infraFisicaObservaciones || '',
+            infraTecAdecuada: nec.infraTecAdecuada || '',
+            equipInfoAdecuado: nec.equipInfoAdecuado || '',
+            equipBioAdecuado: nec.equipBioAdecuado || '',
         };
 
-        // Necesidades de infraestructura y equipamiento
+        // También agregar necesidadesItems si ya viene en formato array (compatibilidad)
         if (nec.necesidadesItems && Array.isArray(nec.necesidadesItems)) {
-            request.necesidades.necesidades = nec.necesidadesItems.map(item => ({
-                idNecesidad: item.idNecesidad,
-                cantidadRequerida: parseInt(item.cantidadRequerida) || 0,
-                idPrioridad: PRIORIDAD_IDS[item.prioridad] || null,
-            }));
+            nec.necesidadesItems.forEach(item => {
+                if (item.idNecesidad && !necesidadesList.find(n => n.idNecesidad === item.idNecesidad)) {
+                    necesidadesList.push({
+                        idNecesidad: item.idNecesidad,
+                        cantidadRequerida: parseInt(item.cantidadRequerida) || 0,
+                        idPrioridad: PRIORIDAD_IDS[item.prioridad] || PRIORIDAD_IDS_LOWER[item.prioridad] || null,
+                    });
+                }
+            });
         }
 
         // Necesidades de capacitación
@@ -393,7 +564,7 @@ function transformarParaBackendInterno(formData, idIpress, idFormulario = null) 
                 temaCapacitacion: cap.temaCapacitacion || cap.tema || '',
                 poblacionObjetivo: cap.poblacionObjetivo || '',
                 numParticipantes: parseInt(cap.numParticipantes) || 0,
-                idPrioridad: PRIORIDAD_IDS[cap.prioridad] || null,
+                idPrioridad: PRIORIDAD_IDS[cap.prioridad] || PRIORIDAD_IDS_LOWER[cap.prioridad] || null,
             }));
         }
     }
@@ -526,6 +697,8 @@ function transformarParaFrontend(response) {
             wifi: fromBool(con.wifi),
             tipoConexion: con.tipoConexion || '',
             proveedor: con.proveedor || '',
+            proveedorSeleccionado: getProveedorSeleccionado(con.proveedor),
+            proveedorOtro: getProveedorOtro(con.proveedor),
             velocidadContratada: con.velocidadContratada || '',
             velocidadReal: con.velocidadReal || '',
             numPuntosRed: con.numPuntosRed || '',
@@ -596,9 +769,11 @@ function transformarParaFrontend(response) {
             'Computadora portátil': 'equip_laptop',
             'Computadora portátil (laptop)': 'equip_laptop',
             'Monitor': 'equip_monitor',
+            'Cable HDMI': 'equip_cableHdmi',
             'Cámara web': 'equip_camaraWeb',
             'Cámara web HD': 'equip_camaraWeb',
             'Cámara web HD (1080p)': 'equip_camaraWeb',
+            'Cámara web HD (resolución mínima 1080p)': 'equip_camaraWeb',
             'Micrófono': 'equip_microfono',
             'Parlantes': 'equip_parlantes',
             'Parlantes/Audífonos': 'equip_parlantes',
@@ -606,10 +781,9 @@ function transformarParaFrontend(response) {
             'Escáner': 'equip_escaner',
             'Router': 'equip_router',
             'Router/Switch de red': 'equip_router',
-            'UPS': 'equip_ups',
-            'UPS/Estabilizador': 'equip_ups',
             // Equipamiento Biomédico
             'Pulsioxímetro': 'bio_pulsioximetro',
+            'Pulsioxímetro digital': 'bio_pulsioximetro',
             'Estetoscopio': 'bio_estetoscopio',
             'Estetoscopio digital': 'bio_estetoscopio',
             'Tensiómetro': 'bio_tensiometro',
@@ -619,10 +793,111 @@ function transformarParaFrontend(response) {
             'Dermatoscopio': 'bio_dermatoscopio',
             'Dermatoscopio digital': 'bio_dermatoscopio',
             'Electrocardiógrafo': 'bio_electrocardiografo',
+            'Electrocardiógrafo digital': 'bio_electrocardiografo',
             'Ecógrafo': 'bio_ecografo',
             'Ecógrafo digital': 'bio_ecografo',
+            'Equipo de gases arteriales digital': 'bio_gasesArteriales',
+            'Fonendoscopio digital': 'bio_fonendoscopio',
+            'Monitor de funciones vitales': 'bio_monitorVitales',
+            'Oxímetro digital': 'bio_oximetro',
+            'Retinógrafo digital': 'bio_retinografo',
+            'Videocolposcopio': 'bio_videocolposcopio',
             'Estación móvil': 'bio_estacionMovil',
             'Estación móvil de telemedicina': 'bio_estacionMovil',
+            // Infraestructura Tecnológica
+            'Equipo de Computo': 'infraTec_equipoComputo',
+            'Equipo de cómputo': 'infraTec_equipoComputo',
+            'Equipos de red': 'infraTec_equiposRed',
+            'Equipos de red (routers, switches)': 'infraTec_equiposRed',
+            'Software de atención': 'infraTec_softwareAtencion',
+            'Software necesario para la gestión y ejecución de la teleconsulta': 'infraTec_softwareAtencion',
+            'Software necesario para la gestión y ejecución de la atención': 'infraTec_softwareAtencion',
+            'Aplicaciones de monitoreo': 'infraTec_aplicacionesMonitoreo',
+            'Aplicaciones para el seguimiento y monitoreo de los servicios': 'infraTec_aplicacionesMonitoreo',
+            'Aplicaciones para el seguimiento y monitoreo de los pacientes': 'infraTec_aplicacionesMonitoreo',
+            'Servicios de soporte': 'infraTec_serviciosSoporte',
+            'Servicios de soporte que garantizan el funcionamiento': 'infraTec_serviciosSoporte',
+            'Servicios de soporte que garanticen el funcionamiento óptimo': 'infraTec_serviciosSoporte',
+            // Recursos Humanos
+            'Médicos especialistas': 'rrhh_medicosEspecialistas',
+            'Médicos generales': 'rrhh_medicosGenerales',
+            'Enfermeras(os)': 'rrhh_enfermeras',
+            'Obstetras': 'rrhh_obstetras',
+            'Tecnólogos médicos': 'rrhh_tecnologosMedicos',
+            'Psicólogos': 'rrhh_psicologos',
+            'Nutricionistas': 'rrhh_nutricionistas',
+            'Trabajadores sociales': 'rrhh_trabajadoresSociales',
+            'Otros profesionales de salud': 'rrhh_otrosProfesionales',
+            'Personal técnico de salud': 'rrhh_personalTecnico',
+            'Personal de soporte TIC': 'rrhh_personalTic',
+            'Personal administrativo': 'rrhh_personalAdmin',
+            // Conectividad
+            'Instalación de internet': 'conect_instalacionInternet',
+            'Puntos de red': 'conect_puntosRed',
+            'Módem WiFi': 'conect_modemWifi',
+            'Internet satelital': 'conect_internetSatelital',
+            // Capacitación para Telesalud
+            'Uso de plataformas de telesalud': 'capac_usoPlataformas',
+            'Seguridad de la información': 'capac_seguridadInfo',
+            'Protocolos clínicos': 'capac_protocolosClinicos',
+        };
+
+        // Mapeo por ID de catálogo (más confiable)
+        const NECESIDAD_ID_MAP = {
+            // INF_TEC (9-13)
+            9: 'infraTec_equipoComputo',
+            10: 'infraTec_equiposRed',
+            11: 'infraTec_softwareAtencion',
+            12: 'infraTec_aplicacionesMonitoreo',
+            13: 'infraTec_serviciosSoporte',
+            // EQUIP_INFO (14-23)
+            14: 'equip_computadora',
+            15: 'equip_laptop',
+            16: 'equip_monitor',
+            17: 'equip_cableHdmi',
+            18: 'equip_camaraWeb',
+            19: 'equip_microfono',
+            20: 'equip_parlantes',
+            21: 'equip_impresora',
+            22: 'equip_escaner',
+            23: 'equip_router',
+            // EQUIP_BIO (201-214)
+            201: 'bio_pulsioximetro',
+            202: 'bio_dermatoscopio',
+            203: 'bio_ecografo',
+            204: 'bio_electrocardiografo',
+            205: 'bio_gasesArteriales',
+            206: 'bio_estetoscopio',
+            207: 'bio_fonendoscopio',
+            208: 'bio_monitorVitales',
+            209: 'bio_otoscopio',
+            210: 'bio_oximetro',
+            211: 'bio_retinografo',
+            212: 'bio_tensiometro',
+            213: 'bio_videocolposcopio',
+            214: 'bio_estacionMovil',
+            // RRHH (42-53)
+            42: 'rrhh_medicosEspecialistas',
+            43: 'rrhh_medicosGenerales',
+            44: 'rrhh_enfermeras',
+            45: 'rrhh_obstetras',
+            46: 'rrhh_tecnologosMedicos',
+            47: 'rrhh_psicologos',
+            48: 'rrhh_nutricionistas',
+            49: 'rrhh_trabajadoresSociales',
+            50: 'rrhh_otrosProfesionales',
+            51: 'rrhh_personalTecnico',
+            52: 'rrhh_personalTic',
+            53: 'rrhh_personalAdmin',
+            // CONECT (38-41)
+            38: 'conect_instalacionInternet',
+            39: 'conect_puntosRed',
+            40: 'conect_modemWifi',
+            41: 'conect_internetSatelital',
+            // CAPAC (54-56)
+            54: 'capac_usoPlataformas',
+            55: 'capac_seguridadInfo',
+            56: 'capac_protocolosClinicos',
         };
 
         // Necesidades de infraestructura y equipamiento
@@ -635,9 +910,14 @@ function transformarParaFrontend(response) {
                 prioridad: n.prioridad || '',
             }));
 
-            // También mapear a campos individuales para la vista previa
+            // Mapear a campos individuales para el formulario y vista previa
             nec.necesidades.forEach(n => {
-                const fieldBase = NECESIDAD_FIELD_MAP[n.nombreNecesidad];
+                // Primero intentar mapear por ID (más confiable)
+                let fieldBase = NECESIDAD_ID_MAP[n.idNecesidad];
+                // Si no se encuentra por ID, intentar por nombre
+                if (!fieldBase && n.nombreNecesidad) {
+                    fieldBase = NECESIDAD_FIELD_MAP[n.nombreNecesidad];
+                }
                 if (fieldBase) {
                     formData.necesidades[`${fieldBase}_cant`] = n.cantidadRequerida || '';
                     formData.necesidades[`${fieldBase}_prior`] = (n.prioridad || '').toLowerCase();
@@ -655,6 +935,13 @@ function transformarParaFrontend(response) {
         if (nec.observacionesGenerales) {
             formData.necesidades.observacionesGenerales = nec.observacionesGenerales;
         }
+
+        // Campos de suficiencia
+        formData.necesidades.infraFisicaSuficiente = nec.infraFisicaSuficiente || '';
+        formData.necesidades.infraFisicaObservaciones = nec.infraFisicaObservaciones || '';
+        formData.necesidades.infraTecAdecuada = nec.infraTecAdecuada || '';
+        formData.necesidades.equipInfoAdecuado = nec.equipInfoAdecuado || '';
+        formData.necesidades.equipBioAdecuado = nec.equipBioAdecuado || '';
 
         // Necesidades de capacitación
         if (nec.capacitacion && Array.isArray(nec.capacitacion)) {
@@ -689,6 +976,50 @@ function fromBool(value) {
     if (value === true) return 'si';
     if (value === false) return 'no';
     return '';
+}
+
+// Lista de proveedores conocidos de internet en Perú
+const PROVEEDORES_CONOCIDOS = [
+    'Movistar',
+    'Claro',
+    'Entel',
+    'Bitel',
+    'WiNet',
+    'Optical Networks',
+    'Fiberlux',
+    'GTD Perú',
+    'Netline',
+    'StarGlobal',
+    'CableMás',
+    'HughesNet',
+    'DirectTV',
+    'América Móvil Perú',
+    'Telecable',
+    'Cable Perú',
+    'Cableonda',
+    'Red Científica Peruana'
+];
+
+/**
+ * Determina si el proveedor es uno conocido o "Otro"
+ */
+function getProveedorSeleccionado(proveedor) {
+    if (!proveedor) return '';
+    if (PROVEEDORES_CONOCIDOS.includes(proveedor)) {
+        return proveedor;
+    }
+    return 'Otro';
+}
+
+/**
+ * Retorna el valor del proveedor si es "Otro"
+ */
+function getProveedorOtro(proveedor) {
+    if (!proveedor) return '';
+    if (PROVEEDORES_CONOCIDOS.includes(proveedor)) {
+        return '';
+    }
+    return proveedor;
 }
 
 export default formularioDiagnosticoService;

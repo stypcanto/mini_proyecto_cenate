@@ -179,6 +179,12 @@ public class FormDiagResponse {
         private String necesidadesConectividad;
         private String necesidadesCapacitacion;
         private String observacionesGenerales;
+        // Campos de suficiencia
+        private String infraFisicaSuficiente;
+        private String infraFisicaObservaciones;
+        private String infraTecAdecuada;
+        private String equipInfoAdecuado;
+        private String equipBioAdecuado;
     }
 
     @Data

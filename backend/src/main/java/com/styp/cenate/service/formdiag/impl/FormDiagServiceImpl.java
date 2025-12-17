@@ -477,6 +477,14 @@ public class FormDiagServiceImpl implements FormDiagService {
         formulario.setNecesidadesConectividad(dto.getNecesidadesConectividad());
         formulario.setNecesidadesCapacitacion(dto.getNecesidadesCapacitacion());
         formulario.setObservacionesGenerales(dto.getObservacionesGenerales());
+
+        // Guardar campos de suficiencia
+        formulario.setNecInfraFisSuficiente(dto.getInfraFisicaSuficiente());
+        formulario.setNecInfraFisObservaciones(dto.getInfraFisicaObservaciones());
+        formulario.setNecInfraTecAdecuada(dto.getInfraTecAdecuada());
+        formulario.setNecEquipInfoAdecuado(dto.getEquipInfoAdecuado());
+        formulario.setNecEquipBioAdecuado(dto.getEquipBioAdecuado());
+
         formularioRepo.save(formulario);
     }
 
@@ -660,7 +668,11 @@ public class FormDiagServiceImpl implements FormDiagService {
         // Verificar si hay datos (incluyendo los campos de texto del formulario)
         boolean hayDatosTexto = formulario.getNecesidadesConectividad() != null ||
                 formulario.getNecesidadesCapacitacion() != null ||
-                formulario.getObservacionesGenerales() != null;
+                formulario.getObservacionesGenerales() != null ||
+                formulario.getNecInfraFisSuficiente() != null ||
+                formulario.getNecInfraTecAdecuada() != null ||
+                formulario.getNecEquipInfoAdecuado() != null ||
+                formulario.getNecEquipBioAdecuado() != null;
 
         if (necesidades.isEmpty() && capacitaciones.isEmpty() && !hayDatosTexto) {
             return null;
@@ -695,6 +707,12 @@ public class FormDiagServiceImpl implements FormDiagService {
                 .necesidadesConectividad(formulario.getNecesidadesConectividad())
                 .necesidadesCapacitacion(formulario.getNecesidadesCapacitacion())
                 .observacionesGenerales(formulario.getObservacionesGenerales())
+                // Campos de suficiencia
+                .infraFisicaSuficiente(formulario.getNecInfraFisSuficiente())
+                .infraFisicaObservaciones(formulario.getNecInfraFisObservaciones())
+                .infraTecAdecuada(formulario.getNecInfraTecAdecuada())
+                .equipInfoAdecuado(formulario.getNecEquipInfoAdecuado())
+                .equipBioAdecuado(formulario.getNecEquipBioAdecuado())
                 .build();
     }
 

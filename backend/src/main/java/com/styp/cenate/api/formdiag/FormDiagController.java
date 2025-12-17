@@ -5,6 +5,10 @@ import com.styp.cenate.dto.formdiag.FirmaDigitalResponse;
 import com.styp.cenate.dto.formdiag.FormDiagListResponse;
 import com.styp.cenate.dto.formdiag.FormDiagRequest;
 import com.styp.cenate.dto.formdiag.FormDiagResponse;
+import com.styp.cenate.model.formdiag.FormDiagCatNecesidad;
+import com.styp.cenate.model.formdiag.FormDiagCatPrioridad;
+import com.styp.cenate.repository.formdiag.FormDiagCatNecesidadRepository;
+import com.styp.cenate.repository.formdiag.FormDiagCatPrioridadRepository;
 import com.styp.cenate.service.formdiag.FirmaDigitalService;
 import com.styp.cenate.service.formdiag.FormDiagService;
 import lombok.RequiredArgsConstructor;
@@ -30,6 +34,8 @@ public class FormDiagController {
 
     private final FormDiagService formDiagService;
     private final FirmaDigitalService firmaDigitalService;
+    private final FormDiagCatNecesidadRepository catNecesidadRepo;
+    private final FormDiagCatPrioridadRepository catPrioridadRepo;
 
     /**
      * Crear un nuevo formulario de diagnóstico
@@ -245,5 +251,38 @@ public class FormDiagController {
         log.info("GET /api/formulario-diagnostico/{}/esta-firmado - Verificando", id);
         boolean firmado = firmaDigitalService.estaFirmado(id);
         return ResponseEntity.ok(firmado);
+    }
+
+    // ==================== ENDPOINTS DE CATÁLOGOS ====================
+
+    /**
+     * Obtener catálogo de necesidades
+     */
+    @GetMapping("/catalogos/necesidades")
+    public ResponseEntity<List<FormDiagCatNecesidad>> getCatalogoNecesidades() {
+        log.info("GET /api/formulario-diagnostico/catalogos/necesidades");
+        List<FormDiagCatNecesidad> lista = catNecesidadRepo.findAllByOrderByIdNecesidadAsc();
+        return ResponseEntity.ok(lista);
+    }
+
+    /**
+     * Obtener catálogo de necesidades por categoría
+     */
+    @GetMapping("/catalogos/necesidades/categoria/{categoria}")
+    public ResponseEntity<List<FormDiagCatNecesidad>> getCatalogoNecesidadesPorCategoria(
+            @PathVariable("categoria") String categoria) {
+        log.info("GET /api/formulario-diagnostico/catalogos/necesidades/categoria/{}", categoria);
+        List<FormDiagCatNecesidad> lista = catNecesidadRepo.findByCategoria(categoria);
+        return ResponseEntity.ok(lista);
+    }
+
+    /**
+     * Obtener catálogo de prioridades
+     */
+    @GetMapping("/catalogos/prioridades")
+    public ResponseEntity<List<FormDiagCatPrioridad>> getCatalogoPrioridades() {
+        log.info("GET /api/formulario-diagnostico/catalogos/prioridades");
+        List<FormDiagCatPrioridad> lista = catPrioridadRepo.findAllByOrderByIdPrioridadAsc();
+        return ResponseEntity.ok(lista);
     }
 }
