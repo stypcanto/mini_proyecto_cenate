@@ -216,7 +216,8 @@ public class SecurityConfig {
                         // 👩‍⚕️ PACIENTES / ASEGURADOS
                         // =====================================================
                         .requestMatchers("/api/pacientes/**").hasAnyRole("SUPERADMIN", "ADMIN")
-
+                        
+                        .requestMatchers(HttpMethod.POST, "/api/import-excel/**").permitAll()
                         // =====================================================
                         // 🔒 Cualquier otro endpoint requiere autenticación
                         // =====================================================
@@ -270,7 +271,8 @@ public class SecurityConfig {
             "http://127.0.0.1:3001",      // Desarrollo alternativo
             "http://127.0.0.1:8080",       // Backend alternativo
             "http://191.101.78.197:5678",
-            "http://127.0.0.1:5500",
+            "http://127.0.0.1:5500",   // LOCAL LIVESERVER VS1
+            "http://127.0.0.2:5500",   // LOCAL LIVESERVER VS2 
             "http://10.0.89.13",          // ✅ IP servidor producción (sin puerto)
             "http://10.0.89.13:80",       // ✅ IP servidor producción puerto 80
             "http://10.0.89.13:3000",     // ✅ IP servidor producción puerto 3000
