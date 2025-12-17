@@ -34,6 +34,12 @@ public class DimServicioEssiController {
     public ResponseEntity<List<DimServicioEssiDTO>> listarActivos() {
         return ResponseEntity.ok(servicio.listarActivos());
     }
+    
+    @GetMapping("/activos-cenate")
+    public ResponseEntity<List<DimServicioEssiDTO>> listarActivosCenate() {
+        return ResponseEntity.ok(servicio.listarActivosCenate());
+    }
+    
 
     @GetMapping("/{id}")
     public ResponseEntity<DimServicioEssiDTO> obtener(@PathVariable("id") Long id) {

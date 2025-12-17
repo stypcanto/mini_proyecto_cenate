@@ -85,7 +85,7 @@ public class SecurityConfig {
                         
                         
                         // =====================================================
-                        // ENDPOINTS DE CITA (POST/PUT) -Inicio
+                        // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT
                         // =====================================================
                         
                         //.requestMatchers(HttpMethod.POST, "/api/solicitud").permitAll()
@@ -97,13 +97,22 @@ public class SecurityConfig {
                         // Disponibilidad
                         .requestMatchers(HttpMethod.GET, "/api/v1/chatbot/disponibilidad/**").permitAll()
                         .requestMatchers(HttpMethod.GET, "/api/v2/chatbot/disponibilidad/**").permitAll()
-                        
                         // Solicitud de Cita
                         .requestMatchers(HttpMethod.POST, "/api/v1/chatbot/solicitud").permitAll()
                         
                         // =====================================================
-                        // ENDPOINTS DE CITA (POST/PUT) -Fin
+                        // ENDPOINTS DE CITA (POST/PUT) -Fin CHATBOT
                         // =====================================================
+                        
+                        // =====================================================
+                        // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT WEB
+                        // =====================================================
+                        .requestMatchers("/api/v1/chatbot/**").permitAll()
+                        
+                        // =====================================================
+                        // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT WEB
+                        // =====================================================
+                        
                         
 
                         // =====================================================
@@ -127,7 +136,7 @@ public class SecurityConfig {
                                 "/api/chatbot/**", // Agregando chatbot-ini
                                 "/api/asegurados/**", // Agregando asegurados - PÚBLICO
                                 "/api/disponibilidad/**",
-                                "/api/servicio-essi",
+                                "/api/servicio-essi/**",
                                 "/api/admin/dashboard-medico/cards/activas" // ✅ Cards activas del dashboard médico (público)
                         ).permitAll()
                         
@@ -207,7 +216,8 @@ public class SecurityConfig {
                         // 👩‍⚕️ PACIENTES / ASEGURADOS
                         // =====================================================
                         .requestMatchers("/api/pacientes/**").hasAnyRole("SUPERADMIN", "ADMIN")
-
+                        
+                        .requestMatchers(HttpMethod.POST, "/api/import-excel/**").permitAll()
                         // =====================================================
                         // 🔒 Cualquier otro endpoint requiere autenticación
                         // =====================================================
@@ -261,7 +271,8 @@ public class SecurityConfig {
             "http://127.0.0.1:3001",      // Desarrollo alternativo
             "http://127.0.0.1:8080",       // Backend alternativo
             "http://191.101.78.197:5678",
-            "http://127.0.0.1:5500",
+            "http://127.0.0.1:5500",   // LOCAL LIVESERVER VS1
+            "http://127.0.0.2:5500",   // LOCAL LIVESERVER VS2 
             "http://10.0.89.13",          // ✅ IP servidor producción (sin puerto)
             "http://10.0.89.13:80",       // ✅ IP servidor producción puerto 80
             "http://10.0.89.13:3000",     // ✅ IP servidor producción puerto 3000

@@ -24,8 +24,8 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "start:local": "REACT_APP_API_URL=http://localhost:8080/api react-scripts start",
-    "start:network": "REACT_APP_API_URL=http://10.0.88.133:8080/api react-scripts start",
+    "start:local": "REACT_APP_API_URL=http://localhost:8080 react-scripts start",
+    "start:network": "REACT_APP_API_URL=http://10.0.89.239:8080 react-scripts start",
     "build": "react-scripts build",
     "build:production": "NODE_ENV=production react-scripts build",
     "test": "react-scripts test",
