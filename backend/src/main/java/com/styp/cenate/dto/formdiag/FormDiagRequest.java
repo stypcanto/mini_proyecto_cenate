@@ -16,7 +16,7 @@ import java.util.List;
 @AllArgsConstructor
 public class FormDiagRequest {
 
-    private Long idFormulario;
+    private Integer idFormulario;
     private Long idIpress;
     private Integer anio;
     private String observaciones;

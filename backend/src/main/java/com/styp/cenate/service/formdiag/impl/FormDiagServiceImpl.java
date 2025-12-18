@@ -101,7 +101,7 @@ public class FormDiagServiceImpl implements FormDiagService {
     @Override
     public FormDiagResponse guardarBorrador(FormDiagRequest request, String username) {
         if (request.getIdFormulario() != null) {
-            return actualizar(request.getIdFormulario().intValue(), request, username);
+            return actualizar(request.getIdFormulario(), request, username);
         } else {
             return crear(request, username);
         }
