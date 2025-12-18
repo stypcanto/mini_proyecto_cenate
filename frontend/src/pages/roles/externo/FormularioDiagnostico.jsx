@@ -2023,15 +2023,11 @@ export default function FormularioDiagnostico() {
                                                 <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${
                                                     doc.estado === "FIRMADO"
                                                         ? "bg-purple-100 text-purple-700"
-                                                        : doc.fechaFirma || doc.firmaDigital
-                                                            ? "bg-purple-100 text-purple-700"
-                                                            : "bg-amber-100 text-amber-700"
+                                                        : "bg-green-100 text-green-700"
                                                 }`}>
                                                     {doc.estado === "FIRMADO"
                                                         ? "Firmado"
-                                                        : doc.fechaFirma || doc.firmaDigital
-                                                            ? "Enviado con Firma"
-                                                            : "Enviado sin Firma"}
+                                                        : "Enviado"}
                                                 </span>
 
                                                 {/* Botón Ver PDF (del backend) */}
@@ -4962,23 +4958,7 @@ export default function FormularioDiagnostico() {
                                                 ) : (
                                                     <Send className="w-4 h-4" />
                                                 )}
-                                                Enviar sin Firma
-                                            </button>
-                                            <button
-                                                onClick={handleAbrirModalFirma}
-                                                disabled={enviando}
-                                                className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-all shadow-lg ${
-                                                    enviando
-                                                        ? "bg-purple-400 cursor-not-allowed"
-                                                        : "bg-purple-600 hover:bg-purple-700"
-                                                } text-white`}
-                                            >
-                                                {enviando ? (
-                                                    <Loader2 className="w-4 h-4 animate-spin" />
-                                                ) : (
-                                                    <Shield className="w-4 h-4" />
-                                                )}
-                                                Firmar y Enviar
+                                                Enviar
                                             </button>
                                         </>
                                     )}
@@ -4989,43 +4969,10 @@ export default function FormularioDiagnostico() {
                                         </div>
                                     )}
                                     {estadoFormulario === "ENVIADO" && (
-                                        <>
-                                            {!formularioFirmado && (
-                                                <button
-                                                    onClick={handleAbrirModalFirma}
-                                                    disabled={enviando}
-                                                    className={`flex items-center gap-2 px-6 py-2.5 font-medium rounded-lg transition-all shadow-lg ${
-                                                        enviando
-                                                            ? "bg-purple-400 cursor-not-allowed"
-                                                            : "bg-purple-600 hover:bg-purple-700"
-                                                    } text-white`}
-                                                >
-                                                    {enviando ? (
-                                                        <Loader2 className="w-4 h-4 animate-spin" />
-                                                    ) : (
-                                                        <Shield className="w-4 h-4" />
-                                                    )}
-                                                    Regularizar Firma
-                                                </button>
-                                            )}
-                                            <div className={`flex items-center gap-2 px-4 py-2 rounded-lg ${
-                                                formularioFirmado
-                                                    ? "bg-purple-100 text-purple-700"
-                                                    : "bg-amber-100 text-amber-700"
-                                            }`}>
-                                                {formularioFirmado ? (
-                                                    <>
-                                                        <Shield className="w-4 h-4" />
-                                                        <span className="font-medium">Enviado y Firmado</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <AlertCircle className="w-4 h-4" />
-                                                        <span className="font-medium">Enviado sin Firma</span>
-                                                    </>
-                                                )}
-                                            </div>
-                                        </>
+                                        <div className="flex items-center gap-2 px-4 py-2 rounded-lg bg-green-100 text-green-700">
+                                            <Send className="w-4 h-4" />
+                                            <span className="font-medium">Enviado</span>
+                                        </div>
                                     )}
                                 </div>
                             ) : activeTab === "necesidades" ? (
