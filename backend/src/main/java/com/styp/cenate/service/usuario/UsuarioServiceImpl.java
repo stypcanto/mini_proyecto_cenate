@@ -166,7 +166,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 			// Buscar y asignar Origen de Personal
 
-			if (request.getId_origen() != null || request.getId_origen() != 0) {
+			if (request.getId_origen() != null && request.getId_origen() != 0) {
 				repositorioOrigenPersonal.findById(request.getId_origen()).ifPresentOrElse(
 						personalCnt::setOrigenPersonal,
 						() -> log.warn("No existe origen {}:  ", request.getId_origen()));

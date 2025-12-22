@@ -1847,6 +1847,22 @@ WHERE name_user = 'usuario';
 - Los tokens expiran en 24 horas
 - Realizar nuevo login para obtener token fresco
 
+**Error HTTP 400 al aprobar solicitudes de registro:**
+```
+Error: Cannot invoke "UsuarioCreateRequest.getId_origen()" is null
+```
+- **Causa:** Bug en validación lógica en `UsuarioServiceImpl.java:169`
+- **Problema:** Se usaba operador `||` (OR) en lugar de `&&` (AND) al validar `id_origen`
+- **Solución:** Corregido en commit - cambiar `||` por `&&` para aplicar short-circuit evaluation
+```java
+// ANTES (incorrecto):
+if (request.getId_origen() != null || request.getId_origen() != 0)
+
+// DESPUÉS (correcto):
+if (request.getId_origen() != null && request.getId_origen() != 0)
+```
+- **Archivo:** `backend/src/main/java/com/styp/cenate/service/usuario/UsuarioServiceImpl.java`
+
 ---
 
 ## 23. FORMULARIO DE DIAGNÓSTICO SITUACIONAL DE TELESALUD (`/api/formulario-diagnostico`)
