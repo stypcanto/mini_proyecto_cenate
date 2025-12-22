@@ -228,6 +228,10 @@ public class EmailService {
                 ? "Tu cuenta en el sistema CENATE ha sido creada exitosamente. Para completar tu registro, debes configurar tu contraseña."
                 : "Hemos recibido una solicitud para restablecer tu contraseña en el sistema CENATE.";
 
+        String textoBoton = "BIENVENIDO".equals(tipoAccion)
+                ? "Activar mi Cuenta"
+                : "Restablecer Contraseña";
+
         String contenido = """
             <!DOCTYPE html>
             <html>
@@ -262,7 +266,7 @@ public class EmailService {
                         </div>
 
                         <div class="button-container">
-                            <a href="%s" class="button">Configurar mi Contraseña</a>
+                            <a href="%s" class="button">%s</a>
                         </div>
 
                         <div class="warning">
@@ -288,7 +292,7 @@ public class EmailService {
             </body>
             </html>
             """.formatted(tituloHeader, nombreCompleto, mensajePrincipal, usuario,
-                          enlace, horasExpiracion, enlace, enlace);
+                          enlace, textoBoton, horasExpiracion, enlace, enlace);
 
         enviarCorreoHTML(destinatario, asunto, contenido);
     }
