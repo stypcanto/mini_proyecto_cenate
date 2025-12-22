@@ -17,6 +17,7 @@ import com.styp.cenate.dto.ApiResponse;
 import com.styp.cenate.dto.SolicitudContrasenaDTO;
 import com.styp.cenate.service.personal.PersonalCntService;
 import com.styp.cenate.service.personal.PersonalExternoService;
+import com.styp.cenate.service.security.PasswordTokenService;
 import com.styp.cenate.service.usuario.PasswordService;
 import com.styp.cenate.service.usuario.SolicitudContrasenaService;
 
@@ -32,13 +33,16 @@ public class SesionController {
 	private final PersonalExternoService servicioPersonalExterno;
 	private final SolicitudContrasenaService servicioContrasena;
 	private final PasswordService passwordService;
+	private final PasswordTokenService passwordTokenService;
 
 	public SesionController(PersonalCntService servicioPersonalCenate, PersonalExternoService servicioPersonalExterno,
-			SolicitudContrasenaService servicioContrasena, PasswordService passwordService) {
+			SolicitudContrasenaService servicioContrasena, PasswordService passwordService,
+			PasswordTokenService passwordTokenService) {
 		this.servicioPersonalCenate = servicioPersonalCenate;
 		this.servicioPersonalExterno = servicioPersonalExterno;
 		this.servicioContrasena = servicioContrasena;
-		this.passwordService=passwordService;
+		this.passwordService = passwordService;
+		this.passwordTokenService = passwordTokenService;
 	}
 
 	@PostMapping
@@ -109,6 +113,20 @@ public class SesionController {
 
 		SolicitudContrasenaDTO solicitud = registrarSolicitud(idUsuario, idemKey, correo);
 
+		// Enviar correo con token de recuperación
+		boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmail(idUsuario, "RECUPERACION");
+		if (!emailEnviado) {
+			log.error("Error al enviar correo de recuperación a usuario {}", idUsuario);
+			return ResponseEntity.status(500).body(
+				new ApiResponse<>(
+					false,
+					"Error al enviar el correo de recuperación. Por favor, intente nuevamente.",
+					"EMAIL_ERROR",
+					null
+				)
+			);
+		}
+
 		// Enmascarar el correo para mostrar al usuario
 		String correoEnmascarado = enmascararCorreo(correo);
 
@@ -122,7 +140,7 @@ public class SesionController {
 		return ResponseEntity.status(201).body(
 			new ApiResponse<>(
 				true,
-				"Se enviará un enlace de recuperación a: " + correoEnmascarado,
+				"Se ha enviado un enlace de recuperación a: " + correoEnmascarado,
 				"OK",
 				data
 			)
