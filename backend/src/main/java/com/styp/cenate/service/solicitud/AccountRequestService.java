@@ -16,6 +16,9 @@ import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.DimOrigenPersonal;
 import com.styp.cenate.model.TipoDocumento;
 import com.styp.cenate.service.email.EmailService;
+import com.styp.cenate.service.mbac.PermisosService;
+import com.styp.cenate.service.security.PasswordTokenService;
+import com.styp.cenate.dto.mbac.PermisoUsuarioRequestDTO;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -45,6 +48,8 @@ public class AccountRequestService {
     private final DimOrigenPersonalRepository dimOrigenPersonalRepository;
     private final TipoDocumentoRepository tipoDocumentoRepository;
     private final EmailService emailService;
+    private final PermisosService permisosService;
+    private final PasswordTokenService passwordTokenService;
 
     @Transactional
     public SolicitudRegistroDTO crearSolicitud(SolicitudRegistroDTO dto) {
@@ -150,6 +155,9 @@ public class AccountRequestService {
             // Solo necesitamos crear PersonalExterno para usuarios EXTERNOS
             if (solicitud.isExterno()) {
                 crearPersonalExterno(solicitud, idUsuario);
+
+                // Asignar permisos automáticos para el módulo de Personal Externo
+                asignarPermisosUsuarioExterno(idUsuario);
             }
             // Para usuarios internos, NO llamamos a crearPersonalCNT() porque ya se crea en createUser()
 
@@ -162,22 +170,15 @@ public class AccountRequestService {
 
             log.info("Solicitud aprobada, usuario y personal creados: {}", solicitud.getNumDocumento());
 
-            // Enviar correo de confirmación
-            String emailDestino = solicitud.getCorreoPersonal() != null
-                    ? solicitud.getCorreoPersonal()
-                    : solicitud.getCorreoInstitucional();
-
-            if (emailDestino != null && !emailDestino.isBlank()) {
-                String nombreCompleto = solicitud.getNombreCompleto();
-                emailService.enviarCorreoAprobacionSolicitud(
-                        emailDestino,
-                        nombreCompleto,
-                        solicitud.getNumDocumento(),
-                        generarPasswordTemporal(solicitud.getNumDocumento())
-                );
-                log.info("Correo de aprobación enviado a: {}", emailDestino);
-            } else {
-                log.warn("No se pudo enviar correo: el solicitante no tiene email registrado");
+            // Enviar correo con enlace para configurar contraseña (sistema seguro de tokens)
+            Usuario usuarioNuevo = usuarioRepository.findById(idUsuario).orElse(null);
+            if (usuarioNuevo != null) {
+                boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmail(usuarioNuevo, "BIENVENIDO");
+                if (emailEnviado) {
+                    log.info("Correo con enlace de configuración enviado al usuario: {}", solicitud.getNumDocumento());
+                } else {
+                    log.warn("No se pudo enviar correo: el usuario no tiene email registrado");
+                }
             }
 
             return convertirADTOConIpress(solicitud);
@@ -272,6 +273,45 @@ public class AccountRequestService {
         log.info("Personal EXTERNO creado exitosamente en dim_personal_cnt con ID: {}", personalCnt.getIdPers());
     }
 
+    /**
+     * Asigna permisos automáticos al usuario externo para el módulo de Personal Externo
+     * - Módulo: Gestión de Personal Externo (id_modulo = 20)
+     * - Página: Formulario de Diagnóstico (id_pagina = 59)
+     * - Rol: INSTITUCION_EX (id_rol = 18)
+     */
+    private void asignarPermisosUsuarioExterno(Long idUsuario) {
+        log.info("Asignando permisos automáticos al usuario externo ID: {}", idUsuario);
+
+        try {
+            // Configuración de IDs (según la estructura actual de la BD)
+            final int ID_MODULO_EXTERNO = 20;      // Gestión de Personal Externo
+            final int ID_PAGINA_FORMULARIO = 59;   // Formulario de Diagnóstico
+            final int ID_ROL_EXTERNO = 18;         // INSTITUCION_EX
+
+            PermisoUsuarioRequestDTO permiso = PermisoUsuarioRequestDTO.builder()
+                    .idUser(idUsuario)
+                    .idRol(ID_ROL_EXTERNO)
+                    .idModulo(ID_MODULO_EXTERNO)
+                    .idPagina(ID_PAGINA_FORMULARIO)
+                    .rutaPagina("/roles/externo/formulario-diagnostico")
+                    .accion("all")
+                    .ver(true)
+                    .crear(true)
+                    .editar(true)
+                    .eliminar(false)
+                    .exportar(true)
+                    .aprobar(false)
+                    .build();
+
+            permisosService.guardarOActualizarPermiso(permiso);
+            log.info("Permisos asignados exitosamente al usuario externo ID: {}", idUsuario);
+
+        } catch (Exception e) {
+            log.error("Error al asignar permisos al usuario externo: {}", e.getMessage());
+            // No lanzamos excepción para no bloquear la creación del usuario
+        }
+    }
+
     private Long obtenerIdTipoDocumento(String tipoDoc) {
         String sql = "SELECT id_tip_doc FROM dim_tipo_documento WHERE desc_tip_doc ILIKE ? LIMIT 1";
         
@@ -334,7 +374,8 @@ public class AccountRequestService {
     }
 
     private String generarPasswordTemporal(String numeroDocumento) {
-        return "@Cenate2025";
+        // Genera contraseña temporal aleatoria y segura
+        return passwordTokenService.generarPasswordTemporal();
     }
 
     private SolicitudRegistroDTO convertirADTO(AccountRequest solicitud, Ipress ipress) {

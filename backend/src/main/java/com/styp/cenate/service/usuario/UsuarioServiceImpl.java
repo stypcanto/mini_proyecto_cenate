@@ -22,6 +22,7 @@ import com.styp.cenate.dto.UsuarioUpdateRequest;
 import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
 import com.styp.cenate.dto.mbac.RolResponse;
 import com.styp.cenate.service.email.EmailService;
+import com.styp.cenate.service.security.PasswordTokenService;
 import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Rol;
@@ -60,6 +61,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final com.styp.cenate.repository.PersonalTipoRepository personalTipoRepository;
 	private final com.styp.cenate.repository.DimTipoPersonalRepository dimTipoPersonalRepository;
 	private final EmailService emailService;
+	private final PasswordTokenService passwordTokenService;
 
 	private final DimOrigenPersonalRepository repositorioOrigenPersonal;
 
@@ -348,26 +350,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		log.info("✅ Usuario creado exitosamente: {} con {} rol(es)", usuario.getNameUser(), rolesAsignados.size());
 
-		// Enviar correo de bienvenida si hay email disponible
-		String emailDestino = request.getCorreo_personal() != null
-				? request.getCorreo_personal()
-				: request.getCorreo_corporativo();
-
-		if (emailDestino != null && !emailDestino.isBlank()) {
-			String nombreCompleto = (request.getNombres() != null ? request.getNombres() : "") + " " +
-					(request.getApellido_paterno() != null ? request.getApellido_paterno() : "") + " " +
-					(request.getApellido_materno() != null ? request.getApellido_materno() : "");
-			nombreCompleto = nombreCompleto.trim();
-
-			if (!nombreCompleto.isBlank()) {
-				emailService.enviarCorreoBienvenidaUsuario(
-						emailDestino,
-						nombreCompleto,
-						usuario.getNameUser(),
-						request.getPassword()
-				);
-				log.info("Correo de bienvenida enviado a: {}", emailDestino);
-			}
+		// Enviar correo con enlace para configurar contraseña (sistema seguro de tokens)
+		boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmail(usuario, "BIENVENIDO");
+		if (emailEnviado) {
+			log.info("📧 Correo con enlace de configuración enviado al usuario: {}", usuario.getNameUser());
+		} else {
+			log.warn("⚠️ No se pudo enviar correo: el usuario no tiene email registrado");
 		}
 
 		return convertToResponse(usuario);
@@ -1136,8 +1124,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 	}
 
 	/**
-	 * 🔄 Resetear contraseña (para ADMIN/SUPERADMIN) No requiere la contraseña
-	 * actual del usuario
+	 * 🔄 Resetear contraseña (para ADMIN/SUPERADMIN)
+	 * Genera contraseña temporal aleatoria y envía enlace para configurar nueva contraseña
 	 */
 	@Override
 	@Transactional
@@ -1147,13 +1135,18 @@ public class UsuarioServiceImpl implements UsuarioService {
 		Usuario usuario = usuarioRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
 
+		// Generar contraseña temporal aleatoria si no se proporciona una
+		String passwordTemporal = (newPassword == null || newPassword.isBlank())
+				? passwordTokenService.generarPasswordTemporal()
+				: newPassword;
+
 		// Validar que la nueva contraseña cumpla requisitos mínimos
-		if (newPassword == null || newPassword.length() < 8) {
+		if (passwordTemporal.length() < 8) {
 			throw new IllegalArgumentException("La contraseña debe tener al menos 8 caracteres");
 		}
 
 		// Actualizar la contraseña sin verificar la anterior
-		usuario.setPassUser(passwordEncoder.encode(newPassword));
+		usuario.setPassUser(passwordEncoder.encode(passwordTemporal));
 		usuario.setUpdateAt(LocalDateTime.now());
 
 		// Resetear intentos fallidos y desbloquear si estaba bloqueado
@@ -1167,6 +1160,43 @@ public class UsuarioServiceImpl implements UsuarioService {
 		usuarioRepository.save(usuario);
 
 		log.info("✅ Contraseña reseteada exitosamente para usuario: {}", usuario.getNameUser());
+
+		// Enviar correo con enlace para configurar nueva contraseña (sistema seguro de tokens)
+		boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmail(usuario, "RESET");
+		if (emailEnviado) {
+			log.info("📧 Correo con enlace de cambio de contraseña enviado al usuario: {}", usuario.getNameUser());
+		} else {
+			log.warn("⚠️ No se pudo enviar correo: el usuario no tiene email registrado");
+		}
+	}
+
+	/**
+	 * Obtener el email del usuario desde PersonalCnt o PersonalExterno
+	 */
+	private String obtenerEmailUsuario(Usuario usuario) {
+		// Intentar obtener email de PersonalCnt
+		if (usuario.getPersonalCnt() != null) {
+			PersonalCnt personal = usuario.getPersonalCnt();
+			if (personal.getEmailPers() != null && !personal.getEmailPers().isBlank()) {
+				return personal.getEmailPers();
+			}
+			if (personal.getEmailCorpPers() != null && !personal.getEmailCorpPers().isBlank()) {
+				return personal.getEmailCorpPers();
+			}
+		}
+
+		// Intentar obtener email de PersonalExterno
+		if (usuario.getPersonalExterno() != null) {
+			var personalExt = usuario.getPersonalExterno();
+			if (personalExt.getEmailPersExt() != null && !personalExt.getEmailPersExt().isBlank()) {
+				return personalExt.getEmailPersExt();
+			}
+			if (personalExt.getEmailCorpExt() != null && !personalExt.getEmailCorpExt().isBlank()) {
+				return personalExt.getEmailCorpExt();
+			}
+		}
+
+		return null;
 	}
 
 	/**

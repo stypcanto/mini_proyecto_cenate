@@ -210,6 +210,157 @@ public class EmailService {
     }
 
     /**
+     * Enviar correo con enlace para cambiar contraseña (nuevo usuario o recuperación)
+     */
+    @Async
+    public void enviarCorreoCambioContrasena(String destinatario, String nombreCompleto,
+                                              String usuario, String enlace, int horasExpiracion,
+                                              String tipoAccion) {
+        String asunto = "BIENVENIDO".equals(tipoAccion)
+                ? "CENATE - Configura tu contraseña de acceso"
+                : "CENATE - Restablece tu contraseña";
+
+        String tituloHeader = "BIENVENIDO".equals(tipoAccion)
+                ? "Bienvenido a CENATE"
+                : "Restablecer Contraseña";
+
+        String mensajePrincipal = "BIENVENIDO".equals(tipoAccion)
+                ? "Tu cuenta en el sistema CENATE ha sido creada exitosamente. Para completar tu registro, debes configurar tu contraseña."
+                : "Hemos recibido una solicitud para restablecer tu contraseña en el sistema CENATE.";
+
+        String contenido = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background-color: #1a56db; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+                    .info-box { background-color: #fff; padding: 15px; border-radius: 8px; border: 1px solid #d1d5db; margin: 20px 0; }
+                    .button-container { text-align: center; margin: 30px 0; }
+                    .button { display: inline-block; background-color: #1a56db; color: white !important; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 16px; }
+                    .button:hover { background-color: #1e40af; }
+                    .warning { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
+                    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+                    .link-fallback { word-break: break-all; font-size: 12px; color: #6b7280; margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>%s</h1>
+                    </div>
+                    <div class="content">
+                        <p>Estimado/a <strong>%s</strong>,</p>
+
+                        <p>%s</p>
+
+                        <div class="info-box">
+                            <strong>Tu usuario de acceso:</strong> %s
+                        </div>
+
+                        <div class="button-container">
+                            <a href="%s" class="button">Configurar mi Contraseña</a>
+                        </div>
+
+                        <div class="warning">
+                            <strong>Importante:</strong>
+                            <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+                                <li>Este enlace expira en <strong>%d horas</strong></li>
+                                <li>Solo puede usarse una vez</li>
+                                <li>Si no solicitaste este cambio, ignora este correo</li>
+                            </ul>
+                        </div>
+
+                        <p class="link-fallback">
+                            Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
+                            <a href="%s">%s</a>
+                        </p>
+
+                    </div>
+                    <div class="footer">
+                        <p>Este es un correo automático, por favor no responda a este mensaje.</p>
+                        <p>&copy; 2025 CENATE - Centro Nacional de Telemedicina</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(tituloHeader, nombreCompleto, mensajePrincipal, usuario,
+                          enlace, horasExpiracion, enlace, enlace);
+
+        enviarCorreoHTML(destinatario, asunto, contenido);
+    }
+
+    /**
+     * Enviar correo cuando se resetea la contraseña de un usuario (DEPRECADO - usar enviarCorreoCambioContrasena)
+     */
+    @Async
+    public void enviarCorreoResetPassword(String destinatario, String nombreCompleto,
+                                           String usuario, String nuevaPassword) {
+        String asunto = "CENATE - Tu contraseña ha sido restablecida";
+
+        String contenido = """
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+                    .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+                    .header { background-color: #f59e0b; color: white; padding: 20px; text-align: center; border-radius: 8px 8px 0 0; }
+                    .content { background-color: #f9fafb; padding: 30px; border: 1px solid #e5e7eb; }
+                    .credentials { background-color: #fff; padding: 20px; border-radius: 8px; border: 1px solid #d1d5db; margin: 20px 0; }
+                    .credential-item { margin: 10px 0; }
+                    .credential-label { font-weight: bold; color: #374151; }
+                    .credential-value { font-family: monospace; background-color: #f3f4f6; padding: 8px 12px; border-radius: 4px; display: inline-block; }
+                    .warning { background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 15px; margin: 20px 0; }
+                    .footer { text-align: center; padding: 20px; color: #6b7280; font-size: 12px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Contraseña Restablecida</h1>
+                    </div>
+                    <div class="content">
+                        <p>Estimado/a <strong>%s</strong>,</p>
+
+                        <p>Tu contraseña del sistema CENATE ha sido <strong>restablecida</strong> por un administrador.</p>
+
+                        <div class="credentials">
+                            <h3 style="margin-top: 0; color: #f59e0b;">Tus nuevas credenciales:</h3>
+                            <div class="credential-item">
+                                <span class="credential-label">Usuario:</span>
+                                <span class="credential-value">%s</span>
+                            </div>
+                            <div class="credential-item">
+                                <span class="credential-label">Nueva contraseña:</span>
+                                <span class="credential-value">%s</span>
+                            </div>
+                        </div>
+
+                        <div class="warning">
+                            <strong>Importante:</strong> Por seguridad, deberás cambiar tu contraseña en el próximo inicio de sesión.
+                        </div>
+
+                        <p>Si no solicitaste este cambio, por favor contacta inmediatamente al administrador del sistema.</p>
+
+                    </div>
+                    <div class="footer">
+                        <p>Este es un correo automático, por favor no responda a este mensaje.</p>
+                        <p>&copy; 2025 CENATE - Centro Nacional de Telemedicina</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """.formatted(nombreCompleto, usuario, nuevaPassword);
+
+        enviarCorreoHTML(destinatario, asunto, contenido);
+    }
+
+    /**
      * Método base para enviar correos HTML
      */
     private void enviarCorreoHTML(String destinatario, String asunto, String contenidoHTML) {
