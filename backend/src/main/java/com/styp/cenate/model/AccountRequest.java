@@ -97,7 +97,7 @@ public class AccountRequest {
     }
 
     public boolean isExterno() {
-        return "EXTERNO".equalsIgnoreCase(tipoUsuario) || "Externo".equalsIgnoreCase(tipoUsuario);
+        return tipoUsuario != null && tipoUsuario.toUpperCase().contains("EXTERNO");
     }
 
     @PrePersist

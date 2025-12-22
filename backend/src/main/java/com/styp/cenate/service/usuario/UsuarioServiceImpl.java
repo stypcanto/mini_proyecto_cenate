@@ -114,9 +114,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		// 🆕 CREAR REGISTRO DE PERSONAL_CNT con los datos personales
 		// ⚠️ NO crear PersonalCnt para usuarios EXTERNOS (ellos van a dim_personal_externo)
-		boolean esExterno = request.getTipo_personal() != null &&
-				(request.getTipo_personal().equalsIgnoreCase("EXTERNO") ||
-				 request.getTipo_personal().equalsIgnoreCase("Externo"));
+		String tipoPersonalStr = request.getTipo_personal();
+		boolean esExterno = tipoPersonalStr != null &&
+				tipoPersonalStr.trim().toUpperCase().contains("EXTERNO");
+		log.info("📋 Tipo personal recibido: '{}' -> esExterno: {}", tipoPersonalStr, esExterno);
 
 		if (request.getNombres() != null && !request.getNombres().isBlank() && !esExterno) {
 			log.info("👤 Creando registro de PersonalCnt para usuario: {}", usuario.getNameUser());

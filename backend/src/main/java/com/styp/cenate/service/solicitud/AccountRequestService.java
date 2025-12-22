@@ -7,8 +7,17 @@ import com.styp.cenate.model.Ipress;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.AccountRequestRepository;
 import com.styp.cenate.repository.IpressRepository;
+import com.styp.cenate.repository.PersonalCntRepository;
+import com.styp.cenate.repository.DimOrigenPersonalRepository;
+import com.styp.cenate.repository.TipoDocumentoRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.service.usuario.UsuarioService;
+import com.styp.cenate.model.PersonalCnt;
+import com.styp.cenate.model.DimOrigenPersonal;
+import com.styp.cenate.model.TipoDocumento;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -31,6 +40,9 @@ public class AccountRequestService {
     private final IpressRepository ipressRepository;
     private final UsuarioService usuarioService;
     private final JdbcTemplate jdbcTemplate;
+    private final PersonalCntRepository personalCntRepository;
+    private final DimOrigenPersonalRepository dimOrigenPersonalRepository;
+    private final TipoDocumentoRepository tipoDocumentoRepository;
 
     @Transactional
     public SolicitudRegistroDTO crearSolicitud(SolicitudRegistroDTO dto) {
@@ -124,7 +136,7 @@ public class AccountRequestService {
             usuarioRequest.setEstado("ACTIVO");
             
             if (solicitud.isExterno()) {
-                usuarioRequest.setRol("PERSONAL_EXTERNO");
+                usuarioRequest.setRol("INSTITUCION_EX");  // Rol con acceso limitado para externos
             } else {
                 usuarioRequest.setRol("USER");
             }
@@ -188,34 +200,56 @@ public class AccountRequestService {
     }
 
     private void crearPersonalExterno(AccountRequest solicitud, Long idUsuario) {
-        log.info("Creando registro en dim_personal_externo para: {}", solicitud.getNumDocumento());
+        log.info("Creando registro en dim_personal_cnt (EXTERNO) para: {}", solicitud.getNumDocumento());
 
-        Long idTipDoc = obtenerIdTipoDocumento(solicitud.getTipoDocumento());
+        // Obtener TipoDocumento usando JPA
+        String tipoDocStr = solicitud.getTipoDocumento() != null ? solicitud.getTipoDocumento() : "DNI";
+        TipoDocumento tipoDocumento = tipoDocumentoRepository.findByDescTipDocIgnoreCase(tipoDocStr)
+                .orElseGet(() -> tipoDocumentoRepository.findById(1L).orElse(null));
 
-        String sql = """
-            INSERT INTO dim_personal_externo (
-                id_tip_doc, num_doc_ext, nom_ext, ape_pater_ext, ape_mater_ext,
-                fech_naci_ext, gen_ext, movil_ext, email_pers_ext, email_corp_ext,
-                id_ipress, id_usuario, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-        """;
+        // Obtener Ipress usando JPA
+        Ipress ipress = ipressRepository.findById(solicitud.getIdIpress()).orElse(null);
 
-        jdbcTemplate.update(sql,
-                idTipDoc,
-                solicitud.getNumDocumento(),
-                solicitud.getNombres(),
-                solicitud.getApellidoPaterno(),
-                solicitud.getApellidoMaterno(),
-                solicitud.getFechaNacimiento(),
-                solicitud.getGenero(),
-                solicitud.getTelefono(),
-                solicitud.getCorreoPersonal(),
-                solicitud.getCorreoInstitucional(),
-                solicitud.getIdIpress(),
-                idUsuario
-        );
+        // Obtener Usuario usando JPA
+        Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
 
-        log.info("Personal Externo creado exitosamente");
+        // Obtener el origen EXTERNO (id_origen = 2)
+        DimOrigenPersonal origenExterno = dimOrigenPersonalRepository.findById(2L)
+                .orElseThrow(() -> new RuntimeException("Origen EXTERNO (id=2) no encontrado en dim_origen_personal"));
+
+        // Normalizar género a 1 carácter
+        String genero = solicitud.getGenero();
+        if (genero != null && !genero.isBlank()) {
+            genero = genero.trim().toUpperCase();
+            if (genero.startsWith("M")) genero = "M";
+            else if (genero.startsWith("F")) genero = "F";
+            else genero = genero.substring(0, 1);
+        }
+
+        // Generar período actual (YYYYMM)
+        String periodoActual = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyyMM"));
+
+        // Crear PersonalCnt con id_origen = 2 (EXTERNO)
+        PersonalCnt personalCnt = PersonalCnt.builder()
+                .tipoDocumento(tipoDocumento)
+                .numDocPers(solicitud.getNumDocumento())
+                .nomPers(solicitud.getNombres())
+                .apePaterPers(solicitud.getApellidoPaterno())
+                .apeMaterPers(solicitud.getApellidoMaterno())
+                .fechNaciPers(solicitud.getFechaNacimiento())
+                .genPers(genero)
+                .movilPers(solicitud.getTelefono())
+                .emailPers(solicitud.getCorreoPersonal())
+                .emailCorpPers(solicitud.getCorreoInstitucional())
+                .ipress(ipress)
+                .usuario(usuario)
+                .origenPersonal(origenExterno)  // ⚠️ EXTERNO = id_origen 2
+                .perPers(periodoActual)         // ⚠️ Período requerido
+                .statPers("A")                  // Estado Activo
+                .build();
+
+        personalCntRepository.save(personalCnt);
+        log.info("Personal EXTERNO creado exitosamente en dim_personal_cnt con ID: {}", personalCnt.getIdPers());
     }
 
     private Long obtenerIdTipoDocumento(String tipoDoc) {
