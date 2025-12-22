@@ -85,34 +85,14 @@ public class SesionController {
 	    }
 
 		Long idUsuario = null;
-		String correoPersonalDestino = null;
 
-		// Primero buscar por correo personal (CNT)
+		// Solo buscar por correo personal (CNT)
 		if (servicioPersonalCenate.existsByEmailPers(correo)) {
 			idUsuario = servicioPersonalCenate.getUsuarioXCorreoPersonal(correo);
-			correoPersonalDestino = correo;
 		}
-		// Luego buscar por correo corporativo (CNT)
-		else if (servicioPersonalCenate.existsByEmailCorpPers(correo)) {
-			idUsuario = servicioPersonalCenate.getUsuarioXCorreo(correo);
-			// Obtener el correo personal del usuario para enviar ahí
-			correoPersonalDestino = servicioPersonalCenate.getCorreoPersonalDeUsuario(idUsuario);
-			if (correoPersonalDestino == null || correoPersonalDestino.isBlank()) {
-				correoPersonalDestino = correo; // Si no tiene personal, usar el corporativo
-			}
-		}
-		// Buscar por correo personal (Externo)
+		// Solo buscar por correo personal (Externo)
 		else if (servicioPersonalExterno.existsByEmailPersExt(correo)) {
 			idUsuario = servicioPersonalExterno.getUsuarioXCorreoPersonal(correo);
-			correoPersonalDestino = correo;
-		}
-		// Buscar por correo corporativo (Externo)
-		else if (servicioPersonalExterno.existsByEmailCorpExt(correo)) {
-			idUsuario = servicioPersonalExterno.getUsuarioXCorreo(correo);
-			correoPersonalDestino = servicioPersonalExterno.getCorreoPersonalDeUsuario(idUsuario);
-			if (correoPersonalDestino == null || correoPersonalDestino.isBlank()) {
-				correoPersonalDestino = correo;
-			}
 		}
 
 		// Correo no encontrado
@@ -120,17 +100,17 @@ public class SesionController {
 			return ResponseEntity.status(404).body(
 				new ApiResponse<>(
 					false,
-					"El correo ingresado no se encuentra registrado.",
+					"El correo personal ingresado no se encuentra registrado. Por favor, ingrese su correo personal (no institucional).",
 					"EMAIL_NO_ENCONTRADO",
 					null
 				)
 			);
 		}
 
-		SolicitudContrasenaDTO solicitud = registrarSolicitud(idUsuario, idemKey, correoPersonalDestino);
+		SolicitudContrasenaDTO solicitud = registrarSolicitud(idUsuario, idemKey, correo);
 
 		// Enmascarar el correo para mostrar al usuario
-		String correoEnmascarado = enmascararCorreo(correoPersonalDestino);
+		String correoEnmascarado = enmascararCorreo(correo);
 
 		Map<String, Object> data = Map.of(
 			"idSolicitud", solicitud.getId(),
@@ -142,7 +122,7 @@ public class SesionController {
 		return ResponseEntity.status(201).body(
 			new ApiResponse<>(
 				true,
-				"Se registró la solicitud de recuperación. Se enviará un enlace de recuperación a su correo personal: " + correoEnmascarado,
+				"Se enviará un enlace de recuperación a: " + correoEnmascarado,
 				"OK",
 				data
 			)

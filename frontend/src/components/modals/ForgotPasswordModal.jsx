@@ -28,7 +28,7 @@ export default function ForgotPasswordModal({ onClose }) {
     setError(null);
 
     if (!email.trim()) {
-      setError("Por favor ingrese su correo electrónico.");
+      setError("Por favor ingrese su correo personal.");
       return;
     }
 
@@ -81,19 +81,19 @@ export default function ForgotPasswordModal({ onClose }) {
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <p className="text-sm text-gray-600">
-            Ingresa tu <b>correo personal o institucional</b>. Si está registrado,
-            recibirás un enlace de recuperación en tu correo personal.
+            Ingresa tu <b>correo personal</b> registrado en el sistema.
+            Recibirás un enlace para restablecer tu contraseña.
           </p>
 
           <div>
             <label className="text-sm font-semibold text-gray-700">
-              Correo electrónico
+              Correo personal
             </label>
             <div className="flex items-center border rounded-xl px-3 py-2 mt-1 focus-within:ring-2 focus-within:ring-[#0a5ba9]/40">
               <Mail size={18} className="text-gray-400 mr-2" />
               <input
                 type="email"
-                placeholder="tucorreo@ejemplo.com"
+                placeholder="tucorreo@gmail.com"
                 className="flex-1 outline-none text-sm text-gray-700"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
