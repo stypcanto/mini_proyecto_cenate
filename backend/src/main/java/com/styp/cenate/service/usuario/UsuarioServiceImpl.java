@@ -21,6 +21,7 @@ import com.styp.cenate.dto.UsuarioResponse;
 import com.styp.cenate.dto.UsuarioUpdateRequest;
 import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
 import com.styp.cenate.dto.mbac.RolResponse;
+import com.styp.cenate.service.email.EmailService;
 import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Rol;
@@ -58,6 +59,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final com.styp.cenate.repository.AreaRepository areaRepository;
 	private final com.styp.cenate.repository.PersonalTipoRepository personalTipoRepository;
 	private final com.styp.cenate.repository.DimTipoPersonalRepository dimTipoPersonalRepository;
+	private final EmailService emailService;
 
 	private final DimOrigenPersonalRepository repositorioOrigenPersonal;
 
@@ -345,6 +347,29 @@ public class UsuarioServiceImpl implements UsuarioService {
 		}
 
 		log.info("✅ Usuario creado exitosamente: {} con {} rol(es)", usuario.getNameUser(), rolesAsignados.size());
+
+		// Enviar correo de bienvenida si hay email disponible
+		String emailDestino = request.getCorreo_personal() != null
+				? request.getCorreo_personal()
+				: request.getCorreo_corporativo();
+
+		if (emailDestino != null && !emailDestino.isBlank()) {
+			String nombreCompleto = (request.getNombres() != null ? request.getNombres() : "") + " " +
+					(request.getApellido_paterno() != null ? request.getApellido_paterno() : "") + " " +
+					(request.getApellido_materno() != null ? request.getApellido_materno() : "");
+			nombreCompleto = nombreCompleto.trim();
+
+			if (!nombreCompleto.isBlank()) {
+				emailService.enviarCorreoBienvenidaUsuario(
+						emailDestino,
+						nombreCompleto,
+						usuario.getNameUser(),
+						request.getPassword()
+				);
+				log.info("Correo de bienvenida enviado a: {}", emailDestino);
+			}
+		}
+
 		return convertToResponse(usuario);
 	}
 

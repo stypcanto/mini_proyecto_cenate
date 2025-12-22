@@ -47,6 +47,9 @@ dependencies {
     // 🔹 ACTUATOR (para healthcheck y monitoreo Docker)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
 
+    // 🔹 EMAIL (para notificaciones)
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
     // 🔹 AOP (para MBAC Permission Aspect)
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 

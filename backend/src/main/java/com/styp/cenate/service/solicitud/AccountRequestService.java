@@ -15,6 +15,7 @@ import com.styp.cenate.service.usuario.UsuarioService;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.DimOrigenPersonal;
 import com.styp.cenate.model.TipoDocumento;
+import com.styp.cenate.service.email.EmailService;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -43,6 +44,7 @@ public class AccountRequestService {
     private final PersonalCntRepository personalCntRepository;
     private final DimOrigenPersonalRepository dimOrigenPersonalRepository;
     private final TipoDocumentoRepository tipoDocumentoRepository;
+    private final EmailService emailService;
 
     @Transactional
     public SolicitudRegistroDTO crearSolicitud(SolicitudRegistroDTO dto) {
@@ -155,10 +157,28 @@ public class AccountRequestService {
             solicitud.setIdAdmin(admin.getIdUser());
             solicitud.setFechaRespuesta(LocalDateTime.now());
             solicitud.setObservacionAdmin("Solicitud aprobada - Usuario creado");
-            
+
             solicitud = accountRequestRepository.save(solicitud);
 
             log.info("Solicitud aprobada, usuario y personal creados: {}", solicitud.getNumDocumento());
+
+            // Enviar correo de confirmación
+            String emailDestino = solicitud.getCorreoPersonal() != null
+                    ? solicitud.getCorreoPersonal()
+                    : solicitud.getCorreoInstitucional();
+
+            if (emailDestino != null && !emailDestino.isBlank()) {
+                String nombreCompleto = solicitud.getNombreCompleto();
+                emailService.enviarCorreoAprobacionSolicitud(
+                        emailDestino,
+                        nombreCompleto,
+                        solicitud.getNumDocumento(),
+                        generarPasswordTemporal(solicitud.getNumDocumento())
+                );
+                log.info("Correo de aprobación enviado a: {}", emailDestino);
+            } else {
+                log.warn("No se pudo enviar correo: el solicitante no tiene email registrado");
+            }
 
             return convertirADTOConIpress(solicitud);
             
@@ -282,10 +302,25 @@ public class AccountRequestService {
         solicitud.setObservacionAdmin(motivoRechazo);
         solicitud.setIdAdmin(admin.getIdUser());
         solicitud.setFechaRespuesta(LocalDateTime.now());
-        
+
         solicitud = accountRequestRepository.save(solicitud);
 
         log.info("Solicitud rechazada: {}", solicitud.getNumDocumento());
+
+        // Enviar correo de rechazo
+        String emailDestino = solicitud.getCorreoPersonal() != null
+                ? solicitud.getCorreoPersonal()
+                : solicitud.getCorreoInstitucional();
+
+        if (emailDestino != null && !emailDestino.isBlank()) {
+            String nombreCompleto = solicitud.getNombreCompleto();
+            emailService.enviarCorreoRechazoSolicitud(
+                    emailDestino,
+                    nombreCompleto,
+                    motivoRechazo
+            );
+            log.info("Correo de rechazo enviado a: {}", emailDestino);
+        }
 
         return convertirADTOConIpress(solicitud);
     }
