@@ -132,11 +132,12 @@ public class AccountRequestService {
             var usuarioCreado = usuarioService.createUser(usuarioRequest);
             Long idUsuario = usuarioCreado.getIdUser();
 
-            if (solicitud.isInterno()) {
-                crearPersonalCNT(solicitud, idUsuario);
-            } else {
+            // ⚠️ NOTA: Para usuarios INTERNOS, PersonalCnt ya se crea en UsuarioServiceImpl.createUser()
+            // Solo necesitamos crear PersonalExterno para usuarios EXTERNOS
+            if (solicitud.isExterno()) {
                 crearPersonalExterno(solicitud, idUsuario);
             }
+            // Para usuarios internos, NO llamamos a crearPersonalCNT() porque ya se crea en createUser()
 
             solicitud.setEstado("APROBADO");
             solicitud.setIdAdmin(admin.getIdUser());
