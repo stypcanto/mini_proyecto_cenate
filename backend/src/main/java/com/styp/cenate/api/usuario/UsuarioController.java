@@ -4,6 +4,7 @@ import com.styp.cenate.dto.UsuarioCreateRequest;
 import com.styp.cenate.dto.UsuarioResponse;
 import com.styp.cenate.dto.UsuarioUpdateRequest;
 import com.styp.cenate.service.usuario.UsuarioService;
+import com.styp.cenate.service.security.PasswordTokenService;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,7 @@ import java.util.Map;
 public class UsuarioController {
 
 	private final UsuarioService usuarioService;
+	private final PasswordTokenService passwordTokenService;
 
 	// ============================================================
 	// 🧩 NUEVO ENDPOINT: Listar roles del usuario por username
@@ -310,31 +312,36 @@ public class UsuarioController {
 		}
 	}
 
-	/** 🔄 Resetear contraseña (Solo ADMIN/SUPERADMIN) */
+	/** 🔄 Resetear contraseña (Solo ADMIN/SUPERADMIN) - Envía correo con enlace */
 	@PutMapping("/id/{id}/reset-password")
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
-	public ResponseEntity<?> resetPassword(@PathVariable("id") Long id, @RequestBody Map<String, String> request,
+	public ResponseEntity<?> resetPassword(@PathVariable("id") Long id,
 			Authentication authentication) {
 		try {
 			String adminUsername = authentication.getName();
-			String newPassword = request.get("newPassword");
 
-			if (newPassword == null || newPassword.isBlank()) {
-				return ResponseEntity.badRequest().body(Map.of("error", "Contraseña requerida", "message",
-						"Debe proporcionar 'newPassword' en el body"));
+			log.info("🔄 Admin '{}' solicitando reset de contraseña para usuario ID: {}", adminUsername, id);
+
+			// Enviar correo con enlace para restablecer contraseña
+			boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmail(id, "RESET");
+
+			if (!emailEnviado) {
+				log.error("❌ No se pudo enviar correo de reset para usuario ID: {}", id);
+				return ResponseEntity.status(500).body(Map.of(
+						"error", "Error al enviar correo",
+						"message", "No se pudo enviar el correo de restablecimiento. Verifique que el usuario tenga un correo registrado."
+				));
 			}
 
-			log.info("🔄 Admin '{}' reseteando contraseña para usuario ID: {}", adminUsername, id);
-			usuarioService.resetPassword(id, newPassword);
+			log.info("✅ Correo de reset enviado exitosamente para usuario ID: {}", id);
+			return ResponseEntity.ok(Map.of(
+					"message", "Se ha enviado un correo al usuario con el enlace para restablecer su contraseña",
+					"resetBy", adminUsername
+			));
 
-			return ResponseEntity
-					.ok(Map.of("message", "✅ Contraseña reseteada exitosamente", "resetBy", adminUsername));
 		} catch (EntityNotFoundException e) {
 			log.error("❌ Usuario no encontrado: {}", e.getMessage());
 			return ResponseEntity.status(404).body(Map.of("error", "Usuario no encontrado", "message", e.getMessage()));
-		} catch (IllegalArgumentException e) {
-			log.error("❌ Contraseña inválida: {}", e.getMessage());
-			return ResponseEntity.badRequest().body(Map.of("error", "Contraseña inválida", "message", e.getMessage()));
 		} catch (Exception e) {
 			log.error("❌ Error al resetear contraseña: {}", e.getMessage());
 			return ResponseEntity.internalServerError()

@@ -875,25 +875,23 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
         return;
       }
 
-      console.log('🔄 Reseteando contraseña para usuario ID:', userId);
-      
-      await api.put(`/usuarios/id/${userId}/reset-password`, { 
-        newPassword: '@Cenate2025' 
-      });
+      console.log('🔄 Enviando correo de reset para usuario ID:', userId);
 
-      alert('✅ Contraseña reseteada exitosamente a @Cenate2025\n\n🔑 El usuario deberá cambiarla en su próximo inicio de sesión.');
+      const response = await api.put(`/usuarios/id/${userId}/reset-password`);
+
+      alert('✅ ' + (response.message || 'Se ha enviado un correo al usuario con el enlace para restablecer su contraseña'));
       setShowResetConfirm(false);
-      
+
       if (onSuccess) onSuccess();
 
     } catch (error) {
       console.error('❌ Error al resetear contraseña:', error);
-      
-      const errorMsg = error.response?.data?.message || 
-                      error.response?.data?.error || 
-                      error.message || 
+
+      const errorMsg = error.response?.data?.message ||
+                      error.response?.data?.error ||
+                      error.message ||
                       'Error desconocido';
-      
+
       alert(`❌ Error al resetear la contraseña\n\n${errorMsg}\n\nVerifica la consola para más detalles.`);
     } finally {
       setLoading(false);
