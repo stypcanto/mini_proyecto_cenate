@@ -23,6 +23,7 @@ import ProtectedRoute from "./components/security/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import CrearCuenta from "./pages/CrearCuenta";
+import CambiarContrasena from "./pages/CambiarContrasena";
 import Unauthorized from "./pages/Unauthorized";
 
 // 🧩 Dashboard principal MBAC
@@ -111,6 +112,7 @@ function AppRoutes() {
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/crear-cuenta" element={<CrearCuenta />} />
+      <Route path="/cambiar-contrasena" element={<CambiarContrasena />} />
       <Route path="/unauthorized" element={<Unauthorized />} />
 
       {/* 🔒 Área protegida con AppLayout único */}
