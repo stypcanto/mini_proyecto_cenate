@@ -304,4 +304,23 @@ public class PersonalExternoServiceImpl implements PersonalExternoService {
     public boolean existsByEmailCorpExt(String emailCorpPers) {
         return personalExternoRepository.existsByEmailCorpExt(emailCorpPers);
     }
+
+    @Override
+    public boolean existsByEmailPersExt(String emailPersExt) {
+        return personalExternoRepository.existsByEmailPersExt(emailPersExt);
+    }
+
+    @Override
+    public Long getUsuarioXCorreoPersonal(String correo) {
+        return personalExternoRepository.findByEmailPersExt(correo)
+                .map(PersonalExterno::getIdUserPrincipal)
+                .orElse(null);
+    }
+
+    @Override
+    public String getCorreoPersonalDeUsuario(Long idUsuario) {
+        return personalExternoRepository.findByIdUser(idUsuario)
+                .map(PersonalExterno::getEmailPersExt)
+                .orElse(null);
+    }
 }

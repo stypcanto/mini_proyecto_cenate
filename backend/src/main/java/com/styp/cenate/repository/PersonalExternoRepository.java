@@ -56,4 +56,7 @@ public interface PersonalExternoRepository extends JpaRepository<PersonalExterno
 
 	boolean existsByEmailCorpExt(String correo);
 
+	// Búsqueda por correo personal (para recuperación de contraseña)
+	boolean existsByEmailPersExt(String emailPersExt);
+
 }

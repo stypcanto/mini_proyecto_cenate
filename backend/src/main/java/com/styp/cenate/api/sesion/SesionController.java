@@ -85,45 +85,68 @@ public class SesionController {
 	    }
 
 		Long idUsuario = null;
+		String correoPersonalDestino = null;
 
-	    boolean existeCorreoCenate = servicioPersonalCenate.existsByEmailCorpPers(correo);
-	    if (existeCorreoCenate) {
-	        idUsuario = servicioPersonalCenate.getUsuarioXCorreo(correo);
-	    } else {
-	        boolean existeCorreoExterno = servicioPersonalExterno.existsByEmailCorpExt(correo);
-	        if (existeCorreoExterno) {
-	            idUsuario = servicioPersonalExterno.getUsuarioXCorreo(correo);
-	        }
-	    }
+		// Primero buscar por correo personal (CNT)
+		if (servicioPersonalCenate.existsByEmailPers(correo)) {
+			idUsuario = servicioPersonalCenate.getUsuarioXCorreoPersonal(correo);
+			correoPersonalDestino = correo;
+		}
+		// Luego buscar por correo corporativo (CNT)
+		else if (servicioPersonalCenate.existsByEmailCorpPers(correo)) {
+			idUsuario = servicioPersonalCenate.getUsuarioXCorreo(correo);
+			// Obtener el correo personal del usuario para enviar ahí
+			correoPersonalDestino = servicioPersonalCenate.getCorreoPersonalDeUsuario(idUsuario);
+			if (correoPersonalDestino == null || correoPersonalDestino.isBlank()) {
+				correoPersonalDestino = correo; // Si no tiene personal, usar el corporativo
+			}
+		}
+		// Buscar por correo personal (Externo)
+		else if (servicioPersonalExterno.existsByEmailPersExt(correo)) {
+			idUsuario = servicioPersonalExterno.getUsuarioXCorreoPersonal(correo);
+			correoPersonalDestino = correo;
+		}
+		// Buscar por correo corporativo (Externo)
+		else if (servicioPersonalExterno.existsByEmailCorpExt(correo)) {
+			idUsuario = servicioPersonalExterno.getUsuarioXCorreo(correo);
+			correoPersonalDestino = servicioPersonalExterno.getCorreoPersonalDeUsuario(idUsuario);
+			if (correoPersonalDestino == null || correoPersonalDestino.isBlank()) {
+				correoPersonalDestino = correo;
+			}
+		}
 
-	    // Correo no encontrado
-	    if (idUsuario == null ) {
-	        return ResponseEntity.status(404).body(
-	            new ApiResponse<>(
-	                false,
-	                "El correo ingresado no se encuentra registrado.",
-	                "EMAIL_NO_ENCONTRADO",
-	                null
-	            )
-	        );
-	    }
-		
-	    SolicitudContrasenaDTO solicitud = registrarSolicitud(idUsuario, idemKey, correo);
+		// Correo no encontrado
+		if (idUsuario == null) {
+			return ResponseEntity.status(404).body(
+				new ApiResponse<>(
+					false,
+					"El correo ingresado no se encuentra registrado.",
+					"EMAIL_NO_ENCONTRADO",
+					null
+				)
+			);
+		}
 
-	    Map<String, Object> data = Map.of(
-	        "idSolicitud", solicitud.getId(),
-	        "estado", solicitud.getEstado(),
-	        "idempotencia", solicitud.getIdempotencia()
-	    );
+		SolicitudContrasenaDTO solicitud = registrarSolicitud(idUsuario, idemKey, correoPersonalDestino);
 
-	    return ResponseEntity.status(201).body(
-	        new ApiResponse<>(
-	            true,
-	            "Se registró la solicitud de recuperación. Se enviará un correo con sus credenciales.",
-	            "OK",
-	            data
-	        )
-	    );
+		// Enmascarar el correo para mostrar al usuario
+		String correoEnmascarado = enmascararCorreo(correoPersonalDestino);
+
+		Map<String, Object> data = Map.of(
+			"idSolicitud", solicitud.getId(),
+			"estado", solicitud.getEstado(),
+			"idempotencia", solicitud.getIdempotencia(),
+			"correoDestino", correoEnmascarado
+		);
+
+		return ResponseEntity.status(201).body(
+			new ApiResponse<>(
+				true,
+				"Se registró la solicitud de recuperación. Se enviará un enlace de recuperación a su correo personal: " + correoEnmascarado,
+				"OK",
+				data
+			)
+		);
 
 	}
 
@@ -141,6 +164,27 @@ public class SesionController {
 		objSolicitud.setContrasenaHash(passwordService.generarNuevaContrasena());
 		objSolicitud.setCorreoDestino(correo);
 		return servicioContrasena.guardar(objSolicitud);
+	}
+
+	/**
+	 * Enmascara un correo electrónico para mostrar de forma segura.
+	 * Ejemplo: styp611@outlook.com -> st***11@outlook.com
+	 */
+	private String enmascararCorreo(String correo) {
+		if (correo == null || !correo.contains("@")) {
+			return "***@***";
+		}
+
+		String[] partes = correo.split("@");
+		String usuario = partes[0];
+		String dominio = partes[1];
+
+		if (usuario.length() <= 4) {
+			return usuario.charAt(0) + "***@" + dominio;
+		}
+
+		// Mostrar primeros 2 y últimos 2 caracteres
+		return usuario.substring(0, 2) + "***" + usuario.substring(usuario.length() - 2) + "@" + dominio;
 	}
 
 }

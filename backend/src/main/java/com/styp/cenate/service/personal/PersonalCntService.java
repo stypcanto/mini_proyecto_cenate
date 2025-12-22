@@ -75,4 +75,9 @@ public interface PersonalCntService {
 
 	boolean existsByEmailCorpPers(String emailCorpPers);
 	Long getUsuarioXCorreo(String correo);
+
+	// Búsqueda por correo personal (recuperación de contraseña)
+	boolean existsByEmailPers(String emailPers);
+	Long getUsuarioXCorreoPersonal(String correo);
+	String getCorreoPersonalDeUsuario(Long idUsuario);
 }

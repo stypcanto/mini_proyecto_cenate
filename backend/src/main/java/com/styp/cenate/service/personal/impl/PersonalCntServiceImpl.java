@@ -421,6 +421,25 @@ public class PersonalCntServiceImpl implements PersonalCntService {
 	public boolean existsByEmailCorpPers(String emailCorpPers) {
 		return personalCntRepository.existsByEmailCorpPers(emailCorpPers);
 	}
+
+	@Override
+	public boolean existsByEmailPers(String emailPers) {
+		return personalCntRepository.existsByEmailPers(emailPers);
+	}
+
+	@Override
+	public Long getUsuarioXCorreoPersonal(String correo) {
+		return personalCntRepository.findByEmailPers(correo)
+				.map(p -> p.getUsuario().getIdUser())
+				.orElse(null);
+	}
+
+	@Override
+	public String getCorreoPersonalDeUsuario(Long idUsuario) {
+		return personalCntRepository.findByUsuario_IdUser(idUsuario)
+				.map(PersonalCnt::getEmailPers)
+				.orElse(null);
+	}
 }
 
 

@@ -86,6 +86,11 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 
 	boolean existsByEmailCorpPers(String emailCorpPers);
 
+	// Búsqueda por correo personal (para recuperación de contraseña)
+	Optional<PersonalCnt> findByEmailPers(String emailPers);
+
+	boolean existsByEmailPers(String emailPers);
+
 	/**
 	 * Obtiene todo el personal con las relaciones necesarias cargadas (optimizado para getAllPersonal).
 	 * Evita queries N+1 al cargar todas las relaciones en una sola query.

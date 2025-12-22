@@ -48,4 +48,9 @@ public interface PersonalExternoService {
 
 	boolean existsByEmailCorpExt(String emailCorpPers);
 
+	// Búsqueda por correo personal (recuperación de contraseña)
+	boolean existsByEmailPersExt(String emailPersExt);
+	Long getUsuarioXCorreoPersonal(String correo);
+	String getCorreoPersonalDeUsuario(Long idUsuario);
+
 }
