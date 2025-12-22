@@ -113,7 +113,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 		usuarioRepository.save(usuario);
 
 		// 🆕 CREAR REGISTRO DE PERSONAL_CNT con los datos personales
-		if (request.getNombres() != null && !request.getNombres().isBlank()) {
+		// ⚠️ NO crear PersonalCnt para usuarios EXTERNOS (ellos van a dim_personal_externo)
+		boolean esExterno = request.getTipo_personal() != null &&
+				(request.getTipo_personal().equalsIgnoreCase("EXTERNO") ||
+				 request.getTipo_personal().equalsIgnoreCase("Externo"));
+
+		if (request.getNombres() != null && !request.getNombres().isBlank() && !esExterno) {
 			log.info("👤 Creando registro de PersonalCnt para usuario: {}", usuario.getNameUser());
 
 			PersonalCnt personalCnt = new PersonalCnt();
@@ -332,6 +337,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 					log.warn("⚠️ Tipo de profesional no encontrado con ID: {}", request.getId_tip_pers());
 				}
 			}
+		} else if (esExterno) {
+			log.info("👤 Usuario EXTERNO: {} - Los datos personales se crearán en dim_personal_externo", usuario.getNameUser());
 		} else {
 			log.warn("⚠️ No se proporcionaron datos personales para el usuario: {}", usuario.getNameUser());
 		}
