@@ -111,6 +111,19 @@ public class PasswordTokenService {
             log.warn("Usuario {} no tiene email registrado", usuario.getNameUser());
             return false;
         }
+        return crearTokenYEnviarEmailDirecto(usuario, email, tipoAccion);
+    }
+
+    /**
+     * Crea un token de cambio de contraseña y envía email a una dirección específica
+     * (evita problemas de lazy loading cuando el email viene de otra fuente)
+     */
+    @Transactional
+    public boolean crearTokenYEnviarEmailDirecto(Usuario usuario, String email, String tipoAccion) {
+        if (email == null || email.isBlank()) {
+            log.warn("Email vacío para usuario {}", usuario.getNameUser());
+            return false;
+        }
 
         // Invalidar tokens anteriores del mismo usuario
         tokenStore.entrySet().removeIf(entry ->

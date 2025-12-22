@@ -173,11 +173,17 @@ public class AccountRequestService {
             // Enviar correo con enlace para configurar contraseña (sistema seguro de tokens)
             Usuario usuarioNuevo = usuarioRepository.findById(idUsuario).orElse(null);
             if (usuarioNuevo != null) {
-                boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmail(usuarioNuevo, "BIENVENIDO");
+                // Usar email de la solicitud directamente (evita problemas de lazy loading)
+                String emailDestino = solicitud.getCorreoPersonal() != null && !solicitud.getCorreoPersonal().isBlank()
+                        ? solicitud.getCorreoPersonal()
+                        : solicitud.getCorreoInstitucional();
+
+                boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmailDirecto(
+                        usuarioNuevo, emailDestino, "BIENVENIDO");
                 if (emailEnviado) {
-                    log.info("Correo con enlace de configuración enviado al usuario: {}", solicitud.getNumDocumento());
+                    log.info("Correo con enlace de configuración enviado a: {}", emailDestino);
                 } else {
-                    log.warn("No se pudo enviar correo: el usuario no tiene email registrado");
+                    log.warn("No se pudo enviar correo a: {}", emailDestino);
                 }
             }
 
