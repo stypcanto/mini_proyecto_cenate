@@ -43,4 +43,9 @@ public interface IpressRepository extends JpaRepository<Ipress, Long> {
      */
     @Query("SELECT i FROM Ipress i WHERE i.idDist = :idDistrito AND i.statIpress = :estado ORDER BY i.descIpress ASC")
     List<Ipress> findByIdDistAndStatIpressOrderByDescIpressAsc(@Param("idDistrito") Long idDistrito, @Param("estado") String estado);
+
+    /**
+     * Buscar IPRESS por RED y estado
+     */
+    List<Ipress> findByRed_IdAndStatIpress(Long idRed, String estado);
 }

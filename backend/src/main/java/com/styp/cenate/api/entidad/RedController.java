@@ -33,6 +33,18 @@ public class RedController {
         return ResponseEntity.ok(list);
     }
 
+    /**
+     * Endpoint público para obtener REDs activas (para registro de usuarios externos)
+     */
+    @GetMapping("/publicas")
+    public ResponseEntity<List<RedResponse>> listarPublicas() {
+        log.info("📋 Consultando REDs activas (endpoint público)");
+        List<RedResponse> list = service.listar().stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+        return ResponseEntity.ok(list);
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<RedResponse> obtenerPorId(@PathVariable Long id) {
         Red r = service.obtenerPorId(id);

@@ -15,4 +15,6 @@ public interface IpressService {
     IpressResponse getIpressById(Long id);
 
     List<IpressResponse> searchIpress(String searchTerm);
+
+    List<IpressResponse> getIpressActivasPorRed(Long idRed);
 }

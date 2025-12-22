@@ -65,6 +65,15 @@ public class IpressServiceImpl implements IpressService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<IpressResponse> getIpressActivasPorRed(Long idRed) {
+        log.info("Obteniendo IPRESS activas por RED: {}", idRed);
+        return ipressRepository.findByRed_IdAndStatIpress(idRed, "A")
+                .stream()
+                .map(this::convertToResponse)
+                .collect(Collectors.toList());
+    }
+
     /**
      * 🔄 Convierte entidad Ipress a DTO con Red y Macroregión completas
      */

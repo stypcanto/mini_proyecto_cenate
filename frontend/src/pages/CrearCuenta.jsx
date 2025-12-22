@@ -22,7 +22,9 @@ export default function CrearCuenta() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [solicitudEnviada, setSolicitudEnviada] = useState(false);
+  const [redes, setRedes] = useState([]);
   const [ipress, setIpress] = useState([]);
+  const [loadingRedes, setLoadingRedes] = useState(false);
   const [loadingIpress, setLoadingIpress] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -37,49 +39,66 @@ export default function CrearCuenta() {
     correo_institucional: "",
     telefono: "",
     tipo_personal: "Externo",
+    id_red: null,
     id_ipress: null,
   });
 
   const [errors, setErrors] = useState({});
 
   useEffect(() => {
-    cargarIpress();
+    cargarRedes();
   }, []);
 
-  const cargarIpress = async () => {
+  // Cargar IPRESS cuando se selecciona una RED
+  useEffect(() => {
+    if (formData.id_red) {
+      cargarIpressPorRed(formData.id_red);
+    } else {
+      setIpress([]);
+      setFormData(prev => ({ ...prev, id_ipress: null }));
+    }
+  }, [formData.id_red]);
+
+  const cargarRedes = async () => {
+    try {
+      setLoadingRedes(true);
+      const response = await apiClient.get('/redes/publicas');
+      const todasRedes = Array.isArray(response) ? response : [];
+
+      // Ordenar por descripción
+      todasRedes.sort((a, b) => {
+        const descA = a.descRed || '';
+        const descB = b.descRed || '';
+        return descA.localeCompare(descB);
+      });
+
+      setRedes(todasRedes);
+      console.log(`✅ Cargadas ${todasRedes.length} REDs`);
+    } catch (e) {
+      console.error('❌ Error al cargar REDs:', e);
+      toast.error("Error al cargar Redes de Salud");
+    } finally {
+      setLoadingRedes(false);
+    }
+  };
+
+  const cargarIpressPorRed = async (idRed) => {
     try {
       setLoadingIpress(true);
-      
-      // ✅ Usar el endpoint PÚBLICO que devuelve TODAS las IPRESS activas
-      const response = await apiClient.get('/ipress/publicas');
-      const todasIpress = Array.isArray(response) ? response : [];
-      
+      setIpress([]);
+
+      const response = await apiClient.get(`/ipress/publicas/por-red/${idRed}`);
+      const ipressFiltradas = Array.isArray(response) ? response : [];
+
       // Ordenar alfabéticamente por descripción
-      todasIpress.sort((a, b) => {
+      ipressFiltradas.sort((a, b) => {
         const descA = a.descIpress || '';
         const descB = b.descIpress || '';
         return descA.localeCompare(descB);
       });
-      
-      setIpress(todasIpress);
-      
-      // Buscar la IPRESS 739 (Centro Nacional de Telemedicina) y seleccionarla por defecto
-      const ipress739 = todasIpress.find(
-        (ip) => ip.codIpress === "739" || 
-               ip.descIpress?.toUpperCase().includes("CENTRO NACIONAL DE TELEMEDICINA")
-      );
-      
-      if (ipress739) {
-        setFormData((prev) => ({
-          ...prev,
-          id_ipress: ipress739.idIpress
-        }));
-        console.log('✅ IPRESS 739 seleccionada por defecto:', ipress739);
-      } else {
-        console.warn('⚠️ No se encontró la IPRESS 739 en la lista');
-      }
-      
-      console.log(`✅ Cargadas ${todasIpress.length} IPRESS activas`);
+
+      setIpress(ipressFiltradas);
+      console.log(`✅ Cargadas ${ipressFiltradas.length} IPRESS para RED ${idRed}`);
     } catch (e) {
       console.error('❌ Error al cargar IPRESS:', e);
       toast.error("Error al cargar IPRESS");
@@ -120,6 +139,7 @@ export default function CrearCuenta() {
     if (!formData.fecha_nacimiento) errs.fecha_nacimiento = "Campo obligatorio";
     if (!formData.correo_personal) errs.correo_personal = "Campo obligatorio";
     if (!formData.telefono) errs.telefono = "Campo obligatorio";
+    if (!formData.id_red) errs.id_red = "Debe seleccionar una Red de Salud";
     if (!formData.id_ipress) errs.id_ipress = "Debe seleccionar una IPRESS";
 
     const emailRgx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -576,6 +596,48 @@ export default function CrearCuenta() {
                   )}
                 </div>
 
+                {/* Red de Salud */}
+                <div>
+                  <label className="block text-sm font-medium text-slate-700 mb-1">
+                    Red de Salud <span className="text-red-500">*</span>
+                  </label>
+                  {loadingRedes ? (
+                    <div className="w-full px-4 py-3 border border-slate-300 rounded-xl bg-gray-50 flex items-center">
+                      <div className="inline-block w-4 h-4 border-2 border-[#0A5BA9] border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <span className="text-sm text-gray-500">
+                        Cargando Redes...
+                      </span>
+                    </div>
+                  ) : (
+                    <select
+                      name="id_red"
+                      value={formData.id_red || ""}
+                      onChange={(e) =>
+                        setFormData((p) => ({
+                          ...p,
+                          id_red: e.target.value ? parseInt(e.target.value) : null,
+                          id_ipress: null, // Limpiar IPRESS al cambiar RED
+                        }))
+                      }
+                      className={`w-full px-4 py-3 rounded-xl border ${
+                        errors.id_red ? "border-red-500" : "border-slate-300"
+                      } focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/30 outline-none transition-all`}
+                    >
+                      <option value="">Seleccione una Red de Salud</option>
+                      {redes.map((red) => (
+                        <option key={red.idRed} value={red.idRed}>
+                          {red.descRed}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {errors.id_red && (
+                    <p className="text-red-500 text-xs mt-1">
+                      {errors.id_red}
+                    </p>
+                  )}
+                </div>
+
                 {/* IPRESS */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">
@@ -600,11 +662,18 @@ export default function CrearCuenta() {
                             : null,
                         }))
                       }
+                      disabled={!formData.id_red}
                       className={`w-full px-4 py-3 rounded-xl border ${
                         errors.id_ipress ? "border-red-500" : "border-slate-300"
-                      } focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/30 outline-none transition-all`}
+                      } focus:border-[#0A5BA9] focus:ring-2 focus:ring-[#0A5BA9]/30 outline-none transition-all ${
+                        !formData.id_red ? "bg-gray-100 cursor-not-allowed" : ""
+                      }`}
                     >
-                      <option value="">Seleccione su IPRESS</option>
+                      <option value="">
+                        {formData.id_red
+                          ? "Seleccione su IPRESS"
+                          : "Primero seleccione una Red"}
+                      </option>
                       {ipress.map((ip) => (
                         <option key={ip.idIpress} value={ip.idIpress}>
                           {ip.codIpress} - {ip.descIpress}

@@ -42,6 +42,15 @@ public class IpressController {
     }
 
     // ============================================================
+    // 🔹 Obtener IPRESS por RED (PÚBLICO - para registro)
+    // ============================================================
+    @GetMapping("/publicas/por-red/{idRed}")
+    public ResponseEntity<List<IpressResponse>> getIpressPorRed(@PathVariable Long idRed) {
+        log.info("📋 Consultando IPRESS activas por RED: {}", idRed);
+        return ResponseEntity.ok(ipressService.getIpressActivasPorRed(idRed));
+    }
+
+    // ============================================================
     // 🔹 Obtener todas las IPRESS
     // ============================================================
     @GetMapping
