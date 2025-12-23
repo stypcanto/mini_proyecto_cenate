@@ -5,6 +5,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.styp.cenate.model.ActividadEssi;
 import com.styp.cenate.model.AreaHospitalaria;
 import com.styp.cenate.model.DimServicioEssi;
@@ -116,8 +117,17 @@ public class SolicitudCita {
     private DimEstadoCita estadoCita;
     
     
+    @JsonIgnore
+    // No leas este campo cuando venga en el request
+    // No lo escribas cuando devuelvas el response
+    @Column(name = "estado_registro", nullable = false)
+    private Boolean estadoRegistro;
+    
+    
+    
     @PrePersist
     public void prePersist() {
+    	this.estadoRegistro= true;
         this.fechaSolicitud = OffsetDateTime.now(ZoneOffset.of("-05:00"));
         this.fechaActualiza = OffsetDateTime.now(ZoneOffset.of("-05:00"));
     }

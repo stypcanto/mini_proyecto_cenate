@@ -6,6 +6,7 @@ import java.util.Map;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -13,7 +14,9 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
+import com.styp.cenate.api.admin.AdminDashboardMedicoCardController;
 import com.styp.cenate.dto.chatbot.SolicitudCitaRequestDTO;
 import com.styp.cenate.dto.chatbot.SolicitudCitaResponseDTO;
 import com.styp.cenate.service.chatbot.solicitudcita.ISolicitudCitaService;
@@ -30,10 +33,14 @@ import lombok.extern.slf4j.Slf4j;
 @Validated // habilita validación en parámetros simples
 public class SolicitudController {
 
+	private final AdminDashboardMedicoCardController adminDashboardMedicoCardController;
+
 	private final ISolicitudCitaService servicio;
 
-	public SolicitudController(ISolicitudCitaService servicio) {
+	public SolicitudController(ISolicitudCitaService servicio,
+			AdminDashboardMedicoCardController adminDashboardMedicoCardController) {
 		this.servicio = servicio;
+		this.adminDashboardMedicoCardController = adminDashboardMedicoCardController;
 	}
 
 	/**
@@ -63,8 +70,7 @@ public class SolicitudController {
 			@Valid @RequestBody SolicitudCitaRequestDTO dto) {
 		// @Validated → permite validar @Positive en @PathVariable
 		// @Valid → valida el DTO completo
-		log.info("Actualizando SolicitudCita id={} (docPaciente={}, estado={})", id, dto.getDocPaciente(),
-				0);
+		log.info("Actualizando SolicitudCita id={} (docPaciente={}, estado={})", id, dto.getDocPaciente(), 0);
 		var actualizado = servicio.actualizar(id, dto);
 		return ResponseEntity.ok(actualizado);
 	}
@@ -74,9 +80,20 @@ public class SolicitudController {
 			@RequestBody Map<String, String> body) {
 
 		String estado = body.get("estadoSolicitud");
-		String observacion = body.get("observacion");
 
-		var actualizado = servicio.actualizarEstado(id, estado, observacion);
+		if (estado == null || estado.isBlank()) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "El campo estadoSolicitud es obligatorio");
+		}
+
+		String observacion = body.get("observacion");
+		Long lEstado;
+		try {
+			lEstado = Long.valueOf(estado);
+		} catch (NumberFormatException e) {
+			throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "estadoSolicitud debe ser numérico");
+		}
+
+		var actualizado = servicio.actualizarEstado(id, lEstado, observacion);
 		return ResponseEntity.ok(actualizado);
 	}
 
@@ -96,6 +113,14 @@ public class SolicitudController {
 			return ResponseEntity.noContent().build();
 		}
 		return ResponseEntity.ok(resultados);
+	}
+
+	@DeleteMapping("/{idCita}")
+	public ResponseEntity<Void> eliminarCita(@PathVariable Long idCita) {
+
+		servicio.eliminarCita(idCita);
+
+		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
 
 }

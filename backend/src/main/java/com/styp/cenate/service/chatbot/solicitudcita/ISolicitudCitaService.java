@@ -13,9 +13,9 @@ public interface ISolicitudCitaService {
 	
 	SolicitudCitaResponseDTO guardar(SolicitudCitaRequestDTO solicitudCitaDTO);
 	SolicitudCitaResponseDTO actualizar(Long idSolicitud, SolicitudCitaRequestDTO solicitudCitaDTO);
-    void eliminar(Long idSolicitud);
     
-    SolicitudCitaResponseDTO actualizarEstado(Long id, String estado, String observacion);
+    
+    SolicitudCitaResponseDTO actualizarEstado(Long id, Long estado, String observacion);
     
     
 
@@ -33,6 +33,11 @@ public interface ISolicitudCitaService {
     
     
     boolean existeCitaPorPersonalYFechaHora(Long idPers, LocalDate fechaCita, LocalTime horaCita);
+    
+    
+    // La eliminacion sera lógica, se cambiara a estado_registro = false. 
+    // se desactiva de manera definitiva, solo procede si tiene el estado 2
+    void eliminarCita(Long codigo);
 	
     
 }
