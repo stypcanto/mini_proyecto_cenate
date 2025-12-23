@@ -17,6 +17,11 @@ import {
   Calendar,
   AlertTriangle,
   Filter,
+  RefreshCw,
+  UserCheck,
+  Send,
+  Search,
+  Trash2,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiClient } from "../../lib/apiClient";
@@ -29,10 +34,28 @@ export default function AprobacionSolicitudes() {
   const [modalRechazo, setModalRechazo] = useState({ open: false, solicitudId: null });
   const [motivoRechazo, setMotivoRechazo] = useState("");
 
+  // Estados para usuarios pendientes de activación
+  const [vistaActual, setVistaActual] = useState("solicitudes"); // "solicitudes" o "pendientes-activacion"
+  const [usuariosPendientes, setUsuariosPendientes] = useState([]);
+  const [loadingPendientes, setLoadingPendientes] = useState(false);
+  const [enviandoEmail, setEnviandoEmail] = useState(null); // ID del usuario al que se está enviando
+  const [eliminandoUsuario, setEliminandoUsuario] = useState(null); // ID del usuario que se está eliminando
+  const [busquedaPendientes, setBusquedaPendientes] = useState(""); // Búsqueda por nombre o documento
+
+  // Cargar solicitudes cuando cambia el filtro (solo en vista solicitudes)
   useEffect(() => {
-    cargarSolicitudes();
-    cargarEstadisticas();
+    if (vistaActual === "solicitudes") {
+      cargarSolicitudes();
+      cargarEstadisticas();
+    }
   }, [filtro]);
+
+  // Cargar usuarios pendientes cuando cambia a esa vista
+  useEffect(() => {
+    if (vistaActual === "pendientes-activacion") {
+      cargarUsuariosPendientes();
+    }
+  }, [vistaActual]);
 
   const cargarSolicitudes = async () => {
     try {
@@ -70,14 +93,76 @@ export default function AprobacionSolicitudes() {
     }
   };
 
+  // Cargar usuarios que fueron aprobados pero no han activado su cuenta
+  const cargarUsuariosPendientes = async () => {
+    try {
+      setLoadingPendientes(true);
+      const data = await apiClient.get("/admin/usuarios/pendientes-activacion", true);
+      setUsuariosPendientes(data || []);
+    } catch (error) {
+      console.error("Error al cargar usuarios pendientes:", error);
+      toast.error("Error al cargar usuarios pendientes de activación");
+    } finally {
+      setLoadingPendientes(false);
+    }
+  };
+
+  // Reenviar email de activación a un usuario
+  const reenviarEmailActivacion = async (idUsuario, nombreCompleto) => {
+    if (!window.confirm(`¿Desea reenviar el correo de activación a ${nombreCompleto}?`)) {
+      return;
+    }
+
+    try {
+      setEnviandoEmail(idUsuario);
+      const response = await apiClient.post(`/admin/usuarios/${idUsuario}/reenviar-activacion`, {}, true);
+
+      if (response.success) {
+        toast.success("Correo de activación reenviado exitosamente");
+      } else {
+        toast.error(response.error || "No se pudo enviar el correo");
+      }
+    } catch (error) {
+      console.error("Error al reenviar email:", error);
+      toast.error(error.message || "Error al reenviar el correo de activación");
+    } finally {
+      setEnviandoEmail(null);
+    }
+  };
+
+  // Eliminar usuario pendiente de activación (para que pueda volver a registrarse)
+  const eliminarUsuarioPendiente = async (idUsuario, nombreCompleto) => {
+    if (!window.confirm(
+      `¿Está seguro de eliminar al usuario "${nombreCompleto}"?\n\n` +
+      `Esta acción eliminará la cuenta del usuario y podrá volver a registrarse.\n\n` +
+      `⚠️ Esta acción no se puede deshacer.`
+    )) {
+      return;
+    }
+
+    try {
+      setEliminandoUsuario(idUsuario);
+      await apiClient.delete(`/admin/usuarios/${idUsuario}/pendiente-activacion`, true);
+
+      toast.success("Usuario eliminado. Ahora puede volver a registrarse.");
+      // Recargar la lista
+      cargarUsuariosPendientes();
+    } catch (error) {
+      console.error("Error al eliminar usuario:", error);
+      toast.error(error.message || "Error al eliminar el usuario");
+    } finally {
+      setEliminandoUsuario(null);
+    }
+  };
+
   const aprobarSolicitud = async (id) => {
-    if (!window.confirm("¿Está seguro de aprobar esta solicitud? Se creará un usuario con las credenciales: Usuario = DNI, Contraseña = @Cenate2025")) {
+    if (!window.confirm("¿Está seguro de aprobar esta solicitud?\n\nSe creará el usuario y se enviará un correo con un enlace para que configure su contraseña de forma segura.")) {
       return;
     }
 
     try {
       await apiClient.put(`/admin/solicitudes-registro/${id}/aprobar`, {}, true);
-      toast.success("Solicitud aprobada y usuario creado exitosamente");
+      toast.success("Solicitud aprobada. Se envió un correo con el enlace de activación.");
       cargarSolicitudes();
       cargarEstadisticas();
     } catch (error) {
@@ -143,14 +228,52 @@ export default function AprobacionSolicitudes() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-800">
-            Aprobación de Solicitudes
+            {vistaActual === "solicitudes"
+              ? "Aprobación de Solicitudes"
+              : "Usuarios Pendientes de Activación"}
           </h1>
           <p className="text-slate-600 mt-1">
-            Revise y apruebe las solicitudes de registro de nuevos usuarios
+            {vistaActual === "solicitudes"
+              ? "Revise y apruebe las solicitudes de registro de nuevos usuarios"
+              : "Usuarios aprobados que aún no han configurado su contraseña"}
           </p>
         </div>
       </div>
 
+      {/* Tabs de navegación */}
+      <div className="flex gap-2 bg-slate-100 p-1 rounded-xl w-fit">
+        <button
+          onClick={() => setVistaActual("solicitudes")}
+          className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+            vistaActual === "solicitudes"
+              ? "bg-white text-[#0A5BA9] shadow-md"
+              : "text-slate-600 hover:text-slate-800"
+          }`}
+        >
+          <Clock className="w-4 h-4" />
+          Solicitudes de Registro
+        </button>
+        <button
+          onClick={() => setVistaActual("pendientes-activacion")}
+          className={`px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-2 ${
+            vistaActual === "pendientes-activacion"
+              ? "bg-white text-orange-600 shadow-md"
+              : "text-slate-600 hover:text-slate-800"
+          }`}
+        >
+          <UserCheck className="w-4 h-4" />
+          Pendientes de Activación
+          {usuariosPendientes.length > 0 && (
+            <span className="bg-orange-500 text-white text-xs px-2 py-0.5 rounded-full">
+              {usuariosPendientes.length}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* ===== VISTA: SOLICITUDES DE REGISTRO ===== */}
+      {vistaActual === "solicitudes" && (
+        <>
       {/* Estadísticas */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 border-2 border-yellow-200 rounded-2xl p-6 shadow-md">
@@ -343,6 +466,223 @@ export default function AprobacionSolicitudes() {
             </div>
           ))}
         </div>
+      )}
+        </>
+      )}
+
+      {/* ===== VISTA: USUARIOS PENDIENTES DE ACTIVACIÓN ===== */}
+      {vistaActual === "pendientes-activacion" && (
+        <>
+          {/* Info card */}
+          <div className="bg-gradient-to-br from-orange-50 to-orange-100 border-2 border-orange-200 rounded-2xl p-6 shadow-md">
+            <div className="flex items-start gap-4">
+              <UserCheck className="w-10 h-10 text-orange-600 flex-shrink-0" />
+              <div>
+                <h3 className="text-lg font-bold text-orange-900">
+                  Usuarios Aprobados Pendientes de Activación
+                </h3>
+                <p className="text-orange-700 text-sm mt-1">
+                  Estos usuarios fueron aprobados pero aún no han configurado su contraseña.
+                  Puede reenviarles el correo de activación si no lo recibieron.
+                </p>
+              </div>
+              <div className="ml-auto">
+                <button
+                  onClick={cargarUsuariosPendientes}
+                  className="p-2 bg-orange-200 hover:bg-orange-300 rounded-lg transition-colors"
+                  title="Recargar lista"
+                >
+                  <RefreshCw className={`w-5 h-5 text-orange-700 ${loadingPendientes ? 'animate-spin' : ''}`} />
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Buscador */}
+          <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar por nombre o documento..."
+                value={busquedaPendientes}
+                onChange={(e) => setBusquedaPendientes(e.target.value)}
+                className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all"
+              />
+              {busquedaPendientes && (
+                <button
+                  onClick={() => setBusquedaPendientes("")}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-slate-600"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+            {busquedaPendientes && (
+              <p className="text-sm text-slate-500 mt-2">
+                Mostrando {usuariosPendientes.filter(u => {
+                  const term = busquedaPendientes.toLowerCase();
+                  return (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
+                         (u.username?.toLowerCase() || '').includes(term) ||
+                         (u.correoPersonal?.toLowerCase() || '').includes(term) ||
+                         (u.correoInstitucional?.toLowerCase() || '').includes(term);
+                }).length} de {usuariosPendientes.length} usuarios
+              </p>
+            )}
+          </div>
+
+          {/* Lista de usuarios pendientes */}
+          {loadingPendientes ? (
+            <div className="flex justify-center items-center py-20">
+              <div className="w-16 h-16 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          ) : usuariosPendientes.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-12 text-center">
+              <CheckCircle2 className="w-16 h-16 text-green-400 mx-auto mb-4" />
+              <p className="text-slate-600 text-lg">Todos los usuarios han activado su cuenta</p>
+              <p className="text-slate-400 text-sm mt-2">No hay usuarios pendientes de activación</p>
+            </div>
+          ) : usuariosPendientes.filter(u => {
+              if (!busquedaPendientes) return true;
+              const term = busquedaPendientes.toLowerCase();
+              return (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
+                     (u.username?.toLowerCase() || '').includes(term) ||
+                     (u.correoPersonal?.toLowerCase() || '').includes(term) ||
+                     (u.correoInstitucional?.toLowerCase() || '').includes(term);
+            }).length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-12 text-center">
+              <Search className="w-16 h-16 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-600 text-lg">No se encontraron resultados</p>
+              <p className="text-slate-400 text-sm mt-2">No hay usuarios que coincidan con "{busquedaPendientes}"</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl shadow-md border border-slate-200 overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b border-slate-200">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Usuario
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Documento
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Correo
+                      </th>
+                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Fecha Creación
+                      </th>
+                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Acción
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-200">
+                    {usuariosPendientes
+                      .filter(u => {
+                        if (!busquedaPendientes) return true;
+                        const term = busquedaPendientes.toLowerCase();
+                        return (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
+                               (u.username?.toLowerCase() || '').includes(term) ||
+                               (u.correoPersonal?.toLowerCase() || '').includes(term) ||
+                               (u.correoInstitucional?.toLowerCase() || '').includes(term);
+                      })
+                      .map((usuario) => (
+                      <tr key={usuario.idUsuario} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                              <User className="w-5 h-5 text-orange-600" />
+                            </div>
+                            <div>
+                              <p className="text-sm font-medium text-slate-800">
+                                {usuario.nombreCompleto}
+                              </p>
+                              <p className="text-xs text-slate-500">
+                                ID: {usuario.idUsuario}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">{usuario.username}</span>
+                        </td>
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-slate-400" />
+                            <span className="text-sm text-slate-600">
+                              {usuario.correoPersonal || usuario.correoInstitucional || 'Sin correo'}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4">
+                          <span className="text-sm text-slate-600">
+                            {usuario.fechaCreacion
+                              ? new Date(usuario.fechaCreacion).toLocaleDateString("es-PE", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })
+                              : 'N/A'}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <button
+                              onClick={() => reenviarEmailActivacion(usuario.idUsuario, usuario.nombreCompleto)}
+                              disabled={enviandoEmail === usuario.idUsuario || (!usuario.correoPersonal && !usuario.correoInstitucional)}
+                              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                enviandoEmail === usuario.idUsuario
+                                  ? 'bg-gray-200 text-gray-500 cursor-wait'
+                                  : (!usuario.correoPersonal && !usuario.correoInstitucional)
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                  : 'bg-orange-600 text-white hover:bg-orange-700 shadow-md'
+                              }`}
+                              title={(!usuario.correoPersonal && !usuario.correoInstitucional) ? 'Usuario sin correo registrado' : 'Reenviar correo de activación'}
+                            >
+                              {enviandoEmail === usuario.idUsuario ? (
+                                <>
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                  Enviando...
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="w-4 h-4" />
+                                  Reenviar
+                                </>
+                              )}
+                            </button>
+                            <button
+                              onClick={() => eliminarUsuarioPendiente(usuario.idUsuario, usuario.nombreCompleto)}
+                              disabled={eliminandoUsuario === usuario.idUsuario}
+                              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                                eliminandoUsuario === usuario.idUsuario
+                                  ? 'bg-gray-200 text-gray-500 cursor-wait'
+                                  : 'bg-red-600 text-white hover:bg-red-700 shadow-md'
+                              }`}
+                              title="Eliminar usuario para que pueda volver a registrarse"
+                            >
+                              {eliminandoUsuario === usuario.idUsuario ? (
+                                <>
+                                  <RefreshCw className="w-4 h-4 animate-spin" />
+                                </>
+                              ) : (
+                                <>
+                                  <Trash2 className="w-4 h-4" />
+                                </>
+                              )}
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modal de Rechazo */}

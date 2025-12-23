@@ -31,6 +31,7 @@
 - [Formulario Diagnóstico Telesalud](#23-formulario-de-diagnóstico-situacional-de-telesalud-apiformulario-diagnostico)
 - [Testing](#-testing)
 - [Despliegue](#-despliegue)
+- [Historial de Versiones (Changelog)](#historial-de-versiones-changelog)
 
 ---
 
@@ -2351,6 +2352,194 @@ Authorization: Bearer {token}
 | **Unicidad** | Solo UN formulario `EN_PROCESO` por IPRESS por año |
 | **Permisos de edición** | Solo se pueden editar formularios en estado `EN_PROCESO` |
 | **Permisos de eliminación** | Solo se pueden eliminar formularios en estado `EN_PROCESO` |
+
+---
+
+## Historial de Versiones (Changelog)
+
+### v1.7.0 - Documentación y Arquitectura (2025-12-23)
+
+| Commit | Descripción |
+|--------|-------------|
+| `pending` | **docs:** Crear archivo CLAUDE.md como memoria del proyecto |
+| `pending` | **docs:** Documentar historial de versiones en README.md |
+| `pending` | **feat:** Agregar versión en footer del frontend |
+| `pending` | **refactor:** Crear archivo de configuración de versión centralizado |
+
+**Cambios destacados:**
+- Nuevo archivo `CLAUDE.md` con documentación técnica completa del proyecto
+- Análisis de arquitectura backend (Spring Boot) y frontend (React)
+- Documentación del sistema MBAC y flujo de autenticación
+- Historial de versiones (Changelog) agregado al README.md
+- Versión visible en el footer de la aplicación (`v1.7.0`)
+- Archivo de configuración centralizado en `frontend/src/config/version.js`
+
+**Archivos nuevos:**
+- `/CLAUDE.md` - Memoria técnica del proyecto
+- `/frontend/src/config/version.js` - Configuración de versión
+
+---
+
+### v1.6.0 - Recuperación de Contraseña por Email (2025-12-22)
+
+| Commit | Descripción |
+|--------|-------------|
+| `1daaced` | Cambio de recuperación de contraseña (versión final) |
+| `d1b9987` | **feat:** Reset de contraseña ahora envía correo con enlace |
+| `403717c` | **fix:** Agregar envío de correo en recuperación de contraseña |
+| `ab472d6` | Mejoras en recuperación de contraseña |
+| `b718f3e` | **feat:** Agregar selector de RED antes de IPRESS en registro |
+| `60969fc` | **fix:** Corregir envío de email al aprobar usuario externo |
+| `276feb6` | **fix:** Recuperación solo acepta correo personal |
+| `22ef07c` | **fix:** Texto de botón dinámico en emails de contraseña |
+| `0a29ebc` | **feat:** Agregar página de cambio de contraseña con token |
+| `785710d` | **security:** Mover credenciales a variables de entorno |
+| `e439b48` | Cambio de contraseña segura |
+| `7dc4739` | Corregido usuario externo |
+| `fc009a7` | Corrigiendo errores de aceptación personal externo |
+| `e86f4db` | **fix:** Corregir validación de id_origen en aprobación de solicitudes |
+
+**Cambios destacados:**
+- Sistema completo de recuperación de contraseña por email
+- Envío de enlaces de reset con token seguro
+- Selector de RED antes de IPRESS en el registro
+- Credenciales movidas a variables de entorno
+- Correcciones en aprobación de usuarios externos
+
+---
+
+### v1.5.0 - Formulario Diagnóstico y Mejoras de Producción (2025-12-16 al 2025-12-18)
+
+| Commit | Descripción |
+|--------|-------------|
+| `c636767` | Corrigiendo el problema de enviar formularios en producción |
+| `ad7616e` | Actualizando información |
+| `4d393f4` | Finaliza merge y elimina artefactos de build |
+| `379c60e` | Liberación de nuevos cambios |
+| `33081dc` | Cascarón Excel - A la espera de formato de tabla |
+| `bbad490` | Cambios generales |
+
+**Cambios destacados:**
+- Corrección de envío de formularios en producción
+- Eliminación de artefactos de build
+- Preparación para exportación Excel
+
+---
+
+### v1.4.0 - Sistema de Citas y Chatbot (2025-12-10 al 2025-12-11)
+
+| Commit | Descripción |
+|--------|-------------|
+| `2419f96` | CITAS REPORT - Reporte de citas |
+| `8a98e20` | Agregando servicio de estado |
+| `419da56` | Arreglando el envío de formato |
+| `e5090c2` | Merge remote branch, eliminar lock files de Gradle |
+| `990dfda` | Depuración de lista |
+| `a20b423` | Cambios en Solicitud |
+| `35398bd` | Vistas de disponibilidad chatbot |
+| `2a7db97` | Creación de PDF |
+| `e419f12` | Integración backend con el frontend |
+| `197757c` | Cargando red, macroregión e IPRESS en personal externo |
+| `1ec1abe` | Cargando nuevas vistas para diferenciar personal interno y externo |
+
+**Cambios destacados:**
+- Sistema de reportes de citas
+- Vistas de disponibilidad para chatbot
+- Generación de PDF
+- Diferenciación de personal interno vs externo
+- Integración de Red y Macroregión
+
+---
+
+### v1.3.0 - Formulario de Diagnóstico Situacional (2025-12-09)
+
+| Commit | Descripción |
+|--------|-------------|
+| `641522e` | Ajustes al formulario - parte 1 |
+| `53622a6` | Creando el frontend del formulario |
+
+**Cambios destacados:**
+- Nuevo módulo de Formulario de Diagnóstico Situacional de Telesalud
+- 7 secciones: Datos Generales, Recursos Humanos, Infraestructura, Equipamiento, Conectividad, Servicios, Necesidades
+- Sistema de guardado de borradores
+- Vinculación automática a IPRESS del usuario
+
+---
+
+### v1.2.0 - Sistema MBAC y Multi-roles (2025-12-04 al 2025-12-05)
+
+| Commit | Descripción |
+|--------|-------------|
+| `6a5f053` | Actualizando lista de IPRESS |
+| `533dfb3` | Función de multi-roles |
+| `2b6eef1` | Cambiando el icono del proyecto |
+| `1446f6d` | Actualización de MBAC |
+| `b5464b8` | Reordenando secciones en base al RBAC desde base de datos |
+| `7a6e297` | **feat:** Control de acceso RBAC y mejoras en gestión de usuarios |
+| `e198367` | Actualización de datos |
+| `a42941b` | Actualizando README |
+
+**Cambios destacados:**
+- Sistema MBAC (Modular-Based Access Control) completo
+- Soporte para múltiples roles por usuario
+- Sidebar dinámico basado en permisos
+- Gestión de módulos y páginas desde base de datos
+- Permisos granulares: ver, crear, editar, eliminar, exportar, aprobar
+
+---
+
+### v1.1.0 - Gestión de Usuarios y Contraseñas (2025-11-18 al 2025-11-20)
+
+| Commit | Descripción |
+|--------|-------------|
+| `bd2414d` | Refresh |
+| `9542f4b` | Actualizar Datos Personales |
+| `2b95465` | Quitando archivos .class |
+| `418c65a` | Modificando rutas |
+| `aea52f2` | Mod Contraseña - iguales |
+| `959c737` | Modificación servicio en personal CNT |
+| `3427875` | Parche de Docker |
+| `33d7d7e` | Merge pull request #1 from stypcanto/2025-001 |
+| `475db34` | Asignación de módulos-páginas a rol |
+
+**Cambios destacados:**
+- Sistema de gestión de datos personales
+- Validación de contraseñas iguales
+- Configuración Docker
+- Asignación de módulos y páginas a roles
+
+---
+
+### v1.0.0 - Release Inicial (2025-11-18)
+
+| Commit | Descripción |
+|--------|-------------|
+| `82bf5be` | Cleanup: removing JAR from repo and applying .gitignore |
+| `55e4d6e` | Primer commit desde resync |
+
+**Funcionalidades iniciales:**
+- Backend Spring Boot 3.5.6 con JWT
+- Frontend React 19 con TailwindCSS
+- Sistema de autenticación completo
+- Gestión de usuarios y roles
+- Catálogos base (IPRESS, Áreas, Profesiones, etc.)
+- Integración con PostgreSQL
+- API REST documentada
+
+---
+
+### Resumen de Versiones
+
+| Versión | Fecha | Descripción Principal |
+|---------|-------|----------------------|
+| **v1.7.0** | **2025-12-23** | **Documentación y arquitectura (actual)** |
+| v1.6.0 | 2025-12-22 | Recuperación de contraseña por email |
+| v1.5.0 | 2025-12-16 | Mejoras de producción y Excel |
+| v1.4.0 | 2025-12-10 | Sistema de citas y chatbot |
+| v1.3.0 | 2025-12-09 | Formulario diagnóstico situacional |
+| v1.2.0 | 2025-12-04 | Sistema MBAC y multi-roles |
+| v1.1.0 | 2025-11-18 | Gestión de usuarios |
+| v1.0.0 | 2025-11-18 | Release inicial |
 
 ---
 

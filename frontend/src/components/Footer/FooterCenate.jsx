@@ -1,4 +1,5 @@
 import React from "react";
+import { VERSION, APP_INFO } from "../../config/version";
 
 export default function FooterCenate() {
   return (
@@ -23,8 +24,9 @@ export default function FooterCenate() {
           </ul>
         </div>
       </div>
-      <div className="text-center text-xs mt-6">
-        © {new Date().getFullYear()} CENATE – EsSalud. Todos los derechos reservados.
+      <div className="text-center text-xs mt-6 space-y-1">
+        <p>© {APP_INFO.year} CENATE – {APP_INFO.organization}. Todos los derechos reservados.</p>
+        <p className="text-gray-300">v{VERSION.number}</p>
       </div>
     </footer>
   );

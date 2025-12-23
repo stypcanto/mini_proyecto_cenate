@@ -55,8 +55,14 @@ public class AccountRequestService {
     public SolicitudRegistroDTO crearSolicitud(SolicitudRegistroDTO dto) {
         log.info("Creando solicitud de registro para: {} {}", dto.getNombres(), dto.getApellidoPaterno());
 
-        if (accountRequestRepository.existsByNumDocumento(dto.getNumeroDocumento())) {
-            throw new RuntimeException("Ya existe una solicitud con este número de documento");
+        // Verificar si existe una solicitud ACTIVA (PENDIENTE o APROBADO) - permite re-registro si fue RECHAZADO
+        if (accountRequestRepository.existsSolicitudActivaByNumDocumento(dto.getNumeroDocumento())) {
+            throw new RuntimeException("Ya existe una solicitud pendiente o aprobada con este número de documento");
+        }
+
+        if (dto.getCorreoPersonal() != null && !dto.getCorreoPersonal().isBlank()
+                && accountRequestRepository.existsSolicitudActivaByCorreoPersonal(dto.getCorreoPersonal())) {
+            throw new RuntimeException("Ya existe una solicitud pendiente o aprobada con este correo electrónico");
         }
 
         // Nota: Validación de documento duplicado se hace al crear el usuario
@@ -173,18 +179,24 @@ public class AccountRequestService {
             // Enviar correo con enlace para configurar contraseña (sistema seguro de tokens)
             Usuario usuarioNuevo = usuarioRepository.findById(idUsuario).orElse(null);
             if (usuarioNuevo != null) {
-                // Usar email de la solicitud directamente (evita problemas de lazy loading)
+                // Usar datos de la solicitud directamente (evita problemas de lazy loading)
                 String emailDestino = solicitud.getCorreoPersonal() != null && !solicitud.getCorreoPersonal().isBlank()
                         ? solicitud.getCorreoPersonal()
                         : solicitud.getCorreoInstitucional();
 
+                String nombreCompleto = solicitud.getNombreCompleto();
+
+                log.info("Preparando envío de correo a: {} para usuario: {}", emailDestino, nombreCompleto);
+
                 boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmailDirecto(
-                        usuarioNuevo, emailDestino, "BIENVENIDO");
+                        usuarioNuevo, emailDestino, nombreCompleto, "BIENVENIDO");
                 if (emailEnviado) {
                     log.info("Correo con enlace de configuración enviado a: {}", emailDestino);
                 } else {
                     log.warn("No se pudo enviar correo a: {}", emailDestino);
                 }
+            } else {
+                log.error("No se encontró el usuario recién creado con ID: {}", idUsuario);
             }
 
             return convertirADTOConIpress(solicitud);
@@ -413,5 +425,200 @@ public class AccountRequestService {
     private SolicitudRegistroDTO convertirADTOConIpress(AccountRequest solicitud) {
         Ipress ipress = ipressRepository.findById(solicitud.getIdIpress()).orElse(null);
         return convertirADTO(solicitud, ipress);
+    }
+
+    // ================================================================
+    // MÉTODOS PARA USUARIOS PENDIENTES DE ACTIVACIÓN
+    // ================================================================
+
+    /**
+     * Lista usuarios que fueron creados pero aún no han activado su cuenta
+     * (requiere_cambio_password = true)
+     */
+    public List<Map<String, Object>> listarUsuariosPendientesActivacion() {
+        log.info("Consultando usuarios pendientes de activación");
+
+        String sql = """
+            SELECT
+                u.id_user,
+                u.name_user,
+                u.stat_user,
+                u.created_at,
+                p.id_pers,
+                p.nom_pers,
+                p.ape_pater_pers,
+                p.ape_mater_pers,
+                p.email_pers,
+                p.email_corp_pers,
+                p.movil_pers,
+                i.desc_ipress
+            FROM dim_usuarios u
+            LEFT JOIN dim_personal_cnt p ON p.id_usuario = u.id_user
+            LEFT JOIN dim_ipress i ON i.id_ipress = p.id_ipress
+            WHERE u.requiere_cambio_password = true
+            ORDER BY u.created_at DESC
+        """;
+
+        List<Map<String, Object>> resultados = jdbcTemplate.queryForList(sql);
+
+        return resultados.stream().map(row -> {
+            Map<String, Object> usuario = new java.util.HashMap<>();
+            usuario.put("idUsuario", row.get("id_user"));
+            usuario.put("username", row.get("name_user"));
+            usuario.put("estado", row.get("stat_user"));
+            usuario.put("fechaCreacion", row.get("created_at"));
+            usuario.put("idPersonal", row.get("id_pers"));
+            usuario.put("nombres", row.get("nom_pers"));
+            usuario.put("apellidoPaterno", row.get("ape_pater_pers"));
+            usuario.put("apellidoMaterno", row.get("ape_mater_pers"));
+            usuario.put("correoPersonal", row.get("email_pers"));
+            usuario.put("correoInstitucional", row.get("email_corp_pers"));
+            usuario.put("telefono", row.get("movil_pers"));
+            usuario.put("ipress", row.get("desc_ipress"));
+
+            // Nombre completo
+            String nombreCompleto = String.format("%s %s %s",
+                    row.get("nom_pers") != null ? row.get("nom_pers") : "",
+                    row.get("ape_pater_pers") != null ? row.get("ape_pater_pers") : "",
+                    row.get("ape_mater_pers") != null ? row.get("ape_mater_pers") : ""
+            ).trim();
+            usuario.put("nombreCompleto", nombreCompleto);
+
+            return usuario;
+        }).collect(Collectors.toList());
+    }
+
+    /**
+     * Reenvía el email de activación a un usuario específico
+     */
+    @Transactional
+    public boolean reenviarEmailActivacion(Long idUsuario) {
+        log.info("Reenviando email de activación a usuario ID: {}", idUsuario);
+
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        if (!usuario.getRequiereCambioPassword()) {
+            throw new RuntimeException("El usuario ya ha activado su cuenta");
+        }
+
+        // Obtener email del personal asociado usando SQL directo (evita lazy loading)
+        String sql = """
+            SELECT
+                p.email_pers,
+                p.email_corp_pers,
+                p.nom_pers,
+                p.ape_pater_pers,
+                p.ape_mater_pers
+            FROM dim_personal_cnt p
+            WHERE p.id_usuario = ?
+        """;
+
+        String email = null;
+        String nombreCompleto = null;
+
+        try {
+            var result = jdbcTemplate.queryForMap(sql, idUsuario);
+
+            String emailPers = (String) result.get("email_pers");
+            String emailCorp = (String) result.get("email_corp_pers");
+            email = (emailPers != null && !emailPers.isBlank()) ? emailPers : emailCorp;
+
+            String nombres = (String) result.get("nom_pers");
+            String apePat = (String) result.get("ape_pater_pers");
+            String apeMat = (String) result.get("ape_mater_pers");
+
+            nombreCompleto = String.format("%s %s %s",
+                    nombres != null ? nombres : "",
+                    apePat != null ? apePat : "",
+                    apeMat != null ? apeMat : ""
+            ).trim();
+
+            log.info("Datos obtenidos - Email: {}, Nombre: {}", email, nombreCompleto);
+
+        } catch (Exception e) {
+            log.warn("No se encontró personal para usuario ID: {} - {}", idUsuario, e.getMessage());
+        }
+
+        if (email == null || email.isBlank()) {
+            throw new RuntimeException("El usuario no tiene correo electrónico registrado");
+        }
+
+        if (nombreCompleto == null || nombreCompleto.isBlank()) {
+            nombreCompleto = usuario.getNameUser();
+        }
+
+        log.info("Enviando email de activación a: {} para usuario: {}", email, nombreCompleto);
+
+        return passwordTokenService.crearTokenYEnviarEmailDirecto(
+                usuario, email, nombreCompleto, "BIENVENIDO");
+    }
+
+    /**
+     * Elimina un usuario pendiente de activación para que pueda volver a registrarse.
+     * Solo elimina usuarios que tienen requiere_cambio_password = true (nunca activaron su cuenta)
+     * También elimina el registro de personal asociado y la solicitud original.
+     */
+    @Transactional
+    public void eliminarUsuarioPendienteActivacion(Long idUsuario) {
+        log.info("Eliminando usuario pendiente de activación ID: {}", idUsuario);
+
+        Usuario usuario = usuarioRepository.findById(idUsuario)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+        // Verificar que el usuario realmente está pendiente de activación
+        if (usuario.getRequiereCambioPassword() == null || !usuario.getRequiereCambioPassword()) {
+            throw new RuntimeException("Este usuario ya ha activado su cuenta y no puede ser eliminado de esta forma");
+        }
+
+        String numDocumento = usuario.getNameUser();
+        Long idPersonal = null;
+
+        // Obtener ID de personal antes de eliminar la referencia
+        if (usuario.getPersonalCnt() != null) {
+            idPersonal = usuario.getPersonalCnt().getIdPers();
+        }
+
+        // 1. Eliminar permisos del usuario (si existen) - usando SQL directo
+        String sqlPermisos = "DELETE FROM permisos_modulares WHERE id_user = ?";
+        int permisosEliminados = jdbcTemplate.update(sqlPermisos, idUsuario);
+        log.info("Permisos eliminados: {} para usuario ID: {}", permisosEliminados, idUsuario);
+
+        // 2. Eliminar relación usuario-rol (si existe) - usando SQL directo
+        String sqlRoles = "DELETE FROM rel_user_roles WHERE id_user = ?";
+        int rolesEliminados = jdbcTemplate.update(sqlRoles, idUsuario);
+        log.info("Roles eliminados: {} para usuario ID: {}", rolesEliminados, idUsuario);
+
+        // 3. Primero desvinculamos el personal del usuario (para evitar FK constraint)
+        if (idPersonal != null) {
+            String sqlDesvincular = "UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_pers = ?";
+            jdbcTemplate.update(sqlDesvincular, idPersonal);
+            log.info("Personal desvinculado del usuario");
+        }
+
+        // 4. Eliminar usuario usando SQL directo (evita problemas de cascada)
+        String sqlDeleteUsuario = "DELETE FROM dim_usuarios WHERE id_user = ?";
+        int usuarioEliminado = jdbcTemplate.update(sqlDeleteUsuario, idUsuario);
+        log.info("Usuario eliminado: {} (filas afectadas: {})", numDocumento, usuarioEliminado);
+
+        // 5. Ahora eliminar el personal huérfano
+        if (idPersonal != null) {
+            String sqlDeletePersonal = "DELETE FROM dim_personal_cnt WHERE id_pers = ?";
+            int personalEliminado = jdbcTemplate.update(sqlDeletePersonal, idPersonal);
+            log.info("Personal eliminado: {} (filas afectadas: {})", idPersonal, personalEliminado);
+        }
+
+        // 6. Actualizar la solicitud original para que pueda volver a registrarse
+        String sqlUpdateSolicitud = """
+            UPDATE account_requests
+            SET estado = 'RECHAZADO',
+                observacion_admin = 'Usuario eliminado - Puede volver a registrarse',
+                fecha_respuesta = CURRENT_TIMESTAMP
+            WHERE num_documento = ? AND estado = 'APROBADO'
+        """;
+        int solicitudActualizada = jdbcTemplate.update(sqlUpdateSolicitud, numDocumento);
+        log.info("Solicitud actualizada: {} (filas afectadas: {})", numDocumento, solicitudActualizada);
+
+        log.info("Usuario pendiente de activación eliminado exitosamente: {} (ID: {})", numDocumento, idUsuario);
     }
 }

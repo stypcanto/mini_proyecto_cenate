@@ -100,16 +100,16 @@ public class SolicitudRegistroController {
             @RequestBody Map<String, String> body) {
         try {
             String motivoRechazo = body.getOrDefault("motivo", "Sin motivo especificado");
-            
+
             log.info("Rechazando solicitud ID: {}", id);
-            
+
             SolicitudRegistroDTO solicitud = accountRequestService.rechazarSolicitud(id, motivoRechazo);
-            
+
             return ResponseEntity.ok(Map.of(
                     "message", "Solicitud rechazada exitosamente",
                     "solicitud", solicitud
             ));
-            
+
         } catch (RuntimeException e) {
             log.error("Error al rechazar solicitud: {}", e.getMessage());
             return ResponseEntity.badRequest().body(Map.of(
@@ -117,6 +117,95 @@ public class SolicitudRegistroController {
             ));
         } catch (Exception e) {
             log.error("Error inesperado al rechazar solicitud", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Error al procesar la solicitud"
+            ));
+        }
+    }
+
+    // ================================================================
+    // ENDPOINTS PARA USUARIOS PENDIENTES DE ACTIVACIÓN
+    // ================================================================
+
+    /**
+     * Lista usuarios que fueron aprobados pero aún no han activado su cuenta
+     * (requiere_cambio_password = true)
+     */
+    @GetMapping("/admin/usuarios/pendientes-activacion")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> listarUsuariosPendientesActivacion() {
+        try {
+            log.info("Listando usuarios pendientes de activación");
+            return ResponseEntity.ok(accountRequestService.listarUsuariosPendientesActivacion());
+        } catch (Exception e) {
+            log.error("Error al listar usuarios pendientes: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Error al obtener usuarios pendientes"
+            ));
+        }
+    }
+
+    /**
+     * Reenvía el email de activación a un usuario específico
+     */
+    @PostMapping("/admin/usuarios/{idUsuario}/reenviar-activacion")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> reenviarEmailActivacion(@PathVariable Long idUsuario) {
+        try {
+            log.info("Reenviando email de activación a usuario ID: {}", idUsuario);
+
+            boolean enviado = accountRequestService.reenviarEmailActivacion(idUsuario);
+
+            if (enviado) {
+                return ResponseEntity.ok(Map.of(
+                        "message", "Email de activación reenviado exitosamente",
+                        "success", true
+                ));
+            } else {
+                return ResponseEntity.badRequest().body(Map.of(
+                        "error", "No se pudo enviar el email de activación",
+                        "success", false
+                ));
+            }
+
+        } catch (RuntimeException e) {
+            log.error("Error al reenviar email: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        } catch (Exception e) {
+            log.error("Error inesperado al reenviar email", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Error al procesar la solicitud"
+            ));
+        }
+    }
+
+    /**
+     * Elimina un usuario pendiente de activación para que pueda volver a registrarse.
+     * Solo elimina usuarios que tienen requiere_cambio_password = true (nunca activaron su cuenta)
+     */
+    @DeleteMapping("/admin/usuarios/{idUsuario}/pendiente-activacion")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> eliminarUsuarioPendiente(@PathVariable Long idUsuario) {
+        try {
+            log.info("Eliminando usuario pendiente de activación ID: {}", idUsuario);
+
+            accountRequestService.eliminarUsuarioPendienteActivacion(idUsuario);
+
+            return ResponseEntity.ok(Map.of(
+                    "message", "Usuario eliminado exitosamente. Ahora puede volver a registrarse.",
+                    "success", true
+            ));
+
+        } catch (RuntimeException e) {
+            log.error("Error al eliminar usuario: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage(),
+                    "success", false
+            ));
+        } catch (Exception e) {
+            log.error("Error inesperado al eliminar usuario", e);
             return ResponseEntity.internalServerError().body(Map.of(
                     "error", "Error al procesar la solicitud"
             ));

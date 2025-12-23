@@ -111,7 +111,7 @@ const UsersManagement = () => {
   const applyFilters = useCallback((usersList) => {
     let filtered = [...usersList];
 
-    // 🔍 Búsqueda general (nombre, usuario, documento, IPRESS)
+    // 🔍 Búsqueda general (nombre, usuario, documento, IPRESS, email)
     if (searchTerm && searchTerm.trim() !== '') {
       const searchLower = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(user => {
@@ -119,11 +119,16 @@ const UsersManagement = () => {
         const username = (user.username || '').toLowerCase();
         const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
         const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
-        
+        // 📧 Campos de email (personal y corporativo) - Backend envía en snake_case
+        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
+        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
+
         return nombreCompleto.includes(searchLower) ||
                username.includes(searchLower) ||
                numeroDocumento.includes(searchLower) ||
-               nombreIpress.includes(searchLower);
+               nombreIpress.includes(searchLower) ||
+               emailPersonal.includes(searchLower) ||
+               emailCorporativo.includes(searchLower);
       });
     }
 

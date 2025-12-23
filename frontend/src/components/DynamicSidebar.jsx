@@ -11,6 +11,7 @@ import React, { useState, useMemo, useEffect } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import usePermissions from "../hooks/usePermissions";
+import { VERSION } from "../config/version";
 import {
   LayoutDashboard,
   Users,
@@ -283,6 +284,12 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         </div>
       )}
 
+      {/* Version del Sistema */}
+      <div className="flex-shrink-0 border-t border-slate-700/50 py-2 px-3">
+        <p className={`text-slate-500 text-center ${collapsed ? 'text-[10px]' : 'text-xs'}`}>
+          v{VERSION.number}
+        </p>
+      </div>
 
     </div>
   );

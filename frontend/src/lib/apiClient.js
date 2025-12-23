@@ -51,6 +51,7 @@ async function handleResponse(response) {
   if (!response.ok) {
     const errorMessage =
       (data && data.message) ||
+      (data && data.error) ||
       (typeof data === "string" ? data : null) ||
       `HTTP ${response.status} - ${response.statusText}`;
 

@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiClient } from "../lib/apiClient";
+import { VERSION } from "../config/version";
 
 export default function CrearCuenta() {
   const navigate = useNavigate();
@@ -205,9 +206,8 @@ export default function CrearCuenta() {
       toast.success("Solicitud enviada correctamente");
     } catch (err) {
       console.error(err);
-      toast.error(
-        err.response?.data?.message || "Error al enviar la solicitud"
-      );
+      // El mensaje viene directamente en err.message desde apiClient
+      toast.error(err.message || "Error al enviar la solicitud");
     } finally {
       setLoading(false);
     }
@@ -283,6 +283,16 @@ export default function CrearCuenta() {
 
             <p className="text-center text-sm text-slate-500 mt-4">
               Tiempo estimado de aprobación: 24-48 horas
+            </p>
+
+            <p className="text-center text-xs text-slate-400 mt-3">
+              ¿No recibió respuesta? Contáctenos:{" "}
+              <a
+                href="mailto:cenate.analista@essalud.gob.pe"
+                className="text-blue-600 hover:underline"
+              >
+                cenate.analista@essalud.gob.pe
+              </a>
             </p>
           </div>
         </div>
@@ -746,7 +756,7 @@ export default function CrearCuenta() {
 
       {/* Versión */}
       <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 text-center text-white/80 text-sm drop-shadow z-10">
-        CENATE v1.0 – Plataforma institucional
+        CENATE v{VERSION.number} – Plataforma institucional
       </div>
     </div>
   );

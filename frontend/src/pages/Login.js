@@ -18,6 +18,7 @@ import {
   Info,
   CheckCircle2,
 } from "lucide-react";
+import { VERSION } from "../config/version";
 import { useAuth } from "../context/AuthContext";
 import { Link, useNavigate } from "react-router-dom";
 import ForgotPasswordModal from "../components/modals/ForgotPasswordModal";
@@ -176,11 +177,16 @@ export default function Login() {
               </label>
               <input
                 type="text"
-                placeholder="Tu usuario institucional"
+                placeholder="DNI / Pasaporte / CE"
                 value={formData.username}
-                onChange={(e) =>
-                  setFormData({ ...formData, username: e.target.value })
-                }
+                onChange={(e) => {
+                  // Solo permitir números y letras (para DNI, pasaporte, carnet extranjería)
+                  const value = e.target.value.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+                  setFormData({ ...formData, username: value });
+                }}
+                maxLength={12}
+                inputMode="numeric"
+                autoComplete="username"
                 className={`w-full px-4 py-3 border-2 rounded-xl text-gray-800 placeholder-gray-400 transition-all focus:outline-none focus:ring-4 ${
                   errors.username
                     ? "border-red-400 focus:ring-red-100"
@@ -357,7 +363,7 @@ export default function Login() {
 
         {/* Versión */}
         <div className="mt-4 text-center text-white/90 text-sm drop-shadow">
-          CENATE v1.0 – Plataforma institucional
+          CENATE v{VERSION.number} – Plataforma institucional
         </div>
       </div>
     </div>

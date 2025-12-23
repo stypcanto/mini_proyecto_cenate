@@ -120,6 +120,24 @@ public class PasswordTokenService {
      */
     @Transactional
     public boolean crearTokenYEnviarEmailDirecto(Usuario usuario, String email, String tipoAccion) {
+        // Obtener nombre completo de forma segura (evita lazy loading)
+        String nombreCompleto = usuario.getNameUser(); // Por defecto el username
+        try {
+            if (usuario.getPersonalCnt() != null && usuario.getPersonalCnt().getNombreCompleto() != null) {
+                nombreCompleto = usuario.getPersonalCnt().getNombreCompleto();
+            }
+        } catch (Exception e) {
+            log.warn("No se pudo obtener nombre completo, usando username: {}", usuario.getNameUser());
+        }
+        return crearTokenYEnviarEmailDirecto(usuario, email, nombreCompleto, tipoAccion);
+    }
+
+    /**
+     * Crea un token de cambio de contraseña y envía email con nombre completo explícito
+     * (usado cuando el nombre ya está disponible, evita problemas de lazy loading)
+     */
+    @Transactional
+    public boolean crearTokenYEnviarEmailDirecto(Usuario usuario, String email, String nombreCompleto, String tipoAccion) {
         if (email == null || email.isBlank()) {
             log.warn("Email vacío para usuario {}", usuario.getNameUser());
             return false;
@@ -144,9 +162,11 @@ public class PasswordTokenService {
 
         // Enviar email con enlace
         String enlace = frontendUrl + "/cambiar-contrasena?token=" + token;
+        log.info("Enviando correo de {} a {} con enlace: {}", tipoAccion, email, enlace);
+
         emailService.enviarCorreoCambioContrasena(
             email,
-            usuario.getNombreCompleto(),
+            nombreCompleto != null ? nombreCompleto : usuario.getNameUser(),
             usuario.getNameUser(),
             enlace,
             TOKEN_EXPIRATION_HOURS,

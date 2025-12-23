@@ -10,6 +10,7 @@ import React, { useState } from "react";
 import { ArrowLeft, Send, AlertCircle, Info, CheckCircle2 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { apiClient } from "../lib/apiClient";
+import { VERSION } from "../config/version";
 
 export default function PasswordRecovery() {
   const [username, setUsername] = useState("");
@@ -159,7 +160,7 @@ export default function PasswordRecovery() {
 
         {/* Versión */}
         <div className="mt-4 text-center text-white/90 text-sm drop-shadow">
-          CENATE v1.0 – Plataforma institucional
+          CENATE v{VERSION.number} – Plataforma institucional
         </div>
       </div>
     </div>
