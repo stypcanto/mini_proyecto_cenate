@@ -122,5 +122,10 @@ public class SolicitudController {
 
 		return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
 	}
+	
+	
+	
+	
+	
 
 }
