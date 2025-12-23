@@ -4,6 +4,169 @@
 
 ---
 
+## v1.7.8 (2025-12-23) - Integracion ChatBot de Citas
+
+### Sistema de Solicitud de Citas Medicas via ChatBot
+
+Se integro el modulo de ChatBot desarrollado externamente (`chatbot-erick`) al proyecto principal React, migrando los archivos HTML a componentes React siguiendo los patrones del sistema.
+
+**Funcionalidades principales:**
+
+| Funcionalidad | Descripcion |
+|---------------|-------------|
+| Consulta de paciente | Buscar por DNI, obtener datos y servicios disponibles |
+| Disponibilidad | Ver fechas y horarios disponibles por servicio |
+| Solicitud de cita | Generar solicitud con validacion de conflictos |
+| Dashboard reportes | KPIs, filtros avanzados, tabla paginada, exportar CSV |
+
+### Archivos Creados
+
+**Servicio API:**
+```
+frontend/src/services/chatbotService.js
+```
+
+Funciones disponibles:
+- `consultarPaciente(documento)` - Consultar datos del paciente
+- `getFechasDisponibles(codServicio)` - Obtener fechas disponibles
+- `getSlotsDisponibles(fecha, codServicio)` - Obtener horarios disponibles
+- `crearSolicitud(solicitud)` - Crear solicitud de cita
+- `buscarCitas(filtros)` - Buscar citas con filtros
+- `getKPIs(filtros)` - Obtener KPIs del dashboard
+- Y mas...
+
+**Componentes React:**
+```
+frontend/src/pages/chatbot/ChatbotCita.jsx     - Wizard de 3 pasos
+frontend/src/pages/chatbot/ChatbotBusqueda.jsx - Dashboard de reportes
+```
+
+**Script SQL para menu dinamico:**
+```
+spec/sql/chatbot_menu_setup.sql
+```
+
+### Rutas Configuradas
+
+```jsx
+// App.js - Nuevas rutas protegidas
+<Route path="/chatbot/cita" element={<ChatbotCita />} />
+<Route path="/chatbot/busqueda" element={<ChatbotBusqueda />} />
+```
+
+### Flujo del Wizard (ChatbotCita.jsx)
+
+```
+Paso 1: Consultar Paciente
+├── Input: Numero de documento (DNI/CE)
+├── Endpoint: GET /api/chatbot/documento/{doc}
+└── Output: Datos del paciente + servicios disponibles
+
+Paso 2: Seleccionar Disponibilidad
+├── 2a. Seleccionar servicio
+│   ├── Endpoint: GET /api/v2/chatbot/disponibilidad/servicio?codServicio=
+│   └── Output: Lista de fechas disponibles
+├── 2b. Seleccionar horario
+│   ├── Endpoint: GET /api/v2/chatbot/disponibilidad/servicio-detalle?fecha_cita=&cod_servicio=
+│   └── Output: Lista de slots con profesionales
+
+Paso 3: Confirmar Solicitud
+├── Resumen de cita seleccionada
+├── Campo de observaciones
+├── Endpoint: POST /api/v1/chatbot/solicitud
+└── Output: Confirmacion con numero de solicitud
+```
+
+### Dashboard de Reportes (ChatbotBusqueda.jsx)
+
+**KPIs mostrados:**
+- Total de citas
+- Citas reservadas
+- Pacientes unicos
+- Profesionales activos
+
+**Filtros disponibles:**
+- Fecha inicio/fin
+- Periodo (YYYYMM)
+- DNI Paciente
+- DNI Personal
+- Area hospitalaria
+- Servicio
+- Estado
+
+**Funcionalidades:**
+- Tabla paginada (10 registros por pagina)
+- Exportar a CSV
+- Mostrar/Ocultar filtros
+- Badges de estado con colores
+
+### Iconos Agregados
+
+```javascript
+// DynamicSidebar.jsx - Nuevos iconos de Lucide
+import { MessageSquare, Bot } from "lucide-react";
+
+const iconMap = {
+  // ... iconos existentes
+  'MessageSquare': MessageSquare,
+  'Bot': Bot,
+};
+```
+
+### Endpoints Backend Utilizados
+
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| GET | `/api/chatbot/documento/{doc}` | Consultar paciente |
+| GET | `/api/chatbot/atencioncenate` | Atenciones CENATE |
+| GET | `/api/chatbot/atencionglobal/{doc}` | Atenciones globales |
+| GET | `/api/v2/chatbot/disponibilidad/servicio` | Fechas disponibles |
+| GET | `/api/v2/chatbot/disponibilidad/servicio-detalle` | Slots horarios |
+| POST | `/api/v1/chatbot/solicitud` | Crear solicitud |
+| PUT | `/api/v1/chatbot/solicitud/{id}` | Actualizar solicitud |
+| PUT | `/api/v1/chatbot/solicitud/estado/{id}` | Cambiar estado |
+| GET | `/api/v1/chatbot/solicitud/paciente/{doc}` | Solicitudes del paciente |
+| GET | `/api/v1/chatbot/estado-cita` | Catalogo de estados |
+| GET | `/api/v1/chatbot/reportes/citas/buscar` | Busqueda avanzada |
+
+### Configuracion del Menu (Base de Datos)
+
+Para activar el menu en el sidebar, ejecutar:
+
+```sql
+-- Crear modulo
+INSERT INTO dim_modulos_sistema (nombre, icono, orden, activo)
+VALUES ('ChatBot Citas', 'Bot', 15, true);
+
+-- Crear paginas
+INSERT INTO dim_pagina_modulo (id_modulo, nombre, ruta, orden, activo)
+SELECT id_modulo, 'Solicitar Cita', '/chatbot/cita', 1, true
+FROM dim_modulos_sistema WHERE nombre = 'ChatBot Citas';
+
+INSERT INTO dim_pagina_modulo (id_modulo, nombre, ruta, orden, activo)
+SELECT id_modulo, 'Dashboard Citas', '/chatbot/busqueda', 2, true
+FROM dim_modulos_sistema WHERE nombre = 'ChatBot Citas';
+
+-- Asignar permisos (ver script completo en spec/sql/chatbot_menu_setup.sql)
+```
+
+### Documentacion Tecnica
+
+Se creo documento de analisis arquitectural completo:
+```
+spec/006_chatbot_citas_ANALYSIS.md
+```
+
+Contenido:
+- Analisis de impacto (Backend, Frontend, BD)
+- Propuesta de solucion
+- Plan de implementacion por fases
+- Diagramas de arquitectura
+- Esquemas de tablas SQL
+- Checklist de validacion
+
+---
+
 ## v1.7.7 (2025-12-23) - Documentacion de Usuarios
 
 ### Especificacion tecnica del sistema de usuarios

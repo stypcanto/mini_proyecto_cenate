@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.7.7** (2025-12-23)
+> Sistema de Telemedicina - EsSalud | **v1.7.8** (2025-12-23)
 
 ---
 
@@ -25,7 +25,10 @@ mini_proyecto_cenate/
 │   ├── 002_changelog.md              # Historial de cambios
 │   ├── 003_api_endpoints.md          # Endpoints API REST
 │   ├── 004_arquitectura.md           # Diagramas y arquitectura
-│   └── 005_troubleshooting.md        # Solucion de problemas
+│   ├── 005_troubleshooting.md        # Solucion de problemas
+│   ├── 006_plan_auditoria.md         # Plan de auditoria
+│   └── scripts/
+│       └── 001_audit_view_and_indexes.sql  # Script BD auditoria
 │
 ├── backend/                          # Spring Boot API (puerto 8080)
 │   └── src/main/java/com/styp/cenate/
@@ -99,6 +102,100 @@ Password: @Cenate2025
 
 ---
 
+## Modulo de Auditoria
+
+### Arquitectura
+
+```
+Accion del Usuario
+       ↓
+Service (UsuarioServiceImpl, AccountRequestService, etc.)
+       ↓
+AuditLogService.registrarEvento()
+       ↓
+Tabla: audit_logs
+       ↓
+API: /api/auditoria/ultimos
+       ↓
+Frontend: LogsDelSistema.jsx
+```
+
+### Servicios con Auditoria Integrada
+
+| Servicio | Acciones Auditadas |
+|----------|-------------------|
+| **UsuarioServiceImpl** | CREATE_USER, DELETE_USER, ACTIVATE_USER, DEACTIVATE_USER, UNLOCK_USER |
+| **AccountRequestService** | APPROVE_REQUEST, REJECT_REQUEST, DELETE_PENDING_USER, CLEANUP_ORPHAN_DATA |
+| **AuthenticationServiceImpl** | LOGIN, LOGIN_FAILED, LOGOUT, PASSWORD_CHANGE |
+
+### Patron de Implementacion
+
+```java
+// 1. Inyectar servicio
+private final AuditLogService auditLogService;
+
+// 2. Metodo helper
+private void auditar(String action, String detalle, String nivel, String estado) {
+    try {
+        String usuario = SecurityContextHolder.getContext().getAuthentication().getName();
+        auditLogService.registrarEvento(usuario, action, "MODULO", detalle, nivel, estado);
+    } catch (Exception e) {
+        log.warn("No se pudo registrar auditoria: {}", e.getMessage());
+    }
+}
+
+// 3. Uso en metodos
+public void eliminarUsuario(Long id) {
+    Usuario u = repo.findById(id).orElseThrow();
+    repo.delete(u);
+    auditar("DELETE_USER", "Usuario eliminado: " + u.getNameUser(), "WARNING", "SUCCESS");
+}
+```
+
+### Acciones Estandarizadas
+
+```
+// Autenticacion
+LOGIN, LOGOUT, LOGIN_FAILED, PASSWORD_CHANGE, PASSWORD_RESET
+
+// Usuarios
+CREATE_USER, UPDATE_USER, DELETE_USER, ACTIVATE_USER, DEACTIVATE_USER, UNLOCK_USER
+
+// Solicitudes
+APPROVE_REQUEST, REJECT_REQUEST, DELETE_PENDING_USER, CLEANUP_ORPHAN_DATA
+
+// Niveles
+INFO, WARNING, ERROR, CRITICAL
+
+// Estados
+SUCCESS, FAILURE
+```
+
+### Frontend - LogsDelSistema.jsx
+
+Ubicacion: `/admin/logs`
+
+Caracteristicas:
+- Filtros por usuario, modulo, accion, fechas
+- Exportacion a CSV
+- Estadisticas (total, hoy, semana, usuarios activos)
+- Paginacion de 20 registros
+
+### Script SQL
+
+```bash
+# Ejecutar para crear vista e indices
+PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+  -f spec/scripts/001_audit_view_and_indexes.sql
+```
+
+### Documentacion Relacionada
+
+- Plan de accion: `spec/006_plan_auditoria.md`
+- Scripts SQL: `spec/scripts/001_audit_view_and_indexes.sql`
+
+---
+
 ## Instrucciones para Claude
 
 ### Al implementar nuevos features:
@@ -119,6 +216,8 @@ Password: @Cenate2025
 - **Troubleshooting**: `spec/005_troubleshooting.md`
 - **Changelog**: `spec/002_changelog.md`
 - **Modelo Usuarios**: `spec/001_espec_users_bd.md`
+- **Plan Auditoria**: `spec/006_plan_auditoria.md`
+- **Scripts SQL**: `spec/scripts/`
 
 ---
 

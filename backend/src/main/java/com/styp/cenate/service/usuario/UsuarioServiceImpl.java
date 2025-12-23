@@ -24,6 +24,8 @@ import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
 import com.styp.cenate.dto.mbac.RolResponse;
 import com.styp.cenate.service.email.EmailService;
 import com.styp.cenate.service.security.PasswordTokenService;
+import com.styp.cenate.service.auditlog.AuditLogService;
+import org.springframework.security.core.context.SecurityContextHolder;
 import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Rol;
@@ -66,6 +68,25 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 	private final DimOrigenPersonalRepository repositorioOrigenPersonal;
 	private final JdbcTemplate jdbcTemplate;
+	private final AuditLogService auditLogService;
+
+	// =============================================================
+	// 🔒 MÉTODO HELPER PARA AUDITORÍA
+	// =============================================================
+	private void auditar(String action, String detalle, String nivel, String estado) {
+		try {
+			String usuario = "SYSTEM";
+			try {
+				var auth = SecurityContextHolder.getContext().getAuthentication();
+				if (auth != null && auth.getName() != null) {
+					usuario = auth.getName();
+				}
+			} catch (Exception ignored) {}
+			auditLogService.registrarEvento(usuario, action, "USUARIOS", detalle, nivel, estado);
+		} catch (Exception e) {
+			log.warn("⚠️ No se pudo registrar auditoría: {}", e.getMessage());
+		}
+	}
 
 	// =============================================================
 	// 🟢 CREAR USUARIO
@@ -359,6 +380,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 		} else {
 			log.warn("⚠️ No se pudo enviar correo: el usuario no tiene email registrado");
 		}
+
+		// 🔒 AUDITORÍA
+		auditar("CREATE_USER", "Usuario creado: " + usuario.getNameUser() + " (ID: " + usuario.getIdUser() + ")", "INFO", "SUCCESS");
 
 		return convertToResponse(usuario);
 	}
@@ -1079,6 +1103,9 @@ public class UsuarioServiceImpl implements UsuarioService {
 		usuarioRepository.delete(usuario);
 		log.info("  - Usuario eliminado: {}", numDocumento);
 
+		// 🔒 AUDITORÍA
+		auditar("DELETE_USER", "Usuario eliminado: " + numDocumento + " (ID: " + id + ")", "WARNING", "SUCCESS");
+
 		// 5. Eliminar personal huérfano
 		if (idPersonal != null) {
 			int personal = jdbcTemplate.update("DELETE FROM dim_personal_cnt WHERE id_pers = ?", idPersonal);
@@ -1120,6 +1147,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		usuarioRepository.save(usuario);
 		log.info("✅ Usuario {} activado correctamente", usuario.getNameUser());
+
+		// 🔒 AUDITORÍA
+		auditar("ACTIVATE_USER", "Usuario activado: " + usuario.getNameUser() + " (ID: " + id + ")", "INFO", "SUCCESS");
+
 		return convertToResponse(usuario);
 	}
 
@@ -1142,6 +1173,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		usuarioRepository.save(usuario);
 		log.info("✅ Usuario {} desactivado correctamente", usuario.getNameUser());
+
+		// 🔒 AUDITORÍA
+		auditar("DEACTIVATE_USER", "Usuario desactivado: " + usuario.getNameUser() + " (ID: " + id + ")", "WARNING", "SUCCESS");
+
 		return convertToResponse(usuario);
 	}
 
@@ -1153,6 +1188,10 @@ public class UsuarioServiceImpl implements UsuarioService {
 		usuario.setLockedUntil(null);
 		usuario.setFailedAttempts(0);
 		usuarioRepository.save(usuario);
+
+		// 🔒 AUDITORÍA
+		auditar("UNLOCK_USER", "Usuario desbloqueado: " + usuario.getNameUser() + " (ID: " + id + ")", "INFO", "SUCCESS");
+
 		return convertToResponse(usuario);
 	}
 

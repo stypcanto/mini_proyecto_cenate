@@ -97,15 +97,85 @@ POST /api/auth/login
 
 ---
 
-## Chatbot (Endpoints Publicos)
+## ChatBot de Citas
+
+### Consulta de Paciente
 
 | Metodo | Endpoint | Descripcion |
 |--------|----------|-------------|
-| GET | `/api/chatbot/documento/{dni}` | Consultar paciente |
-| GET | `/api/chatbot/atencioncenate` | Atenciones CENATE |
-| GET | `/api/chatbot/atencionglobal/{dni}` | Atenciones globales |
-| GET | `/api/disponibilidad/por-servicio` | Disponibilidad citas |
-| POST | `/api/solicitud` | Crear solicitud cita |
+| GET | `/api/chatbot/documento/{dni}` | Consultar paciente con servicios disponibles |
+| GET | `/api/chatbot/atencioncenate?documento={dni}` | Listar atenciones CENATE |
+| GET | `/api/chatbot/atencioncenate/buscar?documento={dni}&servicio={svc}` | Buscar por servicio |
+| GET | `/api/chatbot/atencionglobal/{dni}` | Listar atenciones globales |
+| GET | `/api/chatbot/atencionglobal/doc-codservicio?documento={dni}&codServicio={cod}` | Buscar por codigo |
+| GET | `/api/chatbot/atencionglobal/doc-nomservicio?documento={dni}&servicio={svc}` | Buscar por nombre |
+
+### Disponibilidad (API v2)
+
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| GET | `/api/v2/chatbot/disponibilidad/servicio?codServicio={cod}` | Fechas disponibles |
+| GET | `/api/v2/chatbot/disponibilidad/servicio-detalle?fecha_cita={fecha}&cod_servicio={cod}` | Slots horarios |
+
+### Solicitudes de Cita
+
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| POST | `/api/v1/chatbot/solicitud` | Crear solicitud |
+| PUT | `/api/v1/chatbot/solicitud/{id}` | Actualizar solicitud |
+| PUT | `/api/v1/chatbot/solicitud/estado/{id}?estado={estado}` | Cambiar estado |
+| GET | `/api/v1/chatbot/solicitud/{id}` | Obtener por ID |
+| GET | `/api/v1/chatbot/solicitud/paciente/{dni}` | Solicitudes del paciente |
+
+### Estados de Cita
+
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| GET | `/api/v1/chatbot/estado-cita` | Catalogo de estados |
+
+### Reportes y Dashboard
+
+| Metodo | Endpoint | Descripcion |
+|--------|----------|-------------|
+| GET | `/api/v1/chatbot/reportes/dashboard/kpis` | KPIs del dashboard |
+| GET | `/api/v1/chatbot/reportes/dashboard/estado-paciente` | Distribucion por estado |
+| GET | `/api/v1/chatbot/reportes/dashboard/top-servicios` | Top 10 servicios |
+| GET | `/api/v1/chatbot/reportes/dashboard/evolucion` | Evolucion temporal |
+| GET | `/api/v1/chatbot/reportes/dashboard/top-profesionales` | Top profesionales |
+| GET | `/api/v1/chatbot/reportes/citas/buscar` | Busqueda avanzada |
+
+### Crear Solicitud Request
+
+```json
+POST /api/v1/chatbot/solicitud
+{
+  "periodo": "202512",
+  "docPaciente": "70073164",
+  "telefono": "987654321",
+  "fechaCita": "2025-12-26",
+  "horaCita": "09:00:00",
+  "observacion": "Primera consulta",
+  "idServicio": 82,
+  "idActividad": 6,
+  "idSubactividad": 472,
+  "idAreaHospitalaria": 1,
+  "idPersonal": 171
+}
+```
+
+### Busqueda Avanzada Parametros
+
+```
+GET /api/v1/chatbot/reportes/citas/buscar?
+  fi=2025-12-01          # Fecha inicio (YYYY-MM-DD)
+  ff=2025-12-31          # Fecha fin
+  periodo=202512         # Periodo (YYYYMM)
+  docPaciente=70073164   # DNI paciente
+  numDocPers=12345678    # DNI profesional
+  areaHosp=Consulta      # Area hospitalaria
+  servicio=Medicina      # Servicio
+  estadoPaciente=RESERVADO  # Estado
+```
 
 ---
 

@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.7.5",
-  name: "Panel de Activaciones Mejorado",
+  number: "1.7.8",
+  name: "Integracion ChatBot de Citas",
   date: "2025-12-23",
-  description: "Panel completo para gestión de usuarios pendientes de activación con buscador"
+  description: "Sistema de solicitud de citas medicas via ChatBot con wizard de 3 pasos y dashboard de reportes"
 };
 
 export const APP_INFO = {

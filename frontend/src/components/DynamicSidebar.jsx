@@ -50,6 +50,8 @@ import {
   Layers,
   BoxSelect,
   Folder,
+  MessageSquare,
+  Bot,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -87,6 +89,8 @@ const iconMap = {
   'Activity': Activity,
   'Layers': Layers,
   'BoxSelect': BoxSelect,
+  'MessageSquare': MessageSquare,
+  'Bot': Bot,
 };
 
 const getIconComponent = (iconName) => {

@@ -18,6 +18,7 @@ import com.styp.cenate.model.TipoDocumento;
 import com.styp.cenate.service.email.EmailService;
 import com.styp.cenate.service.mbac.PermisosService;
 import com.styp.cenate.service.security.PasswordTokenService;
+import com.styp.cenate.service.auditlog.AuditLogService;
 import com.styp.cenate.dto.mbac.PermisoUsuarioRequestDTO;
 
 import java.time.LocalDate;
@@ -50,6 +51,25 @@ public class AccountRequestService {
     private final EmailService emailService;
     private final PermisosService permisosService;
     private final PasswordTokenService passwordTokenService;
+    private final AuditLogService auditLogService;
+
+    // ================================================================
+    // MÉTODO HELPER PARA AUDITORÍA
+    // ================================================================
+    private void auditar(String action, String detalle, String nivel, String estado) {
+        try {
+            String usuario = "SYSTEM";
+            try {
+                var auth = SecurityContextHolder.getContext().getAuthentication();
+                if (auth != null && auth.getName() != null) {
+                    usuario = auth.getName();
+                }
+            } catch (Exception ignored) {}
+            auditLogService.registrarEvento(usuario, action, "SOLICITUDES", detalle, nivel, estado);
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo registrar auditoría: {}", e.getMessage());
+        }
+    }
 
     @Transactional
     public SolicitudRegistroDTO crearSolicitud(SolicitudRegistroDTO dto) {
@@ -175,6 +195,12 @@ public class AccountRequestService {
             solicitud = accountRequestRepository.save(solicitud);
 
             log.info("Solicitud aprobada, usuario y personal creados: {}", solicitud.getNumDocumento());
+
+            // Registrar en auditoría
+            auditar("APPROVE_REQUEST",
+                    String.format("Solicitud aprobada ID:%d - Usuario creado: %s (%s)",
+                            idRequest, solicitud.getNumDocumento(), solicitud.getNombreCompleto()),
+                    "INFO", "SUCCESS");
 
             // Enviar correo con enlace para configurar contraseña (sistema seguro de tokens)
             Usuario usuarioNuevo = usuarioRepository.findById(idUsuario).orElse(null);
@@ -364,6 +390,12 @@ public class AccountRequestService {
         solicitud = accountRequestRepository.save(solicitud);
 
         log.info("Solicitud rechazada: {}", solicitud.getNumDocumento());
+
+        // Registrar en auditoría
+        auditar("REJECT_REQUEST",
+                String.format("Solicitud rechazada ID:%d - DNI: %s (%s). Motivo: %s",
+                        idRequest, solicitud.getNumDocumento(), solicitud.getNombreCompleto(), motivoRechazo),
+                "WARNING", "SUCCESS");
 
         // Enviar correo de rechazo
         String emailDestino = solicitud.getCorreoPersonal() != null
@@ -629,6 +661,12 @@ public class AccountRequestService {
         int solicitudActualizada = jdbcTemplate.update(sqlUpdateSolicitud, numDocumento);
         log.info("Solicitud actualizada: {} (filas afectadas: {})", numDocumento, solicitudActualizada);
 
+        // Registrar en auditoría
+        auditar("DELETE_PENDING_USER",
+                String.format("Usuario pendiente eliminado - DNI: %s, ID: %d. Permitido re-registro",
+                        numDocumento, idUsuario),
+                "WARNING", "SUCCESS");
+
         log.info("Usuario pendiente de activación eliminado exitosamente: {} (ID: {})", numDocumento, idUsuario);
     }
 
@@ -722,6 +760,12 @@ public class AccountRequestService {
 
         resultado.put("totalRegistrosEliminados", totalEliminados);
         resultado.put("mensaje", "Datos huérfanos limpiados exitosamente para documento: " + numDocumento);
+
+        // Registrar en auditoría
+        auditar("CLEANUP_ORPHAN_DATA",
+                String.format("Datos huérfanos limpiados - DNI: %s. Usuarios: %d, Personales: %d, Solicitudes: %d",
+                        numDocumento, usuarios.size(), personales.size(), solicitudesActualizadas),
+                "WARNING", "SUCCESS");
 
         log.info("Limpieza completada para documento: {}. Total eliminados: {}", numDocumento, totalEliminados);
 

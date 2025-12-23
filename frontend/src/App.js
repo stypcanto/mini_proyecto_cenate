@@ -85,6 +85,10 @@ import ListadoIpress from "./pages/ipress/ListadoIpress";
 import BuscarAsegurado from "./pages/asegurados/BuscarAsegurado";
 import DashboardAsegurados from './pages/asegurados/DashboardAsegurados';
 
+// 🤖 Módulo ChatBot de Citas
+import ChatbotCita from "./pages/chatbot/ChatbotCita";
+import ChatbotBusqueda from "./pages/chatbot/ChatbotBusqueda";
+
 // TEST
 import TestUsuarios from "./pages/TestUsuarios";
 
@@ -433,6 +437,24 @@ function AppRoutes() {
         {/* 👥 Módulo de Asegurados */}
         <Route path="/asegurados/buscar" element={<BuscarAsegurado />} />
         <Route path="/asegurados/dashboard" element={<DashboardAsegurados />} />
+
+        {/* 🤖 Módulo ChatBot de Citas */}
+        <Route
+          path="/chatbot/cita"
+          element={
+            <ProtectedRoute requiredPath="/chatbot/cita" requiredAction="ver">
+              <ChatbotCita />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/chatbot/busqueda"
+          element={
+            <ProtectedRoute requiredPath="/chatbot/busqueda" requiredAction="ver">
+              <ChatbotBusqueda />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 🗺️ Gestión Territorial */}
         <Route
