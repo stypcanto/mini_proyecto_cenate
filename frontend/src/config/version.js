@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.7.8",
-  name: "Integracion ChatBot de Citas",
+  number: "1.7.9",
+  name: "Dashboard ChatBot Mejorado",
   date: "2025-12-23",
-  description: "Sistema de solicitud de citas medicas via ChatBot con wizard de 3 pasos y dashboard de reportes"
+  description: "Correccion de mapeo de estado y columna de acciones para cambiar estado de citas"
 };
 
 export const APP_INFO = {

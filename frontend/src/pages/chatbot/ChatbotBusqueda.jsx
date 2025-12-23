@@ -79,6 +79,13 @@ export default function ChatbotBusqueda() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
+  // Estado para modal de cambio de estado
+  const [modalEstado, setModalEstado] = useState({ open: false, cita: null });
+  const [nuevoEstado, setNuevoEstado] = useState('');
+  const [observacionEstado, setObservacionEstado] = useState('');
+  const [catalogoEstados, setCatalogoEstados] = useState([]);
+  const [procesando, setProcesando] = useState(false);
+
   // Opciones para combos (se llenan desde los datos)
   const [opciones, setOpciones] = useState({
     periodos: [],
@@ -115,21 +122,62 @@ export default function ChatbotBusqueda() {
       periodos: uniq(data.map((x) => x.periodo)),
       areas: uniq(data.map((x) => x.area || x.areaHosp)),
       servicios: uniq(data.map((x) => x.desc_servicio || x.descServicio || x.servicio)),
-      estados: uniq(data.map((x) => x.cod_estado_cita || x.codEstadoCita || x.estadoPaciente || x.estado)),
+      estados: uniq(data.map((x) => x.desc_estado_paciente || x.descEstadoPaciente || x.estadoPaciente || x.estado)),
       profesionales: uniq(data.map((x) => x.profesional))
     });
   };
 
+  // Cargar catalogo de estados
+  const cargarCatalogoEstados = useCallback(async () => {
+    try {
+      const data = await chatbotService.getEstadosCita();
+      setCatalogoEstados(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Error al cargar catalogo de estados:', err);
+    }
+  }, []);
+
   // Cargar al montar
   useEffect(() => {
     cargarCitas();
+    cargarCatalogoEstados();
   }, []);
+
+  // Abrir modal de cambio de estado
+  const abrirModalEstado = (cita) => {
+    setModalEstado({ open: true, cita });
+    setNuevoEstado('');
+    setObservacionEstado('');
+  };
+
+  // Cerrar modal
+  const cerrarModalEstado = () => {
+    setModalEstado({ open: false, cita: null });
+    setNuevoEstado('');
+    setObservacionEstado('');
+  };
+
+  // Cambiar estado de cita
+  const cambiarEstadoCita = async () => {
+    if (!modalEstado.cita || !nuevoEstado) return;
+
+    setProcesando(true);
+    try {
+      await chatbotService.actualizarEstado(modalEstado.cita.id, nuevoEstado, observacionEstado);
+      cerrarModalEstado();
+      cargarCitas(); // Recargar datos
+    } catch (err) {
+      setError(err.message || 'Error al cambiar estado');
+    } finally {
+      setProcesando(false);
+    }
+  };
 
   // Calcular KPIs
   const calcularKPIs = () => {
     const totalCitas = citas.length;
     const citasReservadas = citas.filter(
-      (c) => (c.cod_estado_cita || c.codEstadoCita || c.estado || '').toUpperCase() === 'RESERVADO'
+      (c) => (c.desc_estado_paciente || c.descEstadoPaciente || c.estadoPaciente || c.estado || '').toUpperCase() === 'RESERVADO'
     ).length;
     const pacientesUnicos = new Set(citas.map((c) => c.doc_paciente || c.docPaciente)).size;
     const profesionalesActivos = new Set(citas.map((c) => c.profesional)).size;
@@ -224,7 +272,7 @@ export default function ChatbotBusqueda() {
     edad: c.edad,
     profesional: c.profesional,
     servicio: c.desc_servicio || c.descServicio || c.servicio,
-    estado: c.cod_estado_cita || c.codEstadoCita || c.estadoPaciente || c.estado
+    estado: c.desc_estado_paciente || c.descEstadoPaciente || c.estadoPaciente || c.estado
   });
 
   return (
@@ -453,12 +501,15 @@ export default function ChatbotBusqueda() {
                   <th className="px-6 py-4 text-left text-xs font-semibold text-gray-600 uppercase">
                     Estado
                   </th>
+                  <th className="px-6 py-4 text-center text-xs font-semibold text-gray-600 uppercase">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {citasPaginadas.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="px-6 py-8 text-center text-gray-500">
+                    <td colSpan="9" className="px-6 py-8 text-center text-gray-500">
                       No se encontraron citas
                     </td>
                   </tr>
@@ -493,6 +544,15 @@ export default function ChatbotBusqueda() {
                         </td>
                         <td className="px-6 py-4">
                           <EstadoBadge estado={c.estado} />
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => abrirModalEstado(c)}
+                            className="inline-flex items-center px-3 py-1.5 text-sm font-medium text-white bg-orange-500 hover:bg-orange-600 rounded-lg transition"
+                            title="Cambiar estado"
+                          >
+                            Editar
+                          </button>
                         </td>
                       </tr>
                     );
@@ -529,6 +589,84 @@ export default function ChatbotBusqueda() {
             </div>
           </div>
         </div>
+
+        {/* Modal de cambio de estado */}
+        {modalEstado.open && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full mx-4 p-6">
+              <div className="flex justify-between items-center mb-4">
+                <h3 className="text-xl font-bold text-gray-800">Cambiar Estado de Cita</h3>
+                <button
+                  onClick={cerrarModalEstado}
+                  className="text-gray-400 hover:text-gray-600 text-2xl"
+                >
+                  &times;
+                </button>
+              </div>
+
+              {modalEstado.cita && (
+                <div className="mb-4 p-3 bg-gray-50 rounded-lg">
+                  <p className="text-sm text-gray-600">
+                    <span className="font-medium">Cita #{modalEstado.cita.id}</span> - {modalEstado.cita.nombresPaciente}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {modalEstado.cita.fechaCita} {modalEstado.cita.horaCita}
+                  </p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Estado actual: <EstadoBadge estado={modalEstado.cita.estado} />
+                  </p>
+                </div>
+              )}
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Nuevo Estado
+                </label>
+                <select
+                  value={nuevoEstado}
+                  onChange={(e) => setNuevoEstado(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Seleccionar estado...</option>
+                  {catalogoEstados.map((est) => (
+                    <option key={est.cod_estado || est.codEstado || est.id} value={est.cod_estado || est.codEstado || est.codigo}>
+                      {est.desc_estado || est.descEstado || est.descripcion || est.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="mb-6">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Observacion (opcional)
+                </label>
+                <textarea
+                  value={observacionEstado}
+                  onChange={(e) => setObservacionEstado(e.target.value)}
+                  rows={3}
+                  placeholder="Motivo del cambio de estado..."
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+                />
+              </div>
+
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={cerrarModalEstado}
+                  className="px-4 py-2 text-gray-700 bg-gray-200 hover:bg-gray-300 rounded-lg transition"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={cambiarEstadoCita}
+                  disabled={!nuevoEstado || procesando}
+                  className="px-4 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+                >
+                  {procesando ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

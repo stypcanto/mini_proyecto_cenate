@@ -90,14 +90,16 @@ export default function AdminDashboard() {
   }, []);
 
   // ============================================================
-  // 📋 Cargar logs recientes
+  // 📋 Cargar logs recientes (usando endpoint de auditoría completo)
   // ============================================================
   useEffect(() => {
     const loadRecentLogs = async () => {
       setLoadingLogs(true);
       try {
-        const logs = await auditoriaService.getLogsRecientes();
-        setRecentLogs(logs.slice(0, 3)); // Solo mostrar los 3 más recientes
+        // Usar el endpoint de auditoría que devuelve información más completa
+        const logs = await auditoriaService.getUltimos(20);
+        console.log("📋 Logs de auditoría cargados:", logs);
+        setRecentLogs(Array.isArray(logs) ? logs.slice(0, 8) : []); // Mostrar los 8 más recientes
       } catch (error) {
         console.error("Error cargando logs recientes:", error);
         setRecentLogs([]);
@@ -154,16 +156,16 @@ export default function AdminDashboard() {
   };
 
   // ============================================================
-  // 🎨 Obtener icono y color según acción
+  // 🎨 Obtener icono y color según acción (mejorado)
   // ============================================================
   const getLogStyle = (log) => {
-    const accion = log.accion?.toLowerCase() || '';
-    const nivel = log.nivel?.toLowerCase() || '';
-    const estado = log.estado?.toLowerCase() || '';
+    const accion = (log.accion || log.action || '').toUpperCase();
+    const nivel = (log.nivel || '').toLowerCase();
+    const estado = (log.estado || '').toLowerCase();
 
-    // Acciones de creación/éxito
-    if (accion.includes('crear') || accion.includes('creado') || accion.includes('creación') || 
-        accion.includes('registrar') || accion.includes('registrado') || estado === 'exitoso' || estado === 'success') {
+    // Acciones de creación/aprobación/éxito
+    if (accion.includes('CREATE') || accion.includes('APPROVE') || accion.includes('ACTIVATE') ||
+        accion.includes('UNLOCK') || estado === 'success') {
       return {
         icon: CheckCircle2,
         color: "text-green-600",
@@ -171,29 +173,8 @@ export default function AdminDashboard() {
       };
     }
 
-    // Acciones de actualización/modificación
-    if (accion.includes('actualizar') || accion.includes('actualizado') || accion.includes('modificar') || 
-        accion.includes('modificado') || accion.includes('editar') || accion.includes('editado')) {
-      return {
-        icon: Lock,
-        color: "text-blue-600",
-        bg: "bg-blue-100",
-      };
-    }
-
-    // Acciones de eliminación
-    if (accion.includes('eliminar') || accion.includes('eliminado') || accion.includes('borrar') || 
-        accion.includes('borrado')) {
-      return {
-        icon: AlertCircle,
-        color: "text-red-600",
-        bg: "bg-red-100",
-      };
-    }
-
-    // Acciones de acceso/autenticación
-    if (accion.includes('login') || accion.includes('acceso') || accion.includes('autenticación') || 
-        accion.includes('autenticado')) {
+    // Login exitoso
+    if (accion === 'LOGIN' && estado !== 'failure') {
       return {
         icon: Shield,
         color: "text-blue-600",
@@ -201,9 +182,27 @@ export default function AdminDashboard() {
       };
     }
 
-    // Errores/alertas
-    if (nivel === 'error' || nivel === 'warning' || estado === 'error' || estado === 'fallido' || 
-        accion.includes('error') || accion.includes('fallo') || accion.includes('no autorizado')) {
+    // Acciones de actualización/cambio de contraseña
+    if (accion.includes('UPDATE') || accion.includes('PASSWORD') || accion.includes('CHANGE')) {
+      return {
+        icon: Lock,
+        color: "text-purple-600",
+        bg: "bg-purple-100",
+      };
+    }
+
+    // Acciones de eliminación/rechazo/desactivación
+    if (accion.includes('DELETE') || accion.includes('REJECT') || accion.includes('DEACTIVATE') ||
+        accion.includes('CLEANUP')) {
+      return {
+        icon: AlertCircle,
+        color: "text-red-600",
+        bg: "bg-red-100",
+      };
+    }
+
+    // Login fallido / Errores
+    if (accion.includes('FAILED') || nivel === 'error' || estado === 'failure') {
       return {
         icon: AlertCircle,
         color: "text-amber-600",
@@ -211,37 +210,97 @@ export default function AdminDashboard() {
       };
     }
 
+    // Logout
+    if (accion === 'LOGOUT') {
+      return {
+        icon: Activity,
+        color: "text-gray-600",
+        bg: "bg-gray-100",
+      };
+    }
+
     // Por defecto
     return {
       icon: Activity,
-      color: "text-gray-600",
-      bg: "bg-gray-100",
+      color: "text-blue-600",
+      bg: "bg-blue-100",
     };
   };
 
   // ============================================================
-  // 📝 Formatear mensaje del log
+  // 📝 Formatear acción del log (versión ejecutiva)
   // ============================================================
-  const formatLogMessage = (log) => {
-    const usuario = log.usuario || 'Usuario desconocido';
-    const accion = log.accion || 'Acción';
-    const modulo = log.modulo || '';
-    const detalles = log.detalles || '';
+  const formatAccionEjecutiva = (log) => {
+    const accion = (log.accion || log.action || '').toUpperCase();
 
-    // Si hay detalles, usarlos
-    if (detalles) {
-      return detalles;
+    // Mapeo de acciones a descripciones ejecutivas cortas
+    const acciones = {
+      'LOGIN': 'Inicio de sesión',
+      'LOGIN_FAILED': 'Acceso denegado',
+      'LOGOUT': 'Cierre de sesión',
+      'CREATE_USER': 'Nuevo usuario creado',
+      'DELETE_USER': 'Usuario eliminado',
+      'ACTIVATE_USER': 'Usuario activado',
+      'DEACTIVATE_USER': 'Usuario desactivado',
+      'UNLOCK_USER': 'Usuario desbloqueado',
+      'APPROVE_REQUEST': 'Solicitud aprobada',
+      'REJECT_REQUEST': 'Solicitud rechazada',
+      'DELETE_PENDING_USER': 'Pendiente eliminado',
+      'CLEANUP_ORPHAN_DATA': 'Limpieza de datos',
+      'PASSWORD_CHANGE': 'Cambio de contraseña',
+      'PASSWORD_RESET': 'Reseteo de contraseña',
+      'INSERT': 'Registro creado',
+      'UPDATE': 'Registro actualizado',
+      'DELETE': 'Registro eliminado',
+    };
+
+    return acciones[accion] || accion || 'Acción del sistema';
+  };
+
+  // ============================================================
+  // 📋 Obtener resumen del detalle (corto y ejecutivo)
+  // ============================================================
+  const getDetalleCorto = (log) => {
+    const detalle = log.detalle || log.detalles || '';
+    if (!detalle) return null;
+
+    // Extraer información clave del detalle
+    // Ejemplo: "Nuevo valor → id_permiso_mod = "16"" → "Permiso #16"
+    if (detalle.includes('id_permiso_mod')) {
+      const match = detalle.match(/id_permiso_mod\s*=\s*"?(\d+)"?/);
+      return match ? `Permiso módulo #${match[1]}` : null;
+    }
+    if (detalle.includes('id_permiso_pagina')) {
+      const match = detalle.match(/id_permiso_pagina\s*=\s*"?(\d+)"?/);
+      return match ? `Permiso página #${match[1]}` : null;
+    }
+    if (detalle.includes('Usuario')) {
+      const match = detalle.match(/Usuario[:\s]+(\w+)/i);
+      return match ? `Usuario: ${match[1]}` : null;
     }
 
-    // Construir mensaje basado en acción y módulo
-    let mensaje = '';
-    if (modulo) {
-      mensaje = `${accion} en ${modulo}`;
-    } else {
-      mensaje = `${accion} por ${usuario}`;
-    }
+    // Si el detalle es corto, mostrarlo
+    if (detalle.length <= 40) return detalle;
 
-    return mensaje;
+    return null;
+  };
+
+  // ============================================================
+  // 👤 Obtener usuario del log
+  // ============================================================
+  const getLogUsuario = (log) => {
+    const usuario = log.usuarioSesion || log.usuario_sesion || log.usuario || log.username;
+    if (!usuario || usuario === 'N/A' || usuario.trim() === '') {
+      return "SYSTEM";
+    }
+    return usuario;
+  };
+
+  // ============================================================
+  // 👤 Obtener nombre completo del usuario
+  // ============================================================
+  const getNombreCompleto = (log) => {
+    return log.nombreCompleto || log.nombre_completo || null;
   };
 
   // ============================================================
@@ -422,46 +481,114 @@ export default function AdminDashboard() {
 
       {/* Actividad reciente y estado */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Actividad */}
+        {/* Actividad Reciente - Auditoría (Diseño Ejecutivo) */}
         <div className="bg-white dark:bg-[var(--bg-primary)] rounded-3xl shadow-md border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <Clock className="w-5 h-5 text-[#0A5BA9]" /> Actividad Reciente
-          </h2>
-          <div className="space-y-4">
-            {loadingLogs ? (
-              <div className="flex items-center justify-center py-8">
-                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                <p className="ml-3 text-gray-500 text-sm">Cargando logs...</p>
-              </div>
-            ) : recentLogs.length === 0 ? (
-              <div className="text-center py-8 text-gray-500 text-sm">
-                No hay actividad reciente
-              </div>
-            ) : (
-              recentLogs.map((log, i) => {
+          <div className="flex justify-between items-center mb-5">
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Activity className="w-5 h-5 text-[#0A5BA9]" /> Actividad Reciente
+            </h2>
+            <button
+              onClick={() => navigate('/admin/logs')}
+              className="text-xs px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-full font-medium transition-colors"
+            >
+              Ver auditoría →
+            </button>
+          </div>
+
+          {loadingLogs ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              <p className="ml-3 text-gray-500 text-sm">Cargando...</p>
+            </div>
+          ) : recentLogs.length === 0 ? (
+            <div className="text-center py-12 text-gray-500 text-sm">
+              No hay actividad reciente
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {recentLogs.map((log, i) => {
                 const style = getLogStyle(log);
                 const IconComponent = style.icon;
+                const usuario = getLogUsuario(log);
+                const nombreCompleto = getNombreCompleto(log);
+                const modulo = log.modulo || '';
+                const detalleCorto = getDetalleCorto(log);
+
                 return (
                   <div
                     key={i}
-                    className="flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-700 rounded-2xl p-3 transition-colors"
+                    className="flex items-center gap-3 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-xl px-3 py-2.5 transition-all cursor-default group"
                   >
-                    <div className={`p-2 ${style.bg} rounded-lg flex-shrink-0`}>
-                      <IconComponent className={`w-5 h-5 ${style.color}`} />
+                    {/* Icono */}
+                    <div className={`p-1.5 ${style.bg} rounded-lg flex-shrink-0 transition-transform group-hover:scale-110`}>
+                      <IconComponent className={`w-4 h-4 ${style.color}`} />
                     </div>
+
+                    {/* Contenido principal */}
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-gray-800 dark:text-gray-200 text-sm">
-                        {formatLogMessage(log)}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {formatTimeAgo(log.fechaHora)}
-                      </p>
+                      {/* Fila 1: Acción y módulo */}
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold text-gray-800 dark:text-gray-200 text-sm">
+                          {formatAccionEjecutiva(log)}
+                        </span>
+                        {modulo && (
+                          <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium">
+                            {modulo.replace('dim_', '').replace(/_/g, ' ')}
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Fila 2: Usuario y detalle */}
+                      <div className="flex items-center gap-1.5 mt-0.5">
+                        <span className="text-xs text-gray-400">
+                          {formatTimeAgo(log.fechaHora)}
+                        </span>
+                        <span className="text-gray-300">•</span>
+                        <span className="text-xs font-medium text-blue-600">
+                          {usuario}
+                        </span>
+                        {nombreCompleto && (
+                          <>
+                            <span className="text-gray-300">•</span>
+                            <span className="text-xs text-gray-500 truncate max-w-[120px]">
+                              {nombreCompleto}
+                            </span>
+                          </>
+                        )}
+                        {detalleCorto && (
+                          <>
+                            <span className="text-gray-300">•</span>
+                            <span className="text-xs text-gray-500 truncate max-w-[100px]">
+                              {detalleCorto}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
+
+                    {/* Estado */}
+                    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                      log.estado?.toLowerCase() === 'success' ? 'bg-green-500' :
+                      log.estado?.toLowerCase() === 'failure' ? 'bg-red-500' :
+                      'bg-blue-500'
+                    }`} title={log.estado || 'OK'} />
                   </div>
                 );
-              })
-            )}
-          </div>
+              })}
+            </div>
+          )}
+
+          {/* Footer con total */}
+          {recentLogs.length > 0 && (
+            <div className="mt-4 pt-3 border-t border-gray-100 flex justify-between items-center">
+              <span className="text-xs text-gray-400">
+                Mostrando últimas {recentLogs.length} actividades
+              </span>
+              <span className="text-xs text-gray-400">
+                Actualización automática
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Estado del sistema - DATOS EN TIEMPO REAL */}

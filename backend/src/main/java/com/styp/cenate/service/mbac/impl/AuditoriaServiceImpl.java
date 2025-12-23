@@ -111,11 +111,20 @@ public class AuditoriaServiceImpl implements AuditoriaService {
     }
 
     private AuditoriaModularResponseDTO mapToAuditoriaResponseDTO(AuditoriaModularView view) {
+        // Priorizar usuarioSesion (el que hizo la acción), si no existe usar username, si no "SYSTEM"
+        String usuario = view.getUsuarioSesion();
+        if (usuario == null || usuario.isBlank()) {
+            usuario = view.getUsername();
+        }
+        if (usuario == null || usuario.isBlank()) {
+            usuario = "SYSTEM";
+        }
+
         return AuditoriaModularResponseDTO.builder()
                 .id(view.getId())
                 .fechaHora(view.getFechaHora())
                 .fechaFormateada(view.getFechaFormateada())
-                .usuario(view.getUsername())
+                .usuario(usuario)
                 .dni(view.getDni())
                 .nombreCompleto(view.getNombreCompleto())
                 .roles(view.getRoles())

@@ -136,7 +136,13 @@ export default function LogsDelSistema() {
   // 🎭 FUNCIONES HELPER
   // ================================================================
   const obtenerUsuario = (log) => {
-    return log.usuario || log.username || log.user || log.nombreUsuario || log.usuarioNombre || "N/A";
+    // Priorizar usuario_sesion (viene de audit_logs.usuario), luego username (de dim_usuarios)
+    const usuario = log.usuarioSesion || log.usuario_sesion || log.usuario || log.username || log.user;
+    // Si no hay usuario o es vacío/null, mostrar SYSTEM
+    if (!usuario || usuario === 'N/A' || usuario.trim() === '') {
+      return "SYSTEM";
+    }
+    return usuario;
   };
 
   const obtenerFecha = (log) => {

@@ -4,6 +4,109 @@
 
 ---
 
+## v1.7.9 (2025-12-23) - Dashboard ChatBot Mejorado
+
+### Footer con Version del Sistema en toda la Intranet
+
+Se agrego un footer visible en todas las paginas de la intranet mostrando la version del sistema.
+
+**Ubicaciones del footer con version:**
+
+| Ubicacion | Archivo | Contenido |
+|-----------|---------|-----------|
+| Sidebar | `DynamicSidebar.jsx` | `v{VERSION.number}` |
+| Intranet (todas las paginas) | `AppLayout.jsx` | Nombre, organizacion, version |
+| Login | `Login.js` | `CENATE v{VERSION.number}` |
+| Crear Cuenta | `CrearCuenta.jsx` | `CENATE v{VERSION.number}` |
+| Recuperar Contrasena | `PasswordRecovery.js` | `CENATE v{VERSION.number}` |
+| Home (publico) | `FooterCenate.jsx` | Version completa con links |
+
+**Archivo de configuracion centralizado:**
+
+```javascript
+// frontend/src/config/version.js
+export const VERSION = {
+  number: "1.7.9",
+  name: "Dashboard ChatBot Mejorado",
+  date: "2025-12-23",
+  description: "..."
+};
+
+export const APP_INFO = {
+  name: "CENATE - Sistema de Telemedicina",
+  organization: "EsSalud",
+  year: new Date().getFullYear()
+};
+```
+
+**Archivo modificado:**
+
+```
+frontend/src/components/AppLayout.jsx
+├── Importado VERSION y APP_INFO desde config/version.js
+└── Agregado footer al final del contenido con version dinamica
+```
+
+---
+
+### Correccion de mapeo de estado en Dashboard de Citas
+
+Se corrigio el mapeo del campo estado en `ChatbotBusqueda.jsx` que mostraba "N/A" y se agrego funcionalidad para cambiar el estado de las citas.
+
+**Problema resuelto:**
+
+El campo "Estado" en la tabla de citas mostraba "N/A" porque el frontend buscaba campos incorrectos (`cod_estado_cita`, `codEstadoCita`) cuando el backend retorna `descEstadoPaciente`.
+
+**Correccion aplicada:**
+
+```javascript
+// Antes (incorrecto)
+estado: c.cod_estado_cita || c.codEstadoCita || c.estadoPaciente || c.estado
+
+// Ahora (correcto)
+estado: c.desc_estado_paciente || c.descEstadoPaciente || c.estadoPaciente || c.estado
+```
+
+### Nueva funcionalidad: Cambiar Estado de Citas
+
+Se agrego columna de acciones con boton para cambiar el estado de las citas.
+
+**Caracteristicas:**
+
+| Funcionalidad | Descripcion |
+|---------------|-------------|
+| Columna Acciones | Nueva columna en tabla con boton "Editar" |
+| Modal de Estado | Formulario para seleccionar nuevo estado |
+| Catalogo de Estados | Carga desde `/api/v1/chatbot/estado-cita` |
+| Observacion | Campo opcional para registrar motivo del cambio |
+| Actualizacion | Llama a `PUT /api/v1/chatbot/solicitud/estado/{id}` |
+
+**Estados disponibles:**
+- PENDIENTE
+- RESERVADO
+- CONFIRMADA
+- CANCELADA
+- NO_PRESENTADO
+- ATENDIDO
+
+**Archivos modificados:**
+
+```
+frontend/src/pages/chatbot/ChatbotBusqueda.jsx
+├── Corregido normalizeCita() - mapeo de estado
+├── Corregido actualizarOpciones() - opciones de filtro
+├── Corregido calcularKPIs() - conteo de reservadas
+├── Agregado estado para modal (modalEstado, nuevoEstado, etc.)
+├── Agregado cargarCatalogoEstados() - cargar estados del backend
+├── Agregado abrirModalEstado() / cerrarModalEstado()
+├── Agregado cambiarEstadoCita() - llamada API
+├── Agregado columna "Acciones" en thead
+├── Agregado boton "Editar" en cada fila
+└── Agregado Modal de cambio de estado
+```
+
+---
+
 ## v1.7.8 (2025-12-23) - Integracion ChatBot de Citas
 
 ### Sistema de Solicitud de Citas Medicas via ChatBot

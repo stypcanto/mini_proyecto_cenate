@@ -10,6 +10,7 @@
 import React from "react";
 import ResponsiveSidebar from "./layout/ResponsiveSidebar";
 import HeaderTemplate from "./Header/Header_template"; // ✅ Header Apple-like
+import { VERSION, APP_INFO } from "../config/version";
 
 export default function AppLayout({ children, title = "" }) {
   return (
@@ -42,6 +43,12 @@ export default function AppLayout({ children, title = "" }) {
           }}
         >
           {children}
+
+          {/* 📌 Footer con versión del sistema */}
+          <footer className="mt-8 pt-4 border-t border-gray-200 text-center text-xs text-gray-500">
+            <p>{APP_INFO.name} - {APP_INFO.organization} {APP_INFO.year}</p>
+            <p className="mt-1">v{VERSION.number} - {VERSION.name}</p>
+          </footer>
         </section>
       </main>
     </div>
