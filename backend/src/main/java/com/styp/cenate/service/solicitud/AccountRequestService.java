@@ -594,6 +594,16 @@ public class AccountRequestService {
             String sqlDesvincular = "UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_pers = ?";
             jdbcTemplate.update(sqlDesvincular, idPersonal);
             log.info("Personal desvinculado del usuario");
+
+            // 3.1 Eliminar dependencias del personal (dim_personal_prof)
+            String sqlDeletePersonalProf = "DELETE FROM dim_personal_prof WHERE id_pers = ?";
+            int profEliminados = jdbcTemplate.update(sqlDeletePersonalProf, idPersonal);
+            log.info("Personal profesiones eliminadas: {} para personal ID: {}", profEliminados, idPersonal);
+
+            // 3.2 Eliminar dependencias del personal (dim_personal_tipo)
+            String sqlDeletePersonalTipo = "DELETE FROM dim_personal_tipo WHERE id_pers = ?";
+            int tiposEliminados = jdbcTemplate.update(sqlDeletePersonalTipo, idPersonal);
+            log.info("Personal tipos eliminados: {} para personal ID: {}", tiposEliminados, idPersonal);
         }
 
         // 4. Eliminar usuario usando SQL directo (evita problemas de cascada)
@@ -620,5 +630,160 @@ public class AccountRequestService {
         log.info("Solicitud actualizada: {} (filas afectadas: {})", numDocumento, solicitudActualizada);
 
         log.info("Usuario pendiente de activación eliminado exitosamente: {} (ID: {})", numDocumento, idUsuario);
+    }
+
+    /**
+     * Limpia datos huérfanos de un número de documento específico.
+     * Útil cuando hay datos residuales que impiden un nuevo registro.
+     * Este método elimina todos los datos relacionados con el DNI en todas las tablas.
+     */
+    @Transactional
+    public Map<String, Object> limpiarDatosHuerfanos(String numDocumento) {
+        log.info("Limpiando datos huérfanos para documento: {}", numDocumento);
+
+        Map<String, Object> resultado = new java.util.HashMap<>();
+        resultado.put("numDocumento", numDocumento);
+        int totalEliminados = 0;
+
+        // 1. Buscar usuario por username (el username es el número de documento)
+        String sqlBuscarUsuario = "SELECT id_user FROM dim_usuarios WHERE name_user = ?";
+        List<Long> usuarios = jdbcTemplate.queryForList(sqlBuscarUsuario, Long.class, numDocumento);
+
+        for (Long idUsuario : usuarios) {
+            log.info("Encontrado usuario con ID: {}", idUsuario);
+
+            // 1.1 Eliminar permisos del usuario
+            int permisos = jdbcTemplate.update("DELETE FROM permisos_modulares WHERE id_user = ?", idUsuario);
+            log.info("Permisos eliminados: {}", permisos);
+
+            // 1.2 Eliminar roles del usuario
+            int roles = jdbcTemplate.update("DELETE FROM rel_user_roles WHERE id_user = ?", idUsuario);
+            log.info("Roles eliminados: {}", roles);
+
+            // 1.3 Desvincular personal del usuario
+            jdbcTemplate.update("UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_usuario = ?", idUsuario);
+
+            // 1.4 Eliminar usuario
+            int usuarioEliminado = jdbcTemplate.update("DELETE FROM dim_usuarios WHERE id_user = ?", idUsuario);
+            totalEliminados += usuarioEliminado;
+            log.info("Usuario eliminado: {}", usuarioEliminado);
+        }
+        resultado.put("usuariosEliminados", usuarios.size());
+
+        // 2. Buscar y eliminar personal por número de documento
+        String sqlBuscarPersonal = "SELECT id_pers FROM dim_personal_cnt WHERE num_doc_pers = ?";
+        List<Long> personales = jdbcTemplate.queryForList(sqlBuscarPersonal, Long.class, numDocumento);
+
+        for (Long idPers : personales) {
+            log.info("Encontrado personal con ID: {}", idPers);
+
+            // 2.1 Eliminar profesiones del personal
+            int profs = jdbcTemplate.update("DELETE FROM dim_personal_prof WHERE id_pers = ?", idPers);
+            log.info("Profesiones eliminadas: {}", profs);
+
+            // 2.2 Eliminar tipos del personal
+            int tipos = jdbcTemplate.update("DELETE FROM dim_personal_tipo WHERE id_pers = ?", idPers);
+            log.info("Tipos eliminados: {}", tipos);
+
+            // 2.3 Eliminar el personal
+            int personalEliminado = jdbcTemplate.update("DELETE FROM dim_personal_cnt WHERE id_pers = ?", idPers);
+            totalEliminados += personalEliminado;
+            log.info("Personal eliminado: {}", personalEliminado);
+        }
+        resultado.put("personalesEliminados", personales.size());
+
+        // 3. Buscar y eliminar personal externo por número de documento
+        String sqlBuscarExterno = "SELECT id_pers_ext FROM dim_personal_externo WHERE num_doc_ext = ?";
+        List<Long> externos = new java.util.ArrayList<>();
+        try {
+            externos = jdbcTemplate.queryForList(sqlBuscarExterno, Long.class, numDocumento);
+        } catch (Exception e) {
+            log.debug("Tabla dim_personal_externo no existe o no tiene datos: {}", e.getMessage());
+        }
+
+        for (Long idExt : externos) {
+            int extEliminado = jdbcTemplate.update("DELETE FROM dim_personal_externo WHERE id_pers_ext = ?", idExt);
+            totalEliminados += extEliminado;
+            log.info("Personal externo eliminado: {}", extEliminado);
+        }
+        resultado.put("externosEliminados", externos.size());
+
+        // 4. Actualizar solicitudes a RECHAZADO para permitir re-registro
+        String sqlUpdateSolicitudes = """
+            UPDATE account_requests
+            SET estado = 'RECHAZADO',
+                observacion_admin = 'Datos huérfanos limpiados - Puede volver a registrarse',
+                fecha_respuesta = CURRENT_TIMESTAMP
+            WHERE num_documento = ? AND estado IN ('PENDIENTE', 'APROBADO')
+        """;
+        int solicitudesActualizadas = jdbcTemplate.update(sqlUpdateSolicitudes, numDocumento);
+        resultado.put("solicitudesActualizadas", solicitudesActualizadas);
+        log.info("Solicitudes actualizadas: {}", solicitudesActualizadas);
+
+        resultado.put("totalRegistrosEliminados", totalEliminados);
+        resultado.put("mensaje", "Datos huérfanos limpiados exitosamente para documento: " + numDocumento);
+
+        log.info("Limpieza completada para documento: {}. Total eliminados: {}", numDocumento, totalEliminados);
+
+        return resultado;
+    }
+
+    /**
+     * Verifica si existen datos huérfanos para un número de documento.
+     * Retorna información detallada sobre qué datos existen en cada tabla.
+     */
+    public Map<String, Object> verificarDatosExistentes(String numDocumento) {
+        log.info("Verificando datos existentes para documento: {}", numDocumento);
+
+        Map<String, Object> resultado = new java.util.HashMap<>();
+        resultado.put("numDocumento", numDocumento);
+
+        // 1. Verificar en dim_usuarios
+        String sqlUsuarios = "SELECT COUNT(*) FROM dim_usuarios WHERE name_user = ?";
+        int usuarios = jdbcTemplate.queryForObject(sqlUsuarios, Integer.class, numDocumento);
+        resultado.put("usuariosEncontrados", usuarios);
+
+        // 2. Verificar en dim_personal_cnt
+        String sqlPersonal = "SELECT COUNT(*) FROM dim_personal_cnt WHERE num_doc_pers = ?";
+        int personales = jdbcTemplate.queryForObject(sqlPersonal, Integer.class, numDocumento);
+        resultado.put("personalesEncontrados", personales);
+
+        // 3. Verificar en dim_personal_externo
+        int externos = 0;
+        try {
+            String sqlExternos = "SELECT COUNT(*) FROM dim_personal_externo WHERE num_doc_ext = ?";
+            externos = jdbcTemplate.queryForObject(sqlExternos, Integer.class, numDocumento);
+        } catch (Exception e) {
+            log.debug("Tabla dim_personal_externo no accesible: {}", e.getMessage());
+        }
+        resultado.put("externosEncontrados", externos);
+
+        // 4. Verificar solicitudes activas
+        String sqlSolicitudes = "SELECT COUNT(*) FROM account_requests WHERE num_documento = ? AND estado IN ('PENDIENTE', 'APROBADO')";
+        int solicitudesActivas = jdbcTemplate.queryForObject(sqlSolicitudes, Integer.class, numDocumento);
+        resultado.put("solicitudesActivas", solicitudesActivas);
+
+        // 5. Verificar solicitudes rechazadas (pueden volver a registrarse)
+        String sqlSolicitudesRechazadas = "SELECT COUNT(*) FROM account_requests WHERE num_documento = ? AND estado = 'RECHAZADO'";
+        int solicitudesRechazadas = jdbcTemplate.queryForObject(sqlSolicitudesRechazadas, Integer.class, numDocumento);
+        resultado.put("solicitudesRechazadas", solicitudesRechazadas);
+
+        boolean tieneDatosHuerfanos = usuarios > 0 || personales > 0 || externos > 0;
+        boolean puedeRegistrarse = !tieneDatosHuerfanos && solicitudesActivas == 0;
+
+        resultado.put("tieneDatosHuerfanos", tieneDatosHuerfanos);
+        resultado.put("puedeRegistrarse", puedeRegistrarse);
+
+        if (!puedeRegistrarse) {
+            if (tieneDatosHuerfanos) {
+                resultado.put("razonBloqueo", "Existen datos huérfanos que deben ser limpiados");
+            } else if (solicitudesActivas > 0) {
+                resultado.put("razonBloqueo", "Existe una solicitud activa (PENDIENTE o APROBADO)");
+            }
+        }
+
+        log.info("Verificación completada para documento: {}. Puede registrarse: {}", numDocumento, puedeRegistrarse);
+
+        return resultado;
     }
 }

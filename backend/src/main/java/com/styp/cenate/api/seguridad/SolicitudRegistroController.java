@@ -211,4 +211,48 @@ public class SolicitudRegistroController {
             ));
         }
     }
+
+    // ================================================================
+    // ENDPOINTS PARA LIMPIEZA DE DATOS HUÉRFANOS
+    // ================================================================
+
+    /**
+     * Verifica si existen datos huérfanos para un número de documento.
+     * Útil para diagnosticar por qué un usuario no puede registrarse.
+     */
+    @GetMapping("/admin/datos-huerfanos/{numDocumento}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> verificarDatosHuerfanos(@PathVariable String numDocumento) {
+        try {
+            log.info("Verificando datos existentes para documento: {}", numDocumento);
+            Map<String, Object> resultado = accountRequestService.verificarDatosExistentes(numDocumento);
+            return ResponseEntity.ok(resultado);
+
+        } catch (Exception e) {
+            log.error("Error al verificar datos: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Error al verificar datos existentes"
+            ));
+        }
+    }
+
+    /**
+     * Limpia todos los datos huérfanos de un número de documento.
+     * Elimina registros en todas las tablas relacionadas y permite el re-registro.
+     */
+    @DeleteMapping("/admin/datos-huerfanos/{numDocumento}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> limpiarDatosHuerfanos(@PathVariable String numDocumento) {
+        try {
+            log.info("Limpiando datos huérfanos para documento: {}", numDocumento);
+            Map<String, Object> resultado = accountRequestService.limpiarDatosHuerfanos(numDocumento);
+            return ResponseEntity.ok(resultado);
+
+        } catch (Exception e) {
+            log.error("Error al limpiar datos: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Error al limpiar datos huérfanos"
+            ));
+        }
+    }
 }

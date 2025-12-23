@@ -2,7 +2,7 @@
 
 > Sistema de Telemedicina para el Centro Nacional de Telemedicina - EsSalud
 
-**Versión actual:** `v1.7.5` (2025-12-23) - Panel de Activaciones Mejorado
+**Versión actual:** `v1.7.7` (2025-12-23) - Documentación de Usuarios
 
 ---
 
@@ -73,6 +73,9 @@
 
 ```
 mini_proyecto_cenate/
+├── spec/                             # Especificaciones técnicas
+│   └── 001_espec_users_bd.md         # Modelo de datos de usuarios
+│
 ├── backend/                          # Spring Boot API
 │   ├── src/main/java/com/styp/cenate/
 │   │   ├── api/                      # Controllers REST (20+)
@@ -739,6 +742,167 @@ frontend/src/components/DynamicSidebar.jsx
 ---
 
 ## Historial de Cambios
+
+### v1.7.7 (2025-12-23) - Documentación de Usuarios
+
+#### Especificación técnica del sistema de usuarios
+
+Se creó documentación completa del modelo de datos de usuarios en:
+`spec/001_espec_users_bd.md`
+
+**Contenido del documento:**
+
+| Sección | Descripción |
+|---------|-------------|
+| Diagrama ERD | Relaciones entre tablas de usuarios |
+| Tablas principales | dim_usuarios, dim_personal_cnt, account_requests |
+| Clasificación INTERNO/EXTERNO | Lógica por id_origen y código Java |
+| Flujo de registro | Diagrama de secuencia completo |
+| Estados de usuario | Ciclo de vida de solicitudes y usuarios |
+| Cascada de eliminación | Orden correcto para evitar FK errors |
+| Roles del sistema | 20 roles con tipos asignados |
+| Endpoints API | Todos los endpoints de usuarios |
+| Queries diagnóstico | SQL útiles para debugging |
+
+**Tablas documentadas:**
+
+```
+dim_usuarios          - Credenciales de acceso
+dim_personal_cnt      - Datos personales (INTERNO y EXTERNO)
+account_requests      - Solicitudes de registro
+dim_origen_personal   - Clasificación (1=INTERNO, 2=EXTERNO)
+rel_user_roles        - Relación usuario-rol (M:N)
+dim_personal_prof     - Profesiones del personal
+dim_personal_tipo     - Tipo de profesional
+```
+
+**Lógica de clasificación INTERNO/EXTERNO:**
+
+```java
+// Por id_origen en dim_personal_cnt:
+// id_origen = 1 → INTERNO
+// id_origen = 2 → EXTERNO
+
+// Por existencia en tablas:
+if (personalCnt != null) tipoPersonal = "INTERNO";
+else if (personalExterno != null) tipoPersonal = "EXTERNO";
+else tipoPersonal = "SIN_CLASIFICAR";
+```
+
+#### Limpieza de base de datos
+
+Se ejecutó limpieza de 11 solicitudes APROBADAS sin usuario creado:
+
+**DNIs liberados:**
+- 99999999, 66666666, 12345679, 56321456, 98575642
+- 14851616, 45151515, 54544545, 45415156, 99921626, 87654321
+
+**Correo liberado:** cenate.analista@essalud.gob.pe (estaba bloqueado)
+
+**Estado final de la BD:**
+
+| Métrica | Valor |
+|---------|-------|
+| Usuarios totales | 100 |
+| Pendientes activación | 90 |
+| Solicitudes APROBADAS | 4 (válidas) |
+| Solicitudes RECHAZADAS | 21 |
+| Datos huérfanos | 0 |
+| DNIs duplicados | 0 |
+
+---
+
+### v1.7.6 (2025-12-23) - Limpieza de Datos Huérfanos
+
+#### Sistema de limpieza de datos residuales
+
+Se mejoró el proceso de eliminación de usuarios y se agregaron nuevos endpoints para diagnosticar y limpiar datos huérfanos que impiden el re-registro de usuarios.
+
+**Problema resuelto:**
+
+Cuando un usuario era eliminado (ej: desde "Pendientes de Activación"), podían quedar datos huérfanos en las siguientes tablas:
+- `dim_usuarios` - Usuario sin eliminar
+- `dim_personal_cnt` - Personal sin usuario asociado
+- `dim_personal_prof` - Profesiones del personal
+- `dim_personal_tipo` - Tipos de profesional
+- `account_requests` - Solicitudes en estado APROBADO
+
+Esto impedía que el usuario volviera a registrarse con el mismo DNI.
+
+**Mejoras al proceso de eliminación:**
+
+El método `eliminarUsuarioPendienteActivacion()` ahora también elimina:
+- `dim_personal_prof` - Profesiones asociadas al personal
+- `dim_personal_tipo` - Tipos de profesional asociados
+
+**Nuevos endpoints:**
+
+```java
+// Verificar datos existentes para un DNI (GET)
+GET /api/admin/datos-huerfanos/{numDocumento}
+// Respuesta: { usuariosEncontrados, personalesEncontrados, solicitudesActivas, puedeRegistrarse, razonBloqueo }
+
+// Limpiar todos los datos huérfanos de un DNI (DELETE)
+DELETE /api/admin/datos-huerfanos/{numDocumento}
+// Respuesta: { usuariosEliminados, personalesEliminados, solicitudesActualizadas, totalRegistrosEliminados }
+```
+
+**Nuevos métodos en AccountRequestService:**
+
+```java
+// Limpia datos huérfanos de un documento
+public Map<String, Object> limpiarDatosHuerfanos(String numDocumento)
+
+// Verifica qué datos existen para un documento
+public Map<String, Object> verificarDatosExistentes(String numDocumento)
+```
+
+**Tablas afectadas en la limpieza (orden correcto):**
+```sql
+-- 1. Permisos del usuario
+DELETE FROM permisos_modulares WHERE id_user = ?;
+-- 2. Roles del usuario
+DELETE FROM rel_user_roles WHERE id_user = ?;
+-- 3. Desvincular personal
+UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_usuario = ?;
+-- 4. Profesiones del personal
+DELETE FROM dim_personal_prof WHERE id_pers = ?;
+-- 5. Tipos del personal
+DELETE FROM dim_personal_tipo WHERE id_pers = ?;
+-- 6. Usuario
+DELETE FROM dim_usuarios WHERE id_user = ?;
+-- 7. Personal
+DELETE FROM dim_personal_cnt WHERE id_pers = ?;
+-- 8. Actualizar solicitudes a RECHAZADO
+UPDATE account_requests SET estado = 'RECHAZADO' WHERE num_documento = ?;
+```
+
+**Archivos modificados:**
+
+```
+backend/src/main/java/com/styp/cenate/service/solicitud/AccountRequestService.java
+  - Mejorado eliminarUsuarioPendienteActivacion()
+  - Nuevo limpiarDatosHuerfanos()
+  - Nuevo verificarDatosExistentes()
+
+backend/src/main/java/com/styp/cenate/api/seguridad/SolicitudRegistroController.java
+  - GET /admin/datos-huerfanos/{numDocumento}
+  - DELETE /admin/datos-huerfanos/{numDocumento}
+```
+
+**Uso desde el frontend o curl:**
+
+```bash
+# Verificar qué bloquea el registro
+curl -X GET "http://localhost:8080/api/admin/datos-huerfanos/12121212" \
+  -H "Authorization: Bearer TOKEN"
+
+# Limpiar datos huérfanos
+curl -X DELETE "http://localhost:8080/api/admin/datos-huerfanos/12121212" \
+  -H "Authorization: Bearer TOKEN"
+```
+
+---
 
 ### v1.7.5 (2025-12-23) - Panel de Activaciones Mejorado
 
