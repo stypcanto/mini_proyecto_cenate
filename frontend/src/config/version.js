@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.7.9",
-  name: "Dashboard ChatBot Mejorado",
+  number: "1.8.1",
+  name: "Fix Usuarios Huerfanos",
   date: "2025-12-23",
-  description: "Correccion de mapeo de estado y columna de acciones para cambiar estado de citas"
+  description: "Correccion de limpieza de usuarios externos (IPRESS) y datos huerfanos"
 };
 
 export const APP_INFO = {

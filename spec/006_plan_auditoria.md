@@ -399,6 +399,9 @@ scripts/
 - [ ] AuditDetailModal creado (pendiente - mejora futura)
 - [x] Filtros avanzados implementados (usuario, modulo, accion, fechas)
 - [ ] Exportacion PDF (pendiente - mejora futura)
+- [x] Menu renombrado de "Logs del Sistema" a "Auditoría"
+- [x] AdminDashboard con 8 actividades recientes en formato ejecutivo
+- [x] Fix usuario N/A - ahora muestra SYSTEM para acciones del sistema
 
 ### Alertas
 - [ ] Sistema de alertas implementado (pendiente - fase futura)

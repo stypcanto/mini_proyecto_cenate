@@ -4,6 +4,122 @@
 
 ---
 
+## v1.8.1 (2025-12-23) - Fix Usuarios Huerfanos
+
+### Problema Identificado
+
+Los usuarios externos (IPRESS) podian hacer login pero no aparecian en la busqueda de "Gestion de Usuarios". Esto ocurria porque:
+
+1. La busqueda solo consultaba `dim_personal_cnt` (internos)
+2. Usuarios externos estan en `dim_personal_externo`
+3. Al eliminar usuarios, quedaban datos huerfanos que permitian login
+
+### Correccion: Limpieza de Personal Externo
+
+Se mejoraron dos metodos en `AccountRequestService.java`:
+
+**`limpiarDatosHuerfanos()`**
+```java
+// Ahora desvincula personal externo ANTES de eliminar usuario
+UPDATE dim_personal_externo SET id_user = NULL WHERE id_user = ?;
+// Luego elimina el usuario
+DELETE FROM dim_usuarios WHERE id_user = ?;
+// Finalmente elimina el personal externo
+DELETE FROM dim_personal_externo WHERE id_pers_ext = ?;
+```
+
+**`eliminarUsuarioPendienteActivacion()`**
+- Ahora detecta si el usuario es INTERNO o EXTERNO
+- Limpia `dim_personal_externo` ademas de `dim_personal_cnt`
+- Orden correcto: desvincular → eliminar usuario → eliminar personal
+
+### Usuarios Huerfanos Limpiados
+
+| DNI | Nombre | IPRESS | Accion |
+|-----|--------|--------|--------|
+| 11111111 | Testing Testing | P.M. QUEROBAMBA | Eliminado |
+| 32323232 | Tess Testing | P.M. QUEROBAMBA | Eliminado |
+
+### Tablas del Sistema de Personal
+
+| Tabla | Tipo | Descripcion |
+|-------|------|-------------|
+| `dim_personal_cnt` | INTERNO | Personal de CENATE |
+| `dim_personal_externo` | EXTERNO | Personal de IPRESS |
+| `dim_usuarios` | Ambos | Credenciales de acceso |
+
+**Nota:** La pagina "Gestion de Usuarios" (`/admin/users`) solo muestra personal INTERNO. Para gestionar personal externo, usar la opcion correspondiente del menu.
+
+### Archivos Modificados
+
+```
+backend/src/main/java/com/styp/cenate/service/solicitud/AccountRequestService.java
+├── limpiarDatosHuerfanos() - Incluye dim_personal_externo
+└── eliminarUsuarioPendienteActivacion() - Maneja ambos tipos de personal
+```
+
+---
+
+## v1.8.0 (2025-12-23) - Mejoras en Auditoria
+
+### Renombrado de Menu
+
+El menu "Logs del Sistema" fue renombrado a **"Auditoría"** para reflejar mejor su funcion.
+
+**Script SQL:**
+```sql
+-- spec/scripts/002_rename_logs_to_auditoria.sql
+UPDATE dim_paginas_modulo
+SET nombre_pagina = 'Auditoría',
+    descripcion = 'Auditoría completa del sistema - Trazabilidad de acciones'
+WHERE ruta_pagina = '/admin/logs';
+```
+
+### Fix: Usuario N/A en Logs
+
+**Problema:** Los registros de auditoria mostraban "N/A" en lugar del nombre de usuario.
+
+**Causa:** El mapper en `AuditoriaServiceImpl.java` usaba `view.getUsername()` que viene del JOIN con `dim_usuarios`. Los usuarios de sistema como "backend_user" no existen en esa tabla.
+
+**Solucion:**
+```java
+// AuditoriaServiceImpl.java - mapToAuditoriaResponseDTO()
+String usuario = view.getUsuarioSesion();  // Prioriza campo de audit_logs
+if (usuario == null || usuario.isBlank()) {
+    usuario = view.getUsername();
+}
+if (usuario == null || usuario.isBlank()) {
+    usuario = "SYSTEM";  // Fallback para acciones del sistema
+}
+```
+
+### Mejoras en AdminDashboard - Actividad Reciente
+
+Se mejoro la seccion "Actividad Reciente" del dashboard administrativo:
+
+| Antes | Despues |
+|-------|---------|
+| 5 actividades | 8 actividades |
+| Acciones en codigo (LOGIN, INSERT) | Acciones legibles ("Inicio de sesión", "Registro creado") |
+| Solo usuario | Usuario + nombre completo |
+| Sin indicador visual | Indicador de estado (verde/rojo) |
+
+**Funciones agregadas:**
+- `formatAccionEjecutiva()` - Traduce acciones a formato ejecutivo
+- `getDetalleCorto()` - Extrae detalle resumido
+- `getNombreCompleto()` - Obtiene nombre completo del log
+- `getLogUsuario()` - Obtiene usuario con fallback a "SYSTEM"
+
+**Archivos modificados:**
+```
+backend/src/main/java/com/styp/cenate/service/mbac/impl/AuditoriaServiceImpl.java
+frontend/src/pages/AdminDashboard.js
+frontend/src/pages/admin/LogsDelSistema.jsx
+spec/scripts/002_rename_logs_to_auditoria.sql (NUEVO)
+```
+
+---
+
 ## v1.7.9 (2025-12-23) - Dashboard ChatBot Mejorado
 
 ### Footer con Version del Sistema en toda la Intranet
