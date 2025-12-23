@@ -5,7 +5,7 @@
 // las solicitudes de registro de nuevos usuarios.
 // ========================================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   CheckCircle2,
   XCircle,
@@ -22,6 +22,9 @@ import {
   Send,
   Search,
   Trash2,
+  CheckSquare,
+  Square,
+  MinusSquare,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiClient } from "../../lib/apiClient";
@@ -41,6 +44,10 @@ export default function AprobacionSolicitudes() {
   const [enviandoEmail, setEnviandoEmail] = useState(null); // ID del usuario al que se está enviando
   const [eliminandoUsuario, setEliminandoUsuario] = useState(null); // ID del usuario que se está eliminando
   const [busquedaPendientes, setBusquedaPendientes] = useState(""); // Búsqueda por nombre o documento
+
+  // Estados para selección múltiple
+  const [seleccionados, setSeleccionados] = useState(new Set());
+  const [procesandoMasivo, setProcesandoMasivo] = useState(false);
 
   // Cargar solicitudes cuando cambia el filtro (solo en vista solicitudes)
   useEffect(() => {
@@ -152,6 +159,133 @@ export default function AprobacionSolicitudes() {
       toast.error(error.message || "Error al eliminar el usuario");
     } finally {
       setEliminandoUsuario(null);
+    }
+  };
+
+  // Filtrar usuarios pendientes según búsqueda
+  const usuariosFiltrados = useMemo(() => {
+    if (!busquedaPendientes) return usuariosPendientes;
+    const term = busquedaPendientes.toLowerCase();
+    return usuariosPendientes.filter(u =>
+      (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
+      (u.username?.toLowerCase() || '').includes(term) ||
+      (u.correoPersonal?.toLowerCase() || '').includes(term) ||
+      (u.correoInstitucional?.toLowerCase() || '').includes(term) ||
+      (u.ipress?.toLowerCase() || '').includes(term)
+    );
+  }, [usuariosPendientes, busquedaPendientes]);
+
+  // Limpiar selección cuando cambia la búsqueda o los datos
+  useEffect(() => {
+    setSeleccionados(new Set());
+  }, [busquedaPendientes, usuariosPendientes]);
+
+  // Funciones de selección
+  const toggleSeleccion = (idUsuario) => {
+    setSeleccionados(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(idUsuario)) {
+        newSet.delete(idUsuario);
+      } else {
+        newSet.add(idUsuario);
+      }
+      return newSet;
+    });
+  };
+
+  const seleccionarTodos = () => {
+    if (seleccionados.size === usuariosFiltrados.length) {
+      // Deseleccionar todos
+      setSeleccionados(new Set());
+    } else {
+      // Seleccionar todos los filtrados
+      setSeleccionados(new Set(usuariosFiltrados.map(u => u.idUsuario)));
+    }
+  };
+
+  // Acciones masivas
+  const reenviarEmailsMasivo = async () => {
+    const usuariosConCorreo = usuariosFiltrados.filter(
+      u => seleccionados.has(u.idUsuario) && (u.correoPersonal || u.correoInstitucional)
+    );
+
+    if (usuariosConCorreo.length === 0) {
+      toast.error("No hay usuarios seleccionados con correo registrado");
+      return;
+    }
+
+    if (!window.confirm(
+      `¿Desea reenviar el correo de activación a ${usuariosConCorreo.length} usuario(s)?`
+    )) {
+      return;
+    }
+
+    setProcesandoMasivo(true);
+    let exitosos = 0;
+    let fallidos = 0;
+
+    for (const usuario of usuariosConCorreo) {
+      try {
+        await apiClient.post(`/admin/usuarios/${usuario.idUsuario}/reenviar-activacion`, {}, true);
+        exitosos++;
+      } catch (error) {
+        console.error(`Error al reenviar a ${usuario.nombreCompleto}:`, error);
+        fallidos++;
+      }
+    }
+
+    setProcesandoMasivo(false);
+    setSeleccionados(new Set());
+
+    if (exitosos > 0 && fallidos === 0) {
+      toast.success(`Se enviaron ${exitosos} correo(s) exitosamente`);
+    } else if (exitosos > 0 && fallidos > 0) {
+      toast.success(`Se enviaron ${exitosos} correo(s), ${fallidos} fallaron`);
+    } else {
+      toast.error("No se pudo enviar ningún correo");
+    }
+  };
+
+  const eliminarMasivo = async () => {
+    const usuariosSeleccionados = usuariosFiltrados.filter(u => seleccionados.has(u.idUsuario));
+
+    if (usuariosSeleccionados.length === 0) {
+      toast.error("No hay usuarios seleccionados");
+      return;
+    }
+
+    if (!window.confirm(
+      `⚠️ ¿Está seguro de eliminar ${usuariosSeleccionados.length} usuario(s)?\n\n` +
+      `Esta acción eliminará las cuentas de los usuarios y podrán volver a registrarse.\n\n` +
+      `Esta acción NO se puede deshacer.`
+    )) {
+      return;
+    }
+
+    setProcesandoMasivo(true);
+    let exitosos = 0;
+    let fallidos = 0;
+
+    for (const usuario of usuariosSeleccionados) {
+      try {
+        await apiClient.delete(`/admin/usuarios/${usuario.idUsuario}/pendiente-activacion`, true);
+        exitosos++;
+      } catch (error) {
+        console.error(`Error al eliminar ${usuario.nombreCompleto}:`, error);
+        fallidos++;
+      }
+    }
+
+    setProcesandoMasivo(false);
+    setSeleccionados(new Set());
+    cargarUsuariosPendientes();
+
+    if (exitosos > 0 && fallidos === 0) {
+      toast.success(`Se eliminaron ${exitosos} usuario(s) exitosamente`);
+    } else if (exitosos > 0 && fallidos > 0) {
+      toast.success(`Se eliminaron ${exitosos} usuario(s), ${fallidos} fallaron`);
+    } else {
+      toast.error("No se pudo eliminar ningún usuario");
     }
   };
 
@@ -504,7 +638,7 @@ export default function AprobacionSolicitudes() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Buscar por nombre o documento..."
+                placeholder="Buscar por nombre, documento o IPRESS..."
                 value={busquedaPendientes}
                 onChange={(e) => setBusquedaPendientes(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all"
@@ -520,16 +654,54 @@ export default function AprobacionSolicitudes() {
             </div>
             {busquedaPendientes && (
               <p className="text-sm text-slate-500 mt-2">
-                Mostrando {usuariosPendientes.filter(u => {
-                  const term = busquedaPendientes.toLowerCase();
-                  return (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
-                         (u.username?.toLowerCase() || '').includes(term) ||
-                         (u.correoPersonal?.toLowerCase() || '').includes(term) ||
-                         (u.correoInstitucional?.toLowerCase() || '').includes(term);
-                }).length} de {usuariosPendientes.length} usuarios
+                Mostrando {usuariosFiltrados.length} de {usuariosPendientes.length} usuarios
               </p>
             )}
           </div>
+
+          {/* Barra de acciones masivas */}
+          {seleccionados.size > 0 && (
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl shadow-lg p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3 text-white">
+                <CheckSquare className="w-5 h-5" />
+                <span className="font-medium">
+                  {seleccionados.size} usuario{seleccionados.size > 1 ? 's' : ''} seleccionado{seleccionados.size > 1 ? 's' : ''}
+                </span>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={reenviarEmailsMasivo}
+                  disabled={procesandoMasivo}
+                  className="flex items-center gap-2 px-4 py-2 bg-white text-blue-700 rounded-lg hover:bg-blue-50 transition-colors font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {procesandoMasivo ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                  Reenviar Emails
+                </button>
+                <button
+                  onClick={eliminarMasivo}
+                  disabled={procesandoMasivo}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium shadow-md disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {procesandoMasivo ? (
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Trash2 className="w-4 h-4" />
+                  )}
+                  Eliminar
+                </button>
+                <button
+                  onClick={() => setSeleccionados(new Set())}
+                  className="px-4 py-2 bg-white/20 text-white rounded-lg hover:bg-white/30 transition-colors font-medium"
+                >
+                  Cancelar
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Lista de usuarios pendientes */}
           {loadingPendientes ? (
@@ -542,14 +714,7 @@ export default function AprobacionSolicitudes() {
               <p className="text-slate-600 text-lg">Todos los usuarios han activado su cuenta</p>
               <p className="text-slate-400 text-sm mt-2">No hay usuarios pendientes de activación</p>
             </div>
-          ) : usuariosPendientes.filter(u => {
-              if (!busquedaPendientes) return true;
-              const term = busquedaPendientes.toLowerCase();
-              return (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
-                     (u.username?.toLowerCase() || '').includes(term) ||
-                     (u.correoPersonal?.toLowerCase() || '').includes(term) ||
-                     (u.correoInstitucional?.toLowerCase() || '').includes(term);
-            }).length === 0 ? (
+          ) : usuariosFiltrados.length === 0 ? (
             <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-12 text-center">
               <Search className="w-16 h-16 text-slate-300 mx-auto mb-4" />
               <p className="text-slate-600 text-lg">No se encontraron resultados</p>
@@ -561,42 +726,68 @@ export default function AprobacionSolicitudes() {
                 <table className="w-full">
                   <thead className="bg-slate-50 border-b border-slate-200">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-center">
+                        <button
+                          onClick={seleccionarTodos}
+                          className="p-1 hover:bg-slate-200 rounded transition-colors"
+                          title={seleccionados.size === usuariosFiltrados.length ? "Deseleccionar todos" : "Seleccionar todos"}
+                        >
+                          {seleccionados.size === 0 ? (
+                            <Square className="w-5 h-5 text-slate-400" />
+                          ) : seleccionados.size === usuariosFiltrados.length ? (
+                            <CheckSquare className="w-5 h-5 text-blue-600" />
+                          ) : (
+                            <MinusSquare className="w-5 h-5 text-blue-600" />
+                          )}
+                        </button>
+                      </th>
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         Usuario
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         Documento
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        IPRESS
+                      </th>
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         Correo
                       </th>
-                      <th className="px-6 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                        Fecha Creación
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Fecha
                       </th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                      <th className="px-4 py-4 text-center text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         Acción
                       </th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-200">
-                    {usuariosPendientes
-                      .filter(u => {
-                        if (!busquedaPendientes) return true;
-                        const term = busquedaPendientes.toLowerCase();
-                        return (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
-                               (u.username?.toLowerCase() || '').includes(term) ||
-                               (u.correoPersonal?.toLowerCase() || '').includes(term) ||
-                               (u.correoInstitucional?.toLowerCase() || '').includes(term);
-                      })
-                      .map((usuario) => (
-                      <tr key={usuario.idUsuario} className="hover:bg-slate-50 transition-colors">
-                        <td className="px-6 py-4">
+                    {usuariosFiltrados.map((usuario) => (
+                      <tr
+                        key={usuario.idUsuario}
+                        className={`hover:bg-slate-50 transition-colors ${
+                          seleccionados.has(usuario.idUsuario) ? 'bg-blue-50' : ''
+                        }`}
+                      >
+                        <td className="px-4 py-4 text-center">
+                          <button
+                            onClick={() => toggleSeleccion(usuario.idUsuario)}
+                            className="p-1 hover:bg-slate-200 rounded transition-colors"
+                          >
+                            {seleccionados.has(usuario.idUsuario) ? (
+                              <CheckSquare className="w-5 h-5 text-blue-600" />
+                            ) : (
+                              <Square className="w-5 h-5 text-slate-400" />
+                            )}
+                          </button>
+                        </td>
+                        <td className="px-4 py-4">
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                            <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center flex-shrink-0">
                               <User className="w-5 h-5 text-orange-600" />
                             </div>
-                            <div>
-                              <p className="text-sm font-medium text-slate-800">
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium text-slate-800 truncate">
                                 {usuario.nombreCompleto}
                               </p>
                               <p className="text-xs text-slate-500">
@@ -605,18 +796,26 @@ export default function AprobacionSolicitudes() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <span className="text-sm text-slate-600">{usuario.username}</span>
+                        <td className="px-4 py-4">
+                          <span className="text-sm text-slate-600 font-mono">{usuario.username}</span>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <div className="flex items-center gap-2">
-                            <Mail className="w-4 h-4 text-slate-400" />
-                            <span className="text-sm text-slate-600">
-                              {usuario.correoPersonal || usuario.correoInstitucional || 'Sin correo'}
+                            <Building2 className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                            <span className="text-sm text-slate-600 truncate max-w-[200px]" title={usuario.ipress || 'Sin IPRESS'}>
+                              {usuario.ipress || <span className="text-slate-400 italic">Sin IPRESS</span>}
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                            <span className="text-sm text-slate-600 truncate max-w-[180px]" title={usuario.correoPersonal || usuario.correoInstitucional || 'Sin correo'}>
+                              {usuario.correoPersonal || usuario.correoInstitucional || <span className="text-slate-400 italic">Sin correo</span>}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4">
                           <span className="text-sm text-slate-600">
                             {usuario.fechaCreacion
                               ? new Date(usuario.fechaCreacion).toLocaleDateString("es-PE", {
@@ -627,50 +826,40 @@ export default function AprobacionSolicitudes() {
                               : 'N/A'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-4 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button
                               onClick={() => reenviarEmailActivacion(usuario.idUsuario, usuario.nombreCompleto)}
                               disabled={enviandoEmail === usuario.idUsuario || (!usuario.correoPersonal && !usuario.correoInstitucional)}
-                              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                                 enviandoEmail === usuario.idUsuario
                                   ? 'bg-gray-200 text-gray-500 cursor-wait'
                                   : (!usuario.correoPersonal && !usuario.correoInstitucional)
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                                  : 'bg-orange-600 text-white hover:bg-orange-700 shadow-md'
+                                  : 'bg-orange-600 text-white hover:bg-orange-700 shadow-sm'
                               }`}
                               title={(!usuario.correoPersonal && !usuario.correoInstitucional) ? 'Usuario sin correo registrado' : 'Reenviar correo de activación'}
                             >
                               {enviandoEmail === usuario.idUsuario ? (
-                                <>
-                                  <RefreshCw className="w-4 h-4 animate-spin" />
-                                  Enviando...
-                                </>
+                                <RefreshCw className="w-4 h-4 animate-spin" />
                               ) : (
-                                <>
-                                  <Send className="w-4 h-4" />
-                                  Reenviar
-                                </>
+                                <Send className="w-4 h-4" />
                               )}
                             </button>
                             <button
                               onClick={() => eliminarUsuarioPendiente(usuario.idUsuario, usuario.nombreCompleto)}
                               disabled={eliminandoUsuario === usuario.idUsuario}
-                              className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                                 eliminandoUsuario === usuario.idUsuario
                                   ? 'bg-gray-200 text-gray-500 cursor-wait'
-                                  : 'bg-red-600 text-white hover:bg-red-700 shadow-md'
+                                  : 'bg-red-600 text-white hover:bg-red-700 shadow-sm'
                               }`}
                               title="Eliminar usuario para que pueda volver a registrarse"
                             >
                               {eliminandoUsuario === usuario.idUsuario ? (
-                                <>
-                                  <RefreshCw className="w-4 h-4 animate-spin" />
-                                </>
+                                <RefreshCw className="w-4 h-4 animate-spin" />
                               ) : (
-                                <>
-                                  <Trash2 className="w-4 h-4" />
-                                </>
+                                <Trash2 className="w-4 h-4" />
                               )}
                             </button>
                           </div>

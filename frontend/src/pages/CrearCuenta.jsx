@@ -355,6 +355,17 @@ export default function CrearCuenta() {
             </p>
           </div>
 
+          {/* Nota informativa */}
+          <div className="mx-8 mb-2 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <p className="text-sm text-amber-800 leading-relaxed">
+              <span className="font-semibold">Importante:</span> La cuenta de usuario es{" "}
+              <span className="font-semibold">personal e intransferible</span>. Para personal
+              externo de CENATE, se permite el registro de{" "}
+              <span className="font-semibold">un representante por IPRESS</span>. No se
+              aceptan registros por Red Asistencial.
+            </p>
+          </div>
+
           {/* Formulario */}
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
             {/* Información Personal */}

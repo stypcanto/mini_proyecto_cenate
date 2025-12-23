@@ -11,6 +11,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -64,6 +65,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final PasswordTokenService passwordTokenService;
 
 	private final DimOrigenPersonalRepository repositorioOrigenPersonal;
+	private final JdbcTemplate jdbcTemplate;
 
 	// =============================================================
 	// 🟢 CREAR USUARIO
@@ -1038,9 +1040,62 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Override
 	@Transactional
 	public void deleteUser(Long id) {
+		log.info("🗑️ Iniciando eliminación completa de usuario ID: {}", id);
+
 		Usuario usuario = usuarioRepository.findById(id)
 				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + id));
+
+		String numDocumento = usuario.getNameUser();
+		Long idPersonal = null;
+
+		// Obtener ID de personal antes de eliminar
+		if (usuario.getPersonalCnt() != null) {
+			idPersonal = usuario.getPersonalCnt().getIdPers();
+		}
+
+		// 1. Eliminar permisos del usuario
+		int permisos = jdbcTemplate.update("DELETE FROM permisos_modulares WHERE id_user = ?", id);
+		log.info("  - Permisos eliminados: {}", permisos);
+
+		// 2. Eliminar roles del usuario
+		int roles = jdbcTemplate.update("DELETE FROM rel_user_roles WHERE id_user = ?", id);
+		log.info("  - Roles eliminados: {}", roles);
+
+		// 3. Desvincular y eliminar personal
+		if (idPersonal != null) {
+			// Desvincular primero
+			jdbcTemplate.update("UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_pers = ?", idPersonal);
+
+			// Eliminar profesiones del personal
+			int profs = jdbcTemplate.update("DELETE FROM dim_personal_prof WHERE id_pers = ?", idPersonal);
+			log.info("  - Profesiones eliminadas: {}", profs);
+
+			// Eliminar tipos del personal
+			int tipos = jdbcTemplate.update("DELETE FROM dim_personal_tipo WHERE id_pers = ?", idPersonal);
+			log.info("  - Tipos eliminados: {}", tipos);
+		}
+
+		// 4. Eliminar usuario
 		usuarioRepository.delete(usuario);
+		log.info("  - Usuario eliminado: {}", numDocumento);
+
+		// 5. Eliminar personal huérfano
+		if (idPersonal != null) {
+			int personal = jdbcTemplate.update("DELETE FROM dim_personal_cnt WHERE id_pers = ?", idPersonal);
+			log.info("  - Personal eliminado: {}", personal);
+		}
+
+		// 6. Actualizar solicitudes en account_requests a RECHAZADO para permitir re-registro
+		int solicitudes = jdbcTemplate.update("""
+			UPDATE account_requests
+			SET estado = 'RECHAZADO',
+			    observacion_admin = 'Usuario eliminado - Puede volver a registrarse',
+			    updated_at = CURRENT_TIMESTAMP
+			WHERE num_documento = ? AND estado IN ('PENDIENTE', 'APROBADO')
+			""", numDocumento);
+		log.info("  - Solicitudes actualizadas a RECHAZADO: {}", solicitudes);
+
+		log.info("✅ Usuario {} (ID: {}) eliminado completamente", numDocumento, id);
 	}
 
 	// =============================================================
