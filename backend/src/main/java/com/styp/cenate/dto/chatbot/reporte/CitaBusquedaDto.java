@@ -2,6 +2,7 @@ package com.styp.cenate.dto.chatbot.reporte;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 import lombok.Data;
 
@@ -33,4 +34,7 @@ public class CitaBusquedaDto {
 
     private Boolean bloqueaSlot;
     private Boolean esFinal;
+    private OffsetDateTime fechaSolicitud;
+    
+    
 }

@@ -84,6 +84,7 @@ public class CitaDashboardServiceImpl implements CitaDashboardService {
             dto.setNombresPaciente(v.getNombresPaciente());
 
             dto.setDescEstadoPaciente(v.getDescEstadoPaciente());
+            dto.setFechaSolicitud(v.getFechaSolicitud());
             dto.setDescEstadoBackoffice(v.getDescEstadoBackoffice());
 
             dto.setBloqueaSlot(v.getBloqueaSlot());

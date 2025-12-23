@@ -3,6 +3,7 @@ package com.styp.cenate.service.chatbot.solicitudcita;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -13,8 +14,10 @@ import com.styp.cenate.dto.chatbot.SolicitudCitaRequestDTO;
 import com.styp.cenate.dto.chatbot.SolicitudCitaResponseDTO;
 import com.styp.cenate.exception.AseguradoNoEncontradoException;
 import com.styp.cenate.exception.RegistroCitaExistenteException;
+import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.mapper.SolicitudCitaMapper;
 import com.styp.cenate.model.Asegurado;
+import com.styp.cenate.model.chatbot.DimEstadoCita;
 import com.styp.cenate.model.chatbot.SolicitudCita;
 import com.styp.cenate.repository.ActividadEssiRepository;
 import com.styp.cenate.repository.AreaHospitalariaRepository;
@@ -48,15 +51,15 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 	@Override
 	public SolicitudCitaResponseDTO guardar(SolicitudCitaRequestDTO dto) {
 		SolicitudCita entity = SolicitudCitaMapper.toEntity(dto);
-		
+
 		// buscar datos del asegurado.
 		Asegurado asegurado = aseguradoRepo.findByDocPaciente(dto.getDocPaciente())
 				.orElseThrow(() -> new AseguradoNoEncontradoException("No existe el paciente"));
-		
+
 		entity.setNombresPaciente(asegurado.getPaciente());
 		entity.setEdad(CalculoFechas.calcularEdad(asegurado.getFecnacimpaciente()));
 		entity.setSexo(asegurado.getSexo());
-		
+
 		// Validar existencia de cita
 		boolean existencia = existeCitaPorPersonalYFechaHora(dto.getIdPersonal(), dto.getFechaCita(),
 				dto.getHoraCita());
@@ -69,8 +72,6 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(entity));
 	}
-	
-	
 
 	@Override
 	public SolicitudCitaResponseDTO actualizar(Long idSolicitud, SolicitudCitaRequestDTO dto) {
@@ -92,13 +93,13 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(existente));
 	}
 
-	@Override
-	public void eliminar(Long idSolicitud) {
-		if (!solicitudRepo.existsById(idSolicitud)) {
-			throw new IllegalArgumentException("Solicitud no encontrada: " + idSolicitud);
-		}
-		solicitudRepo.deleteById(idSolicitud);
-	}
+//	@Override
+//	public void eliminar(Long idSolicitud) {
+//		if (!solicitudRepo.existsById(idSolicitud)) {
+//			throw new IllegalArgumentException("Solicitud no encontrada: " + idSolicitud);
+//		}
+//		solicitudRepo.deleteById(idSolicitud);
+//	}
 
 	@Override
 	@Transactional(readOnly = true)
@@ -185,16 +186,32 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 
 	}
 
+	@Transactional
 	@Override
-	public SolicitudCitaResponseDTO actualizarEstado(Long id, String estado, String observacion) {
+	public SolicitudCitaResponseDTO actualizarEstado(Long id, Long estado, String observacion) {
+		
+		
 		SolicitudCita solicitud = solicitudRepo.findById(id)
 				.orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + id));
-
+		
+		if (Boolean.FALSE.equals(solicitud.getEstadoRegistro())) {
+	        throw new IllegalStateException("No se puede actualizar una solicitud eliminada/anulada");
+	    }
+		
+	    // Validar que el estado exista 
+	    if (!estadoCitaRepo.existsById(estado)) {
+	        throw new IllegalArgumentException("Estado no válido: " + estado);
+	    }
+	    
+	    solicitud.setIdEstadoCita(estado); 
 		solicitud.setObservacion(observacion);
-		solicitud.setFechaActualiza(OffsetDateTime.now());
+
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(solicitud));
 	}
 
+	
+	
+	
 	private void validarCamposObligatorios(SolicitudCitaRequestDTO dto) {
 		if (dto.getPeriodo() == null || dto.getPeriodo().isBlank())
 			throw new IllegalArgumentException("Periodo es obligatorio");
@@ -208,6 +225,31 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 			throw new IllegalArgumentException("Los parámetros idPers, fechaCita y horaCita son obligatorios");
 		}
 		return solicitudRepo.existsByPersonal_IdPersAndFechaCitaAndHoraCita(idPers, fechaCita, horaCita);
+	}
+
+	@Transactional
+	@Override
+	public void eliminarCita(Long codigo) {
+
+		SolicitudCita entidad = solicitudRepo.findById(codigo)
+				.orElseThrow(() -> new ResourceNotFoundException("Registro de cita no se encuentra"));
+
+		// 1) si ya está eliminado
+		if (Boolean.FALSE.equals(entidad.getEstadoRegistro())) {
+			throw new IllegalStateException("La cita ya se encuentra eliminada/anulada");
+		}
+
+		// 2) regla de negocio: solo permitir eliminar si está en estado 2 (por ej: PENDIENTE)
+		if (!entidad.getIdEstadoCita().equals(2L)) {
+			throw new IllegalStateException("Solo se puede eliminar una cita en estado PENDIENTE");
+		}
+
+		entidad.setEstadoRegistro(false);
+		entidad.setIdEstadoCita(6L);
+		
+		// FALTA ACTUALIZAR LOS ESTADOS DE LA PROGRAMACION
+		
+		
 	}
 
 }
