@@ -59,4 +59,19 @@ public interface PersonalExternoRepository extends JpaRepository<PersonalExterno
 	// Búsqueda por correo personal (para recuperación de contraseña)
 	boolean existsByEmailPersExt(String emailPersExt);
 
+	// ========================================
+	// Métodos para Módulo de Red
+	// ========================================
+
+	/**
+	 * 🌐 Buscar personal externo por Red Asistencial.
+	 * Filtra a través de la relación IPRESS -> Red.
+	 */
+	List<PersonalExterno> findByIpress_Red_Id(Long idRed);
+
+	/**
+	 * 📊 Contar personal externo por Red Asistencial.
+	 */
+	Long countByIpress_Red_Id(Long idRed);
+
 }

@@ -1,11 +1,14 @@
 package com.styp.cenate.service.security;
 
+import com.styp.cenate.model.PasswordResetToken;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.repository.PasswordResetTokenRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.service.email.EmailService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,12 +16,10 @@ import org.springframework.transaction.annotation.Transactional;
 import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.Base64;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Servicio para gestión segura de tokens de recuperación/cambio de contraseña.
- * Utiliza tokens temporales en memoria con expiración.
+ * Los tokens se persisten en base de datos para sobrevivir reinicios del servidor.
  */
 @Service
 @RequiredArgsConstructor
@@ -26,14 +27,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class PasswordTokenService {
 
     private final UsuarioRepository usuarioRepository;
+    private final PasswordResetTokenRepository tokenRepository;
     private final PasswordEncoder passwordEncoder;
     private final EmailService emailService;
 
     @Value("${app.frontend.url:http://localhost:3000}")
     private String frontendUrl;
-
-    // Almacén temporal de tokens (en producción usar Redis o base de datos)
-    private final Map<String, TokenInfo> tokenStore = new ConcurrentHashMap<>();
 
     // Configuración de tokens
     private static final int TOKEN_EXPIRATION_HOURS = 24;
@@ -116,12 +115,10 @@ public class PasswordTokenService {
 
     /**
      * Crea un token de cambio de contraseña y envía email a una dirección específica
-     * (evita problemas de lazy loading cuando el email viene de otra fuente)
      */
     @Transactional
     public boolean crearTokenYEnviarEmailDirecto(Usuario usuario, String email, String tipoAccion) {
-        // Obtener nombre completo de forma segura (evita lazy loading)
-        String nombreCompleto = usuario.getNameUser(); // Por defecto el username
+        String nombreCompleto = usuario.getNameUser();
         try {
             if (usuario.getPersonalCnt() != null && usuario.getPersonalCnt().getNombreCompleto() != null) {
                 nombreCompleto = usuario.getPersonalCnt().getNombreCompleto();
@@ -134,7 +131,6 @@ public class PasswordTokenService {
 
     /**
      * Crea un token de cambio de contraseña y envía email con nombre completo explícito
-     * (usado cuando el nombre ya está disponible, evita problemas de lazy loading)
      */
     @Transactional
     public boolean crearTokenYEnviarEmailDirecto(Usuario usuario, String email, String nombreCompleto, String tipoAccion) {
@@ -144,24 +140,28 @@ public class PasswordTokenService {
         }
 
         // Invalidar tokens anteriores del mismo usuario
-        tokenStore.entrySet().removeIf(entry ->
-            entry.getValue().idUsuario.equals(usuario.getIdUser()));
+        tokenRepository.invalidarTokensAnteriores(usuario.getIdUser());
 
         // Generar nuevo token
-        String token = generarToken();
+        String tokenValue = generarToken();
         LocalDateTime expiracion = LocalDateTime.now().plusHours(TOKEN_EXPIRATION_HOURS);
 
-        // Almacenar token
-        tokenStore.put(token, new TokenInfo(
-            usuario.getIdUser(),
-            usuario.getNameUser(),
-            email,
-            expiracion,
-            tipoAccion
-        ));
+        // Crear y guardar el token en base de datos
+        PasswordResetToken token = PasswordResetToken.builder()
+            .token(tokenValue)
+            .idUsuario(usuario.getIdUser())
+            .username(usuario.getNameUser())
+            .email(email)
+            .fechaExpiracion(expiracion)
+            .tipoAccion(tipoAccion)
+            .usado(false)
+            .build();
+
+        tokenRepository.save(token);
+        log.info("Token guardado en BD para usuario: {}", usuario.getNameUser());
 
         // Enviar email con enlace
-        String enlace = frontendUrl + "/cambiar-contrasena?token=" + token;
+        String enlace = frontendUrl + "/cambiar-contrasena?token=" + tokenValue;
         log.info("Enviando correo de {} a {} con enlace: {}", tipoAccion, email, enlace);
 
         emailService.enviarCorreoCambioContrasena(
@@ -181,20 +181,37 @@ public class PasswordTokenService {
     /**
      * Valida un token y devuelve la información del usuario
      */
+    @Transactional(readOnly = true)
     public TokenValidationResult validarToken(String token) {
         if (token == null || token.isBlank()) {
             return new TokenValidationResult(false, "Token no proporcionado", null);
         }
 
-        TokenInfo info = tokenStore.get(token);
-        if (info == null) {
+        var tokenEntity = tokenRepository.findByToken(token).orElse(null);
+
+        if (tokenEntity == null) {
+            log.warn("Token no encontrado en BD: {}", token.substring(0, Math.min(10, token.length())) + "...");
             return new TokenValidationResult(false, "Token inválido o ya utilizado", null);
         }
 
-        if (LocalDateTime.now().isAfter(info.expiracion)) {
-            tokenStore.remove(token);
+        if (tokenEntity.getUsado()) {
+            log.warn("Token ya fue usado: {}", tokenEntity.getUsername());
+            return new TokenValidationResult(false, "Token ya utilizado", null);
+        }
+
+        if (tokenEntity.isExpirado()) {
+            log.warn("Token expirado para usuario: {}", tokenEntity.getUsername());
             return new TokenValidationResult(false, "Token expirado", null);
         }
+
+        // Crear TokenInfo para compatibilidad
+        TokenInfo info = new TokenInfo(
+            tokenEntity.getIdUsuario(),
+            tokenEntity.getUsername(),
+            tokenEntity.getEmail(),
+            tokenEntity.getFechaExpiracion(),
+            tokenEntity.getTipoAccion()
+        );
 
         return new TokenValidationResult(true, "Token válido", info);
     }
@@ -228,8 +245,12 @@ public class PasswordTokenService {
         usuario.setLockedUntil(null);
         usuarioRepository.save(usuario);
 
-        // Invalidar token usado
-        tokenStore.remove(token);
+        // Marcar token como usado
+        var tokenEntity = tokenRepository.findByToken(token).orElse(null);
+        if (tokenEntity != null) {
+            tokenEntity.setUsado(true);
+            tokenRepository.save(tokenEntity);
+        }
 
         log.info("Contraseña cambiada exitosamente para usuario: {}", usuario.getNameUser());
         return new CambioContrasenaResult(true, "Contraseña cambiada exitosamente");
@@ -263,19 +284,18 @@ public class PasswordTokenService {
     }
 
     /**
-     * Limpia tokens expirados (llamar periódicamente)
+     * Limpia tokens expirados (se ejecuta automáticamente cada hora)
      */
+    @Scheduled(fixedRate = 3600000) // Cada hora
+    @Transactional
     public void limpiarTokensExpirados() {
-        int antes = tokenStore.size();
-        tokenStore.entrySet().removeIf(entry ->
-            LocalDateTime.now().isAfter(entry.getValue().expiracion));
-        int despues = tokenStore.size();
-        if (antes != despues) {
-            log.info("Limpiados {} tokens expirados", antes - despues);
+        int eliminados = tokenRepository.eliminarTokensExpiradosOUsados(LocalDateTime.now());
+        if (eliminados > 0) {
+            log.info("Limpiados {} tokens expirados o usados de la BD", eliminados);
         }
     }
 
-    // Clases internas para resultados
+    // Clases internas para resultados (mantener compatibilidad)
     public record TokenInfo(
         Long idUsuario,
         String username,

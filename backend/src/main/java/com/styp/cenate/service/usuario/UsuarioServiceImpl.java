@@ -69,6 +69,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final DimOrigenPersonalRepository repositorioOrigenPersonal;
 	private final JdbcTemplate jdbcTemplate;
 	private final AuditLogService auditLogService;
+	private final com.styp.cenate.repository.RedRepository redRepository;
 
 	// =============================================================
 	// 🔒 MÉTODO HELPER PARA AUDITORÍA
@@ -798,6 +799,21 @@ public class UsuarioServiceImpl implements UsuarioService {
 		} else {
 			log.info("ℹ️ No se modifican los roles del usuario {} (roles recibidos: {})", usuario.getNameUser(),
 					request.getRoles());
+		}
+
+		// 🌐 ACTUALIZAR RED si se envía (para COORDINADOR_RED)
+		if (request.getIdRed() != null) {
+			log.info("🌐 Actualizando Red para usuario {}: {}", usuario.getNameUser(), request.getIdRed());
+			var red = redRepository.findById(request.getIdRed())
+					.orElseThrow(() -> new EntityNotFoundException("Red no encontrada con ID: " + request.getIdRed()));
+			usuario.setRed(red);
+			log.info("✅ Red asignada: {} - {}", red.getId(), red.getDescripcion());
+		} else if (request.getRoles() != null && !request.getRoles().contains("COORDINADOR_RED")) {
+			// Si se quita el rol COORDINADOR_RED, también quitar la Red asignada
+			if (usuario.getRed() != null) {
+				log.info("🔄 Quitando Red del usuario {} porque ya no tiene rol COORDINADOR_RED", usuario.getNameUser());
+				usuario.setRed(null);
+			}
 		}
 
 		usuario.setUpdateAt(LocalDateTime.now());
@@ -1744,6 +1760,26 @@ public class UsuarioServiceImpl implements UsuarioService {
 				}
 			} else {
 				log.debug("ℹ️ No hay tipo de profesional registrado para {}", usuario.getNameUser());
+			}
+		}
+
+		// ============================================================
+		// 🌐 RED ASIGNADA DIRECTAMENTE AL USUARIO (para COORDINADOR_RED)
+		// ============================================================
+		// Si el usuario tiene una Red asignada directamente (no desde IPRESS),
+		// usamos esa información para el response
+		if (usuario.getRed() != null) {
+			var redUsuario = usuario.getRed();
+			idRed = redUsuario.getId();
+			nombreRed = redUsuario.getDescripcion();
+			codigoRed = redUsuario.getCodigo();
+			log.debug("🌐 Red asignada al usuario {}: {} - {}", usuario.getNameUser(), idRed, nombreRed);
+
+			// Extraer Macroregión de la Red del usuario
+			if (redUsuario.getMacroregion() != null) {
+				var macro = redUsuario.getMacroregion();
+				idMacroregion = macro.getIdMacro();
+				nombreMacroregion = macro.getDescMacro();
 			}
 		}
 

@@ -593,7 +593,7 @@ public class AccountRequestService {
      */
     @Transactional
     public void eliminarUsuarioPendienteActivacion(Long idUsuario) {
-        log.info("Eliminando usuario pendiente de activación ID: {}", idUsuario);
+        log.info("🗑️ Eliminando usuario pendiente de activación ID: {}", idUsuario);
 
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -604,70 +604,93 @@ public class AccountRequestService {
         }
 
         String numDocumento = usuario.getNameUser();
-        Long idPersonal = null;
+        Long idPersonalCnt = null;
+        Long idPersonalExt = null;
 
-        // Obtener ID de personal antes de eliminar la referencia
+        // Obtener ID de personal INTERNO antes de eliminar
         if (usuario.getPersonalCnt() != null) {
-            idPersonal = usuario.getPersonalCnt().getIdPers();
+            idPersonalCnt = usuario.getPersonalCnt().getIdPers();
         }
 
-        // 1. Eliminar permisos del usuario (si existen) - usando SQL directo
-        String sqlPermisos = "DELETE FROM permisos_modulares WHERE id_user = ?";
-        int permisosEliminados = jdbcTemplate.update(sqlPermisos, idUsuario);
-        log.info("Permisos eliminados: {} para usuario ID: {}", permisosEliminados, idUsuario);
-
-        // 2. Eliminar relación usuario-rol (si existe) - usando SQL directo
-        String sqlRoles = "DELETE FROM rel_user_roles WHERE id_user = ?";
-        int rolesEliminados = jdbcTemplate.update(sqlRoles, idUsuario);
-        log.info("Roles eliminados: {} para usuario ID: {}", rolesEliminados, idUsuario);
-
-        // 3. Primero desvinculamos el personal del usuario (para evitar FK constraint)
-        if (idPersonal != null) {
-            String sqlDesvincular = "UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_pers = ?";
-            jdbcTemplate.update(sqlDesvincular, idPersonal);
-            log.info("Personal desvinculado del usuario");
-
-            // 3.1 Eliminar dependencias del personal (dim_personal_prof)
-            String sqlDeletePersonalProf = "DELETE FROM dim_personal_prof WHERE id_pers = ?";
-            int profEliminados = jdbcTemplate.update(sqlDeletePersonalProf, idPersonal);
-            log.info("Personal profesiones eliminadas: {} para personal ID: {}", profEliminados, idPersonal);
-
-            // 3.2 Eliminar dependencias del personal (dim_personal_tipo)
-            String sqlDeletePersonalTipo = "DELETE FROM dim_personal_tipo WHERE id_pers = ?";
-            int tiposEliminados = jdbcTemplate.update(sqlDeletePersonalTipo, idPersonal);
-            log.info("Personal tipos eliminados: {} para personal ID: {}", tiposEliminados, idPersonal);
+        // Obtener ID de personal EXTERNO antes de eliminar
+        if (usuario.getPersonalExterno() != null) {
+            idPersonalExt = usuario.getPersonalExterno().getIdPersExt();
         }
 
-        // 4. Eliminar usuario usando SQL directo (evita problemas de cascada)
-        String sqlDeleteUsuario = "DELETE FROM dim_usuarios WHERE id_user = ?";
-        int usuarioEliminado = jdbcTemplate.update(sqlDeleteUsuario, idUsuario);
-        log.info("Usuario eliminado: {} (filas afectadas: {})", numDocumento, usuarioEliminado);
+        // 1. Eliminar permisos del usuario
+        int permisosEliminados = jdbcTemplate.update(
+            "DELETE FROM permisos_modulares WHERE id_user = ?", idUsuario);
+        log.info("   🔐 Permisos eliminados: {}", permisosEliminados);
 
-        // 5. Ahora eliminar el personal huérfano
-        if (idPersonal != null) {
-            String sqlDeletePersonal = "DELETE FROM dim_personal_cnt WHERE id_pers = ?";
-            int personalEliminado = jdbcTemplate.update(sqlDeletePersonal, idPersonal);
-            log.info("Personal eliminado: {} (filas afectadas: {})", idPersonal, personalEliminado);
+        // 2. Eliminar roles del usuario
+        int rolesEliminados = jdbcTemplate.update(
+            "DELETE FROM rel_user_roles WHERE id_user = ?", idUsuario);
+        log.info("   🎭 Roles eliminados: {}", rolesEliminados);
+
+        // 3. Desvincular personal INTERNO del usuario (ANTES de eliminar usuario)
+        if (idPersonalCnt != null) {
+            jdbcTemplate.update(
+                "UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_pers = ?", idPersonalCnt);
+            log.info("   📋 Personal CNT desvinculado");
+
+            // Eliminar profesiones y tipos
+            jdbcTemplate.update("DELETE FROM dim_personal_prof WHERE id_pers = ?", idPersonalCnt);
+            jdbcTemplate.update("DELETE FROM dim_personal_tipo WHERE id_pers = ?", idPersonalCnt);
         }
 
-        // 6. Actualizar la solicitud original para que pueda volver a registrarse
-        String sqlUpdateSolicitud = """
+        // 4. Desvincular personal EXTERNO del usuario (ANTES de eliminar usuario)
+        if (idPersonalExt != null) {
+            try {
+                jdbcTemplate.update(
+                    "UPDATE dim_personal_externo SET id_user = NULL WHERE id_pers_ext = ?",
+                    idPersonalExt);
+                log.info("   🌐 Personal externo desvinculado");
+            } catch (Exception e) {
+                log.debug("   ⚠️ Error desvinculando personal externo: {}", e.getMessage());
+            }
+        }
+
+        // 5. Eliminar usuario (ya no hay FK constraints)
+        int usuarioEliminado = jdbcTemplate.update(
+            "DELETE FROM dim_usuarios WHERE id_user = ?", idUsuario);
+        log.info("   ✅ Usuario eliminado: {} (filas: {})", numDocumento, usuarioEliminado);
+
+        // 6. Eliminar personal INTERNO huérfano
+        if (idPersonalCnt != null) {
+            int cntEliminado = jdbcTemplate.update(
+                "DELETE FROM dim_personal_cnt WHERE id_pers = ?", idPersonalCnt);
+            log.info("   ✅ Personal CNT eliminado: {}", cntEliminado);
+        }
+
+        // 7. Eliminar personal EXTERNO huérfano
+        if (idPersonalExt != null) {
+            try {
+                int extEliminado = jdbcTemplate.update(
+                    "DELETE FROM dim_personal_externo WHERE id_pers_ext = ?", idPersonalExt);
+                log.info("   ✅ Personal externo eliminado: {}", extEliminado);
+            } catch (Exception e) {
+                log.debug("   ⚠️ Error eliminando personal externo: {}", e.getMessage());
+            }
+        }
+
+        // 8. Actualizar solicitud para permitir re-registro
+        int solicitudActualizada = jdbcTemplate.update("""
             UPDATE account_requests
             SET estado = 'RECHAZADO',
                 observacion_admin = 'Usuario eliminado - Puede volver a registrarse',
                 fecha_respuesta = CURRENT_TIMESTAMP
             WHERE num_documento = ? AND estado = 'APROBADO'
-        """;
-        int solicitudActualizada = jdbcTemplate.update(sqlUpdateSolicitud, numDocumento);
-        log.info("Solicitud actualizada: {} (filas afectadas: {})", numDocumento, solicitudActualizada);
+        """, numDocumento);
+        log.info("   📝 Solicitud actualizada: {}", solicitudActualizada);
 
-        // Registrar en auditoría
+        // 9. Auditoría
         auditar("DELETE_PENDING_USER",
-                String.format("Usuario pendiente eliminado - DNI: %s, ID: %d. Permitido re-registro",
-                        numDocumento, idUsuario),
+                String.format("Usuario pendiente eliminado - DNI: %s, ID: %d. Tipo: %s. Permitido re-registro",
+                        numDocumento, idUsuario,
+                        idPersonalCnt != null ? "INTERNO" : (idPersonalExt != null ? "EXTERNO" : "SIN_TIPO")),
                 "WARNING", "SUCCESS");
 
-        log.info("Usuario pendiente de activación eliminado exitosamente: {} (ID: {})", numDocumento, idUsuario);
+        log.info("✅ Usuario pendiente eliminado exitosamente: {} (ID: {})", numDocumento, idUsuario);
     }
 
     /**
@@ -677,72 +700,90 @@ public class AccountRequestService {
      */
     @Transactional
     public Map<String, Object> limpiarDatosHuerfanos(String numDocumento) {
-        log.info("Limpiando datos huérfanos para documento: {}", numDocumento);
+        log.info("🧹 Limpiando datos huérfanos para documento: {}", numDocumento);
 
         Map<String, Object> resultado = new java.util.HashMap<>();
         resultado.put("numDocumento", numDocumento);
         int totalEliminados = 0;
 
-        // 1. Buscar usuario por username (el username es el número de documento)
+        // ============================================================
+        // PASO 1: Buscar usuario por username (el username es el DNI)
+        // ============================================================
         String sqlBuscarUsuario = "SELECT id_user FROM dim_usuarios WHERE name_user = ?";
         List<Long> usuarios = jdbcTemplate.queryForList(sqlBuscarUsuario, Long.class, numDocumento);
 
         for (Long idUsuario : usuarios) {
-            log.info("Encontrado usuario con ID: {}", idUsuario);
+            log.info("👤 Encontrado usuario con ID: {}", idUsuario);
 
             // 1.1 Eliminar permisos del usuario
             int permisos = jdbcTemplate.update("DELETE FROM permisos_modulares WHERE id_user = ?", idUsuario);
-            log.info("Permisos eliminados: {}", permisos);
+            log.info("   🔐 Permisos eliminados: {}", permisos);
 
             // 1.2 Eliminar roles del usuario
             int roles = jdbcTemplate.update("DELETE FROM rel_user_roles WHERE id_user = ?", idUsuario);
-            log.info("Roles eliminados: {}", roles);
+            log.info("   🎭 Roles eliminados: {}", roles);
 
-            // 1.3 Desvincular personal del usuario
-            jdbcTemplate.update("UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_usuario = ?", idUsuario);
+            // 1.3 Desvincular personal INTERNO del usuario (ANTES de eliminar usuario)
+            int cntDesvinculados = jdbcTemplate.update(
+                "UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_usuario = ?", idUsuario);
+            log.info("   📋 Personal CNT desvinculado: {}", cntDesvinculados);
 
-            // 1.4 Eliminar usuario
+            // 1.4 Desvincular personal EXTERNO del usuario (ANTES de eliminar usuario)
+            try {
+                int extDesvinculados = jdbcTemplate.update(
+                    "UPDATE dim_personal_externo SET id_user = NULL WHERE id_user = ?", idUsuario);
+                log.info("   🌐 Personal externo desvinculado: {}", extDesvinculados);
+            } catch (Exception e) {
+                log.debug("   ⚠️ No se pudo desvincular personal externo: {}", e.getMessage());
+            }
+
+            // 1.5 Ahora sí eliminar el usuario (ya no hay FK constraints)
             int usuarioEliminado = jdbcTemplate.update("DELETE FROM dim_usuarios WHERE id_user = ?", idUsuario);
             totalEliminados += usuarioEliminado;
-            log.info("Usuario eliminado: {}", usuarioEliminado);
+            log.info("   ✅ Usuario eliminado: {}", usuarioEliminado);
         }
         resultado.put("usuariosEliminados", usuarios.size());
 
-        // 2. Buscar y eliminar personal por número de documento
+        // ============================================================
+        // PASO 2: Eliminar personal INTERNO por número de documento
+        // ============================================================
         String sqlBuscarPersonal = "SELECT id_pers FROM dim_personal_cnt WHERE num_doc_pers = ?";
         List<Long> personales = jdbcTemplate.queryForList(sqlBuscarPersonal, Long.class, numDocumento);
 
         for (Long idPers : personales) {
-            log.info("Encontrado personal con ID: {}", idPers);
+            log.info("📋 Encontrado personal CNT con ID: {}", idPers);
 
             // 2.1 Eliminar profesiones del personal
             int profs = jdbcTemplate.update("DELETE FROM dim_personal_prof WHERE id_pers = ?", idPers);
-            log.info("Profesiones eliminadas: {}", profs);
+            log.info("   🎓 Profesiones eliminadas: {}", profs);
 
             // 2.2 Eliminar tipos del personal
             int tipos = jdbcTemplate.update("DELETE FROM dim_personal_tipo WHERE id_pers = ?", idPers);
-            log.info("Tipos eliminados: {}", tipos);
+            log.info("   📝 Tipos eliminados: {}", tipos);
 
             // 2.3 Eliminar el personal
             int personalEliminado = jdbcTemplate.update("DELETE FROM dim_personal_cnt WHERE id_pers = ?", idPers);
             totalEliminados += personalEliminado;
-            log.info("Personal eliminado: {}", personalEliminado);
+            log.info("   ✅ Personal CNT eliminado: {}", personalEliminado);
         }
         resultado.put("personalesEliminados", personales.size());
 
-        // 3. Buscar y eliminar personal externo por número de documento
+        // ============================================================
+        // PASO 3: Eliminar personal EXTERNO por número de documento
+        // ============================================================
         String sqlBuscarExterno = "SELECT id_pers_ext FROM dim_personal_externo WHERE num_doc_ext = ?";
         List<Long> externos = new java.util.ArrayList<>();
         try {
             externos = jdbcTemplate.queryForList(sqlBuscarExterno, Long.class, numDocumento);
         } catch (Exception e) {
-            log.debug("Tabla dim_personal_externo no existe o no tiene datos: {}", e.getMessage());
+            log.debug("⚠️ Tabla dim_personal_externo no accesible: {}", e.getMessage());
         }
 
         for (Long idExt : externos) {
+            log.info("🌐 Encontrado personal externo con ID: {}", idExt);
             int extEliminado = jdbcTemplate.update("DELETE FROM dim_personal_externo WHERE id_pers_ext = ?", idExt);
             totalEliminados += extEliminado;
-            log.info("Personal externo eliminado: {}", extEliminado);
+            log.info("   ✅ Personal externo eliminado: {}", extEliminado);
         }
         resultado.put("externosEliminados", externos.size());
 

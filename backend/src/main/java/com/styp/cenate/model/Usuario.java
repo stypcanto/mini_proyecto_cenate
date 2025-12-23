@@ -101,9 +101,20 @@ public class Usuario implements UserDetails {
     @JsonIgnore
     private PersonalExterno personalExterno;
 
+    /** Red asignada al usuario (para COORDINADOR_RED) */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_red")
+    @JsonIgnore
+    private Red red;
+
     // ======================================================
     // 🧠 Métodos utilitarios
     // ======================================================
+
+    /** Obtiene el ID de la red asignada */
+    public Long getIdRed() {
+        return red != null ? red.getId() : null;
+    }
 
     /** Determina si el usuario está activo */
     public boolean isActive() {

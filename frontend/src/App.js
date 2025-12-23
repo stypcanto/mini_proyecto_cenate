@@ -61,14 +61,23 @@ import DashboardCoordinador from "./pages/roles/coordinador/DashboardCoordinador
 import ModuloAgenda from "./pages/roles/coordinador/ModuloAgenda";
 import AsignarGestorMedico from "./pages/roles/coordinador/AsignarGestorMedico";
 import SistemaCoordinacionMedica from "./pages/roles/coordinador/SistemaCoordinacionMedica";
+import GestionPeriodosSolicitud from "./pages/roles/coordinador/GestionPeriodosSolicitud";
 
 // 🧩 Módulos por Rol - Externo
 import DashboardExterno from "./pages/roles/externo/DashboardExterno";
 import ModuloReportes from "./pages/roles/externo/ModuloReportes";
 import FormularioDiagnostico from "./pages/roles/externo/FormularioDiagnostico";
+import FormularioSolicitudTurnos from "./pages/roles/externo/FormularioSolicitudTurnos";
 
 // 🗺️ Módulos - Gestión Territorial
 import DiagnosticoIpress from "./pages/roles/gestionterritorial/DiagnosticoIpress";
+
+// 🌐 Módulo de Red - Coordinadores de Red
+import RedDashboard from "./pages/red/RedDashboard";
+
+// 📊 Módulo Programación CENATE
+import ProgramacionCenateDashboard from "./pages/programacion/ProgramacionCenateDashboard";
+import ProgramacionCenateDetalle from "./pages/programacion/ProgramacionCenateDetalle";
 
 // 🧩 Módulos - Citas
 import DashboardCitas from "./pages/roles/citas/DashboardCitas";
@@ -357,6 +366,17 @@ function AppRoutes() {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/roles/coordinador/gestion-periodos"
+          element={
+            <ProtectedRoute
+              requiredPath="/roles/coordinador/gestion-periodos"
+              requiredAction="ver"
+            >
+              <GestionPeriodosSolicitud />
+            </ProtectedRoute>
+          }
+        />
 
         {/* 🌐 Módulo Externo */}
         <Route
@@ -380,6 +400,14 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredPath="/roles/externo/formulario-diagnostico" requiredAction="ver">
               <FormularioDiagnostico />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roles/externo/solicitud-turnos"
+          element={
+            <ProtectedRoute requiredPath="/roles/externo/solicitud-turnos" requiredAction="ver">
+              <FormularioSolicitudTurnos />
             </ProtectedRoute>
           }
         />
@@ -462,6 +490,34 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredPath="/roles/gestionterritorial/diagnosticoipress" requiredAction="ver">
               <DiagnosticoIpress />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 🌐 Módulo de Red - Coordinadores de Red */}
+        <Route
+          path="/red/dashboard"
+          element={
+            <ProtectedRoute requiredPath="/red/dashboard" requiredAction="ver">
+              <RedDashboard />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 📊 Módulo Programación CENATE */}
+        <Route
+          path="/programacion/dashboard"
+          element={
+            <ProtectedRoute requiredPath="/programacion/dashboard" requiredAction="ver">
+              <ProgramacionCenateDashboard />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/programacion/detalle/:idPeriodo"
+          element={
+            <ProtectedRoute requiredPath="/programacion/detalle" requiredAction="ver">
+              <ProgramacionCenateDetalle />
             </ProtectedRoute>
           }
         />

@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.7.9",
-  name: "Dashboard ChatBot Mejorado",
+  number: "1.9.2",
+  name: "Tokens de Recuperacion Persistentes",
   date: "2025-12-23",
-  description: "Correccion de mapeo de estado y columna de acciones para cambiar estado de citas"
+  description: "Tokens de recuperacion de contrasena persistentes en BD + mejora UX del boton de recuperacion"
 };
 
 export const APP_INFO = {

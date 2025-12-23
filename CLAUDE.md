@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.7.9** (2025-12-23)
+> Sistema de Telemedicina - EsSalud | **v1.9.2** (2025-12-23)
 
 ---
 
@@ -28,7 +28,8 @@ mini_proyecto_cenate/
 │   ├── 005_troubleshooting.md        # Solucion de problemas
 │   ├── 006_plan_auditoria.md         # Plan de auditoria
 │   └── scripts/
-│       └── 001_audit_view_and_indexes.sql  # Script BD auditoria
+│       ├── 001_audit_view_and_indexes.sql  # Vista e indices auditoria
+│       └── 002_rename_logs_to_auditoria.sql # Renombrar menu
 │
 ├── backend/                          # Spring Boot API (puerto 8080)
 │   └── src/main/java/com/styp/cenate/
@@ -171,28 +172,72 @@ INFO, WARNING, ERROR, CRITICAL
 SUCCESS, FAILURE
 ```
 
-### Frontend - LogsDelSistema.jsx
+### Frontend - Auditoria
 
-Ubicacion: `/admin/logs`
+**Menu:** "Auditoría" (antes "Logs del Sistema")
+**Ubicacion:** `/admin/logs`
 
-Caracteristicas:
+#### LogsDelSistema.jsx
 - Filtros por usuario, modulo, accion, fechas
 - Exportacion a CSV
 - Estadisticas (total, hoy, semana, usuarios activos)
 - Paginacion de 20 registros
 
-### Script SQL
+#### AdminDashboard.js - Actividad Reciente
+- Muestra **8 ultimas actividades** del sistema
+- Formato ejecutivo con acciones legibles
+- Muestra usuario + nombre completo
+- Indicador de estado (verde=exito, rojo=fallo)
+
+```javascript
+// Formato ejecutivo de acciones
+const formatAccionEjecutiva = (log) => {
+  const acciones = {
+    'LOGIN': 'Inicio de sesión',
+    'LOGIN_FAILED': 'Acceso denegado',
+    'CREATE_USER': 'Nuevo usuario creado',
+    'APPROVE_REQUEST': 'Solicitud aprobada',
+    // ...
+  };
+  return acciones[accion] || accion;
+};
+```
+
+### Fix: Usuario N/A en logs
+
+**Problema:** Los logs mostraban "N/A" en lugar del usuario.
+
+**Solucion en AuditoriaServiceImpl.java:**
+```java
+private AuditoriaModularResponseDTO mapToAuditoriaResponseDTO(AuditoriaModularView view) {
+    // Priorizar usuarioSesion (el que hizo la accion)
+    String usuario = view.getUsuarioSesion();
+    if (usuario == null || usuario.isBlank()) {
+        usuario = view.getUsername();
+    }
+    if (usuario == null || usuario.isBlank()) {
+        usuario = "SYSTEM";
+    }
+    // ... builder
+}
+```
+
+### Scripts SQL
 
 ```bash
-# Ejecutar para crear vista e indices
+# Crear vista e indices de auditoria
 PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
   -f spec/scripts/001_audit_view_and_indexes.sql
+
+# Renombrar menu a "Auditoría"
+PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+  -f spec/scripts/002_rename_logs_to_auditoria.sql
 ```
 
 ### Documentacion Relacionada
 
 - Plan de accion: `spec/006_plan_auditoria.md`
-- Scripts SQL: `spec/scripts/001_audit_view_and_indexes.sql`
+- Scripts SQL: `spec/scripts/`
 
 ---
 
