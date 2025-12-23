@@ -113,7 +113,7 @@ export default function Home() {
               className="h-20 mb-4 drop-shadow-lg"
             />
             <h1 className="text-4xl sm:text-5xl font-bold mb-4 drop-shadow-lg">
-              Acerca de CENATE
+              Bienvenidos al
             </h1>
             <p className="max-w-2xl text-lg sm:text-xl text-white/90 drop-shadow">
               Centro Nacional de Telemedicina - EsSalud
