@@ -48,4 +48,9 @@ public interface IpressRepository extends JpaRepository<Ipress, Long> {
      * Buscar IPRESS por RED y estado
      */
     List<Ipress> findByRed_IdAndStatIpress(Long idRed, String estado);
+
+    /**
+     * Contar IPRESS por Red
+     */
+    Long countByRed_Id(Long idRed);
 }

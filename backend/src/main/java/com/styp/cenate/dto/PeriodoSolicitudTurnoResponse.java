@@ -2,6 +2,7 @@ package com.styp.cenate.dto;
 
 import lombok.*;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 
 /**
@@ -16,8 +17,8 @@ public class PeriodoSolicitudTurnoResponse {
     private Long idPeriodo;
     private String periodo;
     private String descripcion;
-    private OffsetDateTime fechaInicio;
-    private OffsetDateTime fechaFin;
+    private LocalDateTime fechaInicio;
+    private LocalDateTime fechaFin;
     private String estado;
     private String instrucciones;
     private String createdBy;
@@ -44,7 +45,7 @@ public class PeriodoSolicitudTurnoResponse {
 
     public boolean isVigente() {
         if (!isActivo()) return false;
-        OffsetDateTime ahora = OffsetDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now();
         return (ahora.isAfter(fechaInicio) || ahora.isEqual(fechaInicio))
                && (ahora.isBefore(fechaFin) || ahora.isEqual(fechaFin));
     }

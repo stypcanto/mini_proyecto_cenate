@@ -28,4 +28,11 @@ public class UsuarioUpdateRequest {
      * Si es null o vacío, no se modifican los roles.
      */
     private List<String> roles;
+
+    /**
+     * ID de la Red asignada al usuario (para COORDINADOR_RED).
+     * Si se envía, asocia la red al usuario.
+     * Si es null, no se modifica la red actual.
+     */
+    private Long idRed;
 }

@@ -143,6 +143,10 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
     }
   }, [collapsed]);
 
+  // Expandir automáticamente módulos según el rol del usuario
+  const isExterno = roles.includes("EXTERNO") || roles.includes("INSTITUCION_EX");
+  const isCoordinadorRed = roles.includes("COORDINADOR_RED");
+
   // ============================================================
   // Obtener modulos permitidos (segun permisos RBAC)
   // ============================================================
@@ -173,7 +177,39 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
     return modulosDetalle;
   }, [getModulosConDetalle, isAdmin, isSuperAdmin]);
 
+  // Expandir automáticamente módulos según el rol del usuario
+  useEffect(() => {
+    if (!loading && modulosPermitidos && modulosPermitidos.length > 0 && !collapsed) {
+      const sectionsToOpen = {};
 
+      // Para usuarios EXTERNO: expandir "Gestión de Personal Externo"
+      if (isExterno) {
+        const moduloExterno = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("personal externo") ||
+          m.nombreModulo?.toLowerCase().includes("gestión de personal externo")
+        );
+        if (moduloExterno) {
+          sectionsToOpen[moduloExterno.nombreModulo] = true;
+        }
+      }
+
+      // Para usuarios COORDINADOR_RED: expandir "Gestión de Red"
+      if (isCoordinadorRed) {
+        const moduloRed = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("gestión de red") ||
+          m.nombreModulo?.toLowerCase().includes("red")
+        );
+        if (moduloRed) {
+          sectionsToOpen[moduloRed.nombreModulo] = true;
+        }
+      }
+
+      // Si hay secciones para abrir, establecerlas
+      if (Object.keys(sectionsToOpen).length > 0) {
+        setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
+      }
+    }
+  }, [loading, modulosPermitidos, collapsed, isExterno, isCoordinadorRed]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD

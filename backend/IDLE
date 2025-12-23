@@ -1,0 +1,29 @@
+
+ms. Found 74 JPA repository interfaces.
+2025-12-23 14:38:26.547 [restartedMain] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2025-12-23 14:38:26.556 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-0.0.0.0-8080"
+2025-12-23 14:38:26.557 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2025-12-23 14:38:26.557 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/10.1.46]
+2025-12-23 14:38:26.579 [restartedMain] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2025-12-23 14:38:26.580 [restartedMain] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1419 ms
+2025-12-23 14:38:26.765 [restartedMain] INFO  o.h.jpa.internal.util.LogHelper - HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-12-23 14:38:26.821 [restartedMain] INFO  org.hibernate.Version - HHH000412: Hibernate ORM core version 6.6.29.Final
+2025-12-23 14:38:26.838 [restartedMain] INFO  o.h.c.i.RegionFactoryInitiator - HHH000026: Second-level cache disabled
+2025-12-23 14:38:26.972 [restartedMain] INFO  o.s.o.j.p.SpringPersistenceUnitInfo - No LoadTimeWeaver setup: ignoring JPA class transformer
+2025-12-23 14:38:26.986 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - CenateHikariCP - Starting...
+2025-12-23 14:38:27.226 [restartedMain] INFO  com.zaxxer.hikari.pool.HikariPool - CenateHikariCP - Added connection org.postgresql.jdbc.PgConnection@8216d07
+2025-12-23 14:38:27.227 [restartedMain] INFO  com.zaxxer.hikari.HikariDataSource - CenateHikariCP - Start completed.
+2025-12-23 14:38:27.255 [restartedMain] WARN  org.hibernate.orm.deprecation - HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+2025-12-23 14:38:27.279 [restartedMain] INFO  o.hibernate.orm.connections.pooling - HHH10001005: Database info:
+        Database JDBC URL [Connecting through datasource 'HikariDataSource (CenateHikariCP)']
+        Database driver: undefined/unknown
+        Database version: 16.9
+        Autocommit mode: undefined/unknown
+        Isolation level: undefined/unknown
+        Minimum pool size: undefined/unknown
+        Maximum pool size: undefined/unknown
+2025-12-23 14:38:28.930 [restartedMain] INFO  o.h.e.t.j.p.i.JtaPlatformInitiator - HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
+2025-12-23 14:38:28.932 [restartedMain] INFO  o.s.o.j.LocalContainerEntityManagerFactoryBean - Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-12-23 14:38:29.108 [restartedMain] INFO  o.s.d.j.r.query.QueryEnhancerFactory - Hibernate is in classpath; If applicable, HQL parser will be used.
+2025-12-23 14:38:29.607 [restartedMain] DEBUG c.s.c.s.f.JwtAuthenticationFilter - Filter 'jwtAuthenticationFilter' configured for use
+2025-12-23 14:38:30.306 [restartedMain] INFO  c.s.c.a.area.PersonalTotalController - 📁 Directorio de fotos existe: /Users/styp/Documents/CENATE/Chatbot/API_Springboot/mini_proyecto_cenate/backend/uploads/personal

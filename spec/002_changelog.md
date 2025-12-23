@@ -4,6 +4,198 @@
 
 ---
 
+## v1.9.2 (2025-12-23) - Tokens de Recuperacion Persistentes
+
+### Problema Resuelto
+
+Los tokens de recuperacion de contrasena se almacenaban en memoria y se perdian al reiniciar el backend, invalidando los enlaces enviados por correo.
+
+### Solucion Implementada
+
+**Persistencia en Base de Datos:**
+
+Se creo una nueva tabla `segu_password_reset_tokens` para almacenar los tokens de forma permanente.
+
+**Archivos Creados:**
+```
+backend/src/main/java/com/styp/cenate/
+├── model/PasswordResetToken.java          # Entidad JPA
+└── repository/PasswordResetTokenRepository.java  # Repositorio
+```
+
+**Archivos Modificados:**
+- `PasswordTokenService.java` - Usa BD en lugar de memoria
+- `application.properties` - URL frontend configurable por ambiente
+- `ActualizarModel.jsx` - Nuevo boton "Enviar correo de recuperacion"
+
+### Estructura de la Tabla
+
+```sql
+CREATE TABLE segu_password_reset_tokens (
+    id_token BIGSERIAL PRIMARY KEY,
+    token VARCHAR(100) NOT NULL UNIQUE,
+    id_usuario BIGINT NOT NULL,
+    username VARCHAR(50) NOT NULL,
+    email VARCHAR(150) NOT NULL,
+    fecha_expiracion TIMESTAMP NOT NULL,
+    tipo_accion VARCHAR(50),
+    usado BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
+);
+```
+
+### Configuracion por Ambiente
+
+| Ambiente | Variable | Frontend URL |
+|----------|----------|--------------|
+| Desarrollo | (default) | `http://localhost:3000` |
+| Produccion | `FRONTEND_URL=http://10.0.89.239` | `http://10.0.89.239` |
+
+### Mejora UX - Boton de Recuperacion
+
+**Antes:** Boton amarillo "Resetear a @Cenate2025" (mostraba contrasena en texto plano)
+
+**Ahora:** Boton azul "Enviar correo de recuperacion" con modal explicativo que indica:
+- Se enviara un enlace seguro al correo del usuario
+- El enlace expira en 24 horas
+- El usuario configura su propia contrasena
+
+### Flujo de Recuperacion
+
+1. Admin abre modal de edicion de usuario
+2. Clic en "Enviar correo de recuperacion"
+3. Confirma en el modal
+4. Usuario recibe correo con enlace
+5. Usuario abre enlace y configura su nueva contrasena
+6. Token se marca como usado en BD
+
+### Limpieza Automatica
+
+Los tokens expirados o usados se eliminan automaticamente cada hora mediante `@Scheduled`.
+
+---
+
+## v1.9.1 (2025-12-23) - Selector de Red para Coordinadores
+
+### Mejoras en Asignacion de COORDINADOR_RED
+
+Se agrego funcionalidad para asignar una Red automaticamente al usuario cuando se le asigna el rol `COORDINADOR_RED` desde el modal de edicion de usuarios.
+
+### Cambios en Backend
+
+**UsuarioUpdateRequest.java:**
+- Nuevo campo `idRed` para recibir la Red asignada
+
+**UsuarioServiceImpl.java:**
+- Inyeccion de `RedRepository`
+- Logica en `updateUser()` para asignar/quitar Red segun rol COORDINADOR_RED
+- Actualizacion de `convertToResponse()` para incluir Red del usuario
+
+### Cambios en Frontend
+
+**ActualizarModel.jsx:**
+- `handleRoleToggle()` ahora carga redes cuando se selecciona COORDINADOR_RED
+- Nuevo selector de Red que aparece al seleccionar rol COORDINADOR_RED
+- Validacion obligatoria de Red para COORDINADOR_RED
+- Envio de `idRed` en datos de actualizacion de usuario
+- useEffect para inicializar Red cuando usuario ya tiene el rol
+
+### Flujo de Uso
+
+1. Abrir modal de edicion de usuario
+2. Ir a pestana "Roles"
+3. Marcar checkbox de "COORDINADOR_RED"
+4. Aparece selector "Asignar Red al Coordinador"
+5. Seleccionar la Red (obligatorio)
+6. Guardar cambios
+
+La Red se guarda en `dim_usuarios.id_red` y el usuario podra acceder al modulo "Gestion de Red" viendo solo datos de su red asignada.
+
+---
+
+## v1.9.0 (2025-12-23) - Modulo de Red para Coordinadores
+
+### Nuevo Modulo
+
+Se agrego un nuevo modulo **Gestion de Red** para Coordinadores de Red que permite visualizar:
+- Personal externo de las IPRESS de su red asignada
+- Formularios de diagnostico de su red
+- Estadisticas consolidadas (total IPRESS, personal, formularios)
+
+### Cambios en Backend
+
+**Modelo Usuario:**
+- Nuevo campo `id_red` para asignar red directamente al usuario
+- Relacion `@ManyToOne` con entidad `Red`
+
+**Nuevo Rol:**
+- `COORDINADOR_RED` (nivel jerarquico 4)
+
+**Nuevos Endpoints:**
+- `GET /api/red/mi-red` - Dashboard con info de la red y estadisticas
+- `GET /api/red/personal` - Personal externo de la red
+- `GET /api/red/formularios` - Formularios de diagnostico de la red
+
+**Archivos Creados:**
+```
+backend/src/main/java/com/styp/cenate/
+├── api/red/RedDashboardController.java
+├── service/red/RedDashboardService.java
+├── service/red/impl/RedDashboardServiceImpl.java
+└── dto/red/RedDashboardResponse.java
+```
+
+**Repositorios Modificados:**
+- `PersonalExternoRepository` - Nuevos metodos por Red
+- `IpressRepository` - Conteo por Red
+- `FormDiagFormularioRepository` - Conteo por Red y Estado
+
+### Cambios en Frontend
+
+**Nueva Pagina:**
+- `frontend/src/pages/red/RedDashboard.jsx`
+- Ruta: `/red/dashboard`
+
+**Caracteristicas:**
+- Header con info de la red y macroregion
+- Cards de estadisticas (IPRESS, Personal, Formularios)
+- Tabs para alternar entre Personal y Formularios
+- Exportacion a CSV
+- Diseno responsive
+
+### Script SQL
+
+**Archivo:** `spec/scripts/003_modulo_red_coordinador.sql`
+
+Ejecutar con:
+```bash
+PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+  -f spec/scripts/003_modulo_red_coordinador.sql
+```
+
+### Asignar Red a Usuario
+
+```sql
+-- Asignar red a usuario
+UPDATE dim_usuarios
+SET id_red = (SELECT id_red FROM dim_red WHERE cod_red = 'RXXX' LIMIT 1)
+WHERE name_user = 'DNI_USUARIO';
+
+-- Asignar rol COORDINADOR_RED
+INSERT INTO rel_user_roles (id_user, id_rol)
+SELECT u.id_user, r.id_rol
+FROM dim_usuarios u, dim_roles r
+WHERE u.name_user = 'DNI_USUARIO'
+AND r.desc_rol = 'COORDINADOR_RED'
+ON CONFLICT DO NOTHING;
+```
+
+### Documentacion
+
+- Plan detallado: `spec/007_plan_modulo_red.md`
+
+---
+
 ## v1.8.1 (2025-12-23) - Fix Usuarios Huerfanos
 
 ### Problema Identificado

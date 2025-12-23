@@ -59,4 +59,20 @@ public interface FormDiagFormularioRepository extends JpaRepository<FormDiagForm
      */
     @Query("SELECT f FROM FormDiagFormulario f WHERE f.ipress.red.id = :idRed ORDER BY f.fechaCreacion DESC")
     List<FormDiagFormulario> findByIdRed(@Param("idRed") Long idRed);
+
+    // ========================================
+    // Métodos de conteo para Módulo de Red
+    // ========================================
+
+    /**
+     * Contar formularios por Red
+     */
+    @Query("SELECT COUNT(f) FROM FormDiagFormulario f WHERE f.ipress.red.id = :idRed")
+    Long countByIpress_Red_Id(@Param("idRed") Long idRed);
+
+    /**
+     * Contar formularios por Red y Estado
+     */
+    @Query("SELECT COUNT(f) FROM FormDiagFormulario f WHERE f.ipress.red.id = :idRed AND f.estado = :estado")
+    Long countByIpress_Red_IdAndEstado(@Param("idRed") Long idRed, @Param("estado") String estado);
 }

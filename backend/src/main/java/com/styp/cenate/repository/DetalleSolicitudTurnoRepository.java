@@ -15,9 +15,9 @@ import java.util.List;
 public interface DetalleSolicitudTurnoRepository extends JpaRepository<DetalleSolicitudTurno, Long> {
 
     /**
-     * Busca detalles por solicitud
+     * Busca detalles por solicitud (usar findBySolicitudWithEspecialidad para ordenar por nombre)
      */
-    List<DetalleSolicitudTurno> findBySolicitudIdSolicitudOrderByEspecialidadDescServicio(Long idSolicitud);
+    List<DetalleSolicitudTurno> findBySolicitudIdSolicitud(Long idSolicitud);
 
     /**
      * Busca detalles por especialidad

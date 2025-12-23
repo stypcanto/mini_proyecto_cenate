@@ -23,6 +23,8 @@ import com.styp.cenate.repository.mbac.ModuloSistemaRepository;
 import com.styp.cenate.repository.mbac.PermisoModularRepository;
 import com.styp.cenate.repository.segu.MenuUsuarioRepository;
 import com.styp.cenate.repository.segu.PaginaRepository;
+import com.styp.cenate.repository.segu.PermisoRolPaginaRepository;
+import com.styp.cenate.model.segu.SeguPermisosRolPagina;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -35,6 +37,7 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 	private final ModuloSistemaRepository moduloSistemaRepository;
 	private final PaginaRepository paginaRepository;
 	private final UsuarioRepository usuarioRepository;
+	private final PermisoRolPaginaRepository permisoRolPaginaRepository;
 	private final ObjectMapper mapper;
 
 	public MenuUsuarioServiceImpl(
@@ -43,12 +46,14 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 			ModuloSistemaRepository moduloSistemaRepository,
 			PaginaRepository paginaRepository,
 			UsuarioRepository usuarioRepository,
+			PermisoRolPaginaRepository permisoRolPaginaRepository,
 			ObjectMapper mapper) {
 		this.repositorioMenu = repositorioMenu;
 		this.permisoModularRepository = permisoModularRepository;
 		this.moduloSistemaRepository = moduloSistemaRepository;
 		this.paginaRepository = paginaRepository;
 		this.usuarioRepository = usuarioRepository;
+		this.permisoRolPaginaRepository = permisoRolPaginaRepository;
 		this.mapper = mapper;
 	}
 
@@ -108,8 +113,8 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 		// 0. Verificar si el usuario es SUPERADMIN o ADMIN
 		boolean esAdmin = verificarSiEsAdmin(idUser);
 		if (esAdmin) {
-			log.info("👑 Usuario {} es ADMIN/SUPERADMIN, retornando todos los módulos", idUser);
-			return obtenerMenuCompletoParaAdmin();
+			log.info("👑 Usuario {} es ADMIN/SUPERADMIN, usando permisos de rol desde BD", idUser);
+			return obtenerMenuParaAdminDesdePermisos(idUser);
 		}
 
 		// 1. Obtener permisos activos del usuario directamente de la tabla permisos_modulares
@@ -284,6 +289,111 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 		menu.sort(Comparator.comparing(MenuUsuarioDTO::orden, Comparator.nullsLast(Integer::compareTo)));
 
 		log.info("👑 Menú completo para admin generado con {} módulos", menu.size());
+		return menu;
+	}
+
+	/**
+	 * Genera el menú para ADMIN/SUPERADMIN basado en los permisos de rol en segu_permisos_rol_pagina
+	 * En lugar de dar acceso total, usa los permisos reales asignados al rol
+	 */
+	private List<MenuUsuarioDTO> obtenerMenuParaAdminDesdePermisos(Long idUser) {
+		List<MenuUsuarioDTO> menu = new ArrayList<>();
+
+		// 1. Obtener los roles del usuario
+		Usuario usuario = usuarioRepository.findByIdWithRoles(idUser).orElse(null);
+		if (usuario == null || usuario.getRoles() == null || usuario.getRoles().isEmpty()) {
+			log.warn("⚠️ Usuario {} no encontrado o sin roles", idUser);
+			return menu;
+		}
+
+		// 2. Obtener IDs de los roles del usuario
+		List<Integer> roleIds = usuario.getRoles().stream()
+				.map(rol -> rol.getIdRol())
+				.collect(Collectors.toList());
+		log.info("📋 Roles del usuario {}: {}", idUser, roleIds);
+
+		// 3. Obtener permisos de rol desde segu_permisos_rol_pagina
+		List<SeguPermisosRolPagina> permisosRol = permisoRolPaginaRepository.findByIdRolInAndActivoTrue(roleIds);
+		if (permisosRol.isEmpty()) {
+			log.warn("⚠️ No hay permisos de rol configurados para los roles: {}", roleIds);
+			return menu;
+		}
+
+		// 4. Filtrar solo los que tienen puedeVer = true
+		permisosRol = permisosRol.stream()
+				.filter(p -> Boolean.TRUE.equals(p.getPuedeVer()))
+				.collect(Collectors.toList());
+
+		// 5. Cargar módulos y páginas
+		Map<Integer, ModuloSistema> modulosMap = moduloSistemaRepository.findAll()
+				.stream()
+				.filter(m -> Boolean.TRUE.equals(m.getActivo()))
+				.collect(Collectors.toMap(ModuloSistema::getIdModulo, m -> m));
+
+		Map<Integer, PaginaModulo> paginasMap = paginaRepository.findAll()
+				.stream()
+				.filter(p -> Boolean.TRUE.equals(p.getActivo()))
+				.collect(Collectors.toMap(PaginaModulo::getIdPagina, p -> p));
+
+		// 6. Agrupar permisos por página (tomar el mejor permiso si hay múltiples roles)
+		Map<Integer, SeguPermisosRolPagina> mejoresPermisos = new LinkedHashMap<>();
+		for (SeguPermisosRolPagina p : permisosRol) {
+			mejoresPermisos.merge(p.getIdPagina(), p, (existing, nuevo) -> {
+				// Combinar permisos: si alguno tiene el permiso, se mantiene
+				existing.setPuedeCrear(existing.getPuedeCrear() || nuevo.getPuedeCrear());
+				existing.setPuedeEditar(existing.getPuedeEditar() || nuevo.getPuedeEditar());
+				existing.setPuedeEliminar(existing.getPuedeEliminar() || nuevo.getPuedeEliminar());
+				existing.setPuedeExportar(existing.getPuedeExportar() || nuevo.getPuedeExportar());
+				return existing;
+			});
+		}
+
+		// 7. Agrupar páginas por módulo
+		Map<Integer, List<PaginaMenuDTO>> paginasPorModulo = new LinkedHashMap<>();
+		for (Map.Entry<Integer, SeguPermisosRolPagina> entry : mejoresPermisos.entrySet()) {
+			PaginaModulo pagina = paginasMap.get(entry.getKey());
+			if (pagina == null) continue;
+
+			SeguPermisosRolPagina permiso = entry.getValue();
+			PaginaMenuDTO paginaDTO = new PaginaMenuDTO(
+					pagina.getRutaPagina(),
+					pagina.getOrden(),
+					pagina.getNombrePagina(),
+					pagina.getIdPagina(),
+					true, // puedeVer ya está filtrado
+					Boolean.TRUE.equals(permiso.getPuedeCrear()),
+					Boolean.TRUE.equals(permiso.getPuedeEditar()),
+					Boolean.TRUE.equals(permiso.getPuedeEliminar()),
+					Boolean.TRUE.equals(permiso.getPuedeExportar())
+			);
+
+			Integer idModulo = pagina.getModulo() != null ? pagina.getModulo().getIdModulo() : null;
+			if (idModulo == null) continue;
+			paginasPorModulo.computeIfAbsent(idModulo, k -> new ArrayList<>()).add(paginaDTO);
+		}
+
+		// 8. Construir menú
+		for (Map.Entry<Integer, List<PaginaMenuDTO>> entry : paginasPorModulo.entrySet()) {
+			ModuloSistema modulo = modulosMap.get(entry.getKey());
+			if (modulo == null) continue;
+
+			List<PaginaMenuDTO> paginas = entry.getValue();
+			paginas.sort(Comparator.comparing(PaginaMenuDTO::orden, Comparator.nullsLast(Integer::compareTo)));
+
+			MenuUsuarioDTO menuModulo = new MenuUsuarioDTO(
+					modulo.getIdModulo(),
+					modulo.getNombreModulo(),
+					modulo.getDescripcion(),
+					modulo.getIcono(),
+					modulo.getRutaBase(),
+					modulo.getOrden(),
+					paginas
+			);
+			menu.add(menuModulo);
+		}
+
+		menu.sort(Comparator.comparing(MenuUsuarioDTO::orden, Comparator.nullsLast(Integer::compareTo)));
+		log.info("👑 Menú para admin basado en permisos generado con {} módulos", menu.size());
 		return menu;
 	}
 

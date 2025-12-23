@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.*;
 
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
 /**
  * DTO de request para crear/actualizar un periodo de solicitud de turnos.
@@ -25,10 +25,10 @@ public class PeriodoSolicitudTurnoRequest {
     private String descripcion;
 
     @NotNull(message = "La fecha de inicio es obligatoria")
-    private OffsetDateTime fechaInicio;
+    private LocalDateTime fechaInicio;
 
     @NotNull(message = "La fecha de fin es obligatoria")
-    private OffsetDateTime fechaFin;
+    private LocalDateTime fechaFin;
 
     private String instrucciones;
 }

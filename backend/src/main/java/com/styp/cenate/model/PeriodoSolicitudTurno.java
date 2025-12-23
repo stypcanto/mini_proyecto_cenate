@@ -5,6 +5,7 @@ import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -37,10 +38,10 @@ public class PeriodoSolicitudTurno {
     private String descripcion; // "Enero 2026"
 
     @Column(name = "fecha_inicio", nullable = false)
-    private OffsetDateTime fechaInicio;
+    private LocalDateTime fechaInicio;
 
     @Column(name = "fecha_fin", nullable = false)
-    private OffsetDateTime fechaFin;
+    private LocalDateTime fechaFin;
 
     @Column(name = "estado", length = 20)
     @Builder.Default
@@ -84,7 +85,7 @@ public class PeriodoSolicitudTurno {
 
     public boolean isVigente() {
         if (!isActivo()) return false;
-        OffsetDateTime ahora = OffsetDateTime.now();
+        LocalDateTime ahora = LocalDateTime.now();
         return (ahora.isAfter(fechaInicio) || ahora.isEqual(fechaInicio))
                && (ahora.isBefore(fechaFin) || ahora.isEqual(fechaFin));
     }

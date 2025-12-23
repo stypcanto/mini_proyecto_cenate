@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.8.1",
-  name: "Fix Usuarios Huerfanos",
+  number: "1.9.2",
+  name: "Tokens de Recuperacion Persistentes",
   date: "2025-12-23",
-  description: "Correccion de limpieza de usuarios externos (IPRESS) y datos huerfanos"
+  description: "Tokens de recuperacion de contrasena persistentes en BD + mejora UX del boton de recuperacion"
 };
 
 export const APP_INFO = {

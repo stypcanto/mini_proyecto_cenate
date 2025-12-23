@@ -1,6 +1,6 @@
 // Modal de Actualización de Usuario - VERSIÓN COMPLETA CON LÓGICA CONDICIONAL
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Edit, Shield, Save, User, Mail, Briefcase, GraduationCap, RefreshCw, Key, Building2, Check, Camera, Image as ImageIcon, XCircle, Lock } from 'lucide-react';
+import { X, Edit, Shield, Save, User, Mail, Briefcase, GraduationCap, RefreshCw, Key, Building2, Check, Camera, Image as ImageIcon, XCircle, Lock, Send } from 'lucide-react';
 import PermisosUsuarioPanel from '../PermisosUsuarioPanel';
 import FormField from '../modals/FormField';
 import SelectField from '../modals/SelectField';
@@ -24,6 +24,7 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
   const [loadingRedes, setLoadingRedes] = useState(false);
   const [redSeleccionada, setRedSeleccionada] = useState(null);
   const [macroregionInfo, setMacroregionInfo] = useState(null);
+  const [showRedModal, setShowRedModal] = useState(false); // Modal para seleccionar Red
 
   // Estado para foto
   const [fotoSeleccionada, setFotoSeleccionada] = useState(null);
@@ -167,7 +168,14 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
     cargarIpress();
     cargarCatalogos();
     cargarRoles();
-    
+
+    // 🌐 Si el usuario tiene rol COORDINADOR_RED, cargar las redes
+    const userRoles = user?.roles ? (Array.isArray(user.roles) ? user.roles : [user.roles]) : [];
+    if (userRoles.includes('COORDINADOR_RED')) {
+      console.log('🌐 Usuario tiene rol COORDINADOR_RED, cargando redes...');
+      cargarRedes();
+    }
+
     // Cargar foto actual si existe
     if (user?.foto_url || user?.foto_pers) {
       const fotoUrl = user.foto_url || user.foto_pers;
@@ -315,6 +323,21 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
       setMacroregionInfo(null);
     }
   }, [formData.id_ipress, ipressAll]);
+
+  // 🌐 Inicializar la Red seleccionada para COORDINADOR_RED cuando se cargan las redes
+  useEffect(() => {
+    if (redes.length > 0 && formData.id_red && formData.roles.includes('COORDINADOR_RED')) {
+      const redId = parseInt(formData.id_red);
+      const redSel = redes.find(r => (r.id || r.idRed) === redId);
+      if (redSel) {
+        console.log('🌐 Inicializando Red seleccionada para COORDINADOR_RED:', redSel);
+        setRedSeleccionada(redSel);
+        if (redSel.macroregion) {
+          setMacroregionInfo(redSel.macroregion);
+        }
+      }
+    }
+  }, [redes, formData.id_red, formData.roles]);
 
   const cargarIpress = async () => {
     try {
@@ -482,6 +505,31 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
       return;
     }
 
+    // Si se está seleccionando COORDINADOR_RED, abrir modal para seleccionar Red
+    if (roleName === 'COORDINADOR_RED' && !formData.roles.includes('COORDINADOR_RED')) {
+      console.log('🌐 Abriendo modal para seleccionar Red...');
+      cargarRedes();
+      // Agregar el rol primero
+      setFormData(prev => ({
+        ...prev,
+        roles: [...prev.roles, roleName]
+      }));
+      // Abrir modal para seleccionar Red
+      setShowRedModal(true);
+      return;
+    }
+
+    // Si se está deseleccionando COORDINADOR_RED, limpiar la red seleccionada
+    if (roleName === 'COORDINADOR_RED' && formData.roles.includes('COORDINADOR_RED')) {
+      setFormData(prev => ({
+        ...prev,
+        roles: prev.roles.filter(r => r !== roleName),
+        id_red: null // Limpiar Red al quitar el rol
+      }));
+      setRedSeleccionada(null);
+      return;
+    }
+
     setFormData(prev => ({
       ...prev,
       roles: prev.roles.includes(roleName)
@@ -619,14 +667,21 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
 
     if (tab === 'laboral') {
       // Validar Código de Planilla si es régimen 728 o CAS
-      const regimenSeleccionado = regimenesLaborales.find(r => 
+      const regimenSeleccionado = regimenesLaborales.find(r =>
         r.idRegLab === parseInt(formData.id_regimen_laboral)
       );
-      const requiereCodigoPlanilla = regimenSeleccionado?.descRegLab?.toUpperCase().includes('728') || 
+      const requiereCodigoPlanilla = regimenSeleccionado?.descRegLab?.toUpperCase().includes('728') ||
                                       regimenSeleccionado?.descRegLab?.toUpperCase().includes('CAS');
-      
+
       if (requiereCodigoPlanilla && !formData.codigo_planilla?.trim()) {
         newErrors.codigo_planilla = 'El código de planilla es obligatorio para este régimen laboral';
+      }
+    }
+
+    // 🌐 Validar Red para COORDINADOR_RED
+    if (tab === 'roles') {
+      if (formData.roles.includes('COORDINADOR_RED') && !formData.id_red) {
+        newErrors.id_red = 'Debe seleccionar una Red para el Coordinador';
       }
     }
 
@@ -750,7 +805,9 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
 
       const usuarioData = {
         username: formData.username,
-        roles: formData.roles
+        roles: formData.roles,
+        // 🌐 Enviar idRed solo si el usuario tiene rol COORDINADOR_RED
+        idRed: formData.roles.includes('COORDINADOR_RED') ? formData.id_red : null
       };
       console.log('📤 Datos de usuario a enviar:', usuarioData);
       const usuarioResponse = await api.put(`/usuarios/id/${userId}`, usuarioData);
@@ -1031,10 +1088,10 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                     <button
                       type="button"
                       onClick={() => setShowResetConfirm(true)}
-                      className="w-full px-4 py-2.5 bg-amber-50 border-2 border-amber-300 text-amber-700 rounded-xl hover:bg-amber-100 transition-all flex items-center justify-center gap-2 font-medium"
+                      className="w-full px-4 py-2.5 bg-blue-50 border-2 border-blue-300 text-blue-700 rounded-xl hover:bg-blue-100 transition-all flex items-center justify-center gap-2 font-medium"
                     >
-                      <RefreshCw className="w-4 h-4" />
-                      Resetear a @Cenate2025
+                      <Mail className="w-4 h-4" />
+                      Enviar correo de recuperación
                     </button>
                   </div>
                 </div>
@@ -1863,6 +1920,52 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                         </div>
                       </div>
                     )}
+
+                    {/* 🌐 Indicador de Red asignada para COORDINADOR_RED */}
+                    {formData.roles.includes('COORDINADOR_RED') && (
+                      <div className={`mt-4 p-4 rounded-xl border-2 ${
+                        formData.id_red
+                          ? 'bg-purple-50 border-purple-300'
+                          : 'bg-red-50 border-red-300'
+                      }`}>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Building2 className={`w-6 h-6 ${formData.id_red ? 'text-purple-600' : 'text-red-500'}`} />
+                            <div>
+                              {formData.id_red && redSeleccionada ? (
+                                <>
+                                  <p className="font-bold text-purple-800">
+                                    {redSeleccionada.descripcion || redSeleccionada.descRed}
+                                  </p>
+                                  <p className="text-sm text-purple-600">
+                                    Código: {redSeleccionada.codigo || redSeleccionada.codRed}
+                                    {macroregionInfo && ` • ${macroregionInfo.descMacro || macroregionInfo.descripcion}`}
+                                  </p>
+                                </>
+                              ) : (
+                                <p className="font-medium text-red-600">
+                                  Debe asignar una Red al Coordinador
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              cargarRedes();
+                              setShowRedModal(true);
+                            }}
+                            className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                              formData.id_red
+                                ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                                : 'bg-red-600 hover:bg-red-700 text-white animate-pulse'
+                            }`}
+                          >
+                            {formData.id_red ? 'Cambiar Red' : 'Seleccionar Red'}
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>
@@ -1936,28 +2039,163 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
       </div>
 
       {/* Modal de confirmación resetear contraseña */}
+      {/* 🌐 Modal para seleccionar Red - COORDINADOR_RED */}
+      {showRedModal && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header del modal */}
+            <div className="bg-gradient-to-r from-purple-600 to-indigo-600 p-5">
+              <div className="flex items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center">
+                  <Building2 className="w-7 h-7 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-white">Asignar Red al Coordinador</h3>
+                  <p className="text-purple-200 text-sm">Seleccione la red que podrá gestionar</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Contenido del modal */}
+            <div className="p-6">
+              <p className="text-gray-600 mb-4">
+                El usuario con rol <span className="font-bold text-purple-700">COORDINADOR_RED</span> solo podrá ver información de las IPRESS y personal de la red seleccionada.
+              </p>
+
+              {loadingRedes ? (
+                <div className="flex items-center justify-center gap-3 py-8 text-purple-600">
+                  <div className="w-6 h-6 border-3 border-purple-600 border-t-transparent rounded-full animate-spin" />
+                  <span className="font-medium">Cargando redes disponibles...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <label className="block text-sm font-semibold text-gray-700">
+                    Red Asignada <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.id_red || ''}
+                    onChange={(e) => {
+                      const redId = e.target.value ? parseInt(e.target.value) : null;
+                      setFormData(prev => ({ ...prev, id_red: redId }));
+
+                      if (redId && redes.length > 0) {
+                        const redSel = redes.find(r => (r.id || r.idRed) === redId);
+                        if (redSel) {
+                          setRedSeleccionada(redSel);
+                          setMacroregionInfo(redSel.macroregion || null);
+                        }
+                      } else {
+                        setRedSeleccionada(null);
+                        setMacroregionInfo(null);
+                      }
+                    }}
+                    className="w-full px-4 py-3 border-2 border-purple-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white font-medium text-lg"
+                  >
+                    <option value="">-- Seleccione una Red --</option>
+                    {redes.map(red => (
+                      <option key={red.id || red.idRed} value={red.id || red.idRed}>
+                        {red.codigo || red.codRed} - {red.descripcion || red.descRed}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Información de la Red seleccionada */}
+                  {formData.id_red && redSeleccionada && (
+                    <div className="p-4 bg-purple-50 border border-purple-200 rounded-xl">
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase">Red</span>
+                          <p className="font-bold text-purple-800">
+                            {redSeleccionada.descripcion || redSeleccionada.descRed}
+                          </p>
+                        </div>
+                        <div>
+                          <span className="text-xs text-gray-500 uppercase">Código</span>
+                          <p className="font-bold text-purple-800">
+                            {redSeleccionada.codigo || redSeleccionada.codRed}
+                          </p>
+                        </div>
+                        {macroregionInfo && (
+                          <div className="col-span-2">
+                            <span className="text-xs text-gray-500 uppercase">Macroregión</span>
+                            <p className="font-bold text-indigo-700">
+                              {macroregionInfo.descMacro || macroregionInfo.descripcion}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Footer del modal */}
+            <div className="px-6 py-4 bg-gray-50 border-t flex justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  // Si cancela y no había Red antes, quitar el rol
+                  if (!formData.id_red) {
+                    setFormData(prev => ({
+                      ...prev,
+                      roles: prev.roles.filter(r => r !== 'COORDINADOR_RED')
+                    }));
+                  }
+                  setShowRedModal(false);
+                }}
+                className="px-5 py-2.5 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-xl font-medium transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  if (!formData.id_red) {
+                    alert('Debe seleccionar una Red para continuar');
+                    return;
+                  }
+                  setShowRedModal(false);
+                }}
+                disabled={!formData.id_red}
+                className={`px-5 py-2.5 rounded-xl font-medium transition-all flex items-center gap-2 ${
+                  formData.id_red
+                    ? 'bg-purple-600 hover:bg-purple-700 text-white'
+                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                }`}
+              >
+                <Check className="w-5 h-5" />
+                Confirmar Red
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showResetConfirm && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center">
-                <Key className="w-6 h-6 text-amber-600" />
+              <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                <Mail className="w-6 h-6 text-blue-600" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-gray-900">Resetear Contraseña</h3>
-                <p className="text-sm text-gray-600">¿Estás seguro de continuar?</p>
+                <h3 className="text-lg font-bold text-gray-900">Recuperación de Contraseña</h3>
+                <p className="text-sm text-gray-600">¿Enviar correo de recuperación?</p>
               </div>
             </div>
 
-            <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4 mb-4">
-              <p className="text-sm text-amber-900 font-medium mb-2">
-                Se establecerá la contraseña temporal:
+            <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4 mb-4">
+              <p className="text-sm text-blue-900 font-medium mb-2">
+                Se enviará un correo electrónico al usuario con:
               </p>
-              <div className="bg-white px-4 py-3 rounded-lg border border-amber-200">
-                <code className="text-amber-700 font-mono font-bold text-lg">@Cenate2025</code>
-              </div>
-              <p className="text-xs text-amber-700 mt-2">
-                ⚠️ El usuario deberá cambiarla en su próximo inicio de sesión
+              <ul className="text-sm text-blue-800 space-y-1 ml-4 list-disc">
+                <li>Un enlace seguro para crear su nueva contraseña</li>
+                <li>El enlace expirará en 24 horas</li>
+              </ul>
+              <p className="text-xs text-blue-700 mt-3 flex items-center gap-1">
+                <Shield className="w-3 h-3" />
+                El usuario recibirá el correo en su email registrado
               </p>
             </div>
 
@@ -1972,17 +2210,17 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
               <button
                 onClick={handleResetPassword}
                 disabled={loading}
-                className="flex-1 px-4 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-xl font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    Reseteando...
+                    Enviando...
                   </>
                 ) : (
                   <>
-                    <RefreshCw className="w-4 h-4" />
-                    Confirmar Reset
+                    <Send className="w-4 h-4" />
+                    Enviar Correo
                   </>
                 )}
               </button>

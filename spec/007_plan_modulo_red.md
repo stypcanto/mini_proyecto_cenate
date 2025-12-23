@@ -1,8 +1,8 @@
 # Plan de Accion: Modulo de Red para Coordinadores
 
 > **Fecha:** 2025-12-23
-> **Version:** 1.0
-> **Estado:** Pendiente de implementacion
+> **Version:** 1.1
+> **Estado:** IMPLEMENTADO
 > **Prioridad:** Alta
 
 ---
@@ -826,21 +826,175 @@ curl -X GET http://localhost:8080/api/red/mi-red \
 
 ---
 
-## 6. Criterios de Aceptacion
+## 6. Selector de Red en Modal de Usuario (v1.9.1)
 
-- [ ] Rol COORDINADOR_RED creado en BD
-- [ ] Campo id_red agregado a usuarios
-- [ ] Modulo "Gestion de Red" visible en menu para COORDINADOR_RED
-- [ ] Endpoint GET /api/red/mi-red retorna datos de la red asignada
-- [ ] Endpoint GET /api/red/personal retorna solo personal de la red
-- [ ] Endpoint GET /api/red/formularios retorna solo formularios de la red
-- [ ] Pagina frontend muestra estadisticas correctas
-- [ ] Exportacion CSV funciona
-- [ ] Usuario sin red asignada recibe error apropiado
+### 6.1 Descripcion
+
+Se implemento funcionalidad para asignar una Red al usuario directamente desde el modal de edicion de usuarios cuando se selecciona el rol `COORDINADOR_RED`.
+
+### 6.2 Flujo de Uso
+
+```
+1. Admin abre modal "Editar Usuario"
+2. Va a pestana "Roles"
+3. Marca checkbox "COORDINADOR_RED"
+4. Automaticamente aparece selector "Asignar Red al Coordinador"
+5. Selecciona una Red (obligatorio)
+6. Guarda cambios
+7. Red se guarda en dim_usuarios.id_red
+```
+
+### 6.3 Cambios Backend
+
+**UsuarioUpdateRequest.java:**
+```java
+/**
+ * ID de la Red asignada al usuario (para COORDINADOR_RED).
+ */
+private Long idRed;
+```
+
+**UsuarioServiceImpl.java - updateUser():**
+```java
+// Inyectar RedRepository
+private final RedRepository redRepository;
+
+// En updateUser():
+if (request.getIdRed() != null) {
+    var red = redRepository.findById(request.getIdRed())
+            .orElseThrow(() -> new EntityNotFoundException("Red no encontrada"));
+    usuario.setRed(red);
+} else if (request.getRoles() != null && !request.getRoles().contains("COORDINADOR_RED")) {
+    // Si se quita el rol COORDINADOR_RED, quitar la Red
+    if (usuario.getRed() != null) {
+        usuario.setRed(null);
+    }
+}
+```
+
+**UsuarioServiceImpl.java - convertToResponse():**
+```java
+// Antes del builder, verificar Red del usuario
+if (usuario.getRed() != null) {
+    var redUsuario = usuario.getRed();
+    idRed = redUsuario.getId();
+    nombreRed = redUsuario.getDescripcion();
+    codigoRed = redUsuario.getCodigo();
+    // Macroregion si existe
+    if (redUsuario.getMacroregion() != null) {
+        idMacroregion = redUsuario.getMacroregion().getIdMacro();
+        nombreMacroregion = redUsuario.getMacroregion().getDescMacro();
+    }
+}
+```
+
+### 6.4 Cambios Frontend
+
+**ActualizarModel.jsx - handleRoleToggle():**
+```jsx
+const handleRoleToggle = (roleName) => {
+  // ... validaciones existentes ...
+
+  // Si se selecciona COORDINADOR_RED, cargar redes
+  if (roleName === 'COORDINADOR_RED' && !formData.roles.includes('COORDINADOR_RED')) {
+    cargarRedes();
+  }
+
+  // Si se deselecciona COORDINADOR_RED, limpiar red
+  if (roleName === 'COORDINADOR_RED' && formData.roles.includes('COORDINADOR_RED')) {
+    setFormData(prev => ({
+      ...prev,
+      roles: prev.roles.filter(r => r !== roleName),
+      id_red: null
+    }));
+    setRedSeleccionada(null);
+    return;
+  }
+
+  // ... resto del codigo ...
+};
+```
+
+**ActualizarModel.jsx - Selector de Red (JSX):**
+```jsx
+{/* Selector de Red para COORDINADOR_RED */}
+{formData.roles.includes('COORDINADOR_RED') && (
+  <div className="mt-6 p-5 bg-gradient-to-r from-purple-50 to-indigo-50 border-2 border-purple-200 rounded-xl">
+    <h4 className="text-lg font-bold text-purple-800">
+      Asignar Red al Coordinador
+    </h4>
+    <select
+      name="id_red"
+      value={formData.id_red || ''}
+      onChange={(e) => {
+        const redId = e.target.value ? parseInt(e.target.value) : null;
+        setFormData(prev => ({ ...prev, id_red: redId }));
+      }}
+    >
+      <option value="">-- Seleccione una Red --</option>
+      {redes.map(red => (
+        <option key={red.id} value={red.id}>
+          {red.codigo} - {red.descripcion}
+        </option>
+      ))}
+    </select>
+  </div>
+)}
+```
+
+**ActualizarModel.jsx - Validacion:**
+```jsx
+// En validateTab()
+if (tab === 'roles') {
+  if (formData.roles.includes('COORDINADOR_RED') && !formData.id_red) {
+    newErrors.id_red = 'Debe seleccionar una Red para el Coordinador';
+  }
+}
+```
+
+**ActualizarModel.jsx - handleSubmit():**
+```jsx
+const usuarioData = {
+  username: formData.username,
+  roles: formData.roles,
+  idRed: formData.roles.includes('COORDINADOR_RED') ? formData.id_red : null
+};
+```
+
+### 6.5 Archivos Modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `backend/.../dto/UsuarioUpdateRequest.java` | +campo `idRed` |
+| `backend/.../service/usuario/UsuarioServiceImpl.java` | +RedRepository, +logica Red |
+| `frontend/.../ActualizarModel.jsx` | +selector Red, +validacion |
 
 ---
 
-## 7. Documentacion Relacionada
+## 7. Criterios de Aceptacion
+
+### Modulo de Red (v1.9.0)
+- [x] Rol COORDINADOR_RED creado en BD
+- [x] Campo id_red agregado a usuarios
+- [x] Modulo "Gestion de Red" visible en menu para COORDINADOR_RED
+- [x] Endpoint GET /api/red/mi-red retorna datos de la red asignada
+- [x] Endpoint GET /api/red/personal retorna solo personal de la red
+- [x] Endpoint GET /api/red/formularios retorna solo formularios de la red
+- [x] Pagina frontend muestra estadisticas correctas
+- [x] Exportacion CSV funciona
+- [x] Usuario sin red asignada recibe error apropiado
+
+### Selector de Red en Modal (v1.9.1)
+- [x] Al marcar COORDINADOR_RED aparece selector de Red
+- [x] Selector carga todas las redes disponibles
+- [x] Validacion impide guardar sin Red seleccionada
+- [x] idRed se envia al backend al guardar usuario
+- [x] Backend guarda Red en dim_usuarios.id_red
+- [x] Al quitar rol COORDINADOR_RED se limpia la Red
+
+---
+
+## 8. Documentacion Relacionada
 
 - Arquitectura MBAC: `spec/004_arquitectura.md`
 - Modelo de usuarios: `spec/001_espec_users_bd.md`
