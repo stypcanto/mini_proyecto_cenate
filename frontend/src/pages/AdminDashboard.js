@@ -24,6 +24,13 @@ import {
   Database,
   Clock,
   Zap,
+  Server,
+  HardDrive,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Cpu,
+  MemoryStick,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -40,6 +47,9 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [recentLogs, setRecentLogs] = useState([]);
   const [loadingLogs, setLoadingLogs] = useState(true);
+  const [systemHealth, setSystemHealth] = useState(null);
+  const [loadingHealth, setLoadingHealth] = useState(true);
+  const [healthError, setHealthError] = useState(null);
 
   // ============================================================
   // 📦 Cargar estadísticas (OPTIMIZADO - Usa endpoint de conteos)
@@ -96,6 +106,32 @@ export default function AdminDashboard() {
       }
     };
     loadRecentLogs();
+  }, []);
+
+  // ============================================================
+  // 🖥️ Cargar estado del sistema (System Health)
+  // ============================================================
+  const loadSystemHealth = async () => {
+    setLoadingHealth(true);
+    setHealthError(null);
+    try {
+      const healthData = await apiClient.get("/admin/dashboard/system-health", true);
+      console.log("🖥️ System Health:", healthData);
+      setSystemHealth(healthData);
+    } catch (error) {
+      console.error("Error cargando estado del sistema:", error);
+      setHealthError(error.message || "Error al cargar estado del sistema");
+      setSystemHealth(null);
+    } finally {
+      setLoadingHealth(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSystemHealth();
+    // Actualizar cada 30 segundos
+    const interval = setInterval(loadSystemHealth, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // ============================================================
@@ -428,30 +464,302 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Estado del sistema */}
+        {/* Estado del sistema - DATOS EN TIEMPO REAL */}
         <div className="bg-white dark:bg-[var(--bg-primary)] rounded-3xl shadow-md border border-gray-100 p-6">
-          <h2 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
-            <Database className="w-5 h-5 text-[#1C5B36]" /> Estado del Sistema
-          </h2>
-          <div className="space-y-3">
-            {[
-              { name: "Autenticación JWT", status: "Operativo" },
-              { name: "Base de Datos", status: "100% Conectado" },
-              { name: "API Rest", status: "99.8% Uptime" },
-              { name: "Sistema MBAC", status: "Activo" },
-              { name: "Auditoría", status: "Sin incidencias" },
-            ].map((sys, i) => (
-              <div
-                key={i}
-                className="flex justify-between items-center bg-green-50 px-4 py-3 rounded-2xl border border-green-100"
-              >
-                <span className="text-gray-800 font-medium">{sys.name}</span>
-                <span className="text-sm text-[#1C5B36] font-semibold">
-                  {sys.status}
-                </span>
-              </div>
-            ))}
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-lg font-semibold text-gray-800 flex items-center gap-2">
+              <Server className="w-5 h-5 text-[#1C5B36]" /> Estado del Sistema
+            </h2>
+            <button
+              onClick={loadSystemHealth}
+              disabled={loadingHealth}
+              className={`p-2 rounded-full transition-all ${
+                loadingHealth
+                  ? "bg-gray-100 cursor-not-allowed"
+                  : "bg-blue-50 hover:bg-blue-100 text-blue-600"
+              }`}
+              title="Actualizar estado"
+            >
+              <RefreshCw className={`w-4 h-4 ${loadingHealth ? "animate-spin" : ""}`} />
+            </button>
           </div>
+
+          {loadingHealth && !systemHealth ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600"></div>
+              <p className="ml-3 text-gray-500 text-sm">Verificando sistemas...</p>
+            </div>
+          ) : healthError ? (
+            <div className="bg-red-50 border border-red-200 rounded-2xl p-4 text-center">
+              <WifiOff className="w-8 h-8 text-red-400 mx-auto mb-2" />
+              <p className="text-red-600 text-sm font-medium">Error de conexión</p>
+              <p className="text-red-500 text-xs mt-1">{healthError}</p>
+              <button
+                onClick={loadSystemHealth}
+                className="mt-3 text-xs text-red-600 hover:text-red-800 underline"
+              >
+                Reintentar
+              </button>
+            </div>
+          ) : systemHealth ? (
+            <div className="space-y-3">
+              {/* Servidor de Aplicación */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-4 border border-blue-100">
+                <div className="flex items-center gap-2 mb-3">
+                  <Server className="w-4 h-4 text-blue-600" />
+                  <span className="font-semibold text-gray-800 text-sm">Servidor API</span>
+                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                    {systemHealth.servidor?.ip}:{systemHealth.servidor?.puerto}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-3 text-xs">
+                  <div className="flex items-center gap-2">
+                    <MemoryStick className="w-3.5 h-3.5 text-gray-500" />
+                    <span className="text-gray-600">Memoria:</span>
+                    <span className={`font-semibold ${
+                      systemHealth.servidor?.memoriaUsadaPorcentaje < 70 ? "text-green-600" :
+                      systemHealth.servidor?.memoriaUsadaPorcentaje < 90 ? "text-yellow-600" : "text-red-600"
+                    }`}>
+                      {systemHealth.servidor?.memoriaUsadaPorcentaje?.toFixed(1)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Cpu className="w-3.5 h-3.5 text-gray-500" />
+                    <span className="text-gray-600">CPUs:</span>
+                    <span className="font-semibold text-gray-800">{systemHealth.servidor?.cpuCores}</span>
+                  </div>
+                  <div className="flex items-center gap-2 col-span-2">
+                    <Clock className="w-3.5 h-3.5 text-gray-500" />
+                    <span className="text-gray-600">Uptime:</span>
+                    <span className="font-semibold text-gray-800">{systemHealth.servidor?.uptime}</span>
+                  </div>
+                  <div className="col-span-2 mt-1">
+                    <div className="flex justify-between text-xs text-gray-500 mb-1">
+                      <span>Uso de memoria</span>
+                      <span>{systemHealth.servidor?.memoriaUsada} / {systemHealth.servidor?.memoriaTotal}</span>
+                    </div>
+                    <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          systemHealth.servidor?.memoriaUsadaPorcentaje < 70 ? "bg-green-500" :
+                          systemHealth.servidor?.memoriaUsadaPorcentaje < 90 ? "bg-yellow-500" : "bg-red-500"
+                        }`}
+                        style={{ width: `${systemHealth.servidor?.memoriaUsadaPorcentaje || 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Base de Datos */}
+              <div className={`rounded-2xl p-4 border ${
+                systemHealth.baseDatos?.conectado
+                  ? "bg-gradient-to-r from-green-50 to-emerald-50 border-green-100"
+                  : "bg-gradient-to-r from-red-50 to-rose-50 border-red-100"
+              }`}>
+                <div className="flex items-center gap-2 mb-3">
+                  <Database className="w-4 h-4 text-green-600" />
+                  <span className="font-semibold text-gray-800 text-sm">Base de Datos PostgreSQL</span>
+                  <span className="ml-auto text-xs px-2 py-1 rounded-full bg-green-100 text-green-700">
+                    {systemHealth.baseDatos?.host}
+                  </span>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  {/* Estado y Latencia */}
+                  <div className="flex items-center gap-2">
+                    {systemHealth.baseDatos?.conectado ? (
+                      <Wifi className="w-3.5 h-3.5 text-green-500" />
+                    ) : (
+                      <WifiOff className="w-3.5 h-3.5 text-red-500" />
+                    )}
+                    <span className="text-gray-600">Estado:</span>
+                    <span className={`font-semibold ${
+                      systemHealth.baseDatos?.conectado ? "text-green-600" : "text-red-600"
+                    }`}>
+                      {systemHealth.baseDatos?.estado}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-3.5 h-3.5 text-gray-500" />
+                    <span className="text-gray-600">Latencia:</span>
+                    <span className={`font-semibold ${
+                      systemHealth.baseDatos?.tiempoRespuestaMs < 50 ? "text-green-600" :
+                      systemHealth.baseDatos?.tiempoRespuestaMs < 200 ? "text-yellow-600" : "text-red-600"
+                    }`}>
+                      {systemHealth.baseDatos?.tiempoRespuesta}
+                    </span>
+                  </div>
+
+                  {/* Estadísticas de PostgreSQL */}
+                  {systemHealth.baseDatos?.estadisticas && (
+                    <>
+                      {/* Memoria configurada */}
+                      <div className="col-span-2 mt-2 pt-2 border-t border-green-200">
+                        <p className="text-gray-500 font-medium mb-1">Memoria PostgreSQL:</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <MemoryStick className="w-3.5 h-3.5 text-blue-500" />
+                        <span className="text-gray-600">Shared Buffers:</span>
+                        <span className="font-semibold text-blue-600">
+                          {systemHealth.baseDatos.estadisticas.sharedBuffers}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <HardDrive className="w-3.5 h-3.5 text-purple-500" />
+                        <span className="text-gray-600">Cache Size:</span>
+                        <span className="font-semibold text-purple-600">
+                          {systemHealth.baseDatos.estadisticas.effectiveCacheSize}
+                        </span>
+                      </div>
+
+                      {/* Tamaño BD y Cache Hit */}
+                      <div className="flex items-center gap-2">
+                        <Database className="w-3.5 h-3.5 text-indigo-500" />
+                        <span className="text-gray-600">Tamaño BD:</span>
+                        <span className="font-semibold text-indigo-600">
+                          {systemHealth.baseDatos.estadisticas.tamanoBD}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Activity className="w-3.5 h-3.5 text-emerald-500" />
+                        <span className="text-gray-600">Cache Hit:</span>
+                        <span className={`font-semibold ${
+                          systemHealth.baseDatos.estadisticas.cacheHitRatio > 95 ? "text-green-600" :
+                          systemHealth.baseDatos.estadisticas.cacheHitRatio > 85 ? "text-yellow-600" : "text-red-600"
+                        }`}>
+                          {systemHealth.baseDatos.estadisticas.cacheHitRatioTexto}
+                        </span>
+                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                          systemHealth.baseDatos.estadisticas.cacheEstado === "EXCELENTE" ? "bg-green-100 text-green-700" :
+                          systemHealth.baseDatos.estadisticas.cacheEstado === "BUENO" ? "bg-yellow-100 text-yellow-700" :
+                          "bg-red-100 text-red-700"
+                        }`}>
+                          {systemHealth.baseDatos.estadisticas.cacheEstado}
+                        </span>
+                      </div>
+
+                      {/* Conexiones del servidor PostgreSQL */}
+                      <div className="col-span-2 mt-2 pt-2 border-t border-green-200">
+                        <p className="text-gray-500 font-medium mb-1">Conexiones Servidor PG:</p>
+                      </div>
+                      <div className="col-span-2 flex items-center gap-3">
+                        <div className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
+                          <span className="text-gray-600">Activas:</span>
+                          <span className="font-semibold">{systemHealth.baseDatos.estadisticas.conexionesActivasServidor}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="w-2 h-2 rounded-full bg-gray-400"></span>
+                          <span className="text-gray-600">Idle:</span>
+                          <span className="font-semibold">{systemHealth.baseDatos.estadisticas.conexionesInactivasServidor}</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-gray-600">Max:</span>
+                          <span className="font-semibold">{systemHealth.baseDatos.estadisticas.maxConexionesPermitidas}</span>
+                        </div>
+                      </div>
+
+                      {/* Uptime PostgreSQL */}
+                      <div className="col-span-2 flex items-center gap-2 mt-1">
+                        <Clock className="w-3.5 h-3.5 text-gray-500" />
+                        <span className="text-gray-600">Uptime PG:</span>
+                        <span className="font-semibold text-gray-700 truncate">
+                          {systemHealth.baseDatos.estadisticas.uptimeServidor?.split('.')[0] || 'N/A'}
+                        </span>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Pool HikariCP */}
+                  {systemHealth.baseDatos?.pool && (
+                    <div className="col-span-2 flex items-center gap-2 mt-2 pt-2 border-t border-green-200">
+                      <HardDrive className="w-3.5 h-3.5 text-gray-500" />
+                      <span className="text-gray-600">Pool App (Hikari):</span>
+                      <span className="font-semibold text-gray-800">
+                        {systemHealth.baseDatos.pool.conexionesActivas}/{systemHealth.baseDatos.pool.maxPoolSize}
+                      </span>
+                      <span className={`ml-auto text-xs px-2 py-0.5 rounded ${
+                        systemHealth.baseDatos.pool.estadoPool === "SALUDABLE"
+                          ? "bg-green-100 text-green-700"
+                          : "bg-yellow-100 text-yellow-700"
+                      }`}>
+                        {systemHealth.baseDatos.pool.estadoPool}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Servicios */}
+              <div className="grid grid-cols-3 gap-2">
+                {/* JWT */}
+                <div className={`rounded-xl p-3 text-center border ${
+                  systemHealth.servicios?.jwt?.estado === "OPERATIVO"
+                    ? "bg-green-50 border-green-100"
+                    : "bg-red-50 border-red-100"
+                }`}>
+                  <Lock className={`w-4 h-4 mx-auto mb-1 ${
+                    systemHealth.servicios?.jwt?.estado === "OPERATIVO" ? "text-green-600" : "text-red-600"
+                  }`} />
+                  <p className="text-xs font-medium text-gray-700">JWT</p>
+                  <p className={`text-xs ${
+                    systemHealth.servicios?.jwt?.estado === "OPERATIVO" ? "text-green-600" : "text-red-600"
+                  }`}>
+                    {systemHealth.servicios?.jwt?.estado === "OPERATIVO" ? "Operativo" : "Error"}
+                  </p>
+                </div>
+
+                {/* MBAC */}
+                <div className={`rounded-xl p-3 text-center border ${
+                  systemHealth.servicios?.mbac?.estado === "ACTIVO"
+                    ? "bg-green-50 border-green-100"
+                    : "bg-yellow-50 border-yellow-100"
+                }`}>
+                  <Shield className={`w-4 h-4 mx-auto mb-1 ${
+                    systemHealth.servicios?.mbac?.estado === "ACTIVO" ? "text-green-600" : "text-yellow-600"
+                  }`} />
+                  <p className="text-xs font-medium text-gray-700">MBAC</p>
+                  <p className={`text-xs ${
+                    systemHealth.servicios?.mbac?.estado === "ACTIVO" ? "text-green-600" : "text-yellow-600"
+                  }`}>
+                    {systemHealth.servicios?.mbac?.permisosConfigurados} permisos
+                  </p>
+                </div>
+
+                {/* Auditoría */}
+                <div className="bg-green-50 border border-green-100 rounded-xl p-3 text-center">
+                  <Activity className="w-4 h-4 mx-auto mb-1 text-green-600" />
+                  <p className="text-xs font-medium text-gray-700">Auditoría</p>
+                  <p className="text-xs text-green-600">
+                    {systemHealth.servicios?.auditoria?.ultimaHora} logs/h
+                  </p>
+                </div>
+              </div>
+
+              {/* Resumen */}
+              <div className={`mt-2 p-3 rounded-xl text-center ${
+                systemHealth.resumen?.estadoGeneralColor === "green"
+                  ? "bg-green-100 border border-green-200"
+                  : "bg-yellow-100 border border-yellow-200"
+              }`}>
+                <div className="flex items-center justify-center gap-2">
+                  {systemHealth.resumen?.estadoGeneralColor === "green" ? (
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                  ) : (
+                    <AlertCircle className="w-4 h-4 text-yellow-600" />
+                  )}
+                  <span className={`text-sm font-semibold ${
+                    systemHealth.resumen?.estadoGeneralColor === "green" ? "text-green-700" : "text-yellow-700"
+                  }`}>
+                    {systemHealth.resumen?.estadoGeneral}
+                  </span>
+                </div>
+                <p className="text-xs text-gray-500 mt-1">
+                  Última verificación: {systemHealth.resumen?.timestamp}
+                </p>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
