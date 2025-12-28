@@ -55,13 +55,16 @@ import DashboardMedico from "./pages/roles/medico/DashboardMedico";
 import ModuloPacientes from "./pages/roles/medico/ModuloPacientes";
 import ModuloCitas from "./pages/roles/medico/ModuloCitas";
 import ModuloIndicadores from "./pages/roles/medico/ModuloIndicadores";
+import CalendarioDisponibilidad from "./pages/roles/medico/CalendarioDisponibilidad";
 
 // 🧩 Módulos por Rol - Coordinador
 import DashboardCoordinador from "./pages/roles/coordinador/DashboardCoordinador";
 import ModuloAgenda from "./pages/roles/coordinador/ModuloAgenda";
 import AsignarGestorMedico from "./pages/roles/coordinador/AsignarGestorMedico";
 import SistemaCoordinacionMedica from "./pages/roles/coordinador/SistemaCoordinacionMedica";
-import GestionPeriodosSolicitud from "./pages/roles/coordinador/GestionPeriodosSolicitud";
+import RequerimientoEspecialidadesTelemedicina from "./pages/roles/coordinador/RequerimientoEspecialidadesTelemedicina";
+import GestionPeriodosTurnos from "./pages/roles/coordinador/GestionPeriodosTurnos";
+import RevisionDisponibilidad from "./pages/roles/coordinador/RevisionDisponibilidad";
 
 // 🧩 Módulos por Rol - Externo
 import DashboardExterno from "./pages/roles/externo/DashboardExterno";
@@ -314,6 +317,14 @@ function AppRoutes() {
           }
         />
         <Route
+          path="/roles/medico/disponibilidad"
+          element={
+            <ProtectedRoute requiredPath="/roles/medico/disponibilidad" requiredAction="ver">
+              <CalendarioDisponibilidad />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/roles/medico/citas"
           element={
             <ProtectedRoute requiredPath="/roles/medico/citas" requiredAction="ver">
@@ -373,7 +384,18 @@ function AppRoutes() {
               requiredPath="/roles/coordinador/gestion-periodos"
               requiredAction="ver"
             >
-              <GestionPeriodosSolicitud />
+              <GestionPeriodosTurnos />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/roles/coordinador/revision-disponibilidad"
+          element={
+            <ProtectedRoute
+              requiredPath="/roles/coordinador/revision-disponibilidad"
+              requiredAction="ver"
+            >
+              <RevisionDisponibilidad />
             </ProtectedRoute>
           }
         />

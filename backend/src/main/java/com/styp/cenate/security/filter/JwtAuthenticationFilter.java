@@ -2,6 +2,7 @@ package com.styp.cenate.security.filter;
 
 import com.styp.cenate.security.service.JwtUtil;
 import com.styp.cenate.security.service.UserDetailsServiceImpl;
+import com.styp.cenate.service.security.TokenBlacklistService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -31,10 +32,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private final JwtUtil jwtUtil;
     private final UserDetailsServiceImpl userDetailsService;
+    private final TokenBlacklistService tokenBlacklistService;
 
-    public JwtAuthenticationFilter(JwtUtil jwtUtil, UserDetailsServiceImpl userDetailsService) {
+    public JwtAuthenticationFilter(JwtUtil jwtUtil,
+                                   UserDetailsServiceImpl userDetailsService,
+                                   TokenBlacklistService tokenBlacklistService) {
         this.jwtUtil = jwtUtil;
         this.userDetailsService = userDetailsService;
+        this.tokenBlacklistService = tokenBlacklistService;
     }
 
     @Override
@@ -52,6 +57,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         final String token = authHeader.substring(7);
+
+        // SEC-003: Verificar si el token esta en blacklist
+        if (tokenBlacklistService.isBlacklisted(token)) {
+            log.warn("Token en blacklist rechazado");
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         final String username = jwtUtil.extractUsername(token);
 
         if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
@@ -63,9 +76,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authToken);
-                log.debug("✅ JWT válido para usuario: {}", username);
+                log.debug("JWT valido para usuario: {}", username);
             } else {
-                log.warn("⚠️ Token JWT inválido o expirado para usuario: {}", username);
+                log.warn("Token JWT invalido o expirado para usuario: {}", username);
             }
         }
 

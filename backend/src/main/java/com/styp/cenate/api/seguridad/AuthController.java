@@ -4,7 +4,10 @@ import com.styp.cenate.dto.ChangePasswordRequest;
 import com.styp.cenate.dto.auth.AuthRequest;
 import com.styp.cenate.dto.auth.AuthResponse;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.security.service.JwtUtil;
 import com.styp.cenate.service.auth.AuthenticationService;
+import com.styp.cenate.service.auditlog.AuditLogService;
+import com.styp.cenate.service.security.TokenBlacklistService;
 import com.styp.cenate.service.usuario.UsuarioService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +15,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 /**
@@ -29,6 +34,9 @@ public class AuthController {
 
     private final AuthenticationService authenticationService;
     private final UsuarioService usuarioService;
+    private final TokenBlacklistService tokenBlacklistService;
+    private final JwtUtil jwtUtil;
+    private final AuditLogService auditLogService;
 
     // ============================================================
     // 🔑 LOGIN (Autenticación principal MBAC)
@@ -44,9 +52,14 @@ public class AuthController {
             log.error("❌ Error en login: {}", e.getMessage());
 
             String mensaje;
-            if (e.getMessage().contains("inactiva")) {
-                mensaje = "La cuenta está inactiva o bloqueada";
-            } else if (e.getMessage().contains("Usuario no encontrado")) {
+            String errorMsg = e.getMessage() != null ? e.getMessage().toLowerCase() : "";
+
+            if (errorMsg.contains("bloqueada") || errorMsg.contains("locked")) {
+                // SEC-002: Cuenta bloqueada por intentos fallidos
+                mensaje = "Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intente nuevamente en 10 minutos.";
+            } else if (errorMsg.contains("inactiva") || errorMsg.contains("disabled")) {
+                mensaje = "La cuenta está inactiva. Contacte al administrador.";
+            } else if (errorMsg.contains("usuario no encontrado") || errorMsg.contains("not found")) {
                 mensaje = "Usuario no encontrado";
             } else {
                 mensaje = "Credenciales inválidas";
@@ -142,7 +155,60 @@ public class AuthController {
         data.put("estado", usuario.getStatUser());
         data.put("activo", usuario.isActive());
 
-        log.info("📋 Usuario autenticado: {}", username);
+        log.info("Usuario autenticado: {}", username);
         return ResponseEntity.ok(data);
+    }
+
+    // ============================================================
+    // SEC-003: LOGOUT (Invalidar token JWT)
+    // ============================================================
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(
+            @RequestHeader("Authorization") String authHeader,
+            Authentication auth
+    ) {
+        if (auth == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "No autenticado"));
+        }
+
+        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Token no proporcionado"));
+        }
+
+        try {
+            String token = authHeader.substring(7);
+            String username = auth.getName();
+
+            // Obtener fecha de expiracion del token
+            LocalDateTime expiration = jwtUtil.extractAllClaims(token)
+                    .getExpiration()
+                    .toInstant()
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDateTime();
+
+            // Agregar token a blacklist
+            tokenBlacklistService.invalidateToken(token, username, expiration, "LOGOUT");
+
+            // Registrar en auditoria
+            try {
+                auditLogService.registrarEvento(
+                        username,
+                        "LOGOUT",
+                        "AUTH",
+                        "Cierre de sesion",
+                        "INFO",
+                        "SUCCESS"
+                );
+            } catch (Exception e) {
+                log.warn("No se pudo registrar logout en auditoria: {}", e.getMessage());
+            }
+
+            log.info("Logout exitoso para: {}", username);
+            return ResponseEntity.ok(Map.of("message", "Sesion cerrada correctamente"));
+
+        } catch (Exception e) {
+            log.error("Error en logout: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of("error", "Error al cerrar sesion"));
+        }
     }
 }

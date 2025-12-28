@@ -72,4 +72,10 @@ public class EspecialidadController {
         servicioEspecialidad.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+
+    @GetMapping("/con-medicos-activos")
+    public ResponseEntity<List<EspecialidadDTO>> listarConMedicosActivos() {
+        log.info("GET /api/especialidades/con-medicos-activos - Listando especialidades con médicos activos");
+        return ResponseEntity.ok(servicioEspecialidad.listarConMedicosActivos());
+    }
 }

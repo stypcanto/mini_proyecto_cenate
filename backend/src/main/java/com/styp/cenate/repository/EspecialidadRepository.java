@@ -17,4 +17,10 @@ public interface EspecialidadRepository extends JpaRepository<Especialidad, Long
 
     @Query("SELECT e FROM Especialidad e WHERE e.estado = :estado ORDER BY e.descServicio ASC")
     List<Especialidad> findByEstadoOrderByDescServicioAsc(@Param("estado") String estado);
+
+    @Query(value = "SELECT DISTINCT e.* FROM dim_servicio_essi e " +
+            "INNER JOIN dim_personal_prof p ON e.id_servicio = p.id_servicio " +
+            "WHERE p.stat_pers_prof = 'A' AND e.estado = 'A' " +
+            "ORDER BY e.desc_servicio ASC", nativeQuery = true)
+    List<Especialidad> findEspecialidadesConMedicosActivos();
 }

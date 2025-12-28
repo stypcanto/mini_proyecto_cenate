@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.8.0-blue)
+![Version](https://img.shields.io/badge/version-1.9.0-blue)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen)
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![React](https://img.shields.io/badge/React-19-blue)
@@ -22,6 +22,7 @@
 - [Instalacion Rapida](#instalacion-rapida)
 - [Estructura del Proyecto](#estructura-del-proyecto)
 - [Documentacion](#documentacion)
+- [Seguridad del Sistema](#seguridad-del-sistema)
 - [Credenciales de Prueba](#credenciales-de-prueba)
 - [Modulos del Sistema](#modulos-del-sistema)
 - [Contacto](#contacto)
@@ -31,9 +32,11 @@
 ## Caracteristicas
 
 ### Autenticacion y Seguridad
-- Login con JWT (JSON Web Tokens)
+- Login con JWT (JSON Web Tokens) - Expiracion: 2 horas
 - Sistema MBAC (Control de Acceso Basado en Modulos)
-- Bloqueo automatico por intentos fallidos
+- Bloqueo automatico por intentos fallidos (3 intentos = 10 min bloqueo)
+- Token Blacklist para invalidacion de sesiones (logout seguro)
+- CORS restringido por ambiente (dev/prod)
 - Auditoria completa de acciones
 
 ### Gestion de Usuarios
@@ -176,7 +179,71 @@ Toda la documentacion tecnica esta en la carpeta `spec/`:
 | [004_arquitectura.md](spec/004_arquitectura.md) | Diagramas de arquitectura del sistema |
 | [005_troubleshooting.md](spec/005_troubleshooting.md) | Solucion a problemas comunes |
 | [006_plan_auditoria.md](spec/006_plan_auditoria.md) | Plan de auditoria del sistema |
+| [008_plan_seguridad_auth.md](spec/008_plan_seguridad_auth.md) | Plan de seguridad - Autenticacion |
 | [CLAUDE.md](CLAUDE.md) | Guia rapida para desarrollo con Claude |
+
+---
+
+## Seguridad del Sistema
+
+### Bloqueo de Cuenta por Intentos Fallidos
+
+El sistema bloquea automaticamente las cuentas despues de **3 intentos fallidos** de login.
+
+```
+Intento 1: Contraseña incorrecta → failedAttempts = 1
+Intento 2: Contraseña incorrecta → failedAttempts = 2
+Intento 3: Contraseña incorrecta → failedAttempts = 3 → CUENTA BLOQUEADA
+```
+
+**Duracion del bloqueo:** 10 minutos (auto-desbloqueo)
+
+**Archivos involucrados:**
+- `AuthenticationFailureListener.java` - Detecta intentos fallidos
+- `AuthenticationSuccessListener.java` - Resetea contador en login exitoso
+- `UserDetailsServiceImpl.java` - Verifica si cuenta esta bloqueada
+
+### Token Blacklist (Logout Seguro)
+
+Cuando un usuario cierra sesion, el token JWT se invalida agregandolo a una blacklist.
+
+```
+POST /api/auth/logout
+Authorization: Bearer {token}
+
+→ Token agregado a blacklist (hash SHA-256)
+→ Siguiente request con ese token es rechazado
+```
+
+**Limpieza automatica:** Cada hora se eliminan tokens expirados de la blacklist.
+
+**Archivos involucrados:**
+- `TokenBlacklist.java` - Entidad JPA
+- `TokenBlacklistService.java` - Servicio de invalidacion
+- `JwtAuthenticationFilter.java` - Verifica blacklist en cada request
+
+### CORS por Ambiente
+
+| Ambiente | Origenes Permitidos |
+|----------|---------------------|
+| Desarrollo | `localhost:3000`, `localhost:8080` |
+| Produccion | `10.0.89.13`, `10.0.89.239` |
+
+**Configuracion:**
+- `application-dev.properties` - Origenes de desarrollo
+- `application-prod.properties` - Origenes de produccion
+
+### Perfiles de Ejecucion
+
+```bash
+# Desarrollo (con logs SQL, Swagger habilitado)
+./gradlew bootRun --args='--spring.profiles.active=dev'
+
+# Produccion (sin logs SQL, Swagger deshabilitado)
+java -jar cenate.jar --spring.profiles.active=prod
+```
+
+> Ver plan completo de seguridad en [spec/008_plan_seguridad_auth.md](spec/008_plan_seguridad_auth.md)
 
 ---
 
@@ -280,7 +347,8 @@ PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -f scrip
 
 | Version | Fecha | Descripcion |
 |---------|-------|-------------|
-| **1.8.0** | 2025-12-23 | Mejoras en Auditoria, fix usuario N/A |
+| **1.9.0** | 2025-12-27 | Seguridad: Bloqueo cuenta, Token Blacklist, CORS por ambiente |
+| 1.8.0 | 2025-12-23 | Mejoras en Auditoria, fix usuario N/A |
 | 1.7.9 | 2025-12-23 | Dashboard ChatBot mejorado, footer con version |
 | 1.7.8 | 2025-12-23 | Integracion ChatBot de Citas |
 | 1.7.7 | 2025-12-23 | Documentacion de usuarios |

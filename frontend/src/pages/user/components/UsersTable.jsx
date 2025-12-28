@@ -1,6 +1,6 @@
 // src/pages/admin/users/components/UsersTable.jsx
 import React from 'react';
-import { Users, Eye, Edit, Trash2, Circle, MapPin, Building, UserPlus, AlertCircle } from 'lucide-react';
+import { Users, Eye, Edit, Trash2, Circle, MapPin, Building, UserPlus, AlertCircle, Unlock, Lock } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
 // ============================================================
@@ -29,11 +29,34 @@ const getTipoPersonal = (user) => {
   ).toUpperCase().trim();
 };
 
-const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, onToggleEstado, onCreateUser, selectedUsers = [], onSelectAll, onSelectUser, showBirthdayColumn = false }) => {
+const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, onToggleEstado, onUnlockUser, onCreateUser, selectedUsers = [], onSelectAll, onSelectUser, showBirthdayColumn = false }) => {
   const { user: currentUser } = useAuth();
 
   // Verificar si es SUPERADMIN (único que puede eliminar usuarios)
   const esSuperAdmin = currentUser?.roles?.includes('SUPERADMIN');
+  const esAdmin = currentUser?.roles?.includes('ADMIN') || esSuperAdmin;
+
+  // 🔒 Verificar si una cuenta está bloqueada
+  const isAccountLocked = (user) => {
+    // Verificar múltiples campos posibles del backend
+    if (user.account_locked === true || user.accountLocked === true) return true;
+
+    // Verificar por intentos fallidos >= 3
+    const failedAttempts = user.failed_attempts || user.failedAttempts || 0;
+    if (failedAttempts >= 3) return true;
+
+    // Verificar por lock_time/lockTime activo
+    const lockTime = user.lock_time || user.lockTime || user.locked_until || user.lockedUntil;
+    if (lockTime) {
+      const lockDate = new Date(lockTime);
+      const now = new Date();
+      // Si lockTime + 10 minutos > ahora, está bloqueado
+      const unlockTime = new Date(lockDate.getTime() + 10 * 60 * 1000);
+      if (unlockTime > now) return true;
+    }
+
+    return false;
+  };
 
   // Función para obtener las iniciales del usuario
   const getInitials = (username) => {
@@ -270,18 +293,29 @@ const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
 
                   {/* Estado */}
                   <td className="px-4 py-3">
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input
-                        type="checkbox"
-                        checked={user.estado_usuario === 'ACTIVO'}
-                        onChange={() => onToggleEstado(user)}
-                        className="sr-only peer"
-                      />
-                      <div className="w-11 h-6 bg-red-400 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 peer-checked:peer-focus:ring-emerald-500/50 transition-all duration-200"></div>
-                      <span className={`ml-2 text-xs font-medium ${user.estado_usuario === 'ACTIVO' ? 'text-emerald-700' : 'text-red-600'}`}>
-                        {user.estado_usuario === 'ACTIVO' ? 'ACTIVO' : 'INACTIVO'}
-                      </span>
-                    </label>
+                    <div className="flex flex-col gap-1">
+                      {/* Toggle de estado ACTIVO/INACTIVO */}
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={user.estado_usuario === 'ACTIVO'}
+                          onChange={() => onToggleEstado(user)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-red-400 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-red-500/50 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500 peer-checked:peer-focus:ring-emerald-500/50 transition-all duration-200"></div>
+                        <span className={`ml-2 text-xs font-medium ${user.estado_usuario === 'ACTIVO' ? 'text-emerald-700' : 'text-red-600'}`}>
+                          {user.estado_usuario === 'ACTIVO' ? 'ACTIVO' : 'INACTIVO'}
+                        </span>
+                      </label>
+
+                      {/* 🔒 Indicador de cuenta bloqueada */}
+                      {isAccountLocked(user) && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 border border-orange-200">
+                          <Lock className="w-3 h-3" strokeWidth={2} />
+                          Bloqueado
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Acciones */}
@@ -315,6 +349,16 @@ const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
                         >
                           <Edit className="w-4 h-4" strokeWidth={2} />
                         </button>
+                        {/* 🔓 Botón de desbloquear (solo si está bloqueado y es ADMIN) */}
+                        {isAccountLocked(user) && esAdmin && onUnlockUser && (
+                          <button
+                            onClick={() => onUnlockUser(user)}
+                            className="p-1.5 text-orange-600 hover:bg-orange-50 rounded transition-colors duration-150"
+                            title="Desbloquear cuenta"
+                          >
+                            <Unlock className="w-4 h-4" strokeWidth={2} />
+                          </button>
+                        )}
                         {/* Solo SUPERADMIN puede eliminar usuarios */}
                         {esSuperAdmin && (
                           <button

@@ -18,4 +18,6 @@ public interface IEspecialidadService {
 	EspecialidadDTO actualizar(Long id, EspecialidadDTO dto);
 
 	void eliminar(Long id);
+
+	List<EspecialidadDTO> listarConMedicosActivos();
 }

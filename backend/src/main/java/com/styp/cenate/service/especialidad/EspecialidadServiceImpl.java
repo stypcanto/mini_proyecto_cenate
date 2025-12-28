@@ -102,6 +102,18 @@ public class EspecialidadServiceImpl implements IEspecialidadService {
 		log.info("Especialidad eliminada: {}", id);
 	}
 
+	@Override
+	@Transactional(readOnly = true)
+	public List<EspecialidadDTO> listarConMedicosActivos() {
+		log.info("Obteniendo especialidades con médicos activos en CENATE");
+		List<EspecialidadDTO> especialidades = repository.findEspecialidadesConMedicosActivos()
+				.stream()
+				.map(this::toDto)
+				.collect(Collectors.toList());
+		log.info("Se encontraron {} especialidades con médicos activos", especialidades.size());
+		return especialidades;
+	}
+
 	private EspecialidadDTO toDto(Especialidad esp) {
 		return EspecialidadDTO.builder()
 				.idServicio(esp.getIdServicio())

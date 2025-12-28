@@ -36,6 +36,20 @@ class EspecialidadService {
   }
 
   /**
+   * Obtener especialidades que tienen médicos activos en CENATE
+   * @returns {Promise<Array>} Lista de especialidades con médicos
+   */
+  async obtenerConMedicosActivos() {
+    try {
+      const data = await apiClient.get("/especialidades/con-medicos-activos", true);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("Error al obtener especialidades con médicos activos:", error);
+      throw error;
+    }
+  }
+
+  /**
    * Obtener una especialidad por ID
    * @param {number} id - ID de la especialidad
    * @returns {Promise<Object>} Especialidad encontrada

@@ -8,7 +8,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import RoleLayout from "../RoleLayout";
-import { CalendarCheck, UserCog, ClipboardList } from "lucide-react";
+import { CalendarCheck, UserCog, ClipboardList, CheckCircle } from "lucide-react";
 
 export default function DashboardCoordinador() {
   const navigate = useNavigate();
@@ -23,6 +23,11 @@ export default function DashboardCoordinador() {
       label: "Asignar Gestores",
       path: "/roles/coordinador/asignacion",
       icon: <UserCog className="w-5 h-5" />,
+    },
+    {
+      label: "Revisión de Disponibilidad",
+      path: "/roles/coordinador/revision-disponibilidad",
+      icon: <CheckCircle className="w-5 h-5" />,
     },
     {
       label: "Reportes",

@@ -578,6 +578,42 @@ const UsersManagement = () => {
     setShowCrearUsuarioModal(true);
   };
 
+  // 🔓 NUEVA FUNCIÓN: Desbloquear cuenta bloqueada por intentos fallidos
+  const handleUnlockUser = async (user) => {
+    try {
+      console.log(`🔓 Desbloqueando cuenta de ${user.username}...`);
+
+      await api.put(`/usuarios/id/${user.id_user}/unlock`);
+
+      // Actualizar UI inmediatamente
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
+          u.id_user === user.id_user
+            ? {
+                ...u,
+                account_locked: false,
+                accountLocked: false,
+                failed_attempts: 0,
+                failedAttempts: 0,
+                lock_time: null,
+                lockTime: null
+              }
+            : u
+        )
+      );
+
+      showToast(`Cuenta de ${user.username} desbloqueada exitosamente`, 'success');
+      console.log(`✅ Cuenta desbloqueada: ${user.username}`);
+
+    } catch (error) {
+      console.error('❌ Error al desbloquear cuenta:', error);
+      showToast(
+        `Error al desbloquear cuenta: ${error.response?.data?.message || error.message}`,
+        'error'
+      );
+    }
+  };
+
   // ✅ NUEVA FUNCIÓN: Cambiar estado ACTIVO/INACTIVO (con actualización optimista)
   const handleToggleEstado = async (user) => {
     try {
@@ -690,8 +726,9 @@ const UsersManagement = () => {
                 onViewDetail={handleVerDetalle}
                 onEdit={handleEditarUsuario}
                 onDelete={handleEliminarUsuario}
-                onToggleEstado={handleToggleEstado}  // ✅ Nueva prop
-                onCreateUser={handleCreateUser}  // 🆕 Nueva prop para crear usuario
+                onToggleEstado={handleToggleEstado}
+                onUnlockUser={handleUnlockUser}  // 🔓 Nueva prop para desbloquear
+                onCreateUser={handleCreateUser}
                 selectedUsers={selectedUsers}
                 onSelectAll={handleSelectAll}
                 onSelectUser={handleSelectUser}

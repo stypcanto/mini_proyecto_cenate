@@ -3,6 +3,7 @@ import lombok.Data;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
@@ -52,6 +53,10 @@ public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl userDetailsService;
 
+    // SEC-004: CORS configurable por ambiente
+    @Value("${cors.allowed-origins:http://localhost:3000}")
+    private String corsAllowedOrigins;
+
     // ============================================================
     // 🔰 CADENA PRINCIPAL DE FILTROS DE SEGURIDAD
     // ============================================================
@@ -75,13 +80,16 @@ public class SecurityConfig {
                                 "/api/public/**",
                                 "/api/account-requests",
                                 "/error",
-                                "/api-docs/**",        // <-- AGREGAR PARA IGU
-                                "/actuator/**",
+                                "/api-docs/**",
+                                "/actuator/health",    // SEC-006: Solo health publico
                                 "/v3/api-docs/**",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
                                 "/api/sesion/**"
                         ).permitAll()
+
+                        // SEC-006: Otros endpoints de actuator requieren SUPERADMIN
+                        .requestMatchers("/actuator/**").hasRole("SUPERADMIN")
                         
                         
                         // =====================================================
@@ -132,7 +140,8 @@ public class SecurityConfig {
                                 "/api/regimenes/**",
                                 "/api/regimenes-laborales",
                                 "/api/ubicacion/**",
-                                "/api/especialidad/**", // Especialidades médicas
+                                "/api/especialidad/**", // Especialidades médicas (singular - legacy)
+                                "/api/especialidades/**", // Especialidades médicas (plural)
                                 "/api/chatbot/**", // Agregando chatbot-ini
                                 "/api/asegurados/**", // Agregando asegurados - PÚBLICO
                                 "/api/disponibilidad/**",
@@ -216,8 +225,10 @@ public class SecurityConfig {
                         // 👩‍⚕️ PACIENTES / ASEGURADOS
                         // =====================================================
                         .requestMatchers("/api/pacientes/**").hasAnyRole("SUPERADMIN", "ADMIN")
-                        
-                        .requestMatchers(HttpMethod.POST, "/api/import-excel/**").permitAll()
+
+                        // SEC-005: Import Excel protegido (antes era permitAll)
+                        .requestMatchers(HttpMethod.POST, "/api/import-excel/**")
+                            .hasAnyRole("SUPERADMIN", "ADMIN")
                         // =====================================================
                         // 🔒 Cualquier otro endpoint requiere autenticación
                         // =====================================================
@@ -252,45 +263,26 @@ public class SecurityConfig {
     }
 
     // ============================================================
-    // 🌍 CONFIGURACIÓN CORS SIMPLIFICADA - LOCALHOST ONLY
+    // SEC-004: CORS configurable por ambiente
     // ============================================================
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration config = new CorsConfiguration();
-        
-        // ✅ LOCALHOST + DOCKER + PRODUCCIÓN (DESARROLLO Y PRODUCCIÓN)
-        config.setAllowedOrigins(Arrays.asList(
-            "http://localhost",           // Frontend Docker (puerto 80)
-            "http://localhost:80",        // Frontend Docker explícito
-            "http://localhost:3000",      // Frontend desarrollo
-            "http://localhost:3001",      // Frontend desarrollo alternativo
-            "http://localhost:8080",      // Backend directo
-            "http://127.0.0.1",           // Localhost alternativo
-            "http://127.0.0.1:80",        // Docker alternativo
-            "http://127.0.0.1:3000",      // Desarrollo alternativo
-            "http://127.0.0.1:3001",      // Desarrollo alternativo
-            "http://127.0.0.1:8080",       // Backend alternativo
-            "http://191.101.78.197:5678",
-            "http://127.0.0.1:5500",   // LOCAL LIVESERVER VS1
-            "http://127.0.0.2:5500",   // LOCAL LIVESERVER VS2 
-            "http://10.0.89.13",          // ✅ IP servidor producción (sin puerto)
-            "http://10.0.89.13:80",       // ✅ IP servidor producción puerto 80
-            "http://10.0.89.13:3000",     // ✅ IP servidor producción puerto 3000
-            "http://10.0.89.239",         // ✅ IP servidor producción alternativa
-            "http://10.0.89.239:80",      // ✅ IP servidor producción alternativa puerto 80
-            "http://10.0.89.239:3000"     // ✅ IP servidor producción alternativa puerto 3000
-        ));
-        
+
+        // Usar origenes desde application.properties/application-prod.properties
+        List<String> origins = Arrays.asList(corsAllowedOrigins.split(","));
+        config.setAllowedOrigins(origins);
+
         config.setAllowedMethods(Arrays.asList(
             "GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"
         ));
-        
+
         config.setAllowedHeaders(Arrays.asList("*"));
         config.setExposedHeaders(Arrays.asList(
             "Authorization",
             "Content-Disposition"
         ));
-        
+
         config.setAllowCredentials(true);
         config.setMaxAge(3600L);
 

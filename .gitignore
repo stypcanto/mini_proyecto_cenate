@@ -8,6 +8,10 @@ target/
 *.class
 *.log
 
+# Configuracion de desarrollo (NUNCA commitear)
+application-dev.properties
+application-local.properties
+
 # ===============================
 #  MAVEN / GRADLE
 # ===============================

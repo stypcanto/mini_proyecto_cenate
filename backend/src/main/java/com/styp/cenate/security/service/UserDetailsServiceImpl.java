@@ -5,6 +5,8 @@ import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.UsuarioRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.authentication.LockedException;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,6 +14,7 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.format.DateTimeFormatter;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -29,21 +32,28 @@ public class UserDetailsServiceImpl implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        log.info("🔎 Buscando usuario para autenticación: {}", username);
+        log.info("Buscando usuario para autenticacion: {}", username);
 
         // Recupera usuario + roles
         Usuario usuario = usuarioRepository.findByNameUserWithRoles(username)
-                .orElseThrow(() -> new UsernameNotFoundException("❌ Usuario no encontrado: " + username));
+                .orElseThrow(() -> new UsernameNotFoundException("Usuario no encontrado: " + username));
 
-        // Verifica que el usuario esté activo
-        String status = usuario.getStatUser().trim().toUpperCase();
-        boolean enabled = status.equals("A") || status.equals("ACTIVO");
-        if (!enabled) {
-            log.warn("🚫 Usuario inactivo o bloqueado: {}", username);
-            throw new UsernameNotFoundException("Usuario inactivo o bloqueado");
+        // SEC-002: Verificar bloqueo temporal por intentos fallidos
+        if (usuario.isAccountLocked()) {
+            String horaDesbloqueo = usuario.getLockedUntil()
+                    .format(DateTimeFormatter.ofPattern("HH:mm"));
+            log.warn("Cuenta bloqueada hasta {} para usuario: {}", horaDesbloqueo, username);
+            throw new LockedException("Cuenta bloqueada temporalmente. Intente despues de las " + horaDesbloqueo);
         }
 
-        // Construcción de authorities basadas en roles MBAC
+        // Verifica que el usuario este activo
+        boolean enabled = usuario.isActive();
+        if (!enabled) {
+            log.warn("Usuario inactivo: {}", username);
+            throw new DisabledException("Usuario inactivo o deshabilitado");
+        }
+
+        // Construccion de authorities basadas en roles MBAC
         Set<SimpleGrantedAuthority> authorities = new HashSet<>();
         if (usuario.getRoles() != null) {
             for (Rol rol : usuario.getRoles()) {
@@ -51,16 +61,16 @@ public class UserDetailsServiceImpl implements UserDetailsService {
             }
         }
 
-        log.info("✅ Usuario cargado: {} con roles {}", username, authorities);
+        log.info("Usuario cargado: {} con roles {}", username, authorities);
 
-        // Retorna objeto User con la contraseña codificada en BD (BCrypt)
+        // Retorna objeto User con la contrasena codificada en BD (BCrypt)
         return new User(
                 usuario.getNameUser(),
                 usuario.getPassUser(),
-                enabled,   // cuenta habilitada según BD
+                enabled,
                 true,      // cuenta no expirada
                 true,      // credenciales no expiradas
-                true,      // no bloqueada
+                !usuario.isAccountLocked(),  // SEC-002: usar valor real de bloqueo
                 authorities
         );
     }

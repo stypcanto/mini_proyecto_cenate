@@ -16,12 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 @RestController
 @RequestMapping("/api/v1/chatbot/disponibilidad")
 @Slf4j
-public class DisponibilidadController {
+public class ChatbotDisponibilidadController {
 
 	private final IVwAtencionDisponibilidadService service;
 	private final DimServicioEssiService servicioEssi;
 
-	public DisponibilidadController(IVwAtencionDisponibilidadService service,DimServicioEssiService servicioEssi) {
+	public ChatbotDisponibilidadController(IVwAtencionDisponibilidadService service,DimServicioEssiService servicioEssi) {
 		this.service = service;
 		this.servicioEssi=servicioEssi;
 	}

@@ -17,6 +17,7 @@ import {
   Home,
   Info,
   CheckCircle2,
+  Lock,
 } from "lucide-react";
 import { VERSION } from "../config/version";
 import { useAuth } from "../context/AuthContext";
@@ -106,12 +107,30 @@ export default function Login() {
         setTimeout(() => navigate(destination, { replace: true }), 800);
       } else {
         setMsgType("error");
-        setAssistantMsg("❌ Usuario o contraseña incorrectos. Intente nuevamente.");
+        // Mostrar mensaje específico del backend si existe
+        const errorMsg = response?.error || "Usuario o contraseña incorrectos";
+        setAssistantMsg(`❌ ${errorMsg}`);
       }
     } catch (err) {
       console.error("Error de autenticación:", err);
       setMsgType("error");
-      setAssistantMsg("❌ Error de conexión con el servidor. Intente más tarde.");
+
+      // SEC-002: Detectar mensaje de cuenta bloqueada
+      const errorMessage = err.message || "";
+      if (errorMessage.toLowerCase().includes("bloqueada") ||
+          errorMessage.toLowerCase().includes("locked")) {
+        setMsgType("warning");
+        setAssistantMsg("Cuenta bloqueada temporalmente por múltiples intentos fallidos. Intente nuevamente en 10 minutos.");
+      } else if (errorMessage.toLowerCase().includes("inactiva")) {
+        setMsgType("warning");
+        setAssistantMsg("La cuenta está inactiva. Contacte al administrador.");
+      } else if (errorMessage.includes("Usuario no encontrado")) {
+        setAssistantMsg("Usuario no encontrado en el sistema.");
+      } else if (errorMessage.includes("Credenciales")) {
+        setAssistantMsg("Usuario o contraseña incorrectos.");
+      } else {
+        setAssistantMsg(errorMessage || "Error de conexión con el servidor. Intente más tarde.");
+      }
     }
   };
 
@@ -154,6 +173,8 @@ export default function Login() {
                   ? "bg-green-50 text-green-700 border border-green-200"
                   : msgType === "error"
                   ? "bg-red-50 text-red-700 border border-red-200"
+                  : msgType === "warning"
+                  ? "bg-orange-50 text-orange-700 border border-orange-200"
                   : "bg-blue-50 text-blue-700 border border-blue-200"
               }`}
             >
@@ -161,6 +182,8 @@ export default function Login() {
                 <CheckCircle2 size={18} />
               ) : msgType === "error" ? (
                 <AlertCircle size={18} />
+              ) : msgType === "warning" ? (
+                <Lock size={18} />
               ) : (
                 <Info size={18} />
               )}
