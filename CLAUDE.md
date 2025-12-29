@@ -97,6 +97,221 @@ Password: @Cenate2025
 
 ---
 
+## Despliegue en Produccion (Docker)
+
+### Arquitectura Docker
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      SERVIDOR PRODUCCION                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────┐      ┌──────────────────┐             │
+│  │   cenate-frontend │      │   cenate-backend  │             │
+│  │   (nginx:80)      │─────▶│   (spring:8080)   │             │
+│  │                   │ /api │                   │             │
+│  └────────┬──────────┘      └─────────┬─────────┘             │
+│           │                           │                       │
+│           │ :80                       │ :8080                 │
+│           ▼                           ▼                       │
+│  ┌──────────────────────────────────────────────┐            │
+│  │              cenate-net (bridge)              │            │
+│  └──────────────────────────────────────────────┘            │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+              ┌───────────────────────────────┐
+              │   PostgreSQL (10.0.89.13:5432) │
+              │   Base de datos: maestro_cenate│
+              └───────────────────────────────┘
+```
+
+### Archivos de Configuracion
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `docker-compose.yml` | Orquestacion principal |
+| `frontend/Dockerfile` | Build React + nginx |
+| `backend/Dockerfile` | Build Spring Boot + Java 17 |
+| `frontend/nginx.conf` | Proxy reverso /api → backend |
+| `frontend/.env.production` | Variables frontend (REACT_APP_API_URL=/api) |
+
+### Variables de Entorno - Backend (Docker)
+
+```yaml
+# docker-compose.yml - servicio backend
+environment:
+  # Base de datos PostgreSQL
+  SPRING_DATASOURCE_URL: jdbc:postgresql://10.0.89.13:5432/maestro_cenate
+  SPRING_DATASOURCE_USERNAME: postgres
+  SPRING_DATASOURCE_PASSWORD: Essalud2025
+  SPRING_JPA_HIBERNATE_DDL_AUTO: none
+  SPRING_JPA_SHOW_SQL: "true"
+
+  # JWT (minimo 32 caracteres)
+  JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+  JWT_EXPIRATION: 86400000
+
+  # Email SMTP (OBLIGATORIO)
+  MAIL_USERNAME: cenateinformatica@gmail.com
+  MAIL_PASSWORD: nolq uisr fwdw zdly
+
+  # Zona horaria
+  TZ: America/Lima
+```
+
+### Variables de Entorno - Frontend (Build)
+
+```bash
+# frontend/.env.production
+REACT_APP_API_URL=/api
+```
+
+**IMPORTANTE:** El frontend usa `/api` (URL relativa) para que nginx haga proxy al backend. NO usar `http://localhost:8080/api` en produccion.
+
+### Configuracion Nginx (Proxy Reverso)
+
+```nginx
+# frontend/nginx.conf
+location /api/ {
+    proxy_pass http://backend:8080;
+    proxy_http_version 1.1;
+    proxy_set_header Host $host;
+    proxy_set_header X-Real-IP $remote_addr;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+}
+```
+
+### Comandos de Despliegue
+
+```bash
+# Construir y levantar todo
+docker-compose up -d --build
+
+# Solo reconstruir frontend (cambios en React)
+docker-compose build frontend && docker-compose up -d frontend
+
+# Solo reconstruir backend (cambios en Java)
+docker-compose build backend && docker-compose up -d backend
+
+# Ver estado de contenedores
+docker-compose ps
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Ver logs solo del backend
+docker-compose logs -f backend
+
+# Reiniciar servicios
+docker-compose restart
+
+# Detener todo
+docker-compose down
+
+# Limpiar imagenes huerfanas
+docker image prune -f
+```
+
+### Volumenes Persistentes
+
+```yaml
+volumes:
+  # Fotos de personal (EXTERNO al proyecto)
+  - /var/cenate-uploads:/app/uploads
+```
+
+**Crear directorio en servidor:**
+```bash
+sudo mkdir -p /var/cenate-uploads/personal
+sudo chown -R 1000:1000 /var/cenate-uploads
+```
+
+### Troubleshooting Produccion
+
+#### Error 502 Bad Gateway
+
+**Causa:** nginx no puede conectar con el backend.
+
+**Verificar:**
+```bash
+# 1. Estado del backend
+docker-compose ps
+
+# 2. Logs del backend
+docker-compose logs backend --tail=100
+
+# 3. Errores comunes:
+#    - Falta variable MAIL_USERNAME/MAIL_PASSWORD
+#    - No conecta a PostgreSQL
+#    - Puerto 8080 ocupado
+```
+
+#### Frontend muestra "localhost:8080" en consola
+
+**Causa:** El codigo antiguo no aceptaba URLs relativas.
+
+**Solucion:** Verificar que `frontend/src/services/apiClient.js` acepte `/api`:
+```javascript
+// URL relativa como /api - VALIDA para produccion con nginx proxy
+if (url.startsWith('/')) {
+  console.log('✅ Usando URL relativa (nginx proxy):', url);
+  return url;
+}
+```
+
+#### Backend no arranca - Falta MAIL_USERNAME
+
+**Error:**
+```
+Could not resolve placeholder 'MAIL_USERNAME' in value "${MAIL_USERNAME}"
+```
+
+**Solucion:** Agregar en docker-compose.yml:
+```yaml
+MAIL_USERNAME: cenateinformatica@gmail.com
+MAIL_PASSWORD: nolq uisr fwdw zdly
+```
+
+#### Fotos de personal no cargan
+
+**Verificar:**
+```bash
+# Directorio existe
+ls -la /var/cenate-uploads/personal/
+
+# Permisos correctos
+sudo chown -R 1000:1000 /var/cenate-uploads
+```
+
+### Puertos Expuestos
+
+| Servicio | Puerto Interno | Puerto Externo |
+|----------|----------------|----------------|
+| Frontend (nginx) | 80 | 80 |
+| Backend (Spring) | 8080 | 8080 |
+
+### Recursos Asignados
+
+```yaml
+# docker-compose.yml
+backend:
+  deploy:
+    resources:
+      limits:
+        memory: 2.5G
+
+frontend:
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+```
+
+---
+
 ## Roles del Sistema
 
 | Rol | Acceso |

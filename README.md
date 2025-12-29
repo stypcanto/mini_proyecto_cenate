@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.9.0-blue)
+![Version](https://img.shields.io/badge/version-1.10.0-blue)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen)
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![React](https://img.shields.io/badge/React-19-blue)
@@ -20,12 +20,13 @@
 - [Caracteristicas](#caracteristicas)
 - [Stack Tecnologico](#stack-tecnologico)
 - [Instalacion Rapida](#instalacion-rapida)
+- [Despliegue en Produccion (Docker)](#despliegue-en-produccion-docker)
+- [Comandos con Makefile](#comandos-con-makefile)
 - [Estructura del Proyecto](#estructura-del-proyecto)
-- [Documentacion](#documentacion)
 - [Seguridad del Sistema](#seguridad-del-sistema)
-- [Credenciales de Prueba](#credenciales-de-prueba)
+- [API REST](#api-rest)
 - [Modulos del Sistema](#modulos-del-sistema)
-- [Contacto](#contacto)
+- [Documentacion](#documentacion)
 
 ---
 
@@ -125,6 +126,139 @@ npm install
 npm start
 ```
 Frontend disponible en: **http://localhost:3000**
+
+---
+
+## Despliegue en Produccion (Docker)
+
+### Requisitos
+- Docker 20+
+- Docker Compose 2+
+- Acceso a PostgreSQL (10.0.89.13:5432)
+
+### Arquitectura
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                      SERVIDOR PRODUCCION                     │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  ┌──────────────────┐      ┌──────────────────┐             │
+│  │   cenate-frontend │      │   cenate-backend  │             │
+│  │   (nginx:80)      │─────▶│   (spring:8080)   │             │
+│  │                   │ /api │                   │             │
+│  └────────┬──────────┘      └─────────┬─────────┘             │
+│           │                           │                       │
+│           │ :80                       │ :8080                 │
+│           ▼                           ▼                       │
+│  ┌──────────────────────────────────────────────┐            │
+│  │              cenate-net (bridge)              │            │
+│  └──────────────────────────────────────────────┘            │
+│                                                              │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+              ┌───────────────────────────────────┐
+              │   PostgreSQL (10.0.89.13:5432)     │
+              └───────────────────────────────────┘
+```
+
+### Archivos de Configuracion
+
+| Archivo | Descripcion |
+|---------|-------------|
+| `docker-compose.yml` | Orquestacion principal |
+| `frontend/Dockerfile` | Build React + nginx |
+| `backend/Dockerfile` | Build Spring Boot + Java 17 |
+| `frontend/nginx.conf` | Proxy reverso /api → backend |
+
+### Variables de Entorno Requeridas
+
+El archivo `docker-compose.yml` ya incluye valores por defecto:
+
+```yaml
+# Backend
+SPRING_DATASOURCE_URL: jdbc:postgresql://10.0.89.13:5432/maestro_cenate
+SPRING_DATASOURCE_USERNAME: postgres
+SPRING_DATASOURCE_PASSWORD: Essalud2025
+JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+JWT_EXPIRATION: 86400000
+MAIL_USERNAME: cenateinformatica@gmail.com   # OBLIGATORIO
+MAIL_PASSWORD: nolq uisr fwdw zdly           # OBLIGATORIO
+TZ: America/Lima
+
+# Frontend (en .env.production)
+REACT_APP_API_URL=/api
+```
+
+### Comandos de Despliegue
+
+```bash
+# Construir y levantar todo
+docker-compose up -d --build
+
+# Solo reconstruir frontend
+docker-compose build frontend && docker-compose up -d frontend
+
+# Solo reconstruir backend
+docker-compose build backend && docker-compose up -d backend
+
+# Ver estado
+docker-compose ps
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Ver logs del backend
+docker-compose logs -f backend
+
+# Reiniciar servicios
+docker-compose restart
+
+# Detener todo
+docker-compose down
+```
+
+### Preparar Servidor (Primera vez)
+
+```bash
+# Crear directorio para fotos de personal
+sudo mkdir -p /var/cenate-uploads/personal
+sudo chown -R 1000:1000 /var/cenate-uploads
+```
+
+### Puertos Expuestos
+
+| Servicio | Puerto |
+|----------|--------|
+| Frontend (nginx) | 80 |
+| Backend (Spring) | 8080 |
+
+### Troubleshooting
+
+#### Error 502 Bad Gateway
+```bash
+# Verificar que el backend este corriendo
+docker-compose ps
+docker-compose logs backend --tail=100
+```
+
+**Causas comunes:**
+- Falta `MAIL_USERNAME` o `MAIL_PASSWORD`
+- No conecta a PostgreSQL
+- Backend no termino de arrancar
+
+#### Backend no arranca - Falta MAIL_USERNAME
+```
+Could not resolve placeholder 'MAIL_USERNAME'
+```
+**Solucion:** Verificar que `docker-compose.yml` tenga las variables de email.
+
+#### Frontend muestra "localhost:8080"
+**Causa:** El codigo no acepta URL relativa `/api`.
+**Solucion:** Reconstruir frontend con `docker-compose build frontend`.
+
+> Ver documentacion completa en [CLAUDE.md](CLAUDE.md#despliegue-en-produccion-docker)
 
 ---
 
@@ -245,15 +379,7 @@ java -jar cenate.jar --spring.profiles.active=prod
 
 > Ver plan completo de seguridad en [spec/008_plan_seguridad_auth.md](spec/008_plan_seguridad_auth.md)
 
----
-
-## Credenciales de Prueba
-
-```
-Username: 44914706
-Password: @Cenate2025
-Rol: SUPERADMIN
-```
+> **Credenciales de prueba:** Ver [CLAUDE.md](CLAUDE.md#credenciales-de-prueba)
 
 ---
 
@@ -311,34 +437,30 @@ Authorization: Bearer {token}
 
 ---
 
-## Comandos Utiles
+## Comandos con Makefile
+
+Ambos proyectos incluyen **Makefile** para facilitar el desarrollo:
 
 ### Backend
 ```bash
-# Desarrollo
-cd backend && ./gradlew bootRun
-
-# Produccion
-cd backend && ./gradlew clean bootJar
-java -jar build/libs/cenate-0.0.1-SNAPSHOT.jar
+cd backend
+make help        # Ver todos los comandos disponibles
+make dev         # Iniciar con hot-reload
+make build       # Compilar proyecto
+make test        # Ejecutar tests
+make jar         # Generar JAR ejecutable
+make db-check    # Verificar conexion a PostgreSQL
 ```
 
 ### Frontend
 ```bash
-# Desarrollo
-cd frontend && npm start
-
-# Produccion
-cd frontend && npm run build
-```
-
-### Base de Datos
-```bash
-# Conectar a PostgreSQL
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
-
-# Ejecutar script SQL
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -f script.sql
+cd frontend
+make help        # Ver todos los comandos disponibles
+make dev         # Iniciar en desarrollo (API local)
+make dev-network # Iniciar en desarrollo (API en red)
+make build       # Compilar para produccion
+make test        # Ejecutar tests
+make clean       # Limpiar node_modules y build
 ```
 
 ---
@@ -347,12 +469,9 @@ PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -f scrip
 
 | Version | Fecha | Descripcion |
 |---------|-------|-------------|
-| **1.9.0** | 2025-12-27 | Seguridad: Bloqueo cuenta, Token Blacklist, CORS por ambiente |
+| **1.10.0** | 2025-12-29 | Docker: Documentacion produccion, fix apiClient URL relativa |
+| 1.9.0 | 2025-12-27 | Seguridad: Bloqueo cuenta, Token Blacklist, CORS por ambiente |
 | 1.8.0 | 2025-12-23 | Mejoras en Auditoria, fix usuario N/A |
-| 1.7.9 | 2025-12-23 | Dashboard ChatBot mejorado, footer con version |
-| 1.7.8 | 2025-12-23 | Integracion ChatBot de Citas |
-| 1.7.7 | 2025-12-23 | Documentacion de usuarios |
-| 1.7.6 | 2025-12-23 | Limpieza de datos huerfanos |
 
 > Ver historial completo en [spec/002_changelog.md](spec/002_changelog.md)
 
