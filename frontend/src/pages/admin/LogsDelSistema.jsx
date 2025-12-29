@@ -43,6 +43,7 @@ export default function LogsDelSistema() {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFin, setFechaFin] = useState("");
   const [usuariosUnicos, setUsuariosUnicos] = useState([]);
+  const [usuariosMap, setUsuariosMap] = useState({}); // Mapeo usuario -> nombre completo
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -87,12 +88,24 @@ export default function LogsDelSistema() {
       
       setLogs(logsArray);
 
-      // Extraer usuarios únicos para el filtro
-      const usuarios = [...new Set(
-        logsArray.map((log) => obtenerUsuario(log))
-          .filter(u => u !== 'N/A')
-      )].sort();
+      // Extraer usuarios únicos para el filtro y crear mapeo usuario -> nombre completo
+      const usuariosMap = {};
+      logsArray.forEach((log) => {
+        const usuario = obtenerUsuario(log);
+        const nombreCompleto = log.nombreCompleto || log.nombre_completo;
+        if (usuario && usuario !== 'N/A' && usuario !== 'SYSTEM') {
+          // Si tiene nombre completo, lo usamos; si no, usamos el usuario
+          usuariosMap[usuario] = nombreCompleto && nombreCompleto.trim() ? nombreCompleto : usuario;
+        }
+      });
+
+      // Ordenar usuarios por nombre completo
+      const usuarios = Object.keys(usuariosMap).sort((a, b) =>
+        usuariosMap[a].localeCompare(usuariosMap[b])
+      );
+
       setUsuariosUnicos(usuarios);
+      setUsuariosMap(usuariosMap);
 
       // Calcular estadísticas
       const hoy = new Date();
@@ -145,6 +158,24 @@ export default function LogsDelSistema() {
     return usuario;
   };
 
+  const obtenerNombreCompleto = (log) => {
+    const nombreCompleto = log.nombreCompleto || log.nombre_completo;
+    const usuario = obtenerUsuario(log);
+
+    // Si es SYSTEM, devolver SYSTEM
+    if (usuario === 'SYSTEM') {
+      return 'SYSTEM';
+    }
+
+    // Si tiene nombre completo y no es vacío, usarlo
+    if (nombreCompleto && nombreCompleto.trim() && nombreCompleto !== 'N/A') {
+      return nombreCompleto;
+    }
+
+    // Si no, devolver el usuario (DNI)
+    return usuario;
+  };
+
   const obtenerFecha = (log) => {
     return log.fechaHora || log.fecha || log.timestamp || log.createdAt || null;
   };
@@ -180,6 +211,7 @@ export default function LogsDelSistema() {
         (log) =>
           log.accion?.toLowerCase().includes(termino) ||
           obtenerUsuario(log).toLowerCase().includes(termino) ||
+          obtenerNombreCompleto(log).toLowerCase().includes(termino) ||
           log.modulo?.toLowerCase().includes(termino) ||
           log.detalle?.toLowerCase().includes(termino)
       );
@@ -287,7 +319,7 @@ export default function LogsDelSistema() {
     const headers = ["Fecha/Hora", "Usuario", "Módulo", "Acción", "Detalle"];
     const rows = logsFiltrados.map((log) => [
       formatearFecha(obtenerFecha(log)),
-      obtenerUsuario(log),
+      obtenerNombreCompleto(log),
       log.modulo || "N/A",
       log.accion || "N/A",
       log.detalle || "N/A",
@@ -465,7 +497,7 @@ export default function LogsDelSistema() {
                   <option value="">Todos los usuarios</option>
                   {usuariosUnicos.map((usuario, index) => (
                     <option key={index} value={usuario}>
-                      {usuario}
+                      {usuariosMap[usuario] || usuario}
                     </option>
                   ))}
                 </select>
@@ -623,7 +655,7 @@ export default function LogsDelSistema() {
                       <td className="px-6 py-4 text-sm font-medium text-slate-900">
                         <div className="flex items-center gap-2">
                           <User className="w-4 h-4 text-blue-600" />
-                          {obtenerUsuario(log)}
+                          {obtenerNombreCompleto(log)}
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">

@@ -23,6 +23,7 @@ public class SolicitudRegistroDTO {
     private LocalDate fechaNacimiento;
     private String correoPersonal;
     private String correoInstitucional;
+    private String emailPreferido;
     private String telefono;
     private String tipoPersonal;
     private Long idIpress;

@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.9.2",
-  name: "Tokens de Recuperacion Persistentes",
-  date: "2025-12-23",
-  description: "Tokens de recuperacion de contrasena persistentes en BD + mejora UX del boton de recuperacion"
+  number: "1.10.4",
+  name: "Vista de Auditoria Completa",
+  date: "2025-12-29",
+  description: "Fix: Vista de auditoria ahora muestra TODOS los modulos (2732 registros vs 530 anteriores). Eventos de usuarios, autenticacion y solicitudes ahora visibles."
 };
 
 export const APP_INFO = {

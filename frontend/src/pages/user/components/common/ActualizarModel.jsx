@@ -18,6 +18,7 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
   const [ipressAll, setIpressAll] = useState([]); // Todas las IPRESS sin filtrar
   const [loadingIpress, setLoadingIpress] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [correoSeleccionado, setCorreoSeleccionado] = useState(null);
 
   // Estados para Red y Macroregión (externos)
   const [redes, setRedes] = useState([]);
@@ -932,12 +933,20 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
         return;
       }
 
-      console.log('🔄 Enviando correo de reset para usuario ID:', userId);
+      if (!correoSeleccionado) {
+        alert('❌ Error: Por favor seleccione un correo electrónico');
+        setLoading(false);
+        return;
+      }
 
-      const response = await api.put(`/usuarios/id/${userId}/reset-password`);
+      console.log('🔄 Enviando correo de reset para usuario ID:', userId, 'a correo:', correoSeleccionado);
+
+      // Enviar email como query parameter
+      const response = await api.put(`/usuarios/id/${userId}/reset-password?email=${encodeURIComponent(correoSeleccionado)}`);
 
       alert('✅ ' + (response.message || 'Se ha enviado un correo al usuario con el enlace para restablecer su contraseña'));
       setShowResetConfirm(false);
+      setCorreoSeleccionado(null);
 
       if (onSuccess) onSuccess();
 
@@ -2181,7 +2190,7 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
               </div>
               <div>
                 <h3 className="text-lg font-bold text-gray-900">Recuperación de Contraseña</h3>
-                <p className="text-sm text-gray-600">¿Enviar correo de recuperación?</p>
+                <p className="text-sm text-gray-600">¿A qué correo desea enviar el enlace?</p>
               </div>
             </div>
 
@@ -2193,15 +2202,64 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                 <li>Un enlace seguro para crear su nueva contraseña</li>
                 <li>El enlace expirará en 24 horas</li>
               </ul>
-              <p className="text-xs text-blue-700 mt-3 flex items-center gap-1">
-                <Shield className="w-3 h-3" />
-                El usuario recibirá el correo en su email registrado
+            </div>
+
+            {/* Selector de correo */}
+            <div className="mb-4">
+              <p className="text-sm font-semibold text-slate-800 mb-3">
+                Seleccione el correo de destino: <span className="text-red-500">*</span>
               </p>
+              <div className="space-y-2">
+                {formData.correo_personal && (
+                  <label className="flex items-center p-3 bg-white border-2 border-slate-200 rounded-lg hover:border-blue-500 cursor-pointer transition-all">
+                    <input
+                      type="radio"
+                      name="correo_recuperacion"
+                      value={formData.correo_personal}
+                      checked={correoSeleccionado === formData.correo_personal}
+                      onChange={(e) => setCorreoSeleccionado(e.target.value)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-slate-800">Correo Personal</span>
+                      <span className="ml-2 text-sm text-slate-600">({formData.correo_personal})</span>
+                    </div>
+                  </label>
+                )}
+
+                {formData.correo_institucional && (
+                  <label className="flex items-center p-3 bg-white border-2 border-slate-200 rounded-lg hover:border-blue-500 cursor-pointer transition-all">
+                    <input
+                      type="radio"
+                      name="correo_recuperacion"
+                      value={formData.correo_institucional}
+                      checked={correoSeleccionado === formData.correo_institucional}
+                      onChange={(e) => setCorreoSeleccionado(e.target.value)}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-slate-800">Correo Institucional</span>
+                      <span className="ml-2 text-sm text-slate-600">({formData.correo_institucional})</span>
+                    </div>
+                  </label>
+                )}
+
+                {!formData.correo_personal && !formData.correo_institucional && (
+                  <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-sm text-amber-800">
+                      ⚠️ Este usuario no tiene ningún correo electrónico registrado.
+                    </p>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="flex gap-3">
               <button
-                onClick={() => setShowResetConfirm(false)}
+                onClick={() => {
+                  setShowResetConfirm(false);
+                  setCorreoSeleccionado(null);
+                }}
                 disabled={loading}
                 className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-all disabled:opacity-50"
               >
@@ -2209,8 +2267,8 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
               </button>
               <button
                 onClick={handleResetPassword}
-                disabled={loading}
-                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                disabled={loading || !correoSeleccionado}
+                className="flex-1 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-medium transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>

@@ -316,14 +316,24 @@ public class UsuarioController {
 	@PutMapping("/id/{id}/reset-password")
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
 	public ResponseEntity<?> resetPassword(@PathVariable("id") Long id,
+			@RequestParam(required = false) String email,
 			Authentication authentication) {
 		try {
 			String adminUsername = authentication.getName();
 
 			log.info("🔄 Admin '{}' solicitando reset de contraseña para usuario ID: {}", adminUsername, id);
 
-			// Enviar correo con enlace para restablecer contraseña
-			boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmail(id, "RESET");
+			boolean emailEnviado;
+
+			if (email != null && !email.isBlank()) {
+				// Si se especificó un correo, usar ese correo específico
+				log.info("📧 Enviando correo de reset al correo especificado: {}", email);
+				emailEnviado = passwordTokenService.crearTokenYEnviarEmail(id, email, "RESET");
+			} else {
+				// Si no se especificó correo, usar el correo del usuario (lógica anterior)
+				log.info("📧 Enviando correo de reset al correo registrado del usuario");
+				emailEnviado = passwordTokenService.crearTokenYEnviarEmail(id, "RESET");
+			}
 
 			if (!emailEnviado) {
 				log.error("❌ No se pudo enviar correo de reset para usuario ID: {}", id);
@@ -336,7 +346,8 @@ public class UsuarioController {
 			log.info("✅ Correo de reset enviado exitosamente para usuario ID: {}", id);
 			return ResponseEntity.ok(Map.of(
 					"message", "Se ha enviado un correo al usuario con el enlace para restablecer su contraseña",
-					"resetBy", adminUsername
+					"resetBy", adminUsername,
+					"emailSentTo", email != null ? email : "correo registrado del usuario"
 			));
 
 		} catch (EntityNotFoundException e) {

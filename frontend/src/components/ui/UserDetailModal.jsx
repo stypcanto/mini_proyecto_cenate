@@ -12,6 +12,7 @@ import {
   User,
   Cake,
   Building,
+  Star,
 } from "lucide-react";
 
 /**
@@ -119,15 +120,17 @@ export default function UserDetailModal({ user, onClose }) {
                 : "—"
             }
           />
-          <InfoRow
+          <EmailRow
             icon={<Mail size={16} className="text-blue-500" />}
-            label="Correo Corporativo"
-            value={contacto.correo_corporativo || "—"}
+            label="Correo Institucional"
+            value={contacto.correo_corporativo || contacto.correo_institucional || "—"}
+            isFavorite={contacto.email_preferido === "INSTITUCIONAL"}
           />
-          <InfoRow
+          <EmailRow
             icon={<Mail size={16} className="text-indigo-500" />}
             label="Correo Personal"
             value={contacto.correo_personal || "—"}
+            isFavorite={contacto.email_preferido === "PERSONAL" || !contacto.email_preferido}
           />
           <InfoRow
             icon={<Phone size={16} className="text-green-500" />}
@@ -238,6 +241,23 @@ function InfoRow({ icon, label, value }) {
       {icon}
       <span>
         <strong>{label}:</strong> {value}
+      </span>
+    </div>
+  );
+}
+
+function EmailRow({ icon, label, value, isFavorite }) {
+  return (
+    <div className="flex items-center gap-2 group">
+      {icon}
+      <span className="flex items-center gap-2 flex-1">
+        <strong>{label}:</strong> <span className="truncate">{value}</span>
+        {isFavorite && value && value !== "—" && (
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-amber-100 text-amber-700 border border-amber-300 rounded-full text-xs font-semibold shadow-sm animate-pulse">
+            <Star size={12} className="fill-amber-500 text-amber-500" />
+            Favorito
+          </span>
+        )}
       </span>
     </div>
   );

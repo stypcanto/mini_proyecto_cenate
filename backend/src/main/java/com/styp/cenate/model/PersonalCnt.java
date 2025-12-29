@@ -72,6 +72,9 @@ public class PersonalCnt {
     @Column(name = "email_corp_pers", length = 150)
     private String emailCorpPers;
 
+    @Column(name = "email_preferido", length = 20)
+    private String emailPreferido; // PERSONAL o INSTITUCIONAL
+
     @Column(name = "movil_pers", length = 15)
     private String movilPers;
 
@@ -204,6 +207,23 @@ public class PersonalCnt {
             return "";
         }
         return texto.substring(0, 1).toUpperCase() + texto.substring(1).toLowerCase();
+    }
+
+    /**
+     * Obtiene el correo preferido del usuario para notificaciones.
+     * @return El correo según la preferencia, con fallback automático
+     */
+    public String obtenerCorreoPreferido() {
+        if ("INSTITUCIONAL".equalsIgnoreCase(emailPreferido)) {
+            // Usuario prefiere correo institucional
+            return (emailCorpPers != null && !emailCorpPers.isBlank())
+                    ? emailCorpPers
+                    : emailPers; // Fallback a personal si no hay institucional
+        }
+        // Por defecto (PERSONAL o null), usar correo personal
+        return (emailPers != null && !emailPers.isBlank())
+                ? emailPers
+                : emailCorpPers; // Fallback a institucional si no hay personal
     }
 
     public boolean isActivo() {

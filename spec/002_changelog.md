@@ -4,6 +4,433 @@
 
 ---
 
+## v1.10.4 (2025-12-29) - Fix: Vista de Auditoría Completa
+
+### Problema Resuelto
+
+**Síntoma:** La vista de auditoría (`/admin/logs`) no mostraba eventos críticos del sistema:
+- ❌ Eliminación de usuarios (DELETE_USER)
+- ❌ Creación de usuarios (CREATE_USER)
+- ❌ Login/Logout (LOGIN, LOGOUT)
+- ❌ Aprobación/Rechazo de solicitudes (APPROVE_REQUEST, REJECT_REQUEST)
+- ❌ Gestión de disponibilidad médica
+
+Solo mostraba 530 registros de cambios en permisos modulares (de 2732 totales).
+
+### Causa Raíz
+
+La vista `vw_auditoria_modular_detallada` contenía un filtro WHERE que limitaba los resultados a solo 2 módulos específicos:
+
+```sql
+WHERE a.modulo = ANY (ARRAY[
+  'dim_permisos_modulares',
+  'dim_permisos_pagina_rol'
+])
+```
+
+**Resultado:**
+- ✅ Tabla audit_logs: 2732 registros (completo)
+- ❌ Vista: 530 registros (solo 19% del total)
+
+### Solución Implementada
+
+1. **Recrear vista sin filtro de módulos** (`spec/scripts/009_fix_vista_auditoria_completa.sql`):
+   - Eliminación completa del filtro WHERE
+   - Ahora muestra TODOS los módulos sin excepción
+   - Join optimizado por nombre de usuario (audit_logs.usuario = dim_usuarios.name_user)
+
+2. **Mejorar mapeo de eventos con emojis descriptivos**:
+   ```sql
+   WHEN a.action = 'LOGIN' THEN '🔑 Inicio de sesión'
+   WHEN a.action = 'DELETE_USER' THEN '🗑️ Eliminación de usuario'
+   WHEN a.action = 'APPROVE_REQUEST' THEN '✔️ Aprobación de solicitud'
+   -- ... más eventos
+   ```
+
+3. **Crear documentación completa del sistema de auditoría** (`spec/011_guia_auditoria.md`):
+   - Arquitectura y flujo completo
+   - Estructura de tabla audit_logs e índices
+   - Definición de vista y columnas generadas
+   - Patrón de implementación en servicios
+   - Troubleshooting y mantenimiento
+   - Consultas SQL útiles y reportes
+
+### Resultados
+
+**Antes del fix:**
+- Vista: 530 registros (19%)
+- Usuario en logs: "backend_user" (incorrecto)
+- Eventos críticos invisibles
+
+**Después del fix:**
+- Vista: 2732 registros (100%)
+- Usuario correcto: "44914706 (Styp Canto Rondón)"
+- Todos los eventos visibles
+
+**Ejemplo verificado:**
+```
+ID: 2757
+Fecha: 2025-12-29 12:40:14
+Usuario: 44914706 (Styp Canto Rondón)
+Acción: DELETE_USER
+Módulo: USUARIOS
+Detalle: Usuario eliminado: 44444444 (ID: 254)
+Estado: SUCCESS
+```
+
+### Archivos Creados/Modificados
+
+- ✅ `spec/scripts/009_fix_vista_auditoria_completa.sql` - Script de corrección
+- ✅ `spec/011_guia_auditoria.md` - Guía completa del sistema de auditoría
+
+### Cómo Aplicar
+
+```bash
+# Aplicar fix de vista
+PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+  -f spec/scripts/009_fix_vista_auditoria_completa.sql
+
+# Verificar resultado
+PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+  -c "SELECT COUNT(*) FROM vw_auditoria_modular_detallada;"
+# Debe retornar 2732 (igual a audit_logs)
+```
+
+**⚠️ Nota:** Recargar frontend (Ctrl+Shift+R o Cmd+Shift+R) después de aplicar para ver cambios.
+
+### Documentación Relacionada
+
+- Guía completa de auditoría: `spec/011_guia_auditoria.md`
+- Script de corrección: `spec/scripts/009_fix_vista_auditoria_completa.sql`
+
+---
+
+## v1.10.3 (2025-12-29) - Fix: Eliminación de Usuarios con Disponibilidad Médica
+
+### Problema Crítico Resuelto
+
+**Síntoma:** Los usuarios SUPERADMIN no podían eliminar usuarios que tenían registros de disponibilidad médica asociados. El sistema mostraba errores como:
+- "No se pudo eliminar el usuario" (violación de restricción FK)
+- `ObjectOptimisticLockingFailureException` (bloqueo optimista de JPA)
+- `TransientObjectException` (instancia transiente no guardada)
+
+**Causas Raíz:**
+1. El método `deleteUser` no eliminaba los registros de `disponibilidad_medica` y `detalle_disponibilidad` antes de eliminar el personal (violación de FK)
+2. Mezclar operaciones JPA con jdbcTemplate causaba conflictos de estado en Hibernate (bloqueo optimista y entidades transientes)
+
+### Solución Implementada
+
+**Modificaciones en UsuarioServiceImpl.java:**
+
+**1. Eliminar en cascada disponibilidades médicas (paso 3):**
+```java
+// 3. Eliminar registros de disponibilidad médica asociados al personal
+if (idPersonal != null) {
+    // Primero eliminar detalles de disponibilidad (tabla hija)
+    int detalles = jdbcTemplate.update("""
+        DELETE FROM detalle_disponibilidad
+        WHERE id_disponibilidad IN (
+            SELECT id_disponibilidad FROM disponibilidad_medica WHERE id_pers = ?
+        )
+        """, idPersonal);
+
+    // Luego eliminar disponibilidades médicas
+    int disponibilidades = jdbcTemplate.update("DELETE FROM disponibilidad_medica WHERE id_pers = ?", idPersonal);
+}
+```
+
+**2. Usar jdbcTemplate en lugar de JPA para eliminar usuario (paso 5):**
+```java
+// 5. Eliminar usuario (usando jdbcTemplate para evitar conflictos de JPA)
+int usuarioEliminado = jdbcTemplate.update("DELETE FROM dim_usuarios WHERE id_user = ?", id);
+```
+
+**Razón:** Al mezclar operaciones JPA (para cargar el usuario) con jdbcTemplate (para modificar tablas relacionadas), JPA detectaba cambios en las entidades y lanzaba errores de bloqueo optimista (`ObjectOptimisticLockingFailureException`) o entidades transientes (`TransientObjectException`). La solución es usar jdbcTemplate consistentemente para todas las operaciones de eliminación.
+
+**Orden de eliminación actualizado (21 tablas):**
+
+**Paso 1-4: Limpiar datos del usuario**
+1. **[NUEVO]** Tokens de recuperación (`password_reset_tokens`)
+2. **[NUEVO]** Solicitudes de cambio de contraseña (`solicitud_contrasena`)
+3. **[NUEVO]** Permisos modulares (`permisos_modulares`)
+4. **[NUEVO]** Permisos de seguridad (`segu_permisos_usuario_pagina`)
+5. **[NUEVO]** Permisos autorizados (`dim_permisos_modulares`)
+6. **[NUEVO]** Referencias en períodos de control (`ctr_periodo` - UPDATE NULL)
+7. Roles del usuario (`rel_user_roles`)
+
+**Paso 6: Limpiar datos del personal asociado**
+8. **[NUEVO]** Solicitudes de cita (`solicitud_cita`)
+9. **[NUEVO]** Solicitudes de turno (`solicitud_turno_ipress`)
+10. **[NUEVO]** Logs de horarios (`ctr_horario_log`)
+11. **[NUEVO]** Horarios de control (`ctr_horario`)
+12. **[NUEVO]** Detalles de disponibilidad (`detalle_disponibilidad`)
+13. **[NUEVO]** Disponibilidades médicas (`disponibilidad_medica`)
+14. **[NUEVO]** Relaciones personal-programa (`persona_programa`)
+15. **[NUEVO]** Firmas digitales (`dim_personal_firma`)
+16. **[NUEVO]** Órdenes de compra (`dim_personal_oc`)
+17. Profesiones del personal (`dim_personal_prof`)
+18. Tipos del personal (`dim_personal_tipo`)
+
+**Paso 7-9: Eliminar registros principales**
+19. Usuario (`dim_usuarios`) - **[MODIFICADO]** Ahora usa `jdbcTemplate` en lugar de JPA
+20. Personal huérfano (`dim_personal_cnt`)
+21. Solicitudes de cuenta (`account_requests` - UPDATE RECHAZADO)
+
+**Nota:** `audit_logs` NO se elimina para preservar el historial de auditoría del sistema.
+
+### Archivos Modificados
+
+```
+backend/src/main/java/com/styp/cenate/service/usuario/UsuarioServiceImpl.java
+```
+
+### Impacto
+
+- ✅ Los SUPERADMIN ahora pueden eliminar usuarios sin importar qué datos asociados tengan
+- ✅ **Eliminación completa SIN huérfanos**: Se limpian **21 tablas** incluyendo:
+  - Tokens y solicitudes de contraseña
+  - Permisos modulares y de seguridad
+  - Disponibilidades médicas y turnos
+  - Solicitudes de cita y turno
+  - Horarios y logs de control
+  - Firmas digitales y órdenes de compra
+  - Profesiones, tipos, programas y personal
+- ✅ Resuelve conflictos entre JPA y jdbcTemplate usando `jdbcTemplate` consistentemente
+- ✅ Mantiene integridad referencial en toda la base de datos
+- ✅ Auditoría completa de la operación de eliminación
+- ✅ Preserva el historial de auditoría (`audit_logs` no se elimina)
+- ✅ Los registros en `account_requests` se marcan como RECHAZADO para permitir re-registro futuro
+
+---
+
+## v1.10.2 (2025-12-29) - Selección de Correo para Recuperación de Contraseña
+
+### Funcionalidad Agregada
+
+Los administradores ahora pueden elegir a qué correo enviar el enlace de recuperación de contraseña cuando hacen clic en "Enviar correo de recuperación".
+
+### Problema Resuelto
+
+Anteriormente, el sistema enviaba automáticamente el correo de recuperación sin permitir al administrador elegir a qué correo enviarlo. Esto era problemático cuando:
+- El usuario tiene correo personal y corporativo registrados
+- Solo uno de los correos está activo o es accesible para el usuario
+- El administrador quiere asegurarse de que el correo llegue a la cuenta que el usuario revisa frecuentemente
+
+### Solución Implementada
+
+**Modal de Selección de Correo en Recuperación:**
+
+Cuando el administrador hace clic en "Enviar correo de recuperación" desde el modal de editar usuario:
+1. Se muestra un diálogo preguntando a qué correo desea enviar el enlace
+2. Aparecen opciones con radio buttons para seleccionar entre:
+   - **Correo Personal** (si existe)
+   - **Correo Institucional** (si existe)
+3. El botón "Enviar Correo" está deshabilitado hasta que se seleccione una opción
+4. Al confirmar, el sistema envía el enlace solo al correo seleccionado
+
+**Archivos Modificados:**
+
+Backend:
+```
+backend/src/main/java/com/styp/cenate/
+├── api/usuario/UsuarioController.java           # Acepta parámetro email opcional
+└── service/security/PasswordTokenService.java    # Nuevo método sobrecargado
+```
+
+Frontend:
+```
+frontend/src/pages/user/components/common/ActualizarModel.jsx  # Modal con selector
+```
+
+### Cambios Técnicos
+
+**1. UsuarioController.java**
+- Endpoint `/id/{id}/reset-password` ahora acepta un parámetro opcional `email`
+- Si se proporciona `email`, envía el correo a esa dirección específica
+- Si no se proporciona, usa el correo registrado del usuario (comportamiento anterior)
+
+```java
+@PutMapping("/id/{id}/reset-password")
+public ResponseEntity<?> resetPassword(@PathVariable("id") Long id,
+        @RequestParam(required = false) String email,
+        Authentication authentication)
+```
+
+**2. PasswordTokenService.java**
+- Nuevo método sobrecargado: `crearTokenYEnviarEmail(Long idUsuario, String email, String tipoAccion)`
+- Permite especificar el correo al que se debe enviar el token
+- Mantiene retrocompatibilidad con métodos existentes
+
+**3. ActualizarModel.jsx**
+- Nuevo estado: `correoSeleccionado`
+- Modal actualizado con selector de radio buttons
+- Validación: el botón de envío se deshabilita si no se selecciona correo
+- Envía el correo seleccionado como query parameter a la API
+
+### Experiencia de Usuario
+
+**Modal de Recuperación:**
+```
+┌─────────────────────────────────────────────────┐
+│ Recuperación de Contraseña                      │
+│ ¿A qué correo desea enviar el enlace?          │
+│                                                  │
+│ Seleccione el correo de destino: *              │
+│                                                  │
+│ ○ Correo Personal (stypcanto@gmail.com)         │
+│ ○ Correo Institucional (cenate.analista@        │
+│                          essalud.gob.pe)        │
+│                                                  │
+│ [Cancelar]  [Enviar Correo]                    │
+└─────────────────────────────────────────────────┘
+```
+
+### Logs Mejorados
+
+El sistema ahora registra a qué correo se envió el enlace:
+```
+📧 Enviando correo de reset al correo especificado: stypcanto@gmail.com
+✅ Correo de reset enviado exitosamente para usuario ID: 123
+emailSentTo: "stypcanto@gmail.com"
+```
+
+### Notas Importantes
+
+**Variables de Entorno Requeridas:**
+
+Para que el envío de correos funcione, el backend DEBE iniciarse con estas variables de entorno:
+```bash
+export MAIL_USERNAME="cenateinformatica@gmail.com"
+export MAIL_PASSWORD="nolq uisr fwdw zdly"
+export DB_URL="jdbc:postgresql://10.0.89.13:5432/maestro_cenate"
+export DB_USERNAME="postgres"
+export DB_PASSWORD="Essalud2025"
+export JWT_SECRET="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+export FRONTEND_URL="http://localhost:3000"
+```
+
+**Tiempos de Entrega de Correo:**
+- Gmail personal: 10-30 segundos
+- Correo corporativo @essalud.gob.pe: 1-5 minutos (puede tardar más o ser bloqueado por filtros)
+
+**Posibles Problemas:**
+- Los correos corporativos pueden tener filtros anti-spam que bloqueen correos de Gmail
+- Revisar carpeta de SPAM si no llega el correo
+- Contactar al área de TI de EsSalud para agregar cenateinformatica@gmail.com a lista blanca
+
+---
+
+## v1.10.1 (2025-12-29) - Selección de Correo Preferido para Notificaciones
+
+### Funcionalidad Agregada
+
+Los usuarios ahora pueden elegir a qué correo electrónico desean recibir las notificaciones del sistema durante el proceso de registro.
+
+### Problema Resuelto
+
+Anteriormente, el sistema enviaba automáticamente todas las notificaciones (credenciales de acceso, recuperación de contraseña, etc.) al correo personal del usuario. Esto no era ideal para usuarios que:
+- Solo pueden acceder a su correo institucional durante horas de trabajo
+- Prefieren mantener comunicaciones laborales en su correo institucional
+- No tienen acceso regular a su correo personal
+
+### Solución Implementada
+
+**Selección de Correo Preferido en el Formulario de Registro:**
+
+Se agregó un selector en el formulario `/crear-cuenta` que permite al usuario elegir entre:
+- **Correo Personal** (opción por defecto)
+- **Correo Institucional** (solo si se proporcionó uno)
+
+**Archivos Modificados:**
+
+Backend:
+```
+backend/src/main/java/com/styp/cenate/
+├── model/AccountRequest.java                    # Nuevo campo emailPreferido
+├── dto/SolicitudRegistroDTO.java                # Nuevo campo emailPreferido
+└── service/solicitud/AccountRequestService.java # Usa correo preferido al enviar emails
+```
+
+Frontend:
+```
+frontend/src/pages/CrearCuenta.jsx               # Selector de correo preferido
+```
+
+Base de Datos:
+```
+spec/scripts/007_agregar_email_preferido.sql     # Nueva columna email_preferido
+```
+
+### Estructura de la Base de Datos
+
+```sql
+ALTER TABLE account_requests
+ADD COLUMN email_preferido VARCHAR(20) DEFAULT 'PERSONAL';
+```
+
+**Valores válidos:**
+- `PERSONAL` - Usar correo personal
+- `INSTITUCIONAL` - Usar correo institucional
+
+### Método Helper en AccountRequest
+
+Se agregó el método `obtenerCorreoPreferido()` que:
+1. Retorna el correo según la preferencia del usuario
+2. Proporciona fallback automático si el correo preferido no está disponible
+3. Garantiza que siempre se obtenga un correo válido
+
+```java
+public String obtenerCorreoPreferido() {
+    if ("INSTITUCIONAL".equalsIgnoreCase(emailPreferido)) {
+        return (correoInstitucional != null && !correoInstitucional.isBlank())
+                ? correoInstitucional
+                : correoPersonal; // Fallback
+    }
+    return (correoPersonal != null && !correoPersonal.isBlank())
+            ? correoPersonal
+            : correoInstitucional; // Fallback
+}
+```
+
+### Puntos de Uso del Correo Preferido
+
+El correo preferido se utiliza automáticamente en:
+1. **Aprobación de solicitud** - Envío de credenciales de activación
+2. **Rechazo de solicitud** - Notificación de rechazo
+3. **Recuperación de contraseña** - Enlaces de recuperación
+4. **Cambio de contraseña** - Notificaciones de cambio
+
+### Experiencia de Usuario
+
+**Formulario de Registro:**
+- Selector visual con radio buttons
+- Muestra el correo seleccionado en tiempo real
+- Deshabilita la opción institucional si no se ingresó un correo institucional
+- Ayuda contextual explicando para qué se usa la preferencia
+
+**Comportamiento Inteligente:**
+- Si el usuario selecciona "INSTITUCIONAL" pero no ingresó correo institucional, el sistema usa el correo personal automáticamente
+- Los registros existentes se actualizan automáticamente con preferencia "PERSONAL"
+
+### Migración de Datos Existentes
+
+El script SQL incluye migración automática:
+```sql
+UPDATE account_requests
+SET email_preferido = 'PERSONAL'
+WHERE email_preferido IS NULL AND correo_personal IS NOT NULL;
+```
+
+### Logs y Auditoría
+
+Los logs ahora incluyen información sobre la preferencia del usuario:
+```
+Preparando envío de correo a: user@gmail.com (preferencia: PERSONAL) para usuario: Juan Pérez
+Correo de rechazo enviado a: user@essalud.gob.pe (preferencia: INSTITUCIONAL)
+```
+
+---
+
 ## v1.9.2 (2025-12-23) - Tokens de Recuperacion Persistentes
 
 ### Problema Resuelto

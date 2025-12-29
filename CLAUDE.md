@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.10.0** (2025-12-27)
+> Sistema de Telemedicina - EsSalud | **v1.10.4** (2025-12-29)
 
 ---
 
@@ -33,7 +33,8 @@ mini_proyecto_cenate/
 │       ├── 001_audit_view_and_indexes.sql  # Vista e indices auditoria
 │       ├── 002_rename_logs_to_auditoria.sql # Renombrar menu
 │       ├── 005_disponibilidad_medica.sql    # Tablas disponibilidad
-│       └── 006_agregar_card_disponibilidad.sql # Card dashboard medico
+│       ├── 006_agregar_card_disponibilidad.sql # Card dashboard medico
+│       └── 007_agregar_email_preferido.sql  # Correo preferido notificaciones
 │
 ├── backend/                          # Spring Boot API (puerto 8080)
 │   └── src/main/java/com/styp/cenate/
@@ -324,9 +325,206 @@ frontend:
 
 ---
 
-## Modulo de Auditoria
+## Modulo de Registro de Usuarios
+
+### Seleccion de Correo Preferido para Notificaciones
+
+Los usuarios pueden elegir a qué correo desean recibir notificaciones del sistema durante el registro.
 
 ### Arquitectura
+
+```
+Usuario → Formulario /crear-cuenta → Selecciona correo preferido
+                ↓
+    AccountRequestService.crearSolicitud()
+                ↓
+    Guarda preferencia en account_requests.email_preferido
+                ↓
+        ADMIN aprueba solicitud
+                ↓
+    AccountRequestService.aprobarSolicitud()
+                ↓
+    solicitud.obtenerCorreoPreferido() → PERSONAL o INSTITUCIONAL
+                ↓
+    PasswordTokenService.crearTokenYEnviarEmailDirecto()
+                ↓
+    Email enviado al correo preferido
+```
+
+### Campos en Base de Datos
+
+**Tabla: `account_requests`**
+- `correo_personal` - Correo personal del usuario
+- `correo_institucional` - Correo institucional (opcional)
+- `email_preferido` - Preferencia: "PERSONAL" o "INSTITUCIONAL" (default: "PERSONAL")
+
+### Metodo Helper
+
+```java
+// AccountRequest.java
+public String obtenerCorreoPreferido() {
+    if ("INSTITUCIONAL".equalsIgnoreCase(emailPreferido)) {
+        return (correoInstitucional != null && !correoInstitucional.isBlank())
+                ? correoInstitucional
+                : correoPersonal; // Fallback
+    }
+    return (correoPersonal != null && !correoPersonal.isBlank())
+            ? correoPersonal
+            : correoInstitucional; // Fallback
+}
+```
+
+### Componentes Involucrados
+
+**Backend:**
+- `AccountRequest.java` - Entidad con campo emailPreferido
+- `SolicitudRegistroDTO.java` - DTO con campo emailPreferido
+- `AccountRequestService.java` - Usa correo preferido al enviar emails
+
+**Frontend:**
+- `CrearCuenta.jsx` - Selector visual de correo preferido
+
+### Puntos de Uso
+
+El correo preferido se utiliza automáticamente en:
+1. **Aprobación de solicitud** - Envío de credenciales de activación
+2. **Rechazo de solicitud** - Notificación de rechazo
+3. **Recuperación de contraseña** - Enlaces de recuperación
+4. **Cambio de contraseña** - Notificaciones de cambio
+
+### Script SQL
+
+```bash
+# Agregar campo email_preferido
+PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+  -f spec/scripts/007_agregar_email_preferido.sql
+```
+
+### Documentacion Relacionada
+
+- Changelog v1.10.1: `spec/002_changelog.md`
+- Script SQL: `spec/scripts/007_agregar_email_preferido.sql`
+
+---
+
+## Recuperacion de Contrasena con Seleccion de Correo
+
+### Descripcion
+
+Los administradores pueden elegir a qué correo (personal o institucional) enviar el enlace de recuperación de contraseña.
+
+### Flujo de Uso
+
+```
+Admin → Editar Usuario → "Enviar correo de recuperación"
+                ↓
+    Modal pregunta: ¿A qué correo enviar?
+                ↓
+    Admin selecciona: ○ Personal  ○ Institucional
+                ↓
+    UsuarioController.resetPassword(id, email)
+                ↓
+    PasswordTokenService.crearTokenYEnviarEmail(id, email, "RESET")
+                ↓
+    Email enviado al correo seleccionado
+```
+
+### Endpoint API
+
+```java
+PUT /api/usuarios/id/{id}/reset-password?email={correo}
+
+// Parámetros:
+// - id: ID del usuario (path)
+// - email: Correo destino (query, opcional)
+
+// Si se proporciona email: envía a ese correo específico
+// Si NO se proporciona email: usa correo registrado del usuario
+```
+
+### Componentes Frontend
+
+**ActualizarModel.jsx** - Modal de selección:
+- Estado `correoSeleccionado` para guardar la elección del usuario
+- Radio buttons para elegir entre correo personal e institucional
+- Botón "Enviar Correo" deshabilitado hasta que se seleccione un correo
+- Envía el correo seleccionado como query parameter
+
+### Metodos Backend
+
+**PasswordTokenService:**
+```java
+// Método existente (retrocompatible)
+public boolean crearTokenYEnviarEmail(Long idUsuario, String tipoAccion)
+
+// Nuevo método con correo específico
+public boolean crearTokenYEnviarEmail(Long idUsuario, String email, String tipoAccion)
+```
+
+### Variables de Entorno Requeridas
+
+**IMPORTANTE:** El backend DEBE iniciarse con las credenciales de correo configuradas:
+
+```bash
+export MAIL_USERNAME="cenateinformatica@gmail.com"
+export MAIL_PASSWORD="nolq uisr fwdw zdly"
+export DB_URL="jdbc:postgresql://10.0.89.13:5432/maestro_cenate"
+export DB_USERNAME="postgres"
+export DB_PASSWORD="Essalud2025"
+export JWT_SECRET="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+export FRONTEND_URL="http://localhost:3000"
+
+# Iniciar backend
+cd backend && ./gradlew bootRun --continuous
+```
+
+### Tiempos de Entrega
+
+| Tipo de Correo | Tiempo Estimado | Notas |
+|----------------|-----------------|-------|
+| Gmail personal | 10-30 segundos | Entrega rápida y confiable |
+| Correo corporativo (@essalud.gob.pe) | 1-5 minutos | Puede ser bloqueado por filtros anti-spam |
+
+### Troubleshooting
+
+**Correo no llega:**
+1. Verificar que el backend esté corriendo con las credenciales de correo
+2. Revisar logs del backend para errores SMTP
+3. Revisar carpeta de SPAM del destinatario
+4. Para correos corporativos: contactar TI para agregar `cenateinformatica@gmail.com` a lista blanca
+
+**Verificar configuración:**
+```bash
+# Ver si el backend tiene las variables de entorno
+ps aux | grep "CenateApplication" | grep -o "MAIL_USERNAME.*"
+
+# Ver logs recientes del backend
+tail -100 /ruta/logs/backend.log | grep -i "mail\|smtp\|email"
+```
+
+### Documentacion Relacionada
+
+- Changelog v1.10.2: `spec/002_changelog.md`
+
+---
+
+## Modulo de Auditoria
+
+### Documentación Completa
+
+📖 **Ver guía completa:** `spec/011_guia_auditoria.md`
+
+La guía incluye:
+- Arquitectura y flujo completo de auditoría
+- Estructura de tabla `audit_logs` e índices
+- Definición de vista `vw_auditoria_modular_detallada`
+- Patrón de implementación en servicios
+- Cómo auditar nuevas acciones
+- Troubleshooting y mantenimiento
+- Consultas SQL útiles y reportes
+- Estadísticas y análisis de seguridad
+
+### Arquitectura (Resumen)
 
 ```
 Accion del Usuario
@@ -337,7 +535,9 @@ AuditLogService.registrarEvento()
        ↓
 Tabla: audit_logs
        ↓
-API: /api/auditoria/ultimos
+Vista: vw_auditoria_modular_detallada
+       ↓
+API: /api/auditoria/busqueda-avanzada
        ↓
 Frontend: LogsDelSistema.jsx
 ```
@@ -611,6 +811,7 @@ PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
 - **Plan Seguridad Auth**: `spec/008_plan_seguridad_auth.md`
 - **Plan Disponibilidad Turnos**: `spec/009_plan_disponibilidad_turnos.md`
 - **Reporte Pruebas Disponibilidad**: `spec/010_reporte_pruebas_disponibilidad.md`
+- **Guia Sistema de Auditoria**: `spec/011_guia_auditoria.md` ⭐
 - **Scripts SQL**: `spec/scripts/`
 
 ---

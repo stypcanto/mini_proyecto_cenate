@@ -76,6 +76,8 @@ public class UsuarioResponse {
     private String correoCorporativo;
     @JsonProperty("correo_institucional")
     private String correoInstitucional;
+    @JsonProperty("email_preferido")
+    private String emailPreferido; // PERSONAL o INSTITUCIONAL
     private String telefono;
     private String direccion;
     @JsonProperty("foto_url")

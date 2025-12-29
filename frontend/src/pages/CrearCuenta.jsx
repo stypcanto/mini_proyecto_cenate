@@ -38,6 +38,7 @@ export default function CrearCuenta() {
     fecha_nacimiento: "",
     correo_personal: "",
     correo_institucional: "",
+    email_preferido: "PERSONAL",
     telefono: "",
     tipo_personal: "Externo",
     id_red: null,
@@ -194,6 +195,7 @@ export default function CrearCuenta() {
         fechaNacimiento: formData.fecha_nacimiento,
         correoPersonal: formData.correo_personal,
         correoInstitucional: formData.correo_institucional,
+        emailPreferido: formData.email_preferido,
         telefono: formData.telefono,
         tipoPersonal: formData.tipo_personal,
         idIpress: formData.id_ipress
@@ -591,7 +593,60 @@ export default function CrearCuenta() {
                     </p>
                   )}
                 </div>
+              </div>
 
+              {/* Selector de correo preferido */}
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <label className="block text-sm font-semibold text-slate-800 mb-3">
+                  ¿A qué correo desea recibir las notificaciones del sistema? <span className="text-red-500">*</span>
+                </label>
+                <p className="text-xs text-slate-600 mb-3">
+                  Seleccione el correo donde desea recibir sus credenciales de acceso, recuperación de contraseña y otras notificaciones importantes.
+                </p>
+                <div className="space-y-2">
+                  <label className="flex items-center p-3 bg-white border-2 border-slate-200 rounded-lg hover:border-[#0A5BA9] cursor-pointer transition-all">
+                    <input
+                      type="radio"
+                      name="email_preferido"
+                      value="PERSONAL"
+                      checked={formData.email_preferido === "PERSONAL"}
+                      onChange={handleChange}
+                      className="w-4 h-4 text-[#0A5BA9] focus:ring-[#0A5BA9] focus:ring-2"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-slate-800">Correo Personal</span>
+                      {formData.correo_personal && (
+                        <span className="ml-2 text-sm text-slate-600">({formData.correo_personal})</span>
+                      )}
+                    </div>
+                  </label>
+
+                  <label className={`flex items-center p-3 bg-white border-2 border-slate-200 rounded-lg hover:border-[#0A5BA9] cursor-pointer transition-all ${
+                    !formData.correo_institucional ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}>
+                    <input
+                      type="radio"
+                      name="email_preferido"
+                      value="INSTITUCIONAL"
+                      checked={formData.email_preferido === "INSTITUCIONAL"}
+                      onChange={handleChange}
+                      disabled={!formData.correo_institucional}
+                      className="w-4 h-4 text-[#0A5BA9] focus:ring-[#0A5BA9] focus:ring-2"
+                    />
+                    <div className="ml-3">
+                      <span className="font-medium text-slate-800">Correo Institucional</span>
+                      {formData.correo_institucional && (
+                        <span className="ml-2 text-sm text-slate-600">({formData.correo_institucional})</span>
+                      )}
+                      {!formData.correo_institucional && (
+                        <span className="ml-2 text-xs text-amber-600">(Debe ingresar un correo institucional primero)</span>
+                      )}
+                    </div>
+                  </label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 {/* Teléfono */}
                 <div>
                   <label className="block text-sm font-medium text-slate-700 mb-1">

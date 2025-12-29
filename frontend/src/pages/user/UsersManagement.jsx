@@ -93,7 +93,8 @@ const UsersManagement = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [areas, setAreas] = useState([]);
-  
+  const [allUsersForFilters, setAllUsersForFilters] = useState([]); // 🆕 Todos los usuarios para generar dropdowns
+
   // 🆕 Toast para notificaciones
   const { showToast, ToastComponent } = useToast();
 
@@ -107,12 +108,12 @@ const UsersManagement = () => {
   }, [filters, searchTerm]);
 
   // ============================================================
-  // 🚀 LISTA DE IPRESS: Generada únicamente de usuarios existentes
+  // 🔧 FUNCIÓN AUXILIAR: Generar lista de IPRESS de usuarios filtrados
   // ============================================================
-  const ipressList = useMemo(() => {
+  const getIpressListFromUsers = useCallback((usersList) => {
     const ipressMap = new Map();
 
-    users.forEach(user => {
+    usersList.forEach(user => {
       const nombreIpress = user.nombre_ipress || user.descIpress;
       const idIpress = user.id_ipress || user.idIpress;
 
@@ -135,12 +136,188 @@ const UsersManagement = () => {
       const nameB = (b.desc_ipress || b.descIpress || '').toUpperCase();
       return nameA.localeCompare(nameB);
     });
-  }, [users]);
+  }, []);
+
+  // ============================================================
+  // 🚀 LISTA DE IPRESS: Dinámica según filtros activos (SIN filtro de IPRESS)
+  // ============================================================
+  const ipressList = useMemo(() => {
+    // 🔧 Usar allUsersForFilters si está disponible, si no, usar users
+    const baseUsers = allUsersForFilters.length > 0 ? allUsersForFilters : users;
+
+    // Aplicar TODOS los filtros EXCEPTO el filtro de IPRESS
+    let usuariosParaIpress = [...baseUsers];
+
+    // 🔍 Búsqueda general
+    if (searchTerm && searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim();
+      usuariosParaIpress = usuariosParaIpress.filter(user => {
+        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
+        const username = (user.username || '').toLowerCase();
+        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
+        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
+        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
+        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
+
+        return nombreCompleto.includes(searchLower) ||
+               username.includes(searchLower) ||
+               numeroDocumento.includes(searchLower) ||
+               nombreIpress.includes(searchLower) ||
+               emailPersonal.includes(searchLower) ||
+               emailCorporativo.includes(searchLower);
+      });
+    }
+
+    // 🔍 Filtro por Rol
+    if (filters.rol && filters.rol !== '') {
+      usuariosParaIpress = usuariosParaIpress.filter(user => {
+        if (!user.roles || !Array.isArray(user.roles)) return false;
+        return user.roles.some(rol => rol === filters.rol);
+      });
+    }
+
+    // 🔍 Filtro por Tipo de Personal (Interno/Externo)
+    if (filters.institucion && filters.institucion !== '') {
+      usuariosParaIpress = usuariosParaIpress.filter(user => {
+        const idIpress = user.id_ipress || user.idIpress;
+        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toUpperCase();
+
+        if (filters.institucion === 'Interno') {
+          return idIpress === 2 || nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
+        } else if (filters.institucion === 'Externo') {
+          return idIpress && idIpress !== 2 && !nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
+        }
+        return true;
+      });
+    }
+
+    // 🔍 Filtro por Estado
+    if (filters.estado && filters.estado !== '') {
+      usuariosParaIpress = usuariosParaIpress.filter(user => {
+        const estadoUsuario = user.estado_usuario || user.statPers || '';
+        return estadoUsuario.toUpperCase() === filters.estado.toUpperCase();
+      });
+    }
+
+    // 🔍 Filtro por Mes de Cumpleaños
+    if (filters.mesCumpleanos && filters.mesCumpleanos !== '') {
+      const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+      const mesIndex = meses.indexOf(filters.mesCumpleanos);
+
+      if (mesIndex !== -1) {
+        usuariosParaIpress = usuariosParaIpress.filter(user => {
+          const fechaNacimiento = user.fecha_nacimiento || user.fech_naci_pers;
+          if (!fechaNacimiento) return false;
+
+          try {
+            let month;
+            if (typeof fechaNacimiento === 'string') {
+              const parts = fechaNacimiento.split('T')[0].split('-');
+              if (parts.length >= 2) {
+                month = parseInt(parts[1], 10) - 1;
+              }
+            } else if (Array.isArray(fechaNacimiento)) {
+              month = fechaNacimiento[1] - 1;
+            }
+
+            if (month === undefined || isNaN(month)) return false;
+            return month === mesIndex;
+          } catch (e) {
+            return false;
+          }
+        });
+      }
+    }
+
+    // 🔍 Filtro por Área
+    if (filters.area && filters.area !== '') {
+      usuariosParaIpress = usuariosParaIpress.filter(user => {
+        const areaUsuario = user.nombre_area || user.nombreArea || user.desc_area || user.descArea || user.area_trabajo || user.areaTrabajo || user.area || '';
+        return areaUsuario.toUpperCase().includes(filters.area.toUpperCase());
+      });
+    }
+
+    // 🔍 Filtro por Fecha de Registro (Desde)
+    if (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') {
+      const fechaDesde = new Date(filters.fechaRegistroDesde);
+      fechaDesde.setHours(0, 0, 0, 0);
+      usuariosParaIpress = usuariosParaIpress.filter(user => {
+        const fechaRegistro = user.create_at || user.created_at || user.createdAt || user.fecha_registro;
+        if (!fechaRegistro) return false;
+
+        try {
+          let fechaUsuario;
+          if (typeof fechaRegistro === 'string') {
+            fechaUsuario = new Date(fechaRegistro);
+          } else if (Array.isArray(fechaRegistro)) {
+            fechaUsuario = new Date(fechaRegistro[0], fechaRegistro[1] - 1, fechaRegistro[2]);
+          } else {
+            return false;
+          }
+
+          if (isNaN(fechaUsuario.getTime())) {
+            return false;
+          }
+
+          fechaUsuario.setHours(0, 0, 0, 0);
+          return fechaUsuario >= fechaDesde;
+        } catch (e) {
+          return false;
+        }
+      });
+    }
+
+    // 🔍 Filtro por Fecha de Registro (Hasta)
+    if (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '') {
+      const fechaHasta = new Date(filters.fechaRegistroHasta);
+      fechaHasta.setHours(23, 59, 59, 999);
+      usuariosParaIpress = usuariosParaIpress.filter(user => {
+        const fechaRegistro = user.create_at || user.created_at || user.createdAt || user.fecha_registro;
+        if (!fechaRegistro) return false;
+
+        try {
+          let fechaUsuario;
+          if (typeof fechaRegistro === 'string') {
+            fechaUsuario = new Date(fechaRegistro);
+          } else if (Array.isArray(fechaRegistro)) {
+            fechaUsuario = new Date(fechaRegistro[0], fechaRegistro[1] - 1, fechaRegistro[2]);
+          } else {
+            return false;
+          }
+
+          if (isNaN(fechaUsuario.getTime())) {
+            return false;
+          }
+
+          return fechaUsuario <= fechaHasta;
+        } catch (e) {
+          return false;
+        }
+      });
+    }
+
+    // Generar lista de IPRESS de los usuarios filtrados
+    return getIpressListFromUsers(usuariosParaIpress);
+  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.fechaRegistroDesde, filters.fechaRegistroHasta, getIpressListFromUsers]);
 
   // ============================================================
   // 🔧 FUNCIÓN AUXILIAR: Aplicar filtros a una lista de usuarios
   // ============================================================
   const applyFilters = useCallback((usersList) => {
+    console.log('🔍 applyFilters - Usuarios recibidos:', usersList.length);
+    console.log('🔍 applyFilters - Filtros activos:', filters);
+
+    // DEBUG: Mostrar IPRESS de los primeros 5 usuarios
+    if (usersList.length > 0) {
+      console.log('📊 Primeros 5 usuarios con IPRESS:', usersList.slice(0, 5).map(u => ({
+        usuario: u.username,
+        nombre_ipress: u.nombre_ipress,
+        descIpress: u.descIpress,
+        id_ipress: u.id_ipress || u.idIpress
+      })));
+    }
+
     let filtered = [...usersList];
 
     // 🔍 Búsqueda general (nombre, usuario, documento, IPRESS, email)
@@ -237,10 +414,34 @@ const UsersManagement = () => {
 
     // 🔍 Filtro por IPRESS
     if (filters.ipress && filters.ipress !== '') {
+      console.log('🔍 Filtro IPRESS activo:', filters.ipress);
+      console.log('🔍 Total usuarios antes de filtrar:', filtered.length);
+
+      // Mostrar las primeras 10 IPRESS únicas de los usuarios
+      const ipressEncontradas = [...new Set(filtered.map(u => u.nombre_ipress || u.descIpress).filter(Boolean))];
+      console.log('🔍 IPRESS únicas encontradas en usuarios:', ipressEncontradas);
+
       filtered = filtered.filter(user => {
         const nombreIpress = user.nombre_ipress || user.descIpress || '';
-        return nombreIpress === filters.ipress;
+        // Normalizar: eliminar espacios extras y comparar en mayúsculas
+        const ipressNormalizada = nombreIpress.trim().toUpperCase().replace(/\s+/g, ' ');
+        const filtroNormalizado = filters.ipress.trim().toUpperCase().replace(/\s+/g, ' ');
+        const match = ipressNormalizada === filtroNormalizado;
+
+        if (!match && nombreIpress) {
+          console.log('❌ No coincide:', {
+            usuario: user.username,
+            nombreCompleto: user.nombre_completo,
+            ipressUsuario: `"${nombreIpress}"`,
+            ipressNormalizada: `"${ipressNormalizada}"`,
+            ipressFiltro: `"${filters.ipress}"`,
+            filtroNormalizado: `"${filtroNormalizado}"`,
+            estadoUsuario: user.estado_usuario || user.statPers
+          });
+        }
+        return match;
       });
+      console.log('✅ Usuarios después de filtrar por IPRESS:', filtered.length);
     }
 
     // 🔍 Filtro por Fecha de Registro (Desde)
@@ -363,7 +564,10 @@ const UsersManagement = () => {
                                (currentFilters.institucion && currentFilters.institucion !== '') ||
                                (currentFilters.estado && currentFilters.estado !== '') ||
                                (currentFilters.mesCumpleanos && currentFilters.mesCumpleanos !== '') ||
-                               (currentFilters.area && currentFilters.area !== '');
+                               (currentFilters.area && currentFilters.area !== '') ||
+                               (currentFilters.ipress && currentFilters.ipress !== '') ||
+                               (currentFilters.fechaRegistroDesde && currentFilters.fechaRegistroDesde !== '') ||
+                               (currentFilters.fechaRegistroHasta && currentFilters.fechaRegistroHasta !== '');
       
       // Si hay filtros, cargar TODOS los usuarios (1000) para buscar en toda la base de datos
       // Si no hay filtros, usar paginación normal (7 usuarios)
@@ -509,11 +713,62 @@ const UsersManagement = () => {
     }
   }, []);
 
+  // 🆕 Cargar TODOS los usuarios una vez para generar dropdowns de filtros
+  const loadAllUsersForFilters = useCallback(async () => {
+    try {
+      console.log('🔄 Cargando todos los usuarios para filtros...');
+
+      // Cargar usuarios e IPRESS en paralelo
+      const [usersResponse, ipressResponse] = await Promise.all([
+        api.get('/usuarios/all-personal?page=0&size=1000&sortBy=createdAt&direction=DESC'),
+        api.get('/ipress')
+      ]);
+
+      // Extraer datos
+      let usersData = [];
+      if (Array.isArray(usersResponse)) {
+        usersData = usersResponse;
+      } else if (usersResponse.content && Array.isArray(usersResponse.content)) {
+        usersData = usersResponse.content;
+      }
+
+      // Crear Map de IPRESS para búsqueda O(1)
+      const ipressMap = new Map();
+      if (Array.isArray(ipressResponse)) {
+        ipressResponse.forEach(ip => {
+          if (ip.idIpress) {
+            ipressMap.set(ip.idIpress, ip);
+          }
+        });
+      }
+
+      // Asociar cada usuario con su IPRESS
+      const usersWithIpress = usersData.map(user => {
+        const ipressId = user.idIpress || user.id_ipress;
+        if (ipressId && ipressMap.has(ipressId)) {
+          const ipress = ipressMap.get(ipressId);
+          return {
+            ...user,
+            nombre_ipress: ipress.descIpress,
+            codigo_ipress: ipress.codIpress
+          };
+        }
+        return user;
+      });
+
+      console.log('✅ Cargados', usersWithIpress.length, 'usuarios para filtros');
+      setAllUsersForFilters(usersWithIpress);
+    } catch (error) {
+      console.error('❌ Error al cargar usuarios para filtros:', error);
+    }
+  }, []);
+
   useEffect(() => {
     loadUsers();
     loadRoles();
     loadAreas();
-  }, [loadUsers, loadRoles, loadAreas]);
+    loadAllUsersForFilters(); // 🆕 Cargar todos los usuarios para dropdowns
+  }, [loadUsers, loadRoles, loadAreas, loadAllUsersForFilters]);
 
   // 🚀 Resetear a primera página cuando cambian filtros o búsqueda (sin recargar del servidor)
   useEffect(() => {
@@ -529,7 +784,10 @@ const UsersManagement = () => {
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
                              (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-                             (filters.area && filters.area !== '');
+                             (filters.area && filters.area !== '') ||
+                             (filters.ipress && filters.ipress !== '') ||
+                             (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
+                             (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
 
     // Si hay filtros activos y tenemos menos de 100 usuarios cargados, cargar todos
     if (hasActiveFilters && users.length < 100) {
@@ -537,7 +795,7 @@ const UsersManagement = () => {
       loadUsers(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area]); // Solo cuando cambian los filtros
+  }, [searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.ipress, filters.fechaRegistroDesde, filters.fechaRegistroHasta]); // Solo cuando cambian los filtros
 
   // 🚀 Actualizar totales cuando hay filtros activos (basándose en filteredUsers)
   useEffect(() => {
@@ -546,7 +804,10 @@ const UsersManagement = () => {
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
                              (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-                             (filters.area && filters.area !== '');
+                             (filters.area && filters.area !== '') ||
+                             (filters.ipress && filters.ipress !== '') ||
+                             (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
+                             (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
 
     if (hasActiveFilters) {
       // Calcular totales basándose en los resultados filtrados

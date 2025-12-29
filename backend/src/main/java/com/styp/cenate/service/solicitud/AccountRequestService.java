@@ -101,6 +101,7 @@ public class AccountRequestService {
                 .fechaNacimiento(dto.getFechaNacimiento())
                 .correoPersonal(dto.getCorreoPersonal())
                 .correoInstitucional(dto.getCorreoInstitucional())
+                .emailPreferido(dto.getEmailPreferido() != null ? dto.getEmailPreferido() : "PERSONAL")
                 .telefono(dto.getTelefono())
                 .tipoUsuario(dto.getTipoPersonal())
                 .idIpress(dto.getIdIpress())
@@ -205,14 +206,12 @@ public class AccountRequestService {
             // Enviar correo con enlace para configurar contraseña (sistema seguro de tokens)
             Usuario usuarioNuevo = usuarioRepository.findById(idUsuario).orElse(null);
             if (usuarioNuevo != null) {
-                // Usar datos de la solicitud directamente (evita problemas de lazy loading)
-                String emailDestino = solicitud.getCorreoPersonal() != null && !solicitud.getCorreoPersonal().isBlank()
-                        ? solicitud.getCorreoPersonal()
-                        : solicitud.getCorreoInstitucional();
-
+                // Usar el correo preferido del usuario según su selección
+                String emailDestino = solicitud.obtenerCorreoPreferido();
                 String nombreCompleto = solicitud.getNombreCompleto();
 
-                log.info("Preparando envío de correo a: {} para usuario: {}", emailDestino, nombreCompleto);
+                log.info("Preparando envío de correo a: {} (preferencia: {}) para usuario: {}",
+                        emailDestino, solicitud.getEmailPreferido(), nombreCompleto);
 
                 boolean emailEnviado = passwordTokenService.crearTokenYEnviarEmailDirecto(
                         usuarioNuevo, emailDestino, nombreCompleto, "BIENVENIDO");
@@ -306,6 +305,7 @@ public class AccountRequestService {
                 .movilPers(solicitud.getTelefono())
                 .emailPers(solicitud.getCorreoPersonal())
                 .emailCorpPers(solicitud.getCorreoInstitucional())
+                .emailPreferido(solicitud.getEmailPreferido() != null ? solicitud.getEmailPreferido() : "PERSONAL") // 🆕 Preferencia de correo
                 .ipress(ipress)
                 .usuario(usuario)
                 .origenPersonal(origenExterno)  // ⚠️ EXTERNO = id_origen 2
@@ -397,10 +397,8 @@ public class AccountRequestService {
                         idRequest, solicitud.getNumDocumento(), solicitud.getNombreCompleto(), motivoRechazo),
                 "WARNING", "SUCCESS");
 
-        // Enviar correo de rechazo
-        String emailDestino = solicitud.getCorreoPersonal() != null
-                ? solicitud.getCorreoPersonal()
-                : solicitud.getCorreoInstitucional();
+        // Enviar correo de rechazo usando el correo preferido del usuario
+        String emailDestino = solicitud.obtenerCorreoPreferido();
 
         if (emailDestino != null && !emailDestino.isBlank()) {
             String nombreCompleto = solicitud.getNombreCompleto();
@@ -409,7 +407,7 @@ public class AccountRequestService {
                     nombreCompleto,
                     motivoRechazo
             );
-            log.info("Correo de rechazo enviado a: {}", emailDestino);
+            log.info("Correo de rechazo enviado a: {} (preferencia: {})", emailDestino, solicitud.getEmailPreferido());
         }
 
         return convertirADTOConIpress(solicitud);
@@ -440,6 +438,7 @@ public class AccountRequestService {
                 .fechaNacimiento(solicitud.getFechaNacimiento())
                 .correoPersonal(solicitud.getCorreoPersonal())
                 .correoInstitucional(solicitud.getCorreoInstitucional())
+                .emailPreferido(solicitud.getEmailPreferido())
                 .telefono(solicitud.getTelefono())
                 .tipoPersonal(solicitud.getTipoUsuario())
                 .idIpress(solicitud.getIdIpress())

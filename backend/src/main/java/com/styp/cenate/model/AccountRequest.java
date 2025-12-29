@@ -84,6 +84,10 @@ public class AccountRequest {
     @Column(name = "id_ipress")
     private Long idIpress;
 
+    @Column(name = "email_preferido")
+    @Builder.Default
+    private String emailPreferido = "PERSONAL";
+
     @UpdateTimestamp
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
@@ -106,5 +110,21 @@ public class AccountRequest {
         if (nombres != null && apellidoPaterno != null && apellidoMaterno != null) {
             this.nombreCompleto = nombres + " " + apellidoPaterno + " " + apellidoMaterno;
         }
+    }
+
+    /**
+     * Obtiene el correo preferido del usuario según su elección
+     * @return El correo preferido (personal o institucional) según la preferencia del usuario
+     */
+    public String obtenerCorreoPreferido() {
+        if ("INSTITUCIONAL".equalsIgnoreCase(emailPreferido)) {
+            return (correoInstitucional != null && !correoInstitucional.isBlank())
+                    ? correoInstitucional
+                    : correoPersonal; // Fallback al personal si no hay institucional
+        }
+        // Por defecto: PERSONAL
+        return (correoPersonal != null && !correoPersonal.isBlank())
+                ? correoPersonal
+                : correoInstitucional; // Fallback al institucional si no hay personal
     }
 }

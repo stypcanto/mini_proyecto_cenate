@@ -450,8 +450,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 			page = 0;
 		if (size < 1)
 			size = 7; // Default: 7 usuarios por página
-		if (size > 100)
-			size = 100; // Límite máximo
+		if (size > 1000)
+			size = 1000; // Límite máximo (aumentado para filtros)
 
 		// Crear Pageable con ordenamiento
 		org.springframework.data.domain.Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction)
@@ -648,6 +648,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 				.apellidoPaterno(personalCnt.getApePaterPers()).apellidoMaterno(personalCnt.getApeMaterPers())
 				.numeroDocumento(personalCnt.getNumDocPers()).tipoDocumento(tipoDocumento)
 				.correoPersonal(personalCnt.getEmailPers()).correoCorporativo(personalCnt.getEmailCorpPers())
+				.emailPreferido(personalCnt.getEmailPreferido() != null ? personalCnt.getEmailPreferido() : "PERSONAL")
 				.telefono(personalCnt.getMovilPers()).direccion(personalCnt.getDirecPers())
 				.genero(personalCnt.getGenPers()).fechaNacimiento(personalCnt.getFechNaciPers())
 				.fotoUrl(personalCnt.getFotoPers())
@@ -1093,42 +1094,104 @@ public class UsuarioServiceImpl implements UsuarioService {
 			idPersonal = usuario.getPersonalCnt().getIdPers();
 		}
 
-		// 1. Eliminar permisos del usuario
-		int permisos = jdbcTemplate.update("DELETE FROM permisos_modulares WHERE id_user = ?", id);
-		log.info("  - Permisos eliminados: {}", permisos);
+		// 1. Eliminar tokens de recuperación de contraseña
+		int tokens = jdbcTemplate.update("DELETE FROM password_reset_tokens WHERE id_usuario = ?", id);
+		log.info("  - Tokens de recuperación eliminados: {}", tokens);
 
-		// 2. Eliminar roles del usuario
+		// 2. Eliminar solicitudes de contraseña
+		int solicitudesPass = jdbcTemplate.update("DELETE FROM solicitud_contrasena WHERE id_usuario = ?", id);
+		log.info("  - Solicitudes de contraseña eliminadas: {}", solicitudesPass);
+
+		// 3. Eliminar permisos modulares y de seguridad del usuario
+		int permisos = jdbcTemplate.update("DELETE FROM permisos_modulares WHERE id_user = ?", id);
+		log.info("  - Permisos modulares eliminados: {}", permisos);
+
+		int permisosSeguridad = jdbcTemplate.update("DELETE FROM segu_permisos_usuario_pagina WHERE id_usuario = ?", id);
+		log.info("  - Permisos de seguridad eliminados: {}", permisosSeguridad);
+
+		int permisosDim = jdbcTemplate.update("DELETE FROM dim_permisos_modulares WHERE autorizado_por = ?", id);
+		log.info("  - Permisos autorizados eliminados: {}", permisosDim);
+
+		// 4. Limpiar referencias en ctr_periodo (anular FKs, no eliminar períodos)
+		int periodos = jdbcTemplate.update("""
+			UPDATE ctr_periodo
+			SET id_usuario_ultima_accion = NULL, id_coordinador = NULL
+			WHERE id_usuario_ultima_accion = ? OR id_coordinador = ?
+			""", id, id);
+		log.info("  - Referencias en períodos anuladas: {}", periodos);
+
+		// 5. Eliminar roles del usuario
 		int roles = jdbcTemplate.update("DELETE FROM rel_user_roles WHERE id_user = ?", id);
 		log.info("  - Roles eliminados: {}", roles);
 
-		// 3. Desvincular y eliminar personal
+		// 6. Eliminar datos del personal asociado
 		if (idPersonal != null) {
-			// Desvincular primero
-			jdbcTemplate.update("UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_pers = ?", idPersonal);
+			// 6a. Eliminar solicitudes de cita y turno del personal
+			int solicitudesCita = jdbcTemplate.update("DELETE FROM solicitud_cita WHERE id_pers = ?", idPersonal);
+			log.info("  - Solicitudes de cita eliminadas: {}", solicitudesCita);
 
-			// Eliminar profesiones del personal
+			int solicitudesTurno = jdbcTemplate.update("DELETE FROM solicitud_turno_ipress WHERE id_pers = ?", idPersonal);
+			log.info("  - Solicitudes de turno eliminadas: {}", solicitudesTurno);
+
+			// 6b. Eliminar horarios y logs del personal
+			int horariosLog = jdbcTemplate.update("DELETE FROM ctr_horario_log WHERE id_pers = ?", idPersonal);
+			log.info("  - Logs de horarios eliminados: {}", horariosLog);
+
+			int horarios = jdbcTemplate.update("DELETE FROM ctr_horario WHERE id_pers = ?", idPersonal);
+			log.info("  - Horarios eliminados: {}", horarios);
+
+			// 6c. Eliminar detalles de disponibilidad (tabla hija)
+			int detalles = jdbcTemplate.update("""
+				DELETE FROM detalle_disponibilidad
+				WHERE id_disponibilidad IN (
+					SELECT id_disponibilidad FROM disponibilidad_medica WHERE id_pers = ?
+				)
+				""", idPersonal);
+			log.info("  - Detalles de disponibilidad eliminados: {}", detalles);
+
+			// 6d. Eliminar disponibilidades médicas
+			int disponibilidades = jdbcTemplate.update("DELETE FROM disponibilidad_medica WHERE id_pers = ?", idPersonal);
+			log.info("  - Disponibilidades médicas eliminadas: {}", disponibilidades);
+
+			// 6e. Eliminar relaciones personal-programa
+			int programas = jdbcTemplate.update("DELETE FROM persona_programa WHERE id_pers = ?", idPersonal);
+			log.info("  - Relaciones personal-programa eliminadas: {}", programas);
+
+			// 6f. Eliminar firmas digitales del personal
+			int firmas = jdbcTemplate.update("DELETE FROM dim_personal_firma WHERE id_pers = ?", idPersonal);
+			log.info("  - Firmas digitales eliminadas: {}", firmas);
+
+			// 6g. Eliminar órdenes de compra del personal
+			int oc = jdbcTemplate.update("DELETE FROM dim_personal_oc WHERE id_pers = ?", idPersonal);
+			log.info("  - Órdenes de compra eliminadas: {}", oc);
+
+			// 6h. Eliminar profesiones del personal
 			int profs = jdbcTemplate.update("DELETE FROM dim_personal_prof WHERE id_pers = ?", idPersonal);
 			log.info("  - Profesiones eliminadas: {}", profs);
 
-			// Eliminar tipos del personal
+			// 6i. Eliminar tipos del personal
 			int tipos = jdbcTemplate.update("DELETE FROM dim_personal_tipo WHERE id_pers = ?", idPersonal);
 			log.info("  - Tipos eliminados: {}", tipos);
+
+			// 6j. Desvincular la relación usuario-personal
+			jdbcTemplate.update("UPDATE dim_personal_cnt SET id_usuario = NULL WHERE id_pers = ?", idPersonal);
+			log.info("  - Personal desvinculado del usuario");
 		}
 
-		// 4. Eliminar usuario
-		usuarioRepository.delete(usuario);
-		log.info("  - Usuario eliminado: {}", numDocumento);
+		// 7. Eliminar usuario (usando jdbcTemplate para evitar conflictos de JPA)
+		int usuarioEliminado = jdbcTemplate.update("DELETE FROM dim_usuarios WHERE id_user = ?", id);
+		log.info("  - Usuario eliminado: {} (registros: {})", numDocumento, usuarioEliminado);
 
 		// 🔒 AUDITORÍA
 		auditar("DELETE_USER", "Usuario eliminado: " + numDocumento + " (ID: " + id + ")", "WARNING", "SUCCESS");
 
-		// 5. Eliminar personal huérfano
+		// 8. Eliminar personal huérfano
 		if (idPersonal != null) {
 			int personal = jdbcTemplate.update("DELETE FROM dim_personal_cnt WHERE id_pers = ?", idPersonal);
 			log.info("  - Personal eliminado: {}", personal);
 		}
 
-		// 6. Actualizar solicitudes en account_requests a RECHAZADO para permitir re-registro
+		// 9. Actualizar solicitudes en account_requests a RECHAZADO para permitir re-registro
 		int solicitudes = jdbcTemplate.update("""
 			UPDATE account_requests
 			SET estado = 'RECHAZADO',

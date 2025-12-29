@@ -101,6 +101,25 @@ public class PasswordTokenService {
     }
 
     /**
+     * Crea un token de cambio de contraseña para un usuario y envía email a un correo específico
+     */
+    @Transactional
+    public boolean crearTokenYEnviarEmail(Long idUsuario, String email, String tipoAccion) {
+        Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
+        if (usuario == null) {
+            log.warn("Usuario no encontrado para crear token: {}", idUsuario);
+            return false;
+        }
+
+        if (email == null || email.isBlank()) {
+            log.warn("Email vacío especificado para usuario ID: {}", idUsuario);
+            return false;
+        }
+
+        return crearTokenYEnviarEmailDirecto(usuario, email, tipoAccion);
+    }
+
+    /**
      * Crea un token de cambio de contraseña para un usuario y envía email con enlace
      */
     @Transactional
