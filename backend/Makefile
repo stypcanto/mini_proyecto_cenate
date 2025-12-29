@@ -51,13 +51,14 @@ dev:
 	@echo "$(GREEN)🚀 Iniciando backend en modo desarrollo...$(NC)"
 	@echo "$(YELLOW)   Puerto: $(PORT)$(NC)"
 	@echo "$(YELLOW)   Hot-reload: activado$(NC)"
+	@echo "$(YELLOW)   Perfil: dev$(NC)"
 	@echo ""
-	$(GRADLE) bootRun --continuous
+	$(GRADLE) bootRun --continuous --args='--spring.profiles.active=dev'
 
 ## Ejecutar aplicación normalmente
 run:
 	@echo "$(GREEN)🚀 Iniciando backend...$(NC)"
-	$(GRADLE) bootRun
+	$(GRADLE) bootRun --args='--spring.profiles.active=dev'
 
 ## Ejecutar en background
 run-bg:

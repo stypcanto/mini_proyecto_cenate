@@ -75,7 +75,10 @@ const UsersManagement = () => {
     institucion: '',
     estado: '',
     mesCumpleanos: '',
-    area: ''
+    area: '',
+    ipress: '',
+    fechaRegistroDesde: '',
+    fechaRegistroHasta: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
 
@@ -89,8 +92,6 @@ const UsersManagement = () => {
   // 🆕 Estado para selección múltiple
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [roles, setRoles] = useState([]);
-  const [ipressMap, setIpressMap] = useState({});
-  const [ipressList, setIpressList] = useState([]);
   const [areas, setAreas] = useState([]);
   
   // 🆕 Toast para notificaciones
@@ -99,11 +100,42 @@ const UsersManagement = () => {
   // 🚀 Refs para mantener valores actuales sin causar recargas
   const filtersRef = useRef(filters);
   const searchTermRef = useRef(searchTerm);
-  
+
   useEffect(() => {
     filtersRef.current = filters;
     searchTermRef.current = searchTerm;
   }, [filters, searchTerm]);
+
+  // ============================================================
+  // 🚀 LISTA DE IPRESS: Generada únicamente de usuarios existentes
+  // ============================================================
+  const ipressList = useMemo(() => {
+    const ipressMap = new Map();
+
+    users.forEach(user => {
+      const nombreIpress = user.nombre_ipress || user.descIpress;
+      const idIpress = user.id_ipress || user.idIpress;
+
+      // Solo agregar si tiene nombre de IPRESS válido
+      if (nombreIpress && nombreIpress.trim() !== '') {
+        if (!ipressMap.has(nombreIpress)) {
+          ipressMap.set(nombreIpress, {
+            id_ipress: idIpress,
+            desc_ipress: nombreIpress,
+            idIpress: idIpress,
+            descIpress: nombreIpress
+          });
+        }
+      }
+    });
+
+    // Convertir a array y ordenar alfabéticamente
+    return Array.from(ipressMap.values()).sort((a, b) => {
+      const nameA = (a.desc_ipress || a.descIpress || '').toUpperCase();
+      const nameB = (b.desc_ipress || b.descIpress || '').toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [users]);
 
   // ============================================================
   // 🔧 FUNCIÓN AUXILIAR: Aplicar filtros a una lista de usuarios
@@ -203,6 +235,79 @@ const UsersManagement = () => {
       });
     }
 
+    // 🔍 Filtro por IPRESS
+    if (filters.ipress && filters.ipress !== '') {
+      filtered = filtered.filter(user => {
+        const nombreIpress = user.nombre_ipress || user.descIpress || '';
+        return nombreIpress === filters.ipress;
+      });
+    }
+
+    // 🔍 Filtro por Fecha de Registro (Desde)
+    if (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') {
+      const fechaDesde = new Date(filters.fechaRegistroDesde);
+      fechaDesde.setHours(0, 0, 0, 0);
+      filtered = filtered.filter(user => {
+        // Intentar con todos los posibles nombres de campo de fecha
+        const fechaRegistro = user.create_at || user.created_at || user.createdAt || user.fecha_registro;
+        if (!fechaRegistro) return false;
+
+        try {
+          let fechaUsuario;
+          if (typeof fechaRegistro === 'string') {
+            fechaUsuario = new Date(fechaRegistro);
+          } else if (Array.isArray(fechaRegistro)) {
+            // Backend puede enviar como array [year, month, day, hour, minute, second]
+            fechaUsuario = new Date(fechaRegistro[0], fechaRegistro[1] - 1, fechaRegistro[2]);
+          } else {
+            return false;
+          }
+
+          // Validar que la fecha sea válida
+          if (isNaN(fechaUsuario.getTime())) {
+            return false;
+          }
+
+          fechaUsuario.setHours(0, 0, 0, 0);
+          return fechaUsuario >= fechaDesde;
+        } catch (e) {
+          return false;
+        }
+      });
+    }
+
+    // 🔍 Filtro por Fecha de Registro (Hasta)
+    if (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '') {
+      const fechaHasta = new Date(filters.fechaRegistroHasta);
+      fechaHasta.setHours(23, 59, 59, 999);
+      filtered = filtered.filter(user => {
+        // Intentar con todos los posibles nombres de campo de fecha
+        const fechaRegistro = user.create_at || user.created_at || user.createdAt || user.fecha_registro;
+        if (!fechaRegistro) return false;
+
+        try {
+          let fechaUsuario;
+          if (typeof fechaRegistro === 'string') {
+            fechaUsuario = new Date(fechaRegistro);
+          } else if (Array.isArray(fechaRegistro)) {
+            // Backend puede enviar como array [year, month, day, hour, minute, second]
+            fechaUsuario = new Date(fechaRegistro[0], fechaRegistro[1] - 1, fechaRegistro[2]);
+          } else {
+            return false;
+          }
+
+          // Validar que la fecha sea válida
+          if (isNaN(fechaUsuario.getTime())) {
+            return false;
+          }
+
+          return fechaUsuario <= fechaHasta;
+        } catch (e) {
+          return false;
+        }
+      });
+    }
+
     return filtered;
   }, [searchTerm, filters]);
 
@@ -223,7 +328,10 @@ const UsersManagement = () => {
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
                              (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-                             (filters.area && filters.area !== '');
+                             (filters.area && filters.area !== '') ||
+                             (filters.ipress && filters.ipress !== '') ||
+                             (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
+                             (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
     
     // Si hay filtros activos, paginar localmente sobre los resultados filtrados
     // Si no hay filtros, usar todos los usuarios (ya vienen paginados del servidor)
@@ -334,10 +442,7 @@ const UsersManagement = () => {
           }
         });
       }
-      
-      // Guardar lista de IPRESS
-      setIpressList(Array.isArray(ipressResponse) ? ipressResponse : []);
-      
+
       // 🚀 OPTIMIZACIÓN: Asociar cada usuario con su IPRESS usando Map (O(1) vs O(n))
       const usersWithIpress = usersData.map(user => {
         // Intentar con ambos nombres de campo posibles
@@ -715,6 +820,7 @@ const UsersManagement = () => {
             setViewMode={setViewMode}
             roles={roles}
             areas={areas}
+            ipressList={ipressList}
             onRefresh={handleRefresh}
           />
 

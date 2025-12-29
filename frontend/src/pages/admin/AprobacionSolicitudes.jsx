@@ -25,6 +25,7 @@ import {
   CheckSquare,
   Square,
   MinusSquare,
+  X,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { apiClient } from "../../lib/apiClient";
@@ -44,6 +45,11 @@ export default function AprobacionSolicitudes() {
   const [enviandoEmail, setEnviandoEmail] = useState(null); // ID del usuario al que se está enviando
   const [eliminandoUsuario, setEliminandoUsuario] = useState(null); // ID del usuario que se está eliminando
   const [busquedaPendientes, setBusquedaPendientes] = useState(""); // Búsqueda por nombre o documento
+
+  // Estados para filtros adicionales
+  const [filtroIpress, setFiltroIpress] = useState(""); // Filtro por IPRESS
+  const [filtroFechaDesde, setFiltroFechaDesde] = useState(""); // Filtro fecha desde
+  const [filtroFechaHasta, setFiltroFechaHasta] = useState(""); // Filtro fecha hasta
 
   // Estados para selección múltiple
   const [seleccionados, setSeleccionados] = useState(new Set());
@@ -162,23 +168,78 @@ export default function AprobacionSolicitudes() {
     }
   };
 
-  // Filtrar usuarios pendientes según búsqueda
+  // Obtener lista única de IPRESS para el filtro
+  const listaIpress = useMemo(() => {
+    const ipressSet = new Set();
+    usuariosPendientes.forEach(u => {
+      if (u.ipress) ipressSet.add(u.ipress);
+    });
+    return Array.from(ipressSet).sort();
+  }, [usuariosPendientes]);
+
+  // Filtrar usuarios pendientes según búsqueda y filtros
   const usuariosFiltrados = useMemo(() => {
-    if (!busquedaPendientes) return usuariosPendientes;
-    const term = busquedaPendientes.toLowerCase();
-    return usuariosPendientes.filter(u =>
-      (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
-      (u.username?.toLowerCase() || '').includes(term) ||
-      (u.correoPersonal?.toLowerCase() || '').includes(term) ||
-      (u.correoInstitucional?.toLowerCase() || '').includes(term) ||
-      (u.ipress?.toLowerCase() || '').includes(term)
-    );
-  }, [usuariosPendientes, busquedaPendientes]);
+    let resultados = [...usuariosPendientes];
+
+    // Filtro por búsqueda de texto
+    if (busquedaPendientes) {
+      const term = busquedaPendientes.toLowerCase();
+      resultados = resultados.filter(u =>
+        (u.nombreCompleto?.toLowerCase() || '').includes(term) ||
+        (u.username?.toLowerCase() || '').includes(term) ||
+        (u.correoPersonal?.toLowerCase() || '').includes(term) ||
+        (u.correoInstitucional?.toLowerCase() || '').includes(term) ||
+        (u.telefono?.toLowerCase() || '').includes(term) ||
+        (u.ipress?.toLowerCase() || '').includes(term)
+      );
+    }
+
+    // Filtro por IPRESS
+    if (filtroIpress) {
+      resultados = resultados.filter(u => u.ipress === filtroIpress);
+    }
+
+    // Filtro por fecha desde
+    if (filtroFechaDesde) {
+      const fechaDesde = new Date(filtroFechaDesde);
+      fechaDesde.setHours(0, 0, 0, 0);
+      resultados = resultados.filter(u => {
+        if (!u.fechaCreacion) return false;
+        const fechaUsuario = new Date(u.fechaCreacion);
+        fechaUsuario.setHours(0, 0, 0, 0);
+        return fechaUsuario >= fechaDesde;
+      });
+    }
+
+    // Filtro por fecha hasta
+    if (filtroFechaHasta) {
+      const fechaHasta = new Date(filtroFechaHasta);
+      fechaHasta.setHours(23, 59, 59, 999);
+      resultados = resultados.filter(u => {
+        if (!u.fechaCreacion) return false;
+        const fechaUsuario = new Date(u.fechaCreacion);
+        return fechaUsuario <= fechaHasta;
+      });
+    }
+
+    return resultados;
+  }, [usuariosPendientes, busquedaPendientes, filtroIpress, filtroFechaDesde, filtroFechaHasta]);
 
   // Limpiar selección cuando cambia la búsqueda o los datos
   useEffect(() => {
     setSeleccionados(new Set());
   }, [busquedaPendientes, usuariosPendientes]);
+
+  // Función para limpiar todos los filtros
+  const limpiarFiltros = () => {
+    setFiltroIpress("");
+    setFiltroFechaDesde("");
+    setFiltroFechaHasta("");
+    setBusquedaPendientes("");
+  };
+
+  // Verificar si hay filtros activos
+  const hayFiltrosActivos = filtroIpress || filtroFechaDesde || filtroFechaHasta;
 
   // Funciones de selección
   const toggleSeleccion = (idUsuario) => {
@@ -638,7 +699,7 @@ export default function AprobacionSolicitudes() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Buscar por nombre, documento o IPRESS..."
+                placeholder="Buscar por nombre, documento, teléfono o IPRESS..."
                 value={busquedaPendientes}
                 onChange={(e) => setBusquedaPendientes(e.target.value)}
                 className="w-full pl-10 pr-4 py-3 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all"
@@ -656,6 +717,85 @@ export default function AprobacionSolicitudes() {
               <p className="text-sm text-slate-500 mt-2">
                 Mostrando {usuariosFiltrados.length} de {usuariosPendientes.length} usuarios
               </p>
+            )}
+          </div>
+
+          {/* Filtros Adicionales */}
+          <div className="bg-white rounded-2xl shadow-md border border-slate-200 p-4">
+            <div className="flex items-center gap-3 mb-4">
+              <Filter className="w-5 h-5 text-slate-600" />
+              <h3 className="text-sm font-semibold text-slate-700">Filtros Avanzados</h3>
+              {hayFiltrosActivos && (
+                <button
+                  onClick={limpiarFiltros}
+                  className="ml-auto text-sm text-orange-600 hover:text-orange-700 font-medium flex items-center gap-1"
+                >
+                  <X className="w-4 h-4" />
+                  Limpiar filtros
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Filtro por IPRESS */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-2">
+                  <Building2 className="w-4 h-4 inline mr-1" />
+                  IPRESS
+                </label>
+                <select
+                  value={filtroIpress}
+                  onChange={(e) => setFiltroIpress(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all text-sm"
+                >
+                  <option value="">Todas las IPRESS</option>
+                  {listaIpress.map((ipress) => (
+                    <option key={ipress} value={ipress}>
+                      {ipress}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por fecha desde */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-2">
+                  <Calendar className="w-4 h-4 inline mr-1" />
+                  Fecha Desde
+                </label>
+                <input
+                  type="date"
+                  value={filtroFechaDesde}
+                  onChange={(e) => setFiltroFechaDesde(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all text-sm"
+                />
+              </div>
+
+              {/* Filtro por fecha hasta */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-2">
+                  <Calendar className="w-4 h-4 inline mr-1" />
+                  Fecha Hasta
+                </label>
+                <input
+                  type="date"
+                  value={filtroFechaHasta}
+                  onChange={(e) => setFiltroFechaHasta(e.target.value)}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all text-sm"
+                />
+              </div>
+            </div>
+
+            {/* Indicador de resultados filtrados */}
+            {hayFiltrosActivos && (
+              <div className="mt-4 pt-4 border-t border-slate-200">
+                <p className="text-sm text-slate-600">
+                  Mostrando <span className="font-semibold text-orange-600">{usuariosFiltrados.length}</span> de <span className="font-semibold">{usuariosPendientes.length}</span> usuarios
+                  {filtroIpress && <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">IPRESS: {filtroIpress}</span>}
+                  {filtroFechaDesde && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Desde: {new Date(filtroFechaDesde).toLocaleDateString('es-PE')}</span>}
+                  {filtroFechaHasta && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Hasta: {new Date(filtroFechaHasta).toLocaleDateString('es-PE')}</span>}
+                </p>
+              </div>
             )}
           </div>
 
@@ -748,6 +888,9 @@ export default function AprobacionSolicitudes() {
                         Documento
                       </th>
                       <th className="px-4 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                        Teléfono
+                      </th>
+                      <th className="px-4 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
                         IPRESS
                       </th>
                       <th className="px-4 py-4 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">
@@ -798,6 +941,14 @@ export default function AprobacionSolicitudes() {
                         </td>
                         <td className="px-4 py-4">
                           <span className="text-sm text-slate-600 font-mono">{usuario.username}</span>
+                        </td>
+                        <td className="px-4 py-4">
+                          <div className="flex items-center gap-2">
+                            <Phone className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                            <span className="text-sm text-slate-600" title={usuario.telefono || 'Sin teléfono'}>
+                              {usuario.telefono || <span className="text-slate-400 italic">Sin teléfono</span>}
+                            </span>
+                          </div>
                         </td>
                         <td className="px-4 py-4">
                           <div className="flex items-center gap-2">
