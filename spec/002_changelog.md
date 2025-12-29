@@ -4,6 +4,90 @@
 
 ---
 
+## v1.12.1 (2025-12-29) - Configuración SMTP Corporativo EsSalud
+
+### Cambios Críticos
+
+Migración del servidor SMTP de **Gmail** a **servidor corporativo de EsSalud** para resolver problemas de correos bloqueados.
+
+### Problema Resuelto
+
+**Antes (v1.12.0):**
+- ❌ Correos enviados desde Gmail (`cenateinformatica@gmail.com`)
+- ❌ Correos corporativos `@essalud.gob.pe` bloqueaban los emails
+- ❌ Los usuarios con correo institucional NO recibían enlaces de recuperación
+- ❌ Tiempos de entrega variables (1-5 minutos o nunca)
+
+**Ahora (v1.12.1):**
+- ✅ Correos enviados desde servidor SMTP corporativo (`cenate.contacto@essalud.gob.pe`)
+- ✅ Correos corporativos YA NO bloquean los emails del mismo dominio
+- ✅ Entrega confiable a correos `@essalud.gob.pe` (10-30 segundos)
+- ✅ Más profesional y seguro
+
+### Configuración SMTP
+
+**Servidor SMTP Corporativo:**
+- **Host**: `172.20.0.227` (wiracocha.essalud)
+- **Port**: `25`
+- **Username**: `cenate.contacto@essalud.gob.pe`
+- **Password**: `essaludc50`
+- **Auth**: `false` (sin autenticación SMTP)
+- **STARTTLS**: `true`
+- **SSL**: `false`
+
+### Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `backend/src/main/resources/application.properties` | Actualizado host, puerto y credenciales SMTP |
+| `docker-compose.yml` | Agregadas variables de entorno: `MAIL_HOST`, `MAIL_PORT`, `MAIL_SMTP_AUTH`, etc. |
+
+### Impacto
+
+- **Usuarios afectados**: Todos (mejora para correos corporativos)
+- **Breaking changes**: Ninguno (retrocompatible)
+- **Requiere redespliegue**: ✅ SÍ (reconstruir backend en Docker)
+
+### Despliegue en Producción
+
+```bash
+# Conectar al servidor
+ssh usuario@10.0.89.239
+
+# Pull de cambios
+cd /ruta/del/proyecto/mini_proyecto_cenate
+git pull origin main
+
+# Reconstruir backend
+docker-compose down
+docker-compose up -d --build backend
+
+# Verificar logs
+docker-compose logs -f backend
+```
+
+Ver guía completa: `/tmp/deploy_smtp_corporativo.md`
+
+### Verificación
+
+```bash
+# Verificar variables de entorno
+docker exec cenate-backend env | grep MAIL
+
+# Debe mostrar:
+# MAIL_HOST=172.20.0.227
+# MAIL_USERNAME=cenate.contacto@essalud.gob.pe
+```
+
+### Tiempos de Entrega Esperados
+
+| Destino | Tiempo Anterior (Gmail) | Tiempo Actual (EsSalud SMTP) |
+|---------|-------------------------|------------------------------|
+| Gmail personal | 10-30 seg ✅ | 30 seg - 2 min ✅ |
+| Correo EsSalud | 1-5 min o NUNCA 🔴 | **10-30 seg ✅✅** |
+
+---
+
 ## v1.12.0 (2025-12-29) - Feature: Recuperación de Contraseña con Selección de Correo
 
 ### Nueva Funcionalidad

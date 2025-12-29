@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.12.0** (2025-12-29)
+> Sistema de Telemedicina - EsSalud | **v1.12.1** (2025-12-29)
 
 ---
 
@@ -73,9 +73,14 @@ DB_PASSWORD=Essalud2025
 # JWT (minimo 32 caracteres)
 JWT_SECRET=your-secure-key-at-least-32-characters
 
-# Email SMTP
-MAIL_USERNAME=cenateinformatica@gmail.com
-MAIL_PASSWORD=nolq uisr fwdw zdly
+# Email SMTP (Servidor Corporativo EsSalud) - v1.12.1
+MAIL_HOST=172.20.0.227
+MAIL_PORT=25
+MAIL_USERNAME=cenate.contacto@essalud.gob.pe
+MAIL_PASSWORD=essaludc50
+MAIL_SMTP_AUTH=false
+MAIL_SMTP_STARTTLS=true
+MAIL_SMTP_SSL=false
 
 # Frontend URL
 FRONTEND_URL=http://localhost:3000
@@ -154,9 +159,14 @@ environment:
   JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   JWT_EXPIRATION: 86400000
 
-  # Email SMTP (OBLIGATORIO)
-  MAIL_USERNAME: cenateinformatica@gmail.com
-  MAIL_PASSWORD: nolq uisr fwdw zdly
+  # Email SMTP (Servidor Corporativo EsSalud) - v1.12.1
+  MAIL_HOST: 172.20.0.227
+  MAIL_PORT: 25
+  MAIL_USERNAME: cenate.contacto@essalud.gob.pe
+  MAIL_PASSWORD: essaludc50
+  MAIL_SMTP_AUTH: false
+  MAIL_SMTP_STARTTLS: true
+  MAIL_SMTP_SSL: false
 
   # Frontend URL (para enlaces en emails de recuperacion de contrasena)
   FRONTEND_URL: http://10.0.89.239

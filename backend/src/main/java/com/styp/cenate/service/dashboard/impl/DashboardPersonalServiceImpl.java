@@ -54,7 +54,8 @@ public class DashboardPersonalServiceImpl implements DashboardPersonalService {
 
         for (Object[] row : resultadosConteo) {
             String origen = (String) row[0];
-            Long total = ((BigInteger) row[1]).longValue();
+            // Directamente cast a Number para manejar tanto Long como BigInteger
+            Long total = ((Number) row[1]).longValue();
 
             if ("INTERNO".equals(origen)) {
                 totalInterno = total;
@@ -99,9 +100,10 @@ public class DashboardPersonalServiceImpl implements DashboardPersonalService {
         Long totalRedesConExternos = 0L;
 
         for (Object[] row : resultadosPorRed) {
-            Long idRed = ((BigInteger) row[0]).longValue();
+            // Directamente cast a Number para manejar tanto Long como BigInteger
+            Long idRed = ((Number) row[0]).longValue();
             String nombreRed = (String) row[1];
-            Long totalUsuarios = ((BigInteger) row[2]).longValue();
+            Long totalUsuarios = ((Number) row[2]).longValue();
 
             // Calcular porcentaje respecto al total de externos
             Double porcentaje = totalExterno > 0

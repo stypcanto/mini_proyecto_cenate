@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.12.0",
-  name: "Recuperación de Contraseña con Selección de Correo",
+  number: "1.12.1",
+  name: "Configuración SMTP Corporativo EsSalud",
   date: "2025-12-29",
-  description: "Feature: Flujo inteligente de recuperación de contraseña. El usuario ingresa su DNI, el sistema muestra sus correos registrados (personal/corporativo) y el usuario elige dónde recibir el enlace."
+  description: "Migración del servidor SMTP de Gmail a servidor corporativo de EsSalud (172.20.0.227). Los correos ahora se envían desde cenate.contacto@essalud.gob.pe, resolviendo problemas de bloqueo a correos corporativos."
 };
 
 export const APP_INFO = {

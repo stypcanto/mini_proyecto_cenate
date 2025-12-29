@@ -25,9 +25,14 @@ services:
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
 
-      # 📧 Email SMTP
-      MAIL_USERNAME: ${MAIL_USERNAME:-cenateinformatica@gmail.com}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-nolq uisr fwdw zdly}
+      # 📧 Email SMTP (Servidor Corporativo EsSalud)
+      MAIL_HOST: ${MAIL_HOST:-172.20.0.227}
+      MAIL_PORT: ${MAIL_PORT:-25}
+      MAIL_USERNAME: ${MAIL_USERNAME:-cenate.contacto@essalud.gob.pe}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-essaludc50}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-true}
+      MAIL_SMTP_SSL: ${MAIL_SMTP_SSL:-false}
 
       # 🔗 Frontend URL (para enlaces en emails de recuperación de contraseña)
       FRONTEND_URL: ${FRONTEND_URL:-http://10.0.89.239}
