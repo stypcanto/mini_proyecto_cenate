@@ -6,37 +6,33 @@
 // ========================================================================
 
 // ✅ Función para obtener la URL base del API
-// Detecta automáticamente basándose en la URL actual si no hay variable de entorno válida
+// En producción con nginx: usa /api (relativo) para que nginx haga proxy
+// En desarrollo: usa http://localhost:8080/api
 const getApiBaseUrl = () => {
-  // Si hay variable de entorno configurada, validar que sea una URL completa
+  // Si hay variable de entorno configurada, usarla directamente
   if (process.env.REACT_APP_API_URL) {
     let url = process.env.REACT_APP_API_URL.trim();
-    
-    // Validar que sea una URL completa (debe empezar con http:// o https://)
+
+    // URL relativa como /api - VÁLIDA para producción con nginx proxy
+    if (url.startsWith('/')) {
+      console.log('✅ Usando URL relativa (nginx proxy):', url);
+      return url;
+    }
+
+    // URL completa (http:// o https://)
     if (url.startsWith('http://') || url.startsWith('https://')) {
       // Asegurar que termine con /api si no lo tiene
       if (!url.endsWith('/api')) {
         url = url.endsWith('/') ? url + 'api' : url + '/api';
       }
       return url;
-    } else {
-      // Si no es una URL completa (solo /api o similar), ignorarla y usar detección automática
-      console.warn('⚠️ REACT_APP_API_URL no es una URL completa. Usando detección automática desde window.location');
     }
   }
 
-  // Si no hay variable de entorno válida, detectar automáticamente desde window.location
+  // Fallback: detección automática para desarrollo local
   if (typeof window !== 'undefined' && window.location) {
-    const protocol = window.location.protocol; // http: o https:
-    const hostname = window.location.hostname; // localhost, 10.0.89.239, etc.
-    const port = window.location.port; // 3000, 80, etc.
-    
-    // Si estamos en el mismo servidor (mismo hostname), usar puerto 8080 para el backend
-    if (port && port !== '8080') {
-      return `${protocol}//${hostname}:8080/api`;
-    }
-    
-    // Si no hay puerto o es el puerto 80, asumir que el backend está en el mismo dominio
+    const protocol = window.location.protocol;
+    const hostname = window.location.hostname;
     return `${protocol}//${hostname}:8080/api`;
   }
 

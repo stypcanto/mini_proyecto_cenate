@@ -25,6 +25,10 @@ services:
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
 
+      # 📧 Email SMTP
+      MAIL_USERNAME: ${MAIL_USERNAME:-cenateinformatica@gmail.com}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-nolq uisr fwdw zdly}
+
       # 🌍 Zona horaria
       TZ: America/Lima
     ports:
