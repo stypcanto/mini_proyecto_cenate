@@ -29,6 +29,9 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-cenateinformatica@gmail.com}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-nolq uisr fwdw zdly}
 
+      # 🔗 Frontend URL (para enlaces en emails de recuperación de contraseña)
+      FRONTEND_URL: ${FRONTEND_URL:-http://10.0.89.239}
+
       # 🌍 Zona horaria
       TZ: America/Lima
     ports:

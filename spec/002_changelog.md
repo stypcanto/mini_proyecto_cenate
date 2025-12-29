@@ -4,6 +4,443 @@
 
 ---
 
+## v1.12.0 (2025-12-29) - Feature: Recuperación de Contraseña con Selección de Correo
+
+### Nueva Funcionalidad
+
+Flujo inteligente de recuperación de contraseña que permite al usuario **elegir a qué correo** (personal o corporativo) desea recibir el enlace de recuperación.
+
+### Problema Anterior
+
+**Antes (v1.11.2 y anteriores):**
+- ❌ El usuario debía escribir manualmente su correo electrónico
+- ❌ No sabía qué correo tenía registrado en el sistema
+- ❌ Si se equivocaba al escribir, no recibía el enlace
+- ❌ No podía elegir entre correo personal o corporativo
+- ❌ Mala experiencia de usuario
+
+### Solución Implementada
+
+**Ahora (v1.12.0):**
+- ✅ **Paso 1:** Usuario ingresa su DNI
+- ✅ **Paso 2:** Sistema muestra los correos registrados (personal y/o corporativo)
+- ✅ Usuario **elige** a qué correo desea recibir el enlace
+- ✅ Interfaz visual intuitiva con radio buttons
+- ✅ Correos enmascarados para seguridad (`st***06@gmail.com`)
+- ✅ Indicador de progreso (Paso 1 → Paso 2)
+
+### Flujo de Usuario
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                   PANTALLA DE LOGIN                              │
+│                                                                  │
+│  Usuario hace clic en "Olvidé mi contraseña"                    │
+│                           ↓                                      │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │          PASO 1: Ingresar DNI                           │    │
+│  │  ┌──────────────────────────────────────────────┐      │    │
+│  │  │  DNI: [44914706________________]  [Continuar]│      │    │
+│  │  └──────────────────────────────────────────────┘      │    │
+│  └────────────────────────────────────────────────────────┘    │
+│                           ↓                                      │
+│  Backend consulta: GET /api/sesion/correos-disponibles/44914706 │
+│                           ↓                                      │
+│  ┌────────────────────────────────────────────────────────┐    │
+│  │          PASO 2: Seleccionar Correo                     │    │
+│  │                                                          │    │
+│  │  👤 NOMBRE USUARIO                                       │    │
+│  │  DNI: 44914706                                           │    │
+│  │                                                          │    │
+│  │  Selecciona dónde recibir el enlace:                    │    │
+│  │                                                          │    │
+│  │  ⚪ Correo Personal                                      │    │
+│  │     st***06@gmail.com                                    │    │
+│  │                                                          │    │
+│  │  ⚪ Correo Institucional                                 │    │
+│  │     styp.***do@essalud.gob.pe                           │    │
+│  │                                                          │    │
+│  │  [Volver]  [Enviar enlace]                              │    │
+│  └────────────────────────────────────────────────────────┘    │
+│                           ↓                                      │
+│  Backend envía email: POST /api/sesion {username, email}        │
+│                           ↓                                      │
+│  ✅ "Se ha enviado un enlace a: st***06@gmail.com"             │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Cambios Técnicos
+
+**Backend:**
+
+1. **Nuevo endpoint:** `GET /api/sesion/correos-disponibles/{username}`
+   - Busca usuario en PersonalCnt y PersonalExterno
+   - Retorna correos disponibles (personal y corporativo)
+   - Enmascara correos para seguridad
+   - Incluye nombre completo del usuario
+
+2. **Endpoint modificado:** `POST /api/sesion` (retrocompatible)
+   - **Flujo nuevo:** Acepta `{username, email}` → valida que el email pertenezca al usuario
+   - **Flujo antiguo:** Acepta `{email}` → busca por correo (retrocompatibilidad)
+   - Envía enlace al correo específico seleccionado
+   - Usa `passwordTokenService.crearTokenYEnviarEmail(idUsuario, email, "RECUPERACION")`
+
+**Frontend:**
+
+1. **ForgotPasswordModal.jsx** - Rediseño completo:
+   - Flujo de 2 pasos (DNI → Selección de correo)
+   - Indicador visual de progreso
+   - Radio buttons para selección de correo
+   - Muestra nombre completo del usuario
+   - Correos enmascarados para seguridad
+   - Pre-selección del correo personal por defecto
+   - Botón "Volver" para regresar al paso 1
+
+### Archivos Modificados
+
+**Backend:**
+- `backend/src/main/java/com/styp/cenate/api/sesion/SesionController.java`
+  - Nuevo método `obtenerCorreosDisponibles()` (líneas 163-267)
+  - Método `recuperar()` modificado para soportar nuevo flujo (líneas 48-251)
+
+**Frontend:**
+- `frontend/src/components/modals/ForgotPasswordModal.jsx`
+  - Rediseño completo con flujo de 2 pasos
+  - Nuevos estados: `paso`, `username`, `correosDisponibles`, `correoSeleccionado`
+  - Nuevos handlers: `handleBuscarCorreos()`, `handleEnviarEnlace()`, `handleVolver()`
+  - UI mejorada con indicador de progreso y radio buttons
+
+**Documentación:**
+- `frontend/src/config/version.js` - v1.12.0
+- `CLAUDE.md` - v1.12.0
+- `spec/002_changelog.md` - Esta entrada
+
+### Validaciones de Seguridad
+
+✅ **Usuario no encontrado:** Mensaje claro "No se encontró ningún usuario con ese DNI"
+✅ **Sin correos registrados:** Alerta al usuario que contacte al administrador
+✅ **Correo no coincide:** Valida que el email seleccionado pertenezca al username
+✅ **Enmascaramiento:** Correos parcialmente ocultos (`st***06@gmail.com`)
+✅ **Idempotencia:** Previene solicitudes duplicadas con mismo token
+✅ **Retrocompatibilidad:** Flujo antiguo (solo email) sigue funcionando
+
+### Beneficios
+
+📱 **Mejor UX:** Usuario no necesita recordar o escribir su email
+🔒 **Más seguro:** Validación de que el email pertenece al usuario
+⚡ **Más rápido:** Solo 2 pasos (DNI → Seleccionar → Listo)
+🎯 **Mayor control:** Usuario elige a qué correo recibir el enlace
+✅ **Retrocompatible:** No rompe flujos existentes
+
+### Casos de Uso
+
+**Caso 1: Usuario con solo correo personal**
+```
+DNI: 44914706
+→ Muestra: ⚫ Correo Personal (pre-seleccionado)
+```
+
+**Caso 2: Usuario con ambos correos**
+```
+DNI: 44914706
+→ Muestra: ⚪ Correo Personal
+          ⚪ Correo Institucional
+→ Usuario elige el que prefiera
+```
+
+**Caso 3: Usuario sin correos registrados**
+```
+DNI: 12345678
+→ Error: "El usuario no tiene correos registrados. Contacte al administrador."
+```
+
+### Testing Recomendado
+
+1. ✅ Probar con DNI válido que tenga ambos correos
+2. ✅ Probar con DNI que solo tenga correo personal
+3. ✅ Probar con DNI que solo tenga correo corporativo
+4. ✅ Probar con DNI inexistente (debe dar error claro)
+5. ✅ Verificar enmascaramiento de correos
+6. ✅ Confirmar que el email llega al correo seleccionado
+7. ✅ Probar botón "Volver" y flujo de 2 pasos
+8. ✅ Verificar retrocompatibilidad (flujo antiguo aún funciona)
+
+---
+
+## v1.11.2 (2025-12-29) - Fix: URL de Recuperación de Contraseña en Producción
+
+### Problema Corregido
+
+**Síntoma:**
+- ❌ Enlaces de recuperación de contraseña enviados por email apuntaban a `localhost:3000/cambiar-contrasena?token=...`
+- ❌ En producción, los usuarios recibían error `ERR_CONNECTION_REFUSED` al hacer clic en el enlace
+- ❌ Los emails no funcionaban fuera del entorno de desarrollo
+
+**Causa raíz:**
+La variable de entorno `FRONTEND_URL` no estaba configurada en el archivo `docker-compose.yml`, por lo que el backend usaba el valor por defecto `http://localhost:3000` definido en `application.properties`.
+
+### Solución Implementada
+
+**Agregado `FRONTEND_URL` a docker-compose.yml:**
+```yaml
+# docker-compose.yml - servicio backend
+environment:
+  # 🔗 Frontend URL (para enlaces en emails de recuperación de contraseña)
+  FRONTEND_URL: ${FRONTEND_URL:-http://10.0.89.239}
+```
+
+**Ahora:**
+- ✅ Los enlaces de recuperación usan la URL de producción correcta
+- ✅ Usuarios pueden restablecer contraseña desde cualquier dispositivo
+- ✅ Configurable mediante variable de entorno o valor por defecto
+- ✅ Compatible con múltiples entornos (dev, staging, producción)
+
+### Archivos Modificados
+
+**Infraestructura:**
+- `docker-compose.yml`
+  - Agregada variable `FRONTEND_URL: ${FRONTEND_URL:-http://10.0.89.239}`
+  - Comentario explicativo
+
+**Documentación:**
+- `CLAUDE.md`
+  - Actualizada sección "Variables de Entorno - Backend (Docker)"
+  - Agregado FRONTEND_URL a la documentación
+  - Versión actualizada a v1.11.2
+
+- `frontend/src/config/version.js` - v1.11.2
+- `spec/002_changelog.md` - Esta entrada
+
+### Archivos de Referencia (sin cambios)
+
+Estos archivos ya tenían el soporte correcto:
+- `backend/src/main/resources/application.properties:139`
+  - `app.frontend.url=${FRONTEND_URL:http://localhost:3000}`
+- `backend/src/main/java/com/styp/cenate/service/security/PasswordTokenService.java:34-35`
+  - `@Value("${app.frontend.url:http://localhost:3000}")`
+  - `private String frontendUrl;`
+- Línea 183: `String enlace = frontendUrl + "/cambiar-contrasena?token=" + tokenValue;`
+
+### Cómo Aplicar el Fix en Producción
+
+```bash
+# 1. Detener contenedores actuales
+docker-compose down
+
+# 2. Reconstruir solo el backend (opcional, no hay cambios en código)
+# docker-compose build backend
+
+# 3. Levantar con nueva configuración
+docker-compose up -d
+
+# 4. Verificar que la variable se leyó correctamente
+docker-compose logs backend | grep -i "frontend"
+```
+
+**Alternativa: Cambiar la IP de producción**
+
+Si tu servidor de producción NO es `10.0.89.239`, puedes:
+
+```bash
+# Opción 1: Exportar variable de entorno antes de docker-compose up
+export FRONTEND_URL=http://TU_IP_PRODUCCION
+docker-compose up -d
+
+# Opción 2: Editar el valor por defecto en docker-compose.yml
+FRONTEND_URL: ${FRONTEND_URL:-http://TU_IP_PRODUCCION}
+```
+
+### Impacto
+
+- **Usuarios afectados:** Todos los que requieran restablecer contraseña
+- **Severidad:** ALTA (bloqueaba funcionalidad crítica en producción)
+- **Tipo de cambio:** Configuración
+- **Requiere rebuild:** No (solo restart con nueva config)
+- **Backward compatible:** Sí
+
+### Testing Recomendado
+
+1. ✅ Probar "Enviar correo de recuperación" desde panel de admin
+2. ✅ Verificar que el enlace en el email use la IP/dominio de producción
+3. ✅ Hacer clic en el enlace y confirmar que abre la página de cambio de contraseña
+4. ✅ Completar el flujo de cambio de contraseña
+
+---
+
+## v1.11.1 (2025-12-29) - Feature: Filtro en Cascada RED → IPRESS
+
+### Nueva Funcionalidad
+
+Implementación de filtro en cascada para gestión de usuarios: primero se selecciona la **Red Asistencial** y luego solo se muestran las **IPRESS** que pertenecen a esa red y tienen usuarios asignados.
+
+### Características
+
+**Filtro de RED Asistencial:**
+- Selector dropdown con todas las redes disponibles (solo redes con usuarios)
+- Posicionado ANTES del filtro de IPRESS
+- Al seleccionar una red, automáticamente filtra las IPRESS disponibles
+- Color morado para distinguirlo visualmente
+
+**Filtro de IPRESS mejorado:**
+- Solo muestra IPRESS de la red seleccionada
+- Si no hay red seleccionada, muestra todas las IPRESS
+- Filtrado dinámico en tiempo real
+
+**Comportamiento en cascada:**
+- Al cambiar la RED, el filtro de IPRESS se resetea automáticamente
+- Las listas se generan dinámicamente según los usuarios existentes
+- Performance optimizada con `useMemo`
+
+### Ejemplo de Uso
+
+```
+1. Usuario abre "Filtros Avanzados"
+2. Selecciona "RED ASISTENCIAL AREQUIPA"
+   → Dropdown de IPRESS se actualiza mostrando solo:
+     - HOSPITAL GOYENECHE
+     - HOSPITAL HONORIO DELGADO
+     - POLICLINICO METROPOLITANO
+3. Selecciona "HOSPITAL GOYENECHE"
+4. Resultado: Solo usuarios de ese hospital en Arequipa
+```
+
+### Archivos Modificados
+
+**Frontend:**
+- `frontend/src/pages/user/UsersManagement.jsx`
+  - Agregado estado `filters.red`
+  - Nueva función `getRedesListFromUsers()`
+  - Nuevo `useMemo` para `redesList`
+  - Filtro de RED en `ipressList`
+  - Pasado `redesList` a FiltersPanel
+
+- `frontend/src/pages/user/components/FiltersPanel.jsx`
+  - Agregado parámetro `redesList`
+  - Nuevo selector de RED (color morado, icono Building2)
+  - Grid ampliado a 4 columnas: RED | IPRESS | Fecha Desde | Fecha Hasta
+  - Lógica de reseteo automático de IPRESS al cambiar RED
+  - Actualizado contador y badges de filtros activos
+
+- `frontend/src/config/version.js` - v1.11.1
+
+### Datos Utilizados
+
+El backend YA envía la información necesaria en `UsuarioResponse.java`:
+- `id_red` (Long)
+- `nombre_red` (String)
+- `codigo_red` (String)
+
+No se requieren cambios en el backend.
+
+### Beneficios
+
+✅ **Mejor UX**: Navegación más intuitiva para encontrar usuarios por ubicación
+✅ **Filtrado inteligente**: Solo muestra opciones con usuarios reales
+✅ **Performance**: Listas dinámicas calculadas eficientemente
+✅ **Consistencia**: Sigue el diseño visual existente
+✅ **Escalable**: Fácil de mantener y extender
+
+---
+
+## v1.11.0 (2025-12-29) - Feature: Selección de Correo para Reenvío de Activación
+
+### Nueva Funcionalidad
+
+Los administradores ahora pueden reenviar el correo de activación a usuarios pendientes, seleccionando explícitamente el tipo de correo (personal o corporativo) al que desean enviarlo.
+
+### Problema Solucionado
+
+**Antes:**
+- ❌ El sistema reenviaba automáticamente al correo personal (fallback a corporativo)
+- ❌ No había control sobre el destino del correo
+- ❌ Si un correo estaba bloqueado/lleno, no se podía intentar con el otro
+
+**Ahora:**
+- ✅ Modal elegante muestra ambos correos disponibles
+- ✅ Admin elige explícitamente a qué correo enviar
+- ✅ Opciones deshabilitadas si el correo no está registrado
+- ✅ Mayor flexibilidad y control
+
+### Características
+
+**Backend:**
+- **Endpoint modificado:** `POST /api/admin/usuarios/{id}/reenviar-activacion`
+  - Acepta body opcional: `{ "tipoCorreo": "PERSONAL" | "CORPORATIVO" }`
+  - Sin body: comportamiento por defecto (prioriza personal)
+- **Lógica en `AccountRequestService.reenviarEmailActivacion()`:**
+  ```java
+  if ("CORPORATIVO".equalsIgnoreCase(tipoCorreo)) {
+      email = (emailCorp != null) ? emailCorp : emailPers;
+  } else if ("PERSONAL".equalsIgnoreCase(tipoCorreo)) {
+      email = (emailPers != null) ? emailPers : emailCorp;
+  } else {
+      email = (emailPers != null) ? emailPers : emailCorp; // Default
+  }
+  ```
+- **Validaciones:**
+  - Usuario debe existir
+  - Usuario debe estar pendiente (`requiere_cambio_password = true`)
+  - Usuario debe tener al menos un correo registrado
+  - Fallback automático si el correo solicitado no existe
+
+**Frontend - Modal de Selección:**
+- **Ubicación:** `AprobacionSolicitudes.jsx` → Tab "Pendientes de Activación"
+- **Diseño:**
+  - Título: "Seleccionar Tipo de Correo"
+  - Muestra nombre completo del usuario
+  - Dos tarjetas interactivas grandes:
+    - **Correo Personal:** Fondo azul gradiente, icono de sobre
+    - **Correo Corporativo:** Fondo verde gradiente, icono de edificio
+  - Tarjetas deshabilitadas (gris) si el correo no está registrado
+- **Funcionalidad:**
+  - Estado `modalTipoCorreo` controla apertura/cierre
+  - Función `abrirModalTipoCorreo(usuario)` pre-carga datos del usuario
+  - Función `reenviarEmailActivacion(tipoCorreo)` envía petición con tipo elegido
+  - Botón "Cancelar" para cerrar sin enviar
+
+### Casos de Uso
+
+| Caso | Comportamiento |
+|------|----------------|
+| Usuario tiene ambos correos | Admin elige cuál usar libremente |
+| Usuario solo tiene correo personal | Opción corporativa deshabilitada en gris |
+| Usuario solo tiene correo corporativo | Opción personal deshabilitada en gris |
+| Usuario sin ningún correo | Botón de reenvío deshabilitado desde la tabla |
+| Admin selecciona PERSONAL | Envía a correo personal, fallback a corporativo |
+| Admin selecciona CORPORATIVO | Envía a correo corporativo, fallback a personal |
+
+### Beneficios
+
+1. **🎯 Flexibilidad:** Admin decide el mejor canal según contexto
+2. **🔄 Redundancia:** Si un correo falla/rebota, puede intentar con el otro
+3. **👁️ Transparencia:** Muestra claramente qué correos tiene registrados el usuario
+4. **✨ UX Mejorada:** Modal visualmente atractivo y fácil de usar
+5. **🛡️ Seguro:** Solo SUPERADMIN y ADMIN pueden usar esta función
+
+### Archivos Modificados
+
+**Backend:**
+- `backend/src/main/java/com/styp/cenate/api/seguridad/SolicitudRegistroController.java`
+  - Endpoint acepta body opcional con `tipoCorreo`
+- `backend/src/main/java/com/styp/cenate/service/solicitud/AccountRequestService.java`
+  - Método `reenviarEmailActivacion()` ahora recibe parámetro `tipoCorreo`
+  - Lógica de selección según tipo solicitado con fallback
+
+**Frontend:**
+- `frontend/src/pages/admin/AprobacionSolicitudes.jsx`
+  - Estado `modalTipoCorreo` agregado
+  - Función `abrirModalTipoCorreo()` agregada
+  - Función `reenviarEmailActivacion()` modificada para enviar tipo
+  - Modal de selección completo (120+ líneas de JSX)
+- `frontend/src/config/version.js` - v1.11.0
+
+### Documentación
+
+- CLAUDE.md: Sección "Reenvío de Correo de Activación con Selección de Tipo"
+- Ubicación: Después de "Recuperación de Contraseña con Selección de Correo"
+
+---
+
 ## v1.10.4 (2025-12-29) - Fix: Vista de Auditoría Completa
 
 ### Problema Resuelto

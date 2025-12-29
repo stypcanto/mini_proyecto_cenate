@@ -11,6 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../lib/apiClient";
 import auditoriaService from "../services/auditoriaService";
+import dashboardPersonalService from "../services/dashboardPersonalService";
 import {
   Users,
   Shield,
@@ -31,6 +32,11 @@ import {
   WifiOff,
   Cpu,
   MemoryStick,
+  UserCheck,
+  UserX,
+  X,
+  TrendingUp,
+  Building2,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -50,6 +56,11 @@ export default function AdminDashboard() {
   const [systemHealth, setSystemHealth] = useState(null);
   const [loadingHealth, setLoadingHealth] = useState(true);
   const [healthError, setHealthError] = useState(null);
+
+  // Estados para estadísticas de personal
+  const [estadisticasPersonal, setEstadisticasPersonal] = useState(null);
+  const [loadingPersonal, setLoadingPersonal] = useState(true);
+  const [modalExternos, setModalExternos] = useState(false);
 
   // ============================================================
   // 📦 Cargar estadísticas (OPTIMIZADO - Usa endpoint de conteos)
@@ -134,6 +145,25 @@ export default function AdminDashboard() {
     // Actualizar cada 30 segundos
     const interval = setInterval(loadSystemHealth, 30000);
     return () => clearInterval(interval);
+  }, []);
+
+  // ============================================================
+  // 👥 Cargar estadísticas de personal
+  // ============================================================
+  useEffect(() => {
+    const loadEstadisticasPersonal = async () => {
+      setLoadingPersonal(true);
+      try {
+        const data = await dashboardPersonalService.obtenerEstadisticasPersonal();
+        setEstadisticasPersonal(data);
+      } catch (error) {
+        console.error("Error cargando estadísticas de personal:", error);
+        setEstadisticasPersonal(null);
+      } finally {
+        setLoadingPersonal(false);
+      }
+    };
+    loadEstadisticasPersonal();
   }, []);
 
   // ============================================================
@@ -455,6 +485,109 @@ export default function AdminDashboard() {
             <p className="text-sm text-gray-500">{item.label}</p>
           </div>
         ))}
+      </div>
+
+      {/* Estadísticas de Personal: Interno vs Externo */}
+      <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
+        <Users className="w-6 h-6 text-[#0A5BA9]" /> Distribución de Personal
+      </h2>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        {/* Card Personal Interno (CENATE) */}
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-3xl p-8 border-2 border-blue-200 shadow-lg hover:shadow-2xl transition-all duration-300">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-4 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-md">
+                <UserCheck className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Personal Interno</h3>
+                <p className="text-sm text-gray-600">CENATE</p>
+              </div>
+            </div>
+            {!loadingPersonal && estadisticasPersonal && (
+              <div className="text-right">
+                <p className="text-4xl font-bold text-blue-600">
+                  {estadisticasPersonal.totalInterno}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {estadisticasPersonal.porcentajeInterno?.toFixed(1)}% del total
+                </p>
+              </div>
+            )}
+          </div>
+          {loadingPersonal ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              <p className="ml-3 text-gray-500">Cargando...</p>
+            </div>
+          ) : (
+            <div className="mt-4">
+              {/* Barra de progreso visual */}
+              <div className="relative h-3 bg-blue-200 rounded-full overflow-hidden">
+                <div
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full transition-all duration-1000 shadow-md"
+                  style={{ width: `${estadisticasPersonal?.porcentajeInterno || 0}%` }}
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Personal que trabaja directamente en CENATE
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Card Personal Externo (Otras IPRESS) */}
+        <div
+          onClick={() => !loadingPersonal && estadisticasPersonal && setModalExternos(true)}
+          className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-3xl p-8 border-2 border-green-200 shadow-lg hover:shadow-2xl transition-all duration-300 cursor-pointer hover:scale-[1.02] hover:-translate-y-1"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-3">
+              <div className="p-4 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl shadow-md">
+                <Building2 className="w-8 h-8 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">Personal Externo</h3>
+                <p className="text-sm text-gray-600">Otras IPRESS</p>
+              </div>
+            </div>
+            {!loadingPersonal && estadisticasPersonal && (
+              <div className="text-right">
+                <p className="text-4xl font-bold text-green-600">
+                  {estadisticasPersonal.totalExterno}
+                </p>
+                <p className="text-sm text-gray-500 mt-1">
+                  {estadisticasPersonal.porcentajeExterno?.toFixed(1)}% del total
+                </p>
+              </div>
+            )}
+          </div>
+          {loadingPersonal ? (
+            <div className="flex items-center justify-center py-6">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+              <p className="ml-3 text-gray-500">Cargando...</p>
+            </div>
+          ) : (
+            <div className="mt-4">
+              {/* Barra de progreso visual */}
+              <div className="relative h-3 bg-green-200 rounded-full overflow-hidden">
+                <div
+                  className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-500 to-green-600 rounded-full transition-all duration-1000 shadow-md"
+                  style={{ width: `${estadisticasPersonal?.porcentajeExterno || 0}%` }}
+                />
+              </div>
+              <div className="flex items-center justify-between mt-3">
+                <p className="text-xs text-gray-500">
+                  {estadisticasPersonal?.totalRedesConExternos || 0} redes con usuarios
+                </p>
+                <div className="flex items-center gap-1 text-green-600 text-sm font-medium">
+                  <span>Ver desglose</span>
+                  <TrendingUp className="w-4 h-4" />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Módulos principales */}
@@ -889,6 +1022,124 @@ export default function AdminDashboard() {
           ) : null}
         </div>
       </div>
+
+      {/* Modal: Desglose por Red (Personal Externo) */}
+      {modalExternos && estadisticasPersonal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-[var(--bg-primary)] rounded-3xl shadow-2xl w-11/12 max-w-5xl max-h-[90vh] overflow-hidden">
+            {/* Header del Modal */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Building2 className="w-8 h-8" />
+                  <div>
+                    <h2 className="text-2xl font-bold">Personal Externo por Red</h2>
+                    <p className="text-sm text-green-100 mt-1">
+                      {estadisticasPersonal.totalExterno} usuarios en {estadisticasPersonal.totalRedesConExternos} redes asistenciales
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModalExternos(false)}
+                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+              {/* Resumen */}
+              <div className="grid grid-cols-3 gap-4 mb-6">
+                <div className="bg-green-50 rounded-2xl p-4 text-center border border-green-200">
+                  <p className="text-3xl font-bold text-green-600">
+                    {estadisticasPersonal.totalExterno}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Total Usuarios</p>
+                </div>
+                <div className="bg-blue-50 rounded-2xl p-4 text-center border border-blue-200">
+                  <p className="text-3xl font-bold text-blue-600">
+                    {estadisticasPersonal.totalRedesConExternos}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Redes Activas</p>
+                </div>
+                <div className="bg-purple-50 rounded-2xl p-4 text-center border border-purple-200">
+                  <p className="text-3xl font-bold text-purple-600">
+                    {(estadisticasPersonal.totalExterno / estadisticasPersonal.totalRedesConExternos).toFixed(1)}
+                  </p>
+                  <p className="text-sm text-gray-600 mt-1">Promedio por Red</p>
+                </div>
+              </div>
+
+              {/* Lista de Redes con Barras Visuales */}
+              <div className="space-y-4">
+                <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                  <BarChart3 className="w-5 h-5 text-green-600" />
+                  Distribución por Red Asistencial
+                </h3>
+
+                {estadisticasPersonal.estadisticasPorRed && estadisticasPersonal.estadisticasPorRed.length > 0 ? (
+                  estadisticasPersonal.estadisticasPorRed.map((red, index) => (
+                    <div
+                      key={red.idRed}
+                      className="bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      {/* Header de la Red */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center w-8 h-8 bg-green-600 text-white rounded-full font-bold text-sm">
+                            {index + 1}
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-800 dark:text-gray-200">
+                              {red.nombreRed}
+                            </h4>
+                            <p className="text-xs text-gray-500">ID: {red.idRed}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-green-600">
+                            {red.totalUsuarios}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {red.porcentaje?.toFixed(1)}% del total
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Barra de Progreso Visual */}
+                      <div className="relative h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                        <div
+                          className="absolute top-0 left-0 h-full bg-gradient-to-r from-green-400 to-green-600 rounded-full transition-all duration-1000 shadow-inner"
+                          style={{ width: `${red.porcentaje || 0}%` }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-end pr-2">
+                          <span className="text-xs font-semibold text-white drop-shadow-md">
+                            {red.totalUsuarios} usuarios
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-center py-12 text-gray-500">
+                    <Building2 className="w-16 h-16 mx-auto mb-3 text-gray-300" />
+                    <p>No hay datos de redes disponibles</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer del Modal */}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 text-center">
+                  Última actualización: {new Date().toLocaleString('es-PE')}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

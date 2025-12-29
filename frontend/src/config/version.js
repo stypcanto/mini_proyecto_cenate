@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.10.4",
-  name: "Vista de Auditoria Completa",
+  number: "1.12.0",
+  name: "Recuperación de Contraseña con Selección de Correo",
   date: "2025-12-29",
-  description: "Fix: Vista de auditoria ahora muestra TODOS los modulos (2732 registros vs 530 anteriores). Eventos de usuarios, autenticacion y solicitudes ahora visibles."
+  description: "Feature: Flujo inteligente de recuperación de contraseña. El usuario ingresa su DNI, el sistema muestra sus correos registrados (personal/corporativo) y el usuario elige dónde recibir el enlace."
 };
 
 export const APP_INFO = {

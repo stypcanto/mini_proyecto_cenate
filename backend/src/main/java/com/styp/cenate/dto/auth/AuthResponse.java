@@ -18,5 +18,6 @@ public class AuthResponse {
     private List<String> roles;
     private List<String> permisos;
     private Boolean requiereCambioPassword; // 🔑 Debe cambiar contraseña y actualizar datos
+    private String sessionId;  // 🆕 ID de la sesión activa
     private String message;
 }

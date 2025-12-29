@@ -76,6 +76,7 @@ const UsersManagement = () => {
     estado: '',
     mesCumpleanos: '',
     area: '',
+    red: '',          // 🆕 Filtro de RED Asistencial
     ipress: '',
     fechaRegistroDesde: '',
     fechaRegistroHasta: ''
@@ -106,6 +107,35 @@ const UsersManagement = () => {
     filtersRef.current = filters;
     searchTermRef.current = searchTerm;
   }, [filters, searchTerm]);
+
+  // ============================================================
+  // 🔧 FUNCIÓN AUXILIAR: Generar lista de REDES de usuarios filtrados
+  // ============================================================
+  const getRedesListFromUsers = useCallback((usersList) => {
+    const redesMap = new Map();
+
+    usersList.forEach(user => {
+      const nombreRed = user.nombre_red;
+      const idRed = user.id_red;
+
+      // Solo agregar si tiene nombre de RED válido
+      if (nombreRed && nombreRed.trim() !== '') {
+        if (!redesMap.has(nombreRed)) {
+          redesMap.set(nombreRed, {
+            id_red: idRed,
+            nombre_red: nombreRed
+          });
+        }
+      }
+    });
+
+    // Convertir a array y ordenar alfabéticamente
+    return Array.from(redesMap.values()).sort((a, b) => {
+      const nameA = (a.nombre_red || '').toUpperCase();
+      const nameB = (b.nombre_red || '').toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, []);
 
   // ============================================================
   // 🔧 FUNCIÓN AUXILIAR: Generar lista de IPRESS de usuarios filtrados
@@ -139,7 +169,76 @@ const UsersManagement = () => {
   }, []);
 
   // ============================================================
-  // 🚀 LISTA DE IPRESS: Dinámica según filtros activos (SIN filtro de IPRESS)
+  // 🚀 LISTA DE REDES: Dinámica según filtros activos (SIN filtro de RED ni IPRESS)
+  // ============================================================
+  const redesList = useMemo(() => {
+    const baseUsers = allUsersForFilters.length > 0 ? allUsersForFilters : users;
+
+    // Aplicar TODOS los filtros EXCEPTO el filtro de RED e IPRESS
+    let usuariosParaRedes = [...baseUsers];
+
+    // 🔍 Búsqueda general
+    if (searchTerm && searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim();
+      usuariosParaRedes = usuariosParaRedes.filter(user => {
+        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
+        const username = (user.username || '').toLowerCase();
+        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
+        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
+        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
+        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
+
+        return nombreCompleto.includes(searchLower) ||
+               username.includes(searchLower) ||
+               numeroDocumento.includes(searchLower) ||
+               nombreIpress.includes(searchLower) ||
+               emailPersonal.includes(searchLower) ||
+               emailCorporativo.includes(searchLower);
+      });
+    }
+
+    // Aplicar filtros de rol, tipo, estado, mes, área, fechas...
+    if (filters.rol && filters.rol !== '') {
+      usuariosParaRedes = usuariosParaRedes.filter(user => {
+        if (!user.roles || !Array.isArray(user.roles)) return false;
+        return user.roles.some(rol => rol === filters.rol);
+      });
+    }
+
+    if (filters.institucion && filters.institucion !== '') {
+      usuariosParaRedes = usuariosParaRedes.filter(user => {
+        const idIpress = user.id_ipress || user.idIpress;
+        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toUpperCase();
+
+        if (filters.institucion === 'Interno') {
+          return idIpress === 2 || nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
+        } else if (filters.institucion === 'Externo') {
+          return idIpress && idIpress !== 2 && !nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
+        }
+        return true;
+      });
+    }
+
+    if (filters.estado && filters.estado !== '') {
+      usuariosParaRedes = usuariosParaRedes.filter(user => {
+        const estadoUsuario = user.estado_usuario || user.statPers || '';
+        return estadoUsuario.toUpperCase() === filters.estado.toUpperCase();
+      });
+    }
+
+    if (filters.area && filters.area !== '') {
+      usuariosParaRedes = usuariosParaRedes.filter(user => {
+        const areaUsuario = user.nombre_area || user.nombreArea || user.desc_area || user.descArea || user.area_trabajo || user.areaTrabajo || user.area || '';
+        return areaUsuario.toUpperCase().includes(filters.area.toUpperCase());
+      });
+    }
+
+    // Generar lista de REDES de los usuarios filtrados
+    return getRedesListFromUsers(usuariosParaRedes);
+  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.area, getRedesListFromUsers]);
+
+  // ============================================================
+  // 🚀 LISTA DE IPRESS: Dinámica según filtros activos (SIN filtro de IPRESS, pero CON filtro de RED)
   // ============================================================
   const ipressList = useMemo(() => {
     // 🔧 Usar allUsersForFilters si está disponible, si no, usar users
@@ -238,6 +337,14 @@ const UsersManagement = () => {
       });
     }
 
+    // 🔍 Filtro por RED Asistencial (🆕 NUEVO - Filtro en cascada)
+    if (filters.red && filters.red !== '') {
+      usuariosParaIpress = usuariosParaIpress.filter(user => {
+        const nombreRed = user.nombre_red || '';
+        return nombreRed.toUpperCase() === filters.red.toUpperCase();
+      });
+    }
+
     // 🔍 Filtro por Fecha de Registro (Desde)
     if (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') {
       const fechaDesde = new Date(filters.fechaRegistroDesde);
@@ -299,7 +406,7 @@ const UsersManagement = () => {
 
     // Generar lista de IPRESS de los usuarios filtrados
     return getIpressListFromUsers(usuariosParaIpress);
-  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.fechaRegistroDesde, filters.fechaRegistroHasta, getIpressListFromUsers]);
+  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.fechaRegistroDesde, filters.fechaRegistroHasta, getIpressListFromUsers]);
 
   // ============================================================
   // 🔧 FUNCIÓN AUXILIAR: Aplicar filtros a una lista de usuarios
@@ -1081,6 +1188,7 @@ const UsersManagement = () => {
             setViewMode={setViewMode}
             roles={roles}
             areas={areas}
+            redesList={redesList}
             ipressList={ipressList}
             onRefresh={handleRefresh}
           />

@@ -70,6 +70,24 @@ public class AuditLog {
     @Column(name = "duracion_ms")
     private Long duracionMs;
 
+    /** 🔍 ID del registro afectado por la acción */
+    @Column(name = "id_afectado")
+    private Long idAfectado;
+
+    /** 📦 Datos previos del registro antes de la modificación (JSON) */
+    @Column(name = "datos_previos", columnDefinition = "jsonb", nullable = true)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    private String datosPrevios;
+
+    /** 📦 Datos nuevos del registro después de la modificación (JSON) */
+    @Column(name = "datos_nuevos", columnDefinition = "jsonb", nullable = true)
+    @org.hibernate.annotations.JdbcTypeCode(org.hibernate.type.SqlTypes.JSON)
+    private String datosNuevos;
+
+    /** 🔐 Hash SHA-256 de integridad para detectar manipulación */
+    @Column(name = "hash_integridad", length = 64)
+    private String hashIntegridad;
+
     /**
      * Inicializa valores por defecto antes de persistir
      */

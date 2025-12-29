@@ -80,4 +80,58 @@ public interface AuditLogRepository extends JpaRepository<AuditLog, Long> {
             @Param("fechaFin") LocalDateTime fechaFin,
             Pageable pageable
     );
+
+    // ============================================================
+    // 🚨 MÉTODOS PARA DETECCIÓN DE ANOMALÍAS
+    // ============================================================
+
+    /**
+     * Cuenta logs de un usuario con una acción específica después de una fecha
+     * Usado para: detección de brute force (LOGIN_FAILED)
+     */
+    long countByUsuarioAndActionAndFechaHoraAfter(
+            String usuario, String action, LocalDateTime fechaHora);
+
+    /**
+     * Busca logs de un usuario con una acción específica después de una fecha
+     */
+    List<AuditLog> findByUsuarioAndActionAndFechaHoraAfter(
+            String usuario, String action, LocalDateTime fechaHora);
+
+    /**
+     * Cuenta logs de un usuario con acción que contiene un texto después de una fecha
+     * Usado para: detección de exportaciones masivas (action LIKE '%EXPORT%')
+     */
+    long countByUsuarioAndActionContainingAndFechaHoraAfter(
+            String usuario, String actionContaining, LocalDateTime fechaHora);
+
+    /**
+     * Cuenta logs de un usuario con acciones específicas después de una fecha
+     * Usado para: detección de cambios de permisos sospechosos
+     */
+    @Query("SELECT COUNT(a) FROM AuditLog a WHERE a.usuario = :usuario " +
+           "AND a.action IN :actions AND a.fechaHora > :fechaHora")
+    long countByUsuarioAndActionInAndFechaHoraAfter(
+            @Param("usuario") String usuario,
+            @Param("actions") List<String> actions,
+            @Param("fechaHora") LocalDateTime fechaHora);
+
+    /**
+     * Cuenta total de acciones de un usuario después de una fecha
+     * Usado para: detección de actividad inusual
+     */
+    long countByUsuarioAndFechaHoraAfter(String usuario, LocalDateTime fechaHora);
+
+    /**
+     * Obtiene lista de usuarios únicos con actividad después de una fecha
+     * Usado para: análisis automático del sistema
+     */
+    @Query("SELECT DISTINCT a.usuario FROM AuditLog a WHERE a.fechaHora > :fechaHora")
+    List<String> findDistinctUsuariosByFechaHoraAfter(@Param("fechaHora") LocalDateTime fechaHora);
+
+    /**
+     * Busca logs en un rango de fechas (sin paginación)
+     * Usado para: verificación de integridad de logs
+     */
+    List<AuditLog> findByFechaHoraBetween(LocalDateTime inicio, LocalDateTime fin);
 }

@@ -37,6 +37,13 @@ export default function AprobacionSolicitudes() {
   const [estadisticas, setEstadisticas] = useState({});
   const [modalRechazo, setModalRechazo] = useState({ open: false, solicitudId: null });
   const [motivoRechazo, setMotivoRechazo] = useState("");
+  const [modalTipoCorreo, setModalTipoCorreo] = useState({
+    open: false,
+    idUsuario: null,
+    nombreCompleto: "",
+    correoPersonal: "",
+    correoCorporativo: ""
+  });
 
   // Estados para usuarios pendientes de activación
   const [vistaActual, setVistaActual] = useState("solicitudes"); // "solicitudes" o "pendientes-activacion"
@@ -120,18 +127,33 @@ export default function AprobacionSolicitudes() {
     }
   };
 
-  // Reenviar email de activación a un usuario
-  const reenviarEmailActivacion = async (idUsuario, nombreCompleto) => {
-    if (!window.confirm(`¿Desea reenviar el correo de activación a ${nombreCompleto}?`)) {
-      return;
-    }
+  // Abrir modal de selección de tipo de correo
+  const abrirModalTipoCorreo = (usuario) => {
+    setModalTipoCorreo({
+      open: true,
+      idUsuario: usuario.idUsuario,
+      nombreCompleto: usuario.nombreCompleto,
+      correoPersonal: usuario.correoPersonal || "",
+      correoCorporativo: usuario.correoInstitucional || ""
+    });
+  };
+
+  // Reenviar email de activación a un usuario con tipo de correo específico
+  const reenviarEmailActivacion = async (tipoCorreo) => {
+    const { idUsuario, nombreCompleto } = modalTipoCorreo;
 
     try {
       setEnviandoEmail(idUsuario);
-      const response = await apiClient.post(`/admin/usuarios/${idUsuario}/reenviar-activacion`, {}, true);
+      setModalTipoCorreo({ ...modalTipoCorreo, open: false });
+
+      const response = await apiClient.post(
+        `/admin/usuarios/${idUsuario}/reenviar-activacion`,
+        { tipoCorreo },
+        true
+      );
 
       if (response.success) {
-        toast.success("Correo de activación reenviado exitosamente");
+        toast.success(`Correo de activación enviado exitosamente a ${tipoCorreo === "PERSONAL" ? "correo personal" : "correo corporativo"}`);
       } else {
         toast.error(response.error || "No se pudo enviar el correo");
       }
@@ -140,6 +162,13 @@ export default function AprobacionSolicitudes() {
       toast.error(error.message || "Error al reenviar el correo de activación");
     } finally {
       setEnviandoEmail(null);
+      setModalTipoCorreo({
+        open: false,
+        idUsuario: null,
+        nombreCompleto: "",
+        correoPersonal: "",
+        correoCorporativo: ""
+      });
     }
   };
 
@@ -980,7 +1009,7 @@ export default function AprobacionSolicitudes() {
                         <td className="px-4 py-4 text-center">
                           <div className="flex items-center justify-center gap-2">
                             <button
-                              onClick={() => reenviarEmailActivacion(usuario.idUsuario, usuario.nombreCompleto)}
+                              onClick={() => abrirModalTipoCorreo(usuario)}
                               disabled={enviandoEmail === usuario.idUsuario || (!usuario.correoPersonal && !usuario.correoInstitucional)}
                               className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                                 enviandoEmail === usuario.idUsuario
@@ -1055,6 +1084,91 @@ export default function AprobacionSolicitudes() {
                 className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
               >
                 Confirmar Rechazo
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Selección de Tipo de Correo */}
+      {modalTipoCorreo.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <Mail className="w-8 h-8 text-orange-600" />
+              <h3 className="text-xl font-bold text-slate-800">Seleccionar Tipo de Correo</h3>
+            </div>
+
+            <p className="text-slate-600 mb-6">
+              ¿A qué correo desea reenviar el enlace de activación para <span className="font-semibold">{modalTipoCorreo.nombreCompleto}</span>?
+            </p>
+
+            <div className="space-y-3">
+              {/* Opción: Correo Personal */}
+              {modalTipoCorreo.correoPersonal ? (
+                <button
+                  onClick={() => reenviarEmailActivacion("PERSONAL")}
+                  className="w-full flex items-start gap-3 p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-xl hover:shadow-md transition-all group"
+                >
+                  <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Mail className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-blue-900 text-sm">Correo Personal</p>
+                    <p className="text-blue-700 text-xs mt-0.5 break-all">{modalTipoCorreo.correoPersonal}</p>
+                  </div>
+                </button>
+              ) : (
+                <div className="w-full flex items-start gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-xl opacity-60 cursor-not-allowed">
+                  <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Mail className="w-5 h-5 text-gray-500" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-gray-500 text-sm">Correo Personal</p>
+                    <p className="text-gray-400 text-xs mt-0.5">No registrado</p>
+                  </div>
+                </div>
+              )}
+
+              {/* Opción: Correo Corporativo */}
+              {modalTipoCorreo.correoCorporativo ? (
+                <button
+                  onClick={() => reenviarEmailActivacion("CORPORATIVO")}
+                  className="w-full flex items-start gap-3 p-4 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-xl hover:shadow-md transition-all group"
+                >
+                  <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                    <Building2 className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-green-900 text-sm">Correo Corporativo</p>
+                    <p className="text-green-700 text-xs mt-0.5 break-all">{modalTipoCorreo.correoCorporativo}</p>
+                  </div>
+                </button>
+              ) : (
+                <div className="w-full flex items-start gap-3 p-4 bg-gray-50 border-2 border-gray-200 rounded-xl opacity-60 cursor-not-allowed">
+                  <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Building2 className="w-5 h-5 text-gray-500" />
+                  </div>
+                  <div className="flex-1 text-left">
+                    <p className="font-semibold text-gray-500 text-sm">Correo Corporativo</p>
+                    <p className="text-gray-400 text-xs mt-0.5">No registrado</p>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-6">
+              <button
+                onClick={() => setModalTipoCorreo({
+                  open: false,
+                  idUsuario: null,
+                  nombreCompleto: "",
+                  correoPersonal: "",
+                  correoCorporativo: ""
+                })}
+                className="w-full px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 transition-colors font-medium"
+              >
+                Cancelar
               </button>
             </div>
           </div>

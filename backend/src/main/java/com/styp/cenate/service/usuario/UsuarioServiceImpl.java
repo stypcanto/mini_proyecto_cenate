@@ -1926,4 +1926,120 @@ public class UsuarioServiceImpl implements UsuarioService {
 		resultado.put("detalle", detalle);
 		return List.of(resultado);
 	}
+
+	// =============================================================
+	// 🔑 GESTIÓN DE ROLES CON AUDITORÍA
+	// =============================================================
+
+	/**
+	 * Asigna un rol a un usuario con auditoría completa
+	 *
+	 * @param idUsuario ID del usuario
+	 * @param idRol ID del rol a asignar
+	 * @throws EntityNotFoundException si el usuario o rol no existe
+	 * @throws IllegalStateException si el usuario ya tiene el rol
+	 */
+	@Transactional
+	public void asignarRol(Long idUsuario, Long idRol) {
+		// Buscar usuario
+		Usuario usuario = usuarioRepository.findById(idUsuario)
+				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + idUsuario));
+
+		// Buscar rol
+		Rol rol = rolRepository.findById(idRol.intValue())
+				.orElseThrow(() -> new EntityNotFoundException("Rol no encontrado con ID: " + idRol));
+
+		// Verificar si ya tiene el rol
+		if (usuario.getRoles().contains(rol)) {
+			throw new IllegalStateException("El usuario ya tiene el rol: " + rol.getDescRol());
+		}
+
+		// Asignar rol
+		usuario.getRoles().add(rol);
+		usuarioRepository.save(usuario);
+
+		// Obtener nombre completo del usuario para auditoría
+		String nombreCompleto = obtenerNombreCompleto(usuario);
+
+		// 🔒 AUDITORÍA
+		auditar(
+			"ASSIGN_ROLE",
+			String.format("Rol '%s' asignado a usuario %s (%s - ID: %d)",
+				rol.getDescRol(),
+				usuario.getNameUser(),
+				nombreCompleto,
+				idUsuario
+			),
+			"WARNING",  // Cambio de permisos es crítico
+			"SUCCESS"
+		);
+
+		log.info("✅ Rol '{}' asignado a usuario '{}' (ID: {})", rol.getDescRol(), usuario.getNameUser(), idUsuario);
+	}
+
+	/**
+	 * Remueve un rol de un usuario con auditoría completa
+	 *
+	 * @param idUsuario ID del usuario
+	 * @param idRol ID del rol a remover
+	 * @throws EntityNotFoundException si el usuario o rol no existe
+	 * @throws IllegalStateException si el usuario no tiene el rol
+	 */
+	@Transactional
+	public void removerRol(Long idUsuario, Long idRol) {
+		// Buscar usuario
+		Usuario usuario = usuarioRepository.findById(idUsuario)
+				.orElseThrow(() -> new EntityNotFoundException("Usuario no encontrado con ID: " + idUsuario));
+
+		// Buscar rol
+		Rol rol = rolRepository.findById(idRol.intValue())
+				.orElseThrow(() -> new EntityNotFoundException("Rol no encontrado con ID: " + idRol));
+
+		// Verificar que el usuario tenga el rol
+		if (!usuario.getRoles().contains(rol)) {
+			throw new IllegalStateException("El usuario no tiene el rol: " + rol.getDescRol());
+		}
+
+		// Validar que no se quite el último rol
+		if (usuario.getRoles().size() <= 1) {
+			throw new IllegalStateException("No se puede remover el único rol del usuario. El usuario debe tener al menos un rol.");
+		}
+
+		// Remover rol
+		usuario.getRoles().remove(rol);
+		usuarioRepository.save(usuario);
+
+		// Obtener nombre completo del usuario para auditoría
+		String nombreCompleto = obtenerNombreCompleto(usuario);
+
+		// 🔒 AUDITORÍA
+		auditar(
+			"REMOVE_ROLE",
+			String.format("Rol '%s' removido de usuario %s (%s - ID: %d)",
+				rol.getDescRol(),
+				usuario.getNameUser(),
+				nombreCompleto,
+				idUsuario
+			),
+			"WARNING",  // Cambio de permisos es crítico
+			"SUCCESS"
+		);
+
+		log.info("✅ Rol '{}' removido de usuario '{}' (ID: {})", rol.getDescRol(), usuario.getNameUser(), idUsuario);
+	}
+
+	/**
+	 * Helper para obtener nombre completo del usuario
+	 */
+	private String obtenerNombreCompleto(Usuario usuario) {
+		if (usuario.getPersonalCnt() != null) {
+			PersonalCnt p = usuario.getPersonalCnt();
+			return String.format("%s %s %s",
+				p.getNomPers() != null ? p.getNomPers() : "",
+				p.getApePaterPers() != null ? p.getApePaterPers() : "",
+				p.getApeMaterPers() != null ? p.getApeMaterPers() : ""
+			).trim();
+		}
+		return "N/A";
+	}
 }

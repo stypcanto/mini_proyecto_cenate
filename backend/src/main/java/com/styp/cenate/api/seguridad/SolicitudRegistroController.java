@@ -150,11 +150,18 @@ public class SolicitudRegistroController {
      */
     @PostMapping("/admin/usuarios/{idUsuario}/reenviar-activacion")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
-    public ResponseEntity<?> reenviarEmailActivacion(@PathVariable Long idUsuario) {
+    public ResponseEntity<?> reenviarEmailActivacion(
+            @PathVariable Long idUsuario,
+            @RequestBody(required = false) Map<String, String> body) {
         try {
-            log.info("Reenviando email de activación a usuario ID: {}", idUsuario);
+            // Obtener tipo de correo del body (PERSONAL o CORPORATIVO)
+            // Si no se especifica, se usará el comportamiento por defecto (priorizar personal)
+            String tipoCorreo = body != null ? body.get("tipoCorreo") : null;
 
-            boolean enviado = accountRequestService.reenviarEmailActivacion(idUsuario);
+            log.info("Reenviando email de activación a usuario ID: {} - Tipo: {}",
+                    idUsuario, tipoCorreo != null ? tipoCorreo : "DEFAULT");
+
+            boolean enviado = accountRequestService.reenviarEmailActivacion(idUsuario, tipoCorreo);
 
             if (enviado) {
                 return ResponseEntity.ok(Map.of(

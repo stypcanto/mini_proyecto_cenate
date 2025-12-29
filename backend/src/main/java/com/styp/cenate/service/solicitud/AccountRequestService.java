@@ -521,10 +521,12 @@ public class AccountRequestService {
 
     /**
      * Reenvía el email de activación a un usuario específico
+     * @param idUsuario ID del usuario
+     * @param tipoCorreo Tipo de correo a usar: "PERSONAL", "CORPORATIVO", o null (usa personal prioritariamente)
      */
     @Transactional
-    public boolean reenviarEmailActivacion(Long idUsuario) {
-        log.info("Reenviando email de activación a usuario ID: {}", idUsuario);
+    public boolean reenviarEmailActivacion(Long idUsuario, String tipoCorreo) {
+        log.info("Reenviando email de activación a usuario ID: {} - Tipo: {}", idUsuario, tipoCorreo);
 
         Usuario usuario = usuarioRepository.findById(idUsuario)
                 .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
@@ -553,7 +555,21 @@ public class AccountRequestService {
 
             String emailPers = (String) result.get("email_pers");
             String emailCorp = (String) result.get("email_corp_pers");
-            email = (emailPers != null && !emailPers.isBlank()) ? emailPers : emailCorp;
+
+            // Seleccionar el correo según el tipo solicitado
+            if ("CORPORATIVO".equalsIgnoreCase(tipoCorreo)) {
+                // Usuario solicita explícitamente correo corporativo
+                email = (emailCorp != null && !emailCorp.isBlank()) ? emailCorp : emailPers;
+                log.info("Usando correo CORPORATIVO prioritariamente");
+            } else if ("PERSONAL".equalsIgnoreCase(tipoCorreo)) {
+                // Usuario solicita explícitamente correo personal
+                email = (emailPers != null && !emailPers.isBlank()) ? emailPers : emailCorp;
+                log.info("Usando correo PERSONAL prioritariamente");
+            } else {
+                // Comportamiento por defecto: priorizar personal
+                email = (emailPers != null && !emailPers.isBlank()) ? emailPers : emailCorp;
+                log.info("Usando correo por defecto (prioridad PERSONAL)");
+            }
 
             String nombres = (String) result.get("nom_pers");
             String apePat = (String) result.get("ape_pater_pers");
@@ -565,14 +581,14 @@ public class AccountRequestService {
                     apeMat != null ? apeMat : ""
             ).trim();
 
-            log.info("Datos obtenidos - Email: {}, Nombre: {}", email, nombreCompleto);
+            log.info("Datos obtenidos - Email seleccionado: {}, Nombre: {}", email, nombreCompleto);
 
         } catch (Exception e) {
             log.warn("No se encontró personal para usuario ID: {} - {}", idUsuario, e.getMessage());
         }
 
         if (email == null || email.isBlank()) {
-            throw new RuntimeException("El usuario no tiene correo electrónico registrado");
+            throw new RuntimeException("El usuario no tiene correo electrónico registrado del tipo solicitado");
         }
 
         if (nombreCompleto == null || nombreCompleto.isBlank()) {

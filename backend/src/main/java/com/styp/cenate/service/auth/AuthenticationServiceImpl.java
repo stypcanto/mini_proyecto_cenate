@@ -40,6 +40,8 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuthenticationManager authenticationManager;
     private final PermisosService permisosService;
     private final AuditLogService auditLogService;
+    private final com.styp.cenate.service.session.SessionService sessionService;
+    private final com.styp.cenate.util.RequestContextUtil requestContextUtil;
 
     // =========================================================
     // 🔐 LOGIN MBAC
@@ -104,6 +106,24 @@ public class AuthenticationServiceImpl implements AuthenticationService {
 
         String token = jwtService.generateToken(claims, userDetails);
 
+        // 🆕 REGISTRAR SESIÓN ACTIVA
+        String sessionId = null;
+        try {
+            com.styp.cenate.util.RequestContextUtil.AuditContext context =
+                com.styp.cenate.util.RequestContextUtil.getAuditContext();
+
+            sessionId = sessionService.registrarNuevaSesion(
+                user.getIdUser(),
+                user.getNameUser(),
+                context.getIp(),
+                context.getUserAgent()
+            );
+
+            log.info("✅ Sesión registrada: {} para usuario: {}", sessionId, user.getNameUser());
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo registrar la sesión: {}", e.getMessage());
+        }
+
         // Registrar auditoría
         try {
             auditLogService.registrarEvento(
@@ -126,6 +146,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .roles(roles)
                 .permisos(null)
                 .requiereCambioPassword(user.getRequiereCambioPassword() != null ? user.getRequiereCambioPassword() : false)  // 🔑 Flag de primer acceso
+                .sessionId(sessionId)  // 🆕 ID de sesión para tracking
                 .message("Inicio de sesión exitoso")
                 .build();
     }

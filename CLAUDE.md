@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.10.4** (2025-12-29)
+> Sistema de Telemedicina - EsSalud | **v1.12.0** (2025-12-29)
 
 ---
 
@@ -157,6 +157,9 @@ environment:
   # Email SMTP (OBLIGATORIO)
   MAIL_USERNAME: cenateinformatica@gmail.com
   MAIL_PASSWORD: nolq uisr fwdw zdly
+
+  # Frontend URL (para enlaces en emails de recuperacion de contrasena)
+  FRONTEND_URL: http://10.0.89.239
 
   # Zona horaria
   TZ: America/Lima
@@ -505,6 +508,133 @@ tail -100 /ruta/logs/backend.log | grep -i "mail\|smtp\|email"
 ### Documentacion Relacionada
 
 - Changelog v1.10.2: `spec/002_changelog.md`
+
+---
+
+## Reenvio de Correo de Activacion con Seleccion de Tipo
+
+### Descripcion
+
+Los administradores pueden reenviar el correo de activación a usuarios pendientes, seleccionando el tipo de correo (personal o corporativo) al que desean enviarlo.
+
+### Flujo de Uso
+
+```
+Admin → Solicitudes → Pendientes de Activación
+                ↓
+    Clic en botón "Reenviar Correo" (icono sobre)
+                ↓
+    Modal pregunta: ¿A qué correo enviar?
+                ↓
+    Admin selecciona: [Correo Personal] o [Correo Corporativo]
+                ↓
+    POST /api/admin/usuarios/{id}/reenviar-activacion
+    Body: { "tipoCorreo": "PERSONAL" | "CORPORATIVO" }
+                ↓
+    AccountRequestService.reenviarEmailActivacion(id, tipoCorreo)
+                ↓
+    Email enviado al correo seleccionado
+```
+
+### Endpoint API
+
+```java
+POST /api/admin/usuarios/{idUsuario}/reenviar-activacion
+
+// Body (opcional):
+{
+  "tipoCorreo": "PERSONAL" | "CORPORATIVO"
+}
+
+// Comportamiento:
+// - "PERSONAL": Envía a correo personal, fallback a corporativo
+// - "CORPORATIVO": Envía a correo corporativo, fallback a personal
+// - Sin especificar: Comportamiento por defecto (prioriza personal)
+```
+
+### Componentes Frontend
+
+**AprobacionSolicitudes.jsx:**
+- Estado `modalTipoCorreo` para controlar el modal de selección
+- Función `abrirModalTipoCorreo(usuario)` - Abre modal con datos del usuario
+- Función `reenviarEmailActivacion(tipoCorreo)` - Envía petición con tipo seleccionado
+- Modal elegante con dos opciones:
+  - **Correo Personal** (fondo azul, icono de sobre)
+  - **Correo Corporativo** (fondo verde, icono de edificio)
+- Opciones deshabilitadas si el correo no está registrado
+
+### Lógica Backend
+
+**AccountRequestService.reenviarEmailActivacion():**
+
+```java
+public boolean reenviarEmailActivacion(Long idUsuario, String tipoCorreo) {
+    // Obtener emails del usuario desde dim_personal_cnt
+    String emailPers = result.get("email_pers");
+    String emailCorp = result.get("email_corp_pers");
+
+    // Seleccionar según tipo solicitado
+    if ("CORPORATIVO".equalsIgnoreCase(tipoCorreo)) {
+        email = (emailCorp != null) ? emailCorp : emailPers;
+    } else if ("PERSONAL".equalsIgnoreCase(tipoCorreo)) {
+        email = (emailPers != null) ? emailPers : emailCorp;
+    } else {
+        // Default: priorizar personal
+        email = (emailPers != null) ? emailPers : emailCorp;
+    }
+
+    // Enviar email de activación
+    return passwordTokenService.crearTokenYEnviarEmailDirecto(
+        usuario, email, nombreCompleto, "BIENVENIDO");
+}
+```
+
+### Validaciones
+
+1. **Usuario debe existir** - `Usuario.findById()`
+2. **Usuario debe estar pendiente** - `requiere_cambio_password = true`
+3. **Usuario debe tener al menos un correo** - Personal o corporativo
+4. **Tipo de correo solicitado debe estar registrado** - Si se solicita CORPORATIVO pero no existe, usa PERSONAL (fallback)
+
+### Modal de Selección
+
+El modal muestra:
+- **Título:** "Seleccionar Tipo de Correo"
+- **Nombre del usuario** al que se enviará
+- **Dos tarjetas interactivas:**
+  - Correo Personal: Fondo azul gradiente, icono de sobre
+  - Correo Corporativo: Fondo verde gradiente, icono de edificio
+- **Correos deshabilitados:** Si un correo no está registrado, se muestra en gris con mensaje "No registrado"
+- **Botón Cancelar:** Cierra el modal sin enviar
+
+### Casos de Uso
+
+| Caso | Acción |
+|------|--------|
+| Usuario tiene ambos correos | Admin elige cuál usar |
+| Usuario solo tiene correo personal | Opción corporativa deshabilitada |
+| Usuario solo tiene correo corporativo | Opción personal deshabilitada |
+| Usuario sin ningún correo | Botón de reenvío deshabilitado desde la tabla |
+
+### Seguridad
+
+- **Autorización:** Solo roles SUPERADMIN y ADMIN pueden reenviar correos
+- **Validación:** El backend valida que el usuario exista y esté pendiente
+- **Logs:** La acción se registra en auditoría (futuro)
+
+### Beneficios
+
+1. **Flexibilidad:** Admin decide el mejor canal de comunicación
+2. **Redundancia:** Si un correo falla, puede intentar con el otro
+3. **Transparencia:** Muestra claramente qué correos tiene el usuario
+4. **UX Mejorada:** Modal elegante y fácil de usar
+
+### Documentacion Relacionada
+
+- Versión: v1.11.0
+- Changelog: `spec/002_changelog.md`
+- Archivo: `frontend/src/pages/admin/AprobacionSolicitudes.jsx`
+- Backend: `AccountRequestService.java`, `SolicitudRegistroController.java`
 
 ---
 

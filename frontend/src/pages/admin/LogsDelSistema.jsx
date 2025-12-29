@@ -316,10 +316,12 @@ export default function LogsDelSistema() {
   };
 
   const exportarCSV = () => {
-    const headers = ["Fecha/Hora", "Usuario", "Módulo", "Acción", "Detalle"];
+    const headers = ["Fecha/Hora", "Usuario", "IP", "Dispositivo", "Módulo", "Acción", "Detalle"];
     const rows = logsFiltrados.map((log) => [
       formatearFecha(obtenerFecha(log)),
       obtenerNombreCompleto(log),
+      log.ip || log.ipAddress || "N/A",
+      log.dispositivo || log.userAgent || "N/A",
       log.modulo || "N/A",
       log.accion || "N/A",
       log.detalle || "N/A",
@@ -632,6 +634,12 @@ export default function LogsDelSistema() {
                     Usuario
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    IP
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
+                    Dispositivo
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
                     Módulo
                   </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">
@@ -658,6 +666,17 @@ export default function LogsDelSistema() {
                           {obtenerNombreCompleto(log)}
                         </div>
                       </td>
+                      <td className="px-6 py-4 text-sm text-slate-600">
+                        <span className="px-2 py-1 bg-emerald-100 text-emerald-800 rounded-md text-xs font-mono">
+                          {log.ip || log.ipAddress || "N/A"}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-600 max-w-xs" title={log.dispositivo || log.userAgent || "N/A"}>
+                        <span className="truncate block">
+                          {(log.dispositivo || log.userAgent || "N/A").substring(0, 40)}
+                          {(log.dispositivo || log.userAgent || "").length > 40 ? "..." : ""}
+                        </span>
+                      </td>
                       <td className="px-6 py-4 text-sm text-slate-700">
                         <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-xs font-medium">
                           {log.modulo || "N/A"}
@@ -678,7 +697,7 @@ export default function LogsDelSistema() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan="7" className="px-6 py-12 text-center text-slate-500">
                       <AlertCircle className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                       <p className="text-lg font-medium">No se encontraron logs</p>
                       <p className="text-sm">Intenta ajustar los filtros de búsqueda</p>

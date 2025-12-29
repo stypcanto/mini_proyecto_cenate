@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Filter, ChevronDown, UserPlus, X, Trash2, Download, Upload, LayoutGrid, List, Sparkles, RefreshCw, Building2, Calendar } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
-const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUser, selectedCount = 0, onDeleteSelected, viewMode, setViewMode, roles = [], areas = [], ipressList = [], onRefresh }) => {
+const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUser, selectedCount = 0, onDeleteSelected, viewMode, setViewMode, roles = [], areas = [], redesList = [], ipressList = [], onRefresh }) => {
   const { user: currentUser } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
 
@@ -18,7 +18,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
   const hasActiveFilters = Object.values(filters).some((v) => v !== '') || searchTerm;
 
   const limpiarFiltros = () => {
-    setFilters({ rol: '', institucion: '', estado: '', mesCumpleanos: '', area: '', ipress: '', fechaRegistroDesde: '', fechaRegistroHasta: '' });
+    setFilters({ rol: '', institucion: '', estado: '', mesCumpleanos: '', area: '', red: '', ipress: '', fechaRegistroDesde: '', fechaRegistroHasta: '' });
     setSearchTerm('');
   };
 
@@ -30,6 +30,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
     if (filters.estado) count++;
     if (filters.mesCumpleanos) count++;
     if (filters.area) count++;
+    if (filters.red) count++;
     if (filters.ipress) count++;
     if (filters.fechaRegistroDesde) count++;
     if (filters.fechaRegistroHasta) count++;
@@ -45,6 +46,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
     if (filters.estado) list.push({ key: 'estado', label: 'Estado', value: filters.estado });
     if (filters.mesCumpleanos) list.push({ key: 'mesCumpleanos', label: 'Mes', value: filters.mesCumpleanos });
     if (filters.area) list.push({ key: 'area', label: 'Área', value: filters.area });
+    if (filters.red) list.push({ key: 'red', label: 'Red', value: filters.red });
     if (filters.ipress) list.push({ key: 'ipress', label: 'IPRESS', value: filters.ipress });
     if (filters.fechaRegistroDesde) list.push({ key: 'fechaRegistroDesde', label: 'Desde', value: new Date(filters.fechaRegistroDesde).toLocaleDateString('es-PE') });
     if (filters.fechaRegistroHasta) list.push({ key: 'fechaRegistroHasta', label: 'Hasta', value: new Date(filters.fechaRegistroHasta).toLocaleDateString('es-PE') });
@@ -452,7 +454,45 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   <div className="h-1 w-1 rounded-full bg-orange-500"></div>
                   Filtros de Ubicación y Fecha de Registro
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {/* RED Asistencial */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-violet-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-purple-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <Building2 className="w-3.5 h-3.5 text-purple-500" strokeWidth={2.5} />
+                        Red Asistencial
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={filters.red}
+                          onChange={(e) => {
+                            // Al cambiar red, limpiar el filtro de IPRESS
+                            setFilters({ ...filters, red: e.target.value, ipress: '' });
+                          }}
+                          className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                        >
+                          <option value="">Todas las Redes</option>
+                          {redesList.map((red) => (
+                            <option key={red.id_red} value={red.nombre_red}>
+                              {red.nombre_red}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2.5} />
+                        </div>
+                      </div>
+                      {filters.red && (
+                        <div className="mt-2.5 px-2.5 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
+                          <span className="text-xs text-purple-700 font-semibold truncate block" title={filters.red}>
+                            {filters.red.length > 20 ? filters.red.substring(0, 20) + '...' : filters.red}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   {/* IPRESS */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-amber-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
