@@ -368,6 +368,11 @@ public class EmailService {
      * Método base para enviar correos HTML
      */
     private void enviarCorreoHTML(String destinatario, String asunto, String contenidoHTML) {
+        log.info("=== INICIANDO ENVÍO DE CORREO ===");
+        log.info("Destinatario: {}", destinatario);
+        log.info("Asunto: {}", asunto);
+        log.info("From: {} <{}>", fromName, fromAddress);
+
         try {
             MimeMessage mensaje = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
@@ -377,13 +382,54 @@ public class EmailService {
             helper.setSubject(asunto);
             helper.setText(contenidoHTML, true);
 
+            log.info("Mensaje preparado, enviando...");
             mailSender.send(mensaje);
-            log.info("Correo enviado exitosamente a: {}", destinatario);
+            log.info("✅ Correo enviado exitosamente a: {}", destinatario);
 
         } catch (MessagingException e) {
-            log.error("Error al enviar correo a {}: {}", destinatario, e.getMessage());
+            log.error("❌ MessagingException al enviar correo a {}: {}", destinatario, e.getMessage());
+            log.error("Causa raíz: {}", e.getCause() != null ? e.getCause().getMessage() : "N/A");
+            e.printStackTrace();
+        } catch (org.springframework.mail.MailException e) {
+            log.error("❌ MailException al enviar correo a {}: {}", destinatario, e.getMessage());
+            log.error("Causa raíz: {}", e.getCause() != null ? e.getCause().getMessage() : "N/A");
+            e.printStackTrace();
         } catch (Exception e) {
-            log.error("Error inesperado al enviar correo: {}", e.getMessage());
+            log.error("❌ Error inesperado al enviar correo a {}: {} - {}", destinatario, e.getClass().getName(), e.getMessage());
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Método de prueba para verificar conexión SMTP (síncrono)
+     */
+    public boolean probarConexionSMTP(String emailPrueba) {
+        log.info("=== PRUEBA DE CONEXIÓN SMTP ===");
+        log.info("Servidor: verificando configuración...");
+        log.info("From Address configurado: {}", fromAddress);
+        log.info("From Name configurado: {}", fromName);
+
+        try {
+            MimeMessage mensaje = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(mensaje, true, "UTF-8");
+
+            helper.setFrom(fromAddress, fromName);
+            helper.setTo(emailPrueba);
+            helper.setSubject("CENATE - Prueba de conexión SMTP");
+            helper.setText("<h1>Prueba exitosa</h1><p>Si recibes este correo, la conexión SMTP está funcionando correctamente.</p>", true);
+
+            log.info("Enviando correo de prueba a: {}", emailPrueba);
+            mailSender.send(mensaje);
+            log.info("✅ Correo de prueba enviado exitosamente");
+            return true;
+
+        } catch (Exception e) {
+            log.error("❌ Error en prueba SMTP: {} - {}", e.getClass().getName(), e.getMessage());
+            if (e.getCause() != null) {
+                log.error("Causa: {}", e.getCause().getMessage());
+            }
+            e.printStackTrace();
+            return false;
         }
     }
 }
