@@ -131,9 +131,28 @@ Frontend disponible en: **http://localhost:3000**
 
 ## Despliegue en Produccion (Docker)
 
+### ⚠️ PASOS DE INICIO (IMPORTANTE)
+
+Cada vez que reinicies la Mac o Docker, ejecutar en este orden:
+
+```bash
+# 1. Iniciar el relay SMTP (permite a Docker conectar al servidor corporativo)
+./start-smtp-relay.sh
+
+# 2. Iniciar Docker
+docker-compose up -d
+
+# 3. Verificar que todo funciona
+docker-compose ps
+docker logs cenate-backend --tail=20
+```
+
+> **¿Por qué el relay?** Docker en macOS no puede acceder directamente a la red corporativa `172.20.0.227`. El relay `socat` actúa como puente entre Docker y el servidor SMTP de EsSalud.
+
 ### Requisitos
 - Docker 20+
 - Docker Compose 2+
+- socat (`brew install socat`)
 - Acceso a PostgreSQL (10.0.89.13:5432)
 
 ### Arquitectura

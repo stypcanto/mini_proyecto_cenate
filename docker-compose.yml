@@ -25,9 +25,9 @@ services:
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
 
-      # 📧 Email SMTP (Servidor Corporativo EsSalud)
-      MAIL_HOST: ${MAIL_HOST:-172.20.0.227}
-      MAIL_PORT: ${MAIL_PORT:-25}
+      # 📧 Email SMTP (Relay via host.docker.internal → 172.20.0.227:25)
+      MAIL_HOST: ${MAIL_HOST:-host.docker.internal}
+      MAIL_PORT: ${MAIL_PORT:-2525}
       MAIL_USERNAME: ${MAIL_USERNAME:-cenate.contacto@essalud.gob.pe}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-essaludc50}
       MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
@@ -44,6 +44,9 @@ services:
     volumes:
       # 📸 Volumen para archivos subidos (EXTERNO - fuera del proyecto Docker)
       - /var/cenate-uploads:/app/uploads
+    extra_hosts:
+      # Permite al contenedor acceder a la red del host (macOS Docker Desktop)
+      - "host.docker.internal:host-gateway"
     networks:
       - cenate-net
     restart: unless-stopped

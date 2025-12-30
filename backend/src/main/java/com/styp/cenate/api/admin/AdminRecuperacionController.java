@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.styp.cenate.model.RecuperacionCuenta;
 import com.styp.cenate.repository.RecuperacionCuentaRepository;
+import com.styp.cenate.service.email.EmailService;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,6 +34,7 @@ import java.util.Map;
 public class AdminRecuperacionController {
 
     private final RecuperacionCuentaRepository recuperacionCuentaRepository;
+    private final EmailService emailService;
 
     // ============================================================
     // 📋 Obtener todas las solicitudes (opcionalmente filtrar por estado)
@@ -140,5 +142,46 @@ public class AdminRecuperacionController {
                 "message", "Solicitud eliminada correctamente",
                 "id", id
         ));
+    }
+
+    // ============================================================
+    // 🧪 Diagnóstico SMTP - Probar conexión de correo
+    // ============================================================
+    @PostMapping("/diagnostico-smtp")
+    public ResponseEntity<?> diagnosticoSMTP(@RequestBody Map<String, String> body) {
+        String emailPrueba = body.get("email");
+        if (emailPrueba == null || emailPrueba.isBlank()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "message", "Debe proporcionar un email de prueba"
+            ));
+        }
+
+        log.info("🧪 Iniciando diagnóstico SMTP - enviando a: {}", emailPrueba);
+
+        try {
+            boolean exito = emailService.probarConexionSMTP(emailPrueba);
+
+            if (exito) {
+                return ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "message", "Correo de prueba enviado exitosamente. Revise la bandeja de entrada.",
+                        "email", emailPrueba
+                ));
+            } else {
+                return ResponseEntity.status(500).body(Map.of(
+                        "success", false,
+                        "message", "Error al enviar correo. Revise los logs del servidor.",
+                        "email", emailPrueba
+                ));
+            }
+        } catch (Exception e) {
+            log.error("❌ Error en diagnóstico SMTP: {}", e.getMessage());
+            return ResponseEntity.status(500).body(Map.of(
+                    "success", false,
+                    "message", "Error: " + e.getMessage(),
+                    "email", emailPrueba
+            ));
+        }
     }
 }

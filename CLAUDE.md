@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.12.1** (2025-12-29)
+> Sistema de Telemedicina - EsSalud | **v1.12.2** (2025-12-29)
 
 ---
 
@@ -105,6 +105,51 @@ Password: @Cenate2025
 
 ## Despliegue en Produccion (Docker)
 
+### ⚠️ PASOS DE INICIO (IMPORTANTE)
+
+Cada vez que reinicies la Mac o Docker, ejecutar en este orden:
+
+```bash
+# 1. Iniciar el relay SMTP (permite a Docker conectar al servidor corporativo)
+./start-smtp-relay.sh
+
+# 2. Iniciar Docker
+docker-compose up -d
+
+# 3. Verificar que todo funciona
+docker-compose ps
+docker logs cenate-backend --tail=20
+```
+
+### Relay SMTP para Docker (macOS)
+
+Docker en macOS no puede acceder directamente a la red corporativa `172.20.0.227`. Se usa un relay `socat` como puente.
+
+**Arquitectura del Relay:**
+```
+Docker Container → host.docker.internal:2525 → socat relay → 172.20.0.227:25
+```
+
+**Archivos involucrados:**
+| Archivo | Descripcion |
+|---------|-------------|
+| `start-smtp-relay.sh` | Script para iniciar el relay socat |
+| `docker-compose.yml` | Configurado con `MAIL_HOST: host.docker.internal` y `MAIL_PORT: 2525` |
+
+**Verificar que el relay está activo:**
+```bash
+ps aux | grep socat
+# Debe mostrar: socat TCP-LISTEN:2525,fork,reuseaddr TCP:172.20.0.227:25
+```
+
+**Si el relay no está activo:**
+```bash
+./start-smtp-relay.sh
+```
+
+**Requisitos:**
+- socat instalado: `brew install socat`
+
 ### Arquitectura Docker
 
 ```
@@ -159,9 +204,10 @@ environment:
   JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
   JWT_EXPIRATION: 86400000
 
-  # Email SMTP (Servidor Corporativo EsSalud) - v1.12.1
-  MAIL_HOST: 172.20.0.227
-  MAIL_PORT: 25
+  # Email SMTP (via Relay socat → Servidor Corporativo EsSalud) - v1.12.2
+  # IMPORTANTE: Requiere ejecutar ./start-smtp-relay.sh antes de docker-compose up
+  MAIL_HOST: host.docker.internal   # Relay local (socat)
+  MAIL_PORT: 2525                   # Puerto del relay
   MAIL_USERNAME: cenate.contacto@essalud.gob.pe
   MAIL_PASSWORD: essaludc50
   MAIL_SMTP_AUTH: false
@@ -287,6 +333,46 @@ Could not resolve placeholder 'MAIL_USERNAME' in value "${MAIL_USERNAME}"
 ```yaml
 MAIL_USERNAME: cenateinformatica@gmail.com
 MAIL_PASSWORD: nolq uisr fwdw zdly
+```
+
+#### Correos no se envian - Timeout SMTP
+
+**Error en logs:**
+```
+Couldn't connect to host, port: 172.20.0.227, 25; timeout 10000
+```
+
+**Causa:** El relay SMTP no está activo o Docker no puede conectar.
+
+**Solucion:**
+```bash
+# 1. Verificar si el relay está corriendo
+ps aux | grep socat
+
+# 2. Si no está activo, iniciarlo
+./start-smtp-relay.sh
+
+# 3. Reiniciar el backend
+docker-compose restart backend
+
+# 4. Probar envío de correo
+docker logs cenate-backend -f | grep -E "SMTP|Correo|enviado"
+```
+
+#### Relay SMTP no inicia
+
+**Error:**
+```
+Address already in use
+```
+
+**Solucion:**
+```bash
+# Matar proceso existente en puerto 2525
+lsof -i :2525 | grep LISTEN | awk '{print $2}' | xargs kill -9
+
+# Reiniciar relay
+./start-smtp-relay.sh
 ```
 
 #### Fotos de personal no cargan
