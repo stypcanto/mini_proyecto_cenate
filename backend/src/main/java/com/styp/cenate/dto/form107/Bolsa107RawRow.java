@@ -1,0 +1,21 @@
+package com.styp.cenate.dto.form107;
+public record Bolsa107RawRow(
+    long idCarga,
+    Integer filaExcel,
+    String registro,
+    String opcionIngreso,
+    String telefono,
+    String tipoDocumento,
+    String numeroDocumento,
+    String apellidosNombres,
+    String sexo,
+    String fechaNacimiento,
+    String departamento,
+    String provincia,
+    String distrito,
+    String motivoLlamada,
+    String afiliacion,
+    String derivacionInterna,
+    String observacion,
+    String rawJson
+) {}
