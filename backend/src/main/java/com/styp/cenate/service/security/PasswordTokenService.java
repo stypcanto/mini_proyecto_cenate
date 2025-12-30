@@ -176,8 +176,10 @@ public class PasswordTokenService {
             .usado(false)
             .build();
 
-        tokenRepository.save(token);
-        log.info("Token guardado en BD para usuario: {}", usuario.getNameUser());
+        // ⚠️ IMPORTANTE: Usar saveAndFlush para persistir inmediatamente y evitar race condition
+        // Si el usuario hace clic muy rápido en el enlace del correo, el token debe existir en BD
+        tokenRepository.saveAndFlush(token);
+        log.info("Token guardado y persistido en BD para usuario: {}", usuario.getNameUser());
 
         // Enviar email con enlace
         String enlace = frontendUrl + "/cambiar-contrasena?token=" + tokenValue;

@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.12.1",
-  name: "Configuración SMTP Corporativo EsSalud",
+  number: "1.13.0",
+  name: "Asignación Automática de Roles + Notificaciones",
   date: "2025-12-29",
-  description: "Migración del servidor SMTP de Gmail a servidor corporativo de EsSalud (172.20.0.227). Los correos ahora se envían desde cenate.contacto@essalud.gob.pe, resolviendo problemas de bloqueo a correos corporativos."
+  description: "Sistema inteligente de asignación de roles según IPRESS y campanita de notificaciones para usuarios pendientes de asignar rol específico. Mejora significativa en la gestión de permisos y flujo de onboarding de usuarios."
 };
 
 export const APP_INFO = {

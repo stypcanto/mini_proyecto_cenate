@@ -43,6 +43,7 @@ import DashboardMedicoCMS from "./pages/admin/DashboardMedicoCMS";
 import ModulosManagement from "./pages/admin/ModulosManagement";
 import PaginasManagement from "./pages/admin/PaginasManagement";
 import DescripcionRBAC from "./pages/admin/DescripcionRBAC";
+import UsuariosPendientesRol from "./pages/admin/UsuariosPendientesRol";
 
 // 🧩 Perfil de Usuario
 import UserDashboard from "./pages/user/UserDashboard"; // 🧭 Inicio personal
@@ -228,6 +229,16 @@ function AppRoutes() {
           element={
             <ProtectedRoute requiredPath="/admin/solicitudes" requiredAction="ver">
               <AprobacionSolicitudes />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* 🔔 Usuarios Pendientes de Asignar Rol */}
+        <Route
+          path="/admin/usuarios-pendientes-rol"
+          element={
+            <ProtectedRoute requiredPath="/admin/users" requiredAction="ver">
+              <UsuariosPendientesRol />
             </ProtectedRoute>
           }
         />

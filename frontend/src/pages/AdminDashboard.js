@@ -12,6 +12,7 @@ import { useAuth } from "../context/AuthContext";
 import { apiClient } from "../lib/apiClient";
 import auditoriaService from "../services/auditoriaService";
 import dashboardPersonalService from "../services/dashboardPersonalService";
+import NotificationBell from "../components/NotificationBell";
 import {
   Users,
   Shield,
@@ -417,17 +418,26 @@ export default function AdminDashboard() {
     <div className="min-h-screen p-8 bg-[var(--bg-secondary)] animate-fadeIn">
       {/* Header */}
       <div className="bg-gradient-to-b from-[#0B0B0B] via-[#1E3A8A] to-[#0A5BA9] rounded-3xl p-8 shadow-xl text-white mb-8">
-        <h1 className="text-3xl font-semibold mb-2 flex items-center gap-3">
-          <Shield className="w-8 h-8 text-white" />
-          Dashboard Administrativo
-        </h1>
-        <p className="text-blue-100 text-lg">
-          Bienvenido,{" "}
-          <span className="font-semibold">
-            {user?.nombreCompleto || user?.username}
-          </span>{" "}
-          — Intranet CENATE
-        </p>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <h1 className="text-3xl font-semibold mb-2 flex items-center gap-3">
+              <Shield className="w-8 h-8 text-white" />
+              Dashboard Administrativo
+            </h1>
+            <p className="text-blue-100 text-lg">
+              Bienvenido,{" "}
+              <span className="font-semibold">
+                {user?.nombreCompleto || user?.username}
+              </span>{" "}
+              — Intranet CENATE
+            </p>
+          </div>
+
+          {/* 🔔 Campanita de Notificaciones */}
+          <div className="flex-shrink-0">
+            <NotificationBell />
+          </div>
+        </div>
       </div>
 
       {/* Tarjetas estadísticas */}

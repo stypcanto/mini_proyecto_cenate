@@ -393,4 +393,55 @@ public class UsuarioController {
 		List<UsuarioResponse> usuarios = usuarioService.getUsuariosByRoles(roles);
 		return ResponseEntity.ok(usuarios);
 	}
+
+	// ============================================================
+	// 🔔 NOTIFICACIONES: Usuarios Pendientes de Asignar Rol
+	// ============================================================
+
+	/**
+	 * 🔔 Contar usuarios que solo tienen rol básico (USER o INSTITUCION_EX)
+	 * y necesitan asignación manual de rol específico.
+	 *
+	 * @return Cantidad de usuarios pendientes
+	 */
+	@GetMapping("/pendientes-rol")
+	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+	public ResponseEntity<Map<String, Object>> contarUsuariosPendientesRol() {
+		log.info("🔔 Consultando usuarios pendientes de asignar rol específico");
+		try {
+			Long cantidadPendientes = usuarioService.contarUsuariosConRolBasico();
+
+			Map<String, Object> response = new HashMap<>();
+			response.put("pendientes", cantidadPendientes);
+			response.put("hayPendientes", cantidadPendientes > 0);
+
+			log.info("✅ Usuarios pendientes de rol: {}", cantidadPendientes);
+			return ResponseEntity.ok(response);
+		} catch (Exception e) {
+			log.error("❌ Error al contar usuarios pendientes: {}", e.getMessage());
+			return ResponseEntity.status(500).body(Map.of(
+				"error", "Error al obtener usuarios pendientes",
+				"message", e.getMessage()
+			));
+		}
+	}
+
+	/**
+	 * 📋 Listar usuarios que solo tienen rol básico (USER o INSTITUCION_EX)
+	 *
+	 * @return Lista de usuarios pendientes de asignar rol
+	 */
+	@GetMapping("/pendientes-rol/lista")
+	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+	public ResponseEntity<List<UsuarioResponse>> listarUsuariosPendientesRol() {
+		log.info("📋 Listando usuarios pendientes de asignar rol específico");
+		try {
+			List<UsuarioResponse> usuarios = usuarioService.listarUsuariosConRolBasico();
+			log.info("✅ Encontrados {} usuarios pendientes", usuarios.size());
+			return ResponseEntity.ok(usuarios);
+		} catch (Exception e) {
+			log.error("❌ Error al listar usuarios pendientes: {}", e.getMessage());
+			return ResponseEntity.status(500).body(List.of());
+		}
+	}
 }

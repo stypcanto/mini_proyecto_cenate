@@ -4,6 +4,150 @@
 
 ---
 
+## v1.13.0 (2025-12-29) - Asignación Automática de Roles + Sistema de Notificaciones
+
+### Nueva Funcionalidad
+
+Sistema inteligente de asignación automática de roles al aprobar solicitudes de registro y campanita de notificaciones para gestionar usuarios pendientes de asignar rol específico.
+
+### Problema Anterior
+
+**Antes (v1.12.1 y anteriores):**
+- ❌ Todos los usuarios internos recibían rol `USER` por defecto
+- ❌ Usuarios de IPRESS externas tenían permisos inadecuados
+- ❌ No había visibilidad de usuarios pendientes de asignar rol
+- ❌ Administradores no sabían quién necesitaba asignación de rol
+- ❌ Proceso manual y propenso a olvidos
+
+### Solución Implementada
+
+**Ahora (v1.13.0):**
+- ✅ **Asignación automática basada en IPRESS:**
+  - IPRESS = "CENTRO NACIONAL DE TELEMEDICINA" → Rol `USER`
+  - IPRESS ≠ CENATE (otra institución) → Rol `INSTITUCION_EX`
+  - Usuarios externos → Siempre `INSTITUCION_EX`
+- ✅ **Campanita de notificaciones** en AdminDashboard
+- ✅ **Consulta automática cada 30 segundos** de usuarios pendientes
+- ✅ **Badge rojo** con número de pendientes
+- ✅ **Dropdown** con vista previa de usuarios
+- ✅ **Página dedicada** para gestión de roles pendientes
+
+### Cambios Técnicos
+
+#### Backend
+
+**1. AccountRequestService.java (líneas 172-205)**
+- Agregada lógica de asignación de rol basada en IPRESS
+- Consulta la IPRESS del usuario al aprobar solicitud
+- Compara con "CENTRO NACIONAL DE TELEMEDICINA"
+- Asigna rol correspondiente automáticamente
+
+**2. UsuarioController.java (nuevos endpoints)**
+```java
+GET /api/usuarios/pendientes-rol              // Contador de pendientes
+GET /api/usuarios/pendientes-rol/lista        // Lista completa
+```
+
+**3. UsuarioService.java y UsuarioServiceImpl.java**
+- Método `contarUsuariosConRolBasico()` - cuenta usuarios con solo rol básico
+- Método `listarUsuariosConRolBasico()` - lista completa con filtros
+- Filtro: usuarios ACTIVOS con exactamente 1 rol (USER o INSTITUCION_EX)
+
+#### Frontend
+
+**1. NotificationBell.jsx (nuevo componente)**
+- Campanita con badge rojo
+- Consulta cada 30 segundos al endpoint de contador
+- Dropdown con lista de últimos 5 usuarios
+- Click para ir a página de gestión completa
+
+**2. UsuariosPendientesRol.jsx (nueva página)**
+- Lista completa de usuarios pendientes
+- Tabla con datos: Usuario, DNI, Rol Actual, IPRESS
+- Botón "Asignar Rol" por cada usuario
+- Información de guía para administradores
+
+**3. AdminDashboard.js**
+- Integrada campanita en header superior derecho
+- Visible solo para administradores
+
+**4. App.js**
+- Nueva ruta: `/admin/usuarios-pendientes-rol`
+- Protección con ProtectedRoute (requiere acceso a /admin/users)
+
+### Flujo de Usuario
+
+```
+Admin aprueba solicitud
+         ↓
+Sistema consulta IPRESS
+         ↓
+    ¿Es CENATE?
+    /         \
+  SÍ          NO
+   ↓           ↓
+  USER   INSTITUCION_EX
+   ↓           ↓
+   ┌───────────┴───────────┐
+   │ Usuario con rol básico │
+   └───────────┬───────────┘
+               ↓
+   Campanita notifica a admin
+               ↓
+   Admin asigna rol específico
+   (MEDICO, ENFERMERIA, etc.)
+```
+
+### Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `backend/src/main/java/com/styp/cenate/service/solicitud/AccountRequestService.java` | Lógica de asignación automática de rol |
+| `backend/src/main/java/com/styp/cenate/api/usuario/UsuarioController.java` | 2 nuevos endpoints de notificaciones |
+| `backend/src/main/java/com/styp/cenate/service/usuario/UsuarioService.java` | 2 nuevas firmas de métodos |
+| `backend/src/main/java/com/styp/cenate/service/usuario/UsuarioServiceImpl.java` | Implementación de métodos |
+| `frontend/src/components/NotificationBell.jsx` | Nuevo componente campanita (176 líneas) |
+| `frontend/src/pages/admin/UsuariosPendientesRol.jsx` | Nueva página de gestión (252 líneas) |
+| `frontend/src/pages/AdminDashboard.js` | Integración de campanita |
+| `frontend/src/App.js` | Nueva ruta + import |
+| `frontend/src/config/version.js` | Actualizada a v1.13.0 |
+| `CLAUDE.md` | Actualizada versión |
+
+### Impacto
+
+- **Usuarios afectados**: Todos los nuevos registros
+- **Breaking changes**: Ninguno (retrocompatible)
+- **Requiere redespliegue**: ✅ SÍ (backend + frontend)
+
+### Beneficios
+
+1. ✅ **Automatización** - Menos intervención manual del administrador
+2. ✅ **Seguridad** - Usuarios de IPRESS externas no tienen permisos de CENATE
+3. ✅ **Visibilidad** - Administradores saben quién necesita atención
+4. ✅ **UX mejorada** - Indicador visual proactivo
+5. ✅ **Eficiencia** - Proceso de onboarding más rápido
+
+### Testing Recomendado
+
+```bash
+# 1. Aprobar solicitud de usuario de CENATE
+# Verificar que recibe rol USER
+
+# 2. Aprobar solicitud de usuario de otra IPRESS
+# Verificar que recibe rol INSTITUCION_EX
+
+# 3. Ver campanita en AdminDashboard
+# Debe mostrar badge con número correcto
+
+# 4. Click en campanita
+# Debe abrir dropdown con lista de usuarios
+
+# 5. Click en "Ver Todos"
+# Debe navegar a /admin/usuarios-pendientes-rol
+```
+
+---
+
 ## v1.12.1 (2025-12-29) - Configuración SMTP Corporativo EsSalud
 
 ### Cambios Críticos

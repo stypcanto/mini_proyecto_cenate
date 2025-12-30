@@ -2042,4 +2042,65 @@ public class UsuarioServiceImpl implements UsuarioService {
 		}
 		return "N/A";
 	}
+
+	// ================================================================
+	// 🔔 NOTIFICACIONES: Usuarios Pendientes de Asignar Rol Específico
+	// ================================================================
+
+	/**
+	 * Contar usuarios que solo tienen rol básico (USER o INSTITUCION_EX)
+	 * y necesitan asignación manual de rol específico.
+	 */
+	@Override
+	public Long contarUsuariosConRolBasico() {
+		log.info("🔍 Contando usuarios con solo rol básico (USER o INSTITUCION_EX)");
+
+		// Obtener todos los usuarios activos
+		List<Usuario> todosUsuarios = usuarioRepository.findByStatUser("ACTIVO");
+
+		// Filtrar usuarios que solo tienen UN rol y es USER o INSTITUCION_EX
+		long contador = todosUsuarios.stream()
+			.filter(usuario -> {
+				Set<Rol> roles = usuario.getRoles();
+				if (roles == null || roles.isEmpty()) {
+					return false; // Sin roles, no cuenta
+				}
+				if (roles.size() > 1) {
+					return false; // Tiene múltiples roles, ya fue configurado
+				}
+
+				// Tiene exactamente 1 rol, verificar si es básico
+				String rolNombre = roles.iterator().next().getDescRol();
+				return "USER".equalsIgnoreCase(rolNombre) || "INSTITUCION_EX".equalsIgnoreCase(rolNombre);
+			})
+			.count();
+
+		log.info("✅ Encontrados {} usuarios pendientes de asignar rol específico", contador);
+		return contador;
+	}
+
+	/**
+	 * Listar usuarios que solo tienen rol básico (USER o INSTITUCION_EX)
+	 */
+	@Override
+	public List<UsuarioResponse> listarUsuariosConRolBasico() {
+		log.info("📋 Listando usuarios con solo rol básico");
+
+		// Obtener todos los usuarios activos
+		List<Usuario> todosUsuarios = usuarioRepository.findByStatUser("ACTIVO");
+
+		// Filtrar y mapear a DTO
+		return todosUsuarios.stream()
+			.filter(usuario -> {
+				Set<Rol> roles = usuario.getRoles();
+				if (roles == null || roles.isEmpty() || roles.size() > 1) {
+					return false;
+				}
+
+				String rolNombre = roles.iterator().next().getDescRol();
+				return "USER".equalsIgnoreCase(rolNombre) || "INSTITUCION_EX".equalsIgnoreCase(rolNombre);
+			})
+			.map(this::convertToResponse)
+			.collect(Collectors.toList());
+	}
 }

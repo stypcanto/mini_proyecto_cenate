@@ -168,12 +168,41 @@ public class AccountRequestService {
             usuarioRequest.setTipo_personal(solicitud.getTipoUsuario());
             usuarioRequest.setIdIpress(solicitud.getIdIpress());
             usuarioRequest.setEstado("ACTIVO");
-            
+
+            // ================================================================
+            // ASIGNACIÓN AUTOMÁTICA DE ROL SEGÚN IPRESS
+            // ================================================================
+            String rolAsignado;
             if (solicitud.isExterno()) {
-                usuarioRequest.setRol("INSTITUCION_EX");  // Rol con acceso limitado para externos
+                // Usuarios externos siempre reciben INSTITUCION_EX
+                rolAsignado = "INSTITUCION_EX";
+                log.info("Usuario EXTERNO → Rol asignado: INSTITUCION_EX");
             } else {
-                usuarioRequest.setRol("USER");
+                // Usuarios internos: depende de la IPRESS
+                if (solicitud.getIdIpress() != null) {
+                    Ipress ipress = ipressRepository.findById(solicitud.getIdIpress()).orElse(null);
+                    if (ipress != null) {
+                        String nombreIpress = ipress.getDescIpress();
+                        if ("CENTRO NACIONAL DE TELEMEDICINA".equalsIgnoreCase(nombreIpress)) {
+                            rolAsignado = "USER";
+                            log.info("Usuario INTERNO de CENATE → Rol asignado: USER");
+                        } else {
+                            rolAsignado = "INSTITUCION_EX";
+                            log.info("Usuario INTERNO de otra institución ({}) → Rol asignado: INSTITUCION_EX", nombreIpress);
+                        }
+                    } else {
+                        // Si no se encuentra la IPRESS, asignar USER por defecto
+                        rolAsignado = "USER";
+                        log.warn("IPRESS no encontrada (ID: {}) → Asignando USER por defecto", solicitud.getIdIpress());
+                    }
+                } else {
+                    // Si no tiene IPRESS, asignar USER por defecto
+                    rolAsignado = "USER";
+                    log.warn("Usuario sin IPRESS asignada → Asignando USER por defecto");
+                }
             }
+
+            usuarioRequest.setRol(rolAsignado);
 
             var usuarioCreado = usuarioService.createUser(usuarioRequest);
             Long idUsuario = usuarioCreado.getIdUser();

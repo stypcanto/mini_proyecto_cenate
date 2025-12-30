@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.12.2** (2025-12-29)
+> Sistema de Telemedicina - EsSalud | **v1.13.0** (2025-12-29)
 
 ---
 

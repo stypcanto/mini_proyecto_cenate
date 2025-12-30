@@ -137,4 +137,23 @@ public interface UsuarioService {
      * @throws jakarta.persistence.EntityNotFoundException Si el usuario no existe
      */
     UsuarioResponse actualizarDatosPersonal(Long id, com.styp.cenate.dto.PersonalUpdateRequest request);
+
+    // ================================================================
+    // 🔔 NOTIFICACIONES: Usuarios Pendientes de Asignar Rol Específico
+    // ================================================================
+
+    /**
+     * Cuenta usuarios que solo tienen rol básico (USER o INSTITUCION_EX)
+     * y necesitan asignación manual de rol específico por el administrador.
+     *
+     * @return Cantidad de usuarios pendientes
+     */
+    Long contarUsuariosConRolBasico();
+
+    /**
+     * Lista usuarios que solo tienen rol básico (USER o INSTITUCION_EX)
+     *
+     * @return Lista de usuarios pendientes de asignar rol
+     */
+    List<UsuarioResponse> listarUsuariosConRolBasico();
 }
