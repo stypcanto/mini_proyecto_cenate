@@ -227,8 +227,13 @@ public class SecurityConfig {
                         .requestMatchers("/api/pacientes/**").hasAnyRole("SUPERADMIN", "ADMIN")
 
                         // SEC-005: Import Excel protegido (antes era permitAll)
-                        .requestMatchers(HttpMethod.POST, "/api/import-excel/**")
-                            .hasAnyRole("SUPERADMIN", "ADMIN")
+                        //.requestMatchers(HttpMethod.POST, "/api/import-excel/**")
+                        //    .hasAnyRole("SUPERADMIN", "ADMIN")
+                            // SOLO PARA PRUEBAS RAPIDAS, luego PONER AUTENTICACION
+                             .requestMatchers(HttpMethod.GET, "/api/import-excel/**").permitAll() 
+                            .requestMatchers(HttpMethod.POST, "/api/import-excel/**") .permitAll() 
+                           
+                            
                         // =====================================================
                         // 🔒 Cualquier otro endpoint requiere autenticación
                         // =====================================================

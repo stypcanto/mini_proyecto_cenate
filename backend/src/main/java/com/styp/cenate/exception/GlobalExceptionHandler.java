@@ -257,4 +257,25 @@ public class GlobalExceptionHandler {
 				.body(Map.of("error", "Formato JSON inválido", "detalle", mensajeUsuario, "mensaje", detalle));
 	}
 
+	
+	// FORMULARIO 107 INICIO 
+	@ExceptionHandler(ExcelValidationException.class)
+	public ResponseEntity<?> handleExcelValidationException(ExcelValidationException ex) {
+		if (ex.getDetail() != null) {
+			return ResponseEntity.badRequest().body(ex.getDetail());
+		}
+		return ResponseEntity.badRequest().body(Map.of("message", ex.getMessage()));
+	}
+
+	@ExceptionHandler(ExcelCargaDuplicadaException.class)
+	public ResponseEntity<?> handleDup(ExcelCargaDuplicadaException ex) {
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
+	}
+	// FORMULARIO 107 FIN
+	
+	
 }
+
+
+
+
