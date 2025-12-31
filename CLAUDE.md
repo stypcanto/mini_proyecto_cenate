@@ -1,6 +1,261 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.13.0** (2025-12-29)
+> Sistema de Telemedicina - EsSalud | **v1.14.2** (2025-12-30)
+>
+> **Última actualización:** Formulario 107 (Bolsa 107) - Implementación completa 100% (Frontend + Backend) con importación, exportación y gestión de cargas
+
+---
+
+## ¿Qué es CENATE?
+
+**CENATE (Centro Nacional de Telemedicina)** es el sistema de gestión de telemedicina de **EsSalud Perú** que coordina la atención médica especializada a nivel nacional mediante tecnologías de telecomunicación.
+
+### Propósito
+
+CENATE permite:
+- **Planificación y registro** de atenciones de telemedicina a nivel nacional
+- **Coordinación de atención médica especializada** desde CENATE hacia IPRESS de la red
+- **Gestión de turnos médicos** según disponibilidad del personal asistencial
+- **Administración de personal médico** con diferentes regímenes laborales (728, CAS, Locador)
+- **Trazabilidad completa** de atenciones por paciente, servicio y estrategia
+- **Control de accesos y auditoría** de todas las operaciones del sistema
+- **Firma digital** para documentos médicos y administrativos
+
+**IMPORTANTE:** Este sistema **NO realiza las videollamadas** directamente. Su función es **planificar, registrar y coordinar** las atenciones que se realizan por teléfono, videollamada (plataformas externas) o mediante el sistema ESSI para teleapoyo al diagnóstico.
+
+---
+
+## Alcance y Cobertura
+
+### Cobertura Nacional
+
+- **Alcance:** Todas las IPRESS (Instituciones Prestadoras de Servicios de Salud) de EsSalud a nivel nacional
+- **Total IPRESS objetivo:** 414 instituciones
+- **Estado actual:** Fase de expansión (pocas IPRESS conectadas, objetivo: 414)
+- **Modelo:** Atención a demanda según capacidad de cada IPRESS
+
+### Estructura Organizacional
+
+```
+EsSalud Nacional
+    ↓
+Macroregiones (5)
+    ↓
+Redes Asistenciales (36)
+    ↓
+IPRESS (414 hospitales y centros de salud)
+    ↓
+CENATE (Centro coordinador nacional)
+```
+
+---
+
+## Modalidades de Atención
+
+### 1. Teleconsultas
+
+**Definición:** Atención médica donde el médico de CENATE llama al paciente desde su domicilio/consultorio.
+
+**Características:**
+- Médico CENATE → Paciente en su casa
+- Llamada telefónica o videollamada (plataforma externa)
+- El sistema SOLO registra y planifica, NO hace la conexión
+
+**Flujo:**
+```
+Paciente solicita cita → Coordinador asigna médico y horario →
+Sistema registra la agenda → Médico llama al paciente en el horario →
+Sistema registra resultado de la atención
+```
+
+### 2. Teleconsultorio
+
+**Definición:** Atención médica donde el paciente acude presencialmente a una IPRESS equipada con tecnología de telemedicina, y un médico especialista de CENATE lo atiende remotamente.
+
+**Características:**
+- Paciente presencial en IPRESS + Médico CENATE remoto
+- Requiere que la IPRESS tenga infraestructura adecuada (equipamiento, conectividad)
+- Se evalúa capacidad mediante el **Módulo de Diagnóstico Institucional** (`form_diag_*`)
+
+**Flujo:**
+```
+IPRESS solicita turnos → CENATE evalúa capacidad de la IPRESS →
+Si tiene equipamiento → Habilita teleconsultorio →
+Paciente acude a IPRESS → Médico CENATE atiende remotamente
+```
+
+### 3. Teleorientaciones
+
+Orientación médica general sin constituir consulta médica completa.
+
+### 4. Teleinterconsultas
+
+Interconsulta entre médicos de diferentes especialidades o instituciones.
+
+### 5. Telemonitoreo
+
+Seguimiento continuo de pacientes con condiciones crónicas.
+
+### 6. Teleapoyo al Diagnóstico
+
+Soporte diagnóstico mediante la plataforma ESSI (sistema externo de EsSalud).
+
+---
+
+## Estrategias de Atención
+
+El sistema permite **etiquetar** las atenciones según estrategias nacionales de salud:
+
+| Estrategia | Descripción |
+|------------|-------------|
+| **TeleDOT** | Tratamiento Directamente Observado por Telemedicina (tuberculosis) |
+| **CENACRON** | Atención de enfermedades crónicas |
+| **Teledengue** | Seguimiento de casos de dengue |
+| **Telepsicoprofilaxis** | Atención psicológica preventiva |
+| **TeleCAM** | Cáncer de Mama |
+| **Otras** | Sistema extensible para futuras estrategias |
+
+**Beneficio:** Permite **trazabilidad** y análisis estadístico por estrategia de salud pública.
+
+---
+
+## Actores del Sistema
+
+| Actor | Descripción | Función Principal | Institución |
+|-------|-------------|-------------------|-------------|
+| **Médicos** | Personal asistencial que brinda atenciones | Realizar teleconsultas, registrar atenciones | CENATE + IPRESS |
+| **Coordinador de Especialidades** | Gestiona asignación de médicos a solicitudes | Asignar qué médico atiende cada solicitud | CENATE |
+| **Coordinadores** | Gestionan agenda médica y turnos | Revisar disponibilidad, coordinar horarios | CENATE |
+| **Coordinadores de Red** | Coordinan solicitudes de IPRESS | Enviar formularios de requerimiento, gestionar turnos | IPRESS de red |
+| **Administradores** | Gestionan usuarios, roles y configuración | Control de accesos, seguridad, auditoría | CENATE - TI |
+| **Personal Externo** | Usuarios de otras IPRESS (hospitales, centros de salud) | Solicitar turnos, ver disponibilidad | IPRESS de red |
+| **Pacientes/Asegurados** | Usuarios finales del servicio | Recibir atención médica | Asegurados EsSalud (4.6M) |
+
+---
+
+## Flujos de Negocio Principales
+
+### 1. Solicitud de Turnos (IPRESS → CENATE)
+
+```
+IPRESS solicita turnos para especialidad X →
+CENATE envía formulario de requerimiento →
+IPRESS completa formulario con demanda →
+CENATE evalúa disponibilidad de médicos →
+CENATE ofrece programación de turnos →
+Coordinador de Red acepta/negocia →
+Turnos confirmados
+```
+
+### 2. Asignación de Médicos
+
+```
+Solicitud de cita ingresa al sistema →
+Coordinador de Especialidades revisa →
+Verifica disponibilidad de médicos en periodo →
+Asigna médico según especialidad y carga →
+Médico recibe notificación →
+Médico atiende en horario asignado
+```
+
+### 3. Gestión de Disponibilidad Médica
+
+```
+Médico declara disponibilidad mensual (calendario) →
+Marca turnos: Mañana (M), Tarde (T), Completo (MT) →
+Sistema calcula total de horas según régimen laboral →
+Sistema valida >= 150 horas mínimas →
+Médico envía (estado: ENVIADO) →
+Coordinador revisa y ajusta si necesario →
+Estado: REVISADO (disponibilidad confirmada) →
+Sistema usa esta disponibilidad para asignar citas
+```
+
+### 4. Atención al Paciente
+
+```
+Paciente solicita cita (chatbot o coordinador) →
+Sistema muestra servicios disponibles →
+Paciente selecciona servicio y fecha/horario →
+Solicitud creada (estado: PENDIENTE) →
+Coordinador de Especialidades asigna médico →
+Médico llama/atiende al paciente →
+Sistema registra resultado de atención →
+Puede generar: Recita, Interconsulta, Alta, etc. →
+Sistema actualiza trazabilidad del paciente
+```
+
+### 5. Diagnóstico Institucional de IPRESS
+
+```
+IPRESS nueva se registra en sistema →
+Admin solicita diagnóstico de capacidades →
+IPRESS completa formulario form_diag_* →
+Registra: Equipamiento, Infraestructura física,
+          Infraestructura tecnológica, RRHH,
+          Conectividad, Necesidades →
+CENATE evalúa capacidad para teleconsultorio →
+Si cumple requisitos → Habilita teleconsultorio →
+Si no cumple → Solo teleconsultas (médico llama a casa)
+```
+
+---
+
+## Glosario de Términos
+
+### Instituciones y Organizaciones
+
+| Término | Definición |
+|---------|-----------|
+| **EsSalud** | Seguro Social de Salud del Perú |
+| **CENATE** | Centro Nacional de Telemedicina (centro coordinador) |
+| **IPRESS** | Institución Prestadora de Servicios de Salud (hospital, centro de salud) |
+| **Red Asistencial** | Conjunto de IPRESS de una zona geográfica |
+| **Macroregión** | Agrupación de redes asistenciales (5 a nivel nacional) |
+
+### Personal y Roles
+
+| Término | Definición |
+|---------|-----------|
+| **Personal Interno CENATE** | Trabajadores de CENATE (médicos, coordinadores, admins) |
+| **Personal de IPRESS** | Trabajadores de hospitales/centros de la red EsSalud |
+| **Personal Externo** | Trabajadores de instituciones fuera de red EsSalud |
+| **Régimen 728** | Personal nombrado (4h mañana, 4h tarde, 8h completo) |
+| **Régimen CAS** | Contrato Administrativo de Servicios (4h/4h/8h) |
+| **Régimen Locador** | Locación de servicios (6h/6h/12h) |
+
+### Modalidades de Atención
+
+| Término | Definición |
+|---------|-----------|
+| **Teleconsulta** | Médico CENATE llama a paciente en su casa |
+| **Teleconsultorio** | Paciente acude a IPRESS, médico CENATE atiende remotamente |
+| **Teleorientación** | Orientación médica general |
+| **Teleinterconsulta** | Consulta entre médicos de diferentes especialidades |
+| **Telemonitoreo** | Seguimiento continuo de pacientes crónicos |
+| **Teleapoyo al Diagnóstico** | Soporte diagnóstico vía ESSI |
+
+### Sistema y Tecnología
+
+| Término | Definición |
+|---------|-----------|
+| **ESSI** | Sistema de información de EsSalud (catálogo de servicios) |
+| **MBAC** | Module-Based Access Control (control de acceso modular) |
+| **JWT** | JSON Web Token (autenticación) |
+| **Firma Digital** | Token físico + certificado digital para firmar documentos |
+| **Bolsa 107** | Área de asignación de pacientes nuevos |
+
+### Otros Términos
+
+| Término | Definición |
+|---------|-----------|
+| **DNI** | Documento Nacional de Identidad (username del sistema) |
+| **Asegurado** | Paciente con seguro EsSalud (4.6M registrados) |
+| **Disponibilidad** | Declaración mensual de turnos del médico |
+| **Turno M** | Turno mañana |
+| **Turno T** | Turno tarde |
+| **Turno MT** | Turno completo (mañana + tarde) |
+| **150 horas** | Mínimo de horas mensuales que debe declarar un médico |
 
 ---
 
@@ -16,25 +271,417 @@
 
 ---
 
+## 🚀 Quick Start - Levantar el Proyecto
+
+### Opción A: Desarrollo Local (Recomendado para desarrollo)
+
+#### 1. Prerrequisitos
+
+Instalar las siguientes herramientas:
+
+| Herramienta | Versión Mínima | Verificar instalación |
+|-------------|----------------|----------------------|
+| **Java JDK** | 17+ | `java -version` |
+| **Node.js** | 18+ | `node -v` |
+| **npm** | 9+ | `npm -v` |
+| **Git** | 2+ | `git --version` |
+
+**Acceso requerido:**
+- Conexión a base de datos PostgreSQL en `10.0.89.13:5432`
+- Red corporativa EsSalud (para SMTP)
+
+#### 2. Clonar el Repositorio
+
+```bash
+git clone https://github.com/stypcanto/mini_proyecto_cenate.git
+cd mini_proyecto_cenate
+```
+
+#### 3. Configurar Variables de Entorno - Backend
+
+Crear archivo `backend/.env` (o exportar variables):
+
+```bash
+# Base de datos PostgreSQL (servidor remoto)
+export DB_URL="jdbc:postgresql://10.0.89.13:5432/maestro_cenate"
+export DB_USERNAME="postgres"
+export DB_PASSWORD="Essalud2025"
+
+# JWT (mínimo 32 caracteres)
+export JWT_SECRET="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+
+# Email SMTP (Servidor Corporativo EsSalud)
+export MAIL_HOST="172.20.0.227"
+export MAIL_PORT="25"
+export MAIL_USERNAME="cenate.contacto@essalud.gob.pe"
+export MAIL_PASSWORD="essaludc50"
+export MAIL_SMTP_AUTH="false"
+export MAIL_SMTP_STARTTLS="true"
+export MAIL_SMTP_SSL="false"
+
+# Frontend URL (para enlaces en emails)
+export FRONTEND_URL="http://localhost:3000"
+```
+
+**Método rápido:** Ejecutar script de configuración:
+
+```bash
+# En el directorio del proyecto
+source backend/setup-env.sh
+```
+
+#### 4. Levantar Backend (Spring Boot)
+
+```bash
+cd backend
+
+# Compilar y ejecutar
+./gradlew bootRun
+
+# O en modo watch (recarga automática)
+./gradlew bootRun --continuous
+```
+
+**Verificar que está corriendo:**
+- Backend estará disponible en: `http://localhost:8080`
+- Endpoint de salud: `http://localhost:8080/actuator/health`
+- Consola debe mostrar: `Tomcat started on port 8080`
+
+#### 5. Levantar Frontend (React)
+
+```bash
+# En una nueva terminal
+cd frontend
+
+# Instalar dependencias (solo la primera vez)
+npm install
+
+# Ejecutar en modo desarrollo
+npm start
+```
+
+**Verificar que está corriendo:**
+- Frontend estará disponible en: `http://localhost:3000`
+- Se abrirá automáticamente en el navegador
+- Verás la pantalla de login
+
+#### 6. Primer Acceso
+
+**Credenciales de prueba:**
+```
+Username: 44914706
+Password: @Cenate2025
+Rol: SUPERADMIN
+```
+
+**Navegación básica después del login:**
+
+```
+Dashboard Administrativo
+    ↓
+Menú lateral izquierdo:
+    ├── 👥 Gestión de Usuarios
+    │   ├── Usuarios (CRUD completo)
+    │   ├── Solicitudes de Registro (aprobar/rechazar)
+    │   └── Pendientes de Activación (reenviar emails)
+    │
+    ├── 🔐 Seguridad
+    │   ├── Roles y Permisos
+    │   ├── Auditoría (logs del sistema)
+    │   └── Permisos Modulares (MBAC)
+    │
+    ├── 👨‍⚕️ Módulos Médicos
+    │   ├── Mi Disponibilidad (si eres médico)
+    │   ├── Revisión de Disponibilidad (coordinadores)
+    │   └── Gestión de Citas
+    │
+    └── 💬 ChatBot de Citas
+        ├── Consultar Paciente (DNI)
+        ├── Solicitar Cita
+        └── Dashboard de Reportes
+```
+
+#### 7. Verificar Funcionalidad Básica
+
+**Test rápido (5 minutos):**
+
+1. **Login exitoso** → Dashboard carga correctamente
+2. **Ver usuarios** → Menú "Gestión de Usuarios" → Ver lista
+3. **Ver auditoría** → Menú "Seguridad" → "Auditoría" → Ver últimos eventos
+4. **Crear usuario de prueba:**
+   - Ir a "Gestión de Usuarios" → "Crear Usuario"
+   - Llenar datos básicos (DNI inventado: 99999999)
+   - Asignar rol USER
+   - Verificar que aparece en la lista
+
+**Si todo funciona:** ✅ El sistema está listo para desarrollo
+
+---
+
+### Opción B: Producción con Docker (Para despliegue)
+
+#### 1. Prerrequisitos
+
+| Herramienta | Versión | Verificar |
+|-------------|---------|----------|
+| **Docker** | 20+ | `docker --version` |
+| **Docker Compose** | 2+ | `docker-compose --version` |
+
+**Solo macOS:** Instalar `socat` para relay SMTP:
+```bash
+brew install socat
+```
+
+#### 2. Configurar SMTP Relay (Solo macOS)
+
+Docker en macOS no puede acceder directamente a la red corporativa. Usar relay:
+
+```bash
+# Iniciar relay SMTP (permite Docker → 172.20.0.227:25)
+./start-smtp-relay.sh
+
+# Verificar que está corriendo
+ps aux | grep socat
+# Debe mostrar: socat TCP-LISTEN:2525,fork,reuseaddr TCP:172.20.0.227:25
+```
+
+**IMPORTANTE:** Este script debe ejecutarse **CADA VEZ** que reinicies la Mac o Docker.
+
+#### 3. Levantar con Docker Compose
+
+```bash
+# Construir imágenes y levantar servicios
+docker-compose up -d --build
+
+# Ver logs en tiempo real
+docker-compose logs -f
+
+# Ver solo backend
+docker-compose logs -f backend
+
+# Ver solo frontend
+docker-compose logs -f frontend
+```
+
+#### 4. Verificar Servicios
+
+```bash
+# Estado de contenedores
+docker-compose ps
+
+# Debe mostrar:
+# cenate-backend   running   0.0.0.0:8080->8080/tcp
+# cenate-frontend  running   0.0.0.0:80->80/tcp
+```
+
+#### 5. Acceder al Sistema
+
+- **Frontend:** `http://localhost:80` o `http://localhost`
+- **Backend API:** `http://localhost:8080/api`
+- **Credenciales:** Mismo que desarrollo (44914706 / @Cenate2025)
+
+#### 6. Comandos Útiles Docker
+
+```bash
+# Detener servicios
+docker-compose down
+
+# Reiniciar solo backend (después de cambios en Java)
+docker-compose build backend && docker-compose up -d backend
+
+# Reiniciar solo frontend (después de cambios en React)
+docker-compose build frontend && docker-compose up -d frontend
+
+# Ver logs recientes (últimas 100 líneas)
+docker-compose logs --tail=100
+
+# Limpiar imágenes huérfanas
+docker image prune -f
+
+# Entrar al contenedor backend (debug)
+docker exec -it cenate-backend bash
+
+# Ver variables de entorno del backend
+docker exec cenate-backend env | grep -E "DB|MAIL|JWT"
+```
+
+---
+
+## 🛠️ Troubleshooting Rápido
+
+### Backend no arranca
+
+**Error:** `Could not resolve placeholder 'MAIL_USERNAME'`
+
+**Solución:**
+```bash
+# Verificar que variables de entorno están configuradas
+env | grep -E "DB|MAIL|JWT"
+
+# Si no están, exportarlas nuevamente
+source backend/setup-env.sh
+```
+
+---
+
+**Error:** `Connection refused: 10.0.89.13:5432`
+
+**Solución:**
+- Verificar conectividad a la red EsSalud
+- Ping al servidor: `ping 10.0.89.13`
+- Verificar firewall/VPN
+
+---
+
+### Frontend no carga
+
+**Error:** `Failed to fetch` o `Network Error`
+
+**Solución:**
+1. Verificar que backend está corriendo en puerto 8080
+2. Verificar CORS en backend (debe permitir `http://localhost:3000`)
+3. Revisar `frontend/src/lib/apiClient.js` que apunte a `http://localhost:8080/api`
+
+---
+
+**Error:** Página en blanco
+
+**Solución:**
+```bash
+cd frontend
+
+# Limpiar cache y reinstalar
+rm -rf node_modules package-lock.json
+npm install
+
+# Reiniciar
+npm start
+```
+
+---
+
+### Docker no envía correos
+
+**Error:** `Couldn't connect to host, port: host.docker.internal, 2525`
+
+**Solución (macOS):**
+```bash
+# 1. Verificar relay SMTP está activo
+ps aux | grep socat
+
+# 2. Si no está, iniciarlo
+./start-smtp-relay.sh
+
+# 3. Reiniciar backend
+docker-compose restart backend
+
+# 4. Ver logs
+docker-compose logs backend | grep -i "mail\|smtp"
+```
+
+---
+
+### Error 502 Bad Gateway (Nginx)
+
+**Causa:** Frontend (nginx) no puede conectar con backend
+
+**Solución:**
+```bash
+# 1. Verificar estado de backend
+docker-compose ps
+
+# 2. Ver logs de backend
+docker-compose logs backend --tail=50
+
+# 3. Reiniciar servicios
+docker-compose restart
+```
+
+---
+
+## 📖 Próximos Pasos
+
+Una vez que el sistema esté corriendo:
+
+1. **Explorar la documentación:**
+   - `CLAUDE.md` (esta guía completa)
+   - `spec/01_Backend/01_api_endpoints.md` (endpoints API)
+   - `spec/03_Arquitectura/01_diagramas_sistema.md` (arquitectura)
+
+2. **Revisar módulos implementados:**
+   - Sistema de Auditoría: `spec/04_BaseDatos/02_guia_auditoria/`
+   - Disponibilidad Médica: `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md`
+   - Firma Digital: Ver changelog v1.14.0
+
+3. **Ver planes futuros:**
+   - `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md`
+   - `plan/03_Infraestructura/01_plan_modulo_red.md`
+   - `plan/04_Integraciones/01_analisis_ollama.md`
+
+4. **Explorar base de datos:**
+   - Conectar a PostgreSQL: `10.0.89.13:5432`
+   - Base de datos: `maestro_cenate`
+   - Ver análisis completo: `spec/04_BaseDatos/04_analisis_estructura/01_resumen_general.md`
+
+---
+
 ## Estructura del Proyecto
 
 ```
 mini_proyecto_cenate/
-├── spec/                             # Documentacion tecnica
-│   ├── 001_espec_users_bd.md         # Modelo de datos usuarios
-│   ├── 002_changelog.md              # Historial de cambios
-│   ├── 003_api_endpoints.md          # Endpoints API REST
-│   ├── 004_arquitectura.md           # Diagramas y arquitectura
-│   ├── 005_troubleshooting.md        # Solucion de problemas
-│   ├── 006_plan_auditoria.md         # Plan de auditoria
-│   ├── 009_plan_disponibilidad_turnos.md   # Plan disponibilidad medica
-│   ├── 010_reporte_pruebas_disponibilidad.md # Reporte de pruebas
-│   └── scripts/
-│       ├── 001_audit_view_and_indexes.sql  # Vista e indices auditoria
-│       ├── 002_rename_logs_to_auditoria.sql # Renombrar menu
-│       ├── 005_disponibilidad_medica.sql    # Tablas disponibilidad
-│       ├── 006_agregar_card_disponibilidad.sql # Card dashboard medico
-│       └── 007_agregar_email_preferido.sql  # Correo preferido notificaciones
+├── spec/                                    # 📚 DOCUMENTACION TECNICA
+│   ├── 01_Backend/                          # Spring Boot
+│   │   └── 01_api_endpoints.md              # Endpoints API REST
+│   ├── 02_Frontend/                         # React (próximamente)
+│   ├── 03_Arquitectura/                     # Diagramas y flujos
+│   │   └── 01_diagramas_sistema.md
+│   ├── 04_BaseDatos/                        # PostgreSQL (numeración 01-07)
+│   │   ├── 01_modelo_usuarios/              # Modelo de datos usuarios
+│   │   │   └── 01_modelo_usuarios.md
+│   │   ├── 02_guia_auditoria/               # ⭐ Guía auditoría
+│   │   │   └── 02_guia_auditoria.md
+│   │   ├── 03_guia_auditoria_acceso_sensible/
+│   │   │   └── 03_guia_auditoria_acceso_sensible.md
+│   │   ├── 04_analisis_estructura/          # Análisis completo BD
+│   │   │   └── 01_resumen_general.md
+│   │   ├── 05_plan_limpieza/                # Plan limpieza BD
+│   │   │   ├── 01_resumen_ejecutivo.md
+│   │   │   ├── 02_guia_ejecucion.md
+│   │   │   └── 03_scripts_limpieza_fase1.sql
+│   │   ├── 06_scripts/                      # Scripts SQL (16 archivos)
+│   │   └── 07_sql/                          # Configuraciones SQL
+│   ├── 05_Troubleshooting/
+│   │   └── 01_guia_problemas_comunes.md
+│   └── README.md                            # ⭐ Índice completo
+│
+├── plan/                                    # 📋 PLANIFICACION
+│   ├── 01_Seguridad_Auditoria/              # Seguridad y auditoría
+│   │   ├── 01_plan_auditoria.md
+│   │   ├── 02_plan_seguridad_auth.md
+│   │   └── 03_plan_mejoras_auditoria.md
+│   ├── 02_Modulos_Medicos/                  # Funcionalidades médicas
+│   │   ├── 01_plan_disponibilidad_turnos.md
+│   │   └── 02_plan_solicitud_turnos.md
+│   ├── 03_Infraestructura/                  # Red y coordinación
+│   │   └── 01_plan_modulo_red.md
+│   ├── 04_Integraciones/                    # IA y servicios externos
+│   │   └── 01_analisis_ollama.md
+│   ├── 05_Firma_Digital/                    # Firma digital
+│   │   └── 01_plan_implementacion.md
+│   └── README.md                            # ⭐ Guía de planificación
+│
+├── checklist/                               # ✅ LOGS Y REPORTES
+│   ├── 01_Historial/                        # Changelog y versiones
+│   │   ├── 01_changelog.md                  # ⭐ Historial completo
+│   │   └── 02_historial_versiones.md
+│   ├── 02_Reportes_Pruebas/                 # Reportes de testing
+│   │   └── 01_reporte_disponibilidad.md
+│   ├── 03_Checklists/                       # Checklists implementación
+│   │   └── 01_checklist_firma_digital.md
+│   ├── 04_Analisis/                         # Análisis y resúmenes
+│   │   ├── 01_analisis_chatbot_citas.md
+│   │   └── 02_resumen_mejoras_auditoria.md
+│   └── README.md                            # ⭐ Guía de logs
 │
 ├── backend/                          # Spring Boot API (puerto 8080)
 │   └── src/main/java/com/styp/cenate/
@@ -496,13 +1143,13 @@ El correo preferido se utiliza automáticamente en:
 ```bash
 # Agregar campo email_preferido
 PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
-  -f spec/scripts/007_agregar_email_preferido.sql
+  -f spec/04_BaseDatos/06_scripts/007_agregar_email_preferido.sql
 ```
 
 ### Documentacion Relacionada
 
-- Changelog v1.10.1: `spec/002_changelog.md`
-- Script SQL: `spec/scripts/007_agregar_email_preferido.sql`
+- Changelog v1.10.1: `checklist/01_Historial/01_changelog.md`
+- Script SQL: `spec/04_BaseDatos/06_scripts/007_agregar_email_preferido.sql`
 
 ---
 
@@ -603,7 +1250,7 @@ tail -100 /ruta/logs/backend.log | grep -i "mail\|smtp\|email"
 
 ### Documentacion Relacionada
 
-- Changelog v1.10.2: `spec/002_changelog.md`
+- Changelog v1.10.2: `checklist/01_Historial/01_changelog.md`
 
 ---
 
@@ -728,7 +1375,7 @@ El modal muestra:
 ### Documentacion Relacionada
 
 - Versión: v1.11.0
-- Changelog: `spec/002_changelog.md`
+- Changelog: `checklist/01_Historial/01_changelog.md`
 - Archivo: `frontend/src/pages/admin/AprobacionSolicitudes.jsx`
 - Backend: `AccountRequestService.java`, `SolicitudRegistroController.java`
 
@@ -1048,7 +1695,7 @@ useEffect(() => {
 ### Documentacion Relacionada
 
 - **Versión:** v1.13.0
-- **Changelog:** `spec/002_changelog.md` (entrada completa de 148 líneas)
+- **Changelog:** `checklist/01_Historial/01_changelog.md` (entrada completa de 148 líneas)
 - **Archivos Modificados:**
   - Backend: `AccountRequestService.java`, `UsuarioController.java`, `UsuarioService.java`, `UsuarioServiceImpl.java`
   - Frontend: `NotificationBell.jsx`, `UsuariosPendientesRol.jsx`, `AdminDashboard.js`, `App.js`
@@ -1060,7 +1707,7 @@ useEffect(() => {
 
 ### Documentación Completa
 
-📖 **Ver guía completa:** `spec/011_guia_auditoria.md`
+📖 **Ver guía completa:** `spec/04_BaseDatos/02_guia_auditoria/02_guia_auditoria.md`
 
 La guía incluye:
 - Arquitectura y flujo completo de auditoría
@@ -1163,18 +1810,49 @@ SUCCESS, FAILURE
 - Indicador de estado (verde=exito, rojo=fallo)
 
 ```javascript
-// Formato ejecutivo de acciones
+// Formato ejecutivo de acciones - AHORA USA DICCIONARIO CENTRALIZADO
+import { obtenerNombreAccion } from "../constants/auditoriaDiccionario";
+
 const formatAccionEjecutiva = (log) => {
-  const acciones = {
-    'LOGIN': 'Inicio de sesión',
-    'LOGIN_FAILED': 'Acceso denegado',
-    'CREATE_USER': 'Nuevo usuario creado',
-    'APPROVE_REQUEST': 'Solicitud aprobada',
-    // ...
-  };
-  return acciones[accion] || accion;
+  return obtenerNombreAccion(log.accion);
 };
 ```
+
+### Diccionario de Auditoría (v1.14.0)
+
+**Archivo:** `/frontend/src/constants/auditoriaDiccionario.js`
+
+Sistema centralizado que traduce códigos técnicos a nombres legibles con íconos y descripciones.
+
+#### Componentes del Diccionario
+
+| Componente | Contenido | Ejemplo |
+|------------|-----------|---------|
+| **MODULOS_AUDITORIA** | 10+ módulos | `AUTH` → "🔐 Autenticación" |
+| **ACCIONES_AUDITORIA** | 40+ acciones | `LOGIN` → "Inicio de Sesión" |
+| **NIVELES_AUDITORIA** | 4 niveles | `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
+| **Helper Functions** | 8 funciones | `obtenerNombreModulo()`, `obtenerIconoModulo()` |
+
+#### Visualización Mejorada
+
+**LogsDelSistema.jsx:**
+- ✅ Tooltips con descripciones en módulos y acciones
+- ✅ Filtros dropdown con nombres legibles
+- ✅ Exportación CSV con nombres + códigos
+- ✅ Íconos emoji para identificación visual
+
+**AdminDashboard.js:**
+- ✅ Módulos con ícono y nombre: `🔐 Autenticación`
+- ✅ Acciones legibles: `Inicio de Sesión`
+- ✅ Visualización consistente
+
+**Beneficios:**
+- 📋 **Un solo archivo** para mantener traducciones
+- 🎯 **Consistencia** en todo el sistema
+- 🚀 **Fácil agregar** nuevos módulos/acciones
+- 👥 **UX mejorada** para usuarios no técnicos
+
+📖 **Documentación completa:** `plan/01_Seguridad_Auditoria/04_diccionario_auditoria.md`
 
 ### Fix: Usuario N/A en logs
 
@@ -1200,17 +1878,17 @@ private AuditoriaModularResponseDTO mapToAuditoriaResponseDTO(AuditoriaModularVi
 ```bash
 # Crear vista e indices de auditoria
 PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
-  -f spec/scripts/001_audit_view_and_indexes.sql
+  -f spec/04_BaseDatos/06_scripts/001_audit_view_and_indexes.sql
 
 # Renombrar menu a "Auditoría"
 PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
-  -f spec/scripts/002_rename_logs_to_auditoria.sql
+  -f spec/04_BaseDatos/06_scripts/002_rename_logs_to_auditoria.sql
 ```
 
 ### Documentacion Relacionada
 
-- Plan de accion: `spec/006_plan_auditoria.md`
-- Scripts SQL: `spec/scripts/`
+- Plan de accion: `plan/01_Seguridad_Auditoria/01_plan_auditoria.md`
+- Scripts SQL: `spec/04_BaseDatos/06_scripts/`
 
 ---
 
@@ -1320,18 +1998,591 @@ PUT    /api/disponibilidad/{id}/ajustar-turno         # Ajustar turno
 ```bash
 # Crear tablas (disponibilidad_medica, detalle_disponibilidad)
 PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
-  -f spec/scripts/005_disponibilidad_medica.sql
+  -f spec/04_BaseDatos/06_scripts/005_disponibilidad_medica.sql
 
 # Agregar card "Mi Disponibilidad" al dashboard medico
 PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
-  -f spec/scripts/006_agregar_card_disponibilidad.sql
+  -f spec/04_BaseDatos/06_scripts/006_agregar_card_disponibilidad.sql
 ```
 
 ### Documentacion Relacionada
 
-- Plan de implementacion: `spec/009_plan_disponibilidad_turnos.md`
-- Reporte de pruebas: `spec/010_reporte_pruebas_disponibilidad.md`
-- Scripts SQL: `spec/scripts/005_*.sql`, `spec/scripts/006_*.sql`
+- Plan de implementacion: `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md`
+- Reporte de pruebas: `checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md`
+- Scripts SQL: `spec/04_BaseDatos/06_scripts/005_*.sql`, `spec/04_BaseDatos/06_scripts/006_*.sql`
+
+---
+
+## Modulo de Firma Digital para Personal Interno
+
+### Descripcion
+
+Sistema completo de gestion de firmas digitales (tokens y certificados) para personal interno de regimen CAS y 728. Permite registrar la entrega de tokens, fechas de certificados digitales, y gestionar entregas pendientes con flujo de actualizacion posterior.
+
+### Alcance
+
+**Solo para usuarios INTERNOS (tipo_personal = '1')**
+- Personal de regimen **CAS** y **728**: Formulario completo
+- Personal de regimen **LOCADOR**: Mensaje informativo (gestionan su propia firma)
+- Usuarios **EXTERNOS**: No se muestra la pestana
+
+### Arquitectura
+
+```
+Usuario INTERNO → Datos Laborales → Firma Digital
+                                          ↓
+                              ¿Regimen LOCADOR?
+                         ┌─────────┴─────────┐
+                        SI                   NO (CAS/728)
+                         │                    │
+            Mensaje informativo      ¿Entrego token?
+            "Gestiona su propia      ┌────┴────┐
+             firma digital"          SI        NO
+                         │            │        │
+                         ↓            ↓        ↓
+                    A Roles    Capturar:  Motivo:
+                               • N° Serie Token         • YA_TIENE → Fechas existentes
+                               • Fechas certificado     • NO_REQUIERE
+                               • Fecha entrega          • PENDIENTE
+                                                              ↓
+                                                        (EDICION POSTERIOR)
+                                                              ↓
+                                                   Boton: "Registrar entrega"
+                                                              ↓
+                                                        Modal especial
+                                                              ↓
+                                                        Capturar datos y
+                                                        cambiar a ENTREGADO
+```
+
+### Componentes Backend
+
+**Tabla de Base de Datos:**
+- `firma_digital_personal` con 12 columnas
+- 7 CHECK constraints para integridad de datos
+- 5 indices para performance
+- Trigger auto-update para timestamps
+
+**Entidad JPA:**
+- `FirmaDigitalPersonal.java` con 10+ metodos helper
+- Relacion `@ManyToOne` con `PersonalCnt`
+- Metodos clave:
+  - `esPendienteEntrega()` - Detecta estado PENDIENTE
+  - `puedeActualizarEntrega()` - Valida si puede actualizarse
+  - `tieneCertificadoVigente()` - Verifica vigencia
+  - `obtenerEstadoCertificado()` - VIGENTE/VENCIDO/SIN_CERTIFICADO
+
+**DTOs (3):**
+- `FirmaDigitalRequest` - Crear/actualizar firma digital
+- `FirmaDigitalResponse` - Respuesta con datos completos
+- `ActualizarEntregaTokenRequest` - Actualizar entregas PENDIENTE
+
+**Service Layer:**
+- `FirmaDigitalService` - Interface con 8 metodos
+- `FirmaDigitalServiceImpl` - Implementacion con:
+  - Patron UPSERT (crea si no existe, actualiza si existe)
+  - Validacion de regimen laboral para calcular horas
+  - Integracion con `AuditLogService`
+  - Metodo especial `actualizarEntregaToken()` para PENDIENTE
+
+**Controller REST:**
+- `FirmaDigitalController` - 9 endpoints:
+  ```
+  POST   /api/firma-digital                    # Crear/actualizar
+  GET    /api/firma-digital/personal/{id}      # Obtener por personal
+  PUT    /api/firma-digital/{id}/actualizar-entrega  # Actualizar PENDIENTE
+  GET    /api/firma-digital/pendientes         # Listar pendientes
+  GET    /api/firma-digital/proximos-vencer    # Certificados por vencer
+  DELETE /api/firma-digital/{id}               # Eliminar (soft delete)
+  ```
+
+### Componentes Frontend
+
+**FirmaDigitalTab.jsx (420 lineas):**
+- Componente tab condicional segun regimen
+- Tres flujos distintos:
+  1. **Locador**: Solo mensaje informativo
+  2. **CAS/728 con token**: Formulario completo con numero de serie
+  3. **CAS/728 sin token**: Selector de motivo + campos condicionales
+- Validacion en tiempo real
+- Limpieza automatica de campos segun seleccion
+
+**ActualizarEntregaTokenModal.jsx (357 lineas):**
+- Modal especifico para actualizar entregas PENDIENTE
+- Muestra informacion del personal en solo lectura
+- Badge de estado "PENDIENTE"
+- Formulario con validacion de:
+  - Numero de serie del token (obligatorio)
+  - Fecha de entrega (default: hoy)
+  - Fechas de certificado (inicio y vencimiento)
+  - Observaciones (opcional)
+- Integrado con PUT `/api/firma-digital/{id}/actualizar-entrega`
+
+**Integracion en Modales:**
+
+1. **CrearUsuarioModal.jsx:**
+   - Tab "Firma Digital" entre "Datos Laborales" y "Roles"
+   - 7 campos nuevos en formData
+   - Validacion completa antes de avanzar al tab "Roles"
+   - Envia `firmaDigital` object en request de creacion
+
+2. **ActualizarModel.jsx:**
+   - Misma integracion que CrearUsuarioModal
+   - Funcion `cargarFirmaDigital()` para cargar datos existentes
+   - Deteccion automatica de estado PENDIENTE
+   - Boton especial "Registrar Entrega" cuando es PENDIENTE
+   - Modal `ActualizarEntregaTokenModal` para completar entrega
+
+### Reglas de Negocio
+
+**Validaciones de Datos:**
+
+| Condicion | Campos Obligatorios | Constraint BD |
+|-----------|-------------------|---------------|
+| Entrego token = SI | numero_serie_token, fecha_inicio, fecha_vencimiento, fecha_entrega | chk_entrego_token_fechas |
+| Entrego token = NO | motivo_sin_token | chk_no_entrego_motivo |
+| Motivo = YA_TIENE | fecha_inicio, fecha_vencimiento del certificado existente | chk_motivo_ya_tiene |
+| Cualquier caso | fecha_vencimiento > fecha_inicio | chk_fechas_coherentes |
+
+**Flujo de Estados:**
+```
+PENDIENTE → (Admin registra entrega) → ENTREGADO
+   ↑                                        │
+   │                                        ↓
+   └──────── (Solo lectura) ────── NO puede volver
+```
+
+**Calculo de Vigencia:**
+- Sistema compara `fecha_vencimiento_certificado` vs fecha actual
+- Estados: VIGENTE, VENCIDO, SIN_CERTIFICADO
+- Puede usarse para alertas automaticas (futuro)
+
+### Patron UPSERT Implementado
+
+```java
+// Service method
+public FirmaDigitalResponse guardarFirmaDigital(FirmaDigitalRequest request) {
+    // Buscar si ya existe
+    FirmaDigitalPersonal firma = firmaRepository
+        .findByPersonal_IdPers(request.getIdPersonal())
+        .orElse(null);
+
+    boolean esNuevo = (firma == null);
+
+    if (esNuevo) {
+        firma = FirmaDigitalPersonal.builder()
+            .personal(personal)
+            .statFirma("A")
+            .build();
+    }
+
+    // Mapear campos y guardar
+    mapearCampos(request, firma);
+    FirmaDigitalPersonal firmaSaved = firmaRepository.save(firma);
+
+    // Auditar
+    auditar(esNuevo ? "CREATE" : "UPDATE", ...);
+
+    return mapToResponse(firmaSaved);
+}
+```
+
+### Scripts SQL
+
+```bash
+# Crear tabla firma_digital_personal
+PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+  -f spec/04_BaseDatos/06_scripts/015_crear_tabla_firma_digital_personal.sql
+```
+
+**Script incluye:**
+- Creacion de tabla con 12 columnas
+- 5 indices (id_pers, stat, motivo, fechas)
+- 7 CHECK constraints para validaciones
+- Trigger `trg_update_firma_digital_timestamp`
+- GRANT de permisos a postgres
+- Mensajes de confirmacion
+
+### Casos de Uso
+
+**Caso 1: Medico CAS con token entregado**
+```
+1. Admin crea usuario medico, regimen CAS
+2. En tab "Firma Digital" selecciona "SI" en ¿Entrego token?
+3. Ingresa numero de serie: ABC123456789
+4. Ingresa fechas: 2025-01-01 a 2027-01-01
+5. Guarda usuario → Firma digital se crea con estado ENTREGADO
+```
+
+**Caso 2: Enfermera 728 con entrega PENDIENTE**
+```
+1. Admin crea usuaria enfermera, regimen 728
+2. En tab "Firma Digital" selecciona "NO" en ¿Entrego token?
+3. Selecciona motivo: PENDIENTE
+4. Guarda usuario → Firma digital con estado PENDIENTE
+5. Dias despues, enfermera trae el token
+6. Admin edita usuario, ve boton "Registrar Entrega"
+7. Hace clic, abre modal especial
+8. Completa: numero serie, fechas certificado
+9. Guarda → Estado cambia a ENTREGADO
+```
+
+**Caso 3: Personal Locador**
+```
+1. Admin crea usuario, regimen LOCADOR
+2. En tab "Firma Digital" ve solo mensaje informativo
+3. No puede ingresar datos (gestionan su propia firma)
+4. Continua a tab "Roles"
+```
+
+**Caso 4: Personal con firma existente (YA_TIENE)**
+```
+1. Admin crea usuario que ya tiene firma digital propia
+2. Selecciona "NO" en ¿Entrego token?
+3. Selecciona motivo: YA_TIENE
+4. Sistema pide fechas del certificado existente
+5. Ingresa fechas de su certificado actual
+6. Guarda → Queda registrado para seguimiento de vencimiento
+```
+
+### Validacion en 3 Capas
+
+**1. Frontend (FirmaDigitalTab + Modales):**
+```javascript
+// Validacion antes de avanzar de tab
+if (formData.entrego_token === 'SI') {
+  if (!formData.numero_serie_token) {
+    errors.numero_serie_token = 'Numero de serie obligatorio';
+  }
+  if (!formData.fecha_inicio_certificado) {
+    errors.fecha_inicio = 'Fecha obligatoria';
+  }
+  // ... mas validaciones
+}
+```
+
+**2. Backend DTO:**
+```java
+// FirmaDigitalRequest.esValido()
+public boolean esValido() {
+    if (Boolean.TRUE.equals(entregoToken)) {
+        if (numeroSerieToken == null || numeroSerieToken.isBlank()) {
+            return false;
+        }
+        if (fechaInicioCertificado == null || fechaVencimientoCertificado == null) {
+            return false;
+        }
+    }
+    return true;
+}
+```
+
+**3. Base de Datos (CHECK Constraints):**
+```sql
+CONSTRAINT chk_entrego_token_fechas CHECK (
+    (entrego_token = TRUE AND
+     fecha_inicio_certificado IS NOT NULL AND
+     fecha_vencimiento_certificado IS NOT NULL AND
+     numero_serie_token IS NOT NULL) OR
+    (entrego_token = FALSE)
+)
+```
+
+### Auditoria
+
+Todas las operaciones son auditadas via `AuditLogService`:
+
+| Accion | Nivel | Detalle |
+|--------|-------|---------|
+| CREATE_FIRMA_DIGITAL | INFO | "Nueva firma digital: {nombre} - {regimen}" |
+| UPDATE_FIRMA_DIGITAL | INFO | "Firma digital actualizada: {idPersonal}" |
+| UPDATE_ENTREGA_TOKEN | INFO | "Token entregado: {numeroSerie}" |
+| DELETE_FIRMA_DIGITAL | WARNING | "Firma digital eliminada: {idPersonal}" |
+
+### Beneficios
+
+| Beneficio | Descripcion |
+|-----------|-------------|
+| **Trazabilidad** | Historial completo de entregas y certificados |
+| **Seguridad** | Validaciones en 3 capas evitan inconsistencias |
+| **Flexibilidad** | Permite entregas inmediatas o pendientes |
+| **Compliance** | Seguimiento de vigencia de certificados |
+| **Auditoria** | Registro de todas las operaciones |
+
+### Proximas Mejoras
+
+1. **Dashboard de alertas** - Certificados proximos a vencer
+2. **Notificaciones email** - Avisos 30 dias antes de vencimiento
+3. **Reporte Excel** - Exportacion de firmas digitales
+4. **Historial de renovaciones** - Tracking de multiples certificados
+5. **Integracion con RENIEC** - Validacion automatica de identidad
+
+### Documentacion Relacionada
+
+- Plan Implementación: `plan/05_Firma_Digital/01_plan_implementacion.md`
+- Checklist: `checklist/03_Checklists/01_checklist_firma_digital.md`
+- Script SQL: `spec/04_BaseDatos/06_scripts/015_crear_tabla_firma_digital_personal.sql`
+- Version: v1.14.0
+
+---
+
+## Modulo Formulario 107 - Importacion Masiva de Pacientes
+
+### Descripcion
+
+Sistema de **importación masiva de pacientes desde archivos Excel** (Bolsa 107). Permite cargar listas de pacientes con validación automática, gestión de errores y visualización de historial de cargas. El módulo procesa archivos Excel con 14 columnas esperadas, valida campos obligatorios y registra automáticamente en base de datos.
+
+### Características Principales
+
+✅ **Interfaz drag & drop** para cargar archivos Excel
+✅ **Validación de formato** (extensión .xlsx/.xls, tamaño máximo 10MB)
+✅ **Procesamiento en backend** con Apache POI
+✅ **Validación de 14 columnas** con 6 campos obligatorios
+✅ **Stored procedure PostgreSQL** para validaciones complejas
+✅ **Hash SHA-256** para evitar duplicados
+✅ **Historial completo** de importaciones
+✅ **Vista detallada** de pacientes OK + errores
+✅ **Estadísticas en tiempo real**
+
+### Arquitectura Frontend → Backend
+
+```
+Usuario → Drag & Drop Excel
+           ↓
+    Validación Frontend
+    ├── ¿Extensión .xlsx/.xls?
+    ├── ¿Tamaño < 10MB?
+    └── Si OK → Enviar a backend
+           ↓
+    POST /api/import-excel/pacientes
+           ↓
+    Backend (ExcelImportService)
+    ├── Calcular hash SHA-256
+    ├── Verificar duplicados
+    ├── Leer 14 columnas con Apache POI
+    ├── Validar campos obligatorios
+    ├── Batch insert → staging.bolsa_107_raw
+    ├── Ejecutar fn_procesar_bolsa_107_v2()
+    └── Retornar estadísticas
+           ↓
+    Respuesta con totales
+    ├── totalFilas: 50
+    ├── filasOk: 47
+    └── filasError: 3
+```
+
+### Componentes Backend
+
+**Entidades JPA (3):**
+- `Bolsa107Carga` - Header de importación (ID, archivo, fechas, totales)
+- `Bolsa107Item` - Pacientes importados correctamente (25 columnas)
+- `Bolsa107Error` - Registros con errores (fila, código, mensaje)
+
+**Service Layer:**
+- `ExcelImportService` - Procesamiento completo de Excel (429 líneas)
+  - Hash calculation (SHA-256)
+  - Apache POI para leer Excel
+  - Batch insert a staging table
+  - Ejecución de stored procedure
+  - Manejo de errores
+
+**Controller REST:**
+- `ImportExcelController` - 2 endpoints principales:
+  ```
+  POST   /api/import-excel/pacientes           # Importar Excel
+  GET    /api/import-excel/pacientes/{id}/datos # Ver detalle de carga
+  ```
+
+**Stored Procedure PostgreSQL:**
+- `fn_procesar_bolsa_107_v2()` - Validaciones complejas y migración de staging a tablas finales
+
+### Componentes Frontend
+
+**Listado107.jsx (648 líneas) - Componente Principal:**
+- **Estadísticas:** 4 cards (Total Cargas, Total Pacientes, Registros OK, Errores)
+- **Área de carga:** Drag & drop zone con validación
+- **Historial:** Tabla de cargas con búsqueda
+- **Modal detalle:** Vista completa de pacientes + errores
+
+**formulario107Service.js (116 líneas) - Cliente API:**
+- `importarPacientesExcel()` - Subir archivo Excel
+- `obtenerListaCargas()` - Historial de cargas
+- `obtenerDatosCarga()` - Detalle de carga específica
+- `eliminarCarga()` - Eliminar carga (soft delete)
+- `exportarCargaExcel()` - Exportar a Excel
+
+### Validaciones
+
+**Columnas Esperadas (14):**
+1. Número Documento *(obligatorio)*
+2. Paciente *(obligatorio)*
+3. Sexo *(obligatorio)*
+4. Fecha Nacimiento *(obligatorio)*
+5. Edad
+6. Diagnóstico *(obligatorio)*
+7. Observación
+8. Servicio *(obligatorio)*
+9. Actividad
+10. Subactividad
+11. Actividad Programada
+12. Área Hospitalaria
+13. Usuario Solicita
+14. Fecha Registro
+
+**Validaciones Backend:**
+- DNI: 8 dígitos numéricos
+- Sexo: M/F/Masculino/Femenino
+- Fecha nacimiento: Formato válido, no futuro
+- Diagnóstico/Servicio: No vacíos
+
+**Códigos de Error:**
+- `ERR_CAMPO_OBLIGATORIO` - Campo requerido está vacío
+- `ERR_DNI_INVALIDO` - DNI no cumple formato
+- `ERR_FECHA_INVALIDA` - Fecha incorrecta
+- `ERR_SEXO_INVALIDO` - Valor de sexo inválido
+
+### Flujo de Usuario
+
+```
+1. Usuario accede a /roles/coordcitas/107
+2. Arrastra archivo Excel a zona drag & drop
+3. Sistema valida (extensión + tamaño)
+4. Hace clic "Importar Pacientes"
+5. Backend procesa:
+   - Lee columnas con Apache POI
+   - Valida datos
+   - Ejecuta stored procedure
+   - Retorna estadísticas
+6. Frontend muestra alert:
+   "✅ Importación exitosa!
+    Total: 50
+    ✓ Correctos: 47
+    ✗ Errores: 3"
+7. Carga aparece en historial
+8. Usuario puede ver detalles (botón 👁️)
+```
+
+### Diseño Visual
+
+**Paleta de colores:**
+- Fondo: `from-violet-50 via-purple-50 to-fuchsia-50`
+- Primario: `from-violet-600 to-purple-600`
+- Cards: violet, blue, green, red
+
+**Iconografía:**
+- 📊 FileSpreadsheet - Archivos Excel
+- 📤 Upload - Cargar archivos
+- ✅ CheckCircle2 - Registros OK
+- ❌ XCircle - Errores
+- 👁️ Eye - Ver detalles
+- 📥 Download - Exportar
+- 🗑️ Trash2 - Eliminar
+
+### Endpoints API
+
+| Método | Endpoint | Estado | Descripción |
+|--------|----------|--------|-------------|
+| **POST** | `/api/import-excel/pacientes` | ✅ Implementado | Importar archivo Excel |
+| **GET** | `/api/import-excel/pacientes/{id}/datos` | ✅ Implementado | Obtener detalle de carga |
+| **GET** | `/api/import-excel/cargas` | ✅ Implementado | Obtener lista de cargas |
+| **DELETE** | `/api/import-excel/cargas/{id}` | ✅ Implementado | Eliminar carga |
+| **GET** | `/api/import-excel/cargas/{id}/exportar` | ✅ Implementado | Exportar a Excel |
+
+### Tablas de Base de Datos
+
+```sql
+-- Header de importación
+form_107.bolsa_107_carga (
+    id_carga SERIAL PRIMARY KEY,
+    nombre_archivo VARCHAR(255),
+    fecha_reporte DATE,
+    fecha_carga TIMESTAMP,
+    total_filas INTEGER,
+    filas_ok INTEGER,
+    filas_error INTEGER,
+    hash_archivo VARCHAR(64),  -- SHA-256
+    usuario_carga VARCHAR(100),
+    UNIQUE(fecha_reporte, hash_archivo)
+);
+
+-- Pacientes importados
+form_107.bolsa_107_item (
+    id_item SERIAL PRIMARY KEY,
+    id_carga INTEGER REFERENCES bolsa_107_carga,
+    numero_documento VARCHAR(20),
+    paciente VARCHAR(255),
+    sexo CHAR(1),
+    -- ... 22 columnas más
+);
+
+-- Errores de validación
+form_107.bolsa_107_error (
+    id_error SERIAL PRIMARY KEY,
+    id_carga INTEGER REFERENCES bolsa_107_carga,
+    numero_fila INTEGER,
+    codigo_error VARCHAR(50),
+    mensaje_error TEXT,
+    campo_afectado VARCHAR(100),
+    raw_data JSONB
+);
+
+-- Staging area (temporal)
+staging.bolsa_107_raw (
+    -- Mismo esquema que bolsa_107_item
+    -- Se limpia después de procesar
+);
+```
+
+### Casos de Uso
+
+**Caso 1: Importación exitosa sin errores**
+```
+1. Usuario sube archivo con 50 pacientes
+2. Backend valida todos los registros
+3. Stored procedure inserta 50 en bolsa_107_item
+4. Response: totalFilas=50, filasOk=50, filasError=0
+5. Historial muestra nueva carga con badge verde
+```
+
+**Caso 2: Importación con errores**
+```
+1. Usuario sube archivo con 50 pacientes
+2. Backend detecta 3 errores (DNI inválido, campo vacío, fecha incorrecta)
+3. Stored procedure inserta 47 en bolsa_107_item
+4. Stored procedure inserta 3 en bolsa_107_error
+5. Response: totalFilas=50, filasOk=47, filasError=3
+6. Usuario hace clic 👁️ "Ver detalles"
+7. Modal muestra tabla de 47 OK + tabla de 3 errores
+```
+
+**Caso 3: Archivo duplicado**
+```
+1. Usuario sube mismo archivo dos veces
+2. Backend calcula hash SHA-256 = mismo hash
+3. UNIQUE constraint (fecha_reporte, hash_archivo) rechaza
+4. Error: "Este archivo ya fue importado para esta fecha"
+```
+
+### Mejoras Futuras
+
+1. **Paginación** en historial de cargas
+2. **Filtros avanzados** por rango de fechas
+3. **Notificaciones toast** en lugar de alerts
+4. **Preview del Excel** antes de importar
+5. **Plantilla descargable** con formato correcto
+6. **Procesamiento asíncrono** para archivos grandes (>1000 registros)
+7. **Dashboard de estadísticas** con gráficos
+8. **Soft delete** - Agregar campo `stat_carga` para eliminación lógica
+9. **Auditoría** - Integrar con sistema de auditoría del módulo
+10. **Notificaciones email** - Avisar al usuario cuando termine importación grande
+
+### Documentación Relacionada
+
+- **Backend técnico:** `spec/01_Backend/03_modulo_formulario_107.md` (800+ líneas)
+- **Frontend implementación:** `frontend/IMPLEMENTACION_FORMULARIO_107.md` (730+ líneas)
+- **Resumen ejecutivo:** `RESUMEN_CODIGO_IMPORTADO_v1.14.0.md`
+- **API Endpoints:** `spec/01_Backend/01_api_endpoints.md` (sección Formulario 107)
+- **Versión:** v1.14.2 - ✅ Implementación completa 100%
 
 ---
 
@@ -1350,17 +2601,68 @@ PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
 4. **Respetar capas**: No mezclar logica de negocio en controllers
 
 ### Documentacion adicional:
-- **API Endpoints**: `spec/003_api_endpoints.md`
-- **Arquitectura**: `spec/004_arquitectura.md`
-- **Troubleshooting**: `spec/005_troubleshooting.md`
-- **Changelog**: `spec/002_changelog.md`
-- **Modelo Usuarios**: `spec/001_espec_users_bd.md`
-- **Plan Auditoria**: `spec/006_plan_auditoria.md`
-- **Plan Seguridad Auth**: `spec/008_plan_seguridad_auth.md`
-- **Plan Disponibilidad Turnos**: `spec/009_plan_disponibilidad_turnos.md`
-- **Reporte Pruebas Disponibilidad**: `spec/010_reporte_pruebas_disponibilidad.md`
-- **Guia Sistema de Auditoria**: `spec/011_guia_auditoria.md` ⭐
-- **Scripts SQL**: `spec/scripts/`
+
+**📚 Documentación Técnica (spec/):**
+
+- **Backend**:
+  - `spec/01_Backend/01_api_endpoints.md` - Todos los endpoints REST (100+ endpoints documentados)
+
+- **Arquitectura**:
+  - `spec/03_Arquitectura/01_diagramas_sistema.md` - Flujos completos, capas, MBAC, patrones de diseño
+
+- **Base de Datos** (135 tablas, 5.4 GB):
+  - `spec/04_BaseDatos/01_modelo_usuarios/01_modelo_usuarios.md` - Modelo completo de usuarios y autenticación
+  - `spec/04_BaseDatos/02_guia_auditoria/02_guia_auditoria.md` ⭐ - Guía completa del sistema de auditoría
+  - `spec/04_BaseDatos/03_guia_auditoria_acceso_sensible/03_guia_auditoria_acceso_sensible.md` - Auditoría de accesos críticos
+  - `spec/04_BaseDatos/04_analisis_estructura/01_resumen_general.md` ⭐ - Análisis completo de las 135 tablas
+  - `spec/04_BaseDatos/05_plan_limpieza/` ⭐ - Plan para optimizar la BD (-28% tamaño, recuperar 1.5 GB)
+    - `01_resumen_ejecutivo.md` - Resumen para jefes y stakeholders
+    - `02_guia_ejecucion.md` - Guía paso a paso para ejecutar limpieza
+    - `03_scripts_limpieza_fase1.sql` - Scripts SQL listos para fase 1
+  - `spec/04_BaseDatos/06_scripts/` - 16 scripts SQL de migración y mantenimiento
+  - `spec/04_BaseDatos/07_sql/` - Configuraciones SQL (menu chatbot, etc.)
+
+- **Troubleshooting**:
+  - `spec/05_Troubleshooting/01_guia_problemas_comunes.md` - Solución a problemas frecuentes
+
+**📋 Planificación (plan/):**
+
+- **Seguridad y Auditoría** (✅ Implementados v1.12.0 - v1.13.0):
+  - `plan/01_Seguridad_Auditoria/01_plan_auditoria.md` - Plan del sistema de auditoría
+  - `plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md` - Plan de seguridad JWT + MBAC
+  - `plan/01_Seguridad_Auditoria/03_plan_mejoras_auditoria.md` - Mejoras adicionales implementadas
+
+- **Módulos Médicos**:
+  - `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` ✅ - Declaración disponibilidad (v1.9.0)
+  - `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` 📋 - Solicitud de turnos (planificado)
+
+- **Infraestructura**:
+  - `plan/03_Infraestructura/01_plan_modulo_red.md` 📋 - Módulo de red para coordinadores (planificado)
+
+- **Integraciones**:
+  - `plan/04_Integraciones/01_analisis_ollama.md` 🔍 - Análisis de integración con Ollama AI (en evaluación)
+
+- **Firma Digital**:
+  - `plan/05_Firma_Digital/01_plan_implementacion.md` ✅ - Plan de firma digital (v1.14.0)
+
+**✅ Checklists y Logs (checklist/):**
+
+- **Historial**:
+  - `checklist/01_Historial/01_changelog.md` ⭐ - Historial completo v1.0.0 → v1.14.0 (CONSULTAR SIEMPRE)
+  - `checklist/01_Historial/02_historial_versiones.md` - Registro de releases y versiones
+
+- **Reportes de Pruebas**:
+  - `checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md` - Pruebas del módulo de disponibilidad médica
+
+- **Checklists de Implementación**:
+  - `checklist/03_Checklists/01_checklist_firma_digital.md` - Checklist de firma digital (v1.14.0)
+
+- **Análisis y Resúmenes**:
+  - `checklist/04_Analisis/01_analisis_chatbot_citas.md` - Análisis del chatbot de citas
+  - `checklist/04_Analisis/02_resumen_mejoras_auditoria.md` - Resumen de mejoras implementadas
+
+**📖 Índice de Navegación:**
+- `INDICE_DOCUMENTACION.md` - Índice maestro de toda la documentación (400+ líneas)
 
 ---
 

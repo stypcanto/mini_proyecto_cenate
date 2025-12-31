@@ -1,0 +1,74 @@
+spec/
+├── 01_Backend
+│   └── 01_api_endpoints.md
+├── 02_Frontend
+├── 03_Arquitectura
+│   └── 01_diagramas_sistema.md
+├── 04_BaseDatos
+│   ├── 01_modelo_usuarios
+│   │   └── 01_modelo_usuarios.md
+│   ├── 02_guia_auditoria
+│   │   └── 02_guia_auditoria.md
+│   ├── 03_guia_auditoria_acceso_sensible
+│   │   └── 03_guia_auditoria_acceso_sensible.md
+│   ├── 04_analisis_estructura
+│   │   └── 01_resumen_general.md
+│   ├── 05_plan_limpieza
+│   │   ├── 01_resumen_ejecutivo.md
+│   │   ├── 02_guia_ejecucion.md
+│   │   └── 03_scripts_limpieza_fase1.sql
+│   ├── 06_scripts
+│   │   ├── 001_audit_view_and_indexes.sql
+│   │   ├── 002_rename_logs_to_auditoria.sql
+│   │   ├── 003_modulo_red_coordinador.sql
+│   │   ├── 003_solicitud_turnos_tables.sql
+│   │   ├── 004_modulo_solicitud_turnos.sql
+│   │   ├── 004_token_blacklist.sql
+│   │   ├── 005_disponibilidad_medica.sql
+│   │   ├── 005_password_reset_tokens.sql
+│   │   ├── 006_agregar_card_disponibilidad.sql
+│   │   ├── 007_agregar_email_preferido.sql
+│   │   ├── 008_email_preferido_personal_cnt.sql
+│   │   ├── 009_fix_vista_auditoria_completa.sql
+│   │   ├── 010_agregar_emojis_mbac_auditoria.sql
+│   │   ├── 011_crear_tabla_active_sessions.sql
+│   │   ├── 012_agregar_columnas_tracking_cambios.sql
+│   │   ├── 013_agregar_hash_integridad.sql
+│   │   ├── 014_crear_tabla_security_alerts.sql
+│   │   ├── 015_crear_tabla_firma_digital_personal.sql
+│   │   └── 016_agregar_control_firma_digital.sql
+│   ├── 07_sql
+│   │   └── chatbot_menu_setup.sql
+│   └── README.md
+├── 05_Troubleshooting
+│   └── 01_guia_problemas_comunes.md
+└── README.md
+plan/
+├── 01_Seguridad_Auditoria
+│   ├── 01_plan_auditoria.md
+│   ├── 02_plan_seguridad_auth.md
+│   └── 03_plan_mejoras_auditoria.md
+├── 02_Modulos_Medicos
+│   ├── 01_plan_disponibilidad_turnos.md
+│   └── 02_plan_solicitud_turnos.md
+├── 03_Infraestructura
+│   └── 01_plan_modulo_red.md
+├── 04_Integraciones
+│   └── 01_analisis_ollama.md
+├── 05_Firma_Digital
+│   └── 01_plan_implementacion.md
+└── README.md
+checklist/
+├── 01_Historial
+│   ├── 01_changelog.md
+│   └── 02_historial_versiones.md
+├── 02_Reportes_Pruebas
+│   └── 01_reporte_disponibilidad.md
+├── 03_Checklists
+│   └── 01_checklist_firma_digital.md
+├── 04_Analisis
+│   ├── 01_analisis_chatbot_citas.md
+│   └── 02_resumen_mejoras_auditoria.md
+└── README.md
+
+24 directories, 48 files

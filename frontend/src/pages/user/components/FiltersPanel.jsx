@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Filter, ChevronDown, UserPlus, X, Trash2, Download, Upload, LayoutGrid, List, Sparkles, RefreshCw, Building2, Calendar } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 
-const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUser, selectedCount = 0, onDeleteSelected, viewMode, setViewMode, roles = [], areas = [], redesList = [], ipressList = [], onRefresh }) => {
+const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUser, selectedCount = 0, onDeleteSelected, viewMode, setViewMode, roles = [], areas = [], redesList = [], ipressList = [], regimenes = [], profesionesList = [], especialidadesList = [], onRefresh }) => {
   const { user: currentUser } = useAuth();
   const [showFilters, setShowFilters] = useState(false);
 
@@ -18,8 +18,13 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
   const hasActiveFilters = Object.values(filters).some((v) => v !== '') || searchTerm;
 
   const limpiarFiltros = () => {
-    setFilters({ rol: '', institucion: '', estado: '', mesCumpleanos: '', area: '', red: '', ipress: '', fechaRegistroDesde: '', fechaRegistroHasta: '' });
+    setFilters({ rol: '', institucion: '', estado: '', mesCumpleanos: '', area: '', red: '', ipress: '', regimen: '', profesion: '', especialidad: '', fechaRegistroDesde: '', fechaRegistroHasta: '' });
     setSearchTerm('');
+    // Recargar usuarios con paginación normal después de limpiar filtros
+    // Delay de 300ms para asegurar que las refs se actualicen antes de recargar
+    if (onRefresh) {
+      setTimeout(() => onRefresh(), 300);
+    }
   };
 
   const activeFiltersCount = useMemo(() => {
@@ -32,6 +37,9 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
     if (filters.area) count++;
     if (filters.red) count++;
     if (filters.ipress) count++;
+    if (filters.regimen) count++;
+    if (filters.profesion) count++;
+    if (filters.especialidad) count++;
     if (filters.fechaRegistroDesde) count++;
     if (filters.fechaRegistroHasta) count++;
     return count;
@@ -48,6 +56,9 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
     if (filters.area) list.push({ key: 'area', label: 'Área', value: filters.area });
     if (filters.red) list.push({ key: 'red', label: 'Red', value: filters.red });
     if (filters.ipress) list.push({ key: 'ipress', label: 'IPRESS', value: filters.ipress });
+    if (filters.regimen) list.push({ key: 'regimen', label: 'Régimen', value: filters.regimen });
+    if (filters.profesion) list.push({ key: 'profesion', label: 'Profesión', value: filters.profesion });
+    if (filters.especialidad) list.push({ key: 'especialidad', label: 'Especialidad', value: filters.especialidad });
     if (filters.fechaRegistroDesde) list.push({ key: 'fechaRegistroDesde', label: 'Desde', value: new Date(filters.fechaRegistroDesde).toLocaleDateString('es-PE') });
     if (filters.fechaRegistroHasta) list.push({ key: 'fechaRegistroHasta', label: 'Hasta', value: new Date(filters.fechaRegistroHasta).toLocaleDateString('es-PE') });
     return list;
@@ -62,53 +73,53 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
   };
 
   return (
-    <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6">
       {/* Toolbar estilo Apple - Minimalista y elegante */}
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-5 py-2">
         {/* Botones de acción - Estilo Apple */}
         <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={onNewUser}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-xl hover:from-emerald-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium backdrop-blur-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white rounded-lg hover:from-emerald-600 hover:to-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium backdrop-blur-sm"
           >
             <UserPlus className="w-4 h-4" strokeWidth={2.5} />
             Nuevo Usuario
           </button>
-          
+
           {/* Solo SUPERADMIN puede ver el botón de eliminar */}
           {esSuperAdmin && (
             <button
               onClick={onDeleteSelected}
               disabled={selectedCount === 0}
-              className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm relative"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg hover:from-red-600 hover:to-red-700 focus:outline-none focus:ring-2 focus:ring-red-500/50 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:scale-100 disabled:hover:shadow-sm relative"
             >
               <Trash2 className="w-4 h-4" strokeWidth={2.5} />
               Eliminar
               {selectedCount > 0 && (
-                <span className="absolute -top-2 -right-2 min-w-[22px] h-5 px-1.5 bg-white text-red-600 rounded-full text-xs font-bold flex items-center justify-center shadow-lg border-2 border-red-500 animate-pulse">
+                <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 bg-white text-red-600 rounded-full text-xs font-bold flex items-center justify-center shadow-lg border-2 border-red-500 animate-pulse">
                   {selectedCount}
                 </span>
               )}
             </button>
           )}
-          
+
           <button
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium"
           >
             <Download className="w-4 h-4" strokeWidth={2.5} />
             Exportar
           </button>
-          
+
           <button
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-white text-gray-700 border border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium"
           >
             <Upload className="w-4 h-4" strokeWidth={2.5} />
             Importar
           </button>
-          
+
           <button
             onClick={onRefresh}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium backdrop-blur-sm"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98] text-sm font-medium backdrop-blur-sm"
             title="Actualizar tabla de usuarios"
           >
             <RefreshCw className="w-4 h-4" strokeWidth={2.5} />
@@ -118,10 +129,10 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
 
         {/* Controles de vista - Estilo Apple */}
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-0.5 bg-gray-100/80 backdrop-blur-sm rounded-xl p-1 border border-gray-200/50 shadow-inner">
+          <div className="flex items-center gap-0.5 bg-gray-100/80 backdrop-blur-sm rounded-lg p-1 border border-gray-200/50 shadow-inner">
             <button
               onClick={() => setViewMode('table')}
-              className={`p-2 rounded-lg transition-all duration-200 ${
+              className={`p-2 rounded-md transition-all duration-200 ${
                 viewMode === 'table'
                   ? 'bg-white text-blue-600 shadow-sm scale-105'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
@@ -132,7 +143,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
             </button>
             <button
               onClick={() => setViewMode('cards')}
-              className={`p-2 rounded-lg transition-all duration-200 ${
+              className={`p-2 rounded-md transition-all duration-200 ${
                 viewMode === 'cards'
                   ? 'bg-white text-blue-600 shadow-sm scale-105'
                   : 'text-gray-500 hover:text-gray-700 hover:bg-white/50'
@@ -146,18 +157,18 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
       </div>
 
       {/* Filtros Avanzados - Estilo Apple Premium */}
-      <div className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-lg border border-gray-200/60 mb-6 overflow-hidden transition-all duration-300 hover:shadow-xl">
+      <div className="bg-white/80 backdrop-blur-xl rounded-xl shadow-md border border-gray-200/60 mb-5 overflow-hidden transition-all duration-300 hover:shadow-lg">
         <button
           onClick={() => setShowFilters(!showFilters)}
-          className="w-full flex items-center justify-between px-6 py-4 hover:bg-gray-50/50 transition-all duration-200 group"
+          className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50/50 transition-all duration-200 group"
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5">
             <div className="relative">
-              <div className="p-2.5 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl group-hover:from-blue-100 group-hover:to-blue-200 transition-all duration-200 shadow-sm">
-                <Filter className="w-5 h-5 text-blue-600" strokeWidth={2.5} />
+              <div className="p-2 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg group-hover:from-blue-100 group-hover:to-blue-200 transition-all duration-200 shadow-sm">
+                <Filter className="w-4.5 h-4.5 text-blue-600" strokeWidth={2.5} />
               </div>
               {activeFiltersCount > 0 && (
-                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg animate-pulse">
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-md animate-pulse">
                   <span className="text-[10px] font-bold text-white">{activeFiltersCount}</span>
                 </div>
               )}
@@ -166,7 +177,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
               <p className="text-sm font-semibold text-gray-900 flex items-center gap-2">
                 Filtros Avanzados
                 {activeFiltersCount > 0 && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
+                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-50 text-blue-700 text-xs font-medium rounded-full border border-blue-200">
                     <Sparkles className="w-3 h-3" />
                     {activeFiltersCount} activo{activeFiltersCount > 1 ? 's' : ''}
                   </span>
@@ -209,25 +220,25 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
             showFilters ? 'max-h-[800px] opacity-100' : 'max-h-0 opacity-0'
           }`}
         >
-          <div className="px-6 pb-6 bg-gradient-to-b from-gray-50/50 to-white border-t border-gray-200/60">
+          <div className="px-5 pb-5 bg-gradient-to-b from-gray-50/50 to-white border-t border-gray-200/60">
             {/* Buscador principal - Estilo Apple */}
-            <div className="pt-6 pb-5">
-              <label className="block mb-3 text-sm font-semibold text-gray-800 flex items-center gap-2">
+            <div className="pt-4 pb-3">
+              <label className="block mb-2 text-sm font-semibold text-gray-800 flex items-center gap-2">
                 <div className="p-1.5 bg-blue-50 rounded-lg">
                   <Search className="w-4 h-4 text-blue-600" strokeWidth={2.5} />
                 </div>
                 Búsqueda General
               </label>
               <div className="relative group">
-                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-2xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-purple-500/10 rounded-xl blur-xl opacity-0 group-focus-within:opacity-100 transition-opacity duration-300"></div>
                 <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-focus-within:text-blue-600 transition-all duration-200 pointer-events-none z-10" strokeWidth={2} />
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4.5 h-4.5 text-gray-400 group-focus-within:text-blue-600 transition-all duration-200 pointer-events-none z-10" strokeWidth={2} />
                   <input
                     type="text"
                     placeholder="Buscar por nombre, usuario, documento, IPRESS..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    className="w-full pl-12 pr-4 py-3.5 bg-white/90 backdrop-blur-sm border-2 border-gray-200 rounded-2xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 shadow-sm hover:border-gray-300 hover:shadow-md focus:shadow-lg"
+                    className="w-full pl-11 pr-4 py-2.5 bg-white/90 backdrop-blur-sm border-2 border-gray-200 rounded-xl text-sm text-gray-900 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 transition-all duration-200 shadow-sm hover:border-gray-300 hover:shadow-md focus:shadow-lg"
                   />
                   {searchTerm && (
                     <button
@@ -243,21 +254,21 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
 
             {/* Badges de filtros activos - Visualización estilo Apple */}
             {activeFiltersList.length > 0 && (
-              <div className="mb-5 pb-4 border-b border-gray-200/60">
-                <p className="text-xs font-semibold text-gray-600 uppercase tracking-wider mb-3">Filtros Aplicados</p>
-                <div className="flex flex-wrap gap-2">
+              <div className="mb-2.5 pb-2.5 border-b border-gray-200/60">
+                <p className="text-[10px] font-semibold text-gray-600 uppercase tracking-wider mb-1.5">Filtros Aplicados</p>
+                <div className="flex flex-wrap gap-1.5">
                   {activeFiltersList.map((filter) => (
                     <div
                       key={filter.key}
-                      className="inline-flex items-center gap-2 px-3 py-1.5 bg-gradient-to-r from-blue-50 to-blue-100/50 border border-blue-200 rounded-xl text-sm text-blue-700 font-medium shadow-sm hover:shadow-md transition-all duration-200 group"
+                      className="inline-flex items-center gap-1.5 px-2 py-1 bg-gradient-to-r from-blue-50 to-blue-100/50 border border-blue-200 rounded-lg text-[10px] text-blue-700 font-medium shadow-sm hover:shadow-md transition-all duration-200 group"
                     >
-                      <span className="text-xs font-semibold text-blue-600">{filter.label}:</span>
-                      <span className="text-blue-800">{filter.value}</span>
+                      <span className="text-[10px] font-semibold text-blue-600">{filter.label}:</span>
+                      <span className="text-blue-800 text-[10px]">{filter.value}</span>
                       <button
                         onClick={() => removeFilter(filter.key)}
-                        className="ml-1 p-0.5 hover:bg-blue-200 rounded-md transition-colors duration-150 opacity-70 hover:opacity-100"
+                        className="ml-0.5 p-0.5 hover:bg-blue-200 rounded-md transition-colors duration-150 opacity-70 hover:opacity-100"
                       >
-                        <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+                        <X className="w-3 h-3" strokeWidth={2.5} />
                       </button>
                     </div>
                   ))}
@@ -266,24 +277,24 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
             )}
 
             {/* Separador visual */}
-            <div className="my-2">
+            <div className="my-1.5">
               <div className="h-px bg-gradient-to-r from-transparent via-gray-300 to-transparent"></div>
             </div>
 
             {/* Grid de filtros principales - Cards estilo Apple */}
-            <div className="space-y-6">
+            <div className="space-y-4">
               {/* Sección 1: Filtros de Usuario */}
               <div>
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <div className="h-1 w-1 rounded-full bg-blue-500"></div>
                   Filtros de Usuario
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
                   {/* Rol */}
                   <div className="group relative">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-purple-500/5 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-blue-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-blue-500"></div>
                         Rol
                       </label>
@@ -291,7 +302,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                         <select
                           value={filters.rol}
                           onChange={(e) => setFilters({ ...filters, rol: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-md text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
                         >
                           <option value="">Todos los Roles</option>
                           {roles.map((rol) => (
@@ -301,12 +312,12 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                           ))}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2.5} />
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
                         </div>
                       </div>
                       {filters.rol && (
-                        <div className="mt-2.5 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-lg">
-                          <span className="text-xs text-blue-700 font-semibold">{filters.rol}</span>
+                        <div className="mt-2 px-2.5 py-1.5 bg-blue-50 border border-blue-200 rounded-md">
+                          <span className="text-[10px] text-blue-700 font-semibold">{filters.rol}</span>
                         </div>
                       )}
                     </div>
@@ -315,8 +326,8 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   {/* Tipo de Personal */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-teal-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-emerald-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-emerald-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
                         Tipo
                       </label>
@@ -324,19 +335,19 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                         <select
                           value={filters.institucion}
                           onChange={(e) => setFilters({ ...filters, institucion: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
                         >
                           <option value="">Todos los Tipos</option>
                           <option value="Interno">Interno</option>
                           <option value="Externo">Externo</option>
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2.5} />
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
                         </div>
                       </div>
                       {filters.institucion && (
-                        <div className="mt-2.5 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
-                          <span className="text-xs text-emerald-700 font-semibold">{filters.institucion}</span>
+                        <div className="mt-2 px-2.5 py-1.5 bg-emerald-50 border border-emerald-200 rounded-lg">
+                          <span className="text-[10px] text-emerald-700 font-semibold">{filters.institucion}</span>
                         </div>
                       )}
                     </div>
@@ -345,8 +356,8 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   {/* Área */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-violet-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-indigo-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-indigo-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-indigo-500"></div>
                         Área
                       </label>
@@ -354,7 +365,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                         <select
                           value={filters.area}
                           onChange={(e) => setFilters({ ...filters, area: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
                         >
                           <option value="">Todas las Áreas</option>
                           {areas.map((area) => (
@@ -364,12 +375,12 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                           ))}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2.5} />
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
                         </div>
                       </div>
                       {filters.area && (
-                        <div className="mt-2.5 px-2.5 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">
-                          <span className="text-xs text-indigo-700 font-semibold">{filters.area}</span>
+                        <div className="mt-2 px-2.5 py-1.5 bg-indigo-50 border border-indigo-200 rounded-lg">
+                          <span className="text-[10px] text-indigo-700 font-semibold">{filters.area}</span>
                         </div>
                       )}
                     </div>
@@ -378,8 +389,8 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   {/* Estado */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-green-500/5 to-emerald-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-green-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-green-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-green-500"></div>
                         Estado
                       </label>
@@ -387,18 +398,18 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                         <select
                           value={filters.estado}
                           onChange={(e) => setFilters({ ...filters, estado: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
                         >
                           <option value="">Todos los Estados</option>
                           <option value="ACTIVO">Activo</option>
                           <option value="INACTIVO">Inactivo</option>
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2.5} />
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
                         </div>
                       </div>
                       {filters.estado && (
-                        <div className={`mt-2.5 px-2.5 py-1.5 rounded-lg border ${
+                        <div className={`mt-2 px-2.5 py-1.5 rounded-lg border ${
                           filters.estado === 'ACTIVO'
                             ? 'bg-green-50 border-green-200'
                             : 'bg-red-50 border-red-200'
@@ -416,8 +427,8 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   {/* Mes Cumpleaños */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-pink-500/5 to-rose-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-pink-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-pink-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <div className="w-2 h-2 rounded-full bg-pink-500"></div>
                         Cumpleaños
                       </label>
@@ -425,7 +436,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                         <select
                           value={filters.mesCumpleanos}
                           onChange={(e) => setFilters({ ...filters, mesCumpleanos: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-pink-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
                         >
                           <option value="">Todos los Meses</option>
                           {meses.map((m) => (
@@ -435,12 +446,12 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                           ))}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2.5} />
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
                         </div>
                       </div>
                       {filters.mesCumpleanos && (
-                        <div className="mt-2.5 px-2.5 py-1.5 bg-pink-50 border border-pink-200 rounded-lg">
-                          <span className="text-xs text-pink-700 font-semibold">{filters.mesCumpleanos}</span>
+                        <div className="mt-2 px-2.5 py-1.5 bg-pink-50 border border-pink-200 rounded-lg">
+                          <span className="text-[10px] text-pink-700 font-semibold">{filters.mesCumpleanos}</span>
                         </div>
                       )}
                     </div>
@@ -448,18 +459,132 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                 </div>
               </div>
 
-              {/* Sección 2: Filtros de Ubicación y Fecha */}
-              <div className="mt-8">
+              {/* Sección 2: Filtros Laborales */}
+              <div className="mt-4">
+                <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <div className="h-1 w-1 rounded-full bg-teal-500"></div>
+                  Filtros Laborales
+                </h4>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {/* Régimen Laboral */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-teal-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-teal-500"></div>
+                        Régimen Laboral
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={filters.regimen}
+                          onChange={(e) => setFilters({ ...filters, regimen: e.target.value })}
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                        >
+                          <option value="">Todos los Regímenes</option>
+                          {regimenes.map((regimen) => (
+                            <option key={regimen.idRegLab} value={regimen.descRegLab}>
+                              {regimen.descRegLab}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
+                        </div>
+                      </div>
+                      {filters.regimen && (
+                        <div className="mt-2 px-2.5 py-1.5 bg-teal-50 border border-teal-200 rounded-lg">
+                          <span className="text-[10px] text-teal-700 font-semibold truncate block" title={filters.regimen}>
+                            {filters.regimen.length > 20 ? filters.regimen.substring(0, 20) + '...' : filters.regimen}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Profesión */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-yellow-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-amber-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-amber-500"></div>
+                        Profesión
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={filters.profesion}
+                          onChange={(e) => setFilters({ ...filters, profesion: e.target.value })}
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-amber-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                        >
+                          <option value="">Todas las Profesiones</option>
+                          {profesionesList.map((profesion, index) => (
+                            <option key={profesion.id_profesion || profesion.idProfesion || index} value={profesion.nombre_profesion || profesion.nombreProfesion}>
+                              {profesion.nombre_profesion || profesion.nombreProfesion}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
+                        </div>
+                      </div>
+                      {filters.profesion && (
+                        <div className="mt-2 px-2.5 py-1.5 bg-amber-50 border border-amber-200 rounded-lg">
+                          <span className="text-[10px] text-amber-700 font-semibold truncate block" title={filters.profesion}>
+                            {filters.profesion.length > 20 ? filters.profesion.substring(0, 20) + '...' : filters.profesion}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Especialidad */}
+                  <div className="group relative">
+                    <div className="absolute inset-0 bg-gradient-to-br from-rose-500/5 to-red-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-rose-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                        <div className="w-2 h-2 rounded-full bg-rose-500"></div>
+                        Especialidad
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={filters.especialidad}
+                          onChange={(e) => setFilters({ ...filters, especialidad: e.target.value })}
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-rose-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                        >
+                          <option value="">Todas las Especialidades</option>
+                          {especialidadesList.map((especialidad, index) => (
+                            <option key={especialidad.id_especialidad || especialidad.idEspecialidad || index} value={especialidad.nombre_especialidad || especialidad.nombreEspecialidad}>
+                              {especialidad.nombre_especialidad || especialidad.nombreEspecialidad}
+                            </option>
+                          ))}
+                        </select>
+                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
+                        </div>
+                      </div>
+                      {filters.especialidad && (
+                        <div className="mt-2 px-2.5 py-1.5 bg-rose-50 border border-rose-200 rounded-lg">
+                          <span className="text-[10px] text-rose-700 font-semibold truncate block" title={filters.especialidad}>
+                            {filters.especialidad.length > 20 ? filters.especialidad.substring(0, 20) + '...' : filters.especialidad}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sección 3: Filtros de Ubicación y Fecha */}
+              <div className="mt-4">
                 <h4 className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 flex items-center gap-2">
                   <div className="h-1 w-1 rounded-full bg-orange-500"></div>
                   Filtros de Ubicación y Fecha de Registro
                 </h4>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                   {/* RED Asistencial */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-purple-500/5 to-violet-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-purple-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-purple-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <Building2 className="w-3.5 h-3.5 text-purple-500" strokeWidth={2.5} />
                         Red Asistencial
                       </label>
@@ -470,7 +595,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                             // Al cambiar red, limpiar el filtro de IPRESS
                             setFilters({ ...filters, red: e.target.value, ipress: '' });
                           }}
-                          className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
                         >
                           <option value="">Todas las Redes</option>
                           {redesList.map((red) => (
@@ -480,12 +605,12 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                           ))}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2.5} />
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
                         </div>
                       </div>
                       {filters.red && (
-                        <div className="mt-2.5 px-2.5 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
-                          <span className="text-xs text-purple-700 font-semibold truncate block" title={filters.red}>
+                        <div className="mt-2 px-2.5 py-1.5 bg-purple-50 border border-purple-200 rounded-lg">
+                          <span className="text-[10px] text-purple-700 font-semibold truncate block" title={filters.red}>
                             {filters.red.length > 20 ? filters.red.substring(0, 20) + '...' : filters.red}
                           </span>
                         </div>
@@ -496,8 +621,8 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   {/* IPRESS */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-orange-500/5 to-amber-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-orange-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-orange-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <Building2 className="w-3.5 h-3.5 text-orange-500" strokeWidth={2.5} />
                         IPRESS
                       </label>
@@ -505,7 +630,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                         <select
                           value={filters.ipress}
                           onChange={(e) => setFilters({ ...filters, ipress: e.target.value })}
-                          className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
+                          className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-200 appearance-none cursor-pointer hover:bg-white font-medium"
                         >
                           <option value="">Todas las IPRESS</option>
                           {ipressList.map((ipress) => (
@@ -515,12 +640,12 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                           ))}
                         </select>
                         <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                          <ChevronDown className="w-4 h-4 text-gray-500" strokeWidth={2.5} />
+                          <ChevronDown className="w-3.5 h-3.5 text-gray-500" strokeWidth={2.5} />
                         </div>
                       </div>
                       {filters.ipress && (
-                        <div className="mt-2.5 px-2.5 py-1.5 bg-orange-50 border border-orange-200 rounded-lg">
-                          <span className="text-xs text-orange-700 font-semibold truncate block" title={filters.ipress}>
+                        <div className="mt-2 px-2.5 py-1.5 bg-orange-50 border border-orange-200 rounded-lg">
+                          <span className="text-[10px] text-orange-700 font-semibold truncate block" title={filters.ipress}>
                             {filters.ipress.length > 20 ? filters.ipress.substring(0, 20) + '...' : filters.ipress}
                           </span>
                         </div>
@@ -531,8 +656,8 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   {/* Fecha Registro Desde */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-cyan-500/5 to-sky-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-cyan-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-cyan-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-cyan-500" strokeWidth={2.5} />
                         Desde
                       </label>
@@ -540,11 +665,11 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                         type="date"
                         value={filters.fechaRegistroDesde}
                         onChange={(e) => setFilters({ ...filters, fechaRegistroDesde: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 cursor-pointer hover:bg-white font-medium"
+                        className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-cyan-500 transition-all duration-200 cursor-pointer hover:bg-white font-medium"
                       />
                       {filters.fechaRegistroDesde && (
-                        <div className="mt-2.5 px-2.5 py-1.5 bg-cyan-50 border border-cyan-200 rounded-lg">
-                          <span className="text-xs text-cyan-700 font-semibold">
+                        <div className="mt-2 px-2.5 py-1.5 bg-cyan-50 border border-cyan-200 rounded-lg">
+                          <span className="text-[10px] text-cyan-700 font-semibold">
                             {new Date(filters.fechaRegistroDesde).toLocaleDateString('es-PE')}
                           </span>
                         </div>
@@ -555,8 +680,8 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                   {/* Fecha Registro Hasta */}
                   <div className="group relative">
                     <div className="absolute inset-0 bg-gradient-to-br from-teal-500/5 to-cyan-500/5 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                    <div className="relative bg-white rounded-xl p-4 border-2 border-gray-200 hover:border-teal-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
-                      <label className="block mb-2.5 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <div className="relative bg-white rounded-lg p-3 border-2 border-gray-200 hover:border-teal-400 transition-all duration-300 shadow-sm hover:shadow-md h-full">
+                      <label className="block mb-2 text-xs font-bold text-gray-700 uppercase tracking-wider flex items-center gap-1.5">
                         <Calendar className="w-3.5 h-3.5 text-teal-500" strokeWidth={2.5} />
                         Hasta
                       </label>
@@ -564,11 +689,11 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
                         type="date"
                         value={filters.fechaRegistroHasta}
                         onChange={(e) => setFilters({ ...filters, fechaRegistroHasta: e.target.value })}
-                        className="w-full px-3.5 py-2.5 bg-gray-50/50 border border-gray-300 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 cursor-pointer hover:bg-white font-medium"
+                        className="w-full px-3 py-2 bg-gray-50/50 border border-gray-300 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-teal-500 transition-all duration-200 cursor-pointer hover:bg-white font-medium"
                       />
                       {filters.fechaRegistroHasta && (
-                        <div className="mt-2.5 px-2.5 py-1.5 bg-teal-50 border border-teal-200 rounded-lg">
-                          <span className="text-xs text-teal-700 font-semibold">
+                        <div className="mt-2 px-2.5 py-1.5 bg-teal-50 border border-teal-200 rounded-lg">
+                          <span className="text-[10px] text-teal-700 font-semibold">
                             {new Date(filters.fechaRegistroHasta).toLocaleDateString('es-PE')}
                           </span>
                         </div>
@@ -579,23 +704,24 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
               </div>
             </div>
 
-            {/* Botón limpiar filtros - Estilo Apple */}
-            {hasActiveFilters && (
-              <div className="mt-6 pt-5 border-t border-gray-200/60">
-                <button
-                  onClick={limpiarFiltros}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-gray-700 bg-white/80 backdrop-blur-sm border-2 border-gray-300 rounded-xl hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-400/50 focus:ring-offset-2 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
-                >
-                  <X className="w-4 h-4" strokeWidth={2.5} />
-                  Limpiar todos los filtros
-                  <span className="px-2 py-0.5 bg-gray-200 text-gray-700 rounded-full text-xs font-bold">
-                    {activeFiltersCount}
-                  </span>
-                </button>
-              </div>
-            )}
           </div>
         </div>
+
+        {/* Botón limpiar filtros - Siempre visible fuera del panel colapsable */}
+        {hasActiveFilters && (
+          <div className="px-4 py-2.5 bg-white border-t border-gray-200/60">
+            <button
+              onClick={limpiarFiltros}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 backdrop-blur-sm border-2 border-green-300 rounded-lg hover:from-green-100 hover:to-emerald-100 hover:border-green-400 focus:outline-none focus:ring-2 focus:ring-green-400/50 focus:ring-offset-1 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
+            >
+              <X className="w-3.5 h-3.5" strokeWidth={2.5} />
+              Limpiar todos los filtros
+              <span className="px-1.5 py-0.5 bg-green-600 text-white rounded-full text-[10px] font-bold">
+                {activeFiltersCount}
+              </span>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

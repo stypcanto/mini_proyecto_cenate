@@ -109,12 +109,34 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 	 * Evita queries N+1 y permite paginación eficiente.
 	 */
 	@EntityGraph(attributePaths = {
-			"usuario", "usuario.roles", "tipoDocumento", "regimenLaboral", 
+			"usuario", "usuario.roles", "tipoDocumento", "regimenLaboral",
 			"area", "ipress", "profesiones", "profesiones.profesion",
 			"profesiones.servicioEssi", // ✅ Incluir especialidad/servicio ESSI
 			"tipos", "tipos.tipoPersonal" // ✅ Incluir tipos de profesional
 	})
 	@Query("SELECT p FROM PersonalCnt p")
 	Page<PersonalCnt> findAllWithRelations(Pageable pageable);
+
+	/**
+	 * Obtiene todo el personal asistencial de CENATE (CAS y 728) con servicioEssi y profesiones cargados.
+	 *
+	 * Optimizado para el módulo de Firma Digital:
+	 * - Filtra personal activo (stat_pers = 'A')
+	 * - Solo de CENATE (id_ipress = 2)
+	 * - Solo regímenes CAS y 728
+	 * - LEFT JOIN FETCH para cargar servicioEssi, profesiones y relaciones en una sola query
+	 *
+	 * @return Lista de personal CENATE con servicioEssi y profesiones cargados
+	 */
+	@Query("SELECT DISTINCT p FROM PersonalCnt p " +
+	       "LEFT JOIN FETCH p.servicioEssi " +
+	       "LEFT JOIN FETCH p.regimenLaboral " +
+	       "LEFT JOIN FETCH p.ipress " +
+	       "LEFT JOIN FETCH p.profesiones pp " +
+	       "LEFT JOIN FETCH pp.profesion " +
+	       "WHERE p.statPers = 'A' " +
+	       "AND p.ipress.idIpress = 2 " +
+	       "AND (UPPER(p.regimenLaboral.descRegLab) LIKE '%CAS%' OR UPPER(p.regimenLaboral.descRegLab) LIKE '%728%')")
+	List<PersonalCnt> findAllCENATEPersonalWithServicio();
 
 }

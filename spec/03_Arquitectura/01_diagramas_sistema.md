@@ -193,6 +193,125 @@ SolicitudCita
     ├── AreaHospitalaria
     ├── Servicio → Actividad → Subactividad
     └── EstadoCita
+
+FirmaDigitalPersonal (v1.14.0)
+    ├── (M:1) PersonalCnt
+    │         ├── nombreCompleto (derivado)
+    │         ├── dni (derivado)
+    │         ├── regimenLaboral (derivado)
+    │         ├── especialidad (derivado)
+    │         └── ipress (derivado)
+    │
+    ├── entregoToken (boolean)
+    ├── numeroSerieToken (si entregoToken=true)
+    ├── fechaEntregaToken
+    ├── fechaInicioCertificado
+    ├── fechaVencimientoCertificado
+    ├── motivoSinToken (si entregoToken=false)
+    │   └── YA_TIENE | NO_REQUIERE | PENDIENTE
+    │
+    └── Campos calculados (en Response DTO):
+        ├── estadoCertificado (VIGENTE | VENCIDO | SIN_CERTIFICADO)
+        ├── diasRestantesVencimiento
+        ├── venceProximamente (boolean)
+        └── esPendiente (boolean)
+```
+
+---
+
+## Módulos del Sistema (v1.14.0)
+
+### Backend
+
+| Módulo | Paquete Base | Descripción | Estado |
+|--------|--------------|-------------|--------|
+| **Autenticación** | `com.styp.cenate.security` | JWT + MBAC | ✅ Implementado v1.12.0 |
+| **Usuarios** | `com.styp.cenate.api.usuario` | CRUD usuarios | ✅ Implementado |
+| **Auditoría** | `com.styp.cenate.service.auditoria` | Sistema de auditoría completo | ✅ Implementado v1.13.0 |
+| **Disponibilidad Médica** | `com.styp.cenate.api.disponibilidad` | Turnos médicos mensuales | ✅ Implementado v1.9.0 |
+| **ChatBot Citas** | `com.styp.cenate.api.chatbot` | Solicitudes de citas | ✅ Implementado |
+| **Firma Digital** | `com.styp.cenate.api.firmadigital` | Gestión de firmas digitales | ✅ Implementado v1.14.0 |
+| **Solicitud Turnos** | `com.styp.cenate.api.solicitudturnos` | Solicitudes IPRESS → CENATE | 📋 Planificado |
+
+### Frontend
+
+| Módulo | Componentes Principales | Estado |
+|--------|------------------------|--------|
+| **Dashboard Admin** | `AdminDashboard.js`, `NotificationBell.jsx` | ✅ Implementado v1.13.0 |
+| **Gestión Usuarios** | `UsersManagement.jsx`, `CrearUsuarioModal.jsx`, `ActualizarModel.jsx` | ✅ Implementado |
+| **Auditoría** | `LogsDelSistema.jsx`, `auditoriaDiccionario.js` | ✅ Implementado v1.14.0 |
+| **Disponibilidad Médica** | `CalendarioDisponibilidad.jsx`, `RevisionDisponibilidad.jsx` | ✅ Implementado v1.9.0 |
+| **ChatBot Citas** | `ChatBotDashboard.jsx`, Componentes consulta | ✅ Implementado |
+| **Firma Digital** | `FirmaDigitalTab.jsx`, `ActualizarEntregaTokenModal.jsx`, `ControlFirmaDigital.jsx` | ✅ Implementado v1.14.0 |
+
+---
+
+## Diccionario de Auditoría (v1.14.0)
+
+Sistema centralizado de traducción de códigos técnicos a nombres legibles.
+
+**Archivo:** `frontend/src/constants/auditoriaDiccionario.js`
+
+### Estructura
+
+```javascript
+┌─────────────────────────────────────────────────────────────┐
+│            DICCIONARIO DE AUDITORÍA                          │
+├─────────────────────────────────────────────────────────────┤
+│                                                              │
+│  MODULOS_AUDITORIA                                          │
+│  ├── AUTH: { nombre: "Autenticación", icono: "🔐", ... }   │
+│  ├── USUARIOS: { nombre: "Usuarios", icono: "👥", ... }     │
+│  ├── FIRMA_DIGITAL: { nombre: "Firma Digital", ... }        │
+│  └── ... (10+ módulos)                                      │
+│                                                              │
+│  ACCIONES_AUDITORIA                                         │
+│  ├── LOGIN: { nombre: "Inicio de Sesión", ... }            │
+│  ├── CREATE_USER: { nombre: "Crear Usuario", ... }         │
+│  ├── CREATE_FIRMA_DIGITAL: { nombre: "Crear Firma", ... }  │
+│  └── ... (40+ acciones)                                     │
+│                                                              │
+│  NIVELES_AUDITORIA                                          │
+│  ├── INFO: { color: "blue", badge: "badge-info", ... }     │
+│  ├── WARNING: { color: "yellow", ... }                      │
+│  ├── ERROR: { color: "red", ... }                           │
+│  └── CRITICAL: { color: "purple", ... }                     │
+│                                                              │
+│  FUNCIONES HELPER (8 funciones)                             │
+│  ├── obtenerNombreModulo(codigo)                            │
+│  ├── obtenerIconoModulo(codigo)                             │
+│  ├── obtenerNombreAccion(codigo)                            │
+│  ├── obtenerDescripcionAccion(codigo)                       │
+│  ├── obtenerColorModulo(codigo)                             │
+│  ├── obtenerEmojiAccion(codigo)                             │
+│  ├── formatearFecha(fecha)                                  │
+│  └── obtenerBadgeClase(nivel)                               │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Beneficios
+
+| Beneficio | Descripción |
+|-----------|-------------|
+| **Centralización** | Un solo archivo para todas las traducciones |
+| **Consistencia** | Mismos nombres en toda la UI |
+| **Mantenibilidad** | Agregar nuevos módulos/acciones es trivial |
+| **UX Mejorada** | Usuarios no técnicos entienden los logs |
+| **Tooltips** | Descripciones detalladas en hover |
+
+### Uso en Componentes
+
+```javascript
+// En LogsDelSistema.jsx
+import { obtenerNombreModulo, obtenerIconoModulo } from '../constants/auditoriaDiccionario';
+
+// Renderizar módulo con ícono
+const moduloDisplay = `${obtenerIconoModulo(log.modulo)} ${obtenerNombreModulo(log.modulo)}`;
+// Resultado: "🔐 Autenticación"
+
+// En AdminDashboard.js
+const accionDisplay = obtenerNombreAccion(log.accion);
+// "LOGIN" → "Inicio de Sesión"
 ```
 
 ---

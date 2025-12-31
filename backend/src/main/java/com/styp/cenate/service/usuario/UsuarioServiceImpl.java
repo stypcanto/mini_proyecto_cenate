@@ -70,6 +70,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final JdbcTemplate jdbcTemplate;
 	private final AuditLogService auditLogService;
 	private final com.styp.cenate.repository.RedRepository redRepository;
+	private final com.styp.cenate.service.firmadigital.FirmaDigitalService firmaDigitalService; // 🆕 v1.14.0
 
 	// =============================================================
 	// 🔒 MÉTODO HELPER PARA AUDITORÍA
@@ -286,6 +287,19 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 			personalCntRepository.save(personalCnt);
 			log.info("✅ Registro de PersonalCnt creado exitosamente para: {}", usuario.getNameUser());
+
+			// 🆕 v1.14.0 - GUARDAR FIRMA DIGITAL si viene en el request
+			if (request.getFirmaDigital() != null) {
+				try {
+					log.info("🖋️ Guardando firma digital para personal ID: {}", personalCnt.getIdPers());
+					request.getFirmaDigital().setIdPersonal(personalCnt.getIdPers());
+					firmaDigitalService.guardarFirmaDigital(request.getFirmaDigital());
+					log.info("✅ Firma digital guardada exitosamente");
+				} catch (Exception e) {
+					log.error("❌ Error al guardar firma digital: {}", e.getMessage(), e);
+					// No lanzar excepción, continuar con la creación del usuario
+				}
+			}
 
 			// 🆕 CREAR DATOS PROFESIONALES EN dim_personal_prof
 			if (request.getId_profesion() != null) {

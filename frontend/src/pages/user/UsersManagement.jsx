@@ -18,6 +18,7 @@ import ProfesionesCRUD from '../admin/components/ProfesionesCRUD';
 import EspecialidadesCRUD from '../admin/components/EspecialidadesCRUD';
 import RolesCRUD from '../admin/components/RolesCRUD';
 import { areaService } from '../../services/areaService';
+import { regimenService } from '../../services/regimenService';
 
 // ============================================================
 // 🔧 FUNCIONES AUXILIARES PARA TIPO DE PERSONAL
@@ -78,6 +79,9 @@ const UsersManagement = () => {
     area: '',
     red: '',          // 🆕 Filtro de RED Asistencial
     ipress: '',
+    regimen: '',      // 🆕 Filtro de Régimen Laboral
+    profesion: '',    // 🆕 Filtro de Profesión
+    especialidad: '', // 🆕 Filtro de Especialidad
     fechaRegistroDesde: '',
     fechaRegistroHasta: ''
   });
@@ -94,6 +98,7 @@ const UsersManagement = () => {
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [roles, setRoles] = useState([]);
   const [areas, setAreas] = useState([]);
+  const [regimenes, setRegimenes] = useState([]);        // 🆕 Lista de regímenes
   const [allUsersForFilters, setAllUsersForFilters] = useState([]); // 🆕 Todos los usuarios para generar dropdowns
 
   // 🆕 Toast para notificaciones
@@ -169,6 +174,70 @@ const UsersManagement = () => {
   }, []);
 
   // ============================================================
+  // 🔧 FUNCIÓN AUXILIAR: Generar lista de PROFESIONES de usuarios filtrados
+  // ============================================================
+  const getProfesionesListFromUsers = useCallback((usersList) => {
+    const profesionesMap = new Map();
+
+    usersList.forEach(user => {
+      // 🔍 Usar los campos correctos del backend: nombre_profesion o profesion_principal
+      const nombreProfesion = user.nombre_profesion || user.profesion_principal || user.nombreProfesion || user.profesionPrincipal;
+      const idProfesion = user.id_profesion || user.idProfesion;
+
+      // Solo agregar si tiene nombre de profesión válido
+      if (nombreProfesion && nombreProfesion.trim() !== '') {
+        if (!profesionesMap.has(nombreProfesion)) {
+          profesionesMap.set(nombreProfesion, {
+            id_profesion: idProfesion,
+            nombre_profesion: nombreProfesion,
+            idProfesion: idProfesion,
+            nombreProfesion: nombreProfesion
+          });
+        }
+      }
+    });
+
+    // Convertir a array y ordenar alfabéticamente
+    return Array.from(profesionesMap.values()).sort((a, b) => {
+      const nameA = (a.nombre_profesion || a.nombreProfesion || '').toUpperCase();
+      const nameB = (b.nombre_profesion || b.nombreProfesion || '').toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, []);
+
+  // ============================================================
+  // 🔧 FUNCIÓN AUXILIAR: Generar lista de ESPECIALIDADES de usuarios filtrados
+  // ============================================================
+  const getEspecialidadesListFromUsers = useCallback((usersList) => {
+    const especialidadesMap = new Map();
+
+    usersList.forEach(user => {
+      // 🔍 Usar los campos correctos del backend: nombre_especialidad
+      const nombreEspecialidad = user.nombre_especialidad || user.nombreEspecialidad;
+      const idEspecialidad = user.id_especialidad || user.idEspecialidad;
+
+      // Solo agregar si tiene nombre de especialidad válido
+      if (nombreEspecialidad && nombreEspecialidad.trim() !== '') {
+        if (!especialidadesMap.has(nombreEspecialidad)) {
+          especialidadesMap.set(nombreEspecialidad, {
+            id_especialidad: idEspecialidad,
+            nombre_especialidad: nombreEspecialidad,
+            idEspecialidad: idEspecialidad,
+            nombreEspecialidad: nombreEspecialidad
+          });
+        }
+      }
+    });
+
+    // Convertir a array y ordenar alfabéticamente
+    return Array.from(especialidadesMap.values()).sort((a, b) => {
+      const nameA = (a.nombre_especialidad || a.nombreEspecialidad || '').toUpperCase();
+      const nameB = (b.nombre_especialidad || b.nombreEspecialidad || '').toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, []);
+
+  // ============================================================
   // 🚀 LISTA DE REDES: Dinámica según filtros activos (SIN filtro de RED ni IPRESS)
   // ============================================================
   const redesList = useMemo(() => {
@@ -236,6 +305,200 @@ const UsersManagement = () => {
     // Generar lista de REDES de los usuarios filtrados
     return getRedesListFromUsers(usuariosParaRedes);
   }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.area, getRedesListFromUsers]);
+
+  // ============================================================
+  // 🚀 LISTA DE PROFESIONES: Dinámica según filtros activos (SIN filtro de PROFESIÓN)
+  // ============================================================
+  const profesionesList = useMemo(() => {
+    const baseUsers = allUsersForFilters.length > 0 ? allUsersForFilters : users;
+
+    // Aplicar TODOS los filtros EXCEPTO el filtro de PROFESIÓN
+    let usuariosParaProfesiones = [...baseUsers];
+
+    // 🔍 Búsqueda general
+    if (searchTerm && searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim();
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
+        const username = (user.username || '').toLowerCase();
+        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
+        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
+        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
+        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
+
+        return nombreCompleto.includes(searchLower) ||
+               username.includes(searchLower) ||
+               numeroDocumento.includes(searchLower) ||
+               nombreIpress.includes(searchLower) ||
+               emailPersonal.includes(searchLower) ||
+               emailCorporativo.includes(searchLower);
+      });
+    }
+
+    // Aplicar filtros de rol, tipo, estado, mes, área, red, ipress, regimen, especialidad...
+    if (filters.rol && filters.rol !== '') {
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        if (!user.roles || !Array.isArray(user.roles)) return false;
+        return user.roles.some(rol => rol === filters.rol);
+      });
+    }
+
+    if (filters.institucion && filters.institucion !== '') {
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        const idIpress = user.id_ipress || user.idIpress;
+        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toUpperCase();
+
+        if (filters.institucion === 'Interno') {
+          return idIpress === 2 || nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
+        } else if (filters.institucion === 'Externo') {
+          return idIpress && idIpress !== 2 && !nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
+        }
+        return true;
+      });
+    }
+
+    if (filters.estado && filters.estado !== '') {
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        const estadoUsuario = user.estado_usuario || user.statPers || '';
+        return estadoUsuario.toUpperCase() === filters.estado.toUpperCase();
+      });
+    }
+
+    if (filters.area && filters.area !== '') {
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        const areaUsuario = user.nombre_area || user.nombreArea || user.desc_area || user.descArea || user.area_trabajo || user.areaTrabajo || user.area || '';
+        return areaUsuario.toUpperCase().includes(filters.area.toUpperCase());
+      });
+    }
+
+    if (filters.red && filters.red !== '') {
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        const nombreRed = user.nombre_red || '';
+        return nombreRed.toUpperCase() === filters.red.toUpperCase();
+      });
+    }
+
+    if (filters.ipress && filters.ipress !== '') {
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        const nombreIpress = user.nombre_ipress || user.descIpress || '';
+        return nombreIpress.toUpperCase() === filters.ipress.toUpperCase();
+      });
+    }
+
+    if (filters.regimen && filters.regimen !== '') {
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        const regimenUsuario = user.regimen_laboral || user.desc_regimen_laboral || user.descRegLab || '';
+        return regimenUsuario.toUpperCase().includes(filters.regimen.toUpperCase());
+      });
+    }
+
+    if (filters.especialidad && filters.especialidad !== '') {
+      usuariosParaProfesiones = usuariosParaProfesiones.filter(user => {
+        const especialidadUsuario = user.nombre_especialidad || user.nombreEspecialidad || '';
+        return especialidadUsuario.toUpperCase().includes(filters.especialidad.toUpperCase());
+      });
+    }
+
+    // Generar lista de PROFESIONES de los usuarios filtrados
+    return getProfesionesListFromUsers(usuariosParaProfesiones);
+  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.area, filters.red, filters.ipress, filters.regimen, filters.especialidad, getProfesionesListFromUsers]);
+
+  // ============================================================
+  // 🚀 LISTA DE ESPECIALIDADES: Dinámica según filtros activos (SIN filtro de ESPECIALIDAD)
+  // ============================================================
+  const especialidadesList = useMemo(() => {
+    const baseUsers = allUsersForFilters.length > 0 ? allUsersForFilters : users;
+
+    // Aplicar TODOS los filtros EXCEPTO el filtro de ESPECIALIDAD
+    let usuariosParaEspecialidades = [...baseUsers];
+
+    // 🔍 Búsqueda general
+    if (searchTerm && searchTerm.trim() !== '') {
+      const searchLower = searchTerm.toLowerCase().trim();
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        const nombreCompleto = (user.nombre_completo || '').toLowerCase();
+        const username = (user.username || '').toLowerCase();
+        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
+        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
+        const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
+        const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
+
+        return nombreCompleto.includes(searchLower) ||
+               username.includes(searchLower) ||
+               numeroDocumento.includes(searchLower) ||
+               nombreIpress.includes(searchLower) ||
+               emailPersonal.includes(searchLower) ||
+               emailCorporativo.includes(searchLower);
+      });
+    }
+
+    // Aplicar filtros de rol, tipo, estado, mes, área, red, ipress, regimen, profesion...
+    if (filters.rol && filters.rol !== '') {
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        if (!user.roles || !Array.isArray(user.roles)) return false;
+        return user.roles.some(rol => rol === filters.rol);
+      });
+    }
+
+    if (filters.institucion && filters.institucion !== '') {
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        const idIpress = user.id_ipress || user.idIpress;
+        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toUpperCase();
+
+        if (filters.institucion === 'Interno') {
+          return idIpress === 2 || nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
+        } else if (filters.institucion === 'Externo') {
+          return idIpress && idIpress !== 2 && !nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
+        }
+        return true;
+      });
+    }
+
+    if (filters.estado && filters.estado !== '') {
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        const estadoUsuario = user.estado_usuario || user.statPers || '';
+        return estadoUsuario.toUpperCase() === filters.estado.toUpperCase();
+      });
+    }
+
+    if (filters.area && filters.area !== '') {
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        const areaUsuario = user.nombre_area || user.nombreArea || user.desc_area || user.descArea || user.area_trabajo || user.areaTrabajo || user.area || '';
+        return areaUsuario.toUpperCase().includes(filters.area.toUpperCase());
+      });
+    }
+
+    if (filters.red && filters.red !== '') {
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        const nombreRed = user.nombre_red || '';
+        return nombreRed.toUpperCase() === filters.red.toUpperCase();
+      });
+    }
+
+    if (filters.ipress && filters.ipress !== '') {
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        const nombreIpress = user.nombre_ipress || user.descIpress || '';
+        return nombreIpress.toUpperCase() === filters.ipress.toUpperCase();
+      });
+    }
+
+    if (filters.regimen && filters.regimen !== '') {
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        const regimenUsuario = user.regimen_laboral || user.desc_regimen_laboral || user.descRegLab || '';
+        return regimenUsuario.toUpperCase().includes(filters.regimen.toUpperCase());
+      });
+    }
+
+    if (filters.profesion && filters.profesion !== '') {
+      usuariosParaEspecialidades = usuariosParaEspecialidades.filter(user => {
+        const profesionUsuario = user.nombre_profesion || user.profesion_principal || user.nombreProfesion || user.profesionPrincipal || '';
+        return profesionUsuario.toUpperCase().includes(filters.profesion.toUpperCase());
+      });
+    }
+
+    // Generar lista de ESPECIALIDADES de los usuarios filtrados
+    return getEspecialidadesListFromUsers(usuariosParaEspecialidades);
+  }, [allUsersForFilters, users, searchTerm, filters.rol, filters.institucion, filters.estado, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, getEspecialidadesListFromUsers]);
 
   // ============================================================
   // 🚀 LISTA DE IPRESS: Dinámica según filtros activos (SIN filtro de IPRESS, pero CON filtro de RED)
@@ -519,6 +782,38 @@ const UsersManagement = () => {
       });
     }
 
+    // 🔍 Filtro por Régimen Laboral
+    if (filters.regimen && filters.regimen !== '') {
+      filtered = filtered.filter(user => {
+        const regimenUsuario = user.regimen_laboral || user.desc_regimen_laboral || user.descRegLab || '';
+        return regimenUsuario.toUpperCase().includes(filters.regimen.toUpperCase());
+      });
+    }
+
+    // 🔍 Filtro por Profesión
+    if (filters.profesion && filters.profesion !== '') {
+      filtered = filtered.filter(user => {
+        const profesionUsuario = user.nombre_profesion || user.profesion_principal || user.nombreProfesion || user.profesionPrincipal || '';
+        return profesionUsuario.toUpperCase().includes(filters.profesion.toUpperCase());
+      });
+    }
+
+    // 🔍 Filtro por Especialidad
+    if (filters.especialidad && filters.especialidad !== '') {
+      filtered = filtered.filter(user => {
+        const especialidadUsuario = user.nombre_especialidad || user.nombreEspecialidad || '';
+        return especialidadUsuario.toUpperCase().includes(filters.especialidad.toUpperCase());
+      });
+    }
+
+    // 🔍 Filtro por RED Asistencial
+    if (filters.red && filters.red !== '') {
+      filtered = filtered.filter(user => {
+        const nombreRed = user.nombre_red || '';
+        return nombreRed.toUpperCase() === filters.red.toUpperCase();
+      });
+    }
+
     // 🔍 Filtro por IPRESS
     if (filters.ipress && filters.ipress !== '') {
       console.log('🔍 Filtro IPRESS activo:', filters.ipress);
@@ -637,7 +932,11 @@ const UsersManagement = () => {
                              (filters.estado && filters.estado !== '') ||
                              (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
                              (filters.area && filters.area !== '') ||
+                             (filters.red && filters.red !== '') ||
                              (filters.ipress && filters.ipress !== '') ||
+                             (filters.regimen && filters.regimen !== '') ||
+                             (filters.profesion && filters.profesion !== '') ||
+                             (filters.especialidad && filters.especialidad !== '') ||
                              (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
                              (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
     
@@ -672,7 +971,11 @@ const UsersManagement = () => {
                                (currentFilters.estado && currentFilters.estado !== '') ||
                                (currentFilters.mesCumpleanos && currentFilters.mesCumpleanos !== '') ||
                                (currentFilters.area && currentFilters.area !== '') ||
+                               (currentFilters.red && currentFilters.red !== '') ||
                                (currentFilters.ipress && currentFilters.ipress !== '') ||
+                               (currentFilters.regimen && currentFilters.regimen !== '') ||
+                               (currentFilters.profesion && currentFilters.profesion !== '') ||
+                               (currentFilters.especialidad && currentFilters.especialidad !== '') ||
                                (currentFilters.fechaRegistroDesde && currentFilters.fechaRegistroDesde !== '') ||
                                (currentFilters.fechaRegistroHasta && currentFilters.fechaRegistroHasta !== '');
       
@@ -820,6 +1123,20 @@ const UsersManagement = () => {
     }
   }, []);
 
+  const loadRegimenes = useCallback(async () => {
+    try {
+      const response = await regimenService.obtenerTodos();
+      console.log('✅ Regímenes cargados:', response);
+      // Ordenar alfabéticamente por descRegLab
+      const regimenesOrdenados = Array.isArray(response)
+        ? response.sort((a, b) => (a.descRegLab || '').localeCompare(b.descRegLab || '', 'es'))
+        : [];
+      setRegimenes(regimenesOrdenados);
+    } catch (error) {
+      console.error('❌ Error al cargar regímenes:', error);
+    }
+  }, []);
+
   // 🆕 Cargar TODOS los usuarios una vez para generar dropdowns de filtros
   const loadAllUsersForFilters = useCallback(async () => {
     try {
@@ -874,8 +1191,9 @@ const UsersManagement = () => {
     loadUsers();
     loadRoles();
     loadAreas();
-    loadAllUsersForFilters(); // 🆕 Cargar todos los usuarios para dropdowns
-  }, [loadUsers, loadRoles, loadAreas, loadAllUsersForFilters]);
+    loadRegimenes();        // 🆕 Cargar regímenes
+    loadAllUsersForFilters(); // 🆕 Cargar todos los usuarios para dropdowns (profesiones y especialidades se generan dinámicamente)
+  }, [loadUsers, loadRoles, loadAreas, loadRegimenes, loadAllUsersForFilters]);
 
   // 🚀 Resetear a primera página cuando cambian filtros o búsqueda (sin recargar del servidor)
   useEffect(() => {
@@ -892,7 +1210,11 @@ const UsersManagement = () => {
                              (filters.estado && filters.estado !== '') ||
                              (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
                              (filters.area && filters.area !== '') ||
+                             (filters.red && filters.red !== '') ||
                              (filters.ipress && filters.ipress !== '') ||
+                             (filters.regimen && filters.regimen !== '') ||
+                             (filters.profesion && filters.profesion !== '') ||
+                             (filters.especialidad && filters.especialidad !== '') ||
                              (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
                              (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
 
@@ -902,7 +1224,7 @@ const UsersManagement = () => {
       loadUsers(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.ipress, filters.fechaRegistroDesde, filters.fechaRegistroHasta]); // Solo cuando cambian los filtros
+  }, [searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, filters.especialidad, filters.fechaRegistroDesde, filters.fechaRegistroHasta]); // Solo cuando cambian los filtros
 
   // 🚀 Actualizar totales cuando hay filtros activos (basándose en filteredUsers)
   useEffect(() => {
@@ -912,7 +1234,11 @@ const UsersManagement = () => {
                              (filters.estado && filters.estado !== '') ||
                              (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
                              (filters.area && filters.area !== '') ||
+                             (filters.red && filters.red !== '') ||
                              (filters.ipress && filters.ipress !== '') ||
+                             (filters.regimen && filters.regimen !== '') ||
+                             (filters.profesion && filters.profesion !== '') ||
+                             (filters.especialidad && filters.especialidad !== '') ||
                              (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
                              (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
 
@@ -929,6 +1255,8 @@ const UsersManagement = () => {
   // 🚀 Función para actualizar manualmente la tabla
   const handleRefresh = useCallback(() => {
     console.log('🔄 Actualizando tabla manualmente...');
+    // Resetear página actual a 0 antes de recargar
+    setCurrentPage(0);
     loadUsers(true);
   }, [loadUsers]);
 
@@ -959,7 +1287,12 @@ const UsersManagement = () => {
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
                              (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-                             (filters.area && filters.area !== '');
+                             (filters.area && filters.area !== '') ||
+                             (filters.red && filters.red !== '') ||
+                             (filters.ipress && filters.ipress !== '') ||
+                             (filters.regimen && filters.regimen !== '') ||
+                             (filters.profesion && filters.profesion !== '') ||
+                             (filters.especialidad && filters.especialidad !== '');
 
     if (hasActiveFilters) {
       // Calcular totales basados en usuarios filtrados
@@ -1190,6 +1523,9 @@ const UsersManagement = () => {
             areas={areas}
             redesList={redesList}
             ipressList={ipressList}
+            regimenes={regimenes}
+            profesionesList={profesionesList}
+            especialidadesList={especialidadesList}
             onRefresh={handleRefresh}
           />
 

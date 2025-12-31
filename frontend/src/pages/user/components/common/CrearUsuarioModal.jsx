@@ -6,6 +6,7 @@ import SelectField from '../modals/SelectField';
 import api from '../../../../services/apiClient';
 import MonthYearPicker from '../../../../components/common/MonthYearPicker';
 import { API_ROUTES } from '../../../../constants/apiRoutes';
+import FirmaDigitalTab from './FirmaDigitalTab'; // 🆕 v1.14.0
 
 
 
@@ -70,7 +71,16 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
     codigo_planilla: '',
     periodo_ingreso: '',
     id_area: null,
-    
+
+    // 🆕 v1.14.0 - Firma Digital
+    entrego_token: null, // 'SI' o 'NO'
+    numero_serie_token: '',
+    fecha_entrega_token: '',
+    fecha_inicio_certificado: '',
+    fecha_vencimiento_certificado: '',
+    motivo_sin_token: null, // 'YA_TIENE', 'NO_REQUIERE', 'PENDIENTE'
+    observaciones_firma: '',
+
     // Roles
     roles: []
   });
@@ -837,17 +847,80 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       }
       
       setErrors(laboralesErrors);
-      
+
       if (Object.keys(laboralesErrors).length > 0) {
         alert('Por favor corrija los errores en los datos laborales');
         return;
       }
-      
+
+      // Pasar a Firma Digital (solo para internos)
+      if (formData.tipo_personal !== '2') {
+        setSelectedTab('firma');
+      } else {
+        setSelectedTab('roles');
+      }
+      return;
+    }
+
+    // 🆕 v1.14.0 - Validación de Firma Digital (solo para internos)
+    if (selectedTab === 'firma') {
+      const firmaErrors = {};
+      const regimenSeleccionado = regimenesLaborales.find(r =>
+        r.idRegLab === parseInt(formData.id_regimen_laboral)
+      );
+      const descRegimen = regimenSeleccionado?.descRegLab?.toUpperCase() || '';
+      const requiereFirmaDigital = descRegimen.includes('CAS') || descRegimen.includes('728');
+
+      if (requiereFirmaDigital) {
+        // Validar que seleccionó si entregó token
+        if (!formData.entrego_token) {
+          firmaErrors.entrego_token = 'Debe indicar si entregó token';
+        }
+
+        // Si SÍ entregó: validar fechas Y número de serie
+        if (formData.entrego_token === 'SI') {
+          if (!formData.numero_serie_token || formData.numero_serie_token.trim() === '') {
+            firmaErrors.numero_serie_token = 'Número de serie obligatorio';
+          }
+          if (!formData.fecha_inicio_certificado) {
+            firmaErrors.fecha_inicio_certificado = 'Fecha de inicio obligatoria';
+          }
+          if (!formData.fecha_vencimiento_certificado) {
+            firmaErrors.fecha_vencimiento_certificado = 'Fecha de vencimiento obligatoria';
+          }
+          if (formData.fecha_inicio_certificado && formData.fecha_vencimiento_certificado) {
+            if (new Date(formData.fecha_vencimiento_certificado) <= new Date(formData.fecha_inicio_certificado)) {
+              firmaErrors.fecha_vencimiento_certificado = 'Debe ser posterior a fecha de inicio';
+            }
+          }
+        }
+
+        // Si NO entregó: validar motivo
+        if (formData.entrego_token === 'NO') {
+          if (!formData.motivo_sin_token) {
+            firmaErrors.motivo_sin_token = 'Debe seleccionar un motivo';
+          }
+          // Si YA_TIENE: validar fechas del certificado existente
+          if (formData.motivo_sin_token === 'YA_TIENE') {
+            if (!formData.fecha_inicio_certificado || !formData.fecha_vencimiento_certificado) {
+              firmaErrors.fecha_inicio_certificado = 'Fechas del certificado obligatorias';
+            }
+          }
+        }
+      }
+
+      setErrors(firmaErrors);
+
+      if (Object.keys(firmaErrors).length > 0) {
+        alert('Por favor corrija los errores en firma digital');
+        return;
+      }
+
       // Pasar a Roles
       setSelectedTab('roles');
       return;
     }
-    
+
     if (selectedTab === 'roles') {
       if (formData.roles.length === 0) {
         setErrors({ roles: 'Debe seleccionar al menos un rol' });
@@ -891,7 +964,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
         codigo_planilla: formData.codigo_planilla || null,
         periodo_ingreso: formData.periodo_ingreso || null,
         id_area: formData.id_area || null,
-        
+
         // ORIGEN PERSONAL (1=Interno, 2=Externo)
         id_origen: formData.tipo_personal ? parseInt(formData.tipo_personal) : null,
         
@@ -925,7 +998,29 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
         alert('⚠️ Error: Debe seleccionar una IPRESS para personal externo.');
         return;
       }
-      
+
+      // 🆕 v1.14.0 - FIRMA DIGITAL (solo para INTERNOS con régimen CAS/728)
+      if (formData.tipo_personal === '1' && formData.id_regimen_laboral) {
+        const regimenSeleccionado = regimenesLaborales.find(r =>
+          r.idRegLab === parseInt(formData.id_regimen_laboral)
+        );
+        const descRegimen = regimenSeleccionado?.descRegLab?.toUpperCase() || '';
+        const requiereFirmaDigital = descRegimen.includes('CAS') || descRegimen.includes('728');
+
+        if (requiereFirmaDigital && formData.entrego_token) {
+          dataToSend.firmaDigital = {
+            entregoToken: formData.entrego_token === 'SI',
+            numeroSerieToken: formData.numero_serie_token || null,
+            fechaEntregaToken: formData.entrego_token === 'SI' && formData.fecha_entrega_token ? formData.fecha_entrega_token : (formData.entrego_token === 'SI' ? new Date().toISOString().split('T')[0] : null),
+            fechaInicioCertificado: formData.fecha_inicio_certificado || null,
+            fechaVencimientoCertificado: formData.fecha_vencimiento_certificado || null,
+            motivoSinToken: formData.motivo_sin_token || null,
+            observaciones: formData.observaciones_firma || null
+          };
+          console.log('🖋️ Firma digital agregada:', dataToSend.firmaDigital);
+        }
+      }
+
       const isSuperAdmin = currentUserRoles.includes('SUPERADMIN');
       const hasPrivilegedRoles = formData.roles.some(r => ['ADMIN', 'SUPERADMIN'].includes(r));
       const endpoint = (isSuperAdmin && hasPrivilegedRoles)
@@ -1050,6 +1145,18 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                   }`}
                 >
                   Datos Laborales
+                </button>
+
+                {/* 🆕 v1.14.0 - Tab Firma Digital (solo usuarios internos) */}
+                <button
+                  onClick={() => setSelectedTab('firma')}
+                  className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all ${
+                    selectedTab === 'firma'
+                      ? 'bg-white text-emerald-900'
+                      : 'bg-emerald-800/40 text-emerald-100 hover:bg-emerald-800/60'
+                  }`}
+                >
+                  Firma Digital
                 </button>
               </>
             )}
@@ -1916,6 +2023,17 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* 🆕 v1.14.0 - FIRMA DIGITAL TAB - Solo para personal INTERNO */}
+            {selectedTab === 'firma' && formData.tipo_personal !== '2' && (
+              <FirmaDigitalTab
+                formData={formData}
+                setFormData={setFormData}
+                errors={errors}
+                handleChange={handleChange}
+                regimenLaboral={regimenesLaborales.find(r => r.idRegLab === parseInt(formData.id_regimen_laboral))?.descRegLab || ''}
+              />
             )}
 
             {selectedTab === 'roles' && (

@@ -12,9 +12,9 @@ import com.styp.cenate.model.form107.Bolsa107Item;
 
 @Repository
 public interface Bolsa107ItemRepository extends JpaRepository<Bolsa107Item, Long> {
-	
+
 	@Query(value = """
-		SELECT 
+		SELECT
 			id_item,
 			id_carga,
 			fecha_reporte,
@@ -46,4 +46,7 @@ public interface Bolsa107ItemRepository extends JpaRepository<Bolsa107Item, Long
 		ORDER BY id_item
 		""", nativeQuery = true)
 	List<Map<String, Object>> findAllByIdCarga(@Param("idCarga") Long idCarga);
+
+	// Método para obtener entidades completas por idCarga
+	List<Bolsa107Item> findByIdCarga(Long idCarga);
 }

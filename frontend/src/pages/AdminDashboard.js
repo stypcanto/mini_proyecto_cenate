@@ -14,6 +14,11 @@ import auditoriaService from "../services/auditoriaService";
 import dashboardPersonalService from "../services/dashboardPersonalService";
 import NotificationBell from "../components/NotificationBell";
 import {
+  obtenerNombreModulo,
+  obtenerIconoModulo,
+  obtenerNombreAccion,
+} from "../constants/auditoriaDiccionario";
+import {
   Users,
   Shield,
   Activity,
@@ -262,30 +267,24 @@ export default function AdminDashboard() {
   // 📝 Formatear acción del log (versión ejecutiva)
   // ============================================================
   const formatAccionEjecutiva = (log) => {
-    const accion = (log.accion || log.action || '').toUpperCase();
+    const accion = log.accion || log.action || '';
 
-    // Mapeo de acciones a descripciones ejecutivas cortas
-    const acciones = {
-      'LOGIN': 'Inicio de sesión',
-      'LOGIN_FAILED': 'Acceso denegado',
-      'LOGOUT': 'Cierre de sesión',
-      'CREATE_USER': 'Nuevo usuario creado',
-      'DELETE_USER': 'Usuario eliminado',
-      'ACTIVATE_USER': 'Usuario activado',
-      'DEACTIVATE_USER': 'Usuario desactivado',
-      'UNLOCK_USER': 'Usuario desbloqueado',
-      'APPROVE_REQUEST': 'Solicitud aprobada',
-      'REJECT_REQUEST': 'Solicitud rechazada',
-      'DELETE_PENDING_USER': 'Pendiente eliminado',
-      'CLEANUP_ORPHAN_DATA': 'Limpieza de datos',
-      'PASSWORD_CHANGE': 'Cambio de contraseña',
-      'PASSWORD_RESET': 'Reseteo de contraseña',
-      'INSERT': 'Registro creado',
-      'UPDATE': 'Registro actualizado',
-      'DELETE': 'Registro eliminado',
-    };
+    // Intentar obtener nombre del diccionario primero
+    const nombreDiccionario = obtenerNombreAccion(accion);
 
-    return acciones[accion] || accion || 'Acción del sistema';
+    // Si el diccionario devuelve el mismo código, usar el mapeo legacy
+    if (nombreDiccionario === accion) {
+      // Mapeo legacy para acciones que aún no están en el diccionario
+      const accionUpper = accion.toUpperCase();
+      const accionesLegacy = {
+        'INSERT': 'Registro creado',
+        'UPDATE': 'Registro actualizado',
+        'DELETE': 'Registro eliminado',
+      };
+      return accionesLegacy[accionUpper] || accion || 'Acción del sistema';
+    }
+
+    return nombreDiccionario;
   };
 
   // ============================================================
@@ -675,8 +674,9 @@ export default function AdminDashboard() {
                           {formatAccionEjecutiva(log)}
                         </span>
                         {modulo && (
-                          <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium">
-                            {modulo.replace('dim_', '').replace(/_/g, ' ')}
+                          <span className="text-xs px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full font-medium flex items-center gap-1">
+                            <span>{obtenerIconoModulo(modulo)}</span>
+                            <span>{obtenerNombreModulo(modulo)}</span>
                           </span>
                         )}
                       </div>

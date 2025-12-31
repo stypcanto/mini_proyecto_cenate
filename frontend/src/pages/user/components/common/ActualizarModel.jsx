@@ -9,10 +9,12 @@ import MonthYearPicker from '../../../../components/common/MonthYearPicker';
 import { getFotoUrl } from '../../../../utils/apiUrlHelper';
 import { useAuth } from '../../../../context/AuthContext';
 import { clearToken, clearUser } from '../../../../constants/auth';
+import FirmaDigitalTab from './FirmaDigitalTab'; // 🆕 v1.14.0
+import ActualizarEntregaTokenModal from './ActualizarEntregaTokenModal'; // 🆕 v1.14.0
 
-const ActualizarModel = ({ user, onClose, onSuccess }) => {
+const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', firmaDigitalOnly = false }) => {
   const { user: currentUser } = useAuth();
-  const [selectedTab, setSelectedTab] = useState('personal');
+  const [selectedTab, setSelectedTab] = useState(initialTab); // 🎯 v1.14.0 - Soporta tab inicial personalizado
   const [loading, setLoading] = useState(false);
   const [ipress, setIpress] = useState([]);
   const [ipressAll, setIpressAll] = useState([]); // Todas las IPRESS sin filtrar
@@ -136,9 +138,23 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
     // 🔥 CORRECCIÓN: Mantener el estado actual del usuario, por defecto ACTIVO
     estado: user.estado_usuario === 'INACTIVO' || user.estado_usuario === 'I' ? 'I' : 'A',
 
+    // 🆕 v1.14.0 - Firma Digital (se cargará desde API)
+    entrego_token: null,
+    numero_serie_token: '',
+    fecha_entrega_token: '',
+    fecha_inicio_certificado: '',
+    fecha_vencimiento_certificado: '',
+    motivo_sin_token: null,
+    observaciones_firma: '',
+
     // Roles
     roles: user?.roles ? (Array.isArray(user.roles) ? user.roles : [user.roles]) : []
   });
+
+  // 🆕 v1.14.0 - Estados para Firma Digital
+  const [firmaDigitalData, setFirmaDigitalData] = useState(null);
+  const [loadingFirmaDigital, setLoadingFirmaDigital] = useState(false);
+  const [mostrarModalActualizarEntrega, setMostrarModalActualizarEntrega] = useState(false);
 
   const [errors, setErrors] = useState({});
 
@@ -169,6 +185,15 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
     cargarIpress();
     cargarCatalogos();
     cargarRoles();
+    cargarFirmaDigital(); // 🆕 v1.14.0
+
+    // 🔄 v1.14.1 - Si solo tenemos datos mínimos (desde Control de Firma Digital), cargar perfil completo
+    // Detectamos datos mínimos si NO tiene nombres o apellidos (datos personales completos)
+    const tieneDatosMinimos = !user?.nombres && !user?.apellido_paterno && detectedId;
+    if (tieneDatosMinimos) {
+      console.log('⚠️ Detectado datos mínimos, cargando perfil completo del usuario...');
+      cargarPerfilCompleto(detectedId);
+    }
 
     // 🌐 Si el usuario tiene rol COORDINADOR_RED, cargar las redes
     const userRoles = user?.roles ? (Array.isArray(user.roles) ? user.roles : [user.roles]) : [];
@@ -340,6 +365,53 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
     }
   }, [redes, formData.id_red, formData.roles]);
 
+  // 🔄 v1.14.1 - Cargar perfil completo del usuario desde el backend
+  const cargarPerfilCompleto = async (userId) => {
+    try {
+      console.log(`🔄 Cargando perfil completo del usuario ID: ${userId}...`);
+      const response = await api.get(`/usuarios/id/${userId}`);
+      const userData = response.data || response;
+
+      console.log('✅ Perfil completo cargado:', userData);
+
+      // Actualizar formData con todos los datos del perfil
+      setFormData(prev => ({
+        ...prev,
+        // Datos Personales
+        numero_documento: userData.num_doc_pers || prev.numero_documento,
+        nombres: userData.nom_pers || prev.nombres,
+        apellido_paterno: userData.ape_pater_pers || prev.apellido_paterno,
+        apellido_materno: userData.ape_mater_pers || prev.apellido_materno,
+        fecha_nacimiento: userData.fec_nac_pers || prev.fecha_nacimiento,
+        genero: userData.sexo_pers || prev.genero,
+        correo_personal: userData.email_pers || prev.correo_personal,
+        correo_institucional: userData.email_corp_pers || prev.correo_institucional,
+        telefono: userData.fono_pers || prev.telefono,
+        direccion: userData.direc_pers || prev.direccion,
+
+        // Datos Profesionales
+        id_profesion: userData.id_prof || prev.id_profesion,
+        colegiatura: userData.num_coleg_pers || prev.colegiatura,
+        id_especialidad: userData.id_serv_essi || prev.id_especialidad,
+        rne: userData.rne_pers || prev.rne,
+
+        // Datos Laborales
+        id_regimen_laboral: userData.id_reg_lab || prev.id_regimen_laboral,
+        id_tip_pers: userData.id_tip_pers || prev.id_tip_pers,
+        codigo_planilla: userData.cod_planilla_pers || prev.codigo_planilla,
+        periodo_ingreso: userData.per_ing_pers || prev.periodo_ingreso,
+        id_area: userData.id_area || prev.id_area,
+        id_ipress: userData.id_ipress || prev.id_ipress,
+
+        // Estado
+        estado: userData.stat_pers === 'I' ? 'I' : 'A'
+      }));
+
+    } catch (error) {
+      console.error('❌ Error al cargar perfil completo del usuario:', error);
+    }
+  };
+
   const cargarIpress = async () => {
     try {
       setLoadingIpress(true);
@@ -494,6 +566,44 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
     } catch (error) {
       console.error('Error al cargar roles:', error);
       setLoadingRoles(false);
+    }
+  };
+
+  // 🆕 v1.14.0 - Cargar datos de firma digital
+  const cargarFirmaDigital = async () => {
+    if (!user?.id_personal) {
+      console.log('⚠️ Usuario no tiene id_personal, saltando carga de firma digital');
+      return;
+    }
+
+    setLoadingFirmaDigital(true);
+    try {
+      const response = await api.get(`/api/firma-digital/personal/${user.id_personal}`);
+      if (response.data?.status === 200 && response.data?.data) {
+        const firma = response.data.data;
+        console.log('🖋️ Firma digital cargada:', firma);
+        setFirmaDigitalData(firma);
+
+        // Actualizar formData con los datos de firma digital
+        setFormData(prev => ({
+          ...prev,
+          entrego_token: firma.entregoToken ? 'SI' : 'NO',
+          numero_serie_token: firma.numeroSerieToken || '',
+          fecha_entrega_token: firma.fechaEntregaToken || '',
+          fecha_inicio_certificado: firma.fechaInicioCertificado || '',
+          fecha_vencimiento_certificado: firma.fechaVencimientoCertificado || '',
+          motivo_sin_token: firma.motivoSinToken || null,
+          observaciones_firma: firma.observaciones || ''
+        }));
+      }
+    } catch (error) {
+      if (error.response?.status === 404) {
+        console.log('ℹ️ Usuario no tiene firma digital registrada');
+      } else {
+        console.error('❌ Error al cargar firma digital:', error);
+      }
+    } finally {
+      setLoadingFirmaDigital(false);
     }
   };
 
@@ -690,6 +800,58 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
     return Object.keys(newErrors).length === 0;
   };
 
+  // 🆕 v1.14.1 - FUNCIÓN: Guardar SOLO firma digital (sin tocar perfil de usuario)
+  const handleSubmitFirmaDigitalOnly = async () => {
+    try {
+      setLoading(true);
+      const userId = getUserId();
+
+      if (!userId) {
+        alert('❌ Error: No se pudo obtener el ID del usuario');
+        setLoading(false);
+        return;
+      }
+
+      // Preparar request SOLO con datos de firma digital
+      const firmaDigitalRequest = {
+        idPersonal: userId,
+        entregoToken: formData.entrego_token === 'SI',
+        numeroSerieToken: formData.numero_serie_token || null,
+        fechaEntregaToken: formData.fecha_entrega_token || null,
+        fechaInicioCertificado: formData.fecha_inicio_certificado || null,
+        fechaVencimientoCertificado: formData.fecha_vencimiento_certificado || null,
+        motivoSinToken: formData.motivo_sin_token || null,
+        observaciones: formData.observaciones_firma || null
+      };
+
+      console.log('📤 Actualizando SOLO firma digital:', firmaDigitalRequest);
+
+      // Llamar al endpoint POST /api/firma-digital (hace UPSERT)
+      const response = await api.post('/firma-digital', firmaDigitalRequest);
+
+      console.log('✅ Firma digital actualizada exitosamente:', response.data);
+
+      alert('✅ Firma digital actualizada exitosamente');
+
+      // Cerrar modal y refrescar tabla
+      onClose();
+      if (onSuccess) {
+        onSuccess();
+      }
+
+    } catch (error) {
+      console.error('❌ Error al actualizar firma digital:', error);
+
+      const errorMsg = error.response?.data?.message ||
+                       error.message ||
+                       'Error desconocido al actualizar firma digital';
+
+      alert(`❌ Error: ${errorMsg}`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleNextOrSubmit = async (e) => {
     e.preventDefault();
 
@@ -716,6 +878,70 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
         alert('Por favor complete todos los campos obligatorios');
         return;
       }
+      setSelectedTab('firma'); // 🆕 v1.14.0 - Ir a Firma Digital
+      return;
+    }
+
+    // 🆕 v1.14.0 - Validación de Firma Digital
+    if (selectedTab === 'firma') {
+      const firmaErrors = {};
+      const regimenSeleccionado = regimenesLaborales.find(r =>
+        r.idRegLab === parseInt(formData.id_regimen_laboral)
+      );
+      const descRegimen = regimenSeleccionado?.descRegLab?.toUpperCase() || '';
+      const requiereFirmaDigital = descRegimen.includes('CAS') || descRegimen.includes('728');
+
+      if (requiereFirmaDigital) {
+        // Validar que seleccionó si entregó token
+        if (!formData.entrego_token) {
+          firmaErrors.entrego_token = 'Debe indicar si entregó token';
+        }
+
+        // Si SÍ entregó: validar fechas Y número de serie
+        if (formData.entrego_token === 'SI') {
+          if (!formData.numero_serie_token || formData.numero_serie_token.trim() === '') {
+            firmaErrors.numero_serie_token = 'Número de serie obligatorio';
+          }
+          if (!formData.fecha_inicio_certificado) {
+            firmaErrors.fecha_inicio_certificado = 'Fecha de inicio obligatoria';
+          }
+          if (!formData.fecha_vencimiento_certificado) {
+            firmaErrors.fecha_vencimiento_certificado = 'Fecha de vencimiento obligatoria';
+          }
+          if (formData.fecha_inicio_certificado && formData.fecha_vencimiento_certificado) {
+            if (new Date(formData.fecha_vencimiento_certificado) <= new Date(formData.fecha_inicio_certificado)) {
+              firmaErrors.fecha_vencimiento_certificado = 'Debe ser posterior a fecha de inicio';
+            }
+          }
+        }
+
+        // Si NO entregó: validar motivo
+        if (formData.entrego_token === 'NO') {
+          if (!formData.motivo_sin_token) {
+            firmaErrors.motivo_sin_token = 'Debe seleccionar un motivo';
+          }
+          // Si YA_TIENE: validar fechas del certificado existente
+          if (formData.motivo_sin_token === 'YA_TIENE') {
+            if (!formData.fecha_inicio_certificado || !formData.fecha_vencimiento_certificado) {
+              firmaErrors.fecha_inicio_certificado = 'Fechas del certificado obligatorias';
+            }
+          }
+        }
+      }
+
+      setErrors(firmaErrors);
+
+      if (Object.keys(firmaErrors).length > 0) {
+        alert('Por favor corrija los errores en firma digital');
+        return;
+      }
+
+      // 🆕 v1.14.1 - Si firmaDigitalOnly=true, guardar SOLO firma digital (no perfil completo)
+      if (firmaDigitalOnly) {
+        await handleSubmitFirmaDigitalOnly();
+        return;
+      }
+
       setSelectedTab('roles');
       return;
     }
@@ -813,6 +1039,36 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
       console.log('📤 Datos de usuario a enviar:', usuarioData);
       const usuarioResponse = await api.put(`/usuarios/id/${userId}`, usuarioData);
       console.log('✅ Respuesta actualización usuario:', usuarioResponse);
+
+      // 🆕 v1.14.0 - Actualizar Firma Digital si existe en formData
+      if (user?.id_personal && formData.id_regimen_laboral) {
+        const regimenSeleccionado = regimenesLaborales.find(r =>
+          r.idRegLab === parseInt(formData.id_regimen_laboral)
+        );
+        const descRegimen = regimenSeleccionado?.descRegLab?.toUpperCase() || '';
+        const requiereFirmaDigital = descRegimen.includes('CAS') || descRegimen.includes('728');
+
+        if (requiereFirmaDigital && formData.entrego_token) {
+          try {
+            const firmaDigitalPayload = {
+              idPersonal: user.id_personal,
+              entregoToken: formData.entrego_token === 'SI',
+              numeroSerieToken: formData.numero_serie_token || null,
+              fechaEntregaToken: formData.entrego_token === 'SI' && formData.fecha_entrega_token ? formData.fecha_entrega_token : (formData.entrego_token === 'SI' ? new Date().toISOString().split('T')[0] : null),
+              fechaInicioCertificado: formData.fecha_inicio_certificado || null,
+              fechaVencimientoCertificado: formData.fecha_vencimiento_certificado || null,
+              motivoSinToken: formData.motivo_sin_token || null,
+              observaciones: formData.observaciones_firma || null
+            };
+            console.log('🖋️ Actualizando firma digital:', firmaDigitalPayload);
+            await api.post('/api/firma-digital', firmaDigitalPayload);
+            console.log('✅ Firma digital actualizada exitosamente');
+          } catch (error) {
+            console.error('⚠️ Error al actualizar firma digital:', error);
+            // No bloquear el flujo principal
+          }
+        }
+      }
 
       // Si hay foto seleccionada, subirla
       if (fotoSeleccionada) {
@@ -1002,59 +1258,81 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
 
           {/* Tabs */}
           <div className="flex gap-2 mt-4 overflow-x-auto">
+            {/* Solo mostrar "Firma Digital" cuando firmaDigitalOnly={true} */}
+            {!firmaDigitalOnly && (
+              <button
+                onClick={() => setSelectedTab('personal')}
+                className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                  selectedTab === 'personal'
+                    ? 'bg-white text-blue-900'
+                    : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+                }`}
+              >
+                Datos Personales
+              </button>
+            )}
+            {!firmaDigitalOnly && (
+              <button
+                onClick={() => setSelectedTab('profesional')}
+                className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                  selectedTab === 'profesional'
+                    ? 'bg-white text-blue-900'
+                    : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+                }`}
+              >
+                Datos Profesionales
+              </button>
+            )}
+            {!firmaDigitalOnly && (
+              <button
+                onClick={() => setSelectedTab('laboral')}
+                className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                  selectedTab === 'laboral'
+                    ? 'bg-white text-blue-900'
+                    : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+                }`}
+              >
+                Datos Laborales
+              </button>
+            )}
+            {/* 🆕 v1.14.0 - Tab Firma Digital */}
             <button
-              onClick={() => setSelectedTab('personal')}
+              onClick={() => setSelectedTab('firma')}
               className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
-                selectedTab === 'personal'
+                selectedTab === 'firma'
                   ? 'bg-white text-blue-900'
                   : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
               }`}
             >
-              Datos Personales
+              Firma Digital
             </button>
-            <button
-              onClick={() => setSelectedTab('profesional')}
-              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
-                selectedTab === 'profesional'
-                  ? 'bg-white text-blue-900'
-                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
-              }`}
-            >
-              Datos Profesionales
-            </button>
-            <button
-              onClick={() => setSelectedTab('laboral')}
-              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
-                selectedTab === 'laboral'
-                  ? 'bg-white text-blue-900'
-                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
-              }`}
-            >
-              Datos Laborales
-            </button>
-            <button
-              onClick={() => setSelectedTab('roles')}
-              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
-                selectedTab === 'roles'
-                  ? 'bg-white text-blue-900'
-                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
-              }`}
-            >
-              Roles del Sistema
-            </button>
-            <button
-              onClick={() => setSelectedTab('permisos')}
-              className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
-                selectedTab === 'permisos'
-                  ? 'bg-white text-blue-900'
-                  : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
-              }`}
-            >
-              <span className="flex items-center gap-1.5">
-                <Lock className="w-3.5 h-3.5" />
-                Permisos
-              </span>
-            </button>
+            {!firmaDigitalOnly && (
+              <button
+                onClick={() => setSelectedTab('roles')}
+                className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                  selectedTab === 'roles'
+                    ? 'bg-white text-blue-900'
+                    : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+                }`}
+              >
+                Roles del Sistema
+              </button>
+            )}
+            {!firmaDigitalOnly && (
+              <button
+                onClick={() => setSelectedTab('permisos')}
+                className={`px-4 py-2 font-medium text-sm rounded-t-xl transition-all whitespace-nowrap ${
+                  selectedTab === 'permisos'
+                    ? 'bg-white text-blue-900'
+                    : 'bg-blue-800/40 text-blue-100 hover:bg-blue-800/60'
+                }`}
+              >
+                <span className="flex items-center gap-1.5">
+                  <Lock className="w-3.5 h-3.5" />
+                  Permisos
+                </span>
+              </button>
+            )}
           </div>
         </div>
 
@@ -1850,6 +2128,56 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
               </div>
             )}
 
+            {/* 🆕 v1.14.0 - PESTAÑA FIRMA DIGITAL */}
+            {selectedTab === 'firma' && (
+              <div className="space-y-6">
+                {/* Detección de firma PENDIENTE y botón de actualización */}
+                {firmaDigitalData && firmaDigitalData.esPendiente && (
+                  <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-300 rounded-xl p-5">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex items-start gap-3">
+                        <div className="p-2 bg-amber-100 rounded-lg">
+                          <Send className="w-5 h-5 text-amber-700" />
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-amber-900 mb-1">
+                            Entrega de Token Pendiente
+                          </h4>
+                          <p className="text-sm text-amber-700">
+                            Este usuario tiene una entrega de token pendiente. Puede registrar la entrega cuando el personal entregue el token físicamente.
+                          </p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setMostrarModalActualizarEntrega(true)}
+                        className="px-4 py-2 bg-amber-600 text-white rounded-xl hover:bg-amber-700 transition-colors shadow-md hover:shadow-lg flex items-center gap-2 whitespace-nowrap"
+                      >
+                        <Send className="w-4 h-4" />
+                        Registrar Entrega
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Componente FirmaDigitalTab */}
+                {loadingFirmaDigital ? (
+                  <div className="text-center py-12">
+                    <div className="inline-block w-10 h-10 border-4 border-purple-600 border-t-transparent rounded-full animate-spin mb-3"></div>
+                    <p className="text-gray-600">Cargando datos de firma digital...</p>
+                  </div>
+                ) : (
+                  <FirmaDigitalTab
+                    formData={formData}
+                    setFormData={setFormData}
+                    errors={errors}
+                    handleChange={handleChange}
+                    regimenLaboral={regimenesLaborales.find(r => r.idRegLab === parseInt(formData.id_regimen_laboral))?.descRegLab || ''}
+                  />
+                )}
+              </div>
+            )}
+
             {/* Pestaña Roles */}
             {selectedTab === 'roles' && (
               <div>
@@ -1999,7 +2327,8 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
               <span className="text-red-500">*</span> Campos obligatorios
             </div>
             <div className="flex gap-3">
-              {selectedTab !== 'personal' && (
+              {/* Ocultar botón "Anterior" cuando firmaDigitalOnly={true} */}
+              {!firmaDigitalOnly && selectedTab !== 'personal' && (
                 <button
                   type="button"
                   onClick={() => {
@@ -2033,7 +2362,7 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
                     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Guardando...
                   </>
-                ) : selectedTab === 'permisos' ? (
+                ) : firmaDigitalOnly || selectedTab === 'permisos' ? (
                   <>
                     <Check className="w-4 h-4" />
                     Guardar Cambios
@@ -2285,6 +2614,19 @@ const ActualizarModel = ({ user, onClose, onSuccess }) => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* 🆕 v1.14.0 - Modal para Actualizar Entrega de Token PENDIENTE */}
+      {mostrarModalActualizarEntrega && firmaDigitalData && (
+        <ActualizarEntregaTokenModal
+          firmaDigital={firmaDigitalData}
+          onClose={() => setMostrarModalActualizarEntrega(false)}
+          onSuccess={() => {
+            setMostrarModalActualizarEntrega(false);
+            cargarFirmaDigital(); // Recargar datos actualizados
+            alert('✅ Entrega de token registrada exitosamente');
+          }}
+        />
       )}
     </div>
   );

@@ -29,6 +29,15 @@ import {
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import auditoriaService from "../../services/auditoriaService";
+import {
+  obtenerNombreModulo,
+  obtenerDescripcionModulo,
+  obtenerIconoModulo,
+  obtenerNombreAccion,
+  obtenerDescripcionAccion,
+  obtenerCategoriaAccion,
+  obtenerColorCategoria
+} from "../../constants/auditoriaDiccionario";
 
 export default function LogsDelSistema() {
   const navigate = useNavigate();
@@ -44,6 +53,9 @@ export default function LogsDelSistema() {
   const [fechaFin, setFechaFin] = useState("");
   const [usuariosUnicos, setUsuariosUnicos] = useState([]);
   const [usuariosMap, setUsuariosMap] = useState({}); // Mapeo usuario -> nombre completo
+  const [modulosUnicos, setModulosUnicos] = useState([]); // Módulos únicos del sistema
+  const [todasLasAcciones, setTodasLasAcciones] = useState([]); // Todas las acciones del sistema
+  const [accionesUnicas, setAccionesUnicas] = useState([]); // Acciones únicas de los logs cargados
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -56,6 +68,24 @@ export default function LogsDelSistema() {
     semana: 0,
     usuarios: 0,
   });
+
+  // ================================================================
+  // 🔄 FILTRADO DINÁMICO DE ACCIONES (según módulo seleccionado)
+  // ================================================================
+  const accionesDisponibles = useMemo(() => {
+    // Si no hay módulo seleccionado, mostrar todas las acciones
+    if (!filtroModulo) {
+      return todasLasAcciones;
+    }
+
+    // Si hay módulo seleccionado, filtrar acciones solo de ese módulo
+    const accionesFiltradas = logs
+      .filter(log => log.modulo === filtroModulo)
+      .map(log => log.accion)
+      .filter(Boolean);
+
+    return [...new Set(accionesFiltradas)].sort();
+  }, [filtroModulo, logs, todasLasAcciones]);
 
   // ================================================================
   // 📡 CARGAR LOGS
@@ -106,6 +136,16 @@ export default function LogsDelSistema() {
 
       setUsuariosUnicos(usuarios);
       setUsuariosMap(usuariosMap);
+
+      // Extraer módulos únicos y ordenar alfabéticamente
+      const modulosSet = new Set(logsArray.map(log => log.modulo).filter(Boolean));
+      const modulos = Array.from(modulosSet).sort();
+      setModulosUnicos(modulos);
+
+      // Extraer acciones únicas y ordenar alfabéticamente
+      const accionesSet = new Set(logsArray.map(log => log.accion).filter(Boolean));
+      const acciones = Array.from(accionesSet).sort();
+      setTodasLasAcciones(acciones);
 
       // Calcular estadísticas
       const hoy = new Date();
@@ -224,17 +264,17 @@ export default function LogsDelSistema() {
       );
     }
 
-    // Filtrar por módulo
+    // Filtrar por módulo (exacto, ya que ahora usamos select)
     if (filtroModulo) {
       resultado = resultado.filter((log) =>
-        log.modulo?.toLowerCase().includes(filtroModulo.toLowerCase())
+        log.modulo === filtroModulo
       );
     }
 
-    // Filtrar por acción
+    // Filtrar por acción (exacto, ya que ahora usamos select)
     if (filtroAccion) {
       resultado = resultado.filter((log) =>
-        log.accion?.toLowerCase().includes(filtroAccion.toLowerCase())
+        log.accion === filtroAccion
       );
     }
 
@@ -322,8 +362,8 @@ export default function LogsDelSistema() {
       obtenerNombreCompleto(log),
       log.ip || log.ipAddress || "N/A",
       log.dispositivo || log.userAgent || "N/A",
-      log.modulo || "N/A",
-      log.accion || "N/A",
+      `${obtenerNombreModulo(log.modulo)} (${log.modulo || "N/A"})`,
+      `${obtenerNombreAccion(log.accion)} (${log.accion || "N/A"})`,
       log.detalle || "N/A",
     ]);
 
@@ -513,39 +553,63 @@ export default function LogsDelSistema() {
                 Módulo
               </label>
               <div className="relative">
-                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
+                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <select
                   value={filtroModulo}
                   onChange={(e) => {
                     setFiltroModulo(e.target.value);
+                    setFiltroAccion(""); // Limpiar filtro de acción al cambiar módulo
                     setPaginaActual(1);
                   }}
-                  placeholder="Filtrar por módulo..."
                   className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg
-                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                             appearance-none bg-white cursor-pointer"
+                >
+                  <option value="">Todos los módulos</option>
+                  {modulosUnicos.map((modulo, index) => (
+                    <option key={index} value={modulo}>
+                      {obtenerIconoModulo(modulo)} {obtenerNombreModulo(modulo)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none rotate-90" />
               </div>
             </div>
 
             {/* Filtro por acción */}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">
-                Acción
+              <label className="block text-sm font-medium text-slate-700 mb-2 flex items-center justify-between">
+                <span>Acción</span>
+                {filtroModulo && accionesDisponibles.length > 0 && (
+                  <span className="text-xs text-slate-500 font-normal">
+                    {accionesDisponibles.length} disponibles
+                  </span>
+                )}
               </label>
               <div className="relative">
-                <Activity className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                <input
-                  type="text"
+                <Activity className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <select
                   value={filtroAccion}
                   onChange={(e) => {
                     setFiltroAccion(e.target.value);
                     setPaginaActual(1);
                   }}
-                  placeholder="Filtrar por acción..."
                   className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg
-                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
+                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+                             appearance-none bg-white cursor-pointer"
+                >
+                  <option value="">
+                    {filtroModulo && accionesDisponibles.length === 0
+                      ? "No hay acciones para este módulo"
+                      : "Todas las acciones"}
+                  </option>
+                  {accionesDisponibles.map((accion, index) => (
+                    <option key={index} value={accion}>
+                      {obtenerNombreAccion(accion)}
+                    </option>
+                  ))}
+                </select>
+                <ChevronRight className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none rotate-90" />
               </div>
             </div>
 
@@ -678,16 +742,37 @@ export default function LogsDelSistema() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">
-                        <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-xs font-medium">
-                          {log.modulo || "N/A"}
-                        </span>
+                        <div className="group relative inline-block">
+                          <span className="px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-xs font-medium cursor-help flex items-center gap-1">
+                            <span>{obtenerIconoModulo(log.modulo)}</span>
+                            <span>{obtenerNombreModulo(log.modulo)}</span>
+                          </span>
+                          {/* Tooltip con descripción del módulo */}
+                          <div className="invisible group-hover:visible absolute z-50 w-64 px-3 py-2 text-xs text-white bg-slate-900 rounded-lg shadow-lg -top-2 left-full ml-2 transform transition-all duration-200">
+                            <div className="font-semibold mb-1">{obtenerNombreModulo(log.modulo)}</div>
+                            <div className="text-slate-300">{obtenerDescripcionModulo(log.modulo)}</div>
+                            <div className="mt-1 text-slate-400 text-[10px]">Código: {log.modulo}</div>
+                            {/* Flecha del tooltip */}
+                            <div className="absolute w-2 h-2 bg-slate-900 transform rotate-45 -left-1 top-3"></div>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">
-                        <div className="flex items-center gap-2">
-                          {getIconoAccion(log.accion)}
-                          <span className={`px-2 py-1 rounded-md text-xs font-medium ${getColorAccion(log.accion)}`}>
-                            {log.accion || "N/A"}
-                          </span>
+                        <div className="group relative inline-block">
+                          <div className="flex items-center gap-2 cursor-help">
+                            {getIconoAccion(log.accion)}
+                            <span className={`px-2 py-1 rounded-md text-xs font-medium ${getColorAccion(log.accion)}`}>
+                              {obtenerNombreAccion(log.accion)}
+                            </span>
+                          </div>
+                          {/* Tooltip con descripción de la acción */}
+                          <div className="invisible group-hover:visible absolute z-50 w-72 px-3 py-2 text-xs text-white bg-slate-900 rounded-lg shadow-lg -top-2 left-full ml-2 transform transition-all duration-200">
+                            <div className="font-semibold mb-1">{obtenerNombreAccion(log.accion)}</div>
+                            <div className="text-slate-300">{obtenerDescripcionAccion(log.accion)}</div>
+                            <div className="mt-1 text-slate-400 text-[10px]">Código: {log.accion}</div>
+                            {/* Flecha del tooltip */}
+                            <div className="absolute w-2 h-2 bg-slate-900 transform rotate-45 -left-1 top-3"></div>
+                          </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-600 max-w-md truncate">

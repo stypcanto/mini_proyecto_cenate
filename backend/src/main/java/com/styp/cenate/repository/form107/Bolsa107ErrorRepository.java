@@ -12,9 +12,9 @@ import com.styp.cenate.model.form107.Bolsa107Error;
 
 @Repository
 public interface Bolsa107ErrorRepository extends JpaRepository<Bolsa107Error, Long> {
-	
+
 	@Query(value = """
-		SELECT 
+		SELECT
 			id_error,
 			id_carga,
 			id_raw,
@@ -29,4 +29,7 @@ public interface Bolsa107ErrorRepository extends JpaRepository<Bolsa107Error, Lo
 		ORDER BY id_error
 		""", nativeQuery = true)
 	List<Map<String, Object>> findAllByIdCarga(@Param("idCarga") Long idCarga);
+
+	// Método para obtener entidades completas por idCarga
+	List<Bolsa107Error> findByIdCarga(Long idCarga);
 }

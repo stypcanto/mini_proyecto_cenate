@@ -65,4 +65,7 @@ public class UsuarioCreateRequest {
     private String codigo_planilla_alt; // Campo alternativo para código de planilla
     private String periodo_ingreso; // Formato YYYYMM
     private Long id_area;
+
+    // 🆕 FIRMA DIGITAL (v1.14.0)
+    private FirmaDigitalRequest firmaDigital; // Datos de firma digital del personal
 }
