@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.13.0",
-  name: "Asignación Automática de Roles + Notificaciones",
-  date: "2025-12-29",
-  description: "Sistema inteligente de asignación de roles según IPRESS y campanita de notificaciones para usuarios pendientes de asignar rol específico. Mejora significativa en la gestión de permisos y flujo de onboarding de usuarios."
+  number: "1.14.1",
+  name: "Mejoras UX Control de Firma Digital + Filtros Avanzados",
+  date: "2025-12-30",
+  description: "Mejoras en Control de Firma Digital: diseño consistente con UsersTable, filtros avanzados (régimen, profesión, especialidad, fechas), fix de hooks React, eliminación de columna EVIDENCIA, y optimización de tabla con anchos fijos y truncamiento."
 };
 
 export const APP_INFO = {

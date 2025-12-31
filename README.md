@@ -2,91 +2,173 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.10.0-blue)
+![Version](https://img.shields.io/badge/version-1.14.0-blue)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen)
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![React](https://img.shields.io/badge/React-19-blue)
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-14-blue)
 ![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-cyan)
 
-**Sistema completo de gestion para el Centro Nacional de Telemedicina - EsSalud**
+**Sistema completo de gestión para el Centro Nacional de Telemedicina - EsSalud Perú**
+
+*Coordinación de atención médica especializada a nivel nacional mediante tecnologías de telecomunicación*
+
+[Documentación Completa](CLAUDE.md) • [Índice de Documentación](INDICE_DOCUMENTACION.md) • [Changelog](checklist/01_Historial/01_changelog.md) • [API Endpoints](spec/01_Backend/01_api_endpoints.md)
 
 </div>
 
 ---
 
-## Tabla de Contenidos
+## 📖 Tabla de Contenidos
 
-- [Caracteristicas](#caracteristicas)
-- [Stack Tecnologico](#stack-tecnologico)
-- [Instalacion Rapida](#instalacion-rapida)
-- [Despliegue en Produccion (Docker)](#despliegue-en-produccion-docker)
-- [Comandos con Makefile](#comandos-con-makefile)
+- [¿Qué es CENATE?](#qué-es-cenate)
+- [Características Principales](#características-principales)
+- [Stack Tecnológico](#stack-tecnológico)
+- [🚀 Quick Start](#-quick-start)
+- [Despliegue en Producción](#despliegue-en-producción-docker)
 - [Estructura del Proyecto](#estructura-del-proyecto)
-- [Seguridad del Sistema](#seguridad-del-sistema)
+- [📋 Cómo Agregar Nuevas Páginas](#-cómo-agregar-nuevas-páginas-component-registry) ⭐
+- [Módulos Implementados](#módulos-implementados)
+- [📚 Documentación](#-documentación)
+- [Seguridad](#seguridad)
 - [API REST](#api-rest)
-- [Modulos del Sistema](#modulos-del-sistema)
-- [Documentacion](#documentacion)
+- [Historial de Versiones](#historial-de-versiones)
+- [Contacto](#contacto)
 
 ---
 
-## Caracteristicas
+## ¿Qué es CENATE?
 
-### Autenticacion y Seguridad
-- Login con JWT (JSON Web Tokens) - Expiracion: 2 horas
-- Sistema MBAC (Control de Acceso Basado en Modulos)
-- Bloqueo automatico por intentos fallidos (3 intentos = 10 min bloqueo)
-- Token Blacklist para invalidacion de sesiones (logout seguro)
-- CORS restringido por ambiente (dev/prod)
-- Auditoria completa de acciones
+**CENATE (Centro Nacional de Telemedicina)** es el sistema de gestión de telemedicina de **EsSalud Perú** que coordina la atención médica especializada a nivel nacional.
 
-### Gestion de Usuarios
+### Propósito
+
+- **Planificación y registro** de atenciones de telemedicina a nivel nacional
+- **Coordinación** entre CENATE y las 414 IPRESS (hospitales y centros de salud)
+- **Gestión de turnos médicos** según disponibilidad del personal (150 horas mínimas/mes)
+- **Trazabilidad completa** de atenciones por paciente, servicio y estrategia
+- **Firma digital** para documentos médicos y administrativos
+- **Auditoría** de todas las operaciones del sistema
+
+### Alcance
+
+- **Cobertura:** 414 IPRESS de EsSalud a nivel nacional (en fase de expansión)
+- **Usuarios:** 4.6M asegurados registrados
+- **Base de datos:** 135 tablas, 5.4 GB de datos históricos
+
+### Modalidades de Atención
+
+| Modalidad | Descripción |
+|-----------|-------------|
+| **Teleconsulta** | Médico CENATE llama a paciente en su casa |
+| **Teleconsultorio** | Paciente acude a IPRESS equipada, médico CENATE atiende remotamente |
+| **Teleorientación** | Orientación médica general |
+| **Teleinterconsulta** | Consulta entre médicos de diferentes especialidades |
+| **Telemonitoreo** | Seguimiento continuo de pacientes crónicos |
+| **Teleapoyo Diagnóstico** | Soporte diagnóstico vía sistema ESSI |
+
+> 📖 **Documentación completa de negocio:** Ver [CLAUDE.md - ¿Qué es CENATE?](CLAUDE.md#qué-es-cenate)
+
+---
+
+## Características Principales
+
+### ✨ Módulos Implementados (v1.14.0)
+
+#### 📋 Desarrollo y Arquitectura
+- **Component Registry** - Sistema de registro dinámico de rutas (v1.14.0)
+  - Agregar nuevas páginas con solo 3 líneas de código
+  - Lazy loading automático
+  - Protección MBAC automática
+  - Reducción del 80% de código en App.js
+
+#### 🔐 Autenticación y Seguridad
+- **JWT** con expiración de 24 horas
+- **Sistema MBAC** (Module-Based Access Control) - Permisos granulares
+- **Bloqueo automático** por 3 intentos fallidos (10 min)
+- **Token Blacklist** para logout seguro
+- **Auditoría completa** de acciones (registro, consulta, exportación)
+- **Asignación automática de roles** según IPRESS (v1.13.0)
+
+#### 👥 Gestión de Usuarios
 - CRUD completo de usuarios internos y externos
-- 20+ Roles pre-configurados
-- Permisos granulares por modulo y pagina
-- Flujo de aprobacion de solicitudes de registro
+- Sistema de **solicitudes de registro** con flujo de aprobación
+- **20+ roles** pre-configurados con permisos específicos
+- **Reenvío de correos** de activación (v1.11.0)
+- **Recuperación de contraseña** con selección de correo (v1.10.2)
+- **Usuarios pendientes de activación** con gestión centralizada
 
-### ChatBot de Citas
-- Wizard de 3 pasos para solicitar citas
-- Consulta de paciente por DNI
-- Seleccion de disponibilidad (fecha/hora/profesional)
-- Dashboard de reportes con KPIs y exportacion CSV
+#### 🔔 Sistema de Notificaciones (v1.13.0)
+- **Campanita de notificaciones** en tiempo real (polling 30s)
+- **Panel de usuarios pendientes** de asignación de rol
+- Identificación automática de usuarios que requieren atención
 
-### Auditoria del Sistema
-- Registro de todas las acciones del sistema
-- Filtros por usuario, modulo, accion, fechas
-- Dashboard con actividad reciente
-- Exportacion a CSV
+#### 👨‍⚕️ Disponibilidad Médica (v1.9.0)
+- **Declaración mensual** de turnos (Mañana, Tarde, Completo)
+- **Cálculo automático** de horas según régimen laboral (728/CAS/Locador)
+- **Validación de 150 horas mínimas** por mes
+- **Flujo de estados:** BORRADOR → ENVIADO → REVISADO
+- **Revisión por coordinadores** con ajustes de turnos
 
-### Formulario Diagnostico
-- 7 secciones de evaluacion de IPRESS
-- Guardado de borradores
-- Flujo de aprobacion
+#### ✍️ Firma Digital (v1.14.0)
+- **Registro de tokens físicos** con número de serie
+- **Gestión de certificados digitales** (fechas inicio/vencimiento)
+- **Flujo de entregas pendientes** con actualización posterior
+- **Validaciones en 3 capas** (frontend, backend DTO, base de datos)
+- Auditoría completa de operaciones
+- Solo para personal régimen **CAS y 728**
+
+#### 💬 ChatBot de Citas
+- **Wizard de 3 pasos** para solicitud de citas
+- Consulta de paciente por **DNI**
+- Selección de **disponibilidad** (fecha/hora/profesional)
+- **Dashboard de reportes** con KPIs y exportación CSV
+- Búsqueda avanzada de citas
+
+#### 📊 Auditoría del Sistema
+- Registro de **todas las acciones críticas** del sistema
+- **Filtros avanzados** por usuario, módulo, acción, fechas
+- **Dashboard** con actividad reciente (8 últimas acciones)
+- **Exportación a CSV** para análisis
+- Vista modular detallada con datos de personal
+
+#### 📋 Formulario Diagnóstico Institucional
+- **7 secciones** de evaluación de capacidades de IPRESS
+- Evaluación de equipamiento, infraestructura, RRHH, conectividad
+- Guardado de **borradores**
+- Flujo de aprobación
+- Determina si IPRESS puede operar **teleconsultorio**
 
 ---
 
-## Stack Tecnologico
+## Stack Tecnológico
 
-| Componente | Tecnologia | Version |
+| Componente | Tecnología | Versión |
 |------------|------------|---------|
-| Backend | Spring Boot | 3.5.6 |
-| Java | OpenJDK | 17 |
-| Frontend | React | 19 |
-| Base de Datos | PostgreSQL | 14+ |
-| CSS | TailwindCSS | 3.4.18 |
-| Iconos | Lucide React | - |
-| HTTP Client | Axios | - |
+| **Backend** | Spring Boot | 3.5.6 |
+| **Java** | OpenJDK | 17 |
+| **Frontend** | React | 19 |
+| **Base de Datos** | PostgreSQL | 14+ |
+| **CSS Framework** | TailwindCSS | 3.4.18 |
+| **Autenticación** | JWT | - |
+| **HTTP Client** | Axios | - |
+| **Iconos** | Lucide React | - |
+| **Despliegue** | Docker + Docker Compose | 20+ |
 
 ---
 
-## Instalacion Rapida
+## 🚀 Quick Start
 
-### Requisitos Previos
-- Java 17+
-- Node.js 20+
-- PostgreSQL 14+
+### Prerrequisitos
+
+- **Java 17+** - `java -version`
+- **Node.js 18+** - `node -v`
+- **npm 9+** - `npm -v`
+- **Git 2+** - `git --version`
+- **Acceso a PostgreSQL** en `10.0.89.13:5432`
 
 ### 1. Clonar el Repositorio
+
 ```bash
 git clone https://github.com/stypcanto/mini_proyecto_cenate.git
 cd mini_proyecto_cenate
@@ -94,72 +176,86 @@ cd mini_proyecto_cenate
 
 ### 2. Configurar Variables de Entorno
 
-Crear archivo `backend/src/main/resources/application-local.properties`:
-```properties
-# Base de Datos
-spring.datasource.url=jdbc:postgresql://localhost:5432/maestro_cenate
-spring.datasource.username=postgres
-spring.datasource.password=tu_password
+```bash
+# Base de datos PostgreSQL (servidor remoto)
+export DB_URL="jdbc:postgresql://10.0.89.13:5432/maestro_cenate"
+export DB_USERNAME="postgres"
+export DB_PASSWORD="Essalud2025"
 
-# JWT (minimo 32 caracteres)
-jwt.secret=your-secure-key-at-least-32-characters
+# JWT (mínimo 32 caracteres)
+export JWT_SECRET="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
 
-# Email SMTP (opcional)
-spring.mail.username=tu_email@gmail.com
-spring.mail.password=tu_app_password
+# Email SMTP (Servidor Corporativo EsSalud)
+export MAIL_HOST="172.20.0.227"
+export MAIL_PORT="25"
+export MAIL_USERNAME="cenate.contacto@essalud.gob.pe"
+export MAIL_PASSWORD="essaludc50"
 
 # Frontend URL
-app.frontend.url=http://localhost:3000
+export FRONTEND_URL="http://localhost:3000"
 ```
 
-### 3. Ejecutar Backend
+### 3. Levantar Backend (Spring Boot)
+
 ```bash
 cd backend
 ./gradlew bootRun
-```
-Backend disponible en: **http://localhost:8080**
 
-### 4. Ejecutar Frontend
+# Backend disponible en: http://localhost:8080
+# Endpoint de salud: http://localhost:8080/actuator/health
+```
+
+### 4. Levantar Frontend (React)
+
 ```bash
 cd frontend
 npm install
 npm start
+
+# Frontend disponible en: http://localhost:3000
 ```
-Frontend disponible en: **http://localhost:3000**
+
+### 5. Primer Acceso
+
+**Credenciales de prueba:**
+```
+Username: 44914706
+Password: @Cenate2025
+Rol: SUPERADMIN
+```
+
+### 6. Verificar Funcionalidad Básica
+
+1. ✅ **Login exitoso** → Dashboard carga correctamente
+2. ✅ **Ver usuarios** → Menú "Gestión de Usuarios"
+3. ✅ **Ver auditoría** → Menú "Seguridad" → "Auditoría"
+4. ✅ **Crear usuario de prueba** → Verificar que aparece en lista
+
+> 📖 **Guía completa de instalación:** Ver [CLAUDE.md - Quick Start](CLAUDE.md#-quick-start---levantar-el-proyecto)
 
 ---
 
-## Despliegue en Produccion (Docker)
+## Despliegue en Producción (Docker)
 
-### ⚠️ PASOS DE INICIO (IMPORTANTE)
-
-Cada vez que reinicies la Mac o Docker, ejecutar en este orden:
+### ⚠️ PASOS DE INICIO (macOS)
 
 ```bash
-# 1. Iniciar el relay SMTP (permite a Docker conectar al servidor corporativo)
+# 1. Iniciar relay SMTP (permite Docker → servidor corporativo)
 ./start-smtp-relay.sh
 
-# 2. Iniciar Docker
-docker-compose up -d
+# 2. Levantar servicios
+docker-compose up -d --build
 
-# 3. Verificar que todo funciona
+# 3. Verificar estado
 docker-compose ps
-docker logs cenate-backend --tail=20
+docker-compose logs backend --tail=20
 ```
 
-> **¿Por qué el relay?** Docker en macOS no puede acceder directamente a la red corporativa `172.20.0.227`. El relay `socat` actúa como puente entre Docker y el servidor SMTP de EsSalud.
-
-### Requisitos
-- Docker 20+
-- Docker Compose 2+
-- socat (`brew install socat`)
-- Acceso a PostgreSQL (10.0.89.13:5432)
-
-### Arquitectura
+### Arquitectura Docker
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                      SERVIDOR PRODUCCION                     │
+│                      SERVIDOR PRODUCCIÓN                     │
 ├─────────────────────────────────────────────────────────────┤
 │                                                              │
 │  ┌──────────────────┐      ┌──────────────────┐             │
@@ -168,7 +264,6 @@ docker logs cenate-backend --tail=20
 │  │                   │ /api │                   │             │
 │  └────────┬──────────┘      └─────────┬─────────┘             │
 │           │                           │                       │
-│           │ :80                       │ :8080                 │
 │           ▼                           ▼                       │
 │  ┌──────────────────────────────────────────────┐            │
 │  │              cenate-net (bridge)              │            │
@@ -179,105 +274,57 @@ docker logs cenate-backend --tail=20
                               ▼
               ┌───────────────────────────────────┐
               │   PostgreSQL (10.0.89.13:5432)     │
+              │   Base de datos: maestro_cenate    │
               └───────────────────────────────────┘
 ```
 
-### Archivos de Configuracion
-
-| Archivo | Descripcion |
-|---------|-------------|
-| `docker-compose.yml` | Orquestacion principal |
-| `frontend/Dockerfile` | Build React + nginx |
-| `backend/Dockerfile` | Build Spring Boot + Java 17 |
-| `frontend/nginx.conf` | Proxy reverso /api → backend |
-
-### Variables de Entorno Requeridas
-
-El archivo `docker-compose.yml` ya incluye valores por defecto:
-
-```yaml
-# Backend
-SPRING_DATASOURCE_URL: jdbc:postgresql://10.0.89.13:5432/maestro_cenate
-SPRING_DATASOURCE_USERNAME: postgres
-SPRING_DATASOURCE_PASSWORD: Essalud2025
-JWT_SECRET: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-JWT_EXPIRATION: 86400000
-MAIL_USERNAME: cenateinformatica@gmail.com   # OBLIGATORIO
-MAIL_PASSWORD: nolq uisr fwdw zdly           # OBLIGATORIO
-TZ: America/Lima
-
-# Frontend (en .env.production)
-REACT_APP_API_URL=/api
-```
-
-### Comandos de Despliegue
+### Comandos Docker Útiles
 
 ```bash
-# Construir y levantar todo
-docker-compose up -d --build
-
-# Solo reconstruir frontend
-docker-compose build frontend && docker-compose up -d frontend
-
-# Solo reconstruir backend
-docker-compose build backend && docker-compose up -d backend
-
-# Ver estado
+# Ver estado de contenedores
 docker-compose ps
 
 # Ver logs en tiempo real
 docker-compose logs -f
 
-# Ver logs del backend
-docker-compose logs -f backend
+# Reiniciar solo backend
+docker-compose build backend && docker-compose up -d backend
 
-# Reiniciar servicios
-docker-compose restart
+# Reiniciar solo frontend
+docker-compose build frontend && docker-compose up -d frontend
 
 # Detener todo
 docker-compose down
+
+# Limpiar imágenes huérfanas
+docker image prune -f
 ```
-
-### Preparar Servidor (Primera vez)
-
-```bash
-# Crear directorio para fotos de personal
-sudo mkdir -p /var/cenate-uploads/personal
-sudo chown -R 1000:1000 /var/cenate-uploads
-```
-
-### Puertos Expuestos
-
-| Servicio | Puerto |
-|----------|--------|
-| Frontend (nginx) | 80 |
-| Backend (Spring) | 8080 |
 
 ### Troubleshooting
 
-#### Error 502 Bad Gateway
+**Error 502 Bad Gateway:**
 ```bash
-# Verificar que el backend este corriendo
+# Verificar backend
 docker-compose ps
-docker-compose logs backend --tail=100
+docker-compose logs backend --tail=50
+
+# Reiniciar servicios
+docker-compose restart
 ```
 
-**Causas comunes:**
-- Falta `MAIL_USERNAME` o `MAIL_PASSWORD`
-- No conecta a PostgreSQL
-- Backend no termino de arrancar
+**Correos no se envían (macOS):**
+```bash
+# Verificar relay SMTP
+ps aux | grep socat
 
-#### Backend no arranca - Falta MAIL_USERNAME
+# Reiniciar relay
+./start-smtp-relay.sh
+
+# Reiniciar backend
+docker-compose restart backend
 ```
-Could not resolve placeholder 'MAIL_USERNAME'
-```
-**Solucion:** Verificar que `docker-compose.yml` tenga las variables de email.
 
-#### Frontend muestra "localhost:8080"
-**Causa:** El codigo no acepta URL relativa `/api`.
-**Solucion:** Reconstruir frontend con `docker-compose build frontend`.
-
-> Ver documentacion completa en [CLAUDE.md](CLAUDE.md#despliegue-en-produccion-docker)
+> 📖 **Guía completa de Docker:** Ver [CLAUDE.md - Despliegue en Producción](CLAUDE.md#opción-b-producción-con-docker-para-despliegue)
 
 ---
 
@@ -285,156 +332,404 @@ Could not resolve placeholder 'MAIL_USERNAME'
 
 ```
 mini_proyecto_cenate/
-├── spec/                             # Documentacion tecnica
-│   ├── 001_espec_users_bd.md         # Modelo de datos usuarios
-│   ├── 002_changelog.md              # Historial de cambios
-│   ├── 003_api_endpoints.md          # Endpoints API REST
-│   ├── 004_arquitectura.md           # Diagramas y arquitectura
-│   ├── 005_troubleshooting.md        # Solucion de problemas
-│   ├── 006_plan_auditoria.md         # Plan de auditoria
-│   ├── sql/                          # Scripts SQL
-│   └── scripts/                      # Scripts de BD
+├── 📚 DOCUMENTACIÓN
+│   ├── CLAUDE.md                    # ⭐ Guía maestra del proyecto (2,462 líneas)
+│   ├── INDICE_DOCUMENTACION.md      # ⭐ Índice maestro de navegación
+│   ├── README.md                    # Este archivo
+│   │
+│   ├── spec/                        # Documentación técnica (11 archivos)
+│   │   ├── 01_Backend/
+│   │   │   └── 01_api_endpoints.md          # 100+ endpoints documentados
+│   │   ├── 03_Arquitectura/
+│   │   │   └── 01_diagramas_sistema.md      # Flujos, capas, MBAC
+│   │   ├── 04_BaseDatos/                    # 135 tablas, 5.4 GB
+│   │   │   ├── 01_modelo_usuarios/
+│   │   │   ├── 02_guia_auditoria/           # ⭐ Sistema de auditoría
+│   │   │   ├── 04_analisis_estructura/      # ⭐ Análisis 135 tablas
+│   │   │   ├── 05_plan_limpieza/            # ⭐ Optimización BD (-28%)
+│   │   │   ├── 06_scripts/                  # 16 scripts SQL
+│   │   │   └── 07_sql/
+│   │   └── 05_Troubleshooting/
+│   │       └── 01_guia_problemas_comunes.md
+│   │
+│   ├── plan/                        # Planificación (8 planes)
+│   │   ├── 01_Seguridad_Auditoria/          # ✅ Implementados v1.12-v1.13
+│   │   ├── 02_Modulos_Medicos/              # ✅ Disponibilidad v1.9.0
+│   │   ├── 03_Infraestructura/              # 📋 Planificado
+│   │   ├── 04_Integraciones/                # 🔍 En evaluación (Ollama)
+│   │   └── 05_Firma_Digital/                # ✅ Implementado v1.14.0
+│   │
+│   └── checklist/                   # Logs y reportes (6 archivos)
+│       ├── 01_Historial/
+│       │   ├── 01_changelog.md              # ⭐ v1.0.0 → v1.14.0
+│       │   └── 02_historial_versiones.md
+│       ├── 02_Reportes_Pruebas/
+│       ├── 03_Checklists/
+│       └── 04_Analisis/
 │
-├── backend/                          # Spring Boot API (puerto 8080)
-│   └── src/main/java/com/styp/cenate/
-│       ├── api/                      # Controllers REST
-│       ├── service/                  # Logica de negocio
-│       ├── model/                    # Entidades JPA
-│       ├── repository/               # JPA Repositories
-│       ├── dto/                      # Data Transfer Objects
-│       ├── security/                 # JWT + MBAC
-│       └── exception/                # Manejo de errores
+├── 🔧 CÓDIGO
+│   ├── backend/                     # Spring Boot (puerto 8080)
+│   │   └── src/main/java/com/styp/cenate/
+│   │       ├── api/                         # Controllers REST
+│   │       ├── service/                     # Lógica de negocio
+│   │       ├── model/                       # Entidades JPA (51)
+│   │       ├── repository/                  # JPA Repositories (48)
+│   │       ├── dto/                         # Data Transfer Objects
+│   │       ├── security/                    # JWT + MBAC
+│   │       └── exception/                   # Manejo de errores
+│   │
+│   └── frontend/                    # React (puerto 3000)
+│       ├── COMPONENT_REGISTRY.md            # ⭐ Guía del Component Registry
+│       ├── QUICK_REFERENCE.md               # Referencia rápida
+│       ├── IMPLEMENTATION_SUMMARY.md        # Resumen técnico
+│       └── src/
+│           ├── config/
+│           │   └── componentRegistry.js     # ⭐ Registro de rutas dinámicas
+│           ├── components/                  # UI reutilizable
+│           ├── context/                     # AuthContext, PermisosContext
+│           ├── pages/                       # Vistas (31+)
+│           ├── services/                    # API services
+│           └── lib/apiClient.js             # HTTP client
 │
-├── frontend/                         # React (puerto 3000)
-│   └── src/
-│       ├── components/               # UI reutilizable
-│       ├── context/                  # AuthContext, PermisosContext
-│       ├── pages/                    # Vistas
-│       ├── services/                 # API services
-│       ├── hooks/                    # Custom hooks
-│       └── config/version.js         # Version del sistema
-│
-├── CLAUDE.md                         # Guia rapida para desarrollo
-└── README.md                         # Este archivo
+└── 🐳 DESPLIEGUE
+    ├── docker-compose.yml           # Orquestación principal
+    ├── Dockerfile (backend)         # Spring Boot + Java 17
+    ├── Dockerfile (frontend)        # React + nginx
+    └── start-smtp-relay.sh          # Relay SMTP para macOS
 ```
 
 ---
 
-## Documentacion
+## 📋 Cómo Agregar Nuevas Páginas (Component Registry)
 
-Toda la documentacion tecnica esta en la carpeta `spec/`:
+> **v1.14.0** - Sistema de registro dinámico de componentes
 
-| Documento | Descripcion |
-|-----------|-------------|
-| [001_espec_users_bd.md](spec/001_espec_users_bd.md) | Modelo de datos de usuarios, roles, flujos |
-| [002_changelog.md](spec/002_changelog.md) | Historial detallado de cambios por version |
-| [003_api_endpoints.md](spec/003_api_endpoints.md) | Documentacion completa de la API REST |
-| [004_arquitectura.md](spec/004_arquitectura.md) | Diagramas de arquitectura del sistema |
-| [005_troubleshooting.md](spec/005_troubleshooting.md) | Solucion a problemas comunes |
-| [006_plan_auditoria.md](spec/006_plan_auditoria.md) | Plan de auditoria del sistema |
-| [008_plan_seguridad_auth.md](spec/008_plan_seguridad_auth.md) | Plan de seguridad - Autenticacion |
-| [CLAUDE.md](CLAUDE.md) | Guia rapida para desarrollo con Claude |
+### ⚡ 3 Pasos Simples
+
+#### 1️⃣ Crear el Componente
+
+```bash
+# Crear archivo en la carpeta correspondiente
+frontend/src/pages/[carpeta]/NombrePagina.jsx
+```
+
+```jsx
+import React from 'react';
+
+export default function NombrePagina() {
+  return (
+    <div>
+      <h1>Mi Nueva Página</h1>
+      {/* Tu código aquí */}
+    </div>
+  );
+}
+```
+
+#### 2️⃣ Registrar en componentRegistry.js
+
+Abrir: `/frontend/src/config/componentRegistry.js`
+
+Buscar el **final del objeto** (antes del `};`) y agregar:
+
+```javascript
+  // Al final, antes del cierre };
+
+  '/ruta/a/tu/pagina': {
+    component: lazy(() => import('../pages/[carpeta]/NombrePagina')),
+    requiredAction: 'ver',
+  },
+};
+```
+
+#### 3️⃣ ¡Listo! 🎉
+
+La página ya está disponible en: `http://localhost:3000/ruta/a/tu/pagina`
 
 ---
 
-## Seguridad del Sistema
+### 📝 Plantillas Copy-Paste
 
-### Bloqueo de Cuenta por Intentos Fallidos
+**Página Administrativa:**
+```javascript
+'/admin/[nombre]': {
+  component: lazy(() => import('../pages/admin/[Componente]')),
+  requiredAction: 'ver',
+},
+```
 
-El sistema bloquea automaticamente las cuentas despues de **3 intentos fallidos** de login.
+**Página Solo SUPERADMIN:**
+```javascript
+'/admin/[nombre]': {
+  component: lazy(() => import('../pages/admin/[Componente]')),
+  requiredAction: 'ver',
+  requiredRoles: ['SUPERADMIN'],
+},
+```
+
+**Página de Rol Específico (Médico, Coordinador, etc):**
+```javascript
+'/roles/[rol]/[nombre]': {
+  component: lazy(() => import('../pages/roles/[rol]/[Componente]')),
+  requiredAction: 'ver',
+},
+```
+
+**Página Sin Protección MBAC:**
+```javascript
+'/[nombre]': {
+  component: lazy(() => import('../pages/[Componente]')),
+  requiredAction: null,
+},
+```
+
+**Página con Parámetros (ej: `/detalle/:id`):**
+```javascript
+'/[ruta]/detalle/:id': {
+  component: lazy(() => import('../pages/[carpeta]/[Componente]')),
+  requiredAction: 'ver',
+  pathMatch: '/[ruta]/detalle',  // Path sin parámetros para MBAC
+},
+```
+
+---
+
+### ⚠️ Errores Comunes
+
+**❌ NO incluir extensión .jsx:**
+```javascript
+// ❌ INCORRECTO
+lazy(() => import('../pages/Admin.jsx'))
+
+// ✅ CORRECTO
+lazy(() => import('../pages/Admin'))
+```
+
+**❌ NO olvidar `lazy()`:**
+```javascript
+// ❌ INCORRECTO
+component: import('../pages/Admin')
+
+// ✅ CORRECTO
+component: lazy(() => import('../pages/Admin'))
+```
+
+**❌ NO olvidar la coma al final:**
+```javascript
+// ❌ INCORRECTO
+'/admin/users': {
+  component: lazy(() => import('../pages/Admin')),
+  requiredAction: 'ver'
+}  // ← Falta coma
+'/admin/logs': {
+
+// ✅ CORRECTO
+'/admin/users': {
+  component: lazy(() => import('../pages/Admin')),
+  requiredAction: 'ver',
+},  // ← Coma agregada
+'/admin/logs': {
+```
+
+---
+
+### 📊 Beneficios del Component Registry
+
+| Antes (Manual) | Ahora (Registry) | Mejora |
+|----------------|------------------|--------|
+| Editar 3 secciones en App.js | Agregar 3 líneas en un archivo | **-70%** |
+| 500+ líneas de rutas repetitivas | Generación automática | **-80%** código |
+| Lazy loading manual | Automático | ✅ |
+| Protección MBAC manual | Automática | ✅ |
+
+---
+
+### 📚 Documentación Adicional
+
+- **Guía completa:** [frontend/COMPONENT_REGISTRY.md](frontend/COMPONENT_REGISTRY.md)
+- **Referencia rápida:** [frontend/QUICK_REFERENCE.md](frontend/QUICK_REFERENCE.md)
+- **Resumen técnico:** [frontend/IMPLEMENTATION_SUMMARY.md](frontend/IMPLEMENTATION_SUMMARY.md)
+
+---
+
+## Módulos Implementados
+
+### 🔐 Panel Administrativo
+- **Dashboard** - KPIs, actividad reciente, estadísticas
+- **Gestión de Usuarios** - CRUD completo, activación, bloqueo
+- **Solicitudes de Registro** - Aprobación/rechazo con notificaciones
+- **Usuarios Pendientes** - Lista de usuarios requieren asignación de rol
+- **Auditoría** - Logs del sistema con filtros avanzados
+- **MBAC** - Gestión de módulos, páginas y permisos
+
+### 👨‍⚕️ Panel Médico
+- **Dashboard Médico** - Indicadores personalizados
+- **Mi Disponibilidad** - Declaración mensual de turnos
+- **Gestión de Pacientes** - Historial de atenciones
+- **Citas Asignadas** - Calendario de atenciones
+
+### 🏥 Panel Coordinador
+- **Revisión de Disponibilidad** - Validar y ajustar turnos médicos
+- **Asignación de Médicos** - Asignar médicos a solicitudes de citas
+- **Gestión de Agenda** - Programación de turnos
+- **Reportes de Atención** - Estadísticas y KPIs
+
+### 💬 ChatBot de Citas
+- **Consulta de Paciente** - Búsqueda por DNI con servicios disponibles
+- **Solicitud de Cita** - Wizard de 3 pasos (paciente → servicio → fecha)
+- **Dashboard de Reportes** - KPIs, evolución, top servicios, exportación CSV
+
+### 📋 Otros Módulos
+- **Formulario Diagnóstico** - Evaluación de capacidades de IPRESS
+- **Gestión de IPRESS** - Listado de hospitales y centros de salud
+- **Catálogos** - Áreas, profesiones, especialidades, servicios
+
+---
+
+## 📚 Documentación
+
+### 🎯 Inicio Rápido
+
+| Necesito... | Ver documento |
+|-------------|---------------|
+| **Levantar el proyecto en 5 minutos** | [CLAUDE.md - Quick Start](CLAUDE.md#-quick-start---levantar-el-proyecto) |
+| **Entender qué es CENATE** | [CLAUDE.md - ¿Qué es CENATE?](CLAUDE.md#qué-es-cenate) |
+| **Ver glosario de términos** | [CLAUDE.md - Glosario](CLAUDE.md#glosario-de-términos) |
+| **Consultar API** | [spec/01_Backend/01_api_endpoints.md](spec/01_Backend/01_api_endpoints.md) |
+| **Ver últimos cambios** | [checklist/01_Historial/01_changelog.md](checklist/01_Historial/01_changelog.md) |
+| **Resolver problemas** | [spec/05_Troubleshooting/01_guia_problemas_comunes.md](spec/05_Troubleshooting/01_guia_problemas_comunes.md) |
+
+### 📖 Guías Principales
+
+| Documento | Descripción | Líneas |
+|-----------|-------------|--------|
+| [**CLAUDE.md**](CLAUDE.md) | ⭐ Guía maestra del proyecto (contexto de negocio + técnico) | 2,462 |
+| [**INDICE_DOCUMENTACION.md**](INDICE_DOCUMENTACION.md) | ⭐ Índice de navegación de toda la documentación | 342 |
+| [**README.md**](README.md) | Este archivo - Vista general del proyecto | - |
+
+### 📚 Documentación Técnica (spec/)
+
+#### Backend
+- [**01_api_endpoints.md**](spec/01_Backend/01_api_endpoints.md) - Todos los endpoints REST (100+ endpoints)
+
+#### Arquitectura
+- [**01_diagramas_sistema.md**](spec/03_Arquitectura/01_diagramas_sistema.md) - Flujos completos, capas, MBAC, patrones
+
+#### Base de Datos (135 tablas, 5.4 GB)
+- [**01_modelo_usuarios.md**](spec/04_BaseDatos/01_modelo_usuarios/01_modelo_usuarios.md) - Modelo de usuarios y autenticación
+- [**02_guia_auditoria.md**](spec/04_BaseDatos/02_guia_auditoria/02_guia_auditoria.md) ⭐ - Sistema completo de auditoría
+- [**03_guia_auditoria_acceso_sensible.md**](spec/04_BaseDatos/03_guia_auditoria_acceso_sensible/03_guia_auditoria_acceso_sensible.md) - Auditoría de accesos críticos
+- [**04_analisis_estructura/**](spec/04_BaseDatos/04_analisis_estructura/) ⭐ - Análisis de las 135 tablas categorizadas
+- [**05_plan_limpieza/**](spec/04_BaseDatos/05_plan_limpieza/) ⭐ - Plan para reducir BD de 5.4 GB a 3.9 GB (-28%)
+- [**06_scripts/**](spec/04_BaseDatos/06_scripts/) - 16 scripts SQL de migración
+- [**07_sql/**](spec/04_BaseDatos/07_sql/) - Configuraciones SQL
+
+#### Troubleshooting
+- [**01_guia_problemas_comunes.md**](spec/05_Troubleshooting/01_guia_problemas_comunes.md) - Solución a problemas frecuentes
+
+### 📋 Planificación (plan/)
+
+#### Seguridad y Auditoría (✅ Implementados v1.12.0-v1.13.0)
+- [**01_plan_auditoria.md**](plan/01_Seguridad_Auditoria/01_plan_auditoria.md) - Sistema de auditoría
+- [**02_plan_seguridad_auth.md**](plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md) - Seguridad JWT + MBAC
+- [**03_plan_mejoras_auditoria.md**](plan/01_Seguridad_Auditoria/03_plan_mejoras_auditoria.md) - Mejoras implementadas
+
+#### Módulos Médicos
+- [**01_plan_disponibilidad_turnos.md**](plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md) ✅ - Disponibilidad (v1.9.0)
+- [**02_plan_solicitud_turnos.md**](plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md) 📋 - Solicitud de turnos (planificado)
+
+#### Infraestructura
+- [**01_plan_modulo_red.md**](plan/03_Infraestructura/01_plan_modulo_red.md) 📋 - Módulo de red (planificado)
+
+#### Integraciones
+- [**01_analisis_ollama.md**](plan/04_Integraciones/01_analisis_ollama.md) 🔍 - Ollama AI (en evaluación)
+
+#### Firma Digital
+- [**01_plan_implementacion.md**](plan/05_Firma_Digital/01_plan_implementacion.md) ✅ - Firma digital (v1.14.0)
+
+### ✅ Checklists y Logs (checklist/)
+
+#### Historial
+- [**01_changelog.md**](checklist/01_Historial/01_changelog.md) ⭐ - Historial v1.0.0 → v1.14.0 (CONSULTAR SIEMPRE)
+- [**02_historial_versiones.md**](checklist/01_Historial/02_historial_versiones.md) - Registro de releases
+
+#### Reportes de Pruebas
+- [**01_reporte_disponibilidad.md**](checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md) - Pruebas de disponibilidad médica
+
+#### Checklists de Implementación
+- [**01_checklist_firma_digital.md**](checklist/03_Checklists/01_checklist_firma_digital.md) - Checklist firma digital (v1.14.0)
+
+#### Análisis y Resúmenes
+- [**01_analisis_chatbot_citas.md**](checklist/04_Analisis/01_analisis_chatbot_citas.md) - Análisis del chatbot
+- [**02_resumen_mejoras_auditoria.md**](checklist/04_Analisis/02_resumen_mejoras_auditoria.md) - Resumen de mejoras
+
+---
+
+## Seguridad
+
+### Autenticación JWT
+
+- **Token JWT** con expiración de 24 horas
+- **Claims:** userId, username, roles, permisos
+- **Firma:** HMAC-SHA256 con secret de 256 bits
+- **Validación** en cada request mediante `JwtAuthenticationFilter`
+
+### Bloqueo de Cuenta
 
 ```
 Intento 1: Contraseña incorrecta → failedAttempts = 1
 Intento 2: Contraseña incorrecta → failedAttempts = 2
-Intento 3: Contraseña incorrecta → failedAttempts = 3 → CUENTA BLOQUEADA
+Intento 3: Contraseña incorrecta → failedAttempts = 3 → BLOQUEADO 10 MIN
 ```
 
-**Duracion del bloqueo:** 10 minutos (auto-desbloqueo)
-
-**Archivos involucrados:**
-- `AuthenticationFailureListener.java` - Detecta intentos fallidos
-- `AuthenticationSuccessListener.java` - Resetea contador en login exitoso
-- `UserDetailsServiceImpl.java` - Verifica si cuenta esta bloqueada
+**Auto-desbloqueo:** Después de 10 minutos
+**Desbloqueo manual:** Admin puede desbloquear en cualquier momento
 
 ### Token Blacklist (Logout Seguro)
 
-Cuando un usuario cierra sesion, el token JWT se invalida agregandolo a una blacklist.
-
+Al cerrar sesión, el token se invalida agregándolo a una blacklist:
 ```
 POST /api/auth/logout
 Authorization: Bearer {token}
-
-→ Token agregado a blacklist (hash SHA-256)
-→ Siguiente request con ese token es rechazado
+→ Token hasheado (SHA-256) agregado a blacklist
+→ Requests posteriores con ese token son rechazados
 ```
 
-**Limpieza automatica:** Cada hora se eliminan tokens expirados de la blacklist.
+**Limpieza automática:** Cada hora se eliminan tokens expirados
 
-**Archivos involucrados:**
-- `TokenBlacklist.java` - Entidad JPA
-- `TokenBlacklistService.java` - Servicio de invalidacion
-- `JwtAuthenticationFilter.java` - Verifica blacklist en cada request
+### Sistema MBAC (Module-Based Access Control)
+
+Control de acceso granular por **módulo → página → acción**:
+
+```java
+@CheckMBACPermission(pagina = "/admin/users", accion = "crear")
+@PostMapping
+public ResponseEntity<?> crearUsuario(...) { ... }
+```
+
+**Acciones disponibles:** ver, crear, editar, eliminar, exportar, aprobar
 
 ### CORS por Ambiente
 
-| Ambiente | Origenes Permitidos |
+| Ambiente | Orígenes Permitidos |
 |----------|---------------------|
 | Desarrollo | `localhost:3000`, `localhost:8080` |
-| Produccion | `10.0.89.13`, `10.0.89.239` |
+| Producción | `10.0.89.13`, `10.0.89.239` |
 
-**Configuracion:**
-- `application-dev.properties` - Origenes de desarrollo
-- `application-prod.properties` - Origenes de produccion
-
-### Perfiles de Ejecucion
-
-```bash
-# Desarrollo (con logs SQL, Swagger habilitado)
-./gradlew bootRun --args='--spring.profiles.active=dev'
-
-# Produccion (sin logs SQL, Swagger deshabilitado)
-java -jar cenate.jar --spring.profiles.active=prod
-```
-
-> Ver plan completo de seguridad en [spec/008_plan_seguridad_auth.md](spec/008_plan_seguridad_auth.md)
-
-> **Credenciales de prueba:** Ver [CLAUDE.md](CLAUDE.md#credenciales-de-prueba)
-
----
-
-## Modulos del Sistema
-
-### Panel Administrativo
-- **Dashboard** - Vista general con KPIs y actividad reciente
-- **Usuarios** - Gestion completa de usuarios
-- **Auditoria** - Trazabilidad de acciones del sistema
-- **Solicitudes** - Aprobacion de registros
-- **Gestion MBAC** - Modulos, paginas y permisos
-
-### ChatBot de Citas
-- **Solicitar Cita** - Wizard de 3 pasos
-- **Dashboard Citas** - Reportes y busqueda avanzada
-
-### Roles Especializados
-- **Medico** - Dashboard, pacientes, citas, indicadores
-- **Coordinador** - Agenda, asignaciones
-- **Externo** - Formulario diagnostico, reportes
-
-### Otros Modulos
-- **Gestion de Pacientes** - Telemedicina
-- **IPRESS** - Listado y gestion
-- **Catalogos** - Areas, profesiones, especialidades
+> 📖 **Guía completa de seguridad:** Ver [plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md](plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md)
 
 ---
 
 ## API REST
 
 ### Base URL
+
 ```
 http://localhost:8080/api
 ```
 
 ### Headers Requeridos
+
 ```
 Content-Type: application/json
 Authorization: Bearer {token}
@@ -442,74 +737,91 @@ Authorization: Bearer {token}
 
 ### Endpoints Principales
 
-| Modulo | Endpoint | Descripcion |
-|--------|----------|-------------|
-| Auth | `POST /api/auth/login` | Iniciar sesion |
-| Auth | `GET /api/auth/me` | Usuario actual |
-| Usuarios | `GET /api/usuarios` | Listar usuarios |
-| ChatBot | `GET /api/chatbot/documento/{dni}` | Consultar paciente |
-| ChatBot | `POST /api/v1/chatbot/solicitud` | Crear cita |
-| Auditoria | `GET /api/auditoria/modulos` | Logs del sistema |
-| MBAC | `GET /api/menu-usuario/usuario/{id}` | Menu dinamico |
+| Módulo | Endpoint | Descripción | Rol Requerido |
+|--------|----------|-------------|---------------|
+| **Auth** | `POST /api/auth/login` | Iniciar sesión | Público |
+| **Auth** | `GET /api/auth/me` | Usuario actual | Autenticado |
+| **Auth** | `POST /api/auth/logout` | Cerrar sesión | Autenticado |
+| **Usuarios** | `GET /api/usuarios` | Listar usuarios | ADMIN |
+| **Usuarios** | `POST /api/usuarios/crear` | Crear usuario | ADMIN |
+| **Usuarios** | `GET /api/usuarios/pendientes-rol` | Usuarios pendientes | ADMIN |
+| **Disponibilidad** | `GET /api/disponibilidad/mis-disponibilidades` | Mis disponibilidades | MEDICO |
+| **Disponibilidad** | `POST /api/disponibilidad` | Crear disponibilidad | MEDICO |
+| **Firma Digital** | `GET /api/firma-digital/personal/{id}` | Firma del personal | ADMIN |
+| **Firma Digital** | `POST /api/firma-digital` | Registrar firma | ADMIN |
+| **ChatBot** | `GET /api/chatbot/documento/{dni}` | Consultar paciente | Autenticado |
+| **ChatBot** | `POST /api/v1/chatbot/solicitud` | Crear cita | Autenticado |
+| **Auditoría** | `GET /api/auditoria/busqueda-avanzada` | Logs del sistema | ADMIN |
+| **MBAC** | `GET /api/menu-usuario/usuario/{id}` | Menú dinámico | Autenticado |
 
-> Ver documentacion completa en [spec/003_api_endpoints.md](spec/003_api_endpoints.md)
-
----
-
-## Comandos con Makefile
-
-Ambos proyectos incluyen **Makefile** para facilitar el desarrollo:
-
-### Backend
-```bash
-cd backend
-make help        # Ver todos los comandos disponibles
-make dev         # Iniciar con hot-reload
-make build       # Compilar proyecto
-make test        # Ejecutar tests
-make jar         # Generar JAR ejecutable
-make db-check    # Verificar conexion a PostgreSQL
-```
-
-### Frontend
-```bash
-cd frontend
-make help        # Ver todos los comandos disponibles
-make dev         # Iniciar en desarrollo (API local)
-make dev-network # Iniciar en desarrollo (API en red)
-make build       # Compilar para produccion
-make test        # Ejecutar tests
-make clean       # Limpiar node_modules y build
-```
+> 📖 **Documentación completa de API:** Ver [spec/01_Backend/01_api_endpoints.md](spec/01_Backend/01_api_endpoints.md)
 
 ---
 
 ## Historial de Versiones
 
-| Version | Fecha | Descripcion |
-|---------|-------|-------------|
-| **1.10.0** | 2025-12-29 | Docker: Documentacion produccion, fix apiClient URL relativa |
-| 1.9.0 | 2025-12-27 | Seguridad: Bloqueo cuenta, Token Blacklist, CORS por ambiente |
-| 1.8.0 | 2025-12-23 | Mejoras en Auditoria, fix usuario N/A |
+### Últimas Versiones
 
-> Ver historial completo en [spec/002_changelog.md](spec/002_changelog.md)
+| Versión | Fecha | Descripción |
+|---------|-------|-------------|
+| **v1.14.0** | 2025-12-30 | ✍️ Firma Digital + 📋 Component Registry (sistema de rutas dinámicas) |
+| **v1.13.0** | 2025-12-29 | 🔔 Asignación Automática de Roles + Sistema de Notificaciones |
+| **v1.12.2** | 2025-12-24 | 🐳 Relay SMTP para Docker en macOS |
+| **v1.12.1** | 2025-12-23 | 📧 Migración a servidor SMTP corporativo EsSalud |
+| **v1.12.0** | 2025-12-22 | 🔒 Sistema de Seguridad Avanzado (JWT + MBAC + Auditoría) |
+| **v1.11.0** | 2025-12-21 | 📨 Reenvío de correo de activación con selección de tipo |
+| **v1.10.2** | 2025-12-20 | 🔑 Recuperación de contraseña con selección de correo |
+| **v1.10.1** | 2025-12-19 | 📧 Email preferido para notificaciones |
+| **v1.10.0** | 2025-12-18 | 🐳 Docker: Documentación producción completa |
+| **v1.9.0** | 2025-12-15 | 👨‍⚕️ Módulo de Disponibilidad de Turnos Médicos |
+
+> 📖 **Changelog completo:** Ver [checklist/01_Historial/01_changelog.md](checklist/01_Historial/01_changelog.md)
+
+---
+
+## Estadísticas del Proyecto
+
+| Métrica | Valor |
+|---------|-------|
+| **Archivos de documentación** | 26+ archivos |
+| **Líneas de documentación** | 10,000+ líneas |
+| **Scripts SQL** | 16 scripts |
+| **Versiones documentadas** | 14 versiones (v1.0-v1.14) |
+| **Endpoints API** | 100+ endpoints |
+| **Tablas en BD** | 135 tablas (5.4 GB) |
+| **Términos en glosario** | 60+ términos |
+| **Usuarios registrados** | 127 usuarios activos |
+| **Asegurados en BD** | 4.6 millones |
+| **IPRESS objetivo** | 414 instituciones |
 
 ---
 
 ## Contacto
 
-| Rol | Correo |
-|-----|--------|
-| Soporte tecnico | cenate.analista@essalud.gob.pe |
-| Sistema (envio) | cenateinformatica@gmail.com |
+| Rol | Contacto |
+|-----|----------|
+| **Desarrollador Principal** | Ing. Styp Canto Rondon |
+| **Soporte Técnico** | cenate.analista@essalud.gob.pe |
+| **Email del Sistema** | cenate.contacto@essalud.gob.pe |
 
 ---
 
 ## Licencia
 
-Este proyecto es propiedad de **EsSalud Peru - CENATE**.
+Este proyecto es propiedad de **EsSalud Perú - CENATE**.
+
 Todos los derechos reservados © 2025
 
 ---
 
+<div align="center">
+
+**Sistema de Telemedicina CENATE**
+
 *Desarrollado por el Ing. Styp Canto Rondon*
+
+*EsSalud Perú - Centro Nacional de Telemedicina*
+
+[Documentación](CLAUDE.md) • [Changelog](checklist/01_Historial/01_changelog.md) • [API](spec/01_Backend/01_api_endpoints.md)
+
+</div>
