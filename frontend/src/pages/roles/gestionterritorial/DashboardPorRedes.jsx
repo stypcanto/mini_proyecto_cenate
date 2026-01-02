@@ -327,7 +327,7 @@ export default function DashboardPorRedes() {
               <TrendingUp className="w-5 h-5 text-blue-600" />
               Resumen General
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Total IPRESS */}
               <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
                 <div className="flex items-center justify-between">
@@ -361,18 +361,6 @@ export default function DashboardPorRedes() {
                     <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_en_proceso || 0}% del total</p>
                   </div>
                   <AlertCircle className="w-10 h-10 text-yellow-500 opacity-70" />
-                </div>
-              </div>
-
-              {/* Registradas */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-blue-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Registradas</p>
-                    <p className="text-3xl font-bold text-blue-600 mt-1">{resumen.registradas || 0}</p>
-                    <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_registradas || 0}% del total</p>
-                  </div>
-                  <FileText className="w-10 h-10 text-blue-500 opacity-70" />
                 </div>
               </div>
 
@@ -431,10 +419,6 @@ export default function DashboardPorRedes() {
                       <div className="text-center">
                         <p className="text-2xl font-bold text-yellow-600">{red.en_proceso}</p>
                         <p className="text-xs text-gray-500">En Proceso</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-blue-600">{red.registradas}</p>
-                        <p className="text-xs text-gray-500">Registradas</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-gray-600">{red.sin_formulario}</p>

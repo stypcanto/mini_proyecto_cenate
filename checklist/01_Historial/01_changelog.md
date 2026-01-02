@@ -4,6 +4,114 @@
 
 ---
 
+## v1.15.7 (2026-01-02) - Simplificación Dashboard Redes
+
+### ♻️ Refactorización
+
+#### Eliminación de Estado "Registradas"
+
+**Problema Identificado**:
+- La tarjeta y columna "Registradas" mostraba siempre **0** porque su cálculo estaba incorrecto
+- Generaba confusión con el estado "EN_PROCESO"
+- El sistema solo tiene 2 estados reales en BD: `EN_PROCESO` y `ENVIADO`
+
+**Análisis de Base de Datos**:
+```sql
+-- Estados reales en form_diag_formulario:
+EN_PROCESO: 8 formularios (borradores pendientes de enviar)
+ENVIADO: 14 formularios (completados y enviados)
+```
+
+**Cálculo Incorrecto Anterior**:
+```javascript
+Registradas = Total IPRESS - Enviados - En Proceso - Sin Formulario
+Registradas = 414 - 14 - 7 - 393 = 0 ← Siempre 0
+```
+
+**Cambios Realizados**:
+
+1. ✅ **Eliminada tarjeta "Registradas"** del resumen de estadísticas (línea 340-350)
+2. ✅ **Eliminada columna "Registradas"** de la tabla de redes (línea 396-399)
+3. ✅ **Eliminado case "REGISTRADO"** de función `getColorEstado()` (línea 152-153)
+4. ✅ **Eliminado case "REGISTRADO"** de función `getIconoEstado()` (línea 167-168)
+5. ✅ **Eliminado case "REGISTRADO"** de función `getLabelEstado()` (línea 182-183)
+
+**Dashboard Simplificado** (3 estados):
+- ✅ **Enviados** - Formularios completados y enviados a CENATE
+- 📝 **En Proceso** - Formularios guardados pero no enviados (borradores)
+- ❌ **Falta registrar** - IPRESS sin formulario creado
+
+**Archivo Modificado**:
+- `frontend/src/pages/roles/gestionterritorial/DashboardPorRedes.jsx`
+
+**Beneficios**:
+- Mayor claridad para los usuarios
+- Dashboard alineado con los estados reales de la base de datos
+- Eliminación de información confusa e incorrecta
+
+---
+
+## v1.15.6 (2026-01-02) - Fix Filtros Dashboard Redes
+
+### 🐛 Correcciones
+
+**Problema**: Los filtros de macroregión y red no actualizaban las estadísticas.
+
+**Solución**: Agregada reactividad mediante `useEffect` para recargar estadísticas cuando cambian los filtros.
+
+---
+
+## v1.15.5 (2026-01-02) - Mejoras de Texto Dashboard
+
+### 📝 Cambios de Texto
+
+#### Actualización de Etiqueta de Estado
+
+**Cambio**: Reemplazo de "Sin Registro" por "Falta registrar" para mayor claridad.
+
+**Ubicaciones Actualizadas**:
+1. **Función getLabelEstado()** (línea 181) - Label del estado SIN_REGISTRO
+2. **Card de Resumen** (línea 352) - Título de la tarjeta de estadísticas
+3. **Tabla de Redes** (línea 410) - Columna de IPRESS sin registro
+4. **Comentario** (línea 348) - Actualizado para consistencia
+
+**Antes**: "Sin Registro"
+**Después**: "Falta registrar"
+
+**Razón**: El nuevo texto es más descriptivo y proactivo, indicando una acción pendiente en lugar de solo describir un estado.
+
+**Archivo Modificado**:
+- `frontend/src/pages/roles/gestionterritorial/DashboardPorRedes.jsx`
+
+---
+
+## v1.15.4 (2026-01-02) - Actualización Textos Dashboard
+
+### 📝 Cambios de Texto
+
+#### Dashboard de Redes Asistenciales
+
+**Cambio**: Actualización del título principal del dashboard para mayor claridad.
+
+**Antes**:
+```
+Dashboard por Redes Asistenciales
+```
+
+**Después**:
+```
+Avance del llenado de la encuesta de diagnóstico de IPRESS
+```
+
+**Ubicación**: `/roles/gestionterritorial/dashboardredes`
+
+**Archivo Modificado**:
+- `frontend/src/pages/roles/gestionterritorial/DashboardPorRedes.jsx` (línea 148)
+
+**Razón**: El nuevo título describe mejor la funcionalidad específica de la página, enfocándose en el seguimiento del llenado de encuestas de diagnóstico institucional por parte de las IPRESS.
+
+---
+
 ## v1.15.3 (2026-01-02) - Fix Permisos Pacientes de 107
 
 ### 🐛 Correcciones

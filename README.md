@@ -1,4 +1,4 @@
-# CENATE - Sistema de Telemedicina
+# CENATE - Sistema de Telemedicina -
 
 <div align="center">
 
