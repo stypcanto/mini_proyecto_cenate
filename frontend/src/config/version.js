@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.15.7",
-  name: "Simplificación Dashboard Redes",
+  number: "1.15.8",
+  name: "Fix Asignación de Macroregiones",
   date: "2026-01-02",
-  description: "Eliminación de tarjeta y columna 'Registradas' del dashboard. Solo quedan 3 estados reales: Enviados, En Proceso, y Falta registrar."
+  description: "Corrección de asignación de 33 redes a sus macroregiones correctas. Todas estaban en LIMA ORIENTE, ahora distribuidas en CENTRO (6), LIMA ORIENTE (6), NORTE (13) y SUR (8)."
 };
 
 export const APP_INFO = {
