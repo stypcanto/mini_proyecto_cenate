@@ -5,7 +5,7 @@
 // por Red Asistencial con resumen general.
 // ========================================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Network, Building2, CheckCircle2, AlertCircle,
   FileText, XCircle, ChevronDown, ChevronUp, Loader,
@@ -74,7 +74,7 @@ export default function DashboardPorRedes() {
     }
   };
 
-  const cargarEstadisticas = async () => {
+  const cargarEstadisticas = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -93,7 +93,10 @@ export default function DashboardPorRedes() {
         url += `?${params.join("&")}`;
       }
 
+      console.log("🔍 Cargando estadísticas con URL:", url);
       const response = await api.get(url);
+      console.log("📊 Respuesta recibida:", response);
+
       setEstadisticas(response.estadisticas_por_red || []);
       setResumen(response.resumen_general || null);
 
@@ -106,7 +109,7 @@ export default function DashboardPorRedes() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filtroMacroregion, filtroRed]);
 
   const limpiarFiltros = () => {
     setFiltroMacroregion("");
@@ -178,7 +181,7 @@ export default function DashboardPorRedes() {
       case "REGISTRADO":
         return "Registrado";
       case "SIN_REGISTRO":
-        return "Sin Registro";
+        return "Falta registrar";
       default:
         return estado;
     }
@@ -213,7 +216,7 @@ export default function DashboardPorRedes() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800">
-                  Avance del llenado de encuesta de diagnóstico de IPRESS
+                  Avance del llenado de la encuesta de diagnóstico de IPRESS
                 </h1>
                 <p className="text-gray-600 mt-1">
                   Estadísticas de formularios diagnósticos por Red
@@ -345,11 +348,11 @@ export default function DashboardPorRedes() {
                 </div>
               </div>
 
-              {/* Sin Registro */}
+              {/* Falta registrar */}
               <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-gray-600 text-sm font-medium">Sin Registro</p>
+                    <p className="text-gray-600 text-sm font-medium">Falta registrar</p>
                     <p className="text-3xl font-bold text-gray-600 mt-1">{resumen.sin_formulario || 0}</p>
                     <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_sin_formulario || 0}% del total</p>
                   </div>
@@ -407,7 +410,7 @@ export default function DashboardPorRedes() {
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-gray-600">{red.sin_formulario}</p>
-                        <p className="text-xs text-gray-500">Sin Registro</p>
+                        <p className="text-xs text-gray-500">Falta registrar</p>
                       </div>
                     </div>
 
