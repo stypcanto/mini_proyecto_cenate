@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.15.3",
-  name: "Fix Permisos Pacientes de 107",
+  number: "1.15.6",
+  name: "Fix Filtros Dashboard Redes",
   date: "2026-01-02",
-  description: "Corrección de permisos para acceso a la página 'Pacientes de 107'. Agregados permisos para SUPERADMIN, ADMIN y COORDINADOR."
+  description: "Corrección de reactividad de filtros en Dashboard por Redes: los filtros de macroregión y red ahora actualizan correctamente las estadísticas."
 };
 
 export const APP_INFO = {
