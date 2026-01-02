@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.15.6",
-  name: "Fix Filtros Dashboard Redes",
+  number: "1.15.7",
+  name: "Simplificación Dashboard Redes",
   date: "2026-01-02",
-  description: "Corrección de reactividad de filtros en Dashboard por Redes: los filtros de macroregión y red ahora actualizan correctamente las estadísticas."
+  description: "Eliminación de tarjeta y columna 'Registradas' del dashboard. Solo quedan 3 estados reales: Enviados, En Proceso, y Falta registrar."
 };
 
 export const APP_INFO = {

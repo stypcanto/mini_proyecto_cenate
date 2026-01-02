@@ -9,7 +9,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import {
   Network, Building2, CheckCircle2, AlertCircle,
   FileText, XCircle, ChevronDown, ChevronUp, Loader,
-  RefreshCw, BarChart3, TrendingUp, Eye, Activity
+  RefreshCw, BarChart3, TrendingUp, Activity
 } from "lucide-react";
 import toast from "react-hot-toast";
 import api from "../../../services/apiClient";
@@ -30,49 +30,33 @@ export default function DashboardPorRedes() {
   const [filtroRed, setFiltroRed] = useState("");
 
   // ================================================================
-  // CARGAR DATOS INICIALES
+  // FUNCIONES DE CARGA
   // ================================================================
-  useEffect(() => {
-    cargarMacroregiones();
-    cargarRedes();
-    cargarEstadisticas();
-  }, []);
 
-  // Recargar redes cuando cambia macroregión
-  useEffect(() => {
-    if (filtroMacroregion) {
-      cargarRedes(filtroMacroregion);
-      setFiltroRed(""); // Limpiar filtro de red
-    } else {
-      cargarRedes();
-    }
-  }, [filtroMacroregion]);
-
-  // Recargar estadísticas cuando cambian filtros
-  useEffect(() => {
-    cargarEstadisticas();
-  }, [filtroMacroregion, filtroRed]);
-
-  const cargarMacroregiones = async () => {
+  const cargarMacroregiones = useCallback(async () => {
     try {
       const response = await api.get("/diagnostico/estadisticas/macroregiones");
+      console.log("📍 Macroregiones cargadas:", response);
       setMacroregiones(response || []);
     } catch (error) {
       console.error("Error al cargar macroregiones:", error);
     }
-  };
+  }, []);
 
-  const cargarRedes = async (idMacroregion = null) => {
+  const cargarRedes = useCallback(async (idMacroregion = null) => {
     try {
       const url = idMacroregion
         ? `/diagnostico/estadisticas/redes?idMacroregion=${idMacroregion}`
         : "/diagnostico/estadisticas/redes";
+      console.log("🌐 Cargando redes con URL:", url);
       const response = await api.get(url);
+      console.log("🌐 Redes recibidas:", response?.length || 0, "redes");
       setRedes(response || []);
     } catch (error) {
       console.error("Error al cargar redes:", error);
+      setRedes([]);
     }
-  };
+  }, []);
 
   const cargarEstadisticas = useCallback(async () => {
     try {
@@ -94,24 +78,32 @@ export default function DashboardPorRedes() {
       }
 
       console.log("🔍 Cargando estadísticas con URL:", url);
+      console.log("🔍 Filtros actuales:", { filtroMacroregion, filtroRed });
+
       const response = await api.get(url);
       console.log("📊 Respuesta recibida:", response);
+      console.log("📊 Cantidad de redes en respuesta:", response.estadisticas_por_red?.length || 0);
 
       setEstadisticas(response.estadisticas_por_red || []);
       setResumen(response.resumen_general || null);
 
       if (!filtroMacroregion && !filtroRed) {
         toast.success("Estadísticas cargadas correctamente");
+      } else {
+        toast.success(`Filtrado: ${response.estadisticas_por_red?.length || 0} redes encontradas`);
       }
     } catch (error) {
-      console.error("Error al cargar estadísticas:", error);
+      console.error("❌ Error al cargar estadísticas:", error);
       toast.error("Error al cargar estadísticas");
+      setEstadisticas([]);
+      setResumen(null);
     } finally {
       setLoading(false);
     }
   }, [filtroMacroregion, filtroRed]);
 
   const limpiarFiltros = () => {
+    console.log("🧹 Limpiando filtros");
     setFiltroMacroregion("");
     setFiltroRed("");
   };
@@ -138,6 +130,34 @@ export default function DashboardPorRedes() {
       await cargarDetalleRed(idRed);
     }
   };
+
+  // ================================================================
+  // EFFECTS
+  // ================================================================
+
+  // Cargar datos iniciales solo una vez
+  useEffect(() => {
+    console.log("🚀 Componente montado - Cargando datos iniciales");
+    cargarMacroregiones();
+    cargarRedes();
+  }, [cargarMacroregiones, cargarRedes]);
+
+  // Recargar redes cuando cambia macroregión
+  useEffect(() => {
+    console.log("🎯 Cambió filtroMacroregion a:", filtroMacroregion);
+    if (filtroMacroregion) {
+      cargarRedes(filtroMacroregion);
+      setFiltroRed(""); // Limpiar filtro de red
+    } else {
+      cargarRedes();
+    }
+  }, [filtroMacroregion, cargarRedes]);
+
+  // Recargar estadísticas cuando cambian filtros
+  useEffect(() => {
+    console.log("🔄 Detectado cambio en filtros - Recargando estadísticas");
+    cargarEstadisticas();
+  }, [cargarEstadisticas]);
 
   // ================================================================
   // HELPERS
@@ -244,7 +264,11 @@ export default function DashboardPorRedes() {
                 </label>
                 <select
                   value={filtroMacroregion}
-                  onChange={(e) => setFiltroMacroregion(e.target.value)}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    console.log("🎯 Usuario seleccionó macroregión:", valor);
+                    setFiltroMacroregion(valor);
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                 >
                   <option value="">Todas las Macroregiones</option>
@@ -263,7 +287,11 @@ export default function DashboardPorRedes() {
                 </label>
                 <select
                   value={filtroRed}
-                  onChange={(e) => setFiltroRed(e.target.value)}
+                  onChange={(e) => {
+                    const valor = e.target.value;
+                    console.log("🌐 Usuario seleccionó red:", valor);
+                    setFiltroRed(valor);
+                  }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   disabled={redes.length === 0}
                 >
@@ -389,7 +417,7 @@ export default function DashboardPorRedes() {
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-800">{red.desc_red}</h3>
                         <p className="text-sm text-gray-500 mt-0.5">
-                          Total: {red.total_ipress} IPRESS
+                          {red.desc_macro} • Total: {red.total_ipress} IPRESS
                         </p>
                       </div>
                     </div>
@@ -506,7 +534,11 @@ export default function DashboardPorRedes() {
             <div className="bg-white rounded-xl shadow border border-gray-200 p-16 text-center">
               <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-600 font-medium">No hay estadísticas disponibles</p>
-              <p className="text-sm text-gray-500 mt-1">Aún no se han registrado formularios diagnósticos</p>
+              <p className="text-sm text-gray-500 mt-1">
+                {filtroMacroregion || filtroRed
+                  ? "No se encontraron redes con los filtros seleccionados"
+                  : "Aún no se han registrado formularios diagnósticos"}
+              </p>
             </div>
           )}
         </div>
