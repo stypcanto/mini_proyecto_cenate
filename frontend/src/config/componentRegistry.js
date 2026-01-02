@@ -226,6 +226,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/coordcitas/pacientes-107': {
+    component: lazy(() => import('../pages/roles/coordcitas/PacientesDe107')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 📋 LINEAMIENTOS
   // ========================================================================

@@ -184,9 +184,9 @@ public class PersonalCnt {
     // 🧩 Métodos utilitarios
     // ==========================================================
     public String getNombreCompleto() {
-        // Obtener el primer nombre (por si hay varios nombres separados por espacio)
-        String primerNombre = Optional.ofNullable(nomPers)
-                .map(n -> n.trim().split("\\s+")[0])
+        // Obtener todos los nombres (no solo el primero)
+        String nombres = Optional.ofNullable(nomPers)
+                .map(String::trim)
                 .orElse("");
 
         // Obtener el apellido paterno
@@ -200,19 +200,35 @@ public class PersonalCnt {
                 .orElse("");
 
         // Formatear a título (primera letra mayúscula, resto minúscula)
-        primerNombre = formatearATitulo(primerNombre);
+        nombres = formatearATitulo(nombres);
         apellidoPaterno = formatearATitulo(apellidoPaterno);
         apellidoMaterno = formatearATitulo(apellidoMaterno);
 
-        // Retornar "Nombre ApellidoPaterno ApellidoMaterno"
-        return String.format("%s %s %s", primerNombre, apellidoPaterno, apellidoMaterno).trim();
+        // Retornar "Nombres ApellidoPaterno ApellidoMaterno"
+        return String.format("%s %s %s", nombres, apellidoPaterno, apellidoMaterno).trim();
     }
     
     private String formatearATitulo(String texto) {
         if (texto == null || texto.isEmpty()) {
             return "";
         }
-        return texto.substring(0, 1).toUpperCase() + texto.substring(1).toLowerCase();
+
+        // Dividir el texto en palabras y capitalizar cada una
+        String[] palabras = texto.trim().split("\\s+");
+        StringBuilder resultado = new StringBuilder();
+
+        for (int i = 0; i < palabras.length; i++) {
+            if (i > 0) {
+                resultado.append(" ");
+            }
+            String palabra = palabras[i];
+            if (!palabra.isEmpty()) {
+                resultado.append(palabra.substring(0, 1).toUpperCase())
+                        .append(palabra.substring(1).toLowerCase());
+            }
+        }
+
+        return resultado.toString();
     }
 
     /**

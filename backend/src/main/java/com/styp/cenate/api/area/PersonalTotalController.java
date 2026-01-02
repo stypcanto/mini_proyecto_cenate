@@ -112,9 +112,9 @@ public class PersonalTotalController {
                     COALESCE(pc.ape_mater_pers, pe.ape_mater_ext, '') as apellido_materno,
                     
                     CASE
-                        WHEN pc.nom_pers IS NOT NULL THEN 
+                        WHEN pc.nom_pers IS NOT NULL THEN
                             CONCAT(pc.nom_pers, ' ', pc.ape_pater_pers, ' ', pc.ape_mater_pers)
-                        WHEN pe.nom_ext IS NOT NULL THEN 
+                        WHEN pe.nom_ext IS NOT NULL THEN
                             CONCAT(pe.nom_ext, ' ', pe.ape_pater_ext, ' ', pe.ape_mater_ext)
                         ELSE u.name_user
                     END as nombre_completo,
