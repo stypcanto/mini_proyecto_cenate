@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.15.10",
-  name: "Reasignación Loreto y Huaraz",
+  number: "1.15.11",
+  name: "Corrección Estados Dashboard",
   date: "2026-01-02",
-  description: "RED ASISTENCIAL LORETO y RED ASISTENCIAL HUARAZ movidas de NORTE a LIMA ORIENTE. Nueva distribución: LIMA ORIENTE (8 redes), NORTE (11 redes)."
+  description: "Estados corregidos a: Enviados, En Proceso, Falta Enviar. Eliminado estado Firmados del dashboard por redes."
 };
 
 export const APP_INFO = {

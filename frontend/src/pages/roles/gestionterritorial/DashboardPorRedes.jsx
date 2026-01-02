@@ -334,18 +334,6 @@ export default function DashboardPorRedes() {
               Resumen General
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Firmados */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Firmados</p>
-                    <p className="text-3xl font-bold text-purple-600 mt-1">{resumen.firmados || 0}</p>
-                    <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_firmados || 0}% del total</p>
-                  </div>
-                  <Shield className="w-10 h-10 text-purple-500 opacity-70" />
-                </div>
-              </div>
-
               {/* Enviados */}
               <div className="bg-white rounded-xl shadow-lg p-6 border border-green-100">
                 <div className="flex items-center justify-between">
@@ -367,6 +355,18 @@ export default function DashboardPorRedes() {
                     <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_en_proceso || 0}% del total</p>
                   </div>
                   <AlertCircle className="w-10 h-10 text-yellow-500 opacity-70" />
+                </div>
+              </div>
+
+              {/* Falta Enviar */}
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-gray-600 text-sm font-medium">Falta Enviar</p>
+                    <p className="text-3xl font-bold text-gray-600 mt-1">{resumen.falta_enviar || 0}</p>
+                    <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_falta_enviar || 0}% del total</p>
+                  </div>
+                  <XCircle className="w-10 h-10 text-gray-400 opacity-70" />
                 </div>
               </div>
             </div>
@@ -407,16 +407,16 @@ export default function DashboardPorRedes() {
                     {/* Contadores */}
                     <div className="flex items-center gap-4 mr-4">
                       <div className="text-center">
-                        <p className="text-2xl font-bold text-purple-600">{red.firmados}</p>
-                        <p className="text-xs text-gray-500">Firmados</p>
-                      </div>
-                      <div className="text-center">
                         <p className="text-2xl font-bold text-green-600">{red.enviados}</p>
                         <p className="text-xs text-gray-500">Enviados</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-yellow-600">{red.en_proceso}</p>
                         <p className="text-xs text-gray-500">En Proceso</p>
+                      </div>
+                      <div className="text-center">
+                        <p className="text-2xl font-bold text-gray-600">{red.falta_enviar}</p>
+                        <p className="text-xs text-gray-500">Falta Enviar</p>
                       </div>
                     </div>
 
