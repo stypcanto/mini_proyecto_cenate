@@ -4,6 +4,476 @@
 
 ---
 
+## v1.15.2 (2026-01-02) - Módulo Pacientes de 107 + Mejoras UX
+
+### ✨ Nuevas Funcionalidades
+
+#### 📋 Nuevo Módulo: Pacientes de 107
+
+**Descripción**: Módulo completo para visualizar, filtrar y gestionar pacientes importados desde archivos Excel (Bolsa 107).
+
+**Ubicación**: Coordinador de Gestión de Citas → Pacientes de 107
+
+**Componentes Frontend**:
+
+1. **PacientesDe107.jsx** (650+ líneas)
+   - Ruta: `/roles/coordcitas/pacientes-107`
+   - Dashboard de estadísticas:
+     - Total de pacientes
+     - Pacientes Psicología
+     - Pacientes Medicina
+     - Pacientes Lima
+     - Pacientes Provincia
+   - Filtros avanzados:
+     - Búsqueda por DNI, nombre, teléfono
+     - Filtro por derivación interna
+     - Filtro por departamento
+   - Funcionalidades:
+     - Selección múltiple con checkboxes
+     - Botón de contacto WhatsApp
+     - Exportación (preparado)
+     - Cálculo automático de edad
+     - Badges de colores para género y derivación
+
+**Componentes Backend**:
+
+2. **Bolsa107Controller.java**
+   - Ruta base: `/api/bolsa107`
+   - 3 endpoints REST:
+     ```java
+     GET /api/bolsa107/pacientes
+     GET /api/bolsa107/pacientes/por-derivacion?derivacion={tipo}
+     GET /api/bolsa107/estadisticas
+     ```
+   - Método helper `itemToMap()` para mapeo de entidades
+   - Manejo de errores con ResponseEntity
+   - Logging detallado con emojis
+
+**Base de Datos**:
+
+3. **Nueva página registrada** (ID: 71)
+   ```sql
+   INSERT INTO dim_paginas_modulo (
+       id_modulo,
+       nombre_pagina,
+       ruta_pagina,
+       descripcion,
+       activo,
+       orden
+   ) VALUES (
+       41,  -- Coordinador de Gestión de Citas
+       'Pacientes de 107',
+       '/roles/coordcitas/pacientes-107',
+       'Gestión y seguimiento de pacientes importados desde la Bolsa 107',
+       true,
+       31
+   );
+   ```
+
+4. **Permisos asignados**:
+   - SUPERADMIN: Todos los permisos
+   - ADMIN: Todos los permisos
+
+**Registro de Rutas**:
+
+5. **componentRegistry.js**
+   ```javascript
+   '/roles/coordcitas/pacientes-107': {
+       component: lazy(() => import('../pages/roles/coordcitas/PacientesDe107')),
+       requiredAction: 'ver',
+   }
+   ```
+
+**Beneficios**:
+- ✅ Visualización centralizada de pacientes importados
+- ✅ Filtrado rápido y eficiente
+- ✅ Estadísticas en tiempo real
+- ✅ Facilita contacto con pacientes (WhatsApp)
+- ✅ Base para futuras funcionalidades (asignación, seguimiento)
+
+### 🐛 Correcciones de Bugs
+
+#### 1. Fix UX: Spinner de Carga en Búsqueda de Usuarios
+
+**Problema**: Al buscar usuarios, se mostraba "No se encontraron usuarios" durante la carga, confundiendo al usuario.
+
+**Solución**: Implementado estado de carga diferenciado
+
+**Archivos modificados**:
+- `frontend/src/pages/user/components/UsersTable.jsx`
+- `frontend/src/pages/user/components/UsersCards.jsx`
+
+**Lógica implementada**:
+```javascript
+// Mientras carga (loading=true)
+{loading ? (
+  <div className="flex flex-col items-center gap-3">
+    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    <p className="text-sm font-medium text-gray-600">Buscando usuarios...</p>
+    <p className="text-xs text-gray-400">Por favor espera un momento</p>
+  </div>
+) : users.length === 0 ? (
+  // Solo después de terminar la carga sin resultados
+  <div className="flex flex-col items-center gap-3">
+    <div className="p-4 bg-gray-100 rounded-full">
+      <Users className="w-8 h-8 text-gray-400" />
+    </div>
+    <p className="text-sm font-medium text-gray-500">No se encontraron usuarios</p>
+    <p className="text-xs text-gray-400">Intenta ajustar los filtros de búsqueda</p>
+  </div>
+) : (
+  // Mostrar resultados
+  ...
+)}
+```
+
+**Flujo mejorado**:
+1. Usuario escribe búsqueda → Spinner animado "Buscando usuarios..."
+2. Backend responde → Spinner desaparece
+3. Si hay resultados → Muestra tabla/tarjetas
+4. Si NO hay resultados → Muestra mensaje "No se encontraron usuarios"
+
+**Impacto**: Mejora significativa en UX, elimina confusión durante búsquedas.
+
+#### 2. Fix Backend: Error de Compilación en Bolsa107Controller
+
+**Error**:
+```
+error: no suitable method found for of(String,Long,String,String,String,...)
+Map.of() only supports up to 10 key-value pairs but 14 were provided
+```
+
+**Causa**: `Map.of()` en Java tiene límite de 10 pares clave-valor, pero se intentaban crear Maps con 14 campos.
+
+**Solución**: Reemplazar `Map.of()` por `HashMap`
+
+**Cambios realizados**:
+
+1. Agregado import:
+   ```java
+   import java.util.HashMap;
+   ```
+
+2. Creado método helper:
+   ```java
+   private Map<String, Object> itemToMap(Bolsa107Item item) {
+       Map<String, Object> map = new HashMap<>();
+       map.put("id_item", item.getIdItem());
+       map.put("registro", item.getRegistro());
+       map.put("numero_documento", item.getNumeroDocumento() != null ? item.getNumeroDocumento() : "");
+       map.put("paciente", item.getPaciente() != null ? item.getPaciente() : "");
+       map.put("sexo", item.getSexo() != null ? item.getSexo() : "");
+       map.put("telefono", item.getTelefono() != null ? item.getTelefono() : "");
+       map.put("fecha_nacimiento", item.getFechaNacimiento() != null ? item.getFechaNacimiento().toString() : "");
+       map.put("departamento", item.getDepartamento() != null ? item.getDepartamento() : "");
+       map.put("provincia", item.getProvincia() != null ? item.getProvincia() : "");
+       map.put("distrito", item.getDistrito() != null ? item.getDistrito() : "");
+       map.put("afiliacion", item.getAfiliacion() != null ? item.getAfiliacion() : "");
+       map.put("derivacion_interna", item.getDerivacionInterna() != null ? item.getDerivacionInterna() : "");
+       map.put("motivo_llamada", item.getMotivoLlamada() != null ? item.getMotivoLlamada() : "");
+       map.put("id_carga", item.getIdCarga() != null ? item.getIdCarga() : 0L);
+       return map;
+   }
+   ```
+
+3. Reemplazado en streams:
+   ```java
+   // Antes (ERROR)
+   .map(item -> Map.of("campo1", valor1, ... "campo14", valor14))
+
+   // Después (OK)
+   .map(this::itemToMap)
+   ```
+
+**Verificación**:
+```bash
+$ ./gradlew compileJava
+BUILD SUCCESSFUL in 4s
+```
+
+**Impacto**: Backend compila correctamente, endpoints funcionan.
+
+### 📝 Archivos Modificados
+
+**Frontend** (3 archivos):
+- `frontend/src/pages/roles/coordcitas/PacientesDe107.jsx` (NUEVO - 650 líneas)
+- `frontend/src/pages/user/components/UsersTable.jsx` (UX fix)
+- `frontend/src/pages/user/components/UsersCards.jsx` (UX fix)
+- `frontend/src/config/componentRegistry.js` (registro de ruta)
+
+**Backend** (1 archivo):
+- `backend/src/main/java/com/styp/cenate/api/form107/Bolsa107Controller.java` (NUEVO)
+
+**Base de Datos**:
+- Insertados registros en `dim_paginas_modulo` (ID: 71)
+- Insertados permisos en `segu_permisos_rol_pagina` (SUPERADMIN, ADMIN)
+
+### 🎯 Commits
+
+```bash
+✅ feat(coordcitas): Nuevo módulo 'Pacientes de 107' con dashboard y filtros
+✅ fix(ux): Agregar spinner de carga en búsqueda de usuarios
+✅ fix(backend): Solucionar error de compilación en Bolsa107Controller
+```
+
+---
+
+## v1.15.1 (2026-01-02) - Fix Búsqueda de Usuarios + Campo username en vw_personal_total
+
+### Problema Resuelto
+
+**Usuario 47136505 (LUZ MILAGROS HUAMAN RODRIGUEZ) no aparecía en búsqueda de Gestión de Usuarios** a pesar de existir en la base de datos y estar ACTIVO.
+
+### Causas Identificadas
+
+1. **Endpoint incorrecto en frontend** ❌
+   - Frontend: `GET /personal/total`
+   - Backend: `GET /personal` (endpoint correcto)
+   - Resultado: Error 404
+
+2. **Vista SQL sin campo `username`** ❌
+   - Vista `vw_personal_total` NO incluía campo `username`
+   - Frontend buscaba por `username` pero el campo no existía
+   - Resultado: Usuarios no aparecían en filtros
+
+3. **Modelo Java desactualizado** ❌
+   - `PersonalTotalView.java` sin campo `username`
+
+### Cambios Implementados
+
+#### 1. Base de Datos
+
+**Script ejecutado**: `spec/04_BaseDatos/06_scripts/016_agregar_username_vw_personal_total.sql`
+
+```sql
+-- Recrear vista con campo username
+DROP VIEW IF EXISTS vw_personal_total CASCADE;
+
+CREATE VIEW vw_personal_total AS
+SELECT
+    p.id_pers AS id_personal,
+    -- ... otros campos
+    p.id_usuario,
+    u.name_user AS username,  -- ⭐ NUEVO CAMPO
+    rol.desc_rol AS rol_usuario,
+    -- ... resto de campos
+FROM dim_personal_cnt p
+    LEFT JOIN dim_usuarios u ON u.id_user = p.id_usuario  -- ⭐ JOIN AGREGADO
+    -- ... otros joins
+```
+
+**Tabla afectada**: Vista `vw_personal_total`
+- ✅ Agregado JOIN con `dim_usuarios`
+- ✅ Agregado campo `username` (mapea a `dim_usuarios.name_user`)
+
+**Verificación**:
+```sql
+SELECT id_personal, numero_documento, username, nombre_ipress
+FROM vw_personal_total
+WHERE numero_documento = '47136505';
+
+-- Resultado:
+-- id_personal: 308
+-- numero_documento: 47136505
+-- username: 47136505  ✅
+-- nombre_ipress: CENTRO NACIONAL DE TELEMEDICINA
+```
+
+#### 2. Backend
+
+**Modelo actualizado**: `backend/src/main/java/com/styp/cenate/model/view/PersonalTotalView.java`
+
+```java
+@Column(name = "id_usuario")
+private Long idUsuario;
+
+@Column(name = "username")  // ⭐ CAMPO AGREGADO
+private String username;
+
+@Column(name = "rol_usuario")
+private String rolUsuario;
+```
+
+**Controller**: `backend/src/main/java/com/styp/cenate/api/personal/PersonalController.java`
+- Endpoint existente: `GET /api/personal`
+- Ahora retorna `PersonalTotalView` con campo `username` incluido
+
+#### 3. Frontend
+
+**Componente actualizado**: `frontend/src/pages/admin/GestionUsuariosPermisos.jsx`
+
+**Línea 212 - Corrección de endpoint**:
+```javascript
+// ❌ Antes (endpoint incorrecto)
+const personal = await api.get('/personal/total');
+
+// ✅ Ahora (endpoint correcto)
+const personal = await api.get('/personal');
+```
+
+**Línea 315 - Búsqueda por username**:
+```javascript
+const filteredUsers = useMemo(() => {
+  let filtered = users;
+
+  if (searchTerm) {
+    const searchLower = searchTerm.toLowerCase();
+    filtered = filtered.filter(u =>
+      u.nombre_completo?.toLowerCase().includes(searchLower) ||
+      u.username?.toLowerCase().includes(searchLower) ||  // ⭐ Campo username disponible
+      u.numero_documento?.includes(searchTerm) ||
+      u.nombre_ipress?.toLowerCase().includes(searchLower)
+    );
+  }
+  // ... resto de filtros
+}, [users, searchTerm, filters]);
+```
+
+### Documentación Actualizada
+
+**Backend**:
+- ✅ `spec/01_Backend/01_api_endpoints.md` - Agregada sección "Personal" con documentación del endpoint `/api/personal`
+- ✅ `spec/04_BaseDatos/08_vista_vw_personal_total.md` - Documentación completa de la vista SQL (nuevo archivo)
+
+**Frontend**:
+- ✅ `spec/02_Frontend/01_gestion_usuarios_permisos.md` - Documentación completa del componente (nuevo archivo)
+
+**Changelog**:
+- ✅ Esta entrada en `checklist/01_Historial/01_changelog.md`
+
+### Flujo Corregido
+
+```
+Usuario accede a /admin/users
+     ↓
+GestionUsuariosPermisos.jsx monta
+     ↓
+useEffect() ejecuta loadUsers()
+     ↓
+GET /api/personal  ✅ (antes: /personal/total ❌)
+     ↓
+Backend retorna List<PersonalTotalView> con campo username ✅
+     ↓
+Frontend filtra usuarios (ahora puede buscar por username) ✅
+     ↓
+Usuario 47136505 aparece en resultados ✅
+```
+
+### Testing Realizado
+
+✅ **Verificación en BD**:
+```sql
+SELECT id_personal, username, nombres, apellido_paterno
+FROM vw_personal_total
+WHERE numero_documento = '47136505';
+-- Retorna username: 47136505 correctamente
+```
+
+✅ **Verificación de endpoint**:
+- `GET /api/personal` retorna 200 OK
+- Response incluye campo `username`
+
+✅ **Búsqueda en frontend**:
+- Buscar por "47136505" → Usuario encontrado ✅
+- Buscar por "LUZ MILAGROS" → Usuario encontrado ✅
+- Buscar por username directamente → Funciona ✅
+
+### Archivos Modificados
+
+**Base de Datos**:
+- `spec/04_BaseDatos/06_scripts/016_agregar_username_vw_personal_total.sql` (nuevo)
+
+**Backend**:
+- `backend/src/main/java/com/styp/cenate/model/view/PersonalTotalView.java`
+
+**Frontend**:
+- `frontend/src/pages/admin/GestionUsuariosPermisos.jsx`
+
+**Documentación**:
+- `spec/01_Backend/01_api_endpoints.md`
+- `spec/04_BaseDatos/08_vista_vw_personal_total.md` (nuevo)
+- `spec/02_Frontend/01_gestion_usuarios_permisos.md` (nuevo)
+
+### Impacto
+
+✅ **Usuarios**: Búsqueda de usuarios funciona correctamente
+✅ **Performance**: Sin impacto (JOIN optimizado con índice en id_usuario)
+✅ **Compatibilidad**: Retrocompatible (campo agregado, no modificado)
+
+### Próximos Pasos
+
+**Acción requerida**: Reiniciar backend para cargar modelo Java actualizado
+
+```bash
+cd backend && ./gradlew clean bootRun
+```
+
+---
+
+## v1.14.2 (2026-01-02) - Renombrado Menú "Carga de Pacientes 107"
+
+### Cambio Implementado
+
+**Menú del módulo Bolsa 107 renombrado para mayor claridad:**
+- ❌ Antes: "Listado de 107"
+- ✅ Ahora: "Carga de Pacientes 107"
+
+**Razón del cambio:**
+El nombre anterior "Listado de 107" no reflejaba adecuadamente la función principal del módulo, que es la **importación masiva de pacientes desde archivos Excel**, no solo listar pacientes.
+
+### Cambios Técnicos
+
+#### Base de Datos
+
+**Script SQL:** `spec/04_BaseDatos/06_scripts/017_rename_listado_107_to_carga_pacientes.sql`
+
+```sql
+UPDATE dim_paginas_modulo
+SET
+    nombre_pagina = 'Carga de Pacientes 107',
+    updated_at = NOW()
+WHERE
+    id_pagina = 70
+    AND ruta_pagina = '/roles/coordcitas/107';
+```
+
+**Tabla afectada:** `dim_paginas_modulo`
+- `id_pagina`: 70
+- `nombre_pagina`: "Listado de 107" → "Carga de Pacientes 107"
+- Ubicación: Submenu de "Coordinador de Gestión de Citas"
+
+#### Frontend
+
+**Documentación actualizada:**
+- `frontend/IMPLEMENTACION_FORMULARIO_107.md` → Título actualizado
+
+**Componente:** `frontend/src/pages/roles/coordcitas/Listado107.jsx`
+- No requiere cambios (el nombre se carga dinámicamente desde BD)
+
+### Impacto
+
+✅ **Usuarios:** El menú ahora tiene un nombre más descriptivo
+✅ **Frontend:** Sin cambios de código (DynamicSidebar carga desde BD)
+✅ **Backend:** Sin cambios de código
+✅ **Permisos:** Sin cambios (mismo `id_pagina`, `ruta_pagina`)
+
+### Verificación
+
+```bash
+# Verificar cambio en BD
+PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -c \
+  "SELECT nombre_pagina, ruta_pagina FROM dim_paginas_modulo WHERE id_pagina = 70;"
+```
+
+**Resultado esperado:**
+```
+     nombre_pagina      |      ruta_pagina
+------------------------+-----------------------
+ Carga de Pacientes 107 | /roles/coordcitas/107
+```
+
+---
+
 ## v1.14.1 (2025-12-30) - Mejoras UX Control de Firma Digital + Filtros Avanzados
 
 ### Problema Resuelto

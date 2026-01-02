@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.14.1",
-  name: "Mejoras UX Control de Firma Digital + Filtros Avanzados",
-  date: "2025-12-30",
-  description: "Mejoras en Control de Firma Digital: diseño consistente con UsersTable, filtros avanzados (régimen, profesión, especialidad, fechas), fix de hooks React, eliminación de columna EVIDENCIA, y optimización de tabla con anchos fijos y truncamiento."
+  number: "1.15.2",
+  name: "Módulo Pacientes de 107 + Mejoras UX",
+  date: "2026-01-02",
+  description: "Nuevo módulo para gestión de pacientes importados desde Bolsa 107. Mejoras de UX en búsqueda de usuarios (spinner de carga). Fix de compilación backend (Map.of() límite)."
 };
 
 export const APP_INFO = {
