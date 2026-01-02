@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.15.8",
-  name: "Fix Asignación de Macroregiones",
+  number: "1.15.9",
+  name: "Alineación de Estados Dashboard Redes",
   date: "2026-01-02",
-  description: "Corrección de asignación de 33 redes a sus macroregiones correctas. Todas estaban en LIMA ORIENTE, ahora distribuidas en CENTRO (6), LIMA ORIENTE (6), NORTE (13) y SUR (8)."
+  description: "Dashboard por Redes ahora usa los mismos estados que Dashboard de Diagnóstico: Firmados (morado), Enviados (verde), En Proceso (amarillo). Se eliminaron estados incorrectos."
 };
 
 export const APP_INFO = {

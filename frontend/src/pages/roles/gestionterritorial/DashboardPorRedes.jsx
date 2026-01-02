@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   Network, Building2, CheckCircle2, AlertCircle,
-  FileText, XCircle, ChevronDown, ChevronUp, Loader,
+  Shield, XCircle, ChevronDown, ChevronUp, Loader,
   RefreshCw, BarChart3, TrendingUp, Activity
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -164,14 +164,16 @@ export default function DashboardPorRedes() {
   // ================================================================
   const getColorEstado = (estado) => {
     switch (estado) {
+      case "FIRMADO":
+        return "bg-purple-100 text-purple-700 border-purple-200";
       case "ENVIADO":
         return "bg-green-100 text-green-700 border-green-200";
       case "EN_PROCESO":
         return "bg-yellow-100 text-yellow-700 border-yellow-200";
-      case "REGISTRADO":
+      case "APROBADO":
         return "bg-blue-100 text-blue-700 border-blue-200";
-      case "SIN_REGISTRO":
-        return "bg-gray-100 text-gray-600 border-gray-200";
+      case "RECHAZADO":
+        return "bg-red-100 text-red-700 border-red-200";
       default:
         return "bg-gray-100 text-gray-600 border-gray-200";
     }
@@ -179,29 +181,33 @@ export default function DashboardPorRedes() {
 
   const getIconoEstado = (estado) => {
     switch (estado) {
+      case "FIRMADO":
+        return <Shield className="w-4 h-4" />;
       case "ENVIADO":
         return <CheckCircle2 className="w-4 h-4" />;
       case "EN_PROCESO":
         return <AlertCircle className="w-4 h-4" />;
-      case "REGISTRADO":
-        return <FileText className="w-4 h-4" />;
-      case "SIN_REGISTRO":
+      case "APROBADO":
+        return <CheckCircle2 className="w-4 h-4" />;
+      case "RECHAZADO":
         return <XCircle className="w-4 h-4" />;
       default:
-        return <FileText className="w-4 h-4" />;
+        return <AlertCircle className="w-4 h-4" />;
     }
   };
 
   const getLabelEstado = (estado) => {
     switch (estado) {
+      case "FIRMADO":
+        return "Firmado";
       case "ENVIADO":
         return "Enviado";
       case "EN_PROCESO":
         return "En Proceso";
-      case "REGISTRADO":
-        return "Registrado";
-      case "SIN_REGISTRO":
-        return "Falta registrar";
+      case "APROBADO":
+        return "Aprobado";
+      case "RECHAZADO":
+        return "Rechazado";
       default:
         return estado;
     }
@@ -327,16 +333,16 @@ export default function DashboardPorRedes() {
               <TrendingUp className="w-5 h-5 text-blue-600" />
               Resumen General
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {/* Total IPRESS */}
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {/* Firmados */}
+              <div className="bg-white rounded-xl shadow-lg p-6 border border-purple-100">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-blue-100 text-sm font-medium">Total IPRESS</p>
-                    <p className="text-3xl font-bold mt-1">{resumen.total_ipress || 0}</p>
-                    <p className="text-blue-100 text-xs mt-1">{resumen.total_redes || 0} redes</p>
+                    <p className="text-gray-600 text-sm font-medium">Firmados</p>
+                    <p className="text-3xl font-bold text-purple-600 mt-1">{resumen.firmados || 0}</p>
+                    <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_firmados || 0}% del total</p>
                   </div>
-                  <Building2 className="w-10 h-10 text-blue-200 opacity-80" />
+                  <Shield className="w-10 h-10 text-purple-500 opacity-70" />
                 </div>
               </div>
 
@@ -361,18 +367,6 @@ export default function DashboardPorRedes() {
                     <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_en_proceso || 0}% del total</p>
                   </div>
                   <AlertCircle className="w-10 h-10 text-yellow-500 opacity-70" />
-                </div>
-              </div>
-
-              {/* Falta registrar */}
-              <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-gray-600 text-sm font-medium">Falta registrar</p>
-                    <p className="text-3xl font-bold text-gray-600 mt-1">{resumen.sin_formulario || 0}</p>
-                    <p className="text-gray-500 text-xs mt-1">{resumen.porcentaje_sin_formulario || 0}% del total</p>
-                  </div>
-                  <XCircle className="w-10 h-10 text-gray-400 opacity-70" />
                 </div>
               </div>
             </div>
@@ -413,16 +407,16 @@ export default function DashboardPorRedes() {
                     {/* Contadores */}
                     <div className="flex items-center gap-4 mr-4">
                       <div className="text-center">
+                        <p className="text-2xl font-bold text-purple-600">{red.firmados}</p>
+                        <p className="text-xs text-gray-500">Firmados</p>
+                      </div>
+                      <div className="text-center">
                         <p className="text-2xl font-bold text-green-600">{red.enviados}</p>
                         <p className="text-xs text-gray-500">Enviados</p>
                       </div>
                       <div className="text-center">
                         <p className="text-2xl font-bold text-yellow-600">{red.en_proceso}</p>
                         <p className="text-xs text-gray-500">En Proceso</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-2xl font-bold text-gray-600">{red.sin_formulario}</p>
-                        <p className="text-xs text-gray-500">Falta registrar</p>
                       </div>
                     </div>
 

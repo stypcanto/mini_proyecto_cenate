@@ -65,9 +65,12 @@ public class EstadisticasDiagnosticoController {
                     m.id_macro,
                     m.desc_macro,
                     COUNT(DISTINCT i.id_ipress) as total_ipress,
+                    COUNT(DISTINCT CASE
+                        WHEN f.estado = 'FIRMADO' OR f.firma_digital IS NOT NULL
+                        THEN i.id_ipress
+                    END) as firmados,
                     COUNT(DISTINCT CASE WHEN f.estado = 'ENVIADO' THEN i.id_ipress END) as enviados,
-                    COUNT(DISTINCT CASE WHEN f.estado = 'EN_PROCESO' THEN i.id_ipress END) as en_proceso,
-                    COUNT(DISTINCT CASE WHEN f.id_formulario IS NULL THEN i.id_ipress END) as sin_formulario
+                    COUNT(DISTINCT CASE WHEN f.estado = 'EN_PROCESO' THEN i.id_ipress END) as en_proceso
                 FROM dim_red r
                 LEFT JOIN dim_macroregion m ON m.id_macro = r.id_macro
                 LEFT JOIN dim_ipress i ON i.id_red = r.id_red
@@ -87,18 +90,9 @@ public class EstadisticasDiagnosticoController {
                     row.put("id_macro", rs.getLong("id_macro"));
                     row.put("desc_macro", rs.getString("desc_macro"));
                     row.put("total_ipress", rs.getLong("total_ipress"));
+                    row.put("firmados", rs.getLong("firmados"));
                     row.put("enviados", rs.getLong("enviados"));
                     row.put("en_proceso", rs.getLong("en_proceso"));
-                    row.put("sin_formulario", rs.getLong("sin_formulario"));
-
-                    // Calcular registradas (tienen formulario pero no enviado)
-                    long totalIpress = rs.getLong("total_ipress");
-                    long enviados = rs.getLong("enviados");
-                    long enProceso = rs.getLong("en_proceso");
-                    long sinFormulario = rs.getLong("sin_formulario");
-                    long registradas = totalIpress - enviados - enProceso - sinFormulario;
-
-                    row.put("registradas", registradas);
 
                     return row;
                 }
@@ -106,33 +100,29 @@ public class EstadisticasDiagnosticoController {
 
             // Calcular resumen general
             long totalGeneral = 0;
+            long firmadosGeneral = 0;
             long enviadosGeneral = 0;
             long enProcesoGeneral = 0;
-            long registradasGeneral = 0;
-            long sinFormularioGeneral = 0;
 
             for (Map<String, Object> red : estadisticasPorRed) {
                 totalGeneral += (Long) red.get("total_ipress");
+                firmadosGeneral += (Long) red.get("firmados");
                 enviadosGeneral += (Long) red.get("enviados");
                 enProcesoGeneral += (Long) red.get("en_proceso");
-                registradasGeneral += (Long) red.get("registradas");
-                sinFormularioGeneral += (Long) red.get("sin_formulario");
             }
 
             Map<String, Object> resumenGeneral = new HashMap<>();
             resumenGeneral.put("total_ipress", totalGeneral);
+            resumenGeneral.put("firmados", firmadosGeneral);
             resumenGeneral.put("enviados", enviadosGeneral);
             resumenGeneral.put("en_proceso", enProcesoGeneral);
-            resumenGeneral.put("registradas", registradasGeneral);
-            resumenGeneral.put("sin_formulario", sinFormularioGeneral);
             resumenGeneral.put("total_redes", estadisticasPorRed.size());
 
             // Calcular porcentajes
             if (totalGeneral > 0) {
+                resumenGeneral.put("porcentaje_firmados", Math.round((firmadosGeneral * 100.0) / totalGeneral));
                 resumenGeneral.put("porcentaje_enviados", Math.round((enviadosGeneral * 100.0) / totalGeneral));
                 resumenGeneral.put("porcentaje_en_proceso", Math.round((enProcesoGeneral * 100.0) / totalGeneral));
-                resumenGeneral.put("porcentaje_registradas", Math.round((registradasGeneral * 100.0) / totalGeneral));
-                resumenGeneral.put("porcentaje_sin_formulario", Math.round((sinFormularioGeneral * 100.0) / totalGeneral));
             }
 
             Map<String, Object> response = new HashMap<>();
