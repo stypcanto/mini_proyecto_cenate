@@ -188,18 +188,24 @@ public class PersonalCnt {
         String primerNombre = Optional.ofNullable(nomPers)
                 .map(n -> n.trim().split("\\s+")[0])
                 .orElse("");
-        
-        // Obtener el primer apellido paterno
-        String primerApellido = Optional.ofNullable(apePaterPers)
+
+        // Obtener el apellido paterno
+        String apellidoPaterno = Optional.ofNullable(apePaterPers)
                 .map(String::trim)
                 .orElse("");
-        
+
+        // Obtener el apellido materno
+        String apellidoMaterno = Optional.ofNullable(apeMaterPers)
+                .map(String::trim)
+                .orElse("");
+
         // Formatear a título (primera letra mayúscula, resto minúscula)
         primerNombre = formatearATitulo(primerNombre);
-        primerApellido = formatearATitulo(primerApellido);
-        
-        // Retornar "Nombre Apellido"
-        return String.format("%s %s", primerNombre, primerApellido).trim();
+        apellidoPaterno = formatearATitulo(apellidoPaterno);
+        apellidoMaterno = formatearATitulo(apellidoMaterno);
+
+        // Retornar "Nombre ApellidoPaterno ApellidoMaterno"
+        return String.format("%s %s %s", primerNombre, apellidoPaterno, apellidoMaterno).trim();
     }
     
     private String formatearATitulo(String texto) {
