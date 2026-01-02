@@ -1,6 +1,6 @@
 // src/pages/admin/users/components/UsersCards.jsx
 import React from 'react';
-import { Eye, Edit, Trash2, Phone, Mail, MapPin, Building, User as UserIcon, AlertCircle, UserPlus } from 'lucide-react';
+import { Eye, Edit, Trash2, Phone, Mail, MapPin, Building, User as UserIcon, AlertCircle, UserPlus, Users } from 'lucide-react';
 
 // ============================================================
 // 🔧 FUNCIONES AUXILIARES PARA TIPO DE PERSONAL
@@ -65,10 +65,30 @@ const UsersCards = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
     );
   };
 
+  // 🔄 Estado de carga - Mostrar spinner
+  if (loading) {
+    return (
+      <div className="p-16 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          <p className="text-sm font-medium text-gray-600">Buscando usuarios...</p>
+          <p className="text-xs text-gray-400">Por favor espera un momento</p>
+        </div>
+      </div>
+    );
+  }
+
+  // ❌ Sin resultados - Solo se muestra cuando YA terminó de cargar
   if (users.length === 0) {
     return (
-      <div className="p-10 text-center text-gray-500">
-        No se encontraron usuarios
+      <div className="p-16 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="p-4 bg-gray-100 rounded-full">
+            <Users className="w-8 h-8 text-gray-400" strokeWidth={1.5} />
+          </div>
+          <p className="text-sm font-medium text-gray-500">No se encontraron usuarios</p>
+          <p className="text-xs text-gray-400">Intenta ajustar los filtros de búsqueda</p>
+        </div>
       </div>
     );
   }
@@ -76,15 +96,6 @@ const UsersCards = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
   return (
     <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 pb-10">
       <div className="relative">
-        {/* Overlay de carga */}
-        {loading && (
-          <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg min-h-[400px]">
-            <div className="flex flex-col items-center gap-3">
-              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0A5BA9]"></div>
-              <p className="text-sm font-medium text-gray-600">Cargando usuarios...</p>
-            </div>
-          </div>
-        )}
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {users.map((user) => (
           <div

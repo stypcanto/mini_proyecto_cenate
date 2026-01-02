@@ -196,7 +196,19 @@ const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
-            {users.length === 0 ? (
+            {loading ? (
+              // 🔄 Estado de carga - Mostrar skeleton
+              <tr>
+                <td colSpan={showBirthdayColumn ? "10" : "9"} className="px-6 py-16 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                    <p className="text-sm font-medium text-gray-600">Buscando usuarios...</p>
+                    <p className="text-xs text-gray-400">Por favor espera un momento</p>
+                  </div>
+                </td>
+              </tr>
+            ) : users.length === 0 ? (
+              // ❌ Sin resultados - Solo se muestra cuando YA terminó de cargar
               <tr>
                 <td colSpan={showBirthdayColumn ? "10" : "9"} className="px-6 py-16 text-center">
                   <div className="flex flex-col items-center gap-3">
