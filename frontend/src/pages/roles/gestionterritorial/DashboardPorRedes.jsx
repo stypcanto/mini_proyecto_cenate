@@ -23,26 +23,94 @@ export default function DashboardPorRedes() {
   const [detalleIpress, setDetalleIpress] = useState([]);
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
 
+  // Estados de filtros
+  const [macroregiones, setMacroregiones] = useState([]);
+  const [redes, setRedes] = useState([]);
+  const [filtroMacroregion, setFiltroMacroregion] = useState("");
+  const [filtroRed, setFiltroRed] = useState("");
+
   // ================================================================
-  // CARGAR DATOS
+  // CARGAR DATOS INICIALES
   // ================================================================
   useEffect(() => {
+    cargarMacroregiones();
+    cargarRedes();
     cargarEstadisticas();
   }, []);
+
+  // Recargar redes cuando cambia macroregión
+  useEffect(() => {
+    if (filtroMacroregion) {
+      cargarRedes(filtroMacroregion);
+      setFiltroRed(""); // Limpiar filtro de red
+    } else {
+      cargarRedes();
+    }
+  }, [filtroMacroregion]);
+
+  // Recargar estadísticas cuando cambian filtros
+  useEffect(() => {
+    cargarEstadisticas();
+  }, [filtroMacroregion, filtroRed]);
+
+  const cargarMacroregiones = async () => {
+    try {
+      const response = await api.get("/diagnostico/estadisticas/macroregiones");
+      setMacroregiones(response || []);
+    } catch (error) {
+      console.error("Error al cargar macroregiones:", error);
+    }
+  };
+
+  const cargarRedes = async (idMacroregion = null) => {
+    try {
+      const url = idMacroregion
+        ? `/diagnostico/estadisticas/redes?idMacroregion=${idMacroregion}`
+        : "/diagnostico/estadisticas/redes";
+      const response = await api.get(url);
+      setRedes(response || []);
+    } catch (error) {
+      console.error("Error al cargar redes:", error);
+    }
+  };
 
   const cargarEstadisticas = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/diagnostico/estadisticas/por-red");
+
+      let url = "/diagnostico/estadisticas/por-red";
+      const params = [];
+
+      if (filtroMacroregion) {
+        params.push(`idMacroregion=${filtroMacroregion}`);
+      }
+
+      if (filtroRed) {
+        params.push(`idRed=${filtroRed}`);
+      }
+
+      if (params.length > 0) {
+        url += `?${params.join("&")}`;
+      }
+
+      const response = await api.get(url);
       setEstadisticas(response.estadisticas_por_red || []);
       setResumen(response.resumen_general || null);
-      toast.success("Estadísticas cargadas correctamente");
+
+      if (!filtroMacroregion && !filtroRed) {
+        toast.success("Estadísticas cargadas correctamente");
+      }
     } catch (error) {
       console.error("Error al cargar estadísticas:", error);
       toast.error("Error al cargar estadísticas");
     } finally {
       setLoading(false);
     }
+  };
+
+  const limpiarFiltros = () => {
+    setFiltroMacroregion("");
+    setFiltroRed("");
   };
 
   const cargarDetalleRed = async (idRed) => {
@@ -145,7 +213,7 @@ export default function DashboardPorRedes() {
               </div>
               <div>
                 <h1 className="text-3xl font-bold text-gray-800">
-                  Dashboard por Redes Asistenciales
+                  Avance del llenado de encuesta de diagnóstico de IPRESS
                 </h1>
                 <p className="text-gray-600 mt-1">
                   Estadísticas de formularios diagnósticos por Red
@@ -159,6 +227,65 @@ export default function DashboardPorRedes() {
               <RefreshCw className="w-4 h-4" />
               <span>Actualizar</span>
             </button>
+          </div>
+        </div>
+
+        {/* Filtros */}
+        <div className="mb-6">
+          <div className="bg-white rounded-xl shadow border border-gray-200 p-5">
+            <div className="flex items-center gap-4 flex-wrap">
+              {/* Filtro Macroregión */}
+              <div className="flex-1 min-w-[250px]">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Macroregión
+                </label>
+                <select
+                  value={filtroMacroregion}
+                  onChange={(e) => setFiltroMacroregion(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                >
+                  <option value="">Todas las Macroregiones</option>
+                  {macroregiones.map((macro) => (
+                    <option key={macro.id_macro} value={macro.id_macro}>
+                      {macro.desc_macro}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro Red */}
+              <div className="flex-1 min-w-[250px]">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Red Asistencial
+                </label>
+                <select
+                  value={filtroRed}
+                  onChange={(e) => setFiltroRed(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  disabled={redes.length === 0}
+                >
+                  <option value="">Todas las Redes</option>
+                  {redes.map((red) => (
+                    <option key={red.id_red} value={red.id_red}>
+                      {red.desc_red}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Botón limpiar filtros */}
+              {(filtroMacroregion || filtroRed) && (
+                <div className="flex-shrink-0 pt-7">
+                  <button
+                    onClick={limpiarFiltros}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center gap-2"
+                  >
+                    <XCircle className="w-4 h-4" />
+                    <span>Limpiar Filtros</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
