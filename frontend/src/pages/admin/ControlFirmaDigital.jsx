@@ -88,6 +88,10 @@ export default function ControlFirmaDigital() {
   const [mostrarModalEdicion, setMostrarModalEdicion] = useState(false);
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
 
+  // 🆕 Selección para exportar
+  const [seleccionados, setSeleccionados] = useState([]);
+  const [seleccionarTodos, setSeleccionarTodos] = useState(false); // Para seleccionar TODOS los registros filtrados
+
   // Estadísticas
   const [stats, setStats] = useState({
     total: 0,
@@ -123,6 +127,32 @@ export default function ControlFirmaDigital() {
     });
     return Array.from(especialidades).sort();
   }, [firmasDigitales]);
+
+  // ================================================================
+  // 🎯 OBTENER ESTADO DE FIRMA (Mejorado - Usa estadoCertificado del backend)
+  // ================================================================
+  const obtenerEstadoFirma = (firma) => {
+    // Priorizar el estado del certificado del backend
+    if (firma.estadoCertificado === 'VENCIDO') {
+      return 'VENCIDO';
+    }
+
+    if (firma.estadoCertificado === 'VIGENTE') {
+      return 'VIGENTE';
+    }
+
+    // Si entregó token pero aún no tiene fechas
+    if (firma.entregoToken && !firma.fechaVencimientoCertificado) {
+      return 'REGISTRADO';
+    }
+
+    // Si no entregó token, verificar motivo
+    if (!firma.entregoToken && firma.motivoSinToken) {
+      return firma.motivoSinToken; // PENDIENTE, YA_TIENE, NO_REQUIERE
+    }
+
+    return 'SIN_REGISTRO';
+  };
 
   // ================================================================
   // 🔍 FILTRAR FIRMAS (con filtros avanzados) - HOOK
@@ -294,11 +324,130 @@ export default function ControlFirmaDigital() {
   };
 
   // ================================================================
+  // 📦 FUNCIONES DE SELECCIÓN Y EXPORTACIÓN
+  // ================================================================
+
+  // Seleccionar/Deseleccionar todos de la página actual
+  const handleSeleccionarTodos = () => {
+    if (seleccionados.length === firmasPaginadas.length && !seleccionarTodos) {
+      // Si todos de la página están seleccionados, deseleccionar todos
+      setSeleccionados([]);
+      setSeleccionarTodos(false);
+    } else {
+      // Seleccionar todos los de la página actual
+      const todosIds = firmasPaginadas.map(firma => firma.idFirmaPersonal);
+      setSeleccionados(todosIds);
+      setSeleccionarTodos(false);
+    }
+  };
+
+  // Seleccionar TODOS los registros filtrados (no solo la página actual)
+  const handleSeleccionarTodosFiltrados = () => {
+    const todosIds = firmasFiltradas.map(firma => firma.idFirmaPersonal);
+    setSeleccionados(todosIds);
+    setSeleccionarTodos(true);
+  };
+
+  // Deseleccionar todos
+  const handleDeseleccionarTodos = () => {
+    setSeleccionados([]);
+    setSeleccionarTodos(false);
+  };
+
+  // Seleccionar/Deseleccionar individual
+  const handleSeleccionarFila = (idFirma) => {
+    setSeleccionarTodos(false); // Desactivar "seleccionar todos" al hacer selección manual
+    setSeleccionados(prev => {
+      if (prev.includes(idFirma)) {
+        return prev.filter(id => id !== idFirma);
+      } else {
+        return [...prev, idFirma];
+      }
+    });
+  };
+
+  // Exportar a CSV
+  const exportarCSV = () => {
+    if (seleccionados.length === 0) {
+      toast.error('Selecciona al menos un registro para exportar');
+      return;
+    }
+
+    // Filtrar solo los registros seleccionados
+    const firmasAExportar = firmasDigitales.filter(firma =>
+      seleccionados.includes(firma.idFirmaPersonal)
+    );
+
+    // Crear CSV
+    const headers = [
+      'DNI',
+      'Nombre Completo',
+      'Régimen Laboral',
+      'Profesión',
+      'Especialidad',
+      'IPRESS',
+      'Entregó Token',
+      'N° Serie Token',
+      'Fecha Entrega',
+      'Fecha Inicio Certificado',
+      'Fecha Vencimiento',
+      'Estado Certificado',
+      'Días para Vencer',
+      'Motivo Sin Token',
+      'Observaciones'
+    ];
+
+    const filas = firmasAExportar.map(firma => [
+      firma.dni || '—',
+      firma.nombreCompleto || '—',
+      firma.regimenLaboral || '—',
+      firma.profesion || '—',
+      firma.especialidad || '—',
+      firma.nombreIpress || '—',
+      firma.entregoToken ? 'SÍ' : 'NO',
+      firma.numeroSerieToken || '—',
+      firma.fechaEntregaToken ? new Date(firma.fechaEntregaToken).toLocaleDateString('es-PE') : '—',
+      firma.fechaInicioCertificado ? new Date(firma.fechaInicioCertificado).toLocaleDateString('es-PE') : '—',
+      firma.fechaVencimientoCertificado ? new Date(firma.fechaVencimientoCertificado).toLocaleDateString('es-PE') : '—',
+      firma.estadoCertificado || '—',
+      firma.diasRestantesVencimiento !== null ? firma.diasRestantesVencimiento : '—',
+      firma.descripcionMotivo || firma.motivoSinToken || '—',
+      firma.observaciones || '—'
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...filas.map(fila => fila.map(campo => `"${campo}"`).join(','))
+    ].join('\n');
+
+    // Descargar archivo
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `firma_digital_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast.success(`✅ ${seleccionados.length} registro(s) exportado(s)`);
+
+    // Limpiar selección después de exportar
+    setSeleccionados([]);
+    setSeleccionarTodos(false);
+  };
+
+  // ================================================================
   // 📄 PAGINACIÓN - Función de navegación
   // ================================================================
   const irAPagina = (pagina) => {
     if (pagina >= 1 && pagina <= totalPaginas) {
       setPaginaActual(pagina);
+      if (!seleccionarTodos) {
+        // Solo limpiar si no está activado "seleccionar todos"
+        setSeleccionados([]);
+      }
     }
   };
 
@@ -334,32 +483,6 @@ export default function ControlFirmaDigital() {
                        'Error desconocido al dar de baja al usuario';
       toast.error(`❌ Error: ${errorMsg}`);
     }
-  };
-
-  // ================================================================
-  // 🎯 OBTENER ESTADO DE FIRMA (Mejorado - Usa estadoCertificado del backend)
-  // ================================================================
-  const obtenerEstadoFirma = (firma) => {
-    // Priorizar el estado del certificado del backend
-    if (firma.estadoCertificado === 'VENCIDO') {
-      return 'VENCIDO';
-    }
-
-    if (firma.estadoCertificado === 'VIGENTE') {
-      return 'VIGENTE';
-    }
-
-    // Si entregó token pero aún no tiene fechas
-    if (firma.entregoToken && !firma.fechaVencimientoCertificado) {
-      return 'REGISTRADO';
-    }
-
-    // Si no entregó token, verificar motivo
-    if (!firma.entregoToken && firma.motivoSinToken) {
-      return firma.motivoSinToken; // PENDIENTE, YA_TIENE, NO_REQUIERE
-    }
-
-    return 'SIN_REGISTRO';
   };
 
   // ================================================================
@@ -514,11 +637,21 @@ export default function ControlFirmaDigital() {
 
           {/* Botón Exportar */}
           <button
-            className="px-4 py-2.5 bg-white border-2 border-gray-300 text-gray-700 text-sm rounded-lg hover:bg-gray-50 transition-all flex items-center gap-2 font-medium"
-            title="Exportar a Excel"
+            onClick={exportarCSV}
+            className={`px-4 py-2.5 text-sm rounded-lg transition-all flex items-center gap-2 font-medium border-2 ${
+              seleccionados.length > 0
+                ? 'bg-green-50 border-green-300 text-green-700 hover:bg-green-100'
+                : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'
+            }`}
+            title={seleccionados.length > 0 ? `Exportar ${seleccionados.length} seleccionado(s)` : 'Selecciona registros para exportar'}
           >
             <Download className="w-4 h-4" />
             Exportar
+            {seleccionados.length > 0 && (
+              <span className="ml-1 px-2 py-0.5 bg-green-600 text-white text-xs rounded-full font-semibold">
+                {seleccionados.length}
+              </span>
+            )}
           </button>
 
           {/* Botón Filtros Avanzados */}
@@ -686,12 +819,75 @@ export default function ControlFirmaDigital() {
         </div>
       )}
 
+      {/* Banner: Seleccionar TODOS los registros */}
+      {seleccionados.length === firmasPaginadas.length &&
+       seleccionados.length > 0 &&
+       firmasFiltradas.length > firmasPaginadas.length &&
+       !seleccionarTodos && (
+        <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-blue-900">
+                  Los {firmasPaginadas.length} registros de esta página están seleccionados.
+                </p>
+                <p className="text-xs text-blue-700 mt-0.5">
+                  ¿Quieres seleccionar los <strong>{firmasFiltradas.length} registros filtrados</strong> en total?
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleSeleccionarTodosFiltrados}
+              className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Seleccionar todos ({firmasFiltradas.length})
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Banner: TODOS los registros seleccionados */}
+      {seleccionarTodos && (
+        <div className="bg-green-50 border-l-4 border-green-500 p-4 mb-4 rounded-lg shadow-sm">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex-shrink-0">
+                <CheckCircle2 className="w-5 h-5 text-green-600" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-green-900">
+                  Los <strong>{firmasFiltradas.length} registros filtrados</strong> están seleccionados.
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleDeseleccionarTodos}
+              className="px-4 py-2 bg-white border-2 border-green-300 text-green-700 text-sm font-medium rounded-lg hover:bg-green-50 transition-colors"
+            >
+              Deseleccionar todos
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Tabla */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden border border-gray-200">
         <div className="overflow-x-auto relative">
           <table className="w-full text-sm text-left table-fixed">
             <thead className="text-xs font-semibold text-white uppercase tracking-wider bg-[#0A5BA9]">
               <tr>
+                <th className="px-4 py-3 w-16 text-center">
+                  <input
+                    type="checkbox"
+                    checked={(seleccionados.length > 0 && seleccionados.length === firmasPaginadas.length) || seleccionarTodos}
+                    onChange={handleSeleccionarTodos}
+                    className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                    title={seleccionarTodos ? `${firmasFiltradas.length} registros seleccionados` : (seleccionados.length === firmasPaginadas.length ? 'Deseleccionar página' : 'Seleccionar página')}
+                  />
+                </th>
                 <th className="px-4 py-3 w-28">DNI</th>
                 <th className="px-4 py-3 w-48">MÉDICO</th>
                 <th className="px-4 py-3 w-36">ESPECIALIDAD</th>
@@ -706,7 +902,7 @@ export default function ControlFirmaDigital() {
             <tbody className="bg-white divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan="9" className="px-6 py-16 text-center">
+                  <td colSpan="10" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#0A5BA9]"></div>
                       <p className="text-sm font-medium text-gray-600">Cargando firmas digitales...</p>
@@ -715,7 +911,7 @@ export default function ControlFirmaDigital() {
                 </tr>
               ) : firmasPaginadas.length === 0 ? (
                 <tr>
-                  <td colSpan="9" className="px-6 py-16 text-center">
+                  <td colSpan="10" className="px-6 py-16 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <div className="p-4 bg-gray-100 rounded-full">
                         <FileSignature className="w-8 h-8 text-gray-400" strokeWidth={1.5} />
@@ -731,6 +927,17 @@ export default function ControlFirmaDigital() {
 
                   return (
                     <tr key={firma.idFirmaPersonal} className={`hover:bg-gray-50 transition-colors duration-150 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
+                      {/* Checkbox */}
+                      <td className="px-4 py-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={seleccionados.includes(firma.idFirmaPersonal)}
+                          onChange={() => handleSeleccionarFila(firma.idFirmaPersonal)}
+                          className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 cursor-pointer"
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      </td>
+
                       {/* DNI */}
                       <td className="px-4 py-3">
                         <span className="text-gray-700 font-medium text-sm">{firma.dni || '—'}</span>
