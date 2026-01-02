@@ -281,6 +281,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/gestionterritorial/dashboardredes': {
+    component: lazy(() => import('../pages/roles/gestionterritorial/DashboardPorRedes')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 🌐 MÓDULO DE RED - COORDINADORES DE RED
   // ========================================================================
