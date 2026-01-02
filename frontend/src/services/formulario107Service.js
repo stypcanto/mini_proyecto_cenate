@@ -18,11 +18,9 @@ export const importarPacientesExcel = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await apiClient.post(`${API_BASE}/pacientes`, formData, true, {
-        headers: {
-            'Content-Type': 'multipart/form-data',
-        },
-    });
+    // ✅ NO establecer Content-Type manualmente
+    // El navegador lo establece automáticamente con el boundary correcto
+    const response = await apiClient.post(`${API_BASE}/pacientes`, formData, true);
 
     return response.data;
 };

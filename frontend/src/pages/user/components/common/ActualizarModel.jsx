@@ -12,6 +12,17 @@ import { clearToken, clearUser } from '../../../../constants/auth';
 import FirmaDigitalTab from './FirmaDigitalTab'; // 🆕 v1.14.0
 import ActualizarEntregaTokenModal from './ActualizarEntregaTokenModal'; // 🆕 v1.14.0
 
+// 🛠️ Helper: Convertir fecha del servidor (YYYY-MM-DD) a formato de input date sin cambio de zona horaria
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  // Si ya está en formato correcto YYYY-MM-DD, retornar tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  // Si tiene tiempo, extraer solo la fecha
+  return dateString.split('T')[0];
+};
+
 const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', firmaDigitalOnly = false }) => {
   const { user: currentUser } = useAuth();
   const [selectedTab, setSelectedTab] = useState(initialTab); // 🎯 v1.14.0 - Soporta tab inicial personalizado
@@ -589,9 +600,9 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
           ...prev,
           entrego_token: firma.entregoToken ? 'SI' : 'NO',
           numero_serie_token: firma.numeroSerieToken || '',
-          fecha_entrega_token: firma.fechaEntregaToken || '',
-          fecha_inicio_certificado: firma.fechaInicioCertificado || '',
-          fecha_vencimiento_certificado: firma.fechaVencimientoCertificado || '',
+          fecha_entrega_token: formatDateForInput(firma.fechaEntregaToken),
+          fecha_inicio_certificado: formatDateForInput(firma.fechaInicioCertificado),
+          fecha_vencimiento_certificado: formatDateForInput(firma.fechaVencimientoCertificado),
           motivo_sin_token: firma.motivoSinToken || null,
           observaciones_firma: firma.observaciones || ''
         }));

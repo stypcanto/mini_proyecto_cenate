@@ -4,6 +4,63 @@
 
 ---
 
+## v1.15.9 (2026-01-02) - Fix Timezone Fechas Firma Digital
+
+### 🐛 Corrección Crítica
+
+#### Bug de Timezone en Fechas
+
+**Problema Reportado**:
+- Usuario ingresaba fecha `08/04/2025` en formulario de firma digital
+- Sistema mostraba `07/04/2025` en la tabla (un día menos)
+- Error causado por conversión de timezone UTC a Lima (GMT-5)
+
+**Causa Raíz**:
+```javascript
+// ❌ ANTES: JavaScript convertía fechas con timezone
+new Date("2025-04-08T00:00:00.000Z")  // UTC medianoche
+// → Se convierte a Lima: 2025-04-07 19:00:00 (día anterior)
+```
+
+**Solución Implementada**:
+
+1. **Helper `formatDateForInput()`** creado en `ActualizarModel.jsx` (líneas 15-24):
+```javascript
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  // Si ya está en formato correcto YYYY-MM-DD, retornar tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  // Si tiene tiempo, extraer solo la fecha
+  return dateString.split('T')[0];
+};
+```
+
+2. **Aplicado en función `cargarFirmaDigital()`** (líneas 603-605):
+```javascript
+setFormData(prev => ({
+  ...prev,
+  fecha_entrega_token: formatDateForInput(firma.fechaEntregaToken),
+  fecha_inicio_certificado: formatDateForInput(firma.fechaInicioCertificado),
+  fecha_vencimiento_certificado: formatDateForInput(firma.fechaVencimientoCertificado),
+  // ...
+}));
+```
+
+**Resultado**:
+- ✅ Fechas se mantienen en formato YYYY-MM-DD sin conversión de timezone
+- ✅ Inputs HTML5 `type="date"` reciben y devuelven formato correcto
+- ✅ No hay más resta de días al cargar fechas del backend
+
+**Archivo Modificado**:
+- `frontend/src/pages/user/components/common/ActualizarModel.jsx`
+
+**Versiones Afectadas**: v1.14.0 - v1.15.8
+**Fix Aplicado en**: v1.15.9
+
+---
+
 ## v1.15.7 (2026-01-02) - Simplificación Dashboard Redes
 
 ### ♻️ Refactorización
