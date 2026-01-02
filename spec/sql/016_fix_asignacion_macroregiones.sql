@@ -8,16 +8,18 @@
 BEGIN;
 
 -- ========================================================================
--- LIMA ORIENTE (id_macro = 1) - Solo redes de Lima
+-- LIMA ORIENTE (id_macro = 1) - Redes de Lima + Loreto + Huaraz
 -- ========================================================================
-UPDATE dim_red SET id_macro = 1 
+UPDATE dim_red SET id_macro = 1
 WHERE desc_red IN (
     'RED ASISTENCIAL ALMENARA',
     'RED ASISTENCIAL REBAGLIATI',
     'RED ASISTENCIAL SABOGAL',
     'AFESSALUD',
     'CENTRO NACIONAL DE SALUD RENAL',
-    'INSTIT. NACIONAL CARDIOVASCULAR'
+    'INSTIT. NACIONAL CARDIOVASCULAR',
+    'RED ASISTENCIAL LORETO',
+    'RED ASISTENCIAL HUARAZ'
 );
 
 -- ========================================================================
@@ -36,7 +38,7 @@ WHERE desc_red IN (
 -- ========================================================================
 -- NORTE (id_macro = 3) - Costa y Selva Norte
 -- ========================================================================
-UPDATE dim_red SET id_macro = 3 
+UPDATE dim_red SET id_macro = 3
 WHERE desc_red IN (
     'RED ASISTENCIAL LA LIBERTAD',
     'RED ASISTENCIAL LAMBAYEQUE',
@@ -45,9 +47,7 @@ WHERE desc_red IN (
     'RED ASISTENCIAL CAJAMARCA',
     'RED ASISTENCIAL AMAZONAS',
     'RED ASISTENCIAL ANCASH',
-    'RED ASISTENCIAL HUARAZ',
     'RED ASISTENCIAL JAEN',
-    'RED ASISTENCIAL LORETO',
     'RED ASISTENCIAL UCAYALI',
     'MICRORED ASISTENCIAL MOYOBAMBA',
     'MICRORED ASISTENCIAL TARAPOTO'

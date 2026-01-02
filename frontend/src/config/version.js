@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.15.9",
-  name: "Alineación de Estados Dashboard Redes",
+  number: "1.15.10",
+  name: "Reasignación Loreto y Huaraz",
   date: "2026-01-02",
-  description: "Dashboard por Redes ahora usa los mismos estados que Dashboard de Diagnóstico: Firmados (morado), Enviados (verde), En Proceso (amarillo). Se eliminaron estados incorrectos."
+  description: "RED ASISTENCIAL LORETO y RED ASISTENCIAL HUARAZ movidas de NORTE a LIMA ORIENTE. Nueva distribución: LIMA ORIENTE (8 redes), NORTE (11 redes)."
 };
 
 export const APP_INFO = {
