@@ -86,6 +86,7 @@ const UsersManagement = () => {
     fechaRegistroHasta: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
 
   const [showCrearUsuarioModal, setShowCrearUsuarioModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -104,14 +105,23 @@ const UsersManagement = () => {
   // 🆕 Toast para notificaciones
   const { showToast, ToastComponent } = useToast();
 
+  // 🚀 Debounce del searchTerm para evitar búsquedas en cada teclazo
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 500); // Esperar 500ms después de que el usuario deja de escribir
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
   // 🚀 Refs para mantener valores actuales sin causar recargas
   const filtersRef = useRef(filters);
-  const searchTermRef = useRef(searchTerm);
+  const searchTermRef = useRef(debouncedSearchTerm); // Usar debouncedSearchTerm en lugar de searchTerm
 
   useEffect(() => {
     filtersRef.current = filters;
-    searchTermRef.current = searchTerm;
-  }, [filters, searchTerm]);
+    searchTermRef.current = debouncedSearchTerm; // Usar debouncedSearchTerm
+  }, [filters, debouncedSearchTerm]);
 
   // ============================================================
   // 🔧 FUNCIÓN AUXILIAR: Generar lista de REDES de usuarios filtrados
@@ -691,8 +701,8 @@ const UsersManagement = () => {
     let filtered = [...usersList];
 
     // 🔍 Búsqueda general (nombre, usuario, documento, IPRESS, email)
-    if (searchTerm && searchTerm.trim() !== '') {
-      const searchLower = searchTerm.toLowerCase().trim();
+    if (debouncedSearchTerm && debouncedSearchTerm.trim() !== '') {
+      const searchLower = debouncedSearchTerm.toLowerCase().trim();
       filtered = filtered.filter(user => {
         const nombreCompleto = (user.nombre_completo || '').toLowerCase();
         const username = (user.username || '').toLowerCase();
@@ -912,7 +922,7 @@ const UsersManagement = () => {
     }
 
     return filtered;
-  }, [searchTerm, filters]);
+  }, [debouncedSearchTerm, filters]);
 
   // ============================================================
   // 🔍 FILTRADO: Aplicar filtros a los usuarios
@@ -926,7 +936,7 @@ const UsersManagement = () => {
   // 🚀 PAGINACIÓN LOCAL: Paginar los resultados filtrados
   // ============================================================
   const paginatedUsers = useMemo(() => {
-    const hasActiveFilters = searchTerm ||
+    const hasActiveFilters = debouncedSearchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
@@ -950,7 +960,7 @@ const UsersManagement = () => {
     
     // Sin filtros, devolver todos los usuarios (ya están paginados del servidor)
     return filteredUsers;
-  }, [filteredUsers, currentPage, pageSize, searchTerm, filters]);
+  }, [filteredUsers, currentPage, pageSize, debouncedSearchTerm, filters]);
 
   // ============================================================
   // 🔄 CARGA DE USUARIOS Y ROLES (PAGINADO)
@@ -979,9 +989,9 @@ const UsersManagement = () => {
                                (currentFilters.fechaRegistroDesde && currentFilters.fechaRegistroDesde !== '') ||
                                (currentFilters.fechaRegistroHasta && currentFilters.fechaRegistroHasta !== '');
       
-      // Si hay filtros, cargar TODOS los usuarios (1000) para buscar en toda la base de datos
+      // Si hay filtros, cargar más usuarios (100) para buscar en toda la base de datos
       // Si no hay filtros, usar paginación normal (7 usuarios)
-      const sizeToLoad = hasActiveFilters ? 1000 : pageSize;
+      const sizeToLoad = hasActiveFilters ? 100 : pageSize;
       const pageToLoad = hasActiveFilters ? 0 : currentPage;
       
       console.log('🔄 Cargando usuarios - Página:', pageToLoad, 'Tamaño:', sizeToLoad, 'Filtros activos:', hasActiveFilters, 'Forzar recarga:', forceReload);
@@ -1200,11 +1210,11 @@ const UsersManagement = () => {
     if (currentPage > 0) {
       setCurrentPage(0);
     }
-  }, [filters, searchTerm]);
+  }, [filters, debouncedSearchTerm]);
 
   // 🚀 Cargar todos los usuarios cuando se activan filtros por primera vez
   useEffect(() => {
-    const hasActiveFilters = searchTerm ||
+    const hasActiveFilters = debouncedSearchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
@@ -1224,11 +1234,11 @@ const UsersManagement = () => {
       loadUsers(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, filters.especialidad, filters.fechaRegistroDesde, filters.fechaRegistroHasta]); // Solo cuando cambian los filtros
+  }, [debouncedSearchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, filters.especialidad, filters.fechaRegistroDesde, filters.fechaRegistroHasta]); // Solo cuando cambian los filtros
 
   // 🚀 Actualizar totales cuando hay filtros activos (basándose en filteredUsers)
   useEffect(() => {
-    const hasActiveFilters = searchTerm ||
+    const hasActiveFilters = debouncedSearchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
@@ -1250,7 +1260,7 @@ const UsersManagement = () => {
       setTotalPages(totalPagesCount);
       console.log('🔍 Filtros activos - Total filtrado:', filteredCount, 'Páginas:', totalPagesCount);
     }
-  }, [filteredUsers, searchTerm, filters, pageSize]);
+  }, [filteredUsers, debouncedSearchTerm, filters, pageSize]);
 
   // 🚀 Función para actualizar manualmente la tabla
   const handleRefresh = useCallback(() => {

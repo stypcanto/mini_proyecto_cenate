@@ -232,6 +232,14 @@ export const componentRegistry = {
   },
 
   // ========================================================================
+  // 👤 ADMISION
+  // ========================================================================
+  '/roles/admision/asignacion-pacientes': {
+    component: lazy(() => import('../pages/roles/admision/AsignacionDePacientes')),
+    requiredAction: 'ver',
+  },
+
+  // ========================================================================
   // 📋 LINEAMIENTOS
   // ========================================================================
   '/lineamientos/ipress': {

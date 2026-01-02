@@ -2117,4 +2117,28 @@ public class UsuarioServiceImpl implements UsuarioService {
 			.map(this::convertToResponse)
 			.collect(Collectors.toList());
 	}
+
+	@Override
+	public List<UsuarioResponse> listarUsuariosPorRol(String nombreRol) {
+		log.info("👥 Listando usuarios con rol: {}", nombreRol);
+
+		try {
+			// ✅ Usar query optimizado que filtra directamente por rol
+			List<Usuario> usuarios = usuarioRepository.findByRolWithPersonalData(nombreRol);
+
+			log.info("✅ Query ejecutado - Encontrados {} usuarios con rol {}", usuarios.size(), nombreRol);
+
+			// Convertir a DTO
+			List<UsuarioResponse> resultado = usuarios.stream()
+				.map(this::convertToResponse)
+				.collect(Collectors.toList());
+
+			log.info("✅ Respuesta preparada: {} usuarios", resultado.size());
+			return resultado;
+
+		} catch (Exception e) {
+			log.error("❌ Error al listar usuarios por rol {}: {}", nombreRol, e.getMessage(), e);
+			throw new RuntimeException("Error al listar usuarios con rol " + nombreRol, e);
+		}
+	}
 }

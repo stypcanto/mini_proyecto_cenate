@@ -444,4 +444,45 @@ public class UsuarioController {
 			return ResponseEntity.status(500).body(List.of());
 		}
 	}
+
+	/**
+	 * 👥 Listar usuarios con rol de ADMISION
+	 *
+	 * @return Lista de admisionistas activos
+	 */
+	@GetMapping("/admisionistas")
+	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+	public ResponseEntity<List<UsuarioResponse>> listarAdmisionistas() {
+		log.info("👥 Listando usuarios con rol ADMISION");
+		try {
+			List<UsuarioResponse> admisionistas = usuarioService.listarUsuariosPorRol("ADMISION");
+			log.info("✅ Encontrados {} admisionistas", admisionistas.size());
+			return ResponseEntity.ok(admisionistas);
+		} catch (Exception e) {
+			log.error("❌ Error al listar admisionistas: {}", e.getMessage(), e);
+			log.error("❌ Tipo de excepción: {}", e.getClass().getName());
+			log.error("❌ Stack trace completo:", e);
+			return ResponseEntity.status(500).body(List.of());
+		}
+	}
+
+	/**
+	 * 👥 Listar usuarios por rol (genérico y flexible)
+	 *
+	 * @param rol Nombre del rol a buscar (ej: "GESTOR DE CITAS", "ADMISION", etc.)
+	 * @return Lista de usuarios con ese rol
+	 */
+	@GetMapping("/por-rol")
+	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+	public ResponseEntity<List<UsuarioResponse>> listarUsuariosPorRol(@RequestParam("rol") String rol) {
+		log.info("👥 Listando usuarios con rol: {}", rol);
+		try {
+			List<UsuarioResponse> usuarios = usuarioService.listarUsuariosPorRol(rol);
+			log.info("✅ Encontrados {} usuarios con rol {}", usuarios.size(), rol);
+			return ResponseEntity.ok(usuarios);
+		} catch (Exception e) {
+			log.error("❌ Error al listar usuarios por rol {}: {}", rol, e.getMessage(), e);
+			return ResponseEntity.status(500).body(List.of());
+		}
+	}
 }

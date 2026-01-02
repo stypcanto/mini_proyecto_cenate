@@ -1,8 +1,8 @@
 // ========================================================================
-// PacientesDe107.jsx – Gestión de Pacientes de la Bolsa 107 (CENATE 2025)
-// ------------------------------------------------------------------------
-// Módulo para visualizar y gestionar pacientes importados desde Excel
-// Permite filtrar, buscar, asignar gestoras y seleccionar para telemedicina
+// AsignacionDePacientes.jsx - Bandeja Personal del Admisionista
+// ========================================================================
+// Muestra los pacientes asignados al admisionista logueado
+// Permite gestionar y dar seguimiento a las asignaciones
 // ========================================================================
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -12,57 +12,44 @@ import {
     Users,
     Search,
     RefreshCw,
-    Filter,
-    Download,
     Phone,
     MessageCircle,
-    UserCheck,
     Calendar,
     MapPin,
     ClipboardList,
     CheckCircle2,
-    XCircle,
     AlertCircle,
-    Eye,
-    Edit2,
-    UserPlus,
-    Apple
+    UserCheck,
+    Filter
 } from "lucide-react";
 import toast from "react-hot-toast";
 import apiClient from "../../../lib/apiClient";
-import AsignarAdmisionistaModal from "../../../components/modals/AsignarAdmisionistaModal";
 
-export default function PacientesDe107() {
+export default function AsignacionDePacientes() {
     // Estados
     const [pacientes, setPacientes] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchTerm, setSearchTerm] = useState("");
     const [filterDerivacion, setFilterDerivacion] = useState("");
-    const [filterDepartamento, setFilterDepartamento] = useState("");
-    const [selectedIds, setSelectedIds] = useState([]);
     const [stats, setStats] = useState({
         total: 0,
         psicologia: 0,
         medicina: 0,
-        nutricion: 0,
         lima: 0,
         provincia: 0
     });
-    const [modalAsignarOpen, setModalAsignarOpen] = useState(false);
-    const [pacienteSeleccionado, setPacienteSeleccionado] = useState(null);
 
-    // Cargar pacientes desde la BD
-    const cargarPacientes = useCallback(async () => {
+    // Cargar pacientes asignados
+    const cargarPacientesAsignados = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await apiClient.get('/api/bolsa107/pacientes', true);
+            const response = await apiClient.get('/api/bolsa107/mis-asignaciones', true);
             const data = response || [];
             setPacientes(data);
 
             // Calcular estadísticas
             const psicologia = data.filter(p => p.derivacion_interna?.includes('PSICOLOGIA')).length;
             const medicina = data.filter(p => p.derivacion_interna?.includes('MEDICINA')).length;
-            const nutricion = data.filter(p => p.derivacion_interna?.includes('NUTRICION')).length;
             const lima = data.filter(p => p.departamento === 'LIMA').length;
             const provincia = data.filter(p => p.departamento !== 'LIMA').length;
 
@@ -70,21 +57,20 @@ export default function PacientesDe107() {
                 total: data.length,
                 psicologia,
                 medicina,
-                nutricion,
                 lima,
                 provincia
             });
         } catch (error) {
-            console.error("Error al cargar pacientes:", error);
-            toast.error("Error al cargar los pacientes de la Bolsa 107");
+            console.error("Error al cargar pacientes asignados:", error);
+            toast.error("Error al cargar tus pacientes asignados");
         } finally {
             setLoading(false);
         }
     }, []);
 
     useEffect(() => {
-        cargarPacientes();
-    }, [cargarPacientes]);
+        cargarPacientesAsignados();
+    }, [cargarPacientesAsignados]);
 
     // Filtrar pacientes
     const pacientesFiltrados = pacientes.filter((p) => {
@@ -95,30 +81,12 @@ export default function PacientesDe107() {
             p.telefono?.includes(searchTerm);
 
         const matchDerivacion = !filterDerivacion || p.derivacion_interna === filterDerivacion;
-        const matchDepartamento = !filterDepartamento || p.departamento === filterDepartamento;
 
-        return matchSearch && matchDerivacion && matchDepartamento;
+        return matchSearch && matchDerivacion;
     });
 
     // Derivaciones únicas para el filtro
     const derivacionesUnicas = [...new Set(pacientes.map((p) => p.derivacion_interna).filter(Boolean))];
-    const departamentosUnicos = [...new Set(pacientes.map((p) => p.departamento).filter(Boolean))];
-
-    // Manejar selección individual
-    const handleSelectOne = (id) => {
-        setSelectedIds((prev) =>
-            prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
-        );
-    };
-
-    // Seleccionar todos
-    const handleSelectAll = () => {
-        if (selectedIds.length === pacientesFiltrados.length) {
-            setSelectedIds([]);
-        } else {
-            setSelectedIds(pacientesFiltrados.map((p) => p.id_item));
-        }
-    };
 
     // Abrir WhatsApp
     const handleEnviarWhatsApp = (paciente) => {
@@ -127,32 +95,10 @@ export default function PacientesDe107() {
             return;
         }
 
-        const mensaje = `Hola ${paciente.paciente}, le contactamos de CENATE para coordinar su atención de telemedicina.`;
+        const mensaje = `Hola ${paciente.paciente}, soy su admisionista asignado de CENATE. Le contacto para coordinar su atención de telemedicina.`;
         const numeroLimpio = paciente.telefono.replace(/\D/g, '');
         const url = `https://wa.me/51${numeroLimpio}?text=${encodeURIComponent(mensaje)}`;
         window.open(url, "_blank");
-    };
-
-    // Abrir modal de asignación
-    const handleAsignarAdmisionista = (paciente) => {
-        setPacienteSeleccionado(paciente);
-        setModalAsignarOpen(true);
-    };
-
-    // Callback cuando se asigna exitosamente
-    const handleAsignacionExitosa = () => {
-        cargarPacientes(); // Recargar lista
-    };
-
-    // Exportar a Excel
-    const handleExportar = () => {
-        if (selectedIds.length === 0) {
-            toast.error("Selecciona al menos un paciente para exportar");
-            return;
-        }
-
-        // Aquí puedes implementar la exportación a Excel
-        toast.success(`Exportando ${selectedIds.length} pacientes...`);
     };
 
     // Calcular edad desde fecha de nacimiento
@@ -176,14 +122,14 @@ export default function PacientesDe107() {
                     <div>
                         <h1 className="text-3xl font-bold text-slate-800 mb-2 flex items-center gap-3">
                             <div className="p-2 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg shadow-lg">
-                                <Users className="w-8 h-8 text-white" />
+                                <UserCheck className="w-8 h-8 text-white" />
                             </div>
-                            Pacientes de la Bolsa 107
+                            Asignación de Pacientes
                         </h1>
-                        <p className="text-slate-600">Gestión y seguimiento de pacientes importados desde Excel</p>
+                        <p className="text-slate-600">Pacientes asignados a tu bandeja personal</p>
                     </div>
                     <Button
-                        onClick={cargarPacientes}
+                        onClick={cargarPacientesAsignados}
                         disabled={loading}
                         className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg"
                     >
@@ -194,12 +140,12 @@ export default function PacientesDe107() {
             </div>
 
             {/* Estadísticas */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
                 <Card className="bg-white border-2 border-blue-200 hover:border-blue-400 transition-all duration-300 hover:shadow-lg">
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             <div>
-                                <p className="text-sm text-slate-600 mb-1">Total Pacientes</p>
+                                <p className="text-sm text-slate-600 mb-1">Total Asignados</p>
                                 <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
                             </div>
                             <div className="p-3 bg-blue-100 rounded-lg">
@@ -217,7 +163,7 @@ export default function PacientesDe107() {
                                 <p className="text-3xl font-bold text-purple-600">{stats.psicologia}</p>
                             </div>
                             <div className="p-3 bg-purple-100 rounded-lg">
-                                <UserCheck className="w-6 h-6 text-purple-600" />
+                                <ClipboardList className="w-6 h-6 text-purple-600" />
                             </div>
                         </div>
                     </CardContent>
@@ -232,20 +178,6 @@ export default function PacientesDe107() {
                             </div>
                             <div className="p-3 bg-green-100 rounded-lg">
                                 <ClipboardList className="w-6 h-6 text-green-600" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-
-                <Card className="bg-white border-2 border-orange-200 hover:border-orange-400 transition-all duration-300 hover:shadow-lg">
-                    <CardContent className="p-6">
-                        <div className="flex items-center justify-between">
-                            <div>
-                                <p className="text-sm text-slate-600 mb-1">Nutrición</p>
-                                <p className="text-3xl font-bold text-orange-600">{stats.nutricion}</p>
-                            </div>
-                            <div className="p-3 bg-orange-100 rounded-lg">
-                                <Apple className="w-6 h-6 text-orange-600" />
                             </div>
                         </div>
                     </CardContent>
@@ -283,9 +215,9 @@ export default function PacientesDe107() {
             {/* Filtros y búsqueda */}
             <Card className="bg-white shadow-lg mb-6 border-2 border-slate-200">
                 <CardContent className="p-6">
-                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         {/* Búsqueda */}
-                        <div className="relative col-span-2">
+                        <div className="relative">
                             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
                             <input
                                 type="text"
@@ -311,50 +243,7 @@ export default function PacientesDe107() {
                                 ))}
                             </select>
                         </div>
-
-                        {/* Filtro por Departamento */}
-                        <div>
-                            <select
-                                value={filterDepartamento}
-                                onChange={(e) => setFilterDepartamento(e.target.value)}
-                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            >
-                                <option value="">Todos los departamentos</option>
-                                {departamentosUnicos.map((dep) => (
-                                    <option key={dep} value={dep}>
-                                        {dep}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
                     </div>
-
-                    {/* Acciones masivas */}
-                    {selectedIds.length > 0 && (
-                        <div className="mt-4 p-4 bg-blue-50 border-2 border-blue-200 rounded-lg flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                                <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                                <span className="font-semibold text-blue-800">
-                                    {selectedIds.length} paciente{selectedIds.length !== 1 ? 's' : ''} seleccionado{selectedIds.length !== 1 ? 's' : ''}
-                                </span>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    onClick={handleExportar}
-                                    className="bg-green-600 hover:bg-green-700 text-white"
-                                >
-                                    <Download className="w-4 h-4 mr-2" />
-                                    Exportar
-                                </Button>
-                                <Button
-                                    onClick={() => setSelectedIds([])}
-                                    className="bg-slate-500 hover:bg-slate-600 text-white"
-                                >
-                                    Limpiar selección
-                                </Button>
-                            </div>
-                        </div>
-                    )}
                 </CardContent>
             </Card>
 
@@ -365,15 +254,7 @@ export default function PacientesDe107() {
                         <table className="w-full">
                             <thead>
                                 <tr className="border-b-2 border-slate-200 bg-slate-50">
-                                    <th className="text-left py-3 px-4">
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedIds.length === pacientesFiltrados.length && pacientesFiltrados.length > 0}
-                                            onChange={handleSelectAll}
-                                            className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                                        />
-                                    </th>
-                                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Fecha Registro</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Fecha Asignación</th>
                                     <th className="text-left py-3 px-4 font-semibold text-slate-700">DNI</th>
                                     <th className="text-left py-3 px-4 font-semibold text-slate-700">Paciente</th>
                                     <th className="text-center py-3 px-4 font-semibold text-slate-700">Sexo</th>
@@ -387,10 +268,10 @@ export default function PacientesDe107() {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="10" className="py-12 text-center text-slate-500">
+                                        <td colSpan="9" className="py-12 text-center text-slate-500">
                                             <div className="flex flex-col items-center gap-3">
                                                 <RefreshCw className="w-12 h-12 text-slate-300 animate-spin" />
-                                                <p className="font-medium text-lg">Cargando pacientes...</p>
+                                                <p className="font-medium text-lg">Cargando pacientes asignados...</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -398,17 +279,9 @@ export default function PacientesDe107() {
                                     pacientesFiltrados.map((paciente) => (
                                         <tr key={paciente.id_item} className="border-b border-slate-100 hover:bg-blue-50/30 transition-colors">
                                             <td className="py-3 px-4">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedIds.includes(paciente.id_item)}
-                                                    onChange={() => handleSelectOne(paciente.id_item)}
-                                                    className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
-                                                />
-                                            </td>
-                                            <td className="py-3 px-4">
                                                 <span className="text-sm text-slate-700">
-                                                    {paciente.created_at ? (() => {
-                                                        const fecha = new Date(paciente.created_at);
+                                                    {paciente.fecha_asignacion_admisionista ? (() => {
+                                                        const fecha = new Date(paciente.fecha_asignacion_admisionista);
                                                         const dia = String(fecha.getDate()).padStart(2, '0');
                                                         const mes = String(fecha.getMonth() + 1).padStart(2, '0');
                                                         const anio = fecha.getFullYear();
@@ -470,24 +343,17 @@ export default function PacientesDe107() {
                                                             <MessageCircle className="w-4 h-4 text-green-600" />
                                                         </button>
                                                     )}
-                                                    <button
-                                                        onClick={() => handleAsignarAdmisionista(paciente)}
-                                                        className="p-2 hover:bg-blue-100 rounded-lg transition-colors"
-                                                        title="Asignar Admisionista"
-                                                    >
-                                                        <UserPlus className="w-4 h-4 text-blue-600" />
-                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="10" className="py-12 text-center text-slate-500">
+                                        <td colSpan="9" className="py-12 text-center text-slate-500">
                                             <div className="flex flex-col items-center gap-3">
-                                                <Users className="w-16 h-16 text-slate-300" />
-                                                <p className="font-medium text-lg">No hay pacientes registrados</p>
-                                                <p className="text-sm">Los pacientes aparecerán aquí después de importar el Excel en "Listado de 107"</p>
+                                                <UserCheck className="w-16 h-16 text-slate-300" />
+                                                <p className="font-medium text-lg">No tienes pacientes asignados</p>
+                                                <p className="text-sm">Los pacientes asignados a tu bandeja aparecerán aquí</p>
                                             </div>
                                         </td>
                                     </tr>
@@ -500,20 +366,12 @@ export default function PacientesDe107() {
                     {!loading && pacientesFiltrados.length > 0 && (
                         <div className="mt-4 flex items-center justify-between text-sm text-slate-600 border-t pt-4">
                             <span>
-                                Mostrando <strong>{pacientesFiltrados.length}</strong> de <strong>{pacientes.length}</strong> pacientes
+                                Mostrando <strong>{pacientesFiltrados.length}</strong> de <strong>{pacientes.length}</strong> pacientes asignados
                             </span>
                         </div>
                     )}
                 </CardContent>
             </Card>
-
-            {/* Modal de Asignación de Admisionista */}
-            <AsignarAdmisionistaModal
-                isOpen={modalAsignarOpen}
-                onClose={() => setModalAsignarOpen(false)}
-                paciente={pacienteSeleccionado}
-                onAsignacionExitosa={handleAsignacionExitosa}
-            />
         </div>
     );
 }

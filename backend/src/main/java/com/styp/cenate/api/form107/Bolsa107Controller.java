@@ -1,17 +1,24 @@
 package com.styp.cenate.api.form107;
 
+import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.styp.cenate.model.Usuario;
 import com.styp.cenate.model.form107.Bolsa107Item;
+import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.form107.Bolsa107ItemRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +37,7 @@ import lombok.extern.slf4j.Slf4j;
 public class Bolsa107Controller {
 
     private final Bolsa107ItemRepository itemRepository;
+    private final UsuarioRepository usuarioRepository;
 
     /**
      * Helper method: Convertir Bolsa107Item a Map
@@ -174,6 +182,99 @@ public class Bolsa107Controller {
 
         } catch (Exception e) {
             log.error("❌ Error al calcular estadísticas: ", e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Asignar un paciente de Bolsa 107 a un admisionista
+     *
+     * @param request Map con id_item y id_admisionista
+     * @return Resultado de la asignación
+     */
+    @PostMapping("/asignar-admisionista")
+    public ResponseEntity<?> asignarAdmisionista(@RequestBody Map<String, Object> request) {
+        log.info("👤 Asignando paciente a admisionista");
+
+        try {
+            // Extraer parámetros
+            Long idItem = request.get("id_item") != null
+                ? Long.parseLong(request.get("id_item").toString())
+                : null;
+            Long idAdmisionista = request.get("id_admisionista") != null
+                ? Long.parseLong(request.get("id_admisionista").toString())
+                : null;
+
+            if (idItem == null || idAdmisionista == null) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "Parámetros inválidos: id_item e id_admisionista son obligatorios"));
+            }
+
+            // Buscar paciente
+            Bolsa107Item item = itemRepository.findById(idItem)
+                .orElseThrow(() -> new RuntimeException("Paciente no encontrado"));
+
+            // Buscar admisionista
+            Usuario admisionista = usuarioRepository.findById(idAdmisionista)
+                .orElseThrow(() -> new RuntimeException("Admisionista no encontrado"));
+
+            // Asignar
+            item.setIdAdmisionistaAsignado(idAdmisionista);
+            item.setFechaAsignacionAdmisionista(ZonedDateTime.now());
+            itemRepository.save(item);
+
+            log.info("✅ Paciente {} asignado a admisionista {}",
+                item.getPaciente(), admisionista.getNameUser());
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Paciente asignado correctamente",
+                "paciente", item.getPaciente(),
+                "admisionista", admisionista.getNameUser()
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error al asignar paciente: ", e);
+            return ResponseEntity.badRequest()
+                .body(Map.of("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Obtener pacientes asignados al admisionista logueado
+     *
+     * @return Lista de pacientes asignados
+     */
+    @GetMapping("/mis-asignaciones")
+    public ResponseEntity<?> obtenerMisAsignaciones() {
+        log.info("📋 Obteniendo pacientes asignados al admisionista logueado");
+
+        try {
+            // Obtener usuario logueado
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String username = auth.getName();
+
+            Usuario usuario = usuarioRepository.findByNameUser(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
+
+            // Obtener pacientes asignados
+            List<Map<String, Object>> pacientes = itemRepository.findAllWithIpress()
+                .stream()
+                .filter(p -> {
+                    Object idAdmisionista = p.get("id_admisionista_asignado");
+                    return idAdmisionista != null &&
+                           idAdmisionista.toString().equals(usuario.getIdUser().toString());
+                })
+                .collect(Collectors.toList());
+
+            log.info("✅ Retornando {} pacientes asignados a {}",
+                pacientes.size(), usuario.getNameUser());
+
+            return ResponseEntity.ok(pacientes);
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener asignaciones: ", e);
             return ResponseEntity.badRequest()
                 .body(Map.of("error", e.getMessage()));
         }

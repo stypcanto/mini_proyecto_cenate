@@ -124,16 +124,20 @@ export default function Listado107() {
             if (data) {
                 const { totalFilas, filasOk, filasError } = data;
 
+                console.log('📊 Resultado de importación:', { totalFilas, filasOk, filasError });
+
                 // Caso 1: 100% Exitoso (sin errores)
                 if (filasError === 0 && filasOk > 0) {
-                    alert(
+                    const mensajeExito =
                         `✅ ¡CARGA COMPLETADA CON ÉXITO!\n\n` +
                         `📊 Resumen:\n` +
                         `   • Total procesado: ${totalFilas} registro${totalFilas !== 1 ? 's' : ''}\n` +
                         `   • Importados correctamente: ${filasOk}\n` +
                         `   • Sin errores: ✓\n\n` +
-                        `🎉 Todos los registros fueron procesados exitosamente.`
-                    );
+                        `🎉 Todos los registros fueron procesados exitosamente.`;
+
+                    console.log('✅ MOSTRANDO MENSAJE DE ÉXITO:', mensajeExito);
+                    alert(mensajeExito);
                 }
                 // Caso 2: Carga Parcial (algunos errores, pero también hay registros correctos)
                 else if (filasOk > 0 && filasError > 0) {

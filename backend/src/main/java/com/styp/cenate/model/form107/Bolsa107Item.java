@@ -2,6 +2,7 @@ package com.styp.cenate.model.form107;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -101,4 +102,10 @@ public class Bolsa107Item {
 
     @Column(name = "updated_at", nullable = false)
     private OffsetDateTime updatedAt;
+
+    @Column(name = "id_admisionista_asignado")
+    private Long idAdmisionistaAsignado;
+
+    @Column(name = "fecha_asignacion_admisionista")
+    private ZonedDateTime fechaAsignacionAdmisionista;
 }

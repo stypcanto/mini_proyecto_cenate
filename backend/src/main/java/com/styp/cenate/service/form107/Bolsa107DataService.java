@@ -68,21 +68,35 @@ public class Bolsa107DataService {
 	}
 
 	/**
-	 * Eliminar una carga (soft delete)
+	 * 🆕 v1.15.14: Eliminar una carga con todos sus registros relacionados
+	 * IMPORTANTE: Elimina en orden correcto para respetar foreign keys
 	 */
 	@Transactional
 	public void eliminarCarga(Long idCarga) {
-		log.info("Eliminando carga ID: {}", idCarga);
+		log.info("🗑️ Eliminando carga ID: {}", idCarga);
 
 		Bolsa107Carga carga = cargaRepository.findById(idCarga)
 			.orElseThrow(() -> new RuntimeException("Carga no encontrada con ID: " + idCarga));
 
-		// Soft delete: marcar como inactivo (si tienes un campo stat_carga)
-		// Por ahora usamos eliminación física
-		// Si quieres soft delete, agrega un campo Boolean activo o String statCarga en la entidad
+		// PASO 1: Eliminar errores primero (foreign key a id_carga)
+		List<Bolsa107Error> errores = errorRepository.findByIdCarga(idCarga);
+		if (!errores.isEmpty()) {
+			errorRepository.deleteAll(errores);
+			log.info("   ✓ Eliminados {} errores", errores.size());
+		}
+
+		// PASO 2: Eliminar items (foreign key a id_carga)
+		List<Bolsa107Item> items = itemRepository.findByIdCarga(idCarga);
+		if (!items.isEmpty()) {
+			itemRepository.deleteAll(items);
+			log.info("   ✓ Eliminados {} items", items.size());
+		}
+
+		// PASO 3: Finalmente eliminar la carga principal
 		cargaRepository.delete(carga);
 
-		log.info("Carga {} eliminada correctamente", idCarga);
+		log.info("✅ Carga {} eliminada correctamente (Total: {} items + {} errores)",
+			idCarga, items.size(), errores.size());
 	}
 
 	/**

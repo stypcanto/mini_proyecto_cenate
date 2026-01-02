@@ -1,12 +1,15 @@
 #!/bin/bash
-
 export DB_URL="jdbc:postgresql://10.0.89.13:5432/maestro_cenate"
 export DB_USERNAME="postgres"
 export DB_PASSWORD="Essalud2025"
-export JWT_SECRET="cenate-jwt-secret-key-2025-minimum-32-characters-required"
-export MAIL_USERNAME="cenateinformatica@gmail.com"
-export MAIL_PASSWORD="nolq uisr fwdw zdly"
+export JWT_SECRET="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
+export MAIL_HOST="172.20.0.227"
+export MAIL_PORT="25"
+export MAIL_USERNAME="cenate.contacto@essalud.gob.pe"
+export MAIL_PASSWORD="essaludc50"
+export MAIL_SMTP_AUTH="false"
+export MAIL_SMTP_STARTTLS="true"
 export FRONTEND_URL="http://localhost:3000"
 
-echo "Starting backend with environment variables..."
+echo "🚀 Iniciando backend CENATE..."
 ./gradlew bootRun

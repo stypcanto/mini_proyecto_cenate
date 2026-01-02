@@ -134,6 +134,20 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     """)
     List<Usuario> findByRolesActivosExcluyendo(@Param("roles") List<String> roles);
 
+    /**
+     * 🎯 Usuarios por rol específico con datos personales cargados.
+     */
+    @Query("""
+        SELECT DISTINCT u
+        FROM Usuario u
+        LEFT JOIN FETCH u.roles r
+        LEFT JOIN FETCH u.personalCnt pc
+        LEFT JOIN FETCH u.personalExterno pe
+        WHERE r.descRol = :rol
+        AND (u.statUser = 'A' OR u.statUser = 'ACTIVO')
+    """)
+    List<Usuario> findByRolWithPersonalData(@Param("rol") String rol);
+
     // =========================================================================
     // 🔹 CONSULTA NATIVA DE VERIFICACIÓN DE EMAIL
     // =========================================================================

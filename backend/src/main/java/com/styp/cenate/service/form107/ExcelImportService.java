@@ -294,65 +294,62 @@ public class ExcelImportService {
 	}
 
 	/**
-	 * Valida y normaliza cabeceras automáticamente
-	 * Acepta variaciones comunes y las corrige sin fallar
+	 * 🆕 v1.15.13: Validación FLEXIBLE de cabeceras
+	 * - Acepta archivos con MENOS o MÁS columnas
+	 * - Solo valida que existan las columnas OBLIGATORIAS
+	 * - Usa normalización inteligente para mapear columnas
 	 */
 	private void validateHeaderStrict(List<String> actualColumns) {
-		if (actualColumns.size() != EXPECTED_COLUMNS.size()) {
-			throw new ExcelValidationException(
-					Map.of("message", "Encabezado inválido: cantidad de columnas no coincide (esperadas: " + EXPECTED_COLUMNS.size() + ", encontradas: " + actualColumns.size() + ")",
-							"expectedColumns", EXPECTED_COLUMNS,
-							"actualColumns", actualColumns));
-		}
+		log.info("📋 Validando cabeceras: {} columnas encontradas", actualColumns.size());
 
-		// Normalizar columnas automáticamente
+		// Normalizar TODAS las columnas del archivo
 		List<String> normalized = ExcelHeaderNormalizer.normalizeAll(actualColumns);
 
-		// Verificar que todas las columnas puedan normalizarse
-		List<String> unrecognized = new ArrayList<>();
-		for (int i = 0; i < actualColumns.size(); i++) {
-			if (normalized.get(i) == null) {
-				unrecognized.add("Posición " + (i + 1) + ": '" + actualColumns.get(i) + "'");
+		// Definir columnas OBLIGATORIAS (pueden estar en cualquier posición)
+		List<String> required = List.of(
+			"DNI",                    // Puede ser DNI o NUMERO DE DOCUMENTO
+			"APELLIDOS Y NOMBRES",    // Puede ser APELLIDOS Y NOMBRES o PACIENTE
+			"SEXO",
+			"FechaNacimiento",
+			"DERIVACION INTERNA"
+		);
+
+		// Verificar que las columnas obligatorias existan (buscar en cualquier posición)
+		List<String> missing = new ArrayList<>();
+		for (String req : required) {
+			boolean found = false;
+			for (String norm : normalized) {
+				if (req.equals(norm)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				missing.add(req);
 			}
 		}
 
-		if (!unrecognized.isEmpty()) {
-			log.error("❌ Columnas no reconocidas en el archivo: {}", unrecognized);
+		if (!missing.isEmpty()) {
+			log.error("❌ Faltan columnas obligatorias: {}", missing);
 			throw new ExcelValidationException(
-					Map.of("message", "Encabezado inválido: columnas no reconocidas",
-							"expectedColumns", EXPECTED_COLUMNS,
-							"actualColumns", actualColumns,
-							"unrecognized", unrecognized));
-		}
-
-		// Verificar que el orden normalizado coincida con el esperado
-		for (int i = 0; i < EXPECTED_COLUMNS.size(); i++) {
-			String expected = EXPECTED_COLUMNS.get(i);
-			String actual = normalized.get(i);
-
-			if (!expected.equals(actual)) {
-				log.error("❌ Orden incorrecto en posición {}: esperado '{}', normalizado '{}'",
-					i + 1, expected, actual);
-				throw new ExcelValidationException(
-						Map.of("message", "Encabezado inválido: orden incorrecto en posición " + (i + 1),
-								"expectedColumns", EXPECTED_COLUMNS,
-								"actualColumns", actualColumns,
-								"normalizedColumns", normalized));
-			}
+				Map.of("message", "Faltan columnas obligatorias: " + String.join(", ", missing),
+					"requiredColumns", required,
+					"missingColumns", missing,
+					"actualColumns", actualColumns));
 		}
 
 		// Log de normalización exitosa
 		Map<String, Object> report = ExcelHeaderNormalizer.generateReport(actualColumns, normalized);
-		if ((int)report.get("normalized") > 0) {
-			log.info("✅ Auto-normalización de cabeceras: {} columnas corregidas automáticamente",
-				report.get("normalized"));
-			for (int i = 0; i < actualColumns.size(); i++) {
-				if (!actualColumns.get(i).equals(normalized.get(i))) {
-					log.info("   📝 '{}' → '{}'", actualColumns.get(i), normalized.get(i));
-				}
+		log.info("✅ Cabeceras validadas correctamente:");
+		log.info("   📊 Total columnas: {}", actualColumns.size());
+		log.info("   📝 Normalizadas: {}", report.get("normalized"));
+		log.info("   ✓ Sin cambios: {}", report.get("unchanged"));
+
+		// Mostrar mapeo de columnas normalizadas
+		for (int i = 0; i < actualColumns.size(); i++) {
+			if (!actualColumns.get(i).equals(normalized.get(i))) {
+				log.info("   🔄 '{}' → '{}'", actualColumns.get(i), normalized.get(i));
 			}
-		} else {
-			log.info("✅ Cabeceras validadas correctamente (sin cambios necesarios)");
 		}
 	}
 
@@ -369,9 +366,19 @@ public class ExcelImportService {
 	}
 
 	private Map<String, Integer> buildColumnIndex(List<String> cols) {
+		// 🆕 v1.15.13: Normalizar TODAS las columnas del archivo (flexible)
+		List<String> normalized = ExcelHeaderNormalizer.normalizeAll(cols);
+
 		Map<String, Integer> map = new HashMap<>();
-		for (int i = 0; i < cols.size(); i++)
-			map.put(n(cols.get(i)), i);
+		for (int i = 0; i < normalized.size(); i++) {
+			String normalizedName = normalized.get(i);
+			if (normalizedName != null && !normalizedName.isBlank()) {
+				map.put(n(normalizedName), i);
+				log.debug("   📍 Columna '{}' → índice {}", normalizedName, i);
+			}
+		}
+
+		log.info("🗺️ Mapa de columnas creado con {} entradas", map.size());
 		return map;
 	}
 

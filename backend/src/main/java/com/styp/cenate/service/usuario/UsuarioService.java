@@ -156,4 +156,12 @@ public interface UsuarioService {
      * @return Lista de usuarios pendientes de asignar rol
      */
     List<UsuarioResponse> listarUsuariosConRolBasico();
+
+    /**
+     * Lista usuarios que tienen un rol específico
+     *
+     * @param nombreRol Nombre del rol a filtrar
+     * @return Lista de usuarios con el rol especificado
+     */
+    List<UsuarioResponse> listarUsuariosPorRol(String nombreRol);
 }
