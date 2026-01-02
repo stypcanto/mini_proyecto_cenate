@@ -106,6 +106,9 @@ public class PersonalTotalView {
     @Column(name = "id_usuario")
     private Long idUsuario;
 
+    @Column(name = "username")
+    private String username;
+
     @Column(name = "rol_usuario")
     private String rolUsuario;
 

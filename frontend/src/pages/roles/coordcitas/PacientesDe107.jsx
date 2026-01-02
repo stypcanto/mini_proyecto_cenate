@@ -49,8 +49,8 @@ export default function PacientesDe107() {
     const cargarPacientes = useCallback(async () => {
         setLoading(true);
         try {
-            const response = await apiClient.get('/api/bolsa107/pacientes');
-            const data = response.data || [];
+            const response = await apiClient.get('/api/bolsa107/pacientes', true);
+            const data = response || [];
             setPacientes(data);
 
             // Calcular estadísticas
@@ -340,12 +340,13 @@ export default function PacientesDe107() {
                                             className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                                         />
                                     </th>
+                                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Fecha Registro</th>
                                     <th className="text-left py-3 px-4 font-semibold text-slate-700">DNI</th>
                                     <th className="text-left py-3 px-4 font-semibold text-slate-700">Paciente</th>
                                     <th className="text-center py-3 px-4 font-semibold text-slate-700">Sexo</th>
                                     <th className="text-center py-3 px-4 font-semibold text-slate-700">Edad</th>
                                     <th className="text-left py-3 px-4 font-semibold text-slate-700">Teléfono</th>
-                                    <th className="text-left py-3 px-4 font-semibold text-slate-700">Ubicación</th>
+                                    <th className="text-left py-3 px-4 font-semibold text-slate-700">IPRESS</th>
                                     <th className="text-left py-3 px-4 font-semibold text-slate-700">Derivación</th>
                                     <th className="text-center py-3 px-4 font-semibold text-slate-700">Acciones</th>
                                 </tr>
@@ -353,7 +354,7 @@ export default function PacientesDe107() {
                             <tbody>
                                 {loading ? (
                                     <tr>
-                                        <td colSpan="9" className="py-12 text-center text-slate-500">
+                                        <td colSpan="10" className="py-12 text-center text-slate-500">
                                             <div className="flex flex-col items-center gap-3">
                                                 <RefreshCw className="w-12 h-12 text-slate-300 animate-spin" />
                                                 <p className="font-medium text-lg">Cargando pacientes...</p>
@@ -370,6 +371,17 @@ export default function PacientesDe107() {
                                                     onChange={() => handleSelectOne(paciente.id_item)}
                                                     className="w-4 h-4 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
                                                 />
+                                            </td>
+                                            <td className="py-3 px-4">
+                                                <span className="text-sm text-slate-700">
+                                                    {paciente.created_at ? (() => {
+                                                        const fecha = new Date(paciente.created_at);
+                                                        const dia = String(fecha.getDate()).padStart(2, '0');
+                                                        const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+                                                        const anio = fecha.getFullYear();
+                                                        return `${dia}/${mes}/${anio}`;
+                                                    })() : '—'}
+                                                </span>
                                             </td>
                                             <td className="py-3 px-4">
                                                 <span className="font-mono text-slate-800">{paciente.numero_documento}</span>
@@ -394,11 +406,15 @@ export default function PacientesDe107() {
                                                 </div>
                                             </td>
                                             <td className="py-3 px-4">
-                                                <div className="flex items-center gap-2 text-sm">
-                                                    <MapPin className="w-4 h-4 text-slate-400" />
-                                                    <span className="text-slate-600">
-                                                        {paciente.departamento} / {paciente.distrito}
-                                                    </span>
+                                                <div className="flex flex-col">
+                                                    {paciente.desc_ipress ? (
+                                                        <>
+                                                            <span className="text-sm font-medium text-slate-800">{paciente.desc_ipress}</span>
+                                                            <span className="text-xs text-slate-500">Código: {paciente.cod_ipress}</span>
+                                                        </>
+                                                    ) : (
+                                                        <span className="text-sm text-slate-400 italic">Sin IPRESS asignada</span>
+                                                    )}
                                                 </div>
                                             </td>
                                             <td className="py-3 px-4">
@@ -427,7 +443,7 @@ export default function PacientesDe107() {
                                     ))
                                 ) : (
                                     <tr>
-                                        <td colSpan="9" className="py-12 text-center text-slate-500">
+                                        <td colSpan="10" className="py-12 text-center text-slate-500">
                                             <div className="flex flex-col items-center gap-3">
                                                 <Users className="w-16 h-16 text-slate-300" />
                                                 <p className="font-medium text-lg">No hay pacientes registrados</p>

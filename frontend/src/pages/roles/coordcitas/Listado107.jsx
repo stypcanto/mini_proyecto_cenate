@@ -50,8 +50,9 @@ export default function Listado107() {
     const cargarListaCargas = async () => {
         try {
             setLoading(true);
-            const response = await formulario107Service.obtenerListaCargas();
-            setCargas(response.data || []);
+            const cargas = await formulario107Service.obtenerListaCargas();
+            console.log("📋 Cargas obtenidas:", cargas); // Debug
+            setCargas(cargas || []);
         } catch (error) {
             console.error("Error al cargar lista de cargas:", error);
             alert("Error al cargar el historial de importaciones");
@@ -111,27 +112,147 @@ export default function Listado107() {
 
     const handleUpload = async () => {
         if (!selectedFile) {
-            alert("Por favor, selecciona un archivo primero");
+            alert("⚠️ Por favor, selecciona un archivo primero");
             return;
         }
 
         try {
             setUploading(true);
-            const response = await formulario107Service.importarPacientesExcel(selectedFile);
+            const data = await formulario107Service.importarPacientesExcel(selectedFile);
 
-            if (response.status === 200 || response.status === 201) {
-                alert(`✅ Importación exitosa!\n\nTotal procesado: ${response.data.totalFilas}\n✓ Correctos: ${response.data.filasOk}\n✗ Errores: ${response.data.filasError}`);
+            // El apiClient devuelve 'data' directamente, no el objeto 'response' completo
+            if (data) {
+                const { totalFilas, filasOk, filasError } = data;
+
+                // Caso 1: 100% Exitoso (sin errores)
+                if (filasError === 0 && filasOk > 0) {
+                    alert(
+                        `✅ ¡CARGA COMPLETADA CON ÉXITO!\n\n` +
+                        `📊 Resumen:\n` +
+                        `   • Total procesado: ${totalFilas} registro${totalFilas !== 1 ? 's' : ''}\n` +
+                        `   • Importados correctamente: ${filasOk}\n` +
+                        `   • Sin errores: ✓\n\n` +
+                        `🎉 Todos los registros fueron procesados exitosamente.`
+                    );
+                }
+                // Caso 2: Carga Parcial (algunos errores, pero también hay registros correctos)
+                else if (filasOk > 0 && filasError > 0) {
+                    const porcentajeOk = ((filasOk / totalFilas) * 100).toFixed(1);
+                    alert(
+                        `📋 CARGA COMPLETADA (con observaciones)\n\n` +
+                        `📊 Resumen:\n` +
+                        `   • Total procesado: ${totalFilas} registro${totalFilas !== 1 ? 's' : ''}\n` +
+                        `   • ✅ Importados correctamente: ${filasOk} (${porcentajeOk}%)\n` +
+                        `   • ⚠️  Con observaciones: ${filasError}\n\n` +
+                        `💡 Se importaron ${filasOk} paciente${filasOk !== 1 ? 's' : ''} correctamente.\n` +
+                        `Los registros con observaciones aparecen en el detalle de la carga.\n\n` +
+                        `👉 Puedes ver los detalles haciendo clic en el ícono 👁️ del historial.`
+                    );
+                }
+                // Caso 3: Solo errores (ningún registro válido)
+                else if (filasOk === 0 && filasError > 0) {
+                    alert(
+                        `⚠️ CARGA PROCESADA - REQUIERE REVISIÓN\n\n` +
+                        `📊 Resumen:\n` +
+                        `   • Total procesado: ${totalFilas} registro${totalFilas !== 1 ? 's' : ''}\n` +
+                        `   • ❌ Todos los registros tienen observaciones\n\n` +
+                        `🔍 Posibles causas:\n` +
+                        `   • Campos obligatorios vacíos (DNI, Nombres, Sexo, etc.)\n` +
+                        `   • Formato de fecha incorrecto (debe ser dd/MM/yyyy)\n` +
+                        `   • Datos inválidos o mal formateados\n\n` +
+                        `👉 Revisa el detalle de errores en el historial (ícono 👁️) para corregir el archivo.`
+                    );
+                }
+                // Caso 4: Archivo vacío
+                else {
+                    alert(
+                        `⚠️ ARCHIVO VACÍO\n\n` +
+                        `El archivo no contiene registros válidos para procesar.\n` +
+                        `Por favor, verifica que el archivo tenga datos después del encabezado.`
+                    );
+                }
+
+                // Limpiar selección y recargar lista
                 setSelectedFile(null);
                 if (fileInputRef.current) {
                     fileInputRef.current.value = "";
                 }
-                // Recargar lista
                 cargarListaCargas();
             }
         } catch (error) {
             console.error("Error al importar archivo:", error);
-            const mensaje = error.response?.data?.message || "Error al procesar el archivo";
-            alert(`❌ Error en importación:\n\n${mensaje}`);
+
+            // Manejar errores específicos del backend
+            // El error capturado es un objeto Error con message
+            const errorMessage = error.message || error.toString();
+            let mensajeError = "";
+
+            // Archivo duplicado
+            if (errorMessage.includes("Ya se cargó este archivo") ||
+                errorMessage.includes("mismo hash")) {
+                mensajeError =
+                    `📁 ARCHIVO YA CARGADO\n\n` +
+                    `Este archivo ya fue importado anteriormente el día de hoy.\n\n` +
+                    `🔍 Detalles:\n` +
+                    `   • El sistema detecta archivos duplicados para evitar importaciones repetidas.\n` +
+                    `   • Puedes ver la carga anterior en el historial.\n\n` +
+                    `💡 Si necesitas volver a cargar el archivo:\n` +
+                    `   1. Modifica algún dato en el Excel (aunque sea un espacio)\n` +
+                    `   2. O elimina la carga anterior del historial`;
+            }
+            // Error de validación de headers
+            else if (errorMessage.includes("encabezado") ||
+                     errorMessage.includes("columna")) {
+                mensajeError =
+                    `📋 ERROR DE FORMATO - COLUMNAS INCORRECTAS\n\n` +
+                    `El archivo no tiene el formato correcto.\n\n` +
+                    `❌ Problema detectado:\n` +
+                    `   ${errorMessage}\n\n` +
+                    `✅ Solución:\n` +
+                    `   • Verifica que el archivo tenga exactamente 14 columnas\n` +
+                    `   • Los nombres de las columnas deben coincidir exactamente\n` +
+                    `   • Revisa la guía de formato azul que aparece arriba\n\n` +
+                    `💡 Tip: Descarga una plantilla de ejemplo del historial.`;
+            }
+            // Error de tamaño
+            else if (errorMessage.includes("tamaño") || errorMessage.includes("size")) {
+                mensajeError =
+                    `📦 ARCHIVO DEMASIADO GRANDE\n\n` +
+                    `El archivo excede el tamaño máximo permitido.\n\n` +
+                    `Límites:\n` +
+                    `   • Tamaño máximo: 10 MB\n` +
+                    `   • Tamaño actual: ${(selectedFile.size / (1024 * 1024)).toFixed(2)} MB\n\n` +
+                    `💡 Soluciones:\n` +
+                    `   • Divide el archivo en partes más pequeñas\n` +
+                    `   • Elimina columnas innecesarias\n` +
+                    `   • Guarda como .xlsx (no .xls)`;
+            }
+            // Error de extensión
+            else if (errorMessage.includes("extensión") || errorMessage.includes("extension")) {
+                mensajeError =
+                    `📄 TIPO DE ARCHIVO NO VÁLIDO\n\n` +
+                    `Solo se aceptan archivos de Excel.\n\n` +
+                    `Formatos permitidos:\n` +
+                    `   • .xlsx (Excel 2007 o superior) ✓\n` +
+                    `   • .xls (Excel 97-2003) ✓\n\n` +
+                    `Formato actual: ${selectedFile.name.split('.').pop()}\n\n` +
+                    `💡 Guarda tu archivo como Excel (.xlsx) antes de cargarlo.`;
+            }
+            // Error genérico
+            else {
+                mensajeError =
+                    `❌ ERROR AL PROCESAR EL ARCHIVO\n\n` +
+                    `🔍 Detalle del error:\n` +
+                    `   ${errorMessage}\n\n` +
+                    `💡 Posibles soluciones:\n` +
+                    `   • Verifica el formato del archivo (debe ser .xlsx o .xls)\n` +
+                    `   • Asegúrate de que el archivo no esté corrupto\n` +
+                    `   • Revisa que las columnas sean las correctas\n` +
+                    `   • Verifica que los datos estén bien formateados\n\n` +
+                    `Si el problema persiste, contacta con soporte técnico.`;
+            }
+
+            alert(mensajeError);
         } finally {
             setUploading(false);
         }
@@ -389,7 +510,7 @@ export default function Listado107() {
                                             <li>1. REGISTRO</li>
                                             <li>2. OPCIONES DE INGRESO DE LLAMADA</li>
                                             <li>3. TELEFONO</li>
-                                            <li>4. TIPO DOCUMENTO</li>
+                                            <li>4. TIPO DE DOCUMENTO</li>
                                             <li>5. DNI</li>
                                             <li>6. APELLIDOS Y NOMBRES</li>
                                             <li>7. SEXO</li>
@@ -409,7 +530,7 @@ export default function Listado107() {
                                     <p className="font-semibold text-blue-900">✅ Campos obligatorios (sin estos la fila se marca como error):</p>
                                     <div className="bg-amber-50 rounded p-2 border border-amber-300 mt-1">
                                         <p className="text-xs text-amber-900 font-mono">
-                                            TIPO DOCUMENTO, DNI, APELLIDOS Y NOMBRES, SEXO, FechaNacimiento, DERIVACION INTERNA
+                                            TIPO DE DOCUMENTO, DNI, APELLIDOS Y NOMBRES, SEXO, FechaNacimiento, DERIVACION INTERNA
                                         </p>
                                     </div>
                                 </div>

@@ -54,19 +54,16 @@ public class Bolsa107Controller {
     }
 
     /**
-     * Listar todos los pacientes de la Bolsa 107
+     * Listar todos los pacientes de la Bolsa 107 con información de IPRESS
      *
-     * @return Lista de pacientes con todos sus datos
+     * @return Lista de pacientes con todos sus datos incluyendo IPRESS
      */
     @GetMapping("/pacientes")
     public ResponseEntity<?> listarPacientes() {
-        log.info("📋 Listando todos los pacientes de la Bolsa 107");
+        log.info("📋 Listando todos los pacientes de la Bolsa 107 con información de IPRESS");
 
         try {
-            List<Map<String, Object>> pacientes = itemRepository.findAll()
-                .stream()
-                .map(this::itemToMap)
-                .collect(Collectors.toList());
+            List<Map<String, Object>> pacientes = itemRepository.findAllWithIpress();
 
             log.info("✅ Retornando {} pacientes de la Bolsa 107", pacientes.size());
 

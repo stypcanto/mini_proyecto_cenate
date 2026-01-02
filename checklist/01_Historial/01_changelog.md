@@ -4,6 +4,30 @@
 
 ---
 
+## v1.15.3 (2026-01-02) - Fix Permisos Pacientes de 107
+
+### 🐛 Correcciones
+
+#### Permisos de Acceso - Página "Pacientes de 107"
+
+**Problema**: Los usuarios no podían acceder a la página `/roles/coordcitas/pacientes-107` aunque estuviera registrada en la base de datos y en el componentRegistry. El sistema redirigía al home automáticamente.
+
+**Causa Raíz**: Faltaban los permisos en la tabla `rel_rol_pagina_permiso` para la página 71.
+
+**Solución Aplicada**:
+- ✅ Creado script SQL `019_agregar_permisos_pacientes_107.sql`
+- ✅ Agregados permisos para 3 roles:
+  - **SUPERADMIN** (id_rol: 1) - Permisos completos
+  - **ADMIN** (id_rol: 2) - Permisos completos
+  - **COORDINADOR** (id_rol: 4) - Permisos de lectura, creación, edición y exportación
+
+**Archivos Creados**:
+- `spec/04_BaseDatos/06_scripts/019_agregar_permisos_pacientes_107.sql`
+
+**Resultado**: Ahora los usuarios con roles autorizados pueden acceder correctamente a la página "Pacientes de 107" y visualizar los pacientes importados desde la Bolsa 107.
+
+---
+
 ## v1.15.2 (2026-01-02) - Módulo Pacientes de 107 + Mejoras UX
 
 ### ✨ Nuevas Funcionalidades

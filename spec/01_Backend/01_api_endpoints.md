@@ -82,6 +82,78 @@ POST /api/auth/login
 
 ---
 
+## Personal
+
+> Gestión unificada de personal CNT (interno) y personal externo
+
+| Método | Endpoint | Roles Permitidos | Descripción |
+|--------|----------|------------------|-------------|
+| GET | `/api/personal` | SUPERADMIN, ADMIN | Listar todo el personal (CNT + Externo) |
+| POST | `/api/personal/crear` | SUPERADMIN, ADMIN | Crear personal (detecta automáticamente CNT/Externo) |
+| GET | `/api/personal/cnt` | SUPERADMIN, ADMIN | Listar solo personal CNT |
+| GET | `/api/personal/externo` | SUPERADMIN, ADMIN | Listar solo personal externo |
+| GET | `/api/personal/buscar/{numeroDocumento}` | SUPERADMIN, ADMIN | Buscar por número de documento |
+
+### Listar Todo el Personal Response
+
+```json
+GET /api/personal
+
+[
+  {
+    "idPersonal": 308,
+    "nombres": "LUZ MILAGROS",
+    "apellidoPaterno": "HUAMAN",
+    "apellidoMaterno": "RODRIGUEZ",
+    "numeroDocumento": "47136505",
+    "tipoDocumento": "DNI",
+    "fechaNacimiento": "1985-03-15",
+    "edad": 39,
+    "mesCumpleanos": "Marzo",
+    "cumpleanosEsteAnio": "2026-03-15",
+    "genero": "F",
+    "correoInstitucional": "lhuaman@essalud.gob.pe",
+    "correoPersonal": "luz.huaman@gmail.com",
+    "telefono": "987654321",
+    "direccion": "Av. Grau 123",
+    "fotoUrl": "/uploads/personal/47136505.jpg",
+    "idDistrito": 15,
+    "nombreDistrito": "SAN ISIDRO",
+    "nombreProvincia": "LIMA",
+    "nombreDepartamento": "LIMA",
+    "idIpress": 1,
+    "nombreIpress": "CENTRO NACIONAL DE TELEMEDICINA",
+    "idArea": 3,
+    "nombreArea": "Medicina",
+    "idRegimen": 2,
+    "nombreRegimen": "CAS",
+    "codigoPlanilla": "CAS2024001",
+    "estado": "ACTIVO",
+    "colegiatura": "12345",
+    "idUsuario": 277,
+    "username": "47136505",
+    "rolUsuario": "MEDICO",
+    "tipoPersonalDetalle": "MEDICO",
+    "profesion": "Medicina General",
+    "especialidad": "Cardiología",
+    "rneEspecialidad": "RNE123456",
+    "tipoPersonal": "INTERNO",
+    "institucion": null
+  }
+]
+```
+
+### Notas Importantes
+
+- **Campo `username`**: Agregado en v1.15.1 para facilitar búsquedas en el frontend
+- **Fuente de datos**: Vista `vw_personal_total` que une `dim_personal_cnt`, `dim_usuarios` y tablas relacionadas
+- **Tipo Personal**:
+  - `INTERNO`: Personal de CENATE
+  - `EXTERNO`: Personal de otras IPRESS
+- **Estado**: `ACTIVO`, `INACTIVO`, `BLOQUEADO`
+
+---
+
 ## MBAC (Control de Acceso Modular)
 
 | Metodo | Endpoint | Descripcion |

@@ -49,4 +49,34 @@ public interface Bolsa107ItemRepository extends JpaRepository<Bolsa107Item, Long
 
 	// Método para obtener entidades completas por idCarga
 	List<Bolsa107Item> findByIdCarga(Long idCarga);
+
+	/**
+	 * Obtener todos los pacientes de Bolsa 107 con información de IPRESS
+	 * Hace JOIN con asegurados y dim_ipress para obtener la IPRESS del paciente
+	 */
+	@Query(value = """
+		SELECT
+			bi.id_item,
+			bi.registro,
+			bi.numero_documento,
+			bi.paciente,
+			bi.sexo,
+			bi.telefono,
+			bi.fecha_nacimiento,
+			bi.departamento,
+			bi.provincia,
+			bi.distrito,
+			bi.afiliacion,
+			bi.derivacion_interna,
+			bi.motivo_llamada,
+			bi.id_carga,
+			bi.created_at,
+			i.cod_ipress,
+			i.desc_ipress
+		FROM bolsa_107_item bi
+		LEFT JOIN asegurados a ON bi.numero_documento = a.doc_paciente
+		LEFT JOIN dim_ipress i ON a.cas_adscripcion = i.cod_ipress
+		ORDER BY bi.id_item DESC
+		""", nativeQuery = true)
+	List<Map<String, Object>> findAllWithIpress();
 }

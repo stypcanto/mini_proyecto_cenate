@@ -18,7 +18,7 @@ export const importarPacientesExcel = async (file) => {
     const formData = new FormData();
     formData.append('file', file);
 
-    const response = await apiClient.post(`${API_BASE}/pacientes`, formData, {
+    const response = await apiClient.post(`${API_BASE}/pacientes`, formData, true, {
         headers: {
             'Content-Type': 'multipart/form-data',
         },
@@ -32,8 +32,9 @@ export const importarPacientesExcel = async (file) => {
  * @returns {Promise<Array>} Lista de cargas con estadísticas
  */
 export const obtenerListaCargas = async () => {
-    const response = await apiClient.get(`${API_BASE}/cargas`);
-    return response.data;
+    const response = await apiClient.get(`${API_BASE}/cargas`, true);
+    // Backend devuelve {status, data, message}, extraemos solo el array
+    return response.data || [];
 };
 
 /**
@@ -42,8 +43,9 @@ export const obtenerListaCargas = async () => {
  * @returns {Promise} Datos de la carga con pacientes y errores
  */
 export const obtenerDatosCarga = async (idCarga) => {
-    const response = await apiClient.get(`${API_BASE}/pacientes/${idCarga}/datos`);
-    return response.data;
+    const response = await apiClient.get(`${API_BASE}/pacientes/${idCarga}/datos`, true);
+    // Backend devuelve {status, data, message}, extraemos solo el objeto de datos
+    return response.data || {};
 };
 
 /**
@@ -52,7 +54,7 @@ export const obtenerDatosCarga = async (idCarga) => {
  * @returns {Promise} Confirmación de eliminación
  */
 export const eliminarCarga = async (idCarga) => {
-    const response = await apiClient.delete(`${API_BASE}/cargas/${idCarga}`);
+    const response = await apiClient.delete(`${API_BASE}/cargas/${idCarga}`, true);
     return response.data;
 };
 
@@ -62,10 +64,8 @@ export const eliminarCarga = async (idCarga) => {
  * @returns {Promise<Blob>} Archivo Excel para descarga
  */
 export const exportarCargaExcel = async (idCarga) => {
-    const response = await apiClient.get(`${API_BASE}/cargas/${idCarga}/exportar`, {
-        responseType: 'blob',
-    });
-    return response.data;
+    const response = await apiClient.get(`${API_BASE}/cargas/${idCarga}/exportar`, true);
+    return response;
 };
 
 export default {
