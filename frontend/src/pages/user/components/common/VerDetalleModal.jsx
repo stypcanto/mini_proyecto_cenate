@@ -1,8 +1,7 @@
 // src/pages/admin/users/components/modals/VerDetalleModal.jsx
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { getFotoUrl as buildFotoUrl } from '../../../../utils/apiUrlHelper';
-import { getToken } from '../../../../constants/auth';
-import axios from 'axios';
+import api from '../../../../services/apiClient';
 import {
   X, User, Mail, Building2, CalendarDays,
   Hash, Clock, Shield, Briefcase, IdCard, GraduationCap,
@@ -10,10 +9,9 @@ import {
   Cake, MapPin, PhoneCall, AtSign, FolderKanban,
   ClipboardList, Calendar, Barcode, Lock, Eye, Plus, Edit3,
   Trash2, Download, CheckCircle, ChevronDown, ChevronRight,
-  FolderOpen, FileText, Loader2, Unlock
+  FolderOpen, FileText, Loader2, Unlock, FileSignature,
+  AlertCircle, XCircle, Info
 } from 'lucide-react';
-
-const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8080';
 
 // Configuración de permisos con iconos y colores
 const PERMISOS_CONFIG = [
@@ -25,7 +23,7 @@ const PERMISOS_CONFIG = [
   { key: 'aprobar', label: 'Aprobar', icon: CheckCircle, color: 'text-emerald-600', bg: 'bg-emerald-100' },
 ];
 
-const VerDetalleModal = ({ user, onClose, token }) => {
+const VerDetalleModal = ({ user, onClose }) => {
   const [selectedTab, setSelectedTab] = useState('personal');
   const [fotoError, setFotoError] = useState(false);
 
@@ -39,14 +37,9 @@ const VerDetalleModal = ({ user, onClose, token }) => {
     totalPermisos: 0
   });
 
-  // Obtener headers con token (usa getToken() como fallback)
-  const getHeaders = useCallback(() => {
-    const storedToken = token || getToken();
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${storedToken}`
-    };
-  }, [token]);
+  // Estados para firma digital
+  const [loadingFirmaDigital, setLoadingFirmaDigital] = useState(false);
+  const [firmaDigital, setFirmaDigital] = useState(null);
 
   // Cargar permisos del usuario
   const cargarPermisos = useCallback(async () => {
@@ -55,10 +48,7 @@ const VerDetalleModal = ({ user, onClose, token }) => {
 
     setLoadingPermisos(true);
     try {
-      const response = await axios.get(
-        `${API_URL}/api/permisos/usuario/${userId}`,
-        { headers: getHeaders() }
-      );
+      const response = await api.get(`/permisos/usuario/${userId}`);
 
       const permisos = response.data || [];
 
@@ -119,7 +109,7 @@ const VerDetalleModal = ({ user, onClose, token }) => {
     } finally {
       setLoadingPermisos(false);
     }
-  }, [user, getHeaders]);
+  }, [user]);
 
   // Toggle módulo
   const toggleModulo = (idx) => {
@@ -129,12 +119,67 @@ const VerDetalleModal = ({ user, onClose, token }) => {
     }));
   };
 
+  // Cargar firma digital del usuario
+  const cargarFirmaDigital = useCallback(async () => {
+    // Intentar múltiples variantes del ID de personal
+    const idPersonal = user?.id_personal || user?.id_pers || user?.idPersonal || user?.idPers;
+
+    console.log('🔍 DEBUG FIRMA DIGITAL - Datos del usuario:', {
+      user: user,
+      id_personal: user?.id_personal,
+      id_pers: user?.id_pers,
+      idPersonal: user?.idPersonal,
+      idPers: user?.idPers,
+      idFinal: idPersonal,
+      todasLasKeys: user ? Object.keys(user) : []
+    });
+
+    if (!idPersonal) {
+      console.warn('⚠️ No se encontró ID de personal en el usuario');
+      return;
+    }
+
+    setLoadingFirmaDigital(true);
+    try {
+      console.log(`📡 Llamando GET /firma-digital/personal/${idPersonal}`);
+      const response = await api.get(`/firma-digital/personal/${idPersonal}`);
+
+      console.log('✅ Firma digital - Respuesta completa:', response);
+      console.log('✅ Firma digital - Data:', response?.data);
+
+      // apiClient devuelve {status, data}, necesitamos extraer data
+      setFirmaDigital(response?.data || null);
+    } catch (err) {
+      console.error('❌ Error al cargar firma digital:', err);
+      console.error('❌ Detalle del error:', {
+        status: err.response?.status,
+        mensaje: err.response?.data?.message || err.message,
+        url: err.config?.url
+      });
+
+      // Si es 404, significa que no tiene firma digital registrada
+      if (err.response?.status === 404 || err.message?.includes('404')) {
+        console.log('ℹ️ Usuario sin firma digital registrada (404)');
+        setFirmaDigital(null);
+      }
+    } finally {
+      setLoadingFirmaDigital(false);
+    }
+  }, [user]);
+
   // Cargar permisos cuando se selecciona la pestaña
   useEffect(() => {
     if (selectedTab === 'permisos' && user) {
       cargarPermisos();
     }
   }, [selectedTab, user, cargarPermisos]);
+
+  // Cargar firma digital cuando se selecciona la pestaña
+  useEffect(() => {
+    if (selectedTab === 'firma-digital' && user) {
+      cargarFirmaDigital();
+    }
+  }, [selectedTab, user, cargarFirmaDigital]);
   
   // Log para debug
   React.useEffect(() => {
@@ -436,16 +481,17 @@ const VerDetalleModal = ({ user, onClose, token }) => {
             {getRolBadge(user.roles)}
           </div>
 
-          {/* Tabs - 4 PESTAÑAS - diseño profesional con fondo morado */}
+          {/* Tabs - 6 PESTAÑAS - diseño profesional con fondo morado */}
           <div className="flex gap-2 mt-5 border-b border-white/20">
             <button
               onClick={() => setSelectedTab('personal')}
-              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative ${
+              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative flex items-center gap-1.5 ${
                 selectedTab === 'personal'
                   ? 'bg-white text-[#6D28D9] shadow-lg'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
+              <User className="w-4 h-4" />
               Datos Personales
               {selectedTab === 'personal' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
@@ -453,12 +499,13 @@ const VerDetalleModal = ({ user, onClose, token }) => {
             </button>
             <button
               onClick={() => setSelectedTab('profesionales')}
-              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative ${
+              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative flex items-center gap-1.5 ${
                 selectedTab === 'profesionales'
                   ? 'bg-white text-[#6D28D9] shadow-lg'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
+              <GraduationCap className="w-4 h-4" />
               Datos Profesionales
               {selectedTab === 'profesionales' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
@@ -466,25 +513,41 @@ const VerDetalleModal = ({ user, onClose, token }) => {
             </button>
             <button
               onClick={() => setSelectedTab('laborales')}
-              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative ${
+              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative flex items-center gap-1.5 ${
                 selectedTab === 'laborales'
                   ? 'bg-white text-[#6D28D9] shadow-lg'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
+              <Building2 className="w-4 h-4" />
               Datos Laborales
               {selectedTab === 'laborales' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
               )}
             </button>
             <button
+              onClick={() => setSelectedTab('firma-digital')}
+              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative flex items-center gap-1.5 ${
+                selectedTab === 'firma-digital'
+                  ? 'bg-white text-[#6D28D9] shadow-lg'
+                  : 'text-white/80 hover:text-white hover:bg-white/10'
+              }`}
+            >
+              <FileSignature className="w-4 h-4" />
+              Firma Digital
+              {selectedTab === 'firma-digital' && (
+                <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
+              )}
+            </button>
+            <button
               onClick={() => setSelectedTab('roles')}
-              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative ${
+              className={`px-5 py-3 font-semibold text-sm rounded-t-xl transition-all relative flex items-center gap-1.5 ${
                 selectedTab === 'roles'
                   ? 'bg-white text-[#6D28D9] shadow-lg'
                   : 'text-white/80 hover:text-white hover:bg-white/10'
               }`}
             >
+              <Shield className="w-4 h-4" />
               Roles del Sistema
               {selectedTab === 'roles' && (
                 <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-white"></div>
@@ -806,6 +869,190 @@ const VerDetalleModal = ({ user, onClose, token }) => {
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {/* PESTAÑA: FIRMA DIGITAL */}
+          {selectedTab === 'firma-digital' && (
+            <div className="space-y-8">
+              {loadingFirmaDigital ? (
+                <div className="flex items-center justify-center py-12">
+                  <Loader2 className="w-8 h-8 animate-spin text-[#6D28D9]" />
+                  <span className="ml-3 text-gray-600">Cargando información de firma digital...</span>
+                </div>
+              ) : firmaDigital ? (
+                <>
+                  {/* Información de Token */}
+                  <div>
+                    <div className="flex items-center gap-3 mb-6 pb-3 border-b-2 border-slate-200">
+                      <div className="p-2 bg-purple-100 rounded-lg">
+                        <FileSignature className="w-5 h-5 text-[#6D28D9]" />
+                      </div>
+                      <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                        Información de Firma Digital
+                      </h3>
+                    </div>
+
+                    {/* Estado del Token */}
+                    <div className="mb-6">
+                      <div className={`p-6 rounded-2xl border-2 ${
+                        firmaDigital.entregoToken
+                          ? 'bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-300'
+                          : 'bg-gradient-to-br from-amber-50 to-amber-100 border-amber-300'
+                      }`}>
+                        <div className="flex items-center gap-3 mb-4">
+                          {firmaDigital.entregoToken ? (
+                            <CheckCircle className="w-8 h-8 text-emerald-600" />
+                          ) : (
+                            <AlertCircle className="w-8 h-8 text-amber-600" />
+                          )}
+                          <div>
+                            <h4 className={`text-lg font-bold ${
+                              firmaDigital.entregoToken ? 'text-emerald-900' : 'text-amber-900'
+                            }`}>
+                              {firmaDigital.entregoToken ? 'Token Entregado' : 'Token No Entregado'}
+                            </h4>
+                            {!firmaDigital.entregoToken && firmaDigital.motivoSinToken && (
+                              <p className="text-sm text-amber-700 mt-1">
+                                Motivo: <span className="font-semibold">
+                                  {firmaDigital.motivoSinToken === 'YA_TIENE' && 'Ya tiene certificado propio'}
+                                  {firmaDigital.motivoSinToken === 'NO_REQUIERE' && 'No requiere firma digital'}
+                                  {firmaDigital.motivoSinToken === 'PENDIENTE' && 'Entrega pendiente'}
+                                </span>
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Datos del Token (si fue entregado) */}
+                    {firmaDigital.entregoToken && (
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
+                        <InfoField
+                          icon={Barcode}
+                          label="Número de Serie del Token"
+                          value={firmaDigital.numeroSerieToken}
+                        />
+                        <InfoField
+                          icon={Calendar}
+                          label="Fecha de Entrega"
+                          value={formatearFechaCompleta(firmaDigital.fechaEntregaToken)}
+                        />
+                      </div>
+                    )}
+
+                    {/* Información del Certificado */}
+                    {(firmaDigital.fechaInicioCertificado || firmaDigital.fechaVencimientoCertificado) && (
+                      <>
+                        <div className="flex items-center gap-3 mb-6 pb-3 border-b-2 border-slate-200 mt-8">
+                          <div className="p-2 bg-blue-100 rounded-lg">
+                            <Shield className="w-5 h-5 text-blue-600" />
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                            Certificado Digital
+                          </h3>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                          <InfoField
+                            icon={Calendar}
+                            label="Fecha de Inicio"
+                            value={formatearFechaCompleta(firmaDigital.fechaInicioCertificado)}
+                          />
+                          <InfoField
+                            icon={Calendar}
+                            label="Fecha de Vencimiento"
+                            value={formatearFechaCompleta(firmaDigital.fechaVencimientoCertificado)}
+                          />
+                        </div>
+
+                        {/* Estado de Vigencia del Certificado */}
+                        {firmaDigital.fechaVencimientoCertificado && (
+                          <div className="mt-6">
+                            {(() => {
+                              const hoy = new Date();
+                              const fechaVenc = new Date(firmaDigital.fechaVencimientoCertificado);
+                              const diasRestantes = Math.ceil((fechaVenc - hoy) / (1000 * 60 * 60 * 24));
+                              const estaVigente = fechaVenc > hoy;
+                              const porVencer = estaVigente && diasRestantes <= 30;
+
+                              return (
+                                <div className={`p-5 rounded-xl border-2 ${
+                                  !estaVigente
+                                    ? 'bg-red-50 border-red-300'
+                                    : porVencer
+                                    ? 'bg-amber-50 border-amber-300'
+                                    : 'bg-emerald-50 border-emerald-300'
+                                }`}>
+                                  <div className="flex items-center gap-3">
+                                    {!estaVigente ? (
+                                      <XCircle className="w-6 h-6 text-red-600" />
+                                    ) : porVencer ? (
+                                      <AlertCircle className="w-6 h-6 text-amber-600" />
+                                    ) : (
+                                      <CheckCircle className="w-6 h-6 text-emerald-600" />
+                                    )}
+                                    <div>
+                                      <p className={`font-bold ${
+                                        !estaVigente ? 'text-red-900' : porVencer ? 'text-amber-900' : 'text-emerald-900'
+                                      }`}>
+                                        {!estaVigente && 'Certificado Vencido'}
+                                        {estaVigente && porVencer && `Certificado por vencer (${diasRestantes} días)`}
+                                        {estaVigente && !porVencer && 'Certificado Vigente'}
+                                      </p>
+                                      <p className={`text-sm ${
+                                        !estaVigente ? 'text-red-700' : porVencer ? 'text-amber-700' : 'text-emerald-700'
+                                      }`}>
+                                        {!estaVigente && `Venció hace ${Math.abs(diasRestantes)} días`}
+                                        {estaVigente && `Válido hasta ${formatearFechaCompleta(firmaDigital.fechaVencimientoCertificado)}`}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            })()}
+                          </div>
+                        )}
+                      </>
+                    )}
+
+                    {/* Observaciones */}
+                    {firmaDigital.observaciones && (
+                      <>
+                        <div className="flex items-center gap-3 mb-6 pb-3 border-b-2 border-slate-200 mt-8">
+                          <div className="p-2 bg-slate-100 rounded-lg">
+                            <Info className="w-5 h-5 text-slate-600" />
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                            Observaciones
+                          </h3>
+                        </div>
+                        <div className="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                          <p className="text-sm text-slate-700">{firmaDigital.observaciones}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </>
+              ) : (
+                <div className="p-12 bg-gradient-to-br from-purple-50/50 to-indigo-50/50 border border-purple-200/50 rounded-2xl shadow-sm">
+                  <div className="text-center">
+                    <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-purple-100/80 flex items-center justify-center shadow-sm">
+                      <FileSignature className="w-10 h-10 text-purple-600" />
+                    </div>
+                    <h4 className="text-xl font-semibold text-slate-800 mb-3">
+                      Sin información de firma digital
+                    </h4>
+                    <p className="text-sm text-slate-600 mb-2">
+                      Este usuario no tiene registrada información de firma digital.
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      <strong>Nota:</strong> La firma digital es opcional y puede ser registrada más adelante si es necesario.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

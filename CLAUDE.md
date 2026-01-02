@@ -1,14 +1,20 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.14.2** (2025-12-30)
->
-> **Última actualización:** Formulario 107 (Bolsa 107) - Implementación completa 100% (Frontend + Backend) con importación, exportación y gestión de cargas
+> Sistema de Telemedicina - EsSalud | **v1.14.0** (2025-12-30)
 
 ---
 
 ## ¿Qué es CENATE?
 
-**CENATE (Centro Nacional de Telemedicina)** es el sistema de gestión de telemedicina de **EsSalud Perú** que coordina la atención médica especializada a nivel nacional mediante tecnologías de telecomunicación.
+**CENATE es el Centro Nacional de Telemedicina** del Seguro Social de Salud (EsSalud) en Perú. Es una institución que usa tecnología para dar atención médica a distancia a los asegurados.  ￼
+
+Funciones principales:
+	•	Servicios de telemedicina: consultas, monitoreo y apoyo diagnóstico remoto.  ￼
+	•	Atención en más de 20 especialidades médicas.  ￼
+	•	Programas educativos y de prevención en salud en línea.  ￼
+	•	Facilita acceso a salud para zonas alejadas y reduce necesidad de desplazamientos.  ￼
+
+CENATE también es reconocido como el primer establecimiento de salud virtual en el país.  ￼
 
 ### Propósito
 
@@ -268,360 +274,6 @@ Si no cumple → Solo teleconsultas (médico llama a casa)
 | Frontend | React | 19 |
 | Base de Datos | PostgreSQL | 14+ |
 | CSS | TailwindCSS | 3.4.18 |
-
----
-
-## 🚀 Quick Start - Levantar el Proyecto
-
-### Opción A: Desarrollo Local (Recomendado para desarrollo)
-
-#### 1. Prerrequisitos
-
-Instalar las siguientes herramientas:
-
-| Herramienta | Versión Mínima | Verificar instalación |
-|-------------|----------------|----------------------|
-| **Java JDK** | 17+ | `java -version` |
-| **Node.js** | 18+ | `node -v` |
-| **npm** | 9+ | `npm -v` |
-| **Git** | 2+ | `git --version` |
-
-**Acceso requerido:**
-- Conexión a base de datos PostgreSQL en `10.0.89.13:5432`
-- Red corporativa EsSalud (para SMTP)
-
-#### 2. Clonar el Repositorio
-
-```bash
-git clone https://github.com/stypcanto/mini_proyecto_cenate.git
-cd mini_proyecto_cenate
-```
-
-#### 3. Configurar Variables de Entorno - Backend
-
-Crear archivo `backend/.env` (o exportar variables):
-
-```bash
-# Base de datos PostgreSQL (servidor remoto)
-export DB_URL="jdbc:postgresql://10.0.89.13:5432/maestro_cenate"
-export DB_USERNAME="postgres"
-export DB_PASSWORD="Essalud2025"
-
-# JWT (mínimo 32 caracteres)
-export JWT_SECRET="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
-
-# Email SMTP (Servidor Corporativo EsSalud)
-export MAIL_HOST="172.20.0.227"
-export MAIL_PORT="25"
-export MAIL_USERNAME="cenate.contacto@essalud.gob.pe"
-export MAIL_PASSWORD="essaludc50"
-export MAIL_SMTP_AUTH="false"
-export MAIL_SMTP_STARTTLS="true"
-export MAIL_SMTP_SSL="false"
-
-# Frontend URL (para enlaces en emails)
-export FRONTEND_URL="http://localhost:3000"
-```
-
-**Método rápido:** Ejecutar script de configuración:
-
-```bash
-# En el directorio del proyecto
-source backend/setup-env.sh
-```
-
-#### 4. Levantar Backend (Spring Boot)
-
-```bash
-cd backend
-
-# Compilar y ejecutar
-./gradlew bootRun
-
-# O en modo watch (recarga automática)
-./gradlew bootRun --continuous
-```
-
-**Verificar que está corriendo:**
-- Backend estará disponible en: `http://localhost:8080`
-- Endpoint de salud: `http://localhost:8080/actuator/health`
-- Consola debe mostrar: `Tomcat started on port 8080`
-
-#### 5. Levantar Frontend (React)
-
-```bash
-# En una nueva terminal
-cd frontend
-
-# Instalar dependencias (solo la primera vez)
-npm install
-
-# Ejecutar en modo desarrollo
-npm start
-```
-
-**Verificar que está corriendo:**
-- Frontend estará disponible en: `http://localhost:3000`
-- Se abrirá automáticamente en el navegador
-- Verás la pantalla de login
-
-#### 6. Primer Acceso
-
-**Credenciales de prueba:**
-```
-Username: 44914706
-Password: @Cenate2025
-Rol: SUPERADMIN
-```
-
-**Navegación básica después del login:**
-
-```
-Dashboard Administrativo
-    ↓
-Menú lateral izquierdo:
-    ├── 👥 Gestión de Usuarios
-    │   ├── Usuarios (CRUD completo)
-    │   ├── Solicitudes de Registro (aprobar/rechazar)
-    │   └── Pendientes de Activación (reenviar emails)
-    │
-    ├── 🔐 Seguridad
-    │   ├── Roles y Permisos
-    │   ├── Auditoría (logs del sistema)
-    │   └── Permisos Modulares (MBAC)
-    │
-    ├── 👨‍⚕️ Módulos Médicos
-    │   ├── Mi Disponibilidad (si eres médico)
-    │   ├── Revisión de Disponibilidad (coordinadores)
-    │   └── Gestión de Citas
-    │
-    └── 💬 ChatBot de Citas
-        ├── Consultar Paciente (DNI)
-        ├── Solicitar Cita
-        └── Dashboard de Reportes
-```
-
-#### 7. Verificar Funcionalidad Básica
-
-**Test rápido (5 minutos):**
-
-1. **Login exitoso** → Dashboard carga correctamente
-2. **Ver usuarios** → Menú "Gestión de Usuarios" → Ver lista
-3. **Ver auditoría** → Menú "Seguridad" → "Auditoría" → Ver últimos eventos
-4. **Crear usuario de prueba:**
-   - Ir a "Gestión de Usuarios" → "Crear Usuario"
-   - Llenar datos básicos (DNI inventado: 99999999)
-   - Asignar rol USER
-   - Verificar que aparece en la lista
-
-**Si todo funciona:** ✅ El sistema está listo para desarrollo
-
----
-
-### Opción B: Producción con Docker (Para despliegue)
-
-#### 1. Prerrequisitos
-
-| Herramienta | Versión | Verificar |
-|-------------|---------|----------|
-| **Docker** | 20+ | `docker --version` |
-| **Docker Compose** | 2+ | `docker-compose --version` |
-
-**Solo macOS:** Instalar `socat` para relay SMTP:
-```bash
-brew install socat
-```
-
-#### 2. Configurar SMTP Relay (Solo macOS)
-
-Docker en macOS no puede acceder directamente a la red corporativa. Usar relay:
-
-```bash
-# Iniciar relay SMTP (permite Docker → 172.20.0.227:25)
-./start-smtp-relay.sh
-
-# Verificar que está corriendo
-ps aux | grep socat
-# Debe mostrar: socat TCP-LISTEN:2525,fork,reuseaddr TCP:172.20.0.227:25
-```
-
-**IMPORTANTE:** Este script debe ejecutarse **CADA VEZ** que reinicies la Mac o Docker.
-
-#### 3. Levantar con Docker Compose
-
-```bash
-# Construir imágenes y levantar servicios
-docker-compose up -d --build
-
-# Ver logs en tiempo real
-docker-compose logs -f
-
-# Ver solo backend
-docker-compose logs -f backend
-
-# Ver solo frontend
-docker-compose logs -f frontend
-```
-
-#### 4. Verificar Servicios
-
-```bash
-# Estado de contenedores
-docker-compose ps
-
-# Debe mostrar:
-# cenate-backend   running   0.0.0.0:8080->8080/tcp
-# cenate-frontend  running   0.0.0.0:80->80/tcp
-```
-
-#### 5. Acceder al Sistema
-
-- **Frontend:** `http://localhost:80` o `http://localhost`
-- **Backend API:** `http://localhost:8080/api`
-- **Credenciales:** Mismo que desarrollo (44914706 / @Cenate2025)
-
-#### 6. Comandos Útiles Docker
-
-```bash
-# Detener servicios
-docker-compose down
-
-# Reiniciar solo backend (después de cambios en Java)
-docker-compose build backend && docker-compose up -d backend
-
-# Reiniciar solo frontend (después de cambios en React)
-docker-compose build frontend && docker-compose up -d frontend
-
-# Ver logs recientes (últimas 100 líneas)
-docker-compose logs --tail=100
-
-# Limpiar imágenes huérfanas
-docker image prune -f
-
-# Entrar al contenedor backend (debug)
-docker exec -it cenate-backend bash
-
-# Ver variables de entorno del backend
-docker exec cenate-backend env | grep -E "DB|MAIL|JWT"
-```
-
----
-
-## 🛠️ Troubleshooting Rápido
-
-### Backend no arranca
-
-**Error:** `Could not resolve placeholder 'MAIL_USERNAME'`
-
-**Solución:**
-```bash
-# Verificar que variables de entorno están configuradas
-env | grep -E "DB|MAIL|JWT"
-
-# Si no están, exportarlas nuevamente
-source backend/setup-env.sh
-```
-
----
-
-**Error:** `Connection refused: 10.0.89.13:5432`
-
-**Solución:**
-- Verificar conectividad a la red EsSalud
-- Ping al servidor: `ping 10.0.89.13`
-- Verificar firewall/VPN
-
----
-
-### Frontend no carga
-
-**Error:** `Failed to fetch` o `Network Error`
-
-**Solución:**
-1. Verificar que backend está corriendo en puerto 8080
-2. Verificar CORS en backend (debe permitir `http://localhost:3000`)
-3. Revisar `frontend/src/lib/apiClient.js` que apunte a `http://localhost:8080/api`
-
----
-
-**Error:** Página en blanco
-
-**Solución:**
-```bash
-cd frontend
-
-# Limpiar cache y reinstalar
-rm -rf node_modules package-lock.json
-npm install
-
-# Reiniciar
-npm start
-```
-
----
-
-### Docker no envía correos
-
-**Error:** `Couldn't connect to host, port: host.docker.internal, 2525`
-
-**Solución (macOS):**
-```bash
-# 1. Verificar relay SMTP está activo
-ps aux | grep socat
-
-# 2. Si no está, iniciarlo
-./start-smtp-relay.sh
-
-# 3. Reiniciar backend
-docker-compose restart backend
-
-# 4. Ver logs
-docker-compose logs backend | grep -i "mail\|smtp"
-```
-
----
-
-### Error 502 Bad Gateway (Nginx)
-
-**Causa:** Frontend (nginx) no puede conectar con backend
-
-**Solución:**
-```bash
-# 1. Verificar estado de backend
-docker-compose ps
-
-# 2. Ver logs de backend
-docker-compose logs backend --tail=50
-
-# 3. Reiniciar servicios
-docker-compose restart
-```
-
----
-
-## 📖 Próximos Pasos
-
-Una vez que el sistema esté corriendo:
-
-1. **Explorar la documentación:**
-   - `CLAUDE.md` (esta guía completa)
-   - `spec/01_Backend/01_api_endpoints.md` (endpoints API)
-   - `spec/03_Arquitectura/01_diagramas_sistema.md` (arquitectura)
-
-2. **Revisar módulos implementados:**
-   - Sistema de Auditoría: `spec/04_BaseDatos/02_guia_auditoria/`
-   - Disponibilidad Médica: `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md`
-   - Firma Digital: Ver changelog v1.14.0
-
-3. **Ver planes futuros:**
-   - `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md`
-   - `plan/03_Infraestructura/01_plan_modulo_red.md`
-   - `plan/04_Integraciones/01_analisis_ollama.md`
-
-4. **Explorar base de datos:**
-   - Conectar a PostgreSQL: `10.0.89.13:5432`
-   - Base de datos: `maestro_cenate`
-   - Ver análisis completo: `spec/04_BaseDatos/04_analisis_estructura/01_resumen_general.md`
 
 ---
 
@@ -1810,49 +1462,18 @@ SUCCESS, FAILURE
 - Indicador de estado (verde=exito, rojo=fallo)
 
 ```javascript
-// Formato ejecutivo de acciones - AHORA USA DICCIONARIO CENTRALIZADO
-import { obtenerNombreAccion } from "../constants/auditoriaDiccionario";
-
+// Formato ejecutivo de acciones
 const formatAccionEjecutiva = (log) => {
-  return obtenerNombreAccion(log.accion);
+  const acciones = {
+    'LOGIN': 'Inicio de sesión',
+    'LOGIN_FAILED': 'Acceso denegado',
+    'CREATE_USER': 'Nuevo usuario creado',
+    'APPROVE_REQUEST': 'Solicitud aprobada',
+    // ...
+  };
+  return acciones[accion] || accion;
 };
 ```
-
-### Diccionario de Auditoría (v1.14.0)
-
-**Archivo:** `/frontend/src/constants/auditoriaDiccionario.js`
-
-Sistema centralizado que traduce códigos técnicos a nombres legibles con íconos y descripciones.
-
-#### Componentes del Diccionario
-
-| Componente | Contenido | Ejemplo |
-|------------|-----------|---------|
-| **MODULOS_AUDITORIA** | 10+ módulos | `AUTH` → "🔐 Autenticación" |
-| **ACCIONES_AUDITORIA** | 40+ acciones | `LOGIN` → "Inicio de Sesión" |
-| **NIVELES_AUDITORIA** | 4 niveles | `INFO`, `WARNING`, `ERROR`, `CRITICAL` |
-| **Helper Functions** | 8 funciones | `obtenerNombreModulo()`, `obtenerIconoModulo()` |
-
-#### Visualización Mejorada
-
-**LogsDelSistema.jsx:**
-- ✅ Tooltips con descripciones en módulos y acciones
-- ✅ Filtros dropdown con nombres legibles
-- ✅ Exportación CSV con nombres + códigos
-- ✅ Íconos emoji para identificación visual
-
-**AdminDashboard.js:**
-- ✅ Módulos con ícono y nombre: `🔐 Autenticación`
-- ✅ Acciones legibles: `Inicio de Sesión`
-- ✅ Visualización consistente
-
-**Beneficios:**
-- 📋 **Un solo archivo** para mantener traducciones
-- 🎯 **Consistencia** en todo el sistema
-- 🚀 **Fácil agregar** nuevos módulos/acciones
-- 👥 **UX mejorada** para usuarios no técnicos
-
-📖 **Documentación completa:** `plan/01_Seguridad_Auditoria/04_diccionario_auditoria.md`
 
 ### Fix: Usuario N/A en logs
 
@@ -2326,266 +1947,6 @@ Todas las operaciones son auditadas via `AuditLogService`:
 
 ---
 
-## Modulo Formulario 107 - Importacion Masiva de Pacientes
-
-### Descripcion
-
-Sistema de **importación masiva de pacientes desde archivos Excel** (Bolsa 107). Permite cargar listas de pacientes con validación automática, gestión de errores y visualización de historial de cargas. El módulo procesa archivos Excel con 14 columnas esperadas, valida campos obligatorios y registra automáticamente en base de datos.
-
-### Características Principales
-
-✅ **Interfaz drag & drop** para cargar archivos Excel
-✅ **Validación de formato** (extensión .xlsx/.xls, tamaño máximo 10MB)
-✅ **Procesamiento en backend** con Apache POI
-✅ **Validación de 14 columnas** con 6 campos obligatorios
-✅ **Stored procedure PostgreSQL** para validaciones complejas
-✅ **Hash SHA-256** para evitar duplicados
-✅ **Historial completo** de importaciones
-✅ **Vista detallada** de pacientes OK + errores
-✅ **Estadísticas en tiempo real**
-
-### Arquitectura Frontend → Backend
-
-```
-Usuario → Drag & Drop Excel
-           ↓
-    Validación Frontend
-    ├── ¿Extensión .xlsx/.xls?
-    ├── ¿Tamaño < 10MB?
-    └── Si OK → Enviar a backend
-           ↓
-    POST /api/import-excel/pacientes
-           ↓
-    Backend (ExcelImportService)
-    ├── Calcular hash SHA-256
-    ├── Verificar duplicados
-    ├── Leer 14 columnas con Apache POI
-    ├── Validar campos obligatorios
-    ├── Batch insert → staging.bolsa_107_raw
-    ├── Ejecutar fn_procesar_bolsa_107_v2()
-    └── Retornar estadísticas
-           ↓
-    Respuesta con totales
-    ├── totalFilas: 50
-    ├── filasOk: 47
-    └── filasError: 3
-```
-
-### Componentes Backend
-
-**Entidades JPA (3):**
-- `Bolsa107Carga` - Header de importación (ID, archivo, fechas, totales)
-- `Bolsa107Item` - Pacientes importados correctamente (25 columnas)
-- `Bolsa107Error` - Registros con errores (fila, código, mensaje)
-
-**Service Layer:**
-- `ExcelImportService` - Procesamiento completo de Excel (429 líneas)
-  - Hash calculation (SHA-256)
-  - Apache POI para leer Excel
-  - Batch insert a staging table
-  - Ejecución de stored procedure
-  - Manejo de errores
-
-**Controller REST:**
-- `ImportExcelController` - 2 endpoints principales:
-  ```
-  POST   /api/import-excel/pacientes           # Importar Excel
-  GET    /api/import-excel/pacientes/{id}/datos # Ver detalle de carga
-  ```
-
-**Stored Procedure PostgreSQL:**
-- `fn_procesar_bolsa_107_v2()` - Validaciones complejas y migración de staging a tablas finales
-
-### Componentes Frontend
-
-**Listado107.jsx (648 líneas) - Componente Principal:**
-- **Estadísticas:** 4 cards (Total Cargas, Total Pacientes, Registros OK, Errores)
-- **Área de carga:** Drag & drop zone con validación
-- **Historial:** Tabla de cargas con búsqueda
-- **Modal detalle:** Vista completa de pacientes + errores
-
-**formulario107Service.js (116 líneas) - Cliente API:**
-- `importarPacientesExcel()` - Subir archivo Excel
-- `obtenerListaCargas()` - Historial de cargas
-- `obtenerDatosCarga()` - Detalle de carga específica
-- `eliminarCarga()` - Eliminar carga (soft delete)
-- `exportarCargaExcel()` - Exportar a Excel
-
-### Validaciones
-
-**Columnas Esperadas (14):**
-1. Número Documento *(obligatorio)*
-2. Paciente *(obligatorio)*
-3. Sexo *(obligatorio)*
-4. Fecha Nacimiento *(obligatorio)*
-5. Edad
-6. Diagnóstico *(obligatorio)*
-7. Observación
-8. Servicio *(obligatorio)*
-9. Actividad
-10. Subactividad
-11. Actividad Programada
-12. Área Hospitalaria
-13. Usuario Solicita
-14. Fecha Registro
-
-**Validaciones Backend:**
-- DNI: 8 dígitos numéricos
-- Sexo: M/F/Masculino/Femenino
-- Fecha nacimiento: Formato válido, no futuro
-- Diagnóstico/Servicio: No vacíos
-
-**Códigos de Error:**
-- `ERR_CAMPO_OBLIGATORIO` - Campo requerido está vacío
-- `ERR_DNI_INVALIDO` - DNI no cumple formato
-- `ERR_FECHA_INVALIDA` - Fecha incorrecta
-- `ERR_SEXO_INVALIDO` - Valor de sexo inválido
-
-### Flujo de Usuario
-
-```
-1. Usuario accede a /roles/coordcitas/107
-2. Arrastra archivo Excel a zona drag & drop
-3. Sistema valida (extensión + tamaño)
-4. Hace clic "Importar Pacientes"
-5. Backend procesa:
-   - Lee columnas con Apache POI
-   - Valida datos
-   - Ejecuta stored procedure
-   - Retorna estadísticas
-6. Frontend muestra alert:
-   "✅ Importación exitosa!
-    Total: 50
-    ✓ Correctos: 47
-    ✗ Errores: 3"
-7. Carga aparece en historial
-8. Usuario puede ver detalles (botón 👁️)
-```
-
-### Diseño Visual
-
-**Paleta de colores:**
-- Fondo: `from-violet-50 via-purple-50 to-fuchsia-50`
-- Primario: `from-violet-600 to-purple-600`
-- Cards: violet, blue, green, red
-
-**Iconografía:**
-- 📊 FileSpreadsheet - Archivos Excel
-- 📤 Upload - Cargar archivos
-- ✅ CheckCircle2 - Registros OK
-- ❌ XCircle - Errores
-- 👁️ Eye - Ver detalles
-- 📥 Download - Exportar
-- 🗑️ Trash2 - Eliminar
-
-### Endpoints API
-
-| Método | Endpoint | Estado | Descripción |
-|--------|----------|--------|-------------|
-| **POST** | `/api/import-excel/pacientes` | ✅ Implementado | Importar archivo Excel |
-| **GET** | `/api/import-excel/pacientes/{id}/datos` | ✅ Implementado | Obtener detalle de carga |
-| **GET** | `/api/import-excel/cargas` | ✅ Implementado | Obtener lista de cargas |
-| **DELETE** | `/api/import-excel/cargas/{id}` | ✅ Implementado | Eliminar carga |
-| **GET** | `/api/import-excel/cargas/{id}/exportar` | ✅ Implementado | Exportar a Excel |
-
-### Tablas de Base de Datos
-
-```sql
--- Header de importación
-form_107.bolsa_107_carga (
-    id_carga SERIAL PRIMARY KEY,
-    nombre_archivo VARCHAR(255),
-    fecha_reporte DATE,
-    fecha_carga TIMESTAMP,
-    total_filas INTEGER,
-    filas_ok INTEGER,
-    filas_error INTEGER,
-    hash_archivo VARCHAR(64),  -- SHA-256
-    usuario_carga VARCHAR(100),
-    UNIQUE(fecha_reporte, hash_archivo)
-);
-
--- Pacientes importados
-form_107.bolsa_107_item (
-    id_item SERIAL PRIMARY KEY,
-    id_carga INTEGER REFERENCES bolsa_107_carga,
-    numero_documento VARCHAR(20),
-    paciente VARCHAR(255),
-    sexo CHAR(1),
-    -- ... 22 columnas más
-);
-
--- Errores de validación
-form_107.bolsa_107_error (
-    id_error SERIAL PRIMARY KEY,
-    id_carga INTEGER REFERENCES bolsa_107_carga,
-    numero_fila INTEGER,
-    codigo_error VARCHAR(50),
-    mensaje_error TEXT,
-    campo_afectado VARCHAR(100),
-    raw_data JSONB
-);
-
--- Staging area (temporal)
-staging.bolsa_107_raw (
-    -- Mismo esquema que bolsa_107_item
-    -- Se limpia después de procesar
-);
-```
-
-### Casos de Uso
-
-**Caso 1: Importación exitosa sin errores**
-```
-1. Usuario sube archivo con 50 pacientes
-2. Backend valida todos los registros
-3. Stored procedure inserta 50 en bolsa_107_item
-4. Response: totalFilas=50, filasOk=50, filasError=0
-5. Historial muestra nueva carga con badge verde
-```
-
-**Caso 2: Importación con errores**
-```
-1. Usuario sube archivo con 50 pacientes
-2. Backend detecta 3 errores (DNI inválido, campo vacío, fecha incorrecta)
-3. Stored procedure inserta 47 en bolsa_107_item
-4. Stored procedure inserta 3 en bolsa_107_error
-5. Response: totalFilas=50, filasOk=47, filasError=3
-6. Usuario hace clic 👁️ "Ver detalles"
-7. Modal muestra tabla de 47 OK + tabla de 3 errores
-```
-
-**Caso 3: Archivo duplicado**
-```
-1. Usuario sube mismo archivo dos veces
-2. Backend calcula hash SHA-256 = mismo hash
-3. UNIQUE constraint (fecha_reporte, hash_archivo) rechaza
-4. Error: "Este archivo ya fue importado para esta fecha"
-```
-
-### Mejoras Futuras
-
-1. **Paginación** en historial de cargas
-2. **Filtros avanzados** por rango de fechas
-3. **Notificaciones toast** en lugar de alerts
-4. **Preview del Excel** antes de importar
-5. **Plantilla descargable** con formato correcto
-6. **Procesamiento asíncrono** para archivos grandes (>1000 registros)
-7. **Dashboard de estadísticas** con gráficos
-8. **Soft delete** - Agregar campo `stat_carga` para eliminación lógica
-9. **Auditoría** - Integrar con sistema de auditoría del módulo
-10. **Notificaciones email** - Avisar al usuario cuando termine importación grande
-
-### Documentación Relacionada
-
-- **Backend técnico:** `spec/01_Backend/03_modulo_formulario_107.md` (800+ líneas)
-- **Frontend implementación:** `frontend/IMPLEMENTACION_FORMULARIO_107.md` (730+ líneas)
-- **Resumen ejecutivo:** `RESUMEN_CODIGO_IMPORTADO_v1.14.0.md`
-- **API Endpoints:** `spec/01_Backend/01_api_endpoints.md` (sección Formulario 107)
-- **Versión:** v1.14.2 - ✅ Implementación completa 100%
-
----
-
 ## Instrucciones para Claude
 
 ### Al implementar nuevos features:
@@ -2603,66 +1964,47 @@ staging.bolsa_107_raw (
 ### Documentacion adicional:
 
 **📚 Documentación Técnica (spec/):**
-
 - **Backend**:
-  - `spec/01_Backend/01_api_endpoints.md` - Todos los endpoints REST (100+ endpoints documentados)
-
+  - API Endpoints: `spec/01_Backend/01_api_endpoints.md`
 - **Arquitectura**:
-  - `spec/03_Arquitectura/01_diagramas_sistema.md` - Flujos completos, capas, MBAC, patrones de diseño
-
-- **Base de Datos** (135 tablas, 5.4 GB):
-  - `spec/04_BaseDatos/01_modelo_usuarios/01_modelo_usuarios.md` - Modelo completo de usuarios y autenticación
-  - `spec/04_BaseDatos/02_guia_auditoria/02_guia_auditoria.md` ⭐ - Guía completa del sistema de auditoría
-  - `spec/04_BaseDatos/03_guia_auditoria_acceso_sensible/03_guia_auditoria_acceso_sensible.md` - Auditoría de accesos críticos
-  - `spec/04_BaseDatos/04_analisis_estructura/01_resumen_general.md` ⭐ - Análisis completo de las 135 tablas
-  - `spec/04_BaseDatos/05_plan_limpieza/` ⭐ - Plan para optimizar la BD (-28% tamaño, recuperar 1.5 GB)
-    - `01_resumen_ejecutivo.md` - Resumen para jefes y stakeholders
-    - `02_guia_ejecucion.md` - Guía paso a paso para ejecutar limpieza
-    - `03_scripts_limpieza_fase1.sql` - Scripts SQL listos para fase 1
-  - `spec/04_BaseDatos/06_scripts/` - 16 scripts SQL de migración y mantenimiento
-  - `spec/04_BaseDatos/07_sql/` - Configuraciones SQL (menu chatbot, etc.)
-
+  - Diagramas Sistema: `spec/03_Arquitectura/01_diagramas_sistema.md`
+- **Base de Datos**:
+  - Modelo Usuarios: `spec/04_BaseDatos/01_modelo_usuarios/01_modelo_usuarios.md`
+  - Guía Auditoría: `spec/04_BaseDatos/02_guia_auditoria/02_guia_auditoria.md` ⭐
+  - Guía Auditoría Acceso Sensible: `spec/04_BaseDatos/03_guia_auditoria_acceso_sensible/03_guia_auditoria_acceso_sensible.md`
+  - Análisis Estructura BD: `spec/04_BaseDatos/04_analisis_estructura/`
+  - Plan Limpieza BD: `spec/04_BaseDatos/05_plan_limpieza/`
+  - Scripts SQL: `spec/04_BaseDatos/06_scripts/`
+  - Configuraciones SQL: `spec/04_BaseDatos/07_sql/`
 - **Troubleshooting**:
-  - `spec/05_Troubleshooting/01_guia_problemas_comunes.md` - Solución a problemas frecuentes
+  - Guía Problemas Comunes: `spec/05_Troubleshooting/01_guia_problemas_comunes.md`
 
 **📋 Planificación (plan/):**
-
-- **Seguridad y Auditoría** (✅ Implementados v1.12.0 - v1.13.0):
-  - `plan/01_Seguridad_Auditoria/01_plan_auditoria.md` - Plan del sistema de auditoría
-  - `plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md` - Plan de seguridad JWT + MBAC
-  - `plan/01_Seguridad_Auditoria/03_plan_mejoras_auditoria.md` - Mejoras adicionales implementadas
-
+- **Seguridad y Auditoría**:
+  - Plan Auditoría: `plan/01_Seguridad_Auditoria/01_plan_auditoria.md`
+  - Plan Seguridad Auth: `plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md`
+  - Plan Mejoras Auditoría: `plan/01_Seguridad_Auditoria/03_plan_mejoras_auditoria.md`
 - **Módulos Médicos**:
-  - `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` ✅ - Declaración disponibilidad (v1.9.0)
-  - `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` 📋 - Solicitud de turnos (planificado)
-
+  - Plan Disponibilidad Turnos: `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md`
+  - Plan Solicitud Turnos: `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md`
 - **Infraestructura**:
-  - `plan/03_Infraestructura/01_plan_modulo_red.md` 📋 - Módulo de red para coordinadores (planificado)
-
+  - Plan Módulo Red: `plan/03_Infraestructura/01_plan_modulo_red.md`
 - **Integraciones**:
-  - `plan/04_Integraciones/01_analisis_ollama.md` 🔍 - Análisis de integración con Ollama AI (en evaluación)
-
+  - Análisis Ollama: `plan/04_Integraciones/01_analisis_ollama.md`
 - **Firma Digital**:
-  - `plan/05_Firma_Digital/01_plan_implementacion.md` ✅ - Plan de firma digital (v1.14.0)
+  - Plan Implementación: `plan/05_Firma_Digital/01_plan_implementacion.md`
 
 **✅ Checklists y Logs (checklist/):**
-
 - **Historial**:
-  - `checklist/01_Historial/01_changelog.md` ⭐ - Historial completo v1.0.0 → v1.14.0 (CONSULTAR SIEMPRE)
-  - `checklist/01_Historial/02_historial_versiones.md` - Registro de releases y versiones
-
+  - Changelog: `checklist/01_Historial/01_changelog.md` ⭐
+  - Historial Versiones: `checklist/01_Historial/02_historial_versiones.md`
 - **Reportes de Pruebas**:
-  - `checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md` - Pruebas del módulo de disponibilidad médica
-
-- **Checklists de Implementación**:
-  - `checklist/03_Checklists/01_checklist_firma_digital.md` - Checklist de firma digital (v1.14.0)
-
-- **Análisis y Resúmenes**:
-  - `checklist/04_Analisis/01_analisis_chatbot_citas.md` - Análisis del chatbot de citas
-  - `checklist/04_Analisis/02_resumen_mejoras_auditoria.md` - Resumen de mejoras implementadas
-
-**📖 Índice de Navegación:**
-- `INDICE_DOCUMENTACION.md` - Índice maestro de toda la documentación (400+ líneas)
+  - Reporte Disponibilidad: `checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md`
+- **Checklists**:
+  - Checklist Firma Digital: `checklist/03_Checklists/01_checklist_firma_digital.md`
+- **Análisis**:
+  - Análisis Chatbot Citas: `checklist/04_Analisis/01_analisis_chatbot_citas.md`
+  - Resumen Mejoras Auditoría: `checklist/04_Analisis/02_resumen_mejoras_auditoria.md`
 
 ---
 
