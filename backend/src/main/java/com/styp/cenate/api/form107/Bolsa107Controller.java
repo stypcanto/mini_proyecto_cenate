@@ -1,5 +1,6 @@
 package com.styp.cenate.api.form107;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -10,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.styp.cenate.model.form107.Bolsa107Item;
 import com.styp.cenate.repository.form107.Bolsa107ItemRepository;
 
 import lombok.RequiredArgsConstructor;
@@ -30,6 +32,28 @@ public class Bolsa107Controller {
     private final Bolsa107ItemRepository itemRepository;
 
     /**
+     * Helper method: Convertir Bolsa107Item a Map
+     */
+    private Map<String, Object> itemToMap(Bolsa107Item item) {
+        Map<String, Object> map = new HashMap<>();
+        map.put("id_item", item.getIdItem());
+        map.put("registro", item.getRegistro());
+        map.put("numero_documento", item.getNumeroDocumento() != null ? item.getNumeroDocumento() : "");
+        map.put("paciente", item.getPaciente() != null ? item.getPaciente() : "");
+        map.put("sexo", item.getSexo() != null ? item.getSexo() : "");
+        map.put("telefono", item.getTelefono() != null ? item.getTelefono() : "");
+        map.put("fecha_nacimiento", item.getFechaNacimiento() != null ? item.getFechaNacimiento().toString() : "");
+        map.put("departamento", item.getDepartamento() != null ? item.getDepartamento() : "");
+        map.put("provincia", item.getProvincia() != null ? item.getProvincia() : "");
+        map.put("distrito", item.getDistrito() != null ? item.getDistrito() : "");
+        map.put("afiliacion", item.getAfiliacion() != null ? item.getAfiliacion() : "");
+        map.put("derivacion_interna", item.getDerivacionInterna() != null ? item.getDerivacionInterna() : "");
+        map.put("motivo_llamada", item.getMotivoLlamada() != null ? item.getMotivoLlamada() : "");
+        map.put("id_carga", item.getIdCarga() != null ? item.getIdCarga() : 0L);
+        return map;
+    }
+
+    /**
      * Listar todos los pacientes de la Bolsa 107
      *
      * @return Lista de pacientes con todos sus datos
@@ -41,22 +65,7 @@ public class Bolsa107Controller {
         try {
             List<Map<String, Object>> pacientes = itemRepository.findAll()
                 .stream()
-                .map(item -> Map.of(
-                    "id_item", item.getIdItem(),
-                    "registro", item.getRegistro(),
-                    "numero_documento", item.getNumeroDocumento() != null ? item.getNumeroDocumento() : "",
-                    "paciente", item.getPaciente() != null ? item.getPaciente() : "",
-                    "sexo", item.getSexo() != null ? item.getSexo() : "",
-                    "telefono", item.getTelefono() != null ? item.getTelefono() : "",
-                    "fecha_nacimiento", item.getFechaNacimiento() != null ? item.getFechaNacimiento().toString() : "",
-                    "departamento", item.getDepartamento() != null ? item.getDepartamento() : "",
-                    "provincia", item.getProvincia() != null ? item.getProvincia() : "",
-                    "distrito", item.getDistrito() != null ? item.getDistrito() : "",
-                    "afiliacion", item.getAfiliacion() != null ? item.getAfiliacion() : "",
-                    "derivacion_interna", item.getDerivacionInterna() != null ? item.getDerivacionInterna() : "",
-                    "motivo_llamada", item.getMotivoLlamada() != null ? item.getMotivoLlamada() : "",
-                    "id_carga", item.getIdCarga() != null ? item.getIdCarga() : 0L
-                ))
+                .map(this::itemToMap)
                 .collect(Collectors.toList());
 
             log.info("✅ Retornando {} pacientes de la Bolsa 107", pacientes.size());
@@ -92,26 +101,30 @@ public class Bolsa107Controller {
                 pacientes = itemRepository.findAll()
                     .stream()
                     .filter(item -> derivacion.equalsIgnoreCase(item.getDerivacionInterna()))
-                    .map(item -> Map.of(
-                        "id_item", item.getIdItem(),
-                        "numero_documento", item.getNumeroDocumento() != null ? item.getNumeroDocumento() : "",
-                        "paciente", item.getPaciente() != null ? item.getPaciente() : "",
-                        "sexo", item.getSexo() != null ? item.getSexo() : "",
-                        "telefono", item.getTelefono() != null ? item.getTelefono() : "",
-                        "departamento", item.getDepartamento() != null ? item.getDepartamento() : "",
-                        "derivacion_interna", item.getDerivacionInterna() != null ? item.getDerivacionInterna() : ""
-                    ))
+                    .map(item -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id_item", item.getIdItem());
+                        map.put("numero_documento", item.getNumeroDocumento() != null ? item.getNumeroDocumento() : "");
+                        map.put("paciente", item.getPaciente() != null ? item.getPaciente() : "");
+                        map.put("sexo", item.getSexo() != null ? item.getSexo() : "");
+                        map.put("telefono", item.getTelefono() != null ? item.getTelefono() : "");
+                        map.put("departamento", item.getDepartamento() != null ? item.getDepartamento() : "");
+                        map.put("derivacion_interna", item.getDerivacionInterna() != null ? item.getDerivacionInterna() : "");
+                        return map;
+                    })
                     .collect(Collectors.toList());
             } else {
                 // Sin filtro, retornar todos
                 pacientes = itemRepository.findAll()
                     .stream()
-                    .map(item -> Map.of(
-                        "id_item", item.getIdItem(),
-                        "numero_documento", item.getNumeroDocumento() != null ? item.getNumeroDocumento() : "",
-                        "paciente", item.getPaciente() != null ? item.getPaciente() : "",
-                        "derivacion_interna", item.getDerivacionInterna() != null ? item.getDerivacionInterna() : ""
-                    ))
+                    .map(item -> {
+                        Map<String, Object> map = new HashMap<>();
+                        map.put("id_item", item.getIdItem());
+                        map.put("numero_documento", item.getNumeroDocumento() != null ? item.getNumeroDocumento() : "");
+                        map.put("paciente", item.getPaciente() != null ? item.getPaciente() : "");
+                        map.put("derivacion_interna", item.getDerivacionInterna() != null ? item.getDerivacionInterna() : "");
+                        return map;
+                    })
                     .collect(Collectors.toList());
             }
 
