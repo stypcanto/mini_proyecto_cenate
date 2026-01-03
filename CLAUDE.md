@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.14.2** (2026-01-02)
+> Sistema de Telemedicina - EsSalud | **v1.16.1** (2026-01-03)
 
 ---
 
@@ -442,7 +442,148 @@ CREATE INDEX ix_bolsa107_admisionista
 spec/04_BaseDatos/06_scripts/020_agregar_menu_asignacion_pacientes.sql
 ```
 
-### 8. Optimizaciones de Performance - Gestión de Usuarios
+### 8. Sistema de Notificaciones de Cumpleaños
+
+**Versión:** v1.15.10
+📖 **Changelog:** `checklist/01_Historial/01_changelog.md` (v1.15.10)
+
+**Resumen:**
+- Notificaciones de cumpleaños integradas en el header principal
+- Campanita con badge animado (solo ADMIN/SUPERADMIN)
+- Panel desplegable con lista de cumpleañeros del día
+- Polling automático cada 5 minutos
+- Diseño institucional integrado
+
+**Ubicación:**
+- Header superior derecho (entre tema y perfil de usuario)
+- Panel desplegable desde la campanita
+
+**Características:**
+
+| Funcionalidad | Detalles |
+|--------------|----------|
+| **Acceso** | Solo ADMIN y SUPERADMIN |
+| **Endpoint Count** | `GET /api/notificaciones/count` |
+| **Endpoint Lista** | `GET /api/notificaciones/cumpleanos` |
+| **Polling** | Cada 5 minutos (300,000 ms) |
+| **Badge** | Número rojo animado (máx "9+") |
+| **Panel** | Componente `NotificacionesPanel.jsx` |
+| **Origen Datos** | Tabla `dim_personal_cnt` |
+| **Filtro** | Estado ACTIVO + fecha nacimiento = hoy |
+
+**Flujo de Trabajo:**
+
+1. **Usuario ADMIN/SUPERADMIN inicia sesión**
+2. **Header consulta** → `GET /api/notificaciones/count`
+3. **Si hay cumpleaños hoy:**
+   - Badge rojo aparece con número
+   - Punto pulsante indica notificación
+4. **Click en campanita:**
+   - Panel se abre → `GET /api/notificaciones/cumpleanos`
+   - Muestra lista de cumpleañeros:
+     - Avatar (foto o iniciales)
+     - Nombre completo
+     - Profesión
+     - Mensaje: "X cumple Y años hoy"
+     - Emoji 🎂
+5. **Polling continúa cada 5 minutos**
+
+**Componentes Backend:**
+- `NotificacionController.java` (`/api/notificacion/`)
+  - Endpoints REST con seguridad `@PreAuthorize`
+- `NotificacionServiceImpl.java` (`/service/notificacion/`)
+  - Lógica de negocio: filtrado en memoria de personal activo
+  - Cálculo de edad y construcción de mensajes
+- `NotificacionResponse.java` (`/dto/`)
+  - DTO con campos: tipo, título, mensaje, id_personal, nombre_completo, profesión, fecha, foto_url, icono
+- `PersonalCnt.java` (`/model/`)
+  - Entidad con `fechNaciPers` (LocalDate)
+
+**Componentes Frontend:**
+- `Header_template.jsx` (`/components/Header/`)
+  - **MODIFICADO** para integrar notificaciones
+  - Estados: `showNotificaciones`, `cantidadNotificaciones`
+  - Polling con `useEffect` y `setInterval`
+  - Botón campanita con badge animado
+- `NotificacionesPanel.jsx` (`/components/`)
+  - Panel desplegable con diseño institucional
+  - Overlay oscuro al abrir
+  - Lista de cumpleañeros con avatares
+  - Footer con contador
+
+**Endpoints:**
+```
+GET /api/notificaciones/count
+    → Retorna: Integer (cantidad de cumpleaños hoy)
+    → Seguridad: ADMIN o SUPERADMIN
+
+GET /api/notificaciones/cumpleanos
+    → Retorna: List<NotificacionResponse>
+    → Seguridad: ADMIN o SUPERADMIN
+```
+
+**Ejemplo de Respuesta:**
+```json
+{
+  "cantidad": 1,
+  "cumpleanos": [
+    {
+      "tipo": "CUMPLEANOS",
+      "titulo": "¡Feliz Cumpleaños! 🎂",
+      "mensaje": "Carolina Alvarez Mejía cumple 26 años hoy",
+      "id_personal": 198,
+      "nombre_completo": "Carolina Alvarez Mejía",
+      "profesion": "Personal médico",
+      "fecha": "2000-01-02",
+      "foto_url": null,
+      "icono": "🎂"
+    }
+  ]
+}
+```
+
+**Archivos Modificados:**
+- `frontend/src/components/Header/Header_template.jsx`
+  - Líneas 11-16: Importaciones (Bell, NotificacionesPanel)
+  - Líneas 27-28: Estados de notificaciones
+  - Líneas 95-117: Polling y función de carga
+  - Líneas 189-205: Botón campanita con badge
+  - Líneas 368-372: Renderizado del panel
+
+**Diseño Visual:**
+```
+┌────────────────────────────────────────────────┐
+│  [Logo]  [Título]        [🔔¹] [👤 Usuario]  │  ← Header
+└────────────────────────────────────────────────┘
+                              ↓ (click)
+                    ┌──────────────────────┐
+                    │ 🎂 Cumpleaños de Hoy │
+                    ├──────────────────────┤
+                    │ 👤 Carolina Álvarez  │
+                    │    Personal médico   │
+                    │    Cumple 26 años    │
+                    ├──────────────────────┤
+                    │ 1 cumpleaños hoy     │
+                    └──────────────────────┘
+```
+
+**Beneficios:**
+- 🎂 Celebrar cumpleaños del equipo proactivamente
+- 🔔 Notificaciones visibles sin salir del sistema
+- 📊 Datos actualizados desde base de datos central
+- 🎨 Diseño integrado con identidad institucional
+- ⚡ Performance optimizado con polling de 5 minutos
+
+**Próximas Mejoras:**
+- Query SQL optimizado (evitar `findAll()` + filtros en memoria)
+- WebSocket para actualizaciones en tiempo real
+- Tabla de auditoría para notificaciones leídas
+- Cache con TTL para reducir carga a BD
+- Más tipos de notificaciones (alertas, recordatorios, avisos)
+
+---
+
+### 9. Optimizaciones de Performance - Gestión de Usuarios
 
 **Versión:** v1.14.2
 
@@ -515,6 +656,370 @@ const sizeToLoad = isDNISearch ? 500 : (hasActiveFilters ? 100 : pageSize);
   - `nombre_ipress` / `descIpress` (institución)
   - `correo_personal` / `correoPersonal` (email)
   - `correo_corporativo` / `correo_institucional` (email)
+
+---
+
+### 10. Gestión de Asegurado - Programación ESSI
+
+**Ubicación:** Gestión de Citas → Gestión del Asegurado
+**Ruta:** `/roles/citas/gestion-asegurado`
+**Versión:** v1.16.0 (2026-01-03)
+
+**Resumen:**
+Sistema completo para gestionar pacientes asignados a gestores de citas, incluyendo programación de atenciones en ESSI con asignación automática de profesionales de salud.
+
+**Funcionalidades Principales:**
+
+| Módulo | Descripción | Estado |
+|--------|-------------|--------|
+| **Modal Editar Gestión** | Actualización de datos de contacto del paciente | ✅ Implementado |
+| **Selector de Profesional** | Dropdown con autocompletado de DNI y especialidad | ✅ Implementado |
+| **Limpiar Asignación** | Botón para eliminar profesional asignado | ✅ Implementado |
+| **Campos de Contacto** | Teléfono principal, alterno y correo | ✅ Implementado |
+| **Especialidades Médicas** | Query optimizado con especialidades reales | ✅ Implementado |
+
+#### Modal "Editar Gestión" - Campos Editables
+
+```
+┌─────────────────────────────────────────────────┐
+│  Editar Gestión                            [X]  │
+│  Nombre Paciente - DNI: 12345678                │
+├─────────────────────────────────────────────────┤
+│  [Tipo de Apoyo ▼]      [Gestora ▼]            │
+│  [Tel. móvil principal] [Tel. alterno]          │
+│  [Correo Electrónico]   [IPRESS (solo lectura)] │
+│  [Observaciones...                             ]│
+│                                                  │
+│               [Cancelar]  [Guardar Cambios]     │
+└─────────────────────────────────────────────────┘
+```
+
+**Campos del Modal:**
+- ✅ **Tipo de Apoyo** - Dropdown editable (PROGRAMAR EN ESSI, OTROS, etc.)
+- ✅ **Gestora** - Dropdown con usuarios del sistema
+- ✅ **Teléfono móvil principal** - Input editable
+- ✅ **Teléfono celular o fijo alterno** - Input editable (NUEVO v1.16.0)
+- ✅ **Correo Electrónico** - Input editable (NUEVO v1.16.0)
+- ❌ **IPRESS** - Solo lectura (muestra IPRESS de afiliación del paciente)
+- ✅ **Observaciones** - Textarea editable
+
+#### Programación ESSI - Tabla de Gestión
+
+**Columnas visibles cuando Tipo de Apoyo = "PROGRAMAR EN ESSI":**
+
+| Columna | Tipo | Comportamiento | Versión |
+|---------|------|----------------|---------|
+| **Fecha Programación** | Date input | Editable inline | v1.15.x |
+| **Turno** | Select (M/T/MT) | Editable inline | v1.15.x |
+| **Profesional** | Select | Autocompletado DNI + Especialidad | ✅ v1.16.0 |
+| **DNI Prof.** | Input (8 dígitos) | Autocompletado desde profesional | ✅ v1.16.0 |
+| **Especialidad** | Input text | Autocompletado desde profesional | ✅ v1.16.0 |
+
+**Mejoras UI/UX v1.16.0:**
+
+1. **Select de Profesionales Mejorado**
+   - ❌ **Antes:** Datalist con duplicación de nombres
+   ```
+   Andrea Lucia Gálvez Gastelú
+   Andrea Lucia Gálvez Gastelú - ESPECIALIDADES  ← Duplicado horrible
+   ```
+   - ✅ **Ahora:** Select limpio con formato profesional
+   ```
+   Andrea Lucia Gálvez Gastelú • MEDICINA INTERNA
+   Angela Mercedes Veliz Franco • CARDIOLOGIA
+   Ángel Eduardo Villareal Giraldo • PEDIATRÍA
+   ```
+
+2. **Autocompletado Inteligente**
+   - Selección de profesional → Autocompleta DNI y Especialidad
+   - Guardado automático en base de datos
+   - Actualización optimista en UI (sin recargar)
+
+3. **Botón Limpiar Asignación** (Nuevo v1.16.0)
+   - Icono: `XCircle` morado
+   - Ubicación: Columna ACCIONES
+   - Función: Limpia profesional, DNI y especialidad simultáneamente
+   - Confirmación antes de limpiar
+   - Visible solo cuando hay profesional asignado
+
+**Componentes Backend:**
+
+| Archivo | Ubicación | Cambios v1.16.0 |
+|---------|-----------|-----------------|
+| `Bolsa107ItemRepository.java` | `/repository/form107/` | ✅ Query mejorado con especialidades |
+| `Bolsa107Controller.java` | `/api/form107/` | ✅ Endpoints actualizados |
+| `Bolsa107Item.java` | `/model/form107/` | ✅ Campos: `telCelular`, `correoElectronico` |
+
+**Query SQL Optimizado - Especialidades Médicas:**
+
+```sql
+-- ANTES (solo mostraba área general)
+SELECT
+    p.id_pers,
+    p.num_doc_pers,
+    p.nom_pers || ' ' || p.ape_pater_pers || ' ' || p.ape_mater_pers as nombre_completo,
+    a.desc_area,  -- TELECONSULTAS, TELEURGENCIA, etc.
+    p.id_area
+FROM dim_personal_cnt p
+LEFT JOIN dim_area a ON p.id_area = a.id_area
+WHERE p.stat_pers = 'A'
+AND p.id_area IN (1, 2, 3, 6, 7, 13)
+
+-- AHORA (muestra especialidad médica real)
+SELECT DISTINCT
+    p.id_pers,
+    p.num_doc_pers,
+    p.nom_pers || ' ' || p.ape_pater_pers || ' ' || p.ape_mater_pers as nombre_completo,
+    COALESCE(s.desc_servicio, prof.desc_prof, a.desc_area) as desc_area,
+    p.id_area
+FROM dim_personal_cnt p
+LEFT JOIN dim_area a ON p.id_area = a.id_area
+LEFT JOIN dim_personal_prof pp ON p.id_pers = pp.id_pers AND pp.stat_pers_prof = 'A'
+LEFT JOIN dim_profesiones prof ON pp.id_prof = prof.id_prof
+LEFT JOIN dim_servicio_essi s ON pp.id_servicio = s.id_servicio
+WHERE p.stat_pers = 'A'
+AND p.id_area IN (1, 2, 3, 6, 7, 13)
+ORDER BY nombre_completo
+```
+
+**Prioridad del COALESCE:**
+1. `s.desc_servicio` → Especialidad médica (CARDIOLOGIA, MEDICINA INTERNA, PEDIATRÍA)
+2. `prof.desc_prof` → Profesión (MEDICO, ENFERMERA, PSICOLOGO)
+3. `a.desc_area` → Área de trabajo (TELECONSULTAS, TELEURGENCIA)
+
+**Componentes Frontend:**
+
+| Archivo | Ubicación | Líneas Modificadas | Cambios |
+|---------|-----------|-------------------|---------|
+| `GestionAsegurado.jsx` | `/pages/roles/citas/` | 828-867 | ✅ Select profesional con autocompletado |
+| `GestionAsegurado.jsx` | `/pages/roles/citas/` | 873-905 | ✅ Inputs DNI y Especialidad controlados |
+| `GestionAsegurado.jsx` | `/pages/roles/citas/` | 570-604 | ✅ Función `handleLimpiarProfesional` |
+| `GestionAsegurado.jsx` | `/pages/roles/citas/` | 975-985 | ✅ Botón limpiar en ACCIONES |
+| `GestionAsegurado.jsx` | `/pages/roles/citas/` | 1240-1383 | ✅ Modal Editar con nuevos campos |
+
+**Endpoints:**
+
+```bash
+# Obtener profesionales de salud con especialidades
+GET /api/bolsa107/profesionales-salud
+→ Retorna: List<Map<String, Object>>
+→ Campos: id_pers, num_doc_pers, nombre_completo, desc_area
+
+# Actualizar datos de contacto del paciente
+PUT /api/bolsa107/paciente/{id}
+Body: {
+  telefono: "987654321",
+  telCelular: "956123456",
+  correoElectronico: "paciente@email.com",
+  observaciones: "..."
+}
+→ Actualiza: teléfonos, correo, observaciones
+
+# Actualizar programación ESSI
+PUT /api/bolsa107/paciente/{id}
+Body: {
+  profesional: "Andrea Lucia Gálvez Gastelú",
+  dni_profesional: "46205941",
+  especialidad: "MEDICINA INTERNA"
+}
+→ Autocompleta y guarda asignación de profesional
+```
+
+**Base de Datos - Cambios:**
+
+```sql
+-- Tabla: bolsa_107_item (existente, columnas agregadas)
+ALTER TABLE bolsa_107_item
+ADD COLUMN IF NOT EXISTS tel_celular VARCHAR(30),
+ADD COLUMN IF NOT EXISTS correo_electronico VARCHAR(100);
+
+-- Índices para performance
+CREATE INDEX IF NOT EXISTS ix_bolsa107_tel_celular
+  ON bolsa_107_item(tel_celular) WHERE tel_celular IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS ix_bolsa107_correo
+  ON bolsa_107_item(correo_electronico) WHERE correo_electronico IS NOT NULL;
+```
+
+**Flujo de Trabajo - Asignación de Profesional:**
+
+```
+1. Gestor accede a tabla de gestión
+2. Selecciona tipo de apoyo "PROGRAMAR EN ESSI"
+3. Columnas de programación se vuelven editables
+4. Click en dropdown "Profesional"
+   └─> Lista ordenada: "Nombre • Especialidad"
+5. Selecciona profesional
+   ├─> DNI se autocompleta (num_doc_pers)
+   ├─> Especialidad se autocompleta (desc_servicio)
+   └─> Guardado automático en BD
+6. Si necesita limpiar:
+   └─> Click en botón morado XCircle → Confirmación → Limpia los 3 campos
+```
+
+**Archivos Modificados - Resumen:**
+
+```
+backend/
+├── src/main/java/com/styp/cenate/
+│   ├── repository/form107/Bolsa107ItemRepository.java  (Query mejorado)
+│   ├── api/form107/Bolsa107Controller.java             (Endpoints actualizados)
+│   └── model/form107/Bolsa107Item.java                 (Campos nuevos)
+
+frontend/
+└── src/pages/roles/citas/
+    └── GestionAsegurado.jsx                             (1671 líneas, múltiples mejoras)
+```
+
+**Beneficios v1.16.0:**
+- 🎯 **UX mejorada:** Select limpio vs datalist duplicado
+- ⚡ **Autocompletado:** DNI y especialidad automáticos
+- 🧹 **Limpieza rápida:** Botón para resetear asignación
+- 📞 **Más contacto:** Teléfono alterno y correo
+- 🏥 **Especialidades reales:** CARDIOLOGIA, PEDIATRÍA, etc.
+- 💾 **Sin recargar:** Actualización optimista en tiempo real
+
+**Testing:**
+- ✅ Selección de profesional autocompleta DNI y especialidad
+- ✅ Botón limpiar resetea los 3 campos simultáneamente
+- ✅ Modal de edición guarda campos de contacto correctamente
+- ✅ IPRESS mostrado como solo lectura (no editable)
+- ✅ Especialidades médicas reales se muestran en dropdown
+
+---
+
+### 11. Gestión de Tipos Profesionales
+
+**Ubicación:** Administración → Usuarios → Tab "Tipo de Profesional"
+**Ruta:** `/admin/users` (Tab: Tipo de Profesional)
+**Versión:** v1.16.0 (2026-01-03)
+
+**Resumen:**
+Sistema CRUD completo para gestionar los tipos profesionales del sistema CENATE (ADMINISTRATIVO, ASISTENCIAL, PRACTICANTE, etc.). Permite crear, editar, activar/desactivar y eliminar tipos de personal.
+
+**Funcionalidades Principales:**
+
+| Característica | Descripción | Estado |
+|----------------|-------------|--------|
+| **Listar Tipos** | Tabla con todos los tipos profesionales | ✅ Implementado |
+| **Crear Tipo** | Modal para agregar nuevos tipos | ✅ Implementado |
+| **Editar Tipo** | Actualizar descripción y estado | ✅ Implementado |
+| **Toggle Estado** | Activar/Desactivar tipos (A/I) | ✅ Implementado |
+| **Eliminar Tipo** | Borrado con confirmación | ✅ Implementado |
+| **Búsqueda** | Filtrado en tiempo real | ✅ Implementado |
+| **Validaciones** | No permite duplicados | ✅ Implementado |
+
+**Componentes Backend:**
+- **Controller:** `TipoProfesionalController.java` (`/api/admin/tipos-profesionales`)
+- **Service:** `TipoProfesionalServiceImpl.java`
+- **Repository:** `TipoProfesionalRepository.java`
+- **Model:** `TipoProfesional.java` (Tabla: `dim_tipo_personal`)
+
+**Componentes Frontend:**
+- **CRUD:** `TipoProfesionalCRUD.jsx` (592 líneas)
+- **Service:** `tipoProfesionalService.js` (90 líneas)
+
+**Endpoints:**
+
+```bash
+GET    /api/admin/tipos-profesionales
+       → Obtener todos los tipos profesionales
+       → Seguridad: ADMIN o SUPERADMIN
+
+GET    /api/admin/tipos-profesionales/activos
+       → Obtener solo tipos activos (estado = 'A')
+       → Seguridad: ADMIN o SUPERADMIN
+
+GET    /api/admin/tipos-profesionales/{id}
+       → Obtener tipo profesional por ID
+       → Seguridad: ADMIN o SUPERADMIN
+
+POST   /api/admin/tipos-profesionales
+       Body: { descTipPers: "TÉCNICO", statTipPers: "A" }
+       → Crear nuevo tipo profesional
+       → Seguridad: ADMIN o SUPERADMIN
+
+PUT    /api/admin/tipos-profesionales/{id}
+       Body: { descTipPers: "TÉCNICO", statTipPers: "I" }
+       → Actualizar tipo profesional existente
+       → Seguridad: ADMIN o SUPERADMIN
+
+DELETE /api/admin/tipos-profesionales/{id}
+       → Eliminar tipo profesional
+       → Seguridad: ADMIN o SUPERADMIN
+```
+
+**Base de Datos:**
+
+```sql
+-- Tabla: dim_tipo_personal
+CREATE TABLE dim_tipo_personal (
+    id_tip_pers   BIGINT PRIMARY KEY GENERATED BY DEFAULT AS IDENTITY,
+    desc_tip_pers TEXT NOT NULL UNIQUE,
+    stat_tip_pers TEXT NOT NULL DEFAULT 'A',
+    created_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    updated_at    TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+
+    CONSTRAINT ck_stat_tip_pers CHECK (stat_tip_pers IN ('A', 'I')),
+    CONSTRAINT ck_desc_tip_pers_trim CHECK (BTRIM(desc_tip_pers) <> '')
+);
+
+-- Índices
+CREATE UNIQUE INDEX ux_desc_tip_pers ON dim_tipo_personal(desc_tip_pers);
+CREATE UNIQUE INDEX uq_dim_tipo_personal_desc ON dim_tipo_personal(desc_tip_pers);
+```
+
+**Características UI/UX:**
+
+- 🎨 **Diseño institucional:** Gradientes azules (0A5BA9 → 2563EB)
+- 🔍 **Búsqueda en tiempo real:** Filtrado por nombre
+- 🎯 **Modal de 2 columnas:** Formulario limpio y organizado
+- ⚡ **Toggle de estado:** Switch animado para activar/desactivar
+- 🗑️ **Confirmación de eliminación:** Modal de seguridad
+- ✨ **Validaciones:** Evita duplicados y nombres vacíos
+- 🔄 **Botón Actualizar:** Recarga datos manualmente
+- 📊 **Tabla ordenada:** Por descripción alfabéticamente
+- 💡 **Tooltips:** Ayudas visuales en botones de acción
+
+**Ejemplos de Uso:**
+
+```bash
+# Crear nuevo tipo profesional
+curl -X POST http://localhost:8080/api/admin/tipos-profesionales \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"descTipPers":"TÉCNICO","statTipPers":"A"}'
+
+# Listar todos los tipos
+curl -X GET http://localhost:8080/api/admin/tipos-profesionales \
+  -H "Authorization: Bearer $TOKEN"
+
+# Actualizar estado a inactivo
+curl -X PUT http://localhost:8080/api/admin/tipos-profesionales/4 \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"descTipPers":"TÉCNICO","statTipPers":"I"}'
+```
+
+**Permisos (MBAC):**
+- Acceso: Solo ADMIN y SUPERADMIN
+- Path base: `/api/admin/tipos-profesionales`
+- No requiere permisos de página específica (validado por rol)
+
+**Validaciones:**
+- ✅ Descripción obligatoria (no vacía, sin espacios)
+- ✅ Descripción única (no permite duplicados)
+- ✅ Estado: Solo 'A' (Activo) o 'I' (Inactivo)
+- ✅ Conversión automática a mayúsculas
+- ✅ Trim de espacios en blanco
+
+**Testing:**
+- ✅ CRUD completo funcional
+- ✅ Validaciones de duplicados
+- ✅ Toggle de estado animado
+- ✅ Modal de confirmación de eliminación
+- ✅ Búsqueda en tiempo real
+- ✅ Carga de datos desde backend exitosa
 
 ---
 
