@@ -5,7 +5,6 @@ import com.styp.cenate.dto.AtencionClinicaDTO;
 import com.styp.cenate.dto.AtencionClinicaUpdateDTO;
 import com.styp.cenate.dto.ObservacionEnfermeriaDTO;
 import com.styp.cenate.exception.ResourceNotFoundException;
-import com.styp.cenate.exception.UnauthorizedException;
 import com.styp.cenate.model.*;
 import com.styp.cenate.repository.*;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +36,7 @@ public class AtencionClinicaServiceImpl implements IAtencionClinicaService {
     private final EspecialidadRepository especialidadRepository;
     private final EstrategiaInstitucionalRepository estrategiaRepository;
     private final TipoAtencionTelemedicinaRepository tipoAtencionRepository;
-    private final PersonalSaludRepository personalSaludRepository;
+    private final PersonalCntRepository personalCntRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -82,7 +81,7 @@ public class AtencionClinicaServiceImpl implements IAtencionClinicaService {
                 .orElseThrow(() -> new ResourceNotFoundException("Tipo de atención no encontrado con ID: " + dto.getIdTipoAtencion()));
 
         // Validar que profesional creador existe
-        PersonalSalud personalCreador = personalSaludRepository.findById(idPersonalCreador)
+        PersonalCnt personalCreador = personalCntRepository.findById(idPersonalCreador)
                 .orElseThrow(() -> new ResourceNotFoundException("Personal de salud no encontrado con ID: " + idPersonalCreador));
 
         // Obtener especialidad si viene
@@ -154,7 +153,7 @@ public class AtencionClinicaServiceImpl implements IAtencionClinicaService {
         // Validar permisos: MEDICO solo puede editar sus propias atenciones
         if ("MEDICO".equals(rolUsuario)) {
             if (!atencion.getPersonalCreador().getIdPersonal().equals(idPersonalModificador)) {
-                throw new UnauthorizedException("No tiene permiso para editar esta atención. Solo puede editar sus propias atenciones.");
+                throw new IllegalStateException("No tiene permiso para editar esta atención. Solo puede editar sus propias atenciones.");
             }
         }
 
@@ -243,7 +242,7 @@ public class AtencionClinicaServiceImpl implements IAtencionClinicaService {
         }
 
         // Actualizar personal modificador
-        PersonalSalud personalModificador = personalSaludRepository.findById(idPersonalModificador)
+        PersonalCnt personalModificador = personalCntRepository.findById(idPersonalModificador)
                 .orElseThrow(() -> new ResourceNotFoundException("Personal de salud no encontrado con ID: " + idPersonalModificador));
         atencion.setPersonalModificador(personalModificador);
 

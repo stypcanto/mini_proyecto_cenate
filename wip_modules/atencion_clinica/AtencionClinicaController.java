@@ -4,9 +4,9 @@ import com.styp.cenate.dto.AtencionClinicaCreateDTO;
 import com.styp.cenate.dto.AtencionClinicaDTO;
 import com.styp.cenate.dto.AtencionClinicaUpdateDTO;
 import com.styp.cenate.dto.ObservacionEnfermeriaDTO;
-import com.styp.cenate.security.CheckMBACPermission;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.service.atencion.IAtencionClinicaService;
-import com.styp.cenate.service.audit.IAuditLogService;
+import com.styp.cenate.service.auditlog.AuditLogService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -38,7 +38,7 @@ import java.util.Map;
 public class AtencionClinicaController {
 
     private final IAtencionClinicaService atencionService;
-    private final IAuditLogService auditLogService;
+    private final AuditLogService auditLogService;
 
     /**
      * GET /api/atenciones-clinicas/asegurado/{pkAsegurado}
