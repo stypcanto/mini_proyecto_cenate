@@ -158,14 +158,14 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
      * (dim_personal_cnt o dim_personal_externo) asociadas al usuario.
      */
     @Query(value = """
-        SELECT CASE 
-            WHEN COUNT(*) > 0 THEN TRUE 
-            ELSE FALSE 
+        SELECT CASE
+            WHEN COUNT(*) > 0 THEN TRUE
+            ELSE FALSE
         END
         FROM dim_usuarios u
         LEFT JOIN dim_personal_cnt pc ON pc.id_usuario = u.id_user
         LEFT JOIN dim_personal_externo pe ON pe.id_user = u.id_user
-        WHERE 
+        WHERE
             LOWER(pc.email_pers) = LOWER(:email)
             OR LOWER(pc.email_corp_pers) = LOWER(:email)
             OR LOWER(pe.email_pers_ext) = LOWER(:email)
@@ -173,4 +173,32 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
             OR LOWER(pe.email_ext) = LOWER(:email)
         """, nativeQuery = true)
     boolean existsByAnyEmail(@Param("email") String email);
+
+    // =========================================================================
+    // 🔹 CONSULTAS DE ESTADÍSTICAS DE PERSONAL
+    // =========================================================================
+
+    /**
+     * 📊 Cuenta usuarios con personal interno (CENATE)
+     * Solo cuenta usuarios activos que tienen datos en dim_personal_cnt
+     */
+    @Query("""
+        SELECT COUNT(DISTINCT u)
+        FROM Usuario u
+        WHERE u.personalCnt IS NOT NULL
+        AND u.statUser IN ('A', 'ACTIVO')
+    """)
+    long countByPersonalCntIsNotNull();
+
+    /**
+     * 📊 Cuenta usuarios con personal externo (Otras IPRESS)
+     * Solo cuenta usuarios activos que tienen datos en dim_personal_externo
+     */
+    @Query("""
+        SELECT COUNT(DISTINCT u)
+        FROM Usuario u
+        WHERE u.personalExterno IS NOT NULL
+        AND u.statUser IN ('A', 'ACTIVO')
+    """)
+    long countByPersonalExternoIsNotNull();
 }

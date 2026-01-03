@@ -127,6 +127,32 @@ public class DashboardController {
             }
             stats.put("topUsuarios", actividadUsuarios);
 
+            // 📊 Indicadores adicionales (datos dinámicos desde BD)
+            try (Connection conn = dataSource.getConnection()) {
+                // Áreas, Profesiones, Regímenes
+                String queryIndicadores = """
+                    SELECT
+                        (SELECT COUNT(*) FROM dim_area) as total_areas,
+                        (SELECT COUNT(*) FROM form_diag_cat_categoria_profesional) as total_profesiones,
+                        (SELECT COUNT(*) FROM dim_regimen_laboral) as total_regimenes
+                    """;
+
+                try (var stmt = conn.createStatement();
+                     var rs = stmt.executeQuery(queryIndicadores)) {
+                    if (rs.next()) {
+                        stats.put("totalAreas", rs.getLong("total_areas"));
+                        stats.put("totalProfesiones", rs.getLong("total_profesiones"));
+                        stats.put("totalRegimenes", rs.getLong("total_regimenes"));
+                    }
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ Error al obtener indicadores adicionales: {}", e.getMessage());
+                // Valores por defecto en caso de error
+                stats.put("totalAreas", 0);
+                stats.put("totalProfesiones", 0);
+                stats.put("totalRegimenes", 0);
+            }
+
             return ResponseEntity.ok(stats);
 
         } catch (Exception e) {
@@ -167,7 +193,111 @@ public class DashboardController {
     }
 
     // ===========================================================
-    // 🖥️ 3️⃣ Estado del Sistema (Health Check)
+    // 👥 3️⃣ Estadísticas de Personal Interno vs Externo
+    // ===========================================================
+    @GetMapping("/estadisticas-personal")
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticasPersonal() {
+        try {
+            Map<String, Object> estadisticas = new LinkedHashMap<>();
+
+            // Obtener distribución CORRECTA de usuarios (evitando duplicados)
+            // Prioridad: Si un usuario tiene personal externo, se cuenta como externo
+            long totalInterno = 0;
+            long totalExterno = 0;
+            long totalGeneral = 0;
+            long totalConAmbos = 0;
+
+            try (Connection conn = dataSource.getConnection()) {
+                String queryDistribucion = """
+                    SELECT
+                        COUNT(*) as total_usuarios,
+                        COUNT(DISTINCT CASE WHEN pc.id_usuario IS NOT NULL AND pe.id_user IS NULL THEN u.id_user END) as solo_interno,
+                        COUNT(DISTINCT CASE WHEN pe.id_user IS NOT NULL THEN u.id_user END) as externo_o_ambos,
+                        COUNT(DISTINCT CASE WHEN pc.id_usuario IS NOT NULL AND pe.id_user IS NOT NULL THEN u.id_user END) as con_ambos
+                    FROM dim_usuarios u
+                    LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
+                    LEFT JOIN dim_personal_externo pe ON u.id_user = pe.id_user
+                    WHERE u.stat_user IN ('A', 'ACTIVO')
+                    """;
+
+                try (var stmt = conn.createStatement();
+                     var rs = stmt.executeQuery(queryDistribucion)) {
+                    if (rs.next()) {
+                        totalGeneral = rs.getLong("total_usuarios");
+                        totalInterno = rs.getLong("solo_interno");
+                        totalExterno = rs.getLong("externo_o_ambos");
+                        totalConAmbos = rs.getLong("con_ambos");
+                    }
+                }
+            }
+
+            estadisticas.put("totalInterno", totalInterno);
+            estadisticas.put("totalExterno", totalExterno);
+            estadisticas.put("totalGeneral", totalGeneral);
+            estadisticas.put("totalConAmbos", totalConAmbos); // Usuarios con ambos tipos de personal
+
+            // Calcular porcentajes
+            double porcentajeInterno = totalGeneral > 0 ? (totalInterno * 100.0 / totalGeneral) : 0.0;
+            double porcentajeExterno = totalGeneral > 0 ? (totalExterno * 100.0 / totalGeneral) : 0.0;
+
+            estadisticas.put("porcentajeInterno", Math.round(porcentajeInterno * 100.0) / 100.0);
+            estadisticas.put("porcentajeExterno", Math.round(porcentajeExterno * 100.0) / 100.0);
+
+            // Obtener desglose de personal externo por red (reusar la conexión)
+            try (Connection conn2 = dataSource.getConnection()) {
+                String queryRedesExternos = """
+                    SELECT
+                        r.id_red,
+                        r.desc_red as nombre_red,
+                        COUNT(DISTINCT pe.id_user) as total_usuarios
+                    FROM dim_personal_externo pe
+                    INNER JOIN dim_ipress i ON pe.id_ipress = i.id_ipress
+                    INNER JOIN dim_red r ON i.id_red = r.id_red
+                    INNER JOIN dim_usuarios u ON u.id_user = pe.id_user
+                    WHERE u.stat_user IN ('A', 'ACTIVO')
+                    GROUP BY r.id_red, r.desc_red
+                    HAVING COUNT(DISTINCT pe.id_user) > 0
+                    ORDER BY total_usuarios DESC
+                    """;
+
+                List<Map<String, Object>> estadisticasPorRed = new ArrayList<>();
+                long totalRedesConExternos = 0;
+
+                try (var stmt = conn2.createStatement();
+                     var rs = stmt.executeQuery(queryRedesExternos)) {
+                    while (rs.next()) {
+                        Map<String, Object> red = new LinkedHashMap<>();
+                        red.put("idRed", rs.getLong("id_red"));
+                        red.put("nombreRed", rs.getString("nombre_red"));
+                        long totalUsuarios = rs.getLong("total_usuarios");
+                        red.put("totalUsuarios", totalUsuarios);
+                        double porcentaje = totalExterno > 0 ? (totalUsuarios * 100.0 / totalExterno) : 0.0;
+                        red.put("porcentaje", Math.round(porcentaje * 100.0) / 100.0);
+                        estadisticasPorRed.add(red);
+                        totalRedesConExternos++;
+                    }
+                }
+
+                estadisticas.put("estadisticasPorRed", estadisticasPorRed);
+                estadisticas.put("totalRedesConExternos", totalRedesConExternos);
+            }
+
+            log.info("📊 Estadísticas de personal: {} internos, {} externos, {} total",
+                    totalInterno, totalExterno, totalGeneral);
+
+            return ResponseEntity.ok(estadisticas);
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener estadísticas de personal: {}", e.getMessage(), e);
+            Map<String, Object> error = new HashMap<>();
+            error.put("error", "Error al obtener estadísticas de personal");
+            error.put("detalle", e.getMessage());
+            return ResponseEntity.internalServerError().body(error);
+        }
+    }
+
+    // ===========================================================
+    // 🖥️ 4️⃣ Estado del Sistema (Health Check)
     // ===========================================================
     @GetMapping("/system-health")
     public ResponseEntity<Map<String, Object>> obtenerEstadoSistema() {

@@ -39,10 +39,10 @@ import {
   Cpu,
   MemoryStick,
   UserCheck,
-  UserX,
   X,
   TrendingUp,
   Building2,
+  Stethoscope,
 } from "lucide-react";
 
 export default function AdminDashboard() {
@@ -56,6 +56,13 @@ export default function AdminDashboard() {
     auditorias: 0,
   });
   const [ipressCount, setIpressCount] = useState(0);
+  const [indicadoresSecundarios, setIndicadoresSecundarios] = useState({
+    areas: 0,
+    profesiones: 0,
+    regimenes: 0,
+    especialidades: 0,
+    roles: 0,
+  });
   const [loading, setLoading] = useState(true);
   const [recentLogs, setRecentLogs] = useState([]);
   const [loadingLogs, setLoadingLogs] = useState(true);
@@ -88,6 +95,13 @@ export default function AdminDashboard() {
           auditorias: statsResponse?.logsRecientes24h || 0,
         });
         setIpressCount(statsResponse?.totalIpress || 0);
+        setIndicadoresSecundarios({
+          areas: statsResponse?.totalAreas || 0,
+          profesiones: statsResponse?.totalProfesiones || 0,
+          regimenes: statsResponse?.totalRegimenes || 0,
+          especialidades: statsResponse?.totalProfesiones || 0, // Categorías profesionales
+          roles: statsResponse?.totalRoles || 0,
+        });
       } catch (error) {
         console.error("Error cargando estadísticas:", error);
         
@@ -99,6 +113,13 @@ export default function AdminDashboard() {
           auditorias: 0,
         });
         setIpressCount(0);
+        setIndicadoresSecundarios({
+          areas: 0,
+          profesiones: 0,
+          regimenes: 0,
+          especialidades: 0,
+          roles: 0,
+        });
       } finally {
         setLoading(false);
       }
@@ -472,11 +493,11 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
         {[
           { icon: <Database className="w-5 h-5 text-blue-600" />, value: ipressCount, label: "IPRESS", bg: "bg-blue-50", path: "/ipress/listado", clickable: true },
-          { icon: <Settings className="w-5 h-5 text-purple-600" />, value: 24, label: "Áreas", bg: "bg-purple-50" },
-          { icon: <Activity className="w-5 h-5 text-green-600" />, value: 18, label: "Profesiones", bg: "bg-green-50" },
-          { icon: <FileText className="w-5 h-5 text-amber-600" />, value: 6, label: "Regímenes", bg: "bg-amber-50" },
-          { icon: <BarChart3 className="w-5 h-5 text-pink-600" />, value: 89, label: "Mensajes", bg: "bg-pink-50" },
-          { icon: <AlertCircle className="w-5 h-5 text-red-600" />, value: 12, label: "Tickets", bg: "bg-red-50" },
+          { icon: <Settings className="w-5 h-5 text-purple-600" />, value: indicadoresSecundarios.areas, label: "Áreas", bg: "bg-purple-50" },
+          { icon: <Activity className="w-5 h-5 text-green-600" />, value: indicadoresSecundarios.profesiones, label: "Profesiones", bg: "bg-green-50" },
+          { icon: <FileText className="w-5 h-5 text-amber-600" />, value: indicadoresSecundarios.regimenes, label: "Regímenes", bg: "bg-amber-50" },
+          { icon: <Stethoscope className="w-5 h-5 text-pink-600" />, value: indicadoresSecundarios.especialidades, label: "Especialidades", bg: "bg-pink-50" },
+          { icon: <Shield className="w-5 h-5 text-indigo-600" />, value: indicadoresSecundarios.roles, label: "Roles", bg: "bg-indigo-50", path: "/admin/permisos", clickable: true },
         ].map((item, i) => (
           <div
             key={i}

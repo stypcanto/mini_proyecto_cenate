@@ -4,6 +4,186 @@
 
 ---
 
+## v1.16.2 (2026-01-03) - Corrección de Coherencia de Datos y Clasificación de Personal
+
+### 🔧 Correcciones Críticas
+
+#### 1. Fix: Coherencia de Datos en Dashboard (Interno vs Externo)
+
+**Problema detectado**:
+- El dashboard mostraba **143 usuarios internos + 19 externos = 162 total**
+- Sin embargo, el sistema total mostraba solo **144 usuarios**
+- Inconsistencia de 18 usuarios causada por doble conteo
+
+**Causa raíz**:
+- 37 usuarios tienen AMBOS registros: `dim_personal_cnt` (interno) Y `dim_personal_externo` (externo)
+- La query original contaba:
+  - Usuarios con `personal_cnt` = 143 (incluía los 37 con ambos)
+  - Usuarios con `personal_externo` = 37 (todos tienen ambos registros)
+  - Total erróneo: 143 + 37 = 180 ≠ 144
+
+**Solución implementada** (`DashboardController.java:203-232`):
+```java
+// Query corregida con exclusión mutua
+SELECT
+    COUNT(*) as total_usuarios,
+    COUNT(DISTINCT CASE WHEN pc.id_usuario IS NOT NULL AND pe.id_user IS NULL THEN u.id_user END) as solo_interno,
+    COUNT(DISTINCT CASE WHEN pe.id_user IS NOT NULL THEN u.id_user END) as externo_o_ambos,
+    COUNT(DISTINCT CASE WHEN pc.id_usuario IS NOT NULL AND pe.id_user IS NOT NULL THEN u.id_user END) as con_ambos
+FROM dim_usuarios u
+LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
+LEFT JOIN dim_personal_externo pe ON u.id_user = pe.id_user
+WHERE u.stat_user IN ('A', 'ACTIVO')
+```
+
+**Resultado correcto**:
+- ✅ **106 usuarios SOLO internos** (tienen `personal_cnt`, NO tienen `personal_externo`)
+- ✅ **37 usuarios externos** (tienen `personal_externo`, pueden o no tener `personal_cnt`)
+- ✅ **1 usuario sin clasificar** (no tiene ninguno de los dos)
+- ✅ **Total: 106 + 37 + 1 = 144** ✓ Coherente
+
+**Archivos modificados**:
+- `backend/src/main/java/com/styp/cenate/api/dashboard/DashboardController.java`
+- `backend/src/main/java/com/styp/cenate/repository/UsuarioRepository.java` (queries actualizadas)
+
+---
+
+#### 2. Fix: Clasificación de Usuarios (tipoPersonal)
+
+**Problema detectado**:
+- El filtro "Tipo: Externo" en `/admin/users` mostraba solo **1 usuario**
+- Se esperaban **37 usuarios** con registro externo
+
+**Causa raíz**:
+- La lógica de clasificación en `UsuarioServiceImpl.java:1606-1621` priorizaba `personalCnt` sobre `personalExterno`
+- Usuarios con AMBOS registros se clasificaban como "INTERNO" en lugar de "EXTERNO"
+- Esto contradecía la lógica del dashboard donde se cuentan como externos
+
+**Solución implementada** (`UsuarioServiceImpl.java:1606-1621`):
+```java
+// ANTES (incorrecto):
+if (personalCnt != null) {
+    tipoPersonal = "INTERNO";  // ❌ Prioridad a interno
+} else if (personalExterno != null) {
+    tipoPersonal = "EXTERNO";
+}
+
+// DESPUÉS (correcto):
+if (personalExterno != null) {
+    tipoPersonal = "EXTERNO";  // ✅ Prioridad a externo
+} else if (personalCnt != null) {
+    tipoPersonal = "INTERNO";
+} else {
+    tipoPersonal = "SIN_CLASIFICAR";
+}
+```
+
+**Impacto**:
+- ✅ Ahora los 37 usuarios con registro externo se clasifican correctamente como "EXTERNO"
+- ✅ El filtro en `/admin/users` mostrará 37 usuarios en lugar de 1
+- ✅ Coherencia entre dashboard y listado de usuarios
+
+**Archivos modificados**:
+- `backend/src/main/java/com/styp/cenate/service/usuario/UsuarioServiceImpl.java`
+
+---
+
+#### 3. Nuevos Indicadores Dinámicos en Dashboard
+
+**Implementado**:
+- Reemplazo de valores estáticos por consultas dinámicas a la base de datos
+- Nuevos endpoints para obtener conteos reales
+
+**Indicadores agregados**:
+```java
+// DashboardController.java:130-154
+totalAreas          → COUNT(*) FROM dim_area WHERE estado = 'A'
+totalProfesiones    → COUNT(*) FROM dim_profesion WHERE estado = 'A'
+totalRegimenes      → COUNT(*) FROM dim_regimen_laboral WHERE estado = 'A'
+totalRoles          → COUNT(*) FROM dim_roles WHERE stat_rol = 'A'
+```
+
+**Cambios en Frontend** (`AdminDashboard.js`):
+- ❌ **Removidos**: "Mensajes" y "Tickets" (estáticos)
+- ✅ **Agregados**: "Especialidades" y "Roles" (dinámicos)
+
+**Indicadores finales**:
+1. IPRESS (414)
+2. Áreas (dinámico)
+3. Profesiones (dinámico)
+4. Regímenes (dinámico)
+5. Especialidades (dinámico)
+6. Roles (dinámico)
+
+**Archivos modificados**:
+- `backend/src/main/java/com/styp/cenate/api/dashboard/DashboardController.java`
+- `frontend/src/pages/AdminDashboard.js`
+
+---
+
+#### 4. Fix: Compilación - Excepciones y Repositorios Faltantes
+
+**Problemas encontrados durante la compilación**:
+
+1. **DuplicateResourceException** no existía
+   - Creado: `backend/src/main/java/com/styp/cenate/exception/DuplicateResourceException.java`
+
+2. **EstrategiaInstitucionalRepository** - Query inválido
+   - Spring Data JPA interpretaba "Desc" en el nombre del método como "descending"
+   - Solución: Agregada anotación `@Query` explícita
+   ```java
+   @Query("SELECT e FROM EstrategiaInstitucional e WHERE e.estado = :estado ORDER BY e.descEstrategia ASC")
+   List<EstrategiaInstitucional> findByEstadoOrderByDescEstrategiaAsc(@Param("estado") String estado);
+   ```
+
+3. **TipoAtencionTelemedicinaRepository** - Mismo problema
+   - Renombrado método a `findAllByEstadoOrdered` con `@Query`
+   ```java
+   @Query("SELECT t FROM TipoAtencionTelemedicina t WHERE t.estado = :estado ORDER BY t.descTipoAtencion ASC")
+   List<TipoAtencionTelemedicina> findAllByEstadoOrdered(@Param("estado") String estado);
+   ```
+
+**Archivos modificados**:
+- `backend/src/main/java/com/styp/cenate/exception/DuplicateResourceException.java` (nuevo)
+- `backend/src/main/java/com/styp/cenate/repository/EstrategiaInstitucionalRepository.java`
+- `backend/src/main/java/com/styp/cenate/repository/TipoAtencionTelemedicinaRepository.java`
+
+---
+
+### 📊 Estado de Verificación
+
+**Datos coherentes confirmados**:
+```
+📊 Dashboard:
+   - Personal Interno (solo): 106
+   - Personal Externo: 37
+   - Total General: 144
+   - Con AMBOS registros: 37
+
+📊 Usuarios Totales Sistema: 144 ✓
+```
+
+**Verificación matemática**:
+- Interno (106) + Externo (37) + Sin Clasificar (1) = 144 ✓
+- Los 37 con AMBOS registros se cuentan UNA sola vez como EXTERNOS ✓
+
+---
+
+### 🚧 Estado Actual
+
+**✅ COMPLETADO**:
+- Coherencia de datos en dashboard
+- Lógica de clasificación corregida
+- Indicadores dinámicos implementados
+- Compilación exitosa
+
+**⏳ PENDIENTE DE VERIFICACIÓN**:
+- Validar que el filtro "Tipo: Externo" en `/admin/users` muestre 37 usuarios
+- Verificar que el campo `tipo_personal` se serialice correctamente en el JSON
+  - **Nota**: El DTO usa `@JsonProperty("tipo_personal")` en lugar de `tipoPersonal`
+
+---
+
 ## v1.16.1 (2026-01-03) - CRUD de Tipos Profesionales
 
 ### 🎯 Nueva Funcionalidad

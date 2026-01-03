@@ -1604,16 +1604,16 @@ public class UsuarioServiceImpl implements UsuarioService {
 		com.styp.cenate.model.PersonalExterno personalExterno = usuario.getPersonalExterno();
 
 		String tipoPersonal;
-		if (personalCnt != null) {
-			// ✅ Existe registro en dim_personal_cnt → ES INTERNO
-			tipoPersonal = "INTERNO";
-			log.debug("👤 Usuario {} es INTERNO (tiene PersonalCnt con ID: {})", usuario.getNameUser(),
-					personalCnt.getIdPers());
-		} else if (personalExterno != null) {
-			// ✅ Existe registro en dim_personal_externo → ES EXTERNO
+		if (personalExterno != null) {
+			// ✅ Existe registro en dim_personal_externo → ES EXTERNO (prioridad a externo)
 			tipoPersonal = "EXTERNO";
 			log.debug("👤 Usuario {} es EXTERNO (tiene PersonalExterno con ID: {})", usuario.getNameUser(),
 					personalExterno.getIdPersExt());
+		} else if (personalCnt != null) {
+			// ✅ Existe registro SOLO en dim_personal_cnt → ES INTERNO
+			tipoPersonal = "INTERNO";
+			log.debug("👤 Usuario {} es INTERNO (tiene PersonalCnt con ID: {})", usuario.getNameUser(),
+					personalCnt.getIdPers());
 		} else {
 			// ❌ No existe en ninguna tabla → SIN CLASIFICAR
 			tipoPersonal = "SIN_CLASIFICAR";
