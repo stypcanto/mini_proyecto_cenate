@@ -3,7 +3,23 @@
 **Proyecto:** CENATE - Sistema de Telemedicina EsSalud
 **Versión:** 2.0.0
 **Fecha:** 2026-01-03
-**Estado:** 📋 Planificación
+**Estado:** ⚠️ 50% Implementado (Fases 1-2 completas, Fase 3 parcial)
+
+---
+
+## 📈 PROGRESO DE IMPLEMENTACIÓN
+
+| Fase | Estado | Completado | Pendiente |
+|------|--------|------------|-----------|
+| **FASE 1** | ✅ COMPLETA | Script SQL + 3 tablas + índices + triggers + MBAC | - |
+| **FASE 2** | ✅ COMPLETA | 2 modelos + 2 DTOs + 2 repos + 2 services + 2 controllers | - |
+| **FASE 3** | ⚠️ 60% | Modelo + 4 DTOs + Repository + Interface Service | ServiceImpl + Controller + Testing |
+| **FASE 4** | ❌ PENDIENTE | - | 3 servicios JS + 2 componentes React + integración |
+| **FASE 5** | ❌ PENDIENTE | - | Modificar BuscarAsegurado.jsx (3 tabs) |
+| **FASE 6** | ❌ PENDIENTE | - | 5 componentes React de trazabilidad |
+| **FASE 7** | ❌ PENDIENTE | - | Testing + Documentación + Commit |
+
+**Próximo paso:** Crear `AtencionClinicaServiceImpl.java` (300 líneas) para completar FASE 3
 
 ---
 
@@ -40,28 +56,28 @@ Implementar un sistema completo de trazabilidad clínica que permita registrar, 
 **Archivo:** `/spec/04_BaseDatos/06_scripts/025_crear_modulo_trazabilidad_clinica.sql`
 
 #### Tareas:
-- [ ] Crear tabla `dim_estrategia_institucional`
-  - [ ] 7 datos iniciales (CENATE, CENACRON, CENAPSI, etc.)
-  - [ ] 2 índices (estado, sigla)
-- [ ] Crear tabla `dim_tipo_atencion_telemedicina`
-  - [ ] 6 datos iniciales (Teleconsulta, Telemonitoreo, etc.)
-  - [ ] 2 índices (estado, sigla)
-- [ ] Crear tabla `atencion_clinica` (tabla principal)
-  - [ ] 37 columnas (datos atención + signos vitales + trazabilidad)
-  - [ ] 7 foreign keys
-  - [ ] 3 CHECK constraints
-- [ ] Crear 9 índices para performance
-  - [ ] `idx_atencion_asegurado` (más importante)
-  - [ ] `idx_atencion_personal_creador`
-  - [ ] `idx_atencion_fecha`
-  - [ ] 6 índices adicionales
-- [ ] Crear 2 triggers
-  - [ ] `trg_calcular_imc_atencion` (calcula IMC automáticamente)
-  - [ ] `trg_actualizar_timestamp_atencion` (actualiza `updated_at`)
-- [ ] Configurar permisos MBAC
-  - [ ] Página `/atenciones-clinicas` (MEDICO, COORDINADOR, ADMIN, SUPERADMIN, ENFERMERIA)
-  - [ ] Página `/admin/estrategias-institucionales` (ADMIN, SUPERADMIN)
-  - [ ] Página `/admin/tipos-atencion-telemedicina` (ADMIN, SUPERADMIN)
+- [x] Crear tabla `dim_estrategia_institucional`
+  - [x] 7 datos iniciales (CENATE, CENACRON, CENAPSI, etc.)
+  - [x] 2 índices (estado, sigla)
+- [x] Crear tabla `dim_tipo_atencion_telemedicina`
+  - [x] 6 datos iniciales (Teleconsulta, Telemonitoreo, etc.)
+  - [x] 2 índices (estado, sigla)
+- [x] Crear tabla `atencion_clinica` (tabla principal)
+  - [x] 37 columnas (datos atención + signos vitales + trazabilidad)
+  - [x] 7 foreign keys
+  - [x] 3 CHECK constraints
+- [x] Crear 9 índices para performance
+  - [x] `idx_atencion_asegurado` (más importante)
+  - [x] `idx_atencion_personal_creador`
+  - [x] `idx_atencion_fecha`
+  - [x] 6 índices adicionales
+- [x] Crear 2 triggers
+  - [x] `trg_calcular_imc_atencion` (calcula IMC automáticamente)
+  - [x] `trg_actualizar_timestamp_atencion` (actualiza `updated_at`)
+- [x] Configurar permisos MBAC
+  - [x] Página `/atenciones-clinicas` (MEDICO, COORDINADOR, ADMIN, SUPERADMIN, ENFERMERIA)
+  - [x] Página `/admin/estrategias-institucionales` (ADMIN, SUPERADMIN)
+  - [x] Página `/admin/tipos-atencion-telemedicina` (ADMIN, SUPERADMIN)
 
 #### Comando de Ejecución:
 ```bash
@@ -70,11 +86,11 @@ PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
 ```
 
 #### Verificación:
-- [ ] Ejecutar queries de verificación incluidas en el script
-- [ ] Confirmar 3 tablas creadas
-- [ ] Confirmar 13+ índices creados
-- [ ] Confirmar 7 estrategias + 6 tipos de atención insertados
-- [ ] Confirmar 3 páginas MBAC creadas
+- [x] Ejecutar queries de verificación incluidas en el script
+- [x] Confirmar 3 tablas creadas
+- [x] Confirmar 13+ índices creados
+- [x] Confirmar 7 estrategias + 6 tipos de atención insertados
+- [x] Confirmar 3 páginas MBAC creadas
 
 ---
 
@@ -85,84 +101,84 @@ PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
 **Ubicación:** `/backend/src/main/java/com/styp/cenate/model/`
 
 #### Tareas:
-- [ ] `EstrategiaInstitucional.java` (85 líneas)
-  - [ ] Campos: id, código, descripción, sigla, estado
-  - [ ] Anotaciones JPA: `@Entity`, `@Table`, `@Id`
-  - [ ] Método `isActiva()`
-- [ ] `TipoAtencionTelemedicina.java` (95 líneas)
-  - [ ] Campos: id, código, descripción, sigla, requiere_profesional, estado
-  - [ ] Anotaciones JPA completas
-  - [ ] Método `isActivo()`
+- [x] `EstrategiaInstitucional.java` (85 líneas)
+  - [x] Campos: id, código, descripción, sigla, estado
+  - [x] Anotaciones JPA: `@Entity`, `@Table`, `@Id`
+  - [x] Método `isActiva()`
+- [x] `TipoAtencionTelemedicina.java` (95 líneas)
+  - [x] Campos: id, código, descripción, sigla, requiere_profesional, estado
+  - [x] Anotaciones JPA completas
+  - [x] Método `isActivo()`
 
 ### 2.2 DTOs
 
 **Ubicación:** `/backend/src/main/java/com/styp/cenate/dto/`
 
 #### Tareas:
-- [ ] `EstrategiaInstitucionalDTO.java`
-  - [ ] Validaciones con `@NotBlank`, `@Size`, `@Pattern`
-- [ ] `TipoAtencionTelemedicinaDTO.java`
-  - [ ] Validaciones completas
+- [x] `EstrategiaInstitucionalDTO.java`
+  - [x] Validaciones con `@NotBlank`, `@Size`, `@Pattern`
+- [x] `TipoAtencionTelemedicinaDTO.java`
+  - [x] Validaciones completas
 
 ### 2.3 Repositories
 
 **Ubicación:** `/backend/src/main/java/com/styp/cenate/repository/`
 
 #### Tareas:
-- [ ] `EstrategiaInstitucionalRepository.java`
-  - [ ] `findByEstado(String estado)`
-  - [ ] `findByCodEstrategia(String)`
-  - [ ] `findBySigla(String)`
-  - [ ] `existsByCodEstrategia(String)`
-  - [ ] `existsBySigla(String)`
-- [ ] `TipoAtencionTelemedicinaRepository.java`
-  - [ ] Mismos métodos que EstrategiaInstitucionalRepository
+- [x] `EstrategiaInstitucionalRepository.java`
+  - [x] `findByEstado(String estado)`
+  - [x] `findByCodEstrategia(String)`
+  - [x] `findBySigla(String)`
+  - [x] `existsByCodEstrategia(String)`
+  - [x] `existsBySigla(String)`
+- [x] `TipoAtencionTelemedicinaRepository.java`
+  - [x] Mismos métodos que EstrategiaInstitucionalRepository
 
 ### 2.4 Services
 
 **Ubicación:** `/backend/src/main/java/com/styp/cenate/service/`
 
 #### Tareas:
-- [ ] Interface `IEstrategiaInstitucionalService.java`
-  - [ ] Métodos CRUD: obtenerTodos, obtenerActivos, obtenerPorId, crear, actualizar, eliminar
-- [ ] Implementación `EstrategiaInstitucionalServiceImpl.java`
-  - [ ] Validaciones de negocio
-  - [ ] Manejo de excepciones (`ResourceNotFoundException`)
-- [ ] Interface `ITipoAtencionTelemedicinaService.java`
-  - [ ] Métodos CRUD completos
-- [ ] Implementación `TipoAtencionTelemedicinaServiceImpl.java`
-  - [ ] Validaciones completas
+- [x] Interface `IEstrategiaInstitucionalService.java`
+  - [x] Métodos CRUD: obtenerTodos, obtenerActivos, obtenerPorId, crear, actualizar, eliminar
+- [x] Implementación `EstrategiaInstitucionalServiceImpl.java`
+  - [x] Validaciones de negocio
+  - [x] Manejo de excepciones (`ResourceNotFoundException`)
+- [x] Interface `ITipoAtencionTelemedicinaService.java`
+  - [x] Métodos CRUD completos
+- [x] Implementación `TipoAtencionTelemedicinaServiceImpl.java`
+  - [x] Validaciones completas
 
 ### 2.5 Controllers REST
 
 **Ubicación:** `/backend/src/main/java/com/styp/cenate/api/admin/`
 
 #### Tareas:
-- [ ] `EstrategiaInstitucionalController.java`
-  - [ ] Base URL: `/api/admin/estrategias-institucionales`
-  - [ ] 6 endpoints: GET todos, GET activos, GET por ID, POST, PUT, DELETE
-  - [ ] `@CheckMBACPermission` en cada endpoint
-  - [ ] Logs con emojis (📋, ➕, ✏️, 🗑️)
-- [ ] `TipoAtencionTelemedicinaController.java`
-  - [ ] Base URL: `/api/admin/tipos-atencion-telemedicina`
-  - [ ] 6 endpoints completos
-  - [ ] MBAC + Logs
+- [x] `EstrategiaInstitucionalController.java`
+  - [x] Base URL: `/api/admin/estrategias-institucionales`
+  - [x] 6 endpoints: GET todos, GET activos, GET por ID, POST, PUT, DELETE
+  - [x] `@CheckMBACPermission` en cada endpoint
+  - [x] Logs con emojis (📋, ➕, ✏️, 🗑️)
+- [x] `TipoAtencionTelemedicinaController.java`
+  - [x] Base URL: `/api/admin/tipos-atencion-telemedicina`
+  - [x] 6 endpoints completos
+  - [x] MBAC + Logs
 
 ### 2.6 Testing Backend - Catálogos
 
 #### Tareas:
-- [ ] Probar endpoint: `GET /api/admin/estrategias-institucionales`
-  - [ ] Debe retornar 7 estrategias
-- [ ] Probar endpoint: `GET /api/admin/estrategias-institucionales/activas`
-  - [ ] Debe retornar solo estrategias con `estado = 'A'`
-- [ ] Probar endpoint: `POST /api/admin/estrategias-institucionales`
-  - [ ] Crear nueva estrategia
-  - [ ] Validar que no permite duplicados
-- [ ] Probar endpoint: `PUT /api/admin/estrategias-institucionales/{id}`
-  - [ ] Actualizar descripción y estado
-- [ ] Probar endpoint: `DELETE /api/admin/estrategias-institucionales/{id}`
-  - [ ] Eliminar estrategia
-- [ ] Repetir testing para `TipoAtencionTelemedicinaController`
+- [x] Probar endpoint: `GET /api/admin/estrategias-institucionales`
+  - [x] Debe retornar 7 estrategias
+- [x] Probar endpoint: `GET /api/admin/estrategias-institucionales/activas`
+  - [x] Debe retornar solo estrategias con `estado = 'A'`
+- [x] Probar endpoint: `POST /api/admin/estrategias-institucionales`
+  - [x] Crear nueva estrategia
+  - [x] Validar que no permite duplicados
+- [x] Probar endpoint: `PUT /api/admin/estrategias-institucionales/{id}`
+  - [x] Actualizar descripción y estado
+- [x] Probar endpoint: `DELETE /api/admin/estrategias-institucionales/{id}`
+  - [x] Eliminar estrategia
+- [x] Repetir testing para `TipoAtencionTelemedicinaController`
 
 ---
 
@@ -173,68 +189,68 @@ PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
 **Archivo:** `/backend/src/main/java/com/styp/cenate/model/AtencionClinica.java` (250 líneas)
 
 #### Tareas:
-- [ ] Campos básicos (37 campos)
-  - [ ] Identificador: `idAtencion`
-  - [ ] Relaciones: `asegurado`, `ipress`, `especialidad`, `estrategia`, `tipoAtencion`, `personalCreador`, `personalModificador`
-  - [ ] Datos clínicos: `motivo_consulta`, `antecedentes`, `diagnostico`, `resultados_clinicos`, `observaciones`, `datos_seguimiento`
-  - [ ] Signos vitales: `presion_arterial`, `temperatura`, `peso_kg`, `talla_cm`, `imc`, `saturacion_o2`, `frecuencia_cardiaca`, `frecuencia_respiratoria`
-  - [ ] Interconsulta: `tiene_orden_interconsulta`, `id_especialidad_interconsulta`, `modalidad_interconsulta`
-  - [ ] Telemonitoreo: `requiere_telemonitoreo`
-  - [ ] Auditoría: `created_at`, `updated_at`
-- [ ] Relaciones JPA
-  - [ ] `@ManyToOne(fetch = LAZY)` para todas las FKs
-  - [ ] `@JoinColumn` con nombres exactos de columnas BD
-- [ ] Métodos utilitarios
-  - [ ] `getNombrePaciente()`
-  - [ ] `getDniPaciente()`
-  - [ ] `getNombreIpress()`
-  - [ ] `tieneSignosVitales()`
-  - [ ] `tieneInterconsultaCompleta()`
+- [x] Campos básicos (37 campos)
+  - [x] Identificador: `idAtencion`
+  - [x] Relaciones: `asegurado`, `ipress`, `especialidad`, `estrategia`, `tipoAtencion`, `personalCreador`, `personalModificador`
+  - [x] Datos clínicos: `motivo_consulta`, `antecedentes`, `diagnostico`, `resultados_clinicos`, `observaciones`, `datos_seguimiento`
+  - [x] Signos vitales: `presion_arterial`, `temperatura`, `peso_kg`, `talla_cm`, `imc`, `saturacion_o2`, `frecuencia_cardiaca`, `frecuencia_respiratoria`
+  - [x] Interconsulta: `tiene_orden_interconsulta`, `id_especialidad_interconsulta`, `modalidad_interconsulta`
+  - [x] Telemonitoreo: `requiere_telemonitoreo`
+  - [x] Auditoría: `created_at`, `updated_at`
+- [x] Relaciones JPA
+  - [x] `@ManyToOne(fetch = LAZY)` para todas las FKs
+  - [x] `@JoinColumn` con nombres exactos de columnas BD
+- [x] Métodos utilitarios
+  - [x] `getNombrePaciente()`
+  - [x] `getDniPaciente()`
+  - [x] `getNombreIpress()`
+  - [x] `tieneSignosVitales()`
+  - [x] `tieneInterconsultaCompleta()`
 
 ### 3.2 DTOs de Atenciones
 
 **Ubicación:** `/backend/src/main/java/com/styp/cenate/dto/`
 
 #### Tareas:
-- [ ] `AtencionClinicaDTO.java` (50+ campos)
-  - [ ] Todos los campos de la entidad + datos calculados
-  - [ ] Nombres de IPRESS, especialidades, estrategias, personal
-  - [ ] Edad del paciente (calculada)
-  - [ ] Flags: `tieneSignosVitales`, `tieneInterconsultaCompleta`
-- [ ] `AtencionClinicaCreateDTO.java` (35+ campos + validaciones)
-  - [ ] `@NotBlank` para campos obligatorios
-  - [ ] `@NotNull` para `pkAsegurado`, `fechaAtencion`, `idIpress`, `idTipoAtencion`
-  - [ ] `@Positive` para IDs
-  - [ ] `@DecimalMin/@DecimalMax` para signos vitales
-  - [ ] `@Pattern` para presión arterial ("120/80")
-  - [ ] `@Size` para campos TEXT (max 5000)
-- [ ] `AtencionClinicaUpdateDTO.java`
-  - [ ] Similar a CreateDTO pero campos opcionales
-  - [ ] Permite actualizaciones parciales
-- [ ] `ObservacionEnfermeriaDTO.java`
-  - [ ] `observacion` (obligatorio, 10-5000 caracteres)
-  - [ ] `datosSeguimiento` (opcional)
+- [x] `AtencionClinicaDTO.java` (50+ campos)
+  - [x] Todos los campos de la entidad + datos calculados
+  - [x] Nombres de IPRESS, especialidades, estrategias, personal
+  - [x] Edad del paciente (calculada)
+  - [x] Flags: `tieneSignosVitales`, `tieneInterconsultaCompleta`
+- [x] `AtencionClinicaCreateDTO.java` (35+ campos + validaciones)
+  - [x] `@NotBlank` para campos obligatorios
+  - [x] `@NotNull` para `pkAsegurado`, `fechaAtencion`, `idIpress`, `idTipoAtencion`
+  - [x] `@Positive` para IDs
+  - [x] `@DecimalMin/@DecimalMax` para signos vitales
+  - [x] `@Pattern` para presión arterial ("120/80")
+  - [x] `@Size` para campos TEXT (max 5000)
+- [x] `AtencionClinicaUpdateDTO.java`
+  - [x] Similar a CreateDTO pero campos opcionales
+  - [x] Permite actualizaciones parciales
+- [x] `ObservacionEnfermeriaDTO.java`
+  - [x] `observacion` (obligatorio, 10-5000 caracteres)
+  - [x] `datosSeguimiento` (opcional)
 
 ### 3.3 Repository de Atenciones
 
 **Archivo:** `/backend/src/main/java/com/styp/cenate/repository/AtencionClinicaRepository.java`
 
 #### Tareas:
-- [ ] Query: `findByPkAseguradoOrderByFechaAtencionDesc(String, Pageable)`
-  - [ ] Query JPQL con JOIN a asegurado
-- [ ] Query: `findByIdPersonalCreador(Long, Pageable)`
-  - [ ] Para médicos que ven solo sus atenciones
-- [ ] Query: `findByFechaAtencionBetween(OffsetDateTime, OffsetDateTime, Pageable)`
-- [ ] Query: `findByIdIpress(Long, Pageable)`
-- [ ] Query: `findByIdEstrategia(Long, Pageable)`
-- [ ] Query: `findByIdTipoAtencion(Long, Pageable)`
-- [ ] Query: `findConInterconsulta(Pageable)`
-  - [ ] Filtro: `tiene_orden_interconsulta = TRUE`
-- [ ] Query: `findConTelemonitoreo(Pageable)`
-  - [ ] Filtro: `requiere_telemonitoreo = TRUE`
-- [ ] Query: `busquedaAvanzada(...)` con 6 parámetros opcionales
-- [ ] Método: `countByAsegurado_PkAsegurado(String)`
-- [ ] Query: `findUltimaAtencionPorAsegurado(String)`
+- [x] Query: `findByPkAseguradoOrderByFechaAtencionDesc(String, Pageable)`
+  - [x] Query JPQL con JOIN a asegurado
+- [x] Query: `findByIdPersonalCreador(Long, Pageable)`
+  - [x] Para médicos que ven solo sus atenciones
+- [x] Query: `findByFechaAtencionBetween(OffsetDateTime, OffsetDateTime, Pageable)`
+- [x] Query: `findByIdIpress(Long, Pageable)`
+- [x] Query: `findByIdEstrategia(Long, Pageable)`
+- [x] Query: `findByIdTipoAtencion(Long, Pageable)`
+- [x] Query: `findConInterconsulta(Pageable)`
+  - [x] Filtro: `tiene_orden_interconsulta = TRUE`
+- [x] Query: `findConTelemonitoreo(Pageable)`
+  - [x] Filtro: `requiere_telemonitoreo = TRUE`
+- [x] Query: `busquedaAvanzada(...)` con 6 parámetros opcionales
+- [x] Método: `countByAsegurado_PkAsegurado(String)`
+- [x] Query: `findUltimaAtencionPorAsegurado(String)`
 
 ### 3.4 Service de Atenciones
 

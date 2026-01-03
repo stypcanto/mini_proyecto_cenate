@@ -71,6 +71,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final AuditLogService auditLogService;
 	private final com.styp.cenate.repository.RedRepository redRepository;
 	private final com.styp.cenate.service.firmadigital.FirmaDigitalService firmaDigitalService; // 🆕 v1.14.0
+	private final com.styp.cenate.repository.PersonalExternoRepository personalExternoRepository; // 🆕 v1.16.2 - Fix relación JPA
 
 	// =============================================================
 	// 🔒 MÉTODO HELPER PARA AUDITORÍA
@@ -1601,7 +1602,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 		// ============================================================
 
 		PersonalCnt personalCnt = usuario.getPersonalCnt();
-		com.styp.cenate.model.PersonalExterno personalExterno = usuario.getPersonalExterno();
+
+		// 🔧 FIX v1.16.2: Consultar explícitamente PersonalExterno ya que la relación JPA lazy no funciona correctamente
+		com.styp.cenate.model.PersonalExterno personalExterno = null;
+		if (usuario.getIdUser() != null) {
+			personalExterno = personalExternoRepository.findByIdUser(usuario.getIdUser()).orElse(null);
+		}
 
 		String tipoPersonal;
 		if (personalExterno != null) {

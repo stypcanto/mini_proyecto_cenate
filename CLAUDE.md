@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.16.2** (2026-01-03)
+> Sistema de Telemedicina - EsSalud | **v1.16.3** (2026-01-03)
 
 ---
 
@@ -283,4 +283,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.16.2 | 2026-01-03*
+*Versión 1.16.3 | 2026-01-03*

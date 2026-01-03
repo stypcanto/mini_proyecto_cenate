@@ -4,6 +4,113 @@
 
 ---
 
+## v1.16.3 (2026-01-03) - Fix Relación JPA PersonalExterno y Limpieza de Datos
+
+### 🔧 Correcciones Críticas
+
+#### 1. Fix: Relación JPA entre Usuario y PersonalExterno
+
+**Problema detectado**:
+- El Dashboard mostraba **37 usuarios externos**
+- La API `/usuarios` mostraba solo **19 usuarios externos**
+- Discrepancia de 18 usuarios causada por relación JPA defectuosa
+
+**Causa raíz**:
+- La relación `@OneToOne(fetch = FetchType.LAZY)` entre `Usuario` y `PersonalExterno` no se cargaba correctamente
+- `usuario.getPersonalExterno()` siempre retornaba `null` aunque existiera el registro en BD
+- Configuración incorrecta de `@JoinColumn` con `insertable=false, updatable=false`
+
+**Solución implementada** (`UsuarioServiceImpl.java:74, 1606-1610`):
+```java
+// 1. Inyectar PersonalExternoRepository
+private final PersonalExternoRepository personalExternoRepository; // v1.16.3
+
+// 2. Consultar explícitamente en convertToResponse()
+com.styp.cenate.model.PersonalExterno personalExterno = null;
+if (usuario.getIdUser() != null) {
+    personalExterno = personalExternoRepository.findByIdUser(usuario.getIdUser()).orElse(null);
+}
+```
+
+**Resultado**:
+- ✅ Ahora la API `/usuarios` devuelve **37 usuarios externos** (coherente con Dashboard)
+- ✅ Todos los usuarios con registro en `dim_personal_externo` se clasifican correctamente
+
+**Archivos modificados**:
+- `backend/src/main/java/com/styp/cenate/service/usuario/UsuarioServiceImpl.java:74` (inyección)
+- `backend/src/main/java/com/styp/cenate/service/usuario/UsuarioServiceImpl.java:1606-1610` (consulta explícita)
+
+---
+
+#### 2. Corrección: Reclasificación de 2 Usuarios de CENATE
+
+**Problema detectado**:
+- Filtro "Tipo: Externo" mostraba **37 usuarios**, pero solo 35 tenían rol `INSTITUCION_EX`
+- 2 usuarios de CENATE estaban mal clasificados como EXTERNOS
+
+**Usuarios corregidos**:
+1. **Fernando Coronado Davila** (42376660) - Rol: GESTIONTERRITORIAL
+2. **Monica Elizabeth Pezantes Salirrosas** (18010623) - Rol: GESTIONTERRITORIAL
+
+**Corrección aplicada en BD**:
+```sql
+-- 1. Actualizar origen de EXTERNO (2) a INTERNO (1)
+UPDATE dim_personal_cnt
+SET id_origen = 1
+WHERE id_usuario IN (225, 260);
+
+-- 2. Registros en dim_personal_externo eliminados automáticamente
+```
+
+**Justificación**:
+- Ambos trabajan en **"CENTRO NACIONAL DE TELEMEDICINA"** (CENATE)
+- Personal de CENATE debe clasificarse como INTERNO
+- Tenían registros incorrectos en `dim_personal_externo`
+
+**Resultado**:
+- ✅ Filtro "Tipo: Externo" ahora muestra **35 usuarios** (correcto)
+- ✅ Ambos usuarios ahora tienen `tipo_personal = "INTERNO"`
+
+---
+
+#### 3. Limpieza: Eliminación de Usuario sin Estado
+
+**Usuario eliminado**:
+- **Username**: 09542424
+- **ID**: 251
+- **Creado**: 2025-12-29 (cuenta reciente sin datos)
+- **Problema**: No tenía registro ni en `dim_personal_cnt` ni en `dim_personal_externo`
+- **Clasificación**: `SIN_CLASIFICAR`
+
+**Eliminación en BD**:
+```sql
+DELETE FROM rel_user_roles WHERE id_user = 251;
+DELETE FROM dim_usuarios WHERE id_user = 251;
+```
+
+**Resultado**:
+- ✅ Sistema ahora tiene **0 usuarios sin clasificar**
+- ✅ Total de usuarios: **143** (35 externos + 108 internos)
+
+---
+
+### 📊 Estado Final del Sistema (v1.16.3)
+
+| Fuente | Externos | Internos | Sin Clasificar | Total |
+|--------|----------|----------|----------------|-------|
+| **Dashboard** | 35 ✅ | 108 ✅ | N/A | 143 |
+| **API /usuarios** | 35 ✅ | 108 ✅ | 0 ✅ | 143 |
+| **BD dim_personal_cnt** | 35 ✅ | 108 ✅ | N/A | 143 |
+| **BD dim_personal_externo** | 35 ✅ | N/A | N/A | 35 |
+
+**Verificación**:
+- ✅ Campo `tipo_personal` se serializa correctamente como JSON
+- ✅ Coherencia total entre Dashboard y listado de usuarios
+- ✅ Filtro "Tipo: Externo" funciona correctamente
+- ✅ No hay usuarios sin clasificar
+
+---
+
 ## v1.16.2 (2026-01-03) - Corrección de Coherencia de Datos y Clasificación de Personal
 
 ### 🔧 Correcciones Críticas

@@ -1,6 +1,6 @@
 // src/pages/admin/users/components/TabsNavigation.jsx
 import React from 'react';
-import { Users, Building, Briefcase, GraduationCap, Stethoscope, Shield, UserCog } from 'lucide-react';
+import { Users, Building, Briefcase, GraduationCap, Stethoscope, Shield, UserCog, Target, Video } from 'lucide-react';
 import TabButton from './modals/TabButton';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -60,6 +60,18 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
                 onClick={() => setActiveTab('tipoprofesional')}
                 icon={<UserCog className="w-4 h-4" />}
                 label="Tipo de Profesional"
+              />
+              <TabButton
+                active={activeTab === 'estrategias'}
+                onClick={() => setActiveTab('estrategias')}
+                icon={<Target className="w-4 h-4" />}
+                label="Estrategias Institucionales"
+              />
+              <TabButton
+                active={activeTab === 'tiposatencion'}
+                onClick={() => setActiveTab('tiposatencion')}
+                icon={<Video className="w-4 h-4" />}
+                label="Tipos de Atención"
               />
             </>
           )}

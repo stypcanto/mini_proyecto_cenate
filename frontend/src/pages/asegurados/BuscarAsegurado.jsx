@@ -28,9 +28,12 @@ import {
   Plus,
   Save,
   Trash2,
+  FileText,
+  Activity
 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import toast from "react-hot-toast";
+import HistorialAtencionesTab from "../../components/trazabilidad/HistorialAtencionesTab";
 
 export default function BuscarAsegurado() {
   const [asegurados, setAsegurados] = useState([]);
@@ -59,6 +62,7 @@ export default function BuscarAsegurado() {
   const [showModal, setShowModal] = useState(false);
   const [detalleAsegurado, setDetalleAsegurado] = useState(null);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
+  const [tabActiva, setTabActiva] = useState('paciente'); // 'paciente', 'ipress', 'antecedentes'
   
   // Modal de formulario (crear/editar)
   const [showFormModal, setShowFormModal] = useState(false);
@@ -224,6 +228,7 @@ export default function BuscarAsegurado() {
   const cerrarModal = () => {
     setShowModal(false);
     setDetalleAsegurado(null);
+    setTabActiva('paciente'); // Reset tab al cerrar
   };
   
   const abrirFormularioCrear = () => {
@@ -773,13 +778,57 @@ export default function BuscarAsegurado() {
                 <X className="w-5 h-5 text-white" />
               </button>
             </div>
-            
-            <div className="p-6 space-y-6">
-              <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <IdCard className="w-5 h-5 text-emerald-600" />
-                  Información de Paciente
-                </h3>
+
+            {/* Navegación de Tabs */}
+            <div className="border-b border-slate-200 bg-slate-50">
+              <div className="px-6">
+                <div className="grid grid-cols-3 gap-0">
+                  <button
+                    onClick={() => setTabActiva('paciente')}
+                    className={`flex items-center justify-center gap-2 px-4 py-4 text-sm font-semibold transition-all border-b-2 ${
+                      tabActiva === 'paciente'
+                        ? 'border-[#0A5BA9] text-[#0A5BA9] bg-white'
+                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                  >
+                    <User className="w-4 h-4" />
+                    Información del Paciente
+                  </button>
+                  <button
+                    onClick={() => setTabActiva('ipress')}
+                    className={`flex items-center justify-center gap-2 px-4 py-4 text-sm font-semibold transition-all border-b-2 ${
+                      tabActiva === 'ipress'
+                        ? 'border-[#0A5BA9] text-[#0A5BA9] bg-white'
+                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Building2 className="w-4 h-4" />
+                    Centro de Adscripción
+                  </button>
+                  <button
+                    onClick={() => setTabActiva('antecedentes')}
+                    className={`flex items-center justify-center gap-2 px-4 py-4 text-sm font-semibold transition-all border-b-2 ${
+                      tabActiva === 'antecedentes'
+                        ? 'border-[#0A5BA9] text-[#0A5BA9] bg-white'
+                        : 'border-transparent text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Activity className="w-4 h-4" />
+                    Antecedentes Clínicos
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Contenido de los Tabs */}
+            <div className="p-6">
+              {/* Tab 1: Información del Paciente */}
+              {tabActiva === 'paciente' && (
+                <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <IdCard className="w-5 h-5 text-emerald-600" />
+                    Información de Paciente
+                  </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-slate-600">DNI</label>
@@ -873,13 +922,16 @@ export default function BuscarAsegurado() {
                     </p>
                   </div>
                 </div>
-              </div>
-              
-              <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200">
-                <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
-                  <Building2 className="w-5 h-5 text-emerald-600" />
-                  Información de IPRESS (Centro de Adscripción)
-                </h3>
+                </div>
+              )}
+
+              {/* Tab 2: Centro de Adscripción */}
+              {tabActiva === 'ipress' && (
+                <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200">
+                  <h3 className="text-lg font-semibold text-slate-900 mb-4 flex items-center gap-2">
+                    <Building2 className="w-5 h-5 text-emerald-600" />
+                    Información de IPRESS (Centro de Adscripción)
+                  </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="text-sm font-medium text-slate-600">Código de Adscripción</label>
@@ -928,9 +980,15 @@ export default function BuscarAsegurado() {
                     </p>
                   </div>
                 </div>
-              </div>
+                </div>
+              )}
+
+              {/* Tab 3: Antecedentes Clínicos */}
+              {tabActiva === 'antecedentes' && (
+                <HistorialAtencionesTab pkAsegurado={detalleAsegurado.asegurado.pkAsegurado} />
+              )}
             </div>
-            
+
             <div className="sticky bottom-0 bg-slate-50 px-6 py-4 rounded-b-2xl border-t border-slate-200 flex justify-end">
               <button
                 onClick={cerrarModal}
