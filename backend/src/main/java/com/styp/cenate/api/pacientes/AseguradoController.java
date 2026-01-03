@@ -79,6 +79,7 @@ public class AseguradoController {
                     a.sexo,
                     a.tipo_paciente,
                     a.tel_fijo,
+                    a.tel_celular,
                     a.tipo_seguro,
                     a.cas_adscripcion,
                     di.desc_ipress as nombre_ipress,
@@ -106,6 +107,7 @@ public class AseguradoController {
                 asegurado.put("sexo", asegurado.get("sexo"));
                 asegurado.put("tipoPaciente", asegurado.get("tipo_paciente"));
                 asegurado.put("telFijo", asegurado.get("tel_fijo"));
+                asegurado.put("telCelular", asegurado.get("tel_celular"));
                 asegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
                 asegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
                 asegurado.put("nombreIpress", asegurado.get("nombre_ipress"));
@@ -117,6 +119,7 @@ public class AseguradoController {
                 asegurado.remove("doc_paciente");
                 asegurado.remove("tipo_paciente");
                 asegurado.remove("tel_fijo");
+                asegurado.remove("tel_celular");
                 asegurado.remove("tipo_seguro");
                 asegurado.remove("cas_adscripcion");
                 asegurado.remove("nombre_ipress");
@@ -199,6 +202,7 @@ public class AseguradoController {
             response.put("sexo", asegurado.get("sexo"));
             response.put("tipoPaciente", asegurado.get("tipo_paciente"));
             response.put("telFijo", asegurado.get("tel_fijo"));
+            response.put("telCelular", asegurado.get("tel_celular"));
             response.put("tipoSeguro", asegurado.get("tipo_seguro"));
             response.put("casAdscripcion", asegurado.get("cas_adscripcion"));
             response.put("nombreIpress", asegurado.get("nombre_ipress"));
@@ -271,6 +275,7 @@ public class AseguradoController {
                     a.sexo,
                     a.tipo_paciente,
                     a.tel_fijo,
+                    a.tel_celular,
                     a.tipo_seguro,
                     a.cas_adscripcion,
                     di.desc_ipress as nombre_ipress,
@@ -304,6 +309,7 @@ public class AseguradoController {
                 asegurado.put("sexo", asegurado.get("sexo"));
                 asegurado.put("tipoPaciente", asegurado.get("tipo_paciente"));
                 asegurado.put("telFijo", asegurado.get("tel_fijo"));
+                asegurado.put("telCelular", asegurado.get("tel_celular"));
                 asegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
                 asegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
                 asegurado.put("nombreIpress", asegurado.get("nombre_ipress"));
@@ -315,6 +321,7 @@ public class AseguradoController {
                 asegurado.remove("doc_paciente");
                 asegurado.remove("tipo_paciente");
                 asegurado.remove("tel_fijo");
+                asegurado.remove("tel_celular");
                 asegurado.remove("tipo_seguro");
                 asegurado.remove("cas_adscripcion");
                 asegurado.remove("nombre_ipress");
@@ -361,7 +368,7 @@ public class AseguradoController {
             log.info("🔍 Obteniendo detalles completos del asegurado: {}", pkAsegurado);
             
             String sql = """
-                SELECT 
+                SELECT
                     a.pk_asegurado,
                     a.doc_paciente,
                     a.paciente,
@@ -369,6 +376,8 @@ public class AseguradoController {
                     a.sexo,
                     a.tipo_paciente,
                     a.tel_fijo,
+                    a.tel_celular,
+                    a.correo_electronico,
                     a.tipo_seguro,
                     a.cas_adscripcion,
                     di.desc_ipress as nombre_ipress,
@@ -410,7 +419,10 @@ public class AseguradoController {
             infoAsegurado.put("sexo", asegurado.get("sexo"));
             infoAsegurado.put("tipoPaciente", asegurado.get("tipo_paciente"));
             infoAsegurado.put("telFijo", asegurado.get("tel_fijo"));
+            infoAsegurado.put("telCelular", asegurado.get("tel_celular"));
             infoAsegurado.put("tipoSeguro", asegurado.get("tipo_seguro"));
+            infoAsegurado.put("correoElectronico", asegurado.get("correo_electronico"));
+            infoAsegurado.put("casAdscripcion", asegurado.get("cas_adscripcion"));
             infoAsegurado.put("periodo", asegurado.get("periodo"));
             response.put("asegurado", infoAsegurado);
             
@@ -564,10 +576,10 @@ public class AseguradoController {
             String insertSql = """
                 INSERT INTO asegurados (
                     pk_asegurado, doc_paciente, paciente, fecnacimpaciente, sexo,
-                    tipo_paciente, tel_fijo, tipo_seguro, cas_adscripcion, periodo
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    tipo_paciente, tel_fijo, tel_celular, correo_electronico, tipo_seguro, cas_adscripcion, periodo
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
-            
+
             jdbcTemplate.update(insertSql,
                     pkAsegurado,
                     aseguradoDTO.getDocPaciente(),
@@ -576,6 +588,8 @@ public class AseguradoController {
                     aseguradoDTO.getSexo(),
                     aseguradoDTO.getTipoPaciente(),
                     aseguradoDTO.getTelFijo(),
+                    aseguradoDTO.getTelCelular(),
+                    aseguradoDTO.getCorreoElectronico(),
                     aseguradoDTO.getTipoSeguro(),
                     aseguradoDTO.getCasAdscripcion(),
                     aseguradoDTO.getPeriodo()
@@ -593,6 +607,7 @@ public class AseguradoController {
                     a.sexo,
                     a.tipo_paciente,
                     a.tel_fijo,
+                    a.tel_celular,
                     a.tipo_seguro,
                     a.cas_adscripcion,
                     di.desc_ipress as nombre_ipress,
@@ -616,6 +631,7 @@ public class AseguradoController {
             response.put("sexo", asegurado.get("sexo"));
             response.put("tipoPaciente", asegurado.get("tipo_paciente"));
             response.put("telFijo", asegurado.get("tel_fijo"));
+            response.put("telCelular", asegurado.get("tel_celular"));
             response.put("tipoSeguro", asegurado.get("tipo_seguro"));
             response.put("casAdscripcion", asegurado.get("cas_adscripcion"));
             response.put("nombreIpress", asegurado.get("nombre_ipress"));
@@ -659,19 +675,23 @@ public class AseguradoController {
                     sexo = ?,
                     tipo_paciente = ?,
                     tel_fijo = ?,
+                    tel_celular = ?,
                     tipo_seguro = ?,
-                    cas_adscripcion = ?
+                    cas_adscripcion = ?,
+                    correo_electronico = ?
                 WHERE pk_asegurado = ?
             """;
-            
+
             int rowsAffected = jdbcTemplate.update(updateSql,
                     aseguradoDTO.getPaciente(),
                     aseguradoDTO.getFecnacimpaciente(),
                     aseguradoDTO.getSexo(),
                     aseguradoDTO.getTipoPaciente(),
                     aseguradoDTO.getTelFijo(),
+                    aseguradoDTO.getTelCelular(),
                     aseguradoDTO.getTipoSeguro(),
                     aseguradoDTO.getCasAdscripcion(),
+                    aseguradoDTO.getCorreoElectronico(),
                     pkAsegurado
             );
             
@@ -693,6 +713,7 @@ public class AseguradoController {
                     a.sexo,
                     a.tipo_paciente,
                     a.tel_fijo,
+                    a.tel_celular,
                     a.tipo_seguro,
                     a.cas_adscripcion,
                     di.desc_ipress as nombre_ipress,
@@ -716,6 +737,7 @@ public class AseguradoController {
             response.put("sexo", asegurado.get("sexo"));
             response.put("tipoPaciente", asegurado.get("tipo_paciente"));
             response.put("telFijo", asegurado.get("tel_fijo"));
+            response.put("telCelular", asegurado.get("tel_celular"));
             response.put("tipoSeguro", asegurado.get("tipo_seguro"));
             response.put("casAdscripcion", asegurado.get("cas_adscripcion"));
             response.put("nombreIpress", asegurado.get("nombre_ipress"));

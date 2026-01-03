@@ -1,6 +1,6 @@
 // src/pages/admin/users/components/TabsNavigation.jsx
 import React from 'react';
-import { Users, Building, Briefcase, GraduationCap, Stethoscope, Shield } from 'lucide-react';
+import { Users, Building, Briefcase, GraduationCap, Stethoscope, Shield, UserCog } from 'lucide-react';
 import TabButton from './modals/TabButton';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -54,6 +54,12 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
                 onClick={() => setActiveTab('roles')}
                 icon={<Shield className="w-4 h-4" />}
                 label="Roles"
+              />
+              <TabButton
+                active={activeTab === 'tipoprofesional'}
+                onClick={() => setActiveTab('tipoprofesional')}
+                icon={<UserCog className="w-4 h-4" />}
+                label="Tipo de Profesional"
               />
             </>
           )}

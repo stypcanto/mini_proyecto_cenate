@@ -1496,9 +1496,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<UsuarioResponse> getUsuariosByRoles(List<String> roles) {
-		return usuarioRepository.findAllWithRoles().stream().filter(
-				u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r -> roles.contains(r.getDescRol())))
-				.map(this::convertToResponse).collect(Collectors.toList());
+		log.info("🔍 Buscando usuarios con roles: {}", roles);
+		List<UsuarioResponse> usuarios = usuarioRepository.findAllWithPersonalData().stream()
+				.filter(u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r -> roles.contains(r.getDescRol())))
+				.map(this::convertToResponse)
+				.collect(Collectors.toList());
+		log.info("✅ Encontrados {} usuarios con roles {}", usuarios.size(), roles);
+		return usuarios;
 	}
 
 	@Override
@@ -2119,6 +2123,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	}
 
 	@Override
+	@Transactional(readOnly = true)
 	public List<UsuarioResponse> listarUsuariosPorRol(String nombreRol) {
 		log.info("👥 Listando usuarios con rol: {}", nombreRol);
 
@@ -2128,10 +2133,29 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 			log.info("✅ Query ejecutado - Encontrados {} usuarios con rol {}", usuarios.size(), nombreRol);
 
+			// 🔄 FORZAR CARGA de PersonalCnt manualmente (debido a @OneToOne mappedBy)
+			for (Usuario u : usuarios) {
+				// Forzar lazy loading
+				if (u.getPersonalCnt() != null) {
+					PersonalCnt pc = u.getPersonalCnt();
+					// Acceso a propiedades para forzar carga
+					pc.getNomPers();
+					pc.getApePaterPers();
+					pc.getApeMaterPers();
+					log.info("✅ PersonalCnt cargado para usuario {}: {} {} {}",
+						u.getNameUser(), pc.getNomPers(), pc.getApePaterPers(), pc.getApeMaterPers());
+				}
+			}
+
 			// Convertir a DTO
 			List<UsuarioResponse> resultado = usuarios.stream()
 				.map(this::convertToResponse)
 				.collect(Collectors.toList());
+
+			// 🔍 DEBUG: Verificar DTO generado
+			for (UsuarioResponse ur : resultado) {
+				log.info("✅ DTO generado - Usuario: {} | NombreCompleto: {}", ur.getUsername(), ur.getNombreCompleto());
+			}
 
 			log.info("✅ Respuesta preparada: {} usuarios", resultado.size());
 			return resultado;

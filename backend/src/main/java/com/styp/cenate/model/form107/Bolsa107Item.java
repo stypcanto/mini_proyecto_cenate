@@ -55,6 +55,15 @@ public class Bolsa107Item {
     @Column(name = "telefono", length = 30)
     private String telefono;
 
+    @Column(name = "tel_celular", length = 30)
+    private String telCelular;
+
+    @Column(name = "correo_electronico", length = 100)
+    private String correoElectronico;
+
+    @Column(name = "cod_ipress", length = 10)
+    private String codIpress;
+
     @Column(name = "opcion_ingreso")
     private String opcionIngreso;
 
@@ -108,4 +117,28 @@ public class Bolsa107Item {
 
     @Column(name = "fecha_asignacion_admisionista")
     private ZonedDateTime fechaAsignacionAdmisionista;
+
+    @Column(name = "id_gestor_asignado")
+    private Long idGestorAsignado;
+
+    @Column(name = "fecha_asignacion_gestor")
+    private ZonedDateTime fechaAsignacionGestor;
+
+    @Column(name = "tipo_apoyo")
+    private String tipoApoyo;
+
+    @Column(name = "fecha_programacion")
+    private java.time.LocalDate fechaProgramacion;
+
+    @Column(name = "turno", length = 20)
+    private String turno;
+
+    @Column(name = "profesional", length = 200)
+    private String profesional;
+
+    @Column(name = "dni_profesional", length = 20)
+    private String dniProfesional;
+
+    @Column(name = "especialidad", length = 100)
+    private String especialidad;
 }

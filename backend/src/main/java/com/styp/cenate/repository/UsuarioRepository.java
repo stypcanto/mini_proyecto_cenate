@@ -136,6 +136,7 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
 
     /**
      * 🎯 Usuarios por rol específico con datos personales cargados.
+     * ✅ OPTIMIZADO: Carga PersonalCnt con FETCH JOIN explícito
      */
     @Query("""
         SELECT DISTINCT u

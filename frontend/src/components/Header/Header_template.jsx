@@ -8,11 +8,12 @@
 // ========================================================================
 
 import React, { useState, useEffect } from "react";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Bell } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import api from "../../services/apiClient";
 import { getFotoUrl } from "../../utils/apiUrlHelper";
+import NotificacionesPanel from "../NotificacionesPanel";
 
 export default function HeaderTemplate({ title = "CENATE" }) {
   const { user, logout } = useAuth();
@@ -21,6 +22,10 @@ export default function HeaderTemplate({ title = "CENATE" }) {
   const [fotoUrl, setFotoUrl] = useState(null);
   const [fotoError, setFotoError] = useState(false);
   const [nombreIpress, setNombreIpress] = useState(null);
+
+  // 🔔 Estado de notificaciones
+  const [showNotificaciones, setShowNotificaciones] = useState(false);
+  const [cantidadNotificaciones, setCantidadNotificaciones] = useState(0);
 
   // Obtener foto y datos del usuario
   useEffect(() => {
@@ -86,6 +91,30 @@ export default function HeaderTemplate({ title = "CENATE" }) {
 
     return () => clearInterval(interval);
   }, [user?.id, user?.username]);
+
+  // 🔔 Cargar notificaciones si es ADMIN o SUPERADMIN
+  useEffect(() => {
+    const esAdmin = user?.roles?.some(
+      (rol) => rol === "ADMIN" || rol === "SUPERADMIN"
+    );
+
+    if (esAdmin) {
+      cargarCantidadNotificaciones();
+      // Polling cada 5 minutos para actualizar notificaciones
+      const interval = setInterval(cargarCantidadNotificaciones, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const cargarCantidadNotificaciones = async () => {
+    try {
+      const count = await api.get('/notificaciones/count');
+      setCantidadNotificaciones(count || 0);
+    } catch (error) {
+      console.error('❌ Error al cargar notificaciones:', error);
+      setCantidadNotificaciones(0);
+    }
+  };
 
   // Función para obtener iniciales
   const getInitials = (nombre) => {
@@ -156,6 +185,25 @@ export default function HeaderTemplate({ title = "CENATE" }) {
 
         {/* 👤 Sección derecha: Usuario */}
         <div className="flex items-center gap-4 flex-shrink-0">
+          {/* 🔔 Campanita de notificaciones - Solo para ADMIN y SUPERADMIN */}
+          {(isAdmin || isSuperAdmin) && (
+            <button
+              onClick={() => setShowNotificaciones(!showNotificaciones)}
+              aria-label="Notificaciones"
+              className="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 transition-all duration-200 border border-white/20"
+            >
+              <Bell className="w-5 h-5 text-white" />
+              {cantidadNotificaciones > 0 && (
+                <>
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
+                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                    {cantidadNotificaciones > 9 ? '9+' : cantidadNotificaciones}
+                  </span>
+                </>
+              )}
+            </button>
+          )}
+
           {/* 👤 Perfil de usuario - Diseño profesional tipo LinkedIn */}
           <div className="relative">
             <button
@@ -315,6 +363,12 @@ export default function HeaderTemplate({ title = "CENATE" }) {
           background:
             "linear-gradient(to right, rgba(255,255,255,0.15), rgba(0,0,0,0.15))",
         }}
+      />
+
+      {/* Panel de Notificaciones */}
+      <NotificacionesPanel
+        isOpen={showNotificaciones}
+        onClose={() => setShowNotificaciones(false)}
       />
     </header>
   );

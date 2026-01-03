@@ -634,6 +634,245 @@ Content-Length: 45632
 
 ---
 
+## Bolsa 107 - Gestión de Asegurado y Programación ESSI
+
+> Sistema de gestión de pacientes de Bolsa 107 con programación de atenciones en ESSI
+> **Versión:** v1.16.0 (2026-01-03)
+
+### Endpoints Disponibles
+
+| Método | Endpoint | Descripción | Versión |
+|--------|----------|-------------|---------|
+| GET | `/api/bolsa107/pacientes` | Listar todos los pacientes de Bolsa 107 | v1.15.x |
+| GET | `/api/bolsa107/mis-pacientes-gestor` | Pacientes asignados al gestor logueado | v1.15.x |
+| PUT | `/api/bolsa107/paciente/{id}` | Actualizar datos de contacto y programación | ✅ v1.16.0 |
+| GET | `/api/bolsa107/profesionales-salud` | Listar profesionales con especialidades | ✅ v1.16.0 |
+| POST | `/api/bolsa107/asignar-admisionista` | Asignar paciente a admisionista | v1.14.x |
+| GET | `/api/bolsa107/mis-asignaciones` | Pacientes asignados al admisionista | v1.14.x |
+
+### 1. Obtener Profesionales de Salud con Especialidades
+
+**Nuevo en v1.16.0** - Query optimizado que retorna especialidades médicas reales
+
+```http
+GET /api/bolsa107/profesionales-salud
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+[
+  {
+    "id_pers": 198,
+    "num_doc_pers": "46205941",
+    "nombre_completo": "Andrea Lucia Gálvez Gastelú",
+    "desc_area": "MEDICINA INTERNA",
+    "id_area": 1
+  },
+  {
+    "id_pers": 203,
+    "num_doc_pers": "42156789",
+    "nombre_completo": "Angela Mercedes Veliz Franco",
+    "desc_area": "CARDIOLOGIA",
+    "id_area": 1
+  },
+  {
+    "id_pers": 215,
+    "num_doc_pers": "44332211",
+    "nombre_completo": "Carlos Alberto Muñoz Cárdenas",
+    "desc_area": "TELEU RGENCIA",
+    "id_area": 2
+  }
+]
+```
+
+**Query SQL (mejorado):**
+```sql
+SELECT DISTINCT
+    p.id_pers,
+    p.num_doc_pers,
+    p.nom_pers || ' ' || p.ape_pater_pers || ' ' || p.ape_mater_pers as nombre_completo,
+    COALESCE(s.desc_servicio, prof.desc_prof, a.desc_area) as desc_area,
+    p.id_area
+FROM dim_personal_cnt p
+LEFT JOIN dim_area a ON p.id_area = a.id_area
+LEFT JOIN dim_personal_prof pp ON p.id_pers = pp.id_pers AND pp.stat_pers_prof = 'A'
+LEFT JOIN dim_profesiones prof ON pp.id_prof = prof.id_prof
+LEFT JOIN dim_servicio_essi s ON pp.id_servicio = s.id_servicio
+WHERE p.stat_pers = 'A'
+AND p.id_area IN (1, 2, 3, 6, 7, 13)
+ORDER BY nombre_completo
+```
+
+**Prioridad de especialidad (COALESCE):**
+1. `s.desc_servicio` - Especialidad médica ESSI (CARDIOLOGIA, MEDICINA INTERNA, etc.)
+2. `prof.desc_prof` - Profesión general (MEDICO, ENFERMERA, PSICOLOGO)
+3. `a.desc_area` - Área de trabajo (TELECONSULTAS, TELEURGENCIA)
+
+---
+
+### 2. Actualizar Datos de Contacto del Paciente
+
+**Mejorado en v1.16.0** - Nuevos campos: `telCelular`, `correoElectronico`
+
+```http
+PUT /api/bolsa107/paciente/{id}
+Authorization: Bearer {token}
+Content-Type: application/json
+```
+
+**Request Body (Campos de Contacto):**
+```json
+{
+  "telefono": "987654321",
+  "telCelular": "956194180",
+  "correoElectronico": "paciente@email.com",
+  "observaciones": "Paciente solicita teleconsulta por la tarde"
+}
+```
+
+**Request Body (Programación ESSI):**
+```json
+{
+  "profesional": "Andrea Lucia Gálvez Gastelú",
+  "dni_profesional": "46205941",
+  "especialidad": "MEDICINA INTERNA",
+  "fecha_programacion": "2026-01-15",
+  "turno": "M"
+}
+```
+
+**Request Body (Limpiar Asignación de Profesional):**
+```json
+{
+  "profesional": "",
+  "dni_profesional": "",
+  "especialidad": ""
+}
+```
+
+**Response (Éxito):**
+```json
+{
+  "mensaje": "Paciente actualizado correctamente",
+  "id_item": 1523
+}
+```
+
+**Response (Error - Paciente no encontrado):**
+```json
+{
+  "error": "Paciente no encontrado con ID: 9999"
+}
+```
+
+---
+
+### 3. Obtener Pacientes Asignados al Gestor
+
+```http
+GET /api/bolsa107/mis-pacientes-gestor
+Authorization: Bearer {token}
+```
+
+**Response:**
+```json
+[
+  {
+    "id_item": 1523,
+    "numero_documento": "19860572",
+    "paciente": "PEREZ LOPEZ MARIA",
+    "sexo": "F",
+    "fecha_nacimiento": "1986-05-12",
+    "telefono": "941800722",
+    "tel_celular": "956194180",
+    "correo_electronico": "maria.perez@email.com",
+    "afiliacion": "TITULAR",
+    "derivacion_interna": "Medicina General",
+    "desc_ipress": "H.N. CARLOS ALBERTO SEGUIN ESCOBEDO",
+    "tipo_apoyo": "PROGRAMAR EN ESSI",
+    "fecha_programacion": "2026-01-15",
+    "turno": "M",
+    "profesional": "Andrea Lucia Gálvez Gastelú",
+    "dni_profesional": "46205941",
+    "especialidad": "MEDICINA INTERNA",
+    "nombre_gestor": "Jhonatan Test",
+    "created_at": "2026-01-02T10:30:00Z"
+  }
+]
+```
+
+---
+
+### 4. Campos de la Tabla `bolsa_107_item`
+
+**Campos Nuevos (v1.16.0):**
+- `tel_celular` VARCHAR(30) - Teléfono celular o fijo alterno
+- `correo_electronico` VARCHAR(100) - Correo electrónico del paciente
+
+**Campos de Programación ESSI (v1.15.x):**
+- `tipo_apoyo` TEXT - Tipo de apoyo (PROGRAMAR EN ESSI, OTROS, etc.)
+- `fecha_programacion` DATE - Fecha de la cita
+- `turno` VARCHAR(20) - Turno (M=Mañana, T=Tarde, MT=Mañana y Tarde)
+- `profesional` VARCHAR(200) - Nombre completo del profesional
+- `dni_profesional` VARCHAR(20) - DNI del profesional
+- `especialidad` VARCHAR(100) - Especialidad médica
+
+**Índices de Performance:**
+```sql
+CREATE INDEX IF NOT EXISTS ix_bolsa107_tel_celular
+  ON bolsa_107_item(tel_celular) WHERE tel_celular IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS ix_bolsa107_correo
+  ON bolsa_107_item(correo_electronico) WHERE correo_electronico IS NOT NULL;
+```
+
+---
+
+### 5. Validaciones Backend
+
+**Validaciones de Contacto:**
+- `telefono` - Opcional, máximo 30 caracteres
+- `telCelular` - Opcional, máximo 30 caracteres
+- `correoElectronico` - Opcional, máximo 100 caracteres, formato email válido
+
+**Validaciones de Programación:**
+- `profesional` - Opcional, máximo 200 caracteres
+- `dni_profesional` - Opcional, 8 dígitos numéricos
+- `especialidad` - Opcional, máximo 100 caracteres
+- `fecha_programacion` - Opcional, formato ISO 8601 (YYYY-MM-DD)
+- `turno` - Opcional, valores: M, T, MT
+
+**Lógica de Negocio:**
+- Al seleccionar un profesional, `dni_profesional` y `especialidad` se autocompletan
+- Para limpiar asignación, enviar strings vacíos ("") en los 3 campos
+- Actualización parcial: solo se actualizan campos presentes en el body
+
+---
+
+### 6. Logs y Auditoría
+
+**Operaciones registradas:**
+```
+✅ Actualización de contacto del paciente
+✅ Asignación de profesional de salud
+✅ Limpieza de asignación de profesional
+✅ Actualización de programación ESSI
+```
+
+**Ejemplo de log:**
+```
+2026-01-03 10:30:15 [INFO] Actualizando paciente ID: 1523
+  → Teléfono actualizado: 987654321
+  → Teléfono celular actualizado: 956194180
+  → Correo electrónico actualizado: paciente@email.com
+  → Profesional actualizado: Andrea Lucia Gálvez Gastelú
+  → DNI profesional actualizado: 46205941
+  → Especialidad actualizada: MEDICINA INTERNA
+```
+
+---
+
 ## Gestion de Pacientes
 
 | Metodo | Endpoint | Descripcion |

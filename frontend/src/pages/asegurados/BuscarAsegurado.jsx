@@ -11,6 +11,7 @@ import {
   Users,
   IdCard,
   Phone,
+  Mail,
   Calendar,
   ChevronLeft,
   ChevronRight,
@@ -69,6 +70,8 @@ export default function BuscarAsegurado() {
     sexo: 'M',
     tipoPaciente: 'TITULAR',
     telFijo: '',
+    telCelular: '',
+    correoElectronico: '',
     tipoSeguro: 'TITULAR',
     casAdscripcion: '',
     periodo: new Date().getFullYear().toString()
@@ -232,6 +235,8 @@ export default function BuscarAsegurado() {
       sexo: 'M',
       tipoPaciente: 'TITULAR',
       telFijo: '',
+      telCelular: '',
+      correoElectronico: '',
       tipoSeguro: 'TITULAR',
       casAdscripcion: '',
       periodo: new Date().getFullYear().toString()
@@ -269,6 +274,8 @@ export default function BuscarAsegurado() {
         sexo: response.asegurado.sexo || 'M',
         tipoPaciente: response.asegurado.tipoPaciente || 'TITULAR',
         telFijo: response.asegurado.telFijo || '',
+        telCelular: response.asegurado.telCelular || '',
+        correoElectronico: response.asegurado.correoElectronico || '',
         tipoSeguro: response.asegurado.tipoSeguro || 'TITULAR',
         casAdscripcion: response.asegurado.casAdscripcion || '',
         periodo: response.asegurado.periodo || new Date().getFullYear().toString()
@@ -291,6 +298,8 @@ export default function BuscarAsegurado() {
       sexo: 'M',
       tipoPaciente: 'TITULAR',
       telFijo: '',
+      telCelular: '',
+      correoElectronico: '',
       tipoSeguro: 'TITULAR',
       casAdscripcion: '',
       periodo: new Date().getFullYear().toString()
@@ -319,7 +328,7 @@ export default function BuscarAsegurado() {
     
     try {
       setLoadingForm(true);
-      
+
       if (modoFormulario === 'crear') {
         await apiClient.post('/asegurados', formularioData, true);
         toast.success('Asegurado creado exitosamente');
@@ -327,13 +336,20 @@ export default function BuscarAsegurado() {
         await apiClient.put(`/asegurados/${formularioData.pkAsegurado}`, formularioData, true);
         toast.success('Asegurado actualizado exitosamente');
       }
-      
+
       cerrarFormulario();
       cargarAsegurados();
     } catch (error) {
       console.error('Error al guardar asegurado:', error);
-      const errorMsg = error.response?.data?.message || 'Error al guardar el asegurado';
-      toast.error(errorMsg);
+
+      // Detectar error de DNI duplicado
+      const errorMessage = error.message || error.toString();
+      if (errorMessage.includes('duplicate key') && errorMessage.includes('doc_paciente')) {
+        toast.error(`❌ El DNI ${formularioData.docPaciente} ya está registrado en el sistema`);
+      } else {
+        const errorMsg = error.response?.data?.message || error.message || 'Error al guardar el asegurado';
+        toast.error(errorMsg);
+      }
     } finally {
       setLoadingForm(false);
     }
@@ -415,20 +431,28 @@ export default function BuscarAsegurado() {
             </div>
             <div className="flex items-center gap-2">
               {(selectedRed || selectedIpress || searchValue) && (
-                <button
+                <span
                   onClick={(e) => {
                     e.stopPropagation();
                     limpiarFiltros();
                   }}
-                  className="text-xs text-emerald-600 hover:text-emerald-700 font-medium px-2 py-1 hover:bg-emerald-50 rounded"
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.stopPropagation();
+                      limpiarFiltros();
+                    }
+                  }}
+                  className="text-xs text-emerald-600 hover:text-emerald-700 font-medium px-2 py-1 hover:bg-emerald-50 rounded cursor-pointer"
                 >
                   Limpiar
-                </button>
+                </span>
               )}
-              <ChevronRight 
+              <ChevronRight
                 className={`w-5 h-5 text-slate-400 transition-transform ${
                   filtrosAbiertos ? 'rotate-90' : ''
-                }`} 
+                }`}
               />
             </div>
           </button>
@@ -798,10 +822,24 @@ export default function BuscarAsegurado() {
                     </p>
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-slate-600">Teléfono</label>
+                    <label className="text-sm font-medium text-slate-600">Teléfono móvil principal</label>
                     <p className="text-base text-slate-900 mt-1 flex items-center gap-2">
                       <Phone className="w-4 h-4 text-emerald-600" />
                       {detalleAsegurado.asegurado.telFijo || "No registrado"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Teléfono celular o fijo alterno</label>
+                    <p className="text-base text-slate-900 mt-1 flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-indigo-600" />
+                      {detalleAsegurado.asegurado.telCelular || "No registrado"}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-slate-600">Correo Electrónico</label>
+                    <p className="text-base text-slate-900 mt-1 flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-blue-600" />
+                      {detalleAsegurado.asegurado.correoElectronico || "No registrado"}
                     </p>
                   </div>
                   <div>
@@ -1028,7 +1066,7 @@ export default function BuscarAsegurado() {
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     <Phone className="w-4 h-4 inline mr-1" />
-                    Teléfono <span className="text-red-600">*</span>
+                    Teléfono móvil principal <span className="text-red-600">*</span>
                   </label>
                   <input
                     type="text"
@@ -1042,7 +1080,41 @@ export default function BuscarAsegurado() {
                     placeholder="999888777"
                   />
                 </div>
-                
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Phone className="w-4 h-4 inline mr-1" />
+                    Teléfono celular o fijo alterno
+                  </label>
+                  <input
+                    type="text"
+                    name="telCelular"
+                    value={formularioData.telCelular}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                    placeholder="987654321"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    <Mail className="w-4 h-4 inline mr-1" />
+                    Correo Electrónico
+                  </label>
+                  <input
+                    type="email"
+                    name="correoElectronico"
+                    value={formularioData.correoElectronico}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all"
+                    placeholder="ejemplo@correo.com"
+                  />
+                </div>
+
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     <Shield className="w-4 h-4 inline mr-1" />
@@ -1099,11 +1171,18 @@ export default function BuscarAsegurado() {
                     required
                     maxLength="4"
                     pattern="[0-9]{4}"
-                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                    disabled={modoFormulario === 'editar'}
+                    className={`w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
                              focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                             transition-all"
+                             transition-all ${modoFormulario === 'editar' ? 'bg-slate-100 cursor-not-allowed' : ''}`}
                     placeholder="2025"
+                    title={modoFormulario === 'editar' ? 'El periodo no se puede modificar' : 'Ingresa el año (4 dígitos). Ejemplo: 2025'}
                   />
+                  <p className="text-xs text-slate-500 mt-1">
+                    {modoFormulario === 'editar'
+                      ? 'El periodo no se puede modificar después de crear el asegurado'
+                      : 'Ingresa solo el año (4 dígitos). Ejemplo: 2025'}
+                  </p>
                 </div>
               </div>
               

@@ -1,11 +1,16 @@
 #!/bin/bash
 
 echo "🛑 Deteniendo el backend actual..."
+# Cargar variables de entorno
+if [ -f .env ]; then
+    echo "📥 Cargando variables de entorno desde .env..."
+    export $(grep -v '^#' .env | xargs)
+fi
 # Buscar y matar el proceso de Spring Boot
 pkill -f "CenateApplication" || echo "No hay procesos de backend corriendo"
 
 echo "🧹 Limpiando archivos compilados..."
-cd /Users/styp/Documents/CENATE/Chatbot/API_Springboot/cenate/backend
+cd /Users/styp/Documents/CENATE/Chatbot/API_Springboot/mini_proyecto_cenate/backend
 ./gradlew clean
 
 echo "🔨 Compilando el proyecto..."
@@ -13,8 +18,9 @@ echo "🔨 Compilando el proyecto..."
 
 if [ $? -eq 0 ]; then
     echo "✅ Compilación exitosa"
-    echo "🚀 Iniciando el backend..."
-    ./gradlew bootRun &
+    echo "🚀 Iniciando el backend con variables de entorno..."
+    # Ejecutar bootRun con las variables de entorno cargadas
+    env $(grep -v '^#' .env | xargs) ./gradlew bootRun &
     
     echo "⏳ Esperando a que el servidor inicie (30 segundos)..."
     sleep 30

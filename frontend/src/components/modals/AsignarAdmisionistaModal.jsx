@@ -34,7 +34,7 @@ export default function AsignarAdmisionistaModal({
         setLoading(true);
         try {
             console.log(`🔍 Cargando usuarios con rol: ${rol}...`);
-            const response = await apiClient.get(`/api/usuarios/por-rol?rol=${encodeURIComponent(rol)}`, true);
+            const response = await apiClient.get(`/api/usuarios/por-rol?roles=${encodeURIComponent(rol)}`, true);
             console.log("📦 Respuesta completa:", response);
             console.log("📊 Tipo de respuesta:", typeof response);
             console.log("🔢 Es array?", Array.isArray(response));
@@ -67,21 +67,27 @@ export default function AsignarAdmisionistaModal({
         );
     });
 
-    // Asignar paciente al admisionista seleccionado
+    // Asignar paciente al admisionista/gestor seleccionado
     const handleAsignar = async () => {
         if (!selectedAdmisionista) {
-            toast.error("Selecciona un admisionista");
+            toast.error(`Selecciona un ${rol.toLowerCase()}`);
             return;
         }
 
         setAsignando(true);
         try {
-            const response = await apiClient.post('/api/bolsa107/asignar-admisionista', {
+            // Determinar endpoint y parámetro según el rol
+            const isGestor = rol.toUpperCase().includes('GESTOR');
+            const endpoint = isGestor ? '/api/bolsa107/asignar-gestor' : '/api/bolsa107/asignar-admisionista';
+            const paramName = isGestor ? 'id_gestor' : 'id_admisionista';
+
+            const response = await apiClient.post(endpoint, {
                 id_item: paciente.id_item,
-                id_admisionista: selectedAdmisionista.idUser
+                [paramName]: selectedAdmisionista.id_user
             }, true);
 
-            toast.success(`Paciente asignado a ${selectedAdmisionista.nombreCompleto}`);
+            const nombreCompleto = getNombreCompleto(selectedAdmisionista);
+            toast.success(`Paciente asignado a ${nombreCompleto}`);
             onAsignacionExitosa && onAsignacionExitosa();
             onClose();
         } catch (error) {
@@ -91,6 +97,63 @@ export default function AsignarAdmisionistaModal({
             setAsignando(false);
         }
     };
+
+    // ============================================================================
+    // 🧩 FUNCIONES AUXILIARES
+    // ============================================================================
+
+    /**
+     * Obtiene el nombre completo del usuario con fallbacks inteligentes
+     */
+    const getNombreCompleto = (usuario) => {
+        // 1. Si tiene nombreCompleto, usarlo
+        if (usuario.nombreCompleto && usuario.nombreCompleto.trim()) {
+            return usuario.nombreCompleto;
+        }
+
+        // 2. Construir desde nombres + apellidos
+        if (usuario.nombres || usuario.apellidoPaterno || usuario.apellidoMaterno) {
+            const partes = [
+                usuario.nombres,
+                usuario.apellidoPaterno,
+                usuario.apellidoMaterno
+            ].filter(parte => parte && parte.trim());
+
+            if (partes.length > 0) {
+                return partes.join(' ');
+            }
+        }
+
+        // 3. Fallback: Gestor + DNI
+        return `Gestor ${usuario.username || 'Sin DNI'}`;
+    };
+
+    /**
+     * Obtiene las iniciales del nombre completo (no del DNI)
+     */
+    const getInitials = (usuario) => {
+        const nombreCompleto = getNombreCompleto(usuario);
+
+        // Si es "Gestor XXXXXXXX", usar "GC"
+        if (nombreCompleto.startsWith('Gestor ')) {
+            return 'GC';
+        }
+
+        // Extraer iniciales del nombre completo
+        const palabras = nombreCompleto.trim().split(/\s+/);
+
+        if (palabras.length >= 2) {
+            // Tomar primera letra del primer y segundo nombre/apellido
+            return (palabras[0][0] + palabras[1][0]).toUpperCase();
+        } else if (palabras.length === 1) {
+            // Solo un nombre: tomar primeras 2 letras
+            return palabras[0].substring(0, 2).toUpperCase();
+        }
+
+        return 'GC'; // Fallback
+    };
+
+    // ============================================================================
 
     if (!isOpen) return null;
 
@@ -150,62 +213,81 @@ export default function AsignarAdmisionistaModal({
                             </p>
                         </div>
                     ) : (
-                        <div className="grid gap-3">
+                        <div className="grid gap-4">
                             {admisionistasFiltrados.map((adm) => (
                                 <button
-                                    key={adm.idUser}
+                                    key={adm.id_user}
                                     onClick={() => setSelectedAdmisionista(adm)}
-                                    className={`p-4 rounded-lg border-2 transition-all duration-200 text-left ${
-                                        selectedAdmisionista?.idUser === adm.idUser
-                                            ? 'border-blue-500 bg-blue-50 shadow-md'
-                                            : 'border-slate-200 hover:border-blue-300 hover:bg-blue-50/30'
+                                    className={`p-5 rounded-xl border-2 transition-all duration-200 text-left ${
+                                        selectedAdmisionista?.id_user === adm.id_user
+                                            ? 'border-blue-500 bg-gradient-to-r from-blue-50 to-indigo-50 shadow-lg scale-[1.02]'
+                                            : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50 hover:shadow-md'
                                     }`}
                                 >
-                                    <div className="flex items-center justify-between">
-                                        <div className="flex items-center gap-3">
-                                            {/* Avatar */}
-                                            <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-white ${
-                                                selectedAdmisionista?.idUser === adm.idUser
-                                                    ? 'bg-blue-600'
-                                                    : 'bg-slate-400'
-                                            }`}>
-                                                {adm.nombreCompleto?.charAt(0) || adm.username?.charAt(0) || 'A'}
-                                            </div>
-
-                                            {/* Información */}
-                                            <div className="flex-1">
-                                                <p className="font-semibold text-slate-800">
-                                                    {adm.nombreCompleto || `Usuario ${adm.username}`}
-                                                </p>
-                                                <div className="flex items-center gap-4 mt-1">
-                                                    <span className="text-sm text-slate-600">
-                                                        DNI: {adm.username}
-                                                    </span>
-                                                    {adm.correoPersonal && (
-                                                        <span className="text-sm text-slate-500">
-                                                            {adm.correoPersonal}
-                                                        </span>
-                                                    )}
+                                    <div className="flex items-center gap-4">
+                                        {/* Avatar/Foto */}
+                                        <div className="flex-shrink-0">
+                                            {adm.fotoUrl ? (
+                                                <img
+                                                    src={adm.fotoUrl}
+                                                    alt={getNombreCompleto(adm)}
+                                                    className={`w-14 h-14 rounded-full object-cover border-3 transition-all ${
+                                                        selectedAdmisionista?.id_user === adm.id_user
+                                                            ? 'border-blue-500 shadow-lg'
+                                                            : 'border-slate-300'
+                                                    }`}
+                                                />
+                                            ) : (
+                                                <div className={`w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white transition-all ${
+                                                    selectedAdmisionista?.id_user === adm.id_user
+                                                        ? 'bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg ring-2 ring-blue-300'
+                                                        : 'bg-gradient-to-br from-slate-500 to-slate-600'
+                                                }`}>
+                                                    {getInitials(adm)}
                                                 </div>
-                                                <div className="flex gap-2 mt-2">
-                                                    {adm.roles?.map((rol, idx) => (
-                                                        <span
-                                                            key={idx}
-                                                            className="px-2 py-1 text-xs font-semibold rounded-full bg-purple-100 text-purple-800"
-                                                        >
-                                                            {rol}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </div>
+                                            )}
                                         </div>
 
-                                        {/* Checkmark si está seleccionado */}
-                                        {selectedAdmisionista?.idUser === adm.idUser && (
-                                            <div className="ml-4">
-                                                <CheckCircle2 className="w-6 h-6 text-blue-600" />
+                                        {/* Información del Gestor */}
+                                        <div className="flex-1 min-w-0">
+                                            {/* Nombre Completo (DESTACADO) */}
+                                            <h3 className={`text-base font-bold mb-0.5 truncate transition-colors ${
+                                                selectedAdmisionista?.id_user === adm.id_user
+                                                    ? 'text-blue-900'
+                                                    : 'text-slate-900'
+                                            }`}>
+                                                {getNombreCompleto(adm)}
+                                            </h3>
+
+                                            {/* DNI */}
+                                            <div className="flex items-center gap-2 mb-1">
+                                                <span className="text-sm text-slate-600">
+                                                    DNI: <span className="font-semibold text-slate-800">{adm.username}</span>
+                                                </span>
                                             </div>
-                                        )}
+
+                                            {/* Badge del Rol */}
+                                            {adm.roles && adm.roles.length > 0 && (
+                                                <span className={`inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full transition-colors ${
+                                                    selectedAdmisionista?.id_user === adm.id_user
+                                                        ? 'bg-blue-100 text-blue-800'
+                                                        : 'bg-slate-100 text-slate-700'
+                                                }`}>
+                                                    {adm.roles[0]}
+                                                </span>
+                                            )}
+                                        </div>
+
+                                        {/* Checkmark */}
+                                        <div className="flex-shrink-0">
+                                            {selectedAdmisionista?.id_user === adm.id_user ? (
+                                                <div className="w-7 h-7 rounded-full bg-blue-600 flex items-center justify-center shadow-md">
+                                                    <CheckCircle2 className="w-5 h-5 text-white" />
+                                                </div>
+                                            ) : (
+                                                <div className="w-7 h-7 rounded-full border-2 border-slate-300 transition-all hover:border-blue-400" />
+                                            )}
+                                        </div>
                                     </div>
                                 </button>
                             ))}
