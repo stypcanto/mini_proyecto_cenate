@@ -180,6 +180,11 @@ export const componentRegistry = {
   // ========================================================================
   // 🌐 MÓDULO EXTERNO
   // ========================================================================
+  '/roles/externo/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/roles/externo/dashboard': {
     component: lazy(() => import('../pages/roles/externo/DashboardExterno')),
     requiredAction: 'ver',
@@ -203,6 +208,11 @@ export const componentRegistry = {
   // ========================================================================
   // 📅 MÓDULO CITAS
   // ========================================================================
+  '/citas/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/citas/dashboard': {
     component: lazy(() => import('../pages/roles/citas/DashboardCitas')),
     requiredAction: 'ver',
