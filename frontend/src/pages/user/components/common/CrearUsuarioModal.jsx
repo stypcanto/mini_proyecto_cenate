@@ -8,7 +8,26 @@ import MonthYearPicker from '../../../../components/common/MonthYearPicker';
 import { API_ROUTES } from '../../../../constants/apiRoutes';
 import FirmaDigitalTab from './FirmaDigitalTab'; // 🆕 v1.14.0
 
+// 🆕 v1.15.15: Helper para enviar fechas al backend sin conversión UTC
+// IMPORTANTE: Previene el bug donde "02/05/2025" se guarda como "01/05/2025"
+const formatDateForBackend = (dateString) => {
+  if (!dateString) return null;
 
+  // Si ya está en formato YYYY-MM-DD correcto, retornar tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+
+  // Si es un objeto Date, formatear manualmente en zona horaria local
+  if (dateString instanceof Date) {
+    const year = dateString.getFullYear();
+    const month = String(dateString.getMonth() + 1).padStart(2, '0');
+    const day = String(dateString.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return dateString;
+};
 
 const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null }) => {
   const [selectedTab, setSelectedTab] = useState('personal');
@@ -1011,9 +1030,9 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
           dataToSend.firmaDigital = {
             entregoToken: formData.entrego_token === 'SI',
             numeroSerieToken: formData.numero_serie_token || null,
-            fechaEntregaToken: formData.entrego_token === 'SI' && formData.fecha_entrega_token ? formData.fecha_entrega_token : (formData.entrego_token === 'SI' ? new Date().toISOString().split('T')[0] : null),
-            fechaInicioCertificado: formData.fecha_inicio_certificado || null,
-            fechaVencimientoCertificado: formData.fecha_vencimiento_certificado || null,
+            fechaEntregaToken: formData.entrego_token === 'SI' && formData.fecha_entrega_token ? formatDateForBackend(formData.fecha_entrega_token) : (formData.entrego_token === 'SI' ? formatDateForBackend(new Date()) : null),
+            fechaInicioCertificado: formatDateForBackend(formData.fecha_inicio_certificado),
+            fechaVencimientoCertificado: formatDateForBackend(formData.fecha_vencimiento_certificado),
             motivoSinToken: formData.motivo_sin_token || null,
             observaciones: formData.observaciones_firma || null
           };
