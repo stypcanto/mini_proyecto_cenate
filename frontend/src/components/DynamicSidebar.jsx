@@ -146,6 +146,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   // Expandir automáticamente módulos según el rol del usuario
   const isExterno = roles.includes("EXTERNO") || roles.includes("INSTITUCION_EX");
   const isCoordinadorRed = roles.includes("COORDINADOR_RED");
+  const isGestorCitas = roles.includes("GESTOR DE CITAS") || roles.includes("GESTOR_CITAS");
 
   // ============================================================
   // Obtener modulos permitidos (segun permisos RBAC)
@@ -204,12 +205,23 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
+      // Para usuarios GESTOR DE CITAS: expandir "Gestión de Citas"
+      if (isGestorCitas) {
+        const moduloCitas = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("gestión de citas") ||
+          m.nombreModulo?.toLowerCase().includes("citas")
+        );
+        if (moduloCitas) {
+          sectionsToOpen[moduloCitas.nombreModulo] = true;
+        }
+      }
+
       // Si hay secciones para abrir, establecerlas
       if (Object.keys(sectionsToOpen).length > 0) {
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isExterno, isCoordinadorRed]);
+  }, [loading, modulosPermitidos, collapsed, isExterno, isCoordinadorRed, isGestorCitas]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD
