@@ -11,6 +11,8 @@ import React, { useEffect, useState } from "react";
 import { Sun, Moon, Bell, UserCircle2, LogOut } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
+import NotificacionesPanel from "../NotificacionesPanel";
+import apiClient from "../../services/apiClient";
 
 export default function HeaderCenate() {
   const { user, logout } = useAuth() || {}; // 🛡 Evita error si el contexto no existe
@@ -20,6 +22,10 @@ export default function HeaderCenate() {
   const [darkMode, setDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
   });
+
+  // 🔔 Estado de notificaciones
+  const [showNotificaciones, setShowNotificaciones] = useState(false);
+  const [cantidadNotificaciones, setCantidadNotificaciones] = useState(0);
 
   // 🔁 Sincroniza el modo con el documento
   useEffect(() => {
@@ -33,11 +39,39 @@ export default function HeaderCenate() {
     }
   }, [darkMode]);
 
+  // 🔔 Cargar notificaciones si es ADMIN o SUPERADMIN
+  useEffect(() => {
+    const esAdmin = user?.roles?.some(
+      (rol) => rol === "ADMIN" || rol === "SUPERADMIN"
+    );
+
+    if (esAdmin) {
+      cargarCantidadNotificaciones();
+      // Polling cada 5 minutos para actualizar notificaciones
+      const interval = setInterval(cargarCantidadNotificaciones, 5 * 60 * 1000);
+      return () => clearInterval(interval);
+    }
+  }, [user]);
+
+  const cargarCantidadNotificaciones = async () => {
+    try {
+      const count = await apiClient.get('/notificaciones/count');
+      setCantidadNotificaciones(count || 0);
+    } catch (error) {
+      console.error('❌ Error al cargar notificaciones:', error);
+      setCantidadNotificaciones(0);
+    }
+  };
+
   const toggleTheme = () => setDarkMode((prev) => !prev);
 
   const handleLogout = () => {
     if (logout) logout();
     navigate("/"); // 🚪 Regresa al inicio público
+  };
+
+  const handleNotificacionClick = () => {
+    setShowNotificaciones(!showNotificaciones);
   };
 
   return (
@@ -84,11 +118,19 @@ export default function HeaderCenate() {
 
         {/* Notificaciones */}
         <button
+          onClick={handleNotificacionClick}
           aria-label="Notificaciones"
           className="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all"
         >
           <Bell className="w-5 h-5" />
-          <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white"></span>
+          {cantidadNotificaciones > 0 && (
+            <>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
+                {cantidadNotificaciones > 9 ? '9+' : cantidadNotificaciones}
+              </span>
+            </>
+          )}
         </button>
 
         {/* Perfil de usuario */}
@@ -119,6 +161,12 @@ export default function HeaderCenate() {
           <span className="hidden sm:block">Salir</span>
         </button>
       </div>
+
+      {/* Panel de Notificaciones */}
+      <NotificacionesPanel
+        isOpen={showNotificaciones}
+        onClose={() => setShowNotificaciones(false)}
+      />
     </header>
   );
 }

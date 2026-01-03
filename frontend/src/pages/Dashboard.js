@@ -39,10 +39,10 @@ export default function Dashboard() {
       targetPath = "/roles/medico/dashboard";
     } else if (roles.includes("COORDINADOR")) {
       targetPath = "/roles/coordinador/dashboard";
-    } else if (roles.includes("EXTERNO")) {
-      targetPath = "/roles/externo/dashboard";
-    } else if (roles.includes("CITAS")) {
-      targetPath = "/roles/citas/dashboard";
+    } else if (roles.includes("GESTOR DE CITAS") || roles.includes("CITAS")) {
+      targetPath = "/citas/dashboard";
+    } else if (roles.includes("EXTERNO") || roles.includes("INSTITUCION_EX")) {
+      targetPath = "/roles/externo/bienvenida";
     } else if (roles.includes("LINEAMIENTOS")) {
       targetPath = "/roles/lineamientos/dashboard";
     } else if (roles.includes("USER")) {

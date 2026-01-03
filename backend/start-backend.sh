@@ -7,9 +7,6 @@ export MAIL_HOST="172.20.0.227"
 export MAIL_PORT="25"
 export MAIL_USERNAME="cenate.contacto@essalud.gob.pe"
 export MAIL_PASSWORD="essaludc50"
-export MAIL_SMTP_AUTH="false"
-export MAIL_SMTP_STARTTLS="true"
 export FRONTEND_URL="http://localhost:3000"
 
-echo "🚀 Iniciando backend CENATE..."
 ./gradlew bootRun

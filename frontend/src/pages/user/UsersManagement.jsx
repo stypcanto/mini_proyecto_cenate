@@ -87,6 +87,7 @@ const UsersManagement = () => {
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const [showCrearUsuarioModal, setShowCrearUsuarioModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -107,12 +108,18 @@ const UsersManagement = () => {
 
   // 🚀 Debounce del searchTerm para evitar búsquedas en cada teclazo
   useEffect(() => {
+    // Si hay texto escrito, activar estado de búsqueda
+    if (searchTerm !== debouncedSearchTerm) {
+      setIsSearching(true);
+    }
+
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-    }, 500); // Esperar 500ms después de que el usuario deja de escribir
+      setIsSearching(false); // Desactivar cuando termina el debounce
+    }, 300); // Reducido a 300ms para mejor UX
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm, debouncedSearchTerm]);
 
   // 🚀 Refs para mantener valores actuales sin causar recargas
   const filtersRef = useRef(filters);
@@ -702,22 +709,26 @@ const UsersManagement = () => {
 
     // 🔍 Búsqueda general (nombre, usuario, documento, IPRESS, email)
     if (debouncedSearchTerm && debouncedSearchTerm.trim() !== '') {
-      const searchLower = debouncedSearchTerm.toLowerCase().trim();
+      const searchLower = debouncedSearchTerm.trim();
+      console.log('🔍 Buscando:', searchLower, 'en', usersList.length, 'usuarios');
       filtered = filtered.filter(user => {
         const nombreCompleto = (user.nombre_completo || '').toLowerCase();
-        const username = (user.username || '').toLowerCase();
-        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
-        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
+        const username = (user.username || user.nameUser || '').toString();
+        const numeroDocumento = (user.numero_documento || user.num_doc_pers || user.numeroDocumento || '').toString();
+        const nombreIpress = (user.nombre_ipress || user.descIpress || user.nombreIpress || '').toLowerCase();
         // 📧 Campos de email (personal y corporativo) - Backend envía en snake_case
         const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
         const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
 
-        return nombreCompleto.includes(searchLower) ||
-               username.includes(searchLower) ||
-               numeroDocumento.includes(searchLower) ||
-               nombreIpress.includes(searchLower) ||
-               emailPersonal.includes(searchLower) ||
-               emailCorporativo.includes(searchLower);
+        // Búsqueda case-insensitive para texto, exacta para números (DNI)
+        const searchLowerCase = searchLower.toLowerCase();
+
+        return nombreCompleto.includes(searchLowerCase) ||
+               username.includes(searchLower) || // DNI: búsqueda exacta
+               numeroDocumento.includes(searchLower) || // DNI alternativo: búsqueda exacta
+               nombreIpress.includes(searchLowerCase) ||
+               emailPersonal.includes(searchLowerCase) ||
+               emailCorporativo.includes(searchLowerCase);
       });
     }
 
@@ -989,9 +1000,12 @@ const UsersManagement = () => {
                                (currentFilters.fechaRegistroDesde && currentFilters.fechaRegistroDesde !== '') ||
                                (currentFilters.fechaRegistroHasta && currentFilters.fechaRegistroHasta !== '');
       
-      // Si hay filtros, cargar más usuarios (100) para buscar en toda la base de datos
+      // Si hay filtros, cargar más usuarios para buscar en toda la base de datos
+      // Si es búsqueda por DNI (solo números), cargar más registros (2000)
+      // Si son otros filtros, cargar 1000
       // Si no hay filtros, usar paginación normal (7 usuarios)
-      const sizeToLoad = hasActiveFilters ? 100 : pageSize;
+      const isDNISearch = currentSearchTerm && /^\d+$/.test(currentSearchTerm.trim());
+      const sizeToLoad = isDNISearch ? 2000 : (hasActiveFilters ? 1000 : pageSize);
       const pageToLoad = hasActiveFilters ? 0 : currentPage;
       
       console.log('🔄 Cargando usuarios - Página:', pageToLoad, 'Tamaño:', sizeToLoad, 'Filtros activos:', hasActiveFilters, 'Forzar recarga:', forceReload);
@@ -1154,7 +1168,7 @@ const UsersManagement = () => {
 
       // Cargar usuarios e IPRESS en paralelo
       const [usersResponse, ipressResponse] = await Promise.all([
-        api.get('/usuarios/all-personal?page=0&size=1000&sortBy=createdAt&direction=DESC'),
+        api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC'),
         api.get('/ipress')
       ]);
 
@@ -1228,9 +1242,12 @@ const UsersManagement = () => {
                              (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
                              (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
 
-    // Si hay filtros activos y tenemos menos de 100 usuarios cargados, cargar todos
-    if (hasActiveFilters && users.length < 100) {
-      console.log('🔍 Filtros activos detectados, cargando todos los usuarios para buscar en toda la base de datos...');
+    // Si hay filtros activos y tenemos menos usuarios de los necesarios, cargar más
+    const isDNISearch = debouncedSearchTerm && /^\d+$/.test(debouncedSearchTerm.trim());
+    const requiredSize = isDNISearch ? 2000 : 1000;
+
+    if (hasActiveFilters && users.length < requiredSize) {
+      console.log('🔍 Filtros activos detectados, cargando', requiredSize, 'usuarios para buscar en toda la base de datos...');
       loadUsers(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1544,6 +1561,7 @@ const UsersManagement = () => {
               <UsersTable
                 users={paginatedUsers}
                 loading={loading}
+                isSearching={isSearching}
                 onViewDetail={handleVerDetalle}
                 onEdit={handleEditarUsuario}
                 onDelete={handleEliminarUsuario}
@@ -1573,6 +1591,7 @@ const UsersManagement = () => {
               <UsersCards
                 users={paginatedUsers}
                 loading={loading}
+                isSearching={isSearching}
                 onViewDetail={handleVerDetalle}
                 onEdit={handleEditarUsuario}
                 onDelete={handleEliminarUsuario}

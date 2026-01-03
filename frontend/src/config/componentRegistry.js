@@ -27,7 +27,7 @@ export const componentRegistry = {
   // 🧭 PANEL ADMINISTRATIVO
   // ========================================================================
   '/admin/bienvenida': {
-    component: lazy(() => import('../pages/common/Bienvenida')),
+    component: lazy(() => import('../pages/user/UserDashboard')),
     requiredAction: 'ver',
   },
 
@@ -196,7 +196,7 @@ export const componentRegistry = {
   // 🌐 MÓDULO EXTERNO
   // ========================================================================
   '/roles/externo/bienvenida': {
-    component: lazy(() => import('../pages/common/Bienvenida')),
+    component: lazy(() => import('../pages/user/UserDashboard')),
     requiredAction: 'ver',
   },
 
@@ -224,7 +224,7 @@ export const componentRegistry = {
   // 📅 MÓDULO CITAS
   // ========================================================================
   '/citas/bienvenida': {
-    component: lazy(() => import('../pages/common/Bienvenida')),
+    component: lazy(() => import('../pages/user/UserDashboard')),
     requiredAction: 'ver',
   },
 

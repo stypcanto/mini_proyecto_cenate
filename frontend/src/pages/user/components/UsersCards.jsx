@@ -28,7 +28,7 @@ const getTipoPersonal = (user) => {
   ).toUpperCase().trim();
 };
 
-const UsersCards = ({ users, loading = false, onViewDetail, onEdit, onDelete, onToggleEstado, onCreateUser, selectedUsers = [], onSelectUser }) => {
+const UsersCards = ({ users, loading = false, isSearching = false, onViewDetail, onEdit, onDelete, onToggleEstado, onCreateUser, selectedUsers = [], onSelectUser }) => {
   // Función para obtener las iniciales del nombre completo
   const getInitials = (nombreCompleto) => {
     if (!nombreCompleto) return '?';
@@ -73,6 +73,18 @@ const UsersCards = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
           <p className="text-sm font-medium text-gray-600">Buscando usuarios...</p>
           <p className="text-xs text-gray-400">Por favor espera un momento</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🔍 Buscando (debounce activo) - Muestra mientras espera el debounce
+  if (isSearching) {
+    return (
+      <div className="p-12 text-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="animate-spin rounded-full h-8 w-8 border-3 border-blue-600 border-t-transparent"></div>
+          <p className="text-sm font-medium text-blue-600">Buscando...</p>
         </div>
       </div>
     );

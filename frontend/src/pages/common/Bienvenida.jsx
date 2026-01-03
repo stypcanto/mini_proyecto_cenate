@@ -19,31 +19,18 @@ import {
   FileText
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import api from "../../services/apiClient";
 
 export default function Bienvenida() {
   const { user } = useAuth();
-  const [personalData, setPersonalData] = useState(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (user?.id_user) {
-      cargarDatosPersonal();
-    }
-  }, [user]);
-
-  const cargarDatosPersonal = async () => {
-    try {
-      const response = await api.get(`/api/usuarios/${user.id_user}`);
-      if (response.status === 200 && response.data) {
-        setPersonalData(response.data);
-      }
-    } catch (error) {
-      console.error("Error al cargar datos del personal:", error);
-    } finally {
+    // Simular carga con un pequeño delay para UX
+    const timer = setTimeout(() => {
       setLoading(false);
-    }
-  };
+    }, 300);
+    return () => clearTimeout(timer);
+  }, []);
 
   const formatearFecha = (fechaString) => {
     if (!fechaString) return "—";
@@ -67,6 +54,15 @@ export default function Bienvenida() {
     );
   }
 
+  // 🎯 Determinar saludo según género
+  const obtenerSaludo = () => {
+    const genero = user?.genero?.toUpperCase() || '';
+    // Detectar tanto "F"/"M" como "FEMENINO"/"MASCULINO"
+    if (genero === 'F' || genero === 'FEMENINO') return '¡Bienvenida al Sistema CENATE!';
+    if (genero === 'M' || genero === 'MASCULINO') return '¡Bienvenido al Sistema CENATE!';
+    return '¡Bienvenido(a) al Sistema CENATE!'; // Por defecto
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8">
       <div className="max-w-5xl mx-auto">
@@ -75,7 +71,7 @@ export default function Bienvenida() {
           <div className="flex items-center gap-3 mb-2">
             <Sparkles className="w-8 h-8 text-indigo-600" />
             <h1 className="text-4xl font-bold text-gray-800">
-              ¡Bienvenido(a) al Sistema CENATE!
+              {obtenerSaludo()}
             </h1>
           </div>
           <p className="text-gray-600 text-lg ml-11">
@@ -99,7 +95,7 @@ export default function Bienvenida() {
                 </h2>
                 <div className="flex items-center gap-2 text-indigo-100">
                   <Mail className="w-4 h-4" />
-                  <span>{personalData?.correo_personal || user?.username}</span>
+                  <span>{user?.username || "—"}</span>
                 </div>
               </div>
 
@@ -128,61 +124,16 @@ export default function Bienvenida() {
               </div>
             </div>
 
-            {/* Correo Corporativo */}
-            {personalData?.correo_corporativo && (
+            {/* Correo Personal adicional si existe */}
+            {user?.email && (
               <div className="flex items-start gap-4">
                 <div className="p-3 bg-purple-100 rounded-lg">
                   <Mail className="w-6 h-6 text-purple-600" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 font-medium">Correo Corporativo</p>
+                  <p className="text-sm text-gray-500 font-medium">Correo</p>
                   <p className="text-lg font-semibold text-gray-800">
-                    {personalData.correo_corporativo}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Profesión */}
-            {personalData?.profesion && (
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-green-100 rounded-lg">
-                  <Briefcase className="w-6 h-6 text-green-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500 font-medium">Profesión</p>
-                  <p className="text-lg font-semibold text-gray-800">
-                    {personalData.profesion}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Especialidad */}
-            {personalData?.especialidad && (
-              <div className="flex items-start gap-4">
-                <div className="p-3 bg-amber-100 rounded-lg">
-                  <Briefcase className="w-6 h-6 text-amber-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500 font-medium">Especialidad</p>
-                  <p className="text-lg font-semibold text-gray-800">
-                    {personalData.especialidad}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* IPRESS */}
-            {personalData?.ipress && (
-              <div className="flex items-start gap-4 md:col-span-2">
-                <div className="p-3 bg-indigo-100 rounded-lg">
-                  <Building2 className="w-6 h-6 text-indigo-600" />
-                </div>
-                <div className="flex-1">
-                  <p className="text-sm text-gray-500 font-medium">Institución (IPRESS)</p>
-                  <p className="text-lg font-semibold text-gray-800">
-                    {personalData.ipress}
+                    {user.email}
                   </p>
                 </div>
               </div>
