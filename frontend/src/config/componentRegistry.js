@@ -26,6 +26,11 @@ export const componentRegistry = {
   // ========================================================================
   // 🧭 PANEL ADMINISTRATIVO
   // ========================================================================
+  '/admin/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/admin/dashboard': {
     component: lazy(() => import('../pages/AdminDashboard')),
     requiredAction: 'ver',
@@ -119,6 +124,11 @@ export const componentRegistry = {
   // ========================================================================
   // 👨‍⚕️ MÓDULO MÉDICO
   // ========================================================================
+  '/roles/medico/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/roles/medico/dashboard': {
     component: lazy(() => import('../pages/roles/medico/DashboardMedico')),
     requiredAction: 'ver',
@@ -147,6 +157,11 @@ export const componentRegistry = {
   // ========================================================================
   // 📊 MÓDULO COORDINADOR
   // ========================================================================
+  '/roles/coordinador/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/roles/coordinador/dashboard': {
     component: lazy(() => import('../pages/roles/coordinador/DashboardCoordinador')),
     requiredAction: 'ver',
@@ -231,6 +246,11 @@ export const componentRegistry = {
   // ========================================================================
   // 📋 COORDINADOR DE GESTIÓN DE CITAS
   // ========================================================================
+  '/roles/coordcitas/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/roles/coordcitas/107': {
     component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
     requiredAction: 'ver',
