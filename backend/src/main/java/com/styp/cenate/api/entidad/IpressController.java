@@ -100,7 +100,7 @@ public class IpressController {
      * Requiere rol: ADMIN o SUPERADMIN
      */
     @PostMapping
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SUPERADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN')")
     public ResponseEntity<Map<String, Object>> createIpress(@Valid @RequestBody IpressRequest request) {
         log.info("➕ Creando nueva IPRESS: {}", request.getDescIpress());
         IpressResponse ipress = ipressService.createIpress(request);
@@ -120,7 +120,7 @@ public class IpressController {
      * Requiere rol: ADMIN o SUPERADMIN
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SUPERADMIN')")
+    @PreAuthorize("hasRole('ADMIN') or hasRole('SUPERADMIN')")
     public ResponseEntity<Map<String, Object>> updateIpress(
             @PathVariable Long id,
             @Valid @RequestBody IpressRequest request) {
@@ -142,7 +142,7 @@ public class IpressController {
      * Requiere rol: SUPERADMIN únicamente
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ROLE_SUPERADMIN')")
+    @PreAuthorize("hasRole('SUPERADMIN')")
     public ResponseEntity<Map<String, Object>> deleteIpress(@PathVariable Long id) {
         log.info("🗑️ Eliminando IPRESS con ID: {} (solo SUPERADMIN)", id);
         ipressService.deleteIpress(id);

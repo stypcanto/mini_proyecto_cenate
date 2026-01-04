@@ -1,6 +1,7 @@
 package com.styp.cenate.service.integracion;
 
 import com.styp.cenate.dto.ComparativoDisponibilidadHorarioDTO;
+import com.styp.cenate.dto.ResumenDisponibilidadPeriodoDTO;
 import com.styp.cenate.dto.SincronizacionResultadoDTO;
 import com.styp.cenate.model.SincronizacionHorarioLog;
 
@@ -74,6 +75,24 @@ public interface IIntegracionHorarioService {
      * @return Comparativo con diferencias
      */
     ComparativoDisponibilidadHorarioDTO obtenerComparativo(Long idDisponibilidad, Long idArea);
+
+    /**
+     * Obtiene comparativos de todas las disponibilidades de un periodo.
+     *
+     * Genera un resumen de sincronización para todas las disponibilidades
+     * del periodo especificado (formato YYYYMM, ej: 202601).
+     *
+     * Para cada disponibilidad retorna:
+     * - Datos del médico y especialidad
+     * - Horas declaradas vs horas sincronizadas al chatbot
+     * - Estado de sincronización
+     * - Indicador de inconsistencias
+     * - Cantidad de slots generados
+     *
+     * @param periodo Periodo en formato YYYYMM (ej: "202601")
+     * @return Lista de comparativos del periodo
+     */
+    List<ResumenDisponibilidadPeriodoDTO> obtenerComparativosPorPeriodo(String periodo);
 
     /**
      * Obtiene historial de sincronizaciones de una disponibilidad.

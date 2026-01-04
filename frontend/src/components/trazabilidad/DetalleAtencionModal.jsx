@@ -298,25 +298,121 @@ export default function DetalleAtencionModal({
               {/* TAB: Datos Clínicos */}
               {tabActiva === 'clinico' && (
                 <div className="space-y-4">
-                  {/* Estrategia CENACRON */}
-                  {atencion.nombreEstrategia && (
-                    <div className="bg-gradient-to-r from-[#0A5BA9]/10 to-[#2563EB]/10 border-2 border-[#0A5BA9] rounded-xl p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gradient-to-br from-[#0A5BA9] to-[#2563EB] rounded-lg">
-                          <Building2 className="w-5 h-5 text-white" />
+                  {/* ============================================ */}
+                  {/* 💊 PLAN DE ACCIÓN CLÍNICA (PRIORIDAD #1) */}
+                  {/* ============================================ */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                    {/* COLUMNA IZQUIERDA: PLAN TERAPÉUTICO (2/3 del espacio) */}
+                    <div className="lg:col-span-2 space-y-4">
+                      {/* Tratamiento Indicado (LO MÁS IMPORTANTE) */}
+                      {atencion.tratamiento && (
+                        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-3 border-green-500 rounded-xl p-5 shadow-lg">
+                          <h3 className="text-lg font-black text-green-900 mb-3 flex items-center gap-2 uppercase">
+                            <FileText className="w-5 h-5" />
+                            💊 Plan Farmacológico
+                          </h3>
+                          <div className="bg-white rounded-lg p-4 border-2 border-green-300">
+                            <pre className="text-sm text-green-900 font-semibold leading-relaxed whitespace-pre-wrap font-sans">
+                              {atencion.tratamiento}
+                            </pre>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs font-semibold text-[#0A5BA9] uppercase">Estrategia de Atención</p>
-                          <p className="text-lg font-bold text-slate-900">{atencion.nombreEstrategia}</p>
+                      )}
+
+                      {/* Recomendaciones del Especialista */}
+                      {atencion.recomendacionEspecialista && (
+                        <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border-2 border-teal-400 rounded-xl p-5 shadow-md">
+                          <h3 className="text-base font-bold text-teal-900 mb-3 flex items-center gap-2">
+                            <FileText className="w-5 h-5" />
+                            👨‍⚕️ Recomendaciones Clínicas
+                          </h3>
+                          <p className="text-sm text-teal-900 font-medium leading-relaxed whitespace-pre-wrap">
+                            {atencion.recomendacionEspecialista}
+                          </p>
                         </div>
-                      </div>
+                      )}
+
+                      {/* Resultados Clínicos / Exámenes */}
+                      {atencion.resultadosClinicos && (
+                        <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-5">
+                          <h3 className="text-sm font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                            <ClipboardList className="w-4 h-4" />
+                            Resultados de Exámenes
+                          </h3>
+                          <p className="text-sm text-indigo-800 whitespace-pre-wrap">{atencion.resultadosClinicos}</p>
+                        </div>
+                      )}
                     </div>
-                  )}
+
+                    {/* COLUMNA DERECHA: CONTEXTO ADMINISTRATIVO (1/3 del espacio) */}
+                    <div className="lg:col-span-1 space-y-4">
+                      {/* Diagnósticos CIE-10 COMPACTOS */}
+                      {(atencion.diagnosticosCie10?.length > 0 || atencion.cie10Codigo) && (
+                        <div className="bg-slate-50 border-2 border-slate-300 rounded-xl p-4">
+                          <h3 className="text-xs font-bold text-slate-600 mb-3 uppercase tracking-wide flex items-center gap-2">
+                            <Stethoscope className="w-4 h-4" />
+                            Códigos CIE-10
+                          </h3>
+                          {atencion.diagnosticosCie10?.length > 0 ? (
+                            <ul className="space-y-2 text-xs text-slate-700">
+                              {atencion.diagnosticosCie10.map((diag, index) => (
+                                <li key={index} className="flex items-start gap-2">
+                                  <span className={`px-1.5 py-0.5 rounded font-mono font-bold text-[10px] flex-shrink-0 ${
+                                    diag.esPrincipal
+                                      ? 'bg-red-600 text-white'
+                                      : 'bg-slate-300 text-slate-700'
+                                  }`}>
+                                    {diag.cie10Codigo}
+                                  </span>
+                                  <span className="leading-tight">
+                                    {diag.esPrincipal && <strong>⭐ </strong>}
+                                    {diag.cie10Descripcion}
+                                  </span>
+                                </li>
+                              ))}
+                            </ul>
+                          ) : (
+                            atencion.cie10Codigo && (
+                              <div className="flex items-start gap-2 text-xs text-slate-700">
+                                <span className="px-1.5 py-0.5 bg-red-600 text-white rounded font-mono font-bold text-[10px]">
+                                  {atencion.cie10Codigo}
+                                </span>
+                                <span className="leading-tight">{atencion.cie10Descripcion}</span>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      )}
+
+                      {/* Antecedentes */}
+                      {atencion.antecedentes && (
+                        <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-4">
+                          <h3 className="text-xs font-bold text-amber-800 mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <ClipboardList className="w-4 h-4" />
+                            Antecedentes
+                          </h3>
+                          <p className="text-xs text-amber-800 leading-snug whitespace-pre-wrap">{atencion.antecedentes}</p>
+                        </div>
+                      )}
+
+                      {/* Estrategia CENACRON */}
+                      {atencion.nombreEstrategia && (
+                        <div className="bg-[#0A5BA9]/5 border-2 border-[#0A5BA9] rounded-xl p-3">
+                          <p className="text-[10px] font-semibold text-[#0A5BA9] uppercase mb-1">Estrategia</p>
+                          <p className="text-xs font-bold text-slate-900">{atencion.nombreEstrategia}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* ============================================ */}
+                  {/* 📋 INFORMACIÓN COMPLEMENTARIA */}
+                  {/* ============================================ */}
 
                   {/* Motivo de Consulta */}
                   {atencion.motivoConsulta && (
-                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-6">
-                      <h3 className="text-sm font-bold text-blue-900 mb-3 flex items-center gap-2">
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-5">
+                      <h3 className="text-sm font-bold text-blue-900 mb-2 flex items-center gap-2">
                         <FileText className="w-4 h-4" />
                         Motivo de Consulta
                       </h3>
@@ -324,95 +420,30 @@ export default function DetalleAtencionModal({
                     </div>
                   )}
 
-                  {/* Antecedentes */}
-                  {atencion.antecedentes && (
-                    <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-6">
-                      <h3 className="text-sm font-bold text-amber-900 mb-3 flex items-center gap-2">
-                        <ClipboardList className="w-4 h-4" />
-                        Antecedentes
-                      </h3>
-                      <p className="text-sm text-amber-800 whitespace-pre-wrap">{atencion.antecedentes}</p>
-                    </div>
-                  )}
-
-                  {/* CIE-10: Código + Descripción */}
-                  {(atencion.cie10Codigo || atencion.cie10Descripcion) && (
-                    <div className="bg-red-50 border-2 border-red-200 rounded-xl p-6">
-                      <h3 className="text-sm font-bold text-red-900 mb-3 flex items-center gap-2">
-                        <Stethoscope className="w-4 h-4" />
-                        Clasificación Internacional (CIE-10)
-                      </h3>
-                      <div className="space-y-2">
-                        {atencion.cie10Codigo && (
-                          <div className="flex items-center gap-2">
-                            <span className="px-3 py-1 bg-red-600 text-white rounded-lg text-xs font-mono font-bold">
-                              {atencion.cie10Codigo}
-                            </span>
-                            {atencion.cie10Descripcion && (
-                              <span className="text-sm text-red-900 font-semibold">
-                                {atencion.cie10Descripcion}
-                              </span>
-                            )}
-                          </div>
-                        )}
-                        {!atencion.cie10Descripcion && atencion.cie10Codigo && (
-                          <p className="text-xs text-red-700 italic">Descripción no disponible</p>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Diagnóstico Clínico */}
+                  {/* Diagnóstico Clínico (Texto Descriptivo - SIN valores numéricos) */}
                   {atencion.diagnostico && (
-                    <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-6">
-                      <h3 className="text-sm font-bold text-purple-900 mb-3 flex items-center gap-2">
+                    <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-5">
+                      <h3 className="text-sm font-bold text-purple-900 mb-2 flex items-center gap-2">
                         <Stethoscope className="w-4 h-4" />
-                        Diagnóstico Clínico
+                        Impresión Diagnóstica (Texto Libre)
                       </h3>
                       <p className="text-sm text-purple-800 whitespace-pre-wrap font-medium">{atencion.diagnostico}</p>
                     </div>
                   )}
 
-                  {/* Recomendaciones del Especialista */}
-                  {atencion.recomendacionEspecialista && (
-                    <div className="bg-teal-50 border-2 border-teal-200 rounded-xl p-6">
-                      <h3 className="text-sm font-bold text-teal-900 mb-3 flex items-center gap-2">
-                        <FileText className="w-4 h-4" />
-                        Recomendaciones del Especialista
-                      </h3>
-                      <p className="text-sm text-teal-800 whitespace-pre-wrap">{atencion.recomendacionEspecialista}</p>
-                    </div>
-                  )}
-
-                  {/* Tratamiento */}
-                  {atencion.tratamiento && (
-                    <div className="bg-green-50 border-2 border-green-200 rounded-xl p-6">
-                      <h3 className="text-sm font-bold text-green-900 mb-3 flex items-center gap-2">
-                        <FileText className="w-4 h-4" />
-                        Tratamiento Indicado
-                      </h3>
-                      <p className="text-sm text-green-800 whitespace-pre-wrap font-medium">{atencion.tratamiento}</p>
-                    </div>
-                  )}
-
-                  {/* Resultados Clínicos */}
-                  {atencion.resultadosClinicos && (
-                    <div className="bg-indigo-50 border-2 border-indigo-200 rounded-xl p-6">
-                      <h3 className="text-sm font-bold text-indigo-900 mb-3">Resultados Clínicos / Exámenes</h3>
-                      <p className="text-sm text-indigo-800 whitespace-pre-wrap">{atencion.resultadosClinicos}</p>
-                    </div>
-                  )}
-
                   {/* Observaciones Generales */}
                   {atencion.observacionesGenerales && (
-                    <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-6">
-                      <h3 className="text-sm font-bold text-yellow-900 mb-3">Observaciones Generales</h3>
+                    <div className="bg-yellow-50 border-2 border-yellow-200 rounded-xl p-5">
+                      <h3 className="text-sm font-bold text-yellow-900 mb-2 flex items-center gap-2">
+                        <FileText className="w-4 h-4" />
+                        Observaciones Generales
+                      </h3>
                       <p className="text-sm text-yellow-800 whitespace-pre-wrap">{atencion.observacionesGenerales}</p>
                     </div>
                   )}
 
                   {/* Estado Vacío */}
-                  {!atencion.nombreEstrategia && !atencion.motivoConsulta && !atencion.diagnostico && !atencion.cie10Codigo && !atencion.recomendacionEspecialista && !atencion.tratamiento && !atencion.antecedentes && !atencion.resultadosClinicos && !atencion.observacionesGenerales && (
+                  {!atencion.tratamiento && !atencion.recomendacionEspecialista && !atencion.motivoConsulta && !atencion.diagnostico && !atencion.observacionesGenerales && (
                     <div className="bg-slate-50 border-2 border-slate-200 rounded-xl p-12 text-center">
                       <FileText className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                       <p className="text-slate-600 font-medium">No hay datos clínicos registrados</p>

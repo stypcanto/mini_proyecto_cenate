@@ -192,6 +192,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/coordinador/comparativo-disponibilidad': {
+    component: lazy(() => import('../pages/roles/coordinador/ComparativoDisponibilidad')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 🌐 MÓDULO EXTERNO
   // ========================================================================
@@ -344,6 +349,27 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/programacion/ProgramacionCenateDetalle')),
     requiredAction: 'ver',
     pathMatch: '/programacion/detalle', // Para MBAC, usar path sin parámetros
+  },
+
+  // ========================================================================
+  // 👩‍⚕️ MÓDULO ENFERMERÍA
+  // ========================================================================
+  '/enfermeria/bienvenida': {
+    component: lazy(() => import('../pages/enfermeria/BienvenidaEnfermeria')),
+    requiredAction: 'ver',
+    requiredRoles: ['ENFERMERIA'],
+  },
+
+  '/enfermeria/mis-pacientes': {
+    component: lazy(() => import('../pages/enfermeria/MisPacientesEnfermeria')),
+    requiredAction: 'ver',
+    requiredRoles: ['ENFERMERIA'],
+  },
+
+  '/enfermeria/dashboard': {
+    component: lazy(() => import('../pages/enfermeria/DashboardEnfermeria')),
+    requiredAction: 'ver',
+    requiredRoles: ['SUPERADMIN'],
   },
 };
 

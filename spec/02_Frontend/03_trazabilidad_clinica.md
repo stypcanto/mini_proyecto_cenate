@@ -1,7 +1,7 @@
 # Módulo de Trazabilidad Clínica - Documentación Técnica
 
-> **Estado**: 🟡 Parcialmente implementado (Frontend completo, Backend requiere ajustes)
-> **Versión**: 2.0.0-dev
+> **Estado**: ✅ Implementado (Frontend 100%, Backend 100%, Múltiples CIE-10 ✅)
+> **Versión**: 2.1.0
 > **Fecha**: 2026-01-03
 > **Autores**: Claude Code + Ing. Styp Canto Rondón
 
@@ -11,11 +11,12 @@
 
 1. [Resumen Ejecutivo](#resumen-ejecutivo)
 2. [Arquitectura del Módulo](#arquitectura-del-módulo)
-3. [Componentes Implementados](#componentes-implementados)
-4. [Estado de Implementación](#estado-de-implementación)
-5. [Problemas Identificados](#problemas-identificados)
-6. [Plan de Corrección](#plan-de-corrección)
-7. [Testing y Validación](#testing-y-validación)
+3. [Módulo de Múltiples Diagnósticos CIE-10](#módulo-de-múltiples-diagnósticos-cie-10) ⭐ **NUEVO**
+4. [Componentes Implementados](#componentes-implementados)
+5. [Estado de Implementación](#estado-de-implementación)
+6. [Problemas Identificados](#problemas-identificados)
+7. [Plan de Corrección](#plan-de-corrección)
+8. [Testing y Validación](#testing-y-validación)
 
 ---
 
@@ -110,7 +111,417 @@ backend/src/main/java/com/styp/cenate/
 
 ---
 
-## 3. Componentes Implementados
+## 3. Módulo de Múltiples Diagnósticos CIE-10
+
+> ⭐ **Implementación Completa**: Backend + Frontend + UI/UX Médico
+> **Versión**: 1.0.0
+> **Fecha**: 2026-01-03
+
+### 3.1 Resumen
+
+El módulo permite registrar **múltiples diagnósticos CIE-10** por atención clínica, diferenciando entre diagnóstico principal y secundarios. Implementa principios de **UI/UX médico** priorizando información clínica sobre administrativa.
+
+### 3.2 Estructura de Base de Datos
+
+#### Tabla: `atencion_diagnosticos_cie10`
+
+```sql
+CREATE TABLE atencion_diagnosticos_cie10 (
+    id SERIAL PRIMARY KEY,
+    id_atencion INTEGER NOT NULL REFERENCES atencion_clinica(id_atencion) ON DELETE CASCADE,
+    cie10_codigo VARCHAR(10) NOT NULL,
+    es_principal BOOLEAN DEFAULT FALSE,
+    orden INTEGER NOT NULL,
+    observaciones TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_atencion_diagnosticos_atencion ON atencion_diagnosticos_cie10(id_atencion);
+CREATE INDEX idx_atencion_diagnosticos_codigo ON atencion_diagnosticos_cie10(cie10_codigo);
+```
+
+#### Catálogo: `dim_cie10`
+
+```sql
+-- Contiene 14,400+ códigos CIE-10 con descripciones
+SELECT codigo, descripcion FROM dim_cie10 WHERE codigo IN ('I10', 'I251', 'E785');
+
+ codigo |           descripcion
+--------|----------------------------------
+ I10    | Hipertensión esencial (primaria)
+ I251   | Enfermedad aterosclerótica del corazón
+ E785   | Hiperlipidemia no especificada
+```
+
+#### Ejemplo de Datos Reales
+
+```sql
+-- Atención #15: Paciente con hipertensión y comorbilidades
+SELECT
+  adc.id_atencion,
+  adc.cie10_codigo,
+  dc.descripcion,
+  adc.es_principal,
+  adc.orden,
+  adc.observaciones
+FROM atencion_diagnosticos_cie10 adc
+LEFT JOIN dim_cie10 dc ON adc.cie10_codigo = dc.codigo
+WHERE adc.id_atencion = 15
+ORDER BY adc.orden;
+
+ id_atencion | cie10_codigo | descripcion                            | es_principal | orden | observaciones
+-------------|--------------|----------------------------------------|--------------|-------|------------------
+ 15          | I10          | Hipertensión esencial (primaria)       | t            | 1     | Diagnóstico principal
+ 15          | I251         | Enfermedad aterosclerótica del corazón | f            | 2     | Cardiopatía aterosclerótica
+ 15          | E785         | Hiperlipidemia no especificada         | f            | 3     | Factor de riesgo cardiovascular
+```
+
+### 3.3 Backend Implementation
+
+#### Service Layer: `AtencionClinicaServiceImpl.java`
+
+**Archivo**: `/backend/src/main/java/com/styp/cenate/service/atencion/AtencionClinicaServiceImpl.java`
+
+**Líneas**: 340-399
+
+```java
+// Obtener lista completa de diagnósticos CIE-10 (soporte múltiple)
+List<DiagnosticoCie10DTO> diagnosticosCie10 = diagnosticoCie10Repository
+        .findByIdAtencionOrderByOrdenAsc(atencion.getIdAtencion())
+        .stream()
+        .map(diag -> {
+            // JOIN con catálogo dim_cie10 para obtener descripción
+            String descripcion = dimCie10Repository
+                    .findDescripcionByCodigo(diag.getCie10Codigo())
+                    .orElse(null);
+
+            return DiagnosticoCie10DTO.builder()
+                    .cie10Codigo(diag.getCie10Codigo())
+                    .cie10Descripcion(descripcion)
+                    .esPrincipal(diag.getEsPrincipal())
+                    .orden(diag.getOrden())
+                    .observaciones(diag.getObservaciones())
+                    .build();
+        })
+        .collect(Collectors.toList());
+
+// Agregar al DTO de respuesta
+return AtencionClinicaResponseDTO.builder()
+        // ... otros campos ...
+        .diagnosticosCie10(diagnosticosCie10)  // Array de diagnósticos
+        .cie10Codigo(atencion.getCie10Codigo()) // Legacy - mantiene compatibilidad
+        .cie10Descripcion(cie10Descripcion)     // Legacy
+        .build();
+```
+
+#### DTO: `DiagnosticoCie10DTO.java`
+
+```java
+@Data
+@Builder
+public class DiagnosticoCie10DTO {
+    private String cie10Codigo;        // Ej: "I10"
+    private String cie10Descripcion;   // Ej: "Hipertensión esencial (primaria)"
+    private Boolean esPrincipal;       // true = diagnóstico principal ⭐
+    private Integer orden;             // 1, 2, 3, ...
+    private String observaciones;      // Notas adicionales del médico
+}
+```
+
+#### API Response Format
+
+```json
+{
+  "status": 200,
+  "data": {
+    "idAtencion": 15,
+    "diagnosticosCie10": [
+      {
+        "cie10Codigo": "I10",
+        "cie10Descripcion": "Hipertensión esencial (primaria)",
+        "esPrincipal": true,
+        "orden": 1,
+        "observaciones": "Diagnóstico principal"
+      },
+      {
+        "cie10Codigo": "I251",
+        "cie10Descripcion": "Enfermedad aterosclerótica del corazón",
+        "esPrincipal": false,
+        "orden": 2,
+        "observaciones": "Cardiopatía aterosclerótica - Diagnóstico secundario"
+      },
+      {
+        "cie10Codigo": "E785",
+        "cie10Descripcion": "Hiperlipidemia no especificada",
+        "esPrincipal": false,
+        "orden": 3,
+        "observaciones": "Hiperlipidemia - Factor de riesgo cardiovascular"
+      }
+    ],
+    "tratamiento": "Enalapril 10mg VO c/12h. Control en 15 días.",
+    "recomendacionEspecialista": "Control periódico de presión arterial..."
+  }
+}
+```
+
+### 3.4 Frontend Components
+
+#### 3.4.1 Modal de Detalle: `DetalleAtencionModal.jsx`
+
+**Archivo**: `/frontend/src/components/trazabilidad/DetalleAtencionModal.jsx`
+**Líneas**: 300-451
+
+**Diseño UI/UX Médico** (Basado en feedback de profesionales de salud):
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                  DATOS CLÍNICOS                             │
+├─────────────────────────────────────────────────────────────┤
+│  [2/3 COLUMNA IZQ - ACCIÓN CLÍNICA]  │ [1/3 COL DER - CTX] │
+│                                        │                     │
+│  💊 PLAN FARMACOLÓGICO (VERDE)         │ 📋 CIE-10 (COMPACTO)│
+│  ┌────────────────────────────┐       │ ┌─────────────────┐ │
+│  │ Enalapril 10mg VO c/12h    │       │ │ [I10] ⭐ Hiper. │ │
+│  │ Control en 15 días         │       │ │ [I251] Enf. Ate.│ │
+│  └────────────────────────────┘       │ │ [E785] Hiperlip.│ │
+│                                        │ └─────────────────┘ │
+│  👨‍⚕️ RECOMENDACIONES (TEAL)            │                     │
+│  ┌────────────────────────────┐       │ 📝 ANTECEDENTES     │
+│  │ Control periódico PA       │       │                     │
+│  │ Modificar hábitos aliment. │       │ 🎯 ESTRATEGIA       │
+│  └────────────────────────────┘       │                     │
+└────────────────────────────────────────┴─────────────────────┘
+```
+
+**Principios aplicados**:
+1. ✅ **Tratamiento > Códigos**: Medicación visible sin scroll
+2. ✅ **2 columnas**: Izq (acción clínica) + Der (contexto administrativo)
+3. ✅ **CIE-10 comprimido**: De cards gigantes → lista compacta (3 líneas)
+4. ✅ **Sin redundancia**: No repetir valores numéricos de Signos Vitales
+
+**Código del layout 2 columnas**:
+
+```jsx
+{/* Grid 2 columnas responsive */}
+<div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+
+  {/* COLUMNA IZQUIERDA: ACCIÓN CLÍNICA (2/3) */}
+  <div className="lg:col-span-2 space-y-4">
+
+    {/* 💊 Plan Farmacológico (PRIORIDAD #1) */}
+    {atencion.tratamiento && (
+      <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-3 border-green-500 rounded-xl p-5 shadow-lg">
+        <h3 className="text-lg font-black text-green-900 uppercase">
+          💊 Plan Farmacológico
+        </h3>
+        <pre className="text-sm text-green-900 font-semibold">
+          {atencion.tratamiento}
+        </pre>
+      </div>
+    )}
+
+    {/* 👨‍⚕️ Recomendaciones Clínicas */}
+    {atencion.recomendacionEspecialista && (
+      <div className="bg-gradient-to-br from-teal-50 to-cyan-50 border-2 border-teal-400">
+        {/* ... */}
+      </div>
+    )}
+  </div>
+
+  {/* COLUMNA DERECHA: CONTEXTO ADMINISTRATIVO (1/3) */}
+  <div className="lg:col-span-1 space-y-4">
+
+    {/* 📋 Códigos CIE-10 COMPACTOS */}
+    <div className="bg-slate-50 border-2 border-slate-300 rounded-xl p-4">
+      <h3 className="text-xs font-bold text-slate-600 uppercase">
+        Códigos CIE-10
+      </h3>
+      <ul className="space-y-2 text-xs text-slate-700">
+        {atencion.diagnosticosCie10.map((diag, index) => (
+          <li key={index} className="flex items-start gap-2">
+            <span className={`px-1.5 py-0.5 rounded font-mono font-bold text-[10px] ${
+              diag.esPrincipal ? 'bg-red-600 text-white' : 'bg-slate-300 text-slate-700'
+            }`}>
+              {diag.cie10Codigo}
+            </span>
+            <span className="leading-tight">
+              {diag.esPrincipal && <strong>⭐ </strong>}
+              {diag.cie10Descripcion}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</div>
+```
+
+#### 3.4.2 Historial de Atenciones: `HistorialAtencionesTab.jsx`
+
+**Archivo**: `/frontend/src/components/trazabilidad/HistorialAtencionesTab.jsx`
+**Líneas**: 562-640
+
+**Orden de información** (según prioridad médica):
+
+1. **💊 Plan Farmacológico** (verde, destacado)
+2. **👨‍⚕️ Recomendaciones** (teal)
+3. **📋 Códigos CIE-10** (compacto, gris)
+4. **📝 Impresión Diagnóstica** (morado)
+
+**Código de CIE-10 compacto**:
+
+```jsx
+{/* 📋 CIE-10 Compacto (Contexto administrativo) */}
+{(atencion.diagnosticosCie10?.length > 0 || atencion.cie10Codigo) && (
+  <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg">
+    <h4 className="text-xs font-bold text-slate-600 uppercase flex items-center gap-2">
+      <Stethoscope className="w-3 h-3" />
+      Códigos CIE-10 {atencion.diagnosticosCie10?.length > 0 && `(${atencion.diagnosticosCie10.length})`}
+    </h4>
+
+    {atencion.diagnosticosCie10?.length > 0 ? (
+      <ul className="space-y-1.5 text-xs text-slate-700">
+        {atencion.diagnosticosCie10.map((diag, index) => (
+          <li key={index} className="flex items-start gap-2">
+            <span className={`px-1.5 py-0.5 rounded font-mono font-bold text-[10px] ${
+              diag.esPrincipal ? 'bg-red-600 text-white' : 'bg-slate-300 text-slate-700'
+            }`}>
+              {diag.cie10Codigo}
+            </span>
+            <span className="leading-tight">
+              {diag.esPrincipal && <strong>⭐ </strong>}
+              {diag.cie10Descripcion}
+            </span>
+          </li>
+        ))}
+      </ul>
+    ) : (
+      /* Formato legacy para atenciones antiguas */
+      <div className="flex items-start gap-2 text-xs">
+        <span className="px-1.5 py-0.5 bg-red-600 text-white rounded font-mono font-bold text-[10px]">
+          {atencion.cie10Codigo}
+        </span>
+        <span className="leading-tight">{atencion.cie10Descripcion}</span>
+      </div>
+    )}
+  </div>
+)}
+```
+
+### 3.5 Principios de UI/UX Médico Aplicados
+
+#### Retroalimentación del Usuario (Médico)
+
+> **Feedback original**: "¿Por qué rayos ocupa la mitad de la pantalla? Tienes tres tarjetas gigantes para códigos administrativos. A mí, el código exacto me importa para la estadística y la aseguradora. Para tratar al paciente, ya sé que es hipertenso porque lo vi arriba en rojo gigante."
+
+#### Solución Implementada
+
+| Antes ❌ | Después ✅ |
+|---------|----------|
+| 3 tarjetas gigantes de CIE-10 | Lista compacta en 3 líneas |
+| Códigos ocupan 50% pantalla | Códigos en columna lateral (33%) |
+| Tratamiento fuera de vista | Tratamiento PRIMERO, sin scroll |
+| Redundancia numérica en texto | Solo texto cualitativo |
+| Colores "chillones" | Slate gris, sin distracciones |
+
+#### Reglas de Oro
+
+1. **Diagnóstico + Tratamiento**: Deben verse juntos sin scroll
+2. **Jerarquía Visual**: Medicación > Códigos administrativos
+3. **Espacio Eficiente**: Comprimir datos administrativos
+4. **No Redundancia**: No repetir valores numéricos ya mostrados
+5. **Workflow Médico**: Pensar como médico, no como programador
+
+### 3.6 Testing y Validación
+
+#### Test 1: Obtener atenciones con múltiples CIE-10
+
+```bash
+TOKEN=$(curl -s -X POST http://localhost:8080/api/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"44914706","password":"@Styp654321"}' | jq -r '.token')
+
+curl -s -X GET "http://localhost:8080/api/atenciones-clinicas/asegurado/1?page=0&size=5" \
+  -H "Authorization: Bearer $TOKEN" | jq '.data.content[0].diagnosticosCie10'
+```
+
+**Resultado esperado**:
+```json
+[
+  {
+    "cie10Codigo": "I10",
+    "cie10Descripcion": "Hipertensión esencial (primaria)",
+    "esPrincipal": true,
+    "orden": 1,
+    "observaciones": "Diagnóstico principal"
+  },
+  {
+    "cie10Codigo": "I251",
+    "cie10Descripcion": "Enfermedad aterosclerótica del corazón",
+    "esPrincipal": false,
+    "orden": 2,
+    "observaciones": "Cardiopatía aterosclerótica - Diagnóstico secundario"
+  },
+  {
+    "cie10Codigo": "E785",
+    "cie10Descripcion": "Hiperlipidemia no especificada",
+    "esPrincipal": false,
+    "orden": 3,
+    "observaciones": "Hiperlipidemia - Factor de riesgo cardiovascular"
+  }
+]
+```
+
+#### Test 2: Validación Frontend
+
+1. Login en `http://localhost:3000`
+2. Buscar asegurado con pk_asegurado = 1
+3. Navegar a tab "Antecedentes Clínicos"
+4. Abrir atención #15 (clic en card)
+5. Verificar:
+   - ✅ Tratamiento visible sin scroll
+   - ✅ CIE-10 compacto en columna derecha
+   - ✅ Diagnóstico principal marcado con ⭐ y badge rojo
+   - ✅ Diagnósticos secundarios con badge gris
+   - ✅ Contador "(3)" en header de CIE-10
+
+### 3.7 Archivos Modificados
+
+| Archivo | Líneas | Cambios |
+|---------|--------|---------|
+| `AtencionClinicaServiceImpl.java` | 340-399 | Query y mapeo múltiples CIE-10 |
+| `DetalleAtencionModal.jsx` | 300-451 | Layout 2 columnas, CIE-10 compacto |
+| `HistorialAtencionesTab.jsx` | 562-640 | Reordenar prioridades, CIE-10 compacto |
+
+### 3.8 Scripts SQL de Referencia
+
+**Insertar múltiples diagnósticos**:
+```sql
+INSERT INTO atencion_diagnosticos_cie10 (id_atencion, cie10_codigo, es_principal, orden, observaciones)
+VALUES
+  (15, 'I10', TRUE, 1, 'Diagnóstico principal'),
+  (15, 'I251', FALSE, 2, 'Cardiopatía aterosclerótica - Diagnóstico secundario'),
+  (15, 'E785', FALSE, 3, 'Hiperlipidemia - Factor de riesgo cardiovascular');
+```
+
+**Consultar con descripción**:
+```sql
+SELECT
+  adc.id_atencion,
+  adc.cie10_codigo,
+  dc.descripcion AS cie10_descripcion,
+  adc.es_principal,
+  adc.orden
+FROM atencion_diagnosticos_cie10 adc
+LEFT JOIN dim_cie10 dc ON adc.cie10_codigo = dc.codigo
+WHERE adc.id_atencion = 15
+ORDER BY adc.orden;
+```
+
+---
+
+## 4. Componentes Implementados
 
 ### 3.1 Frontend Services
 

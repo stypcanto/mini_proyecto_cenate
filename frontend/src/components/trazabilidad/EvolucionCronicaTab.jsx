@@ -22,7 +22,8 @@ export default function EvolucionCronicaTab({ pkAsegurado }) {
         setError(null);
         try {
             const response = await evolucionCronicaService.obtenerEvolucion(pkAsegurado, mesesVista);
-            setDatos(response);
+            // ✅ FIX: Acceder a response.data en lugar de response directamente
+            setDatos(response?.data || null);
         } catch (err) {
             console.error('Error al cargar evolución:', err);
             setError('No se pudo cargar la evolución del paciente');

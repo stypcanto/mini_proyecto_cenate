@@ -559,59 +559,82 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                         </div>
                       ) }
 
-                      {/* Diagnóstico Clínico con CIE-10 inline (OPTIMIZADO) */ }
-                      { (atencion.diagnostico || atencion.cie10Codigo) && (
-                        <div className="p-4 bg-purple-50 border-2 border-purple-300 rounded-xl">
-                          <div className="flex items-start justify-between gap-3 mb-2">
-                            <h4 className="text-sm font-bold text-purple-900 flex items-center gap-2">
-                              <Stethoscope className="w-4 h-4" />
-                              Diagnóstico Clínico
-                            </h4>
-                            {/* CIE-10 como badge pequeño (FIX PROBLEMA #3) */ }
-                            { atencion.cie10Codigo && (
-                              <span
-                                className="px-2 py-1 bg-gray-700 text-white rounded text-xs font-mono font-semibold whitespace-nowrap"
-                                title={ atencion.cie10Descripcion || 'Código CIE-10' }
-                              >
-                                CIE: { atencion.cie10Codigo }
-                              </span>
-                            ) }
-                          </div>
-                          { atencion.diagnostico && (
-                            <p className="text-sm text-purple-800 leading-relaxed">
-                              { atencion.diagnostico }
-                            </p>
+                      {/* 💊 TRATAMIENTO Y RECOMENDACIONES (PRIORIDAD #1) */ }
+                      { (atencion.tratamiento || atencion.recomendacionEspecialista) && (
+                        <div className="space-y-3">
+                          {/* Tratamiento */ }
+                          { atencion.tratamiento && (
+                            <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded-xl">
+                              <h4 className="text-sm font-black text-green-900 mb-2 flex items-center gap-2 uppercase">
+                                <FileText className="w-4 h-4" />
+                                💊 Plan Farmacológico
+                              </h4>
+                              <pre className="text-sm text-green-900 font-semibold leading-relaxed whitespace-pre-wrap font-sans">
+                                { atencion.tratamiento }
+                              </pre>
+                            </div>
                           ) }
-                          { atencion.cie10Descripcion && !atencion.diagnostico && (
-                            <p className="text-sm text-purple-700 italic">
-                              { atencion.cie10Descripcion }
-                            </p>
+
+                          {/* Recomendaciones */ }
+                          { atencion.recomendacionEspecialista && (
+                            <div className="p-4 bg-teal-50 border-2 border-teal-300 rounded-xl">
+                              <h4 className="text-sm font-bold text-teal-900 mb-2 flex items-center gap-2">
+                                <FileText className="w-4 h-4" />
+                                👨‍⚕️ Recomendaciones
+                              </h4>
+                              <p className="text-sm text-teal-900 font-medium leading-relaxed whitespace-pre-wrap">
+                                { atencion.recomendacionEspecialista }
+                              </p>
+                            </div>
                           ) }
                         </div>
                       ) }
 
-                      {/* Recomendaciones del Especialista (PRIORIDAD ALTA) */ }
-                      { atencion.recomendacionEspecialista && (
-                        <div className="p-5 bg-gradient-to-br from-teal-50 to-cyan-50 border-2 border-teal-400 rounded-xl shadow-sm">
-                          <h4 className="text-base font-bold text-teal-900 mb-3 flex items-center gap-2">
-                            <FileText className="w-5 h-5" />
-                            👨‍⚕️ Recomendaciones del Especialista
+                      {/* 📋 CIE-10 Compacto (Contexto administrativo) */ }
+                      { (atencion.diagnosticosCie10?.length > 0 || atencion.cie10Codigo) && (
+                        <div className="p-3 bg-slate-50 border border-slate-300 rounded-lg">
+                          <h4 className="text-xs font-bold text-slate-600 mb-2 uppercase tracking-wide flex items-center gap-2">
+                            <Stethoscope className="w-3 h-3" />
+                            Códigos CIE-10 { atencion.diagnosticosCie10?.length > 0 && `(${atencion.diagnosticosCie10.length})` }
                           </h4>
-                          <p className="text-sm text-teal-900 font-medium leading-relaxed whitespace-pre-wrap">
-                            { atencion.recomendacionEspecialista }
-                          </p>
+                          { atencion.diagnosticosCie10?.length > 0 ? (
+                            <ul className="space-y-1.5 text-xs text-slate-700">
+                              { atencion.diagnosticosCie10.map((diag, index) => (
+                                <li key={ index } className="flex items-start gap-2">
+                                  <span className={ `px-1.5 py-0.5 rounded font-mono font-bold text-[10px] flex-shrink-0 ${
+                                    diag.esPrincipal ? 'bg-red-600 text-white' : 'bg-slate-300 text-slate-700'
+                                  }` }>
+                                    { diag.cie10Codigo }
+                                  </span>
+                                  <span className="leading-tight">
+                                    { diag.esPrincipal && <strong>⭐ </strong> }
+                                    { diag.cie10Descripcion }
+                                  </span>
+                                </li>
+                              )) }
+                            </ul>
+                          ) : (
+                            atencion.cie10Codigo && (
+                              <div className="flex items-start gap-2 text-xs text-slate-700">
+                                <span className="px-1.5 py-0.5 bg-red-600 text-white rounded font-mono font-bold text-[10px]">
+                                  { atencion.cie10Codigo }
+                                </span>
+                                <span className="leading-tight">{ atencion.cie10Descripcion }</span>
+                              </div>
+                            )
+                          ) }
                         </div>
                       ) }
 
-                      {/* Tratamiento Indicado (PRIORIDAD ALTA) */ }
-                      { atencion.tratamiento && (
-                        <div className="p-5 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded-xl shadow-sm">
-                          <h4 className="text-base font-bold text-green-900 mb-3 flex items-center gap-2">
-                            <FileText className="w-5 h-5" />
-                            💊 Tratamiento Indicado
+                      {/* Impresión Diagnóstica (texto libre - SIN valores) */ }
+                      { atencion.diagnostico && (
+                        <div className="p-3 bg-purple-50 border border-purple-300 rounded-lg">
+                          <h4 className="text-xs font-bold text-purple-900 flex items-center gap-2 mb-1.5">
+                            <FileText className="w-3 h-3" />
+                            Impresión Diagnóstica
                           </h4>
-                          <p className="text-sm text-green-900 font-semibold leading-relaxed whitespace-pre-wrap">
-                            { atencion.tratamiento }
+                          <p className="text-xs text-purple-800 leading-relaxed">
+                            { atencion.diagnostico }
                           </p>
                         </div>
                       ) }

@@ -6,9 +6,21 @@
 // ========================================================================
 
 import React, { useEffect, useState } from "react";
-import { HeartPulse } from "lucide-react";
+import { HeartPulse, Calendar } from "lucide-react";
 import { dashboardMedicoService } from "../../../services/dashboardMedicoService";
 import MedicoDashboardCard from "./components/MedicoDashboardCard";
+
+// Card estática de Disponibilidad Mensual (Fase 4)
+const CARD_DISPONIBILIDAD = {
+    id: 'disponibilidad-mensual-static',
+    titulo: 'Mi Disponibilidad Mensual',
+    descripcion: 'Declara tu disponibilidad horaria para atención de telemedicina',
+    link: '/roles/medico/disponibilidad',
+    icono: 'Calendar',
+    color: '#0A5BA9',
+    targetBlank: false,
+    isStatic: true
+};
 
 export default function DashboardMedico() {
     const [cards, setCards] = useState([]);
@@ -24,10 +36,13 @@ export default function DashboardMedico() {
             setLoading(true);
             setError(null);
             const data = await dashboardMedicoService.obtenerActivas();
-            setCards(data || []);
+            // Combinar card estática de disponibilidad con cards dinámicas del CMS
+            setCards([CARD_DISPONIBILIDAD, ...(data || [])]);
         } catch (err) {
             console.error("Error al cargar cards:", err);
             setError("No se pudieron cargar las cards del dashboard");
+            // Incluso si falla la carga del CMS, mostrar la card estática
+            setCards([CARD_DISPONIBILIDAD]);
         } finally {
             setLoading(false);
         }

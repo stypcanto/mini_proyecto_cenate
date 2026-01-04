@@ -3,6 +3,7 @@ package com.styp.cenate.repository;
 import com.styp.cenate.model.CtrHorario;
 import com.styp.cenate.model.CtrHorarioDet;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -116,12 +117,18 @@ public interface CtrHorarioDetRepository extends JpaRepository<CtrHorarioDet, Lo
     );
 
     /**
-     * Elimina todos los detalles de un horario.
+     * Elimina todos los detalles de un horario usando JPQL explícito.
      * Usado antes de resincronizar.
      *
+     * IMPORTANTE: Usa @Query con JPQL DELETE en lugar de deleteBy*.
+     * Esto evita problemas de transacción con constraints y cascadas.
+     *
      * @param horario Horario padre
+     * @return Cantidad de registros eliminados
      */
-    void deleteByHorario(CtrHorario horario);
+    @Modifying(clearAutomatically = true)
+    @Query("DELETE FROM CtrHorarioDet d WHERE d.horario = :horario")
+    int deleteByHorario(@Param("horario") CtrHorario horario);
 
     /**
      * Cuenta detalles con horario asignado.

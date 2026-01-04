@@ -2,11 +2,13 @@ package com.styp.cenate.service.integracion;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.styp.cenate.dto.ComparativoDisponibilidadHorarioDTO;
+import com.styp.cenate.dto.ResumenDisponibilidadPeriodoDTO;
 import com.styp.cenate.dto.SincronizacionResultadoDTO;
 import com.styp.cenate.exception.BusinessException;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.model.*;
 import com.styp.cenate.repository.*;
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,7 +50,7 @@ import java.util.stream.Collectors;
 public class IntegracionHorarioServiceImpl implements IIntegracionHorarioService {
 
     // ==========================================================
-    // 📦 Repositorios
+    // 📦 Repositorios y Dependencias
     // ==========================================================
 
     private final DisponibilidadMedicaRepository disponibilidadRepository;
@@ -58,6 +60,7 @@ public class IntegracionHorarioServiceImpl implements IIntegracionHorarioService
     private final DimTipoTurnoRepository dimTipoTurnoRepository;
     private final AreaRepository areaRepository;
     private final SincronizacionHorarioLogRepository sincronizacionLogRepository;
+    private final EntityManager entityManager;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -86,9 +89,25 @@ public class IntegracionHorarioServiceImpl implements IIntegracionHorarioService
 
             // ========== PASO 5: Limpiar detalles anteriores si es actualización ==========
             if ("ACTUALIZACION".equals(tipoOperacion)) {
-                ctrHorarioDetRepository.deleteByHorario(horario);
+                int cantidadAnterior = horario.getDetalles().size();
+                log.info("🔄 Modo ACTUALIZACION detectado - Horario #{} tiene {} detalles anteriores",
+                    horario.getIdCtrHorario(), cantidadAnterior);
+
+                // SOLUCIÓN: Eliminar manualmente cada detalle para evitar problemas de sincronización
+                List<CtrHorarioDet> detallesAEliminar = new ArrayList<>(horario.getDetalles());
+                for (CtrHorarioDet detalle : detallesAEliminar) {
+                    ctrHorarioDetRepository.delete(detalle);
+                }
+                log.info("🗑️ Eliminados {} detalles uno por uno", detallesAEliminar.size());
+
+                // Limpiar colección en memoria
                 horario.getDetalles().clear();
-                log.info("🗑️ Eliminados detalles anteriores del horario #{}", horario.getIdCtrHorario());
+
+                // Flush para aplicar deletes antes de los inserts
+                entityManager.flush();
+                log.debug("💾 Flush aplicado - Cambios persistidos en BD");
+
+                log.info("✅ Limpieza completada - Listo para insertar nuevos detalles");
             }
 
             // ========== PASO 6: Mapear y crear detalles ==========
@@ -441,6 +460,78 @@ public class IntegracionHorarioServiceImpl implements IIntegracionHorarioService
 
         // Ejecutar sincronización normal
         return sincronizarDisponibilidadAHorario(idDisponibilidad, idArea);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ResumenDisponibilidadPeriodoDTO> obtenerComparativosPorPeriodo(String periodo) {
+        log.info("📊 Obteniendo comparativos del periodo: {}", periodo);
+
+        // Buscar todas las disponibilidades del periodo
+        List<DisponibilidadMedica> disponibilidades = disponibilidadRepository.findByPeriodo(periodo);
+
+        log.info("📋 Encontradas {} disponibilidades para el periodo {}", disponibilidades.size(), periodo);
+
+        // Generar comparativo para cada disponibilidad
+        return disponibilidades.stream()
+            .map(this::generarComparativoBasico)
+            .collect(Collectors.toList());
+    }
+
+    /**
+     * Genera un comparativo básico para una disponibilidad.
+     * Usado por obtenerComparativosPorPeriodo().
+     */
+    private ResumenDisponibilidadPeriodoDTO generarComparativoBasico(DisponibilidadMedica disponibilidad) {
+        ResumenDisponibilidadPeriodoDTO dto = new ResumenDisponibilidadPeriodoDTO();
+
+        // Datos básicos
+        dto.setIdDisponibilidad(disponibilidad.getIdDisponibilidad());
+        dto.setNombreMedico(disponibilidad.getPersonal().getNombreCompleto());
+        dto.setEspecialidad(disponibilidad.getServicio() != null
+            ? disponibilidad.getServicio().getDescServicio()
+            : "No especificado");
+        dto.setCmpMedico(disponibilidad.getPersonal().getColegPers());
+
+        // Horas declaradas
+        dto.setHorasDeclaradas(disponibilidad.getTotalHoras() != null
+            ? disponibilidad.getTotalHoras().doubleValue()
+            : 0.0);
+
+        // Horas chatbot y slots (solo si está sincronizado)
+        dto.setEstadoSincronizacion(disponibilidad.getEstado());
+
+        if ("SINCRONIZADO".equals(disponibilidad.getEstado()) && disponibilidad.getIdCtrHorarioGenerado() != null) {
+            // Buscar horario sincronizado
+            ctrHorarioRepository.findById(disponibilidad.getIdCtrHorarioGenerado())
+                .ifPresent(horario -> {
+                    // Calcular horas del chatbot (suma de horas de todos los detalles)
+                    double horasChatbot = horario.getDetalles().stream()
+                        .mapToDouble(det -> det.getHorarioDia() != null && det.getHorarioDia().getHoras() != null
+                            ? det.getHorarioDia().getHoras().doubleValue()
+                            : 0.0)
+                        .sum();
+
+                    dto.setHorasChatbot(horasChatbot);
+                    dto.setSlotsGenerados(horario.getDetalles().size());
+
+                    // Detectar inconsistencias
+                    double diferencia = Math.abs(dto.getHorasDeclaradas() - horasChatbot);
+                    dto.setTieneInconsistencia(diferencia > 1.0); // Tolerancia de 1 hora
+
+                    // Información del área sincronizada
+                    dto.setIdArea(horario.getArea() != null ? horario.getArea().getIdArea() : null);
+                    dto.setNombreArea(horario.getArea() != null ? horario.getArea().getDescArea() : null);
+                });
+        } else {
+            dto.setHorasChatbot(0.0);
+            dto.setSlotsGenerados(0);
+            dto.setTieneInconsistencia(false);
+            dto.setIdArea(null);
+            dto.setNombreArea(null);
+        }
+
+        return dto;
     }
 
     // ==========================================================

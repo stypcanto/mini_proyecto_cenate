@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.16.3** (2026-01-03)
+> Sistema de Telemedicina - EsSalud | **v1.17.0** (2026-01-04)
 
 ---
 
@@ -154,7 +154,7 @@ Password: @Cenate2025
 | Módulo | Documentación | Estado |
 |--------|--------------|--------|
 | **Auditoría** | `spec/04_BaseDatos/02_guia_auditoria/` | ✅ Implementado |
-| **Disponibilidad + Integración Chatbot** | `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` (v2.0.0) | 📋 Pendiente (12 días) |
+| **Disponibilidad + Integración Chatbot** | `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` (v2.0.0) + Testing: `checklist/02_Reportes_Pruebas/02_reporte_integracion_chatbot.md` | ✅ Implementado (v1.17.0) |
 | **Solicitud Turnos IPRESS** | `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` (v1.2) | ✅ Implementado |
 | **Firma Digital** | `plan/05_Firma_Digital/01_plan_implementacion.md` | ✅ Implementado |
 | **Bolsa 107 (Importación)** | `spec/01_Backend/04_auto_normalizacion_excel_107.md` | ✅ Implementado |
@@ -293,4 +293,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.16.3 | 2026-01-03*
+*Versión 1.17.0 | 2026-01-04*

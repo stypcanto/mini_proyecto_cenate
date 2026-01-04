@@ -1,6 +1,7 @@
 package com.styp.cenate.api;
 
 import com.styp.cenate.dto.ComparativoDisponibilidadHorarioDTO;
+import com.styp.cenate.dto.ResumenDisponibilidadPeriodoDTO;
 import com.styp.cenate.dto.SincronizacionResultadoDTO;
 import com.styp.cenate.model.SincronizacionHorarioLog;
 import com.styp.cenate.service.integracion.IIntegracionHorarioService;
@@ -124,6 +125,50 @@ public class IntegracionHorarioController {
             "status", 200,
             "data", resultado,
             "message", "Resincronización completada"
+        ));
+    }
+
+    /**
+     * GET /api/integracion-horario/comparativo/periodo/{periodo}
+     *
+     * Obtiene comparativos de todas las disponibilidades de un periodo.
+     * Formato periodo: YYYYMM (ej: 202601)
+     *
+     * IMPORTANTE: Este endpoint debe estar ANTES de /comparativo/{idDisponibilidad}/{idArea}
+     * para que Spring matchee correctamente las rutas específicas primero.
+     *
+     * Response:
+     * {
+     *   "status": 200,
+     *   "data": [
+     *     {
+     *       "idDisponibilidad": 123,
+     *       "nombreMedico": "Dr. Juan Pérez",
+     *       "especialidad": "Medicina General",
+     *       "horasDeclaradas": 180.00,
+     *       "horasChatbot": 180.00,
+     *       "estadoSincronizacion": "SINCRONIZADO",
+     *       "tieneInconsistencia": false,
+     *       "slotsGenerados": 90,
+     *       ...
+     *     }
+     *   ],
+     *   "message": "Comparativos del periodo obtenidos: 5 registros"
+     * }
+     */
+    @GetMapping("/comparativo/periodo/{periodo}")
+    public ResponseEntity<?> obtenerComparativosPorPeriodo(
+        @PathVariable String periodo
+    ) {
+        log.info("📨 GET /api/integracion-horario/comparativo/periodo/{}", periodo);
+
+        List<ResumenDisponibilidadPeriodoDTO> comparativos =
+            integracionService.obtenerComparativosPorPeriodo(periodo);
+
+        return ResponseEntity.ok(Map.of(
+            "status", 200,
+            "data", comparativos,
+            "message", String.format("Comparativos del periodo obtenidos: %d registro(s)", comparativos.size())
         ));
     }
 

@@ -52,6 +52,14 @@ public interface AtencionClinicaRepository extends JpaRepository<AtencionClinica
                         Pageable pageable);
 
         /**
+         * Buscar atenciones creadas por un profesional específico (sin paginar)
+         *
+         * @param idPersonalCreador ID del profesional creador
+         * @return Lista de atenciones creadas por el profesional
+         */
+        List<AtencionClinica> findByIdPersonalCreador(Long idPersonalCreador);
+
+        /**
          * Buscar atenciones por rango de fechas (paginado)
          *
          * @param fechaInicio Fecha de inicio (inclusive)
