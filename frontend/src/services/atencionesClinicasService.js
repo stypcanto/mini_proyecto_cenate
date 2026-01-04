@@ -110,5 +110,20 @@ export const atencionesClinicasService = {
       console.error(`Error al eliminar atención ${idAtencion}:`, error);
       throw error;
     }
+  },
+
+  /**
+   * Obtener comparativo de signos vitales con atención anterior
+   * Permite visualizar tendencias (mejorando/empeorando/estable)
+   * @param {number} idAtencion - ID de la atención actual
+   */
+  obtenerComparativoSignosVitales: async (idAtencion) => {
+    try {
+      const data = await api.get(`${BASE_URL}/${idAtencion}/comparativo-signos-vitales`);
+      return data;
+    } catch (error) {
+      console.error(`Error al obtener comparativo de signos vitales para atención ${idAtencion}:`, error);
+      throw error;
+    }
   }
 };

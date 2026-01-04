@@ -25,8 +25,10 @@
 - **Acceso Sensible:** `spec/04_BaseDatos/03_guia_auditoria_acceso_sensible/`
 
 ### 👨‍⚕️ Módulos Médicos
-- **Disponibilidad Turnos:** `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md`
-- **Solicitud Turnos:** `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md`
+- **⭐ Resumen Optimización:** `plan/02_Modulos_Medicos/00_resumen_optimizacion_planes.md` (Decisión arquitectónica)
+- **Disponibilidad Turnos + Integración Chatbot:** `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` (v2.0.0)
+- **📋 Checklist Disponibilidad:** `checklist/03_Checklists/01_checklist_disponibilidad_v2.md` (Seguimiento de implementación)
+- **Solicitud Turnos IPRESS:** `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` (v1.2 - Independiente)
 - **Reporte Testing:** `checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md`
 
 ### 💾 Base de Datos
@@ -34,6 +36,7 @@
 - **Análisis Estructura:** `spec/04_BaseDatos/04_analisis_estructura/`
 - **Plan Limpieza:** `spec/04_BaseDatos/05_plan_limpieza/`
 - **Scripts SQL (17+):** `spec/04_BaseDatos/06_scripts/`
+- **⭐ Sistema Horarios:** `spec/04_BaseDatos/07_horarios_sistema/` (Modelo existente + Guía integración)
 
 ### 🔧 Backend y APIs
 - **Endpoints REST:** `spec/01_Backend/01_api_endpoints.md`
@@ -151,7 +154,8 @@ Password: @Cenate2025
 | Módulo | Documentación | Estado |
 |--------|--------------|--------|
 | **Auditoría** | `spec/04_BaseDatos/02_guia_auditoria/` | ✅ Implementado |
-| **Disponibilidad Médica** | `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` | ✅ Implementado |
+| **Disponibilidad + Integración Chatbot** | `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` (v2.0.0) | 📋 Pendiente (12 días) |
+| **Solicitud Turnos IPRESS** | `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` (v1.2) | ✅ Implementado |
 | **Firma Digital** | `plan/05_Firma_Digital/01_plan_implementacion.md` | ✅ Implementado |
 | **Bolsa 107 (Importación)** | `spec/01_Backend/04_auto_normalizacion_excel_107.md` | ✅ Implementado |
 | **Pacientes 107** | Ver changelog v1.15.2 | ✅ Implementado |
@@ -160,7 +164,6 @@ Password: @Cenate2025
 | **Notificaciones Cumpleaños** | Ver changelog v1.15.10 | ✅ Implementado |
 | **Gestión Asegurado** | Ver changelog v1.16.0 | ✅ Implementado |
 | **Tipos Profesionales** | Ver changelog v1.16.1 | ✅ Implementado |
-| **Solicitud Turnos** | `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` | 🔄 En desarrollo |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
@@ -174,9 +177,13 @@ Password: @Cenate2025
 | **ESSI** | Sistema de información de EsSalud |
 | **MBAC** | Module-Based Access Control |
 | **Bolsa 107** | Módulo de importación masiva de pacientes |
-| **Régimen 728** | Personal nombrado (4h/4h/8h) |
-| **Régimen CAS** | Contrato Administrativo (4h/4h/8h) |
-| **Locador** | Locación de servicios (6h/6h/12h) |
+| **Régimen 728/CAS** | Personal nombrado/CAS: M=4h, T=4h, MT=8h + 2h sanitarias/día (telemonitoreo 1h + administrativa 1h) |
+| **Locador** | Locación de servicios: M=6h, T=6h, MT=12h (sin horas sanitarias) |
+| **Horas Sanitarias** | 2h adicionales por día trabajado solo para 728/CAS (1h telemonitoreo + 1h administrativa) |
+| **ctr_horario** | Sistema existente de slots del chatbot (producción) |
+| **disponibilidad_medica** | Nuevo módulo de declaración médica (150h mínimas) |
+| **TRN_CHATBOT** | Tipo de turno crítico para que slots aparezcan en chatbot |
+| **Sincronización** | Proceso manual de mapear disponibilidad → slots chatbot |
 
 ---
 
@@ -196,7 +203,10 @@ Password: @Cenate2025
 
 **Referencias rápidas:**
 - Auditoría → `spec/04_BaseDatos/02_guia_auditoria/02_guia_auditoria.md`
-- Disponibilidad → `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md`
+- Optimización Planes → `plan/02_Modulos_Medicos/00_resumen_optimizacion_planes.md`
+- Disponibilidad + Chatbot → `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` (v2.0.0)
+- Horarios Existentes → `spec/04_BaseDatos/07_horarios_sistema/01_modelo_horarios_existente.md`
+- Integración Horarios → `spec/04_BaseDatos/07_horarios_sistema/02_guia_integracion_horarios.md`
 - Firma Digital → `plan/05_Firma_Digital/01_plan_implementacion.md`
 - Bolsa 107 → `spec/01_Backend/04_auto_normalizacion_excel_107.md`
 - Troubleshooting → `spec/05_Troubleshooting/01_guia_problemas_comunes.md`

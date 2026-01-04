@@ -9,6 +9,7 @@ import java.util.stream.Collectors;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -451,6 +452,7 @@ public class Bolsa107Controller {
          * @return Estadísticas resumidas de pacientes asignados
          */
         @GetMapping("/estadisticas-gestor")
+        @Transactional(readOnly = true)
         public ResponseEntity<?> obtenerEstadisticasGestor() {
                 log.info("📊 Obteniendo estadísticas de dashboard para gestor de citas");
 
@@ -462,14 +464,24 @@ public class Bolsa107Controller {
                         Usuario usuario = usuarioRepository.findByNameUser(username)
                                         .orElseThrow(() -> new RuntimeException("Usuario no encontrado"));
 
-                        // Obtener todos los pacientes asignados al gestor
+                        // Verificar si el usuario es SUPERADMIN
+                        boolean esSuperAdmin = usuario.getRoles().stream()
+                                        .anyMatch(rol -> "SUPERADMIN".equals(rol.getDescRol()));
+
+                        // Obtener pacientes (todos si es SUPERADMIN, solo asignados si es gestor)
                         List<Map<String, Object>> pacientes = itemRepository.findAllWithIpress()
                                         .stream()
                                         .filter(p -> {
-                                                Object idGestor = p.get("id_gestor_asignado");
-                                                return idGestor != null &&
-                                                                idGestor.toString()
-                                                                                .equals(usuario.getIdUser().toString());
+                                                if (esSuperAdmin) {
+                                                        // SUPERADMIN ve TODOS los pacientes del sistema
+                                                        return true;
+                                                } else {
+                                                        // Gestores ven solo los pacientes asignados a ellos
+                                                        Object idGestor = p.get("id_gestor_asignado");
+                                                        return idGestor != null &&
+                                                                        idGestor.toString()
+                                                                                        .equals(usuario.getIdUser().toString());
+                                                }
                                         })
                                         .collect(Collectors.toList());
 

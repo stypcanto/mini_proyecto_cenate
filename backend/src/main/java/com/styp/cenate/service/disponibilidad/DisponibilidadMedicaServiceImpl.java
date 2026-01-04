@@ -1,0 +1,723 @@
+package com.styp.cenate.service.disponibilidad;
+
+import com.styp.cenate.dto.*;
+import com.styp.cenate.exception.BusinessException;
+import com.styp.cenate.model.*;
+import com.styp.cenate.repository.*;
+// import com.styp.cenate.service.auditlog.AuditLogService; // TODO: Descomentar
+import com.styp.cenate.service.usuario.UsuarioService;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * Implementación del servicio para gestionar disponibilidad médica.
+ * Incluye cálculo de horas asistenciales, sanitarias y sincronización con chatbot.
+ *
+ * @author Ing. Styp Canto Rondón
+ * @version 2.0.0
+ * @since 2026-01-03
+ */
+@Slf4j
+@Service
+@RequiredArgsConstructor
+@Transactional
+public class DisponibilidadMedicaServiceImpl implements IDisponibilidadMedicaService {
+
+    // Repositories
+    private final DisponibilidadMedicaRepository disponibilidadRepository;
+    private final DetalleDisponibilidadRepository detalleRepository;
+    private final PersonalCntRepository personalRepository;
+    private final DimServicioEssiRepository servicioRepository;
+    private final UsuarioRepository usuarioRepository;
+    // private final AuditLogService auditLogService; // TODO: Descomentar
+
+    // Constantes para cálculo de horas
+    private static final BigDecimal HORAS_MANANA_728 = new BigDecimal("4");
+    private static final BigDecimal HORAS_TARDE_728 = new BigDecimal("4");
+    private static final BigDecimal HORAS_COMPLETO_728 = new BigDecimal("8");
+    private static final BigDecimal HORAS_MANANA_LOCADOR = new BigDecimal("6");
+    private static final BigDecimal HORAS_TARDE_LOCADOR = new BigDecimal("6");
+    private static final BigDecimal HORAS_COMPLETO_LOCADOR = new BigDecimal("12");
+    private static final BigDecimal HORAS_SANITARIAS_POR_DIA = new BigDecimal("2");
+    private static final BigDecimal HORAS_MINIMAS_REQUERIDAS = new BigDecimal("150");
+
+    @Override
+    public DisponibilidadMedicaDTO crear(DisponibilidadRequestDTO request) {
+        log.info("📝 Creando disponibilidad médica para periodo: {}", request.getPeriodo());
+
+        // Obtener usuario actual
+        Usuario usuario = obtenerUsuarioActual();
+        
+        // Determinar idPers (del request o del usuario actual)
+        Long idPers = request.getIdPers() != null ? request.getIdPers() : obtenerIdPersonalDelUsuario(usuario);
+        
+        // Validar que no exista disponibilidad para este médico/periodo/servicio
+        if (disponibilidadRepository.existsByPersonal_IdPersAndPeriodoAndServicio_IdServicio(
+                idPers, request.getPeriodo(), request.getIdServicio())) {
+            throw new BusinessException(
+                "Ya existe una disponibilidad para este médico, periodo y servicio"
+            );
+        }
+
+        // Obtener entidades relacionadas
+        PersonalCnt personal = personalRepository.findById(idPers)
+            .orElseThrow(() -> new BusinessException("Personal no encontrado con ID: " + idPers));
+
+        DimServicioEssi servicio = servicioRepository.findById(request.getIdServicio())
+            .orElseThrow(() -> new BusinessException("Servicio no encontrado con ID: " + request.getIdServicio()));
+
+        // Crear disponibilidad
+        DisponibilidadMedica disponibilidad = DisponibilidadMedica.builder()
+            .personal(personal)
+            .servicio(servicio)
+            .periodo(request.getPeriodo())
+            .estado("BORRADOR")
+            .horasRequeridas(request.getHorasRequeridas() != null ? request.getHorasRequeridas() : HORAS_MINIMAS_REQUERIDAS)
+            .observaciones(request.getObservaciones())
+            .detalles(new ArrayList<>())  // FIX: Inicializar lista explícitamente (Bug #001)
+            .build();
+
+        // Calcular horas asistenciales y sanitarias
+        calcularYAgregarDetalles(disponibilidad, request.getTurnos(), personal);
+
+        // Guardar disponibilidad
+        disponibilidad = disponibilidadRepository.save(disponibilidad);
+
+        // Auditoría
+        // TODO: Implementar auditoría correctamente
+        // auditLogService.registrarEvento(...);
+
+        log.info("✅ Disponibilidad creada con ID: {} - Total horas: {}", 
+            disponibilidad.getIdDisponibilidad(), disponibilidad.getTotalHoras());
+
+        return convertirADTO(disponibilidad);
+    }
+
+    @Override
+    public DisponibilidadMedicaDTO actualizar(Long idDisponibilidad, DisponibilidadRequestDTO request) {
+        log.info("🔄 Actualizando disponibilidad ID: {}", idDisponibilidad);
+
+        DisponibilidadMedica disponibilidad = disponibilidadRepository.findById(idDisponibilidad)
+            .orElseThrow(() -> new BusinessException("Disponibilidad no encontrada con ID: " + idDisponibilidad));
+
+        // Validar que esté en BORRADOR
+        if (!"BORRADOR".equals(disponibilidad.getEstado())) {
+            throw new BusinessException("Solo se pueden actualizar disponibilidades en estado BORRADOR");
+        }
+
+        // Actualizar observaciones y horas requeridas
+        disponibilidad.setObservaciones(request.getObservaciones());
+        if (request.getHorasRequeridas() != null) {
+            disponibilidad.setHorasRequeridas(request.getHorasRequeridas());
+        }
+
+        // Eliminar detalles anteriores
+        disponibilidad.getDetalles().clear();
+        detalleRepository.flush();
+
+        // Recalcular con los nuevos turnos
+        calcularYAgregarDetalles(disponibilidad, request.getTurnos(), disponibilidad.getPersonal());
+
+        disponibilidad = disponibilidadRepository.save(disponibilidad);
+
+        // Auditoría
+        // TODO: Implementar auditoría correctamente
+        // auditLogService.registrarEvento(...);
+
+        log.info("✅ Disponibilidad actualizada - Nuevo total horas: {}", disponibilidad.getTotalHoras());
+
+        return convertirADTO(disponibilidad);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DisponibilidadMedicaDTO obtenerPorId(Long idDisponibilidad) {
+        log.info("🔍 Obteniendo disponibilidad ID: {}", idDisponibilidad);
+
+        DisponibilidadMedica disponibilidad = disponibilidadRepository.findById(idDisponibilidad)
+            .orElseThrow(() -> new BusinessException("Disponibilidad no encontrada con ID: " + idDisponibilidad));
+
+        return convertirADTO(disponibilidad);
+    }
+
+    @Override
+    public void eliminar(Long idDisponibilidad) {
+        log.info("🗑️ Eliminando disponibilidad ID: {}", idDisponibilidad);
+
+        DisponibilidadMedica disponibilidad = disponibilidadRepository.findById(idDisponibilidad)
+            .orElseThrow(() -> new BusinessException("Disponibilidad no encontrada con ID: " + idDisponibilidad));
+
+        // Validar que esté en BORRADOR
+        if (!"BORRADOR".equals(disponibilidad.getEstado())) {
+            throw new BusinessException("Solo se pueden eliminar disponibilidades en estado BORRADOR");
+        }
+
+        disponibilidadRepository.delete(disponibilidad);
+
+        // Auditoría
+        // TODO: Implementar auditoría correctamente
+        // auditLogService.registrarEvento(...);
+
+        log.info("✅ Disponibilidad eliminada exitosamente");
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DisponibilidadResponseDTO> obtenerMisDisponibilidades(Pageable pageable) {
+        log.info("👨‍⚕️ Obteniendo disponibilidades del médico logueado");
+
+        Usuario usuario = obtenerUsuarioActual();
+        Long idPers = obtenerIdPersonalDelUsuario(usuario);
+
+        Page<DisponibilidadMedica> disponibilidades = disponibilidadRepository.findByPersonal(idPers, pageable);
+
+        return disponibilidades.map(this::convertirAResponseDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DisponibilidadResponseDTO> obtenerPorMedico(Long idPers, Pageable pageable) {
+        log.info("📋 Obteniendo disponibilidades del médico ID: {}", idPers);
+
+        Page<DisponibilidadMedica> disponibilidades = disponibilidadRepository.findByPersonal(idPers, pageable);
+
+        return disponibilidades.map(this::convertirAResponseDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DisponibilidadResponseDTO> obtenerPorPeriodo(String periodo, Pageable pageable) {
+        log.info("📅 Obteniendo disponibilidades del periodo: {}", periodo);
+
+        Page<DisponibilidadMedica> disponibilidades = disponibilidadRepository.findByPeriodo(periodo, pageable);
+
+        return disponibilidades.map(this::convertirAResponseDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DisponibilidadResponseDTO> obtenerPorEstado(String estado, Pageable pageable) {
+        log.info("📊 Obteniendo disponibilidades con estado: {}", estado);
+
+        Page<DisponibilidadMedica> disponibilidades = disponibilidadRepository.findByEstado(estado, pageable);
+
+        return disponibilidades.map(this::convertirAResponseDTO);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DisponibilidadResponseDTO> obtenerPorPeriodoYEstado(String periodo, String estado, Pageable pageable) {
+        log.info("📊 Obteniendo disponibilidades - Periodo: {}, Estado: {}", periodo, estado);
+
+        List<DisponibilidadMedica> disponibilidades = disponibilidadRepository.findByPeriodoAndEstado(periodo, estado);
+
+        // Convertir lista a Page manualmente
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), disponibilidades.size());
+        List<DisponibilidadResponseDTO> pageContent = disponibilidades.subList(start, end)
+            .stream()
+            .map(this::convertirAResponseDTO)
+            .toList();
+
+        return new org.springframework.data.domain.PageImpl<>(
+            pageContent,
+            pageable,
+            disponibilidades.size()
+        );
+    }
+
+    @Override
+    public DisponibilidadMedicaDTO enviarARevision(Long idDisponibilidad) {
+        log.info("📤 Enviando disponibilidad a revisión - ID: {}", idDisponibilidad);
+
+        DisponibilidadMedica disponibilidad = disponibilidadRepository.findById(idDisponibilidad)
+            .orElseThrow(() -> new BusinessException("Disponibilidad no encontrada con ID: " + idDisponibilidad));
+
+        // Validar estado actual
+        if (!"BORRADOR".equals(disponibilidad.getEstado())) {
+            throw new BusinessException("Solo se pueden enviar disponibilidades en estado BORRADOR");
+        }
+
+        // Validar que cumpla horas mínimas
+        if (disponibilidad.getTotalHoras().compareTo(disponibilidad.getHorasRequeridas()) < 0) {
+            throw new BusinessException(
+                String.format("No cumple con las horas requeridas. Total: %s, Requeridas: %s",
+                    disponibilidad.getTotalHoras(), disponibilidad.getHorasRequeridas())
+            );
+        }
+
+        // Cambiar estado
+        disponibilidad.setEstado("ENVIADO");
+        disponibilidad.setFechaEnvio(OffsetDateTime.now());
+
+        disponibilidad = disponibilidadRepository.save(disponibilidad);
+
+        // Auditoría
+        // TODO: Implementar auditoría correctamente
+        // auditLogService.registrarEvento(...);
+
+        log.info("✅ Disponibilidad enviada a revisión exitosamente");
+
+        return convertirADTO(disponibilidad);
+    }
+
+    // CONTINÚA EN SIGUIENTE MENSAJE...
+
+    @Override
+    public DisponibilidadMedicaDTO marcarRevisado(Long idDisponibilidad, String observaciones) {
+        log.info("✅ Marcando disponibilidad como revisada - ID: {}", idDisponibilidad);
+
+        DisponibilidadMedica disponibilidad = disponibilidadRepository.findById(idDisponibilidad)
+            .orElseThrow(() -> new BusinessException("Disponibilidad no encontrada con ID: " + idDisponibilidad));
+
+        // Validar estado actual
+        if (!"ENVIADO".equals(disponibilidad.getEstado())) {
+            throw new BusinessException("Solo se pueden revisar disponibilidades en estado ENVIADO");
+        }
+
+        // Cambiar estado
+        disponibilidad.setEstado("REVISADO");
+        disponibilidad.setFechaRevision(OffsetDateTime.now());
+        
+        if (observaciones != null && !observaciones.isBlank()) {
+            disponibilidad.setObservaciones(
+                disponibilidad.getObservaciones() != null 
+                    ? disponibilidad.getObservaciones() + "\n\n[Coordinador] " + observaciones
+                    : "[Coordinador] " + observaciones
+            );
+        }
+
+        disponibilidad = disponibilidadRepository.save(disponibilidad);
+
+        // Auditoría
+        // TODO: Implementar auditoría correctamente
+        // auditLogService.registrarEvento(...);
+
+        log.info("✅ Disponibilidad marcada como revisada exitosamente");
+
+        return convertirADTO(disponibilidad);
+    }
+
+    @Override
+    public DisponibilidadMedicaDTO rechazar(Long idDisponibilidad, String motivoRechazo) {
+        log.info("❌ Rechazando disponibilidad - ID: {}", idDisponibilidad);
+
+        DisponibilidadMedica disponibilidad = disponibilidadRepository.findById(idDisponibilidad)
+            .orElseThrow(() -> new BusinessException("Disponibilidad no encontrada con ID: " + idDisponibilidad));
+
+        // Validar que esté enviada
+        if (!"ENVIADO".equals(disponibilidad.getEstado())) {
+            throw new BusinessException("Solo se pueden rechazar disponibilidades en estado ENVIADO");
+        }
+
+        // Regresar a BORRADOR
+        disponibilidad.setEstado("BORRADOR");
+        disponibilidad.setFechaEnvio(null);
+        
+        // Agregar motivo de rechazo
+        String observacionRechazo = "\n\n[RECHAZADO - " + OffsetDateTime.now() + "] " + motivoRechazo;
+        disponibilidad.setObservaciones(
+            disponibilidad.getObservaciones() != null
+                ? disponibilidad.getObservaciones() + observacionRechazo
+                : observacionRechazo
+        );
+
+        disponibilidad = disponibilidadRepository.save(disponibilidad);
+
+        // Auditoría
+        // TODO: Implementar auditoría correctamente
+        // auditLogService.registrarEvento(...);
+
+        log.info("✅ Disponibilidad rechazada - Regresada a BORRADOR");
+
+        return convertirADTO(disponibilidad);
+    }
+
+    @Override
+    public DisponibilidadMedicaDTO ajustarTurnos(AjusteDisponibilidadDTO ajusteDTO) {
+        log.info("⚙️ Ajustando turnos de disponibilidad ID: {}", ajusteDTO.getIdDisponibilidad());
+
+        DisponibilidadMedica disponibilidad = disponibilidadRepository.findById(ajusteDTO.getIdDisponibilidad())
+            .orElseThrow(() -> new BusinessException("Disponibilidad no encontrada"));
+
+        // Obtener coordinador actual
+        Usuario usuario = obtenerUsuarioActual();
+        Long idCoordinador = obtenerIdPersonalDelUsuario(usuario);
+        PersonalCnt coordinador = personalRepository.findById(idCoordinador)
+            .orElseThrow(() -> new BusinessException("Coordinador no encontrado"));
+
+        // Procesar cada ajuste
+        for (AjusteDisponibilidadDTO.AjusteTurnoDTO ajuste : ajusteDTO.getAjustes()) {
+            DetalleDisponibilidad detalle = detalleRepository
+                .findByDisponibilidadMedica_IdDisponibilidadAndFecha(
+                    disponibilidad.getIdDisponibilidad(),
+                    ajuste.getFecha()
+                )
+                .orElseThrow(() -> new BusinessException("No existe turno para la fecha: " + ajuste.getFecha()));
+
+            // Actualizar turno
+            detalle.setTurno(ajuste.getNuevoTurno());
+            detalle.setHoras(calcularHorasPorTurno(ajuste.getNuevoTurno(), disponibilidad.getPersonal()));
+            detalle.setAjustadoPorPersonal(coordinador);
+            detalle.setObservacionAjuste(ajuste.getObservacion());
+
+            detalleRepository.save(detalle);
+        }
+
+        // Recalcular totales
+        recalcularTotales(disponibilidad);
+
+        // Agregar observaciones generales
+        if (ajusteDTO.getObservacionesGenerales() != null) {
+            String obs = "\n\n[AJUSTE - " + OffsetDateTime.now() + "] " + ajusteDTO.getObservacionesGenerales();
+            disponibilidad.setObservaciones(
+                disponibilidad.getObservaciones() != null
+                    ? disponibilidad.getObservaciones() + obs
+                    : obs
+            );
+        }
+
+        disponibilidad = disponibilidadRepository.save(disponibilidad);
+
+        // Auditoría
+        // TODO: Implementar auditoría correctamente
+        // auditLogService.registrarEvento(...);
+
+        log.info("✅ Turnos ajustados exitosamente - Nuevo total: {}", disponibilidad.getTotalHoras());
+
+        return convertirADTO(disponibilidad);
+    }
+
+    @Override
+    public SincronizacionResponseDTO sincronizarConChatbot(SincronizacionRequestDTO request) {
+        log.info("🔄 Sincronizando disponibilidad ID: {} con chatbot", request.getIdDisponibilidad());
+
+        // TODO: Implementar sincronización real con ctr_horario
+        // Por ahora retornamos una respuesta de ejemplo
+        
+        return SincronizacionResponseDTO.builder()
+            .idDisponibilidad(request.getIdDisponibilidad())
+            .tipoOperacion(request.getTipoOperacion().name())
+            .resultado(SincronizacionResponseDTO.ResultadoSincronizacion.EXITOSO)
+            .mensaje("Sincronización pendiente de implementación completa")
+            .fechaSincronizacion(OffsetDateTime.now())
+            .usuarioSincronizacion(obtenerUsuarioActual().getUsername())
+            .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ValidacionConsistenciaDTO validarConsistencia(Long idDisponibilidad) {
+        log.info("🔍 Validando consistencia de disponibilidad ID: {}", idDisponibilidad);
+
+        // TODO: Implementar validación real vs ctr_horario
+        // Por ahora retornamos validación básica
+        
+        DisponibilidadMedica disp = disponibilidadRepository.findById(idDisponibilidad)
+            .orElseThrow(() -> new BusinessException("Disponibilidad no encontrada"));
+
+        return ValidacionConsistenciaDTO.builder()
+            .idDisponibilidad(idDisponibilidad)
+            .nombreMedico(disp.getPersonal().getNomPers() + " " + disp.getPersonal().getApePaterPers())
+            .periodo(disp.getPeriodo())
+            .estado(disp.getEstado())
+            .horasTotalesDeclaradas(disp.getTotalHoras())
+            .estadoValidacion(ValidacionConsistenciaDTO.EstadoValidacion.SIN_HORARIO_CARGADO)
+            .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DisponibilidadResponseDTO> obtenerPendientesSincronizacion() {
+        log.info("📋 Obteniendo disponibilidades pendientes de sincronización");
+
+        List<DisponibilidadMedica> pendientes = disponibilidadRepository.findPendientesSincronizacion();
+
+        return pendientes.stream()
+            .map(this::convertirAResponseDTO)
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ValidacionConsistenciaDTO> obtenerConDiferenciasSignificativas() {
+        log.info("⚠️ Obteniendo disponibilidades con diferencias significativas");
+
+        List<DisponibilidadMedica> conDiferencias = disponibilidadRepository.findConDiferenciasSignificativasChatbot();
+
+        return conDiferencias.stream()
+            .map(disp -> validarConsistencia(disp.getIdDisponibilidad()))
+            .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ResumenDisponibilidadDTO obtenerResumenPorPeriodo(String periodo) {
+        log.info("📊 Generando resumen de disponibilidad para periodo: {}", periodo);
+
+        List<DisponibilidadMedica> disponibilidades = disponibilidadRepository.findByPeriodo(periodo);
+
+        ResumenDisponibilidadDTO resumen = ResumenDisponibilidadDTO.builder()
+            .periodo(periodo)
+            .totalDisponibilidades(disponibilidades.size())
+            .totalMedicos((int) disponibilidades.stream().map(d -> d.getPersonal().getIdPers()).distinct().count())
+            .totalBorrador((int) disponibilidades.stream().filter(d -> "BORRADOR".equals(d.getEstado())).count())
+            .totalEnviado((int) disponibilidades.stream().filter(d -> "ENVIADO".equals(d.getEstado())).count())
+            .totalRevisado((int) disponibilidades.stream().filter(d -> "REVISADO".equals(d.getEstado())).count())
+            .totalSincronizado((int) disponibilidades.stream().filter(d -> "SINCRONIZADO".equals(d.getEstado())).count())
+            .totalHorasAsistenciales(disponibilidadRepository.sumHorasAsistencialesByPeriodo(periodo))
+            .totalHorasSanitarias(disponibilidadRepository.sumHorasSanitariasByPeriodo(periodo))
+            .totalHorasDeclaradas(disponibilidadRepository.sumTotalHorasByPeriodo(periodo))
+            .medicosQueCumplenHoras((int) disponibilidades.stream().filter(DisponibilidadMedica::cumpleHorasRequeridas).count())
+            .medicosQueNoCumplenHoras((int) disponibilidades.stream().filter(d -> !d.cumpleHorasRequeridas()).count())
+            .build();
+
+        resumen.calcularPorcentajeCumplimiento();
+
+        log.info("✅ Resumen generado - Total médicos: {}, Cumplimiento: {}%", 
+            resumen.getTotalMedicos(), resumen.getPorcentajeCumplimiento());
+
+        return resumen;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public boolean existeDisponibilidad(Long idPers, String periodo, Long idServicio) {
+        return disponibilidadRepository.existsByPersonal_IdPersAndPeriodoAndServicio_IdServicio(
+            idPers, periodo, idServicio
+        );
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public BigDecimal calcularTotalHoras(String periodo, Long idServicio) {
+        // Calcular sumando disponibilidades del periodo y servicio
+        List<DisponibilidadMedica> disponibilidades = disponibilidadRepository.findByPeriodo(periodo);
+        
+        return disponibilidades.stream()
+            .filter(d -> d.getServicio().getIdServicio().equals(idServicio))
+            .map(DisponibilidadMedica::getTotalHoras)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    // ==========================================================
+    // 🛠️ Métodos privados auxiliares
+    // ==========================================================
+
+    /**
+     * Calcula horas asistenciales y sanitarias, crea detalles de turnos
+     */
+    private void calcularYAgregarDetalles(DisponibilidadMedica disponibilidad, 
+                                         List<DisponibilidadRequestDTO.TurnoRequestDTO> turnos,
+                                         PersonalCnt personal) {
+        BigDecimal horasAsistenciales = BigDecimal.ZERO;
+        int diasTrabajados = turnos.size();
+
+        // Crear detalles
+        for (DisponibilidadRequestDTO.TurnoRequestDTO turnoRequest : turnos) {
+            BigDecimal horas = turnoRequest.getHoras() != null 
+                ? turnoRequest.getHoras()
+                : calcularHorasPorTurno(turnoRequest.getTurno(), personal);
+
+            DetalleDisponibilidad detalle = DetalleDisponibilidad.builder()
+                .disponibilidadMedica(disponibilidad)
+                .fecha(turnoRequest.getFecha())
+                .turno(turnoRequest.getTurno())
+                .horas(horas)
+                .build();
+
+            disponibilidad.addDetalle(detalle);
+            horasAsistenciales = horasAsistenciales.add(horas);
+        }
+
+        // Calcular horas sanitarias (solo para 728/CAS)
+        BigDecimal horasSanitarias = calcularHorasSanitarias(personal, diasTrabajados);
+
+        // Establecer totales
+        disponibilidad.setHorasAsistenciales(horasAsistenciales);
+        disponibilidad.setHorasSanitarias(horasSanitarias);
+        disponibilidad.calcularTotalHoras();
+
+        log.info("📊 Horas calculadas - Asistenciales: {}, Sanitarias: {}, Total: {}",
+            horasAsistenciales, horasSanitarias, disponibilidad.getTotalHoras());
+    }
+
+    /**
+     * Calcula horas por turno según régimen laboral del médico
+     */
+    private BigDecimal calcularHorasPorTurno(String tipoTurno, PersonalCnt personal) {
+        String regimen = personal.getRegimenLaboral() != null 
+            ? personal.getRegimenLaboral().getDescRegLab()
+            : "LOCADOR";
+
+        boolean es728oCAS = "728".equals(regimen) || "CAS".equals(regimen);
+
+        return switch (tipoTurno) {
+            case "M" -> es728oCAS ? HORAS_MANANA_728 : HORAS_MANANA_LOCADOR;
+            case "T" -> es728oCAS ? HORAS_TARDE_728 : HORAS_TARDE_LOCADOR;
+            case "MT" -> es728oCAS ? HORAS_COMPLETO_728 : HORAS_COMPLETO_LOCADOR;
+            default -> throw new BusinessException("Tipo de turno inválido: " + tipoTurno);
+        };
+    }
+
+    /**
+     * Calcula horas sanitarias: 2h × días trabajados (solo 728/CAS)
+     */
+    private BigDecimal calcularHorasSanitarias(PersonalCnt personal, int diasTrabajados) {
+        String regimen = personal.getRegimenLaboral() != null
+            ? personal.getRegimenLaboral().getDescRegLab()
+            : "LOCADOR";
+
+        boolean es728oCAS = "728".equals(regimen) || "CAS".equals(regimen);
+
+        if (es728oCAS) {
+            return HORAS_SANITARIAS_POR_DIA.multiply(BigDecimal.valueOf(diasTrabajados));
+        }
+
+        return BigDecimal.ZERO;
+    }
+
+    /**
+     * Recalcula totales después de ajustes
+     */
+    private void recalcularTotales(DisponibilidadMedica disponibilidad) {
+        BigDecimal horasAsistenciales = detalleRepository.sumHorasByDisponibilidad(
+            disponibilidad.getIdDisponibilidad()
+        );
+
+        int diasTrabajados = (int) detalleRepository.countByDisponibilidadMedica_IdDisponibilidad(
+            disponibilidad.getIdDisponibilidad()
+        );
+
+        BigDecimal horasSanitarias = calcularHorasSanitarias(disponibilidad.getPersonal(), diasTrabajados);
+
+        disponibilidad.setHorasAsistenciales(horasAsistenciales);
+        disponibilidad.setHorasSanitarias(horasSanitarias);
+        disponibilidad.calcularTotalHoras();
+    }
+
+    /**
+     * Convierte entidad a DTO completo
+     */
+    private DisponibilidadMedicaDTO convertirADTO(DisponibilidadMedica disponibilidad) {
+        List<DetalleDisponibilidadDTO> detallesDTO = disponibilidad.getDetalles().stream()
+            .map(this::convertirDetalleADTO)
+            .collect(Collectors.toList());
+
+        return DisponibilidadMedicaDTO.builder()
+            .idDisponibilidad(disponibilidad.getIdDisponibilidad())
+            .idPers(disponibilidad.getPersonal().getIdPers())
+            .nombreMedico(disponibilidad.getPersonal().getNomPers() + " " + 
+                         disponibilidad.getPersonal().getApePaterPers() + " " +
+                         disponibilidad.getPersonal().getApeMaterPers())
+            .dniMedico(disponibilidad.getPersonal().getNumDocPers())
+            .idServicio(disponibilidad.getServicio().getIdServicio())
+            .nombreServicio(disponibilidad.getServicio().getDescServicio())
+            .periodo(disponibilidad.getPeriodo())
+            .estado(disponibilidad.getEstado())
+            .horasAsistenciales(disponibilidad.getHorasAsistenciales())
+            .horasSanitarias(disponibilidad.getHorasSanitarias())
+            .totalHoras(disponibilidad.getTotalHoras())
+            .horasRequeridas(disponibilidad.getHorasRequeridas())
+            .observaciones(disponibilidad.getObservaciones())
+            .fechaCreacion(disponibilidad.getFechaCreacion())
+            .fechaEnvio(disponibilidad.getFechaEnvio())
+            .fechaRevision(disponibilidad.getFechaRevision())
+            .fechaSincronizacion(disponibilidad.getFechaSincronizacion())
+            .idCtrHorarioGenerado(disponibilidad.getIdCtrHorarioGenerado())
+            .detalles(detallesDTO)
+            .cumpleHorasRequeridas(disponibilidad.cumpleHorasRequeridas())
+            .totalDiasTrabajados(detallesDTO.size())
+            .createdAt(disponibilidad.getCreatedAt())
+            .updatedAt(disponibilidad.getUpdatedAt())
+            .build();
+    }
+
+    /**
+     * Convierte entidad a DTO simplificado
+     */
+    private DisponibilidadResponseDTO convertirAResponseDTO(DisponibilidadMedica disponibilidad) {
+        DisponibilidadResponseDTO dto = DisponibilidadResponseDTO.builder()
+            .idDisponibilidad(disponibilidad.getIdDisponibilidad())
+            .idPers(disponibilidad.getPersonal().getIdPers())
+            .nombreMedico(disponibilidad.getPersonal().getNomPers() + " " +
+                         disponibilidad.getPersonal().getApePaterPers())
+            .dniMedico(disponibilidad.getPersonal().getNumDocPers())
+            .idServicio(disponibilidad.getServicio().getIdServicio())
+            .nombreServicio(disponibilidad.getServicio().getDescServicio())
+            .periodo(disponibilidad.getPeriodo())
+            .estado(disponibilidad.getEstado())
+            .horasAsistenciales(disponibilidad.getHorasAsistenciales())
+            .horasSanitarias(disponibilidad.getHorasSanitarias())
+            .totalHoras(disponibilidad.getTotalHoras())
+            .horasRequeridas(disponibilidad.getHorasRequeridas())
+            .cumpleHorasRequeridas(disponibilidad.cumpleHorasRequeridas())
+            .totalDiasTrabajados(disponibilidad.getDetalles().size())
+            .fechaCreacion(disponibilidad.getFechaCreacion())
+            .fechaEnvio(disponibilidad.getFechaEnvio())
+            .fechaRevision(disponibilidad.getFechaRevision())
+            .fechaSincronizacion(disponibilidad.getFechaSincronizacion())
+            .sincronizadoConChatbot(disponibilidad.getIdCtrHorarioGenerado() != null)
+            .idCtrHorarioGenerado(disponibilidad.getIdCtrHorarioGenerado())
+            .build();
+
+        dto.calcularPorcentajeCumplimiento();
+        dto.setEstadoDescripcion();
+
+        return dto;
+    }
+
+    /**
+     * Convierte detalle a DTO
+     */
+    private DetalleDisponibilidadDTO convertirDetalleADTO(DetalleDisponibilidad detalle) {
+        return DetalleDisponibilidadDTO.builder()
+            .idDetalle(detalle.getIdDetalle())
+            .idDisponibilidad(detalle.getDisponibilidadMedica().getIdDisponibilidad())
+            .fecha(detalle.getFecha())
+            .turno(detalle.getTurno())
+            .nombreTurno(detalle.getNombreTurno())
+            .horas(detalle.getHoras())
+            .ajustadoPor(detalle.getAjustadoPorPersonal() != null ? detalle.getAjustadoPorPersonal().getIdPers() : null)
+            .nombreAjustador(detalle.getAjustadoPorPersonal() != null 
+                ? detalle.getAjustadoPorPersonal().getNomPers() + " " + detalle.getAjustadoPorPersonal().getApePaterPers()
+                : null)
+            .observacionAjuste(detalle.getObservacionAjuste())
+            .fueAjustado(detalle.fueAjustado())
+            .createdAt(detalle.getCreatedAt())
+            .build();
+    }
+
+    /**
+     * Obtiene el usuario actualmente autenticado
+     */
+    private Usuario obtenerUsuarioActual() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String username = authentication.getName();
+
+        return usuarioRepository.findByNameUser(username)
+            .orElseThrow(() -> new BusinessException("Usuario no encontrado: " + username));
+    }
+
+    /**
+     * Obtiene el ID del personal asociado al usuario
+     */
+    private Long obtenerIdPersonalDelUsuario(Usuario usuario) {
+        if (usuario.getPersonalCnt() != null) {
+            return usuario.getPersonalCnt().getIdPers();
+        }
+        throw new BusinessException("El usuario no tiene personal asociado");
+    }
+}

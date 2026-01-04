@@ -1,0 +1,94 @@
+{
+  "status": 200,
+  "message": "Atención clínica encontrada",
+  "data": {
+    "idAtencion": 15,
+    "pkAsegurado": "22672403-202405",
+    "nombreAsegurado": "PACIENTE DE PRUEBA",
+    "fechaAtencion": "2026-01-01T10:00:00-05:00",
+
+    "idIpress": 1,
+    "nombreIpress": "HOSPITAL GUILLERMO ALMENARA IRIGOYEN",
+    "idEspecialidad": 5,
+    "nombreEspecialidad": "CARDIOLOGIA",
+
+    "nombreTipoAtencion": "Teleconsulta Médica",
+    "nombreEstrategia": "Telemedicina Sincrónica",
+
+    "motivoConsulta": "Dolor torácico y disnea de esfuerzo",
+    "diagnostico": "Paciente con antecedentes de hipertensión arterial. Presenta dolor torácico atípico y disnea a moderados esfuerzos. Examen físico: PA 150/95, FC 88 lpm. Soplo sistólico grado II/VI.",
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━": "",
+    "  📋 CAMPOS CIE-10 LEGACY (Compatibilidad con versiones anteriores)": "",
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━": "",
+
+    "cie10Codigo": "I10",
+    "cie10Descripcion": "Hipertensión esencial (primaria)",
+
+    "NOTA_IMPORTANTE": "⚠️ Los campos cie10Codigo y cie10Descripcion mantienen el diagnóstico PRINCIPAL para compatibilidad con código antiguo que espera un único diagnóstico.",
+
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━": "",
+    "  🆕 LISTA COMPLETA DE DIAGNÓSTICOS CIE-10 (Soporte Múltiple)": "",
+    "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━": "",
+
+    "diagnosticosCie10": [
+      {
+        "cie10Codigo": "I10",
+        "cie10Descripcion": "Hipertensión esencial (primaria)",
+        "esPrincipal": true,
+        "orden": 1,
+        "observaciones": "Diagnóstico principal"
+      },
+      {
+        "cie10Codigo": "I251",
+        "cie10Descripcion": "Enfermedad aterosclerótica del corazón",
+        "esPrincipal": false,
+        "orden": 2,
+        "observaciones": "Cardiopatía aterosclerótica - Diagnóstico secundario"
+      },
+      {
+        "cie10Codigo": "E785",
+        "cie10Descripcion": "Hiperlipidemia no especificada",
+        "esPrincipal": false,
+        "orden": 3,
+        "observaciones": "Hiperlipidemia - Factor de riesgo cardiovascular"
+      }
+    ],
+
+    "EXPLICACION": {
+      "ventajas": [
+        "✅ Permite registrar diagnósticos principal + secundarios + comorbilidades",
+        "✅ Mantiene orden de importancia (campo 'orden')",
+        "✅ Permite agregar observaciones específicas por cada diagnóstico",
+        "✅ Marca claramente cuál es el diagnóstico principal (esPrincipal: true)",
+        "✅ Retrocompatible: código antiguo sigue funcionando con cie10Codigo/cie10Descripcion"
+      ],
+      "casos_uso": [
+        "📌 Paciente con hipertensión + diabetes",
+        "📌 Infección respiratoria + comorbilidades múltiples",
+        "📌 Enfermedad principal + factores de riesgo",
+        "📌 Diagnósticos diferenciales pendientes de confirmar"
+      ]
+    },
+
+    "tratamiento": "1. Enalapril 10mg c/12h\n2. Atorvastatina 20mg c/24h\n3. AAS 100mg c/24h\n4. Dieta hiposódica\n5. Control en 1 mes",
+    "recomendacionEspecialista": "Continuar tratamiento antihipertensivo. Solicitar perfil lipídico y ecocardiograma para valoración de función ventricular.",
+
+    "signosVitales": {
+      "presionArterial": "150/95",
+      "temperatura": 36.5,
+      "pesoKg": 78.5,
+      "tallaCm": 170.0,
+      "imc": 27.1,
+      "saturacionO2": 97,
+      "frecuenciaCardiaca": 88,
+      "frecuenciaRespiratoria": 18
+    },
+
+    "nombreProfesional": "Dr. Juan Pérez Rodríguez",
+    "tieneSignosVitales": true,
+    "isCompleta": true,
+    "createdAt": "2026-01-01T10:30:00-05:00",
+    "updatedAt": "2026-01-01T10:30:00-05:00"
+  }
+}

@@ -4,6 +4,433 @@
 
 ---
 
+## v2.0.0 (2026-01-03) - Módulo de Trazabilidad Clínica
+
+### ✨ Nueva Funcionalidad: Trazabilidad de Atenciones Clínicas
+
+**Descripción**: Implementación completa del módulo de Trazabilidad Clínica que permite registrar, consultar y gestionar el historial completo de atenciones médicas de los asegurados, incluyendo signos vitales, interconsultas y telemonitoreo.
+
+---
+
+#### 1. Backend - Modelo de Datos y Repositorios
+
+**Entidad creada**: `AtencionClinica.java`
+- **Ubicación**: `backend/src/main/java/com/styp/cenate/model/atencion/AtencionClinica.java`
+- **Tabla**: `atencion_clinica`
+- **Campos principales**:
+  - Identificadores: `id_atencion` (PK), `pk_asegurado` (FK), `id_ipress`, `id_especialidad`
+  - Datos clínicos: `motivo_consulta`, `antecedentes`, `diagnostico`, `resultados_clinicos`, `observaciones_generales`, `datos_seguimiento`
+  - Signos vitales: `presion_arterial`, `temperatura`, `peso_kg`, `talla_cm`, `imc`, `saturacion_o2`, `frecuencia_cardiaca`, `frecuencia_respiratoria`
+  - Interconsulta: `tiene_orden_interconsulta`, `id_especialidad_interconsulta`, `modalidad_interconsulta` (PRESENCIAL/VIRTUAL)
+  - Telemonitoreo: `requiere_telemonitoreo`
+  - Metadata: `id_estrategia`, `id_tipo_atencion`, `id_personal_creador`, `id_personal_modificador`, `created_at`, `updated_at`
+
+**Relaciones JPA configuradas**:
+```java
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "pk_asegurado", referencedColumnName = "pk_asegurado")
+private Asegurado asegurado;
+
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "id_ipress", referencedColumnName = "id_ipress")
+private Ipress ipress;
+
+@ManyToOne(fetch = FetchType.LAZY)
+@JoinColumn(name = "id_especialidad", referencedColumnName = "id_especialidad")
+private Especialidad especialidad;
+
+// + relaciones con EstrategiaInstitucional, TipoAtencion, Usuario (creador/modificador)
+```
+
+**Repositorio**: `AtencionClinicaRepository.java`
+- Consultas personalizadas con paginación
+- Búsqueda por asegurado
+- Filtros por rango de fechas
+- Ordenamiento por fecha descendente
+
+---
+
+#### 2. Backend - DTOs (Data Transfer Objects)
+
+**`AtencionClinicaCreateDTO.java`** (126 líneas)
+- Validaciones con Bean Validation:
+  - `@NotBlank` para campos obligatorios
+  - `@NotNull` para fecha de atención
+  - `@DecimalMin/@DecimalMax` para rangos de signos vitales
+    - Temperatura: 30.0°C - 45.0°C
+    - Peso: 0.1kg - 500kg
+    - Talla: 20cm - 250cm
+    - IMC: 5.0 - 100.0
+    - Saturación O2: 50% - 100%
+    - Frecuencia cardíaca: 20 - 300 lpm
+    - Frecuencia respiratoria: 5 - 100 rpm
+- Validación custom: Si `tieneOrdenInterconsulta=true`, requiere `idEspecialidadInterconsulta` y `modalidadInterconsulta`
+- Enumeración `ModalidadInterconsulta`: PRESENCIAL, VIRTUAL
+
+**`AtencionClinicaUpdateDTO.java`**
+- Mismo esquema de validación que CreateDTO
+- Permite actualización parcial de campos
+
+**`AtencionClinicaResponseDTO.java`**
+- Incluye datos denormalizados para reducir consultas:
+  - `nombreAsegurado`, `nombreIpress`, `nombreEspecialidad`, `nombreProfesional`
+  - `nombreEstrategia`, `nombreTipoAtencion`, `nombreModificador`
+- Objeto anidado `signosVitales` con todos los signos vitales
+- Flags calculados:
+  - `tieneSignosVitales`: true si al menos un signo vital está presente
+  - `isCompleta`: true si tiene motivo, diagnóstico y signos vitales
+
+---
+
+#### 3. Backend - Servicios
+
+**`AtencionClinicaService.java`** (~500 líneas)
+- **Métodos CRUD completos**:
+  - `crear(AtencionClinicaCreateDTO)`: Crea nueva atención con auditoría
+  - `actualizar(Long, AtencionClinicaUpdateDTO)`: Actualiza atención existente
+  - `eliminar(Long)`: Eliminación lógica/física
+  - `obtenerPorId(Long)`: Consulta detalle completo
+  - `obtenerPorAsegurado(String, Pageable)`: Timeline paginado de atenciones
+
+**Características destacadas**:
+- **Cálculo automático de IMC**: Si se proporcionan peso y talla, calcula IMC = peso / (talla²)
+- **Auditoría automática**: Registra `id_personal_creador` y `id_personal_modificador` desde el contexto de seguridad
+- **Validación de negocio**: Verifica que el asegurado exista antes de crear atención
+- **Manejo de errores**: Excepciones personalizadas con mensajes descriptivos
+- **Conversión DTO↔Entity**: Mapeo bidireccional con todos los campos
+
+---
+
+#### 4. Backend - Controladores REST
+
+**`AtencionClinicaController.java`**
+- **Base URL**: `/api/atenciones-clinicas`
+- **Endpoints implementados**:
+
+```java
+POST   /api/atenciones-clinicas
+       → Crear nueva atención clínica
+       Request Body: AtencionClinicaCreateDTO
+       Response: 201 Created + AtencionClinicaResponseDTO
+
+GET    /api/atenciones-clinicas/{id}
+       → Obtener detalle de atención por ID
+       Response: 200 OK + AtencionClinicaResponseDTO
+
+PUT    /api/atenciones-clinicas/{id}
+       → Actualizar atención existente
+       Request Body: AtencionClinicaUpdateDTO
+       Response: 200 OK + AtencionClinicaResponseDTO
+
+DELETE /api/atenciones-clinicas/{id}
+       → Eliminar atención
+       Response: 204 No Content
+
+GET    /api/atenciones-clinicas/asegurado/{pkAsegurado}
+       → Obtener timeline de atenciones del asegurado (paginado)
+       Query params: page=0, size=20
+       Response: 200 OK + Page<AtencionClinicaResponseDTO>
+
+GET    /api/atenciones-clinicas/mis-atenciones
+       → Obtener atenciones creadas por el profesional logueado (paginado)
+       Response: 200 OK + Page<AtencionClinicaResponseDTO>
+```
+
+**Formato de respuesta estándar**:
+```json
+{
+  "status": 200,
+  "data": { /* AtencionClinicaResponseDTO */ },
+  "message": "Atención clínica creada exitosamente"
+}
+```
+
+---
+
+#### 5. Frontend - Componentes React
+
+**5.1. `HistorialAtencionesTab.jsx`** (250 líneas)
+- **Propósito**: Mostrar timeline de atenciones clínicas del asegurado
+- **Características**:
+  - Vista de timeline vertical con iconos y líneas conectoras
+  - Muestra 5 atenciones por página con paginación
+  - Badges visuales: "Signos Vitales ✓", "Interconsulta", "Telemonitoreo"
+  - Botón "Actualizar" para refrescar datos
+  - Estados: loading, error, empty state
+  - Formato de fechas en español (es-PE)
+  - Colores CENATE: gradiente #0A5BA9 → #2563EB
+
+**Bug fix aplicado** (línea 42-43):
+```javascript
+// Antes (incorrecto):
+setAtenciones(response.content || []);
+
+// Después (correcto):
+const data = response.data || response;
+setAtenciones(data.content || []);
+```
+
+**5.2. `SignosVitalesCard.jsx`** (295 líneas)
+- **Propósito**: Componente reutilizable para mostrar signos vitales con evaluación médica
+- **Características**:
+  - **Evaluación automática con rangos clínicos**:
+    - Temperatura: Hipotermia (< 36°C), Normal (36-37.5°C), Febrícula (37.5-38°C), Fiebre (> 38°C)
+    - Saturación O2: Normal (≥ 95%), Precaución (90-94%), Crítico (< 90%)
+    - Frecuencia cardíaca: Bradicardia (< 60), Normal (60-100), Taquicardia (> 100)
+    - Frecuencia respiratoria: Bradipnea (< 12), Normal (12-20), Taquipnea (> 20)
+    - IMC: Bajo peso (< 18.5), Normal (18.5-25), Sobrepeso (25-30), Obesidad I-III (≥ 30)
+  - **Código de colores según estado**:
+    - Verde: Normal
+    - Amarillo: Advertencia/Precaución
+    - Naranja: Obesidad moderada
+    - Rojo: Crítico/Fiebre/Obesidad mórbida
+    - Azul: Por debajo de lo normal (hipotermia, bradicardia)
+    - Gris: Dato no disponible
+  - Grid responsivo (1-2-3 columnas según viewport)
+  - Badges con estado clínico (ej: "Normal", "Fiebre", "Taquicardia")
+  - Nota informativa sobre rangos de normalidad
+
+**5.3. `InterconsultaCard.jsx`** (220 líneas)
+- **Propósito**: Mostrar información de órdenes de interconsulta
+- **Características**:
+  - **Configuración por modalidad**:
+    - PRESENCIAL: Icono Building2, color azul, instrucciones para atención presencial
+    - VIRTUAL: Icono Video, color púrpura, instrucciones para teleconsulta
+  - Muestra especialidad destino
+  - Estado "ACTIVA" con badge verde
+  - Información de agendamiento (pendiente de programación)
+  - Tiempo estimado de respuesta: 24-48 horas hábiles
+  - Instrucciones específicas según modalidad:
+    - **Presencial**: Acudir al establecimiento, presentar documentos, llevar exámenes, llegar 15 min antes
+    - **Virtual**: Enlace por correo, conexión estable, preparar cámara/micrófono, ingresar 5 min antes
+  - Nota importante sobre seguimiento y notificación
+  - Información adicional: Prioridad, Tipo de atención
+  - Empty state si no requiere interconsulta
+
+**5.4. `DetalleAtencionModal.jsx`** (470+ líneas)
+- **Propósito**: Modal completo para visualizar detalle de una atención clínica
+- **Estructura de navegación por tabs**:
+  1. **General**: Información básica de la atención
+     - Tipo de atención, especialidad, fecha
+     - Profesional que atendió, IPRESS, estrategia
+     - Motivo de consulta, antecedentes, diagnóstico
+     - Resultados clínicos, observaciones generales
+  2. **Signos Vitales**: Componente `SignosVitalesCard` integrado
+     - Solo visible si `tieneSignosVitales === true`
+  3. **Datos Clínicos**: Detalles adicionales
+     - Resultados de exámenes complementarios
+     - Observaciones generales del profesional
+  4. **Interconsulta**: Componente `InterconsultaCard` integrado
+     - Solo visible si `tieneOrdenInterconsulta === true`
+  5. **Seguimiento**: Datos de telemonitoreo
+     - Solo visible si `requiereTelemonitoreo === true`
+     - Plan de seguimiento y notas
+- **Características UX**:
+  - Modal responsivo con backdrop blur
+  - Botón "Cerrar" siempre visible
+  - Animaciones suaves al cambiar de tab
+  - Badges de estado (ACTIVA/INACTIVA)
+  - Iconos de Lucide React
+  - Diseño coherente con sistema CENATE
+
+**5.5. `FormularioAtencionModal.jsx`** (~900 líneas)
+- **Propósito**: Formulario completo para crear/editar atenciones clínicas
+- **Modo dual**: Creación (POST) y Edición (PUT)
+- **5 secciones de formulario**:
+  1. **Datos de Atención**:
+     - Fecha y hora de atención (datetime-local)
+     - Selección de IPRESS (dropdown)
+     - Selección de especialidad (dropdown)
+     - Selección de tipo de atención (dropdown)
+     - Selección de estrategia institucional (dropdown)
+  2. **Datos Clínicos**:
+     - Motivo de consulta (textarea)
+     - Antecedentes (textarea)
+     - Diagnóstico (textarea, requerido)
+     - Resultados clínicos (textarea)
+     - Observaciones generales (textarea)
+  3. **Signos Vitales**:
+     - Presión arterial (texto, ej: "120/80")
+     - Temperatura (°C, rango validado)
+     - Peso (kg, con validación)
+     - Talla (cm, con validación)
+     - IMC (calculado automáticamente, readonly)
+     - Saturación O2 (%, rango validado)
+     - Frecuencia cardíaca (lpm, rango validado)
+     - Frecuencia respiratoria (rpm, rango validado)
+  4. **Interconsulta**:
+     - Checkbox "¿Requiere interconsulta?"
+     - Especialidad destino (dropdown, obligatorio si checkbox activo)
+     - Modalidad (PRESENCIAL/VIRTUAL, obligatorio si checkbox activo)
+  5. **Telemonitoreo**:
+     - Checkbox "¿Requiere telemonitoreo?"
+     - Datos de seguimiento (textarea, visible si checkbox activo)
+- **Validaciones frontend**:
+  - Campos requeridos marcados con asterisco
+  - Validación de rangos numéricos en tiempo real
+  - Validación condicional (interconsulta, telemonitoreo)
+  - Mensajes de error descriptivos
+- **Cálculo automático de IMC**:
+  ```javascript
+  useEffect(() => {
+    if (formData.pesoKg && formData.tallaCm) {
+      const tallaMts = formData.tallaCm / 100;
+      const imc = formData.pesoKg / (tallaMts * tallaMts);
+      setFormData(prev => ({ ...prev, imc: parseFloat(imc.toFixed(2)) }));
+    }
+  }, [formData.pesoKg, formData.tallaCm]);
+  ```
+- **Estados del formulario**:
+  - Loading: Spinner durante guardado
+  - Success: Mensaje de éxito + cierre automático
+  - Error: Mensaje de error detallado
+  - Validación: Resaltado de campos con error
+
+---
+
+#### 6. Frontend - Servicio API
+
+**`atencionesClinicasService.js`** (115 líneas)
+- **Métodos implementados**:
+```javascript
+obtenerPorAsegurado(pkAsegurado, page, size)  // Timeline paginado
+obtenerDetalle(idAtencion)                     // Detalle completo
+crear(atencionData)                            // POST nueva atención
+actualizar(idAtencion, atencionData)           // PUT actualizar
+eliminar(idAtencion)                           // DELETE
+obtenerMisAtenciones(page, size)               // Atenciones del profesional logueado
+```
+- Configuración:
+  - Base URL: `/api/atenciones-clinicas`
+  - Headers automáticos: `Authorization: Bearer <token>`
+  - Manejo de errores con try/catch
+  - Retorno del formato de respuesta CENATE: `{ status, data, message }`
+
+---
+
+#### 7. Testing y Validación
+
+**Datos de prueba creados**:
+- Paciente: TESTING ATENCION JOSE (DNI: 99999999)
+- 5 atenciones clínicas con datos variados:
+  1. **Control preventivo** (02/01/2026): Signos vitales normales, IMC 26.2
+  2. **Cuadro viral** (31/12/2025): Fiebre 38.2°C, taquicardia 105 lpm, **CON TELEMONITOREO**
+  3. **Cefalea tensional** (29/12/2025): Signos vitales normales
+  4. **Dolor precordial** (27/12/2025): PA 138/88, **INTERCONSULTA PRESENCIAL** a Cardiología
+  5. **Control diabetes** (24/12/2025): IMC 26.2, **INTERCONSULTA VIRTUAL** a Endocrinología
+
+**Testing visual con Playwright MCP**:
+- ✅ Login exitoso (44914706 / @Styp654321)
+- ✅ Navegación a "Asegurados" → "Buscar Asegurado"
+- ✅ Búsqueda del paciente de prueba (DNI: 99999999)
+- ✅ Apertura del modal "Detalles del Asegurado"
+- ✅ Visualización del tab "Antecedentes Clínicos"
+- ✅ Verificación del timeline con las 5 atenciones
+- ✅ Badges visuales correctos:
+  - "Signos Vitales ✓" en todas las atenciones
+  - "Telemonitoreo" en atención #2
+  - Fechas formateadas correctamente
+  - Motivo y diagnóstico visibles
+
+**Screenshots generados**:
+- `testing_historial_atenciones_exitoso.png`: Timeline con 5 atenciones
+- `testing_final_timeline_5_atenciones.png`: Vista final del módulo funcionando
+
+---
+
+### 📊 Estadísticas del Módulo
+
+**Backend**:
+- **4 archivos nuevos**:
+  - 1 entidad JPA (AtencionClinica.java)
+  - 3 DTOs (Create, Update, Response)
+  - 1 repositorio
+  - 1 servicio (~500 líneas)
+  - 1 controlador REST
+- **7 endpoints REST** implementados
+- **Validaciones**: 15+ reglas de validación Bean Validation
+- **Relaciones JPA**: 7 relaciones ManyToOne configuradas
+
+**Frontend**:
+- **5 componentes React** creados:
+  - HistorialAtencionesTab.jsx (250 líneas)
+  - SignosVitalesCard.jsx (295 líneas)
+  - InterconsultaCard.jsx (220 líneas)
+  - DetalleAtencionModal.jsx (470+ líneas)
+  - FormularioAtencionModal.jsx (~900 líneas)
+- **1 servicio API** (atencionesClinicasService.js, 115 líneas)
+- **Total**: ~2,250 líneas de código frontend
+
+**Total del módulo**: ~3,000 líneas de código (backend + frontend)
+
+---
+
+### 🎯 Beneficios y Características Destacadas
+
+1. **Trazabilidad completa**: Registro detallado de cada atención médica
+2. **Evaluación automática**: Rangos clínicos con código de colores según estado
+3. **Cálculo automático de IMC**: No requiere cálculo manual
+4. **Validación exhaustiva**: 15+ reglas de validación backend + frontend
+5. **Interconsultas digitales**: Modalidad PRESENCIAL y VIRTUAL
+6. **Telemonitoreo integrado**: Seguimiento remoto de pacientes
+7. **Timeline visual**: Visualización clara del historial médico
+8. **Auditoría**: Registro de quién creó/modificó cada atención
+9. **Paginación**: Manejo eficiente de grandes volúmenes de datos
+10. **Responsive**: Adaptación a dispositivos móviles y tablets
+
+---
+
+### 🔐 Seguridad
+
+- Autenticación JWT requerida en todos los endpoints
+- Validación de permisos MBAC (futuro)
+- Auditoría automática con `id_personal_creador` y `id_personal_modificador`
+- Sanitización de inputs en backend
+- Protección contra SQL injection (JPA + named parameters)
+
+---
+
+### 📝 Próximos Pasos
+
+1. Integrar modal `DetalleAtencionModal` con onClick en `HistorialAtencionesTab`
+2. Implementar botón "Nueva Atención" con `FormularioAtencionModal`
+3. Agregar permisos MBAC específicos (crear/editar/eliminar atenciones)
+4. Implementar búsqueda y filtros avanzados (por fecha, profesional, especialidad)
+5. Agregar exportación de historial clínico a PDF
+6. Implementar notificaciones push para interconsultas y telemonitoreo
+
+---
+
+### 📚 Documentación Adicional
+
+- Plan de implementación: `plan/02_Modulos_Medicos/03_plan_trazabilidad_clinica.md` (a crear)
+- Modelo de datos: `spec/04_BaseDatos/01_modelo_usuarios/04_modelo_atencion_clinica.md` (a crear)
+- Guía de usuario: Pendiente
+
+---
+
+### ⚙️ Dependencias Actualizadas
+
+**Frontend**:
+- `lucide-react`: Iconos para UI (Activity, Heart, Thermometer, Wind, etc.)
+- `tailwindcss`: Estilos utility-first con colores CENATE
+
+**Backend**:
+- Spring Boot 3.5.6
+- Jakarta Validation (Bean Validation)
+- Spring Data JPA
+- PostgreSQL 14+
+
+---
+
+### 👥 Equipo
+
+- **Desarrollo**: Ing. Styp Canto Rondón
+- **Testing**: Claude Sonnet 4.5 + Playwright MCP
+- **Documentación**: Claude Sonnet 4.5
+
+---
+
 ## v1.16.3 (2026-01-03) - Fix Relación JPA PersonalExterno y Limpieza de Datos
 
 ### 🔧 Correcciones Críticas

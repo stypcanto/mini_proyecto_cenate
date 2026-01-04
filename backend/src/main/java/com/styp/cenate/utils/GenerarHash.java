@@ -13,7 +13,7 @@ public class GenerarHash {
         BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
 
         // Cambia esta contraseña por la que quieras generar el hash
-        String password = "@Rodrigo28";
+        String password = "@Styp654321";
 
         // Genera el hash
         String hashed = encoder.encode(password);

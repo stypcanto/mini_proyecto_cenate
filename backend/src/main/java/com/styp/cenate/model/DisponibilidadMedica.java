@@ -2,47 +2,43 @@ package com.styp.cenate.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
-
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
-import java.util.HashSet;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * 📅 Entidad que representa la disponibilidad mensual de un médico.
- * Permite al médico declarar su disponibilidad por turnos (Mañana, Tarde, Completo)
- * con validación de 150 horas mínimas.
- *
- * Estados:
- * - BORRADOR: Médico puede editar libremente
- * - ENVIADO: Médico puede editar hasta que coordinador marque REVISADO (requiere >= 150 horas)
- * - REVISADO: Solo coordinador puede ajustar turnos
- *
+ * 📅 Entidad que representa la disponibilidad mensual declarada por médicos.
+ * Incluye cálculo de horas asistenciales, sanitarias e integración con chatbot.
  * Tabla: disponibilidad_medica
  *
- * @author Ing. Styp Canto Rondon
- * @version 1.0.0
- * @since 2025-12-27
+ * @author Ing. Styp Canto Rondón
+ * @version 2.0.0
+ * @since 2026-01-03
  */
 @Entity
-@Table(name = "disponibilidad_medica", schema = "public",
-       uniqueConstraints = @UniqueConstraint(
-           name = "uq_disponibilidad_periodo_pers_servicio",
-           columnNames = {"id_pers", "periodo", "id_servicio"}
-       ))
+@Table(
+    name = "disponibilidad_medica",
+    schema = "public",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uq_disponibilidad_periodo_pers_servicio",
+            columnNames = {"id_pers", "periodo", "id_servicio"}
+        )
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"personal", "especialidad", "detalles"})
+@ToString(exclude = {"personal", "servicio", "detalles"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class DisponibilidadMedica {
 
     // ==========================================================
-    // 🆔 IDENTIFICADOR PRINCIPAL
+    // 🆔 Identificador principal
     // ==========================================================
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
@@ -50,270 +46,265 @@ public class DisponibilidadMedica {
     private Long idDisponibilidad;
 
     // ==========================================================
-    // 🔗 RELACIONES
+    // 🔗 Relaciones con otras entidades
     // ==========================================================
 
     /**
-     * Médico que declaró la disponibilidad
+     * Relación con el personal médico que declara disponibilidad
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_pers", nullable = false)
+    @JoinColumn(
+        name = "id_pers",
+        referencedColumnName = "id_pers",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "disponibilidad_medica_id_pers_fkey")
+    )
     private PersonalCnt personal;
 
     /**
-     * Especialidad médica para la cual se declara disponibilidad
+     * Relación con el servicio/especialidad en la que declara disponibilidad
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_servicio", nullable = false)
-    private DimServicioEssi especialidad;
+    @JoinColumn(
+        name = "id_servicio",
+        referencedColumnName = "id_servicio",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "disponibilidad_medica_id_servicio_fkey")
+    )
+    private DimServicioEssi servicio;
+
+    /**
+     * Relación OneToMany con los detalles de disponibilidad diaria
+     */
+    @OneToMany(
+        mappedBy = "disponibilidadMedica",
+        cascade = CascadeType.ALL,
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
+    @Builder.Default
+    private List<DetalleDisponibilidad> detalles = new ArrayList<>();
 
     // ==========================================================
-    // 📊 DATOS PRINCIPALES
+    // 📆 Información del periodo
     // ==========================================================
 
     /**
-     * Periodo en formato YYYYMM (ejemplo: 202601 = Enero 2026)
+     * Periodo en formato YYYYMM (ej: 202601)
      */
     @Column(name = "periodo", length = 6, nullable = false)
     private String periodo;
 
     /**
-     * Estado de la disponibilidad:
-     * - BORRADOR: En proceso de creación
-     * - ENVIADO: Enviada para revisión
-     * - REVISADO: Revisada y aprobada por coordinador
+     * Estado del flujo de disponibilidad
+     * Valores: BORRADOR, ENVIADO, REVISADO, SINCRONIZADO
      */
     @Column(name = "estado", length = 20, nullable = false)
     @Builder.Default
     private String estado = "BORRADOR";
 
     // ==========================================================
-    // ✅ VALIDACIÓN DE HORAS
+    // ⏱️ Cálculo de horas (v2.0.0)
     // ==========================================================
 
     /**
-     * Total de horas calculadas según los turnos registrados
+     * Horas de atención directa según turnos M/T/MT y régimen laboral
+     * Régimen 728/CAS: M=4h, T=4h, MT=8h
+     * Régimen Locador: M=6h, T=6h, MT=12h
+     */
+    @Column(name = "horas_asistenciales", precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal horasAsistenciales = BigDecimal.ZERO;
+
+    /**
+     * Horas administrativas: 2h × días trabajados (solo régimen 728/CAS)
+     * Incluye 1h telemonitoreo + 1h trabajo administrativo
+     * NO aplica para Régimen Locador
+     */
+    @Column(name = "horas_sanitarias", precision = 5, scale = 2)
+    @Builder.Default
+    private BigDecimal horasSanitarias = BigDecimal.ZERO;
+
+    /**
+     * Total de horas = horas_asistenciales + horas_sanitarias
      */
     @Column(name = "total_horas", precision = 5, scale = 2)
     @Builder.Default
     private BigDecimal totalHoras = BigDecimal.ZERO;
 
     /**
-     * Horas mínimas requeridas (default: 150 horas/mes)
+     * Meta mensual de horas requeridas
      */
     @Column(name = "horas_requeridas", precision = 5, scale = 2)
     @Builder.Default
     private BigDecimal horasRequeridas = new BigDecimal("150.00");
 
     // ==========================================================
-    // 📝 INFORMACIÓN ADICIONAL
+    // 📝 Observaciones y notas
     // ==========================================================
 
-    /**
-     * Observaciones generales del médico sobre su disponibilidad
-     */
-    @Column(name = "observaciones", columnDefinition = "TEXT")
+    @Column(name = "observaciones", columnDefinition = "text")
     private String observaciones;
 
     // ==========================================================
-    // 📅 CONTROL DE FECHAS
+    // 📅 Fechas de workflow
     // ==========================================================
 
     /**
      * Fecha de creación del registro
      */
-    @Column(name = "fecha_creacion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Column(name = "fecha_creacion", columnDefinition = "timestamptz")
     private OffsetDateTime fechaCreacion;
 
     /**
-     * Fecha en que el médico envió la disponibilidad
+     * Fecha en que el médico envió su disponibilidad
      */
-    @Column(name = "fecha_envio", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Column(name = "fecha_envio", columnDefinition = "timestamptz")
     private OffsetDateTime fechaEnvio;
 
     /**
-     * Fecha en que el coordinador marcó como revisado
+     * Fecha en que el coordinador revisó la disponibilidad
      */
-    @Column(name = "fecha_revision", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Column(name = "fecha_revision", columnDefinition = "timestamptz")
     private OffsetDateTime fechaRevision;
 
     // ==========================================================
-    // 🕓 AUDITORÍA
+    // 🔗 Integración con horarios chatbot (v2.0.0)
     // ==========================================================
 
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    /**
+     * Fecha de sincronización con el sistema de horarios del chatbot
+     */
+    @Column(name = "fecha_sincronizacion", columnDefinition = "timestamptz")
+    private OffsetDateTime fechaSincronizacion;
+
+    /**
+     * ID del registro en ctr_horario generado tras sincronización
+     * No es FK para evitar dependencia circular
+     */
+    @Column(name = "id_ctr_horario_generado")
+    private Long idCtrHorarioGenerado;
+
+    // ==========================================================
+    // 📋 Auditoría
+    // ==========================================================
+
+    @Column(name = "created_at", columnDefinition = "timestamptz", updatable = false)
     private OffsetDateTime createdAt;
 
-    @UpdateTimestamp
-    @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Column(name = "updated_at", columnDefinition = "timestamptz")
     private OffsetDateTime updatedAt;
 
     // ==========================================================
-    // 🔗 RELACIONES INVERSAS
-    // ==========================================================
-
-    /**
-     * Detalles de turnos por día
-     */
-    @Builder.Default
-    @OneToMany(mappedBy = "disponibilidad", cascade = CascadeType.ALL,
-               orphanRemoval = true, fetch = FetchType.LAZY)
-    private Set<DetalleDisponibilidad> detalles = new HashSet<>();
-
-    // ==========================================================
-    // 🧩 MÉTODOS UTILITARIOS
-    // ==========================================================
-
-    /**
-     * Verifica si la disponibilidad está en estado BORRADOR
-     */
-    public boolean isBorrador() {
-        return "BORRADOR".equalsIgnoreCase(estado);
-    }
-
-    /**
-     * Verifica si la disponibilidad está en estado ENVIADO
-     */
-    public boolean isEnviado() {
-        return "ENVIADO".equalsIgnoreCase(estado);
-    }
-
-    /**
-     * Verifica si la disponibilidad está en estado REVISADO
-     */
-    public boolean isRevisado() {
-        return "REVISADO".equalsIgnoreCase(estado);
-    }
-
-    /**
-     * Cambia el estado a ENVIADO y registra la fecha de envío
-     *
-     * @throws IllegalStateException si no cumple con las horas mínimas
-     */
-    public void enviar() {
-        if (totalHoras.compareTo(horasRequeridas) < 0) {
-            throw new IllegalStateException(
-                String.format("No se puede enviar. Se requieren al menos %.2f horas, pero solo tiene %.2f horas",
-                    horasRequeridas, totalHoras)
-            );
-        }
-        this.estado = "ENVIADO";
-        this.fechaEnvio = OffsetDateTime.now();
-    }
-
-    /**
-     * Cambia el estado a REVISADO y registra la fecha de revisión
-     */
-    public void marcarRevisado() {
-        this.estado = "REVISADO";
-        this.fechaRevision = OffsetDateTime.now();
-    }
-
-    /**
-     * Obtiene el nombre completo del médico
-     */
-    public String getNombreCompleto() {
-        return personal != null ? personal.getNombreCompleto() : null;
-    }
-
-    /**
-     * Obtiene el nombre de la especialidad
-     */
-    public String getNombreEspecialidad() {
-        return especialidad != null ? especialidad.getDescServicio() : null;
-    }
-
-    /**
-     * Obtiene el código de la especialidad
-     */
-    public String getCodigoEspecialidad() {
-        return especialidad != null ? especialidad.getCodServicio() : null;
-    }
-
-    /**
-     * Obtiene el número de documento del médico
-     */
-    public String getNumeroDocumento() {
-        return personal != null ? personal.getNumDocPers() : null;
-    }
-
-    /**
-     * Obtiene el email del médico (corporativo o personal)
-     */
-    public String getEmailMedico() {
-        if (personal != null) {
-            return personal.getEmailCorpPers() != null ?
-                   personal.getEmailCorpPers() :
-                   personal.getEmailPers();
-        }
-        return null;
-    }
-
-    /**
-     * Verifica si cumple con el mínimo de horas requeridas
-     */
-    public boolean cumpleMinimo() {
-        return totalHoras.compareTo(horasRequeridas) >= 0;
-    }
-
-    /**
-     * Calcula el porcentaje de cumplimiento de horas
-     */
-    public BigDecimal getPorcentajeCumplimiento() {
-        if (horasRequeridas.compareTo(BigDecimal.ZERO) == 0) {
-            return BigDecimal.ZERO;
-        }
-        return totalHoras.divide(horasRequeridas, 4, java.math.RoundingMode.HALF_UP)
-                        .multiply(new BigDecimal("100"));
-    }
-
-    /**
-     * Obtiene el régimen laboral del médico
-     */
-    public String getRegimenLaboral() {
-        if (personal != null && personal.getRegimenLaboral() != null) {
-            return personal.getRegimenLaboral().getDescRegLab();
-        }
-        return null;
-    }
-
-    /**
-     * Verifica si el médico puede editar la disponibilidad
-     */
-    public boolean puedeEditar() {
-        return isBorrador() || isEnviado();
-    }
-
-    // ==========================================================
-    // 🔧 LIFECYCLE CALLBACKS
+    // 🔄 Lifecycle callbacks
     // ==========================================================
 
     @PrePersist
     protected void onCreate() {
-        if (fechaCreacion == null) {
-            fechaCreacion = OffsetDateTime.now();
+        OffsetDateTime now = OffsetDateTime.now();
+        this.createdAt = now;
+        this.updatedAt = now;
+
+        if (this.fechaCreacion == null) {
+            this.fechaCreacion = now;
         }
-        if (totalHoras == null) {
-            totalHoras = BigDecimal.ZERO;
+
+        if (this.estado == null) {
+            this.estado = "BORRADOR";
         }
-        if (horasRequeridas == null) {
-            horasRequeridas = new BigDecimal("150.00");
+
+        if (this.horasAsistenciales == null) {
+            this.horasAsistenciales = BigDecimal.ZERO;
         }
-        if (estado == null || estado.isBlank()) {
-            estado = "BORRADOR";
+
+        if (this.horasSanitarias == null) {
+            this.horasSanitarias = BigDecimal.ZERO;
+        }
+
+        if (this.totalHoras == null) {
+            this.totalHoras = BigDecimal.ZERO;
+        }
+
+        if (this.horasRequeridas == null) {
+            this.horasRequeridas = new BigDecimal("150.00");
         }
     }
 
     @PreUpdate
     protected void onUpdate() {
-        // Si se está cambiando a ENVIADO, validar horas
-        if ("ENVIADO".equalsIgnoreCase(estado) && fechaEnvio == null) {
-            fechaEnvio = OffsetDateTime.now();
+        this.updatedAt = OffsetDateTime.now();
+    }
+
+    // ==========================================================
+    // 🛠️ Métodos de utilidad
+    // ==========================================================
+
+    /**
+     * Agrega un detalle de disponibilidad a la lista
+     * Establece la relación bidireccional
+     */
+    public void addDetalle(DetalleDisponibilidad detalle) {
+        if (detalles == null) {
+            detalles = new ArrayList<>();
         }
-        // Si se está cambiando a REVISADO, registrar fecha
-        if ("REVISADO".equalsIgnoreCase(estado) && fechaRevision == null) {
-            fechaRevision = OffsetDateTime.now();
+        detalles.add(detalle);
+        detalle.setDisponibilidadMedica(this);
+    }
+
+    /**
+     * Remueve un detalle de disponibilidad de la lista
+     * Rompe la relación bidireccional
+     */
+    public void removeDetalle(DetalleDisponibilidad detalle) {
+        if (detalles != null) {
+            detalles.remove(detalle);
+            detalle.setDisponibilidadMedica(null);
         }
+    }
+
+    /**
+     * Verifica si la disponibilidad está en estado BORRADOR
+     */
+    public boolean esBorrador() {
+        return "BORRADOR".equals(this.estado);
+    }
+
+    /**
+     * Verifica si la disponibilidad ha sido enviada
+     */
+    public boolean esEnviado() {
+        return "ENVIADO".equals(this.estado);
+    }
+
+    /**
+     * Verifica si la disponibilidad ha sido revisada
+     */
+    public boolean esRevisado() {
+        return "REVISADO".equals(this.estado);
+    }
+
+    /**
+     * Verifica si la disponibilidad ha sido sincronizada con el chatbot
+     */
+    public boolean esSincronizado() {
+        return "SINCRONIZADO".equals(this.estado);
+    }
+
+    /**
+     * Verifica si cumple con las horas requeridas
+     */
+    public boolean cumpleHorasRequeridas() {
+        return this.totalHoras != null
+            && this.horasRequeridas != null
+            && this.totalHoras.compareTo(this.horasRequeridas) >= 0;
+    }
+
+    /**
+     * Calcula el total de horas sumando asistenciales + sanitarias
+     */
+    public void calcularTotalHoras() {
+        BigDecimal asistenciales = this.horasAsistenciales != null ? this.horasAsistenciales : BigDecimal.ZERO;
+        BigDecimal sanitarias = this.horasSanitarias != null ? this.horasSanitarias : BigDecimal.ZERO;
+        this.totalHoras = asistenciales.add(sanitarias);
     }
 }

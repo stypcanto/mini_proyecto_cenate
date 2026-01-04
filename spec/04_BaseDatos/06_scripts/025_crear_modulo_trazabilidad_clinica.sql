@@ -51,7 +51,7 @@ COMMENT ON COLUMN public.dim_estrategia_institucional.estado IS 'Estado: A = Act
 INSERT INTO public.dim_estrategia_institucional (cod_estrategia, desc_estrategia, sigla, estado)
 VALUES
     ('EST-001', 'Centro Nacional de Telemedicina', 'CENATE', 'A'),
-    ('EST-002', 'Centro Nacional de Enfermedades Crónicas', 'CENACRON', 'A'),
+    ('EST-002', 'CENACRON', 'CENACRON', 'A'),
     ('EST-003', 'Centro Nacional de Atención Psicológica', 'CENAPSI', 'A'),
     ('EST-004', 'Centro Nacional de Salud Materno Infantil', 'CENASMI', 'A'),
     ('EST-005', 'Programa de Diabetes e Hipertensión', 'PDIAH', 'A'),
