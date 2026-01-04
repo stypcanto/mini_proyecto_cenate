@@ -9,7 +9,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Building2, Search, Download, FileText, FileSpreadsheet,
   ChevronLeft, ChevronRight, Filter, ArrowUpDown, Loader,
-  Home, TrendingUp, MapPin, Network, Activity, Plus, Edit2, Trash2
+  Home, TrendingUp, MapPin, Network, Activity, Plus, Edit2, Trash2, Eye
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -18,6 +18,7 @@ import { ipressService } from "../../services/ipressService";
 import { useAuth } from "../../context/AuthContext";
 import IpressFormModal from "./components/IpressFormModal";
 import ConfirmDeleteIpressModal from "./components/ConfirmDeleteIpressModal";
+import IpressViewModal from "./components/IpressViewModal";
 
 export default function ListadoIpress() {
   const navigate = useNavigate();
@@ -41,6 +42,7 @@ export default function ListadoIpress() {
   // Estados para modales CRUD
   const [modalCrearEditar, setModalCrearEditar] = useState({ open: false, ipress: null });
   const [modalEliminar, setModalEliminar] = useState({ open: false, ipress: null });
+  const [modalVer, setModalVer] = useState({ open: false, ipress: null });
 
   // Verificar permisos de usuario
   const esAdminOSuperadmin = user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPERADMIN');
@@ -197,7 +199,7 @@ export default function ListadoIpress() {
       item.codIpress,
       item.nombreRed,
       item.idRedDisplay,
-      item.descModalidadAtencion || "No especificado",
+      item.nombreModalidadAtencion || "No especificado",
     ]);
 
     const csvContent = [
@@ -455,11 +457,9 @@ export default function ListadoIpress() {
                   <th className="px-6 py-4 text-left font-semibold text-slate-700">
                     Modalidad de Atención
                   </th>
-                  {esAdminOSuperadmin && (
-                    <th className="px-6 py-4 text-center font-semibold text-slate-700">
-                      Acciones
-                    </th>
-                  )}
+                  <th className="px-6 py-4 text-center font-semibold text-slate-700">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
@@ -483,46 +483,58 @@ export default function ListadoIpress() {
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${
-                          item.descModalidadAtencion === 'TELECONSULTA'
+                          item.nombreModalidadAtencion === 'TELECONSULTA'
                             ? 'bg-blue-100 text-blue-800'
-                            : item.descModalidadAtencion === 'TELECONSULTORIO'
+                            : item.nombreModalidadAtencion === 'TELECONSULTORIO'
                             ? 'bg-purple-100 text-purple-800'
-                            : item.descModalidadAtencion === 'AMBOS'
+                            : item.nombreModalidadAtencion === 'AMBOS'
                             ? 'bg-emerald-100 text-emerald-800'
-                            : item.descModalidadAtencion === 'NO SE BRINDA SERVICIO'
+                            : item.nombreModalidadAtencion === 'NO SE BRINDA SERVICIO'
                             ? 'bg-red-100 text-red-800'
                             : 'bg-gray-100 text-gray-600'
                         }`}>
-                          {item.descModalidadAtencion || 'No especificado'}
+                          {item.nombreModalidadAtencion || 'No especificado'}
                         </span>
                       </td>
-                      {esAdminOSuperadmin && (
-                        <td className="px-6 py-4 text-sm text-slate-700">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => handleEditar(item)}
-                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                              title="Editar IPRESS"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            {esSuperadmin && (
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        <div className="flex items-center justify-center gap-2">
+                          {/* Botón Ver - Disponible para TODOS los usuarios */}
+                          <button
+                            onClick={() => setModalVer({ open: true, ipress: item })}
+                            className="p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                            title="Ver detalles"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+
+                          {/* Botones Editar y Eliminar - Solo para ADMIN y SUPERADMIN */}
+                          {esAdminOSuperadmin && (
+                            <>
                               <button
-                                onClick={() => handleEliminar(item)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                title="Eliminar IPRESS (solo SUPERADMIN)"
+                                onClick={() => handleEditar(item)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Editar IPRESS"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Edit2 className="w-4 h-4" />
                               </button>
-                            )}
-                          </div>
-                        </td>
-                      )}
+                              {esSuperadmin && (
+                                <button
+                                  onClick={() => handleEliminar(item)}
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Eliminar IPRESS (solo SUPERADMIN)"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={esAdminOSuperadmin ? "6" : "5"} className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                       <Building2 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                       <p className="text-lg font-medium">No se encontraron IPRESS</p>
                       <p className="text-sm">Intenta ajustar los filtros de búsqueda</p>
@@ -626,6 +638,13 @@ export default function ListadoIpress() {
             ipress={modalEliminar.ipress}
             onConfirm={confirmarEliminar}
             onCancel={() => setModalEliminar({ open: false, ipress: null })}
+          />
+        )}
+
+        {modalVer.open && (
+          <IpressViewModal
+            ipress={modalVer.ipress}
+            onClose={() => setModalVer({ open: false, ipress: null })}
           />
         )}
       </div>
