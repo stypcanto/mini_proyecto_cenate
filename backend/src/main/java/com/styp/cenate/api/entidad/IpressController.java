@@ -2,14 +2,19 @@ package com.styp.cenate.api.entidad;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import com.styp.cenate.dto.IpressRequest;
 import com.styp.cenate.dto.IpressResponse;
 import com.styp.cenate.service.ipress.IpressService;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 🌐 Controlador REST para gestión de IPRESS (Instituciones Prestadoras de Servicios de Salud)
@@ -88,5 +93,66 @@ public class IpressController {
     public ResponseEntity<List<IpressResponse>> searchIpress(@RequestParam("q") String q) {
         log.info("🔎 Buscando IPRESS con término: {}", q);
         return ResponseEntity.ok(ipressService.searchIpress(q));
+    }
+
+    // ============================================================
+    // 🔹 CREAR (CREATE)
+    // ============================================================
+    /**
+     * POST /api/ipress
+     * Crea una nueva IPRESS
+     * Requiere rol: ADMIN o SUPERADMIN
+     */
+    @PostMapping
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SUPERADMIN')")
+    public ResponseEntity<Map<String, Object>> createIpress(@Valid @RequestBody IpressRequest request) {
+        log.info("➕ Creando nueva IPRESS: {}", request.getDescIpress());
+        IpressResponse ipress = ipressService.createIpress(request);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 201);
+        response.put("data", ipress);
+        response.put("message", "IPRESS creada exitosamente");
+        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+    }
+
+    // ============================================================
+    // 🔹 ACTUALIZAR (UPDATE)
+    // ============================================================
+    /**
+     * PUT /api/ipress/{id}
+     * Actualiza una IPRESS existente
+     * Requiere rol: ADMIN o SUPERADMIN
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_ADMIN') or hasRole('ROLE_SUPERADMIN')")
+    public ResponseEntity<Map<String, Object>> updateIpress(
+            @PathVariable Long id,
+            @Valid @RequestBody IpressRequest request) {
+        log.info("✏️ Actualizando IPRESS con ID: {}", id);
+        IpressResponse ipress = ipressService.updateIpress(id, request);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("data", ipress);
+        response.put("message", "IPRESS actualizada exitosamente");
+        return ResponseEntity.ok(response);
+    }
+
+    // ============================================================
+    // 🔹 ELIMINAR (DELETE) - Solo SUPERADMIN
+    // ============================================================
+    /**
+     * DELETE /api/ipress/{id}
+     * Elimina una IPRESS
+     * Requiere rol: SUPERADMIN únicamente
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('ROLE_SUPERADMIN')")
+    public ResponseEntity<Map<String, Object>> deleteIpress(@PathVariable Long id) {
+        log.info("🗑️ Eliminando IPRESS con ID: {} (solo SUPERADMIN)", id);
+        ipressService.deleteIpress(id);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("message", "IPRESS eliminada exitosamente");
+        return ResponseEntity.ok(response);
     }
 }

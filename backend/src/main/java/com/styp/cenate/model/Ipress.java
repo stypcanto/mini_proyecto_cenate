@@ -54,10 +54,11 @@ public class Ipress {
     private Long idNivAten;
 
     /**
-     * Modalidad de atención
+     * Modalidad de atención (TELECONSULTA, TELECONSULTORIO, AMBOS, NO SE BRINDA SERVICIO)
      */
-    @Column(name = "id_mod_aten")
-    private Long idModAten;
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "id_mod_aten")
+    private ModalidadAtencion modalidadAtencion;
 
     /**
      * Dirección de la IPRESS
@@ -125,5 +126,19 @@ public class Ipress {
      */
     public Long getIdRed() {
         return red != null ? red.getId() : null;
+    }
+
+    /**
+     * Obtiene el ID de la modalidad de atención (compatibilidad)
+     */
+    public Long getIdModAten() {
+        return modalidadAtencion != null ? modalidadAtencion.getIdModAten() : null;
+    }
+
+    /**
+     * Obtiene la descripción de la modalidad de atención
+     */
+    public String getDescModalidadAtencion() {
+        return modalidadAtencion != null ? modalidadAtencion.getDescModAten() : null;
     }
 }
