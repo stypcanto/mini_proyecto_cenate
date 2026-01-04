@@ -59,10 +59,10 @@ export default function ListadoIpress() {
     try {
       setLoading(true);
 
-      // Cargar redes y todas las IPRESS
+      // Cargar redes y todas las IPRESS usando ipressService
       const [redesData, ipressData] = await Promise.all([
         aseguradosService.getRedes(),
-        aseguradosService.getIpress(null)
+        ipressService.obtenerTodas() // ✅ Cambiado para usar endpoint correcto /ipress
       ]);
 
       setRedes(redesData || []);

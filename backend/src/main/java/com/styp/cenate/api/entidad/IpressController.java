@@ -56,40 +56,36 @@ public class IpressController {
     }
 
     // ============================================================
-    // 🔹 Obtener todas las IPRESS
+    // 🔹 Obtener todas las IPRESS (PÚBLICO - respeta SecurityConfig)
     // ============================================================
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<IpressResponse>> getAllIpress() {
         log.info("📋 Consultando todas las IPRESS");
         return ResponseEntity.ok(ipressService.getAllIpress());
     }
 
     // ============================================================
-    // 🔹 Obtener IPRESS activas
+    // 🔹 Obtener IPRESS activas (PÚBLICO - respeta SecurityConfig)
     // ============================================================
     @GetMapping("/activas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<IpressResponse>> getIpressActivas() {
         log.info("📋 Consultando IPRESS activas");
         return ResponseEntity.ok(ipressService.getIpressActivas());
     }
 
     // ============================================================
-    // 🔹 Obtener IPRESS por ID
+    // 🔹 Obtener IPRESS por ID (PÚBLICO - respeta SecurityConfig)
     // ============================================================
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<IpressResponse> getIpressById(@PathVariable Long id) {
         log.info("🔍 Consultando IPRESS con ID: {}", id);
         return ResponseEntity.ok(ipressService.getIpressById(id));
     }
 
     // ============================================================
-    // 🔹 Buscar IPRESS por nombre (búsqueda parcial)
+    // 🔹 Buscar IPRESS por nombre (PÚBLICO - respeta SecurityConfig)
     // ============================================================
     @GetMapping("/buscar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'USER')")
     public ResponseEntity<List<IpressResponse>> searchIpress(@RequestParam("q") String q) {
         log.info("🔎 Buscando IPRESS con término: {}", q);
         return ResponseEntity.ok(ipressService.searchIpress(q));
