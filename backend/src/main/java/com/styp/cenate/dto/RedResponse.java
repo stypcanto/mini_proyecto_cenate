@@ -23,4 +23,7 @@ public class RedResponse {
 
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Estado de la red
+    private boolean activa;
 }

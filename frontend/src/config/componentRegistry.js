@@ -290,6 +290,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/ipress/redes': {
+    component: lazy(() => import('../pages/ipress/ListadoRedes')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 👥 MÓDULO DE ASEGURADOS (Sin MBAC - Rutas abiertas)
   // ========================================================================

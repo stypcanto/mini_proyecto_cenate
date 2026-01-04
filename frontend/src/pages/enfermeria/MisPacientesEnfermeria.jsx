@@ -1,19 +1,21 @@
 // ========================================================================
 // 👩‍⚕️ MisPacientesEnfermeria.jsx – Módulo de Mis Pacientes para Enfermería
-// ✅ Versión 1.0.0 (2026-01-03)
+// ✅ Versión 1.1.0 (2026-01-04) - Implementado modal de historial clínico
 // ========================================================================
 
 import React, { useState, useEffect } from "react";
 import {
   Users, Search, Calendar, Activity, Heart, AlertCircle,
-  FileText, ArrowLeft, ChevronRight, Loader, User, Phone
+  FileText, ArrowLeft, ChevronRight, Loader, User, Phone, X
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { getApiBaseUrl } from "../../utils/apiUrlHelper";
+import TrazabilidadClinicaTabs from "../../components/trazabilidad/TrazabilidadClinicaTabs";
 
 const API_URL = getApiBaseUrl();
+
 
 export default function MisPacientesEnfermeria() {
   const navigate = useNavigate();
@@ -24,6 +26,11 @@ export default function MisPacientesEnfermeria() {
   const [totalPaginas, setTotalPaginas] = useState(0);
   const [totalElementos, setTotalElementos] = useState(0);
   const pageSize = 10;
+
+  // Estados para modal de historial clínico
+  const [showModal, setShowModal] = useState(false);
+  const [detalleAsegurado, setDetalleAsegurado] = useState(null);
+  const [loadingDetalle, setLoadingDetalle] = useState(false);
 
   useEffect(() => {
     cargarPacientes();
@@ -61,8 +68,35 @@ export default function MisPacientesEnfermeria() {
     }
   };
 
-  const handleVerDetalle = (pkAsegurado) => {
-    navigate(`/enfermeria/paciente/${pkAsegurado}`);
+  const obtenerDetalles = async (pkAsegurado) => {
+    try {
+      setLoadingDetalle(true);
+      const token = localStorage.getItem("auth.token");
+
+      const response = await axios.get(
+        `${API_URL}/asegurados/detalle/${pkAsegurado}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`
+          }
+        }
+      );
+
+      if (response.data) {
+        setDetalleAsegurado(response.data);
+        setShowModal(true);
+      }
+    } catch (error) {
+      console.error("Error al obtener detalles:", error);
+      toast.error("Error al cargar los detalles del paciente");
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
+
+  const cerrarModal = () => {
+    setShowModal(false);
+    setDetalleAsegurado(null);
   };
 
   const pacientesFiltrados = pacientes.filter((p) =>
@@ -84,10 +118,10 @@ export default function MisPacientesEnfermeria() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
-      {/* Header */}
+      {/* Header */ }
       <div className="max-w-7xl mx-auto mb-6">
         <button
-          onClick={() => navigate("/dashboard")}
+          onClick={ () => navigate("/dashboard") }
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
         >
           <ArrowLeft className="w-5 h-5" />
@@ -103,7 +137,7 @@ export default function MisPacientesEnfermeria() {
               <div>
                 <h1 className="text-3xl font-bold text-gray-900">Mis Pacientes</h1>
                 <p className="text-gray-600 mt-1">
-                  {totalElementos} {totalElementos === 1 ? "paciente atendido" : "pacientes atendidos"}
+                  { totalElementos } { totalElementos === 1 ? "paciente atendido" : "pacientes atendidos" }
                 </p>
               </div>
             </div>
@@ -111,23 +145,23 @@ export default function MisPacientesEnfermeria() {
         </div>
       </div>
 
-      {/* Buscador */}
+      {/* Buscador */ }
       <div className="max-w-7xl mx-auto mb-6">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
           <input
             type="text"
             placeholder="Buscar por nombre o DNI..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            value={ searchTerm }
+            onChange={ (e) => setSearchTerm(e.target.value) }
             className="w-full pl-12 pr-4 py-3 rounded-xl border border-gray-200 focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all"
           />
         </div>
       </div>
 
-      {/* Lista de Pacientes */}
+      {/* Lista de Pacientes */ }
       <div className="max-w-7xl mx-auto">
-        {loading ? (
+        { loading ? (
           <div className="flex justify-center items-center py-20">
             <Loader className="w-8 h-8 text-green-600 animate-spin" />
             <span className="ml-3 text-gray-600">Cargando pacientes...</span>
@@ -139,21 +173,21 @@ export default function MisPacientesEnfermeria() {
               No se encontraron pacientes
             </h3>
             <p className="text-gray-600">
-              {searchTerm
+              { searchTerm
                 ? "Intenta con otro término de búsqueda"
-                : "Aún no has atendido a ningún paciente"}
+                : "Aún no has atendido a ningún paciente" }
             </p>
           </div>
         ) : (
           <div className="space-y-4">
-            {pacientesFiltrados.map((paciente) => (
+            { pacientesFiltrados.map((paciente) => (
               <div
-                key={paciente.pkAsegurado}
+                key={ paciente.pkAsegurado }
                 className="bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 border border-gray-100 overflow-hidden"
               >
                 <div className="p-6">
                   <div className="flex items-start justify-between">
-                    {/* Información del Paciente */}
+                    {/* Información del Paciente */ }
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-3">
                         <div className="p-2 bg-gradient-to-br from-blue-100 to-blue-50 rounded-lg">
@@ -161,22 +195,22 @@ export default function MisPacientesEnfermeria() {
                         </div>
                         <div>
                           <h3 className="text-lg font-bold text-gray-900">
-                            {paciente.apellidosNombres}
+                            { paciente.apellidosNombres }
                           </h3>
                           <p className="text-sm text-gray-600">
-                            DNI: {paciente.numDoc} • {paciente.edad} años • {paciente.sexo === "M" ? "Masculino" : "Femenino"}
+                            DNI: { paciente.numDoc } • { paciente.edad } años • { paciente.sexo === "M" ? "Masculino" : "Femenino" }
                           </p>
                         </div>
                       </div>
 
-                      {/* Detalles de la Última Atención */}
+                      {/* Detalles de la Última Atención */ }
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                         <div className="flex items-center gap-2 text-sm">
                           <Calendar className="w-4 h-4 text-gray-400" />
                           <div>
                             <p className="text-xs text-gray-500">Última atención</p>
                             <p className="font-medium text-gray-900">
-                              {formatearFecha(paciente.ultimaFechaAtencion)}
+                              { formatearFecha(paciente.ultimaFechaAtencion) }
                             </p>
                           </div>
                         </div>
@@ -186,7 +220,7 @@ export default function MisPacientesEnfermeria() {
                           <div>
                             <p className="text-xs text-gray-500">Tipo de atención</p>
                             <p className="font-medium text-gray-900">
-                              {paciente.ultimaTipoAtencion}
+                              { paciente.ultimaTipoAtencion }
                             </p>
                           </div>
                         </div>
@@ -196,39 +230,40 @@ export default function MisPacientesEnfermeria() {
                           <div>
                             <p className="text-xs text-gray-500">Diagnóstico</p>
                             <p className="font-medium text-gray-900 truncate">
-                              {paciente.ultimaDiagnosticoPrincipal}
+                              { paciente.ultimaDiagnosticoPrincipal }
                             </p>
                           </div>
                         </div>
                       </div>
 
-                      {/* Información Adicional */}
+                      {/* Información Adicional */ }
                       <div className="flex items-center gap-4 mt-4 pt-4 border-t border-gray-100">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Heart className="w-4 h-4" />
-                          <span>{paciente.totalAtenciones} {paciente.totalAtenciones === 1 ? "atención" : "atenciones"}</span>
+                          <span>{ paciente.totalAtenciones } { paciente.totalAtenciones === 1 ? "atención" : "atenciones" }</span>
                         </div>
 
-                        {paciente.telefono && (
+                        { paciente.telefono && (
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <Phone className="w-4 h-4" />
-                            <span>{paciente.telefono}</span>
+                            <span>{ paciente.telefono }</span>
                           </div>
-                        )}
+                        ) }
 
-                        {paciente.requiereTelemonitoreo && (
+                        { paciente.requiereTelemonitoreo && (
                           <span className="px-3 py-1 bg-red-100 text-red-700 text-xs font-semibold rounded-full">
                             Requiere Telemonitoreo
                           </span>
-                        )}
+                        ) }
                       </div>
                     </div>
 
-                    {/* Botón de Acción */}
+                    {/* Botón de Acción */ }
                     <div className="ml-6">
                       <button
-                        onClick={() => handleVerDetalle(paciente.pkAsegurado)}
-                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg hover:from-green-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg"
+                        onClick={ () => obtenerDetalles(paciente.pkAsegurado) }
+                        disabled={ loadingDetalle }
+                        className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-teal-600 text-white rounded-lg hover:from-green-600 hover:to-teal-700 transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
                       >
                         <span className="font-medium">Ver Historial</span>
                         <ChevronRight className="w-4 h-4" />
@@ -237,35 +272,62 @@ export default function MisPacientesEnfermeria() {
                   </div>
                 </div>
               </div>
-            ))}
+            )) }
           </div>
-        )}
+        ) }
 
-        {/* Paginación */}
-        {!loading && totalPaginas > 1 && (
+        {/* Paginación */ }
+        { !loading && totalPaginas > 1 && (
           <div className="flex justify-center items-center gap-4 mt-8">
             <button
-              onClick={() => setPaginaActual((prev) => Math.max(0, prev - 1))}
-              disabled={paginaActual === 0}
+              onClick={ () => setPaginaActual((prev) => Math.max(0, prev - 1)) }
+              disabled={ paginaActual === 0 }
               className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               Anterior
             </button>
 
             <span className="text-gray-700 font-medium">
-              Página {paginaActual + 1} de {totalPaginas}
+              Página { paginaActual + 1 } de { totalPaginas }
             </span>
 
             <button
-              onClick={() => setPaginaActual((prev) => Math.min(totalPaginas - 1, prev + 1))}
-              disabled={paginaActual >= totalPaginas - 1}
+              onClick={ () => setPaginaActual((prev) => Math.min(totalPaginas - 1, prev + 1)) }
+              disabled={ paginaActual >= totalPaginas - 1 }
               className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
             >
               Siguiente
             </button>
           </div>
-        )}
+        ) }
       </div>
+
+      {/* Modal de Historial Clínico */ }
+      { showModal && detalleAsegurado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-gradient-to-r from-green-600 to-teal-700 px-6 py-4 rounded-t-2xl flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <div className="bg-white/20 p-2 rounded-lg">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-white">Historial Clínico del Paciente</h2>
+              </div>
+              <button
+                onClick={ cerrarModal }
+                className="bg-white/20 hover:bg-white/30 p-2 rounded-lg transition-all"
+              >
+                <X className="w-5 h-5 text-white" />
+              </button>
+            </div>
+
+            {/* Componente de Trazabilidad Clínica */ }
+            <div className="p-6">
+              <TrazabilidadClinicaTabs pkAsegurado={ detalleAsegurado.asegurado.pkAsegurado } />
+            </div>
+          </div>
+        </div>
+      ) }
     </div>
   );
 }

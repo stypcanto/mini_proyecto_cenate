@@ -43,4 +43,12 @@ public class Red {
     @UpdateTimestamp
     @Column(name = "updated_at")
     private OffsetDateTime actualizado;
+
+    /**
+     * Todas las redes se consideran activas por defecto
+     * ya que la tabla dim_red no tiene campo de estado
+     */
+    public boolean isActiva() {
+        return true;
+    }
 }

@@ -10,6 +10,7 @@ import com.styp.cenate.dto.MacroregionResponse;
 import com.styp.cenate.dto.RedResponse;
 import com.styp.cenate.model.Macroregion;
 import com.styp.cenate.model.Red;
+import com.styp.cenate.repository.MacroregionRepository;
 import com.styp.cenate.service.red.RedService;
 
 import java.util.List;
@@ -20,10 +21,11 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 @Slf4j
 @Data
-@CrossOrigin(origins = {"http://localhost:3000", "http://localhost:5173"})
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173" })
 public class RedController {
 
     private final RedService service;
+    private final MacroregionRepository macroregionRepository;
 
     @GetMapping
     public ResponseEntity<List<RedResponse>> listar() {
@@ -34,7 +36,8 @@ public class RedController {
     }
 
     /**
-     * Endpoint público para obtener REDs activas (para registro de usuarios externos)
+     * Endpoint público para obtener REDs activas (para registro de usuarios
+     * externos)
      */
     @GetMapping("/publicas")
     public ResponseEntity<List<RedResponse>> listarPublicas() {
@@ -53,9 +56,15 @@ public class RedController {
 
     @PostMapping
     public ResponseEntity<RedResponse> crear(@RequestBody RedResponse request) {
+        log.info("📝 Creando nueva red con macrorregión ID: {}", request.getIdMacro());
+
+        Macroregion macro = macroregionRepository.findById(request.getIdMacro())
+                .orElseThrow(() -> new IllegalArgumentException("Macrorregión no encontrada"));
+
         Red nuevo = Red.builder()
                 .codigo(request.getCodRed())
                 .descripcion(request.getDescRed())
+                .macroregion(macro)
                 .build();
         Red creado = service.crear(nuevo);
         return ResponseEntity.ok(convertToResponse(creado));
@@ -63,9 +72,15 @@ public class RedController {
 
     @PutMapping("/{id}")
     public ResponseEntity<RedResponse> actualizar(@PathVariable Long id, @RequestBody RedResponse request) {
+        log.info("✏️ Actualizando red {} con macrorregión ID: {}", id, request.getIdMacro());
+
+        Macroregion macro = macroregionRepository.findById(request.getIdMacro())
+                .orElseThrow(() -> new IllegalArgumentException("Macrorregión no encontrada"));
+
         Red toUpdate = Red.builder()
                 .codigo(request.getCodRed())
                 .descripcion(request.getDescRed())
+                .macroregion(macro)
                 .build();
         Red actualizado = service.actualizar(id, toUpdate);
         return ResponseEntity.ok(convertToResponse(actualizado));
@@ -98,6 +113,7 @@ public class RedController {
                 .descRed(red.getDescripcion())
                 .macroregion(macroResponse)
                 .idMacro(macro != null ? macro.getIdMacro() : null)
+                .activa(red.isActiva())
                 .build();
     }
 }
