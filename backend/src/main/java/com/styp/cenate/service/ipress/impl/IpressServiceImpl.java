@@ -184,7 +184,7 @@ public class IpressServiceImpl implements IpressService {
     }
 
     /**
-     * 🔄 Convierte entidad Ipress a DTO con Red y Macroregión completas
+     * 🔄 Convierte entidad Ipress a DTO con Red, Macroregión y Modalidad completas
      */
     private IpressResponse convertToResponse(Ipress ipress) {
         Red red = ipress.getRed();
@@ -212,6 +212,12 @@ public class IpressServiceImpl implements IpressService {
                     .build();
         }
 
+        // Obtener nombre de la modalidad de atención
+        String nombreModalidad = null;
+        if (ipress.getModalidadAtencion() != null) {
+            nombreModalidad = ipress.getModalidadAtencion().getDescModAten();
+        }
+
         return IpressResponse.builder()
                 .idIpress(ipress.getIdIpress())
                 .codIpress(ipress.getCodIpress())
@@ -220,6 +226,7 @@ public class IpressServiceImpl implements IpressService {
                 .idRed(ipress.getIdRed())
                 .idNivAten(ipress.getIdNivAten())
                 .idModAten(ipress.getIdModAten())
+                .nombreModalidadAtencion(nombreModalidad)
                 .direcIpress(ipress.getDirecIpress())
                 .idTipIpress(ipress.getIdTipIpress())
                 .idDist(ipress.getIdDist())

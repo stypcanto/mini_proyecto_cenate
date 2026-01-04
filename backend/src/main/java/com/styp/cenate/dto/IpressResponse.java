@@ -26,6 +26,7 @@ public class IpressResponse {
     // Otros IDs de relaciones
     private Long idNivAten;
     private Long idModAten;
+    private String nombreModalidadAtencion; // Descripción de la modalidad
     private Long idTipIpress;
     private Long idDist;
 

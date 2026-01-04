@@ -1,6 +1,7 @@
 // Modal de Creación/Edición de IPRESS
 import React, { useState, useEffect } from 'react';
 import { X, Building2, Save, MapPin } from 'lucide-react';
+import toast from 'react-hot-toast';
 import { ipressService } from '../../../services/ipressService';
 
 const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
@@ -116,20 +117,34 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
         longIpress: formData.longIpress ? parseFloat(formData.longIpress) : null,
       };
 
+      console.log('📤 Enviando payload:', payload);
+
+      let response;
       if (ipress) {
         // Actualizar
-        await ipressService.actualizar(ipress.idIpress, payload);
+        console.log(`🔄 Actualizando IPRESS ID: ${ipress.idIpress}`);
+        response = await ipressService.actualizar(ipress.idIpress, payload);
+        console.log('✅ Respuesta actualización:', response);
       } else {
         // Crear
-        await ipressService.crear(payload);
+        console.log('➕ Creando nueva IPRESS');
+        response = await ipressService.crear(payload);
+        console.log('✅ Respuesta creación:', response);
       }
 
+      // Llamar a onSuccess ANTES de cerrar el modal
       onSuccess();
-      onClose();
+
+      // Cerrar el modal después de un pequeño delay
+      setTimeout(() => {
+        onClose();
+      }, 100);
+
+      setLoading(false);
     } catch (error) {
-      console.error('Error al guardar IPRESS:', error);
-      alert(error.message || 'Error al guardar IPRESS');
-    } finally {
+      console.error('❌ Error al guardar IPRESS:', error);
+      const errorMsg = error?.response?.data?.message || error?.message || 'Error al guardar IPRESS';
+      toast.error(errorMsg);
       setLoading(false);
     }
   };
