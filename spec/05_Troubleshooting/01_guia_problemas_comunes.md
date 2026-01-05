@@ -1,6 +1,14 @@
 # Troubleshooting - CENATE
 
-> Guia de solucion de problemas comunes
+> Guía de solución de problemas comunes
+
+---
+
+## 📚 Guías Especializadas
+
+Para problemas específicos, consulta estas guías detalladas:
+
+- **[Coherencia de Datos de Personal](./02_coherencia_datos_personal.md)** - Discrepancias entre Dashboard y API, clasificación Interno/Externo (v1.16.2, v1.16.3)
 
 ---
 

@@ -34,9 +34,12 @@ import com.styp.cenate.exception.ExcelValidationException;
 import com.styp.cenate.model.form107.Bolsa107Carga;
 import com.styp.cenate.repository.form107.Bolsa107CargaRepository;
 import com.styp.cenate.repository.form107.Bolsa107RawDao;
+import com.styp.cenate.util.ExcelHeaderNormalizer;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Service
-
+@Slf4j
 public class ExcelImportService {
 
 	private final Bolsa107CargaRepository cargaRepo;
@@ -50,13 +53,13 @@ public class ExcelImportService {
 	}
 
 	private static final List<String> EXPECTED_COLUMNS = List.of("REGISTRO", "OPCIONES DE INGRESO DE LLAMADA",
-			"TELEFONO", "TIPO DOCUMENTO", "DNI", "APELLIDOS Y NOMBRES", "SEXO", "FechaNacimiento", "DEPARTAMENTO",
+			"TELEFONO", "TIPO DE DOCUMENTO", "DNI", "APELLIDOS Y NOMBRES", "SEXO", "FechaNacimiento", "DEPARTAMENTO",
 			"PROVINCIA", "DISTRITO", "MOTIVO DE LA LLAMADA", "AFILIACION", "DERIVACION INTERNA"
 
 	);
 
 	// obligatorios para filas_ok
-	private static final List<String> REQUIRED = List.of("TIPO DOCUMENTO", "DNI", "APELLIDOS Y NOMBRES", "SEXO",
+	private static final List<String> REQUIRED = List.of("TIPO DE DOCUMENTO", "DNI", "APELLIDOS Y NOMBRES", "SEXO",
 			"FechaNacimiento", "DERIVACION INTERNA");
 
 	
@@ -107,13 +110,13 @@ public class ExcelImportService {
 	        .orElseThrow(() -> new ExcelValidationException("No se pudo leer la cabecera final de la carga."));
 
 	    Map<String, Object> resp = new LinkedHashMap<>();
-	    resp.put("id_carga", finalCarga.getIdCarga());
-	    resp.put("estado_carga", finalCarga.getEstadoCarga());
-	    resp.put("total_filas", finalCarga.getTotalFilas());
-	    resp.put("filas_ok", finalCarga.getFilasOk());
-	    resp.put("filas_error", finalCarga.getFilasError());
-	    resp.put("hash_archivo", finalCarga.getHashArchivo());
-	    resp.put("nombre_archivo", finalCarga.getNombreArchivo());
+	    resp.put("idCarga", finalCarga.getIdCarga());
+	    resp.put("estadoCarga", finalCarga.getEstadoCarga());
+	    resp.put("totalFilas", finalCarga.getTotalFilas());
+	    resp.put("filasOk", finalCarga.getFilasOk());
+	    resp.put("filasError", finalCarga.getFilasError());
+	    resp.put("hashArchivo", finalCarga.getHashArchivo());
+	    resp.put("nombreArchivo", finalCarga.getNombreArchivo());
 
 	    return resp;
 	  }
@@ -172,7 +175,7 @@ public class ExcelImportService {
 				String opcionIngreso = cellStr(row, idx.get(n("OPCIONES DE INGRESO DE LLAMADA")));
 				String telefono = cellStr(row, idx.get(n("TELEFONO")));
 
-				String tipoDocumento = cellStr(row, idx.get(n("TIPO DOCUMENTO")));
+				String tipoDocumento = cellStr(row, idx.get(n("TIPO DE DOCUMENTO")));
 				String numeroDocumento = cellStr(row, idx.get(n("DNI"))); // tu tabla raw lo llama numero_documento
 
 				String apellidos = cellStr(row, idx.get(n("APELLIDOS Y NOMBRES")));
@@ -200,7 +203,7 @@ public class ExcelImportService {
 				if (isBlank(deriv))
 					faltantes.add("DERIVACION INTERNA");
 				if (isBlank(tipoDocumento))
-					faltantes.add("tipo documento");
+					faltantes.add("TIPO DE DOCUMENTO");
 
 				boolean ok = faltantes.isEmpty();
 				if (ok)
@@ -216,7 +219,7 @@ public class ExcelImportService {
 				rawMap.put("REGISTRO", registro);
 				rawMap.put("OPCIONES DE INGRESO DE LLAMADA", opcionIngreso);
 				rawMap.put("TELEFONO", telefono);
-				rawMap.put("tipo documento", tipoDocumento);
+				rawMap.put("TIPO DE DOCUMENTO", tipoDocumento);
 				rawMap.put("DNI", numeroDocumento);
 				rawMap.put("APELLIDOS Y NOMBRES", apellidos);
 				rawMap.put("SEXO", sexo);
@@ -290,17 +293,62 @@ public class ExcelImportService {
 		}
 	}
 
+	/**
+	 * 🆕 v1.15.13: Validación FLEXIBLE de cabeceras
+	 * - Acepta archivos con MENOS o MÁS columnas
+	 * - Solo valida que existan las columnas OBLIGATORIAS
+	 * - Usa normalización inteligente para mapear columnas
+	 */
 	private void validateHeaderStrict(List<String> actualColumns) {
-		if (actualColumns.size() != EXPECTED_COLUMNS.size()) {
-			throw new ExcelValidationException(
-					Map.of("message", "Encabezado inválido: cantidad de columnas no coincide", "expectedColumns",
-							EXPECTED_COLUMNS, "actualColumns", actualColumns));
+		log.info("📋 Validando cabeceras: {} columnas encontradas", actualColumns.size());
+
+		// Normalizar TODAS las columnas del archivo
+		List<String> normalized = ExcelHeaderNormalizer.normalizeAll(actualColumns);
+
+		// Definir columnas OBLIGATORIAS (pueden estar en cualquier posición)
+		List<String> required = List.of(
+			"DNI",                    // Puede ser DNI o NUMERO DE DOCUMENTO
+			"APELLIDOS Y NOMBRES",    // Puede ser APELLIDOS Y NOMBRES o PACIENTE
+			"SEXO",
+			"FechaNacimiento",
+			"DERIVACION INTERNA"
+		);
+
+		// Verificar que las columnas obligatorias existan (buscar en cualquier posición)
+		List<String> missing = new ArrayList<>();
+		for (String req : required) {
+			boolean found = false;
+			for (String norm : normalized) {
+				if (req.equals(norm)) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				missing.add(req);
+			}
 		}
-		for (int i = 0; i < EXPECTED_COLUMNS.size(); i++) {
-			if (!n(EXPECTED_COLUMNS.get(i)).equals(n(actualColumns.get(i)))) {
-				throw new ExcelValidationException(
-						Map.of("message", "Encabezado inválido: nombre u orden incorrecto en posición " + (i + 1),
-								"expectedColumns", EXPECTED_COLUMNS, "actualColumns", actualColumns));
+
+		if (!missing.isEmpty()) {
+			log.error("❌ Faltan columnas obligatorias: {}", missing);
+			throw new ExcelValidationException(
+				Map.of("message", "Faltan columnas obligatorias: " + String.join(", ", missing),
+					"requiredColumns", required,
+					"missingColumns", missing,
+					"actualColumns", actualColumns));
+		}
+
+		// Log de normalización exitosa
+		Map<String, Object> report = ExcelHeaderNormalizer.generateReport(actualColumns, normalized);
+		log.info("✅ Cabeceras validadas correctamente:");
+		log.info("   📊 Total columnas: {}", actualColumns.size());
+		log.info("   📝 Normalizadas: {}", report.get("normalized"));
+		log.info("   ✓ Sin cambios: {}", report.get("unchanged"));
+
+		// Mostrar mapeo de columnas normalizadas
+		for (int i = 0; i < actualColumns.size(); i++) {
+			if (!actualColumns.get(i).equals(normalized.get(i))) {
+				log.info("   🔄 '{}' → '{}'", actualColumns.get(i), normalized.get(i));
 			}
 		}
 	}
@@ -318,9 +366,19 @@ public class ExcelImportService {
 	}
 
 	private Map<String, Integer> buildColumnIndex(List<String> cols) {
+		// 🆕 v1.15.13: Normalizar TODAS las columnas del archivo (flexible)
+		List<String> normalized = ExcelHeaderNormalizer.normalizeAll(cols);
+
 		Map<String, Integer> map = new HashMap<>();
-		for (int i = 0; i < cols.size(); i++)
-			map.put(n(cols.get(i)), i);
+		for (int i = 0; i < normalized.size(); i++) {
+			String normalizedName = normalized.get(i);
+			if (normalizedName != null && !normalizedName.isBlank()) {
+				map.put(n(normalizedName), i);
+				log.debug("   📍 Columna '{}' → índice {}", normalizedName, i);
+			}
+		}
+
+		log.info("🗺️ Mapa de columnas creado con {} entradas", map.size());
 		return map;
 	}
 

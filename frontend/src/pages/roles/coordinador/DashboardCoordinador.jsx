@@ -8,7 +8,7 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import RoleLayout from "../RoleLayout";
-import { CalendarCheck, UserCog, ClipboardList, CheckCircle } from "lucide-react";
+import { CalendarCheck, UserCog, ClipboardList, CheckCircle, GitCompare } from "lucide-react";
 
 export default function DashboardCoordinador() {
   const navigate = useNavigate();
@@ -28,6 +28,11 @@ export default function DashboardCoordinador() {
       label: "Revisión de Disponibilidad",
       path: "/roles/coordinador/revision-disponibilidad",
       icon: <CheckCircle className="w-5 h-5" />,
+    },
+    {
+      label: "Comparativo Disponibilidad",
+      path: "/roles/coordinador/comparativo-disponibilidad",
+      icon: <GitCompare className="w-5 h-5" />,
     },
     {
       label: "Reportes",
@@ -61,6 +66,8 @@ export default function DashboardCoordinador() {
           <ul className="list-disc list-inside text-gray-600 text-sm space-y-1">
             <li>Revisar y editar las agendas médicas registradas.</li>
             <li>Asignar gestores responsables por médico y turno.</li>
+            <li>Revisar y aprobar disponibilidad mensual de médicos.</li>
+            <li>Verificar sincronización con sistema de horarios chatbot.</li>
             <li>Monitorear la cobertura operativa por fecha y especialidad.</li>
             <li>Generar reportes de cumplimiento y productividad.</li>
           </ul>

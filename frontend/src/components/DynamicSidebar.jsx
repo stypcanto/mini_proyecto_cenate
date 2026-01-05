@@ -146,6 +146,8 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   // Expandir automáticamente módulos según el rol del usuario
   const isExterno = roles.includes("EXTERNO") || roles.includes("INSTITUCION_EX");
   const isCoordinadorRed = roles.includes("COORDINADOR_RED");
+  const isGestorCitas = roles.includes("GESTOR DE CITAS") || roles.includes("GESTOR_CITAS");
+  const isEnfermeria = roles.includes("ENFERMERIA");
 
   // ============================================================
   // Obtener modulos permitidos (segun permisos RBAC)
@@ -171,10 +173,13 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
             !RUTAS_SUPERADMIN.includes(pagina.ruta)
           )
         }))
-        .filter(modulo => modulo.paginas.length > 0);
+        .filter(modulo => modulo.paginas.length > 0)
+        // Ordenar alfabéticamente por nombre de módulo
+        .sort((a, b) => a.nombreModulo.localeCompare(b.nombreModulo));
     }
 
-    return modulosDetalle;
+    // Ordenar alfabéticamente por nombre de módulo
+    return modulosDetalle.sort((a, b) => a.nombreModulo.localeCompare(b.nombreModulo));
   }, [getModulosConDetalle, isAdmin, isSuperAdmin]);
 
   // Expandir automáticamente módulos según el rol del usuario
@@ -204,12 +209,34 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
+      // Para usuarios GESTOR DE CITAS: expandir "Gestión de Citas"
+      if (isGestorCitas) {
+        const moduloCitas = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("gestión de citas") ||
+          m.nombreModulo?.toLowerCase().includes("citas")
+        );
+        if (moduloCitas) {
+          sectionsToOpen[moduloCitas.nombreModulo] = true;
+        }
+      }
+
+      // Para usuarios ENFERMERIA: expandir "Enfermería"
+      if (isEnfermeria) {
+        const moduloEnfermeria = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("enfermería") ||
+          m.nombreModulo?.toLowerCase().includes("enfermeria")
+        );
+        if (moduloEnfermeria) {
+          sectionsToOpen[moduloEnfermeria.nombreModulo] = true;
+        }
+      }
+
       // Si hay secciones para abrir, establecerlas
       if (Object.keys(sectionsToOpen).length > 0) {
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isExterno, isCoordinadorRed]);
+  }, [loading, modulosPermitidos, collapsed, isExterno, isCoordinadorRed, isGestorCitas, isEnfermeria]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD

@@ -9,22 +9,32 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Building2, Search, Download, FileText, FileSpreadsheet,
   ChevronLeft, ChevronRight, Filter, ArrowUpDown, Loader,
-  Home, TrendingUp, MapPin, Network, Activity
+  Home, TrendingUp, MapPin, Network, Activity, Plus, Edit2, Trash2, Eye
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
-import aseguradosService from "../../services/aseguradosService";
+import apiClient from "../../services/apiClient";
+import { ipressService } from "../../services/ipressService";
+import { useAuth } from "../../context/AuthContext";
+import IpressFormModal from "./components/IpressFormModal";
+import ConfirmDeleteIpressModal from "./components/ConfirmDeleteIpressModal";
+import IpressViewModal from "./components/IpressViewModal";
 
 export default function ListadoIpress() {
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Estados principales
   const [ipress, setIpress] = useState([]);
   const [ipressConRedes, setIpressConRedes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState("");
+  const [macroregionSeleccionada, setMacroregionSeleccionada] = useState(null);
   const [redSeleccionada, setRedSeleccionada] = useState(null);
+  const [modalidadSeleccionada, setModalidadSeleccionada] = useState(null);
+  const [macrorregiones, setMacrorregiones] = useState([]);
   const [redes, setRedes] = useState([]);
+  const [modalidades, setModalidades] = useState([]);
 
   // Paginación
   const [paginaActual, setPaginaActual] = useState(1);
@@ -32,6 +42,15 @@ export default function ListadoIpress() {
 
   // Ordenamiento
   const [ordenamiento, setOrdenamiento] = useState({ campo: null, direccion: "asc" });
+
+  // Estados para modales CRUD
+  const [modalCrearEditar, setModalCrearEditar] = useState({ open: false, ipress: null });
+  const [modalEliminar, setModalEliminar] = useState({ open: false, ipress: null });
+  const [modalVer, setModalVer] = useState({ open: false, ipress: null });
+
+  // Verificar permisos de usuario
+  const esAdminOSuperadmin = user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPERADMIN');
+  const esSuperadmin = user?.roles?.includes('SUPERADMIN');
 
   // ================================================================
   // 📡 CARGAR DATOS
@@ -44,22 +63,39 @@ export default function ListadoIpress() {
     try {
       setLoading(true);
 
-      // Cargar redes y todas las IPRESS
-      const [redesData, ipressData] = await Promise.all([
-        aseguradosService.getRedes(),
-        aseguradosService.getIpress(null)
+      // Cargar redes, modalidades y todas las IPRESS
+      const [redesData, modalidadesData, ipressData] = await Promise.all([
+        apiClient.get('/redes'), // ✅ Endpoint correcto que devuelve macrorregiones
+        ipressService.obtenerModalidadesActivas(),
+        ipressService.obtenerTodas()
       ]);
 
       setRedes(redesData || []);
+      setModalidades(modalidadesData || []);
       setIpress(ipressData || []);
 
-      // Enriquecer IPRESS con información de red
+      // Extraer macrorregiones únicas de las redes
+      const macrorregionesUnicas = [];
+      const macrosMap = new Map();
+      (redesData || []).forEach(red => {
+        if (red.macroregion && !macrosMap.has(red.macroregion.idMacro)) {
+          macrosMap.set(red.macroregion.idMacro, red.macroregion);
+          macrorregionesUnicas.push(red.macroregion);
+        }
+      });
+      setMacrorregiones(macrorregionesUnicas);
+
+      // Enriquecer IPRESS con información de red y macrorregión
       const ipressEnriquecidas = (ipressData || []).map(ipr => {
         const red = redesData.find(r => r.idRed === ipr.idRed);
         return {
           ...ipr,
           nombreRed: red?.descRed || "Sin red asignada",
-          idRedDisplay: ipr.idRed || "N/A"
+          idRedDisplay: ipr.idRed || "N/A",
+          idMacro: red?.macroregion?.idMacro || null,
+          nombreMacro: red?.macroregion?.descMacro || null,
+          // Agregar descMacrorregion para el modal de visualización
+          descMacrorregion: red?.macroregion?.descMacro || null
         };
       });
 
@@ -90,9 +126,19 @@ export default function ListadoIpress() {
       );
     }
 
+    // Filtrar por macrorregión
+    if (macroregionSeleccionada) {
+      resultado = resultado.filter((item) => item.idMacro === parseInt(macroregionSeleccionada));
+    }
+
     // Filtrar por red
     if (redSeleccionada) {
       resultado = resultado.filter((item) => item.idRed === parseInt(redSeleccionada));
+    }
+
+    // Filtrar por modalidad de atención
+    if (modalidadSeleccionada) {
+      resultado = resultado.filter((item) => item.idModAten === parseInt(modalidadSeleccionada));
     }
 
     // Ordenar
@@ -106,7 +152,7 @@ export default function ListadoIpress() {
     }
 
     return resultado;
-  }, [ipressConRedes, busqueda, redSeleccionada, ordenamiento]);
+  }, [ipressConRedes, busqueda, macroregionSeleccionada, redSeleccionada, modalidadSeleccionada, ordenamiento]);
 
   // ================================================================
   // 📄 PAGINACIÓN
@@ -136,21 +182,57 @@ export default function ListadoIpress() {
 
   const limpiarFiltros = () => {
     setBusqueda("");
+    setMacroregionSeleccionada(null);
     setRedSeleccionada(null);
+    setModalidadSeleccionada(null);
     setPaginaActual(1);
     toast.success("Filtros limpiados");
+  };
+
+  // ================================================================
+  // ✏️ CRUD DE IPRESS
+  // ================================================================
+  const handleCrear = () => {
+    setModalCrearEditar({ open: true, ipress: null });
+  };
+
+  const handleEditar = (ipress) => {
+    setModalCrearEditar({ open: true, ipress });
+  };
+
+  const handleEliminar = (ipress) => {
+    setModalEliminar({ open: true, ipress });
+  };
+
+  const confirmarEliminar = async () => {
+    try {
+      await ipressService.eliminar(modalEliminar.ipress.idIpress);
+      toast.success("IPRESS eliminada exitosamente");
+      setModalEliminar({ open: false, ipress: null });
+      cargarDatos(); // Recargar datos
+    } catch (error) {
+      console.error("Error al eliminar IPRESS:", error);
+      toast.error("Error al eliminar IPRESS");
+    }
+  };
+
+  const handleSuccessModal = () => {
+    toast.success(`IPRESS ${modalCrearEditar.ipress ? 'actualizada' : 'creada'} exitosamente`);
+    setModalCrearEditar({ open: false, ipress: null });
+    cargarDatos(); // Recargar datos
   };
 
   // ================================================================
   // 📥 EXPORTACIÓN
   // ================================================================
   const exportarCSV = () => {
-    const headers = ["Centro Asistencial", "ID CAS", "Red Asistencial", "ID RED"];
+    const headers = ["Centro Asistencial", "ID CAS", "Red Asistencial", "ID RED", "Modalidad de Atención"];
     const rows = datosFiltrados.map((item) => [
       item.descIpress,
       item.codIpress,
       item.nombreRed,
       item.idRedDisplay,
+      item.nombreModalidadAtencion || "No especificado",
     ]);
 
     const csvContent = [
@@ -186,13 +268,13 @@ export default function ListadoIpress() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        {/* ============================================================ */}
-        {/* HEADER */}
-        {/* ============================================================ */}
+        {/* ============================================================ */ }
+        {/* HEADER */ }
+        {/* ============================================================ */ }
         <header className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <button
-              onClick={() => navigate(-1)}
+              onClick={ () => navigate(-1) }
               className="p-2 bg-white border-2 border-blue-600 text-blue-600 rounded-lg
                          hover:bg-blue-600 hover:text-white transition-all"
               title="Volver"
@@ -213,16 +295,16 @@ export default function ListadoIpress() {
             <div className="flex items-center gap-2 text-sm">
               <Activity className="w-4 h-4 text-blue-600" />
               <span className="font-semibold text-slate-900">
-                {datosFiltrados.length}
+                { datosFiltrados.length }
               </span>
               <span className="text-slate-600">IPRESS</span>
             </div>
           </div>
         </header>
 
-        {/* ============================================================ */}
-        {/* CARDS DE ESTADÍSTICAS */}
-        {/* ============================================================ */}
+        {/* ============================================================ */ }
+        {/* CARDS DE ESTADÍSTICAS */ }
+        {/* ============================================================ */ }
         <section className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl p-6 text-white shadow-lg hover:shadow-xl transition-all">
             <div className="flex items-center justify-between mb-2">
@@ -230,7 +312,7 @@ export default function ListadoIpress() {
               <TrendingUp className="w-5 h-5 opacity-60" />
             </div>
             <p className="text-sm font-medium opacity-90 mb-1">Total IPRESS</p>
-            <p className="text-4xl font-bold">{ipress.length}</p>
+            <p className="text-4xl font-bold">{ ipress.length }</p>
             <p className="text-xs opacity-75 mt-2">Instituciones registradas</p>
           </div>
 
@@ -240,7 +322,7 @@ export default function ListadoIpress() {
               <TrendingUp className="w-5 h-5 opacity-60" />
             </div>
             <p className="text-sm font-medium opacity-90 mb-1">Redes</p>
-            <p className="text-4xl font-bold">{redes.length}</p>
+            <p className="text-4xl font-bold">{ redes.length }</p>
             <p className="text-xs opacity-75 mt-2">Redes asistenciales</p>
           </div>
 
@@ -250,7 +332,7 @@ export default function ListadoIpress() {
               <TrendingUp className="w-5 h-5 opacity-60" />
             </div>
             <p className="text-sm font-medium opacity-90 mb-1">Filtradas</p>
-            <p className="text-4xl font-bold">{datosFiltrados.length}</p>
+            <p className="text-4xl font-bold">{ datosFiltrados.length }</p>
             <p className="text-xs opacity-75 mt-2">Resultados actuales</p>
           </div>
 
@@ -265,60 +347,118 @@ export default function ListadoIpress() {
           </div>
         </section>
 
-        {/* ============================================================ */}
-        {/* FILTROS Y BÚSQUEDA */}
-        {/* ============================================================ */}
+        {/* ============================================================ */ }
+        {/* FILTROS Y BÚSQUEDA */ }
+        {/* ============================================================ */ }
         <section className="bg-white rounded-xl border border-slate-200 shadow-sm p-6">
+          {/* Búsqueda - Ancho completo */ }
+          <div className="mb-4">
+            <label className="block text-sm font-semibold text-slate-700 mb-2">
+              Buscar IPRESS
+            </label>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+              <input
+                type="text"
+                value={ busqueda }
+                onChange={ (e) => {
+                  setBusqueda(e.target.value);
+                  setPaginaActual(1);
+                } }
+                placeholder="Buscar por nombre, código o red..."
+                className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg
+                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+          </div>
+
+          {/* Filtros - Grid de 3 columnas */ }
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-            {/* Búsqueda */}
-            <div className="md:col-span-2">
+            {/* Filtro por Macrorregión */ }
+            <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
-                Buscar IPRESS
+                Filtrar por Macrorregión
               </label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
-                <input
-                  type="text"
-                  value={busqueda}
-                  onChange={(e) => {
-                    setBusqueda(e.target.value);
-                    setPaginaActual(1);
-                  }}
-                  placeholder="Buscar por nombre, código o red..."
-                  className="w-full pl-10 pr-4 py-2.5 border border-slate-300 rounded-lg
-                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
+              <select
+                value={ macroregionSeleccionada || "" }
+                onChange={ (e) => {
+                  setMacroregionSeleccionada(e.target.value || null);
+                  setPaginaActual(1);
+                } }
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg
+                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Todas las macrorregiones</option>
+                { macrorregiones.map((macro) => (
+                  <option key={ macro.idMacro } value={ macro.idMacro }>
+                    { macro.descMacro }
+                  </option>
+                )) }
+              </select>
             </div>
 
-            {/* Filtro por red */}
+            {/* Filtro por red */ }
             <div>
               <label className="block text-sm font-semibold text-slate-700 mb-2">
                 Filtrar por Red
               </label>
               <select
-                value={redSeleccionada || ""}
-                onChange={(e) => {
+                value={ redSeleccionada || "" }
+                onChange={ (e) => {
                   setRedSeleccionada(e.target.value || null);
                   setPaginaActual(1);
-                }}
+                } }
                 className="w-full px-4 py-2.5 border border-slate-300 rounded-lg
                            focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Todas las redes</option>
-                {redes.map((red) => (
-                  <option key={red.idRed} value={red.idRed}>
-                    {red.descRed}
+                { redes.map((red) => (
+                  <option key={ red.idRed } value={ red.idRed }>
+                    { red.descRed }
                   </option>
-                ))}
+                )) }
+              </select>
+            </div>
+
+            {/* Filtro por Modalidad de Atención */ }
+            <div>
+              <label className="block text-sm font-semibold text-slate-700 mb-2">
+                Filtrar por Modalidad
+              </label>
+              <select
+                value={ modalidadSeleccionada || "" }
+                onChange={ (e) => {
+                  setModalidadSeleccionada(e.target.value || null);
+                  setPaginaActual(1);
+                } }
+                className="w-full px-4 py-2.5 border border-slate-300 rounded-lg
+                           focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Todas las modalidades</option>
+                { modalidades.map((mod) => (
+                  <option key={ mod.idModAten } value={ mod.idModAten }>
+                    { mod.descModAten }
+                  </option>
+                )) }
               </select>
             </div>
           </div>
 
-          {/* Botones de acción */}
+          {/* Botones de acción */ }
           <div className="flex flex-wrap items-center gap-3">
+            { esAdminOSuperadmin && (
+              <button
+                onClick={ handleCrear }
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white
+                           rounded-lg hover:bg-blue-700 transition-all shadow-md"
+              >
+                <Plus className="w-4 h-4" />
+                Nueva IPRESS
+              </button>
+            ) }
+
             <button
-              onClick={exportarCSV}
+              onClick={ exportarCSV }
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white
                          rounded-lg hover:bg-emerald-700 transition-all shadow-md"
             >
@@ -326,39 +466,39 @@ export default function ListadoIpress() {
               Exportar a CSV
             </button>
 
-            {(busqueda || redSeleccionada) && (
+            { (busqueda || macroregionSeleccionada || redSeleccionada || modalidadSeleccionada) && (
               <button
-                onClick={limpiarFiltros}
+                onClick={ limpiarFiltros }
                 className="px-4 py-2 text-sm font-medium text-slate-700 bg-white
                            border border-slate-300 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Limpiar filtros
               </button>
-            )}
+            ) }
 
             <div className="ml-auto flex items-center gap-2 text-sm text-slate-600">
               <span>Mostrar:</span>
               <select
-                value={itemsPorPagina}
-                onChange={(e) => {
+                value={ itemsPorPagina }
+                onChange={ (e) => {
                   setItemsPorPagina(Number(e.target.value));
                   setPaginaActual(1);
-                }}
+                } }
                 className="px-3 py-1.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               >
-                <option value={10}>10</option>
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
+                <option value={ 10 }>10</option>
+                <option value={ 25 }>25</option>
+                <option value={ 50 }>50</option>
+                <option value={ 100 }>100</option>
               </select>
               <span>entradas</span>
             </div>
           </div>
         </section>
 
-        {/* ============================================================ */}
-        {/* TABLA DE DATOS */}
-        {/* ============================================================ */}
+        {/* ============================================================ */ }
+        {/* TABLA DE DATOS */ }
+        {/* ============================================================ */ }
         <section className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -366,7 +506,7 @@ export default function ListadoIpress() {
                 <tr>
                   <th className="px-6 py-4 text-left">
                     <button
-                      onClick={() => handleOrdenar("descIpress")}
+                      onClick={ () => handleOrdenar("descIpress") }
                       className="flex items-center gap-2 font-semibold text-slate-700 hover:text-blue-600 transition-colors"
                     >
                       Centro Asistencial
@@ -375,7 +515,7 @@ export default function ListadoIpress() {
                   </th>
                   <th className="px-6 py-4 text-left">
                     <button
-                      onClick={() => handleOrdenar("codIpress")}
+                      onClick={ () => handleOrdenar("codIpress") }
                       className="flex items-center gap-2 font-semibold text-slate-700 hover:text-blue-600 transition-colors"
                     >
                       ID CAS
@@ -384,7 +524,7 @@ export default function ListadoIpress() {
                   </th>
                   <th className="px-6 py-4 text-left">
                     <button
-                      onClick={() => handleOrdenar("nombreRed")}
+                      onClick={ () => handleOrdenar("nombreRed") }
                       className="flex items-center gap-2 font-semibold text-slate-700 hover:text-blue-600 transition-colors"
                     >
                       Red Asistencial
@@ -394,65 +534,119 @@ export default function ListadoIpress() {
                   <th className="px-6 py-4 text-left font-semibold text-slate-700">
                     ID RED
                   </th>
+                  <th className="px-6 py-4 text-left font-semibold text-slate-700">
+                    Modalidad de Atención
+                  </th>
+                  <th className="px-6 py-4 text-center font-semibold text-slate-700">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
-                {datosPaginados.length > 0 ? (
+                { datosPaginados.length > 0 ? (
                   datosPaginados.map((item, index) => (
                     <tr
-                      key={index}
+                      key={ index }
                       className="hover:bg-blue-50/50 transition-colors"
                     >
                       <td className="px-6 py-4 text-sm font-medium text-slate-900">
-                        {item.descIpress}
+                        { item.descIpress }
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700 font-mono">
-                        {item.codIpress}
+                        { item.codIpress }
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700">
-                        {item.nombreRed}
+                        { item.nombreRed }
                       </td>
                       <td className="px-6 py-4 text-sm text-slate-700 font-mono">
-                        {item.idRedDisplay}
+                        { item.idRedDisplay }
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        <span className={ `inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${item.nombreModalidadAtencion === 'TELECONSULTA'
+                            ? 'bg-blue-100 text-blue-800'
+                            : item.nombreModalidadAtencion === 'TELECONSULTORIO'
+                              ? 'bg-purple-100 text-purple-800'
+                              : item.nombreModalidadAtencion === 'AMBOS'
+                                ? 'bg-emerald-100 text-emerald-800'
+                                : item.nombreModalidadAtencion === 'NO SE BRINDA SERVICIO'
+                                  ? 'bg-red-100 text-red-800'
+                                  : 'bg-gray-100 text-gray-600'
+                          }` }>
+                          { item.nombreModalidadAtencion || 'No especificado' }
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-sm text-slate-700">
+                        <div className="flex items-center justify-center gap-2">
+                          {/* Botón Ver - Disponible para TODOS los usuarios */ }
+                          <button
+                            onClick={ () => setModalVer({ open: true, ipress: item }) }
+                            className="p-2 text-slate-600 hover:bg-slate-50 rounded-lg transition-colors"
+                            title="Ver detalles"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+
+                          {/* Botones Editar y Eliminar - Solo para ADMIN y SUPERADMIN */ }
+                          { esAdminOSuperadmin && (
+                            <>
+                              <button
+                                onClick={ () => handleEditar(item) }
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title="Editar IPRESS"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                              { esSuperadmin && (
+                                <button
+                                  onClick={ () => handleEliminar(item) }
+                                  className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                  title="Eliminar IPRESS (solo SUPERADMIN)"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              ) }
+                            </>
+                          ) }
+                        </div>
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="4" className="px-6 py-12 text-center text-slate-500">
+                    <td colSpan="6" className="px-6 py-12 text-center text-slate-500">
                       <Building2 className="w-16 h-16 mx-auto mb-4 text-slate-300" />
                       <p className="text-lg font-medium">No se encontraron IPRESS</p>
                       <p className="text-sm">Intenta ajustar los filtros de búsqueda</p>
                     </td>
                   </tr>
-                )}
+                ) }
               </tbody>
             </table>
           </div>
 
-          {/* Paginación */}
-          {datosFiltrados.length > 0 && (
+          {/* Paginación */ }
+          { datosFiltrados.length > 0 && (
             <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex items-center justify-between">
               <div className="text-sm text-slate-600">
-                Mostrando{" "}
+                Mostrando{ " " }
                 <span className="font-semibold text-slate-900">
-                  {(paginaActual - 1) * itemsPorPagina + 1}
-                </span>{" "}
-                a{" "}
+                  { (paginaActual - 1) * itemsPorPagina + 1 }
+                </span>{ " " }
+                a{ " " }
                 <span className="font-semibold text-slate-900">
-                  {Math.min(paginaActual * itemsPorPagina, datosFiltrados.length)}
-                </span>{" "}
-                de{" "}
+                  { Math.min(paginaActual * itemsPorPagina, datosFiltrados.length) }
+                </span>{ " " }
+                de{ " " }
                 <span className="font-semibold text-slate-900">
-                  {datosFiltrados.length}
-                </span>{" "}
+                  { datosFiltrados.length }
+                </span>{ " " }
                 entradas
               </div>
 
               <div className="flex items-center gap-2">
                 <button
-                  onClick={() => setPaginaActual((p) => Math.max(1, p - 1))}
-                  disabled={paginaActual === 1}
+                  onClick={ () => setPaginaActual((p) => Math.max(1, p - 1)) }
+                  disabled={ paginaActual === 1 }
                   className="px-3 py-2 rounded-lg border border-slate-300 hover:bg-white
                              disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -460,42 +654,40 @@ export default function ListadoIpress() {
                 </button>
 
                 <div className="flex items-center gap-1">
-                  {[...Array(Math.min(5, totalPaginas))].map((_, i) => {
+                  { [...Array(Math.min(5, totalPaginas))].map((_, i) => {
                     const pagina = i + 1;
                     return (
                       <button
-                        key={pagina}
-                        onClick={() => setPaginaActual(pagina)}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                          paginaActual === pagina
+                        key={ pagina }
+                        onClick={ () => setPaginaActual(pagina) }
+                        className={ `px-4 py-2 rounded-lg font-medium transition-all ${paginaActual === pagina
                             ? "bg-blue-600 text-white shadow-md"
                             : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
-                        }`}
+                          }` }
                       >
-                        {pagina}
+                        { pagina }
                       </button>
                     );
-                  })}
-                  {totalPaginas > 5 && (
+                  }) }
+                  { totalPaginas > 5 && (
                     <>
                       <span className="px-2 text-slate-400">...</span>
                       <button
-                        onClick={() => setPaginaActual(totalPaginas)}
-                        className={`px-4 py-2 rounded-lg font-medium transition-all ${
-                          paginaActual === totalPaginas
+                        onClick={ () => setPaginaActual(totalPaginas) }
+                        className={ `px-4 py-2 rounded-lg font-medium transition-all ${paginaActual === totalPaginas
                             ? "bg-blue-600 text-white shadow-md"
                             : "bg-white border border-slate-300 text-slate-700 hover:bg-slate-50"
-                        }`}
+                          }` }
                       >
-                        {totalPaginas}
+                        { totalPaginas }
                       </button>
                     </>
-                  )}
+                  ) }
                 </div>
 
                 <button
-                  onClick={() => setPaginaActual((p) => Math.min(totalPaginas, p + 1))}
-                  disabled={paginaActual === totalPaginas}
+                  onClick={ () => setPaginaActual((p) => Math.min(totalPaginas, p + 1)) }
+                  disabled={ paginaActual === totalPaginas }
                   className="px-3 py-2 rounded-lg border border-slate-300 hover:bg-white
                              disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
@@ -503,8 +695,35 @@ export default function ListadoIpress() {
                 </button>
               </div>
             </div>
-          )}
+          ) }
         </section>
+
+        {/* ============================================================ */ }
+        {/* MODALES */ }
+        {/* ============================================================ */ }
+        { modalCrearEditar.open && (
+          <IpressFormModal
+            ipress={ modalCrearEditar.ipress }
+            redes={ redes }
+            onClose={ () => setModalCrearEditar({ open: false, ipress: null }) }
+            onSuccess={ handleSuccessModal }
+          />
+        ) }
+
+        { modalEliminar.open && (
+          <ConfirmDeleteIpressModal
+            ipress={ modalEliminar.ipress }
+            onConfirm={ confirmarEliminar }
+            onCancel={ () => setModalEliminar({ open: false, ipress: null }) }
+          />
+        ) }
+
+        { modalVer.open && (
+          <IpressViewModal
+            ipress={ modalVer.ipress }
+            onClose={ () => setModalVer({ open: false, ipress: null }) }
+          />
+        ) }
       </div>
     </div>
   );

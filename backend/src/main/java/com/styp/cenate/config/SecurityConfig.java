@@ -77,6 +77,7 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(
                                 "/api/auth/**",
+                                "/api/usuarios/auth/**",
                                 "/api/public/**",
                                 "/api/account-requests",
                                 "/error",
@@ -146,7 +147,8 @@ public class SecurityConfig {
                                 "/api/asegurados/**", // Agregando asegurados - PÚBLICO
                                 "/api/disponibilidad/**",
                                 "/api/servicio-essi/**",
-                                "/api/admin/dashboard-medico/cards/activas" // ✅ Cards activas del dashboard médico (público)
+                                "/api/admin/dashboard-medico/cards/activas", // ✅ Cards activas del dashboard médico (público)
+                                "/api/modalidades-atencion/**" // ✅ Modalidades de atención (público para dropdowns)
                         ).permitAll()
                         
                         

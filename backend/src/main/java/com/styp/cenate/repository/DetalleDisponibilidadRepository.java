@@ -2,7 +2,6 @@ package com.styp.cenate.repository;
 
 import com.styp.cenate.model.DetalleDisponibilidad;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -13,173 +12,184 @@ import java.util.List;
 import java.util.Optional;
 
 /**
- * 🗄️ Repository para la entidad DetalleDisponibilidad.
- *
- * Proporciona métodos especializados para:
- * - Buscar detalles de una disponibilidad
- * - Calcular total de horas
- * - Eliminar detalles en cascada
- * - Buscar detalles ajustados por coordinadores
- *
- * @author Ing. Styp Canto Rondon
- * @version 1.0.0
- * @since 2025-12-27
+ * Repository para DetalleDisponibilidad.
+ * Incluye consultas para gestión de turnos diarios.
+ * 
+ * @author Ing. Styp Canto Rondón
+ * @version 2.0.0
+ * @since 2026-01-03
  */
 @Repository
 public interface DetalleDisponibilidadRepository extends JpaRepository<DetalleDisponibilidad, Long> {
 
     // ==========================================================
-    // OPERACIONES DE ELIMINACIÓN
+    // 🔍 Búsquedas básicas
     // ==========================================================
 
     /**
-     * Elimina todos los detalles de una disponibilidad.
-     * Útil cuando se actualiza completamente la disponibilidad.
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     */
-    @Modifying
-    @Query("DELETE FROM DetalleDisponibilidad d WHERE d.disponibilidad.idDisponibilidad = :idDisponibilidad")
-    void deleteByDisponibilidadIdDisponibilidad(@Param("idDisponibilidad") Long idDisponibilidad);
-
-    // ==========================================================
-    // BÚSQUEDAS POR DISPONIBILIDAD
-    // ==========================================================
-
-    /**
-     * Busca todos los detalles de una disponibilidad, ordenados por fecha ascendente
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @return Lista de detalles ordenados por fecha
-     */
-    List<DetalleDisponibilidad> findByDisponibilidadIdDisponibilidadOrderByFechaAsc(Long idDisponibilidad);
-
-    /**
-     * Cuenta la cantidad de detalles (turnos) de una disponibilidad
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @return Cantidad de turnos registrados
-     */
-    long countByDisponibilidadIdDisponibilidad(Long idDisponibilidad);
-
-    // ==========================================================
-    // CÁLCULO DE HORAS
-    // ==========================================================
-
-    /**
-     * Calcula el total de horas de una disponibilidad sumando las horas de todos sus detalles.
-     * Retorna 0 si no hay detalles.
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @return Total de horas (0 si no hay detalles)
-     */
-    @Query("SELECT COALESCE(SUM(d.horas), 0) FROM DetalleDisponibilidad d " +
-           "WHERE d.disponibilidad.idDisponibilidad = :idDisponibilidad")
-    BigDecimal sumHorasByDisponibilidad(@Param("idDisponibilidad") Long idDisponibilidad);
-
-    // ==========================================================
-    // BÚSQUEDAS POR FECHA
-    // ==========================================================
-
-    /**
-     * Busca detalles de una disponibilidad en una fecha específica
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @param fecha Fecha del turno
-     * @return Optional con el detalle si existe
-     */
-    Optional<DetalleDisponibilidad> findByDisponibilidadIdDisponibilidadAndFecha(
-            Long idDisponibilidad, LocalDate fecha);
-
-    /**
-     * Busca todos los detalles dentro de un rango de fechas
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @param fechaInicio Fecha de inicio del rango
-     * @param fechaFin Fecha de fin del rango
-     * @return Lista de detalles en el rango
+     * Buscar detalles por disponibilidad
      */
     @Query("SELECT d FROM DetalleDisponibilidad d " +
-           "WHERE d.disponibilidad.idDisponibilidad = :idDisponibilidad " +
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad " +
+           "ORDER BY d.fecha ASC")
+    List<DetalleDisponibilidad> findByDisponibilidadMedica(@Param("idDisponibilidad") Long idDisponibilidad);
+
+    /**
+     * Buscar detalle por disponibilidad y fecha
+     */
+    Optional<DetalleDisponibilidad> findByDisponibilidadMedica_IdDisponibilidadAndFecha(
+        Long idDisponibilidad,
+        LocalDate fecha
+    );
+
+    /**
+     * Buscar detalles por tipo de turno
+     */
+    @Query("SELECT d FROM DetalleDisponibilidad d " +
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad " +
+           "AND d.turno = :turno " +
+           "ORDER BY d.fecha ASC")
+    List<DetalleDisponibilidad> findByDisponibilidadAndTurno(
+        @Param("idDisponibilidad") Long idDisponibilidad,
+        @Param("turno") String turno
+    );
+
+    /**
+     * Buscar detalles por rango de fechas
+     */
+    @Query("SELECT d FROM DetalleDisponibilidad d " +
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad " +
            "AND d.fecha BETWEEN :fechaInicio AND :fechaFin " +
            "ORDER BY d.fecha ASC")
-    List<DetalleDisponibilidad> findByDisponibilidadAndFechaRange(
-            @Param("idDisponibilidad") Long idDisponibilidad,
-            @Param("fechaInicio") LocalDate fechaInicio,
-            @Param("fechaFin") LocalDate fechaFin);
+    List<DetalleDisponibilidad> findByDisponibilidadAndFechaBetween(
+        @Param("idDisponibilidad") Long idDisponibilidad,
+        @Param("fechaInicio") LocalDate fechaInicio,
+        @Param("fechaFin") LocalDate fechaFin
+    );
 
     // ==========================================================
-    // BÚSQUEDAS POR TIPO DE TURNO
+    // 📊 Estadísticas y reportes
     // ==========================================================
 
     /**
-     * Busca detalles por tipo de turno
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @param turno Tipo de turno (M, T, MT)
-     * @return Lista de detalles con ese tipo de turno
+     * Contar turnos por disponibilidad
      */
-    List<DetalleDisponibilidad> findByDisponibilidadIdDisponibilidadAndTurno(
-            Long idDisponibilidad, String turno);
+    long countByDisponibilidadMedica_IdDisponibilidad(Long idDisponibilidad);
 
     /**
-     * Cuenta la cantidad de turnos por tipo
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @param turno Tipo de turno (M, T, MT)
-     * @return Cantidad de turnos de ese tipo
-     */
-    long countByDisponibilidadIdDisponibilidadAndTurno(Long idDisponibilidad, String turno);
-
-    // ==========================================================
-    // BÚSQUEDAS DE AJUSTES
-    // ==========================================================
-
-    /**
-     * Busca detalles que fueron ajustados por coordinadores
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @return Lista de detalles ajustados
-     */
-    @Query("SELECT d FROM DetalleDisponibilidad d " +
-           "WHERE d.disponibilidad.idDisponibilidad = :idDisponibilidad " +
-           "AND d.ajustadoPor IS NOT NULL " +
-           "ORDER BY d.fecha ASC")
-    List<DetalleDisponibilidad> findDetallesAjustados(@Param("idDisponibilidad") Long idDisponibilidad);
-
-    /**
-     * Cuenta la cantidad de detalles ajustados por coordinadores
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @return Cantidad de turnos ajustados
+     * Contar turnos por tipo
      */
     @Query("SELECT COUNT(d) FROM DetalleDisponibilidad d " +
-           "WHERE d.disponibilidad.idDisponibilidad = :idDisponibilidad " +
-           "AND d.ajustadoPor IS NOT NULL")
-    long countDetallesAjustados(@Param("idDisponibilidad") Long idDisponibilidad);
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad " +
+           "AND d.turno = :turno")
+    long countByDisponibilidadAndTurno(
+        @Param("idDisponibilidad") Long idDisponibilidad,
+        @Param("turno") String turno
+    );
 
     /**
-     * Busca todos los detalles ajustados por un coordinador específico
-     *
-     * @param idCoordinador ID del coordinador
-     * @return Lista de detalles ajustados por ese coordinador
+     * Sumar total de horas por disponibilidad
      */
-    List<DetalleDisponibilidad> findByAjustadoPorIdPers(Long idCoordinador);
-
-    // ==========================================================
-    // ESTADÍSTICAS
-    // ==========================================================
+    @Query("SELECT COALESCE(SUM(d.horas), 0) FROM DetalleDisponibilidad d " +
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad")
+    BigDecimal sumHorasByDisponibilidad(@Param("idDisponibilidad") Long idDisponibilidad);
 
     /**
-     * Obtiene estadísticas agrupadas por tipo de turno para una disponibilidad
-     *
-     * @param idDisponibilidad ID de la disponibilidad padre
-     * @return Lista de Object[] con estructura: [turno, cantidad, totalHoras]
+     * Obtener estadísticas de turnos por tipo
      */
-    @Query("SELECT d.turno, COUNT(d), SUM(d.horas) " +
-           "FROM DetalleDisponibilidad d " +
-           "WHERE d.disponibilidad.idDisponibilidad = :idDisponibilidad " +
-           "GROUP BY d.turno " +
-           "ORDER BY d.turno")
+    @Query("""
+        SELECT d.turno as tipo, 
+               COUNT(d) as cantidad, 
+               COALESCE(SUM(d.horas), 0) as totalHoras
+        FROM DetalleDisponibilidad d
+        WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad
+        GROUP BY d.turno
+        ORDER BY d.turno
+        """)
     List<Object[]> getEstadisticasPorTurno(@Param("idDisponibilidad") Long idDisponibilidad);
+
+    // ==========================================================
+    // 🛠️ Auditoría de ajustes
+    // ==========================================================
+
+    /**
+     * Buscar detalles ajustados por un coordinador
+     */
+    @Query("SELECT d FROM DetalleDisponibilidad d " +
+           "WHERE d.ajustadoPorPersonal.idPers = :idCoordinador " +
+           "ORDER BY d.createdAt DESC")
+    List<DetalleDisponibilidad> findAjustadosPorCoordinador(@Param("idCoordinador") Long idCoordinador);
+
+    /**
+     * Buscar detalles que fueron ajustados
+     */
+    @Query("SELECT d FROM DetalleDisponibilidad d " +
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad " +
+           "AND d.ajustadoPorPersonal IS NOT NULL " +
+           "ORDER BY d.fecha ASC")
+    List<DetalleDisponibilidad> findAjustadosByDisponibilidad(@Param("idDisponibilidad") Long idDisponibilidad);
+
+    /**
+     * Contar ajustes realizados por coordinador
+     */
+    long countByAjustadoPorPersonal_IdPers(Long idCoordinador);
+
+    // ==========================================================
+    // 🔍 Validaciones
+    // ==========================================================
+
+    /**
+     * Verificar si existe detalle para una fecha específica
+     */
+    boolean existsByDisponibilidadMedica_IdDisponibilidadAndFecha(
+        Long idDisponibilidad,
+        LocalDate fecha
+    );
+
+    /**
+     * Buscar detalles con horas inválidas para su tipo de turno
+     */
+    @Query("""
+        SELECT d FROM DetalleDisponibilidad d
+        WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad
+        AND (
+            (d.turno = 'M' AND d.horas NOT IN (4, 6)) OR
+            (d.turno = 'T' AND d.horas NOT IN (4, 6)) OR
+            (d.turno = 'MT' AND d.horas NOT IN (8, 12))
+        )
+        """)
+    List<DetalleDisponibilidad> findHorasInvalidasByDisponibilidad(@Param("idDisponibilidad") Long idDisponibilidad);
+
+    /**
+     * Buscar turnos completos (MT) por disponibilidad
+     */
+    @Query("SELECT d FROM DetalleDisponibilidad d " +
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad " +
+           "AND d.turno = 'MT' " +
+           "ORDER BY d.fecha ASC")
+    List<DetalleDisponibilidad> findTurnosCompletosByDisponibilidad(@Param("idDisponibilidad") Long idDisponibilidad);
+
+    /**
+     * Buscar turnos de mañana (M) por disponibilidad
+     */
+    @Query("SELECT d FROM DetalleDisponibilidad d " +
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad " +
+           "AND d.turno = 'M' " +
+           "ORDER BY d.fecha ASC")
+    List<DetalleDisponibilidad> findTurnosMananaByDisponibilidad(@Param("idDisponibilidad") Long idDisponibilidad);
+
+    /**
+     * Buscar turnos de tarde (T) por disponibilidad
+     */
+    @Query("SELECT d FROM DetalleDisponibilidad d " +
+           "WHERE d.disponibilidadMedica.idDisponibilidad = :idDisponibilidad " +
+           "AND d.turno = 'T' " +
+           "ORDER BY d.fecha ASC")
+    List<DetalleDisponibilidad> findTurnosTardeByDisponibilidad(@Param("idDisponibilidad") Long idDisponibilidad);
+
+    /**
+     * Eliminar todos los detalles de una disponibilidad
+     * (Usada al regenerar turnos)
+     */
+    void deleteByDisponibilidadMedica_IdDisponibilidad(Long idDisponibilidad);
 }

@@ -2,47 +2,41 @@ package com.styp.cenate.model;
 
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.annotations.CreationTimestamp;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 
 /**
- * 📋 Entidad que representa un turno específico en una fecha de la disponibilidad.
- * Cada registro almacena:
- * - Fecha del turno
- * - Tipo de turno (M=Mañana, T=Tarde, MT=Completo)
- * - Horas calculadas según régimen laboral del médico
- * - Información de ajustes realizados por coordinador
- *
- * Horas por turno según régimen:
- * - Régimen 728/CAS: M=4h, T=4h, MT=8h
- * - Régimen Locador: M=6h, T=6h, MT=12h
- *
+ * 📋 Entidad que representa los turnos diarios declarados por el médico.
  * Tabla: detalle_disponibilidad
  *
- * @author Ing. Styp Canto Rondon
- * @version 1.0.0
- * @since 2025-12-27
+ * @author Ing. Styp Canto Rondón
+ * @version 2.0.0
+ * @since 2026-01-03
  */
 @Entity
-@Table(name = "detalle_disponibilidad", schema = "public",
-       uniqueConstraints = @UniqueConstraint(
-           name = "uq_detalle_fecha",
-           columnNames = {"id_disponibilidad", "fecha"}
-       ))
+@Table(
+    name = "detalle_disponibilidad",
+    schema = "public",
+    uniqueConstraints = {
+        @UniqueConstraint(
+            name = "uq_detalle_fecha",
+            columnNames = {"id_disponibilidad", "fecha"}
+        )
+    }
+)
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-@ToString(exclude = {"disponibilidad", "ajustadoPor"})
+@ToString(exclude = {"disponibilidadMedica", "ajustadoPorPersonal"})
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class DetalleDisponibilidad {
 
     // ==========================================================
-    // 🆔 IDENTIFICADOR PRINCIPAL
+    // 🆔 Identificador principal
     // ==========================================================
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @EqualsAndHashCode.Include
@@ -50,18 +44,35 @@ public class DetalleDisponibilidad {
     private Long idDetalle;
 
     // ==========================================================
-    // 🔗 RELACIONES
+    // 🔗 Relaciones con otras entidades
     // ==========================================================
 
     /**
-     * Disponibilidad a la que pertenece este turno
+     * Relación con la disponibilidad médica padre
      */
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_disponibilidad", nullable = false)
-    private DisponibilidadMedica disponibilidad;
+    @JoinColumn(
+        name = "id_disponibilidad",
+        referencedColumnName = "id_disponibilidad",
+        nullable = false,
+        foreignKey = @ForeignKey(name = "detalle_disponibilidad_id_disponibilidad_fkey")
+    )
+    private DisponibilidadMedica disponibilidadMedica;
+
+    /**
+     * Relación con el personal que ajustó el turno (coordinador)
+     * Opcional - solo se llena si hubo ajuste
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(
+        name = "ajustado_por",
+        referencedColumnName = "id_pers",
+        foreignKey = @ForeignKey(name = "detalle_disponibilidad_ajustado_por_fkey")
+    )
+    private PersonalCnt ajustadoPorPersonal;
 
     // ==========================================================
-    // 📊 DATOS DEL TURNO
+    // 📆 Información del turno
     // ==========================================================
 
     /**
@@ -71,173 +82,106 @@ public class DetalleDisponibilidad {
     private LocalDate fecha;
 
     /**
-     * Tipo de turno:
-     * - M: Mañana (4h o 6h según régimen)
-     * - T: Tarde (4h o 6h según régimen)
-     * - MT: Turno Completo (8h o 12h según régimen)
+     * Tipo de turno
+     * Valores: M (Mañana), T (Tarde), MT (Completo)
      */
     @Column(name = "turno", length = 2, nullable = false)
     private String turno;
 
     /**
-     * Horas del turno (calculadas según régimen laboral)
+     * Horas asistenciales de ese turno según régimen
+     * M: 4h (728/CAS) o 6h (Locador)
+     * T: 4h (728/CAS) o 6h (Locador)
+     * MT: 8h (728/CAS) o 12h (Locador)
      */
     @Column(name = "horas", precision = 4, scale = 2, nullable = false)
     private BigDecimal horas;
 
     // ==========================================================
-    // ✏️ AJUSTES DEL COORDINADOR
+    // 📝 Auditoría de ajustes
     // ==========================================================
-
-    /**
-     * Coordinador que realizó el ajuste (NULL si no fue ajustado)
-     */
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "ajustado_por")
-    private PersonalCnt ajustadoPor;
 
     /**
      * Observación del ajuste realizado por el coordinador
      */
-    @Column(name = "observacion_ajuste", columnDefinition = "TEXT")
+    @Column(name = "observacion_ajuste", columnDefinition = "text")
     private String observacionAjuste;
 
-    // ==========================================================
-    // 🕓 AUDITORÍA
-    // ==========================================================
-
-    @CreationTimestamp
-    @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    @Column(name = "created_at", columnDefinition = "timestamptz", updatable = false)
     private OffsetDateTime createdAt;
 
     // ==========================================================
-    // 🧩 MÉTODOS UTILITARIOS
+    // 🔄 Lifecycle callbacks
+    // ==========================================================
+
+    @PrePersist
+    protected void onCreate() {
+        this.createdAt = OffsetDateTime.now();
+    }
+
+    // ==========================================================
+    // 🛠️ Métodos de utilidad
     // ==========================================================
 
     /**
-     * Verifica si este turno fue ajustado por un coordinador
+     * Verifica si es turno de mañana
+     */
+    public boolean esTurnoManana() {
+        return "M".equals(this.turno);
+    }
+
+    /**
+     * Verifica si es turno de tarde
+     */
+    public boolean esTurnoTarde() {
+        return "T".equals(this.turno);
+    }
+
+    /**
+     * Verifica si es turno completo
+     */
+    public boolean esTurnoCompleto() {
+        return "MT".equals(this.turno);
+    }
+
+    /**
+     * Verifica si el turno fue ajustado por un coordinador
      */
     public boolean fueAjustado() {
-        return ajustadoPor != null;
+        return this.ajustadoPorPersonal != null;
     }
 
     /**
-     * Obtiene el nombre del turno en formato legible
-     *
-     * @return "Mañana", "Tarde" o "Turno Completo"
+     * Obtiene el nombre del tipo de turno
      */
     public String getNombreTurno() {
-        if ("M".equals(turno)) {
-            return "Mañana";
-        } else if ("T".equals(turno)) {
-            return "Tarde";
-        } else if ("MT".equals(turno)) {
-            return "Turno Completo";
-        }
-        return turno;
-    }
-
-    /**
-     * Obtiene el código de turno con descripción
-     *
-     * @return "M (Mañana)", "T (Tarde)" o "MT (Completo)"
-     */
-    public String getTurnoConDescripcion() {
-        return turno + " (" + getNombreTurno() + ")";
-    }
-
-    /**
-     * Obtiene el nombre completo del coordinador que ajustó (si aplica)
-     */
-    public String getNombreCoordinador() {
-        return ajustadoPor != null ? ajustadoPor.getNombreCompleto() : null;
-    }
-
-    /**
-     * Obtiene el número de documento del coordinador que ajustó (si aplica)
-     */
-    public String getNumDocCoordinador() {
-        return ajustadoPor != null ? ajustadoPor.getNumDocPers() : null;
-    }
-
-    /**
-     * Verifica si el turno es de Mañana
-     */
-    public boolean isTurnoManana() {
-        return "M".equals(turno);
-    }
-
-    /**
-     * Verifica si el turno es de Tarde
-     */
-    public boolean isTurnoTarde() {
-        return "T".equals(turno);
-    }
-
-    /**
-     * Verifica si el turno es Completo
-     */
-    public boolean isTurnoCompleto() {
-        return "MT".equals(turno);
-    }
-
-    /**
-     * Obtiene el día de la semana del turno
-     *
-     * @return Nombre del día (Lunes, Martes, etc.)
-     */
-    public String getDiaSemana() {
-        if (fecha == null) {
-            return null;
-        }
-        return switch (fecha.getDayOfWeek()) {
-            case MONDAY -> "Lunes";
-            case TUESDAY -> "Martes";
-            case WEDNESDAY -> "Miércoles";
-            case THURSDAY -> "Jueves";
-            case FRIDAY -> "Viernes";
-            case SATURDAY -> "Sábado";
-            case SUNDAY -> "Domingo";
+        return switch (this.turno) {
+            case "M" -> "Mañana";
+            case "T" -> "Tarde";
+            case "MT" -> "Completo";
+            default -> "Desconocido";
         };
     }
 
     /**
-     * Obtiene información completa del turno
-     *
-     * @return String con formato "dd/MM/yyyy - Turno - Horas h"
+     * Verifica si las horas son válidas para el tipo de turno
+     * Régimen 728/CAS: M=4h, T=4h, MT=8h
+     * Régimen Locador: M=6h, T=6h, MT=12h
      */
-    public String getDescripcionCompleta() {
-        if (fecha == null) {
-            return "";
-        }
-        return String.format("%s %s - %s - %.2f h",
-            getDiaSemana(),
-            fecha,
-            getNombreTurno(),
-            horas
-        );
-    }
-
-    // ==========================================================
-    // 🔧 LIFECYCLE CALLBACKS
-    // ==========================================================
-
-    @PrePersist
-    @PreUpdate
-    protected void validate() {
-        // Validar que el turno sea M, T o MT
-        if (turno == null || (!turno.equals("M") && !turno.equals("T") && !turno.equals("MT"))) {
-            throw new IllegalStateException("El turno debe ser M, T o MT");
+    public boolean esHoraValida() {
+        if (this.horas == null || this.turno == null) {
+            return false;
         }
 
-        // Validar que horas sea positivo
-        if (horas == null || horas.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("Las horas deben ser mayores a cero");
-        }
+        BigDecimal cuatro = new BigDecimal("4");
+        BigDecimal seis = new BigDecimal("6");
+        BigDecimal ocho = new BigDecimal("8");
+        BigDecimal doce = new BigDecimal("12");
 
-        // Si hay observación de ajuste, debe haber coordinador
-        if (observacionAjuste != null && !observacionAjuste.isBlank() && ajustadoPor == null) {
-            throw new IllegalStateException("Si hay observación de ajuste, debe especificarse quién lo ajustó");
-        }
+        return switch (this.turno) {
+            case "M", "T" -> this.horas.compareTo(cuatro) == 0 || this.horas.compareTo(seis) == 0;
+            case "MT" -> this.horas.compareTo(ocho) == 0 || this.horas.compareTo(doce) == 0;
+            default -> false;
+        };
     }
 }

@@ -20,6 +20,8 @@ public class AseguradoDTO {
     private String sexo;
     private String tipoPaciente;
     private String telFijo;
+    private String telCelular;  // Teléfono celular adicional del asegurado
+    private String correoElectronico;  // Correo electrónico del asegurado
     private String tipoSeguro;
     private String casAdscripcion;
     private String nombreIpress;  // Nombre de la IPRESS desde dim_ipress

@@ -1,8 +1,9 @@
-# Implementación del Formulario 107 - Frontend React
+# Implementación de Carga de Pacientes 107 - Frontend React
 
 > **Versión:** v1.14.1
-> **Fecha:** 2025-12-30
+> **Fecha:** 2026-01-02
 > **Módulo:** Importación Masiva de Pacientes desde Excel (Bolsa 107)
+> **Menú:** Carga de Pacientes 107
 
 ---
 

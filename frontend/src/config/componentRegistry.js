@@ -26,6 +26,11 @@ export const componentRegistry = {
   // ========================================================================
   // 🧭 PANEL ADMINISTRATIVO
   // ========================================================================
+  '/admin/bienvenida': {
+    component: lazy(() => import('../pages/user/UserDashboard')),
+    requiredAction: 'ver',
+  },
+
   '/admin/dashboard': {
     component: lazy(() => import('../pages/AdminDashboard')),
     requiredAction: 'ver',
@@ -119,6 +124,11 @@ export const componentRegistry = {
   // ========================================================================
   // 👨‍⚕️ MÓDULO MÉDICO
   // ========================================================================
+  '/roles/medico/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/roles/medico/dashboard': {
     component: lazy(() => import('../pages/roles/medico/DashboardMedico')),
     requiredAction: 'ver',
@@ -147,6 +157,11 @@ export const componentRegistry = {
   // ========================================================================
   // 📊 MÓDULO COORDINADOR
   // ========================================================================
+  '/roles/coordinador/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/roles/coordinador/dashboard': {
     component: lazy(() => import('../pages/roles/coordinador/DashboardCoordinador')),
     requiredAction: 'ver',
@@ -177,9 +192,19 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/coordinador/comparativo-disponibilidad': {
+    component: lazy(() => import('../pages/roles/coordinador/ComparativoDisponibilidad')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 🌐 MÓDULO EXTERNO
   // ========================================================================
+  '/roles/externo/bienvenida': {
+    component: lazy(() => import('../pages/user/UserDashboard')),
+    requiredAction: 'ver',
+  },
+
   '/roles/externo/dashboard': {
     component: lazy(() => import('../pages/roles/externo/DashboardExterno')),
     requiredAction: 'ver',
@@ -203,6 +228,11 @@ export const componentRegistry = {
   // ========================================================================
   // 📅 MÓDULO CITAS
   // ========================================================================
+  '/citas/bienvenida': {
+    component: lazy(() => import('../pages/user/UserDashboard')),
+    requiredAction: 'ver',
+  },
+
   '/citas/dashboard': {
     component: lazy(() => import('../pages/roles/citas/DashboardCitas')),
     requiredAction: 'ver',
@@ -221,6 +251,11 @@ export const componentRegistry = {
   // ========================================================================
   // 📋 COORDINADOR DE GESTIÓN DE CITAS
   // ========================================================================
+  '/roles/coordcitas/bienvenida': {
+    component: lazy(() => import('../pages/common/Bienvenida')),
+    requiredAction: 'ver',
+  },
+
   '/roles/coordcitas/107': {
     component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
     requiredAction: 'ver',
@@ -228,6 +263,14 @@ export const componentRegistry = {
 
   '/roles/coordcitas/pacientes-107': {
     component: lazy(() => import('../pages/roles/coordcitas/PacientesDe107')),
+    requiredAction: 'ver',
+  },
+
+  // ========================================================================
+  // 👤 ADMISION
+  // ========================================================================
+  '/roles/admision/asignacion-pacientes': {
+    component: lazy(() => import('../pages/roles/admision/AsignacionDePacientes')),
     requiredAction: 'ver',
   },
 
@@ -244,6 +287,11 @@ export const componentRegistry = {
   // ========================================================================
   '/ipress/listado': {
     component: lazy(() => import('../pages/ipress/ListadoIpress')),
+    requiredAction: 'ver',
+  },
+
+  '/ipress/redes': {
+    component: lazy(() => import('../pages/ipress/ListadoRedes')),
     requiredAction: 'ver',
   },
 
@@ -281,6 +329,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/gestionterritorial/dashboardredes': {
+    component: lazy(() => import('../pages/roles/gestionterritorial/DashboardPorRedes')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 🌐 MÓDULO DE RED - COORDINADORES DE RED
   // ========================================================================
@@ -301,6 +354,27 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/programacion/ProgramacionCenateDetalle')),
     requiredAction: 'ver',
     pathMatch: '/programacion/detalle', // Para MBAC, usar path sin parámetros
+  },
+
+  // ========================================================================
+  // 👩‍⚕️ MÓDULO ENFERMERÍA
+  // ========================================================================
+  '/enfermeria/bienvenida': {
+    component: lazy(() => import('../pages/enfermeria/BienvenidaEnfermeria')),
+    requiredAction: 'ver',
+    requiredRoles: ['ENFERMERIA'],
+  },
+
+  '/enfermeria/mis-pacientes': {
+    component: lazy(() => import('../pages/enfermeria/MisPacientesEnfermeria')),
+    requiredAction: 'ver',
+    requiredRoles: ['ENFERMERIA'],
+  },
+
+  '/enfermeria/dashboard': {
+    component: lazy(() => import('../pages/enfermeria/DashboardEnfermeria')),
+    requiredAction: 'ver',
+    requiredRoles: ['SUPERADMIN'],
   },
 };
 

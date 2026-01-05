@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.15.2",
-  name: "Módulo Pacientes de 107 + Mejoras UX",
+  number: "1.15.11",
+  name: "Corrección Estados Dashboard",
   date: "2026-01-02",
-  description: "Nuevo módulo para gestión de pacientes importados desde Bolsa 107. Mejoras de UX en búsqueda de usuarios (spinner de carga). Fix de compilación backend (Map.of() límite)."
+  description: "Estados corregidos a: Enviados, En Proceso, Falta Enviar. Eliminado estado Firmados del dashboard por redes."
 };
 
 export const APP_INFO = {

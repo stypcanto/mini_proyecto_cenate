@@ -2,6 +2,27 @@ import React, { useState, useEffect } from 'react';
 import { X, FileSignature, AlertCircle, CheckCircle, Calendar, Hash, FileText, Save } from 'lucide-react';
 import apiClient from '../../../../lib/apiClient';
 
+// 🆕 v1.15.15: Helper para enviar fechas al backend sin conversión UTC
+// IMPORTANTE: Previene el bug donde "02/05/2025" se guarda como "01/05/2025"
+const formatDateForBackend = (dateString) => {
+  if (!dateString) return null;
+
+  // Si ya está en formato YYYY-MM-DD correcto, retornar tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+
+  // Si es un objeto Date, formatear manualmente en zona horaria local
+  if (dateString instanceof Date) {
+    const year = dateString.getFullYear();
+    const month = String(dateString.getMonth() + 1).padStart(2, '0');
+    const day = String(dateString.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return dateString;
+};
+
 /**
  * 🔄 Modal: Actualizar Entrega de Token PENDIENTE
  *
@@ -105,9 +126,9 @@ const ActualizarEntregaTokenModal = ({ firmaDigital, onClose, onSuccess }) => {
         `/api/firma-digital/${firmaDigital.idFirmaPersonal}/actualizar-entrega`,
         {
           numeroSerieToken: formData.numeroSerieToken.trim().toUpperCase(),
-          fechaEntregaToken: formData.fechaEntregaToken,
-          fechaInicioCertificado: formData.fechaInicioCertificado,
-          fechaVencimientoCertificado: formData.fechaVencimientoCertificado,
+          fechaEntregaToken: formatDateForBackend(formData.fechaEntregaToken),
+          fechaInicioCertificado: formatDateForBackend(formData.fechaInicioCertificado),
+          fechaVencimientoCertificado: formatDateForBackend(formData.fechaVencimientoCertificado),
           observaciones: formData.observaciones.trim() || null
         }
       );

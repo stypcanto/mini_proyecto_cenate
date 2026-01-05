@@ -61,14 +61,18 @@ export default function Login() {
 
   // ============================================================
   // 🚀 Redirección según rol MBAC
+  // 👋 v1.15.18: Redirigir a Bienvenida en lugar de Dashboard
   // ============================================================
   const redirectByRole = (roles = []) => {
     const has = (r) => roles?.includes(r);
 
-    if (has("SUPERADMIN") || has("ADMIN")) return "/admin/dashboard";
-    if (has("MEDICO")) return "/roles/medico/dashboard";
-    if (has("COORDINADOR")) return "/roles/coordinador/dashboard";
-    if (has("EXTERNO")) return "/roles/externo/dashboard";
+    if (has("SUPERADMIN") || has("ADMIN")) return "/admin/bienvenida";
+    if (has("MEDICO")) return "/roles/medico/bienvenida";
+    if (has("COORDINADOR")) return "/roles/coordinador/bienvenida";
+    if (has("GESTOR DE CITAS")) return "/citas/bienvenida";
+    if (has("GESTOR_CITAS")) return "/citas/bienvenida";
+    if (has("COORD. GESTION CITAS")) return "/roles/coordcitas/bienvenida";
+    if (has("EXTERNO") || has("INSTITUCION_EX")) return "/roles/externo/bienvenida";
     return "/user/dashboard"; // ruta por defecto
   };
 

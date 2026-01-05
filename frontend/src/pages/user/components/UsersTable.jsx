@@ -29,7 +29,7 @@ const getTipoPersonal = (user) => {
   ).toUpperCase().trim();
 };
 
-const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, onToggleEstado, onUnlockUser, onCreateUser, selectedUsers = [], onSelectAll, onSelectUser, showBirthdayColumn = false }) => {
+const UsersTable = ({ users, loading = false, isSearching = false, onViewDetail, onEdit, onDelete, onToggleEstado, onUnlockUser, onCreateUser, selectedUsers = [], onSelectAll, onSelectUser, showBirthdayColumn = false }) => {
   const { user: currentUser } = useAuth();
 
   // Verificar si es SUPERADMIN (único que puede eliminar usuarios)
@@ -204,6 +204,18 @@ const UsersTable = ({ users, loading = false, onViewDetail, onEdit, onDelete, on
                     <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
                     <p className="text-sm font-medium text-gray-600">Buscando usuarios...</p>
                     <p className="text-xs text-gray-400">Por favor espera un momento</p>
+                  </div>
+                </td>
+              </tr>
+            ) : isSearching ? (
+              // 🔍 Buscando (debounce activo) - Muestra mientras espera el debounce
+              <tr>
+                <td colSpan={showBirthdayColumn ? "10" : "9"} className="px-6 py-12 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="relative">
+                      <div className="animate-spin rounded-full h-8 w-8 border-3 border-blue-600 border-t-transparent"></div>
+                    </div>
+                    <p className="text-sm font-medium text-blue-600">Buscando...</p>
                   </div>
                 </td>
               </tr>

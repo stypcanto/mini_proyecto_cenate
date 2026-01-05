@@ -61,14 +61,13 @@ public class UsuarioController {
 	/** 🔹 Obtener TODO el personal de CENATE (con y sin usuario) - Paginado */
 	@GetMapping("/all-personal")
 	public ResponseEntity<Map<String, Object>> getAllPersonal(
-			@RequestParam(name="page", defaultValue = "0") int page,
-			@RequestParam(name="size", defaultValue = "7") int size,  // 7 usuarios por página por defecto
-			@RequestParam(name="sortBy", defaultValue = "idPers") String sortBy,
-			@RequestParam(name="direction", defaultValue = "asc") String direction
-	) {
-		log.info("📋 Consultando personal de CENATE - Página: {}, Tamaño: {}, Orden: {} {}", 
+			@RequestParam(name = "page", defaultValue = "0") int page,
+			@RequestParam(name = "size", defaultValue = "7") int size, // 7 usuarios por página por defecto
+			@RequestParam(name = "sortBy", defaultValue = "idPers") String sortBy,
+			@RequestParam(name = "direction", defaultValue = "asc") String direction) {
+		log.info("📋 Consultando personal de CENATE - Página: {}, Tamaño: {}, Orden: {} {}",
 				page, size, sortBy, direction);
-		
+
 		Map<String, Object> response = usuarioService.getAllPersonal(page, size, sortBy, direction);
 		return ResponseEntity.ok(response);
 	}
@@ -144,14 +143,13 @@ public class UsuarioController {
 	@CheckMBACPermission(pagina = "/admin/users", accion = "crear", mensajeDenegado = "No tiene permiso para crear usuarios")
 	public ResponseEntity<?> createUser(@RequestBody UsuarioCreateRequest request) {
 		try {
-			
+
 			log.info("Datos de Usuario :  {} ", request.toString());
 
 			log.info("Origen de Usuario :" + request.getId_origen() + "******************" + "*".repeat(50));
 			log.info("Especialidad : " + request.getId_especialidad());
 			log.info("Profesion : " + request.getProfesion());
-			
-			
+
 			log.info("✨ Creando nuevo usuario: {}", request.getUsername());
 
 			// Validar que no se intenten asignar roles privilegiados sin permiso SUPERADMIN
@@ -165,9 +163,9 @@ public class UsuarioController {
 							"Solo usuarios con rol SUPERADMIN pueden asignar roles privilegiados. Use el endpoint /api/admin/usuarios/crear-con-roles"));
 				}
 			}
-//            UsuarioResponse usuario = usuarioService.createUser(null);
-//			request.setId_especialidad(13L);
-			
+			// UsuarioResponse usuario = usuarioService.createUser(null);
+			// request.setId_especialidad(13L);
+
 			UsuarioResponse usuario = usuarioService.createUser(request);
 			return ResponseEntity.ok(Map.of("message", "Usuario creado correctamente", "usuario", usuario));
 		} catch (Exception e) {
@@ -251,7 +249,8 @@ public class UsuarioController {
 	/** 🔄 Cambiar estado del usuario (ACTIVO/INACTIVO) */
 	@PatchMapping("/{id}/estado")
 	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
-	public ResponseEntity<?> cambiarEstadoUsuario(@PathVariable("id") Long id, @RequestBody Map<String, String> request) {
+	public ResponseEntity<?> cambiarEstadoUsuario(@PathVariable("id") Long id,
+			@RequestBody Map<String, String> request) {
 		try {
 			String nuevoEstado = request.get("estado");
 			if (nuevoEstado == null || (!nuevoEstado.equals("ACTIVO") && !nuevoEstado.equals("INACTIVO"))) {
@@ -339,16 +338,15 @@ public class UsuarioController {
 				log.error("❌ No se pudo enviar correo de reset para usuario ID: {}", id);
 				return ResponseEntity.status(500).body(Map.of(
 						"error", "Error al enviar correo",
-						"message", "No se pudo enviar el correo de restablecimiento. Verifique que el usuario tenga un correo registrado."
-				));
+						"message",
+						"No se pudo enviar el correo de restablecimiento. Verifique que el usuario tenga un correo registrado."));
 			}
 
 			log.info("✅ Correo de reset enviado exitosamente para usuario ID: {}", id);
 			return ResponseEntity.ok(Map.of(
 					"message", "Se ha enviado un correo al usuario con el enlace para restablecer su contraseña",
 					"resetBy", adminUsername,
-					"emailSentTo", email != null ? email : "correo registrado del usuario"
-			));
+					"emailSentTo", email != null ? email : "correo registrado del usuario"));
 
 		} catch (EntityNotFoundException e) {
 			log.error("❌ Usuario no encontrado: {}", e.getMessage());
@@ -420,9 +418,8 @@ public class UsuarioController {
 		} catch (Exception e) {
 			log.error("❌ Error al contar usuarios pendientes: {}", e.getMessage());
 			return ResponseEntity.status(500).body(Map.of(
-				"error", "Error al obtener usuarios pendientes",
-				"message", e.getMessage()
-			));
+					"error", "Error al obtener usuarios pendientes",
+					"message", e.getMessage()));
 		}
 	}
 
@@ -441,6 +438,70 @@ public class UsuarioController {
 			return ResponseEntity.ok(usuarios);
 		} catch (Exception e) {
 			log.error("❌ Error al listar usuarios pendientes: {}", e.getMessage());
+			return ResponseEntity.status(500).body(List.of());
+		}
+	}
+
+	/**
+	 * 👥 Listar usuarios con rol de ADMISION
+	 *
+	 * @return Lista de admisionistas activos
+	 */
+	@GetMapping("/admisionistas")
+	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+	public ResponseEntity<List<UsuarioResponse>> listarAdmisionistas() {
+		log.info("👥 Listando usuarios con rol ADMISION");
+		try {
+			List<UsuarioResponse> admisionistas = usuarioService.listarUsuariosPorRol("ADMISION");
+			log.info("✅ Encontrados {} admisionistas", admisionistas.size());
+			return ResponseEntity.ok(admisionistas);
+		} catch (Exception e) {
+			log.error("❌ Error al listar admisionistas: {}", e.getMessage(), e);
+			log.error("❌ Tipo de excepción: {}", e.getClass().getName());
+			log.error("❌ Stack trace completo:", e);
+			return ResponseEntity.status(500).body(List.of());
+		}
+	}
+
+	/**
+	 * 👥 Listar usuarios con rol de COORDINADOR (Gestores de Citas)
+	 *
+	 * @return Lista de gestores de citas activos
+	 */
+	@GetMapping("/gestores-citas")
+	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+	public ResponseEntity<List<UsuarioResponse>> listarGestoresCitas() {
+		log.info("👥 Listando usuarios con rol GESTOR DE CITAS");
+		try {
+			// Buscar usuarios con el rol específico "GESTOR DE CITAS"
+			List<UsuarioResponse> gestores = usuarioService.listarUsuariosPorRol("GESTOR DE CITAS");
+
+			log.info("✅ Encontrados {} gestores de citas", gestores.size());
+			return ResponseEntity.ok(gestores);
+		} catch (Exception e) {
+			log.error("❌ Error al listar gestores de citas: {}", e.getMessage(), e);
+			log.error("❌ Tipo de excepción: {}", e.getClass().getName());
+			log.error("❌ Stack trace completo:", e);
+			return ResponseEntity.status(500).body(List.of());
+		}
+	}
+
+	/**
+	 * 👥 Listar usuarios por rol (genérico y flexible)
+	 *
+	 * @param rol Nombre del rol a buscar (ej: "GESTOR DE CITAS", "ADMISION", etc.)
+	 * @return Lista de usuarios con ese rol
+	 */
+
+	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+	public ResponseEntity<List<UsuarioResponse>> listarUsuariosPorRol(@RequestParam("rol") String rol) {
+		log.info("👥 Listando usuarios con rol: {}", rol);
+		try {
+			List<UsuarioResponse> usuarios = usuarioService.listarUsuariosPorRol(rol);
+			log.info("✅ Encontrados {} usuarios con rol {}", usuarios.size(), rol);
+			return ResponseEntity.ok(usuarios);
+		} catch (Exception e) {
+			log.error("❌ Error al listar usuarios por rol {}: {}", rol, e.getMessage(), e);
 			return ResponseEntity.status(500).body(List.of());
 		}
 	}

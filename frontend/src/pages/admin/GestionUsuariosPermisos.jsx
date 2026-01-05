@@ -209,7 +209,7 @@ const GestionUsuariosPermisos = () => {
       setError(null);
       
       // Obtener datos del personal
-      const personal = await api.get('/personal/total');
+      const personal = await api.get('/personal');
       
       // Filtrar duplicados y normalizar estados
       const uniqueUsers = personal.reduce((acc, current) => {

@@ -71,6 +71,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 	private final AuditLogService auditLogService;
 	private final com.styp.cenate.repository.RedRepository redRepository;
 	private final com.styp.cenate.service.firmadigital.FirmaDigitalService firmaDigitalService; // 🆕 v1.14.0
+	private final com.styp.cenate.repository.PersonalExternoRepository personalExternoRepository; // 🆕 v1.16.2 - Fix relación JPA
 
 	// =============================================================
 	// 🔒 MÉTODO HELPER PARA AUDITORÍA
@@ -1496,9 +1497,13 @@ public class UsuarioServiceImpl implements UsuarioService {
 	@Override
 	@Transactional(readOnly = true)
 	public List<UsuarioResponse> getUsuariosByRoles(List<String> roles) {
-		return usuarioRepository.findAllWithRoles().stream().filter(
-				u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r -> roles.contains(r.getDescRol())))
-				.map(this::convertToResponse).collect(Collectors.toList());
+		log.info("🔍 Buscando usuarios con roles: {}", roles);
+		List<UsuarioResponse> usuarios = usuarioRepository.findAllWithPersonalData().stream()
+				.filter(u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r -> roles.contains(r.getDescRol())))
+				.map(this::convertToResponse)
+				.collect(Collectors.toList());
+		log.info("✅ Encontrados {} usuarios con roles {}", usuarios.size(), roles);
+		return usuarios;
 	}
 
 	@Override
@@ -1597,19 +1602,24 @@ public class UsuarioServiceImpl implements UsuarioService {
 		// ============================================================
 
 		PersonalCnt personalCnt = usuario.getPersonalCnt();
-		com.styp.cenate.model.PersonalExterno personalExterno = usuario.getPersonalExterno();
+
+		// 🔧 FIX v1.16.2: Consultar explícitamente PersonalExterno ya que la relación JPA lazy no funciona correctamente
+		com.styp.cenate.model.PersonalExterno personalExterno = null;
+		if (usuario.getIdUser() != null) {
+			personalExterno = personalExternoRepository.findByIdUser(usuario.getIdUser()).orElse(null);
+		}
 
 		String tipoPersonal;
-		if (personalCnt != null) {
-			// ✅ Existe registro en dim_personal_cnt → ES INTERNO
-			tipoPersonal = "INTERNO";
-			log.debug("👤 Usuario {} es INTERNO (tiene PersonalCnt con ID: {})", usuario.getNameUser(),
-					personalCnt.getIdPers());
-		} else if (personalExterno != null) {
-			// ✅ Existe registro en dim_personal_externo → ES EXTERNO
+		if (personalExterno != null) {
+			// ✅ Existe registro en dim_personal_externo → ES EXTERNO (prioridad a externo)
 			tipoPersonal = "EXTERNO";
 			log.debug("👤 Usuario {} es EXTERNO (tiene PersonalExterno con ID: {})", usuario.getNameUser(),
 					personalExterno.getIdPersExt());
+		} else if (personalCnt != null) {
+			// ✅ Existe registro SOLO en dim_personal_cnt → ES INTERNO
+			tipoPersonal = "INTERNO";
+			log.debug("👤 Usuario {} es INTERNO (tiene PersonalCnt con ID: {})", usuario.getNameUser(),
+					personalCnt.getIdPers());
 		} else {
 			// ❌ No existe en ninguna tabla → SIN CLASIFICAR
 			tipoPersonal = "SIN_CLASIFICAR";
@@ -2116,5 +2126,49 @@ public class UsuarioServiceImpl implements UsuarioService {
 			})
 			.map(this::convertToResponse)
 			.collect(Collectors.toList());
+	}
+
+	@Override
+	@Transactional(readOnly = true)
+	public List<UsuarioResponse> listarUsuariosPorRol(String nombreRol) {
+		log.info("👥 Listando usuarios con rol: {}", nombreRol);
+
+		try {
+			// ✅ Usar query optimizado que filtra directamente por rol
+			List<Usuario> usuarios = usuarioRepository.findByRolWithPersonalData(nombreRol);
+
+			log.info("✅ Query ejecutado - Encontrados {} usuarios con rol {}", usuarios.size(), nombreRol);
+
+			// 🔄 FORZAR CARGA de PersonalCnt manualmente (debido a @OneToOne mappedBy)
+			for (Usuario u : usuarios) {
+				// Forzar lazy loading
+				if (u.getPersonalCnt() != null) {
+					PersonalCnt pc = u.getPersonalCnt();
+					// Acceso a propiedades para forzar carga
+					pc.getNomPers();
+					pc.getApePaterPers();
+					pc.getApeMaterPers();
+					log.info("✅ PersonalCnt cargado para usuario {}: {} {} {}",
+						u.getNameUser(), pc.getNomPers(), pc.getApePaterPers(), pc.getApeMaterPers());
+				}
+			}
+
+			// Convertir a DTO
+			List<UsuarioResponse> resultado = usuarios.stream()
+				.map(this::convertToResponse)
+				.collect(Collectors.toList());
+
+			// 🔍 DEBUG: Verificar DTO generado
+			for (UsuarioResponse ur : resultado) {
+				log.info("✅ DTO generado - Usuario: {} | NombreCompleto: {}", ur.getUsername(), ur.getNombreCompleto());
+			}
+
+			log.info("✅ Respuesta preparada: {} usuarios", resultado.size());
+			return resultado;
+
+		} catch (Exception e) {
+			log.error("❌ Error al listar usuarios por rol {}: {}", nombreRol, e.getMessage(), e);
+			throw new RuntimeException("Error al listar usuarios con rol " + nombreRol, e);
+		}
 	}
 }

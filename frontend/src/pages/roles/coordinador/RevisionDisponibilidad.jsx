@@ -31,10 +31,15 @@ import {
   AlertCircle,
   Save,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  RefreshCw,
+  GitMerge,
+  Database
 } from 'lucide-react';
-import disponibilidadService from '../../../services/disponibilidadService';
+import { disponibilidadService } from '../../../services/disponibilidadService';
 import { especialidadService } from '../../../services/especialidadService';
+import { integracionHorarioService } from '../../../services/integracionHorarioService';
+import toast from 'react-hot-toast';
 
 export default function RevisionDisponibilidad() {
   // ============================================================
@@ -67,6 +72,13 @@ export default function RevisionDisponibilidad() {
 
   // Confirmación de revisado
   const [confirmRevisado, setConfirmRevisado] = useState(false);
+
+  // Modal de sincronización (NUEVO v2.0)
+  const [showModalSincronizar, setShowModalSincronizar] = useState(false);
+  const [areaSeleccionada, setAreaSeleccionada] = useState('');
+  const [areas, setAreas] = useState([]);
+  const [sincronizando, setSincronizando] = useState(false);
+  const [resultadoSincronizacion, setResultadoSincronizacion] = useState(null);
 
   // ============================================================
   // CARGAR ESPECIALIDADES
@@ -212,15 +224,75 @@ export default function RevisionDisponibilidad() {
     setSaving(true);
     try {
       await disponibilidadService.marcarRevisado(selectedDisponibilidad.idDisponibilidad);
-      window.alert('✓ Disponibilidad marcada como REVISADO correctamente.');
+      toast.success('Disponibilidad marcada como REVISADO correctamente');
       cerrarModal();
       cargarSolicitudes();
     } catch (err) {
       console.error('Error al marcar como revisado:', err);
-      window.alert('No se pudo marcar como revisado. Intente nuevamente.');
+      toast.error('No se pudo marcar como revisado. Intente nuevamente.');
     } finally {
       setSaving(false);
       setConfirmRevisado(false);
+    }
+  };
+
+  // ============================================================
+  // SINCRONIZACIÓN CON CHATBOT (NUEVO v2.0)
+  // ============================================================
+  const abrirModalSincronizar = async (disponibilidad) => {
+    setSelectedDisponibilidad(disponibilidad);
+    setShowModalSincronizar(true);
+    setResultadoSincronizacion(null);
+    setAreaSeleccionada('');
+
+    // Cargar áreas disponibles
+    try {
+      const response = await fetch('/api/areas/activas', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      const areasData = await response.json();
+      setAreas(areasData);
+    } catch (err) {
+      console.error('Error al cargar áreas:', err);
+      toast.error('Error al cargar áreas de atención');
+    }
+  };
+
+  const cerrarModalSincronizar = () => {
+    setShowModalSincronizar(false);
+    setSelectedDisponibilidad(null);
+    setResultadoSincronizacion(null);
+    setAreaSeleccionada('');
+  };
+
+  const sincronizarConChatbot = async () => {
+    if (!areaSeleccionada) {
+      toast.error('Debes seleccionar un área de atención');
+      return;
+    }
+
+    setSincronizando(true);
+    try {
+      const data = {
+        idDisponibilidad: selectedDisponibilidad.idDisponibilidad,
+        idArea: parseInt(areaSeleccionada)
+      };
+
+      const resultado = await integracionHorarioService.sincronizar(data);
+      setResultadoSincronizacion(resultado);
+      toast.success('Sincronización completada exitosamente');
+
+      // Recargar solicitudes
+      setTimeout(() => {
+        cargarSolicitudes();
+      }, 2000);
+    } catch (err) {
+      console.error('Error al sincronizar:', err);
+      toast.error(err.response?.data?.message || 'Error al sincronizar con chatbot');
+    } finally {
+      setSincronizando(false);
     }
   };
 
@@ -455,13 +527,60 @@ export default function RevisionDisponibilidad() {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <button
-                          onClick={() => abrirModal(solicitud)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                          <Eye className="w-4 h-4" />
-                          Revisar
-                        </button>
+                        <div className="flex items-center justify-center gap-2">
+                          {/* Botón Revisar - para estado ENVIADO */}
+                          {solicitud.estado === 'ENVIADO' && (
+                            <button
+                              onClick={() => abrirModal(solicitud)}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                              Revisar
+                            </button>
+                          )}
+
+                          {/* Botones para estado REVISADO */}
+                          {solicitud.estado === 'REVISADO' && (
+                            <>
+                              <button
+                                onClick={() => abrirModal(solicitud)}
+                                className="inline-flex items-center gap-2 px-3 py-2 bg-slate-600 text-white rounded-lg hover:bg-slate-700 transition-colors text-sm"
+                              >
+                                <Eye className="w-4 h-4" />
+                                Ver
+                              </button>
+                              <button
+                                onClick={() => abrirModalSincronizar(solicitud)}
+                                className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                              >
+                                <GitMerge className="w-4 h-4" />
+                                Sincronizar con Chatbot
+                              </button>
+                            </>
+                          )}
+
+                          {/* Botón Ver - para estado SINCRONIZADO */}
+                          {solicitud.estado === 'SINCRONIZADO' && (
+                            <button
+                              onClick={() => abrirModal(solicitud)}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                              <Database className="w-4 h-4" />
+                              Ver Detalles
+                            </button>
+                          )}
+
+                          {/* Fallback para otros estados */}
+                          {!['ENVIADO', 'REVISADO', 'SINCRONIZADO'].includes(solicitud.estado) && (
+                            <button
+                              onClick={() => abrirModal(solicitud)}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-slate-400 text-white rounded-lg hover:bg-slate-500 transition-colors"
+                            >
+                              <Eye className="w-4 h-4" />
+                              Ver
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -700,6 +819,205 @@ export default function RevisionDisponibilidad() {
                   )}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* ========== MODAL DE SINCRONIZACIÓN (NUEVO v2.0) ========== */}
+        {showModalSincronizar && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+              {/* Header */}
+              <div className="flex items-center justify-between p-6 border-b border-slate-200 bg-gradient-to-r from-blue-50 to-purple-50">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-blue-600 rounded-lg">
+                    <GitMerge className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold text-slate-800">
+                      Sincronizar con Chatbot
+                    </h3>
+                    <p className="text-sm text-slate-600">
+                      {selectedDisponibilidad?.nombreMedico} - {selectedDisponibilidad?.periodo}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={cerrarModalSincronizar}
+                  className="p-2 hover:bg-white rounded-lg transition-colors"
+                >
+                  <X className="w-5 h-5 text-slate-600" />
+                </button>
+              </div>
+
+              {/* Body */}
+              <div className="p-6 space-y-6">
+                {!resultadoSincronizacion ? (
+                  <>
+                    {/* Información de la disponibilidad */}
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                        <Database className="w-5 h-5" />
+                        Resumen de Disponibilidad
+                      </h4>
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="text-blue-600 font-medium">Total Horas:</span>
+                          <span className="ml-2 text-blue-900 font-bold">
+                            {selectedDisponibilidad?.totalHoras}h
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-blue-600 font-medium">Días Trabajados:</span>
+                          <span className="ml-2 text-blue-900 font-bold">
+                            {selectedDisponibilidad?.detalles?.filter(d => d.turno).length || 0} días
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-blue-600 font-medium">Estado:</span>
+                          <span className="ml-2 px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
+                            {selectedDisponibilidad?.estado}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Selector de Área */}
+                    <div>
+                      <label className="block text-sm font-medium text-slate-700 mb-2">
+                        Área de Atención <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={areaSeleccionada}
+                        onChange={(e) => setAreaSeleccionada(e.target.value)}
+                        className="w-full px-4 py-2 border-2 border-slate-300 rounded-lg focus:border-blue-500 focus:outline-none"
+                      >
+                        <option value="">Seleccionar área...</option>
+                        {areas.map((area) => (
+                          <option key={area.idArea} value={area.idArea}>
+                            {area.descArea}
+                          </option>
+                        ))}
+                      </select>
+                      <p className="mt-2 text-xs text-slate-600">
+                        Selecciona el área donde se sincronizarán los horarios del médico
+                      </p>
+                    </div>
+
+                    {/* Advertencia */}
+                    <div className="bg-amber-50 border-2 border-amber-200 rounded-lg p-4">
+                      <div className="flex items-start gap-3">
+                        <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                        <div className="text-sm text-amber-800">
+                          <p className="font-semibold mb-1">Antes de sincronizar:</p>
+                          <ul className="list-disc list-inside space-y-1">
+                            <li>La disponibilidad debe estar en estado REVISADO</li>
+                            <li>Se crearán slots en el sistema de chatbot</li>
+                            <li>El estado cambiará a SINCRONIZADO</li>
+                            <li>Esta acción no se puede deshacer automáticamente</li>
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Resultado de Sincronización */
+                  <div className="space-y-4">
+                    <div className={`border-2 rounded-lg p-6 ${
+                      resultadoSincronizacion.resultado === 'EXITOSO'
+                        ? 'bg-green-50 border-green-200'
+                        : 'bg-red-50 border-red-200'
+                    }`}>
+                      <div className="flex items-center gap-3 mb-4">
+                        <CheckCircle className={`w-8 h-8 ${
+                          resultadoSincronizacion.resultado === 'EXITOSO'
+                            ? 'text-green-600'
+                            : 'text-red-600'
+                        }`} />
+                        <div>
+                          <h4 className={`text-lg font-bold ${
+                            resultadoSincronizacion.resultado === 'EXITOSO'
+                              ? 'text-green-900'
+                              : 'text-red-900'
+                          }`}>
+                            {resultadoSincronizacion.mensaje}
+                          </h4>
+                          <p className="text-sm text-slate-600">
+                            Operación: {resultadoSincronizacion.tipoOperacion}
+                          </p>
+                        </div>
+                      </div>
+
+                      {resultadoSincronizacion.resultado === 'EXITOSO' && (
+                        <div className="grid grid-cols-2 gap-4 text-sm">
+                          <div className="bg-white bg-opacity-50 rounded p-3">
+                            <div className="text-green-700 font-medium">ID Horario Generado:</div>
+                            <div className="text-green-900 font-bold text-lg">
+                              #{resultadoSincronizacion.idHorario}
+                            </div>
+                          </div>
+                          <div className="bg-white bg-opacity-50 rounded p-3">
+                            <div className="text-green-700 font-medium">Detalles Procesados:</div>
+                            <div className="text-green-900 font-bold text-lg">
+                              {resultadoSincronizacion.detallesCreados}/{resultadoSincronizacion.detallesProcesados}
+                            </div>
+                          </div>
+                          <div className="bg-white bg-opacity-50 rounded p-3">
+                            <div className="text-green-700 font-medium">Horas Sincronizadas:</div>
+                            <div className="text-green-900 font-bold text-lg">
+                              {resultadoSincronizacion.horasSincronizadas}h
+                            </div>
+                          </div>
+                          <div className="bg-white bg-opacity-50 rounded p-3">
+                            <div className="text-green-700 font-medium">Errores:</div>
+                            <div className="text-green-900 font-bold text-lg">
+                              {resultadoSincronizacion.detallesConError}
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-slate-200 bg-slate-50">
+                {!resultadoSincronizacion ? (
+                  <div className="flex gap-4">
+                    <button
+                      onClick={cerrarModalSincronizar}
+                      className="flex-1 px-6 py-3 border-2 border-slate-300 text-slate-700 rounded-lg hover:bg-white font-semibold"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={sincronizarConChatbot}
+                      disabled={sincronizando || !areaSeleccionada}
+                      className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 font-semibold"
+                    >
+                      {sincronizando ? (
+                        <>
+                          <Loader2 className="w-5 h-5 animate-spin" />
+                          Sincronizando...
+                        </>
+                      ) : (
+                        <>
+                          <RefreshCw className="w-5 h-5" />
+                          Sincronizar Ahora
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={cerrarModalSincronizar}
+                    className="w-full px-6 py-3 bg-slate-600 text-white rounded-lg hover:bg-slate-700 font-semibold"
+                  >
+                    Cerrar
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}

@@ -61,6 +61,27 @@ const getAvatarColor = (dni) => {
   return colors[index];
 };
 
+// 🆕 v1.15.17: Helper para formatear fechas sin conversión de timezone
+// IMPORTANTE: Previene el bug donde "2025-05-02" se muestra como "01/05/2025"
+const formatearFechaSinTimezone = (fechaString) => {
+  if (!fechaString) return '—';
+
+  try {
+    // Si es string "YYYY-MM-DD", extraer componentes directamente
+    const parts = fechaString.split('T')[0].split('-');
+    if (parts.length >= 3) {
+      const year = parts[0];
+      const month = parts[1];
+      const day = parts[2];
+      // Retornar en formato DD/MM/YYYY (Perú)
+      return `${day}/${month}/${year}`;
+    }
+    return '—';
+  } catch (e) {
+    return '—';
+  }
+};
+
 export default function ControlFirmaDigital() {
   const navigate = useNavigate();
 
@@ -406,9 +427,9 @@ export default function ControlFirmaDigital() {
       firma.nombreIpress || '—',
       firma.entregoToken ? 'SÍ' : 'NO',
       firma.numeroSerieToken || '—',
-      firma.fechaEntregaToken ? new Date(firma.fechaEntregaToken).toLocaleDateString('es-PE') : '—',
-      firma.fechaInicioCertificado ? new Date(firma.fechaInicioCertificado).toLocaleDateString('es-PE') : '—',
-      firma.fechaVencimientoCertificado ? new Date(firma.fechaVencimientoCertificado).toLocaleDateString('es-PE') : '—',
+      formatearFechaSinTimezone(firma.fechaEntregaToken),
+      formatearFechaSinTimezone(firma.fechaInicioCertificado),
+      formatearFechaSinTimezone(firma.fechaVencimientoCertificado),
       firma.estadoCertificado || '—',
       firma.diasRestantesVencimiento !== null ? firma.diasRestantesVencimiento : '—',
       firma.descripcionMotivo || firma.motivoSinToken || '—',
@@ -956,14 +977,14 @@ export default function ControlFirmaDigital() {
                       {/* Inicio (fecha inicio certificado) */}
                       <td className="px-4 py-3 text-center">
                         <span className="text-gray-700 text-xs">
-                          {firma.fechaInicioCertificado ? new Date(firma.fechaInicioCertificado).toLocaleDateString('es-PE') : '—'}
+                          {formatearFechaSinTimezone(firma.fechaInicioCertificado)}
                         </span>
                       </td>
 
                       {/* Fin (fecha fin certificado) */}
                       <td className="px-4 py-3 text-center">
                         <span className="text-gray-700 text-xs">
-                          {firma.fechaVencimientoCertificado ? new Date(firma.fechaVencimientoCertificado).toLocaleDateString('es-PE') : '—'}
+                          {formatearFechaSinTimezone(firma.fechaVencimientoCertificado)}
                         </span>
                       </td>
 

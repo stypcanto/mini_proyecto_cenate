@@ -17,6 +17,9 @@ import RegimenesCRUD from '../admin/components/RegimenesCRUD';
 import ProfesionesCRUD from '../admin/components/ProfesionesCRUD';
 import EspecialidadesCRUD from '../admin/components/EspecialidadesCRUD';
 import RolesCRUD from '../admin/components/RolesCRUD';
+import TipoProfesionalCRUD from '../admin/components/TipoProfesionalCRUD';
+import EstrategiasInstitucionales from '../admin/catalogs/EstrategiasInstitucionales';
+import TiposAtencionTelemedicina from '../admin/catalogs/TiposAtencionTelemedicina';
 import { areaService } from '../../services/areaService';
 import { regimenService } from '../../services/regimenService';
 
@@ -86,6 +89,8 @@ const UsersManagement = () => {
     fechaRegistroHasta: ''
   });
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   const [showCrearUsuarioModal, setShowCrearUsuarioModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -104,14 +109,29 @@ const UsersManagement = () => {
   // 🆕 Toast para notificaciones
   const { showToast, ToastComponent } = useToast();
 
+  // 🚀 Debounce del searchTerm para evitar búsquedas en cada teclazo
+  useEffect(() => {
+    // Si hay texto escrito, activar estado de búsqueda
+    if (searchTerm !== debouncedSearchTerm) {
+      setIsSearching(true);
+    }
+
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+      setIsSearching(false); // Desactivar cuando termina el debounce
+    }, 300); // Reducido a 300ms para mejor UX
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, debouncedSearchTerm]);
+
   // 🚀 Refs para mantener valores actuales sin causar recargas
   const filtersRef = useRef(filters);
-  const searchTermRef = useRef(searchTerm);
+  const searchTermRef = useRef(debouncedSearchTerm); // Usar debouncedSearchTerm en lugar de searchTerm
 
   useEffect(() => {
     filtersRef.current = filters;
-    searchTermRef.current = searchTerm;
-  }, [filters, searchTerm]);
+    searchTermRef.current = debouncedSearchTerm; // Usar debouncedSearchTerm
+  }, [filters, debouncedSearchTerm]);
 
   // ============================================================
   // 🔧 FUNCIÓN AUXILIAR: Generar lista de REDES de usuarios filtrados
@@ -691,23 +711,27 @@ const UsersManagement = () => {
     let filtered = [...usersList];
 
     // 🔍 Búsqueda general (nombre, usuario, documento, IPRESS, email)
-    if (searchTerm && searchTerm.trim() !== '') {
-      const searchLower = searchTerm.toLowerCase().trim();
+    if (debouncedSearchTerm && debouncedSearchTerm.trim() !== '') {
+      const searchLower = debouncedSearchTerm.trim();
+      console.log('🔍 Buscando:', searchLower, 'en', usersList.length, 'usuarios');
       filtered = filtered.filter(user => {
         const nombreCompleto = (user.nombre_completo || '').toLowerCase();
-        const username = (user.username || '').toLowerCase();
-        const numeroDocumento = (user.numero_documento || user.num_doc_pers || '').toString().toLowerCase();
-        const nombreIpress = (user.nombre_ipress || user.descIpress || '').toLowerCase();
+        const username = (user.username || user.nameUser || '').toString();
+        const numeroDocumento = (user.numero_documento || user.num_doc_pers || user.numeroDocumento || '').toString();
+        const nombreIpress = (user.nombre_ipress || user.descIpress || user.nombreIpress || '').toLowerCase();
         // 📧 Campos de email (personal y corporativo) - Backend envía en snake_case
         const emailPersonal = (user.correo_personal || user.correoPersonal || '').toLowerCase();
         const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
 
-        return nombreCompleto.includes(searchLower) ||
-               username.includes(searchLower) ||
-               numeroDocumento.includes(searchLower) ||
-               nombreIpress.includes(searchLower) ||
-               emailPersonal.includes(searchLower) ||
-               emailCorporativo.includes(searchLower);
+        // Búsqueda case-insensitive para texto, exacta para números (DNI)
+        const searchLowerCase = searchLower.toLowerCase();
+
+        return nombreCompleto.includes(searchLowerCase) ||
+               username.includes(searchLower) || // DNI: búsqueda exacta
+               numeroDocumento.includes(searchLower) || // DNI alternativo: búsqueda exacta
+               nombreIpress.includes(searchLowerCase) ||
+               emailPersonal.includes(searchLowerCase) ||
+               emailCorporativo.includes(searchLowerCase);
       });
     }
 
@@ -912,7 +936,7 @@ const UsersManagement = () => {
     }
 
     return filtered;
-  }, [searchTerm, filters]);
+  }, [debouncedSearchTerm, filters]);
 
   // ============================================================
   // 🔍 FILTRADO: Aplicar filtros a los usuarios
@@ -926,7 +950,7 @@ const UsersManagement = () => {
   // 🚀 PAGINACIÓN LOCAL: Paginar los resultados filtrados
   // ============================================================
   const paginatedUsers = useMemo(() => {
-    const hasActiveFilters = searchTerm ||
+    const hasActiveFilters = debouncedSearchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
@@ -950,7 +974,7 @@ const UsersManagement = () => {
     
     // Sin filtros, devolver todos los usuarios (ya están paginados del servidor)
     return filteredUsers;
-  }, [filteredUsers, currentPage, pageSize, searchTerm, filters]);
+  }, [filteredUsers, currentPage, pageSize, debouncedSearchTerm, filters]);
 
   // ============================================================
   // 🔄 CARGA DE USUARIOS Y ROLES (PAGINADO)
@@ -979,9 +1003,12 @@ const UsersManagement = () => {
                                (currentFilters.fechaRegistroDesde && currentFilters.fechaRegistroDesde !== '') ||
                                (currentFilters.fechaRegistroHasta && currentFilters.fechaRegistroHasta !== '');
       
-      // Si hay filtros, cargar TODOS los usuarios (1000) para buscar en toda la base de datos
+      // Si hay filtros, cargar más usuarios para buscar en toda la base de datos
+      // Si es búsqueda por DNI (solo números), cargar más registros (2000)
+      // Si son otros filtros, cargar 1000
       // Si no hay filtros, usar paginación normal (7 usuarios)
-      const sizeToLoad = hasActiveFilters ? 1000 : pageSize;
+      const isDNISearch = currentSearchTerm && /^\d+$/.test(currentSearchTerm.trim());
+      const sizeToLoad = isDNISearch ? 2000 : (hasActiveFilters ? 1000 : pageSize);
       const pageToLoad = hasActiveFilters ? 0 : currentPage;
       
       console.log('🔄 Cargando usuarios - Página:', pageToLoad, 'Tamaño:', sizeToLoad, 'Filtros activos:', hasActiveFilters, 'Forzar recarga:', forceReload);
@@ -1144,7 +1171,7 @@ const UsersManagement = () => {
 
       // Cargar usuarios e IPRESS en paralelo
       const [usersResponse, ipressResponse] = await Promise.all([
-        api.get('/usuarios/all-personal?page=0&size=1000&sortBy=createdAt&direction=DESC'),
+        api.get('/usuarios/all-personal?page=0&size=2000&sortBy=createdAt&direction=DESC'),
         api.get('/ipress')
       ]);
 
@@ -1200,11 +1227,11 @@ const UsersManagement = () => {
     if (currentPage > 0) {
       setCurrentPage(0);
     }
-  }, [filters, searchTerm]);
+  }, [filters, debouncedSearchTerm]);
 
   // 🚀 Cargar todos los usuarios cuando se activan filtros por primera vez
   useEffect(() => {
-    const hasActiveFilters = searchTerm ||
+    const hasActiveFilters = debouncedSearchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
@@ -1218,17 +1245,20 @@ const UsersManagement = () => {
                              (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
                              (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
 
-    // Si hay filtros activos y tenemos menos de 100 usuarios cargados, cargar todos
-    if (hasActiveFilters && users.length < 100) {
-      console.log('🔍 Filtros activos detectados, cargando todos los usuarios para buscar en toda la base de datos...');
+    // Si hay filtros activos y tenemos menos usuarios de los necesarios, cargar más
+    const isDNISearch = debouncedSearchTerm && /^\d+$/.test(debouncedSearchTerm.trim());
+    const requiredSize = isDNISearch ? 2000 : 1000;
+
+    if (hasActiveFilters && users.length < requiredSize) {
+      console.log('🔍 Filtros activos detectados, cargando', requiredSize, 'usuarios para buscar en toda la base de datos...');
       loadUsers(true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, filters.especialidad, filters.fechaRegistroDesde, filters.fechaRegistroHasta]); // Solo cuando cambian los filtros
+  }, [debouncedSearchTerm, filters.rol, filters.institucion, filters.estado, filters.mesCumpleanos, filters.area, filters.red, filters.ipress, filters.regimen, filters.profesion, filters.especialidad, filters.fechaRegistroDesde, filters.fechaRegistroHasta]); // Solo cuando cambian los filtros
 
   // 🚀 Actualizar totales cuando hay filtros activos (basándose en filteredUsers)
   useEffect(() => {
-    const hasActiveFilters = searchTerm ||
+    const hasActiveFilters = debouncedSearchTerm ||
                              (filters.rol && filters.rol !== '') ||
                              (filters.institucion && filters.institucion !== '') ||
                              (filters.estado && filters.estado !== '') ||
@@ -1250,7 +1280,7 @@ const UsersManagement = () => {
       setTotalPages(totalPagesCount);
       console.log('🔍 Filtros activos - Total filtrado:', filteredCount, 'Páginas:', totalPagesCount);
     }
-  }, [filteredUsers, searchTerm, filters, pageSize]);
+  }, [filteredUsers, debouncedSearchTerm, filters, pageSize]);
 
   // 🚀 Función para actualizar manualmente la tabla
   const handleRefresh = useCallback(() => {
@@ -1534,6 +1564,7 @@ const UsersManagement = () => {
               <UsersTable
                 users={paginatedUsers}
                 loading={loading}
+                isSearching={isSearching}
                 onViewDetail={handleVerDetalle}
                 onEdit={handleEditarUsuario}
                 onDelete={handleEliminarUsuario}
@@ -1563,6 +1594,7 @@ const UsersManagement = () => {
               <UsersCards
                 users={paginatedUsers}
                 loading={loading}
+                isSearching={isSearching}
                 onViewDetail={handleVerDetalle}
                 onEdit={handleEditarUsuario}
                 onDelete={handleEliminarUsuario}
@@ -1648,8 +1680,29 @@ const UsersManagement = () => {
         </div>
       )}
 
+      {/* Tab de Tipo de Profesional */}
+      {activeTab === 'tipoprofesional' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TipoProfesionalCRUD />
+        </div>
+      )}
+
+      {/* Tab de Estrategias Institucionales */}
+      {activeTab === 'estrategias' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <EstrategiasInstitucionales />
+        </div>
+      )}
+
+      {/* Tab de Tipos de Atención Telemedicina */}
+      {activeTab === 'tiposatencion' && (
+        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <TiposAtencionTelemedicina />
+        </div>
+      )}
+
       {/* Placeholder para otras tabs futuras */}
-      {activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && (
+      {activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && activeTab !== 'tipoprofesional' && activeTab !== 'estrategias' && activeTab !== 'tiposatencion' && (
         <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
           <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200">
             <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">

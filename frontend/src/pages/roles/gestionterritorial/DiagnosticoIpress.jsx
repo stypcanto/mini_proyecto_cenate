@@ -78,10 +78,24 @@ export default function DiagnosticoIpress() {
   // ================================================================
   // FILTRADO
   // ================================================================
+
+  // Obtener solo las redes que tienen diagnósticos
+  const redesConDiagnosticos = useMemo(() => {
+    const idsRedes = new Set(diagnosticos.map(d => d.idRed).filter(Boolean));
+    return redes.filter(red => idsRedes.has(red.idRed));
+  }, [redes, diagnosticos]);
+
+  // Obtener solo las IPRESS que tienen diagnósticos
+  const ipressConDiagnosticos = useMemo(() => {
+    const idsIpress = new Set(diagnosticos.map(d => d.idIpress).filter(Boolean));
+    return ipress.filter(ipr => idsIpress.has(ipr.idIpress));
+  }, [ipress, diagnosticos]);
+
+  // Filtrar IPRESS por red seleccionada
   const ipressFiltradas = useMemo(() => {
-    if (!redSeleccionada) return ipress;
-    return ipress.filter(ipr => ipr.idRed === parseInt(redSeleccionada));
-  }, [ipress, redSeleccionada]);
+    if (!redSeleccionada) return ipressConDiagnosticos;
+    return ipressConDiagnosticos.filter(ipr => ipr.idRed === parseInt(redSeleccionada));
+  }, [ipressConDiagnosticos, redSeleccionada]);
 
   const datosFiltrados = useMemo(() => {
     let resultado = [...diagnosticos];
@@ -389,7 +403,7 @@ export default function DiagnosticoIpress() {
               className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-300 rounded-lg text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer transition-all"
             >
               <option value="">Todas las Redes</option>
-              {redes.map((red) => (
+              {redesConDiagnosticos.map((red) => (
                 <option key={red.idRed} value={red.idRed}>
                   {red.descRed}
                 </option>

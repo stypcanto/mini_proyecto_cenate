@@ -12,6 +12,38 @@ import { clearToken, clearUser } from '../../../../constants/auth';
 import FirmaDigitalTab from './FirmaDigitalTab'; // 🆕 v1.14.0
 import ActualizarEntregaTokenModal from './ActualizarEntregaTokenModal'; // 🆕 v1.14.0
 
+// 🛠️ Helper: Convertir fecha del servidor (YYYY-MM-DD) a formato de input date sin cambio de zona horaria
+const formatDateForInput = (dateString) => {
+  if (!dateString) return '';
+  // Si ya está en formato correcto YYYY-MM-DD, retornar tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+  // Si tiene tiempo, extraer solo la fecha
+  return dateString.split('T')[0];
+};
+
+// 🆕 v1.15.15: Helper para enviar fechas al backend sin conversión UTC
+// IMPORTANTE: Previene el bug donde "02/05/2025" se guarda como "01/05/2025"
+const formatDateForBackend = (dateString) => {
+  if (!dateString) return null;
+
+  // Si ya está en formato YYYY-MM-DD correcto, retornar tal cual
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateString)) {
+    return dateString;
+  }
+
+  // Si es un objeto Date, formatear manualmente en zona horaria local
+  if (dateString instanceof Date) {
+    const year = dateString.getFullYear();
+    const month = String(dateString.getMonth() + 1).padStart(2, '0');
+    const day = String(dateString.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }
+
+  return dateString;
+};
+
 const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', firmaDigitalOnly = false }) => {
   const { user: currentUser } = useAuth();
   const [selectedTab, setSelectedTab] = useState(initialTab); // 🎯 v1.14.0 - Soporta tab inicial personalizado
@@ -589,9 +621,9 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
           ...prev,
           entrego_token: firma.entregoToken ? 'SI' : 'NO',
           numero_serie_token: firma.numeroSerieToken || '',
-          fecha_entrega_token: firma.fechaEntregaToken || '',
-          fecha_inicio_certificado: firma.fechaInicioCertificado || '',
-          fecha_vencimiento_certificado: firma.fechaVencimientoCertificado || '',
+          fecha_entrega_token: formatDateForInput(firma.fechaEntregaToken),
+          fecha_inicio_certificado: formatDateForInput(firma.fechaInicioCertificado),
+          fecha_vencimiento_certificado: formatDateForInput(firma.fechaVencimientoCertificado),
           motivo_sin_token: firma.motivoSinToken || null,
           observaciones_firma: firma.observaciones || ''
         }));
@@ -817,9 +849,9 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
         idPersonal: userId,
         entregoToken: formData.entrego_token === 'SI',
         numeroSerieToken: formData.numero_serie_token || null,
-        fechaEntregaToken: formData.fecha_entrega_token || null,
-        fechaInicioCertificado: formData.fecha_inicio_certificado || null,
-        fechaVencimientoCertificado: formData.fecha_vencimiento_certificado || null,
+        fechaEntregaToken: formatDateForBackend(formData.fecha_entrega_token),
+        fechaInicioCertificado: formatDateForBackend(formData.fecha_inicio_certificado),
+        fechaVencimientoCertificado: formatDateForBackend(formData.fecha_vencimiento_certificado),
         motivoSinToken: formData.motivo_sin_token || null,
         observaciones: formData.observaciones_firma || null
       };
@@ -1054,9 +1086,9 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
               idPersonal: user.id_personal,
               entregoToken: formData.entrego_token === 'SI',
               numeroSerieToken: formData.numero_serie_token || null,
-              fechaEntregaToken: formData.entrego_token === 'SI' && formData.fecha_entrega_token ? formData.fecha_entrega_token : (formData.entrego_token === 'SI' ? new Date().toISOString().split('T')[0] : null),
-              fechaInicioCertificado: formData.fecha_inicio_certificado || null,
-              fechaVencimientoCertificado: formData.fecha_vencimiento_certificado || null,
+              fechaEntregaToken: formData.entrego_token === 'SI' && formData.fecha_entrega_token ? formatDateForBackend(formData.fecha_entrega_token) : (formData.entrego_token === 'SI' ? formatDateForBackend(new Date()) : null),
+              fechaInicioCertificado: formatDateForBackend(formData.fecha_inicio_certificado),
+              fechaVencimientoCertificado: formatDateForBackend(formData.fecha_vencimiento_certificado),
               motivoSinToken: formData.motivo_sin_token || null,
               observaciones: formData.observaciones_firma || null
             };

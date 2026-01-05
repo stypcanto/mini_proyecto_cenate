@@ -31,6 +31,9 @@ public class Asegurado {
     @Column(name = "tel_fijo")
     private String telFijo;
 
+    @Column(name = "tel_celular")
+    private String telCelular;
+
     @Column(name = "tipo_seguro")
     private String tipoSeguro;
 
@@ -39,6 +42,9 @@ public class Asegurado {
 
     @Column(name = "periodo")
     private String periodo;
+
+    @Column(name = "correo_electronico")
+    private String correoElectronico;
 
     // Getters y Setters
     public String getPkAsegurado() { return pkAsegurado; }
@@ -62,6 +68,9 @@ public class Asegurado {
     public String getTelFijo() { return telFijo; }
     public void setTelFijo(String telFijo) { this.telFijo = telFijo; }
 
+    public String getTelCelular() { return telCelular; }
+    public void setTelCelular(String telCelular) { this.telCelular = telCelular; }
+
     public String getTipoSeguro() { return tipoSeguro; }
     public void setTipoSeguro(String tipoSeguro) { this.tipoSeguro = tipoSeguro; }
 
@@ -70,4 +79,7 @@ public class Asegurado {
 
     public String getPeriodo() { return periodo; }
     public void setPeriodo(String periodo) { this.periodo = periodo; }
+
+    public String getCorreoElectronico() { return correoElectronico; }
+    public void setCorreoElectronico(String correoElectronico) { this.correoElectronico = correoElectronico; }
 }
