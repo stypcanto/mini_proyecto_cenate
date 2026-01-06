@@ -11,6 +11,11 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
     const [formData, setFormData] = useState({
         motivoConsulta: "",
         observaciones: "",
+        observacionesCheckboxes: {
+            dietaHiposodica: false,
+            signosAlarmaExplicados: false,
+            verificaTecnicaAutomedida: false
+        },
         signosVitales: {
             pa: "",
             fc: "",
@@ -23,6 +28,84 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
         especialidadInterconsulta: "",
         motivoInterconsulta: ""
     });
+    
+    const [signosVitalesErrors, setSignosVitalesErrors] = useState({});
+
+    // Validación de rangos fisiológicos
+    const validarSignosVitales = (nombre, valor) => {
+        const errores = { ...signosVitalesErrors };
+        
+        if (!valor || valor.trim() === "") {
+            delete errores[nombre];
+            setSignosVitalesErrors(errores);
+            return true;
+        }
+        
+        const numValor = parseFloat(valor);
+        
+        switch (nombre) {
+            case "pa":
+                // Validar formato PA (ej: 120/80)
+                const paMatch = valor.match(/^(\d+)\/(\d+)$/);
+                if (!paMatch) {
+                    errores.pa = "Formato inválido. Use: SISTOLICA/DASTOLICA (ej: 120/80)";
+                    setSignosVitalesErrors(errores);
+                    return false;
+                }
+                const sistolica = parseInt(paMatch[1]);
+                const diastolica = parseInt(paMatch[2]);
+                if (sistolica < 70 || sistolica > 250 || diastolica < 40 || diastolica > 150) {
+                    errores.pa = "⚠️ ¿Estás segura? Valores fuera de rango fisiológico (70-250/40-150)";
+                    setSignosVitalesErrors(errores);
+                    return false;
+                }
+                delete errores.pa;
+                break;
+            case "fc":
+                if (numValor < 40 || numValor > 200) {
+                    errores.fc = "⚠️ ¿Estás segura? Frecuencia cardíaca fuera de rango (40-200 lpm)";
+                    setSignosVitalesErrors(errores);
+                    return false;
+                }
+                delete errores.fc;
+                break;
+            case "spo2":
+                if (numValor < 70 || numValor > 100) {
+                    errores.spo2 = "⚠️ ¿Estás segura? Saturación O2 fuera de rango (70-100%)";
+                    setSignosVitalesErrors(errores);
+                    return false;
+                }
+                delete errores.spo2;
+                break;
+            case "temp":
+                if (numValor < 35 || numValor > 42) {
+                    errores.temp = "⚠️ ¿Estás segura? Temperatura fuera de rango (35-42°C)";
+                    setSignosVitalesErrors(errores);
+                    return false;
+                }
+                delete errores.temp;
+                break;
+            case "peso":
+                if (numValor < 1 || numValor > 300) {
+                    errores.peso = "⚠️ ¿Estás segura? Peso fuera de rango (1-300 kg)";
+                    setSignosVitalesErrors(errores);
+                    return false;
+                }
+                delete errores.peso;
+                break;
+            case "talla":
+                if (numValor < 30 || numValor > 250) {
+                    errores.talla = "⚠️ ¿Estás segura? Talla fuera de rango (30-250 cm)";
+                    setSignosVitalesErrors(errores);
+                    return false;
+                }
+                delete errores.talla;
+                break;
+        }
+        
+        setSignosVitalesErrors(errores);
+        return true;
+    };
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -32,9 +115,22 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                 ...prev,
                 signosVitales: { ...prev.signosVitales, [svKey]: value }
             }));
+            // Validar en tiempo real
+            validarSignosVitales(svKey, value);
         } else {
             setFormData((prev) => ({ ...prev, [name]: value }));
         }
+    };
+    
+    const handleCheckboxObservacion = (e) => {
+        const { name, checked } = e.target;
+        setFormData((prev) => ({
+            ...prev,
+            observacionesCheckboxes: {
+                ...prev.observacionesCheckboxes,
+                [name]: checked
+            }
+        }));
     };
 
     const handleCheckboxChange = (e) => {
@@ -48,6 +144,29 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
             toast.error("El motivo de consulta es obligatorio");
             return;
         }
+        
+        // Validar que no haya errores en signos vitales
+        if (Object.keys(signosVitalesErrors).length > 0) {
+            toast.error("Por favor, corrige los errores en los signos vitales antes de guardar");
+            return;
+        }
+        
+        // Construir observaciones combinando checkboxes y texto libre
+        const observacionesCheckboxes = [];
+        if (formData.observacionesCheckboxes.dietaHiposodica) {
+            observacionesCheckboxes.push("Dieta hiposódica reforzada");
+        }
+        if (formData.observacionesCheckboxes.signosAlarmaExplicados) {
+            observacionesCheckboxes.push("Signos de alarma explicados");
+        }
+        if (formData.observacionesCheckboxes.verificaTecnicaAutomedida) {
+            observacionesCheckboxes.push("Verifica técnica de automedida");
+        }
+        
+        const observacionesCompletas = [
+            ...observacionesCheckboxes,
+            formData.observaciones.trim()
+        ].filter(Boolean).join(". ");
 
         try {
             setLoading(true);
@@ -59,7 +178,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                 idAtencionMedicaRef: paciente.tipoOrigen === "MEDICINA_GENERAL" ? paciente.idOrigen : null,
                 idCitaRef: paciente.tipoOrigen === "CITA" ? paciente.idOrigen : null,
                 motivoConsulta: formData.motivoConsulta,
-                observaciones: formData.observaciones,
+                observaciones: observacionesCompletas,
                 signosVitales: formData.signosVitales,
                 idUsuarioEnfermera: user?.id || null, // ID del usuario enfermera logueado
                 derivaInterconsulta: formData.derivaInterconsulta,
@@ -145,8 +264,15 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             value={ formData.signosVitales.pa }
                                             onChange={ handleChange }
                                             placeholder="120/80"
-                                            className="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm"
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg focus:ring-2 focus:bg-white transition-all text-sm ${
+                                                signosVitalesErrors.pa 
+                                                    ? "bg-red-50 border-2 border-red-500 text-red-700" 
+                                                    : "bg-gray-50 border border-gray-200 focus:ring-green-500"
+                                            }`}
                                         />
+                                        { signosVitalesErrors.pa && (
+                                            <p className="text-xs text-red-600 mt-1 font-medium">{ signosVitalesErrors.pa }</p>
+                                        ) }
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-500 font-medium ml-1">F. Cardíaca (lpm)</label>
@@ -156,8 +282,15 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             value={ formData.signosVitales.fc }
                                             onChange={ handleChange }
                                             placeholder="72"
-                                            className="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm"
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg focus:ring-2 focus:bg-white transition-all text-sm ${
+                                                signosVitalesErrors.fc 
+                                                    ? "bg-red-50 border-2 border-red-500 text-red-700" 
+                                                    : "bg-gray-50 border border-gray-200 focus:ring-green-500"
+                                            }`}
                                         />
+                                        { signosVitalesErrors.fc && (
+                                            <p className="text-xs text-red-600 mt-1 font-medium">{ signosVitalesErrors.fc }</p>
+                                        ) }
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-500 font-medium ml-1">Sat. O2 (%)</label>
@@ -167,8 +300,15 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             value={ formData.signosVitales.spo2 }
                                             onChange={ handleChange }
                                             placeholder="98"
-                                            className="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm"
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg focus:ring-2 focus:bg-white transition-all text-sm ${
+                                                signosVitalesErrors.spo2 
+                                                    ? "bg-red-50 border-2 border-red-500 text-red-700" 
+                                                    : "bg-gray-50 border border-gray-200 focus:ring-green-500"
+                                            }`}
                                         />
+                                        { signosVitalesErrors.spo2 && (
+                                            <p className="text-xs text-red-600 mt-1 font-medium">{ signosVitalesErrors.spo2 }</p>
+                                        ) }
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-500 font-medium ml-1">Temp (°C)</label>
@@ -179,8 +319,15 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             value={ formData.signosVitales.temp }
                                             onChange={ handleChange }
                                             placeholder="36.5"
-                                            className="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm"
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg focus:ring-2 focus:bg-white transition-all text-sm ${
+                                                signosVitalesErrors.temp 
+                                                    ? "bg-red-50 border-2 border-red-500 text-red-700" 
+                                                    : "bg-gray-50 border border-gray-200 focus:ring-green-500"
+                                            }`}
                                         />
+                                        { signosVitalesErrors.temp && (
+                                            <p className="text-xs text-red-600 mt-1 font-medium">{ signosVitalesErrors.temp }</p>
+                                        ) }
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-500 font-medium ml-1">Peso (Kg)</label>
@@ -190,8 +337,15 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             step="0.1"
                                             value={ formData.signosVitales.peso }
                                             onChange={ handleChange }
-                                            className="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm"
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg focus:ring-2 focus:bg-white transition-all text-sm ${
+                                                signosVitalesErrors.peso 
+                                                    ? "bg-red-50 border-2 border-red-500 text-red-700" 
+                                                    : "bg-gray-50 border border-gray-200 focus:ring-green-500"
+                                            }`}
                                         />
+                                        { signosVitalesErrors.peso && (
+                                            <p className="text-xs text-red-600 mt-1 font-medium">{ signosVitalesErrors.peso }</p>
+                                        ) }
                                     </div>
                                     <div>
                                         <label className="text-xs text-gray-500 font-medium ml-1">Talla (cm)</label>
@@ -200,8 +354,15 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             type="number"
                                             value={ formData.signosVitales.talla }
                                             onChange={ handleChange }
-                                            className="w-full mt-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:bg-white transition-all text-sm"
+                                            className={`w-full mt-1 px-3 py-2 rounded-lg focus:ring-2 focus:bg-white transition-all text-sm ${
+                                                signosVitalesErrors.talla 
+                                                    ? "bg-red-50 border-2 border-red-500 text-red-700" 
+                                                    : "bg-gray-50 border border-gray-200 focus:ring-green-500"
+                                            }`}
                                         />
+                                        { signosVitalesErrors.talla && (
+                                            <p className="text-xs text-red-600 mt-1 font-medium">{ signosVitalesErrors.talla }</p>
+                                        ) }
                                     </div>
                                 </div>
                             </div>
@@ -209,26 +370,69 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                             {/* Consulta */ }
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Motivo de Atención</label>
-                                    <input
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Motivo de Atención *</label>
+                                    <select
                                         name="motivoConsulta"
                                         value={ formData.motivoConsulta }
                                         onChange={ handleChange }
-                                        placeholder="Ej. Control de hipertensión..."
-                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                                    />
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white"
+                                        required
+                                    >
+                                        <option value="">Seleccione un motivo...</option>
+                                        <option value="Control Rutina">Control Rutina</option>
+                                        <option value="Urgencia">Urgencia</option>
+                                        <option value="Telemonitoreo">Telemonitoreo</option>
+                                        <option value="Consejería">Consejería</option>
+                                    </select>
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Observaciones y Recomendaciones</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-2">Observaciones y Recomendaciones</label>
+                                    
+                                    {/* Checkboxes para observaciones estándar */}
+                                    <div className="space-y-2 mb-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-gray-900">
+                                            <input
+                                                type="checkbox"
+                                                name="dietaHiposodica"
+                                                checked={ formData.observacionesCheckboxes.dietaHiposodica }
+                                                onChange={ handleCheckboxObservacion }
+                                                className="w-4 h-4 text-green-600 rounded focus:ring-green-500 border-gray-300"
+                                            />
+                                            <span>Dieta hiposódica reforzada</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-gray-900">
+                                            <input
+                                                type="checkbox"
+                                                name="signosAlarmaExplicados"
+                                                checked={ formData.observacionesCheckboxes.signosAlarmaExplicados }
+                                                onChange={ handleCheckboxObservacion }
+                                                className="w-4 h-4 text-green-600 rounded focus:ring-green-500 border-gray-300"
+                                            />
+                                            <span>Signos de alarma explicados</span>
+                                        </label>
+                                        <label className="flex items-center gap-2 cursor-pointer text-sm text-gray-700 hover:text-gray-900">
+                                            <input
+                                                type="checkbox"
+                                                name="verificaTecnicaAutomedida"
+                                                checked={ formData.observacionesCheckboxes.verificaTecnicaAutomedida }
+                                                onChange={ handleCheckboxObservacion }
+                                                className="w-4 h-4 text-green-600 rounded focus:ring-green-500 border-gray-300"
+                                            />
+                                            <span>Verifica técnica de automedida</span>
+                                        </label>
+                                    </div>
+                                    
+                                    {/* Campo de texto para excepciones */}
                                     <textarea
                                         name="observaciones"
-                                        rows={ 4 }
+                                        rows={ 3 }
                                         value={ formData.observaciones }
                                         onChange={ handleChange }
-                                        placeholder="Detalle de la evolución..."
+                                        placeholder="Observaciones adicionales o excepciones..."
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none"
                                     />
+                                    <p className="text-xs text-gray-500 mt-1">Use este campo solo para observaciones adicionales o excepciones</p>
                                 </div>
                             </div>
 

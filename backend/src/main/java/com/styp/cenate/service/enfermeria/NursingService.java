@@ -11,6 +11,7 @@ import com.styp.cenate.repository.chatbot.SolicitudCitaRepository;
 import com.styp.cenate.repository.enfermeria.AtencionEnfermeriaRepository;
 import com.styp.cenate.repository.enfermeria.PacienteInterconsultaRepository;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import lombok.RequiredArgsConstructor;
@@ -41,6 +42,7 @@ public class NursingService {
     private final PacienteInterconsultaRepository pacienteInterconsultaRepository;
     private final com.styp.cenate.repository.AseguradoRepository aseguradoRepository;
     private final UsuarioRepository usuarioRepository;
+    private final IpressRepository ipressRepository;
 
     private static final Long ESTADO_CITA_PROGRAMADO = 1L; // Asumiendo ID 1 = Programado/Confirmado
     // TODO: Confirmar si CENACRON se identifica por idEstrategia
@@ -240,6 +242,7 @@ public class NursingService {
         String diagnostico = "Sin diagnóstico";
         Boolean requiereTelemonitoreo = false;
         Long diasTranscurridos = 0L;
+        String nombreIpress = null;
 
         // Intentar buscar Asegurado de múltiples formas
         var aseguradoOpt = aseguradoRepository.findById(String.valueOf(entity.getIdPaciente()));
@@ -248,15 +251,16 @@ public class NursingService {
         if (aseguradoOpt.isEmpty() && entity.getIdAtencionMedicaRef() != null) {
             var atencionClinicaOpt = atencionClinicaRepository.findById(entity.getIdAtencionMedicaRef());
             if (atencionClinicaOpt.isPresent()) {
-                pkAsegurado = atencionClinicaOpt.get().getPkAsegurado();
+                var atencionClinica = atencionClinicaOpt.get();
+                pkAsegurado = atencionClinica.getPkAsegurado();
                 aseguradoOpt = aseguradoRepository.findById(pkAsegurado);
                 if (aseguradoOpt.isPresent()) {
-                    diagnostico = atencionClinicaOpt.get().getDiagnostico();
-                    requiereTelemonitoreo = Boolean.TRUE.equals(atencionClinicaOpt.get().getRequiereTelemonitoreo());
+                    diagnostico = atencionClinica.getDiagnostico();
+                    requiereTelemonitoreo = Boolean.TRUE.equals(atencionClinica.getRequiereTelemonitoreo());
                     // Calcular días desde la atención médica original
-                    if (atencionClinicaOpt.get().getFechaAtencion() != null) {
+                    if (atencionClinica.getFechaAtencion() != null) {
                         diasTranscurridos = ChronoUnit.DAYS.between(
-                            atencionClinicaOpt.get().getFechaAtencion().toLocalDate(),
+                            atencionClinica.getFechaAtencion().toLocalDate(),
                             LocalDate.now()
                         );
                     }
@@ -272,12 +276,49 @@ public class NursingService {
             if (asegurado.getFecnacimpaciente() != null) {
                 edadPaciente = (int) ChronoUnit.YEARS.between(asegurado.getFecnacimpaciente(), LocalDate.now());
             }
+            // 1. PRIORIDAD: Obtener IPRESS desde Asegurado.casAdscripcion (IPRESS real del paciente)
+            if (asegurado.getCasAdscripcion() != null && !asegurado.getCasAdscripcion().trim().isEmpty()) {
+                try {
+                    String codIpress = asegurado.getCasAdscripcion().trim();
+                    var ipressOpt = ipressRepository.findByCodIpress(codIpress);
+                    if (ipressOpt.isPresent()) {
+                        nombreIpress = ipressOpt.get().getDescIpress();
+                        log.info("✅ IPRESS obtenida desde Asegurado.casAdscripcion {}: {}", codIpress, nombreIpress);
+                    } else {
+                        log.warn("⚠️ IPRESS con código '{}' no encontrada en dim_ipress, usando código como nombre", codIpress);
+                        nombreIpress = codIpress;
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Error al buscar IPRESS con código {}: {}", asegurado.getCasAdscripcion(), e.getMessage(), e);
+                    nombreIpress = asegurado.getCasAdscripcion();
+                }
+            }
         } else {
             // Si aún no encontramos el paciente, calcular días desde la atención de enfermería
             diasTranscurridos = ChronoUnit.DAYS.between(
                 entity.getFechaAtencion().toLocalDate(),
                 LocalDate.now()
             );
+        }
+
+        // 2. FALLBACK: Si no se obtuvo IPRESS desde Asegurado, intentar desde AtencionClinica.idIpress
+        if (nombreIpress == null && entity.getIdAtencionMedicaRef() != null) {
+            var atencionClinicaOpt = atencionClinicaRepository.findById(entity.getIdAtencionMedicaRef());
+            if (atencionClinicaOpt.isPresent()) {
+                var atencionClinica = atencionClinicaOpt.get();
+                if (atencionClinica.getIdIpress() != null) {
+                    try {
+                        nombreIpress = ipressRepository.findById(atencionClinica.getIdIpress())
+                            .map(ip -> ip.getDescIpress())
+                            .orElse(null);
+                        if (nombreIpress != null) {
+                            log.info("✅ IPRESS obtenida desde AtencionClinica.idIpress {} (fallback): {}", atencionClinica.getIdIpress(), nombreIpress);
+                        }
+                    } catch (Exception e) {
+                        log.warn("⚠️ Error al buscar IPRESS por idIpress {}: {}", atencionClinica.getIdIpress(), e.getMessage());
+                    }
+                }
+            }
         }
 
         return NursingWorklistDto.builder()
@@ -297,6 +338,7 @@ public class NursingService {
                 .diasTranscurridos(diasTranscurridos)
                 .colorSemaforo("AZUL") // Completado
                 .tipoAtencion("Control (Atendido)")
+                .nombreIpress(nombreIpress)
                 .build();
     }
 
@@ -309,6 +351,7 @@ public class NursingService {
         String dniPaciente = entity.getPkAsegurado(); // Fallback: pk completo
         Integer edadPaciente = null;
         String pkAseguradoCompleto = entity.getPkAsegurado(); // Guardar pk completo para historial
+        String nombreIpress = null;
 
         // Buscar asegurado para obtener nombre real y DNI limpio
         var aseguradoOpt = aseguradoRepository.findById(entity.getPkAsegurado());
@@ -319,6 +362,47 @@ public class NursingService {
             if (asegurado.getFecnacimpaciente() != null) {
                 edadPaciente = (int) ChronoUnit.YEARS.between(asegurado.getFecnacimpaciente(), LocalDate.now());
             }
+            // 1. PRIORIDAD: Obtener IPRESS desde Asegurado.casAdscripcion (IPRESS real del paciente)
+            if (asegurado.getCasAdscripcion() != null && !asegurado.getCasAdscripcion().trim().isEmpty()) {
+                try {
+                    String codIpress = asegurado.getCasAdscripcion().trim();
+                    var ipressOpt = ipressRepository.findByCodIpress(codIpress);
+                    if (ipressOpt.isPresent()) {
+                        nombreIpress = ipressOpt.get().getDescIpress();
+                        log.info("✅ IPRESS obtenida desde Asegurado.casAdscripcion {}: {}", codIpress, nombreIpress);
+                    } else {
+                        log.warn("⚠️ IPRESS con código '{}' no encontrada en dim_ipress, usando código como nombre", codIpress);
+                        nombreIpress = codIpress;
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Error al buscar IPRESS con código {}: {}", asegurado.getCasAdscripcion(), e.getMessage(), e);
+                    nombreIpress = asegurado.getCasAdscripcion();
+                }
+            } else {
+                log.debug("⚠️ Asegurado {} no tiene casAdscripcion o está vacío", entity.getPkAsegurado());
+            }
+        } else {
+            log.warn("⚠️ No se encontró asegurado con pkAsegurado: {}", entity.getPkAsegurado());
+        }
+
+        // 2. FALLBACK: Si no se obtuvo IPRESS desde Asegurado, intentar desde AtencionClinica.idIpress
+        if (nombreIpress == null && entity.getIdIpress() != null) {
+            try {
+                var ipressOpt = ipressRepository.findById(entity.getIdIpress());
+                if (ipressOpt.isPresent()) {
+                    nombreIpress = ipressOpt.get().getDescIpress();
+                    log.info("✅ IPRESS obtenida desde AtencionClinica.idIpress {} (fallback): {}", entity.getIdIpress(), nombreIpress);
+                } else {
+                    log.warn("⚠️ IPRESS con id {} no encontrada en dim_ipress para atención {}", entity.getIdIpress(), entity.getIdAtencion());
+                }
+            } catch (Exception e) {
+                log.error("❌ Error al buscar IPRESS por idIpress {}: {}", entity.getIdIpress(), e.getMessage(), e);
+            }
+        }
+        
+        if (nombreIpress == null) {
+            log.warn("⚠️ No se pudo obtener IPRESS para atención {} (idIpress: {}, pkAsegurado: {})", 
+                entity.getIdAtencion(), entity.getIdIpress(), entity.getPkAsegurado());
         }
 
         return NursingWorklistDto.builder()
@@ -336,10 +420,26 @@ public class NursingService {
                 .diasTranscurridos(dias)
                 .colorSemaforo(color)
                 .tipoAtencion("Derivación Post-Consulta")
+                .nombreIpress(nombreIpress)
                 .build();
     }
 
     private NursingWorklistDto mapToPendienteDto(SolicitudCita entity) {
+        String nombreIpress = null;
+        // Intentar obtener IPRESS desde el asegurado si tiene DNI
+        if (entity.getDocPaciente() != null) {
+            try {
+                var aseguradoOpt = aseguradoRepository.findByDocPaciente(entity.getDocPaciente());
+                if (aseguradoOpt.isPresent() && aseguradoOpt.get().getCasAdscripcion() != null) {
+                    nombreIpress = ipressRepository.findByCodIpress(aseguradoOpt.get().getCasAdscripcion())
+                        .map(ip -> ip.getDescIpress())
+                        .orElse(aseguradoOpt.get().getCasAdscripcion());
+                }
+            } catch (Exception e) {
+                log.warn("No se pudo obtener IPRESS para cita con DNI: {}", entity.getDocPaciente());
+            }
+        }
+        
         return NursingWorklistDto.builder()
                 .idOrigen(entity.getIdSolicitud())
                 .tipoOrigen("CITA")
@@ -355,6 +455,7 @@ public class NursingService {
                 .diasTranscurridos(0L)
                 .colorSemaforo("VERDE") // Hoy
                 .tipoAtencion("Cita Programada")
+                .nombreIpress(nombreIpress)
                 .build();
     }
 

@@ -61,3 +61,5 @@ docker-data/
 
 backend/bin/
 *.class*.hprof
+*.hprof
+*.hprof.*

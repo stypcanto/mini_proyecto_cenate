@@ -3,15 +3,15 @@
 // ✅ Versión 2.0.0 (2026-01-04) - Implementación Worklist Unificada y Tarjetas
 // ========================================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
-  Users, Search, Calendar, Activity, Heart, AlertCircle,
-  ArrowLeft, RefreshCw, Clock, CheckCircle2, Stethoscope, Share2, ClipboardList, FileText
+  Users, Search, Calendar, Activity, Heart,
+  RefreshCw, Clock, CheckCircle2, Stethoscope, Share2, ClipboardList, FileText
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import apiClient from "../../services/apiClient"; // Usamos apiClient configurado
 import NursingAttendModal from "./components/NursingAttendModal";
+import PaginationControls from "../user/components/PaginationControls";
 
 // Colores para Semáforos SLA
 const SLA_COLORS = {
@@ -23,20 +23,19 @@ const SLA_COLORS = {
 };
 
 export default function MisPacientesEnfermeria() {
-  const navigate = useNavigate();
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("PENDIENTE"); // PENDIENTE | ATENDIDO
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize] = useState(20); // 20 registros por página
+
   // Modal de Atención
   const [selectedPatient, setSelectedPatient] = useState(null);
 
-  useEffect(() => {
-    cargarWorklist();
-  }, [activeTab]);
-
-  const cargarWorklist = async () => {
+  const cargarWorklist = useCallback(async () => {
     try {
       setLoading(true);
       // Convertir el estado a mayúsculas para que coincida con el backend
@@ -59,7 +58,11 @@ export default function MisPacientesEnfermeria() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
+
+  useEffect(() => {
+    cargarWorklist();
+  }, [cargarWorklist]);
 
   const handleAttend = (paciente) => {
     setSelectedPatient(paciente);
@@ -70,121 +73,264 @@ export default function MisPacientesEnfermeria() {
   };
 
   // Filtro local por buscador
-  const filteredPatients = pacientes.filter(p =>
-    p.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    p.pacienteDni?.includes(searchTerm)
-  );
+  const filteredPatients = useMemo(() => {
+    return pacientes.filter(p =>
+      p.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      p.pacienteDni?.includes(searchTerm)
+    );
+  }, [pacientes, searchTerm]);
+
+  // Paginación de datos filtrados
+  const paginatedPatients = useMemo(() => {
+    const startIndex = currentPage * pageSize;
+    const endIndex = startIndex + pageSize;
+    return filteredPatients.slice(startIndex, endIndex);
+  }, [filteredPatients, currentPage, pageSize]);
+
+  const totalPages = Math.ceil(filteredPatients.length / pageSize);
+
+  // Resetear página cuando cambia el filtro o la pestaña
+  useEffect(() => {
+    setCurrentPage(0);
+  }, [searchTerm, activeTab]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6 font-sans">
+    <div className="min-h-screen p-4 font-sans bg-gray-50">
 
-      {/* 1. Header & Stats */ }
-      <header className="max-w-7xl mx-auto mb-8">
-        <button
-          onClick={ () => navigate("/dashboard") }
-          className="flex items-center gap-2 text-gray-500 hover:text-gray-800 mb-6 transition-colors font-medium"
-        >
-          <ArrowLeft className="w-5 h-5" />
-          Volver al Dashboard
-        </button>
-
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-              <span className="p-2 bg-green-600 rounded-lg shadow-lg shadow-green-200">
-                <Activity className="w-8 h-8 text-white relative z-10" />
-              </span>
-              Gestión de Enfermería
-              <span className="px-3 py-1 bg-green-100 text-green-700 text-xs font-bold rounded-full border border-green-200 uppercase tracking-wide">
+      {/* 1. Header Profesional Optimizado */ }
+      <header className="max-w-full mx-auto mb-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-gradient-to-br from-[#0A5BA9] to-[#2563EB] rounded-lg shadow-sm">
+              <Activity className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900">
+                Gestión de Enfermería
+              </h1>
+              <span className="inline-flex items-center px-2 py-0.5 mt-0.5 text-[10px] font-bold tracking-wider text-[#0A5BA9] uppercase bg-blue-50 border border-blue-200 rounded-md">
                 CENACRON
               </span>
-            </h1>
-            <p className="text-gray-500 mt-2 text-lg">
-              Seguimiento y control de pacientes crónicos derivados.
-            </p>
+            </div>
           </div>
-
-          <div className="flex gap-3">
-            <button
-              onClick={ cargarWorklist }
-              className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 hover:border-gray-300 transition-all text-gray-600 shadow-sm"
-              title="Actualizar lista"
-            >
-              <RefreshCw className={ `w-5 h-5 ${loading ? "animate-spin text-green-600" : ""}` } />
-            </button>
-          </div>
+          <button
+            onClick={ cargarWorklist }
+            className="p-2 text-gray-600 transition-all duration-200 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 hover:shadow-md active:scale-95"
+            title="Actualizar lista"
+          >
+            <RefreshCw className={ `w-4 h-4 transition-transform ${loading ? "animate-spin text-[#0A5BA9]" : ""}` } />
+          </button>
         </div>
       </header>
 
-      {/* 2. Tabs & Filters */ }
-      <section className="max-w-7xl mx-auto mb-8">
-        <div className="bg-white rounded-2xl p-1.5 shadow-sm border border-gray-100 inline-flex">
-          <button
-            onClick={ () => setActiveTab("PENDIENTE") }
-            className={ `px-6 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === "PENDIENTE"
-              ? "bg-green-50 text-green-700 shadow-sm ring-1 ring-green-200"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }` }
-          >
-            <ClipboardList className="w-4 h-4" />
-            Por Atender
-            <span className={ `ml-2 px-2 py-0.5 rounded-full text-xs ${activeTab === "PENDIENTE" ? "bg-green-200 text-green-800" : "bg-gray-100 block"}` }>
-              { activeTab === "PENDIENTE" ? filteredPatients.length : "" }
-            </span>
-          </button>
-          <button
-            onClick={ () => setActiveTab("ATENDIDO") }
-            className={ `px-6 py-2.5 rounded-xl text-sm font-semibold transition-all flex items-center gap-2 ${activeTab === "ATENDIDO"
-              ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-200"
-              : "text-gray-500 hover:text-gray-700 hover:bg-gray-50"
-              }` }
-          >
-            <CheckCircle2 className="w-4 h-4" />
-            Atendidos (Histórico)
-          </button>
-        </div>
+      {/* 2. Tabs & Filters Profesionales */ }
+      <section className="max-w-full mx-auto mb-5">
+        <div className="flex items-center gap-4">
+          {/* Tabs con Mejor Tipografía */}
+          <div className="inline-flex p-1 bg-white border border-gray-200 rounded-lg shadow-sm">
+            <button
+              onClick={ () => setActiveTab("PENDIENTE") }
+              className={ `px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 flex items-center gap-2 tracking-tight ${activeTab === "PENDIENTE"
+                ? "bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white shadow-md"
+                : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                }` }
+            >
+              <ClipboardList className="w-4 h-4" />
+              <span>Por Atender</span>
+              { activeTab === "PENDIENTE" && (
+                <span className="ml-1 px-2 py-0.5 rounded-full text-[11px] bg-white/25 text-white font-bold backdrop-blur-sm">
+                  { filteredPatients.length }
+                </span>
+              ) }
+            </button>
+            <button
+              onClick={ () => setActiveTab("ATENDIDO") }
+              className={ `px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 flex items-center gap-2 tracking-tight ${activeTab === "ATENDIDO"
+                ? "bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white shadow-md"
+                : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+                }` }
+            >
+              <CheckCircle2 className="w-4 h-4" />
+              <span>Atendidos</span>
+            </button>
+          </div>
 
-        {/* Search Bar */ }
-        <div className="mt-6 relative max-w-2xl">
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-          <input
-            type="text"
-            placeholder="Buscar paciente por nombre o DNI..."
-            value={ searchTerm }
-            onChange={ (e) => setSearchTerm(e.target.value) }
-            className="w-full pl-12 pr-4 py-3.5 bg-white border border-gray-200 rounded-xl focus:ring-4 focus:ring-green-100 focus:border-green-500 transition-all shadow-sm text-gray-700 placeholder-gray-400"
-          />
+          {/* Search Bar Profesional */}
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 pointer-events-none left-3 top-1/2" />
+            <input
+              type="text"
+              placeholder="Buscar por nombre o DNI..."
+              value={ searchTerm }
+              onChange={ (e) => setSearchTerm(e.target.value) }
+              className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/20 focus:border-[#0A5BA9] transition-all duration-200 text-gray-700 placeholder-gray-400 shadow-sm hover:border-gray-400"
+            />
+          </div>
         </div>
       </section>
 
       {/* 3. Cards/Grid Layout */ }
-      <section className="max-w-7xl mx-auto pb-20">
+      <section className="max-w-full pb-4 mx-auto">
 
         { loading ? (
           <div className="flex flex-col items-center justify-center py-20">
             <Activity className="w-12 h-12 mx-auto mb-3 text-green-500 animate-pulse" />
-            <p className="text-gray-600 font-medium">Cargando pacientes...</p>
+            <p className="font-medium text-gray-600">Cargando pacientes...</p>
           </div>
         ) : filteredPatients.length === 0 ? (
-          <div className="bg-gray-50 border-2 border-gray-200 rounded-2xl p-12 text-center">
-            <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="p-12 text-center border-2 border-gray-200 bg-gray-50 rounded-2xl">
+            <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full">
               <ClipboardList className="w-10 h-10 text-gray-300" />
             </div>
-            <p className="font-semibold text-gray-700 mb-2 text-lg">No hay registros en esta vista</p>
+            <p className="mb-2 text-lg font-semibold text-gray-700">No hay registros en esta vista</p>
             <p className="text-sm text-gray-500">
               { activeTab === "PENDIENTE"
                 ? "No tienes pacientes pendientes asignados en este momento."
                 : "Aún no has atendido pacientes en este periodo." }
             </p>
           </div>
+        ) : activeTab === "PENDIENTE" ? (
+          // Tabla Profesional con Paginación
+          <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
+                  <tr>
+                    <th className="w-10 px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase">P</th>
+                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase min-w-[200px]">Paciente</th>
+                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase w-24">DNI</th>
+                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase w-16">Edad</th>
+                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase min-w-[200px]">IPRESS</th>
+                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase min-w-[280px]">Diagnóstico</th>
+                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase w-32">Fecha</th>
+                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase w-24">Estado</th>
+                    <th className="w-24 px-3 py-2.5 text-xs font-bold tracking-wide text-center text-white uppercase">Acción</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  { paginatedPatients.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} className="px-6 py-12 text-sm text-center text-gray-500">
+                        <div className="flex flex-col items-center gap-2">
+                          <Users className="w-8 h-8 text-gray-400" />
+                          <span>No se encontraron pacientes pendientes</span>
+                        </div>
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedPatients.map((paciente, idx) => (
+                      <tr
+                        key={ `${paciente.idOrigen}_${paciente.fechaAtencionEnfermeria || paciente.fechaBase}_${idx}` }
+                        className="transition-all duration-150 border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/30 group"
+                      >
+                        <td className="px-3 py-2">
+                          <div className="flex items-center justify-center">
+                            <div className={ `w-2.5 h-2.5 rounded-full transition-all duration-200 group-hover:ring-2 ${
+                              paciente.colorSemaforo === "VERDE" ? "bg-green-500 ring-green-200" :
+                              paciente.colorSemaforo === "AMARILLO" ? "bg-yellow-400 ring-yellow-200" :
+                              paciente.colorSemaforo === "ROJO" ? "bg-red-500 ring-red-200" : "bg-blue-500 ring-blue-200"
+                            }` } title={ `Prioridad: ${paciente.colorSemaforo}` } />
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="min-w-[200px]">
+                            <div className="text-sm font-semibold leading-tight tracking-tight text-gray-900 truncate">{ paciente.pacienteNombre }</div>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              { paciente.esCronico && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold tracking-tight text-purple-700 bg-purple-50 rounded border border-purple-200">
+                                  <Heart className="w-2.5 h-2.5" />
+                                  CRÓNICO
+                                </span>
+                              ) }
+                              { paciente.requiereTelemonitoreo && (
+                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold tracking-tight text-orange-700 bg-orange-50 rounded border border-orange-200">
+                                  <Share2 className="w-2.5 h-2.5" />
+                                  TELEMONITOREO
+                                </span>
+                              ) }
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <span className="inline-flex items-center px-2 py-0.5 font-mono text-xs font-semibold tracking-tight text-gray-700 border border-gray-200 rounded bg-gray-50">
+                            { paciente.pacienteDni }
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-xs font-medium tracking-tight text-gray-600 whitespace-nowrap">
+                          { paciente.pacienteEdad ? `${paciente.pacienteEdad} años` : "-" }
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="text-xs text-gray-700 min-w-[200px] truncate tracking-tight font-medium" title={ paciente.nombreIpress || "N/A" }>
+                            { paciente.nombreIpress || "-" }
+                          </div>
+                        </td>
+                        <td className="px-3 py-2">
+                          <div className="text-xs text-gray-700 min-w-[280px] max-w-[320px] truncate leading-relaxed tracking-tight" title={ paciente.diagnostico }>
+                            { paciente.diagnostico }
+                          </div>
+                        </td>
+                        <td className="px-3 py-2 text-xs font-medium tracking-tight text-gray-600 whitespace-nowrap">
+                          { paciente.fechaBase ? new Date(paciente.fechaBase).toLocaleString('es-PE', {
+                            day: '2-digit', month: 'short', year: '2-digit',
+                            hour: '2-digit', minute: '2-digit'
+                          }) : "-" }
+                        </td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          <span className={ `inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-tight shadow-sm transition-all duration-200 ${
+                            paciente.diasTranscurridos > 0 
+                              ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" 
+                              : paciente.diasTranscurridos === 0
+                              ? "bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100"
+                              : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
+                          }` }>
+                            <Clock className="w-3 h-3" />
+                            { paciente.diasTranscurridos > 0 ? (
+                              <span>Retraso: {paciente.diasTranscurridos}d</span>
+                            ) : paciente.diasTranscurridos === 0 ? (
+                              <span>Hoy</span>
+                            ) : (
+                              <span>Vence: {Math.abs(paciente.diasTranscurridos)}d</span>
+                            ) }
+                          </span>
+                        </td>
+                        <td className="px-3 py-2 text-center whitespace-nowrap">
+                          <button
+                            onClick={ () => handleAttend(paciente) }
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-white transition-all duration-200 rounded-md shadow-md bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 hover:shadow-lg active:scale-95 tracking-tight"
+                          >
+                            <Stethoscope className="w-3 h-3" />
+                            <span>Atender</span>
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  ) }
+                </tbody>
+              </table>
+            </div>
+            
+            {/* Paginación */}
+            { filteredPatients.length > 0 && (
+              <PaginationControls
+                currentPage={currentPage}
+                totalPages={totalPages}
+                totalElements={filteredPatients.length}
+                pageSize={pageSize}
+                onPageChange={setCurrentPage}
+                loading={loading}
+                className="px-4 py-3 border-t border-gray-200 bg-gray-50"
+              />
+            ) }
+          </div>
         ) : (
+          // Tarjetas para atendidos (histórico)
           <div className="grid grid-cols-1 gap-4">
             { filteredPatients.map((paciente, idx) => (
               <PatientCard
-                key={ paciente.idOrigen + "_" + idx }
+                key={ `${paciente.idOrigen}_${paciente.fechaAtencionEnfermeria || paciente.fechaBase}_${idx}` }
                 paciente={ paciente }
                 onAttend={ () => handleAttend(paciente) }
-                isPendiente={ activeTab === "PENDIENTE" }
+                isPendiente={ false }
               />
             )) }
           </div>
@@ -210,12 +356,12 @@ function PatientCard({ paciente, onAttend, isPendiente }) {
   const slaColorClass = SLA_COLORS[paciente.colorSemaforo] || SLA_COLORS.NEGRO;
 
   return (
-    <div className="bg-white border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg transition-all duration-200">
+    <div className="transition-all duration-200 bg-white border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg">
       <div className="p-5">
 
         {/* Header: Paciente + Semáforo */ }
         <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start gap-3 flex-1">
+          <div className="flex items-start flex-1 gap-3">
             {/* Semáforo Circular */ }
             <div className={ `w-4 h-4 rounded-full mt-1 flex-shrink-0 ${
               paciente.colorSemaforo === "VERDE" ? "bg-green-500 animate-pulse ring-4 ring-green-100" :
@@ -225,7 +371,7 @@ function PatientCard({ paciente, onAttend, isPendiente }) {
 
             {/* Info del Paciente */ }
             <div className="flex-1">
-              <h3 className="text-lg font-bold text-gray-900 mb-1">
+              <h3 className="mb-1 text-lg font-bold text-gray-900">
                 { paciente.pacienteNombre }
               </h3>
               <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
@@ -260,12 +406,22 @@ function PatientCard({ paciente, onAttend, isPendiente }) {
           </div>
 
           {/* Badge SLA/Estado */ }
-          <div className="ml-4 flex-shrink-0">
-            <span className={ `inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 shadow-sm ${slaColorClass}` }>
+          <div className="flex-shrink-0 ml-4">
+            <span className={ `inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 shadow-sm ${
+              isPendiente && paciente.diasTranscurridos > 0 
+                ? "bg-red-100 text-red-700 border-red-200" 
+                : slaColorClass
+            }` }>
               { isPendiente ? (
                 <>
                   <Clock className="w-4 h-4" />
-                  { paciente.diasTranscurridos } días
+                  { paciente.diasTranscurridos > 0 ? (
+                    <span className="font-bold text-red-700">Retraso: {paciente.diasTranscurridos} días</span>
+                  ) : paciente.diasTranscurridos === 0 ? (
+                    <span className="font-semibold text-yellow-700">Vence hoy</span>
+                  ) : (
+                    <span className="text-green-700">Vence en: {Math.abs(paciente.diasTranscurridos)} días</span>
+                  ) }
                 </>
               ) : (
                 <>
@@ -278,16 +434,16 @@ function PatientCard({ paciente, onAttend, isPendiente }) {
         </div>
 
         {/* Divider */ }
-        <div className="border-t border-gray-100 my-4"></div>
+        <div className="my-4 border-t border-gray-100"></div>
 
         {/* Body: Información Clínica */ }
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+        <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
 
           {/* Diagnóstico */ }
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+          <div className="p-3 border border-blue-200 rounded-lg bg-blue-50">
             <div className="flex items-center gap-2 mb-1.5">
               <Stethoscope className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-bold text-blue-900 uppercase tracking-wide">Diagnóstico</span>
+              <span className="text-xs font-bold tracking-wide text-blue-900 uppercase">Diagnóstico</span>
             </div>
             <p className="text-sm font-medium text-blue-800 line-clamp-2" title={ paciente.diagnostico }>
               { paciente.diagnostico }
@@ -295,10 +451,10 @@ function PatientCard({ paciente, onAttend, isPendiente }) {
           </div>
 
           {/* Origen + Fecha */ }
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
             <div className="flex items-center gap-2 mb-1.5">
               <Activity className="w-4 h-4 text-gray-600" />
-              <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">
+              <span className="text-xs font-bold tracking-wide text-gray-900 uppercase">
                 { isPendiente ? "Derivación" : "Atención" }
               </span>
             </div>
@@ -308,8 +464,9 @@ function PatientCard({ paciente, onAttend, isPendiente }) {
               </p>
               <p className="text-xs text-gray-600 flex items-center gap-1.5">
                 <Calendar className="w-3.5 h-3.5" />
-                { paciente.fechaBase ? new Date(paciente.fechaBase).toLocaleDateString('es-PE', {
-                  day: '2-digit', month: 'long', year: 'numeric'
+                { paciente.fechaBase ? new Date(paciente.fechaBase).toLocaleString('es-PE', {
+                  day: '2-digit', month: 'long', year: 'numeric',
+                  hour: '2-digit', minute: '2-digit'
                 }) : "N/A" }
               </p>
             </div>

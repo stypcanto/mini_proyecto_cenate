@@ -39,4 +39,7 @@ public class NursingWorklistDto {
     // Datos si ya fue atendido
     private LocalDateTime fechaAtencionEnfermeria;
     private String usuarioEnfermera;
+    
+    // IPRESS del paciente
+    private String nombreIpress;
 }

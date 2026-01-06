@@ -4,6 +4,172 @@
 
 ---
 
+## v1.17.2 (2026-01-04) - Corrección IPRESS y Mejoras UI/UX Módulo Enfermería
+
+### 🎯 Corrección: Priorización de IPRESS desde Asegurado
+
+**Descripción**: Corrección crítica en la obtención de IPRESS para mostrar la IPRESS real del paciente (ej: "CAP II MACACONA") en lugar de la IPRESS de la atención (ej: "CENTRO NACIONAL DE TELEMEDICINA").
+
+---
+
+#### 📋 Resumen Ejecutivo
+
+**Estado**: ✅ **COMPLETADO**
+
+**Componentes**:
+- Backend: `backend/src/main/java/com/styp/cenate/service/enfermeria/NursingService.java`
+- Corrección en métodos: `mapToPendienteDto(AtencionClinica)`, `mapToAtendidoDto(AtencionEnfermeria)`
+
+**Problema Identificado**:
+- Se priorizaba `AtencionClinica.idIpress` que apunta a "CENTRO NACIONAL DE TELEMEDICINA"
+- Se ignoraba `Asegurado.casAdscripcion` que contiene la IPRESS real del paciente
+
+**Solución**:
+1. **PRIORIDAD**: Obtener IPRESS desde `Asegurado.casAdscripcion` (IPRESS real del paciente)
+2. **FALLBACK**: Si no está disponible, usar `AtencionClinica.idIpress`
+
+---
+
+#### ✨ Cambios Implementados
+
+##### 1. Corrección de Priorización de IPRESS ✅
+
+**Archivo**: `backend/src/main/java/com/styp/cenate/service/enfermeria/NursingService.java`
+
+**Métodos Corregidos**:
+- `mapToPendienteDto(AtencionClinica entity)` - Para derivaciones pendientes
+- `mapToAtendidoDto(AtencionEnfermeria entity)` - Para atenciones completadas
+
+**Lógica Anterior** (Incorrecta):
+```java
+// 1. PRIORIDAD: Intentar obtener IPRESS desde AtencionClinica.idIpress
+if (entity.getIdIpress() != null) {
+    nombreIpress = ipressRepository.findById(entity.getIdIpress())...
+}
+// 2. FALLBACK: Si no se obtuvo, intentar desde Asegurado.casAdscripcion
+if (nombreIpress == null && asegurado.getCasAdscripcion() != null) {
+    nombreIpress = ipressRepository.findByCodIpress(asegurado.getCasAdscripcion())...
+}
+```
+
+**Lógica Nueva** (Correcta):
+```java
+// 1. PRIORIDAD: Obtener IPRESS desde Asegurado.casAdscripcion (IPRESS real del paciente)
+if (asegurado.getCasAdscripcion() != null && !asegurado.getCasAdscripcion().trim().isEmpty()) {
+    String codIpress = asegurado.getCasAdscripcion().trim();
+    var ipressOpt = ipressRepository.findByCodIpress(codIpress);
+    if (ipressOpt.isPresent()) {
+        nombreIpress = ipressOpt.get().getDescIpress();
+        log.info("✅ IPRESS obtenida desde Asegurado.casAdscripcion {}: {}", codIpress, nombreIpress);
+    }
+}
+// 2. FALLBACK: Si no se obtuvo IPRESS desde Asegurado, intentar desde AtencionClinica.idIpress
+if (nombreIpress == null && entity.getIdIpress() != null) {
+    nombreIpress = ipressRepository.findById(entity.getIdIpress())...
+}
+```
+
+**Resultado**: Ahora se muestra correctamente "CAP II MACACONA" en lugar de "CENTRO NACIONAL DE TELEMEDICINA".
+
+---
+
+### 🎨 Mejora: Tabla Profesional con Paginación en Módulo Enfermería
+
+**Descripción**: Implementación de paginación de 20 registros por página y mejoras significativas en el diseño UI/UX de la tabla de pacientes pendientes.
+
+---
+
+#### 📋 Resumen Ejecutivo
+
+**Estado**: ✅ **COMPLETADO**
+
+**Componentes**:
+- Frontend: `frontend/src/pages/enfermeria/MisPacientesEnfermeria.jsx`
+- Componente: `frontend/src/pages/user/components/PaginationControls.jsx`
+
+**Características**:
+- Paginación de 20 registros por página
+- Diseño profesional y compacto
+- Optimización de espacio y tipografía
+- Hover effects mejorados
+- Estado vacío con mensaje informativo
+
+---
+
+#### ✨ Cambios Implementados
+
+##### 1. Paginación de 20 Registros por Página ✅
+
+**Archivo**: `frontend/src/pages/enfermeria/MisPacientesEnfermeria.jsx`
+
+**Implementación**:
+- Estado: `currentPage`, `pageSize = 20`
+- `useMemo` para `filteredPatients` y `paginatedPatients`
+- Reset automático de página al cambiar filtros o pestañas
+- Integración de componente `PaginationControls`
+
+**Código clave**:
+```javascript
+const [currentPage, setCurrentPage] = useState(0);
+const [pageSize] = useState(20); // 20 registros por página
+
+const paginatedPatients = useMemo(() => {
+  const startIndex = currentPage * pageSize;
+  const endIndex = startIndex + pageSize;
+  return filteredPatients.slice(startIndex, endIndex);
+}, [filteredPatients, currentPage, pageSize]);
+
+const totalPages = Math.ceil(filteredPatients.length / pageSize);
+```
+
+##### 2. Mejoras de Diseño UI/UX ✅
+
+**Optimizaciones**:
+- **Padding reducido**: `py-2` en lugar de `py-2.5` en celdas
+- **Tipografía optimizada**: `text-xs` en celdas de datos
+- **Anchos de columna ajustados**: Mejor aprovechamiento del espacio
+- **Hover effects**: Gradiente sutil `hover:from-blue-50/50 hover:to-indigo-50/30`
+- **Bordes y sombras**: Ajustados para un look más profesional
+- **Estado vacío**: Mensaje informativo cuando no hay pacientes
+
+**Estructura**:
+- Tabla dentro de contenedor con scroll horizontal si es necesario
+- Paginación en la parte inferior con fondo gris claro
+- Diseño responsive
+
+##### 3. Eliminación de Botón Dashboard ✅
+
+**Archivo**: `frontend/src/pages/enfermeria/MisPacientesEnfermeria.jsx`
+
+**Cambios**:
+- Eliminado botón "Dashboard" y separador vertical del header
+- Header más compacto y limpio
+- Eliminados imports no utilizados: `ArrowLeft`, `useNavigate`
+- Espacio recuperado: ~120px de ancho
+
+---
+
+#### 🔧 Archivos Modificados
+
+**Backend**:
+- `backend/src/main/java/com/styp/cenate/service/enfermeria/NursingService.java`
+
+**Frontend**:
+- `frontend/src/pages/enfermeria/MisPacientesEnfermeria.jsx`
+
+---
+
+#### ✅ Testing
+
+**Verificado**:
+- ✅ IPRESS se muestra correctamente desde `Asegurado.casAdscripcion`
+- ✅ Paginación funciona correctamente (20 registros por página)
+- ✅ Diseño responsive y profesional
+- ✅ Estado vacío muestra mensaje apropiado
+- ✅ Hover effects funcionan correctamente
+
+---
+
 ## v1.17.1 (2026-01-04) - Mejora de Navegación de Pestañas con Cálculo Dinámico de Espacio
 
 ### 🎯 Mejora: Navegación Responsive de Pestañas
