@@ -7,21 +7,25 @@ import com.styp.cenate.model.TipoProcedimiento;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository para gestión de Tipos de Procedimiento (CPMS).
+ * Tabla: dim_tip_proced
+ */
 @Repository
 public interface TipoProcedimientoRepository extends JpaRepository<TipoProcedimiento, Long> {
 
     /**
-     * 🔹 Filtra por estado ('A' o 'I')
+     * Filtra por estado ('A' o 'I')
      */
-    List<TipoProcedimiento> findByEstadoIgnoreCase(String estado);
+    List<TipoProcedimiento> findByStatTipProcedIgnoreCase(String estado);
 
     /**
-     * 🔹 Busca por código único (campo: codigo)
+     * Busca por código
      */
-    Optional<TipoProcedimiento> findByCodigoIgnoreCase(String codigo);
+    Optional<TipoProcedimiento> findByCodTipProcedIgnoreCase(String codigo);
 
     /**
-     * 🔹 Verifica existencia por descripción (campo: descripcion)
+     * Verifica existencia por descripción
      */
-    boolean existsByDescripcionIgnoreCase(String descripcion);
+    boolean existsByDescTipProcedIgnoreCase(String descripcion);
 }

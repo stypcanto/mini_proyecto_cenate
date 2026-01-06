@@ -13,15 +13,15 @@ public interface ProcedimientoRepository extends JpaRepository<Procedimiento, Lo
     /**
      * 🔹 Busca procedimientos por estado (ej: "A" para activos)
      */
-    List<Procedimiento> findByEstadoIgnoreCase(String estado);
+    List<Procedimiento> findByStatProcedIgnoreCase(String statProced);
 
     /**
-     * 🔹 Busca por código único (campo: codigo)
+     * 🔹 Busca por código único (campo: codProced)
      */
-    Optional<Procedimiento> findByCodigoIgnoreCase(String codigo);
+    Optional<Procedimiento> findByCodProcedIgnoreCase(String codProced);
 
     /**
-     * 🔹 Verifica existencia por descripción (campo: descripcion)
+     * 🔹 Verifica existencia por descripción (campo: descProced)
      */
-    boolean existsByDescripcionIgnoreCase(String descripcion);
+    boolean existsByDescProcedIgnoreCase(String descProced);
 }

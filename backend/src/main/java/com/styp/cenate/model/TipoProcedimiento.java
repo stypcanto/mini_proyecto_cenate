@@ -6,33 +6,36 @@ import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
+/**
+ * Entidad para la tabla dim_tip_proced (Tipos de Procedimiento - CPMS)
+ */
 @Entity
-@Table(name = "dim_tipo_procedimiento")
-@Data @NoArgsConstructor @AllArgsConstructor @Builder
+@Table(name = "dim_tip_proced", schema = "public")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class TipoProcedimiento {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id_tipo_procedimiento")
-    private Long id;
+    @Column(name = "id_tip_proced")
+    private Long idTipProced;
 
-    @Column(name = "cod_tipo_procedimiento", nullable = false)
-    private String codigo;
+    @Column(name = "cod_tip_proced", nullable = false, unique = true)
+    private String codTipProced;
 
-    @Column(name = "desc_tipo_procedimiento", nullable = false)
-    private String descripcion;
+    @Column(name = "desc_tip_proced", nullable = false)
+    private String descTipProced;
 
-    @Column(name = "abr_tipo_procedimiento")
-    private String abreviatura;
-
-    @Column(name = "stat_tipo_procedimiento", nullable = false)
-    private String estado;
+    @Column(name = "stat_tip_proced", nullable = false)
+    private String statTipProced;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private LocalDateTime creado;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private LocalDateTime actualizado;
+    private LocalDateTime updatedAt;
 }

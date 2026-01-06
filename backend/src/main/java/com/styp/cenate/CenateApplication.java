@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 import jakarta.annotation.PostConstruct;
 import java.util.TimeZone;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.styp.cenate")
 @EnableAsync
 public class CenateApplication {
 

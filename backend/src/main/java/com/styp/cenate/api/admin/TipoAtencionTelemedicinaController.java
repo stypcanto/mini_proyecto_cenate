@@ -35,7 +35,7 @@ public class TipoAtencionTelemedicinaController {
      * GET /api/admin/tipos-atencion-telemedicina
      */
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<List<TipoAtencionTelemedicinaDTO>> obtenerTodos() {
         log.info("📋 GET /api/admin/tipos-atencion-telemedicina - Obtener todos");
         List<TipoAtencionTelemedicinaDTO> tipos = service.obtenerTodos();
@@ -69,7 +69,7 @@ public class TipoAtencionTelemedicinaController {
      * GET /api/admin/tipos-atencion-telemedicina/{id}
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<TipoAtencionTelemedicinaDTO> obtenerPorId(@PathVariable Long id) {
         log.info("🔍 GET /api/admin/tipos-atencion-telemedicina/{}", id);
         TipoAtencionTelemedicinaDTO tipo = service.obtenerPorId(id);
@@ -81,7 +81,7 @@ public class TipoAtencionTelemedicinaController {
      * POST /api/admin/tipos-atencion-telemedicina
      */
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<TipoAtencionTelemedicinaDTO> crear(
             @Valid @RequestBody TipoAtencionTelemedicinaDTO dto) {
         log.info("➕ POST /api/admin/tipos-atencion-telemedicina - Crear: {}", dto.getDescTipoAtencion());
@@ -94,7 +94,7 @@ public class TipoAtencionTelemedicinaController {
      * PUT /api/admin/tipos-atencion-telemedicina/{id}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<TipoAtencionTelemedicinaDTO> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody TipoAtencionTelemedicinaDTO dto) {
@@ -108,7 +108,7 @@ public class TipoAtencionTelemedicinaController {
      * DELETE /api/admin/tipos-atencion-telemedicina/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<Map<String, String>> eliminar(@PathVariable Long id) {
         log.info("🗑️ DELETE /api/admin/tipos-atencion-telemedicina/{}", id);
         service.eliminar(id);
@@ -120,7 +120,7 @@ public class TipoAtencionTelemedicinaController {
      * PATCH /api/admin/tipos-atencion-telemedicina/{id}/activar
      */
     @PatchMapping("/{id}/activar")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<TipoAtencionTelemedicinaDTO> activar(@PathVariable Long id) {
         log.info("✔️ PATCH /api/admin/tipos-atencion-telemedicina/{}/activar", id);
         TipoAtencionTelemedicinaDTO activated = service.activar(id);
@@ -132,7 +132,7 @@ public class TipoAtencionTelemedicinaController {
      * PATCH /api/admin/tipos-atencion-telemedicina/{id}/inactivar
      */
     @PatchMapping("/{id}/inactivar")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<TipoAtencionTelemedicinaDTO> inactivar(@PathVariable Long id) {
         log.info("❌ PATCH /api/admin/tipos-atencion-telemedicina/{}/inactivar", id);
         TipoAtencionTelemedicinaDTO inactivated = service.inactivar(id);

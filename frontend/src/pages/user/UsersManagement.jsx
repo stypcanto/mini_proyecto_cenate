@@ -20,6 +20,8 @@ import RolesCRUD from '../admin/components/RolesCRUD';
 import TipoProfesionalCRUD from '../admin/components/TipoProfesionalCRUD';
 import EstrategiasInstitucionales from '../admin/catalogs/EstrategiasInstitucionales';
 import TiposAtencionTelemedicina from '../admin/catalogs/TiposAtencionTelemedicina';
+import CPMS from '../admin/catalogs/CPMS';
+import Procedimientos from '../admin/catalogs/Procedimientos';
 import { areaService } from '../../services/areaService';
 import { regimenService } from '../../services/regimenService';
 
@@ -32,19 +34,19 @@ const getTipoPersonal = (user) => {
   // EXTERNO = trabaja en cualquier otro IPRESS
   const idIpress = user.id_ipress || user.idIpress;
   const nombreIpress = user.nombre_ipress || '';
-  
+
   if (idIpress === 2 || nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA')) {
     return 'INTERNO';
   } else if (idIpress && idIpress !== 2) {
     return 'EXTERNO';
   }
-  
+
   // Fallback: revisar el campo tipo_personal si existe
   return String(
-    user.descOrigen || 
-    user.desc_origen || 
-    user.tipo_personal || 
-    user.tipoPersonal || 
+    user.descOrigen ||
+    user.desc_origen ||
+    user.tipo_personal ||
+    user.tipoPersonal ||
     ''
   ).toUpperCase().trim();
 };
@@ -98,7 +100,7 @@ const UsersManagement = () => {
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [userToDelete, setUserToDelete] = useState(null);
-  
+
   // 🆕 Estado para selección múltiple
   const [selectedUsers, setSelectedUsers] = useState([]);
   const [roles, setRoles] = useState([]);
@@ -278,11 +280,11 @@ const UsersManagement = () => {
         const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
 
         return nombreCompleto.includes(searchLower) ||
-               username.includes(searchLower) ||
-               numeroDocumento.includes(searchLower) ||
-               nombreIpress.includes(searchLower) ||
-               emailPersonal.includes(searchLower) ||
-               emailCorporativo.includes(searchLower);
+          username.includes(searchLower) ||
+          numeroDocumento.includes(searchLower) ||
+          nombreIpress.includes(searchLower) ||
+          emailPersonal.includes(searchLower) ||
+          emailCorporativo.includes(searchLower);
       });
     }
 
@@ -347,11 +349,11 @@ const UsersManagement = () => {
         const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
 
         return nombreCompleto.includes(searchLower) ||
-               username.includes(searchLower) ||
-               numeroDocumento.includes(searchLower) ||
-               nombreIpress.includes(searchLower) ||
-               emailPersonal.includes(searchLower) ||
-               emailCorporativo.includes(searchLower);
+          username.includes(searchLower) ||
+          numeroDocumento.includes(searchLower) ||
+          nombreIpress.includes(searchLower) ||
+          emailPersonal.includes(searchLower) ||
+          emailCorporativo.includes(searchLower);
       });
     }
 
@@ -444,11 +446,11 @@ const UsersManagement = () => {
         const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
 
         return nombreCompleto.includes(searchLower) ||
-               username.includes(searchLower) ||
-               numeroDocumento.includes(searchLower) ||
-               nombreIpress.includes(searchLower) ||
-               emailPersonal.includes(searchLower) ||
-               emailCorporativo.includes(searchLower);
+          username.includes(searchLower) ||
+          numeroDocumento.includes(searchLower) ||
+          nombreIpress.includes(searchLower) ||
+          emailPersonal.includes(searchLower) ||
+          emailCorporativo.includes(searchLower);
       });
     }
 
@@ -542,11 +544,11 @@ const UsersManagement = () => {
         const emailCorporativo = (user.correo_corporativo || user.correo_institucional || user.correoCorporativo || user.correoInstitucional || '').toLowerCase();
 
         return nombreCompleto.includes(searchLower) ||
-               username.includes(searchLower) ||
-               numeroDocumento.includes(searchLower) ||
-               nombreIpress.includes(searchLower) ||
-               emailPersonal.includes(searchLower) ||
-               emailCorporativo.includes(searchLower);
+          username.includes(searchLower) ||
+          numeroDocumento.includes(searchLower) ||
+          nombreIpress.includes(searchLower) ||
+          emailPersonal.includes(searchLower) ||
+          emailCorporativo.includes(searchLower);
       });
     }
 
@@ -584,7 +586,7 @@ const UsersManagement = () => {
     // 🔍 Filtro por Mes de Cumpleaños
     if (filters.mesCumpleanos && filters.mesCumpleanos !== '') {
       const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
       const mesIndex = meses.indexOf(filters.mesCumpleanos);
 
       if (mesIndex !== -1) {
@@ -727,11 +729,11 @@ const UsersManagement = () => {
         const searchLowerCase = searchLower.toLowerCase();
 
         return nombreCompleto.includes(searchLowerCase) ||
-               username.includes(searchLower) || // DNI: búsqueda exacta
-               numeroDocumento.includes(searchLower) || // DNI alternativo: búsqueda exacta
-               nombreIpress.includes(searchLowerCase) ||
-               emailPersonal.includes(searchLowerCase) ||
-               emailCorporativo.includes(searchLowerCase);
+          username.includes(searchLower) || // DNI: búsqueda exacta
+          numeroDocumento.includes(searchLower) || // DNI alternativo: búsqueda exacta
+          nombreIpress.includes(searchLowerCase) ||
+          emailPersonal.includes(searchLowerCase) ||
+          emailCorporativo.includes(searchLowerCase);
       });
     }
 
@@ -748,7 +750,7 @@ const UsersManagement = () => {
       filtered = filtered.filter(user => {
         const idIpress = user.id_ipress || user.idIpress;
         const nombreIpress = (user.nombre_ipress || user.descIpress || '').toUpperCase();
-        
+
         if (filters.institucion === 'Interno') {
           return idIpress === 2 || nombreIpress.includes('CENTRO NACIONAL DE TELEMEDICINA');
         } else if (filters.institucion === 'Externo') {
@@ -769,7 +771,7 @@ const UsersManagement = () => {
     // 🔍 Filtro por Mes de Cumpleaños
     if (filters.mesCumpleanos && filters.mesCumpleanos !== '') {
       const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-                     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
       const mesIndex = meses.indexOf(filters.mesCumpleanos);
 
       if (mesIndex !== -1) {
@@ -951,19 +953,19 @@ const UsersManagement = () => {
   // ============================================================
   const paginatedUsers = useMemo(() => {
     const hasActiveFilters = debouncedSearchTerm ||
-                             (filters.rol && filters.rol !== '') ||
-                             (filters.institucion && filters.institucion !== '') ||
-                             (filters.estado && filters.estado !== '') ||
-                             (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-                             (filters.area && filters.area !== '') ||
-                             (filters.red && filters.red !== '') ||
-                             (filters.ipress && filters.ipress !== '') ||
-                             (filters.regimen && filters.regimen !== '') ||
-                             (filters.profesion && filters.profesion !== '') ||
-                             (filters.especialidad && filters.especialidad !== '') ||
-                             (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
-                             (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
-    
+      (filters.rol && filters.rol !== '') ||
+      (filters.institucion && filters.institucion !== '') ||
+      (filters.estado && filters.estado !== '') ||
+      (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
+      (filters.area && filters.area !== '') ||
+      (filters.red && filters.red !== '') ||
+      (filters.ipress && filters.ipress !== '') ||
+      (filters.regimen && filters.regimen !== '') ||
+      (filters.profesion && filters.profesion !== '') ||
+      (filters.especialidad && filters.especialidad !== '') ||
+      (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
+      (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
+
     // Si hay filtros activos, paginar localmente sobre los resultados filtrados
     // Si no hay filtros, usar todos los usuarios (ya vienen paginados del servidor)
     if (hasActiveFilters) {
@@ -971,7 +973,7 @@ const UsersManagement = () => {
       const endIndex = startIndex + pageSize;
       return filteredUsers.slice(startIndex, endIndex);
     }
-    
+
     // Sin filtros, devolver todos los usuarios (ya están paginados del servidor)
     return filteredUsers;
   }, [filteredUsers, currentPage, pageSize, debouncedSearchTerm, filters]);
@@ -983,26 +985,26 @@ const UsersManagement = () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // 🔍 Usar valores actuales de los filtros desde las refs
       const currentFilters = filtersRef.current;
       const currentSearchTerm = searchTermRef.current;
-      
+
       // 🔍 Si hay filtros activos, cargar TODOS los usuarios para buscar en toda la base de datos
       const hasActiveFilters = currentSearchTerm ||
-                               (currentFilters.rol && currentFilters.rol !== '') ||
-                               (currentFilters.institucion && currentFilters.institucion !== '') ||
-                               (currentFilters.estado && currentFilters.estado !== '') ||
-                               (currentFilters.mesCumpleanos && currentFilters.mesCumpleanos !== '') ||
-                               (currentFilters.area && currentFilters.area !== '') ||
-                               (currentFilters.red && currentFilters.red !== '') ||
-                               (currentFilters.ipress && currentFilters.ipress !== '') ||
-                               (currentFilters.regimen && currentFilters.regimen !== '') ||
-                               (currentFilters.profesion && currentFilters.profesion !== '') ||
-                               (currentFilters.especialidad && currentFilters.especialidad !== '') ||
-                               (currentFilters.fechaRegistroDesde && currentFilters.fechaRegistroDesde !== '') ||
-                               (currentFilters.fechaRegistroHasta && currentFilters.fechaRegistroHasta !== '');
-      
+        (currentFilters.rol && currentFilters.rol !== '') ||
+        (currentFilters.institucion && currentFilters.institucion !== '') ||
+        (currentFilters.estado && currentFilters.estado !== '') ||
+        (currentFilters.mesCumpleanos && currentFilters.mesCumpleanos !== '') ||
+        (currentFilters.area && currentFilters.area !== '') ||
+        (currentFilters.red && currentFilters.red !== '') ||
+        (currentFilters.ipress && currentFilters.ipress !== '') ||
+        (currentFilters.regimen && currentFilters.regimen !== '') ||
+        (currentFilters.profesion && currentFilters.profesion !== '') ||
+        (currentFilters.especialidad && currentFilters.especialidad !== '') ||
+        (currentFilters.fechaRegistroDesde && currentFilters.fechaRegistroDesde !== '') ||
+        (currentFilters.fechaRegistroHasta && currentFilters.fechaRegistroHasta !== '');
+
       // Si hay filtros, cargar más usuarios para buscar en toda la base de datos
       // Si es búsqueda por DNI (solo números), cargar más registros (2000)
       // Si son otros filtros, cargar 1000
@@ -1010,9 +1012,9 @@ const UsersManagement = () => {
       const isDNISearch = currentSearchTerm && /^\d+$/.test(currentSearchTerm.trim());
       const sizeToLoad = isDNISearch ? 2000 : (hasActiveFilters ? 1000 : pageSize);
       const pageToLoad = hasActiveFilters ? 0 : currentPage;
-      
+
       console.log('🔄 Cargando usuarios - Página:', pageToLoad, 'Tamaño:', sizeToLoad, 'Filtros activos:', hasActiveFilters, 'Forzar recarga:', forceReload);
-      
+
       // 🚀 PAGINACIÓN: Construir URL con parámetros de paginación
       const params = new URLSearchParams({
         page: pageToLoad.toString(),
@@ -1020,16 +1022,16 @@ const UsersManagement = () => {
         sortBy: sortBy,
         direction: sortDirection
       });
-      
+
       // 🚀 PAGINACIÓN: Usar endpoint con paginación para mejor rendimiento
       const [usersResponse, ipressResponse] = await Promise.all([
         api.get(`/usuarios/all-personal?${params.toString()}`),
         api.get('/ipress')
       ]);
-      
+
       console.log('📥 Respuesta del servidor (usuarios):', usersResponse);
       console.log('📥 Respuesta del servidor (ipress):', ipressResponse);
-      
+
       // 🔍 DEBUG: Verificar estructura de la respuesta
       if (!usersResponse) {
         console.error('❌ La respuesta de usuarios está vacía o es null');
@@ -1038,12 +1040,12 @@ const UsersManagement = () => {
         setTotalPages(0);
         return;
       }
-      
+
       // Extraer datos paginados - puede venir como objeto con content o como array directo
       let usersData = [];
       let total = 0;
       let totalPagesCount = 0;
-      
+
       if (Array.isArray(usersResponse)) {
         // Si la respuesta es un array directo (formato antiguo)
         console.warn('⚠️ La respuesta es un array, no un objeto paginado. Usando formato antiguo.');
@@ -1064,16 +1066,16 @@ const UsersManagement = () => {
         setTotalPages(0);
         return;
       }
-      
+
       console.log('✅ Usuarios extraídos:', usersData.length, 'de', total, 'total (solicitados:', sizeToLoad, ', filtros activos:', hasActiveFilters, ')');
-      
+
       // Si no hay filtros activos, actualizar totales del servidor
       // Si hay filtros, los totales se calcularán después de filtrar
       if (!hasActiveFilters) {
         setTotalElements(total);
         setTotalPages(totalPagesCount);
       }
-      
+
       // 🚀 OPTIMIZACIÓN: Crear Map de IPRESS para búsqueda O(1) en lugar de O(n)
       const ipressMap = new Map();
       if (Array.isArray(ipressResponse)) {
@@ -1088,7 +1090,7 @@ const UsersManagement = () => {
       const usersWithIpress = usersData.map(user => {
         // Intentar con ambos nombres de campo posibles
         const ipressId = user.idIpress || user.id_ipress;
-        
+
         if (ipressId && ipressMap.has(ipressId)) {
           const ipress = ipressMap.get(ipressId);
           return {
@@ -1099,15 +1101,15 @@ const UsersManagement = () => {
         }
         return user;
       });
-      
+
       // 🚀 Si hay filtros activos, guardar todos los usuarios cargados (se filtrarán después)
       // Si no hay filtros, limitar a pageSize
       const finalUsers = hasActiveFilters ? usersWithIpress : usersWithIpress.slice(0, pageSize);
-      
+
       console.log('✅ Usuarios procesados:', finalUsers.length, '(esperados:', hasActiveFilters ? 'todos para filtrar' : pageSize, ')');
-      
+
       setUsers(finalUsers);
-      
+
       // Si hay filtros activos, los totales se calcularán después de filtrar
       // Si no hay filtros, usar los totales del servidor
       if (!hasActiveFilters) {
@@ -1232,18 +1234,18 @@ const UsersManagement = () => {
   // 🚀 Cargar todos los usuarios cuando se activan filtros por primera vez
   useEffect(() => {
     const hasActiveFilters = debouncedSearchTerm ||
-                             (filters.rol && filters.rol !== '') ||
-                             (filters.institucion && filters.institucion !== '') ||
-                             (filters.estado && filters.estado !== '') ||
-                             (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-                             (filters.area && filters.area !== '') ||
-                             (filters.red && filters.red !== '') ||
-                             (filters.ipress && filters.ipress !== '') ||
-                             (filters.regimen && filters.regimen !== '') ||
-                             (filters.profesion && filters.profesion !== '') ||
-                             (filters.especialidad && filters.especialidad !== '') ||
-                             (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
-                             (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
+      (filters.rol && filters.rol !== '') ||
+      (filters.institucion && filters.institucion !== '') ||
+      (filters.estado && filters.estado !== '') ||
+      (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
+      (filters.area && filters.area !== '') ||
+      (filters.red && filters.red !== '') ||
+      (filters.ipress && filters.ipress !== '') ||
+      (filters.regimen && filters.regimen !== '') ||
+      (filters.profesion && filters.profesion !== '') ||
+      (filters.especialidad && filters.especialidad !== '') ||
+      (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
+      (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
 
     // Si hay filtros activos y tenemos menos usuarios de los necesarios, cargar más
     const isDNISearch = debouncedSearchTerm && /^\d+$/.test(debouncedSearchTerm.trim());
@@ -1259,18 +1261,18 @@ const UsersManagement = () => {
   // 🚀 Actualizar totales cuando hay filtros activos (basándose en filteredUsers)
   useEffect(() => {
     const hasActiveFilters = debouncedSearchTerm ||
-                             (filters.rol && filters.rol !== '') ||
-                             (filters.institucion && filters.institucion !== '') ||
-                             (filters.estado && filters.estado !== '') ||
-                             (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-                             (filters.area && filters.area !== '') ||
-                             (filters.red && filters.red !== '') ||
-                             (filters.ipress && filters.ipress !== '') ||
-                             (filters.regimen && filters.regimen !== '') ||
-                             (filters.profesion && filters.profesion !== '') ||
-                             (filters.especialidad && filters.especialidad !== '') ||
-                             (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
-                             (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
+      (filters.rol && filters.rol !== '') ||
+      (filters.institucion && filters.institucion !== '') ||
+      (filters.estado && filters.estado !== '') ||
+      (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
+      (filters.area && filters.area !== '') ||
+      (filters.red && filters.red !== '') ||
+      (filters.ipress && filters.ipress !== '') ||
+      (filters.regimen && filters.regimen !== '') ||
+      (filters.profesion && filters.profesion !== '') ||
+      (filters.especialidad && filters.especialidad !== '') ||
+      (filters.fechaRegistroDesde && filters.fechaRegistroDesde !== '') ||
+      (filters.fechaRegistroHasta && filters.fechaRegistroHasta !== '');
 
     if (hasActiveFilters) {
       // Calcular totales basándose en los resultados filtrados
@@ -1313,16 +1315,16 @@ const UsersManagement = () => {
   // 🚀 Actualizar totales cuando hay filtros activos
   useEffect(() => {
     const hasActiveFilters = searchTerm ||
-                             (filters.rol && filters.rol !== '') ||
-                             (filters.institucion && filters.institucion !== '') ||
-                             (filters.estado && filters.estado !== '') ||
-                             (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
-                             (filters.area && filters.area !== '') ||
-                             (filters.red && filters.red !== '') ||
-                             (filters.ipress && filters.ipress !== '') ||
-                             (filters.regimen && filters.regimen !== '') ||
-                             (filters.profesion && filters.profesion !== '') ||
-                             (filters.especialidad && filters.especialidad !== '');
+      (filters.rol && filters.rol !== '') ||
+      (filters.institucion && filters.institucion !== '') ||
+      (filters.estado && filters.estado !== '') ||
+      (filters.mesCumpleanos && filters.mesCumpleanos !== '') ||
+      (filters.area && filters.area !== '') ||
+      (filters.red && filters.red !== '') ||
+      (filters.ipress && filters.ipress !== '') ||
+      (filters.regimen && filters.regimen !== '') ||
+      (filters.profesion && filters.profesion !== '') ||
+      (filters.especialidad && filters.especialidad !== '');
 
     if (hasActiveFilters) {
       // Calcular totales basados en usuarios filtrados
@@ -1378,7 +1380,7 @@ const UsersManagement = () => {
       await Promise.all(
         selectedUsers.map(userId => api.delete(`/usuarios/id/${userId}`))
       );
-      
+
       alert(`✅ ${selectedUsers.length} usuario(s) eliminado(s) correctamente`);
       setSelectedUsers([]);
       loadUsers();
@@ -1426,14 +1428,14 @@ const UsersManagement = () => {
         prevUsers.map(u =>
           u.id_user === user.id_user
             ? {
-                ...u,
-                account_locked: false,
-                accountLocked: false,
-                failed_attempts: 0,
-                failedAttempts: 0,
-                lock_time: null,
-                lockTime: null
-              }
+              ...u,
+              account_locked: false,
+              accountLocked: false,
+              failed_attempts: 0,
+              failedAttempts: 0,
+              lock_time: null,
+              lockTime: null
+            }
             : u
         )
       );
@@ -1455,20 +1457,20 @@ const UsersManagement = () => {
     try {
       const nuevoEstado = user.estado_usuario === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
       const accion = nuevoEstado === 'ACTIVO' ? 'activar' : 'desactivar';
-      
+
       console.log(`🔄 Cambiando estado de ${user.username} a ${nuevoEstado}...`);
 
       // ✅ ACTUALIZACIÓN INMEDIATA EN LA UI (sin esperar respuesta del servidor)
       // Esto evita que la tabla se reordene mientras esperamos
-      setUsers(prevUsers => 
-        prevUsers.map(u => 
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
           u.id_user === user.id_user
-            ? { 
-                ...u, 
-                estado_usuario: nuevoEstado, 
-                activo: nuevoEstado === 'ACTIVO',
-                estado: nuevoEstado === 'ACTIVO' ? 'A' : 'I'
-              }
+            ? {
+              ...u,
+              estado_usuario: nuevoEstado,
+              activo: nuevoEstado === 'ACTIVO',
+              estado: nuevoEstado === 'ACTIVO' ? 'A' : 'I'
+            }
             : u
         )
       );
@@ -1490,17 +1492,17 @@ const UsersManagement = () => {
 
     } catch (error) {
       console.error('❌ Error al cambiar estado:', error);
-      
+
       // ❌ Si falla, revertir el cambio en la UI
-      setUsers(prevUsers => 
-        prevUsers.map(u => 
+      setUsers(prevUsers =>
+        prevUsers.map(u =>
           u.id_user === user.id_user
-            ? { 
-                ...u, 
-                estado_usuario: user.estado_usuario, 
-                activo: user.estado_usuario === 'ACTIVO',
-                estado: user.estado_usuario === 'ACTIVO' ? 'A' : 'I'
-              }
+            ? {
+              ...u,
+              estado_usuario: user.estado_usuario,
+              activo: user.estado_usuario === 'ACTIVO',
+              estado: user.estado_usuario === 'ACTIVO' ? 'A' : 'I'
+            }
             : u
         )
       );
@@ -1534,189 +1536,203 @@ const UsersManagement = () => {
   // ============================================================
   return (
     <>
-      {ToastComponent}
+      { ToastComponent }
       <div className="min-h-screen bg-gray-50">
-      <TabsNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
-      {activeTab === 'usuarios' && (
-        <>
-          <FiltersPanel
-            filters={filters}
-            setFilters={setFilters}
-            searchTerm={searchTerm}
-            setSearchTerm={setSearchTerm}
-            onNewUser={() => setShowCrearUsuarioModal(true)}
-            selectedCount={selectedUsers.length}
-            onDeleteSelected={handleEliminarSeleccionados}
-            viewMode={viewMode}
-            setViewMode={setViewMode}
-            roles={roles}
-            areas={areas}
-            redesList={redesList}
-            ipressList={ipressList}
-            regimenes={regimenes}
-            profesionesList={profesionesList}
-            especialidadesList={especialidadesList}
-            onRefresh={handleRefresh}
+        <TabsNavigation activeTab={ activeTab } setActiveTab={ setActiveTab } />
+        { activeTab === 'usuarios' && (
+          <>
+            <FiltersPanel
+              filters={ filters }
+              setFilters={ setFilters }
+              searchTerm={ searchTerm }
+              setSearchTerm={ setSearchTerm }
+              onNewUser={ () => setShowCrearUsuarioModal(true) }
+              selectedCount={ selectedUsers.length }
+              onDeleteSelected={ handleEliminarSeleccionados }
+              viewMode={ viewMode }
+              setViewMode={ setViewMode }
+              roles={ roles }
+              areas={ areas }
+              redesList={ redesList }
+              ipressList={ ipressList }
+              regimenes={ regimenes }
+              profesionesList={ profesionesList }
+              especialidadesList={ especialidadesList }
+              onRefresh={ handleRefresh }
+            />
+
+            { viewMode === 'table' ? (
+              <>
+                <UsersTable
+                  users={ paginatedUsers }
+                  loading={ loading }
+                  isSearching={ isSearching }
+                  onViewDetail={ handleVerDetalle }
+                  onEdit={ handleEditarUsuario }
+                  onDelete={ handleEliminarUsuario }
+                  onToggleEstado={ handleToggleEstado }
+                  onUnlockUser={ handleUnlockUser }  // 🔓 Nueva prop para desbloquear
+                  onCreateUser={ handleCreateUser }
+                  selectedUsers={ selectedUsers }
+                  onSelectAll={ handleSelectAll }
+                  onSelectUser={ handleSelectUser }
+                  showBirthdayColumn={ !!filters.mesCumpleanos }
+                  sortBy={ sortBy }
+                  sortDirection={ sortDirection }
+                  onSort={ handleSort }
+                />
+                {/* 🚀 Controles de paginación */ }
+                <PaginationControls
+                  currentPage={ currentPage }
+                  totalPages={ totalPages }
+                  totalElements={ totalElements }
+                  pageSize={ pageSize }
+                  onPageChange={ handlePageChange }
+                  loading={ loading }
+                />
+              </>
+            ) : (
+              <>
+                <UsersCards
+                  users={ paginatedUsers }
+                  loading={ loading }
+                  isSearching={ isSearching }
+                  onViewDetail={ handleVerDetalle }
+                  onEdit={ handleEditarUsuario }
+                  onDelete={ handleEliminarUsuario }
+                  onToggleEstado={ handleToggleEstado }  // ✅ Nueva prop
+                  onCreateUser={ handleCreateUser }  // 🆕 Nueva prop para crear usuario
+                  selectedUsers={ selectedUsers }
+                  onSelectUser={ handleSelectUser }
+                />
+                {/* 🚀 Controles de paginación */ }
+                <PaginationControls
+                  currentPage={ currentPage }
+                  totalPages={ totalPages }
+                  totalElements={ totalElements }
+                  pageSize={ pageSize }
+                  onPageChange={ handlePageChange }
+                  loading={ loading }
+                />
+              </>
+            ) }
+          </>
+        ) }
+
+        { showCrearUsuarioModal && (
+          <CrearUsuarioModal
+            onClose={ () => setShowCrearUsuarioModal(false) }
+            onSuccess={ loadUsers }
+            ipressList={ ipressList }
           />
+        ) }
+        { showEditModal && selectedUser && (
+          <ActualizarModel
+            user={ selectedUser }
+            onClose={ () => setShowEditModal(false) }
+            onSuccess={ loadUsers }
+          />
+        ) }
+        { showDetalleModal && selectedUser && (
+          <VerDetalleModal
+            user={ selectedUser }
+            onClose={ () => setShowDetalleModal(false) }
+          />
+        ) }
+        { showDeleteModal && (
+          <ConfirmDeleteModal
+            user={ userToDelete }
+            onConfirm={ confirmarEliminar }
+            onCancel={ () => setShowDeleteModal(false) }
+          />
+        ) }
 
-          {viewMode === 'table' ? (
-            <>
-              <UsersTable
-                users={paginatedUsers}
-                loading={loading}
-                isSearching={isSearching}
-                onViewDetail={handleVerDetalle}
-                onEdit={handleEditarUsuario}
-                onDelete={handleEliminarUsuario}
-                onToggleEstado={handleToggleEstado}
-                onUnlockUser={handleUnlockUser}  // 🔓 Nueva prop para desbloquear
-                onCreateUser={handleCreateUser}
-                selectedUsers={selectedUsers}
-                onSelectAll={handleSelectAll}
-                onSelectUser={handleSelectUser}
-                showBirthdayColumn={!!filters.mesCumpleanos}
-                sortBy={sortBy}
-                sortDirection={sortDirection}
-                onSort={handleSort}
-              />
-              {/* 🚀 Controles de paginación */}
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalElements={totalElements}
-                pageSize={pageSize}
-                onPageChange={handlePageChange}
-                loading={loading}
-              />
-            </>
-          ) : (
-            <>
-              <UsersCards
-                users={paginatedUsers}
-                loading={loading}
-                isSearching={isSearching}
-                onViewDetail={handleVerDetalle}
-                onEdit={handleEditarUsuario}
-                onDelete={handleEliminarUsuario}
-                onToggleEstado={handleToggleEstado}  // ✅ Nueva prop
-                onCreateUser={handleCreateUser}  // 🆕 Nueva prop para crear usuario
-                selectedUsers={selectedUsers}
-                onSelectUser={handleSelectUser}
-              />
-              {/* 🚀 Controles de paginación */}
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalElements={totalElements}
-                pageSize={pageSize}
-                onPageChange={handlePageChange}
-                loading={loading}
-              />
-            </>
-          )}
-        </>
-      )}
-
-      {showCrearUsuarioModal && (
-        <CrearUsuarioModal
-          onClose={() => setShowCrearUsuarioModal(false)}
-          onSuccess={loadUsers}
-          ipressList={ipressList}
-        />
-      )}
-      {showEditModal && selectedUser && (
-        <ActualizarModel
-          user={selectedUser}
-          onClose={() => setShowEditModal(false)}
-          onSuccess={loadUsers}
-        />
-      )}
-      {showDetalleModal && selectedUser && (
-        <VerDetalleModal
-          user={selectedUser}
-          onClose={() => setShowDetalleModal(false)}
-        />
-      )}
-      {showDeleteModal && (
-        <ConfirmDeleteModal
-          user={userToDelete}
-          onConfirm={confirmarEliminar}
-          onCancel={() => setShowDeleteModal(false)}
-        />
-      )}
-
-      {/* Tab de Áreas */}
-      {activeTab === 'areas' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <AreasCRUD />
-        </div>
-      )}
-
-      {/* Tab de Regímenes */}
-      {activeTab === 'regimenes' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <RegimenesCRUD />
-        </div>
-      )}
-
-      {/* Tab de Profesiones */}
-      {activeTab === 'profesion' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <ProfesionesCRUD />
-        </div>
-      )}
-
-      {/* Tab de Especialidades */}
-      {activeTab === 'especialidad' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <EspecialidadesCRUD />
-        </div>
-      )}
-
-      {/* Tab de Roles */}
-      {activeTab === 'roles' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <RolesCRUD />
-        </div>
-      )}
-
-      {/* Tab de Tipo de Profesional */}
-      {activeTab === 'tipoprofesional' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <TipoProfesionalCRUD />
-        </div>
-      )}
-
-      {/* Tab de Estrategias Institucionales */}
-      {activeTab === 'estrategias' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <EstrategiasInstitucionales />
-        </div>
-      )}
-
-      {/* Tab de Tipos de Atención Telemedicina */}
-      {activeTab === 'tiposatencion' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <TiposAtencionTelemedicina />
-        </div>
-      )}
-
-      {/* Placeholder para otras tabs futuras */}
-      {activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && activeTab !== 'tipoprofesional' && activeTab !== 'estrategias' && activeTab !== 'tiposatencion' && (
-        <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200">
-            <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <Building className="w-8 h-8 text-gray-400" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Gestión de {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Módulo en desarrollo
-            </p>
+        {/* Tab de Áreas */ }
+        { activeTab === 'areas' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <AreasCRUD />
           </div>
-        </div>
-      )}
+        ) }
+
+        {/* Tab de Regímenes */ }
+        { activeTab === 'regimenes' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <RegimenesCRUD />
+          </div>
+        ) }
+
+        {/* Tab de Profesiones */ }
+        { activeTab === 'profesion' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <ProfesionesCRUD />
+          </div>
+        ) }
+
+        {/* Tab de Especialidades */ }
+        { activeTab === 'especialidad' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <EspecialidadesCRUD />
+          </div>
+        ) }
+
+        {/* Tab de Roles */ }
+        { activeTab === 'roles' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <RolesCRUD />
+          </div>
+        ) }
+
+        {/* Tab de Tipo de Profesional */ }
+        { activeTab === 'tipoprofesional' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <TipoProfesionalCRUD />
+          </div>
+        ) }
+
+        {/* Tab de Estrategias Institucionales */ }
+        { activeTab === 'estrategias' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <EstrategiasInstitucionales />
+          </div>
+        ) }
+
+        {/* Tab de Tipos de Atención Telemedicina */ }
+        { activeTab === 'tiposatencion' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <TiposAtencionTelemedicina />
+          </div>
+        ) }
+
+        {/* Tab de CPMS (Tipos de Procedimiento) */ }
+        { activeTab === 'cpms' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <CPMS />
+          </div>
+        ) }
+
+        {/* Tab de Procedimientos */ }
+        { activeTab === 'procedimientos' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <Procedimientos />
+          </div>
+        ) }
+
+        {/* Placeholder para otras tabs futuras */ }
+        { activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && activeTab !== 'tipoprofesional' && activeTab !== 'estrategias' && activeTab !== 'tiposatencion' && activeTab !== 'cpms' && activeTab !== 'procedimientos' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200">
+              <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Building className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                Gestión de { activeTab.charAt(0).toUpperCase() + activeTab.slice(1) }
+              </h3>
+              <p className="text-gray-500 mb-4">
+                Módulo en desarrollo
+              </p>
+            </div>
+          </div>
+        ) }
       </div>
     </>
   );

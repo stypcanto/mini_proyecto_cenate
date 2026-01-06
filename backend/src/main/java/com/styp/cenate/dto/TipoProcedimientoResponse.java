@@ -4,7 +4,7 @@ import lombok.*;
 import java.time.LocalDateTime;
 
 /**
- * DTO para la tabla dim_tip_proced.
+ * DTO para la tabla dim_tip_proced (Tipos de Procedimiento - CPMS).
  */
 @Data
 @NoArgsConstructor
@@ -12,8 +12,9 @@ import java.time.LocalDateTime;
 @Builder
 public class TipoProcedimientoResponse {
     private Long idTipProced;
+    private String codTipProced;
     private String descTipProced;
-    private String statProced;   // 'A' o 'I'
+    private String statTipProced; // 'A' o 'I'
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
