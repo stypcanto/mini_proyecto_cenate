@@ -238,6 +238,10 @@ const Procedimientos = () => {
                         <div>
                             <h2 className="text-xl font-bold text-gray-800">Procedimientos CPMS</h2>
                             <p className="text-sm text-gray-500">Catálogo de procedimientos médicos</p>
+                            <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
+                                <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
+                                Actualizado al 06/01/2026 - 12,477 registros
+                            </p>
                         </div>
                     </div>
                     <div className="flex gap-2">
