@@ -7,7 +7,7 @@ import org.hibernate.annotations.UpdateTimestamp;
 import java.time.LocalDateTime;
 
 /**
- * Entidad para la tabla dim_proced (Procedimientos CPT).
+ * Entidad para la tabla dim_proced (Procedimientos CPMS).
  */
 @Entity
 @Table(name = "dim_proced", schema = "public")

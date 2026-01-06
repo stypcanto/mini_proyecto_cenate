@@ -20,8 +20,8 @@ import RolesCRUD from '../admin/components/RolesCRUD';
 import TipoProfesionalCRUD from '../admin/components/TipoProfesionalCRUD';
 import EstrategiasInstitucionales from '../admin/catalogs/EstrategiasInstitucionales';
 import TiposAtencionTelemedicina from '../admin/catalogs/TiposAtencionTelemedicina';
-import CPMS from '../admin/catalogs/CPMS';
 import Procedimientos from '../admin/catalogs/Procedimientos';
+import CIE10 from '../admin/catalogs/CIE10';
 import { areaService } from '../../services/areaService';
 import { regimenService } from '../../services/regimenService';
 
@@ -1703,13 +1703,6 @@ const UsersManagement = () => {
           </div>
         ) }
 
-        {/* Tab de CPMS (Tipos de Procedimiento) */ }
-        { activeTab === 'cpms' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
-            <CPMS />
-          </div>
-        ) }
-
         {/* Tab de Procedimientos */ }
         { activeTab === 'procedimientos' && (
           <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
@@ -1717,8 +1710,15 @@ const UsersManagement = () => {
           </div>
         ) }
 
+        {/* Tab de CIE10 */ }
+        { activeTab === 'cie10' && (
+          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <CIE10 />
+          </div>
+        ) }
+
         {/* Placeholder para otras tabs futuras */ }
-        { activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && activeTab !== 'tipoprofesional' && activeTab !== 'estrategias' && activeTab !== 'tiposatencion' && activeTab !== 'cpms' && activeTab !== 'procedimientos' && (
+        { activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && activeTab !== 'tipoprofesional' && activeTab !== 'estrategias' && activeTab !== 'tiposatencion' && activeTab !== 'procedimientos' && activeTab !== 'cie10' && (
           <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">

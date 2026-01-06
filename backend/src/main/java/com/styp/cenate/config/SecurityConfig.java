@@ -201,9 +201,7 @@ public class SecurityConfig {
                                                                 "/api/admin/areas/**",
                                                                 "/api/area/**",
                                                                 "/api/admin/**",
-                                                                "/api/roles/**",
-                                                                "/api/tipos-procedimiento/**") // ✅ CPMS (Tipos de
-                                                                                               // Procedimiento)
+                                                                "/api/roles/**")
                                                 .hasAnyRole("SUPERADMIN", "ADMIN")
 
                                                 // =====================================================

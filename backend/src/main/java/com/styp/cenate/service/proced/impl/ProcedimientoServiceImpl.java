@@ -1,21 +1,27 @@
 package com.styp.cenate.service.proced.impl;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
+
 import com.styp.cenate.dto.ProcedimientoResponse;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.model.Procedimiento;
 import com.styp.cenate.repository.ProcedimientoRepository;
 import com.styp.cenate.service.proced.ProcedimientoService;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
- * Implementación del servicio para gestión de Procedimientos CPT.
+ * Implementación del servicio para gestión de Procedimientos CPMS.
  */
 @Service
 @RequiredArgsConstructor
@@ -32,6 +38,75 @@ public class ProcedimientoServiceImpl implements ProcedimientoService {
         return entities.stream()
                 .map(p -> mapper.map(p, ProcedimientoResponse.class))
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<ProcedimientoResponse> listarPaginado(int page, int size, String sortBy, String direction) {
+        log.info("📋 [SERVICE] Listando procedimientos paginados - Página: {}, Tamaño: {}, Orden: {} {}", page, size, sortBy, direction);
+        
+        // Validar y establecer valores por defecto
+        String sortField = (sortBy != null && !sortBy.isEmpty()) ? sortBy : "idProced";
+        Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction) 
+            ? Sort.Direction.DESC 
+            : Sort.Direction.ASC;
+        
+        Sort sort = Sort.by(sortDirection, sortField);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        Page<Procedimiento> procedimientosPage = repository.findAll(pageable);
+        
+        Page<ProcedimientoResponse> responsePage = procedimientosPage.map(
+            p -> mapper.map(p, ProcedimientoResponse.class)
+        );
+        
+        log.info("📋 [SERVICE] Retornando página {} de {} con {} elementos", 
+            page, responsePage.getTotalPages(), responsePage.getNumberOfElements());
+        
+        return responsePage;
+    }
+
+    @Override
+    public Page<ProcedimientoResponse> buscar(int page, int size, String sortBy, String direction, String codProced, String descProced) {
+        log.info("🔍 [SERVICE] Buscando procedimientos - Página: {}, Tamaño: {}, Código: '{}', Descripción: '{}'", 
+            page, size, codProced, descProced);
+        
+        // Validar y establecer valores por defecto
+        String sortField = (sortBy != null && !sortBy.isEmpty()) ? sortBy : "idProced";
+        Sort.Direction sortDirection = "desc".equalsIgnoreCase(direction) 
+            ? Sort.Direction.DESC 
+            : Sort.Direction.ASC;
+        
+        Sort sort = Sort.by(sortDirection, sortField);
+        Pageable pageable = PageRequest.of(page, size, sort);
+        
+        // Normalizar parámetros de búsqueda (null si están vacíos)
+        String codBusqueda = (codProced != null && !codProced.trim().isEmpty()) ? codProced.trim() : null;
+        String descBusqueda = (descProced != null && !descProced.trim().isEmpty()) ? descProced.trim() : null;
+        
+        Page<Procedimiento> procedimientosPage;
+        
+        if (codBusqueda != null && descBusqueda != null) {
+            // Búsqueda combinada: código Y descripción (ambos criterios deben cumplirse)
+            procedimientosPage = repository.buscarPorCodigoYDescripcion(codBusqueda, descBusqueda, pageable);
+        } else if (codBusqueda != null) {
+            // Solo búsqueda por código - BÚSQUEDA EXACTA
+            procedimientosPage = repository.findByCodProcedIgnoreCase(codBusqueda, pageable);
+        } else if (descBusqueda != null) {
+            // Solo búsqueda por descripción
+            procedimientosPage = repository.findByDescProcedContainingIgnoreCase(descBusqueda, pageable);
+        } else {
+            // Sin filtros, retornar todos
+            procedimientosPage = repository.findAll(pageable);
+        }
+        
+        Page<ProcedimientoResponse> responsePage = procedimientosPage.map(
+            p -> mapper.map(p, ProcedimientoResponse.class)
+        );
+        
+        log.info("🔍 [SERVICE] Búsqueda retornó página {} de {} con {} elementos de {} total", 
+            page, responsePage.getTotalPages(), responsePage.getNumberOfElements(), responsePage.getTotalElements());
+        
+        return responsePage;
     }
 
     @Override

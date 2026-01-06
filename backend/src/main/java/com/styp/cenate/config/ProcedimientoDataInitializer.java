@@ -25,7 +25,7 @@ public class ProcedimientoDataInitializer implements CommandLineRunner {
     @Override
     public void run(String... args) throws Exception {
         if (repository.count() == 0) {
-            log.info("🚀 Inicializando datos para dim_proced (Procedimientos CPT)...");
+            log.info("🚀 Inicializando datos para dim_proced (Procedimientos CPMS)...");
 
             List<Procedimiento> cleanList = Arrays.asList(
                     Procedimiento.builder().codProced("LAB").descProced("LABORATORIO CLINICO").statProced("A")

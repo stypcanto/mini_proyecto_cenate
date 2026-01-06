@@ -4,6 +4,121 @@
 
 ---
 
+## v1.17.1 (2026-01-04) - Mejora de Navegación de Pestañas con Cálculo Dinámico de Espacio
+
+### 🎯 Mejora: Navegación Responsive de Pestañas
+
+**Descripción**: Implementación de sistema inteligente de navegación que calcula dinámicamente cuántas pestañas pueden mostrarse según el espacio disponible en pantalla, moviendo automáticamente las restantes al menú dropdown "Más".
+
+---
+
+#### 📋 Resumen Ejecutivo
+
+**Estado**: ✅ **COMPLETADO**
+
+**Componentes**:
+- Frontend: `frontend/src/pages/user/components/TabsNavigation.jsx`
+- Lógica de cálculo dinámico con `useRef` y `useCallback`
+- Mejora de UX en hover del menú dropdown
+
+**Características**:
+- Cálculo automático de espacio disponible
+- Distribución inteligente de pestañas visibles vs. menú "Más"
+- Responsive: se recalcula al cambiar tamaño de ventana
+- Hover mejorado en opciones del menú dropdown
+
+---
+
+#### ✨ Cambios Implementados
+
+##### 1. Cálculo Dinámico de Espacio Disponible ✅
+
+**Problema**: Las pestañas se mostraban de forma fija, desperdiciando espacio disponible en pantallas grandes o ocultando opciones importantes en pantallas pequeñas.
+
+**Solución**: Implementación de algoritmo que:
+- Mide el ancho real del contenedor
+- Calcula el ancho de cada pestaña usando refs
+- Determina cuántas pestañas caben antes del botón "Más"
+- Considera el ancho del botón "Más" (120px) y gaps (8px)
+
+**Archivo**: `frontend/src/pages/user/components/TabsNavigation.jsx`
+
+**Código clave**:
+```javascript
+const calculateVisibleTabs = useCallback(() => {
+  const containerWidth = containerRef.current.offsetWidth;
+  const moreButtonWidth = 120;
+  const gap = 8;
+  let availableWidth = containerWidth - moreButtonWidth - gap;
+  // ... cálculo dinámico
+}, [visibleTabs]);
+```
+
+**Impacto**: Mejor aprovechamiento del espacio disponible, mejor UX en diferentes tamaños de pantalla.
+
+---
+
+##### 2. Mejora de Hover en Menú Dropdown ✅
+
+**Problema**: El efecto hover en las opciones del menú "Más" no era suficientemente visible, dificultando la navegación.
+
+**Solución**: Mejora visual del hover con:
+- Fondo azul claro más visible (`bg-blue-50`)
+- Texto azul oscuro destacado (`text-blue-700`)
+- Sombra para profundidad (`shadow-md`)
+- Borde sutil azul claro (`border-blue-200`)
+- Icono interactivo que cambia a azul (`text-blue-600`)
+- Transiciones suaves (`duration-200`)
+
+**Archivo**: `frontend/src/pages/user/components/TabsNavigation.jsx:183-201`
+
+**Impacto**: Navegación más intuitiva y profesional, mejor feedback visual al usuario.
+
+---
+
+##### 3. Optimización de Rendimiento ✅
+
+**Mejoras**:
+- Uso de `useCallback` para evitar recálculos innecesarios
+- Uso de `useMemo` para filtrar pestañas visibles
+- Recalculo automático al cambiar tamaño de ventana
+- Delay de 100ms para asegurar renderizado completo antes de calcular
+
+**Archivo**: `frontend/src/pages/user/components/TabsNavigation.jsx`
+
+**Impacto**: Mejor rendimiento, cálculos solo cuando es necesario.
+
+---
+
+#### 📁 Archivos Modificados
+
+```
+frontend/src/pages/user/components/TabsNavigation.jsx
+  - Implementación de cálculo dinámico de espacio
+  - Mejora de hover en menú dropdown
+  - Optimización con useCallback y useMemo
+```
+
+---
+
+#### 🎨 Mejoras de UX/UI
+
+1. **Distribución Inteligente**: Las pestañas se muestran hasta donde haya espacio, el resto va al menú "Más"
+2. **Responsive**: Se adapta automáticamente a diferentes tamaños de pantalla
+3. **Hover Mejorado**: Feedback visual claro al pasar el mouse sobre opciones
+4. **Transiciones Suaves**: Animaciones fluidas para mejor experiencia
+
+---
+
+#### 🔄 Compatibilidad
+
+- ✅ Compatible con todos los navegadores modernos
+- ✅ No requiere cambios en backend
+- ✅ No requiere cambios en base de datos
+- ✅ Retrocompatible con funcionalidad existente
+
+---
+
 ## v1.17.0 (2026-01-04) - Disponibilidad + Integración Chatbot COMPLETADO 🎉
 
 ### 🎯 Módulo Completado: Disponibilidad Médica + Integración Chatbot

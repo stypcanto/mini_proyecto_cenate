@@ -27,7 +27,8 @@ public class FrmTransfImgServiceImpl implements FrmTransfImgService {
         private final IpressRepository ipressRepo;
         private final RedRepository redRepo;
         private final ProcedimientoRepository procedRepo;
-        private final TipoProcedimientoRepository tipoRepo;
+        // TipoProcedimiento eliminado - CPMS removido del sistema
+        // private final TipoProcedimientoRepository tipoRepo;
         private final NivelAtencionRepository nivelRepo;
         private final AreaHospitalariaRepository areaRepo;
 
@@ -66,9 +67,10 @@ public class FrmTransfImgServiceImpl implements FrmTransfImgService {
                 Procedimiento proc = procedRepo.findById(request.getIdProced())
                                 .orElseThrow(() -> new ResourceNotFoundException("Procedimiento no encontrado"));
 
-                TipoProcedimiento tipo = tipoRepo.findById(request.getIdTipProced())
-                                .orElseThrow(() -> new ResourceNotFoundException(
-                                                "Tipo de procedimiento no encontrado"));
+                // TipoProcedimiento eliminado - CPMS removido del sistema
+                // Usar valores por defecto o del request
+                Long idTipProced = request.getIdTipProced() != null ? request.getIdTipProced() : 0L;
+                String descTipProced = request.getIdTipProced() != null ? "N/A" : "No especificado";
 
                 NivelAtencion nivel = nivelRepo.findById(ipress.getIdNivAten())
                                 .orElseThrow(() -> new ResourceNotFoundException("Nivel de atención no encontrado"));
@@ -86,8 +88,8 @@ public class FrmTransfImgServiceImpl implements FrmTransfImgService {
                                 .descNivelIpress(nivel.getDescripcion())
                                 .idAreaHosp(area.getId())
                                 .descAreaHosp(area.getDescripcion())
-                                .idTipProced(tipo.getIdTipProced())
-                                .descTipProced(tipo.getDescTipProced())
+                                .idTipProced(idTipProced)
+                                .descTipProced(descTipProced)
                                 .idProced(proc.getIdProced())
                                 .codProced(proc.getCodProced())
                                 .descProced(proc.getDescProced())
