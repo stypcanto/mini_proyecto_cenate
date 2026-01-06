@@ -29,6 +29,7 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
     { id: 'tiposatencion', icon: Video, label: 'Tipos de Atención', visible: esSuperAdmin },
     { id: 'procedimientos', icon: FileText, label: 'Procedimientos', visible: esSuperAdmin },
     { id: 'cie10', icon: FileText, label: 'CIE10', visible: esSuperAdmin },
+    { id: 'medicamentos', icon: FileText, label: 'Medicamentos', visible: esSuperAdmin },
   ], [esSuperAdmin]);
 
   // Filtrar pestañas visibles

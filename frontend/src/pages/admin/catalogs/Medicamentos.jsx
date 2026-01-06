@@ -1,8 +1,8 @@
 /**
- * 🏥 Componente CRUD para gestión de CIE10
- * 
- * Este componente permite administrar los códigos CIE10
- * almacenados en la tabla dim_cie10.
+ * 💊 Componente CRUD para gestión de Medicamentos (Petitorio)
+ *
+ * Este componente permite administrar el petitorio nacional de medicamentos
+ * almacenados en la tabla dim_medicamento.
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -20,15 +20,15 @@ import {
     Calendar,
     Clock
 } from 'lucide-react';
-import cie10Service from '../../../services/cie10Service';
+import medicamentosService from '../../../services/medicamentosService';
 import PaginationControls from '../../user/components/PaginationControls';
 
 // ============================================================
 // COMPONENTE PRINCIPAL
 // ============================================================
-const CIE10 = () => {
+const Medicamentos = () => {
     // Estado
-    const [cie10List, setCie10List] = useState([]);
+    const [medicamentos, setMedicamentos] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     
@@ -53,16 +53,9 @@ const CIE10 = () => {
 
     // Formulario
     const [formData, setFormData] = useState({
-        codigo: '',
-        codigoPadre0: '',
-        codigoPadre1: '',
-        codigoPadre2: '',
-        codigoPadre3: '',
-        codigoPadre4: '',
-        descripcion: '',
-        nivel: 0,
-        fuente: '',
-        activo: true
+        codMedicamento: '',
+        descMedicamento: '',
+        statMedicamento: 'A'
     });
 
     // ============================================================
@@ -89,7 +82,7 @@ const CIE10 = () => {
         const codBusqueda = debouncedCodigo.trim() || null;
         const descBusqueda = debouncedDescripcion.trim() || null;
         
-        console.log('🔵 [CIE10] Iniciando carga de datos paginados...', { 
+        console.log('🔵 [Medicamentos] Iniciando carga de datos paginados...', { 
             page: currentPage, 
             size: pageSize,
             codigo: codBusqueda,
@@ -98,10 +91,10 @@ const CIE10 = () => {
         setLoading(true);
         setError(null);
         try {
-            const response = await cie10Service.obtenerTodosPaginados(
+            const response = await medicamentosService.obtenerTodosPaginados(
                 currentPage, 
                 pageSize, 
-                'idCie10', 
+                'idMedicamento', 
                 'asc',
                 codBusqueda,
                 descBusqueda
@@ -112,21 +105,21 @@ const CIE10 = () => {
                 // Si es array, construir objeto Page manualmente
                 const startIndex = currentPage * pageSize;
                 const endIndex = startIndex + pageSize;
-                setCie10List(response.slice(startIndex, endIndex));
+                setMedicamentos(response.slice(startIndex, endIndex));
                 setTotalElements(response.length);
                 setTotalPages(Math.ceil(response.length / pageSize));
-                console.log('✅ [CIE10] Datos cargados (array):', response.slice(startIndex, endIndex).length, 'de', response.length);
+                console.log('✅ [Medicamentos] Datos cargados (array):', response.slice(startIndex, endIndex).length, 'de', response.length);
             } else {
                 // Si es objeto Page
-                setCie10List(response.content || []);
+                setMedicamentos(response.content || []);
                 setTotalElements(response.totalElements || 0);
                 setTotalPages(response.totalPages || 0);
-                console.log('✅ [CIE10] Datos cargados (Page):', response.content?.length || 0, 'de', response.totalElements || 0);
+                console.log('✅ [Medicamentos] Datos cargados (Page):', response.content?.length || 0, 'de', response.totalElements || 0);
             }
         } catch (err) {
-            console.error('❌ [CIE10] Error al cargar:', err);
-            setError('Error al cargar los códigos CIE10. Por favor, intente nuevamente.');
-            setCie10List([]);
+            console.error('❌ [Medicamentos] Error al cargar:', err);
+            setError('Error al cargar los medicamentos. Por favor, intente nuevamente.');
+            setMedicamentos([]);
             setTotalElements(0);
             setTotalPages(0);
         } finally {
@@ -147,7 +140,7 @@ const CIE10 = () => {
     // ============================================================
     // DATOS FILTRADOS (ya vienen filtrados del backend)
     // ============================================================
-    const filteredData = cie10List;
+    const filteredData = medicamentos;
 
     // ============================================================
     // HANDLER DE CAMBIO DE PÁGINA
@@ -162,34 +155,16 @@ const CIE10 = () => {
     // HANDLERS
     // ============================================================
     const handleOpenCreate = () => {
-        setFormData({
-            codigo: '',
-            codigoPadre0: '',
-            codigoPadre1: '',
-            codigoPadre2: '',
-            codigoPadre3: '',
-            codigoPadre4: '',
-            descripcion: '',
-            nivel: 0,
-            fuente: '',
-            activo: true
-        });
+        setFormData({ codMedicamento: '', descMedicamento: '', statMedicamento: 'A' });
         setModalMode('create');
         setShowModal(true);
     };
 
     const handleOpenEdit = (item) => {
         setFormData({
-            codigo: item.codigo || '',
-            codigoPadre0: item.codigoPadre0 || '',
-            codigoPadre1: item.codigoPadre1 || '',
-            codigoPadre2: item.codigoPadre2 || '',
-            codigoPadre3: item.codigoPadre3 || '',
-            codigoPadre4: item.codigoPadre4 || '',
-            descripcion: item.descripcion || '',
-            nivel: item.nivel || 0,
-            fuente: item.fuente || '',
-            activo: item.activo !== undefined ? item.activo : true
+            codMedicamento: item.codMedicamento || '',
+            descMedicamento: item.descMedicamento || '',
+            statMedicamento: item.statMedicamento || 'A'
         });
         setSelectedItem(item);
         setModalMode('edit');
@@ -211,15 +186,15 @@ const CIE10 = () => {
         setLoading(true);
         try {
             if (modalMode === 'create') {
-                await cie10Service.crear(formData);
+                await medicamentosService.crear(formData);
             } else {
-                await cie10Service.actualizar(selectedItem.idCie10, formData);
+                await medicamentosService.actualizar(selectedItem.idMedicamento, formData);
             }
             setShowModal(false);
             loadData();
         } catch (err) {
             console.error('Error al guardar:', err);
-            setError('Error al guardar el código CIE10.');
+            setError('Error al guardar el medicamento.');
             setLoading(false);
         }
     };
@@ -227,24 +202,24 @@ const CIE10 = () => {
     const handleDelete = async () => {
         setLoading(true);
         try {
-            await cie10Service.eliminar(selectedItem.idCie10);
+            await medicamentosService.eliminar(selectedItem.idMedicamento);
             setShowDeleteModal(false);
             loadData();
         } catch (err) {
             console.error('Error al eliminar:', err);
-            setError('No se puede eliminar. El código CIE10 está siendo utilizado.');
+            setError('No se puede eliminar. El medicamento está siendo utilizado.');
             setLoading(false);
         }
     };
 
     const handleToggleStatus = async (item) => {
-        const nuevoEstado = !item.activo;
+        const nuevoEstado = item.statMedicamento === 'A' ? 'I' : 'A';
         try {
-            await cie10Service.cambiarEstado(item.idCie10, nuevoEstado);
+            await medicamentosService.cambiarEstado(item.idMedicamento, nuevoEstado);
             loadData();
         } catch (err) {
             console.error('Error al cambiar estado:', err);
-            setError('Error al cambiar el estado del código CIE10.');
+            setError('Error al cambiar el estado del medicamento.');
         }
     };
 
@@ -261,11 +236,11 @@ const CIE10 = () => {
                             <FileText className="w-6 h-6 text-white" />
                         </div>
                         <div>
-                            <h2 className="text-xl font-bold text-gray-800">Códigos CIE10</h2>
-                            <p className="text-sm text-gray-500">Catálogo de códigos CIE10 (Clasificación Internacional de Enfermedades)</p>
+                            <h2 className="text-xl font-bold text-gray-800">Medicamentos Medicamento</h2>
+                            <p className="text-sm text-gray-500">Catálogo de medicamentos médicos</p>
                             <p className="text-xs text-green-600 font-medium mt-1 flex items-center gap-1">
                                 <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span>
-                                Actualizado al 06/01/2026 - 14,324 registros
+                                Actualizado al 06/01/2026 - 56,662 registros
                             </p>
                         </div>
                     </div>
@@ -283,7 +258,7 @@ const CIE10 = () => {
                             className="flex items-center gap-2 px-4 py-2 text-white transition-all rounded-lg shadow-md bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
                         >
                             <Plus className="w-4 h-4" />
-                            Nuevo Código CIE10
+                            Nuevo Medicamento
                         </button>
                     </div>
                 </div>
@@ -296,25 +271,25 @@ const CIE10 = () => {
                         <Search className="w-4 h-4 text-blue-600" />
                         Búsqueda Avanzada
                     </h3>
-                    <p className="mt-1 text-xs text-gray-500">Busca por código CIE10 o descripción. Puedes usar ambos filtros simultáneamente.</p>
+                    <p className="mt-1 text-xs text-gray-500">Busca por código Medicamento o descripción. Puedes usar ambos filtros simultáneamente.</p>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {/* Filtro por Código CIE10 */}
+                    {/* Filtro por Código Medicamento */}
                     <div className="relative">
                         <label className="block mb-2 text-sm font-semibold text-gray-700">
                             <span className="flex items-center gap-2">
                                 <div className="p-1.5 bg-blue-100 rounded-md">
                                     <FileText className="w-3.5 h-3.5 text-blue-700" />
                                 </div>
-                                Código CIE10
+                                Código Medicamento
                             </span>
                         </label>
                         <div className="relative group">
                             <Search className="absolute w-5 h-5 text-gray-400 transition-colors transform -translate-y-1/2 left-3 top-1/2 group-focus-within:text-blue-500" />
                             <input
                                 type="text"
-                                placeholder="Ej: J00, E11.9, A00..."
+                                placeholder="Ej: 100010001, 100010002, 100010003..."
                                 value={filtroCodigo}
                                 onChange={(e) => setFiltroCodigo(e.target.value)}
                                 className="w-full py-3 pl-10 pr-10 transition-all bg-white border-2 border-gray-200 shadow-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 focus:shadow-md"
@@ -351,7 +326,7 @@ const CIE10 = () => {
                             <Search className="absolute w-5 h-5 text-gray-400 transition-colors transform -translate-y-1/2 left-3 top-1/2 group-focus-within:text-blue-500" />
                             <input
                                 type="text"
-                                placeholder="Ej: diabetes, neumonía, gripe..."
+                                placeholder="Ej: cultivo, anestesia, consulta, emergencia..."
                                 value={filtroDescripcion}
                                 onChange={(e) => setFiltroDescripcion(e.target.value)}
                                 className="w-full py-3 pl-10 pr-10 transition-all bg-white border-2 border-gray-200 shadow-sm rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 hover:border-gray-300 focus:shadow-md"
@@ -430,7 +405,7 @@ const CIE10 = () => {
                         <thead className="bg-[#0A5BA9]">
                             <tr>
                                 <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-white uppercase">
-                                    Código CIE10
+                                    Código Medicamento
                                 </th>
                                 <th className="px-6 py-4 text-xs font-semibold tracking-wider text-left text-white uppercase">
                                     Descripción
@@ -449,7 +424,7 @@ const CIE10 = () => {
                                     <td colSpan="4" className="px-6 py-16 text-center">
                                         <div className="flex flex-col items-center justify-center">
                                             <RefreshCw className="w-10 h-10 mb-4 text-blue-500 animate-spin" />
-                                            <p className="font-medium text-gray-600">Cargando códigos CIE10...</p>
+                                            <p className="font-medium text-gray-600">Cargando medicamentos...</p>
                                             <p className="mt-1 text-sm text-gray-400">Por favor espere</p>
                                         </div>
                                     </td>
@@ -459,11 +434,11 @@ const CIE10 = () => {
                                     <td colSpan="4" className="px-6 py-16 text-center">
                                         <div className="flex flex-col items-center justify-center">
                                             <FileText className="w-12 h-12 mb-4 text-gray-300" />
-                                            <p className="text-lg font-medium text-gray-600">No se encontraron códigos CIE10</p>
+                                            <p className="text-lg font-medium text-gray-600">No se encontraron medicamentos</p>
                                             <p className="mt-1 text-sm text-gray-400">
                                                 {(debouncedCodigo || debouncedDescripcion) 
                                                     ? 'Intenta con otros términos de búsqueda o ajusta los filtros' 
-                                                    : 'No hay códigos CIE10 registrados'}
+                                                    : 'No hay medicamentos registrados'}
                                             </p>
                                         </div>
                                     </td>
@@ -471,17 +446,17 @@ const CIE10 = () => {
                             ) : (
                                 filteredData.map((item, index) => (
                                     <tr 
-                                        key={ item.idCie10 } 
+                                        key={ item.idMedicamento } 
                                         className={ `hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}` }
                                     >
                                         <td className="px-6 py-4">
-                                            <span className="inline-flex items-center px-2 py-1 rounded font-mono text-xs font-bold bg-blue-600 text-white shadow-sm">
-                                                { item.codigo }
+                                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                                { item.codMedicamento }
                                             </span>
                                         </td>
                                         <td className="px-6 py-4">
                                             <p className="text-sm text-gray-900">
-                                                { item.descripcion }
+                                                { item.descMedicamento }
                                             </p>
                                         </td>
                                         <td className="px-6 py-4 text-center whitespace-nowrap">
@@ -489,19 +464,19 @@ const CIE10 = () => {
                                                 <button
                                                     onClick={ () => handleToggleStatus(item) }
                                                     className={ `relative inline-flex h-6 w-11 items-center rounded-full transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 ${
-                                                        item.activo
+                                                        item.statMedicamento === 'A'
                                                             ? 'bg-emerald-500 focus:ring-emerald-500'
                                                             : 'bg-gray-300 focus:ring-gray-400'
                                                     }` }
                                                 >
                                                     <span
                                                         className={ `inline-block h-4 w-4 transform rounded-full bg-white shadow-md transition-transform duration-200 ${
-                                                            item.activo ? 'translate-x-6' : 'translate-x-1'
+                                                            item.statMedicamento === 'A' ? 'translate-x-6' : 'translate-x-1'
                                                         }` }
                                                     />
                                                 </button>
-                                                <span className={ `ml-2 text-xs font-semibold ${item.activo ? 'text-emerald-600' : 'text-gray-500'}` }>
-                                                    { item.activo ? 'ACTIVO' : 'INACTIVO' }
+                                                <span className={ `ml-2 text-xs font-semibold ${item.statMedicamento === 'A' ? 'text-emerald-600' : 'text-gray-500'}` }>
+                                                    { item.statMedicamento === 'A' ? 'ACTIVO' : 'INACTIVO' }
                                                 </span>
                                             </div>
                                         </td>
@@ -572,7 +547,7 @@ const CIE10 = () => {
             {/* Modal Crear/Editar - Diseño Profesional */}
             { showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 overflow-y-auto bg-black/60 backdrop-blur-sm">
-                    <div className="w-full max-w-3xl my-8 overflow-hidden duration-200 bg-white shadow-2xl rounded-3xl animate-in fade-in zoom-in">
+                    <div className="w-full max-w-2xl my-8 overflow-hidden duration-200 bg-white shadow-2xl rounded-3xl animate-in fade-in zoom-in">
                         {/* Header con gradiente profesional */}
                         <div className="relative px-8 py-8 bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600">
                             <button 
@@ -597,12 +572,12 @@ const CIE10 = () => {
                                 {/* Información principal */}
                                 <div className="flex-1 text-white">
                                     <h3 className="mb-2 text-2xl font-bold">
-                                        { modalMode === 'create' ? 'Nuevo Código CIE10' : 'Editar Código CIE10' }
+                                        { modalMode === 'create' ? 'Nuevo Medicamento Medicamento' : 'Editar Medicamento Medicamento' }
                                     </h3>
                                     <p className="text-sm text-blue-100">
                                         { modalMode === 'create' 
-                                            ? 'Completa el formulario para crear un nuevo código CIE10' 
-                                            : 'Modifica los datos del código CIE10 seleccionado' 
+                                            ? 'Completa el formulario para crear un nuevo medicamento médico' 
+                                            : 'Modifica los datos del medicamento seleccionado' 
                                         }
                                     </p>
                                 </div>
@@ -610,24 +585,24 @@ const CIE10 = () => {
                         </div>
 
                         {/* Formulario */}
-                        <form onSubmit={ handleSubmit } className="p-8 space-y-6 bg-gradient-to-br from-gray-50 to-white max-h-[70vh] overflow-y-auto">
-                            {/* Código CIE10 */}
+                        <form onSubmit={ handleSubmit } className="p-8 space-y-6 bg-gradient-to-br from-gray-50 to-white">
+                            {/* Código Medicamento */}
                             <div>
                                 <label className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700">
                                     <div className="p-1.5 bg-blue-100 rounded-lg">
                                         <FileText className="w-4 h-4 text-blue-700" />
                                     </div>
-                                    Código CIE10 <span className="text-red-500">*</span>
+                                    Código Medicamento <span className="text-red-500">*</span>
                                 </label>
                                 <input
                                     type="text"
-                                    value={ formData.codigo }
-                                    onChange={ (e) => setFormData({ ...formData, codigo: e.target.value }) }
+                                    value={ formData.codMedicamento }
+                                    onChange={ (e) => setFormData({ ...formData, codMedicamento: e.target.value }) }
                                     className="w-full px-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-300 focus:shadow-md"
-                                    placeholder="Ej: J00, E11.9, A00..."
+                                    placeholder="Ej: 100010001, 100010002, 100010003..."
                                     required
                                 />
-                                <p className="mt-1.5 text-xs text-gray-500">Ingresa el código CIE10 único</p>
+                                <p className="mt-1.5 text-xs text-gray-500">Ingresa el código Medicamento único del medicamento</p>
                             </div>
 
                             {/* Descripción */}
@@ -639,73 +614,14 @@ const CIE10 = () => {
                                     Descripción <span className="text-red-500">*</span>
                                 </label>
                                 <textarea
-                                    value={ formData.descripcion }
-                                    onChange={ (e) => setFormData({ ...formData, descripcion: e.target.value }) }
+                                    value={ formData.descMedicamento }
+                                    onChange={ (e) => setFormData({ ...formData, descMedicamento: e.target.value }) }
                                     className="w-full px-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-300 focus:shadow-md resize-none"
-                                    placeholder="Ej: Resfriado común, Diabetes mellitus tipo 2..."
+                                    placeholder="Ej: Anestesia para medicamentos en glándulas salivales, incluyendo biopsia..."
                                     rows={ 4 }
                                     required
                                 />
-                                <p className="mt-1.5 text-xs text-gray-500">Describe detalladamente la enfermedad o condición</p>
-                            </div>
-
-                            {/* Grid de campos adicionales */}
-                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                {/* Nivel */}
-                                <div>
-                                    <label className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700">
-                                        <div className="p-1.5 bg-purple-100 rounded-lg">
-                                            <FileText className="w-4 h-4 text-purple-700" />
-                                        </div>
-                                        Nivel
-                                    </label>
-                                    <input
-                                        type="number"
-                                        value={ formData.nivel }
-                                        onChange={ (e) => setFormData({ ...formData, nivel: parseInt(e.target.value) || 0 }) }
-                                        className="w-full px-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-300 focus:shadow-md"
-                                        placeholder="0"
-                                        min="0"
-                                    />
-                                </div>
-
-                                {/* Fuente */}
-                                <div>
-                                    <label className="flex items-center gap-2 mb-2 text-sm font-semibold text-gray-700">
-                                        <div className="p-1.5 bg-amber-100 rounded-lg">
-                                            <FileText className="w-4 h-4 text-amber-700" />
-                                        </div>
-                                        Fuente
-                                    </label>
-                                    <input
-                                        type="text"
-                                        value={ formData.fuente }
-                                        onChange={ (e) => setFormData({ ...formData, fuente: e.target.value }) }
-                                        className="w-full px-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-300 focus:shadow-md"
-                                        placeholder="Ej: OMS, MINSA..."
-                                    />
-                                </div>
-                            </div>
-
-                            {/* Códigos Padre */}
-                            <div>
-                                <label className="block mb-3 text-sm font-semibold text-gray-700">
-                                    Códigos Padre (Opcional)
-                                </label>
-                                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 lg:grid-cols-3">
-                                    {[0, 1, 2, 3, 4].map((num) => (
-                                        <div key={num}>
-                                            <label className="block mb-1 text-xs text-gray-600">Padre {num}</label>
-                                            <input
-                                                type="text"
-                                                value={formData[`codigoPadre${num}`] || ''}
-                                                onChange={(e) => setFormData({ ...formData, [`codigoPadre${num}`]: e.target.value })}
-                                                className="w-full px-3 py-2 text-sm bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                                placeholder={`Código padre ${num}`}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
+                                <p className="mt-1.5 text-xs text-gray-500">Describe detalladamente el medicamento médico</p>
                             </div>
 
                             {/* Estado */}
@@ -716,30 +632,15 @@ const CIE10 = () => {
                                     </div>
                                     Estado
                                 </label>
-                                <div className="flex items-center gap-3">
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, activo: true })}
-                                        className={`flex-1 px-4 py-3 rounded-xl transition-all ${
-                                            formData.activo
-                                                ? 'bg-emerald-500 text-white shadow-md'
-                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        Activo
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => setFormData({ ...formData, activo: false })}
-                                        className={`flex-1 px-4 py-3 rounded-xl transition-all ${
-                                            !formData.activo
-                                                ? 'bg-gray-500 text-white shadow-md'
-                                                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                                        }`}
-                                    >
-                                        Inactivo
-                                    </button>
-                                </div>
+                                <select
+                                    value={ formData.statMedicamento }
+                                    onChange={ (e) => setFormData({ ...formData, statMedicamento: e.target.value }) }
+                                    className="w-full px-4 py-3.5 bg-white border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all shadow-sm hover:border-gray-300 focus:shadow-md"
+                                >
+                                    <option value="A">Activo</option>
+                                    <option value="I">Inactivo</option>
+                                </select>
+                                <p className="mt-1.5 text-xs text-gray-500">Selecciona el estado del medicamento</p>
                             </div>
 
                             {/* Botones de acción */}
@@ -798,13 +699,13 @@ const CIE10 = () => {
                                 {/* Información principal */}
                                 <div className="flex-1 text-white">
                                     <div className="flex items-center gap-3 mb-2">
-                                        <h3 className="text-2xl font-bold">Detalles del Código CIE10</h3>
+                                        <h3 className="text-2xl font-bold">Detalles del Medicamento</h3>
                                         <span className={ `inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg ${
-                                            selectedItem.activo
+                                            selectedItem.statMedicamento === 'A'
                                                 ? 'bg-emerald-500/90 text-white border border-emerald-400/50'
                                                 : 'bg-gray-500/90 text-white border border-gray-400/50'
                                         }` }>
-                                            { selectedItem.activo ? (
+                                            { selectedItem.statMedicamento === 'A' ? (
                                                 <>
                                                     <Check className="w-3.5 h-3.5" />
                                                     ACTIVO
@@ -817,13 +718,13 @@ const CIE10 = () => {
                                             ) }
                                         </span>
                                     </div>
-                                    <p className="mb-1 text-sm text-blue-100">Código: <span className="font-bold text-white">{ selectedItem.codigo }</span></p>
+                                    <p className="mb-1 text-sm text-blue-100">Código Medicamento: <span className="font-bold text-white">{ selectedItem.codMedicamento }</span></p>
                                 </div>
                             </div>
                         </div>
 
                         {/* Contenido del modal */}
-                        <div className="p-8 bg-gradient-to-br from-gray-50 to-white max-h-[70vh] overflow-y-auto">
+                        <div className="p-8 bg-gradient-to-br from-gray-50 to-white">
                             {/* Descripción destacada */}
                             <div className="p-6 mb-6 bg-white border-2 border-blue-100 shadow-sm rounded-xl">
                                 <div className="flex items-start gap-3 mb-3">
@@ -832,10 +733,10 @@ const CIE10 = () => {
                                     </div>
                                     <div className="flex-1">
                                         <label className="block mb-2 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                            Descripción
+                                            Descripción del Medicamento
                                         </label>
                                         <p className="text-base font-medium leading-relaxed text-gray-800">
-                                            { selectedItem.descripcion }
+                                            { selectedItem.descMedicamento }
                                         </p>
                                     </div>
                                 </div>
@@ -843,17 +744,17 @@ const CIE10 = () => {
 
                             {/* Información adicional en grid */}
                             <div className="grid grid-cols-1 gap-4 mb-6 md:grid-cols-2">
-                                {/* Código CIE10 */}
+                                {/* Código Medicamento */}
                                 <div className="p-5 transition-shadow bg-white border border-gray-200 shadow-sm rounded-xl hover:shadow-md">
                                     <div className="flex items-center gap-3 mb-2">
                                         <div className="p-2 bg-indigo-100 rounded-lg">
                                             <FileText className="w-4 h-4 text-indigo-700" />
                                         </div>
                                         <label className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                            Código CIE10
+                                            Código Medicamento
                                         </label>
                                     </div>
-                                    <p className="text-lg font-bold text-gray-900">{ selectedItem.codigo }</p>
+                                    <p className="text-lg font-bold text-gray-900">{ selectedItem.codMedicamento }</p>
                                 </div>
 
                                 {/* Estado */}
@@ -867,11 +768,11 @@ const CIE10 = () => {
                                         </label>
                                     </div>
                                     <span className={ `inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold ${
-                                        selectedItem.activo
+                                        selectedItem.statMedicamento === 'A'
                                             ? 'bg-emerald-100 text-emerald-700 border border-emerald-300'
                                             : 'bg-gray-100 text-gray-600 border border-gray-300'
                                     }` }>
-                                        { selectedItem.activo ? (
+                                        { selectedItem.statMedicamento === 'A' ? (
                                             <>
                                                 <Check className="w-4 h-4" />
                                                 ACTIVO
@@ -885,77 +786,34 @@ const CIE10 = () => {
                                     </span>
                                 </div>
 
-                                {/* Nivel */}
-                                {selectedItem.nivel !== null && selectedItem.nivel !== undefined && (
-                                    <div className="p-5 transition-shadow bg-white border border-gray-200 shadow-sm rounded-xl hover:shadow-md">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 bg-purple-100 rounded-lg">
-                                                <FileText className="w-4 h-4 text-purple-700" />
-                                            </div>
-                                            <label className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                Nivel
-                                            </label>
-                                        </div>
-                                        <p className="text-lg font-bold text-gray-900">{ selectedItem.nivel }</p>
-                                    </div>
-                                )}
-
-                                {/* Fuente */}
-                                {selectedItem.fuente && (
-                                    <div className="p-5 transition-shadow bg-white border border-gray-200 shadow-sm rounded-xl hover:shadow-md">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 bg-amber-100 rounded-lg">
-                                                <FileText className="w-4 h-4 text-amber-700" />
-                                            </div>
-                                            <label className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                Fuente
-                                            </label>
-                                        </div>
-                                        <p className="text-lg font-semibold text-gray-900">{ selectedItem.fuente }</p>
-                                    </div>
-                                )}
-
                                 {/* Fecha de creación */}
-                                {selectedItem.createdAt && (
-                                    <div className="p-5 transition-shadow bg-white border border-gray-200 shadow-sm rounded-xl hover:shadow-md">
-                                        <div className="flex items-center gap-3 mb-2">
-                                            <div className="p-2 rounded-lg bg-amber-100">
-                                                <Calendar className="w-4 h-4 text-amber-700" />
-                                            </div>
-                                            <label className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                Fecha de Creación
-                                            </label>
+                                <div className="p-5 transition-shadow bg-white border border-gray-200 shadow-sm rounded-xl hover:shadow-md">
+                                    <div className="flex items-center gap-3 mb-2">
+                                        <div className="p-2 rounded-lg bg-amber-100">
+                                            <Calendar className="w-4 h-4 text-amber-700" />
                                         </div>
-                                        <p className="text-lg font-semibold text-gray-900">
-                                            { new Date(selectedItem.createdAt).toLocaleDateString('es-PE', { 
+                                        <label className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                                            Fecha de Creación
+                                        </label>
+                                    </div>
+                                    <p className="text-lg font-semibold text-gray-900">
+                                        { selectedItem.createdAt 
+                                            ? new Date(selectedItem.createdAt).toLocaleDateString('es-PE', { 
                                                 year: 'numeric', 
                                                 month: 'long', 
                                                 day: 'numeric' 
-                                            }) }
-                                        </p>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Códigos Padre */}
-                            {(selectedItem.codigoPadre0 || selectedItem.codigoPadre1 || selectedItem.codigoPadre2 || selectedItem.codigoPadre3 || selectedItem.codigoPadre4) && (
-                                <div className="p-6 mb-6 bg-white border border-gray-200 shadow-sm rounded-xl">
-                                    <label className="block mb-3 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                        Códigos Padre
-                                    </label>
-                                    <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
-                                        {[0, 1, 2, 3, 4].map((num) => {
-                                            const codigoPadre = selectedItem[`codigoPadre${num}`];
-                                            return codigoPadre ? (
-                                                <div key={num} className="p-3 bg-gray-50 rounded-lg">
-                                                    <span className="text-xs text-gray-600">Padre {num}:</span>
-                                                    <p className="text-sm font-semibold text-gray-900">{codigoPadre}</p>
-                                                </div>
-                                            ) : null;
-                                        })}
-                                    </div>
+                                            })
+                                            : 'No disponible' 
+                                        }
+                                    </p>
+                                    { selectedItem.updatedAt && selectedItem.updatedAt !== selectedItem.createdAt && (
+                                        <div className="flex items-center gap-1 mt-2 text-xs text-gray-500">
+                                            <Clock className="w-3 h-3" />
+                                            <span>Actualizado: { new Date(selectedItem.updatedAt).toLocaleDateString('es-PE') }</span>
+                                        </div>
+                                    ) }
                                 </div>
-                            )}
+                            </div>
 
                             {/* Acciones */}
                             <div className="flex items-center justify-end gap-3 pt-6 border-t border-gray-200">
@@ -1005,7 +863,7 @@ const CIE10 = () => {
                                 {/* Información principal */}
                                 <div className="flex-1 text-white">
                                     <h3 className="mb-2 text-2xl font-bold">
-                                        ¿Eliminar Código CIE10?
+                                        ¿Eliminar Medicamento?
                                     </h3>
                                     <p className="text-sm text-red-100">
                                         Esta acción no se puede deshacer
@@ -1025,13 +883,13 @@ const CIE10 = () => {
                                     <div className="flex-1">
                                         <h4 className="mb-1 font-semibold text-red-900">Advertencia</h4>
                                         <p className="text-sm text-red-700">
-                                            Estás a punto de eliminar permanentemente este código CIE10. Esta acción no se puede revertir.
+                                            Estás a punto de eliminar permanentemente este medicamento. Esta acción no se puede revertir.
                                         </p>
                                     </div>
                                 </div>
                             </div>
 
-                            {/* Información del código a eliminar */}
+                            {/* Información del medicamento a eliminar */}
                             <div className="p-6 mb-6 bg-white border-2 border-gray-200 shadow-sm rounded-xl">
                                 <div className="flex items-start gap-4">
                                     <div className="flex-shrink-0 p-3 bg-gray-100 rounded-xl">
@@ -1040,16 +898,16 @@ const CIE10 = () => {
                                     <div className="flex-1">
                                         <div className="mb-3">
                                             <label className="block mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                                                Código CIE10
+                                                Código Medicamento
                                             </label>
-                                            <p className="text-lg font-bold text-gray-900">{ selectedItem.codigo }</p>
+                                            <p className="text-lg font-bold text-gray-900">{ selectedItem.codMedicamento }</p>
                                         </div>
                                         <div>
                                             <label className="block mb-1 text-xs font-semibold tracking-wide text-gray-500 uppercase">
                                                 Descripción
                                             </label>
                                             <p className="text-sm leading-relaxed text-gray-700">
-                                                { selectedItem.descripcion }
+                                                { selectedItem.descMedicamento }
                                             </p>
                                         </div>
                                     </div>
@@ -1090,4 +948,4 @@ const CIE10 = () => {
     );
 };
 
-export default CIE10;
+export default Medicamentos;

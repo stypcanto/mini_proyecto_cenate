@@ -1,15 +1,17 @@
 package com.styp.cenate.config;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.CommandLineRunner;
-import org.springframework.stereotype.Component;
-import com.styp.cenate.model.Procedimiento;
-import com.styp.cenate.repository.ProcedimientoRepository;
-
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
+
+import org.springframework.boot.CommandLineRunner;
+import org.springframework.stereotype.Component;
+
+import com.styp.cenate.model.Procedimiento;
+import com.styp.cenate.repository.ProcedimientoRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Inicializador de datos para la tabla dim_proced.
