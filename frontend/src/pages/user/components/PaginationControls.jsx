@@ -87,10 +87,10 @@ const PaginationControls = ({
           onClick={() => handlePageChange(currentPage - 1)}
           disabled={currentPage === 0 || loading}
           className={`
-            px-3 py-2 rounded-md text-sm font-medium transition-colors
+            px-3 py-2 rounded-lg text-sm font-medium transition-colors
             ${currentPage === 0 || loading
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 shadow-sm'
             }
           `}
         >
@@ -105,7 +105,7 @@ const PaginationControls = ({
               return (
                 <span
                   key={`ellipsis-${index}`}
-                  className="px-2 py-2 text-gray-500 dark:text-gray-400"
+                  className="px-2 py-2 text-gray-500"
                 >
                   ...
                 </span>
@@ -119,12 +119,12 @@ const PaginationControls = ({
                 onClick={() => handlePageChange(page)}
                 disabled={loading}
                 className={`
-                  min-w-[36px] px-3 py-2 rounded-md text-sm font-medium transition-colors
+                  min-w-[40px] px-3 py-2 rounded-lg text-sm font-medium transition-colors
                   ${loading
-                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
                     : isActive
-                    ? 'bg-blue-600 text-white hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600'
-                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
+                    ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                    : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 shadow-sm'
                   }
                 `}
               >
@@ -139,10 +139,10 @@ const PaginationControls = ({
           onClick={() => handlePageChange(currentPage + 1)}
           disabled={currentPage >= totalPages - 1 || loading}
           className={`
-            px-3 py-2 rounded-md text-sm font-medium transition-colors
+            px-3 py-2 rounded-lg text-sm font-medium transition-colors
             ${currentPage >= totalPages - 1 || loading
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800 dark:text-gray-600'
-              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 dark:bg-gray-800 dark:text-gray-300 dark:border-gray-700 dark:hover:bg-gray-700'
+              ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300 shadow-sm'
             }
           `}
         >

@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.17.0** (2026-01-04)
+> Sistema de Telemedicina - EsSalud | **v1.17.2** (2026-01-04)
 
 ---
 
@@ -164,6 +164,7 @@ Password: @Cenate2025
 | **Notificaciones Cumpleaños** | Ver changelog v1.15.10 | ✅ Implementado |
 | **Gestión Asegurado** | Ver changelog v1.16.0 | ✅ Implementado |
 | **Tipos Profesionales** | Ver changelog v1.16.1 | ✅ Implementado |
+| **Navegación Dinámica de Pestañas** | Ver changelog v1.17.1 | ✅ Implementado |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
@@ -293,4 +294,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.17.0 | 2026-01-04*
+*Versión 1.17.1 | 2026-01-04*

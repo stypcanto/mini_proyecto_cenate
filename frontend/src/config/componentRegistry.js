@@ -374,7 +374,7 @@ export const componentRegistry = {
   '/enfermeria/dashboard': {
     component: lazy(() => import('../pages/enfermeria/DashboardEnfermeria')),
     requiredAction: 'ver',
-    requiredRoles: ['SUPERADMIN'],
+    requiredRoles: ['ENFERMERIA', 'SUPERADMIN'], // Enfermeras y SUPERADMIN pueden ver
   },
 };
 

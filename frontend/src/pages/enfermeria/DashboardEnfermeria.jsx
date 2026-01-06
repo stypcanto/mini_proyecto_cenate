@@ -6,12 +6,13 @@
 import React, { useState, useEffect } from "react";
 import {
   Users, Activity, Heart, TrendingUp, Building2, Calendar,
-  ArrowLeft, Loader, AlertCircle
+  ArrowLeft, Loader, AlertCircle, ClipboardList, CheckCircle2
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import axios from "axios";
 import { getApiBaseUrl } from "../../utils/apiUrlHelper";
+import apiClient from "../../services/apiClient";
 
 const API_URL = getApiBaseUrl();
 
@@ -19,10 +20,40 @@ export default function DashboardEnfermeria() {
   const navigate = useNavigate();
   const [estadisticas, setEstadisticas] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [resumenAtenciones, setResumenAtenciones] = useState({ pendientes: 0, atendidos: 0 });
 
   useEffect(() => {
-    cargarEstadisticas();
+    cargarResumenAtenciones();
+    // Solo cargar estadísticas si es SUPERADMIN
+    const roles = JSON.parse(localStorage.getItem("auth.user") || "{}")?.roles || [];
+    const esSuperAdmin = roles.some(r => 
+      (typeof r === 'string' ? r : r?.authority || '').includes('SUPERADMIN')
+    );
+    if (esSuperAdmin) {
+      cargarEstadisticas();
+    } else {
+      setLoading(false);
+    }
   }, []);
+
+  const cargarResumenAtenciones = async () => {
+    try {
+      const [pendientes, atendidos] = await Promise.all([
+        apiClient.get("/enfermeria/queue", { params: { estado: "PENDIENTE" } }),
+        apiClient.get("/enfermeria/queue", { params: { estado: "ATENDIDO" } })
+      ]);
+      
+      const pendientesData = Array.isArray(pendientes) ? pendientes : (pendientes.data || []);
+      const atendidosData = Array.isArray(atendidos) ? atendidos : (atendidos.data || []);
+      
+      setResumenAtenciones({
+        pendientes: pendientesData.length,
+        atendidos: atendidosData.length
+      });
+    } catch (error) {
+      console.error("Error al cargar resumen de atenciones:", error);
+    }
+  };
 
   const cargarEstadisticas = async () => {
     try {
@@ -43,13 +74,25 @@ export default function DashboardEnfermeria() {
       }
     } catch (error) {
       console.error("Error al cargar estadísticas:", error);
-      toast.error("Error al cargar las estadísticas de enfermería");
+      // No mostrar error si no es SUPERADMIN
+      const roles = JSON.parse(localStorage.getItem("auth.user") || "{}")?.roles || [];
+      const esSuperAdmin = roles.some(r => 
+        (typeof r === 'string' ? r : r?.authority || '').includes('SUPERADMIN')
+      );
+      if (esSuperAdmin) {
+        toast.error("Error al cargar las estadísticas de enfermería");
+      }
     } finally {
       setLoading(false);
     }
   };
 
-  if (loading) {
+  const roles = JSON.parse(localStorage.getItem("auth.user") || "{}")?.roles || [];
+  const esSuperAdmin = roles.some(r => 
+    (typeof r === 'string' ? r : r?.authority || '').includes('SUPERADMIN')
+  );
+
+  if (loading && esSuperAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
         <div className="flex justify-center items-center py-20">
@@ -60,7 +103,89 @@ export default function DashboardEnfermeria() {
     );
   }
 
-  if (!estadisticas) {
+  // Si no es SUPERADMIN, mostrar dashboard de enfermera
+  if (!esSuperAdmin) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <button
+              onClick={() => navigate("/dashboard")}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
+            >
+              <ArrowLeft className="w-5 h-5" />
+              <span className="font-medium">Volver al Dashboard</span>
+            </button>
+
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-gradient-to-br from-green-500 to-teal-600 rounded-xl shadow-lg">
+                  <Activity className="w-8 h-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Dashboard de Enfermería</h1>
+                  <p className="text-gray-600 mt-1">
+                    Resumen de tus atenciones pendientes y realizadas
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Tarjetas de Resumen */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div 
+              onClick={() => navigate("/enfermeria/mis-pacientes")}
+              className="bg-white rounded-xl shadow-md p-6 border border-gray-100 cursor-pointer hover:shadow-lg transition-all hover:border-green-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-yellow-100 rounded-lg">
+                  <ClipboardList className="w-6 h-6 text-yellow-600" />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                {resumenAtenciones.pendientes}
+              </div>
+              <div className="text-sm text-gray-600">
+                Pacientes Pendientes
+              </div>
+            </div>
+
+            <div 
+              onClick={() => navigate("/enfermeria/mis-pacientes")}
+              className="bg-white rounded-xl shadow-md p-6 border border-gray-100 cursor-pointer hover:shadow-lg transition-all hover:border-blue-300"
+            >
+              <div className="flex items-center justify-between mb-4">
+                <div className="p-3 bg-blue-100 rounded-lg">
+                  <CheckCircle2 className="w-6 h-6 text-blue-600" />
+                </div>
+              </div>
+              <div className="text-3xl font-bold text-gray-900 mb-1">
+                {resumenAtenciones.atendidos}
+              </div>
+              <div className="text-sm text-gray-600">
+                Pacientes Atendidos
+              </div>
+            </div>
+          </div>
+
+          {/* Acceso Rápido */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">Acceso Rápido</h3>
+            <button
+              onClick={() => navigate("/enfermeria/mis-pacientes")}
+              className="w-full px-6 py-3 bg-gradient-to-r from-green-600 to-teal-700 text-white font-medium rounded-lg hover:from-green-700 hover:to-teal-800 transition-all shadow-md"
+            >
+              Ver Lista de Pacientes
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!estadisticas && esSuperAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
         <div className="max-w-7xl mx-auto">

@@ -4,10 +4,13 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import java.time.OffsetDateTime;
+import java.time.LocalDateTime;
 
+/**
+ * Entidad para la tabla dim_proced (Procedimientos CPMS).
+ */
 @Entity
-@Table(name = "dim_proced")
+@Table(name = "dim_proced", schema = "public")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -17,22 +20,22 @@ public class Procedimiento {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_proced")
-    private Long id;
+    private Long idProced;
 
     @Column(name = "cod_proced", nullable = false)
-    private String codigo;
+    private String codProced;
 
     @Column(name = "desc_proced", nullable = false)
-    private String descripcion;
+    private String descProced;
 
     @Column(name = "stat_proced", nullable = false)
-    private String estado;
+    private String statProced;
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
-    private OffsetDateTime creado;
+    private LocalDateTime createdAt;
 
     @UpdateTimestamp
     @Column(name = "updated_at")
-    private OffsetDateTime actualizado;
+    private LocalDateTime updatedAt;
 }

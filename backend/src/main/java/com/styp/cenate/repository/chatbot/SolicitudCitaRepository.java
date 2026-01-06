@@ -15,8 +15,8 @@ public interface SolicitudCitaRepository extends JpaRepository<SolicitudCita, Lo
 	// Buscar por documento del paciente
 	List<SolicitudCita> findByDocPaciente(String docPaciente);
 
-//	// Buscar por estado de solicitud
-//	List<SolicitudCita> findByEstadoSolicitud(String estadoSolicitud);
+	// // Buscar por estado de solicitud
+	// List<SolicitudCita> findByEstadoSolicitud(String estadoSolicitud);
 
 	// Buscar por servicio (usando la relación)
 	List<SolicitudCita> findByServicio_IdServicio(Long idServicio);
@@ -31,5 +31,8 @@ public interface SolicitudCitaRepository extends JpaRepository<SolicitudCita, Lo
 	List<SolicitudCita> findByPersonal_IdPers(Long idPers);
 
 	boolean existsByPersonal_IdPersAndFechaCitaAndHoraCita(Long idPers, LocalDate fechaCita, LocalTime horaCita);
+
+	// Buscar citas programadas por fecha y estado
+	List<SolicitudCita> findByFechaCitaAndIdEstadoCita(LocalDate fechaCita, Long idEstadoCita);
 
 }

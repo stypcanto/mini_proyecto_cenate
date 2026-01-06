@@ -233,11 +233,37 @@ public class GlobalExceptionHandler {
 
 	// Violaciones de integridad (NOT NULL, UNIQUE, FK) a nivel BD
 	@ExceptionHandler(DataIntegrityViolationException.class)
-	public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException ex) {
-		String detalle = Optional.ofNullable(ex.getMostSpecificCause()).map(Throwable::getMessage)
+	public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
+		String detalle = Optional.ofNullable(ex.getMostSpecificCause())
+				.map(Throwable::getMessage)
 				.orElse(ex.getMessage());
-		return ResponseEntity.status(HttpStatus.CONFLICT)
-				.body(Map.of("error", "Violación de integridad de datos", "detalle", detalle));
+
+		log.warn("⚠️ Violación de integridad de datos: {}", detalle);
+
+		// Mensaje amigable para el usuario
+		String mensajeUsuario;
+		if (detalle != null && (detalle.contains("violates foreign key constraint") ||
+				detalle.contains("is still referenced") ||
+				detalle.contains("llave foránea") ||
+				detalle.contains("fk_"))) {
+			mensajeUsuario = "No se puede eliminar este registro porque está siendo utilizado en otras partes del sistema. "
+					+
+					"Considere inactivarlo en lugar de eliminarlo.";
+		} else if (detalle != null && (detalle.contains("duplicate key") || detalle.contains("unique constraint"))) {
+			mensajeUsuario = "Ya existe un registro con estos datos. Verifique que no haya duplicados.";
+		} else if (detalle != null && detalle.contains("null value")) {
+			mensajeUsuario = "Hay campos obligatorios que no fueron completados.";
+		} else {
+			mensajeUsuario = "Error de integridad de datos. Verifique la información ingresada.";
+		}
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("status", HttpStatus.CONFLICT.value());
+		response.put("error", "Violación de integridad de datos");
+		response.put("message", mensajeUsuario);
+		response.put("timestamp", LocalDateTime.now().toString());
+
+		return ResponseEntity.status(HttpStatus.CONFLICT).body(response);
 	}
 
 	@ExceptionHandler(HttpMessageNotReadableException.class)
@@ -257,8 +283,7 @@ public class GlobalExceptionHandler {
 				.body(Map.of("error", "Formato JSON inválido", "detalle", mensajeUsuario, "mensaje", detalle));
 	}
 
-	
-	// FORMULARIO 107 INICIO 
+	// FORMULARIO 107 INICIO
 	@ExceptionHandler(ExcelValidationException.class)
 	public ResponseEntity<?> handleExcelValidationException(ExcelValidationException ex) {
 		if (ex.getDetail() != null) {
@@ -272,10 +297,5 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
 	}
 	// FORMULARIO 107 FIN
-	
-	
+
 }
-
-
-
-

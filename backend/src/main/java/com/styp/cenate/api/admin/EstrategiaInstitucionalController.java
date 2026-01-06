@@ -35,7 +35,7 @@ public class EstrategiaInstitucionalController {
      * GET /api/admin/estrategias-institucionales
      */
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<List<EstrategiaInstitucionalDTO>> obtenerTodas() {
         log.info("📋 GET /api/admin/estrategias-institucionales - Obtener todas");
         List<EstrategiaInstitucionalDTO> estrategias = service.obtenerTodas();
@@ -58,7 +58,7 @@ public class EstrategiaInstitucionalController {
      * GET /api/admin/estrategias-institucionales/{id}
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<EstrategiaInstitucionalDTO> obtenerPorId(@PathVariable Long id) {
         log.info("🔍 GET /api/admin/estrategias-institucionales/{}", id);
         EstrategiaInstitucionalDTO estrategia = service.obtenerPorId(id);
@@ -70,7 +70,7 @@ public class EstrategiaInstitucionalController {
      * POST /api/admin/estrategias-institucionales
      */
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<EstrategiaInstitucionalDTO> crear(
             @Valid @RequestBody EstrategiaInstitucionalDTO dto) {
         log.info("➕ POST /api/admin/estrategias-institucionales - Crear: {}", dto.getDescEstrategia());
@@ -83,7 +83,7 @@ public class EstrategiaInstitucionalController {
      * PUT /api/admin/estrategias-institucionales/{id}
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<EstrategiaInstitucionalDTO> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody EstrategiaInstitucionalDTO dto) {
@@ -97,7 +97,7 @@ public class EstrategiaInstitucionalController {
      * DELETE /api/admin/estrategias-institucionales/{id}
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<Map<String, String>> eliminar(@PathVariable Long id) {
         log.info("🗑️ DELETE /api/admin/estrategias-institucionales/{}", id);
         service.eliminar(id);
@@ -109,7 +109,7 @@ public class EstrategiaInstitucionalController {
      * PATCH /api/admin/estrategias-institucionales/{id}/activar
      */
     @PatchMapping("/{id}/activar")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<EstrategiaInstitucionalDTO> activar(@PathVariable Long id) {
         log.info("✔️ PATCH /api/admin/estrategias-institucionales/{}/activar", id);
         EstrategiaInstitucionalDTO activated = service.activar(id);
@@ -121,7 +121,7 @@ public class EstrategiaInstitucionalController {
      * PATCH /api/admin/estrategias-institucionales/{id}/inactivar
      */
     @PatchMapping("/{id}/inactivar")
-    @PreAuthorize("hasAnyAuthority('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
     public ResponseEntity<EstrategiaInstitucionalDTO> inactivar(@PathVariable Long id) {
         log.info("❌ PATCH /api/admin/estrategias-institucionales/{}/inactivar", id);
         EstrategiaInstitucionalDTO inactivated = service.inactivar(id);

@@ -26,6 +26,9 @@ public class AtencionClinicaResponseDTO {
     // Identificador
     private Long idAtencion;
 
+    // Tipo de origen (MEDICINA | ENFERMERIA)
+    private String tipoOrigen;
+
     // Datos de Atención
     private String pkAsegurado;
     private String nombreAsegurado;

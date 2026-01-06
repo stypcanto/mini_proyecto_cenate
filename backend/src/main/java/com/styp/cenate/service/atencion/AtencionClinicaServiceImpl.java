@@ -46,16 +46,53 @@ public class AtencionClinicaServiceImpl implements IAtencionClinicaService {
     private final DimCie10Repository dimCie10Repository;
     private final AtencionDiagnosticoCie10Repository diagnosticoCie10Repository;
     private final SignosVitalesTendenciaService tendenciaService;
+    private final com.styp.cenate.repository.enfermeria.AtencionEnfermeriaRepository atencionEnfermeriaRepository;
 
     @Override
     @Transactional(readOnly = true)
     public Page<AtencionClinicaResponseDTO> obtenerPorAsegurado(String pkAsegurado, Pageable pageable) {
-        log.info("📋 Obteniendo atenciones del asegurado: {}", pkAsegurado);
+        log.info("📋 Obteniendo atenciones del asegurado: {} (médicas + enfermería)", pkAsegurado);
 
-        Page<AtencionClinica> atenciones = atencionRepository
-                .findByPkAseguradoOrderByFechaAtencionDesc(pkAsegurado, pageable);
+        // 1. Obtener TODAS las atenciones médicas (sin paginar primero)
+        List<AtencionClinica> atencionesMedicas = atencionRepository
+                .findByPkAseguradoOrderByFechaAtencionDesc(pkAsegurado);
 
-        return atenciones.map(this::convertirAResponse);
+        // 2. Obtener TODAS las atenciones de enfermería (buscar por DNI como Long)
+        List<com.styp.cenate.model.enfermeria.AtencionEnfermeria> atencionesEnfermeria = List.of();
+        try {
+            // Limpiar el DNI: eliminar guiones y caracteres no numéricos
+            String dniLimpio = pkAsegurado.replaceAll("[^0-9]", "");
+            Long dniAsegurado = Long.parseLong(dniLimpio);
+            atencionesEnfermeria = atencionEnfermeriaRepository.findByIdPacienteOrderByFechaAtencionDesc(dniAsegurado);
+            log.info("✅ Encontradas {} atenciones de enfermería para paciente {} (DNI limpio: {})",
+                    atencionesEnfermeria.size(), pkAsegurado, dniLimpio);
+        } catch (NumberFormatException e) {
+            log.warn("⚠️ El pkAsegurado {} no es un número válido, omitiendo atenciones de enfermería", pkAsegurado);
+        }
+
+        // 3. Mapear ambas listas a DTOs
+        List<AtencionClinicaResponseDTO> todasLasAtenciones = new java.util.ArrayList<>();
+        atencionesMedicas.forEach(atencion -> todasLasAtenciones.add(convertirAResponse(atencion)));
+        atencionesEnfermeria
+                .forEach(atencion -> todasLasAtenciones.add(convertirEnfermeriaAResponse(atencion, pkAsegurado)));
+
+        // 4. Ordenar por fecha descendente (más reciente primero)
+        todasLasAtenciones.sort((a1, a2) -> {
+            if (a1.getFechaAtencion() == null)
+                return 1;
+            if (a2.getFechaAtencion() == null)
+                return -1;
+            return a2.getFechaAtencion().compareTo(a1.getFechaAtencion());
+        });
+
+        // 5. Aplicar paginación manual
+        int start = (int) pageable.getOffset();
+        int end = Math.min((start + pageable.getPageSize()), todasLasAtenciones.size());
+        List<AtencionClinicaResponseDTO> paginadas = start < todasLasAtenciones.size()
+                ? todasLasAtenciones.subList(start, end)
+                : List.of();
+
+        return new org.springframework.data.domain.PageImpl<>(paginadas, pageable, todasLasAtenciones.size());
     }
 
     @Override
@@ -370,6 +407,7 @@ public class AtencionClinicaServiceImpl implements IAtencionClinicaService {
 
         return AtencionClinicaResponseDTO.builder()
                 .idAtencion(atencion.getIdAtencion())
+                .tipoOrigen("MEDICINA")
                 .pkAsegurado(atencion.getPkAsegurado())
                 .nombreAsegurado(nombreAsegurado)
                 .fechaAtencion(atencion.getFechaAtencion())
@@ -409,6 +447,59 @@ public class AtencionClinicaServiceImpl implements IAtencionClinicaService {
                 .updatedAt(atencion.getUpdatedAt())
                 .tieneSignosVitales(atencion.tieneSignosVitales())
                 .isCompleta(atencion.isCompleta())
+                .build();
+    }
+
+    /**
+     * Convierte una AtencionEnfermeria a AtencionClinicaResponseDTO
+     */
+    private AtencionClinicaResponseDTO convertirEnfermeriaAResponse(
+            com.styp.cenate.model.enfermeria.AtencionEnfermeria atencion, String pkAsegurado) {
+
+        // Obtener nombre del asegurado
+        String nombreAsegurado = obtenerNombreAsegurado(pkAsegurado);
+
+        // Obtener nombre de la enfermera
+        String nombreEnfermera = obtenerNombrePersonal(atencion.getIdUsuarioEnfermera());
+
+        // Convertir fecha de LocalDateTime a OffsetDateTime
+        OffsetDateTime fechaAtencionOffset = atencion.getFechaAtencion() != null
+                ? atencion.getFechaAtencion().atOffset(java.time.ZoneOffset.UTC)
+                : null;
+
+        // Construir SignosVitalesDTO desde el Map<String, Object>
+        AtencionClinicaResponseDTO.SignosVitalesDTO signosVitales = null;
+        if (atencion.getSignosVitales() != null && !atencion.getSignosVitales().isEmpty()) {
+            Map<String, Object> sv = atencion.getSignosVitales();
+            signosVitales = AtencionClinicaResponseDTO.SignosVitalesDTO.builder()
+                    .presionArterial(sv.get("pa") != null ? sv.get("pa").toString() : null)
+                    .temperatura(sv.get("temp") != null ? new java.math.BigDecimal(sv.get("temp").toString()) : null)
+                    .pesoKg(sv.get("peso") != null ? new java.math.BigDecimal(sv.get("peso").toString()) : null)
+                    .tallaCm(sv.get("talla") != null ? new java.math.BigDecimal(sv.get("talla").toString()) : null)
+                    .saturacionO2(sv.get("spo2") != null ? Integer.valueOf(sv.get("spo2").toString()) : null)
+                    .frecuenciaCardiaca(sv.get("fc") != null ? Integer.valueOf(sv.get("fc").toString()) : null)
+                    .build();
+        }
+
+        return AtencionClinicaResponseDTO.builder()
+                .idAtencion(atencion.getIdAtencionEnf())
+                .tipoOrigen("ENFERMERIA")
+                .pkAsegurado(pkAsegurado)
+                .nombreAsegurado(nombreAsegurado)
+                .fechaAtencion(fechaAtencionOffset)
+                .nombreEspecialidad("Enfermería")
+                .nombreTipoAtencion("Atención de Enfermería")
+                .siglaTipoAtencion("ENF")
+                .motivoConsulta(atencion.getMotivoConsulta())
+                .observacionesGenerales(atencion.getObservaciones())
+                .signosVitales(signosVitales)
+                .nombreProfesional(nombreEnfermera)
+                .idPersonalCreador(atencion.getIdUsuarioEnfermera())
+                .createdAt(atencion.getCreatedAt() != null ? atencion.getCreatedAt().atOffset(java.time.ZoneOffset.UTC)
+                        : null)
+                .updatedAt(atencion.getUpdatedAt() != null ? atencion.getUpdatedAt().atOffset(java.time.ZoneOffset.UTC)
+                        : null)
+                .tieneSignosVitales(signosVitales != null)
                 .build();
     }
 

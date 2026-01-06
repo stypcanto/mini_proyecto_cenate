@@ -1,3 +1,5 @@
+package com.styp.cenate;
+
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 public class GenerarHash {
