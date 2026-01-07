@@ -184,6 +184,11 @@ public class SecurityConfig {
                                                 // =====================================================
 
                                                 // =====================================================
+                                                // 📹 TELEMEDICINA - Videollamadas Jitsi
+                                                // =====================================================
+                                                .requestMatchers("/api/telemedicina/**").authenticated()
+
+                                                // =====================================================
                                                 // 🧩 ADMINISTRACIÓN GENERAL
                                                 // =====================================================
                                                 // ⚠️ Usuarios: permitir GET para autenticados, resto solo ADMIN

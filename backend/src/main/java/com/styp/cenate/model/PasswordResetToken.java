@@ -41,6 +41,7 @@ public class PasswordResetToken {
     private String tipoAccion;
 
     @Column(name = "usado", nullable = false)
+    @Builder.Default
     private Boolean usado = false;
 
     @Column(name = "created_at", nullable = false)

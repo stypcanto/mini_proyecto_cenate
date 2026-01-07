@@ -48,6 +48,7 @@ public class DimOrigenPersonal {
 	    private OffsetDateTime updatedAt;
 	    
 	    @OneToMany(fetch = FetchType.LAZY, mappedBy = "origenPersonal")
+	    @Builder.Default
 	    private Set<PersonalCnt> personal = new HashSet<>();
 	    
 	    

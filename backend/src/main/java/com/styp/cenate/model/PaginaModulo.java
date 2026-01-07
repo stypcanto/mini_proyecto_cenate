@@ -35,7 +35,7 @@ import lombok.NoArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-
+@Builder
 public class PaginaModulo {
 	
 
@@ -94,10 +94,6 @@ public class PaginaModulo {
         updatedAt = LocalDateTime.now();
     }
 
-    private static Boolean $default$activo() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 
 	@PreUpdate
     protected void onUpdate() {

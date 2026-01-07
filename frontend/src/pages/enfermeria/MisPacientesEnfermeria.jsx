@@ -379,6 +379,7 @@ export default function MisPacientesEnfermeria() {
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">DNI</th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Género</th>
                   <th className="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">Edad</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Teléfono</th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Estrategia</th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">IPRESS de Adscripción</th>
                   <th className="px-4 py-3 text-center font-bold text-gray-700">Estado</th>
@@ -421,6 +422,9 @@ export default function MisPacientesEnfermeria() {
                     </td>
                     <td className="px-4 py-3 text-center font-semibold text-gray-900 border-r border-gray-200">
                       {paciente.pacienteEdad}
+                    </td>
+                    <td className="px-4 py-3 text-left font-mono text-sm text-gray-900 border-r border-gray-200">
+                      {paciente.telefono || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-left border-r border-gray-200">
                       {paciente.esCronico ? (

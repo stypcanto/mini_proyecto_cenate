@@ -19,6 +19,7 @@ public class NursingWorklistDto {
     private String pkAsegurado; // PK completo con sufijo (para buscar historial)
     private Integer pacienteEdad;
     private String pacienteSexo;
+    private String telefono; // Teléfono principal del paciente
 
     // Datos Clínicos
     private String diagnostico; // CIE-10 o descripción

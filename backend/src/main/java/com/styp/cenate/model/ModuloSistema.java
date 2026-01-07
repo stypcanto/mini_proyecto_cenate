@@ -9,7 +9,6 @@ package com.styp.cenate.model;
 
 import java.time.LocalDateTime;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Set;
 
 import com.fasterxml.jackson.annotation.JsonManagedReference;
@@ -89,12 +88,14 @@ public class ModuloSistema {
     @OneToMany(mappedBy = "modulo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @JsonManagedReference
 //    private List<PaginaModulo> paginas;
+    @Builder.Default
     private Set<PaginaModulo> paginas = new LinkedHashSet<>();
 
     
     /** Contextos funcionales asociados al módulo (dim_contextos_modulo) */
     @OneToMany(mappedBy = "modulo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
 //    private List<ContextoModulo> contextos;
+    @Builder.Default
     private Set<ContextoModulo> contextos = new LinkedHashSet<>();
 
     

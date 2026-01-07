@@ -32,6 +32,7 @@ public class DimTipoPersonalDTO {
         private String descTipPers;
 
         @Pattern(regexp = "^[AI]$", message = "El estado debe ser 'A' (Activo) o 'I' (Inactivo)")
+        @Builder.Default
         private String statTipPers = "A";
     }
 

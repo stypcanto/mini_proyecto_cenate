@@ -193,7 +193,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-16">
-        <Loader2 className="w-12 h-12 text-[#0A5BA9] animate-spin mb-4" />
+        <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
         <p className="text-slate-600 font-medium">Cargando atenciones clínicas...</p>
       </div>
     );
@@ -201,12 +201,12 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
 
   if (error) {
     return (
-      <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-8 text-center">
-        <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
-        <p className="text-red-700 font-medium mb-2">{ error }</p>
+      <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-8 text-center">
+        <AlertCircle className="w-12 h-12 text-purple-600 mx-auto mb-4" />
+        <p className="text-purple-700 font-medium mb-2">{ error }</p>
         <button
           onClick={ cargarAtenciones }
-          className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-all font-medium inline-flex items-center gap-2"
+          className="mt-4 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-xl transition-all font-medium inline-flex items-center gap-2"
         >
           <RefreshCw className="w-4 h-4" />
           Reintentar
@@ -234,7 +234,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
       {/* Header */ }
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-gradient-to-br from-[#0A5BA9] to-[#2563EB] rounded-lg">
+          <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-lg">
             <Activity className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -258,15 +258,15 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
         <div className="flex items-center gap-2">
           <button
             onClick={ () => setMostrarFiltros(!mostrarFiltros) }
-            className={ `flex items - center gap - 2 px - 3 py - 2 rounded - lg transition - all text - sm font - medium ${hayFiltrosActivos
-              ? 'bg-[#0A5BA9] text-white hover:bg-[#084682]'
+            className={ `flex items-center gap-2 px-3 py-2 rounded-lg transition-all text-sm font-medium ${hayFiltrosActivos
+              ? 'bg-blue-500 text-white hover:bg-blue-600'
               : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
               } ` }
           >
             <Filter className="w-4 h-4" />
             Filtros
             { hayFiltrosActivos && (
-              <span className="ml-1 px-1.5 py-0.5 bg-white text-[#0A5BA9] rounded-full text-xs font-bold">
+              <span className="ml-1 px-1.5 py-0.5 bg-white text-blue-500 rounded-full text-xs font-bold">
                 { [filtros.fechaAtencion, filtros.especialidad, filtros.medico].filter(Boolean).length }
               </span>
             ) }
@@ -286,13 +286,13 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
         <div className="bg-gradient-to-r from-slate-50 to-blue-50 border-2 border-slate-200 rounded-xl p-4 space-y-3 animate-in slide-in-from-top-2 duration-200">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-[#0A5BA9]" />
+              <Filter className="w-4 h-4 text-blue-500" />
               <h4 className="font-semibold text-slate-900">Filtrar Atenciones</h4>
             </div>
             { hayFiltrosActivos && (
               <button
                 onClick={ limpiarFiltros }
-                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all"
+                className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-all"
               >
                 <X className="w-3 h-3" />
                 Limpiar filtros
@@ -309,7 +309,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
               <select
                 value={ filtros.fechaAtencion }
                 onChange={ (e) => setFiltros({ ...filtros, fechaAtencion: e.target.value }) }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent transition-all bg-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
               >
                 <option value="">Todas las fechas</option>
                 { fechasUnicas.map(fecha => (
@@ -328,7 +328,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
               <select
                 value={ filtros.especialidad }
                 onChange={ (e) => setFiltros({ ...filtros, especialidad: e.target.value }) }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent transition-all bg-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
               >
                 <option value="">Todas las especialidades</option>
                 { especialidadesUnicas.map(esp => (
@@ -345,7 +345,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
               <select
                 value={ filtros.medico }
                 onChange={ (e) => setFiltros({ ...filtros, medico: e.target.value }) }
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-[#0A5BA9] focus:border-transparent transition-all bg-white"
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all bg-white"
               >
                 <option value="">Todos los médicos</option>
                 { medicosUnicos.map(med => (
@@ -398,15 +398,15 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
 
       {/* Timeline de Atenciones */ }
       { atencionesFiltradas.length === 0 ? (
-        <div className="bg-amber-50 border-2 border-amber-200 rounded-xl p-8 text-center">
-          <Filter className="w-12 h-12 text-amber-400 mx-auto mb-3" />
-          <p className="text-amber-900 font-semibold mb-1">No se encontraron resultados</p>
-          <p className="text-sm text-amber-700 mb-4">
+        <div className="bg-purple-50 border-2 border-purple-200 rounded-xl p-8 text-center">
+          <Filter className="w-12 h-12 text-purple-400 mx-auto mb-3" />
+          <p className="text-purple-900 font-semibold mb-1">No se encontraron resultados</p>
+          <p className="text-sm text-purple-700 mb-4">
             No hay atenciones que coincidan con los filtros seleccionados
           </p>
           <button
             onClick={ limpiarFiltros }
-            className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg transition-all font-medium text-sm inline-flex items-center gap-2"
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-all font-medium text-sm inline-flex items-center gap-2"
           >
             <X className="w-4 h-4" />
             Limpiar filtros
@@ -417,12 +417,12 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
           { atencionesFiltradas.map((atencion, index) => (
             <div
               key={ atencion.idAtencion }
-              className="bg-white border-2 border-slate-200 rounded-xl p-4 hover:border-[#0A5BA9] hover:shadow-lg transition-all"
+              className="bg-white border-2 border-slate-200 rounded-xl p-4 hover:border-blue-500 hover:shadow-lg transition-all"
             >
               <div className="flex items-start gap-4">
                 {/* Icono y línea de timeline */ }
                 <div className="flex flex-col items-center">
-                  <div className="p-2 bg-gradient-to-br from-[#0A5BA9] to-[#2563EB] rounded-full">
+                  <div className="p-2 bg-gradient-to-br from-blue-500 to-blue-400 rounded-full">
                     <Stethoscope className="w-4 h-4 text-white" />
                   </div>
                   { index < atencionesFiltradas.length - 1 && (
@@ -445,14 +445,14 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
 
                     {/* Botón de expandir/colapsar más intuitivo */ }
                     <button
-                      className="group/btn flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-[#0A5BA9] transition-all duration-200 border border-slate-200 hover:border-[#0A5BA9] flex-shrink-0 shadow-sm hover:shadow-md"
+                      className="group/btn flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-50 hover:bg-blue-500 transition-all duration-200 border border-slate-200 hover:border-blue-500 flex-shrink-0 shadow-sm hover:shadow-md"
                       onClick={ () => toggleExpand(atencion.idAtencion) }
                     >
                       <span className="text-xs font-medium text-slate-600 group-hover/btn:text-white transition-colors">
                         { expandedItems[atencion.idAtencion] ? 'Ocultar detalles' : 'Ver detalles' }
                       </span>
                       <ChevronDown
-                        className={ `w - 4 h - 4 text - slate - 600 group - hover / btn: text - white transition - all duration - 200 ${expandedItems[atencion.idAtencion] ? 'rotate-180' : 'rotate-0'
+                        className={ `w-4 h-4 text-slate-600 group-hover/btn:text-white transition-all duration-200 ${expandedItems[atencion.idAtencion] ? 'rotate-180' : 'rotate-0'
                           } ` }
                       />
                     </button>
@@ -461,12 +461,12 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                   {/* Información básica - siempre visible */ }
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                     <div className="flex items-center gap-2 text-slate-600">
-                      <Calendar className="w-4 h-4 text-[#0A5BA9]" />
+                      <Calendar className="w-4 h-4 text-blue-500" />
                       <span>{ formatearFecha(atencion.fechaAtencion) }</span>
                     </div>
                     { atencion.nombreProfesional && (
                       <div className="flex items-center gap-2 text-slate-600">
-                        <User className="w-4 h-4 text-[#0A5BA9]" />
+                        <User className="w-4 h-4 text-blue-500" />
                         <span>{ atencion.nombreProfesional }</span>
                       </div>
                     ) }
@@ -475,7 +475,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                   {/* Estrategia - Badge siempre visible */ }
                   { atencion.nombreEstrategia && (
                     <div className="mt-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white shadow-sm">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-gradient-to-r from-blue-500 to-blue-400 text-white shadow-sm">
                         <FileText className="w-3.5 h-3.5" />
                         { atencion.nombreEstrategia }
                       </span>
@@ -488,7 +488,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                       {/* Información adicional del header */ }
                       { atencion.nombreIpress && (
                         <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <Building2 className="w-4 h-4 text-[#0A5BA9]" />
+                          <Building2 className="w-4 h-4 text-blue-500" />
                           <span className="truncate">{ atencion.nombreIpress }</span>
                         </div>
                       ) }
@@ -497,8 +497,8 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                       { (atencion.signosVitales?.presionArterial || atencion.signosVitales?.saturacionO2 || atencion.signosVitales?.temperatura || atencion.signosVitales?.frecuenciaCardiaca) && (
                         <div className="bg-gradient-to-r from-gray-50 to-slate-50 border-2 border-gray-200 rounded-xl p-4">
                           <div className="flex items-center gap-2 mb-3">
-                            <div className="p-1.5 bg-blue-100 rounded">
-                              <Activity className="w-4 h-4 text-blue-600" />
+                            <div className="p-1.5 bg-green-100 rounded">
+                              <Activity className="w-4 h-4 text-green-600" />
                             </div>
                             <h4 className="text-sm font-semibold text-gray-900">Signos Vitales</h4>
                           </div>
@@ -564,7 +564,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                         <div className="space-y-3">
                           {/* Tratamiento */ }
                           { atencion.tratamiento && (
-                            <div className="p-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded-xl">
+                            <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-400 rounded-xl">
                               <h4 className="text-sm font-black text-green-900 mb-2 flex items-center gap-2 uppercase">
                                 <FileText className="w-4 h-4" />
                                 💊 Plan Farmacológico
@@ -577,12 +577,12 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
 
                           {/* Recomendaciones */ }
                           { atencion.recomendacionEspecialista && (
-                            <div className="p-4 bg-teal-50 border-2 border-teal-300 rounded-xl">
-                              <h4 className="text-sm font-bold text-teal-900 mb-2 flex items-center gap-2">
+                            <div className="p-4 bg-green-50 border-2 border-green-300 rounded-xl">
+                              <h4 className="text-sm font-bold text-green-900 mb-2 flex items-center gap-2">
                                 <FileText className="w-4 h-4" />
                                 👨‍⚕️ Recomendaciones
                               </h4>
-                              <p className="text-sm text-teal-900 font-medium leading-relaxed whitespace-pre-wrap">
+                              <p className="text-sm text-green-900 font-medium leading-relaxed whitespace-pre-wrap">
                                 { atencion.recomendacionEspecialista }
                               </p>
                             </div>
@@ -602,7 +602,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                               { atencion.diagnosticosCie10.map((diag, index) => (
                                 <li key={ index } className="flex items-start gap-2">
                                   <span className={ `px-1.5 py-0.5 rounded font-mono font-bold text-[10px] flex-shrink-0 ${
-                                    diag.esPrincipal ? 'bg-red-600 text-white' : 'bg-slate-300 text-slate-700'
+                                    diag.esPrincipal ? 'bg-purple-600 text-white' : 'bg-slate-300 text-slate-700'
                                   }` }>
                                     { diag.cie10Codigo }
                                   </span>
@@ -616,7 +616,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                           ) : (
                             atencion.cie10Codigo && (
                               <div className="flex items-start gap-2 text-xs text-slate-700">
-                                <span className="px-1.5 py-0.5 bg-red-600 text-white rounded font-mono font-bold text-[10px]">
+                                <span className="px-1.5 py-0.5 bg-purple-600 text-white rounded font-mono font-bold text-[10px]">
                                   { atencion.cie10Codigo }
                                 </span>
                                 <span className="leading-tight">{ atencion.cie10Descripcion }</span>
@@ -651,7 +651,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                           />
                         ) }
                         { atencion.tieneInterconsulta && (
-                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-orange-100 text-orange-800">
+                          <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-purple-100 text-purple-800">
                             Interconsulta
                           </span>
                         ) }
@@ -668,7 +668,7 @@ export default function HistorialAtencionesTab({ pkAsegurado }) {
                           e.stopPropagation();
                           setModalDetalle({ isOpen: true, idAtencion: atencion.idAtencion });
                         } }
-                        className="w-full mt-2 px-4 py-2 bg-[#0A5BA9] hover:bg-[#084682] text-white rounded-lg transition-all font-medium text-sm flex items-center justify-center gap-2"
+                        className="w-full mt-2 px-4 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-all font-medium text-sm flex items-center justify-center gap-2"
                       >
                         <FileText className="w-4 h-4" />
                         Ver Detalles Completos

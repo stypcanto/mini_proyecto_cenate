@@ -4,8 +4,6 @@ import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 
-import org.apache.commons.lang3.builder.ToStringExclude;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -21,7 +19,6 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
-import lombok.ToString;
 
 @Entity
 @Table(name = "dim_servicio_essi", schema = "public")
@@ -45,9 +42,11 @@ public class DimServicioEssi {
 	private String descServicio;
 
 	@Column(name = "es_cenate", nullable = false)
+	@Builder.Default
 	private Boolean esCenate = false;
 
 	@Column(name = "estado", columnDefinition = "bpchar(1)", nullable = false)
+	@Builder.Default
 	private String estado = "A";
 
 	@Column(name = "created_at", columnDefinition = "timestamptz", updatable = false)
@@ -57,6 +56,7 @@ public class DimServicioEssi {
 	private OffsetDateTime updatedAt;
 	
 	@Column(name = "es_apertura_nuevos", nullable = false)
+	@Builder.Default
 	private Boolean esAperturaNuevos=false;
 
 	@PrePersist
@@ -71,6 +71,7 @@ public class DimServicioEssi {
 	}
 	
 	@OneToMany(mappedBy = "servicioEssi", fetch = FetchType.LAZY)
+	@Builder.Default
 	private Set<PersonalCnt> personal = new HashSet<>();
 	
 	

@@ -244,6 +244,7 @@ public class NursingService {
         Boolean requiereTelemonitoreo = false;
         Long diasTranscurridos = 0L;
         String nombreIpress = null;
+        String telefono = null;
 
         // Intentar buscar Asegurado de múltiples formas
         var aseguradoOpt = aseguradoRepository.findById(String.valueOf(entity.getIdPaciente()));
@@ -278,6 +279,12 @@ public class NursingService {
             if (asegurado.getFecnacimpaciente() != null) {
                 edadPaciente = (int) ChronoUnit.YEARS.between(asegurado.getFecnacimpaciente(), LocalDate.now());
             }
+            // Obtener teléfono (priorizar celular sobre fijo)
+            telefono = asegurado.getTelCelular() != null && !asegurado.getTelCelular().trim().isEmpty()
+                ? asegurado.getTelCelular()
+                : (asegurado.getTelFijo() != null && !asegurado.getTelFijo().trim().isEmpty()
+                    ? asegurado.getTelFijo()
+                    : null);
             // 1. PRIORIDAD: Obtener IPRESS desde Asegurado.casAdscripcion (IPRESS real del paciente)
             if (asegurado.getCasAdscripcion() != null && !asegurado.getCasAdscripcion().trim().isEmpty()) {
                 try {
@@ -331,6 +338,7 @@ public class NursingService {
                 .pacienteNombre(nombrePaciente)
                 .pacienteEdad(edadPaciente)
                 .pacienteSexo(sexoPaciente) // ✅ Agregar sexo
+                .telefono(telefono) // ✅ Agregar teléfono
                 .fechaBase(entity.getFechaAtencion()) // Fecha de atención de enfermería
                 .fechaAtencionEnfermeria(entity.getFechaAtencion())
                 .diagnostico(diagnostico)
@@ -356,6 +364,7 @@ public class NursingService {
         String sexoPaciente = null;
         String pkAseguradoCompleto = entity.getPkAsegurado(); // Guardar pk completo para historial
         String nombreIpress = null;
+        String telefono = null;
 
         // Buscar asegurado para obtener nombre real y DNI limpio
         var aseguradoOpt = aseguradoRepository.findById(entity.getPkAsegurado());
@@ -367,6 +376,12 @@ public class NursingService {
             if (asegurado.getFecnacimpaciente() != null) {
                 edadPaciente = (int) ChronoUnit.YEARS.between(asegurado.getFecnacimpaciente(), LocalDate.now());
             }
+            // Obtener teléfono (priorizar celular sobre fijo)
+            telefono = asegurado.getTelCelular() != null && !asegurado.getTelCelular().trim().isEmpty()
+                ? asegurado.getTelCelular()
+                : (asegurado.getTelFijo() != null && !asegurado.getTelFijo().trim().isEmpty()
+                    ? asegurado.getTelFijo()
+                    : null);
             // 1. PRIORIDAD: Obtener IPRESS desde Asegurado.casAdscripcion (IPRESS real del paciente)
             if (asegurado.getCasAdscripcion() != null && !asegurado.getCasAdscripcion().trim().isEmpty()) {
                 try {
@@ -418,6 +433,7 @@ public class NursingService {
                 .pacienteNombre(nombrePaciente) // ✅ Nombre real
                 .pacienteEdad(edadPaciente) // ✅ Edad calculada
                 .pacienteSexo(sexoPaciente) // ✅ Agregar sexo
+                .telefono(telefono) // ✅ Agregar teléfono
                 .fechaBase(entity.getFechaAtencion().toLocalDateTime())
                 .diagnostico(entity.getCie10Codigo() + " - " + entity.getDiagnostico())
                 .requiereTelemonitoreo(Boolean.TRUE.equals(entity.getRequiereTelemonitoreo()))
@@ -432,18 +448,34 @@ public class NursingService {
 
     private NursingWorklistDto mapToPendienteDto(SolicitudCita entity) {
         String nombreIpress = null;
-        // Intentar obtener IPRESS desde el asegurado si tiene DNI
+        String telefono = null;
+        // Intentar obtener IPRESS y teléfono desde el asegurado si tiene DNI
         if (entity.getDocPaciente() != null) {
             try {
                 var aseguradoOpt = aseguradoRepository.findByDocPaciente(entity.getDocPaciente());
-                if (aseguradoOpt.isPresent() && aseguradoOpt.get().getCasAdscripcion() != null) {
-                    nombreIpress = ipressRepository.findByCodIpress(aseguradoOpt.get().getCasAdscripcion())
-                        .map(ip -> ip.getDescIpress())
-                        .orElse(aseguradoOpt.get().getCasAdscripcion());
+                if (aseguradoOpt.isPresent()) {
+                    var asegurado = aseguradoOpt.get();
+                    // Obtener IPRESS
+                    if (asegurado.getCasAdscripcion() != null) {
+                        nombreIpress = ipressRepository.findByCodIpress(asegurado.getCasAdscripcion())
+                            .map(ip -> ip.getDescIpress())
+                            .orElse(asegurado.getCasAdscripcion());
+                    }
+                    // Obtener teléfono (priorizar celular sobre fijo)
+                    telefono = asegurado.getTelCelular() != null && !asegurado.getTelCelular().trim().isEmpty()
+                        ? asegurado.getTelCelular()
+                        : (asegurado.getTelFijo() != null && !asegurado.getTelFijo().trim().isEmpty()
+                            ? asegurado.getTelFijo()
+                            : null);
                 }
             } catch (Exception e) {
                 log.warn("No se pudo obtener IPRESS para cita con DNI: {}", entity.getDocPaciente());
             }
+        }
+        
+        // Si no se obtuvo teléfono del asegurado, usar el de la cita si existe
+        if (telefono == null && entity.getTelefono() != null && !entity.getTelefono().trim().isEmpty()) {
+            telefono = entity.getTelefono();
         }
         
         return NursingWorklistDto.builder()
@@ -453,6 +485,7 @@ public class NursingService {
                 .pacienteNombre(entity.getNombresPaciente())
                 .pacienteEdad(entity.getEdad())
                 .pacienteSexo(entity.getSexo())
+                .telefono(telefono) // ✅ Agregar teléfono
                 .fechaBase(LocalDateTime.of(entity.getFechaCita(),
                         entity.getHoraCita() != null ? entity.getHoraCita() : java.time.LocalTime.MIDNIGHT))
                 .diagnostico("Cita Programada - " + entity.getObservacion())
