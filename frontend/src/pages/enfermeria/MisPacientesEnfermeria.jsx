@@ -1,56 +1,44 @@
 // ========================================================================
-// 👩‍⚕️ MisPacientesEnfermeria.jsx – Dashboard de Trabajo para Enfermería
-// ✅ Versión 2.0.0 (2026-01-04) - Implementación Worklist Unificada y Tarjetas
+// 👩‍⚕️ MisPacientesEnfermeria.jsx – Interfaz de Atención No Médica
+// ✅ Versión 3.0.0 (2026-01-06) - Interfaz Consulta Externa + Programación
 // ========================================================================
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useContext } from "react";
 import {
   Users, Search, Calendar, Activity, Heart,
-  RefreshCw, Clock, CheckCircle2, Stethoscope, Share2, ClipboardList, FileText
+  RefreshCw, Clock, CheckCircle2, Stethoscope, Share2, ClipboardList,
+  FileText, ChevronLeft, ChevronRight, ArrowRight, Copy
 } from "lucide-react";
 import toast from "react-hot-toast";
-import apiClient from "../../services/apiClient"; // Usamos apiClient configurado
+import { AuthContext } from "../../context/AuthContext";
+import apiClient from "../../services/apiClient";
 import NursingAttendModal from "./components/NursingAttendModal";
-import PaginationControls from "../user/components/PaginationControls";
-
-// Colores para Semáforos SLA
-const SLA_COLORS = {
-  VERDE: "bg-green-100 text-green-700 border-green-200",
-  AMARILLO: "bg-yellow-100 text-yellow-700 border-yellow-200",
-  ROJO: "bg-red-100 text-red-700 border-red-200",
-  NEGRO: "bg-gray-900 text-white border-gray-700",
-  AZUL: "bg-blue-100 text-blue-700 border-blue-200" // Completado
-};
 
 export default function MisPacientesEnfermeria() {
+  const { usuario } = useContext(AuthContext);
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("PENDIENTE"); // PENDIENTE | ATENDIDO
   const [searchTerm, setSearchTerm] = useState("");
 
   // Paginación
   const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize] = useState(20); // 20 registros por página
+  const [pageSize] = useState(50);
 
-  // Modal de Atención
+  // Modal
   const [selectedPatient, setSelectedPatient] = useState(null);
+
+  // Estado de selección de pacientes
+  const [selectedPatients, setSelectedPatients] = useState(new Set());
 
   const cargarWorklist = useCallback(async () => {
     try {
       setLoading(true);
-      // Convertir el estado a mayúsculas para que coincida con el backend
-      const estadoParam = activeTab.toUpperCase();
-      console.log("🔍 Cargando worklist con estado:", estadoParam, "activeTab:", activeTab);
       const response = await apiClient.get("/enfermeria/queue", {
-        params: { estado: estadoParam }
+        params: { estado: "PENDIENTE" }
       });
 
-      // ✅ FIX: Compatibilidad con ambas versiones de apiClient
-      // Si response es un array directamente, usarlo. Si tiene .data, usar .data
       const data = Array.isArray(response) ? response : (response.data || []);
-
-      console.log("✅ Respuesta recibida:", data.length, "registros");
-      console.log("📦 Datos completos:", data);
+      console.log("✅ Pacientes cargados:", data.length);
       setPacientes(data);
     } catch (error) {
       console.error("Error al cargar worklist:", error);
@@ -58,21 +46,13 @@ export default function MisPacientesEnfermeria() {
     } finally {
       setLoading(false);
     }
-  }, [activeTab]);
+  }, []);
 
   useEffect(() => {
     cargarWorklist();
   }, [cargarWorklist]);
 
-  const handleAttend = (paciente) => {
-    setSelectedPatient(paciente);
-  };
-
-  const handleSuccess = () => {
-    cargarWorklist(); // Recargar lista al terminar atención
-  };
-
-  // Filtro local por buscador
+  // Filtro por búsqueda
   const filteredPatients = useMemo(() => {
     return pacientes.filter(p =>
       p.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -80,7 +60,7 @@ export default function MisPacientesEnfermeria() {
     );
   }, [pacientes, searchTerm]);
 
-  // Paginación de datos filtrados
+  // Paginación
   const paginatedPatients = useMemo(() => {
     const startIndex = currentPage * pageSize;
     const endIndex = startIndex + pageSize;
@@ -89,309 +69,312 @@ export default function MisPacientesEnfermeria() {
 
   const totalPages = Math.ceil(filteredPatients.length / pageSize);
 
-  // Resetear página cuando cambia el filtro o la pestaña
-  useEffect(() => {
-    setCurrentPage(0);
-  }, [searchTerm, activeTab]);
+  const handleAttend = (paciente) => {
+    setSelectedPatient(paciente);
+  };
+
+  const handleSuccess = () => {
+    cargarWorklist();
+  };
+
+  const handleSelectPatient = (idOrigen) => {
+    const newSelected = new Set(selectedPatients);
+    if (newSelected.has(idOrigen)) {
+      newSelected.delete(idOrigen);
+    } else {
+      newSelected.add(idOrigen);
+    }
+    setSelectedPatients(newSelected);
+  };
+
+  const handleSelectAll = () => {
+    if (selectedPatients.size === paginatedPatients.length) {
+      setSelectedPatients(new Set());
+    } else {
+      const allIds = new Set(paginatedPatients.map(p => p.idOrigen));
+      setSelectedPatients(allIds);
+    }
+  };
+
+  const today = new Date().toLocaleDateString('es-PE', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric'
+  });
 
   return (
-    <div className="min-h-screen p-4 font-sans bg-gray-50">
+    <div className="min-h-screen p-6 font-sans bg-white">
 
-      {/* 1. Header Profesional Optimizado */ }
-      <header className="max-w-full mx-auto mb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-[#0A5BA9] to-[#2563EB] rounded-lg shadow-sm">
-              <Activity className="w-5 h-5 text-white" />
+      {/* ========== HEADER: ATENCIÓN NO MÉDICA ========== */}
+      <div className="mb-6 bg-cyan-500 text-white rounded-lg shadow-lg">
+        <div className="px-6 py-6">
+          <div className="text-center mb-4">
+            <h1 className="text-3xl font-bold tracking-wider">ATENCIÓN NO MÉDICA</h1>
+          </div>
+
+          {/* Fecha + Área Hospitalaria */}
+          <div className="flex items-center justify-between border-b border-cyan-400 pb-4 mb-4">
+            <div className="flex items-center gap-3">
+              <Calendar className="w-5 h-5" />
+              <span className="font-semibold text-lg">Fecha: {today}</span>
+              <button className="ml-2 p-1 bg-cyan-400 rounded hover:bg-cyan-300 transition">
+                <ArrowRight className="w-4 h-4" />
+              </button>
             </div>
-            <div>
-              <h1 className="text-xl font-bold leading-tight tracking-tight text-gray-900">
-                Gestión de Enfermería
-              </h1>
-              <span className="inline-flex items-center px-2 py-0.5 mt-0.5 text-[10px] font-bold tracking-wider text-[#0A5BA9] uppercase bg-blue-50 border border-blue-200 rounded-md">
-                CENACRON
+            <div className="text-right">
+              <div className="text-sm opacity-90">Área Hospitalaria</div>
+              <div className="text-xl font-bold">CONSULTA EXTERNA</div>
+            </div>
+          </div>
+
+          {/* Profesional */}
+          <div className="bg-cyan-400/30 rounded px-4 py-3 mb-4">
+            <div className="text-sm font-semibold tracking-wide uppercase opacity-80 mb-2">Profesional</div>
+            <div className="flex items-center gap-3">
+              <Users className="w-5 h-5" />
+              <span className="font-mono font-semibold">Documento D.N.I. {usuario?.username || "N/A"}</span>
+              <Copy className="w-4 h-4 cursor-pointer hover:opacity-70 transition" />
+              <span className="font-bold text-lg">
+                {usuario?.nombreCompleto || "Profesional"}
               </span>
             </div>
           </div>
-          <button
-            onClick={ cargarWorklist }
-            className="p-2 text-gray-600 transition-all duration-200 bg-white border border-gray-300 rounded-lg shadow-sm hover:bg-gray-50 hover:border-gray-400 hover:shadow-md active:scale-95"
-            title="Actualizar lista"
-          >
-            <RefreshCw className={ `w-4 h-4 transition-transform ${loading ? "animate-spin text-[#0A5BA9]" : ""}` } />
-          </button>
         </div>
-      </header>
-
-      {/* 2. Tabs & Filters Profesionales */ }
-      <section className="max-w-full mx-auto mb-5">
-        <div className="flex items-center gap-4">
-          {/* Tabs con Mejor Tipografía */}
-          <div className="inline-flex p-1 bg-white border border-gray-200 rounded-lg shadow-sm">
-            <button
-              onClick={ () => setActiveTab("PENDIENTE") }
-              className={ `px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 flex items-center gap-2 tracking-tight ${activeTab === "PENDIENTE"
-                ? "bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white shadow-md"
-                : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                }` }
-            >
-              <ClipboardList className="w-4 h-4" />
-              <span>Por Atender</span>
-              { activeTab === "PENDIENTE" && (
-                <span className="ml-1 px-2 py-0.5 rounded-full text-[11px] bg-white/25 text-white font-bold backdrop-blur-sm">
-                  { filteredPatients.length }
-                </span>
-              ) }
-            </button>
-            <button
-              onClick={ () => setActiveTab("ATENDIDO") }
-              className={ `px-4 py-2 rounded-md text-sm font-semibold transition-all duration-200 flex items-center gap-2 tracking-tight ${activeTab === "ATENDIDO"
-                ? "bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white shadow-md"
-                : "text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                }` }
-            >
-              <CheckCircle2 className="w-4 h-4" />
-              <span>Atendidos</span>
-            </button>
-          </div>
-
-          {/* Search Bar Profesional */}
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute w-4 h-4 text-gray-400 transform -translate-y-1/2 pointer-events-none left-3 top-1/2" />
-            <input
-              type="text"
-              placeholder="Buscar por nombre o DNI..."
-              value={ searchTerm }
-              onChange={ (e) => setSearchTerm(e.target.value) }
-              className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#0A5BA9]/20 focus:border-[#0A5BA9] transition-all duration-200 text-gray-700 placeholder-gray-400 shadow-sm hover:border-gray-400"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* 3. Cards/Grid Layout */ }
-      <section className="max-w-full pb-4 mx-auto">
-
-        { loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <Activity className="w-12 h-12 mx-auto mb-3 text-green-500 animate-pulse" />
-            <p className="font-medium text-gray-600">Cargando pacientes...</p>
-          </div>
-        ) : filteredPatients.length === 0 ? (
-          <div className="p-12 text-center border-2 border-gray-200 bg-gray-50 rounded-2xl">
-            <div className="flex items-center justify-center w-20 h-20 mx-auto mb-4 bg-gray-100 rounded-full">
-              <ClipboardList className="w-10 h-10 text-gray-300" />
-            </div>
-            <p className="mb-2 text-lg font-semibold text-gray-700">No hay registros en esta vista</p>
-            <p className="text-sm text-gray-500">
-              { activeTab === "PENDIENTE"
-                ? "No tienes pacientes pendientes asignados en este momento."
-                : "Aún no has atendido pacientes en este periodo." }
-            </p>
-          </div>
-        ) : activeTab === "PENDIENTE" ? (
-          // Tarjetas para pacientes pendientes
-          <>
-            <div className="grid grid-cols-1 gap-4">
-              { paginatedPatients.map((paciente, idx) => (
-                <PatientCard
-                  key={ `${paciente.idOrigen}_${paciente.fechaAtencionEnfermeria || paciente.fechaBase}_${idx}` }
-                  paciente={ paciente }
-                  onAttend={ () => handleAttend(paciente) }
-                  isPendiente={ true }
-                />
-              )) }
-            </div>
-
-            {/* Paginación */}
-            { filteredPatients.length > 0 && (
-              <PaginationControls
-                currentPage={currentPage}
-                totalPages={totalPages}
-                totalElements={filteredPatients.length}
-                pageSize={pageSize}
-                onPageChange={setCurrentPage}
-                loading={loading}
-                className="px-4 py-3 border-t border-gray-200 bg-gray-50 mt-4 rounded-lg"
-              />
-            ) }
-          </>
-        ) : (
-          // Tarjetas para atendidos (histórico)
-          <div className="grid grid-cols-1 gap-4">
-            { filteredPatients.map((paciente, idx) => (
-              <PatientCard
-                key={ `${paciente.idOrigen}_${paciente.fechaAtencionEnfermeria || paciente.fechaBase}_${idx}` }
-                paciente={ paciente }
-                onAttend={ () => handleAttend(paciente) }
-                isPendiente={ false }
-              />
-            )) }
-          </div>
-        ) }
-
-      </section>
-
-      {/* Modal */ }
-      { selectedPatient && (
-        <NursingAttendModal
-          paciente={ selectedPatient }
-          onClose={ () => setSelectedPatient(null) }
-          onSuccess={ handleSuccess }
-        />
-      ) }
-
-    </div>
-  );
-}
-
-// Sub-componente Card de Paciente (Diseño Simétrico)
-function PatientCard({ paciente, onAttend, isPendiente }) {
-  const slaColorClass = SLA_COLORS[paciente.colorSemaforo] || SLA_COLORS.NEGRO;
-
-  return (
-    <div className="transition-all duration-200 bg-white border-2 border-gray-200 rounded-xl hover:border-green-500 hover:shadow-lg">
-      <div className="p-5">
-
-        {/* Header: Paciente + Semáforo */ }
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex items-start flex-1 gap-3">
-            {/* Semáforo Circular */ }
-            <div className={ `w-4 h-4 rounded-full mt-1 flex-shrink-0 ${
-              paciente.colorSemaforo === "VERDE" ? "bg-green-500 animate-pulse ring-4 ring-green-100" :
-              paciente.colorSemaforo === "AMARILLO" ? "bg-yellow-400 ring-4 ring-yellow-100" :
-              paciente.colorSemaforo === "ROJO" ? "bg-red-500 ring-4 ring-red-100" : "bg-blue-500 ring-4 ring-blue-100"
-            }` } title={ `Prioridad: ${paciente.colorSemaforo}` } />
-
-            {/* Info del Paciente */ }
-            <div className="flex-1">
-              <h3 className="mb-1 text-lg font-bold text-gray-900">
-                { paciente.pacienteNombre }
-              </h3>
-              <div className="flex flex-wrap items-center gap-2 text-sm text-gray-600">
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-gray-100 rounded-lg font-mono font-semibold">
-                  <Users className="w-3.5 h-3.5" />
-                  { paciente.pacienteDni }
-                </span>
-                { paciente.pacienteEdad && (
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 text-blue-700 rounded-lg font-semibold">
-                    <Calendar className="w-3.5 h-3.5" />
-                    { paciente.pacienteEdad } años
-                  </span>
-                ) }
-              </div>
-
-              {/* Etiquetas Especiales */ }
-              <div className="flex flex-wrap gap-2 mt-2">
-                { paciente.esCronico && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-purple-700 bg-purple-100 rounded-lg border border-purple-200">
-                    <Heart className="w-3.5 h-3.5" />
-                    PACIENTE CRÓNICO
-                  </span>
-                ) }
-                { paciente.requiereTelemonitoreo && (
-                  <span className="inline-flex items-center gap-1 px-2.5 py-1 text-xs font-bold text-orange-700 bg-orange-100 rounded-lg border border-orange-200">
-                    <Share2 className="w-3.5 h-3.5" />
-                    TELEMONITOREO
-                  </span>
-                ) }
-              </div>
-            </div>
-          </div>
-
-          {/* Badge SLA/Estado */ }
-          <div className="flex-shrink-0 ml-4">
-            <span className={ `inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold border-2 shadow-sm ${
-              isPendiente && paciente.diasTranscurridos > 0 
-                ? "bg-red-100 text-red-700 border-red-200" 
-                : slaColorClass
-            }` }>
-              { isPendiente ? (
-                <>
-                  <Clock className="w-4 h-4" />
-                  { paciente.diasTranscurridos > 0 ? (
-                    <span className="font-bold text-red-700">Retraso: {paciente.diasTranscurridos} días</span>
-                  ) : paciente.diasTranscurridos === 0 ? (
-                    <span className="font-semibold text-yellow-700">Vence hoy</span>
-                  ) : (
-                    <span className="text-green-700">Vence en: {Math.abs(paciente.diasTranscurridos)} días</span>
-                  ) }
-                </>
-              ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4" />
-                  Atendido
-                </>
-              ) }
-            </span>
-          </div>
-        </div>
-
-        {/* Divider */ }
-        <div className="my-4 border-t border-gray-100"></div>
-
-        {/* Body: Información Clínica */ }
-        <div className="grid grid-cols-1 gap-4 mb-4 md:grid-cols-2">
-
-          {/* Diagnóstico */ }
-          <div className="p-3 border border-blue-200 rounded-lg bg-blue-50">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Stethoscope className="w-4 h-4 text-blue-600" />
-              <span className="text-xs font-bold tracking-wide text-blue-900 uppercase">Diagnóstico</span>
-            </div>
-            <p className="text-sm font-medium text-blue-800 line-clamp-2" title={ paciente.diagnostico }>
-              { paciente.diagnostico }
-            </p>
-          </div>
-
-          {/* Origen + Fecha */ }
-          <div className="p-3 border border-gray-200 rounded-lg bg-gray-50">
-            <div className="flex items-center gap-2 mb-1.5">
-              <Activity className="w-4 h-4 text-gray-600" />
-              <span className="text-xs font-bold tracking-wide text-gray-900 uppercase">
-                { isPendiente ? "Derivación" : "Atención" }
-              </span>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm font-medium text-gray-700">
-                Origen: <span className="font-bold text-gray-900">{ paciente.tipoOrigen.replace("_", " ") }</span>
-              </p>
-              <p className="text-xs text-gray-600 flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5" />
-                { paciente.fechaBase ? new Date(paciente.fechaBase).toLocaleString('es-PE', {
-                  day: '2-digit', month: 'long', year: 'numeric',
-                  hour: '2-digit', minute: '2-digit'
-                }) : "N/A" }
-              </p>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer: Acción */ }
-        <div className="flex justify-end">
-          <button
-            onClick={ onAttend }
-            className={ `inline-flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-semibold transition-all shadow-md ${
-              isPendiente
-                ? "bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white shadow-green-200"
-                : "bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 hover:border-blue-500 hover:text-blue-700 shadow-gray-100"
-            }` }
-          >
-            { isPendiente ? (
-              <>
-                <Stethoscope className="w-4 h-4" />
-                Atender Paciente
-              </>
-            ) : (
-              <>
-                <FileText className="w-4 h-4" />
-                Ver Historial
-              </>
-            ) }
-          </button>
-        </div>
-
       </div>
+
+      {/* ========== PROGRAMACIÓN ASIGNADA ========== */}
+      <div className="mb-6 bg-white border-2 border-gray-300 rounded-lg shadow-md overflow-hidden">
+        <div className="bg-cyan-500 text-white px-6 py-3 font-bold tracking-wide uppercase text-sm">
+          Programación Asignada
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-blue-600 text-white">
+              <tr>
+                <th className="px-4 py-3 text-left font-bold">Servicio</th>
+                <th className="px-4 py-3 text-left font-bold">Actividad</th>
+                <th className="px-4 py-3 text-left font-bold">Actividad Específica</th>
+                <th className="px-4 py-3 text-left font-bold">Fec Turno</th>
+                <th className="px-4 py-3 text-center font-bold">HorInicio</th>
+                <th className="px-4 py-3 text-center font-bold">HorFin</th>
+                <th className="px-4 py-3 text-left font-bold">Estado</th>
+                <th className="px-4 py-3 text-left font-bold">Tipo Programación</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="bg-white hover:bg-blue-50 transition">
+                <td className="px-4 py-3 font-semibold">ENFERMERÍA</td>
+                <td className="px-4 py-3">ATENCIÓN NO MÉDICA</td>
+                <td className="px-4 py-3">TELEMONITOREO</td>
+                <td className="px-4 py-3 font-mono">{today}</td>
+                <td className="px-4 py-3 text-center font-mono">08:00</td>
+                <td className="px-4 py-3 text-center font-mono">14:00</td>
+                <td className="px-4 py-3">
+                  <span className="inline-block px-3 py-1 bg-cyan-100 text-cyan-800 font-bold rounded text-xs">
+                    APROBADA POR CUPOS
+                  </span>
+                </td>
+                <td className="px-4 py-3">PROGR. DIARIA</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ========== RELACIÓN DE PACIENTES CITADOS ========== */}
+      <div className="bg-white border-2 border-gray-300 rounded-lg shadow-md overflow-hidden">
+
+        {/* Header con Búsqueda y Controles */}
+        <div className="bg-cyan-500 text-white px-6 py-3">
+          <div className="flex items-center justify-between">
+            <div className="font-bold tracking-wide uppercase text-sm flex items-center gap-3">
+              <span>Relación de Pacientes Citados</span>
+              <span className="text-xs bg-white/20 px-2 py-1 rounded">
+                {filteredPatients.length} pacientes
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="relative">
+                <Search className="absolute w-4 h-4 left-3 top-1/2 transform -translate-y-1/2 text-white/60" />
+                <input
+                  type="text"
+                  placeholder="Buscar paciente..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(0);
+                  }}
+                  className="pl-10 pr-4 py-2 rounded bg-white/20 text-white placeholder-white/60 focus:outline-none focus:bg-white/30 transition w-48 text-sm"
+                />
+              </div>
+              <select className="px-3 py-2 bg-white/20 text-white rounded focus:outline-none text-sm hover:bg-white/30 transition">
+                <option className="text-gray-900">Marcar todos</option>
+                <option className="text-gray-900">No marcar</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* Tabla de Pacientes */}
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <Activity className="w-8 h-8 text-cyan-500 animate-spin mr-3" />
+              <span>Cargando pacientes...</span>
+            </div>
+          ) : paginatedPatients.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-12 text-gray-500">
+              <Users className="w-8 h-8 mb-2 opacity-40" />
+              <span>No se encontraron pacientes</span>
+            </div>
+          ) : (
+            <table className="w-full text-sm">
+              <thead className="bg-gray-200 border-b-2 border-gray-300">
+                <tr>
+                  <th className="px-4 py-3 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedPatients.size === paginatedPatients.length && paginatedPatients.length > 0}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 cursor-pointer"
+                    />
+                  </th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Orden</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Acto Asist</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Historia C.</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Apellidos y Nombres</th>
+                  <th className="px-4 py-3 text-center font-bold text-gray-900 border-r border-gray-300">Edad</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Estado</th>
+                  <th className="px-4 py-3 text-center font-bold text-gray-900 border-r border-gray-300">Estado Firma</th>
+                  <th className="px-4 py-3 text-center font-bold text-gray-900">Atender</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedPatients.map((paciente, idx) => (
+                  <tr
+                    key={`${paciente.idOrigen}_${idx}`}
+                    className={`border-b transition ${
+                      idx % 2 === 0 ? "bg-white" : "bg-blue-50"
+                    } hover:bg-yellow-50`}
+                  >
+                    <td className="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        checked={selectedPatients.has(paciente.idOrigen)}
+                        onChange={() => handleSelectPatient(paciente.idOrigen)}
+                        className="w-4 h-4 cursor-pointer"
+                      />
+                    </td>
+                    <td className="px-4 py-3 font-bold border-r border-gray-300">{idx + 1}</td>
+                    <td className="px-4 py-3 border-r border-gray-300">
+                      <span className="text-xs bg-purple-100 text-purple-900 px-2 py-1 rounded font-mono">
+                        {paciente.numeroSolicitud || paciente.idOrigen}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs border-r border-gray-300">
+                      {paciente.pacienteDni}
+                    </td>
+                    <td className="px-4 py-3 border-r border-gray-300">
+                      <div className="font-semibold text-gray-900 truncate" title={paciente.pacienteNombre}>
+                        {paciente.pacienteNombre}
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1">
+                        {paciente.esCronico && (
+                          <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold mr-1">
+                            CRÓNICO
+                          </span>
+                        )}
+                        {paciente.requiereTelemonitoreo && (
+                          <span className="inline-block px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-[10px] font-bold">
+                            TELEMONITOREO
+                          </span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center font-semibold border-r border-gray-300">
+                      {paciente.pacienteEdad}
+                    </td>
+                    <td className="px-4 py-3 border-r border-gray-300">
+                      <span className={`inline-block px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${
+                        paciente.diasTranscurridos > 0
+                          ? "bg-red-100 text-red-800"
+                          : paciente.diasTranscurridos === 0
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-green-100 text-green-800"
+                      }`}>
+                        ATENDIDA
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center border-r border-gray-300">
+                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded font-mono">
+                        NINGUNO
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => handleAttend(paciente)}
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 transition active:scale-95"
+                      >
+                        <Stethoscope className="w-3.5 h-3.5" />
+                        Atender
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        {/* Paginación */}
+        {filteredPatients.length > 0 && (
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex items-center justify-between">
+            <div className="text-sm text-gray-600 font-semibold">
+              Mostrando {currentPage * pageSize + 1} a{" "}
+              {Math.min((currentPage + 1) * pageSize, filteredPatients.length)} de{" "}
+              {filteredPatients.length} entradas
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
+                disabled={currentPage === 0}
+                className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              {Array.from({ length: totalPages }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setCurrentPage(i)}
+                  className={`px-3 py-1.5 rounded font-semibold transition ${
+                    currentPage === i
+                      ? "bg-blue-600 text-white"
+                      : "border border-gray-300 hover:bg-gray-100"
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
+                disabled={currentPage === totalPages - 1}
+                className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Modal de Atención */}
+      {selectedPatient && (
+        <NursingAttendModal
+          paciente={selectedPatient}
+          onClose={() => setSelectedPatient(null)}
+          onSuccess={handleSuccess}
+        />
+      )}
     </div>
   );
 }
