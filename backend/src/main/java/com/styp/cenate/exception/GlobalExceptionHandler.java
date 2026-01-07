@@ -5,10 +5,12 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.dao.DataAccessException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.jdbc.BadSqlGrammarException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -234,21 +236,18 @@ public class GlobalExceptionHandler {
 	// Violaciones de integridad (NOT NULL, UNIQUE, FK) a nivel BD
 	@ExceptionHandler(DataIntegrityViolationException.class)
 	public ResponseEntity<Map<String, Object>> handleDataIntegrity(DataIntegrityViolationException ex) {
-		String detalle = Optional.ofNullable(ex.getMostSpecificCause())
-				.map(Throwable::getMessage)
+		String detalle = Optional.ofNullable(ex.getMostSpecificCause()).map(Throwable::getMessage)
 				.orElse(ex.getMessage());
 
 		log.warn("⚠️ Violación de integridad de datos: {}", detalle);
 
 		// Mensaje amigable para el usuario
 		String mensajeUsuario;
-		if (detalle != null && (detalle.contains("violates foreign key constraint") ||
-				detalle.contains("is still referenced") ||
-				detalle.contains("llave foránea") ||
-				detalle.contains("fk_"))) {
+		if (detalle != null
+				&& (detalle.contains("violates foreign key constraint") || detalle.contains("is still referenced")
+						|| detalle.contains("llave foránea") || detalle.contains("fk_"))) {
 			mensajeUsuario = "No se puede eliminar este registro porque está siendo utilizado en otras partes del sistema. "
-					+
-					"Considere inactivarlo en lugar de eliminarlo.";
+					+ "Considere inactivarlo en lugar de eliminarlo.";
 		} else if (detalle != null && (detalle.contains("duplicate key") || detalle.contains("unique constraint"))) {
 			mensajeUsuario = "Ya existe un registro con estos datos. Verifique que no haya duplicados.";
 		} else if (detalle != null && detalle.contains("null value")) {
@@ -297,5 +296,47 @@ public class GlobalExceptionHandler {
 		return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", ex.getMessage()));
 	}
 	// FORMULARIO 107 FIN
+
+	/**
+	 * Errores provenientes de la BD (RAISE EXCEPTION, constraints, etc.)
+	 * En proceso de construcción, se va a considerar más cosas a futuro.
+	 */
+	@ExceptionHandler(DataAccessException.class)
+	public ResponseEntity<Map<String, Object>> handleDataAccessException(DataAccessException ex) {
+
+		String message = ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage();
+
+		boolean isBusinessError = message != null && (message.contains("no se encontró horario visual")
+				|| message.contains("profesional") || message.contains("ASISTENCIAL") || message.contains("inactivo"));
+
+		HttpStatus status = isBusinessError ? HttpStatus.UNPROCESSABLE_ENTITY // 422
+				: HttpStatus.INTERNAL_SERVER_ERROR; // 500
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("status", status.value());
+		response.put("error", isBusinessError ? "Error de validación de negocio" : "Error en tiempo de ejecución");
+		response.put("message", message != null ? message : "Error desconocido");
+		response.put("type", ex.getClass().getSimpleName());
+		response.put("timestamp", LocalDateTime.now().toString());
+
+		return new ResponseEntity<>(response, status);
+	}
+
+	/**
+	 * Errores SQL mal formados (defensa adicional)
+	 */
+	@ExceptionHandler(BadSqlGrammarException.class)
+	public ResponseEntity<Map<String, Object>> handleBadSql(BadSqlGrammarException ex) {
+
+		Map<String, Object> response = new HashMap<>();
+		response.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+		response.put("error", "Error de sintaxis SQL");
+		response.put("message",
+				ex.getMostSpecificCause() != null ? ex.getMostSpecificCause().getMessage() : ex.getMessage());
+		response.put("type", ex.getClass().getSimpleName());
+		response.put("timestamp", LocalDateTime.now().toString());
+
+		return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
+	}
 
 }
