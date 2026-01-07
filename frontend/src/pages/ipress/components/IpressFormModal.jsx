@@ -391,7 +391,7 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
                   onChange={ handleChange }
                   rows="3"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Ej: Cardiología - Videoconferencias solo en horario matutino, de 7AM-1PM. Sin disponibilidad en tardes. Pacientes en domicilio. | Psicología - Videollamadas con especialista disponibles Lunes-Viernes 8AM-12PM y 3PM-6PM"
+                  placeholder="Ej: Cardiología - Videoconferencias solo en horario matutino, de 7AM-1PM. Sin disponibilidad de consultorio físico en las tardes. Pacientes en domicilio. | Psicología - Consultorio solo disponible los Jueves y Viernes 8AM-12PM y 3PM-6PM"
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   { formData.detallesTeleconsultorio.length }/1000
