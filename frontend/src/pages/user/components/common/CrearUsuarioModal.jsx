@@ -452,9 +452,9 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       
       if (formData.tipo_documento === 'DNI') {
         value = value.replace(/\D/g, '').slice(0, 8);
-      } else if (formData.tipo_documento === 'Carnet de Extranjería') {
+      } else if (formData.tipo_documento === 'C.E./PAS') {
         value = value.replace(/\D/g, '').slice(0, 20);
-      } else if (formData.tipo_documento === 'PASAPORTE') {
+      } else if (formData.tipo_documento === 'PASAPORT') {
         value = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20).toUpperCase();
       }
       
@@ -600,10 +600,10 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
     if (tipo_documento === 'DNI') {
       value = value.replace(/\D/g, '');
       value = value.slice(0, 8);
-    } else if (tipo_documento === 'Carnet de Extranjería') {
+    } else if (tipo_documento === 'C.E./PAS') {
       value = value.replace(/\D/g, '');
       value = value.slice(0, 20);
-    } else if (tipo_documento === 'PASAPORTE') {
+    } else if (tipo_documento === 'PASAPORT') {
       value = value.replace(/[^a-zA-Z0-9]/g, '');
       value = value.slice(0, 20);
       value = value.toUpperCase();
@@ -711,14 +711,14 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       if (!/^\d{8}$/.test(formData.numero_documento)) {
         newErrors.numero_documento = 'El DNI debe contener solo números';
       }
-    } else if (formData.tipo_documento === 'Carnet de Extranjería') {
+    } else if (formData.tipo_documento === 'C.E./PAS') {
       if (formData.numero_documento.length < 9 || formData.numero_documento.length > 20) {
         newErrors.numero_documento = 'El CE debe tener entre 9 y 20 dígitos';
       }
       if (!/^\d+$/.test(formData.numero_documento)) {
         newErrors.numero_documento = 'El CE debe contener solo números';
       }
-    } else if (formData.tipo_documento === 'PASAPORTE') {
+    } else if (formData.tipo_documento === 'PASAPORT') {
       if (formData.numero_documento.length < 6 || formData.numero_documento.length > 20) {
         newErrors.numero_documento = 'El pasaporte debe tener entre 6 y 20 caracteres';
       }
@@ -770,14 +770,14 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
         if (!/^\d{8}$/.test(formData.numero_documento)) {
           personalErrors.numero_documento = 'El DNI debe contener solo números';
         }
-      } else if (formData.tipo_documento === 'Carnet de Extranjería') {
+      } else if (formData.tipo_documento === 'C.E./PAS') {
         if (formData.numero_documento.length < 9 || formData.numero_documento.length > 20) {
           personalErrors.numero_documento = 'El CE debe tener entre 9 y 20 dígitos';
         }
         if (!/^\d+$/.test(formData.numero_documento)) {
           personalErrors.numero_documento = 'El CE debe contener solo números';
         }
-      } else if (formData.tipo_documento === 'PASAPORTE') {
+      } else if (formData.tipo_documento === 'PASAPORT') {
         if (formData.numero_documento.length < 6 || formData.numero_documento.length > 20) {
           personalErrors.numero_documento = 'El pasaporte debe tener entre 6 y 20 caracteres';
         }
@@ -1223,8 +1223,8 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                       errors={errors}
                       options={[
                         { value: 'DNI', label: 'DNI' },
-                        { value: 'Carnet de Extranjería', label: 'Carnet de Extranjería' },
-                        { value: 'PASAPORTE', label: 'Pasaporte' }
+                        { value: 'C.E./PAS', label: 'Carnet de Extranjería / Pasaporte' },
+                        { value: 'PASAPORT', label: 'Pasaporte' }
                       ]}
                     />
                     <div>
@@ -1240,7 +1240,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                         onChange={handleDocumentoChange}
                         placeholder={
                           formData.tipo_documento === 'DNI' ? 'Ej: 12345678' :
-                          formData.tipo_documento === 'Carnet de Extranjería' ? 'Ej: 001234567890' :
+                          formData.tipo_documento === 'C.E./PAS' ? 'Ej: 001234567890' :
                           'Ej: ABC123456'
                         }
                         className={`w-full px-4 py-2 border-2 rounded-xl transition-all focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
@@ -1250,7 +1250,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                       <p className="text-xs text-gray-500 mt-1">
                         {
                           formData.tipo_documento === 'DNI' ? '8 dígitos numéricos' :
-                          formData.tipo_documento === 'Carnet de Extranjería' ? 'Hasta 20 dígitos numéricos' :
+                          formData.tipo_documento === 'C.E./PAS' ? 'Hasta 20 dígitos numéricos' :
                           'Hasta 20 caracteres alfanuméricos'
                         }
                         {formData.numero_documento && ` (${formData.numero_documento.length}/${
