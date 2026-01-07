@@ -313,7 +313,7 @@ export default function MisPacientesEnfermeria() {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleAttend(paciente)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#003d66] hover:bg-[#001f3f] text-white rounded text-xs font-bold transition active:scale-95 shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold transition active:scale-95 shadow-sm"
                       >
                         <Stethoscope className="w-3.5 h-3.5" />
                         Atender
