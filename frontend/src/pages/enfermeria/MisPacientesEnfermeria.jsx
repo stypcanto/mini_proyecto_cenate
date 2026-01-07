@@ -190,125 +190,19 @@ export default function MisPacientesEnfermeria() {
             </p>
           </div>
         ) : activeTab === "PENDIENTE" ? (
-          // Tabla Profesional con Paginación
-          <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
-                  <tr>
-                    <th className="w-10 px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase">P</th>
-                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase min-w-[200px]">Paciente</th>
-                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase w-24">DNI</th>
-                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase w-16">Edad</th>
-                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase min-w-[200px]">IPRESS</th>
-                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase min-w-[280px]">Diagnóstico</th>
-                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase w-32">Fecha</th>
-                    <th className="px-3 py-2.5 text-xs font-bold tracking-wide text-left text-white uppercase w-24">Estado</th>
-                    <th className="w-24 px-3 py-2.5 text-xs font-bold tracking-wide text-center text-white uppercase">Acción</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-100">
-                  { paginatedPatients.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} className="px-6 py-12 text-sm text-center text-gray-500">
-                        <div className="flex flex-col items-center gap-2">
-                          <Users className="w-8 h-8 text-gray-400" />
-                          <span>No se encontraron pacientes pendientes</span>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : (
-                    paginatedPatients.map((paciente, idx) => (
-                      <tr
-                        key={ `${paciente.idOrigen}_${paciente.fechaAtencionEnfermeria || paciente.fechaBase}_${idx}` }
-                        className="transition-all duration-150 border-b border-gray-100 hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/30 group"
-                      >
-                        <td className="px-3 py-2">
-                          <div className="flex items-center justify-center">
-                            <div className={ `w-2.5 h-2.5 rounded-full transition-all duration-200 group-hover:ring-2 ${
-                              paciente.colorSemaforo === "VERDE" ? "bg-green-500 ring-green-200" :
-                              paciente.colorSemaforo === "AMARILLO" ? "bg-yellow-400 ring-yellow-200" :
-                              paciente.colorSemaforo === "ROJO" ? "bg-red-500 ring-red-200" : "bg-blue-500 ring-blue-200"
-                            }` } title={ `Prioridad: ${paciente.colorSemaforo}` } />
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="min-w-[200px]">
-                            <div className="text-sm font-semibold leading-tight tracking-tight text-gray-900 truncate">{ paciente.pacienteNombre }</div>
-                            <div className="flex flex-wrap gap-1 mt-1">
-                              { paciente.esCronico && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold tracking-tight text-purple-700 bg-purple-50 rounded border border-purple-200">
-                                  <Heart className="w-2.5 h-2.5" />
-                                  CRÓNICO
-                                </span>
-                              ) }
-                              { paciente.requiereTelemonitoreo && (
-                                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-bold tracking-tight text-orange-700 bg-orange-50 rounded border border-orange-200">
-                                  <Share2 className="w-2.5 h-2.5" />
-                                  TELEMONITOREO
-                                </span>
-                              ) }
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className="inline-flex items-center px-2 py-0.5 font-mono text-xs font-semibold tracking-tight text-gray-700 border border-gray-200 rounded bg-gray-50">
-                            { paciente.pacienteDni }
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-xs font-medium tracking-tight text-gray-600 whitespace-nowrap">
-                          { paciente.pacienteEdad ? `${paciente.pacienteEdad} años` : "-" }
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="text-xs text-gray-700 min-w-[200px] truncate tracking-tight font-medium" title={ paciente.nombreIpress || "N/A" }>
-                            { paciente.nombreIpress || "-" }
-                          </div>
-                        </td>
-                        <td className="px-3 py-2">
-                          <div className="text-xs text-gray-700 min-w-[280px] max-w-[320px] truncate leading-relaxed tracking-tight" title={ paciente.diagnostico }>
-                            { paciente.diagnostico }
-                          </div>
-                        </td>
-                        <td className="px-3 py-2 text-xs font-medium tracking-tight text-gray-600 whitespace-nowrap">
-                          { paciente.fechaBase ? new Date(paciente.fechaBase).toLocaleString('es-PE', {
-                            day: '2-digit', month: 'short', year: '2-digit',
-                            hour: '2-digit', minute: '2-digit'
-                          }) : "-" }
-                        </td>
-                        <td className="px-3 py-2 whitespace-nowrap">
-                          <span className={ `inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold tracking-tight shadow-sm transition-all duration-200 ${
-                            paciente.diasTranscurridos > 0 
-                              ? "bg-red-50 text-red-700 border border-red-200 hover:bg-red-100" 
-                              : paciente.diasTranscurridos === 0
-                              ? "bg-yellow-50 text-yellow-700 border border-yellow-200 hover:bg-yellow-100"
-                              : "bg-green-50 text-green-700 border border-green-200 hover:bg-green-100"
-                          }` }>
-                            <Clock className="w-3 h-3" />
-                            { paciente.diasTranscurridos > 0 ? (
-                              <span>Retraso: {paciente.diasTranscurridos}d</span>
-                            ) : paciente.diasTranscurridos === 0 ? (
-                              <span>Hoy</span>
-                            ) : (
-                              <span>Vence: {Math.abs(paciente.diasTranscurridos)}d</span>
-                            ) }
-                          </span>
-                        </td>
-                        <td className="px-3 py-2 text-center whitespace-nowrap">
-                          <button
-                            onClick={ () => handleAttend(paciente) }
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-semibold text-white transition-all duration-200 rounded-md shadow-md bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 hover:shadow-lg active:scale-95 tracking-tight"
-                          >
-                            <Stethoscope className="w-3 h-3" />
-                            <span>Atender</span>
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  ) }
-                </tbody>
-              </table>
+          // Tarjetas para pacientes pendientes
+          <>
+            <div className="grid grid-cols-1 gap-4">
+              { paginatedPatients.map((paciente, idx) => (
+                <PatientCard
+                  key={ `${paciente.idOrigen}_${paciente.fechaAtencionEnfermeria || paciente.fechaBase}_${idx}` }
+                  paciente={ paciente }
+                  onAttend={ () => handleAttend(paciente) }
+                  isPendiente={ true }
+                />
+              )) }
             </div>
-            
+
             {/* Paginación */}
             { filteredPatients.length > 0 && (
               <PaginationControls
@@ -318,10 +212,10 @@ export default function MisPacientesEnfermeria() {
                 pageSize={pageSize}
                 onPageChange={setCurrentPage}
                 loading={loading}
-                className="px-4 py-3 border-t border-gray-200 bg-gray-50"
+                className="px-4 py-3 border-t border-gray-200 bg-gray-50 mt-4 rounded-lg"
               />
             ) }
-          </div>
+          </>
         ) : (
           // Tarjetas para atendidos (histórico)
           <div className="grid grid-cols-1 gap-4">
