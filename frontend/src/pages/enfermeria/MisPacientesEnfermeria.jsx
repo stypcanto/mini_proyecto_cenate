@@ -375,6 +375,8 @@ export default function MisPacientesEnfermeria() {
                   </th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Orden</th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Apellidos y Nombres</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">DNI</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Género</th>
                   <th className="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">Edad</th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Estado</th>
                   <th className="px-4 py-3 text-center font-bold text-gray-700">Atender</th>
@@ -402,20 +404,18 @@ export default function MisPacientesEnfermeria() {
                         {paciente.pacienteNombre}
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
-                        <div className="font-mono">
-                          DNI: {paciente.pacienteDni}
-                        </div>
-                        <div className="mt-0.5">
-                          Género: {paciente.sexo || paciente.genero || "N/A"}
-                        </div>
-                      </div>
-                      <div className="text-xs text-gray-600 mt-1.5">
                         {paciente.esCronico && (
                           <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">
                             CRÓNICO
                           </span>
                         )}
                       </div>
+                    </td>
+                    <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900 border-r border-gray-200">
+                      {paciente.pacienteDni}
+                    </td>
+                    <td className="px-4 py-3 text-left font-semibold text-gray-900 border-r border-gray-200">
+                      {paciente.sexo || paciente.genero || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-center font-semibold text-gray-900 border-r border-gray-200">
                       {paciente.pacienteEdad}
