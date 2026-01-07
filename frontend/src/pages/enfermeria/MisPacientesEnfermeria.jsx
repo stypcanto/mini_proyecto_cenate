@@ -403,13 +403,8 @@ export default function MisPacientesEnfermeria() {
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
                         {paciente.esCronico && (
-                          <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold mr-1">
+                          <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">
                             CRÓNICO
-                          </span>
-                        )}
-                        {paciente.requiereTelemonitoreo && (
-                          <span className="inline-block px-1.5 py-0.5 bg-orange-100 text-orange-700 rounded text-[10px] font-bold">
-                            TELEMONITOREO
                           </span>
                         )}
                       </div>
