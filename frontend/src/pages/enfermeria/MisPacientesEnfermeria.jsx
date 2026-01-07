@@ -103,21 +103,21 @@ export default function MisPacientesEnfermeria() {
   });
 
   return (
-    <div className="min-h-screen p-6 font-sans bg-white">
+    <div className="min-h-screen p-6 font-sans bg-gray-50">
 
       {/* ========== HEADER: ATENCIÓN NO MÉDICA ========== */}
-      <div className="mb-6 bg-cyan-500 text-white rounded-lg shadow-lg">
+      <div className="mb-6 bg-gradient-to-r from-[#0a5ba9] via-[#0d4e90] to-[#073b6c] text-white rounded-lg shadow-lg">
         <div className="px-6 py-6">
           <div className="text-center mb-4">
             <h1 className="text-3xl font-bold tracking-wider">ATENCIÓN NO MÉDICA</h1>
           </div>
 
           {/* Fecha + Área Hospitalaria */}
-          <div className="flex items-center justify-between border-b border-cyan-400 pb-4 mb-4">
+          <div className="flex items-center justify-between border-b border-blue-300/30 pb-4 mb-4">
             <div className="flex items-center gap-3">
               <Calendar className="w-5 h-5" />
               <span className="font-semibold text-lg">Fecha: {today}</span>
-              <button className="ml-2 p-1 bg-cyan-400 rounded hover:bg-cyan-300 transition">
+              <button className="ml-2 p-1 bg-blue-400/40 rounded hover:bg-blue-400/60 transition">
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -128,8 +128,8 @@ export default function MisPacientesEnfermeria() {
           </div>
 
           {/* Profesional */}
-          <div className="bg-cyan-400/30 rounded px-4 py-3 mb-4">
-            <div className="text-sm font-semibold tracking-wide uppercase opacity-80 mb-2">Profesional</div>
+          <div className="bg-blue-400/20 rounded px-4 py-3 mb-4">
+            <div className="text-sm font-semibold tracking-wide uppercase opacity-90 mb-2">Profesional</div>
             <div className="flex items-center gap-3">
               <Users className="w-5 h-5" />
               <span className="font-mono font-semibold">Documento D.N.I. {usuario?.username || "N/A"}</span>
@@ -143,38 +143,38 @@ export default function MisPacientesEnfermeria() {
       </div>
 
       {/* ========== PROGRAMACIÓN ASIGNADA ========== */}
-      <div className="mb-6 bg-white border-2 border-gray-300 rounded-lg shadow-md overflow-hidden">
-        <div className="bg-cyan-500 text-white px-6 py-3 font-bold tracking-wide uppercase text-sm">
+      <div className="mb-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0a5ba9] to-[#0d4e90] text-white px-6 py-3 font-bold tracking-wide uppercase text-sm">
           Programación Asignada
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-blue-600 text-white">
+            <thead className="bg-gray-100 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left font-bold">Servicio</th>
-                <th className="px-4 py-3 text-left font-bold">Actividad</th>
-                <th className="px-4 py-3 text-left font-bold">Actividad Específica</th>
-                <th className="px-4 py-3 text-left font-bold">Fec Turno</th>
-                <th className="px-4 py-3 text-center font-bold">HorInicio</th>
-                <th className="px-4 py-3 text-center font-bold">HorFin</th>
-                <th className="px-4 py-3 text-left font-bold">Estado</th>
-                <th className="px-4 py-3 text-left font-bold">Tipo Programación</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700">Servicio</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700">Actividad</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700">Actividad Específica</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700">Fec Turno</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700">HorInicio</th>
+                <th className="px-4 py-3 text-center font-bold text-gray-700">HorFin</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700">Estado</th>
+                <th className="px-4 py-3 text-left font-bold text-gray-700">Tipo Programación</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="bg-white hover:bg-blue-50 transition">
-                <td className="px-4 py-3 font-semibold">ENFERMERÍA</td>
-                <td className="px-4 py-3">ATENCIÓN NO MÉDICA</td>
-                <td className="px-4 py-3">TELEMONITOREO</td>
-                <td className="px-4 py-3 font-mono">{today}</td>
-                <td className="px-4 py-3 text-center font-mono">08:00</td>
-                <td className="px-4 py-3 text-center font-mono">14:00</td>
+              <tr className="bg-white hover:bg-blue-50/50 transition border-b border-gray-100">
+                <td className="px-4 py-3 font-semibold text-gray-900">ENFERMERÍA</td>
+                <td className="px-4 py-3 text-gray-700">ATENCIÓN NO MÉDICA</td>
+                <td className="px-4 py-3 text-gray-700">TELEMONITOREO</td>
+                <td className="px-4 py-3 font-mono text-gray-700">{today}</td>
+                <td className="px-4 py-3 text-center font-mono text-gray-700">08:00</td>
+                <td className="px-4 py-3 text-center font-mono text-gray-700">14:00</td>
                 <td className="px-4 py-3">
-                  <span className="inline-block px-3 py-1 bg-cyan-100 text-cyan-800 font-bold rounded text-xs">
+                  <span className="inline-block px-3 py-1 bg-green-100 text-green-800 font-bold rounded text-xs">
                     APROBADA POR CUPOS
                   </span>
                 </td>
-                <td className="px-4 py-3">PROGR. DIARIA</td>
+                <td className="px-4 py-3 text-gray-700">PROGR. DIARIA</td>
               </tr>
             </tbody>
           </table>
@@ -182,10 +182,10 @@ export default function MisPacientesEnfermeria() {
       </div>
 
       {/* ========== RELACIÓN DE PACIENTES CITADOS ========== */}
-      <div className="bg-white border-2 border-gray-300 rounded-lg shadow-md overflow-hidden">
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
 
         {/* Header con Búsqueda y Controles */}
-        <div className="bg-cyan-500 text-white px-6 py-3">
+        <div className="bg-gradient-to-r from-[#0a5ba9] to-[#0d4e90] text-white px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="font-bold tracking-wide uppercase text-sm flex items-center gap-3">
               <span>Relación de Pacientes Citados</span>
@@ -204,10 +204,10 @@ export default function MisPacientesEnfermeria() {
                     setSearchTerm(e.target.value);
                     setCurrentPage(0);
                   }}
-                  className="pl-10 pr-4 py-2 rounded bg-white/20 text-white placeholder-white/60 focus:outline-none focus:bg-white/30 transition w-48 text-sm"
+                  className="pl-10 pr-4 py-2 rounded bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 transition w-48 text-sm"
                 />
               </div>
-              <select className="px-3 py-2 bg-white/20 text-white rounded focus:outline-none text-sm hover:bg-white/30 transition">
+              <select className="px-3 py-2 bg-white/20 text-white rounded focus:outline-none text-sm hover:bg-white/30 transition focus:ring-2 focus:ring-white/50">
                 <option className="text-gray-900">Marcar todos</option>
                 <option className="text-gray-900">No marcar</option>
               </select>
@@ -229,7 +229,7 @@ export default function MisPacientesEnfermeria() {
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-gray-200 border-b-2 border-gray-300">
+              <thead className="bg-gray-100 border-b border-gray-200">
                 <tr>
                   <th className="px-4 py-3 text-left">
                     <input
@@ -239,23 +239,23 @@ export default function MisPacientesEnfermeria() {
                       className="w-4 h-4 cursor-pointer"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Orden</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Acto Asist</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Historia C.</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Apellidos y Nombres</th>
-                  <th className="px-4 py-3 text-center font-bold text-gray-900 border-r border-gray-300">Edad</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-900 border-r border-gray-300">Estado</th>
-                  <th className="px-4 py-3 text-center font-bold text-gray-900 border-r border-gray-300">Estado Firma</th>
-                  <th className="px-4 py-3 text-center font-bold text-gray-900">Atender</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Orden</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Acto Asist</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Historia C.</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Apellidos y Nombres</th>
+                  <th className="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">Edad</th>
+                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Estado</th>
+                  <th className="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">Estado Firma</th>
+                  <th className="px-4 py-3 text-center font-bold text-gray-700">Atender</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedPatients.map((paciente, idx) => (
                   <tr
                     key={`${paciente.idOrigen}_${idx}`}
-                    className={`border-b transition ${
-                      idx % 2 === 0 ? "bg-white" : "bg-blue-50"
-                    } hover:bg-yellow-50`}
+                    className={`border-b border-gray-200 transition hover:bg-blue-50/80 ${
+                      idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                    }`}
                   >
                     <td className="px-4 py-3 text-center">
                       <input
@@ -265,16 +265,16 @@ export default function MisPacientesEnfermeria() {
                         className="w-4 h-4 cursor-pointer"
                       />
                     </td>
-                    <td className="px-4 py-3 font-bold border-r border-gray-300">{idx + 1}</td>
-                    <td className="px-4 py-3 border-r border-gray-300">
-                      <span className="text-xs bg-purple-100 text-purple-900 px-2 py-1 rounded font-mono">
+                    <td className="px-4 py-3 font-bold text-gray-900 border-r border-gray-200">{idx + 1}</td>
+                    <td className="px-4 py-3 border-r border-gray-200">
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono font-semibold">
                         {paciente.numeroSolicitud || paciente.idOrigen}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs border-r border-gray-300">
+                    <td className="px-4 py-3 font-mono text-xs text-gray-700 border-r border-gray-200">
                       {paciente.pacienteDni}
                     </td>
-                    <td className="px-4 py-3 border-r border-gray-300">
+                    <td className="px-4 py-3 border-r border-gray-200">
                       <div className="font-semibold text-gray-900 truncate" title={paciente.pacienteNombre}>
                         {paciente.pacienteNombre}
                       </div>
@@ -291,29 +291,29 @@ export default function MisPacientesEnfermeria() {
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-center font-semibold border-r border-gray-300">
+                    <td className="px-4 py-3 text-center font-semibold text-gray-900 border-r border-gray-200">
                       {paciente.pacienteEdad}
                     </td>
-                    <td className="px-4 py-3 border-r border-gray-300">
+                    <td className="px-4 py-3 border-r border-gray-200">
                       <span className={`inline-block px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${
                         paciente.diasTranscurridos > 0
                           ? "bg-red-100 text-red-800"
                           : paciente.diasTranscurridos === 0
-                          ? "bg-yellow-100 text-yellow-800"
+                          ? "bg-amber-100 text-amber-800"
                           : "bg-green-100 text-green-800"
                       }`}>
                         ATENDIDA
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-center border-r border-gray-300">
-                      <span className="text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded font-mono">
+                    <td className="px-4 py-3 text-center border-r border-gray-200">
+                      <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded font-mono">
                         NINGUNO
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleAttend(paciente)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white rounded text-xs font-bold hover:bg-green-700 transition active:scale-95"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#0a5ba9] to-[#0d4e90] hover:from-[#073b6c] hover:to-[#0a5ba9] text-white rounded text-xs font-bold transition active:scale-95 shadow-sm"
                       >
                         <Stethoscope className="w-3.5 h-3.5" />
                         Atender
@@ -328,19 +328,19 @@ export default function MisPacientesEnfermeria() {
 
         {/* Paginación */}
         {filteredPatients.length > 0 && (
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-300 flex items-center justify-between">
-            <div className="text-sm text-gray-600 font-semibold">
+          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+            <div className="text-sm text-gray-700 font-semibold">
               Mostrando {currentPage * pageSize + 1} a{" "}
               {Math.min((currentPage + 1) * pageSize, filteredPatients.length)} de{" "}
               {filteredPatients.length} entradas
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <button
                 onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                 disabled={currentPage === 0}
-                className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="p-1.5 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                <ChevronLeft className="w-4 h-4" />
+                <ChevronLeft className="w-4 h-4 text-gray-600" />
               </button>
               {Array.from({ length: totalPages }, (_, i) => (
                 <button
@@ -348,8 +348,8 @@ export default function MisPacientesEnfermeria() {
                   onClick={() => setCurrentPage(i)}
                   className={`px-3 py-1.5 rounded font-semibold transition ${
                     currentPage === i
-                      ? "bg-blue-600 text-white"
-                      : "border border-gray-300 hover:bg-gray-100"
+                      ? "bg-gradient-to-r from-[#0a5ba9] to-[#0d4e90] text-white"
+                      : "border border-gray-300 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
                   {i + 1}
@@ -358,9 +358,9 @@ export default function MisPacientesEnfermeria() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                 disabled={currentPage === totalPages - 1}
-                className="p-1.5 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="p-1.5 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
               >
-                <ChevronRight className="w-4 h-4" />
+                <ChevronRight className="w-4 h-4 text-gray-600" />
               </button>
             </div>
           </div>
