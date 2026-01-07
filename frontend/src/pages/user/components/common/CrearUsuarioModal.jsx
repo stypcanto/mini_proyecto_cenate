@@ -452,7 +452,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       
       if (formData.tipo_documento === 'DNI') {
         value = value.replace(/\D/g, '').slice(0, 8);
-      } else if (formData.tipo_documento === 'CE') {
+      } else if (formData.tipo_documento === 'Carnet de Extranjería') {
         value = value.replace(/\D/g, '').slice(0, 20);
       } else if (formData.tipo_documento === 'PASAPORTE') {
         value = value.replace(/[^a-zA-Z0-9]/g, '').slice(0, 20).toUpperCase();
@@ -600,7 +600,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
     if (tipo_documento === 'DNI') {
       value = value.replace(/\D/g, '');
       value = value.slice(0, 8);
-    } else if (tipo_documento === 'CE') {
+    } else if (tipo_documento === 'Carnet de Extranjería') {
       value = value.replace(/\D/g, '');
       value = value.slice(0, 20);
     } else if (tipo_documento === 'PASAPORTE') {
@@ -711,7 +711,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       if (!/^\d{8}$/.test(formData.numero_documento)) {
         newErrors.numero_documento = 'El DNI debe contener solo números';
       }
-    } else if (formData.tipo_documento === 'CE') {
+    } else if (formData.tipo_documento === 'Carnet de Extranjería') {
       if (formData.numero_documento.length < 9 || formData.numero_documento.length > 20) {
         newErrors.numero_documento = 'El CE debe tener entre 9 y 20 dígitos';
       }
@@ -770,7 +770,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
         if (!/^\d{8}$/.test(formData.numero_documento)) {
           personalErrors.numero_documento = 'El DNI debe contener solo números';
         }
-      } else if (formData.tipo_documento === 'CE') {
+      } else if (formData.tipo_documento === 'Carnet de Extranjería') {
         if (formData.numero_documento.length < 9 || formData.numero_documento.length > 20) {
           personalErrors.numero_documento = 'El CE debe tener entre 9 y 20 dígitos';
         }
@@ -1223,7 +1223,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                       errors={errors}
                       options={[
                         { value: 'DNI', label: 'DNI' },
-                        { value: 'CE', label: 'Carnet de Extranjería' },
+                        { value: 'Carnet de Extranjería', label: 'Carnet de Extranjería' },
                         { value: 'PASAPORTE', label: 'Pasaporte' }
                       ]}
                     />
@@ -1240,7 +1240,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                         onChange={handleDocumentoChange}
                         placeholder={
                           formData.tipo_documento === 'DNI' ? 'Ej: 12345678' :
-                          formData.tipo_documento === 'CE' ? 'Ej: 001234567890' :
+                          formData.tipo_documento === 'Carnet de Extranjería' ? 'Ej: 001234567890' :
                           'Ej: ABC123456'
                         }
                         className={`w-full px-4 py-2 border-2 rounded-xl transition-all focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 ${
@@ -1250,7 +1250,7 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                       <p className="text-xs text-gray-500 mt-1">
                         {
                           formData.tipo_documento === 'DNI' ? '8 dígitos numéricos' :
-                          formData.tipo_documento === 'CE' ? 'Hasta 20 dígitos numéricos' :
+                          formData.tipo_documento === 'Carnet de Extranjería' ? 'Hasta 20 dígitos numéricos' :
                           'Hasta 20 caracteres alfanuméricos'
                         }
                         {formData.numero_documento && ` (${formData.numero_documento.length}/${
