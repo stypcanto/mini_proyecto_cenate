@@ -1,0 +1,107 @@
+
+CREATE OR REPLACE FUNCTION public.fn_validar_profesional_horario(
+  p_id_pers bigint
+)
+RETURNS TABLE (
+  ok boolean,
+  motivo text,
+  id_area bigint,
+  id_reg_lab bigint,
+  id_servicio bigint
+)
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  v_exists_cnt boolean;
+  v_is_active  boolean;
+  v_is_asist   boolean;
+BEGIN
+  -------------------------------------------------------------------
+  -- 0) Validación parámetro
+  -------------------------------------------------------------------
+  IF p_id_pers IS NULL THEN
+    RETURN QUERY
+    SELECT false, 'p_id_pers no puede ser NULL', NULL::bigint, NULL::bigint, NULL::bigint;
+    RETURN;
+  END IF;
+
+  -------------------------------------------------------------------
+  -- 1) Validar existencia en public.dim_personal_cnt
+  --    (lo que pides: "que el registro se encuentre en la tabla")
+  -------------------------------------------------------------------
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.dim_personal_cnt p
+    WHERE p.id_pers = p_id_pers
+  )
+  INTO v_exists_cnt;
+
+  IF NOT v_exists_cnt THEN
+    RETURN QUERY
+    SELECT false, 'No existe en public.dim_personal_cnt', NULL::bigint, NULL::bigint, NULL::bigint;
+    RETURN;
+  END IF;
+
+  -------------------------------------------------------------------
+  -- 2) Validar activo (stat_pers = 'A')
+  -------------------------------------------------------------------
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.dim_personal_cnt p
+    WHERE p.id_pers = p_id_pers
+      AND p.stat_pers = 'A'
+  )
+  INTO v_is_active;
+
+  IF NOT v_is_active THEN
+    RETURN QUERY
+    SELECT false, 'El profesional está inactivo (stat_pers <> ''A'')', NULL::bigint, NULL::bigint, NULL::bigint;
+    RETURN;
+  END IF;
+
+  -------------------------------------------------------------------
+  -- 3) Validar que sea ASISTENCIAL
+  -------------------------------------------------------------------
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.dim_personal_cnt p
+    JOIN public.dim_personal_tipo pt
+      ON pt.id_pers = p.id_pers
+    JOIN public.dim_tipo_personal tp
+      ON tp.id_tip_pers = pt.id_tip_pers
+    WHERE p.id_pers = p_id_pers
+      AND upper(tp.desc_tip_pers) = 'ASISTENCIAL'
+  )
+  INTO v_is_asist;
+
+  IF NOT v_is_asist THEN
+    RETURN QUERY
+    SELECT false, 'El profesional no es ASISTENCIAL', NULL::bigint, NULL::bigint, NULL::bigint;
+    RETURN;
+  END IF;
+
+  -------------------------------------------------------------------
+  -- 4) Si pasó todo, devolver datos base (área, régimen, servicio)
+  --    servicio: último en dim_personal_prof si existe; sino, el de dim_personal_cnt
+  -------------------------------------------------------------------
+  RETURN QUERY
+  SELECT
+    true as ok,
+    'OK'::text as motivo,
+    p.id_area,
+    p.id_reg_lab,
+    COALESCE(pp.id_servicio, p.id_servicio) as id_servicio
+  FROM public.dim_personal_cnt p
+  LEFT JOIN LATERAL (
+      SELECT pp.id_servicio
+      FROM public.dim_personal_prof pp
+      WHERE pp.id_pers = p.id_pers
+      ORDER BY pp.created_at DESC NULLS LAST
+      LIMIT 1
+  ) pp ON TRUE
+  WHERE p.id_pers = p_id_pers
+  LIMIT 1;
+
+END;
+$$;
+
