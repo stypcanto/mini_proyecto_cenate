@@ -105,7 +105,19 @@ public class UsuarioServiceImpl implements UsuarioService {
 
 		Usuario usuario = new Usuario();
 		usuario.setNameUser(request.getUsername());
-		usuario.setPassUser(passwordEncoder.encode(request.getPassword()));
+
+		// 🆕 v1.18.0 - Password es OPCIONAL
+		// Si no se proporciona, se genera uno aleatorio (usuario establecerá su propia password vía email)
+		String passwordParaUsuario;
+		if (request.getPassword() == null || request.getPassword().isBlank()) {
+			log.info("🔐 Password no proporcionado para usuario: {} - Generando password temporal", request.getUsername());
+			passwordParaUsuario = passwordTokenService.generarPasswordTemporal();
+			log.debug("✅ Password temporal generado (no se mostrará al usuario)");
+		} else {
+			log.info("🔐 Usando password proporcionado para usuario: {}", request.getUsername());
+			passwordParaUsuario = request.getPassword();
+		}
+		usuario.setPassUser(passwordEncoder.encode(passwordParaUsuario));
 		usuario.setStatUser(Optional.ofNullable(request.getEstado()).orElse("I"));
 		usuario.setCreateAt(LocalDateTime.now());
 
