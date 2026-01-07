@@ -106,7 +106,7 @@ export default function MisPacientesEnfermeria() {
     <div className="min-h-screen p-6 font-sans bg-gray-50">
 
       {/* ========== HEADER: ATENCIÓN NO MÉDICA ========== */}
-      <div className="mb-6 bg-gradient-to-r from-[#0a5ba9] via-[#0d4e90] to-[#073b6c] text-white rounded-lg shadow-lg">
+      <div className="mb-6 bg-gradient-to-r from-[#001f3f] via-[#001a33] to-[#000000] text-white rounded-lg shadow-lg">
         <div className="px-6 py-6">
           <div className="text-center mb-4">
             <h1 className="text-3xl font-bold tracking-wider">ATENCIÓN NO MÉDICA</h1>
@@ -144,7 +144,7 @@ export default function MisPacientesEnfermeria() {
 
       {/* ========== PROGRAMACIÓN ASIGNADA ========== */}
       <div className="mb-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0a5ba9] to-[#0d4e90] text-white px-6 py-3 font-bold tracking-wide uppercase text-sm">
+        <div className="bg-gradient-to-r from-[#003d66] to-[#001f3f] text-white px-6 py-3 font-bold tracking-wide uppercase text-sm">
           Programación Asignada
         </div>
         <div className="overflow-x-auto">
@@ -185,7 +185,7 @@ export default function MisPacientesEnfermeria() {
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
 
         {/* Header con Búsqueda y Controles */}
-        <div className="bg-gradient-to-r from-[#0a5ba9] to-[#0d4e90] text-white px-6 py-3">
+        <div className="bg-gradient-to-r from-[#003d66] to-[#001f3f] text-white px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="font-bold tracking-wide uppercase text-sm flex items-center gap-3">
               <span>Relación de Pacientes Citados</span>
@@ -313,7 +313,7 @@ export default function MisPacientesEnfermeria() {
                     <td className="px-4 py-3 text-center">
                       <button
                         onClick={() => handleAttend(paciente)}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-[#0a5ba9] to-[#0d4e90] hover:from-[#073b6c] hover:to-[#0a5ba9] text-white rounded text-xs font-bold transition active:scale-95 shadow-sm"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#003d66] hover:bg-[#001f3f] text-white rounded text-xs font-bold transition active:scale-95 shadow-sm"
                       >
                         <Stethoscope className="w-3.5 h-3.5" />
                         Atender
@@ -348,7 +348,7 @@ export default function MisPacientesEnfermeria() {
                   onClick={() => setCurrentPage(i)}
                   className={`px-3 py-1.5 rounded font-semibold transition ${
                     currentPage === i
-                      ? "bg-gradient-to-r from-[#0a5ba9] to-[#0d4e90] text-white"
+                      ? "bg-[#003d66] text-white"
                       : "border border-gray-300 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
