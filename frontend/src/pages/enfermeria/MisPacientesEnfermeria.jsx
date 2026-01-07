@@ -3,7 +3,7 @@
 // ✅ Versión 3.0.0 (2026-01-06) - Interfaz Consulta Externa + Programación
 // ========================================================================
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import {
   Users, Search, Calendar, Activity, Heart,
   RefreshCw, Clock, CheckCircle2, Stethoscope, Share2, ClipboardList,
@@ -34,6 +34,21 @@ export default function MisPacientesEnfermeria() {
   const [showCalendar, setShowCalendar] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const calendarRef = useRef(null);
+
+  // Manejo de clicks fuera del calendario
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (calendarRef.current && !calendarRef.current.contains(event.target)) {
+        setShowCalendar(false);
+      }
+    };
+
+    if (showCalendar) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [showCalendar]);
 
   const cargarWorklist = useCallback(async () => {
     try {
@@ -140,6 +155,14 @@ export default function MisPacientesEnfermeria() {
   const firstDay = getFirstDayOfMonth(currentMonth);
   const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
+  // Obtener fecha de hoy
+  const today = new Date();
+  const isToday = (day) => {
+    return day === today.getDate() &&
+           currentMonth.getMonth() === today.getMonth() &&
+           currentMonth.getFullYear() === today.getFullYear();
+  };
+
   return (
     <div className="min-h-screen p-6 font-sans bg-gray-50">
 
@@ -165,7 +188,10 @@ export default function MisPacientesEnfermeria() {
 
                 {/* Calendario Popup */}
                 {showCalendar && (
-                  <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl p-4 z-50 border border-gray-300 min-w-80">
+                  <div
+                    ref={calendarRef}
+                    className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl p-4 z-50 border border-gray-300 min-w-80"
+                  >
                     {/* Header con mes/año */}
                     <div className="flex items-center justify-between mb-4">
                       <button
@@ -203,11 +229,13 @@ export default function MisPacientesEnfermeria() {
                         <button
                           key={day}
                           onClick={() => handleSelectDate(day)}
-                          className={`p-2 rounded text-sm font-semibold transition ${
+                          className={`p-2 rounded text-sm font-semibold transition relative ${
                             selectedDate.getDate() === day &&
                             selectedDate.getMonth() === currentMonth.getMonth() &&
                             selectedDate.getFullYear() === currentMonth.getFullYear()
                               ? 'bg-blue-600 text-white'
+                              : isToday(day)
+                              ? 'text-orange-600 border-b-2 border-orange-600 font-bold hover:bg-orange-50'
                               : 'text-gray-700 hover:bg-blue-100'
                           }`}
                         >
