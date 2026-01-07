@@ -402,6 +402,14 @@ export default function MisPacientesEnfermeria() {
                         {paciente.pacienteNombre}
                       </div>
                       <div className="text-xs text-gray-600 mt-1">
+                        <div className="font-mono">
+                          DNI: {paciente.pacienteDni}
+                        </div>
+                        <div className="mt-0.5">
+                          Género: {paciente.sexo || paciente.genero || "N/A"}
+                        </div>
+                      </div>
+                      <div className="text-xs text-gray-600 mt-1.5">
                         {paciente.esCronico && (
                           <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">
                             CRÓNICO
