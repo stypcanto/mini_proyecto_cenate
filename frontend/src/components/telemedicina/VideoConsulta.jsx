@@ -15,6 +15,7 @@ const VideoConsulta = ({
     roomName,
     nombrePaciente,
     nombreMedico,
+    token, // Token JWT para autenticación Jitsi
     onCallEnd,
     registroContent = null // Contenido del formulario de registro
 }) => {
@@ -99,11 +100,16 @@ const VideoConsulta = ({
                     }
                 }
 
-                // Extraer el token JWT de la URL si está presente
-                let jwtToken = null;
-                if (roomUrl && roomUrl.includes('jwt=')) {
+                // Usar el token JWT pasado como prop, o intentar extraerlo de la URL como fallback
+                let jwtToken = token || null;
+                if (!jwtToken && roomUrl && roomUrl.includes('jwt=')) {
                     jwtToken = roomUrl.split('jwt=')[1].split('&')[0];
-                    console.log('✅ Token JWT extraído de la URL');
+                    console.log('✅ Token JWT extraído de la URL (fallback)');
+                }
+                if (jwtToken) {
+                    console.log('✅ Token JWT disponible para autenticación');
+                } else {
+                    console.warn('⚠️ No se encontró token JWT - la autenticación puede fallar');
                 }
                 const options = {
                     roomName: roomName,
@@ -193,12 +199,15 @@ const VideoConsulta = ({
                     }
                 };
 
-                // Agregar JWT solo si está disponible
+                // Agregar JWT solo si está disponible (requerido para Jitsi JaaS)
                 if (jwtToken) {
                     options.jwt = jwtToken;
-                    console.log('✅ JWT configurado en opciones de Jitsi');
+                    console.log('✅ JWT configurado en opciones de Jitsi (longitud:', jwtToken.length, ')');
                 } else {
-                    console.warn('⚠️ No se encontró token JWT en la URL');
+                    console.error('❌ No se encontró token JWT - la autenticación Jitsi fallará');
+                    toast.error('Error: No se pudo obtener el token de autenticación. Por favor, intenta de nuevo.', {
+                        duration: 5000
+                    });
                 }
 
                 try {

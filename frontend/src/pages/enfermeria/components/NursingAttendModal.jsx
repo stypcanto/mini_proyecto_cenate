@@ -847,6 +847,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                     roomName={ videoConsultaData.roomName }
                     nombrePaciente={ videoConsultaData.nombrePaciente }
                     nombreMedico={ videoConsultaData.nombreMedico }
+                    token={ videoConsultaData.token }
                     onCallEnd={ () => {
                         toast.info("Videollamada finalizada");
                         setShowVideoConsulta(false);
