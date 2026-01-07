@@ -1,0 +1,380 @@
+/**
+ * Estilos para InformacionIpressView
+ * @author Ing. Styp Canto Rondón
+ */
+
+.informacion-ipress-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem;
+}
+
+/* Header */
+.ipress-header {
+  text-align: center;
+  margin-bottom: 2rem;
+  animation: slideDown 0.5s ease-out;
+}
+
+.ipress-header h1 {
+  font-size: 2.5rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.ipress-header p {
+  font-size: 1.1rem;
+  color: #64748b;
+}
+
+/* Controles */
+.ipress-controles {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  flex-wrap: wrap;
+}
+
+.control-busqueda,
+.control-filtros {
+  flex: 1;
+  min-width: 250px;
+}
+
+.input-busqueda,
+.select-filtro {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  background-color: white;
+  color: #1e293b;
+  transition: all 0.3s ease;
+}
+
+.input-busqueda:focus,
+.select-filtro:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Contenido */
+.ipress-contenido {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  padding: 2rem;
+}
+
+/* Grid de informaciones */
+.informaciones-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 1.5rem;
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* Tarjeta de información */
+.tarjeta-informacion {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 2px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 1.5rem;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.tarjeta-informacion::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #3b82f6, #1e40af);
+}
+
+.tarjeta-informacion:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 40px rgba(0, 0, 0, 0.12);
+  border-color: #3b82f6;
+}
+
+.tarjeta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: start;
+  margin-bottom: 1rem;
+  gap: 1rem;
+}
+
+.tarjeta-titulo {
+  flex: 1;
+}
+
+.tarjeta-titulo h3 {
+  font-size: 1.2rem;
+  color: #1e293b;
+  margin: 0 0 0.25rem 0;
+  font-weight: 600;
+}
+
+.tarjeta-titulo .codigo {
+  font-size: 0.85rem;
+  color: #64748b;
+  background: #e2e8f0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+  display: inline-block;
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.badge::before {
+  font-size: 1rem;
+}
+
+.badge-cumple {
+  background: #d1fae5;
+  color: #065f46;
+  border: 2px solid #6ee7b7;
+}
+
+.badge-no-cumple {
+  background: #fee2e2;
+  color: #7f1d1d;
+  border: 2px solid #fca5a5;
+}
+
+.badge-en-progreso {
+  background: #fef3c7;
+  color: #78350f;
+  border: 2px solid #fcd34d;
+}
+
+.badge-pendiente {
+  background: #dbeafe;
+  color: #082f49;
+  border: 2px solid #93c5fd;
+}
+
+/* Secciones de la tarjeta */
+.tarjeta-ipress,
+.tarjeta-responsable,
+.tarjeta-fecha {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+  padding: 0.75rem;
+  background: white;
+  border-radius: 0.5rem;
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.tarjeta-ipress span,
+.tarjeta-responsable span:first-child,
+.tarjeta-fecha span:first-child {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+}
+
+.tarjeta-ipress h4 {
+  margin: 0;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.tarjeta-ipress p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.tarjeta-contenido,
+.tarjeta-requisitos,
+.tarjeta-observaciones {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: white;
+  border-left: 4px solid #3b82f6;
+  border-radius: 0.25rem;
+}
+
+.tarjeta-contenido p,
+.tarjeta-requisitos p,
+.tarjeta-observaciones p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.tarjeta-contenido .label,
+.tarjeta-requisitos .label {
+  font-weight: 600;
+  color: #1e293b;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.tarjeta-observaciones {
+  display: flex;
+  gap: 0.75rem;
+  align-items: start;
+  border-left-color: #f59e0b;
+}
+
+.tarjeta-observaciones span:first-child {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 0.1rem;
+}
+
+/* Estados de carga y vacío */
+.loading-state,
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 2rem;
+  text-align: center;
+}
+
+.loading-state .spin {
+  animation: spin 2s linear infinite;
+  font-size: 3rem;
+  margin-bottom: 1rem;
+}
+
+.loading-state p,
+.empty-state h3 {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.empty-state .empty-icon {
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+}
+
+.empty-state p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+/* Paginación */
+.paginacion {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 2rem;
+  border-top: 2px solid #e2e8f0;
+}
+
+.btn-paginacion {
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.btn-paginacion:hover:not(:disabled) {
+  background: #2563eb;
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(59, 130, 246, 0.3);
+}
+
+.btn-paginacion:disabled {
+  background: #cbd5e1;
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.info-paginacion {
+  color: #64748b;
+  font-weight: 600;
+  min-width: 150px;
+  text-align: center;
+}
+
+/* Animaciones */
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .informacion-ipress-container {
+    padding: 1rem;
+  }
+
+  .ipress-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .ipress-controles {
+    flex-direction: column;
+  }
+
+  .informaciones-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tarjeta-header {
+    flex-direction: column;
+  }
+
+  .paginacion {
+    flex-wrap: wrap;
+  }
+}

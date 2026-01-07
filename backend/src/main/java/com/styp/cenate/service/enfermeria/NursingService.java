@@ -239,6 +239,7 @@ public class NursingService {
         String dniPaciente = String.valueOf(entity.getIdPaciente());
         String pkAsegurado = null; // Para buscar historial
         Integer edadPaciente = null;
+        String sexoPaciente = null;
         String diagnostico = "Sin diagnóstico";
         Boolean requiereTelemonitoreo = false;
         Long diasTranscurridos = 0L;
@@ -273,6 +274,7 @@ public class NursingService {
             nombrePaciente = asegurado.getPaciente();
             dniPaciente = asegurado.getDocPaciente();
             pkAsegurado = asegurado.getPkAsegurado(); // ✅ Guardar pk completo
+            sexoPaciente = asegurado.getSexo(); // ✅ Obtener sexo del asegurado
             if (asegurado.getFecnacimpaciente() != null) {
                 edadPaciente = (int) ChronoUnit.YEARS.between(asegurado.getFecnacimpaciente(), LocalDate.now());
             }
@@ -328,6 +330,7 @@ public class NursingService {
                 .pkAsegurado(pkAsegurado) // ✅ PK completo para buscar historial
                 .pacienteNombre(nombrePaciente)
                 .pacienteEdad(edadPaciente)
+                .pacienteSexo(sexoPaciente) // ✅ Agregar sexo
                 .fechaBase(entity.getFechaAtencion()) // Fecha de atención de enfermería
                 .fechaAtencionEnfermeria(entity.getFechaAtencion())
                 .diagnostico(diagnostico)
@@ -350,6 +353,7 @@ public class NursingService {
         String nombrePaciente = "Asegurado " + entity.getPkAsegurado(); // Fallback
         String dniPaciente = entity.getPkAsegurado(); // Fallback: pk completo
         Integer edadPaciente = null;
+        String sexoPaciente = null;
         String pkAseguradoCompleto = entity.getPkAsegurado(); // Guardar pk completo para historial
         String nombreIpress = null;
 
@@ -359,6 +363,7 @@ public class NursingService {
             var asegurado = aseguradoOpt.get();
             nombrePaciente = asegurado.getPaciente();
             dniPaciente = asegurado.getDocPaciente(); // ✅ DNI limpio (sin sufijo)
+            sexoPaciente = asegurado.getSexo(); // ✅ Obtener sexo del asegurado
             if (asegurado.getFecnacimpaciente() != null) {
                 edadPaciente = (int) ChronoUnit.YEARS.between(asegurado.getFecnacimpaciente(), LocalDate.now());
             }
@@ -412,6 +417,7 @@ public class NursingService {
                 .pkAsegurado(pkAseguradoCompleto) // ✅ PK completo para buscar historial
                 .pacienteNombre(nombrePaciente) // ✅ Nombre real
                 .pacienteEdad(edadPaciente) // ✅ Edad calculada
+                .pacienteSexo(sexoPaciente) // ✅ Agregar sexo
                 .fechaBase(entity.getFechaAtencion().toLocalDateTime())
                 .diagnostico(entity.getCie10Codigo() + " - " + entity.getDiagnostico())
                 .requiereTelemonitoreo(Boolean.TRUE.equals(entity.getRequiereTelemonitoreo()))
