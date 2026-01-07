@@ -15,7 +15,8 @@ import apiClient from "../../services/apiClient";
 import NursingAttendModal from "./components/NursingAttendModal";
 
 export default function MisPacientesEnfermeria() {
-  const { user: usuario } = useAuth();
+  const { user: usuarioAuth } = useAuth();
+  const [usuario, setUsuario] = useState(usuarioAuth);
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -53,32 +54,91 @@ export default function MisPacientesEnfermeria() {
   const cargarWorklist = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await apiClient.get("/enfermeria/queue", {
-        params: { estado: "PENDIENTE" }
+      console.log("🔄 Cargando pacientes...");
+      const response = await apiClient.get("/enfermeria/mis-pacientes", {
+        params: { page: 0, size: 50 }
       });
 
-      const data = Array.isArray(response) ? response : (response.data || []);
+      console.log("📦 Respuesta del API:", response);
+
+      // Asegurar que siempre sea un array
+      let data = [];
+      if (Array.isArray(response)) {
+        data = response;
+        console.log("✅ Respuesta es un array directo");
+      } else if (response && Array.isArray(response.data)) {
+        data = response.data;
+        console.log("✅ Datos encontrados en response.data");
+      } else if (response && response.data && typeof response.data === 'object') {
+        // Si viene como objeto, intentar extraer el array
+        data = response.data.content || response.data.pacientes || response.data.items || [];
+        console.log("✅ Datos extraídos de objeto:", data.length);
+      }
+      
+      // Asegurar que sea un array válido
+      if (!Array.isArray(data)) {
+        console.warn("⚠️ La respuesta no es un array, usando array vacío");
+        data = [];
+      }
+      
       console.log("✅ Pacientes cargados:", data.length);
+      console.log("📋 Primer paciente (ejemplo):", data[0]);
       setPacientes(data);
     } catch (error) {
-      console.error("Error al cargar worklist:", error);
+      console.error("❌ Error al cargar worklist:", error);
+      console.error("❌ Detalles del error:", error.response?.data || error.message);
       toast.error("Error al actualizar la lista de pacientes");
+      setPacientes([]); // Asegurar que siempre sea un array
     } finally {
       setLoading(false);
     }
   }, []);
 
+  // Cargar datos del usuario desde el API
+  const cargarDatosUsuario = useCallback(async () => {
+    try {
+      const response = await apiClient.get("/personal/me");
+      if (response && response.data) {
+        setUsuario(prev => ({
+          ...prev,
+          ...response.data,
+          nombreCompleto: response.data.nombreProfesional || 
+                         `${response.data.nombres || ''} ${response.data.apellidos || ''}`.trim() ||
+                         prev?.nombreCompleto
+        }));
+      }
+    } catch (error) {
+      console.error("Error al cargar datos del usuario:", error);
+      // Mantener datos del auth si falla
+      setUsuario(usuarioAuth);
+    }
+  }, [usuarioAuth]);
+
   useEffect(() => {
+    cargarDatosUsuario();
     cargarWorklist();
-  }, [cargarWorklist]);
+  }, [cargarDatosUsuario, cargarWorklist]);
 
   // Filtro por búsqueda y estado (solo PENDIENTES)
   const filteredPatients = useMemo(() => {
-    return pacientes.filter(p =>
-      (p.estadoEnfermeria === "PENDIENTE") &&
-      (p.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       p.pacienteDni?.includes(searchTerm))
-    );
+    // Asegurar que pacientes sea un array
+    if (!Array.isArray(pacientes)) {
+      console.warn("⚠️ pacientes no es un array, retornando array vacío");
+      return [];
+    }
+    
+    console.log("🔍 Filtrando pacientes. Total:", pacientes.length, "Búsqueda:", searchTerm);
+    
+    const filtered = pacientes.filter(p => {
+      const matchesEstado = !p.estadoEnfermeria || p.estadoEnfermeria === "PENDIENTE";
+      const matchesSearch = !searchTerm ||
+        p.apellidosNombres?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        p.numDoc?.includes(searchTerm);
+      return matchesEstado && matchesSearch;
+    });
+    
+    console.log("✅ Pacientes filtrados:", filtered.length);
+    return filtered;
   }, [pacientes, searchTerm]);
 
   // Paginación
@@ -98,12 +158,12 @@ export default function MisPacientesEnfermeria() {
     cargarWorklist();
   };
 
-  const handleSelectPatient = (idOrigen) => {
+  const handleSelectPatient = (pkAsegurado) => {
     const newSelected = new Set(selectedPatients);
-    if (newSelected.has(idOrigen)) {
-      newSelected.delete(idOrigen);
+    if (newSelected.has(pkAsegurado)) {
+      newSelected.delete(pkAsegurado);
     } else {
-      newSelected.add(idOrigen);
+      newSelected.add(pkAsegurado);
     }
     setSelectedPatients(newSelected);
   };
@@ -112,7 +172,7 @@ export default function MisPacientesEnfermeria() {
     if (selectedPatients.size === paginatedPatients.length) {
       setSelectedPatients(new Set());
     } else {
-      const allIds = new Set(paginatedPatients.map(p => p.idOrigen));
+      const allIds = new Set(paginatedPatients.map(p => p.pkAsegurado));
       setSelectedPatients(allIds);
     }
   };
@@ -165,48 +225,48 @@ export default function MisPacientesEnfermeria() {
   };
 
   return (
-    <div className="min-h-screen p-6 font-sans bg-gray-50">
+    <div className="min-h-screen p-4 font-sans bg-gray-50">
 
       {/* ========== HEADER: ATENCIÓN NO MÉDICA ========== */}
-      <div className="mb-6 bg-gradient-to-r from-[#001f3f] via-[#001a33] to-[#000000] text-white rounded-lg shadow-lg">
-        <div className="px-6 py-6">
-          <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold tracking-wider">ATENCIÓN NO MÉDICA</h1>
+      <div className="mb-4 bg-[#084a8a] text-white rounded-lg shadow-lg">
+        <div className="px-4 py-3">
+          <div className="mb-3 text-center">
+            <h1 className="text-xl font-bold">ATENCIÓN NO MÉDICA</h1>
           </div>
 
           {/* Fecha + Área Hospitalaria */}
-          <div className="flex items-center justify-between border-b border-blue-300/30 pb-4 mb-4">
-            <div className="flex items-center gap-3 relative">
-              <Calendar className="w-5 h-5" />
+          <div className="flex items-center justify-between pb-3 mb-3 border-b border-blue-300/30">
+            <div className="relative flex items-center gap-2">
+              <Calendar className="w-4 h-4" />
               <div className="relative">
                 <button
                   onClick={() => setShowCalendar(!showCalendar)}
-                  className="font-semibold text-lg flex items-center gap-2 hover:opacity-80 transition"
+                  className="flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80"
                 >
                   Fecha: {formattedDate}
-                  <ArrowRight className="w-4 h-4 ml-1" />
+                  <ArrowRight className="w-3.5 h-3.5 ml-0.5" />
                 </button>
 
                 {/* Calendario Popup */}
                 {showCalendar && (
                   <div
                     ref={calendarRef}
-                    className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl p-4 z-50 border border-gray-300 min-w-80"
+                    className="absolute left-0 z-50 p-4 mt-2 bg-white border border-gray-300 rounded-lg shadow-xl top-full min-w-80"
                   >
                     {/* Header con mes/año */}
                     <div className="flex items-center justify-between mb-4">
                       <button
                         onClick={handlePrevMonth}
-                        className="p-1 hover:bg-gray-100 rounded transition"
+                        className="p-1 transition rounded hover:bg-gray-100"
                       >
                         <ChevronLeft className="w-5 h-5 text-gray-600" />
                       </button>
-                      <h3 className="text-gray-900 font-bold text-center flex-1 capitalize">
+                      <h3 className="flex-1 font-bold text-center text-gray-900 capitalize">
                         {monthYear}
                       </h3>
                       <button
                         onClick={handleNextMonth}
-                        className="p-1 hover:bg-gray-100 rounded transition"
+                        className="p-1 transition rounded hover:bg-gray-100"
                       >
                         <ChevronRight className="w-5 h-5 text-gray-600" />
                       </button>
@@ -215,7 +275,7 @@ export default function MisPacientesEnfermeria() {
                     {/* Días de la semana */}
                     <div className="grid grid-cols-7 gap-2 mb-3">
                       {daysOfWeek.map((day, idx) => (
-                        <div key={idx} className="text-center text-xs font-bold text-gray-600">
+                        <div key={idx} className="text-xs font-bold text-center text-gray-600">
                           {day}
                         </div>
                       ))}
@@ -248,7 +308,7 @@ export default function MisPacientesEnfermeria() {
                     {/* Botón Seleccionar */}
                     <button
                       onClick={() => setShowCalendar(false)}
-                      className="w-full mt-4 py-2 bg-gray-200 text-gray-900 font-semibold rounded hover:bg-gray-300 transition text-sm"
+                      className="w-full py-2 mt-4 text-sm font-semibold text-gray-900 transition bg-gray-200 rounded hover:bg-gray-300"
                     >
                       Seleccionar fecha
                     </button>
@@ -258,18 +318,21 @@ export default function MisPacientesEnfermeria() {
             </div>
             <div className="text-right">
               <div className="text-sm opacity-90">Área Hospitalaria</div>
-              <div className="text-xl font-bold">CONSULTA EXTERNA</div>
+              <div className="text-sm font-bold">CONSULTA EXTERNA</div>
             </div>
           </div>
 
           {/* Profesional */}
-          <div className="bg-blue-400/20 rounded px-4 py-3 mb-4">
-            <div className="text-sm font-semibold tracking-wide uppercase opacity-90 mb-2">Profesional</div>
-            <div className="flex items-center gap-3">
-              <Users className="w-5 h-5" />
-              <span className="font-mono font-semibold">Documento D.N.I. {usuario?.username || "N/A"}</span>
-              <Copy className="w-4 h-4 cursor-pointer hover:opacity-70 transition" />
-              <span className="font-bold text-lg">
+          <div className="px-3 py-2.5 mb-0 border rounded-lg shadow-sm bg-cyan-50/95 backdrop-blur-sm border-cyan-200/40">
+            <div className="mb-1.5 text-xs font-bold uppercase tracking-wider text-cyan-700">Profesional</div>
+            <div className="flex items-center gap-2.5">
+              <Users className="flex-shrink-0 w-4 h-4 text-cyan-700" />
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-medium text-cyan-800">Documento D.N.I.</span>
+                <span className="text-xs font-semibold text-cyan-900">{usuario?.username || "N/A"}</span>
+                <Copy className="w-3.5 h-3.5 text-cyan-600 transition cursor-pointer hover:text-cyan-800 hover:scale-110" />
+              </div>
+              <span className="text-sm font-bold text-cyan-900">
                 {usuario?.nombreCompleto || "Profesional"}
               </span>
             </div>
@@ -278,38 +341,38 @@ export default function MisPacientesEnfermeria() {
       </div>
 
       {/* ========== PROGRAMACIÓN ASIGNADA ========== */}
-      <div className="mb-6 bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-[#003d66] to-[#001f3f] text-white px-6 py-3 font-bold tracking-wide uppercase text-sm">
+      <div className="mb-4 overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
+        <div className="bg-[#084a8a] text-white px-4 py-2 font-bold uppercase text-sm shadow-md">
           Programación Asignada
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-gray-100 border-b border-gray-200">
+            <thead className="bg-[#084a8a] border-b border-[#084a8a]/50">
               <tr>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Servicio</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Actividad</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Actividad Específica</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Fec Turno</th>
-                <th className="px-4 py-3 text-center font-bold text-gray-700">HorInicio</th>
-                <th className="px-4 py-3 text-center font-bold text-gray-700">HorFin</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Estado</th>
-                <th className="px-4 py-3 text-left font-bold text-gray-700">Tipo Programación</th>
+                <th className="px-3 py-2 font-bold text-left text-white border-r border-[#084a8a]/50">Servicio</th>
+                <th className="px-3 py-2 font-bold text-left text-white border-r border-[#084a8a]/50">Actividad</th>
+                <th className="px-3 py-2 font-bold text-left text-white border-r border-[#084a8a]/50">Actividad Específica</th>
+                <th className="px-3 py-2 font-bold text-left text-white border-r border-[#084a8a]/50">Fec Turno</th>
+                <th className="px-3 py-2 font-bold text-center text-white border-r border-[#084a8a]/50">HorInicio</th>
+                <th className="px-3 py-2 font-bold text-center text-white border-r border-[#084a8a]/50">HorFin</th>
+                <th className="px-3 py-2 font-bold text-left text-white border-r border-[#084a8a]/50">Estado</th>
+                <th className="px-3 py-2 font-bold text-left text-white">Tipo Programación</th>
               </tr>
             </thead>
             <tbody>
-              <tr className="bg-white hover:bg-blue-50/50 transition border-b border-gray-100">
-                <td className="px-4 py-3 font-semibold text-gray-900">ENFERMERÍA</td>
-                <td className="px-4 py-3 text-gray-700">ATENCIÓN NO MÉDICA</td>
-                <td className="px-4 py-3 text-gray-700">TELEMONITOREO</td>
-                <td className="px-4 py-3 font-mono text-gray-700">{formattedDate}</td>
-                <td className="px-4 py-3 text-center font-mono text-gray-700">08:00</td>
-                <td className="px-4 py-3 text-center font-mono text-gray-700">14:00</td>
-                <td className="px-4 py-3">
-                  <span className="inline-block px-3 py-1 bg-green-100 text-green-800 font-bold rounded text-xs">
+              <tr className="transition bg-white border-b border-blue-100 hover:bg-blue-50/50">
+                <td className="px-3 py-2 font-semibold text-gray-900 border-r border-blue-100">ENFERMERÍA</td>
+                <td className="px-3 py-2 text-gray-700 border-r border-blue-100">ATENCIÓN NO MÉDICA</td>
+                <td className="px-3 py-2 text-gray-700 border-r border-blue-100">TELEMONITOREO</td>
+                <td className="px-3 py-2 text-gray-700 border-r border-blue-100">{formattedDate}</td>
+                <td className="px-3 py-2 text-center text-gray-700 border-r border-blue-100">08:00</td>
+                <td className="px-3 py-2 text-center text-gray-700 border-r border-blue-100">14:00</td>
+                <td className="px-3 py-2 border-r border-blue-100">
+                  <span className="inline-block px-2 py-0.5 text-xs font-bold text-green-800 bg-green-100 rounded">
                     APROBADA POR CUPOS
                   </span>
                 </td>
-                <td className="px-4 py-3 text-gray-700">PROGR. DIARIA</td>
+                <td className="px-3 py-2 text-gray-700">PROGR. DIARIA</td>
               </tr>
             </tbody>
           </table>
@@ -317,20 +380,20 @@ export default function MisPacientesEnfermeria() {
       </div>
 
       {/* ========== RELACIÓN DE PACIENTES CITADOS ========== */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
+      <div className="overflow-hidden bg-white border border-gray-200 rounded-lg shadow-sm">
 
         {/* Header con Búsqueda y Controles */}
-        <div className="bg-gradient-to-r from-[#003d66] to-[#001f3f] text-white px-6 py-3">
+        <div className="bg-[#084a8a] text-white px-4 py-2 shadow-md">
           <div className="flex items-center justify-between">
-            <div className="font-bold tracking-wide uppercase text-sm flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm font-bold uppercase">
               <span>Relación de Pacientes Citados</span>
-              <span className="text-xs bg-white/20 px-2 py-1 rounded">
+              <span className="px-1.5 py-0.5 text-xs rounded bg-white/20">
                 {filteredPatients.length} pacientes
               </span>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               <div className="relative">
-                <Search className="absolute w-4 h-4 left-3 top-1/2 transform -translate-y-1/2 text-white/60" />
+                <Search className="absolute w-3.5 h-3.5 transform -translate-y-1/2 left-2 top-1/2 text-white/60" />
                 <input
                   type="text"
                   placeholder="Buscar paciente..."
@@ -339,10 +402,10 @@ export default function MisPacientesEnfermeria() {
                     setSearchTerm(e.target.value);
                     setCurrentPage(0);
                   }}
-                  className="pl-10 pr-4 py-2 rounded bg-white/20 text-white placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50 transition w-48 text-sm"
+                  className="w-40 py-1.5 pl-8 pr-3 text-sm text-white transition rounded bg-white/20 placeholder-white/60 focus:outline-none focus:ring-2 focus:ring-white/50"
                 />
               </div>
-              <select className="px-3 py-2 bg-white/20 text-white rounded focus:outline-none text-sm hover:bg-white/30 transition focus:ring-2 focus:ring-white/50">
+              <select className="px-2 py-1.5 text-sm text-white transition rounded bg-white/20 focus:outline-none hover:bg-white/30 focus:ring-2 focus:ring-white/50">
                 <option className="text-gray-900">Marcar todos</option>
                 <option className="text-gray-900">No marcar</option>
               </select>
@@ -354,7 +417,7 @@ export default function MisPacientesEnfermeria() {
         <div className="overflow-x-auto">
           {loading ? (
             <div className="flex items-center justify-center py-12">
-              <Activity className="w-8 h-8 text-cyan-500 animate-spin mr-3" />
+              <Activity className="w-8 h-8 mr-3 text-cyan-500 animate-spin" />
               <span>Cargando pacientes...</span>
             </div>
           ) : paginatedPatients.length === 0 ? (
@@ -364,89 +427,89 @@ export default function MisPacientesEnfermeria() {
             </div>
           ) : (
             <table className="w-full text-sm">
-              <thead className="bg-gray-100 border-b border-gray-200">
+              <thead className="bg-[#084a8a] border-b border-[#084a8a]/50">
                 <tr>
-                  <th className="px-4 py-3 text-left">
+                  <th className="px-2 py-2 text-left">
                     <input
                       type="checkbox"
                       checked={selectedPatients.size === paginatedPatients.length && paginatedPatients.length > 0}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 cursor-pointer"
+                      className="w-3.5 h-3.5 cursor-pointer"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Orden</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Apellidos y Nombres</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">DNI</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Género</th>
-                  <th className="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">Edad</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Teléfono</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Estrategia</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">IPRESS de Adscripción</th>
-                  <th className="px-4 py-3 text-center font-bold text-gray-700">Estado</th>
+                  <th className="px-2 py-2 text-left text-white border-r border-[#084a8a]/50">Orden</th>
+                  <th className="px-2 py-2 text-left text-white border-r border-[#084a8a]/50">Apellidos y Nombres</th>
+                  <th className="px-2 py-2 text-left text-white border-r border-[#084a8a]/50">DNI</th>
+                  <th className="px-2 py-2 text-left text-white border-r border-[#084a8a]/50">Género</th>
+                  <th className="px-2 py-2 text-center text-white border-r border-[#084a8a]/50">Edad</th>
+                  <th className="px-2 py-2 text-left text-white border-r border-[#084a8a]/50">Teléfono</th>
+                  <th className="px-2 py-2 text-left text-white border-r border-[#084a8a]/50">Estrategia</th>
+                  <th className="px-2 py-2 text-left text-white border-r border-[#084a8a]/50">IPRESS de Adscripción</th>
+                  <th className="px-2 py-2 text-center text-white">Estado</th>
                 </tr>
               </thead>
               <tbody>
                 {paginatedPatients.map((paciente, idx) => (
                   <tr
-                    key={`${paciente.idOrigen}_${idx}`}
-                    className={`border-b border-gray-200 transition hover:bg-blue-50/80 ${
+                    key={`${paciente.pkAsegurado}_${idx}`}
+                    className={`border-b border-blue-100 transition hover:bg-blue-50 ${
                       idx % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                     }`}
                   >
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-2 py-2 text-center">
                       <input
                         type="checkbox"
-                        checked={selectedPatients.has(paciente.idOrigen)}
-                        onChange={() => handleSelectPatient(paciente.idOrigen)}
-                        className="w-4 h-4 cursor-pointer"
+                        checked={selectedPatients.has(paciente.pkAsegurado)}
+                        onChange={() => handleSelectPatient(paciente.pkAsegurado)}
+                        className="w-3.5 h-3.5 cursor-pointer"
                       />
                     </td>
-                    <td className="px-4 py-3 font-bold text-gray-900 border-r border-gray-200">{idx + 1}</td>
-                    <td className="px-4 py-3 border-r border-gray-200">
-                      <div className="font-semibold text-gray-900 truncate" title={paciente.pacienteNombre}>
-                        {paciente.pacienteNombre}
+                    <td className="px-2 py-2 text-gray-900 border-r border-blue-100">{idx + 1}</td>
+                    <td className="px-2 py-2 border-r border-blue-100">
+                      <div className="text-sm text-gray-900 truncate" title={paciente.apellidosNombres}>
+                        {paciente.apellidosNombres}
                       </div>
-                      <div className="text-xs text-gray-600 mt-1">
-                        {paciente.esCronico && (
-                          <span className="inline-block px-1.5 py-0.5 bg-purple-100 text-purple-700 rounded text-[10px] font-bold">
-                            CRÓNICO
+                      <div className="mt-0.5">
+                        {paciente.requiereTelemonitoreo && (
+                          <span className="inline-block px-1 py-0.5 bg-purple-100 text-purple-700 rounded text-xs font-bold">
+                            TELEMONITOREO
                           </span>
                         )}
                       </div>
                     </td>
-                    <td className="px-4 py-3 font-mono text-xs font-semibold text-gray-900 border-r border-gray-200">
-                      {paciente.pacienteDni}
+                    <td className="px-2 py-2 text-sm text-gray-900 border-r border-blue-100">
+                      {paciente.numDoc}
                     </td>
-                    <td className="px-4 py-3 text-left font-semibold text-gray-900 border-r border-gray-200">
-                      {paciente.pacienteSexo || "N/A"}
+                    <td className="px-2 py-2 text-sm text-left text-gray-900 border-r border-blue-100">
+                      {paciente.sexo || "N/A"}
                     </td>
-                    <td className="px-4 py-3 text-center font-semibold text-gray-900 border-r border-gray-200">
-                      {paciente.pacienteEdad}
+                    <td className="px-2 py-2 text-sm text-center text-gray-900 border-r border-blue-100">
+                      {paciente.edad}
                     </td>
-                    <td className="px-4 py-3 text-left font-mono text-sm text-gray-900 border-r border-gray-200">
+                    <td className="px-2 py-2 text-sm text-left text-gray-900 border-r border-blue-100">
                       {paciente.telefono || "N/A"}
                     </td>
-                    <td className="px-4 py-3 text-left border-r border-gray-200">
-                      {paciente.esCronico ? (
-                        <span className="inline-block px-2 py-1 bg-purple-100 text-purple-700 rounded text-xs font-bold">
+                    <td className="px-2 py-2 text-left border-r border-blue-100">
+                      {paciente.requiereTelemonitoreo ? (
+                        <span className="inline-block px-1.5 py-0.5 text-xs font-bold text-purple-700 bg-purple-100 rounded">
                           CENACRON
                         </span>
                       ) : (
                         <span className="text-xs text-gray-500">—</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-left text-sm text-gray-700 border-r border-gray-200">
-                      {paciente.nombreIpress || "N/A"}
+                    <td className="px-2 py-2 text-sm text-left text-gray-700 border-r border-blue-100">
+                      {paciente.ipress || "N/A"}
                     </td>
-                    <td className="px-4 py-3 text-center">
+                    <td className="px-2 py-2 text-center">
                       {paciente.estadoEnfermeria === "ATENDIDO" ? (
-                        <span className="inline-block px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap bg-blue-100 text-blue-800">
+                        <span className="inline-block px-2 py-1 text-xs font-bold text-blue-800 bg-blue-100 rounded whitespace-nowrap">
                           ATENDIDO
                         </span>
                       ) : (
                         <button
                           onClick={() => handleAttend(paciente)}
-                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                          className={`inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-bold transition cursor-pointer whitespace-nowrap ${
                             paciente.diasTranscurridos > 0
                               ? "bg-red-100 text-red-800 hover:bg-red-200"
                               : paciente.diasTranscurridos === 0
@@ -467,8 +530,8 @@ export default function MisPacientesEnfermeria() {
 
         {/* Paginación */}
         {filteredPatients.length > 0 && (
-          <div className="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-            <div className="text-sm text-gray-700 font-semibold">
+          <div className="flex items-center justify-between px-4 py-2 border-t border-gray-200 bg-gray-50">
+            <div className="text-sm font-semibold text-gray-700">
               Mostrando {currentPage * pageSize + 1} a{" "}
               {Math.min((currentPage + 1) * pageSize, filteredPatients.length)} de{" "}
               {filteredPatients.length} entradas
@@ -477,17 +540,17 @@ export default function MisPacientesEnfermeria() {
               <button
                 onClick={() => setCurrentPage(Math.max(0, currentPage - 1))}
                 disabled={currentPage === 0}
-                className="p-1.5 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="p-1 transition border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronLeft className="w-4 h-4 text-gray-600" />
+                <ChevronLeft className="w-3.5 h-3.5 text-gray-600" />
               </button>
               {Array.from({ length: totalPages }, (_, i) => (
                 <button
                   key={i}
                   onClick={() => setCurrentPage(i)}
-                  className={`px-3 py-1.5 rounded font-semibold transition ${
+                  className={`px-2 py-1 text-sm rounded font-semibold transition ${
                     currentPage === i
-                      ? "bg-[#003d66] text-white"
+                      ? "bg-[#084a8a] text-white shadow-md"
                       : "border border-gray-300 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -497,9 +560,9 @@ export default function MisPacientesEnfermeria() {
               <button
                 onClick={() => setCurrentPage(Math.min(totalPages - 1, currentPage + 1))}
                 disabled={currentPage === totalPages - 1}
-                className="p-1.5 border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                className="p-1 transition border border-gray-300 rounded hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <ChevronRight className="w-4 h-4 text-gray-600" />
+                <ChevronRight className="w-3.5 h-3.5 text-gray-600" />
               </button>
             </div>
           </div>

@@ -137,14 +137,14 @@ public class JaaSService {
             log.debug("🔑 AppID: {} - Key ID: {}", appId, keyId);
             
             // Construir el JWT según especificación Jitsi JaaS
-            // Según documentación: aud="jitsi", sub=AppID, room=nombreSala o "*"
+            // Según documentación: iss="chat", aud="jitsi", sub=AppID, room=nombreSala
             String token = Jwts.builder()
                     .setHeaderParam("alg", "RS256")
                     .setHeaderParam("typ", "JWT")
                     .setHeaderParam("kid", keyId)  // Key ID completo
-                    .setIssuer("chat")
-                    .setAudience("jitsi")  // Debe ser "jitsi" según especificación
-                    .setSubject(appId)     // AppID va en subject
+                    .setIssuer("chat")     // Issuer debe ser "chat" según Jitsi JaaS
+                    .setAudience("jitsi")  // Audience debe ser "jitsi"
+                    .setSubject(appId)     // Subject debe ser el AppID
                     .setIssuedAt(Date.from(now))
                     .setExpiration(Date.from(expiration))
                     .claim("room", roomName)  // Nombre específico de la sala

@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.RequestMethod;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -29,10 +30,19 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/enfermeria")
 @RequiredArgsConstructor
-@CrossOrigin(origins = "${FRONTEND_URL:http://localhost:3000}")
+@CrossOrigin(origins = "*", allowedHeaders = "*", methods = {RequestMethod.GET, RequestMethod.POST, RequestMethod.PUT, RequestMethod.DELETE, RequestMethod.OPTIONS})
 public class EnfermeriaPacientesController {
 
     private final EnfermeriaPacientesService enfermeriaService;
+
+    /**
+     * OPTIONS /api/enfermeria/mis-pacientes
+     * Maneja las solicitudes preflight de CORS
+     */
+    @RequestMapping(value = "/mis-pacientes", method = RequestMethod.OPTIONS)
+    public ResponseEntity<?> handleOptions() {
+        return ResponseEntity.ok().build();
+    }
 
     /**
      * 1️⃣ GET /api/enfermeria/mis-pacientes

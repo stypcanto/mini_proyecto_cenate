@@ -28,33 +28,39 @@ const VideoConsulta = ({
         if (isOpen && roomUrl && jitsiContainerRef.current) {
             console.log('📹 Inicializando videollamada:', { roomUrl, roomName, nombrePaciente, nombreMedico });
             
-            // Función para solicitar permisos de dispositivos
+            // Función para solicitar permisos de dispositivos (no bloquea si falla)
             const requestMediaPermissions = async () => {
                 try {
+                    // Verificar si la API está disponible
+                    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+                        console.warn('⚠️ API de medios no disponible en este navegador');
+                        return false;
+                    }
+
                     // Solicitar permisos de audio y video explícitamente
                     const stream = await navigator.mediaDevices.getUserMedia({
-                        audio: true,
-                        video: true
+                        audio: {
+                            echoCancellation: true,
+                            noiseSuppression: true,
+                            autoGainControl: true
+                        },
+                        video: {
+                            width: { ideal: 1280 },
+                            height: { ideal: 720 },
+                            facingMode: 'user'
+                        }
                     });
                     // Detener el stream inmediatamente, solo queríamos los permisos
-                    stream.getTracks().forEach(track => track.stop());
+                    stream.getTracks().forEach(track => {
+                        track.stop();
+                        console.log('🛑 Track detenido:', track.kind);
+                    });
                     console.log('✅ Permisos de dispositivos otorgados');
                     return true;
                 } catch (error) {
-                    console.error('❌ Error al solicitar permisos:', error);
-                    if (error.name === 'NotAllowedError') {
-                        toast.error('Permisos denegados. Por favor, permite el acceso a micrófono y cámara en la configuración del navegador.', {
-                            duration: 6000
-                        });
-                    } else if (error.name === 'NotFoundError') {
-                        toast.error('No se encontraron dispositivos de audio/video. Verifica que estén conectados.', {
-                            duration: 5000
-                        });
-                    } else {
-                        toast.error('Error al acceder a los dispositivos: ' + error.message, {
-                            duration: 5000
-                        });
-                    }
+                    console.warn('⚠️ Error al solicitar permisos (no crítico):', error.name, error.message);
+                    // No mostramos error aquí, Jitsi puede solicitar permisos después
+                    // Solo registramos para debugging
                     return false;
                 }
             };
@@ -69,12 +75,17 @@ const VideoConsulta = ({
 
                 console.log('✅ Jitsi Meet API disponible, inicializando...');
 
-                // Solicitar permisos antes de inicializar
-                const hasPermissions = await requestMediaPermissions();
-                if (!hasPermissions) {
-                    console.warn('⚠️ Permisos no otorgados, pero continuando con la inicialización...');
-                    // Continuamos de todas formas, Jitsi puede manejar esto
-                }
+                // Intentar solicitar permisos antes de inicializar (no bloquea si falla)
+                // Jitsi puede solicitar permisos después cuando el usuario intente unirse
+                requestMediaPermissions().then(hasPermissions => {
+                    if (hasPermissions) {
+                        console.log('✅ Permisos obtenidos previamente');
+                    } else {
+                        console.log('ℹ️ Permisos se solicitarán cuando el usuario se una a la sala');
+                    }
+                }).catch(err => {
+                    console.warn('⚠️ Error al solicitar permisos previamente:', err);
+                });
 
                 // Extraer el dominio completo de la URL (incluyendo el tenant)
                 let domain = '8x8.vc'; // Valor por defecto
@@ -100,21 +111,30 @@ const VideoConsulta = ({
                     configOverwrite: {
                         startWithAudioMuted: false,
                         startWithVideoMuted: false,
-                        enableWelcomePage: true, // Habilitar página de bienvenida para solicitar permisos
+                        enableWelcomePage: false, // Deshabilitar página de bienvenida, usar prejoin
                         enableClosePage: false,
                         disableDeepLinking: true,
                         defaultLanguage: 'es',
                         prejoinPageEnabled: true, // Habilitar página de prejoin para configurar dispositivos
                         enableLayerSuspension: true,
+                        enableNoAudioDetection: true,
+                        enableNoisyMicDetection: true,
+                        enableRemb: true,
+                        enableTcc: true,
+                        // Configuración de permisos
+                        requireDisplayName: false,
+                        enableInsecureRoomNameWarning: false,
                         constraints: {
                             video: {
                                 height: { ideal: 720, max: 720, min: 180 },
-                                width: { ideal: 1280, max: 1280, min: 320 }
+                                width: { ideal: 1280, max: 1280, min: 320 },
+                                facingMode: 'user'
                             },
                             audio: {
                                 autoGainControl: true,
                                 echoCancellation: true,
-                                noiseSuppression: true
+                                noiseSuppression: true,
+                                sampleRate: 48000
                             }
                         },
                         toolbarButtons: [
@@ -187,6 +207,25 @@ const VideoConsulta = ({
                     setApi(jitsiApi);
                     console.log('✅ Instancia de Jitsi creada exitosamente');
 
+                    // 🎬 Agregar atributo 'allow' al iframe de Jitsi para permitir micrófono y cámara
+                    // Esperar a que el iframe se cree (normalmente ocurre inmediatamente)
+                    const allowMediaInIframe = () => {
+                        const iframes = jitsiContainerRef.current?.querySelectorAll('iframe');
+                        if (iframes && iframes.length > 0) {
+                            iframes.forEach((iframe, index) => {
+                                const allowAttr = 'microphone; camera; display-capture; fullscreen; autoplay; geolocation; accelerometer; gyroscope; magnetometer; usb; payment';
+                                iframe.setAttribute('allow', allowAttr);
+                                console.log(`✅ Atributo 'allow' agregado al iframe ${index}:`, allowAttr);
+                            });
+                        } else {
+                            // Si los iframes no se han creado aún, intentar de nuevo en 100ms
+                            setTimeout(allowMediaInIframe, 100);
+                        }
+                    };
+
+                    // Dar un poco de tiempo para que el iframe se cree
+                    setTimeout(allowMediaInIframe, 500);
+
                     // Event listeners
                     jitsiApi.addEventListener('videoConferenceJoined', (event) => {
                         console.log('✅ Usuario se unió a la videollamada', event);
@@ -221,11 +260,23 @@ const VideoConsulta = ({
                         console.log('📱 Dispositivos disponibles:', devices);
                     });
 
-                    jitsiApi.addEventListener('mediaDevicesPermissionDenied', () => {
-                        console.error('❌ Permisos de dispositivos denegados');
-                        toast.error('Permisos de micrófono y cámara denegados. Por favor, permite el acceso en la configuración del navegador.', {
-                            duration: 6000
+                    jitsiApi.addEventListener('mediaDevicesPermissionDenied', (event) => {
+                        console.error('❌ Permisos de dispositivos denegados:', event);
+                        toast.error('Permisos de micrófono y cámara denegados. Por favor, permite el acceso en la configuración del navegador y recarga la página.', {
+                            duration: 8000
                         });
+                    });
+
+                    jitsiApi.addEventListener('deviceListChanged', (devices) => {
+                        console.log('📱 Dispositivos disponibles:', devices);
+                    });
+
+                    jitsiApi.addEventListener('participantKickedOut', (event) => {
+                        console.warn('⚠️ Participante expulsado:', event);
+                        if (event.kicked?.local) {
+                            toast.error('Has sido expulsado de la videollamada');
+                            handleClose();
+                        }
                     });
 
 
@@ -255,6 +306,69 @@ const VideoConsulta = ({
                 }
             };
 
+            // Función para cargar el script de Jitsi
+            const loadJitsiScript = (domain) => {
+                return new Promise((resolve, reject) => {
+                    // Verificar si ya existe un script con el mismo dominio
+                    const existingScript = document.querySelector(`script[src*="${domain}/external_api.js"]`);
+                    if (existingScript) {
+                        // Si el script ya existe, esperar a que se cargue
+                        let attempts = 0;
+                        const checkInterval = setInterval(() => {
+                            attempts++;
+                            if (window.JitsiMeetExternalAPI) {
+                                clearInterval(checkInterval);
+                                console.log('✅ Jitsi API disponible después de esperar');
+                                resolve();
+                            } else if (attempts > 20) { // Esperar hasta 2 segundos (20 * 100ms)
+                                clearInterval(checkInterval);
+                                console.warn('⚠️ Script existe pero API no se cargó, intentando recargar...');
+                                // Remover el script existente y cargar uno nuevo
+                                existingScript.remove();
+                                loadNewScript(domain, resolve, reject);
+                            }
+                        }, 100);
+                    } else {
+                        loadNewScript(domain, resolve, reject);
+                    }
+                });
+            };
+
+            // Función para cargar un nuevo script
+            const loadNewScript = (domain, resolve, reject) => {
+                const script = document.createElement('script');
+                script.src = `https://${domain}/external_api.js`;
+                script.async = true;
+                script.onload = () => {
+                    console.log('✅ Script de Jitsi cargado exitosamente desde', domain);
+                    // Esperar un poco más para asegurar que la API esté disponible
+                    setTimeout(() => {
+                        if (window.JitsiMeetExternalAPI) {
+                            resolve();
+                        } else {
+                            reject(new Error('API no disponible después de cargar el script'));
+                        }
+                    }, 200);
+                };
+                script.onerror = () => {
+                    console.error('❌ Error al cargar script de Jitsi desde', domain);
+                    reject(new Error(`Error al cargar script desde ${domain}`));
+                };
+                document.body.appendChild(script);
+            };
+
+            // Extraer el dominio de la roomUrl
+            let scriptDomain = '8x8.vc';
+            if (roomUrl) {
+                try {
+                    const url = new URL(roomUrl);
+                    scriptDomain = url.hostname;
+                    console.log('🌐 Dominio extraído para script:', scriptDomain);
+                } catch (error) {
+                    console.warn('⚠️ No se pudo extraer dominio para el script, usando por defecto');
+                }
+            }
+
             // Verificar si Jitsi ya está cargado
             if (window.JitsiMeetExternalAPI) {
                 console.log('✅ Jitsi API ya está cargado');
@@ -263,52 +377,19 @@ const VideoConsulta = ({
                     toast.error('Error al inicializar la videollamada');
                 });
             } else {
-                console.log('📥 Cargando script de Jitsi...');
-                // Cargar el script de Jitsi si no está cargado
-                const existingScript = document.querySelector('script[src*="external_api.js"]');
-                if (existingScript) {
-                    console.log('✅ Script de Jitsi ya existe en el DOM');
-                    // Esperar un momento y verificar si se cargó
-                    setTimeout(() => {
-                        if (window.JitsiMeetExternalAPI) {
-                            initializeJitsi().catch(error => {
-                                console.error('❌ Error al inicializar Jitsi:', error);
-                                toast.error('Error al inicializar la videollamada');
-                            });
-                        } else {
-                            console.error('❌ Script existe pero API no está disponible');
-                            toast.error('Error al cargar Jitsi Meet. Por favor, recarga la página.');
-                        }
-                    }, 500);
-                } else {
-                    // Extraer el dominio de la roomUrl para cargar el script correcto
-                    let scriptDomain = '8x8.vc';
-                    if (roomUrl) {
-                        try {
-                            const url = new URL(roomUrl);
-                            scriptDomain = url.hostname;
-                        } catch (error) {
-                            console.warn('⚠️ No se pudo extraer dominio para el script, usando por defecto');
-                        }
-                    }
-                    const script = document.createElement('script');
-                    script.src = `https://${scriptDomain}/external_api.js`;
-                    script.async = true;
-                    script.onload = () => {
-                        console.log('✅ Script de Jitsi cargado exitosamente');
-                        setTimeout(() => {
-                            initializeJitsi().catch(error => {
-                                console.error('❌ Error al inicializar Jitsi:', error);
-                                toast.error('Error al inicializar la videollamada');
-                            });
-                        }, 100);
-                    };
-                    script.onerror = () => {
-                        console.error('❌ Error al cargar script de Jitsi');
-                        toast.error('Error al cargar Jitsi Meet. Verifica tu conexión a internet.');
-                    };
-                    document.body.appendChild(script);
-                }
+                console.log('📥 Cargando script de Jitsi desde', scriptDomain);
+                loadJitsiScript(scriptDomain)
+                    .then(() => {
+                        console.log('✅ Script cargado, inicializando Jitsi...');
+                        initializeJitsi().catch(error => {
+                            console.error('❌ Error al inicializar Jitsi:', error);
+                            toast.error('Error al inicializar la videollamada');
+                        });
+                    })
+                    .catch(error => {
+                        console.error('❌ Error al cargar script de Jitsi:', error);
+                        toast.error('Error al cargar Jitsi Meet. Por favor, recarga la página.');
+                    });
             }
         }
 

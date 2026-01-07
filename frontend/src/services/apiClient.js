@@ -114,9 +114,18 @@ const handleResponse = async (response) => {
 /**
  * Realiza una petición HTTP genérica
  */
-const apiRequest = async (endpoint, method = 'GET', body = null, requiresAuth = true) => {
-  const url = `${API_BASE_URL}${endpoint}`;
-  
+const apiRequest = async (endpoint, method = 'GET', body = null, options = {}) => {
+  // Si options es un boolean, es el valor antiguo de requiresAuth
+  const requiresAuth = typeof options === 'boolean' ? options : (options.requiresAuth !== false);
+  const params = options.params || {};
+
+  // Construir query string
+  let url = `${API_BASE_URL}${endpoint}`;
+  if (Object.keys(params).length > 0) {
+    const queryString = new URLSearchParams(params).toString();
+    url = `${url}?${queryString}`;
+  }
+
   console.log(`🚀 [${method}] ${url}`);
   
   const headers = {
@@ -159,24 +168,29 @@ const apiRequest = async (endpoint, method = 'GET', body = null, requiresAuth = 
 // ========================================================================
 
 const apiClient = {
-  get: (endpoint, requiresAuth = true) => {
-    return apiRequest(endpoint, 'GET', null, requiresAuth);
+  get: (endpoint, options = {}) => {
+    // Soportar ambos: get(endpoint, true/false) y get(endpoint, { params: {...} })
+    return apiRequest(endpoint, 'GET', null, options);
   },
 
-  post: (endpoint, body, requiresAuth = true) => {
-    return apiRequest(endpoint, 'POST', body, requiresAuth);
+  post: (endpoint, body, options = {}) => {
+    // Soportar ambos: post(endpoint, body, true/false) y post(endpoint, body, { params: {...} })
+    return apiRequest(endpoint, 'POST', body, options);
   },
 
-  put: (endpoint, body, requiresAuth = true) => {
-    return apiRequest(endpoint, 'PUT', body, requiresAuth);
+  put: (endpoint, body, options = {}) => {
+    // Soportar ambos: put(endpoint, body, true/false) y put(endpoint, body, { params: {...} })
+    return apiRequest(endpoint, 'PUT', body, options);
   },
 
-  patch: (endpoint, body, requiresAuth = true) => {
-    return apiRequest(endpoint, 'PATCH', body, requiresAuth);
+  patch: (endpoint, body, options = {}) => {
+    // Soportar ambos: patch(endpoint, body, true/false) y patch(endpoint, body, { params: {...} })
+    return apiRequest(endpoint, 'PATCH', body, options);
   },
 
-  delete: (endpoint, requiresAuth = true) => {
-    return apiRequest(endpoint, 'DELETE', null, requiresAuth);
+  delete: (endpoint, options = {}) => {
+    // Soportar ambos: delete(endpoint, true/false) y delete(endpoint, { params: {...} })
+    return apiRequest(endpoint, 'DELETE', null, options);
   },
 
   // Método para subir archivos (multipart/form-data)

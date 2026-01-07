@@ -27,6 +27,7 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import com.styp.cenate.security.filter.JwtAuthenticationFilter;
+import com.styp.cenate.security.filter.PermissionsPolicyFilter;
 import com.styp.cenate.security.service.UserDetailsServiceImpl;
 
 import java.time.LocalDateTime;
@@ -52,6 +53,7 @@ import java.util.List;
 public class SecurityConfig {
 
         private final JwtAuthenticationFilter jwtAuthFilter;
+        private final PermissionsPolicyFilter permissionsPolicyFilter;
         private final UserDetailsServiceImpl userDetailsService;
 
         // SEC-004: CORS configurable por ambiente
@@ -267,6 +269,7 @@ public class SecurityConfig {
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authenticationProvider(authenticationProvider())
+                                .addFilterBefore(permissionsPolicyFilter, UsernamePasswordAuthenticationFilter.class)
                                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
                 return http.build();

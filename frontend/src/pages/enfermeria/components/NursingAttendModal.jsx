@@ -67,7 +67,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
     // Cargar próximas citas del paciente
     useEffect(() => {
         const cargarProximasCitas = async () => {
-            const dniPaciente = paciente?.pacienteDni || paciente?.docPaciente;
+            const dniPaciente = paciente?.numDoc || paciente?.pacienteDni || paciente?.docPaciente;
             if (dniPaciente && activeTab === "proximas-citas") {
                 try {
                     setLoadingCitas(true);
@@ -234,8 +234,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
 
             // Crear la sala de videollamada
             const datosSala = {
-                nombrePaciente: paciente.pacienteNombre || paciente.apellidosNombres || "Paciente",
-                dniPaciente: paciente.pacienteDni || paciente.docPaciente || "",
+                nombrePaciente: paciente.apellidosNombres || paciente.pacienteNombre || "Paciente",
+                dniPaciente: paciente.numDoc || paciente.pacienteDni || paciente.docPaciente || "",
                 idUsuarioMedico: user.id,
                 nombreMedico: nombreMedico,
                 motivoConsulta: formData.motivoConsulta || "Consulta de telemedicina"
@@ -331,7 +331,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
             <div className="bg-white rounded-xl shadow-2xl w-full max-w-[96vw] h-[92vh] flex flex-col overflow-hidden border border-gray-100">
                 {/* Header Azul Marino Oscuro */ }
-                <div className="relative flex items-center justify-between px-8 py-6 overflow-hidden border-b-2 border-blue-700 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-950 shadow-3xl">
+                <div className="relative flex items-center justify-between px-8 py-6 overflow-hidden border-b-2 border-[#084a8a] bg-[#084a8a] shadow-3xl">
                     {/* Efecto de brillo animado */ }
                     <div className="absolute inset-0 transform -skew-x-12 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer"></div>
 
@@ -362,7 +362,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                         <button
                             onClick={ handleIniciarVideollamada }
                             disabled={ loadingVideo }
-                            className="flex items-center gap-2 px-5 py-2.5 bg-blue-800 hover:bg-blue-900 text-white rounded-xl transition-all shadow-lg hover:shadow-2xl text-sm font-bold active:scale-95 border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="flex items-center gap-2 px-5 py-2.5 bg-[#084a8a] hover:bg-[#063d6f] text-white rounded-xl transition-all shadow-lg hover:shadow-2xl text-sm font-bold active:scale-95 border border-white/20 disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Iniciar videollamada con el paciente"
                         >
                             { loadingVideo ? (
@@ -389,9 +389,9 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                 {/* Content */ }
                 <div className="relative flex flex-1 overflow-hidden bg-gray-50/30">
                     {/* Left Panel: Historial (Colapsable) */ }
-                    <div className={ `absolute left-0 top-0 bottom-0 bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col transition-all duration-300 ease-in-out z-20 shadow-2xl border-r-2 border-blue-300 ${isHistorialExpanded ? 'w-1/2 translate-x-0' : 'w-0 -translate-x-full opacity-0 pointer-events-none'
+                    <div className={ `absolute left-0 top-0 bottom-0 bg-gradient-to-br from-slate-50 to-gray-100 flex flex-col transition-all duration-300 ease-in-out z-20 shadow-2xl border-r-2 border-[#084a8a]/30 ${isHistorialExpanded ? 'w-1/2 translate-x-0' : 'w-0 -translate-x-full opacity-0 pointer-events-none'
                         }` }>
-                        <div className="flex items-center justify-between px-6 py-5 border-b-2 border-blue-700 shadow-xl bg-gradient-to-r from-blue-900 to-blue-800">
+                        <div className="flex items-center justify-between px-6 py-5 border-b-2 border-[#084a8a] shadow-xl bg-[#084a8a]">
                             <div className="flex items-center gap-3">
                                 <div className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
                                     <FileText className="w-5 h-5 text-white" />
@@ -436,11 +436,11 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                 }
                                             } }
                                             className={ `flex items-center gap-2 px-5 py-3 text-sm font-medium rounded-t-lg transition-all relative ${isActive
-                                                ? "bg-white text-blue-600 border-t-2 border-l border-r border-blue-600 shadow-sm"
-                                                : "text-gray-600 hover:text-blue-600 hover:bg-gray-50 border-t-2 border-l border-r border-transparent"
+                                                ? "bg-green-100 text-green-700 shadow-sm"
+                                                : "text-gray-600 hover:text-[#084a8a] hover:bg-gray-50 border-t-2 border-l border-r border-transparent"
                                                 }` }
                                         >
-                                            <Icon className={ `w-4 h-4 ${isActive ? 'text-blue-600' : 'text-gray-500'}` } />
+                                            <Icon className={ `w-4 h-4 ${isActive ? 'text-green-700' : 'text-gray-500'}` } />
                                             <span>{ tab.label }</span>
                                         </button>
                                     );
@@ -454,8 +454,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                             { activeTab === "datos" && (
                                 <div className="p-8">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="bg-blue-600/20 p-2.5 rounded-lg">
-                                            <User className="w-6 h-6 text-blue-600" />
+                                        <div className="bg-[#084a8a]/20 p-2.5 rounded-lg">
+                                            <User className="w-6 h-6 text-[#084a8a]" />
                                         </div>
                                         <h3 className="text-2xl font-bold tracking-tight text-gray-900">Información del Paciente</h3>
                                     </div>
@@ -501,8 +501,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                             { activeTab === "adscripcion" && (
                                 <div className="p-8">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="bg-blue-600/20 p-2.5 rounded-lg">
-                                            <Building2 className="w-6 h-6 text-blue-600" />
+                                        <div className="bg-[#084a8a]/20 p-2.5 rounded-lg">
+                                            <Building2 className="w-6 h-6 text-[#084a8a]" />
                                         </div>
                                         <h3 className="text-2xl font-bold tracking-tight text-gray-900">Centro de Adscripción</h3>
                                     </div>
@@ -529,8 +529,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                             { activeTab === "historial" && (
                                 <div className="p-8">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="bg-blue-600/20 p-2.5 rounded-lg">
-                                            <History className="w-6 h-6 text-blue-600" />
+                                        <div className="bg-[#084a8a]/20 p-2.5 rounded-lg">
+                                            <History className="w-6 h-6 text-[#084a8a]" />
                                         </div>
                                         <h3 className="text-2xl font-bold tracking-tight text-gray-900">Historial Clínico y Antecedentes</h3>
                                     </div>
@@ -544,8 +544,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                             { activeTab === "proximas-citas" && (
                                 <div className="p-8">
                                     <div className="flex items-center gap-3 mb-6">
-                                        <div className="bg-blue-600/20 p-2.5 rounded-lg">
-                                            <Calendar className="w-6 h-6 text-blue-600" />
+                                        <div className="bg-[#084a8a]/20 p-2.5 rounded-lg">
+                                            <Calendar className="w-6 h-6 text-[#084a8a]" />
                                         </div>
                                         <h3 className="text-2xl font-bold tracking-tight text-gray-900">Próximas Citas Agendadas</h3>
                                     </div>
@@ -553,7 +553,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                     { loadingCitas ? (
                                         <div className="flex items-center justify-center py-16">
                                             <div className="flex flex-col items-center gap-4">
-                                                <Activity className="w-10 h-10 text-blue-500 animate-spin" />
+                                                <Activity className="w-10 h-10 text-[#084a8a] animate-spin" />
                                                 <span className="font-medium text-gray-600">Cargando citas...</span>
                                             </div>
                                         </div>
@@ -596,8 +596,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                 return (
                                                     <div key={ cita.idSolicitud || index } className="bg-gradient-to-br from-white via-pink-50/30 to-rose-50/20 border-2 border-pink-300 rounded-2xl p-6 shadow-lg hover:shadow-2xl hover:scale-[1.03] hover:border-pink-400 transition-all duration-200">
                                                         <div className="flex items-start gap-4">
-                                                            <div className="p-3 rounded-lg bg-blue-400/20 shrink-0">
-                                                                <Calendar className="w-6 h-6 text-blue-500" />
+                                                            <div className="p-3 rounded-lg bg-[#084a8a]/20 shrink-0">
+                                                                <Calendar className="w-6 h-6 text-[#084a8a]" />
                                                             </div>
                                                             <div className="flex-1 min-w-0">
                                                                 <div className="flex items-start justify-between mb-3">
@@ -680,7 +680,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                         placeholder={ field.placeholder }
                                                         className={ `w-full px-4 py-2.5 border rounded-lg transition-all text-sm font-medium ${signosVitalesErrors[field.name.replace("sv_", "")]
                                                             ? "bg-purple-50 border-purple-400 text-purple-900 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-                                                            : "bg-white border-gray-300 text-gray-900 focus:ring-2 focus:ring-blue-800 focus:border-blue-800 hover:border-gray-400"
+                                                            : "bg-white border-[#084a8a]/30 text-gray-900 focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] hover:border-[#084a8a]/50"
                                                             }` }
                                                     />
                                                     { signosVitalesErrors[field.name.replace("sv_", "")] && (
@@ -703,7 +703,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             name="motivoConsulta"
                                             value={ formData.motivoConsulta }
                                             onChange={ handleChange }
-                                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 bg-white text-gray-900 font-medium transition-all"
+                                            className="w-full px-4 py-2.5 border border-[#084a8a]/30 rounded-lg focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] bg-white text-gray-900 font-medium transition-all hover:border-[#084a8a]/50"
                                             required
                                         >
                                             <option value="">Seleccione un motivo...</option>
@@ -732,7 +732,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                         name={ checkbox.name }
                                                         checked={ formData.observacionesCheckboxes[checkbox.name] }
                                                         onChange={ handleCheckboxObservacion }
-                                                        className="w-5 h-5 text-blue-600 transition-all border-gray-300 rounded cursor-pointer focus:ring-2 focus:ring-blue-600"
+                                                        className="w-5 h-5 text-[#084a8a] transition-all border-[#084a8a]/30 rounded cursor-pointer focus:ring-2 focus:ring-[#084a8a]"
                                                     />
                                                     <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900">
                                                         { checkbox.label }
@@ -747,7 +747,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             value={ formData.observaciones }
                                             onChange={ handleChange }
                                             placeholder="Observaciones adicionales o excepciones..."
-                                            className="w-full px-4 py-3 text-sm font-medium text-gray-900 transition-all bg-white border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                                            className="w-full px-4 py-3 text-sm font-medium text-gray-900 transition-all bg-white border border-[#084a8a]/30 rounded-lg resize-none focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] hover:border-[#084a8a]/50"
                                         />
                                         <p className="mt-2 text-xs text-gray-500">Use este campo solo para observaciones adicionales o excepciones</p>
                                     </div>
@@ -761,7 +761,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                 name="derivaInterconsulta"
                                                 checked={ formData.derivaInterconsulta }
                                                 onChange={ handleCheckboxChange }
-                                                className="w-5 h-5 text-blue-600 border-gray-300 rounded cursor-pointer focus:ring-2 focus:ring-blue-600"
+                                                className="w-5 h-5 text-[#084a8a] border-[#084a8a]/30 rounded cursor-pointer focus:ring-2 focus:ring-[#084a8a]"
                                             />
                                             <div className="flex items-center gap-2.5">
                                                 <Share2 className="w-5 h-5 text-purple-600" />
@@ -777,7 +777,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                         name="especialidadInterconsulta"
                                                         value={ formData.especialidadInterconsulta }
                                                         onChange={ handleChange }
-                                                        className="w-full px-4 py-2.5 bg-white border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-medium transition-all"
+                                                        className="w-full px-4 py-2.5 bg-white border border-[#084a8a]/30 rounded-lg focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] text-sm font-medium transition-all hover:border-[#084a8a]/50"
                                                     >
                                                         <option value="">Seleccione...</option>
                                                         <option value="NUTRICION">Nutrición</option>
@@ -792,7 +792,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                         name="motivoInterconsulta"
                                                         value={ formData.motivoInterconsulta }
                                                         onChange={ handleChange }
-                                                        className="w-full px-4 py-2.5 bg-white border border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 text-sm font-medium transition-all"
+                                                        className="w-full px-4 py-2.5 bg-white border border-[#084a8a]/30 rounded-lg focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] text-sm font-medium transition-all hover:border-[#084a8a]/50"
                                                     />
                                                 </div>
                                             </div>
@@ -815,7 +815,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                 <button
                                     onClick={ handleSubmit }
                                     disabled={ loading }
-                                    className="px-8 py-3.5 bg-blue-800 hover:bg-blue-900 text-white font-bold rounded-xl focus:ring-4 focus:ring-blue-400 transition-all shadow-xl hover:shadow-2xl flex items-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
+                                    className="px-8 py-3.5 bg-[#084a8a] hover:bg-[#063d6f] text-white font-bold rounded-xl focus:ring-4 focus:ring-[#084a8a]/50 transition-all shadow-xl hover:shadow-2xl flex items-center gap-2.5 disabled:opacity-70 disabled:cursor-not-allowed active:scale-95"
                                 >
                                     { loading ? (
                                         <>
@@ -854,6 +854,33 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                     } }
                     registroContent={
                         <div className="flex flex-col h-full bg-white">
+                            {/* Header del Modal */}
+                            <div className="relative flex items-center justify-between px-6 py-4 overflow-hidden border-b-2 border-[#084a8a] bg-[#084a8a] shadow-lg">
+                                <div className="relative z-10 flex items-center flex-1 min-w-0 gap-3">
+                                    <div className="p-2 border shadow-lg bg-white/20 rounded-lg backdrop-blur-md shrink-0 border-white/30">
+                                        <Activity className="w-5 h-5 text-white drop-shadow-lg" />
+                                    </div>
+                                    <div className="flex-1 min-w-0">
+                                        <h2 className="text-xl font-bold text-white mb-1 tracking-tight drop-shadow-md">Registro de Atención Clínica</h2>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="text-xs font-semibold text-white/95 drop-shadow">{ paciente.pacienteNombre }</span>
+                                            <span className="text-xs text-white/70">•</span>
+                                            <span className="text-white/90 text-xs font-mono bg-white/10 px-2 py-0.5 rounded backdrop-blur-sm">DNI: { paciente.pacienteDni }</span>
+                                            { paciente.esCronico && (
+                                                <span className="inline-flex items-center px-2 py-0.5 bg-purple-700 text-white rounded text-[10px] font-bold shadow-md">
+                                                    ⚡ CRÓNICO
+                                                </span>
+                                            ) }
+                                            { estrategiaSigla && (
+                                                <span className="inline-flex items-center px-2 py-0.5 bg-green-600 text-white rounded text-[10px] font-bold shadow-md">
+                                                    📋 { estrategiaSigla }
+                                                </span>
+                                            ) }
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
                             {/* Pestañas */}
                             <div className="border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
                                 <div className="flex items-center gap-1 px-4 pt-2 pb-0 overflow-x-auto">
@@ -871,11 +898,11 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                 key={ tab.id }
                                                 onClick={ () => setActiveTab(tab.id) }
                                                 className={ `flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-t-lg transition-all whitespace-nowrap ${isActive
-                                                    ? "bg-white text-blue-600 border-t-2 border-l border-r border-blue-600 shadow-sm"
-                                                    : "text-gray-600 hover:text-blue-600 hover:bg-gray-50 border-t-2 border-l border-r border-transparent"
-                                                    }` }
+                                                    ? "bg-green-100 text-green-700 shadow-sm"
+                                                    : "text-gray-600 hover:text-[#084a8a] hover:bg-gray-50 border-t-2 border-l border-r border-transparent"
+                                                }` }
                                             >
-                                                <Icon className={ `w-3 h-3 ${isActive ? 'text-blue-600' : 'text-gray-500'}` } />
+                                                <Icon className={ `w-3 h-3 ${isActive ? 'text-green-700' : 'text-gray-500'}` } />
                                                 <span>{ tab.label }</span>
                                             </button>
                                         );
@@ -889,8 +916,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                 { activeTab === "datos" && (
                                     <div className="p-4">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 rounded-lg bg-blue-600/20">
-                                                <User className="w-4 h-4 text-blue-600" />
+                                            <div className="p-2 rounded-lg bg-[#084a8a]/20">
+                                                <User className="w-4 h-4 text-[#084a8a]" />
                                             </div>
                                             <h3 className="text-lg font-bold text-gray-900">Información del Paciente</h3>
                                         </div>
@@ -936,8 +963,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                 { activeTab === "adscripcion" && (
                                     <div className="p-4">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 rounded-lg bg-blue-600/20">
-                                                <Building2 className="w-4 h-4 text-blue-600" />
+                                            <div className="p-2 rounded-lg bg-[#084a8a]/20">
+                                                <Building2 className="w-4 h-4 text-[#084a8a]" />
                                             </div>
                                             <h3 className="text-lg font-bold text-gray-900">Centro de Adscripción</h3>
                                         </div>
@@ -964,8 +991,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                 { activeTab === "historial" && (
                                     <div className="p-4">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 rounded-lg bg-blue-600/20">
-                                                <History className="w-4 h-4 text-blue-600" />
+                                            <div className="p-2 rounded-lg bg-[#084a8a]/20">
+                                                <History className="w-4 h-4 text-[#084a8a]" />
                                             </div>
                                             <h3 className="text-lg font-bold text-gray-900">Historial Clínico y Antecedentes</h3>
                                         </div>
@@ -979,8 +1006,8 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                 { activeTab === "proximas-citas" && (
                                     <div className="p-4">
                                         <div className="flex items-center gap-2 mb-4">
-                                            <div className="p-2 rounded-lg bg-blue-600/20">
-                                                <Calendar className="w-4 h-4 text-blue-600" />
+                                            <div className="p-2 rounded-lg bg-[#084a8a]/20">
+                                                <Calendar className="w-4 h-4 text-[#084a8a]" />
                                             </div>
                                             <h3 className="text-lg font-bold text-gray-900">Próximas Citas Agendadas</h3>
                                         </div>
@@ -988,7 +1015,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                         { loadingCitas ? (
                                             <div className="flex items-center justify-center py-12">
                                                 <div className="flex flex-col items-center gap-3">
-                                                    <Activity className="w-8 h-8 text-blue-500 animate-spin" />
+                                                    <Activity className="w-8 h-8 text-[#084a8a] animate-spin" />
                                                     <span className="text-sm font-medium text-gray-600">Cargando citas...</span>
                                                 </div>
                                             </div>
@@ -1032,7 +1059,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                         <div key={ cita.idSolicitud || index } className="p-4 bg-white border border-gray-200 rounded-lg shadow-sm">
                                                             <div className="flex items-start gap-3">
                                                                 <div className="p-2 rounded-lg bg-blue-400/20 shrink-0">
-                                                                    <Calendar className="w-4 h-4 text-blue-500" />
+                                                                    <Calendar className="w-4 h-4 text-[#084a8a]" />
                                                                 </div>
                                                                 <div className="flex-1 min-w-0">
                                                                     <div className="flex items-start justify-between mb-2">
@@ -1099,9 +1126,9 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                             value={ formData.signosVitales[field.name.replace("sv_", "")] }
                                                             onChange={ handleChange }
                                                             placeholder={ field.placeholder }
-                                                            className={ `w-full px-2 py-1.5 border rounded text-xs ${signosVitalesErrors[field.name.replace("sv_", "")]
+                                                            className={ `w-full px-2 py-1.5 border rounded text-xs transition-all ${signosVitalesErrors[field.name.replace("sv_", "")]
                                                                 ? "bg-purple-50 border-purple-400"
-                                                                : "bg-white border-gray-300"
+                                                                : "bg-white border-[#084a8a]/30 focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] hover:border-[#084a8a]/50"
                                                                 }` }
                                                         />
                                                     </div>
@@ -1118,7 +1145,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                 name="motivoConsulta"
                                                 value={ formData.motivoConsulta }
                                                 onChange={ handleChange }
-                                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-600"
+                                                className="w-full px-3 py-2 text-xs border border-[#084a8a]/30 rounded-lg focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] hover:border-[#084a8a]/50 transition-all"
                                                 required
                                             >
                                                 <option value="">Seleccione...</option>
@@ -1146,7 +1173,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                             name={ checkbox.name }
                                                             checked={ formData.observacionesCheckboxes[checkbox.name] }
                                                             onChange={ handleCheckboxObservacion }
-                                                            className="w-3 h-3 text-blue-600 rounded"
+                                                            className="w-3 h-3 text-[#084a8a] border-[#084a8a]/30 rounded focus:ring-2 focus:ring-[#084a8a]"
                                                         />
                                                         <span className="text-xs font-medium text-gray-700">
                                                             { checkbox.label }
@@ -1160,7 +1187,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                 value={ formData.observaciones }
                                                 onChange={ handleChange }
                                                 placeholder="Observaciones adicionales..."
-                                                className="w-full px-3 py-2 text-xs border border-gray-300 rounded-lg resize-none"
+                                                className="w-full px-3 py-2 text-xs border border-[#084a8a]/30 rounded-lg resize-none focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] hover:border-[#084a8a]/50 transition-all"
                                             />
                                         </div>
 
@@ -1172,7 +1199,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                     name="derivaInterconsulta"
                                                     checked={ formData.derivaInterconsulta }
                                                     onChange={ handleCheckboxChange }
-                                                    className="w-3 h-3 text-blue-600 rounded"
+                                                    className="w-3 h-3 text-[#084a8a] border-[#084a8a]/30 rounded focus:ring-2 focus:ring-[#084a8a]"
                                                 />
                                                 <span className="text-xs font-bold text-gray-900">Requiere Interconsulta</span>
                                             </label>
@@ -1184,7 +1211,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                             name="especialidadInterconsulta"
                                                             value={ formData.especialidadInterconsulta }
                                                             onChange={ handleChange }
-                                                            className="w-full px-2 py-1.5 bg-white border border-purple-300 rounded text-xs"
+                                                            className="w-full px-2 py-1.5 bg-white border border-[#084a8a]/30 rounded text-xs focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] hover:border-[#084a8a]/50 transition-all"
                                                         >
                                                             <option value="">Seleccione...</option>
                                                             <option value="NUTRICION">Nutrición</option>
@@ -1199,7 +1226,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                                             name="motivoInterconsulta"
                                                             value={ formData.motivoInterconsulta }
                                                             onChange={ handleChange }
-                                                            className="w-full px-2 py-1.5 bg-white border border-purple-300 rounded text-xs"
+                                                            className="w-full px-2 py-1.5 bg-white border border-[#084a8a]/30 rounded text-xs focus:ring-2 focus:ring-[#084a8a] focus:border-[#084a8a] hover:border-[#084a8a]/50 transition-all"
                                                             placeholder="Motivo de derivación..."
                                                         />
                                                     </div>
@@ -1222,7 +1249,7 @@ export default function NursingAttendModal({ paciente, onClose, onSuccess }) {
                                             <button
                                                 type="submit"
                                                 disabled={ loading }
-                                                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white transition-all bg-blue-800 rounded hover:bg-blue-900 disabled:opacity-70 disabled:cursor-not-allowed"
+                                                className="flex items-center gap-2 px-4 py-2 text-xs font-semibold text-white transition-all bg-[#084a8a] rounded hover:bg-[#063d6f] disabled:opacity-70 disabled:cursor-not-allowed"
                                             >
                                                 { loading ? (
                                                     <>

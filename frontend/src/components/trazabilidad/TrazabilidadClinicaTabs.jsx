@@ -35,22 +35,22 @@ export default function TrazabilidadClinicaTabs({ pkAsegurado }) {
         <div className="w-full">
             {/* Navegación de pestañas */ }
             { !verificandoElegibilidad && (
-                <div className="rounded-xl mb-6 border border-blue-200 bg-blue-50/60 backdrop-blur-sm shadow-sm p-1.5">
+                <div className="rounded-xl mb-6 border border-[#084a8a]/20 bg-[#084a8a]/5 backdrop-blur-sm shadow-sm p-1.5">
                     <div className={ `grid grid-cols-1 ${esElegible ? 'md:grid-cols-2' : ''} gap-2` }>
                         {/* Pestaña Historial (Siempre visible) */ }
                         <button
                             onClick={ () => setTabActiva('historial') }
-                            className={ `group relative flex items-center justify-center gap-2.5 px-5 py-3.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${tabActiva === 'historial'
-                                    ? 'bg-blue-500 text-white shadow-md'
+                            className={ `group relative flex items-center justify-center gap-2.5 px-5 py-3.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#084a8a] focus-visible:ring-offset-2 ${tabActiva === 'historial'
+                                    ? 'bg-[#084a8a] text-white shadow-md'
                                     : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                                 }` }
                         >
-                            <div className={ `p-1.5 rounded-md transition-colors duration-200 ${tabActiva === 'historial' ? 'bg-white/20' : 'bg-blue-100/70 group-hover:bg-blue-100'}` }>
+                            <div className={ `p-1.5 rounded-md transition-colors duration-200 ${tabActiva === 'historial' ? 'bg-white/20' : 'bg-[#084a8a]/10 group-hover:bg-[#084a8a]/20'}` }>
                                 <FileText className={ `w-4 h-4 transition-colors duration-200 ${tabActiva === 'historial' ? 'text-white' : 'text-slate-600 group-hover:text-slate-700'}` } />
                             </div>
                             <span>Historial de Atenciones</span>
                             { tabActiva === 'historial' && (
-                                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-blue-500 rounded-full shadow-sm" />
+                                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-[#084a8a] rounded-full shadow-sm" />
                             ) }
                         </button>
 
@@ -58,12 +58,12 @@ export default function TrazabilidadClinicaTabs({ pkAsegurado }) {
                         { esElegible && (
                             <button
                                 onClick={ () => setTabActiva('evolucion') }
-                                className={ `group relative flex items-center justify-center gap-2.5 px-5 py-3.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${tabActiva === 'evolucion'
-                                        ? 'bg-blue-500 text-white shadow-md'
+                                className={ `group relative flex items-center justify-center gap-2.5 px-5 py-3.5 text-sm font-semibold rounded-lg transition-all duration-200 ease-out focus:outline-none focus-visible:ring-2 focus-visible:ring-[#084a8a] focus-visible:ring-offset-2 ${tabActiva === 'evolucion'
+                                        ? 'bg-[#084a8a] text-white shadow-md'
                                         : 'text-slate-600 hover:text-slate-900 hover:bg-white/70'
                                     }` }
                             >
-                                <div className={ `p-1.5 rounded-md transition-colors duration-200 ${tabActiva === 'evolucion' ? 'bg-white/20' : 'bg-blue-100/70 group-hover:bg-blue-100'}` }>
+                                <div className={ `p-1.5 rounded-md transition-colors duration-200 ${tabActiva === 'evolucion' ? 'bg-white/20' : 'bg-[#084a8a]/10 group-hover:bg-[#084a8a]/20'}` }>
                                     <Activity className={ `w-4 h-4 transition-colors duration-200 ${tabActiva === 'evolucion' ? 'text-white' : 'text-slate-600 group-hover:text-slate-700'}` } />
                                 </div>
                                 <span>Evolución Crónica</span>
@@ -73,7 +73,7 @@ export default function TrazabilidadClinicaTabs({ pkAsegurado }) {
                                     CENACRON
                                 </span>
                                 { tabActiva === 'evolucion' && (
-                                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-blue-500 rounded-full shadow-sm" />
+                                    <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-10 h-1 bg-[#084a8a] rounded-full shadow-sm" />
                                 ) }
                             </button>
                         ) }

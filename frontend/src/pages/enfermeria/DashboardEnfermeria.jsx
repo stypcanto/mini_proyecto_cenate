@@ -39,8 +39,8 @@ export default function DashboardEnfermeria() {
   const cargarResumenAtenciones = async () => {
     try {
       const [pendientes, atendidos] = await Promise.all([
-        apiClient.get("/enfermeria/queue", { params: { estado: "PENDIENTE" } }),
-        apiClient.get("/enfermeria/queue", { params: { estado: "ATENDIDO" } })
+        apiClient.get("/enfermeria/mis-pacientes", { params: { estado: "PENDIENTE" } }),
+        apiClient.get("/enfermeria/mis-pacientes", { params: { estado: "ATENDIDO" } })
       ]);
       
       const pendientesData = Array.isArray(pendientes) ? pendientes : (pendientes.data || []);
