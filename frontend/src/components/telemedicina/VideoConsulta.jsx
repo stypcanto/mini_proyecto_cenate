@@ -414,7 +414,7 @@ const VideoConsulta = ({
                 }
             }
         };
-    }, [isOpen, roomUrl, roomName, nombrePaciente, nombreMedico]);
+    }, [isOpen, roomUrl, roomName, nombrePaciente, nombreMedico, token]);
 
     const handleClose = () => {
         if (api) {
