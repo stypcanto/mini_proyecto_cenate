@@ -363,7 +363,7 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
             { formData.idModAten === getIdModalidadAmbos() && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Detalles: ¿Cuándo se utiliza TELECONSULTA?
+                  📞 Detalles: ¿Cuándo se utiliza TELECONSULTA? (por llamada telefónica)
                 </label>
                 <textarea
                   name="detallesTeleconsulta"
@@ -371,7 +371,7 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
                   onChange={ handleChange }
                   rows="3"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Especificar horarios, especialidades, o detalles de uso. Ej: Disponible lunes a viernes 9AM-5PM para consultas de especialidades médicas"
+                  placeholder="Ej: Terapia Física - Atenciones por llamada telefónica, paciente en domicilio. Disponible: Lunes a Viernes 8AM-5PM. | Nutrición - Consultas telefónicas para seguimiento dietético. Horario: Lunes a Viernes 9AM-4PM"
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   { formData.detallesTeleconsulta.length }/1000
@@ -383,7 +383,7 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
             { formData.idModAten === getIdModalidadAmbos() && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  Detalles: ¿Cuándo se utiliza TELECONSULTORIO?
+                  🎥 Detalles: ¿Cuándo se utiliza TELECONSULTORIO? (por videoconferencia)
                 </label>
                 <textarea
                   name="detallesTeleconsultorio"
@@ -391,7 +391,7 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
                   onChange={ handleChange }
                   rows="3"
                   className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="Especificar horarios, especialidades, o detalles de uso. Ej: Disponible para teleconsultorio especializado de cardiología, solo con cita previa"
+                  placeholder="Ej: Cardiología - Videoconferencias solo en horario matutino, de 7AM-1PM. Sin disponibilidad en tardes. Pacientes en domicilio. | Psicología - Videollamadas con especialista disponibles Lunes-Viernes 8AM-12PM y 3PM-6PM"
                 />
                 <p className="mt-1 text-xs text-gray-500">
                   { formData.detallesTeleconsultorio.length }/1000

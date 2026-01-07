@@ -143,6 +143,33 @@ export default function IpressViewModal({ ipress, onClose }) {
                 </p>
               ) }
             </div>
+
+            {/* Detalles de Modalidad AMBOS */ }
+            { ipress.descModalidadAtencion === 'AMBOS' && (
+              <div className="grid grid-cols-1 gap-4 mt-4">
+                { ipress.detallesTeleconsulta && (
+                  <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                    <label className="text-xs font-semibold text-blue-700 uppercase tracking-wide block mb-2">
+                      📞 Teleconsulta (por llamada telefónica)
+                    </label>
+                    <p className="text-blue-900 font-medium text-sm whitespace-pre-wrap">
+                      { ipress.detallesTeleconsulta }
+                    </p>
+                  </div>
+                ) }
+
+                { ipress.detallesTeleconsultorio && (
+                  <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                    <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide block mb-2">
+                      🎥 Teleconsultorio (por videoconferencia)
+                    </label>
+                    <p className="text-purple-900 font-medium text-sm whitespace-pre-wrap">
+                      { ipress.detallesTeleconsultorio }
+                    </p>
+                  </div>
+                ) }
+              </div>
+            ) }
           </section>
 
           {/* Ubicación y Dirección */ }
