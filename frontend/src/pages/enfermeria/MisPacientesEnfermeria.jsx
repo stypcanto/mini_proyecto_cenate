@@ -426,13 +426,15 @@ export default function MisPacientesEnfermeria() {
                     </td>
                     <td className="px-4 py-3 border-r border-gray-200">
                       <span className={`inline-block px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${
-                        paciente.diasTranscurridos > 0
+                        paciente.estadoEnfermeria === "ATENDIDO"
+                          ? "bg-blue-100 text-blue-800"
+                          : paciente.diasTranscurridos > 0
                           ? "bg-red-100 text-red-800"
                           : paciente.diasTranscurridos === 0
                           ? "bg-amber-100 text-amber-800"
                           : "bg-green-100 text-green-800"
                       }`}>
-                        ATENDIDA
+                        {paciente.estadoEnfermeria === "ATENDIDO" ? "ATENDIDO" : "PENDIENTE"}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
