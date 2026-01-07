@@ -363,7 +363,7 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
             { formData.idModAten === getIdModalidadAmbos() && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  📞 Detalles: ¿Cuándo se utiliza TELECONSULTA? (por llamada telefónica)
+                  Favor de precisar: ¿Cuándo se utiliza TELECONSULTA? (detallar información)
                 </label>
                 <textarea
                   name="detallesTeleconsulta"
@@ -383,7 +383,7 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
             { formData.idModAten === getIdModalidadAmbos() && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
-                  🎥 Detalles: ¿Cuándo se utiliza TELECONSULTORIO? (por videoconferencia)
+                  Favor de precisar: ¿Cuándo se utiliza TELECONSULTORIO? (detallar información)
                 </label>
                 <textarea
                   name="detallesTeleconsultorio"

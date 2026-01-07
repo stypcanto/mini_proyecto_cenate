@@ -124,17 +124,17 @@ export default function IpressViewModal({ ipress, onClose }) {
                 Tipo de Servicio
               </label>
               <div className="flex items-center gap-2">
-                <span className={ `inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${ipress.descModalidadAtencion === 'TELECONSULTA'
+                <span className={ `inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${ipress.nombreModalidadAtencion === 'TELECONSULTA'
                     ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                    : ipress.descModalidadAtencion === 'TELECONSULTORIO'
+                    : ipress.nombreModalidadAtencion === 'TELECONSULTORIO'
                       ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                      : ipress.descModalidadAtencion === 'AMBOS'
+                      : ipress.nombreModalidadAtencion === 'AMBOS'
                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                        : ipress.descModalidadAtencion === 'NO SE BRINDA SERVICIO'
+                        : ipress.nombreModalidadAtencion === 'NO SE BRINDA SERVICIO'
                           ? 'bg-red-100 text-red-800 border border-red-300'
                           : 'bg-gray-100 text-gray-600 border border-gray-300'
                   }` }>
-                  { ipress.descModalidadAtencion || 'No especificado' }
+                  { ipress.nombreModalidadAtencion || 'No especificado' }
                 </span>
               </div>
               { ipress.idModalidadAtencion && (
@@ -145,12 +145,12 @@ export default function IpressViewModal({ ipress, onClose }) {
             </div>
 
             {/* Detalles de Modalidad AMBOS */ }
-            { ipress.descModalidadAtencion === 'AMBOS' && (
+            { ipress.nombreModalidadAtencion === 'AMBOS' && (
               <div className="grid grid-cols-1 gap-4 mt-4">
                 { ipress.detallesTeleconsulta && (
                   <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
                     <label className="text-xs font-semibold text-blue-700 uppercase tracking-wide block mb-2">
-                      📞 Teleconsulta (por llamada telefónica)
+                      Teleconsulta
                     </label>
                     <p className="text-blue-900 font-medium text-sm whitespace-pre-wrap">
                       { ipress.detallesTeleconsulta }
@@ -161,7 +161,7 @@ export default function IpressViewModal({ ipress, onClose }) {
                 { ipress.detallesTeleconsultorio && (
                   <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
                     <label className="text-xs font-semibold text-purple-700 uppercase tracking-wide block mb-2">
-                      🎥 Teleconsultorio (por videoconferencia)
+                      Teleconsultorio
                     </label>
                     <p className="text-purple-900 font-medium text-sm whitespace-pre-wrap">
                       { ipress.detallesTeleconsultorio }
@@ -179,26 +179,26 @@ export default function IpressViewModal({ ipress, onClose }) {
               <h3 className="text-lg font-semibold text-slate-900">Ubicación</h3>
             </div>
             <div className="grid grid-cols-1 gap-4">
-              { ipress.direccion && (
+              { ipress.direcIpress && (
                 <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
                   <label className="text-xs font-semibold text-amber-700 uppercase tracking-wide block mb-1">
                     Dirección
                   </label>
                   <p className="text-amber-900 font-medium">
-                    { ipress.direccion }
+                    { ipress.direcIpress }
                   </p>
                 </div>
               ) }
 
               {/* Coordenadas Geográficas */ }
-              { (ipress.latitud || ipress.longitud) && (
+              { (ipress.latIpress || ipress.longIpress) && (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
                     <label className="text-xs font-semibold text-amber-700 uppercase tracking-wide block mb-1">
                       📍 Latitud
                     </label>
                     <p className="text-amber-900 font-medium font-mono text-sm">
-                      { ipress.latitud || "No especificado" }
+                      { ipress.latIpress || "No especificado" }
                     </p>
                   </div>
 
@@ -207,14 +207,14 @@ export default function IpressViewModal({ ipress, onClose }) {
                       📍 Longitud
                     </label>
                     <p className="text-amber-900 font-medium font-mono text-sm">
-                      { ipress.longitud || "No especificado" }
+                      { ipress.longIpress || "No especificado" }
                     </p>
                   </div>
                 </div>
               ) }
 
               {/* URL de Google Maps */ }
-              { ipress.urlGoogleMaps && (
+              { ipress.gmapsUrlIpress && (
                 <div className="bg-amber-50 rounded-lg p-4 border border-amber-200">
                   <label className="text-xs font-semibold text-amber-700 uppercase tracking-wide block mb-1">
                     <div className="flex items-center gap-1">
@@ -223,12 +223,12 @@ export default function IpressViewModal({ ipress, onClose }) {
                     </div>
                   </label>
                   <a
-                    href={ ipress.urlGoogleMaps }
+                    href={ ipress.gmapsUrlIpress }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 font-medium text-sm underline break-all"
                   >
-                    { ipress.urlGoogleMaps }
+                    { ipress.gmapsUrlIpress }
                   </a>
                 </div>
               ) }
@@ -245,47 +245,15 @@ export default function IpressViewModal({ ipress, onClose }) {
               <label className="text-xs font-semibold text-indigo-700 uppercase tracking-wide block mb-1">
                 Estado Actual
               </label>
-              <span className={ `inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${ipress.estado === 'Activo' || ipress.estado === true || ipress.estado === 1
+              <span className={ `inline-flex items-center px-4 py-2 rounded-full text-sm font-semibold ${ipress.statIpress === 'A'
                   ? 'bg-green-100 text-green-800 border border-green-300'
                   : 'bg-red-100 text-red-800 border border-red-300'
                 }` }>
-                { ipress.estado === 'Activo' || ipress.estado === true || ipress.estado === 1 ? 'Activo' : 'Inactivo' }
+                { ipress.statIpress === 'A' ? 'Activo' : 'Inactivo' }
               </span>
             </div>
           </section>
 
-          {/* Información de Contacto (si existe) */ }
-          { (ipress.telefono || ipress.email) && (
-            <section>
-              <div className="flex items-center gap-2 mb-4">
-                <MapPin className="w-5 h-5 text-teal-600" />
-                <h3 className="text-lg font-semibold text-slate-900">Información de Contacto</h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                { ipress.telefono && (
-                  <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
-                    <label className="text-xs font-semibold text-teal-700 uppercase tracking-wide block mb-1">
-                      Teléfono
-                    </label>
-                    <p className="text-teal-900 font-medium font-mono">
-                      { ipress.telefono }
-                    </p>
-                  </div>
-                ) }
-
-                { ipress.email && (
-                  <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
-                    <label className="text-xs font-semibold text-teal-700 uppercase tracking-wide block mb-1">
-                      Correo Electrónico
-                    </label>
-                    <p className="text-teal-900 font-medium">
-                      { ipress.email }
-                    </p>
-                  </div>
-                ) }
-              </div>
-            </section>
-          ) }
         </div>
 
         {/* Footer */ }
