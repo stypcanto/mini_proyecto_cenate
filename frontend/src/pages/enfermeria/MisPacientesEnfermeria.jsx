@@ -272,7 +272,7 @@ export default function MisPacientesEnfermeria() {
                 <td className="px-4 py-3 font-semibold text-gray-900">ENFERMERÍA</td>
                 <td className="px-4 py-3 text-gray-700">ATENCIÓN NO MÉDICA</td>
                 <td className="px-4 py-3 text-gray-700">TELEMONITOREO</td>
-                <td className="px-4 py-3 font-mono text-gray-700">{today}</td>
+                <td className="px-4 py-3 font-mono text-gray-700">{formattedDate}</td>
                 <td className="px-4 py-3 text-center font-mono text-gray-700">08:00</td>
                 <td className="px-4 py-3 text-center font-mono text-gray-700">14:00</td>
                 <td className="px-4 py-3">
