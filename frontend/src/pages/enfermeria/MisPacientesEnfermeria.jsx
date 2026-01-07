@@ -374,12 +374,9 @@ export default function MisPacientesEnfermeria() {
                     />
                   </th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Orden</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Acto Asist</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Historia C.</th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Apellidos y Nombres</th>
                   <th className="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">Edad</th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Estado</th>
-                  <th className="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">Estado Firma</th>
                   <th className="px-4 py-3 text-center font-bold text-gray-700">Atender</th>
                 </tr>
               </thead>
@@ -400,14 +397,6 @@ export default function MisPacientesEnfermeria() {
                       />
                     </td>
                     <td className="px-4 py-3 font-bold text-gray-900 border-r border-gray-200">{idx + 1}</td>
-                    <td className="px-4 py-3 border-r border-gray-200">
-                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded font-mono font-semibold">
-                        {paciente.numeroSolicitud || paciente.idOrigen}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 font-mono text-xs text-gray-700 border-r border-gray-200">
-                      {paciente.pacienteDni}
-                    </td>
                     <td className="px-4 py-3 border-r border-gray-200">
                       <div className="font-semibold text-gray-900 truncate" title={paciente.pacienteNombre}>
                         {paciente.pacienteNombre}
@@ -437,11 +426,6 @@ export default function MisPacientesEnfermeria() {
                           : "bg-green-100 text-green-800"
                       }`}>
                         ATENDIDA
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-center border-r border-gray-200">
-                      <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded font-mono">
-                        NINGUNO
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
