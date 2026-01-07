@@ -27,8 +27,8 @@ public class IpressResponse {
     private Long idNivAten;
     private Long idModAten;
     private String nombreModalidadAtencion; // Descripción de la modalidad
-    private String detallesTeleconsulta; // Detalles de uso de teleconsulta (cuando modalidad = AMBOS)
-    private String detallesTeleconsultorio; // Detalles de uso de teleconsultorio (cuando modalidad = AMBOS)
+    private String detallesTeleconsulta; // Detalles de uso de teleconsulta (cuando modalidad = MIXTA)
+    private String detallesTeleconsultorio; // Detalles de uso de teleconsultorio (cuando modalidad = MIXTA)
     private Long idTipIpress;
     private Long idDist;
 

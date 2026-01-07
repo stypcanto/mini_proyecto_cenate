@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
 
 /**
  * 🏥 Entidad que representa las Modalidades de Atención de una IPRESS
- * Opciones: TELECONSULTA, TELECONSULTORIO, AMBOS, NO SE BRINDA SERVICIO
+ * Opciones: TELECONSULTA, TELECONSULTORIO, MIXTA, NO SE BRINDA SERVICIO
  * Tabla: dim_modalidad_atencion
  *
  * @author Claude Code + Styp Canto Rondón
@@ -34,7 +34,7 @@ public class ModalidadAtencion {
 
     /**
      * Descripción de la modalidad de atención
-     * Valores: TELECONSULTA, TELECONSULTORIO, AMBOS, NO SE BRINDA SERVICIO
+     * Valores: TELECONSULTA, TELECONSULTORIO, MIXTA, NO SE BRINDA SERVICIO
      */
     @Column(name = "desc_mod_aten", nullable = false, unique = true)
     private String descModAten;

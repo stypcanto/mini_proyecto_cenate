@@ -128,7 +128,7 @@ export default function IpressViewModal({ ipress, onClose }) {
                     ? 'bg-blue-100 text-blue-800 border border-blue-300'
                     : ipress.nombreModalidadAtencion === 'TELECONSULTORIO'
                       ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                      : ipress.nombreModalidadAtencion === 'AMBOS'
+                      : ipress.nombreModalidadAtencion === 'MIXTA'
                         ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
                         : ipress.nombreModalidadAtencion === 'NO SE BRINDA SERVICIO'
                           ? 'bg-red-100 text-red-800 border border-red-300'
@@ -144,8 +144,8 @@ export default function IpressViewModal({ ipress, onClose }) {
               ) }
             </div>
 
-            {/* Detalles de Modalidad AMBOS */ }
-            { ipress.nombreModalidadAtencion === 'AMBOS' && (
+            {/* Detalles de Modalidad MIXTA */ }
+            { ipress.nombreModalidadAtencion === 'MIXTA' && (
               <div className="grid grid-cols-1 gap-4 mt-4">
                 { ipress.detallesTeleconsulta && (
                   <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">

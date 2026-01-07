@@ -48,19 +48,19 @@ public class IpressRequest {
     private Long idNivAten;
 
     /**
-     * ID de Modalidad de atención (TELECONSULTA, TELECONSULTORIO, AMBOS, NO SE BRINDA SERVICIO)
+     * ID de Modalidad de atención (TELECONSULTA, TELECONSULTORIO, MIXTA, NO SE BRINDA SERVICIO)
      */
     private Long idModAten;
 
     /**
-     * Detalles de uso de la modalidad TELECONSULTA (solo cuando modalidad = AMBOS)
+     * Detalles de uso de la modalidad TELECONSULTA (solo cuando modalidad = MIXTA)
      * Incluye horarios, especialidades, y detalles adicionales
      */
     @Size(max = 1000, message = "Los detalles de teleconsulta no pueden exceder 1000 caracteres")
     private String detallesTeleconsulta;
 
     /**
-     * Detalles de uso de la modalidad TELECONSULTORIO (solo cuando modalidad = AMBOS)
+     * Detalles de uso de la modalidad TELECONSULTORIO (solo cuando modalidad = MIXTA)
      * Incluye horarios, especialidades, y detalles adicionales
      */
     @Size(max = 1000, message = "Los detalles de teleconsultorio no pueden exceder 1000 caracteres")

@@ -129,10 +129,10 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
     }
   };
 
-  // Obtener el ID de modalidad "AMBOS"
-  const getIdModalidadAmbos = () => {
-    const modAmbos = modalidades.find((mod) => mod.descModAten === 'AMBOS');
-    return modAmbos ? modAmbos.idModAten.toString() : null;
+  // Obtener el ID de modalidad "MIXTA"
+  const getIdModalidadMixta = () => {
+    const modMixta = modalidades.find((mod) => mod.descModAten === 'MIXTA');
+    return modMixta ? modMixta.idModAten.toString() : null;
   };
 
   const validate = () => {
@@ -359,8 +359,8 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
               </select>
             </div>
 
-            {/* Detalles TELECONSULTA - Solo si es AMBOS */ }
-            { formData.idModAten === getIdModalidadAmbos() && (
+            {/* Detalles TELECONSULTA - Solo si es MIXTA */ }
+            { formData.idModAten === getIdModalidadMixta() && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Favor de precisar: ¿Cuándo se utiliza TELECONSULTA? (detallar información)
@@ -379,8 +379,8 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
               </div>
             ) }
 
-            {/* Detalles TELECONSULTORIO - Solo si es AMBOS */ }
-            { formData.idModAten === getIdModalidadAmbos() && (
+            {/* Detalles TELECONSULTORIO - Solo si es MIXTA */ }
+            { formData.idModAten === getIdModalidadMixta() && (
               <div className="md:col-span-2">
                 <label className="block text-sm font-semibold text-gray-700 mb-2">
                   Favor de precisar: ¿Cuándo se utiliza TELECONSULTORIO? (detallar información)

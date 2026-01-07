@@ -54,21 +54,21 @@ public class Ipress {
     private Long idNivAten;
 
     /**
-     * Modalidad de atención (TELECONSULTA, TELECONSULTORIO, AMBOS, NO SE BRINDA SERVICIO)
+     * Modalidad de atención (TELECONSULTA, TELECONSULTORIO, MIXTA, NO SE BRINDA SERVICIO)
      */
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "id_mod_aten")
     private ModalidadAtencion modalidadAtencion;
 
     /**
-     * Detalles de uso de la modalidad TELECONSULTA (solo cuando modalidad = AMBOS)
+     * Detalles de uso de la modalidad TELECONSULTA (solo cuando modalidad = MIXTA)
      * Incluye horarios, especialidades, y detalles adicionales
      */
     @Column(name = "detalles_teleconsulta", length = 1000)
     private String detallesTeleconsulta;
 
     /**
-     * Detalles de uso de la modalidad TELECONSULTORIO (solo cuando modalidad = AMBOS)
+     * Detalles de uso de la modalidad TELECONSULTORIO (solo cuando modalidad = MIXTA)
      * Incluye horarios, especialidades, y detalles adicionales
      */
     @Column(name = "detalles_teleconsultorio", length = 1000)
