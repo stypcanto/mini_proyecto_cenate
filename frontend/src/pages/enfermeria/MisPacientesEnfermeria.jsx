@@ -415,7 +415,7 @@ export default function MisPacientesEnfermeria() {
                       {paciente.pacienteDni}
                     </td>
                     <td className="px-4 py-3 text-left font-semibold text-gray-900 border-r border-gray-200">
-                      {paciente.sexo || paciente.genero || "N/A"}
+                      {paciente.pacienteSexo || "N/A"}
                     </td>
                     <td className="px-4 py-3 text-center font-semibold text-gray-900 border-r border-gray-200">
                       {paciente.pacienteEdad}
