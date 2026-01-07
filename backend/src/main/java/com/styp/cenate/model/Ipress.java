@@ -61,6 +61,20 @@ public class Ipress {
     private ModalidadAtencion modalidadAtencion;
 
     /**
+     * Detalles de uso de la modalidad TELECONSULTA (solo cuando modalidad = AMBOS)
+     * Incluye horarios, especialidades, y detalles adicionales
+     */
+    @Column(name = "detalles_teleconsulta", length = 1000)
+    private String detallesTeleconsulta;
+
+    /**
+     * Detalles de uso de la modalidad TELECONSULTORIO (solo cuando modalidad = AMBOS)
+     * Incluye horarios, especialidades, y detalles adicionales
+     */
+    @Column(name = "detalles_teleconsultorio", length = 1000)
+    private String detallesTeleconsultorio;
+
+    /**
      * Dirección de la IPRESS
      */
     @Column(name = "direc_ipress", nullable = false)

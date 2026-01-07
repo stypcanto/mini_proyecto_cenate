@@ -20,6 +20,8 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
     idRed: '',
     idNivAten: 1,
     idModAten: '',
+    detallesTeleconsulta: '',
+    detallesTeleconsultorio: '',
     direcIpress: '',
     idTipIpress: 1,
     idDist: 1,
@@ -74,6 +76,8 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
         idRed: ipress.idRed || '',
         idNivAten: ipress.idNivAten || 1,
         idModAten: ipress.idModAten || '',
+        detallesTeleconsulta: ipress.detallesTeleconsulta || '',
+        detallesTeleconsultorio: ipress.detallesTeleconsultorio || '',
         direcIpress: ipress.direcIpress || '',
         idTipIpress: ipress.idTipIpress || 1,
         idDist: ipress.idDist || 1,
@@ -125,6 +129,12 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
     }
   };
 
+  // Obtener el ID de modalidad "AMBOS"
+  const getIdModalidadAmbos = () => {
+    const modAmbos = modalidades.find((mod) => mod.descModAten === 'AMBOS');
+    return modAmbos ? modAmbos.idModAten.toString() : null;
+  };
+
   const validate = () => {
     const newErrors = {};
 
@@ -164,6 +174,8 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
         idRed: parseInt(formData.idRed),
         idNivAten: parseInt(formData.idNivAten),
         idModAten: formData.idModAten ? parseInt(formData.idModAten) : null,
+        detallesTeleconsulta: formData.detallesTeleconsulta || null,
+        detallesTeleconsultorio: formData.detallesTeleconsultorio || null,
         idTipIpress: parseInt(formData.idTipIpress),
         idDist: parseInt(formData.idDist),
         latIpress: formData.latIpress ? parseFloat(formData.latIpress) : null,
@@ -346,6 +358,46 @@ const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
                 )) }
               </select>
             </div>
+
+            {/* Detalles TELECONSULTA - Solo si es AMBOS */ }
+            { formData.idModAten === getIdModalidadAmbos() && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Detalles: ¿Cuándo se utiliza TELECONSULTA?
+                </label>
+                <textarea
+                  name="detallesTeleconsulta"
+                  value={ formData.detallesTeleconsulta }
+                  onChange={ handleChange }
+                  rows="3"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Especificar horarios, especialidades, o detalles de uso. Ej: Disponible lunes a viernes 9AM-5PM para consultas de especialidades médicas"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  { formData.detallesTeleconsulta.length }/1000
+                </p>
+              </div>
+            ) }
+
+            {/* Detalles TELECONSULTORIO - Solo si es AMBOS */ }
+            { formData.idModAten === getIdModalidadAmbos() && (
+              <div className="md:col-span-2">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Detalles: ¿Cuándo se utiliza TELECONSULTORIO?
+                </label>
+                <textarea
+                  name="detallesTeleconsultorio"
+                  value={ formData.detallesTeleconsultorio }
+                  onChange={ handleChange }
+                  rows="3"
+                  className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Especificar horarios, especialidades, o detalles de uso. Ej: Disponible para teleconsultorio especializado de cardiología, solo con cita previa"
+                />
+                <p className="mt-1 text-xs text-gray-500">
+                  { formData.detallesTeleconsultorio.length }/1000
+                </p>
+              </div>
+            ) }
 
             {/* Dirección */ }
             <div className="md:col-span-2">
