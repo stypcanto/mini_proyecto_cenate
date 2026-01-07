@@ -30,11 +30,32 @@ export default function AreasCRUD() {
   const [showModal, setShowModal] = useState(false);
   const [selectedArea, setSelectedArea] = useState(null);
   const [formData, setFormData] = useState({
-    descArea: '',
+    dependencia: '',
+    nombreArea: '',
     statArea: '1'
   });
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState(null);
+
+  // ============================================================
+  // 🔧 Utilidades para separar/combinar dependencia y nombre
+  // ============================================================
+  const extractDependencia = (descArea) => {
+    if (!descArea) return '';
+    const match = descArea.match(/^([A-Z0-9]+)\s*-\s*/);
+    return match ? match[1] : '';
+  };
+
+  const extractNombreArea = (descArea) => {
+    if (!descArea) return '';
+    const match = descArea.match(/^[A-Z0-9]+\s*-\s*(.*)$/);
+    return match ? match[1].trim() : descArea;
+  };
+
+  const combinareAreaDescripcion = (dependencia, nombreArea) => {
+    if (!dependencia || !nombreArea) return '';
+    return `${dependencia} - ${nombreArea}`;
+  };
 
   // ============================================================
   // 📦 Cargar Áreas
@@ -63,10 +84,16 @@ export default function AreasCRUD() {
   // 🔍 Filtrar y Ordenar Áreas (alfabéticamente)
   // ============================================================
   const filteredAreas = areas
-    .filter(area =>
-      area.descArea?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      area.statArea?.toLowerCase().includes(searchTerm.toLowerCase())
-    )
+    .filter(area => {
+      const dependencia = extractDependencia(area.descArea);
+      const nombreArea = extractNombreArea(area.descArea);
+      const searchLower = searchTerm.toLowerCase();
+      return (
+        dependencia.toLowerCase().includes(searchLower) ||
+        nombreArea.toLowerCase().includes(searchLower) ||
+        area.statArea?.toLowerCase().includes(searchLower)
+      );
+    })
     .sort((a, b) => (a.descArea || '').localeCompare(b.descArea || '', 'es'));
 
   // ============================================================
@@ -76,13 +103,15 @@ export default function AreasCRUD() {
     if (area) {
       setSelectedArea(area);
       setFormData({
-        descArea: area.descArea || '',
+        dependencia: extractDependencia(area.descArea),
+        nombreArea: extractNombreArea(area.descArea),
         statArea: area.statArea === 'A' ? '1' : '0'
       });
     } else {
       setSelectedArea(null);
       setFormData({
-        descArea: '',
+        dependencia: '',
+        nombreArea: '',
         statArea: '1'
       });
     }
@@ -93,7 +122,8 @@ export default function AreasCRUD() {
     setShowModal(false);
     setSelectedArea(null);
     setFormData({
-      descArea: '',
+      dependencia: '',
+      nombreArea: '',
       statArea: '1'
     });
   };
@@ -103,20 +133,26 @@ export default function AreasCRUD() {
   // ============================================================
   const handleSave = async (e) => {
     e.preventDefault();
-    
-    if (!formData.descArea.trim()) {
-      alert('La descripción del área es requerida');
+
+    if (!formData.dependencia.trim() || !formData.nombreArea.trim()) {
+      alert('La dependencia y el nombre del área son requeridos');
       return;
     }
 
     setSaving(true);
     try {
+      const descAreaCombinada = combinareAreaDescripcion(formData.dependencia, formData.nombreArea);
+      const dataToSave = {
+        descArea: descAreaCombinada,
+        statArea: formData.statArea
+      };
+
       if (selectedArea) {
         // Actualizar
-        await areaService.actualizar(selectedArea.idArea, formData);
+        await areaService.actualizar(selectedArea.idArea, dataToSave);
       } else {
         // Crear
-        await areaService.crear(formData);
+        await areaService.crear(dataToSave);
       }
       handleCloseModal();
       loadAreas();
@@ -150,7 +186,7 @@ export default function AreasCRUD() {
   // ============================================================
   const handleToggleEstado = async (area) => {
     try {
-      const nuevoEstado = area.statArea === 'A' ? '0' : '1';
+      const nuevoEstado = area.statArea === 'A' ? '0' : 'A';
       await areaService.actualizar(area.idArea, {
         descArea: area.descArea,
         statArea: nuevoEstado
@@ -263,7 +299,10 @@ export default function AreasCRUD() {
               <thead className="bg-[#0A5BA9]">
                 <tr>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
-                    Descripción
+                    Dependencia
+                  </th>
+                  <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
+                    Nombre del Área
                   </th>
                   <th className="px-6 py-4 text-left text-xs font-semibold text-white uppercase tracking-wider">
                     Fecha Creación
@@ -280,8 +319,13 @@ export default function AreasCRUD() {
                 {filteredAreas.map((area, index) => (
                   <tr key={area.idArea} className={`hover:bg-blue-50/50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'}`}>
                     <td className="px-6 py-4">
+                      <p className="text-sm font-semibold text-gray-900">
+                        {extractDependencia(area.descArea)}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
                       <p className="text-sm text-gray-900">
-                        {area.descArea}
+                        {extractNombreArea(area.descArea)}
                       </p>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -392,14 +436,28 @@ export default function AreasCRUD() {
             <form onSubmit={handleSave} className="p-6 space-y-4">
               <div>
                 <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
-                  Descripción <span className="text-red-500">*</span>
+                  Dependencia <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
-                  value={formData.descArea}
-                  onChange={(e) => setFormData({ ...formData, descArea: e.target.value })}
+                  value={formData.dependencia}
+                  onChange={(e) => setFormData({ ...formData, dependencia: e.target.value.toUpperCase() })}
                   className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all"
-                  placeholder="Ej: TELECONSULTAS, ADMINISTRACIÓN..."
+                  placeholder="Ej: DD, AD, TL..."
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
+                  Nombre del Área <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={formData.nombreArea}
+                  onChange={(e) => setFormData({ ...formData, nombreArea: e.target.value })}
+                  className="w-full px-4 py-3 border-2 border-slate-200 dark:border-slate-600 rounded-xl bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all"
+                  placeholder="Ej: DIRECCIÓN DE DESPACHO, ADMINISTRACIÓN..."
                   required
                 />
               </div>

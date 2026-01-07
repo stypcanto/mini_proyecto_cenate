@@ -734,10 +734,13 @@ export default function AprobacionSolicitudes() {
                           <div>
                             <p className="text-sm font-semibold text-red-800">Advertencia: Usuario Duplicado</p>
                             <p className="text-xs text-red-700 mt-1">
-                              Ya existe un usuario con el nombre de usuario <code className="bg-red-100 px-1 rounded font-mono">{solicitud.numeroDocumento}</code>
+                              Ya existe un usuario con el número de documento <code className="bg-red-100 px-1 rounded font-mono">{solicitud.numeroDocumento}</code>
                             </p>
                             <p className="text-xs text-red-600 mt-2">
                               ⚠️ No se puede aprobar esta solicitud hasta que el usuario duplicado sea identificado y resuelto.
+                            </p>
+                            <p className="text-xs text-red-700 font-semibold mt-2">
+                              Favor contactar con el Área Gestión TI del CENATE para gestionar la solución correspondiente.
                             </p>
                           </div>
                         </div>
