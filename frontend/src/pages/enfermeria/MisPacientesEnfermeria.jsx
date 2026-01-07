@@ -72,11 +72,12 @@ export default function MisPacientesEnfermeria() {
     cargarWorklist();
   }, [cargarWorklist]);
 
-  // Filtro por búsqueda
+  // Filtro por búsqueda y estado (solo PENDIENTES)
   const filteredPatients = useMemo(() => {
     return pacientes.filter(p =>
-      p.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.pacienteDni?.includes(searchTerm)
+      (p.estadoEnfermeria === "PENDIENTE") &&
+      (p.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+       p.pacienteDni?.includes(searchTerm))
     );
   }, [pacientes, searchTerm]);
 
@@ -379,8 +380,7 @@ export default function MisPacientesEnfermeria() {
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Género</th>
                   <th className="px-4 py-3 text-center font-bold text-gray-700 border-r border-gray-200">Edad</th>
                   <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">IPRESS de Adscripción</th>
-                  <th className="px-4 py-3 text-left font-bold text-gray-700 border-r border-gray-200">Estado</th>
-                  <th className="px-4 py-3 text-center font-bold text-gray-700">Atender</th>
+                  <th className="px-4 py-3 text-center font-bold text-gray-700">Estado</th>
                 </tr>
               </thead>
               <tbody>
@@ -424,27 +424,25 @@ export default function MisPacientesEnfermeria() {
                     <td className="px-4 py-3 text-left text-sm text-gray-700 border-r border-gray-200">
                       {paciente.nombreIpress || "N/A"}
                     </td>
-                    <td className="px-4 py-3 border-r border-gray-200">
-                      <span className={`inline-block px-3 py-1 rounded text-xs font-bold whitespace-nowrap ${
-                        paciente.estadoEnfermeria === "ATENDIDO"
-                          ? "bg-blue-100 text-blue-800"
-                          : paciente.diasTranscurridos > 0
-                          ? "bg-red-100 text-red-800"
-                          : paciente.diasTranscurridos === 0
-                          ? "bg-amber-100 text-amber-800"
-                          : "bg-green-100 text-green-800"
-                      }`}>
-                        {paciente.estadoEnfermeria === "ATENDIDO" ? "ATENDIDO" : "PENDIENTE"}
-                      </span>
-                    </td>
                     <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => handleAttend(paciente)}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold transition active:scale-95 shadow-sm"
-                      >
-                        <Stethoscope className="w-3.5 h-3.5" />
-                        Atender
-                      </button>
+                      {paciente.estadoEnfermeria === "ATENDIDO" ? (
+                        <span className="inline-block px-3 py-1.5 rounded text-xs font-bold whitespace-nowrap bg-blue-100 text-blue-800">
+                          ATENDIDO
+                        </span>
+                      ) : (
+                        <button
+                          onClick={() => handleAttend(paciente)}
+                          className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-bold transition cursor-pointer whitespace-nowrap ${
+                            paciente.diasTranscurridos > 0
+                              ? "bg-red-100 text-red-800 hover:bg-red-200"
+                              : paciente.diasTranscurridos === 0
+                              ? "bg-amber-100 text-amber-800 hover:bg-amber-200"
+                              : "bg-green-100 text-green-800 hover:bg-green-200"
+                          }`}
+                        >
+                          PENDIENTE
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
