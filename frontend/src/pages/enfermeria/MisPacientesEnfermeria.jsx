@@ -30,6 +30,11 @@ export default function MisPacientesEnfermeria() {
   // Estado de selección de pacientes
   const [selectedPatients, setSelectedPatients] = useState(new Set());
 
+  // Estado del calendario
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+
   const cargarWorklist = useCallback(async () => {
     try {
       setLoading(true);
@@ -96,11 +101,44 @@ export default function MisPacientesEnfermeria() {
     }
   };
 
-  const today = new Date().toLocaleDateString('es-PE', {
+  // Funciones del calendario
+  const getDaysInMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+  };
+
+  const getFirstDayOfMonth = (date) => {
+    return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
+  };
+
+  const handlePrevMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() - 1));
+  };
+
+  const handleNextMonth = () => {
+    setCurrentMonth(new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1));
+  };
+
+  const handleSelectDate = (day) => {
+    const newDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    setSelectedDate(newDate);
+    setShowCalendar(false);
+  };
+
+  const formattedDate = selectedDate.toLocaleDateString('es-PE', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   });
+
+  const monthYear = currentMonth.toLocaleDateString('es-PE', {
+    month: 'long',
+    year: 'numeric'
+  }).replace(/^\w/, (c) => c.toUpperCase());
+
+  const daysOfWeek = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sab'];
+  const daysInMonth = getDaysInMonth(currentMonth);
+  const firstDay = getFirstDayOfMonth(currentMonth);
+  const calendarDays = Array.from({ length: daysInMonth }, (_, i) => i + 1);
 
   return (
     <div className="min-h-screen p-6 font-sans bg-gray-50">
@@ -114,12 +152,80 @@ export default function MisPacientesEnfermeria() {
 
           {/* Fecha + Área Hospitalaria */}
           <div className="flex items-center justify-between border-b border-blue-300/30 pb-4 mb-4">
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 relative">
               <Calendar className="w-5 h-5" />
-              <span className="font-semibold text-lg">Fecha: {today}</span>
-              <button className="ml-2 p-1 bg-blue-400/40 rounded hover:bg-blue-400/60 transition">
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowCalendar(!showCalendar)}
+                  className="font-semibold text-lg flex items-center gap-2 hover:opacity-80 transition"
+                >
+                  Fecha: {formattedDate}
+                  <ArrowRight className="w-4 h-4 ml-1" />
+                </button>
+
+                {/* Calendario Popup */}
+                {showCalendar && (
+                  <div className="absolute top-full left-0 mt-2 bg-white rounded-lg shadow-xl p-4 z-50 border border-gray-300 min-w-80">
+                    {/* Header con mes/año */}
+                    <div className="flex items-center justify-between mb-4">
+                      <button
+                        onClick={handlePrevMonth}
+                        className="p-1 hover:bg-gray-100 rounded transition"
+                      >
+                        <ChevronLeft className="w-5 h-5 text-gray-600" />
+                      </button>
+                      <h3 className="text-gray-900 font-bold text-center flex-1 capitalize">
+                        {monthYear}
+                      </h3>
+                      <button
+                        onClick={handleNextMonth}
+                        className="p-1 hover:bg-gray-100 rounded transition"
+                      >
+                        <ChevronRight className="w-5 h-5 text-gray-600" />
+                      </button>
+                    </div>
+
+                    {/* Días de la semana */}
+                    <div className="grid grid-cols-7 gap-2 mb-3">
+                      {daysOfWeek.map((day, idx) => (
+                        <div key={idx} className="text-center text-xs font-bold text-gray-600">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Días del mes */}
+                    <div className="grid grid-cols-7 gap-2">
+                      {Array.from({ length: firstDay }).map((_, idx) => (
+                        <div key={`empty-${idx}`}></div>
+                      ))}
+                      {calendarDays.map((day) => (
+                        <button
+                          key={day}
+                          onClick={() => handleSelectDate(day)}
+                          className={`p-2 rounded text-sm font-semibold transition ${
+                            selectedDate.getDate() === day &&
+                            selectedDate.getMonth() === currentMonth.getMonth() &&
+                            selectedDate.getFullYear() === currentMonth.getFullYear()
+                              ? 'bg-blue-600 text-white'
+                              : 'text-gray-700 hover:bg-blue-100'
+                          }`}
+                        >
+                          {day}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Botón Seleccionar */}
+                    <button
+                      onClick={() => setShowCalendar(false)}
+                      className="w-full mt-4 py-2 bg-gray-200 text-gray-900 font-semibold rounded hover:bg-gray-300 transition text-sm"
+                    >
+                      Seleccionar fecha
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
             <div className="text-right">
               <div className="text-sm opacity-90">Área Hospitalaria</div>
