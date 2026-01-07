@@ -106,6 +106,8 @@ public class IpressServiceImpl implements IpressService {
                 .red(red)
                 .idNivAten(request.getIdNivAten())
                 .modalidadAtencion(modalidad)
+                .detallesTeleconsulta(request.getDetallesTeleconsulta())
+                .detallesTeleconsultorio(request.getDetallesTeleconsultorio())
                 .direcIpress(request.getDirecIpress())
                 .idTipIpress(request.getIdTipIpress())
                 .idDist(request.getIdDist())
@@ -151,6 +153,8 @@ public class IpressServiceImpl implements IpressService {
         ipress.setRed(red);
         ipress.setIdNivAten(request.getIdNivAten());
         ipress.setModalidadAtencion(modalidad);
+        ipress.setDetallesTeleconsulta(request.getDetallesTeleconsulta());
+        ipress.setDetallesTeleconsultorio(request.getDetallesTeleconsultorio());
         ipress.setDirecIpress(request.getDirecIpress());
         ipress.setIdTipIpress(request.getIdTipIpress());
         ipress.setIdDist(request.getIdDist());
@@ -227,6 +231,8 @@ public class IpressServiceImpl implements IpressService {
                 .idNivAten(ipress.getIdNivAten())
                 .idModAten(ipress.getIdModAten())
                 .nombreModalidadAtencion(nombreModalidad)
+                .detallesTeleconsulta(ipress.getDetallesTeleconsulta())
+                .detallesTeleconsultorio(ipress.getDetallesTeleconsultorio())
                 .direcIpress(ipress.getDirecIpress())
                 .idTipIpress(ipress.getIdTipIpress())
                 .idDist(ipress.getIdDist())
