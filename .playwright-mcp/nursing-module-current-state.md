@@ -1,0 +1,112 @@
+### New console messages
+- [LOG] 🚀 [GET] http://localhost:8080/api/usuarios/detalle/44012678 @ http://localhost:3000/static/js...
+- [LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:55267
+- [LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:55346
+- [ERROR] Failed to load resource: the server responded with a status of 404 () @ http://localhost:808...
+- [LOG] 📥 [Response Status]: 404  @ http://localhost:3000/static/js/bundle.js:55275
+- [ERROR] [API Error] {status: 404, path: /error, tip: Verifica la URL o contacta al administrador del...
+- [ERROR] ❌ [API Error] 🚫 El recurso solicitado no existe o fue movido. Response @ http://localhost:3...
+- [ERROR] ❌ [Network Error] en GET http://localhost:8080/api/usuarios/detalle/44012678: 🚫 El recurso ...
+- [ERROR] ⚠️ Error al cargar datos del usuario: Error: 🚫 El recurso solicitado no existe o fue movido...
+
+### Page state
+- Page URL: http://localhost:3000/enfermeria/mis-pacientes
+- Page Title: Intranet CENATE
+- Page Snapshot:
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e10]
+        - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - navigation [ref=e14]:
+        - paragraph [ref=e40]: No tienes modulos asignados
+      - paragraph [ref=e17]: v1.15.11
+  - main "Contenido principal" [ref=e18]:
+    - generic [ref=e20]:
+      - heading [level=1]
+      - generic [ref=e22]:
+        - button "Menú de usuario" [active] [ref=e23] [cursor=pointer]:
+          - generic [ref=e25]: MQ
+          - generic [ref=e26]:
+            - generic "Maria Quispe" [ref=e27]
+            - generic "ENFERMERIA" [ref=e28]
+          - img [ref=e29]
+        - generic [ref=e119]:
+          - generic [ref=e121]:
+            - generic [ref=e123]: MQ
+            - generic [ref=e124]:
+              - paragraph [ref=e125]: Maria Quispe
+              - paragraph [ref=e126]: ENFERMERIA
+          - generic [ref=e127]:
+            - button "Mi Cuenta" [ref=e128] [cursor=pointer]:
+              - generic [ref=e129]: Mi Cuenta
+            - button "Cerrar Sesión" [ref=e131] [cursor=pointer]:
+              - generic [ref=e132]: Cerrar Sesión
+    - generic [ref=e32]:
+      - generic [ref=e41]:
+        - generic [ref=e43]:
+          - heading "ATENCIÓN NO MÉDICA" [level=1] [ref=e45]
+          - generic [ref=e46]:
+            - generic [ref=e47]:
+              - img [ref=e48]
+              - 'button "Fecha: 07/01/2026" [ref=e51] [cursor=pointer]':
+                - text: "Fecha: 07/01/2026"
+                - img [ref=e52]
+            - generic [ref=e54]:
+              - generic [ref=e55]: Área Hospitalaria
+              - generic [ref=e56]: CONSULTA EXTERNA
+          - generic [ref=e57]:
+            - generic [ref=e58]: Profesional
+            - generic [ref=e59]:
+              - img [ref=e60]
+              - generic [ref=e65]:
+                - generic [ref=e66]: Documento D.N.I.
+                - generic [ref=e67]: "44012678"
+                - img [ref=e68] [cursor=pointer]
+              - generic [ref=e71]: Maria Quispe Evangelista
+        - generic [ref=e72]:
+          - generic [ref=e73]: Programación Asignada
+          - table [ref=e75]:
+            - rowgroup [ref=e76]:
+              - row "Servicio Actividad Actividad Específica Fec Turno HorInicio HorFin Estado Tipo Programación" [ref=e77]:
+                - columnheader "Servicio" [ref=e78]
+                - columnheader "Actividad" [ref=e79]
+                - columnheader "Actividad Específica" [ref=e80]
+                - columnheader "Fec Turno" [ref=e81]
+                - columnheader "HorInicio" [ref=e82]
+                - columnheader "HorFin" [ref=e83]
+                - columnheader "Estado" [ref=e84]
+                - columnheader "Tipo Programación" [ref=e85]
+            - rowgroup [ref=e86]:
+              - row "ENFERMERÍA ATENCIÓN NO MÉDICA TELEMONITOREO 07/01/2026 08:00 14:00 APROBADA POR CUPOS PROGR. DIARIA" [ref=e87]:
+                - cell "ENFERMERÍA" [ref=e88]
+                - cell "ATENCIÓN NO MÉDICA" [ref=e89]
+                - cell "TELEMONITOREO" [ref=e90]
+                - cell "07/01/2026" [ref=e91]
+                - cell "08:00" [ref=e92]
+                - cell "14:00" [ref=e93]
+                - cell "APROBADA POR CUPOS" [ref=e94]:
+                  - generic [ref=e95]: APROBADA POR CUPOS
+                - cell "PROGR. DIARIA" [ref=e96]
+        - generic [ref=e97]:
+          - generic [ref=e99]:
+            - generic [ref=e100]:
+              - generic [ref=e101]: Relación de Pacientes Citados
+              - generic [ref=e102]: 0 pacientes
+            - generic [ref=e103]:
+              - generic [ref=e104]:
+                - img [ref=e105]
+                - textbox "Buscar paciente..." [ref=e108]
+              - combobox [ref=e109]:
+                - option "Marcar todos" [selected]
+                - option "No marcar"
+          - generic [ref=e111]:
+            - img [ref=e112]
+            - generic [ref=e117]: No se encontraron pacientes
+      - generic [ref=e37]:
+        - paragraph [ref=e38]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e39]: v1.15.11 - Corrección Estados Dashboard
+```
