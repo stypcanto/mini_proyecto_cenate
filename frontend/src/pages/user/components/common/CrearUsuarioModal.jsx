@@ -590,7 +590,8 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
     return numero_documento || '';
   }, [formData.numero_documento]);
 
-  const passwordTemporal = '@Cenate2025';
+  // 🆕 v1.18.0 - Password temporal REMOVIDO
+  // Backend genera contraseña automática + envía email con token
 
   const handleDocumentoChange = useCallback((e) => {
     let { value } = e.target;
@@ -953,10 +954,12 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
   };
 
   const handleSubmit = async () => {
-    try {      
+    try {
       const dataToSend = {
         username: username,
-        password: passwordTemporal,
+        // 🆕 v1.18.0 - Password NO se envía aquí
+        // Backend genera un password temporal + envía email con token
+        // Usuario establecerá su propia password vía enlace de email
         nombres: formData.nombres,
         apellido_paterno: formData.apellido_paterno,
         apellido_materno: formData.apellido_materno,
@@ -1068,10 +1071,10 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
           alert(
             `✅ Usuario creado exitosamente\n\n` +
             `⚠️ Advertencia: No se pudo subir la foto. Puedes subirla más tarde editando el usuario.\n\n` +
+            `📧 Se envió un correo de activación a:\n` +
+            `   ${formData.correo_personal}\n\n` +
             `Username: ${username}\n` +
-            `Password temporal: ${passwordTemporal}\n` +
-            `Roles: ${formData.roles.join(', ')}\n\n` +
-            `⚠️ El usuario debe cambiar su contraseña en el primer inicio de sesión.`
+            `Roles: ${formData.roles.join(', ')}`
           );
           onSuccess();
           onClose();
@@ -1081,10 +1084,16 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
       
       alert(
         `✅ Usuario creado exitosamente${fotoSeleccionada ? ' con foto' : ''}\n\n` +
+        `🆕 Flujo Seguro de Activación:\n\n` +
+        `📧 Se envió un correo a:\n` +
+        `   ${formData.correo_personal}\n\n` +
+        `El usuario debe:\n` +
+        `1. Revisar su correo (bandeja de entrada o spam)\n` +
+        `2. Hacer clic en el enlace "Activar mi Cuenta"\n` +
+        `3. Establecer su propia contraseña\n` +
+        `4. El enlace expira en 24 horas\n\n` +
         `Username: ${username}\n` +
-        `Password temporal: ${passwordTemporal}\n` +
-        `Roles: ${formData.roles.join(', ')}\n\n` +
-        `⚠️ El usuario debe cambiar su contraseña en el primer inicio de sesión.`
+        `Roles: ${formData.roles.join(', ')}`
       );
       
       onSuccess();
@@ -1639,35 +1648,10 @@ const CrearUsuarioModal = ({ onClose, onSuccess, ipressList, personalData = null
                       </p>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-semibold text-teal-900 mb-1.5">
-                        Contraseña Temporal
-                      </label>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={passwordTemporal}
-                          readOnly
-                          className="flex-1 px-3 py-2 bg-white border-2 border-teal-200 rounded-lg text-teal-900 font-mono font-semibold text-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={() => {
-                            navigator.clipboard.writeText(passwordTemporal);
-                            alert('✅ Contraseña copiada al portapapeles');
-                          }}
-                          className="px-4 py-2 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-medium text-sm transition-all flex items-center gap-1.5"
-                        >
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
-                          </svg>
-                          Copiar
-                        </button>
-                      </div>
-                      <p className="text-xs text-teal-600 mt-1">
-                        Contraseña estándar para todos los usuarios nuevos
-                      </p>
-                    </div>
+                    {/* 🆕 v1.18.0 - REMOVIDO: Campo de contraseña temporal
+                        El backend ahora genera automáticamente una contraseña
+                        y envía un email con token al usuario para que establezca
+                        su propia contraseña. Ver UsuarioServiceImpl.createUser() */}
                   </div>
                 </div>
               </div>

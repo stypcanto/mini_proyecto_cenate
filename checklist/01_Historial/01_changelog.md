@@ -4,6 +4,169 @@
 
 ---
 
+## v1.18.0 (2026-01-06) - Unificación: Creación de Usuarios con Enlace por Email
+
+### 🎯 Mejora de Seguridad: Creación de Usuarios con Flujo Seguro por Email
+
+**Descripción**: Unificación del flujo de creación de usuarios con recuperación de contraseña. Ya no se genera una contraseña temporal visible (`@Cenate2025`). Ahora el usuario recibe un email con un enlace para establecer su propia contraseña de forma segura.
+
+---
+
+#### 📋 Resumen Ejecutivo
+
+**Estado**: ✅ **COMPLETADO**
+
+**Impacto de Seguridad**: 🔒 **CRÍTICO**
+- ✅ Password NO visible en pantalla
+- ✅ Password NO transmitido por canales inseguros
+- ✅ Usuario GENERA su propia password (más seguro)
+- ✅ Email con token (24 horas de expiración)
+- ✅ Token NO se puede reutilizar
+
+**Componentes Modificados**:
+- Backend: `UsuarioServiceImpl.java` - Generar password aleatorio si no se proporciona
+- Backend: `UsuarioCreateRequest.java` - Password opcional
+- Frontend: `CrearUsuarioModal.jsx` - NO enviar password + Actualizar UI
+- Reutilizado: `PasswordTokenService.java` (ya implementado)
+- Reutilizado: `EmailService.java` (ya soportaba tipoAccion="BIENVENIDO")
+
+#### ✨ Cambios Implementados
+
+##### 1. Backend: UsuarioServiceImpl.createUser() ✅
+
+**Cambio**: Generar password aleatorio si es null (línea 109-120)
+
+```java
+// 🆕 v1.18.0 - Password es OPCIONAL
+String passwordParaUsuario;
+if (request.getPassword() == null || request.getPassword().isBlank()) {
+  log.info("🔐 Password no proporcionado - Generando password temporal");
+  passwordParaUsuario = passwordTokenService.generarPasswordTemporal();
+} else {
+  passwordParaUsuario = request.getPassword();
+}
+usuario.setPassUser(passwordEncoder.encode(passwordParaUsuario));
+```
+
+**Comportamiento**:
+- Si el frontend NO envía `password` → Sistema genera password aleatorio (16 caracteres)
+- Si el frontend SÍ envía `password` → Se usa directamente (compatibilidad con importación masiva)
+
+##### 2. Backend: UsuarioCreateRequest.java ✅
+
+**Cambio**: Documentar que password es OPCIONAL (línea 14-18)
+
+```java
+private String password; // 🆕 OPCIONAL - Si es null, se genera automáticamente
+```
+
+##### 3. Frontend: CrearUsuarioModal.jsx ✅
+
+**Cambios**:
+- ❌ Remover: `const passwordTemporal = '@Cenate2025'` (línea 593)
+- ❌ Remover: `password: passwordTemporal` del request (línea 959)
+- ❌ Remover: Sección UI con campo de contraseña temporal (línea 1642-1670)
+- ✅ Actualizar: Alert de éxito con instrucciones de email (línea 1085-1097)
+
+**Nuevo Alert**:
+```
+✅ Usuario creado exitosamente
+
+🆕 Flujo Seguro de Activación:
+
+📧 Se envió un correo a: user@example.com
+
+El usuario debe:
+1. Revisar su correo (bandeja de entrada o spam)
+2. Hacer clic en el enlace "Activar mi Cuenta"
+3. Establecer su propia contraseña
+4. El enlace expira en 24 horas
+
+Username: 44914706
+Roles: MEDICO, COORDINADOR
+```
+
+#### 🔄 Flujo del Usuario
+
+**ANTES (v1.17.2 y anteriores)**:
+1. Admin crea usuario
+2. System muestra password: `@Cenate2025` en alert
+3. Admin copia password manualmente
+4. Admin envía password por otros medios (WhatsApp, email manual, etc)
+5. Usuario recibe password inseguro
+6. ⚠️ Contraseña débil y reutilizada
+
+**DESPUÉS (v1.18.0)**:
+1. Admin crea usuario (SIN proporcionar password)
+2. Backend genera password aleatorio (16 caracteres, no visible)
+3. Backend envía EMAIL automático con token a `correo_personal`
+4. Usuario recibe enlace: `/cambiar-contrasena?token=xxxxx`
+5. Usuario hace clic en enlace → Página de configuración de password
+6. Usuario ingresa su propia password (mínimo 8 caracteres)
+7. Password se actualiza en BD + Token marcado como usado
+8. ✅ Password fuerte y elegida por el usuario
+
+#### 🔐 Consideraciones de Seguridad
+
+✅ **IMPLEMENTADO**:
+- Token expires en 24 horas
+- Token es aleatorio (SecureRandom + Base64 UTF-8)
+- Token se marca como "usado" después de consumirse
+- Email se envía por canal corporativo (SMTP)
+- Password NO se expone en logs
+- Password NO se expone en respuesta del API
+
+⚠️ **A MONITOREAR**:
+- No exponer token en logs de Spring (DEBUG)
+- Validar que token no se puede fuerza brute
+- Validar que link no se puede reutilizar
+- Monitorear tasa de emails rechazados
+
+#### 📊 Testing Realizado
+
+✅ **Compilación**:
+- Backend: `./gradlew compileJava` ✅ SUCCESS
+- Frontend: `npm run build` ✅ SUCCESS
+
+⏳ **Testing Manual (Por Realizar)**:
+- [ ] Crear usuario INTERNO → Verificar email recibido
+- [ ] Crear usuario EXTERNO (desde solicitud) → Verificar email
+- [ ] Hacer click en link → Verificar redirección a cambiar-contrasena
+- [ ] Establecer password → Verificar que funciona login
+- [ ] Token expirado → Verificar error apropiado
+- [ ] Token ya usado → Verificar que no se puede reutilizar
+
+#### 📝 Archivos Modificados
+
+```
+✅ MODIFICADOS:
+- backend/src/main/java/com/styp/cenate/dto/UsuarioCreateRequest.java
+- backend/src/main/java/com/styp/cenate/service/usuario/UsuarioServiceImpl.java
+- frontend/src/pages/user/components/common/CrearUsuarioModal.jsx
+
+✅ REUTILIZADOS (Sin cambios):
+- backend/src/main/java/com/styp/cenate/service/security/PasswordTokenService.java
+- backend/src/main/java/com/styp/cenate/service/email/EmailService.java
+- frontend/src/pages/PasswordRecovery.js (endpoint /cambiar-contrasena)
+
+📋 DOCUMENTACIÓN:
+- CLAUDE.md - Agregado a tabla de módulos (v1.18.0)
+- plan/01_Seguridad_Auditoria/03_plan_unificacion_creacion_usuarios.md - Plan detallado
+```
+
+#### 🚀 Impacto en Otros Módulos
+
+✅ **Compatible con**:
+- Creación manual (Admin → POST /usuarios/crear)
+- Solicitudes externas (SolicitudRegistro → aprobarSolicitud)
+- Importación masiva (Bolsa 107 - si proporciona password explícito)
+
+⚠️ **Considerar**:
+- Si hay scripts de importación → Deben enviar `password` explícitamente
+- Si hay integraciones → Verificar que NO dependen de respuesta con password visible
+
+---
+
 ## v1.17.2 (2026-01-04) - Corrección IPRESS y Mejoras UI/UX Módulo Enfermería
 
 ### 🎯 Corrección: Priorización de IPRESS desde Asegurado
