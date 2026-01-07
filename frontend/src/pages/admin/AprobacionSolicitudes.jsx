@@ -62,6 +62,10 @@ export default function AprobacionSolicitudes() {
   const [seleccionados, setSeleccionados] = useState(new Set());
   const [procesandoMasivo, setProcesandoMasivo] = useState(false);
 
+  // Estados para validación de usuarios duplicados
+  const [usuariosDuplicados, setUsuariosDuplicados] = useState({}); // {solicitudId: existe}
+  const [verificandoUsuarios, setVerificandoUsuarios] = useState(new Set()); // Set de IDs en verificación
+
   // Cargar solicitudes cuando cambia el filtro (solo en vista solicitudes)
   useEffect(() => {
     if (vistaActual === "solicitudes") {
@@ -76,6 +80,21 @@ export default function AprobacionSolicitudes() {
       cargarUsuariosPendientes();
     }
   }, [vistaActual]);
+
+  // Verificar existencia de usuarios cuando carguen las solicitudes
+  useEffect(() => {
+    if (vistaActual === "solicitudes" && solicitudes.length > 0) {
+      solicitudes.forEach((solicitud) => {
+        if (
+          solicitud.estado === "PENDIENTE" &&
+          !usuariosDuplicados.hasOwnProperty(solicitud.idSolicitud) &&
+          !verificandoUsuarios.has(solicitud.idSolicitud)
+        ) {
+          verificarExistenciaUsuario(solicitud.idSolicitud);
+        }
+      });
+    }
+  }, [solicitudes, vistaActual]);
 
   const cargarSolicitudes = async () => {
     try {
@@ -110,6 +129,43 @@ export default function AprobacionSolicitudes() {
       setEstadisticas(data);
     } catch (error) {
       console.error("Error al cargar estadísticas:", error);
+    }
+  };
+
+  // Verificar existencia de un usuario antes de aprobar la solicitud
+  const verificarExistenciaUsuario = async (solicitudId) => {
+    try {
+      setVerificandoUsuarios((prev) => new Set(prev).add(solicitudId));
+
+      const response = await apiClient.get(
+        `/admin/solicitudes-registro/${solicitudId}/validar-usuario`,
+        true
+      );
+
+      const existe = response.existe || false;
+      setUsuariosDuplicados((prev) => ({
+        ...prev,
+        [solicitudId]: existe,
+      }));
+
+      if (existe) {
+        console.warn(
+          `⚠️ Usuario duplicado detectado: ${response.username} (Solicitud ID: ${solicitudId})`
+        );
+      }
+    } catch (error) {
+      console.error("Error verificando existencia de usuario:", error);
+      // En caso de error, asumimos que el usuario NO existe para permitir continuar
+      setUsuariosDuplicados((prev) => ({
+        ...prev,
+        [solicitudId]: false,
+      }));
+    } finally {
+      setVerificandoUsuarios((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(solicitudId);
+        return newSet;
+      });
     }
   };
 
@@ -663,6 +719,36 @@ export default function AprobacionSolicitudes() {
                       </p>
                     </div>
                   )}
+
+                  {/* Verificación de duplicado de usuario (PENDIENTE) */}
+                  {solicitud.estado === "PENDIENTE" && (
+                    <div className="mt-4">
+                      {verificandoUsuarios.has(solicitud.idSolicitud) ? (
+                        <div className="flex items-center gap-2 text-sm text-slate-600">
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          Verificando usuario...
+                        </div>
+                      ) : usuariosDuplicados[solicitud.idSolicitud] ? (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded flex items-start gap-3">
+                          <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-semibold text-red-800">Advertencia: Usuario Duplicado</p>
+                            <p className="text-xs text-red-700 mt-1">
+                              Ya existe un usuario con el nombre de usuario <code className="bg-red-100 px-1 rounded font-mono">{solicitud.numeroDocumento}</code>
+                            </p>
+                            <p className="text-xs text-red-600 mt-2">
+                              ⚠️ No se puede aprobar esta solicitud hasta que el usuario duplicado sea identificado y resuelto.
+                            </p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-xs text-green-700 bg-green-50 px-3 py-2 rounded">
+                          <CheckCircle2 className="w-4 h-4" />
+                          Usuario disponible - Puede proceder con la aprobación
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Botones de acción (solo para pendientes) */}
@@ -670,7 +756,18 @@ export default function AprobacionSolicitudes() {
                   <div className="flex gap-2 ml-4">
                     <button
                       onClick={() => aprobarSolicitud(solicitud.idSolicitud)}
-                      className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2 shadow-md"
+                      disabled={usuariosDuplicados[solicitud.idSolicitud] === true}
+                      className={`px-4 py-2 rounded-lg transition-colors flex items-center gap-2 shadow-md
+                        ${
+                          usuariosDuplicados[solicitud.idSolicitud]
+                            ? "bg-gray-400 text-gray-600 cursor-not-allowed opacity-50"
+                            : "bg-green-600 text-white hover:bg-green-700"
+                        }`}
+                      title={
+                        usuariosDuplicados[solicitud.idSolicitud]
+                          ? "No se puede aprobar: usuario duplicado detectado"
+                          : "Aprobar solicitud"
+                      }
                     >
                       <CheckCircle2 className="w-4 h-4" />
                       Aprobar

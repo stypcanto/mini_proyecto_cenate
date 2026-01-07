@@ -915,4 +915,35 @@ public class AccountRequestService {
 
         return resultado;
     }
+
+    // ================================================================
+    // VALIDACIÓN DE EXISTENCIA DE USUARIO
+    // ================================================================
+
+    /**
+     * Valida si un usuario (documento) ya existe en el sistema
+     * antes de aprobar una solicitud de registro
+     */
+    public Map<String, Object> validarExistenciaUsuario(Long idSolicitud) {
+        log.info("Validando existencia de usuario para solicitud ID: {}", idSolicitud);
+
+        AccountRequest solicitud = accountRequestRepository.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
+
+        String numeroDocumento = solicitud.getNumDocumento();
+        boolean existe = usuarioRepository.existsByNameUser(numeroDocumento);
+
+        Map<String, Object> resultado = Map.of(
+                "existe", existe,
+                "username", numeroDocumento,
+                "idSolicitud", idSolicitud,
+                "mensaje", existe
+                    ? "Usuario ya existe en el sistema"
+                    : "Usuario disponible - Puede proceder con la aprobación"
+        );
+
+        log.info("Validación de usuario '{}' completada. Existe: {}", numeroDocumento, existe);
+
+        return resultado;
+    }
 }

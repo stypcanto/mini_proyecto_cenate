@@ -67,6 +67,25 @@ public class SolicitudRegistroController {
         return ResponseEntity.ok(accountRequestService.obtenerEstadisticas());
     }
 
+    @GetMapping("/admin/solicitudes-registro/{id}/validar-usuario")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> validarExistenciaUsuario(@PathVariable Long id) {
+        try {
+            log.info("Validando existencia de usuario para solicitud ID: {}", id);
+            return ResponseEntity.ok(accountRequestService.validarExistenciaUsuario(id));
+        } catch (RuntimeException e) {
+            log.warn("Error al validar usuario: {}", e.getMessage());
+            return ResponseEntity.badRequest().body(Map.of(
+                    "error", e.getMessage()
+            ));
+        } catch (Exception e) {
+            log.error("Error inesperado al validar usuario", e);
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Error al validar usuario"
+            ));
+        }
+    }
+
     @PutMapping("/admin/solicitudes-registro/{id}/aprobar")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<?> aprobarSolicitud(@PathVariable Long id) {
