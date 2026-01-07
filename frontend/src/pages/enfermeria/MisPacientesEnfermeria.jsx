@@ -3,19 +3,19 @@
 // ✅ Versión 3.0.0 (2026-01-06) - Interfaz Consulta Externa + Programación
 // ========================================================================
 
-import React, { useState, useEffect, useCallback, useMemo, useContext } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import {
   Users, Search, Calendar, Activity, Heart,
   RefreshCw, Clock, CheckCircle2, Stethoscope, Share2, ClipboardList,
   FileText, ChevronLeft, ChevronRight, ArrowRight, Copy
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { AuthContext } from "../../context/AuthContext";
+import { useAuth } from "../../context/AuthContext";
 import apiClient from "../../services/apiClient";
 import NursingAttendModal from "./components/NursingAttendModal";
 
 export default function MisPacientesEnfermeria() {
-  const { usuario } = useContext(AuthContext);
+  const { user: usuario } = useAuth();
   const [pacientes, setPacientes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
