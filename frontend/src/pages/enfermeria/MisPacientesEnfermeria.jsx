@@ -109,7 +109,7 @@ export default function MisPacientesEnfermeria() {
       <div className="mb-6 bg-gradient-to-r from-[#001f3f] via-[#001a33] to-[#000000] text-white rounded-lg shadow-lg">
         <div className="px-6 py-6">
           <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold tracking-wider uppercase">MÓDULO DE TELE-ENFERMERÍA</h1>
+            <h1 className="text-3xl font-bold tracking-wider">Módulo de Tele-enfermería</h1>
           </div>
 
           {/* Fecha + Área Hospitalaria */}
