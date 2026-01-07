@@ -6,12 +6,16 @@ import java.util.List;
 /**
  * DTO para creación completa de usuarios internos.
  * Incluye datos personales, laborales y de contacto.
+ *
+ * 🆕 v1.18.0 - Password es OPCIONAL:
+ * - Si NO se proporciona → sistema genera password aleatorio + envía email con token
+ * - Si se proporciona → se usa directamente (para compatibilidad/importación masiva)
  */
 @Data
 public class UsuarioCreateRequest {
     // Credenciales
     private String username;
-    private String password;
+    private String password; // 🆕 OPCIONAL - Si es null, se genera automáticamente
     
     // Datos Personales
     private String nombres;

@@ -165,6 +165,7 @@ Password: @Cenate2025
 | **Gestión Asegurado** | Ver changelog v1.16.0 | ✅ Implementado |
 | **Tipos Profesionales** | Ver changelog v1.16.1 | ✅ Implementado |
 | **Navegación Dinámica de Pestañas** | Ver changelog v1.17.1 | ✅ Implementado |
+| **Creación de Usuarios con Email** | `plan/01_Seguridad_Auditoria/03_plan_unificacion_creacion_usuarios.md` | ✅ Implementado (v1.18.0) |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
