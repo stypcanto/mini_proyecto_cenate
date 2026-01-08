@@ -19,21 +19,21 @@ public class HorarioDao {
 	private static final RowMapper<HorarioDiaResult> MAPPER = (rs, rowNum) -> {
 		HorarioDiaResult r = new HorarioDiaResult();
 
-		r.setIdCtrHorario(rs.getObject("id_ctr_horario", Long.class));
-		r.setPeriodo(rs.getString("periodo"));
+		r.setIdCtrHorario(rs.getObject("o_id_ctr_horario", Long.class));
+		r.setPeriodo(rs.getString("o_periodo"));
 
-		Date fecha = rs.getDate("fecha_dia");
+		Date fecha = rs.getDate("o_fecha_dia");
 		r.setFechaDia(fecha != null ? fecha.toLocalDate() : null);
 
-		Object oldVal = rs.getObject("id_horario_old");
+		Object oldVal = rs.getObject("o_id_horario_old");
 		r.setIdHorarioOld(oldVal != null ? ((Number) oldVal).longValue() : null);
 
-		Object newVal = rs.getObject("id_horario_new");
+		Object newVal = rs.getObject("o_id_horario_new");
 		r.setIdHorarioNew(newVal != null ? ((Number) newVal).longValue() : null);
 
-		Object tt = rs.getObject("turnos_totales");
+		Object tt = rs.getObject("o_turnos_totales");
 		r.setTurnosTotales(tt != null ? ((Number) tt).intValue() : null);
-		r.setHorasTotales(rs.getBigDecimal("horas_totales"));
+		r.setHorasTotales(rs.getBigDecimal("o_horas_totales"));
 
 		return r;
 	};
@@ -43,7 +43,7 @@ public class HorarioDao {
 
 		final String sql = """
 				  select *
-				  from public.sp_registrar_horario_dia(?, ?, ?, ?)
+				  from public.sp_registrar_horario_dia2(?, ?, ?, ?)
 				""";
 
 		return jdbcTemplate.query(sql, MAPPER, idPers, Date.valueOf(fecha), codHorarioVisual, usuario);

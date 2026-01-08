@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mantenimiento - Rendimiento Horario</title>
+
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body{
+      font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      min-height:100vh;
+      padding:20px;
+    }
+
+    .container{
+      max-width:1400px;
+      margin:0 auto;
+      background:#fff;
+      border-radius:15px;
+      box-shadow:0 20px 60px rgba(0,0,0,.3);
+      overflow:hidden;
+    }
+
+    .header{
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      color:#fff;
+      padding:30px;
+      text-align:center;
+    }
+
+    .header h1{ font-size:2em; margin-bottom:10px; }
+
+    .content{ padding:30px; }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:20px;
+      margin-bottom:30px;
+    }
+
+    .stat-card{
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      padding:20px;
+      border-radius:10px;
+      color:#fff;
+      box-shadow:0 4px 6px rgba(0,0,0,.1);
+    }
+
+    .stat-card h3{ font-size:14px; opacity:.9; margin-bottom:8px; }
+    .stat-card p{ font-size:28px; font-weight:800; }
+
+    .toolbar{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      margin-bottom:25px;
+      gap:15px;
+      flex-wrap:wrap;
+    }
+
+    .search-section{ flex:1; min-width:300px; }
+
+    .search-box{ position:relative; margin-bottom:10px; }
+    .search-box input{
+      width:100%;
+      padding:12px 40px 12px 15px;
+      border:2px solid #e0e0e0;
+      border-radius:8px;
+      font-size:14px;
+      transition:.3s;
+    }
+    .search-box input:focus{
+      outline:none;
+      border-color:#667eea;
+      box-shadow:0 0 0 3px rgba(102,126,234,.1);
+    }
+    .search-icon{
+      position:absolute;
+      right:12px;
+      top:50%;
+      transform:translateY(-50%);
+      color:#999;
+    }
+
+    .filter-toggle{
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      color:#667eea;
+      cursor:pointer;
+      font-size:14px;
+      font-weight:700;
+      padding:8px 0;
+      transition:.3s;
+      user-select:none;
+    }
+    .filter-toggle:hover{ color:#764ba2; }
+
+    .advanced-filters{
+      display:none;
+      background:#f8f9ff;
+      padding:20px;
+      border-radius:8px;
+      margin-top:15px;
+      border:2px solid #e0e0e0;
+      animation:slideDown .3s;
+    }
+    .advanced-filters.active{ display:block; }
+
+    .filter-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:15px;
+      margin-bottom:15px;
+    }
+
+    .filter-group{ display:flex; flex-direction:column; gap:5px; }
+    .filter-group label{ font-size:12px; font-weight:700; color:#374151; }
+
+    .filter-group select,
+    .filter-group input{
+      padding:8px;
+      border:2px solid #e0e0e0;
+      border-radius:6px;
+      font-size:13px;
+      transition:.3s;
+    }
+    .filter-group select:focus,
+    .filter-group input:focus{
+      outline:none;
+      border-color:#667eea;
+    }
+
+    .filter-actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+    }
+
+    .btn{
+      padding:12px 24px;
+      border:none;
+      border-radius:8px;
+      font-size:14px;
+      font-weight:700;
+      cursor:pointer;
+      transition:.3s;
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      user-select:none;
+    }
+
+    .btn-primary{
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      color:#fff;
+    }
+    .btn-primary:hover{
+      transform:translateY(-2px);
+      box-shadow:0 5px 15px rgba(102,126,234,.4);
+    }
+
+    .btn-success{ background:#10b981; color:#fff; }
+    .btn-success:hover{ background:#059669; }
+
+    .btn-danger{ background:#ef4444; color:#fff; }
+    .btn-danger:hover{ background:#dc2626; }
+
+    .btn-warning{ background:#f59e0b; color:#fff; }
+    .btn-warning:hover{ background:#d97706; }
+
+    .btn-secondary{ background:#6b7280; color:#fff; }
+    .btn-secondary:hover{ background:#4b5563; }
+
+    .btn-sm{ padding:6px 12px; font-size:12px; }
+
+    .action-buttons{ display:flex; gap:10px; flex-wrap:wrap; }
+
+    .table-container{
+      overflow-x:auto;
+      border-radius:10px;
+      border:1px solid #e0e0e0;
+      margin-top:20px;
+    }
+
+    table{
+      width:100%;
+      border-collapse:collapse;
+      background:#fff;
+    }
+
+    thead{
+      background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+      color:#fff;
+    }
+
+    th{
+      padding:15px;
+      text-align:left;
+      font-weight:800;
+      white-space:nowrap;
+    }
+
+    td{
+      padding:12px 15px;
+      border-bottom:1px solid #f0f0f0;
+    }
+
+    tbody tr{ transition:.2s; }
+    tbody tr:hover{ background:#f8f9ff; }
+
+    .actions{ display:flex; gap:8px; flex-wrap:wrap; }
+
+    .badge{
+      display:inline-block;
+      padding:4px 12px;
+      border-radius:12px;
+      font-size:12px;
+      font-weight:800;
+    }
+
+    .badge-active{ background:#d1fae5; color:#065f46; }
+    .badge-inactive{ background:#fee2e2; color:#991b1b; }
+
+    .active-filters{
+      display:flex;
+      flex-wrap:wrap;
+      gap:8px;
+      margin-top:10px;
+    }
+
+    .filter-chip{
+      background:#667eea;
+      color:#fff;
+      padding:5px 12px;
+      border-radius:20px;
+      font-size:12px;
+      display:inline-flex;
+      align-items:center;
+      gap:6px;
+      font-weight:700;
+    }
+
+    .filter-chip-close{
+      cursor:pointer;
+      font-weight:900;
+      opacity:.85;
+    }
+    .filter-chip-close:hover{ opacity:1; }
+
+    .modal{
+      display:none;
+      position:fixed;
+      top:0; left:0;
+      width:100%; height:100%;
+      background:rgba(0,0,0,.5);
+      z-index:1000;
+      animation:fadeIn .3s;
+    }
+
+    .modal.active{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+    }
+
+    .modal-content{
+      background:#fff;
+      padding:30px;
+      border-radius:15px;
+      width:90%;
+      max-width:600px;
+      max-height:90vh;
+      overflow-y:auto;
+      animation:slideUp .3s;
+      box-shadow:0 20px 60px rgba(0,0,0,.3);
+    }
+
+    .modal-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:25px;
+      padding-bottom:15px;
+      border-bottom:2px solid #e0e0e0;
+    }
+    .modal-header h2{ color:#667eea; }
+
+    .close{
+      font-size:28px;
+      cursor:pointer;
+      color:#999;
+      transition:.3s;
+      user-select:none;
+    }
+    .close:hover{ color:#ef4444; }
+
+    .form-group{ margin-bottom:20px; }
+    .form-group label{
+      display:block;
+      margin-bottom:8px;
+      font-weight:800;
+      color:#374151;
+    }
+
+    .form-group input,
+    .form-group select{
+      width:100%;
+      padding:12px;
+      border:2px solid #e0e0e0;
+      border-radius:8px;
+      font-size:14px;
+      transition:.3s;
+    }
+
+    .form-group input:focus,
+    .form-group select:focus{
+      outline:none;
+      border-color:#667eea;
+      box-shadow:0 0 0 3px rgba(102,126,234,.1);
+    }
+
+    .form-actions{
+      display:flex;
+      gap:10px;
+      justify-content:flex-end;
+      margin-top:25px;
+      padding-top:20px;
+      border-top:1px solid #e0e0e0;
+    }
+
+    .empty-state{
+      text-align:center;
+      padding:60px 20px;
+      color:#6b7280;
+    }
+
+    .empty-state svg{
+      width:100px;
+      height:100px;
+      margin-bottom:20px;
+      opacity:.5;
+    }
+
+    /* PAGINACIÓN */
+    .pagination-bar{
+      margin-top:15px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+      flex-wrap:wrap;
+    }
+
+    .pagination-left{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      color:#374151;
+      font-size:13px;
+      font-weight:700;
+    }
+
+    .page-size{
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+
+    #pageSizeSelect{
+      padding:6px 10px;
+      border:2px solid #e0e0e0;
+      border-radius:8px;
+      font-weight:800;
+      color:#374151;
+      background:#fff;
+    }
+
+    .pagination-right{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      flex-wrap:wrap;
+    }
+
+    .page-btn{
+      padding:8px 12px;
+      border-radius:10px;
+      border:2px solid #e0e0e0;
+      background:#fff;
+      cursor:pointer;
+      font-weight:900;
+      color:#374151;
+      transition:.2s;
+      user-select:none;
+    }
+
+    .page-btn:hover{
+      border-color:#667eea;
+      color:#667eea;
+    }
+
+    .page-btn.active{
+      border-color:#667eea;
+      background:#667eea;
+      color:#fff;
+    }
+
+    .page-btn:disabled{
+      opacity:.5;
+      cursor:not-allowed;
+    }
+
+    @keyframes fadeIn{ from{opacity:0} to{opacity:1} }
+    @keyframes slideUp{ from{transform:translateY(50px);opacity:0} to{transform:translateY(0);opacity:1} }
+    @keyframes slideDown{ from{opacity:0;max-height:0} to{opacity:1;max-height:500px} }
+
+    @media (max-width:768px){
+      .toolbar{ flex-direction:column; }
+      .search-section{ width:100%; }
+      .action-buttons{ width:100%; justify-content:center; }
+      .filter-grid{ grid-template-columns:1fr; }
+      table{ font-size:12px; }
+      th,td{ padding:8px; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Mantenimiento de Rendimiento Horario</h1>
+      <p>Sistema de gestión y control de registros</p>
+    </div>
+
+    <div class="content">
+      <!-- STATS -->
+      <div class="stats" id="stats">
+        <div class="stat-card">
+          <h3>Total Registros</h3>
+          <p id="totalRecords">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Registros Activos</h3>
+          <p id="activeRecords">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Total Pacientes</h3>
+          <p id="totalPatients">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Áreas Hospital</h3>
+          <p id="totalAreas">0</p>
+        </div>
+      </div>
+
+      <!-- TOOLBAR -->
+      <div class="toolbar">
+        <div class="search-section">
+          <div class="search-box">
+            <input type="text" id="searchInput" placeholder="🔍 Búsqueda rápida (ID, servicio, actividad...)" />
+            <span class="search-icon">🔍</span>
+          </div>
+
+          <div class="filter-toggle" onclick="toggleFilters()">
+            <span id="filterIcon">▼</span>
+            <span>Filtros Avanzados</span>
+          </div>
+
+          <div id="advancedFilters" class="advanced-filters">
+            <div class="filter-grid">
+              <div class="filter-group">
+                <label>Área Hospital</label>
+                <select id="filterAreaHosp">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Servicio</label>
+                <select id="filterServicio">
+                  <option value="">Todos</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Actividad</label>
+                <select id="filterActividad">
+                  <option value="">Todas</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Estado</label>
+                <select id="filterEstado">
+                  <option value="">Todos</option>
+                  <option value="A">Activo</option>
+                  <option value="I">Inactivo</option>
+                </select>
+              </div>
+
+              <div class="filter-group">
+                <label>Pacientes/Hora (Min)</label>
+                <input type="number" id="filterPacientesMin" placeholder="Mínimo" />
+              </div>
+
+              <div class="filter-group">
+                <label>Pacientes/Hora (Max)</label>
+                <input type="number" id="filterPacientesMax" placeholder="Máximo" />
+              </div>
+            </div>
+
+            <div class="filter-actions">
+              <button class="btn btn-sm btn-secondary" onclick="clearFilters()">🔄 Limpiar Filtros</button>
+              <button class="btn btn-sm btn-primary" onclick="applyFilters()">✓ Aplicar Filtros</button>
+            </div>
+          </div>
+
+          <div id="activeFiltersContainer" class="active-filters"></div>
+        </div>
+
+        <div class="action-buttons">
+          <button class="btn btn-primary" onclick="openModal('create')">➕ Nuevo Registro</button>
+          <button class="btn btn-success" onclick="exportData()">📥 Exportar CSV</button>
+        </div>
+      </div>
+
+      <!-- TABLE -->
+      <div class="table-container">
+        <table id="dataTable">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Área Hospital</th>
+              <th>Servicio</th>
+              <th>Actividad</th>
+              <th>Subactividad</th>
+              <th>Pacientes/Hora</th>
+              <th>Adicional</th>
+              <th>Estado</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- PAGINACIÓN -->
+      <div class="pagination-bar">
+        <div class="pagination-left">
+          <span id="paginationInfo">Mostrando 0–0 de 0</span>
+          <label class="page-size">
+            Filas:
+            <select id="pageSizeSelect">
+              <option value="5">5</option>
+              <option value="10" selected>10</option>
+              <option value="20">20</option>
+              <option value="50">50</option>
+            </select>
+          </label>
+        </div>
+        <div class="pagination-right" id="paginationControls"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Nuevo Registro</h2>
+        <span class="close" onclick="closeModal()">&times;</span>
+      </div>
+
+      <form id="dataForm">
+        <input type="hidden" id="recordId" />
+
+        <div class="form-group">
+          <label for="idAreaHosp">ID Área Hospital *</label>
+          <input type="number" id="idAreaHosp" required />
+        </div>
+
+        <div class="form-group">
+          <label for="idServicio">ID Servicio *</label>
+          <input type="number" id="idServicio" required />
+        </div>
+
+        <div class="form-group">
+          <label for="idActividad">ID Actividad *</label>
+          <input type="number" id="idActividad" required />
+        </div>
+
+        <div class="form-group">
+          <label for="idSubactividad">ID Subactividad *</label>
+          <input type="number" id="idSubactividad" required />
+        </div>
+
+        <div class="form-group">
+          <label for="pacientesPorHora">Pacientes por Hora *</label>
+          <input type="number" id="pacientesPorHora" required min="0" step="0.01" />
+        </div>
+
+        <div class="form-group">
+          <label for="adicional">Adicional</label>
+          <input type="number" id="adicional" min="0" step="0.01" value="0" />
+        </div>
+
+        <div class="form-group">
+          <label for="estado">Estado *</label>
+          <select id="estado" required>
+            <option value="A">Activo</option>
+            <option value="I">Inactivo</option>
+          </select>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" onclick="closeModal()">Cancelar</button>
+          <button type="submit" class="btn btn-success">💾 Guardar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // =========================
+    // 1) DATA + STATE
+    // =========================
+    let data = [
+      {id: 61, idAreaHosp: 1, idServicio: 13, idActividad: 6, idSubactividad: 472, pacientesPorHora: 4, adicional: 0, estado: 'A'},
+      {id: 62, idAreaHosp: 1, idServicio: 47, idActividad: 6, idSubactividad: 472, pacientesPorHora: 4, adicional: 0, estado: 'A'},
+      {id: 63, idAreaHosp: 1, idServicio: 52, idActividad: 6, idSubactividad: 472, pacientesPorHora: 4, adicional: 0, estado: 'A'},
+      {id: 64, idAreaHosp: 1, idServicio: 55, idActividad: 6, idSubactividad: 472, pacientesPorHora: 4, adicional: 0, estado: 'A'},
+      {id: 65, idAreaHosp: 1, idServicio: 61, idActividad: 6, idSubactividad: 472, pacientesPorHora: 4, adicional: 0, estado: 'A'},
+      {id: 66, idAreaHosp: 1, idServicio: 64, idActividad: 6, idSubactividad: 472, pacientesPorHora: 3, adicional: 0, estado: 'A'},
+      {id: 67, idAreaHosp: 1, idServicio: 66, idActividad: 6, idSubactividad: 472, pacientesPorHora: 4, adicional: 0, estado: 'A'},
+      {id: 68, idAreaHosp: 1, idServicio: 67, idActividad: 6, idSubactividad: 473, pacientesPorHora: 2, adicional: 0, estado: 'A'},
+      {id: 69, idAreaHosp: 1, idServicio: 70, idActividad: 6, idSubactividad: 472, pacientesPorHora: 4, adicional: 3, estado: 'A'},
+      {id: 70, idAreaHosp: 1, idServicio: 82, idActividad: 6, idSubactividad: 472, pacientesPorHora: 4, adicional: 0, estado: 'A'},
+      {id: 71, idAreaHosp: 2, idServicio: 15, idActividad: 7, idSubactividad: 480, pacientesPorHora: 5, adicional: 1, estado: 'A'},
+      {id: 72, idAreaHosp: 2, idServicio: 20, idActividad: 8, idSubactividad: 485, pacientesPorHora: 3, adicional: 0, estado: 'I'}
+    ];
+
+    let editingId = null;
+    let activeFilters = {};
+    let searchTerm = "";
+
+    // Pagination
+    let currentPage = 1;
+    let pageSize = 10;
+
+    // =========================
+    // 2) INIT
+    // =========================
+    document.addEventListener('DOMContentLoaded', function() {
+      populateFilterOptions();
+
+      document.getElementById('searchInput').addEventListener('input', (e) => {
+        searchTerm = (e.target.value || "").trim().toLowerCase();
+        currentPage = 1;
+        refreshUI();
+      });
+
+      document.getElementById('pageSizeSelect').addEventListener('change', (e) => {
+        pageSize = parseInt(e.target.value, 10) || 10;
+        currentPage = 1;
+        refreshUI();
+      });
+
+      document.getElementById('dataForm').addEventListener('submit', handleSubmit);
+
+      updateStats();
+      refreshUI();
+    });
+
+    // =========================
+    // 3) FILTER OPTIONS
+    // =========================
+    function populateFilterOptions() {
+      const areas = [...new Set(data.map(r => r.idAreaHosp))].sort((a,b) => a-b);
+      const servicios = [...new Set(data.map(r => r.idServicio))].sort((a,b) => a-b);
+      const actividades = [...new Set(data.map(r => r.idActividad))].sort((a,b) => a-b);
+
+      const filterAreaHosp = document.getElementById('filterAreaHosp');
+      const filterServicio = document.getElementById('filterServicio');
+      const filterActividad = document.getElementById('filterActividad');
+
+      filterAreaHosp.innerHTML = `<option value="">Todas</option>`;
+      filterServicio.innerHTML = `<option value="">Todos</option>`;
+      filterActividad.innerHTML = `<option value="">Todas</option>`;
+
+      areas.forEach(area => {
+        const option = document.createElement('option');
+        option.value = String(area);
+        option.textContent = `Área ${area}`;
+        filterAreaHosp.appendChild(option);
+      });
+
+      servicios.forEach(servicio => {
+        const option = document.createElement('option');
+        option.value = String(servicio);
+        option.textContent = `Servicio ${servicio}`;
+        filterServicio.appendChild(option);
+      });
+
+      actividades.forEach(actividad => {
+        const option = document.createElement('option');
+        option.value = String(actividad);
+        option.textContent = `Actividad ${actividad}`;
+        filterActividad.appendChild(option);
+      });
+    }
+
+    // =========================
+    // 4) ADVANCED FILTERS UI
+    // =========================
+    function toggleFilters() {
+      const filters = document.getElementById('advancedFilters');
+      const icon = document.getElementById('filterIcon');
+
+      if (filters.classList.contains('active')) {
+        filters.classList.remove('active');
+        icon.textContent = '▼';
+      } else {
+        filters.classList.add('active');
+        icon.textContent = '▲';
+      }
+    }
+
+    function applyFilters() {
+      activeFilters = {};
+
+      const filterAreaHosp = document.getElementById('filterAreaHosp').value;
+      const filterServicio = document.getElementById('filterServicio').value;
+      const filterActividad = document.getElementById('filterActividad').value;
+      const filterEstado = document.getElementById('filterEstado').value;
+      const filterPacientesMin = document.getElementById('filterPacientesMin').value;
+      const filterPacientesMax = document.getElementById('filterPacientesMax').value;
+
+      if (filterAreaHosp) activeFilters.idAreaHosp = filterAreaHosp;
+      if (filterServicio) activeFilters.idServicio = filterServicio;
+      if (filterActividad) activeFilters.idActividad = filterActividad;
+      if (filterEstado) activeFilters.estado = filterEstado;
+      if (filterPacientesMin) activeFilters.pacientesMin = filterPacientesMin;
+      if (filterPacientesMax) activeFilters.pacientesMax = filterPacientesMax;
+
+      currentPage = 1;
+      renderActiveFilters();
+      refreshUI();
+    }
+
+    function clearFilters() {
+      activeFilters = {};
+
+      document.getElementById('filterAreaHosp').value = '';
+      document.getElementById('filterServicio').value = '';
+      document.getElementById('filterActividad').value = '';
+      document.getElementById('filterEstado').value = '';
+      document.getElementById('filterPacientesMin').value = '';
+      document.getElementById('filterPacientesMax').value = '';
+
+      currentPage = 1;
+      renderActiveFilters();
+      refreshUI();
+    }
+
+    function removeFilter(key) {
+      delete activeFilters[key];
+
+      const filterMap = {
+        idAreaHosp: 'filterAreaHosp',
+        idServicio: 'filterServicio',
+        idActividad: 'filterActividad',
+        estado: 'filterEstado',
+        pacientesMin: 'filterPacientesMin',
+        pacientesMax: 'filterPacientesMax'
+      };
+
+      const element = document.getElementById(filterMap[key]);
+      if (element) element.value = '';
+
+      currentPage = 1;
+      renderActiveFilters();
+      refreshUI();
+    }
+
+    function renderActiveFilters() {
+      const container = document.getElementById('activeFiltersContainer');
+
+      if (Object.keys(activeFilters).length === 0) {
+        container.innerHTML = '';
+        return;
+      }
+
+      const filterNames = {
+        idAreaHosp: 'Área Hospital',
+        idServicio: 'Servicio',
+        idActividad: 'Actividad',
+        estado: 'Estado',
+        pacientesMin: 'Pac/H Min',
+        pacientesMax: 'Pac/H Max'
+      };
+
+      container.innerHTML = Object.entries(activeFilters).map(([key, value]) => `
+        <div class="filter-chip">
+          ${filterNames[key]}: ${value === 'A' ? 'Activo' : value === 'I' ? 'Inactivo' : value}
+          <span class="filter-chip-close" onclick="removeFilter('${key}')">✕</span>
+        </div>
+      `).join('');
+    }
+
+    // =========================
+    // 5) FILTER ENGINE (COMBINED)
+    // =========================
+    function getFilteredData() {
+      let result = [...data];
+
+      if (searchTerm) {
+        result = result.filter(record =>
+          Object.values(record).some(value =>
+            String(value).toLowerCase().includes(searchTerm)
+          )
+        );
+      }
+
+      result = result.filter(record => {
+        if (activeFilters.idAreaHosp && String(record.idAreaHosp) !== String(activeFilters.idAreaHosp)) return false;
+        if (activeFilters.idServicio && String(record.idServicio) !== String(activeFilters.idServicio)) return false;
+        if (activeFilters.idActividad && String(record.idActividad) !== String(activeFilters.idActividad)) return false;
+        if (activeFilters.estado && record.estado !== activeFilters.estado) return false;
+
+        if (activeFilters.pacientesMin && record.pacientesPorHora < parseFloat(activeFilters.pacientesMin)) return false;
+        if (activeFilters.pacientesMax && record.pacientesPorHora > parseFloat(activeFilters.pacientesMax)) return false;
+
+        return true;
+      });
+
+      return result;
+    }
+
+    // =========================
+    // 6) PAGINATION
+    // =========================
+    function paginate(rows) {
+      const total = rows.length;
+      const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+      if (currentPage > totalPages) currentPage = totalPages;
+
+      const startIndex = (currentPage - 1) * pageSize;
+      const endIndexExclusive = startIndex + pageSize;
+      const pageRows = rows.slice(startIndex, endIndexExclusive);
+
+      updatePaginationInfo(total, startIndex, Math.min(endIndexExclusive, total));
+      renderPaginationControls(totalPages);
+
+      return pageRows;
+    }
+
+    function updatePaginationInfo(total, start, end) {
+      const el = document.getElementById('paginationInfo');
+      if (!el) return;
+
+      if (total === 0) {
+        el.textContent = `Mostrando 0–0 de 0`;
+        return;
+      }
+      el.textContent = `Mostrando ${start + 1}–${end} de ${total}`;
+    }
+
+    function renderPaginationControls(totalPages) {
+      const container = document.getElementById('paginationControls');
+      if (!container) return;
+
+      const windowSize = 5;
+      let start = Math.max(1, currentPage - Math.floor(windowSize / 2));
+      let end = Math.min(totalPages, start + windowSize - 1);
+      start = Math.max(1, end - windowSize + 1);
+
+      let html = `
+        <button class="page-btn" ${currentPage === 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">◀</button>
+      `;
+
+      if (start > 1) {
+        html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+        if (start > 2) html += `<span style="padding:0 6px;font-weight:900;">…</span>`;
+      }
+
+      for (let p = start; p <= end; p++) {
+        html += `
+          <button class="page-btn ${p === currentPage ? 'active' : ''}" onclick="goToPage(${p})">${p}</button>
+        `;
+      }
+
+      if (end < totalPages) {
+        if (end < totalPages - 1) html += `<span style="padding:0 6px;font-weight:900;">…</span>`;
+        html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+      }
+
+      html += `
+        <button class="page-btn" ${currentPage === totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">▶</button>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function goToPage(page) {
+      currentPage = Math.max(1, page);
+      refreshUI();
+    }
+
+    // =========================
+    // 7) RENDER TABLE
+    // =========================
+    function refreshUI() {
+      const filtered = getFilteredData();
+      const pageRows = paginate(filtered);
+      renderTable(pageRows);
+    }
+
+    function renderTable(rows) {
+      const tbody = document.getElementById('tableBody');
+
+      if (!rows || rows.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="9" class="empty-state">
+              <div>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+                </svg>
+                <h3>No se encontraron registros</h3>
+                <p>Intenta con otros criterios de búsqueda</p>
+              </div>
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = rows.map(record => `
+        <tr>
+          <td><strong>${record.id}</strong></td>
+          <td>${record.idAreaHosp}</td>
+          <td>${record.idServicio}</td>
+          <td>${record.idActividad}</td>
+          <td>${record.idSubactividad}</td>
+          <td>${record.pacientesPorHora}</td>
+          <td>${record.adicional}</td>
+          <td>
+            <span class="badge ${record.estado === 'A' ? 'badge-active' : 'badge-inactive'}">
+              ${record.estado === 'A' ? 'Activo' : 'Inactivo'}
+            </span>
+          </td>
+          <td>
+            <div class="actions">
+              <button class="btn btn-warning btn-sm" onclick="editRecord(${record.id})">✏️ Editar</button>
+              <button class="btn btn-danger btn-sm" onclick="deleteRecord(${record.id})">🗑️ Eliminar</button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // =========================
+    // 8) STATS
+    // =========================
+    function updateStats() {
+      document.getElementById('totalRecords').textContent = data.length;
+      document.getElementById('activeRecords').textContent = data.filter(r => r.estado === 'A').length;
+
+      // (Lo dejo como estaba en tu lógica original)
+      const uniquePatients = new Set(data.map(r => r.pacientesPorHora)).size;
+      document.getElementById('totalPatients').textContent = uniquePatients;
+
+      const uniqueAreas = new Set(data.map(r => r.idAreaHosp)).size;
+      document.getElementById('totalAreas').textContent = uniqueAreas;
+    }
+
+    // =========================
+    // 9) MODAL CRUD
+    // =========================
+    function openModal(mode, id = null) {
+      const modal = document.getElementById('modal');
+      const modalTitle = document.getElementById('modalTitle');
+      const form = document.getElementById('dataForm');
+
+      form.reset();
+      editingId = null;
+
+      if (mode === 'create') {
+        modalTitle.textContent = 'Nuevo Registro';
+        document.getElementById('estado').value = 'A';
+      } else if (mode === 'edit' && id) {
+        const record = data.find(r => r.id === id);
+        if (record) {
+          modalTitle.textContent = 'Editar Registro';
+          editingId = id;
+
+          document.getElementById('recordId').value = record.id;
+          document.getElementById('idAreaHosp').value = record.idAreaHosp;
+          document.getElementById('idServicio').value = record.idServicio;
+          document.getElementById('idActividad').value = record.idActividad;
+          document.getElementById('idSubactividad').value = record.idSubactividad;
+          document.getElementById('pacientesPorHora').value = record.pacientesPorHora;
+          document.getElementById('adicional').value = record.adicional;
+          document.getElementById('estado').value = record.estado;
+        }
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      editingId = null;
+    }
+
+    function handleSubmit(e) {
+      e.preventDefault();
+
+      const formData = {
+        idAreaHosp: parseInt(document.getElementById('idAreaHosp').value, 10),
+        idServicio: parseInt(document.getElementById('idServicio').value, 10),
+        idActividad: parseInt(document.getElementById('idActividad').value, 10),
+        idSubactividad: parseInt(document.getElementById('idSubactividad').value, 10),
+        pacientesPorHora: parseFloat(document.getElementById('pacientesPorHora').value),
+        adicional: parseFloat(document.getElementById('adicional').value) || 0,
+        estado: document.getElementById('estado').value
+      };
+
+      if (editingId) {
+        const index = data.findIndex(r => r.id === editingId);
+        if (index !== -1) {
+          data[index] = { ...data[index], ...formData };
+          alert('✅ Registro actualizado exitosamente');
+        }
+      } else {
+        const newId = Math.max(...data.map(r => r.id), 0) + 1;
+        data.push({ id: newId, ...formData });
+        alert('✅ Registro creado exitosamente');
+      }
+
+      populateFilterOptions();
+      updateStats();
+      refreshUI();
+      closeModal();
+    }
+
+    function editRecord(id) {
+      openModal('edit', id);
+    }
+
+    function deleteRecord(id) {
+      if (confirm('¿Está seguro de que desea eliminar este registro?')) {
+        data = data.filter(r => r.id !== id);
+        populateFilterOptions();
+        updateStats();
+        refreshUI();
+        alert('✅ Registro eliminado exitosamente');
+      }
+    }
+
+    // =========================
+    // 10) EXPORT (EXPORTA FILTRADO COMPLETO)
+    // =========================
+    function exportData() {
+      const rowsToExport = getFilteredData();
+
+      const headers = ['ID', 'ID Área Hospital', 'ID Servicio', 'ID Actividad', 'ID Subactividad', 'Pacientes/Hora', 'Adicional', 'Estado'];
+      const csvContent = [
+        headers.join(','),
+        ...rowsToExport.map(record => [
+          record.id,
+          record.idAreaHosp,
+          record.idServicio,
+          record.idActividad,
+          record.idSubactividad,
+          record.pacientesPorHora,
+          record.adicional,
+          record.estado
+        ].join(','))
+      ].join('\n');
+
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+
+      link.setAttribute('href', url);
+      link.setAttribute('download', `rendimiento_horario_${new Date().toISOString().split('T')[0]}.csv`);
+      link.style.visibility = 'hidden';
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      alert('✅ Datos exportados exitosamente');
+    }
+
+    // =========================
+    // 11) CLICK OUTSIDE MODAL
+    // =========================
+    window.onclick = function(event) {
+      const modal = document.getElementById('modal');
+      if (event.target === modal) closeModal();
+    };
+  </script>
+</body>
+</html>

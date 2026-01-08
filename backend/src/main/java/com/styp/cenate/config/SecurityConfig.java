@@ -269,6 +269,7 @@ public class SecurityConfig {
                                                 
                                                 // MODULO PROGRAMACION DE HORARIO DE PROFESIONAL ASISTENCIAL
                                                 .requestMatchers("/api/horarios/**").permitAll()
+                                                .requestMatchers("/api/rendimiento-horario/**").permitAll()
 
                                               //******************************************************************
                                               //******************************************************************
