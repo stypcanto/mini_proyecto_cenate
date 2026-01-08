@@ -261,7 +261,7 @@ public class SecurityConfig {
                                                 
                                               //******************************************************************
                                               //******************************************************************
-                                              // SOLO PARA PRUEBAS RAPIDAS
+                                              // INICIO SOLO PARA PRUEBAS RAPIDAS
                                                 
                                                 // MODULO 107
                                                 .requestMatchers(HttpMethod.GET, "/api/import-excel/**").permitAll()
@@ -270,7 +270,11 @@ public class SecurityConfig {
                                                 // MODULO PROGRAMACION DE HORARIO DE PROFESIONAL ASISTENCIAL
                                                 .requestMatchers("/api/horarios/**").permitAll()
                                                 .requestMatchers("/api/rendimiento-horario/**").permitAll()
-
+                                                
+                                                // CATALOGOS
+                                                .requestMatchers("/api/catalogo/subactividad-essi/**").permitAll()
+                                                
+                                              // FIN SOLO PARA PRUEBAS RAPIDAS
                                               //******************************************************************
                                               //******************************************************************
                                               //******************************************************************

@@ -102,18 +102,18 @@ public class RendimientoHorarioController {
     		  **Catálogos requeridos para el Formulario (combos):**
     		  1) Área hospitalaria:
     		     - PAQUETE : com.styp.cenate.api.entidad.AreaHospitalariaController
-    		     - `GET /api/areas-hospitalarias`
+    		     - `GET "/api/areas-hospitalarias"`
     		     - value: `idAreaHosp`
     		     - label: `descAreaHosp`
     		  		
     		  2) Servicio:
-    		     - `GET /api/servicio-essi`
+    		     - `GET "/api/servicio-essi"`
 
     		  3) Actividad:
     		     - `GET `
 
     		  4) Subactividad:
-    		     - `GET `
+    		     - `GET "/api/catalogo/subactividad-essi"`
 
     		  """
     		)
@@ -141,15 +141,6 @@ public class RendimientoHorarioController {
         service.eliminar(id);
         return ResponseEntity.noContent().build();
     }
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     
     
