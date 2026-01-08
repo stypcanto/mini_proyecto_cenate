@@ -107,7 +107,7 @@ public class RendimientoHorarioController {
     		     - label: `descAreaHosp`
     		  		
     		  2) Servicio:
-    		     - `GET `
+    		     - `GET /api/servicio-essi`
 
     		  3) Actividad:
     		     - `GET `
