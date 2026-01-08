@@ -40,8 +40,7 @@ public class RendimientoHorarioController {
      * 
      * */
     
-    
-
+   
     /**
      * LISTA PAGINADA + FILTROS (para búsqueda avanzada)
      *

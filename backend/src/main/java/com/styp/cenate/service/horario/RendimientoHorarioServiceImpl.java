@@ -10,6 +10,10 @@ import com.styp.cenate.dto.horario.RendimientoHorarioListadoRow;
 import com.styp.cenate.dto.horario.RendimientoHorarioRequest;
 import com.styp.cenate.dto.horario.RendimientoHorarioResponse;
 import com.styp.cenate.model.horario.RendimientoHorario;
+import com.styp.cenate.repository.ActividadEssiRepository;
+import com.styp.cenate.repository.AreaHospitalariaRepository;
+import com.styp.cenate.repository.DimServicioEssiRepository;
+import com.styp.cenate.repository.SubactividadEssiRepository;
 import com.styp.cenate.repository.horario.RendimientoHorarioRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -19,6 +23,12 @@ import lombok.RequiredArgsConstructor;
 public class RendimientoHorarioServiceImpl implements RendimientoHorarioService {
 
 	private final RendimientoHorarioRepo repo;
+
+	// repositorio solo para validar existencia
+	private final AreaHospitalariaRepository areaRepo;
+	private final DimServicioEssiRepository servicioRepo;
+	private final ActividadEssiRepository actividadRepo;
+	private final SubactividadEssiRepository subactividadRepo;
 
 	@Override
 	public Page<RendimientoHorarioResponse> buscar(String q, Long idAreaHosp, Long idServicio, Long idActividad,
@@ -33,10 +43,10 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 	@Override
 	public Page<RendimientoHorarioListadoRow> listar(String q, Long idAreaHosp, Long idServicio, Long idActividad,
 			String estado, Integer pacMin, Integer pacMax, int page, int size) {
-		  q = normalizeQ(q);
+		q = normalizeQ(q);
 		Pageable pageable = PageRequest.of(Math.max(page, 0), capSize(size));
-		return repo.buscarConDescripciones(q, idAreaHosp, idServicio, idActividad, 
-				normalizeEstado(estado), pacMin, pacMax, pageable);
+		return repo.buscarConDescripciones(q, idAreaHosp, idServicio, idActividad, normalizeEstado(estado), pacMin,
+				pacMax, pageable);
 	}
 
 	@Override
@@ -49,7 +59,7 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 	@Override
 	public RendimientoHorarioResponse crear(RendimientoHorarioRequest req) {
 		validar(req);
-
+		validarForaneas(req); 
 		RendimientoHorario e = new RendimientoHorario();
 		apply(e, req);
 
@@ -64,7 +74,7 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 	@Override
 	public RendimientoHorarioResponse actualizar(Long id, RendimientoHorarioRequest req) {
 		validar(req);
-
+		validarForaneas(req); 	
 		RendimientoHorario e = repo.findById(id)
 				.orElseThrow(() -> new RuntimeException("No existe id_rendimiento=" + id));
 
@@ -128,6 +138,21 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 			throw new RuntimeException("estado inválido (solo A o I)");
 	}
 
+	private void validarForaneas(RendimientoHorarioRequest req) {
+		if (!areaRepo.existsById(req.idAreaHosp())) {
+			throw new IllegalArgumentException("No existe Área Hospitalaria id=" + req.idAreaHosp());
+		}
+		if (!servicioRepo.existsById(req.idServicio())) {
+			throw new IllegalArgumentException("No existe Servicio id=" + req.idServicio());
+		}
+		if (!actividadRepo.existsById(req.idActividad())) {
+			throw new IllegalArgumentException("No existe Actividad id=" + req.idActividad());
+		}
+		if (!subactividadRepo.existsById(req.idSubactividad())) {
+			throw new IllegalArgumentException("No existe Subactividad id=" + req.idSubactividad());
+		}
+	}
+
 	private static String nullIfBlank(String s) {
 		return (s == null || s.trim().isEmpty()) ? null : s.trim();
 	}
@@ -138,12 +163,13 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 		String x = estado.trim().toUpperCase();
 		return x.isEmpty() ? null : x;
 	}
+
 	private static String normalizeQ(String q) {
-	    return (q == null) ? "" : q.trim();
+		return (q == null) ? "" : q.trim();
 	}
 
 	private static int capSize(int size) {
-	    int s = Math.max(size, 1);
-	    return Math.min(s, 100); // límite recomendado
+		int s = Math.max(size, 1);
+		return Math.min(s, 100); // límite recomendado
 	}
 }
