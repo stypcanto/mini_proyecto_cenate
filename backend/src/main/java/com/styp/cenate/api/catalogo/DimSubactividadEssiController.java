@@ -41,6 +41,13 @@ public class DimSubactividadEssiController {
 		return ResponseEntity.ok(subactividadService.obtenerPorId(id));
 	}
 
+	@GetMapping("/activas/cenate")
+	public ResponseEntity<List<SubactividadEssiResponseDTO>> listarActivasCenate() {
+	    return ResponseEntity.ok(subactividadService.listarActivasCenate());
+	}
+
+	
+	
 	/*
 	 * ========================= EXISTE POR ID (opcional) GET
 	 * /api/catalogo/subactividad-essi/{id}/existe =========================

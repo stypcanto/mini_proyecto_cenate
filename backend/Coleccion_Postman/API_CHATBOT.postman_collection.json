@@ -771,6 +771,62 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "SUB-ACTIVIDADES",
+			"item": [
+				{
+					"name": "LISTADO-ACTIVOS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/catalogo/subactividad-essi/activas/cenate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"catalogo",
+								"subactividad-essi",
+								"activas",
+								"cenate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "ACTIVIDADES",
+			"item": [
+				{
+					"name": "LISTADO-ACTIVOS",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/catalogo/actividades/activas/cenate",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"catalogo",
+								"actividades",
+								"activas",
+								"cenate"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }

@@ -48,5 +48,15 @@ public class SubactividadEssiServiceImpl implements ISubactividadEssiService {
 		entity.setUpdatedAt(OffsetDateTime.now());
 		subactividadRepo.save(entity);
 	}
+	
+	@Override
+	@Transactional(readOnly = true)
+	public List<SubactividadEssiResponseDTO> listarActivasCenate() {
+
+	    return SubactividadEssiMapper.toDtoList(
+	        subactividadRepo.findByEstadoAndEsCenate("A", true)
+	    );
+	}
+
 
 }

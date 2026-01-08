@@ -273,6 +273,8 @@ public class SecurityConfig {
                                                 
                                                 // CATALOGOS
                                                 .requestMatchers("/api/catalogo/subactividad-essi/**").permitAll()
+                                                .requestMatchers("/api/catalogo/actividades/**").permitAll()
+                                                
                                                 
                                               // FIN SOLO PARA PRUEBAS RAPIDAS
                                               //******************************************************************

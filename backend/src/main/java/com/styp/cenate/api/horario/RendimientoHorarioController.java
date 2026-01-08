@@ -110,10 +110,14 @@ public class RendimientoHorarioController {
     		     - `GET "/api/servicio-essi"`
 
     		  3) Actividad:
-    		     - `GET `
+    		     - `GET /api/catalogo/actividades/activas/cenate`
+    		     -value: idActividad
+    		     -label: descActividad
 
     		  4) Subactividad:
-    		     - `GET "/api/catalogo/subactividad-essi"`
+    		     - `GET /api/catalogo/subactividad-essi/activas/cenate`
+    		     - value: `idSubactividad`
+    		     - label: `descSubactividad`
 
     		  """
     		)
