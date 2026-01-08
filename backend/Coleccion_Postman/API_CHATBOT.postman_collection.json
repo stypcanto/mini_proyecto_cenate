@@ -701,6 +701,76 @@
 					"response": []
 				}
 			]
+		},
+		{
+			"name": "RENDIMIENTO_HORARIO",
+			"item": [
+				{
+					"name": "CONSULTAR_POR_ID",
+					"request": {
+						"auth": {
+							"type": "noauth"
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/rendimiento-horario/73",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"rendimiento-horario",
+								"73"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LISTADO CON DESCRIPCION",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/rendimiento-horario/listado",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"rendimiento-horario",
+								"listado"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "LISTADO SIN DESCRIPCION",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/rendimiento-horario",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"rendimiento-horario"
+							]
+						}
+					},
+					"response": []
+				}
+			]
 		}
 	]
 }

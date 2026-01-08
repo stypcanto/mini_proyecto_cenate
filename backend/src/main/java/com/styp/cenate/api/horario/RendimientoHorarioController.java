@@ -1,4 +1,4 @@
-package com.styp.cenate.dto.horario;
+package com.styp.cenate.api.horario;
 
 
 import org.springframework.data.domain.Page;
@@ -13,10 +13,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.styp.cenate.dto.horario.RendimientoHorarioListadoRow;
+import com.styp.cenate.dto.horario.RendimientoHorarioRequest;
+import com.styp.cenate.dto.horario.RendimientoHorarioResponse;
 import com.styp.cenate.service.horario.RendimientoHorarioService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
-
+@Tag(
+	    name = "Rendimiento Horario",
+	    description = "Catálogo de Rendimiento Horario"
+	)
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/api/rendimiento-horario")
@@ -25,6 +34,13 @@ public class RendimientoHorarioController {
     private final RendimientoHorarioService service;
 
 
+    /*
+     * End_point relacionados
+     * /api/areas-hospitalarias
+     * 
+     * */
+    
+    
 
     /**
      * LISTA PAGINADA + FILTROS (para búsqueda avanzada)
@@ -64,14 +80,9 @@ public class RendimientoHorarioController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size
     ) {
-    	System.out.println("q=" + q + " | type=" + (q == null ? "null" : q.getClass()));
-
+    	
 		return service.listar(q, idAreaHosp, idServicio, idActividad, estado, pacMin, pacMax, page, size);
     }
-
-    
-    
-    
     
     /**
      * OBTENER POR ID
@@ -83,7 +94,31 @@ public class RendimientoHorarioController {
 
     /**
      * CREAR
-     */
+    */
+    @Operation(
+    		  summary = "Crear registro de rendimiento horario",
+    		  description = """
+    		  Crea un registro de rendimiento horario.
+    		  **Catálogos requeridos para el Formulario (combos):**
+    		  1) Área hospitalaria:
+    		     - PAQUETE : com.styp.cenate.api.entidad.AreaHospitalariaController
+    		     - `GET /api/areas-hospitalarias`
+    		     - value: `idAreaHosp`
+    		     - label: `descAreaHosp`
+    		  		
+    		  2) Servicio:
+    		     - `GET `
+
+    		  3) Actividad:
+    		     - `GET `
+
+    		  4) Subactividad:
+    		     - `GET `
+
+    		  """
+    		)
+    
+   
     @PostMapping
     public ResponseEntity<RendimientoHorarioResponse> crear(@RequestBody RendimientoHorarioRequest req) {
         RendimientoHorarioResponse created = service.crear(req);
@@ -106,4 +141,16 @@ public class RendimientoHorarioController {
         service.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }

@@ -23,7 +23,7 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 	@Override
 	public Page<RendimientoHorarioResponse> buscar(String q, Long idAreaHosp, Long idServicio, Long idActividad,
 			String estado, Integer pacMin, Integer pacMax, int page, int size) {
-		Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1),
+		Pageable pageable = PageRequest.of(Math.max(page, 0), capSize(size),
 				Sort.by(Sort.Direction.DESC, "id_rendimiento"));
 
 		return repo.buscar(nullIfBlank(q), idAreaHosp, idServicio, idActividad, normalizeEstado(estado), pacMin, pacMax,
@@ -33,9 +33,10 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 	@Override
 	public Page<RendimientoHorarioListadoRow> listar(String q, Long idAreaHosp, Long idServicio, Long idActividad,
 			String estado, Integer pacMin, Integer pacMax, int page, int size) {
-		q = (q == null) ? "" : q.trim();
-		Pageable pageable = PageRequest.of(Math.max(page, 0), Math.max(size, 1));
-		return repo.buscarConDescripciones(q, idAreaHosp, idServicio, idActividad, estado, pacMin, pacMax, pageable);
+		  q = normalizeQ(q);
+		Pageable pageable = PageRequest.of(Math.max(page, 0), capSize(size));
+		return repo.buscarConDescripciones(q, idAreaHosp, idServicio, idActividad, 
+				normalizeEstado(estado), pacMin, pacMax, pageable);
 	}
 
 	@Override
@@ -114,8 +115,8 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 
 		if (req.pacientesPorHora() == null)
 			throw new RuntimeException("pacientesPorHora es obligatorio");
-		if (req.pacientesPorHora() < 0)
-			throw new RuntimeException("pacientesPorHora no puede ser negativo");
+		if (req.pacientesPorHora() <= 0)
+			throw new RuntimeException("pacientesPorHora debe ser mayor a 0");
 
 		if (req.adicional() != null && req.adicional() < 0)
 			throw new RuntimeException("adicional no puede ser negativo");
@@ -136,5 +137,13 @@ public class RendimientoHorarioServiceImpl implements RendimientoHorarioService 
 			return null;
 		String x = estado.trim().toUpperCase();
 		return x.isEmpty() ? null : x;
+	}
+	private static String normalizeQ(String q) {
+	    return (q == null) ? "" : q.trim();
+	}
+
+	private static int capSize(int size) {
+	    int s = Math.max(size, 1);
+	    return Math.min(s, 100); // límite recomendado
 	}
 }
