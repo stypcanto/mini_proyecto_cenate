@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.17.2** (2026-01-04)
+> Sistema de Telemedicina - EsSalud | **v1.18.0** (2026-01-07)
 
 ---
 
@@ -30,6 +30,13 @@
 - **📋 Checklist Disponibilidad:** `checklist/03_Checklists/01_checklist_disponibilidad_v2.md` (Seguimiento de implementación)
 - **Solicitud Turnos IPRESS:** `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` (v1.2 - Independiente)
 - **Reporte Testing:** `checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md`
+
+### 👥 Módulos de Usuarios
+- **⭐ Personal Externo:** `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` (v1.18.0)
+  - Gestión de Modalidad de Atención (NUEVO)
+  - Página de Bienvenida Personalizada (NUEVO)
+  - Formulario de Diagnóstico
+  - Solicitud de Turnos
 
 ### 💾 Base de Datos
 - **Modelo Usuarios:** `spec/04_BaseDatos/01_modelo_usuarios/01_modelo_usuarios.md`
@@ -166,6 +173,7 @@ Password: @Cenate2025
 | **Tipos Profesionales** | Ver changelog v1.16.1 | ✅ Implementado |
 | **Navegación Dinámica de Pestañas** | Ver changelog v1.17.1 | ✅ Implementado |
 | **Creación de Usuarios con Email** | `plan/01_Seguridad_Auditoria/03_plan_unificacion_creacion_usuarios.md` | ✅ Implementado (v1.18.0) |
+| **Personal Externo (Gestión Modalidad + Bienvenida)** | `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` | ✅ Implementado (v1.18.0) |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
@@ -295,4 +303,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.17.1 | 2026-01-04*
+*Versión 1.18.0 | 2026-01-07*

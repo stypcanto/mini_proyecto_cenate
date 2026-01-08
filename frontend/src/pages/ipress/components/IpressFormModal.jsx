@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { X, Building2, Save, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
-import { ipressService } from '../../../services/ipressService';
+import ipressService from '../../../services/ipressService';
 
 const IpressFormModal = ({ ipress = null, redes = [], onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);

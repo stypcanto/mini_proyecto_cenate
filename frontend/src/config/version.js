@@ -4,10 +4,10 @@
  */
 
 export const VERSION = {
-  number: "1.15.11",
-  name: "Corrección Estados Dashboard",
-  date: "2026-01-02",
-  description: "Estados corregidos a: Enviados, En Proceso, Falta Enviar. Eliminado estado Firmados del dashboard por redes."
+  number: "1.18.0",
+  name: "Personal Externo: Gestión Modalidad + Bienvenida",
+  date: "2026-01-07",
+  description: "Implementado módulo de Personal Externo con: (1) Gestión de Modalidad de Atención (PATCH endpoint con validación MIXTA), (2) Página de Bienvenida Personalizada, (3) PATCH method en apiClient. Todas las funcionalidades testeadas y documentadas."
 };
 
 export const APP_INFO = {

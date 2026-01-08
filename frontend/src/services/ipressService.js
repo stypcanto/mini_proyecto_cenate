@@ -126,6 +126,36 @@ class IpressService {
       return [];
     }
   }
+
+  /**
+   * Obtener la IPRESS asignada al usuario logueado (Personal Externo)
+   * @returns {Promise<Object>} IPRESS del usuario
+   */
+  async obtenerMiIpress() {
+    try {
+      const response = await apiClient.get("/ipress/mi-ipress", true);
+      return response.data || response;
+    } catch (error) {
+      console.error("❌ Error al obtener mi IPRESS:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Actualizar modalidad de atención de la IPRESS del usuario logueado
+   * @param {Object} modalidadData - Datos de modalidad a actualizar
+   * @returns {Promise<Object>} IPRESS actualizada
+   */
+  async actualizarMiModalidad(modalidadData) {
+    try {
+      const response = await apiClient.patch("/ipress/mi-modalidad", modalidadData, true);
+      console.log("✅ Modalidad de atención actualizada exitosamente");
+      return response.data || response;
+    } catch (error) {
+      console.error("❌ Error al actualizar modalidad de atención:", error);
+      throw error;
+    }
+  }
 }
 
-export const ipressService = new IpressService();
+export default new IpressService();

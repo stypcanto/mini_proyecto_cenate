@@ -201,7 +201,7 @@ export const componentRegistry = {
   // 🌐 MÓDULO EXTERNO
   // ========================================================================
   '/roles/externo/bienvenida': {
-    component: lazy(() => import('../pages/user/UserDashboard')),
+    component: lazy(() => import('../pages/roles/externo/BienvenidaExterno')),
     requiredAction: 'ver',
   },
 
@@ -222,6 +222,11 @@ export const componentRegistry = {
 
   '/roles/externo/solicitud-turnos': {
     component: lazy(() => import('../pages/roles/externo/FormularioSolicitudTurnos')),
+    requiredAction: 'ver',
+  },
+
+  '/roles/externo/gestion-modalidad': {
+    component: lazy(() => import('../pages/roles/externo/GestionModalidadAtencion')),
     requiredAction: 'ver',
   },
 

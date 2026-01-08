@@ -130,12 +130,23 @@ export const apiClient = {
     }).then(handleResponse);
   },
 
+  patch: (endpoint, body, auth = false) => {
+    const url = buildUrl(endpoint);
+    console.log(`🚀 [PATCH] ${url}`, body);
+    const isFormData = body instanceof FormData;
+    return fetch(url, {
+      method: "PATCH",
+      headers: buildHeaders(auth, isFormData),
+      body: isFormData ? body : JSON.stringify(body),
+    }).then(handleResponse);
+  },
+
   delete: (endpoint, auth = false) => {
     const url = buildUrl(endpoint);
     console.log(`🚀 [DELETE] ${url}`);
-    return fetch(url, { 
-      method: "DELETE", 
-      headers: buildHeaders(auth) 
+    return fetch(url, {
+      method: "DELETE",
+      headers: buildHeaders(auth)
     }).then(handleResponse);
   },
 };

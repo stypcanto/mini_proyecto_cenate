@@ -10,14 +10,22 @@ import com.styp.cenate.dto.IpressRequest;
 import com.styp.cenate.dto.IpressResponse;
 import com.styp.cenate.dto.MacroregionResponse;
 import com.styp.cenate.dto.RedResponse;
+import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
 import com.styp.cenate.model.Ipress;
 import com.styp.cenate.model.Macroregion;
 import com.styp.cenate.model.ModalidadAtencion;
 import com.styp.cenate.model.Red;
+import com.styp.cenate.model.Usuario;
+import com.styp.cenate.model.PersonalExterno;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.ModalidadAtencionRepository;
 import com.styp.cenate.repository.RedRepository;
+import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.PersonalExternoRepository;
 import com.styp.cenate.service.ipress.IpressService;
+import com.styp.cenate.service.auditlog.AuditLogService;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.Authentication;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,6 +43,9 @@ public class IpressServiceImpl implements IpressService {
     private final IpressRepository ipressRepository;
     private final RedRepository redRepository;
     private final ModalidadAtencionRepository modalidadAtencionRepository;
+    private final UsuarioRepository usuarioRepository;
+    private final PersonalExternoRepository personalExternoRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     public List<IpressResponse> getAllIpress() {
@@ -185,6 +196,111 @@ public class IpressServiceImpl implements IpressService {
         // Eliminar
         ipressRepository.delete(ipress);
         log.info("IPRESS eliminada con éxito: {}", id);
+    }
+
+    // ===========================
+    // ACTUALIZAR MODALIDAD (Personal Externo)
+    // ===========================
+    @Override
+    @Transactional
+    public IpressResponse actualizarModalidadPorUsuarioActual(ActualizarModalidadIpressRequest request) {
+        log.info("Actualizando modalidad de atención para usuario logueado");
+
+        // Validar datos
+        request.validarDetallesMixta();
+
+        // Obtener usuario autenticado
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        // Buscar usuario por nombre de usuario
+        Usuario usuario = usuarioRepository.findByNameUser(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+
+        // Buscar PersonalExterno asociado
+        PersonalExterno personalExterno = personalExternoRepository.findByIdUser(usuario.getIdUser())
+                .orElseThrow(() -> new RuntimeException("Usuario no tiene rol de Personal Externo"));
+
+        // Verificar que tiene IPRESS asignada
+        if (personalExterno.getIpress() == null) {
+            throw new RuntimeException("Usuario no tiene IPRESS asignada");
+        }
+
+        // Obtener IPRESS
+        Ipress ipress = personalExterno.getIpress();
+        if (ipress == null) {
+            throw new RuntimeException("IPRESS no encontrada");
+        }
+
+        // Validar que la modalidad existe y está activa
+        ModalidadAtencion modalidad = modalidadAtencionRepository.findById(request.getIdModAten())
+                .orElseThrow(() -> new RuntimeException("Modalidad de atención no encontrada con ID: " + request.getIdModAten()));
+
+        if (!modalidad.isActiva()) {
+            throw new RuntimeException("Modalidad de atención no está activa");
+        }
+
+        // Actualizar modalidad y detalles
+        ipress.setModalidadAtencion(modalidad);
+
+        // Si es MIXTA, establecer detalles; si no, limpiar detalles
+        if (request.esModalidadMixta()) {
+            ipress.setDetallesTeleconsulta(request.getDetallesTeleconsulta().trim());
+            ipress.setDetallesTeleconsultorio(request.getDetallesTeleconsultorio().trim());
+        } else {
+            ipress.setDetallesTeleconsulta(null);
+            ipress.setDetallesTeleconsultorio(null);
+        }
+
+        // Guardar cambios
+        Ipress updated = ipressRepository.save(ipress);
+        log.info("Modalidad de IPRESS actualizada con éxito. ID IPRESS: {}, Nueva modalidad ID: {}",
+                updated.getIdIpress(), modalidad.getIdModAten());
+
+        // Registrar auditoría
+        auditLogService.registrarEvento(
+                username,
+                "ACTUALIZAR_MODALIDAD",
+                "GESTION_IPRESS_EXTERNO",
+                "Se actualizó la modalidad de atención de IPRESS ID: " + ipress.getIdIpress() +
+                " a modalidad ID: " + modalidad.getIdModAten(),
+                "INFO",
+                "SUCCESS"
+        );
+
+        return convertToResponse(updated);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public IpressResponse obtenerIpressPorUsuarioActual() {
+        log.info("Obteniendo IPRESS del usuario logueado");
+
+        // Obtener usuario autenticado
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String username = auth.getName();
+
+        // Buscar usuario por nombre de usuario
+        Usuario usuario = usuarioRepository.findByNameUser(username)
+                .orElseThrow(() -> new RuntimeException("Usuario no encontrado: " + username));
+
+        // Buscar PersonalExterno asociado
+        PersonalExterno personalExterno = personalExternoRepository.findByIdUser(usuario.getIdUser())
+                .orElseThrow(() -> new RuntimeException("Usuario no tiene rol de Personal Externo"));
+
+        // Verificar que tiene IPRESS asignada
+        if (personalExterno.getIpress() == null) {
+            throw new RuntimeException("Usuario no tiene IPRESS asignada");
+        }
+
+        // Obtener IPRESS
+        Ipress ipress = personalExterno.getIpress();
+        if (ipress == null) {
+            throw new RuntimeException("IPRESS no encontrada");
+        }
+
+        log.info("IPRESS obtenida para usuario: {}. IPRESS ID: {}", username, ipress.getIdIpress());
+        return convertToResponse(ipress);
     }
 
     /**

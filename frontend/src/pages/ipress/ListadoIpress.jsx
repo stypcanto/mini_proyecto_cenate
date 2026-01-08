@@ -14,7 +14,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import apiClient from "../../services/apiClient";
-import { ipressService } from "../../services/ipressService";
+import ipressService from "../../services/ipressService";
 import { useAuth } from "../../context/AuthContext";
 import IpressFormModal from "./components/IpressFormModal";
 import ConfirmDeleteIpressModal from "./components/ConfirmDeleteIpressModal";

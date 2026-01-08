@@ -14,6 +14,7 @@ import { Toaster } from "react-hot-toast";
 // 🌈 Contextos globales
 import { AuthProvider } from "./context/AuthContext";
 import { PermisosProvider } from "./context/PermisosContext";
+import { ToastProvider } from "./context/ToastContext";
 
 // 🧱 Layout y seguridad
 import AppLayout from "./components/AppLayout";
@@ -126,8 +127,10 @@ export default function App() {
       <AuthProvider>
         {/* 🛡️ Proveedor de permisos MBAC */}
         <PermisosProvider>
-          {/* 🔔 Notificaciones globales (estilo Apple / MBAC UI) */}
-          <Toaster
+          {/* 🔔 Proveedor de Toast Context */}
+          <ToastProvider>
+            {/* 🔔 Notificaciones globales (estilo Apple / MBAC UI) */}
+            <Toaster
             position="top-right"
             toastOptions={{
               duration: 3000,
@@ -143,8 +146,9 @@ export default function App() {
             }}
           />
 
-          {/* 🚏 Sistema de rutas MBAC */}
-          <AppRoutes />
+            {/* 🚏 Sistema de rutas MBAC */}
+            <AppRoutes />
+          </ToastProvider>
         </PermisosProvider>
       </AuthProvider>
     </BrowserRouter>

@@ -1,5 +1,4 @@
 package com.styp.cenate.api.entidad;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 
 import jakarta.validation.Valid;
@@ -10,6 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import com.styp.cenate.dto.IpressRequest;
 import com.styp.cenate.dto.IpressResponse;
+import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
 import com.styp.cenate.service.ipress.IpressService;
 
 import java.util.HashMap;
@@ -32,7 +32,6 @@ import java.util.Map;
         "http://10.0.89.13:5173",
         "http://10.0.89.239:5173"
 })
-@Data
 public class IpressController {
 
     private final IpressService ipressService;
@@ -74,21 +73,62 @@ public class IpressController {
     }
 
     // ============================================================
-    // 🔹 Obtener IPRESS por ID (PÚBLICO - respeta SecurityConfig)
-    // ============================================================
-    @GetMapping("/{id}")
-    public ResponseEntity<IpressResponse> getIpressById(@PathVariable Long id) {
-        log.info("🔍 Consultando IPRESS con ID: {}", id);
-        return ResponseEntity.ok(ipressService.getIpressById(id));
-    }
-
-    // ============================================================
     // 🔹 Buscar IPRESS por nombre (PÚBLICO - respeta SecurityConfig)
     // ============================================================
     @GetMapping("/buscar")
     public ResponseEntity<List<IpressResponse>> searchIpress(@RequestParam("q") String q) {
         log.info("🔎 Buscando IPRESS con término: {}", q);
         return ResponseEntity.ok(ipressService.searchIpress(q));
+    }
+
+    // ============================================================
+    // 🔹 Obtener IPRESS del usuario logueado (Personal Externo)
+    // ============================================================
+    /**
+     * GET /api/ipress/mi-ipress
+     * Obtiene la IPRESS asignada al usuario logueado
+     * Requiere rol: EXTERNO, ADMIN o SUPERADMIN
+     */
+    @GetMapping("/mi-ipress")
+    @PreAuthorize("hasAnyRole('INSTITUCION_EX', 'ADMIN', 'SUPERADMIN')")
+    public ResponseEntity<Map<String, Object>> obtenerMiIpress() {
+        log.info("📋 Obteniendo IPRESS del usuario logueado");
+        IpressResponse ipress = ipressService.obtenerIpressPorUsuarioActual();
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("data", ipress);
+        response.put("message", "IPRESS obtenida exitosamente");
+        return ResponseEntity.ok(response);
+    }
+
+    // ============================================================
+    // 🔹 Actualizar Modalidad de IPRESS (Personal Externo)
+    // ============================================================
+    /**
+     * PATCH /api/ipress/mi-modalidad
+     * Actualiza la modalidad de atención de la IPRESS del usuario logueado
+     * Requiere rol: EXTERNO, ADMIN o SUPERADMIN
+     */
+    @PatchMapping("/mi-modalidad")
+    @PreAuthorize("hasAnyRole('INSTITUCION_EX', 'ADMIN', 'SUPERADMIN')")
+    public ResponseEntity<Map<String, Object>> actualizarMiModalidad(
+            @Valid @RequestBody ActualizarModalidadIpressRequest request) {
+        log.info("✏️ Actualizando modalidad de IPRESS para usuario logueado");
+        IpressResponse ipress = ipressService.actualizarModalidadPorUsuarioActual(request);
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("data", ipress);
+        response.put("message", "Modalidad de atención actualizada exitosamente");
+        return ResponseEntity.ok(response);
+    }
+
+    // ============================================================
+    // 🔹 Obtener IPRESS por ID (PÚBLICO - respeta SecurityConfig)
+    // ============================================================
+    @GetMapping("/{id}")
+    public ResponseEntity<IpressResponse> getIpressById(@PathVariable Long id) {
+        log.info("🔍 Consultando IPRESS con ID: {}", id);
+        return ResponseEntity.ok(ipressService.getIpressById(id));
     }
 
     // ============================================================

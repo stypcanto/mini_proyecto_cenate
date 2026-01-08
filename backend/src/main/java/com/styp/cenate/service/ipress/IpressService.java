@@ -2,6 +2,7 @@ package com.styp.cenate.service.ipress;
 
 import com.styp.cenate.dto.IpressRequest;
 import com.styp.cenate.dto.IpressResponse;
+import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
 import java.util.List;
 
 /**
@@ -42,6 +43,19 @@ public interface IpressService {
      * @return IPRESS actualizada
      */
     IpressResponse updateIpress(Long id, IpressRequest request);
+
+    /**
+     * Actualiza la modalidad de atención de la IPRESS del usuario logueado (Personal Externo)
+     * @param request datos de modalidad a actualizar
+     * @return IPRESS actualizada
+     */
+    IpressResponse actualizarModalidadPorUsuarioActual(ActualizarModalidadIpressRequest request);
+
+    /**
+     * Obtiene la IPRESS asignada al usuario logueado (Personal Externo)
+     * @return IPRESS del usuario logueado
+     */
+    IpressResponse obtenerIpressPorUsuarioActual();
 
     // ===========================
     // ELIMINAR (DELETE)
