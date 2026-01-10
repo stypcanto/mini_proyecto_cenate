@@ -46,6 +46,8 @@ dependencies {
 
     // 🔹 ACTUATOR (para healthcheck y monitoreo Docker)
     implementation 'org.springframework.boot:spring-boot-starter-actuator'
+     // Micrometer + Prometheus 
+    implementation 'io.micrometer:micrometer-registry-prometheus'
 
     // 🔹 EMAIL (para notificaciones)
     implementation 'org.springframework.boot:spring-boot-starter-mail'

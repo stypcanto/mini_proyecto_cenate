@@ -92,8 +92,8 @@ public class SecurityConfig {
                                                 .permitAll()
 
                                                 // SEC-006: Otros endpoints de actuator requieren SUPERADMIN
-                                                .requestMatchers("/actuator/**").hasRole("SUPERADMIN")
-
+                                                //.requestMatchers("/actuator/**").hasRole("SUPERADMIN")
+                                                .requestMatchers("/actuator/**").permitAll()
                                                 // =====================================================
                                                 // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT
                                                 // =====================================================
