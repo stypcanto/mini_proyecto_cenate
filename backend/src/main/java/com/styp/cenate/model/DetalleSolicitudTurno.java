@@ -23,7 +23,7 @@ public class DetalleSolicitudTurno {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @EqualsAndHashCode.Include
+    //@EqualsAndHashCode.Include
     @Column(name = "id_detalle")
     private Long idDetalle;
 
@@ -47,6 +47,43 @@ public class DetalleSolicitudTurno {
 
     @Column(name = "observacion", columnDefinition = "TEXT")
     private String observacion;
+    
+    
+    /* INICIO CAMPOS NUEVOS AGREGADOS*/
+    
+    // =========================
+    // MAÑANA
+    // =========================
+    @Column(name = "manana_activa", nullable = false)
+    @Builder.Default
+    private Boolean mananaActiva = false;
+
+    /**
+     * Ej: "Lun,Mar,Mie"
+     */
+    @Column(name = "dias_manana", length = 100)
+    private String diasManana;
+
+    // =========================
+    // TARDE
+    // =========================
+    @Column(name = "tarde_activa", nullable = false)
+    @Builder.Default
+    private Boolean tardeActiva = false;
+
+    /**
+     * Ej: "Jue,Vie"
+     */
+    @Column(name = "dias_tarde", length = 100)
+    private String diasTarde;
+    
+    @Column(name = "requiere", nullable = false)
+    @Builder.Default
+    private Boolean requiere = false;
+    
+    /* FIN CAMPOS NUEVOS AGREGADOS*/
+    
+    
 
     @CreationTimestamp
     @Column(name = "created_at", updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")

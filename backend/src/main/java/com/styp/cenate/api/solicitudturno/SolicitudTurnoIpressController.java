@@ -160,6 +160,7 @@ public class SolicitudTurnoIpressController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<SolicitudTurnoIpressResponse> guardarBorrador(
             @Valid @RequestBody SolicitudTurnoIpressRequest request) {
+    	log.info("Datos del borrador : {}", request.toString());
         log.info("Guardando borrador para periodo: {}", request.getIdPeriodo());
         SolicitudTurnoIpressResponse response = solicitudService.guardarBorrador(request);
         return ResponseEntity.ok(response);

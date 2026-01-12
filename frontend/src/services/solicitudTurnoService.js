@@ -118,6 +118,9 @@ class SolicitudTurnoService {
    * @returns {Promise<Object>} Solicitud guardada
    */
   async guardarBorrador(solicitudData) {
+    console.log({
+      funcion: "guardarBorrador", datos: solicitudData
+    })
     try {
       const response = await apiClient.post("/solicitudes-turno/borrador", solicitudData, true);
       console.log("Borrador guardado exitosamente");

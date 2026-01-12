@@ -21,6 +21,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @Builder
 public class PeriodoSolicitudTurnoRequest {
+	
+
 
 	@NotBlank(message = "El periodo es obligatorio")
 	@Size(min = 6, max = 6, message = "El periodo debe tener formato YYYYMM")

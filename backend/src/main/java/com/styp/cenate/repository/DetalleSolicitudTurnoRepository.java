@@ -1,12 +1,15 @@
 package com.styp.cenate.repository;
 
-import com.styp.cenate.model.DetalleSolicitudTurno;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
+import com.styp.cenate.model.DetalleSolicitudTurno;
 
 /**
  * Repository para gestionar detalles de solicitudes de turnos.
@@ -14,7 +17,9 @@ import java.util.List;
 @Repository
 public interface DetalleSolicitudTurnoRepository extends JpaRepository<DetalleSolicitudTurno, Long> {
 
-    /**
+   
+    
+	 /**
      * Busca detalles por solicitud (usar findBySolicitudWithEspecialidad para ordenar por nombre)
      */
     List<DetalleSolicitudTurno> findBySolicitudIdSolicitud(Long idSolicitud);
@@ -89,4 +94,27 @@ public interface DetalleSolicitudTurnoRepository extends JpaRepository<DetalleSo
            "WHERE d.solicitud.idSolicitud = :idSolicitud " +
            "ORDER BY d.especialidad.descServicio")
     List<DetalleSolicitudTurno> findBySolicitudWithEspecialidad(@Param("idSolicitud") Long idSolicitud);
+    
+    
+
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
