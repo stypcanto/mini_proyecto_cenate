@@ -8,6 +8,9 @@
 // 4. Aprobar/rechazar solicitudes
 // ========================================================================
 
+
+// EPY-> NO OLVIDAR QUE ESTE COMPONENTE ES DONDE SE ACTIVA LOS PERIODOS
+
 import React, { useState, useEffect } from 'react';
 import {
   Calendar,
@@ -90,7 +93,7 @@ export default function GestionPeriodosTurnos() {
 
 const handleTogglePeriodo = async (periodo) => {
   try {
-    const nuevoEstado = (periodo.estado === "ACTIVO") ? "INACTIVO" : "ACTIVO";
+    const nuevoEstado = (periodo.estado === "ACTIVO") ? "CERRADO" : "ACTIVO";
     await periodoSolicitudService.cambiarEstado(periodo.idPeriodo, nuevoEstado);
     cargarPeriodos();
   } catch (err) {

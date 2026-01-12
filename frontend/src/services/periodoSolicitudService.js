@@ -65,8 +65,10 @@ class PeriodoSolicitudService {
    * @returns {Promise<Array>} Lista de periodos vigentes
    */
   async obtenerVigentes() {
+    console.log("*****************OBTENER VIGENTES******************");
     try {
       const data = await apiClient.get("/periodos-solicitud/vigentes", true);
+      console.log("DATA_PERIODO_VIGENTE",data );
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error("Error al obtener periodos vigentes:", error);

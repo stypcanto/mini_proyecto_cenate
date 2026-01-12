@@ -6,11 +6,11 @@ import java.time.LocalTime;
 
 public class DateTimeUtils {
 
-    public static LocalDateTime startOfDay(LocalDate date) {
-        return date.atStartOfDay();
-    }
+	public static LocalDateTime startOfDay(LocalDate date) {
+		return date.atStartOfDay();
+	}
 
-    public static LocalDateTime endOfDay(LocalDate date) {
-        return date.atTime(LocalTime.MAX);
-    }
+	public static LocalDateTime endOfDay(LocalDate date) {
+		return date.atTime(23, 59, 59);
+	}
 }

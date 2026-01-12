@@ -42,7 +42,7 @@ public class SolicitudTurnoIpressController {
      * Obtiene los datos de IPRESS del usuario actual
      */
     @GetMapping("/mi-ipress")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<MiIpressResponse> obtenerMiIpress() {
         log.info("Obteniendo datos de IPRESS del usuario actual");
         return ResponseEntity.ok(solicitudService.obtenerMiIpress());
@@ -56,7 +56,7 @@ public class SolicitudTurnoIpressController {
      * Lista las solicitudes del usuario actual
      */
     @GetMapping("/mis-solicitudes")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<List<SolicitudTurnoIpressResponse>> listarMisSolicitudes() {
         log.info("Listando solicitudes del usuario actual");
         return ResponseEntity.ok(solicitudService.listarMisSolicitudes());
@@ -66,7 +66,7 @@ public class SolicitudTurnoIpressController {
      * Obtiene la solicitud del usuario actual para un periodo
      */
     @GetMapping("/mi-solicitud/periodo/{idPeriodo}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<SolicitudTurnoIpressResponse> obtenerMiSolicitud(@PathVariable Long idPeriodo) {
         log.info("Obteniendo mi solicitud para periodo: {}", idPeriodo);
         SolicitudTurnoIpressResponse response = solicitudService.obtenerMiSolicitud(idPeriodo);
@@ -80,7 +80,7 @@ public class SolicitudTurnoIpressController {
      * Verifica si el usuario actual ya tiene solicitud en un periodo
      */
     @GetMapping("/periodo/{idPeriodo}/existe")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<Map<String, Boolean>> existeMiSolicitud(@PathVariable Long idPeriodo) {
         log.info("Verificando si existe solicitud para periodo: {}", idPeriodo);
         boolean existe = solicitudService.existeMiSolicitud(idPeriodo);
@@ -131,7 +131,7 @@ public class SolicitudTurnoIpressController {
      * Obtiene una solicitud por ID
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<SolicitudTurnoIpressResponse> obtenerPorId(@PathVariable Long id) {
         log.info("Obteniendo solicitud con ID: {}", id);
         return ResponseEntity.ok(solicitudService.obtenerPorIdConDetalles(id));
@@ -145,7 +145,7 @@ public class SolicitudTurnoIpressController {
      * Crea una nueva solicitud
      */
     @PostMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<SolicitudTurnoIpressResponse> crear(
             @Valid @RequestBody SolicitudTurnoIpressRequest request) {
         log.info("Creando nueva solicitud para periodo: {}", request.getIdPeriodo());
@@ -157,7 +157,7 @@ public class SolicitudTurnoIpressController {
      * Guarda como borrador (crea o actualiza)
      */
     @PostMapping("/borrador")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<SolicitudTurnoIpressResponse> guardarBorrador(
             @Valid @RequestBody SolicitudTurnoIpressRequest request) {
         log.info("Guardando borrador para periodo: {}", request.getIdPeriodo());
@@ -169,7 +169,7 @@ public class SolicitudTurnoIpressController {
      * Actualiza una solicitud existente
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<SolicitudTurnoIpressResponse> actualizar(
             @PathVariable Long id,
             @Valid @RequestBody SolicitudTurnoIpressRequest request) {
@@ -185,7 +185,7 @@ public class SolicitudTurnoIpressController {
      * Envia una solicitud
      */
     @PutMapping("/{id}/enviar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<SolicitudTurnoIpressResponse> enviar(@PathVariable Long id) {
         log.info("Enviando solicitud con ID: {}", id);
         return ResponseEntity.ok(solicitudService.enviar(id));

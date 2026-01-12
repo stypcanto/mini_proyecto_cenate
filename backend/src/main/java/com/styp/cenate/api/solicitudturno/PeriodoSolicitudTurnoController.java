@@ -52,7 +52,7 @@ public class PeriodoSolicitudTurnoController {
      * Lista periodos activos (para usuarios externos)
      */
     @GetMapping("/activos")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<List<PeriodoSolicitudTurnoResponse>> listarActivos() {
         log.info("Listando periodos activos");
         return ResponseEntity.ok(periodoService.listarActivos());
@@ -62,7 +62,7 @@ public class PeriodoSolicitudTurnoController {
      * Lista periodos vigentes (activos y dentro del rango de fechas)
      */
     @GetMapping("/vigentes")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<List<PeriodoSolicitudTurnoResponse>> listarVigentes() {
         log.info("Listando periodos vigentes");
         return ResponseEntity.ok(periodoService.listarVigentes());
@@ -76,7 +76,7 @@ public class PeriodoSolicitudTurnoController {
      * Obtiene un periodo por ID
      */
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
     public ResponseEntity<PeriodoSolicitudTurnoResponse> obtenerPorId(@PathVariable Long id) {
         log.info("Obteniendo periodo con ID: {}", id);
         return ResponseEntity.ok(periodoService.obtenerPorId(id));
