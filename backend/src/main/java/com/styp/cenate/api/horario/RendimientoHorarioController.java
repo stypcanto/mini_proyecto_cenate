@@ -21,6 +21,7 @@ import com.styp.cenate.service.horario.RendimientoHorarioService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -43,11 +44,19 @@ public class RendimientoHorarioController {
 	 */
 	@Operation(summary = "Listar sin descripcion de campos Rendimiento Horario", description = "Devuelve todos los rendimientos horarios")
 	@GetMapping
-	public Page<RendimientoHorarioResponse> listar(@RequestParam(required = false) String q,
-			@RequestParam(required = false) Long idAreaHosp, @RequestParam(required = false) Long idServicio,
-			@RequestParam(required = false) Long idActividad, @RequestParam(required = false) String estado,
-			@RequestParam(required = false) Integer pacMin, @RequestParam(required = false) Integer pacMax,
-			@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+	@ApiResponses({ @ApiResponse(responseCode = "200", description = "Listado paginado"),
+			@ApiResponse(responseCode = "400", description = "Parámetros inválidos", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Error interno", content = @Content) })
+	public Page<RendimientoHorarioResponse> listar(
+			@Parameter(description = "Búsqueda libre (texto/código)", example = "472") @RequestParam(required = false) String q,
+			@Parameter(description = "ID del Área Hospitalaria", example = "1") @RequestParam(required = false) Long idAreaHosp,
+			@Parameter(description = "ID del Servicio", example = "13") @RequestParam(required = false) Long idServicio,
+			@Parameter(description = "ID de la Actividad", example = "6") @RequestParam(required = false) Long idActividad,
+			@Parameter(description = "Estado (ej: A=Activo, I=Inactivo)", example = "A") @RequestParam(required = false) String estado,
+			@Parameter(description = "Pacientes mínimo", example = "2") @RequestParam(required = false) Integer pacMin,
+			@Parameter(description = "Pacientes máximo", example = "5") @RequestParam(required = false) Integer pacMax,
+			@Parameter(description = "Número de página (0..n)", example = "0") @RequestParam(defaultValue = "0") int page,
+			@Parameter(description = "Tamaño de página (recomendado <= 100)", example = "10") @RequestParam(defaultValue = "10") int size) {
 		return service.buscar(q, idAreaHosp, idServicio, idActividad, estado, pacMin, pacMax, page, size);
 	}
 
@@ -102,15 +111,20 @@ public class RendimientoHorarioController {
 			""")
 
 	@PostMapping
-	public ResponseEntity<RendimientoHorarioResponse> crear(@RequestBody RendimientoHorarioRequest req) {
+	public ResponseEntity<RendimientoHorarioResponse> crear(
+			@io.swagger.v3.oas.annotations.parameters.RequestBody(
+					description = "Datos para crear rendimiento horario", 
+					required = true, 
+					content = @Content(schema = @Schema(implementation = RendimientoHorarioRequest.class))) 
+			@RequestBody RendimientoHorarioRequest req) {
 		RendimientoHorarioResponse created = service.crear(req);
 		return ResponseEntity.status(HttpStatus.CREATED).body(created);
 	}
 
-	/**
-	 * ACTUALIZAR
-	 */
-	@Operation(summary = "Actualizar por id de rendimiento de horario", description = "")
+	@Operation(summary = "Actualizar por id de rendimiento de horario",	
+				description = """
+						Actualiza el registro existente. Debe existir el ID y los catálogos relacionados.
+						""")
 	@PutMapping("/{id}")
 	public RendimientoHorarioResponse actualizar(@PathVariable Long id, @RequestBody RendimientoHorarioRequest req) {
 		return service.actualizar(id, req);
@@ -120,17 +134,13 @@ public class RendimientoHorarioController {
 			Elimina el registro por ID.
 			Retorna **204 No Content** si se eliminó correctamente.
 			""")
-	@ApiResponses(
-			{ 
-				@ApiResponse(responseCode = "204", description = "Eliminado correctamente"),
-				@ApiResponse(responseCode = "404", description = "No existe el ID solicitado", content = @Content),
-				@ApiResponse(responseCode = "409", description = "Conflicto por integridad referencial (está en uso)", content = @Content),
-				@ApiResponse(responseCode = "500", description = "Error interno", content = @Content) 
-			})
+	@ApiResponses({ @ApiResponse(responseCode = "204", description = "Eliminado correctamente"),
+			@ApiResponse(responseCode = "404", description = "No existe el ID solicitado", content = @Content),
+			@ApiResponse(responseCode = "409", description = "Conflicto por integridad referencial (está en uso)", content = @Content),
+			@ApiResponse(responseCode = "500", description = "Error interno", content = @Content) })
 	@DeleteMapping("/{id}")
 	public ResponseEntity<Void> eliminar(
-			@Parameter(description = "ID del rendimiento horario", example = "10")
-			@PathVariable Long id) {
+			@Parameter(description = "ID del rendimiento horario", example = "10") @PathVariable Long id) {
 		service.eliminar(id);
 		return ResponseEntity.noContent().build();
 	}
