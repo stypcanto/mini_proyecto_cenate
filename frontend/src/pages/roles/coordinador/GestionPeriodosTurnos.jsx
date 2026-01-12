@@ -86,18 +86,18 @@ export default function GestionPeriodosTurnos() {
   // ============================================================
   // Acciones de períodos
   // ============================================================
-  const handleTogglePeriodo = async (periodo) => {
-    try {
-      if (periodo.estado === 'ACTIVO') {
-        await periodoSolicitudService.desactivar(periodo.idPeriodo);
-      } else {
-        await periodoSolicitudService.activar(periodo.idPeriodo);
-      }
-      cargarPeriodos();
-    } catch (err) {
-      window.alert('Error al cambiar estado del período');
-    }
-  };
+
+
+const handleTogglePeriodo = async (periodo) => {
+  try {
+    const nuevoEstado = (periodo.estado === "ACTIVO") ? "INACTIVO" : "ACTIVO";
+    await periodoSolicitudService.cambiarEstado(periodo.idPeriodo, nuevoEstado);
+    cargarPeriodos();
+  } catch (err) {
+    console.log(err);
+    window.alert('Error al cambiar estado del período');
+  }
+};
 
   const handleCrearPeriodo = async (nuevoPeriodo) => {
     try {

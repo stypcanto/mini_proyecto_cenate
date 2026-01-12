@@ -151,6 +151,7 @@ class PeriodoSolicitudService {
    */
   async cambiarEstado(id, nuevoEstado) {
     try {
+      console.log("cambiarEstado", id, nuevoEstado)
       const response = await apiClient.put(
         `/periodos-solicitud/${id}/estado`,
         { estado: nuevoEstado },
