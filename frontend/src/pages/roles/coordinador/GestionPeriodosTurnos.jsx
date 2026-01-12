@@ -101,6 +101,7 @@ export default function GestionPeriodosTurnos() {
 
   const handleCrearPeriodo = async (nuevoPeriodo) => {
     try {
+      console.log("**********************************");
       await periodoSolicitudService.crear(nuevoPeriodo);
       cargarPeriodos();
       setShowNuevoPeriodoModal(false);

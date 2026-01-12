@@ -158,7 +158,7 @@ export default function GestionPeriodosSolicitud() {
   // ============================================================
   const handleSave = async (e) => {
     e.preventDefault();
-
+    console.log("********************************");
     if (!formData.periodo.trim() || !formData.descripcion.trim()) {
       alert('El codigo y la descripcion del periodo son requeridos');
       return;

@@ -11,6 +11,31 @@ class PeriodoSolicitudService {
    * Obtener todos los periodos
    * @returns {Promise<Array>} Lista de periodos
    */
+
+
+  yyyymmFromYYYYMMDD(value) {
+    // value: "2026-01-01" -> "202601"
+    if (!value) return "";
+    const [y, m] = String(value).split("-");
+    return y && m ? `${y}${m}` : "";
+  }
+
+  mapToApiPayload(ui) {
+  const fechaInicio = ui.fechaInicio;
+  const fechaFin = ui.fechaFin;
+
+  const periodo = ui.periodo?.trim() || this.yyyymmFromYYYYMMDD(fechaInicio);
+
+  return {
+    periodo,
+    descripcion: ui.descripcion ?? "",
+    fechaInicio,   // YYYY-MM-DD
+    fechaFin,      // YYYY-MM-DD
+    instrucciones: ui.instrucciones ?? null
+  };
+}
+
+
   async obtenerTodos() {
     try {
       const data = await apiClient.get("/periodos-solicitud", true);
@@ -86,7 +111,11 @@ class PeriodoSolicitudService {
    */
   async crear(periodoData) {
     try {
-      const response = await apiClient.post("/periodos-solicitud", periodoData, true);
+      const payload = this.mapToApiPayload(periodoData);
+      console.log("Payload CREATE →", payload);
+
+
+      const response = await apiClient.post("/periodos-solicitud", payload, true);
       console.log("Periodo creado exitosamente");
       return response;
     } catch (error) {
@@ -103,7 +132,9 @@ class PeriodoSolicitudService {
    */
   async actualizar(id, periodoData) {
     try {
-      const response = await apiClient.put(`/periodos-solicitud/${id}`, periodoData, true);
+      const payload = this.mapToApiPayload(periodoData);
+      console.log("Payload UPDATE →", payload);
+      const response = await apiClient.put(`/periodos-solicitud/${id}`, payload, true);
       console.log(`Periodo ${id} actualizado exitosamente`);
       return response;
     } catch (error) {

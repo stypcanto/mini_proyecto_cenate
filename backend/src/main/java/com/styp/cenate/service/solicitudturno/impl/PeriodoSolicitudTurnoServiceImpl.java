@@ -1,19 +1,22 @@
 package com.styp.cenate.service.solicitudturno.impl;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.styp.cenate.dto.PeriodoSolicitudTurnoRequest;
 import com.styp.cenate.dto.PeriodoSolicitudTurnoResponse;
 import com.styp.cenate.model.PeriodoSolicitudTurno;
 import com.styp.cenate.repository.PeriodoSolicitudTurnoRepository;
 import com.styp.cenate.service.auditlog.AuditLogService;
 import com.styp.cenate.service.solicitudturno.PeriodoSolicitudTurnoService;
+import com.styp.cenate.utils.DateTimeUtils;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Implementacion del servicio de periodos de solicitud de turnos.
@@ -80,8 +83,8 @@ public class PeriodoSolicitudTurnoServiceImpl implements PeriodoSolicitudTurnoSe
         PeriodoSolicitudTurno periodo = PeriodoSolicitudTurno.builder()
                 .periodo(request.getPeriodo())
                 .descripcion(request.getDescripcion())
-                .fechaInicio(request.getFechaInicio())
-                .fechaFin(request.getFechaFin())
+                .fechaInicio(DateTimeUtils.startOfDay(request.getFechaInicio()))
+                .fechaFin(DateTimeUtils.endOfDay(request.getFechaFin()))
                 .instrucciones(request.getInstrucciones())
                 .estado("BORRADOR")
                 .createdBy(createdBy)
@@ -114,8 +117,8 @@ public class PeriodoSolicitudTurnoServiceImpl implements PeriodoSolicitudTurnoSe
         }
 
         periodo.setDescripcion(request.getDescripcion());
-        periodo.setFechaInicio(request.getFechaInicio());
-        periodo.setFechaFin(request.getFechaFin());
+        periodo.setFechaInicio(DateTimeUtils.startOfDay(request.getFechaInicio()));
+        periodo.setFechaFin(DateTimeUtils.endOfDay(request.getFechaFin()));
         periodo.setInstrucciones(request.getInstrucciones());
 
         periodo = periodoRepository.save(periodo);
