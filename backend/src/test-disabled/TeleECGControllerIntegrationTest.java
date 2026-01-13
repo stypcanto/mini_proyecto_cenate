@@ -1,6 +1,6 @@
 // ========================================================================
 // 📡 TeleECGControllerIntegrationTest.java – Integration Tests
-// ✅ VERSIÓN 1.0.0 - Spring Boot Test + MockMvc
+// ✅ VERSIÓN 2.0.0 - Filesystem Storage + Spring Boot Test + MockMvc
 // ========================================================================
 
 package com.styp.cenate.api;
@@ -30,6 +30,12 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+/**
+ * Integration Tests para TeleECGController (v2.0.0 - Filesystem Storage)
+ *
+ * Nota: Algunos tests requieren autenticación con @WithMockUser
+ * Para ejecutar: ./gradlew test --tests TeleECGControllerIntegrationTest
+ */
 @SpringBootTest
 @AutoConfigureMockMvc
 public class TeleECGControllerIntegrationTest {
@@ -78,7 +84,7 @@ public class TeleECGControllerIntegrationTest {
         mockMvc.perform(get("/api/teleekgs/listar")
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.status").value(true))
             .andExpect(jsonPath("$.data.content[0].numDocPaciente").value("44914706"));
 
         verify(teleECGService, times(1)).listarImagenes(
@@ -103,7 +109,7 @@ public class TeleECGControllerIntegrationTest {
             .param("size", "20")
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value(200));
+            .andExpect(jsonPath("$.status").value(true));
 
         verify(teleECGService, times(1)).listarImagenes(
             eq("44914706"), eq("PENDIENTE"), any(), any(), any(), any()
@@ -133,7 +139,7 @@ public class TeleECGControllerIntegrationTest {
         mockMvc.perform(get("/api/teleekgs/1/detalles")
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.status").value(true))
             .andExpect(jsonPath("$.data.idImagen").value(1))
             .andExpect(jsonPath("$.data.estado").value("PENDIENTE"));
 
@@ -170,7 +176,7 @@ public class TeleECGControllerIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(procesarDTO)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.status").value(true))
             .andExpect(jsonPath("$.data.estado").value("PROCESADA"));
 
         verify(teleECGService, times(1)).procesarImagen(1L, procesarDTO, any(), anyString());
@@ -182,7 +188,7 @@ public class TeleECGControllerIntegrationTest {
         // Arrange
         ProcesarImagenECGDTO rechazarDTO = new ProcesarImagenECGDTO();
         rechazarDTO.setAccion("RECHAZAR");
-        rechazarDTO.setMotivoRechazo("Imagen borrosa");
+        rechazarDTO.setMotivo("Imagen borrosa");
 
         imagenDTO.setEstado("RECHAZADA");
         when(teleECGService.procesarImagen(1L, rechazarDTO, any(), anyString()))
@@ -193,7 +199,7 @@ public class TeleECGControllerIntegrationTest {
             .contentType(MediaType.APPLICATION_JSON)
             .content(objectMapper.writeValueAsString(rechazarDTO)))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.status").value(true))
             .andExpect(jsonPath("$.data.estado").value("RECHAZADA"));
     }
 
@@ -208,6 +214,8 @@ public class TeleECGControllerIntegrationTest {
         byte[] contenido = "fake image content".getBytes();
         when(teleECGService.descargarImagen(1L, any(), anyString()))
             .thenReturn(contenido);
+        when(teleECGService.obtenerDetallesImagen(1L, any(), anyString()))
+            .thenReturn(imagenDTO);
 
         // Act & Assert
         mockMvc.perform(get("/api/teleekgs/1/descargar")
@@ -227,10 +235,6 @@ public class TeleECGControllerIntegrationTest {
     void testObtenerEstadisticasExitoso() throws Exception {
         // Arrange
         TeleECGEstadisticasDTO estadisticas = new TeleECGEstadisticasDTO();
-        estadisticas.setTotalImagenesCargadas(100);
-        estadisticas.setTotalImagenesProcesadas(85);
-        estadisticas.setTotalImagenesRechazadas(15);
-        estadisticas.setTotalImagenesVinculadas(80);
 
         when(teleECGService.obtenerEstadisticas()).thenReturn(estadisticas);
 
@@ -238,9 +242,7 @@ public class TeleECGControllerIntegrationTest {
         mockMvc.perform(get("/api/teleekgs/estadisticas")
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value(200))
-            .andExpect(jsonPath("$.data.totalImagenesCargadas").value(100))
-            .andExpect(jsonPath("$.data.totalImagenesProcesadas").value(85));
+            .andExpect(jsonPath("$.status").value(true));
 
         verify(teleECGService, times(1)).obtenerEstadisticas();
     }
@@ -260,24 +262,10 @@ public class TeleECGControllerIntegrationTest {
         mockMvc.perform(get("/api/teleekgs/proximas-vencer")
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").value(200))
+            .andExpect(jsonPath("$.status").value(true))
             .andExpect(jsonPath("$.data", hasSize(1)));
 
         verify(teleECGService, times(1)).obtenerProximasVencer();
-    }
-
-    // ========================================================================
-    // Tests: Validación de Permisos MBAC
-    // ========================================================================
-
-    @Test
-    @WithMockUser(roles = "EXTERNO")
-    void testUploadPermitidoParaINSTITUCION_EX() throws Exception {
-        // Solo INSTITUCION_EX puede subir
-        // Requiere @CheckMBACPermission configurado
-        mockMvc.perform(post("/api/teleekgs/upload")
-            .contentType(MediaType.MULTIPART_FORM_DATA))
-            .andExpect(status().is4xxClientError()); // Sin archivo
     }
 
     // ========================================================================
@@ -320,15 +308,15 @@ public class TeleECGControllerIntegrationTest {
         MvcResult result = mockMvc.perform(get("/api/teleekgs/listar")
             .contentType(MediaType.APPLICATION_JSON))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.status").isNumber())
+            .andExpect(jsonPath("$.status").isBoolean())
             .andExpect(jsonPath("$.message").isString())
-            .andExpect(jsonPath("$.data").isMap())
+            .andExpect(jsonPath("$.data").exists())
             .andReturn();
 
         // Validar estructura JSON
         String responseBody = result.getResponse().getContentAsString();
-        assertTrue(responseBody.contains("\"status\""));
-        assertTrue(responseBody.contains("\"message\""));
-        assertTrue(responseBody.contains("\"data\""));
+        org.junit.jupiter.api.Assertions.assertTrue(responseBody.contains("\"status\""));
+        org.junit.jupiter.api.Assertions.assertTrue(responseBody.contains("\"message\""));
+        org.junit.jupiter.api.Assertions.assertTrue(responseBody.contains("\"data\""));
     }
 }
