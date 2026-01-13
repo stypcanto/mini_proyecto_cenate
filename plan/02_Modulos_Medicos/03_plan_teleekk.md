@@ -36,7 +36,7 @@
 #### 1. Nuevas Entidades JPA
 
 ```java
-// TeleEKG - Imagen ECG
+// TeleEKG - Imagen ECG (ALMACENAMIENTO EN BD)
 @Entity
 @Table(name = "tele_ecg_imagenes")
 public class TeleECGImagen {
@@ -57,20 +57,25 @@ public class TeleECGImagen {
     @JoinColumn(name = "id_usuario_paciente", nullable = true)
     private Usuario usuarioPaciente; // FK a usuario (si existe)
 
-    @Column(name = "nombre_archivo", nullable = false)
-    private String nombreArchivo;    // ej: paciente_12345678_20260113_001.jpg
+    // ✅ NUEVO: Imagen almacenada en BD (BYTEA)
+    @Column(name = "contenido_imagen", nullable = false, columnDefinition = "bytea")
+    private byte[] contenidoImagen;  // Archivo JPEG/PNG como bytes
 
-    @Column(name = "ruta_archivo", nullable = false)
-    private String rutaArchivo;      // /app/uploads/teleekgs/2026-01/...
+    @Column(name = "nombre_archivo", nullable = false)
+    private String nombreArchivo;    // ej: paciente_12345678_1704984600000.jpg
 
     @Column(name = "tipo_contenido", nullable = false)
     private String tipoContenido;    // image/jpeg, image/png
 
     @Column(name = "tamanio_bytes")
-    private Long tamanioByt es;      // Tamaño en bytes
+    private Long tamanioByte s;      // Tamaño en bytes
 
     @Column(name = "hash_archivo")
     private String hashArchivo;      // SHA256 para integridad
+
+    @Column(name = "fecha_expiracion")
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date fechaExpiracion;    // 30 días desde fecha_envio (para limpieza)
 
     @ManyToOne
     @JoinColumn(name = "id_ipress_origen", nullable = false)
