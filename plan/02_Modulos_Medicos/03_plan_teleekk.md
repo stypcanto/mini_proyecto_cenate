@@ -219,8 +219,11 @@ public class TeleECGService {
     @Value("${app.teleecg.upload-dir:/app/uploads/teleekgs}")
     private String uploadDir;
 
-    @Value("${app.teleecg.max-file-size:10485760}") // 10MB
+    @Value("${app.teleecg.max-file-size:5242880}") // 5MB (CONFIRMADO)
     private Long maxFileSize;
+
+    @Value("${app.teleecg.retention-days:30}") // 1 mes (CONFIRMADO)
+    private Integer retentionDays;
 
     /**
      * Subir imagen ECG desde IPRESS externa
