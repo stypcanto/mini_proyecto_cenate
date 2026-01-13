@@ -124,7 +124,7 @@ public class TeleECGEstadisticasDTO {
      * Cálculo: (procesadas / cargadas) * 100
      */
     @JsonProperty("tasa_procesamiento_porcentaje")
-    private Double tasaProcesamiento Porcentaje;
+    private Double tasaProcesamientoPorcentaje;
 
     /**
      * Porcentaje de pendientes

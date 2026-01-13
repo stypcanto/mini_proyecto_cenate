@@ -463,7 +463,7 @@ public class TeleECGService {
                 (dto.getTotalImagenesVinculadas().doubleValue() /
                  (dto.getTotalImagenesProcesadas() > 0 ? dto.getTotalImagenesProcesadas() : 1)) * 100
             );
-            dto.setTasaProcesamiento Porcentaje(
+            dto.setTasaProcesamientoPorcentaje(
                 ((dto.getTotalImagenesProcesadas() + dto.getTotalImagenesRechazadas()).doubleValue() /
                  dto.getTotalImagenesCargadas()) * 100
             );
