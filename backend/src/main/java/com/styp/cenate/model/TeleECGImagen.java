@@ -11,7 +11,8 @@ import java.time.LocalDateTime;
  * Entidad para almacenar electrocardiogramas enviados por IPRESS externas
  *
  * Características:
- * - Almacenamiento de imágenes JPEG/PNG en formato BYTEA (máximo 5MB)
+ * - Almacenamiento de imágenes JPEG/PNG en filesystem (/opt/cenate/teleekgs/)
+ * - Metadata de almacenamiento: storage_tipo, storage_ruta, sha256, etc
  * - Retención automática: 30 días desde fecha de envío
  * - Vinculación con pacientes (asegurados) por DNI
  * - Auditoría completa de accesos y cambios
@@ -24,7 +25,7 @@ import java.time.LocalDateTime;
  * - VINCULADA: Vinculada a un usuario del sistema
  *
  * @author Styp Canto Rondón
- * @version 1.0.0
+ * @version 2.0.0 - Migración a Filesystem Storage
  * @since 2026-01-13
  */
 @Entity
@@ -77,45 +78,73 @@ public class TeleECGImagen {
     private Usuario usuarioPaciente;
 
     /**
-     * CONTENIDO BINARIO DE LA IMAGEN
-     * Almacena la imagen JPEG/PNG en formato BYTEA (bytes)
-     * Máximo: 5MB (5242880 bytes)
-     * Las constraints CHECK en BD validan el tamaño
+     * TIPO DE ALMACENAMIENTO
+     * FILESYSTEM: Almacenamiento local en /opt/cenate/teleekgs/
+     * S3: Amazon S3 (futuro)
+     * MINIO: MinIO compatible S3 (futuro)
      */
-    @Column(name = "contenido_imagen", nullable = false, columnDefinition = "bytea")
-    private byte[] contenidoImagen;
+    @Column(name = "storage_tipo", nullable = false, length = 20)
+    private String storageTipo = "FILESYSTEM";
 
     /**
-     * Nombre original del archivo JPEG/PNG
-     * Ej: "paciente_12345678_20260113.jpg"
+     * RUTA COMPLETA DEL ARCHIVO
+     * Ejemplo: /opt/cenate/teleekgs/2026/01/13/IPRESS_001/12345678_20260113_143052_a7f3.jpg
+     * Estructura: {basePath}/YYYY/MM/DD/IPRESS_XXX/DNI_YYYYMMDD_HHMMSS_XXXX.ext
+     */
+    @Column(name = "storage_ruta", nullable = false, length = 500)
+    private String storageRuta;
+
+    /**
+     * BUCKET para S3/MinIO (NULL para FILESYSTEM local)
+     */
+    @Column(name = "storage_bucket", length = 100)
+    private String storageBucket;
+
+    /**
+     * NOMBRE DEL ARCHIVO GENERADO
+     * Formato: DNI_YYYYMMDD_HHMMSS_XXXX.ext
+     * Ejemplo: 12345678_20260113_143052_a7f3.jpg
      */
     @Column(name = "nombre_archivo", nullable = false, length = 255)
     private String nombreArchivo;
 
     /**
-     * Tipo MIME del archivo
-     * Valores válidos: image/jpeg, image/png
-     * Validado tanto en frontend como en backend
+     * NOMBRE ORIGINAL del archivo como fue subido por IPRESS
+     * Ejemplo: paciente_juan_ecg.jpg
      */
-    @Column(name = "tipo_contenido", nullable = false, length = 50)
-    private String tipoContenido;
+    @Column(name = "nombre_original", length = 255)
+    private String nombreOriginal;
 
     /**
-     * Tamaño del archivo en bytes
+     * EXTENSIÓN del archivo (sin punto)
+     * Valores: jpg, png
+     */
+    @Column(name = "extension", length = 10)
+    private String extension;
+
+    /**
+     * TIPO MIME del archivo
+     * Valores válidos: image/jpeg, image/png
+     */
+    @Column(name = "mime_type", nullable = false, length = 50)
+    private String mimeType;
+
+    /**
+     * TAMAÑO DEL ARCHIVO en bytes
      * Máximo permitido: 5242880 bytes (5MB)
      */
-    @Column(name = "tamanio_bytes")
-    private Long tamanioByte;
+    @Column(name = "size_bytes", nullable = false)
+    private Long sizeBytes;
 
     /**
-     * Hash SHA256 del archivo
+     * HASH SHA256 del archivo (64 caracteres hexadecimales)
      * Útil para:
      * - Verificar integridad del archivo
      * - Detectar duplicados
      * - Auditoría criptográfica
      */
-    @Column(name = "hash_archivo", length = 64)
-    private String hashArchivo;
+    @Column(name = "sha256", nullable = false, length = 64)
+    private String sha256;
 
     /**
      * IPRESS que envió el ECG
