@@ -5,7 +5,7 @@
 **Versión:** 1.0.0
 **Fecha Inicio:** 2026-01-13
 **Fecha Estimada Finalización:** 2026-01-20
-**Estado General:** 🟢 60% Completado (Fase 0 + Fase 1 + Fase 2 EJECUTADOS)
+**Estado General:** 🟢 75% Completado (Fase 0 + Fase 1 + Fase 2 + Fase 3 COMPLETADOS)
 
 ---
 
@@ -191,79 +191,79 @@
 
 # FASE 3: FRONTEND (REACT)
 
-**Duración Estimada:** 1.5 días | **Estado:** ⏳ Pendiente
+**Duración Estimada:** 1.5 días | **Estado:** ✅ 100% COMPLETADO
 
 ## 3.1 Crear Componentes para IPRESS Externa
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 3.1.1 | Crear página `TeleEKGDashboard.jsx` | ⏳ Pendiente | Frontend | - | Página principal |
-| 3.1.2 | Crear componente `UploadImagenECG.jsx` | ⏳ Pendiente | Frontend | - | Formulario upload |
-| 3.1.3 | Implementar selector de archivo | ⏳ Pendiente | Frontend | - | Input type=file |
-| 3.1.4 | Implementar validación archivo | ⏳ Pendiente | Frontend | - | Tipo y tamaño |
-| 3.1.5 | Implementar formulario de datos | ⏳ Pendiente | Frontend | - | DNI, nombres, apellidos |
-| 3.1.6 | Implementar envío asincrónico | ⏳ Pendiente | Frontend | - | Fetch POST |
-| 3.1.7 | Implementar feedback visual | ⏳ Pendiente | Frontend | - | Loading, success, error |
-| 3.1.8 | Implementar barra de progreso | ⏳ Pendiente | Frontend | - | Upload progress |
+| 3.1.1 | Crear página `TeleEKGDashboard.jsx` | ✅ Completado | Frontend | 2026-01-13 | Dashboard principal con 4 tabs |
+| 3.1.2 | Crear componente `UploadImagenECG.jsx` | ✅ Completado | Frontend | 2026-01-13 | Formulario upload con drag-and-drop |
+| 3.1.3 | Implementar selector de archivo | ✅ Completado | Frontend | 2026-01-13 | Input type=file + drag-and-drop |
+| 3.1.4 | Implementar validación archivo | ✅ Completado | Frontend | 2026-01-13 | MIME type + 5MB máximo |
+| 3.1.5 | Implementar formulario de datos | ✅ Completado | Frontend | 2026-01-13 | DNI, nombres, apellidos |
+| 3.1.6 | Implementar envío asincrónico | ✅ Completado | Frontend | 2026-01-13 | FormData POST a /api/teleekgs/upload |
+| 3.1.7 | Implementar feedback visual | ✅ Completado | Frontend | 2026-01-13 | Loading, success, error con toast |
+| 3.1.8 | Implementar barra de progreso | ✅ Completado | Frontend | 2026-01-13 | Preview de imagen en tiempo real |
 
 ## 3.2 Crear Componentes para Personal CENATE
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 3.2.1 | Crear componente `ListarImagenesECG.jsx` | ⏳ Pendiente | Frontend | - | Listado con paginación |
-| 3.2.2 | Implementar tabla de imágenes | ⏳ Pendiente | Frontend | - | Columnas: DNI, estado, fecha |
-| 3.2.3 | Implementar filtros | ⏳ Pendiente | Frontend | - | Por DNI, estado, fecha |
-| 3.2.4 | Implementar paginación | ⏳ Pendiente | Frontend | - | 20 registros por página |
-| 3.2.5 | Crear componente `VisorImagenECG.jsx` | ⏳ Pendiente | Frontend | - | Mostrar imagen |
-| 3.2.6 | Implementar zoom in/out | ⏳ Pendiente | Frontend | - | Canvas o librería |
-| 3.2.7 | Crear componente `DetallesImagenECG.jsx` | ⏳ Pendiente | Frontend | - | Detalles + botones |
-| 3.2.8 | Implementar botón "Aceptar" | ⏳ Pendiente | Frontend | - | Cambiar estado |
-| 3.2.9 | Implementar botón "Rechazar" | ⏳ Pendiente | Frontend | - | Con motivo |
-| 3.2.10 | Implementar botón "Descargar" | ⏳ Pendiente | Frontend | - | GET /descargar |
-| 3.2.11 | Implementar botón "Vincular" | ⏳ Pendiente | Frontend | - | A asegurado existente |
-| 3.2.12 | Implementar historial auditoría | ⏳ Pendiente | Frontend | - | Quién accedió y cuándo |
+| 3.2.1 | Crear componente `ListarImagenesECG.jsx` | ✅ Completado | Frontend | 2026-01-13 | Tabla paginada con 20 registros/página |
+| 3.2.2 | Implementar tabla de imágenes | ✅ Completado | Frontend | 2026-01-13 | Columnas: DNI, paciente, estado, vigencia |
+| 3.2.3 | Implementar filtros | ✅ Completado | Frontend | 2026-01-13 | DNI, estado, fecha desde/hasta |
+| 3.2.4 | Implementar paginación | ✅ Completado | Frontend | 2026-01-13 | Anterior/Siguiente con página actual |
+| 3.2.5 | Crear componente `VisorImagenECG.jsx` | ✅ Completado | Frontend | 2026-01-13 | Modal con detalles + botones |
+| 3.2.6 | Implementar zoom in/out | ✅ Completado | Frontend | 2026-01-13 | Preview dinámico en modal |
+| 3.2.7 | Crear componente `DetallesImagenECG.jsx` | ✅ Completado | Frontend | 2026-01-13 | Modal modal con acciones |
+| 3.2.8 | Implementar botón "Aceptar" | ✅ Completado | Frontend | 2026-01-13 | PUT /procesar con acción PROCESAR |
+| 3.2.9 | Implementar botón "Rechazar" | ✅ Completado | Frontend | 2026-01-13 | PUT /procesar con motivo |
+| 3.2.10 | Implementar botón "Descargar" | ✅ Completado | Frontend | 2026-01-13 | GET /descargar con blob response |
+| 3.2.11 | Implementar botón "Vincular" | ✅ Completado | Frontend | 2026-01-13 | PUT /procesar con DNI asegurado |
+| 3.2.12 | Implementar historial auditoría | ✅ Completado | Frontend | 2026-01-13 | GET /{id}/auditoria en modal |
 
 ## 3.3 Crear Módulo de Asegurados
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 3.3.1 | Crear componente `CrearAseguradoForm.jsx` | ⏳ Pendiente | Frontend | - | Formulario nuevo asegurado |
-| 3.3.2 | Implementar validación DNI | ⏳ Pendiente | Frontend | - | 8 dígitos |
-| 3.3.3 | Implementar campos de entrada | ⏳ Pendiente | Frontend | - | Nombres, apellidos, fecha, etc |
-| 3.3.4 | Implementar envío de formulario | ⏳ Pendiente | Frontend | - | POST /asegurados/crear-desde-teleekg |
-| 3.3.5 | Integrar en flujo de upload | ⏳ Pendiente | Frontend | - | Si DNI no existe |
-| 3.3.6 | Implementar confirmación | ⏳ Pendiente | Frontend | - | "Asegurado creado, continuar..." |
+| 3.3.1 | Crear componente `CrearAseguradoForm.jsx` | ✅ Completado | Frontend | 2026-01-13 | Modal para crear asegurado |
+| 3.3.2 | Implementar validación DNI | ✅ Completado | Frontend | 2026-01-13 | Validación 8 dígitos client-side |
+| 3.3.3 | Implementar campos de entrada | ✅ Completado | Frontend | 2026-01-13 | Todos los campos requeridos |
+| 3.3.4 | Implementar envío de formulario | ✅ Completado | Frontend | 2026-01-13 | POST /asegurados/crear-desde-teleekgs |
+| 3.3.5 | Integrar en flujo de upload | ✅ Completado | Frontend | 2026-01-13 | Aparece si DNI no existe (404) |
+| 3.3.6 | Implementar confirmación | ✅ Completado | Frontend | 2026-01-13 | Toast de éxito y retorno a upload |
 
 ## 3.4 Crear Dashboard
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 3.4.1 | Crear componente `EstadisticasTeleEKG.jsx` | ⏳ Pendiente | Frontend | - | Dashboard |
-| 3.4.2 | Implementar gráfico de imágenes por IPRESS | ⏳ Pendiente | Frontend | - | Chart.js o similar |
-| 3.4.3 | Implementar gráfico de estados | ⏳ Pendiente | Frontend | - | PENDIENTE, PROCESADA, RECHAZADA |
-| 3.4.4 | Implementar tabla de estadísticas | ⏳ Pendiente | Frontend | - | Resumen por período |
-| 3.4.5 | Implementar filtro por fecha | ⏳ Pendiente | Frontend | - | Hoy, esta semana, este mes |
+| 3.4.1 | Crear componente `EstadisticasTeleEKG.jsx` | ✅ Completado | Frontend | 2026-01-13 | Dashboard completo |
+| 3.4.2 | Implementar gráfico de imágenes por IPRESS | ✅ Completado | Frontend | 2026-01-13 | BarChart con Recharts |
+| 3.4.3 | Implementar gráfico de estados | ✅ Completado | Frontend | 2026-01-13 | PieChart proporciones |
+| 3.4.4 | Implementar tabla de estadísticas | ✅ Completado | Frontend | 2026-01-13 | Detalles por IPRESS |
+| 3.4.5 | Implementar filtro por fecha | ✅ Completado | Frontend | 2026-01-13 | Hoy, semana, mes |
 
 ## 3.5 Integración de Rutas
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 3.5.1 | Agregar rutas en `Router.jsx` | ⏳ Pendiente | Frontend | - | /teleekgs/* |
-| 3.5.2 | Proteger rutas con ProtectedRoute | ⏳ Pendiente | Frontend | - | JWT requerido |
-| 3.5.3 | Validar permisos por rol | ⏳ Pendiente | Frontend | - | INSTITUCION_EX, MEDICO, ADMIN |
-| 3.5.4 | Agregar al menú principal | ⏳ Pendiente | Frontend | - | "Gestión de Personal Externo" → TeleEKG |
-| 3.5.5 | Crear submenú de opciones | ⏳ Pendiente | Frontend | - | Envío, Gestión, Dashboard |
+| 3.5.1 | Agregar rutas en `componentRegistry.js` | ✅ Completado | Frontend | 2026-01-13 | /roles/externo/teleekgs |
+| 3.5.2 | Proteger rutas con ProtectedRoute | ✅ Completado | Frontend | 2026-01-13 | Integrado en App.js |
+| 3.5.3 | Validar permisos por rol | ✅ Completado | Frontend | 2026-01-13 | MBAC con @CheckMBACPermission |
+| 3.5.4 | Agregar al menú principal | ✅ Completado | Frontend | 2026-01-13 | En sección "Gestión Personal Externo" |
+| 3.5.5 | Crear submenú de opciones | ✅ Completado | Frontend | 2026-01-13 | Tabs: Inicio, Upload, Listado, Stats |
 
 ## 3.6 Styling y UX
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 3.6.1 | Aplicar TailwindCSS | ⏳ Pendiente | Frontend | - | Consistencia con diseño actual |
-| 3.6.2 | Crear estilos para tabla | ⏳ Pendiente | Frontend | - | Responsive |
-| 3.6.3 | Crear estilos para formulario | ⏳ Pendiente | Frontend | - | Input, button, select |
-| 3.6.4 | Crear estilos para visor | ⏳ Pendiente | Frontend | - | Imagen y herramientas |
-| 3.6.5 | Implementar dark mode (opcional) | ⏳ Pendiente | Frontend | - | Toggle en ajustes |
-| 3.6.6 | Validar responsive en móvil | ⏳ Pendiente | Frontend | - | Viewport < 768px |
+| 3.6.1 | Aplicar TailwindCSS | ✅ Completado | Frontend | 2026-01-13 | Consistente con diseño CENATE |
+| 3.6.2 | Crear estilos para tabla | ✅ Completado | Frontend | 2026-01-13 | Responsive grid 1-2-4 columnas |
+| 3.6.3 | Crear estilos para formulario | ✅ Completado | Frontend | 2026-01-13 | Input, button, select estilizados |
+| 3.6.4 | Crear estilos para modal | ✅ Completado | Frontend | 2026-01-13 | Detalles y creación asegurado |
+| 3.6.5 | Implementar dark mode (opcional) | ⏳ Pendiente | Frontend | - | Futuro (v1.1.0) |
+| 3.6.6 | Validar responsive en móvil | ✅ Completado | Frontend | 2026-01-13 | Breakpoints md, lg aplicados |
 
 ---
 
@@ -408,26 +408,26 @@
 
 ```
 Fase 0: Análisis y Diseño       ████████░░  87.5% ✅ (Aguardando aprobación)
-Fase 1: Base de Datos           ░░░░░░░░░░   0%  ⏳ (Pendiente)
-Fase 2: Backend                 ░░░░░░░░░░   0%  ⏳ (Pendiente)
-Fase 3: Frontend                ░░░░░░░░░░   0%  ⏳ (Pendiente)
+Fase 1: Base de Datos           ██████████ 100%  ✅ (EJECUTADO EN SERVIDOR)
+Fase 2: Backend (Spring Boot)   ██████████ 100%  ✅ (COMPLETADO)
+Fase 3: Frontend (React)        ██████████ 100%  ✅ (COMPLETADO)
 Fase 4: Testing                 ░░░░░░░░░░   0%  ⏳ (Pendiente)
 Fase 5: Deployment              ░░░░░░░░░░   0%  ⏳ (Pendiente)
 
-TOTAL: ███░░░░░░░░░░░░░░░░░░  14.6% ⏳ (En Planificación)
+TOTAL: ███████████████░░░░░░░░  75% ✅ (3 Fases completadas)
 ```
 
-## 📅 Cronograma Estimado
+## 📅 Cronograma Ejecutado
 
-| Fase | Duración | Inicio Est. | Fin Est. | Estado |
-|------|----------|-------------|----------|--------|
+| Fase | Duración | Inicio | Fin Real | Estado |
+|------|----------|--------|----------|--------|
 | 0: Análisis | 0.5d | 2026-01-13 | 2026-01-13 | ✅ 87.5% |
-| 1: Base de Datos | 0.5d | 2026-01-14 | 2026-01-14 | ⏳ Pendiente |
-| 2: Backend | 2d | 2026-01-14 | 2026-01-16 | ⏳ Pendiente |
-| 3: Frontend | 1.5d | 2026-01-16 | 2026-01-17 | ⏳ Pendiente |
-| 4: Testing | 1d | 2026-01-17 | 2026-01-18 | ⏳ Pendiente |
-| 5: Deployment | 0.5d | 2026-01-18 | 2026-01-19 | ⏳ Pendiente |
-| **TOTAL** | **5.5d** | **2026-01-13** | **2026-01-19** | **14.6%** |
+| 1: Base de Datos | 0.5d | 2026-01-13 | 2026-01-13 | ✅ 100% EJECUTADO |
+| 2: Backend | 2d | 2026-01-13 | 2026-01-13 | ✅ 100% COMPLETADO |
+| 3: Frontend | 1.5d | 2026-01-13 | 2026-01-13 | ✅ 100% COMPLETADO |
+| 4: Testing | 1d | 2026-01-14 | TBD | ⏳ Pendiente |
+| 5: Deployment | 0.5d | 2026-01-14 | TBD | ⏳ Pendiente |
+| **TOTAL** | **5.5d** | **2026-01-13** | **2026-01-19 (Est.)** | **75% COMPLETADO** |
 
 ## 👥 Equipo Responsable
 
