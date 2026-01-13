@@ -170,8 +170,16 @@ public class TeleECGController {
                 id, idUsuario, request.getRemoteAddr()
             );
 
+            // Obtener metadata para headers correctos
+            TeleECGImagenDTO imagen = teleECGService.obtenerDetallesImagen(
+                id, idUsuario, request.getRemoteAddr()
+            );
+
             return ResponseEntity.ok()
-                .contentType(MediaType.IMAGE_JPEG)
+                .contentType(MediaType.parseMediaType(imagen.getMimeType() != null ? imagen.getMimeType() : "image/jpeg"))
+                .header("Content-Disposition",
+                    "attachment; filename=\"" + imagen.getNombreArchivo() + "\"")
+                .header("Content-Length", String.valueOf(imagen.getSizeBytes()))
                 .body(contenido);
         } catch (Exception e) {
             log.error("❌ Error descargando", e);
