@@ -10,7 +10,7 @@ import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.service.email.EmailService;
-import com.styp.cenate.service.AuditLogService;
+import com.styp.cenate.service.auditlog.AuditLogService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
