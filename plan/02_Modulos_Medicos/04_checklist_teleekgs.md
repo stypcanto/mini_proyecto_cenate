@@ -40,38 +40,38 @@
 
 # FASE 1: BASE DE DATOS
 
-**Duración Estimada:** 0.5 días | **Estado:** ⏳ Pendiente Aprobación
+**Duración Estimada:** 0.5 días | **Estado:** ✅ 60% Completado (Pendiente ejecución en servidor)
 
 ## 1.1 Crear Tablas
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 1.1.1 | Crear tabla `tele_ecg_imagenes` | ⏳ Pendiente | DBA/Backend | - | BYTEA para contenido_imagen |
-| 1.1.2 | Crear tabla `tele_ecg_auditoria` | ⏳ Pendiente | DBA/Backend | - | Log de accesos |
-| 1.1.3 | Crear tabla `tele_ecg_estadisticas` | ⏳ Pendiente | DBA/Backend | - | Dashboard metrics |
-| 1.1.4 | Validar tipos de datos en PostgreSQL | ⏳ Pendiente | DBA | - | BYTEA, TIMESTAMP, VARCHAR |
+| 1.1.1 | Crear tabla `tele_ecg_imagenes` | ✅ Documentado | DBA/Backend | 2026-01-13 | Script: 013_modulo_teleekgs.sql |
+| 1.1.2 | Crear tabla `tele_ecg_auditoria` | ✅ Documentado | DBA/Backend | 2026-01-13 | Con triggers de auditoría |
+| 1.1.3 | Crear tabla `tele_ecg_estadisticas` | ✅ Documentado | DBA/Backend | 2026-01-13 | Para dashboards y métricas |
+| 1.1.4 | Validar tipos de datos en PostgreSQL | ✅ Documentado | DBA | 2026-01-13 | BYTEA, TIMESTAMP, CHECK constraints |
 | 1.1.5 | Ejecutar script SQL | ⏳ Pendiente | DBA | - | En servidor 10.0.89.13 |
 
 ## 1.2 Crear Índices
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 1.2.1 | Índice en `num_doc_paciente` | ⏳ Pendiente | DBA | - | Búsqueda frecuente |
-| 1.2.2 | Índice en `estado` | ⏳ Pendiente | DBA | - | Filtrado por estado |
-| 1.2.3 | Índice en `fecha_expiracion` | ⏳ Pendiente | DBA | - | Limpieza automática |
-| 1.2.4 | Índice compuesto (num_doc + estado) | ⏳ Pendiente | DBA | - | Optimización búsqueda |
-| 1.2.5 | Analizar performance de índices | ⏳ Pendiente | DBA | - | EXPLAIN ANALYZE |
+| 1.2.1 | Índice en `num_doc_paciente` | ✅ Documentado | DBA | 2026-01-13 | Búsqueda frecuente |
+| 1.2.2 | Índice en `estado` | ✅ Documentado | DBA | 2026-01-13 | Filtrado por estado |
+| 1.2.3 | Índice en `fecha_expiracion` | ✅ Documentado | DBA | 2026-01-13 | Limpieza automática (30 días) |
+| 1.2.4 | Índice compuesto (num_doc + estado) | ✅ Documentado | DBA | 2026-01-13 | Optimización búsqueda (CRÍTICA) |
+| 1.2.5 | Analizar performance de índices | ✅ Documentado | DBA | 2026-01-13 | Ver 013_INDICES_TELEEKGS_GUIA.md |
 
 ## 1.3 Configurar Permisos MBAC
 
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
-| 1.3.1 | Crear módulo "TeleEKG" en BD | ⏳ Pendiente | Admin | - | id_modulo = ? |
-| 1.3.2 | Crear página "Envío de ECG" | ⏳ Pendiente | Admin | - | Para INSTITUCION_EX |
-| 1.3.3 | Crear página "Administración ECG" | ⏳ Pendiente | Admin | - | Para MEDICO, ADMIN |
-| 1.3.4 | Crear página "Dashboard TeleEKG" | ⏳ Pendiente | Admin | - | Para ADMIN |
-| 1.3.5 | Asignar permisos a roles | ⏳ Pendiente | Admin | - | INSTITUCION_EX, MEDICO, ADMIN |
-| 1.3.6 | Validar permisos en sistema | ⏳ Pendiente | QA | - | Acceso correcto por rol |
+| 1.3.1 | Crear módulo "TeleEKG" en BD | ✅ Documentado | Admin | 2026-01-13 | Script: SECTION 5.1 |
+| 1.3.2 | Crear página "Envío de ECG" | ✅ Documentado | Admin | 2026-01-13 | Para INSTITUCION_EX |
+| 1.3.3 | Crear página "Administración ECG" | ✅ Documentado | Admin | 2026-01-13 | Para MEDICO, COORDINADOR, ADMIN |
+| 1.3.4 | Crear página "Dashboard TeleEKG" | ✅ Documentado | Admin | 2026-01-13 | Para ADMIN, SUPERADMIN |
+| 1.3.5 | Asignar permisos a roles | ✅ Documentado | Admin | 2026-01-13 | Script: SECTION 5.4 |
+| 1.3.6 | Validar permisos en sistema | ⏳ Pendiente | QA | - | Ejecutar en servidor 10.0.89.13 |
 
 ## 1.4 Validar Backup y Recovery
 
