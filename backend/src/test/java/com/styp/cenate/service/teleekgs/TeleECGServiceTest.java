@@ -48,9 +48,6 @@ public class TeleECGServiceTest {
     private IpressRepository ipressRepository;
 
     @Mock
-    private AseguradoService aseguradoService;
-
-    @Mock
     private EmailService emailService;
 
     @Mock
