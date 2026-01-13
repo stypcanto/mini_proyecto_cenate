@@ -272,7 +272,7 @@ public class TeleECGControllerIntegrationTest {
 
     @Test
     @WithMockUser(roles = "EXTERNO")
-    void testUploadPermitidoPara INSTITUCION_EX() throws Exception {
+    void testUploadPermitidoParaINSTITUCION_EX() throws Exception {
         // Solo INSTITUCION_EX puede subir
         // Requiere @CheckMBACPermission configurado
         mockMvc.perform(post("/api/teleekgs/upload")
