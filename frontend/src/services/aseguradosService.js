@@ -155,6 +155,19 @@ const aseguradosService = {
       console.error('❌ Error al eliminar asegurado:', error);
       throw error;
     }
+  },
+
+  /**
+   * Crear asegurado desde módulo TeleEKG
+   * @param {Object} datos - {numDoc, nombres, apellidos, fechaNacimiento, genero, telefono, email}
+   */
+  crearDesdeTelukg: async (datos) => {
+    try {
+      return await apiClient.post('/asegurados/crear-desde-teleekgs', datos);
+    } catch (error) {
+      console.error('❌ Error al crear asegurado desde TeleEKG:', error);
+      throw error;
+    }
   }
 };
 

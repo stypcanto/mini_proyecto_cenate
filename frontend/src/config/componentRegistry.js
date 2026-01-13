@@ -230,6 +230,12 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/externo/teleekgs': {
+    component: lazy(() => import('../pages/roles/externo/TeleEKGDashboard')),
+    requiredAction: 'ver',
+    pathMatch: '/roles/externo/teleekgs',
+  },
+
   // ========================================================================
   // 📅 MÓDULO CITAS
   // ========================================================================
