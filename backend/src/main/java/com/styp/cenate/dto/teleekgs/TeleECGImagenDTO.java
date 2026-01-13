@@ -74,24 +74,38 @@ public class TeleECGImagenDTO {
     private String nombreIpress;
 
     /**
-     * Nombre del archivo original
-     * Ej: "paciente_12345678_20260113.jpg"
+     * Nombre del archivo generado
+     * Ej: "12345678_20260113_143052_a7f3.jpg"
      */
     @JsonProperty("nombre_archivo")
     private String nombreArchivo;
 
     /**
+     * Nombre original del archivo como fue subido
+     * Ej: "paciente_juan_ecg.jpg"
+     */
+    @JsonProperty("nombre_original")
+    private String nombreOriginal;
+
+    /**
+     * Extensión del archivo
+     * Valores: jpg, png
+     */
+    @JsonProperty("extension")
+    private String extension;
+
+    /**
      * Tipo MIME del archivo
      * Valores: image/jpeg, image/png
      */
-    @JsonProperty("tipo_contenido")
-    private String tipoContenido;
+    @JsonProperty("mime_type")
+    private String mimeType;
 
     /**
-     * Tamaño del archivo en bytes
+     * Tamaño del archivo en bytes (máximo 5MB)
      */
-    @JsonProperty("tamanio_bytes")
-    private Long tamanioByte;
+    @JsonProperty("size_bytes")
+    private Long sizeBytes;
 
     /**
      * Tamaño del archivo en formato legible
@@ -101,11 +115,31 @@ public class TeleECGImagenDTO {
     private String tamanoFormato;
 
     /**
-     * Hash SHA256 del archivo
-     * Útil para: verificar integridad
+     * Hash SHA256 del archivo (64 caracteres hexadecimales)
+     * Útil para: verificar integridad y detectar duplicados
      */
-    @JsonProperty("hash_archivo")
-    private String hashArchivo;
+    @JsonProperty("sha256")
+    private String sha256;
+
+    /**
+     * Tipo de almacenamiento
+     * Valores: FILESYSTEM, S3, MINIO
+     */
+    @JsonProperty("storage_tipo")
+    private String storageTipo;
+
+    /**
+     * Ruta completa del archivo en filesystem
+     * NO se expone en listados por seguridad (solo en detalles con permiso)
+     */
+    @JsonProperty("storage_ruta")
+    private String storageRuta;
+
+    /**
+     * Bucket para S3/MinIO (NULL para FILESYSTEM local)
+     */
+    @JsonProperty("storage_bucket")
+    private String storageBucket;
 
     /**
      * ESTADO del ECG

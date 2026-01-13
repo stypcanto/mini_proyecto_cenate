@@ -82,7 +82,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      * Imágenes de una IPRESS específica
      * Usado por: reportes por institución
      */
-    Page<TeleECGImagen> findByIpressOrigenAndStatImagenOrderByFechaEnvioDesc(
+    Page<TeleECGImagen> findByIpressOrigenIdAndStatImagenOrderByFechaEnvioDesc(
         Long idIpress,
         String statImagen,
         Pageable pageable
@@ -118,7 +118,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     /**
      * Cuenta imágenes totales activas por IPRESS
      */
-    Long countByIpressOrigenAndStatImagenEquals(Long idIpress, String statImagen);
+    Long countByIpressOrigenIdAndStatImagenEquals(Long idIpress, String statImagen);
 
     /**
      * LIMPIEZA AUTOMÁTICA: Marca imágenes como inactivas si pasaron 30 días
@@ -164,11 +164,11 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     @Query("""
         SELECT
             t.nombreIpress,
-            SUM(t.tamanioByte) / 1024 / 1024
+            SUM(t.sizeBytes) / 1024 / 1024
         FROM TeleECGImagen t
         WHERE t.statImagen = 'A'
         GROUP BY t.nombreIpress
-        ORDER BY SUM(t.tamanioByte) DESC
+        ORDER BY SUM(t.sizeBytes) DESC
         """)
     List<Object[]> getVolumenPorIpress();
 
@@ -230,7 +230,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
         SELECT
             CAST(t.fechaEnvio AS DATE),
             COUNT(t),
-            SUM(t.tamanioByte) / 1024 / 1024
+            SUM(t.sizeBytes) / 1024 / 1024
         FROM TeleECGImagen t
         WHERE t.statImagen = 'A'
           AND t.fechaEnvio >= :desde
@@ -253,7 +253,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     /**
      * Busca imagen por hash SHA256 (para detectar duplicados)
      */
-    Optional<TeleECGImagen> findByHashArchivoAndStatImagenEquals(String hashArchivo, String statImagen);
+    Optional<TeleECGImagen> findBySha256AndStatImagenEquals(String sha256, String statImagen);
 
     /**
      * Verifica si existe una imagen con el mismo DNI y hash en los últimos X minutos
@@ -262,13 +262,13 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     @Query("""
         SELECT COUNT(t) FROM TeleECGImagen t
         WHERE t.numDocPaciente = :numDoc
-          AND t.hashArchivo = :hash
+          AND t.sha256 = :sha256
           AND t.fechaEnvio > :hace_x_minutos
           AND t.statImagen = 'A'
         """)
     Long contarDuplicados(
         @Param("numDoc") String numDoc,
-        @Param("hash") String hash,
+        @Param("sha256") String sha256,
         @Param("hace_x_minutos") LocalDateTime hacexMinutos
     );
 }
