@@ -82,9 +82,15 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      * Imágenes de una IPRESS específica
      * Usado por: reportes por institución
      */
+    @Query("""
+        SELECT t FROM TeleECGImagen t
+        WHERE t.ipressOrigen.idIpress = :idIpress
+          AND t.statImagen = :statImagen
+        ORDER BY t.fechaEnvio DESC
+        """)
     Page<TeleECGImagen> findByIpressOrigenIdAndStatImagenOrderByFechaEnvioDesc(
-        Long idIpress,
-        String statImagen,
+        @Param("idIpress") Long idIpress,
+        @Param("statImagen") String statImagen,
         Pageable pageable
     );
 
@@ -118,7 +124,15 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     /**
      * Cuenta imágenes totales activas por IPRESS
      */
-    Long countByIpressOrigenIdAndStatImagenEquals(Long idIpress, String statImagen);
+    @Query("""
+        SELECT COUNT(t) FROM TeleECGImagen t
+        WHERE t.ipressOrigen.idIpress = :idIpress
+          AND t.statImagen = :statImagen
+        """)
+    Long countByIpressOrigenIdAndStatImagenEquals(
+        @Param("idIpress") Long idIpress,
+        @Param("statImagen") String statImagen
+    );
 
     /**
      * LIMPIEZA AUTOMÁTICA: Marca imágenes como inactivas si pasaron 30 días
@@ -145,7 +159,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      */
     @Query("""
         SELECT
-            t.ipressOrigen.id,
+            t.ipressOrigen.idIpress,
             t.nombreIpress,
             COUNT(t),
             SUM(CASE WHEN t.estado = 'PENDIENTE' THEN 1 ELSE 0 END),
@@ -153,7 +167,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
             SUM(CASE WHEN t.estado = 'RECHAZADA' THEN 1 ELSE 0 END)
         FROM TeleECGImagen t
         WHERE t.statImagen = 'A'
-        GROUP BY t.ipressOrigen.id, t.nombreIpress
+        GROUP BY t.ipressOrigen.idIpress, t.nombreIpress
         ORDER BY COUNT(t) DESC
         """)
     List<Object[]> getEstadisticasPorIpress();
@@ -240,15 +254,17 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     List<Object[]> getResumenDiario(@Param("desde") LocalDateTime desde);
 
     /**
-     * Tiempo promedio de procesamiento (entre envío y procesamiento)
+     * Obtiene imágenes procesadas para calcular tiempo promedio en Java
+     * (EXTRACT(EPOCH) no está soportado en Hibernate JPA)
      */
     @Query("""
-        SELECT AVG(EXTRACT(EPOCH FROM (t.fechaRecepcion - t.fechaEnvio)) / 60)
-        FROM TeleECGImagen t
+        SELECT t FROM TeleECGImagen t
         WHERE t.estado = 'PROCESADA'
           AND t.fechaRecepcion IS NOT NULL
+          AND t.fechaEnvio IS NOT NULL
+        ORDER BY t.fechaRecepcion DESC
         """)
-    Double getTiempoPromedioProcessamiento();
+    List<TeleECGImagen> findProcessedWithTimestamps();
 
     /**
      * Busca imagen por hash SHA256 (para detectar duplicados)
