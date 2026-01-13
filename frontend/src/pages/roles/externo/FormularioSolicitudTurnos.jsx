@@ -3,7 +3,8 @@
 // ------------------------------------------------------------------------
 // Pantalla principal: Tabla de "Mis Solicitudes" + Botón "Nueva Solicitud"
 // Modal:
-//  - NUEVA / EDITAR: Selector de Periodo + Tabla editable + Guardar/Enviar
+//  - NUEVA: Selector de Periodo + Tabla editable + Guardar/Enviar
+//  - EDITAR (BORRADOR): Periodo SOLO LECTURA (sin cambiar) + Tabla editable
 //  - VER (ENVIADO/REVISADO): NO muestra combo, solo resumen + detalle (UX UI)
 // ========================================================================
 
@@ -26,6 +27,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  Lock, // ✅ NUEVO
 } from "lucide-react";
 
 import { periodoSolicitudService } from "../../../services/periodoSolicitudService";
@@ -119,11 +121,7 @@ function Modal({ open, onClose, title, children }) {
 
   return (
     <div className="fixed inset-0 z-50">
-      <div
-        className="absolute inset-0 bg-black/40"
-        onClick={onClose}
-        aria-hidden="true"
-      />
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
@@ -276,15 +274,19 @@ export default function FormularioSolicitudTurnos() {
 
       setSolicitudActual(solicitud);
 
-      // Para editar/nueva se usa, para ver solo es informativo
+      // set periodo info (si no está en vigentes, igual lo mostramos)
       const periodo =
         periodosVigentes.find((p) => p.idPeriodo === solicitud.idPeriodo) || {
           idPeriodo: solicitud.idPeriodo,
           descripcion: solicitud.periodoDescripcion,
           periodo: "",
+          fechaInicio: null,
+          fechaFin: null,
+          instrucciones: null,
         };
       setPeriodoSeleccionado(periodo);
 
+      // Si es BORRADOR, mapear detalles a tabla editable
       if (solicitud.estado === "BORRADOR") {
         const base = {};
         especialidades.forEach((esp) => (base[esp.idServicio] = createEmptyRow()));
@@ -322,15 +324,19 @@ export default function FormularioSolicitudTurnos() {
   };
 
   // ============================================================
-  // CARGAR SOLICITUD POR PERIODO (solo NUEVA/EDITAR)
+  // CARGAR SOLICITUD POR PERIODO (solo NUEVA)
+  //   ✅ FIX: ya NO debe ejecutarse en EDITAR
   // ============================================================
   useEffect(() => {
     const cargar = async () => {
       if (!openFormModal) return;
       if (!periodoSeleccionado?.idPeriodo) return;
 
-      // ✅ VER: no cargar por periodo (evita que se muestre combo editable)
+      // ✅ VER: no cargar por periodo
       if (modoModal === "VER") return;
+
+      // ✅ EDITAR: NO volver a cargar por periodo (evita cambiar cabecera / periodo)
+      if (modoModal === "EDITAR" && solicitudActual?.idSolicitud) return;
 
       try {
         const solicitud = await solicitudTurnoService.obtenerMiSolicitud(periodoSeleccionado.idPeriodo);
@@ -376,7 +382,7 @@ export default function FormularioSolicitudTurnos() {
 
     cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openFormModal, periodoSeleccionado?.idPeriodo, especialidades, modoModal]);
+  }, [openFormModal, periodoSeleccionado?.idPeriodo, especialidades, modoModal, solicitudActual?.idSolicitud]);
 
   // ============================================================
   // CÁLCULOS
@@ -404,6 +410,12 @@ export default function FormularioSolicitudTurnos() {
     modoModal === "VER" ||
     solicitudActual?.estado === "ENVIADO" ||
     solicitudActual?.estado === "REVISADO";
+
+  // ✅ NUEVO: periodo bloqueado SOLO cuando estás EDITANDO un BORRADOR ya creado
+  const periodoBloqueado =
+    modoModal === "EDITAR" &&
+    !!solicitudActual?.idSolicitud &&
+    !!solicitudActual?.idPeriodo;
 
   // ============================================================
   // GUARDAR BORRADOR
@@ -452,6 +464,12 @@ export default function FormularioSolicitudTurnos() {
       const resultado = await solicitudTurnoService.guardarBorrador(payload);
       setSolicitudActual(resultado);
       setModoModal(resultado?.estado === "BORRADOR" ? "EDITAR" : "VER");
+
+      // ✅ asegura que periodo quede fijado tras guardar
+      const periodoFix =
+        periodosVigentes.find((p) => p.idPeriodo === resultado?.idPeriodo) ||
+        periodoSeleccionado;
+      setPeriodoSeleccionado(periodoFix || periodoSeleccionado);
 
       setSuccess("Borrador guardado exitosamente");
       setTimeout(() => setSuccess(null), 2500);
@@ -664,11 +682,7 @@ export default function FormularioSolicitudTurnos() {
                         <div className="text-xs text-slate-500">Periodo ID: {row.idPeriodo}</div>
                       </td>
                       <td className="px-4 py-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(
-                            row.estado
-                          )}`}
-                        >
+                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(row.estado)}`}>
                           {row.estado}
                         </span>
                       </td>
@@ -710,20 +724,14 @@ export default function FormularioSolicitudTurnos() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="text-sm text-slate-600">
               Estado:{" "}
-              <span
-                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(
-                  solicitudActual?.estado || "BORRADOR"
-                )}`}
-              >
+              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(solicitudActual?.estado || "BORRADOR")}`}>
                 {solicitudActual?.estado || "—"}
               </span>
             </div>
 
             <div className="text-sm text-slate-500">
               {solicitudActual?.updatedAt ? (
-                <>
-                  Última actualización: <strong>{formatFecha(solicitudActual.updatedAt)}</strong>
-                </>
+                <>Última actualización: <strong>{formatFecha(solicitudActual.updatedAt)}</strong></>
               ) : (
                 <>—</>
               )}
@@ -732,59 +740,108 @@ export default function FormularioSolicitudTurnos() {
 
           {/* ===================== BLOQUE PERIODO (UX) ===================== */}
           {!esSoloLectura ? (
-            // ✅ NUEVA / EDITAR: combo
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
               <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-[#0A5BA9]" />
                 Periodo de Solicitud
               </h2>
 
-              {periodosVigentes.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No hay periodos activos.</p>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <select
-                    value={periodoSeleccionado?.idPeriodo || ""}
-                    onChange={(e) => {
-                      const periodo = periodosVigentes.find((p) => p.idPeriodo === parseInt(e.target.value));
-                      setPeriodoSeleccionado(periodo || null);
-                    }}
-                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
-                  >
-                    <option value="">Seleccione un periodo...</option>
-                    {periodosVigentes.map((periodo) => (
-                      <option key={periodo.idPeriodo} value={periodo.idPeriodo}>
-                        {periodo.descripcion} ({periodo.periodo})
-                      </option>
-                    ))}
-                  </select>
+              {/* ✅ EDITAR: periodo solo lectura (sin combo) */}
+              {periodoBloqueado ? (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs text-slate-500">Periodo seleccionado</div>
+                      <div className="text-lg font-bold text-slate-900">
+                        {solicitudActual?.periodoDescripcion || periodoSeleccionado?.descripcion || "—"}
+                      </div>
+                      <div className="text-sm text-slate-600 mt-1">
+                        ID Periodo: <strong>{solicitudActual?.idPeriodo ?? periodoSeleccionado?.idPeriodo ?? "—"}</strong>
+                      </div>
+                    </div>
 
-                  {periodoSeleccionado && (
-                    <div className="p-4 bg-blue-50 rounded-xl">
+                    <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border border-amber-200 bg-amber-50 text-amber-800">
+                      <Lock className="w-4 h-4" />
+                      Bloqueado
+                    </span>
+                  </div>
+
+                  {(periodoSeleccionado?.fechaInicio || periodoSeleccionado?.fechaFin) && (
+                    <div className="mt-4 p-4 bg-blue-50 rounded-xl">
                       <div className="flex items-center gap-2 text-blue-800 mb-2">
                         <Clock className="w-4 h-4" />
                         <span className="font-semibold">Vigencia del periodo</span>
                       </div>
-
-                      {periodoSeleccionado.fechaInicio && periodoSeleccionado.fechaFin ? (
+                      {periodoSeleccionado?.fechaInicio && periodoSeleccionado?.fechaFin ? (
                         <p className="text-sm text-blue-700">
                           {new Date(periodoSeleccionado.fechaInicio).toLocaleDateString("es-PE", { dateStyle: "long" })}{" "}
                           -{" "}
                           {new Date(periodoSeleccionado.fechaFin).toLocaleDateString("es-PE", { dateStyle: "long" })}
                         </p>
                       ) : (
-                        <p className="text-sm text-blue-700">{periodoSeleccionado.descripcion || "—"}</p>
+                        <p className="text-sm text-blue-700">{periodoSeleccionado?.descripcion || "—"}</p>
                       )}
-
-                      {periodoSeleccionado.instrucciones && (
+                      {periodoSeleccionado?.instrucciones && (
                         <p className="mt-2 text-sm text-blue-600 italic">{periodoSeleccionado.instrucciones}</p>
                       )}
                     </div>
                   )}
+
+                  <p className="mt-3 text-xs text-slate-500">
+                    El periodo no se puede modificar una vez creada la solicitud.
+                  </p>
                 </div>
+              ) : (
+                /* ✅ NUEVA: combo */
+                <>
+                  {periodosVigentes.length === 0 ? (
+                    <div className="text-center py-8 text-slate-500">
+                      <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                      <p>No hay periodos activos.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-4">
+                      <select
+                        value={periodoSeleccionado?.idPeriodo || ""}
+                        onChange={(e) => {
+                          const periodo = periodosVigentes.find((p) => p.idPeriodo === parseInt(e.target.value));
+                          setPeriodoSeleccionado(periodo || null);
+                        }}
+                        className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                      >
+                        <option value="">Seleccione un periodo...</option>
+                        {periodosVigentes.map((periodo) => (
+                          <option key={periodo.idPeriodo} value={periodo.idPeriodo}>
+                            {periodo.descripcion} ({periodo.periodo})
+                          </option>
+                        ))}
+                      </select>
+
+                      {periodoSeleccionado && (
+                        <div className="p-4 bg-blue-50 rounded-xl">
+                          <div className="flex items-center gap-2 text-blue-800 mb-2">
+                            <Clock className="w-4 h-4" />
+                            <span className="font-semibold">Vigencia del periodo</span>
+                          </div>
+
+                          {periodoSeleccionado.fechaInicio && periodoSeleccionado.fechaFin ? (
+                            <p className="text-sm text-blue-700">
+                              {new Date(periodoSeleccionado.fechaInicio).toLocaleDateString("es-PE", { dateStyle: "long" })}{" "}
+                              -{" "}
+                              {new Date(periodoSeleccionado.fechaFin).toLocaleDateString("es-PE", { dateStyle: "long" })}
+                            </p>
+                          ) : (
+                            <p className="text-sm text-blue-700">{periodoSeleccionado.descripcion || "—"}</p>
+                          )}
+
+                          {periodoSeleccionado.instrucciones && (
+                            <p className="mt-2 text-sm text-blue-600 italic">{periodoSeleccionado.instrucciones}</p>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           ) : (
@@ -793,26 +850,19 @@ export default function FormularioSolicitudTurnos() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <div className="text-xs text-slate-500">Periodo</div>
-                  <div className="text-lg font-bold text-slate-900">
-                    {solicitudActual?.periodoDescripcion || "—"}
-                  </div>
+                  <div className="text-lg font-bold text-slate-900">{solicitudActual?.periodoDescripcion || "—"}</div>
                   <div className="text-sm text-slate-600">
                     ID Periodo: <strong>{solicitudActual?.idPeriodo ?? "—"}</strong>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <span
-                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(
-                      solicitudActual?.estado || "BORRADOR"
-                    )}`}
-                  >
+                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(solicitudActual?.estado || "BORRADOR")}`}>
                     {solicitudActual?.estado || "—"}
                   </span>
 
                   <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
-                    Turnos:{" "}
-                    <span className="ml-1 font-bold">{solicitudActual?.totalTurnosSolicitados ?? 0}</span>
+                    Turnos: <span className="ml-1 font-bold">{solicitudActual?.totalTurnosSolicitados ?? 0}</span>
                   </span>
 
                   <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
@@ -841,7 +891,7 @@ export default function FormularioSolicitudTurnos() {
             </div>
           )}
 
-          {/* ✅ VER: Detalle UX */}
+          {/* ✅ VER: Detalle UX (tabla solo lectura) */}
           {esSoloLectura && <SolicitudDetalleView solicitud={solicitudActual} />}
 
           {/* ✅ EDITAR/NUEVA: tabla editable */}
@@ -920,154 +970,6 @@ export default function FormularioSolicitudTurnos() {
 }
 
 /** =======================================================================
- * Vista SOLO LECTURA (VER): UX mejorado
- * ======================================================================= */
-function SolicitudDetalleView2({ solicitud }) {
-  if (!solicitud) return null;
-
-  const diasArr = (arr) => (Array.isArray(arr) && arr.length ? arr : []);
-
-  const chipClass = (variant) => {
-    const base = "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border";
-    if (variant === "morning") return `${base} bg-sky-50 text-sky-700 border-sky-200`;
-    if (variant === "afternoon") return `${base} bg-amber-50 text-amber-800 border-amber-200`;
-    return `${base} bg-slate-50 text-slate-700 border-slate-200`;
-  };
-
-  const badgeClass = (active) =>
-    active
-      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-      : "bg-slate-50 text-slate-500 border-slate-200";
-
-  const detalles = Array.isArray(solicitud.detalles) ? solicitud.detalles : [];
-
-  return (
-    <div className="space-y-4">
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <div className="text-xs text-slate-500">Detalle de la solicitud</div>
-            <div className="text-lg font-bold text-slate-900">Especialidades solicitadas</div>
-            <div className="text-sm text-slate-600">
-              Se muestra exactamente lo registrado en el backend (solo lectura).
-            </div>
-          </div>
-
-          <div className="flex gap-2 flex-wrap">
-            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
-              Total turnos: <span className="ml-1 font-bold">{solicitud.totalTurnosSolicitados ?? 0}</span>
-            </span>
-            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
-              N° especialidades:{" "}
-              <span className="ml-1 font-bold">{solicitud.totalEspecialidades ?? detalles.length}</span>
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {detalles.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-lg p-10 border border-slate-200 text-center text-slate-500">
-          No hay detalles registrados.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {detalles.map((d) => {
-            const man = !!d.mananaActiva;
-            const tar = !!d.tardeActiva;
-
-            const manDias = diasArr(d.diasManana);
-            const tarDias = diasArr(d.diasTarde);
-
-            return (
-              <div key={d.idDetalle} className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-                <div className="p-5 border-b border-slate-200">
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <div className="text-xs text-slate-500">Especialidad</div>
-                      <div className="text-lg font-bold text-slate-900">{d.nombreEspecialidad || "—"}</div>
-                      <div className="text-xs text-slate-500 mt-1">
-                        {d.codServicio ? `Código: ${d.codServicio}` : "—"} ·{" "}
-                        {d.idServicio ? `Servicio ID: ${d.idServicio}` : "—"}
-                      </div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-xs text-slate-500">Turnos</div>
-                      <div className="text-2xl font-extrabold text-[#0A5BA9]">{d.turnosSolicitados ?? 0}</div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="p-5 space-y-4">
-                  <div className="flex flex-wrap gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${badgeClass(
-                        man
-                      )}`}
-                    >
-                      Mañana {man ? "activa" : "—"}
-                    </span>
-
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${badgeClass(
-                        tar
-                      )}`}
-                    >
-                      Tarde {tar ? "activa" : "—"}
-                    </span>
-
-                    <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
-                      Requiere: <span className="ml-1 font-bold">{d.requiere ? "Sí" : "No"}</span>
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-sm font-bold text-slate-800 mb-2">Días mañana</div>
-                      {man && manDias.length ? (
-                        <div className="flex flex-wrap gap-2">
-                          {manDias.map((x) => (
-                            <span key={x} className={chipClass("morning")}>
-                              {x}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-slate-500">—</div>
-                      )}
-                    </div>
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-sm font-bold text-slate-800 mb-2">Días tarde</div>
-                      {tar && tarDias.length ? (
-                        <div className="flex flex-wrap gap-2">
-                          {tarDias.map((x) => (
-                            <span key={x} className={chipClass("afternoon")}>
-                              {x}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-slate-500">—</div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="rounded-xl border border-slate-200 p-4">
-                    <div className="text-sm font-bold text-slate-800 mb-1">Observación</div>
-                    <div className="text-sm text-slate-600">{d.observacion?.trim() ? d.observacion : "—"}</div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-/** =======================================================================
  * Vista SOLO LECTURA (VER): DETALLE EN TABLA (UX PRO)
  * ======================================================================= */
 function SolicitudDetalleView({ solicitud }) {
@@ -1096,57 +998,43 @@ function SolicitudDetalleView({ solicitud }) {
     const base = "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border";
     if (!active) return <span className={`${base} bg-slate-50 text-slate-500 border-slate-200`}>—</span>;
 
-    if (tone === "morning")
-      return <span className={`${base} bg-sky-50 text-sky-700 border-sky-200`}>{label}</span>;
-    if (tone === "afternoon")
-      return <span className={`${base} bg-amber-50 text-amber-800 border-amber-200`}>{label}</span>;
+    if (tone === "morning") return <span className={`${base} bg-sky-50 text-sky-700 border-sky-200`}>{label}</span>;
+    if (tone === "afternoon") return <span className={`${base} bg-amber-50 text-amber-800 border-amber-200`}>{label}</span>;
 
     return <span className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}>{label}</span>;
   };
 
   const formatObs = (t) => (t && String(t).trim().length ? String(t).trim() : "—");
 
-  // Totales por turnos (seguridad UX)
   const totalTurnosTabla = detalles.reduce((acc, d) => acc + Number(d.turnosSolicitados || 0), 0);
 
   return (
     <div className="space-y-4">
-      {/* Header */}
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div>
             <div className="text-xs text-slate-500">Detalle de la solicitud</div>
             <div className="text-lg font-bold text-slate-900">Especialidades solicitadas</div>
-            <div className="text-sm text-slate-600">
-              Vista solo lectura. Información cargada desde el backend.
-            </div>
+            <div className="text-sm text-slate-600">Vista solo lectura. Información cargada desde el backend.</div>
           </div>
 
           <div className="flex gap-2 flex-wrap">
             <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
-              Total turnos:{" "}
-              <span className="ml-1 font-bold">{solicitud.totalTurnosSolicitados ?? totalTurnosTabla}</span>
+              Total turnos: <span className="ml-1 font-bold">{solicitud.totalTurnosSolicitados ?? totalTurnosTabla}</span>
             </span>
             <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
-              N° especialidades:{" "}
-              <span className="ml-1 font-bold">{solicitud.totalEspecialidades ?? detalles.length}</span>
+              N° especialidades: <span className="ml-1 font-bold">{solicitud.totalEspecialidades ?? detalles.length}</span>
             </span>
           </div>
         </div>
       </div>
 
-      {/* Tabla */}
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-        {/* Cabecera tabla */}
         <div className="p-5 border-b border-slate-200 flex items-center justify-between gap-3">
           <div className="text-sm text-slate-700">
-            <span className="font-semibold">Listado</span>{" "}
-            <span className="text-slate-500">({detalles.length})</span>
+            <span className="font-semibold">Listado</span> <span className="text-slate-500">({detalles.length})</span>
           </div>
-
-          <div className="text-xs text-slate-500">
-            * Días marcados por turno (Mañana / Tarde)
-          </div>
+          <div className="text-xs text-slate-500">* Días marcados por turno (Mañana / Tarde)</div>
         </div>
 
         <div className="overflow-x-auto">
@@ -1185,17 +1073,13 @@ function SolicitudDetalleView({ solicitud }) {
                       <td className="px-4 py-4 text-sm text-slate-500">{idx + 1}</td>
 
                       <td className="px-4 py-4">
-                        <div className="font-semibold text-slate-900">
-                          {d.nombreEspecialidad || "—"}
-                        </div>
+                        <div className="font-semibold text-slate-900">{d.nombreEspecialidad || "—"}</div>
                         <div className="text-xs text-slate-500">
                           Servicio ID: <span className="font-semibold">{d.idServicio ?? "—"}</span>
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 text-sm text-slate-700">
-                        {d.codServicio || "—"}
-                      </td>
+                      <td className="px-4 py-4 text-sm text-slate-700">{d.codServicio || "—"}</td>
 
                       <td className="px-4 py-4 text-right">
                         <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border border-blue-200 bg-blue-50 text-[#0A5BA9]">
@@ -1203,54 +1087,37 @@ function SolicitudDetalleView({ solicitud }) {
                         </span>
                       </td>
 
-                      {/* Mañana */}
-                      <td className="px-4 py-4 text-center">
-                        {badge(man, "Activa", "morning")}
-                      </td>
+                      <td className="px-4 py-4 text-center">{badge(man, "Activa", "morning")}</td>
 
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap gap-2 justify-center">
                           {DIAS_ORDEN.map((dia) => (
-                            <span
-                              key={`m-${d.idDetalle}-${dia}`}
-                              className={chipDia(man && manDias.includes(dia), "morning")}
-                              title="Día de atención (Mañana)"
-                            >
+                            <span key={`m-${d.idDetalle}-${dia}`} className={chipDia(man && manDias.includes(dia), "morning")}>
                               {dia}
                             </span>
                           ))}
                         </div>
                       </td>
 
-                      {/* Tarde */}
-                      <td className="px-4 py-4 text-center">
-                        {badge(tar, "Activa", "afternoon")}
-                      </td>
+                      <td className="px-4 py-4 text-center">{badge(tar, "Activa", "afternoon")}</td>
 
                       <td className="px-4 py-4">
                         <div className="flex flex-wrap gap-2 justify-center">
                           {DIAS_ORDEN.map((dia) => (
-                            <span
-                              key={`t-${d.idDetalle}-${dia}`}
-                              className={chipDia(tar && tarDias.includes(dia), "afternoon")}
-                              title="Día de atención (Tarde)"
-                            >
+                            <span key={`t-${d.idDetalle}-${dia}`} className={chipDia(tar && tarDias.includes(dia), "afternoon")}>
                               {dia}
                             </span>
                           ))}
                         </div>
                       </td>
 
-                      <td className="px-4 py-4 text-sm text-slate-600">
-                        {formatObs(d.observacion)}
-                      </td>
+                      <td className="px-4 py-4 text-sm text-slate-600">{formatObs(d.observacion)}</td>
                     </tr>
                   );
                 })
               )}
             </tbody>
 
-            {/* Footer totales */}
             {detalles.length > 0 && (
               <tfoot className="bg-white">
                 <tr className="border-t border-slate-200">
@@ -1273,10 +1140,8 @@ function SolicitudDetalleView({ solicitud }) {
   );
 }
 
-
-
 /** =======================================================================
- * TurnosPorEspecialidadTabla (tu tabla editable)
+ * TurnosPorEspecialidadTabla (tu tabla editable) - SIN CAMBIOS
  * ======================================================================= */
 function TurnosPorEspecialidadTabla({
   especialidades,
@@ -1392,7 +1257,6 @@ function TurnosPorEspecialidadTabla({
 
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
-      {/* Controls */}
       <div className="p-5 border-b border-slate-200">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-3">
           <div className="lg:col-span-6">
@@ -1422,7 +1286,6 @@ function TurnosPorEspecialidadTabla({
         </div>
       </div>
 
-      {/* Table */}
       <div className="overflow-x-auto">
         <table className="min-w-full border-collapse">
           <thead className="bg-indigo-50 text-sm text-gray-700">
@@ -1451,7 +1314,6 @@ function TurnosPorEspecialidadTabla({
                     {esp.codServicio && <div className="text-xs text-slate-500">Código: {esp.codServicio}</div>}
                   </td>
 
-                  {/* Requiere */}
                   <td className="px-4 py-4 text-center">
                     <input
                       type="checkbox"
@@ -1463,7 +1325,6 @@ function TurnosPorEspecialidadTabla({
                     <div className="text-xs text-slate-500 mt-1">{row.requiere ? "Sí" : "No"}</div>
                   </td>
 
-                  {/* Turnos */}
                   <td className="px-4 py-4 text-center">
                     <input
                       type="number"
@@ -1476,7 +1337,6 @@ function TurnosPorEspecialidadTabla({
                     />
                   </td>
 
-                  {/* Mañana */}
                   <td className="px-4 py-4 text-center">
                     <input
                       type="checkbox"
@@ -1493,7 +1353,6 @@ function TurnosPorEspecialidadTabla({
                     <div className="text-xs text-slate-400 mt-1">{row.mananaActiva ? "Activo" : "Inactivo"}</div>
                   </td>
 
-                  {/* Días mañana */}
                   <td className="px-4 py-4">
                     <div className={`flex flex-wrap gap-1 justify-center ${!row.requiere || !row.mananaActiva ? "opacity-50" : ""}`}>
                       {DIAS.map((d) => (
@@ -1518,7 +1377,6 @@ function TurnosPorEspecialidadTabla({
                     </div>
                   </td>
 
-                  {/* Tarde */}
                   <td className="px-4 py-4 text-center">
                     <input
                       type="checkbox"
@@ -1535,7 +1393,6 @@ function TurnosPorEspecialidadTabla({
                     <div className="text-xs text-slate-400 mt-1">{row.tardeActiva ? "Activo" : "Inactivo"}</div>
                   </td>
 
-                  {/* Días tarde */}
                   <td className="px-4 py-4">
                     <div className={`flex flex-wrap gap-1 justify-center ${!row.requiere || !row.tardeActiva ? "opacity-50" : ""}`}>
                       {DIAS.map((d) => (
@@ -1560,7 +1417,6 @@ function TurnosPorEspecialidadTabla({
                     </div>
                   </td>
 
-                  {/* Estado */}
                   <td className="px-4 py-4 text-center">
                     <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadge(st)}`}>
                       {st === "complete" ? "Completa" : st === "pending" ? "Pendiente" : "No requerida"}
@@ -1581,7 +1437,6 @@ function TurnosPorEspecialidadTabla({
         </table>
       </div>
 
-      {/* Footer stats */}
       <div className="p-5 border-t border-slate-200">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
           <div className="text-sm text-gray-700">
