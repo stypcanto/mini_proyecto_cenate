@@ -365,7 +365,7 @@ public class EmailService {
     }
 
     /**
-     * Método base para enviar correos HTML
+     * Método base para enviar correos HTML con manejo robusto de errores
      */
     private void enviarCorreoHTML(String destinatario, String asunto, String contenidoHTML) {
         log.info("=== INICIANDO ENVÍO DE CORREO ===");
@@ -388,15 +388,46 @@ public class EmailService {
 
         } catch (MessagingException e) {
             log.error("❌ MessagingException al enviar correo a {}: {}", destinatario, e.getMessage());
-            log.error("Causa raíz: {}", e.getCause() != null ? e.getCause().getMessage() : "N/A");
-            e.printStackTrace();
+            log.error("Stack trace: ", e);
+            diagnosticarErrorSMTP(e);
         } catch (org.springframework.mail.MailException e) {
             log.error("❌ MailException al enviar correo a {}: {}", destinatario, e.getMessage());
-            log.error("Causa raíz: {}", e.getCause() != null ? e.getCause().getMessage() : "N/A");
-            e.printStackTrace();
+            log.error("Stack trace: ", e);
+            diagnosticarErrorSMTP(e);
         } catch (Exception e) {
             log.error("❌ Error inesperado al enviar correo a {}: {} - {}", destinatario, e.getClass().getName(), e.getMessage());
-            e.printStackTrace();
+            log.error("Stack trace: ", e);
+        }
+    }
+
+    /**
+     * Método para diagnosticar problemas SMTP
+     */
+    private void diagnosticarErrorSMTP(Exception e) {
+        String mensaje = e.getMessage();
+
+        if (mensaje == null) mensaje = "Error desconocido";
+
+        log.warn("🔍 DIAGNÓSTICO DE ERROR SMTP:");
+
+        if (mensaje.contains("bad greeting") || mensaje.contains("[EOF]")) {
+            log.warn("  ⚠️ PROBLEMA: El servidor SMTP no responde correctamente");
+            log.warn("  📍 Causa probable: Servidor SMTP no disponible, firewall bloquea puerto 25, o problemas de red");
+            log.warn("  ✅ Soluciones:");
+            log.warn("     1. Verificar que el servidor 172.20.0.227:25 está disponible");
+            log.warn("     2. Verificar conectividad de red: ping 172.20.0.227");
+            log.warn("     3. Verificar firewall no bloquea puerto 25");
+            log.warn("     4. Si está en desarrollo, habilitar Gmail fallback: MAIL_USE_GMAIL_FALLBACK=true");
+        } else if (mensaje.contains("Authentication failed") || mensaje.contains("535")) {
+            log.warn("  ⚠️ PROBLEMA: Autenticación SMTP fallida");
+            log.warn("  📍 Causa probable: Credenciales incorrectas o autenticación requerida");
+            log.warn("  ✅ Soluciones: Verificar MAIL_USERNAME y MAIL_PASSWORD");
+        } else if (mensaje.contains("Connection refused") || mensaje.contains("connect timed out")) {
+            log.warn("  ⚠️ PROBLEMA: No se puede conectar al servidor SMTP");
+            log.warn("  📍 Causa probable: Servidor SMTP no está escuchando, puerto incorrecto, o red no accesible");
+            log.warn("  ✅ Soluciones: Verificar MAIL_HOST={} y MAIL_PORT={}", fromAddress, 25);
+        } else {
+            log.warn("  ⚠️ PROBLEMA: {}", mensaje);
         }
     }
 
