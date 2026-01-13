@@ -14,6 +14,9 @@ import com.styp.cenate.dto.DetalleSolicitudTurnoResponse;
 import com.styp.cenate.dto.MiIpressResponse;
 import com.styp.cenate.dto.SolicitudTurnoIpressRequest;
 import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoEstadoResponse;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
+import com.styp.cenate.mapper.solicitudturno.SolicitudTurnoEstadoMapper;
 import com.styp.cenate.model.DetalleSolicitudTurno;
 import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.Ipress;
@@ -485,21 +488,16 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 	}
 
 	private DetalleSolicitudTurnoResponse convertDetalleToResponse(DetalleSolicitudTurno detalle) {
-		 return DetalleSolicitudTurnoResponse.builder()
-			      .idDetalle(detalle.getIdDetalle())
-			      .idSolicitud(detalle.getSolicitud().getIdSolicitud())
-			      .idServicio(detalle.getEspecialidad().getIdServicio())
-			      .codServicio(detalle.getEspecialidad().getCodServicio())
-			      .nombreEspecialidad(detalle.getEspecialidad().getDescServicio())
-			      .requiere(Boolean.TRUE.equals(detalle.getRequiere()))
-			      .turnosSolicitados(detalle.getTurnosSolicitados())
-			      .mananaActiva(Boolean.TRUE.equals(detalle.getMananaActiva()))
-			      .diasManana(splitDias(detalle.getDiasManana()))
-			      .tardeActiva(Boolean.TRUE.equals(detalle.getTardeActiva()))
-			      .diasTarde(splitDias(detalle.getDiasTarde()))
-			      .observacion(detalle.getObservacion())
-			      .createdAt(detalle.getCreatedAt())
-			      .build();
+		return DetalleSolicitudTurnoResponse.builder().idDetalle(detalle.getIdDetalle())
+				.idSolicitud(detalle.getSolicitud().getIdSolicitud())
+				.idServicio(detalle.getEspecialidad().getIdServicio())
+				.codServicio(detalle.getEspecialidad().getCodServicio())
+				.nombreEspecialidad(detalle.getEspecialidad().getDescServicio())
+				.requiere(Boolean.TRUE.equals(detalle.getRequiere())).turnosSolicitados(detalle.getTurnosSolicitados())
+				.mananaActiva(Boolean.TRUE.equals(detalle.getMananaActiva()))
+				.diasManana(splitDias(detalle.getDiasManana()))
+				.tardeActiva(Boolean.TRUE.equals(detalle.getTardeActiva())).diasTarde(splitDias(detalle.getDiasTarde()))
+				.observacion(detalle.getObservacion()).createdAt(detalle.getCreatedAt()).build();
 	}
 
 	private void auditar(String action, String detalle, String nivel, String estado) {
@@ -515,6 +513,49 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		if (dias == null || dias.isBlank())
 			return List.of();
 		return java.util.Arrays.stream(dias.split(",")).map(String::trim).filter(s -> !s.isBlank()).toList();
+	}
+
+	public List<SolicitudTurnoIpressListadoRow> listar(Long idPeriodo, String estado) {
+		if (estado != null && ("TODAS".equalsIgnoreCase(estado) || estado.isBlank())) {
+			estado = null;
+		}
+		return solicitudRepository.listarResumen(idPeriodo, estado);
+	}
+
+	@Transactional
+	@Override
+	public SolicitudTurnoEstadoResponse aprobarSolicitud(Long idSolicitud) {
+		SolicitudTurnoIpress s = solicitudRepository.findById(idSolicitud)
+				.orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + idSolicitud));
+		if (!"ENVIADO".equalsIgnoreCase(s.getEstado())) {
+			throw new IllegalStateException("Solo se puede aprobar una solicitud en estado ENVIADO.");
+		}
+		s.setEstado("APROBADA");
+		if (s.getFechaEnvio() == null) {
+			s.setFechaEnvio(OffsetDateTime.now());
+		}
+
+		return SolicitudTurnoEstadoMapper.toResponse(solicitudRepository.save(s));
+	}
+
+	@Transactional
+	@Override
+	public SolicitudTurnoEstadoResponse rechazarSolicitud(Long idSolicitud, String motivo) {
+		SolicitudTurnoIpress s = solicitudRepository.findById(idSolicitud)
+				.orElseThrow(() -> new IllegalArgumentException("Solicitud no encontrada: " + idSolicitud));
+
+		if (!"ENVIADO".equalsIgnoreCase(s.getEstado())) {
+			throw new IllegalStateException("Solo se puede rechazar una solicitud en estado ENVIADO.");
+		}
+
+		if (motivo == null || motivo.trim().isEmpty()) {
+			throw new IllegalArgumentException("El motivo del rechazo es obligatorio.");
+		}
+
+		s.setEstado("RECHAZADA");
+		s.setMotivoRechazo(motivo.trim());
+
+		return SolicitudTurnoEstadoMapper.toResponse(solicitudRepository.save(s));
 	}
 
 }

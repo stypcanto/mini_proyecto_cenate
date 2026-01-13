@@ -8,9 +8,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
 import java.util.List;
 import java.util.Map;
+
 
 @RestController
 @RequestMapping("/api/solicitud-turnos")
@@ -25,8 +25,17 @@ import java.util.Map;
         "http://10.0.89.13:5173",
         "http://10.0.89.13:3000"
 })
+
+// Se observa que hay tablas con datos similares. Esto no tomar en cuenta. Tomare en cuenta las tablas:
+// select * from solicitud_turno_ipress;
+// select * from detalle_solicitud_turno dst ;
+
+
 public class SolicitudTurnosController {
 
+	
+	
+	
     private final ISolicitudTurnosService solicitudService;
 
     @PostMapping
@@ -137,4 +146,5 @@ public class SolicitudTurnosController {
         boolean existe = solicitudService.existeSolicitud(periodo, idIpress);
         return ResponseEntity.ok(Map.of("existe", existe));
     }
+    
 }

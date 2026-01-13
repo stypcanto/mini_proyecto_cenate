@@ -1,13 +1,15 @@
 package com.styp.cenate.repository;
 
-import com.styp.cenate.model.SolicitudTurnoIpress;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
+import com.styp.cenate.model.SolicitudTurnoIpress;
 
 /**
  * Repository para gestionar solicitudes de turnos de IPRESS.
@@ -110,4 +112,37 @@ public interface SolicitudTurnoIpressRepository extends JpaRepository<SolicitudT
            "WHERE s.periodo.idPeriodo = :idPeriodo " +
            "ORDER BY s.createdAt DESC")
     List<SolicitudTurnoIpress> findByPeriodoWithIpress(@Param("idPeriodo") Long idPeriodo);
+    
+    
+    
+    
+    @Query("""
+    		SELECT new com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow(
+    		    s.idSolicitud,
+    		    p.idPeriodo,
+    		    s.estado,
+    		    s.fechaEnvio,
+    		    s.createdAt,
+    		    s.updatedAt,
+    		    i.descIpress
+    		)
+    		FROM SolicitudTurnoIpress s
+    		JOIN s.periodo p
+    		JOIN s.personal per
+    		JOIN per.ipress i
+    		WHERE (:estado IS NULL OR :estado = '' OR s.estado = :estado)
+    		  AND (:idPeriodo IS NULL OR p.idPeriodo = :idPeriodo)
+    		ORDER BY s.createdAt DESC
+    		""")
+        List<SolicitudTurnoIpressListadoRow> listarResumen(
+                @Param("idPeriodo") Long idPeriodo,
+                @Param("estado") String estado
+        );
+    
+    
+    
+    
+    
+    
+    
 }

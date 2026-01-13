@@ -58,7 +58,7 @@ public class SolicitudTurnoIpress {
 
     @Column(name = "estado", length = 20)
     @Builder.Default
-    private String estado = "BORRADOR"; // BORRADOR, ENVIADO, REVISADO
+    private String estado = "BORRADOR"; // BORRADOR, ENVIADO, REVISADO, APROBADA, RECHAZADA
 
     @Column(name = "fecha_envio", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime fechaEnvio;
@@ -70,6 +70,9 @@ public class SolicitudTurnoIpress {
     @UpdateTimestamp
     @Column(name = "updated_at", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime updatedAt;
+    
+    @Column(name = "motivo_rechazo", columnDefinition = "text")
+    private String motivoRechazo;
 
     // ==========================================================
     // Relaciones

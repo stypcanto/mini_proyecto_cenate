@@ -1,8 +1,26 @@
 import apiClient from "../lib/apiClient";
 
-const BASE_URL = "/api/solicitud-turnos";
+const BASE_URL = "/api/solicitudes-turno";
 
 export const solicitudTurnosService = {
+
+
+async obtenerTodas(filtros = {}) {
+    const params = {
+    estado: filtros.estado && filtros.estado !== "TODAS" ? filtros.estado : undefined,
+    idPeriodo: filtros.periodo ? Number(filtros.periodo) : undefined,
+  };
+
+  console.log("obtenerTodas - PARAMS >>>", params);
+
+  //  USAMOS EL NUEVO MÉTODO
+  return apiClient.getWithParams(
+    `${BASE_URL}/consultar`,
+    params,
+    true // auth
+  );
+  },
+
   /**
    * Guardar solicitud (crear o actualizar)
    */
@@ -15,8 +33,8 @@ export const solicitudTurnosService = {
    * Obtener solicitud por ID
    */
   async obtenerPorId(id) {
-    const response = await apiClient.get(`${BASE_URL}/${id}`);
-    return response.data;
+    const data = await apiClient.get(`${BASE_URL}/${id}`, true);
+  return data;
   },
 
   /**
@@ -64,18 +82,21 @@ export const solicitudTurnosService = {
   /**
    * Aprobar solicitud (solo coordinador)
    */
-  async aprobarSolicitud(id) {
-    const response = await apiClient.post(`${BASE_URL}/${id}/aprobar`);
-    return response.data;
-  },
 
-  /**
+  async aprobarSolicitud(id) {
+    // 
+    const data = await apiClient.post(`${BASE_URL}/${id}/aprobar`, {}, true);
+    return data;
+  },
+ /**
    * Rechazar solicitud (solo coordinador)
    */
   async rechazarSolicitud(id, motivo) {
-    const response = await apiClient.post(`${BASE_URL}/${id}/rechazar`, { motivo });
-    return response.data;
+    const body = { motivo };
+    const data = await apiClient.post(`${BASE_URL}/${id}/rechazar`, body, true);
+    return data;
   },
+
 
   /**
    * Eliminar solicitud (solo BORRADOR)

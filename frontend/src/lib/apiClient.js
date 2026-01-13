@@ -149,6 +149,31 @@ export const apiClient = {
       headers: buildHeaders(auth)
     }).then(handleResponse);
   },
+
+  // NUEVO MÉTODO SOLO PARA GET CON PARAMS
+  getWithParams: (endpoint, params = {}, auth = false) => {
+    let url = buildUrl(endpoint);
+
+    const qs = new URLSearchParams();
+    Object.entries(params).forEach(([k, v]) => {
+      if (v === undefined || v === null || v === "") return;
+      qs.append(k, String(v));
+    });
+
+    const query = qs.toString();
+    if (query) {
+      url += `?${query}`;
+    }
+
+    console.log(` [GET+PARAMS] ${url}`);
+
+    return fetch(url, {
+      method: "GET",
+      headers: buildHeaders(auth),
+    }).then(handleResponse);
+  },
+
+
 };
 
 // Helpers para autenticación
