@@ -2,7 +2,9 @@ package com.styp.cenate.api;
 
 import com.styp.cenate.dto.ApiResponse;
 import com.styp.cenate.dto.teleekgs.*;
-import com.styp.cenate.security.CheckMBACPermission;
+import com.styp.cenate.exception.ResourceNotFoundException;
+import com.styp.cenate.exception.ValidationException;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.service.teleekgs.TeleECGService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
