@@ -2,7 +2,9 @@
 // FormularioSolicitudTurnos.jsx
 // ------------------------------------------------------------------------
 // Pantalla principal: Tabla de "Mis Solicitudes" + Botón "Nueva Solicitud"
-// Modal: Selección de Periodo + Tabla de especialidades + Guardar/Enviar
+// Modal:
+//  - NUEVA / EDITAR: Selector de Periodo + Tabla editable + Guardar/Enviar
+//  - VER (ENVIADO/REVISADO): NO muestra combo, solo resumen + detalle (UX UI)
 // ========================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -46,7 +48,9 @@ const esFilaCompleta = (row) => {
   const turnosOk = Number(row.turnos || 0) >= 1;
 
   const mananaOk =
-    !!row.mananaActiva && Array.isArray(row.diasManana) && row.diasManana.length > 0;
+    !!row.mananaActiva &&
+    Array.isArray(row.diasManana) &&
+    row.diasManana.length > 0;
 
   const tardeOk =
     !!row.tardeActiva && Array.isArray(row.diasTarde) && row.diasTarde.length > 0;
@@ -66,7 +70,7 @@ const obtenerRequeridasValidasDeTabla = (especialidades, turnosPorEspecialidad) 
     .filter(({ row }) => esFilaCompleta(row))
     .map(({ esp, row }) => ({
       idServicio: esp.idServicio,
-      requiere: true, // ✅ Opción A: solo mandas los que requieren
+      requiere: true,
       turnos: Number(row.turnos || 0),
       mananaActiva: !!row.mananaActiva,
       diasManana: Array.isArray(row.diasManana) ? row.diasManana : [],
@@ -115,7 +119,11 @@ function Modal({ open, onClose, title, children }) {
 
   return (
     <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
+      <div
+        className="absolute inset-0 bg-black/40"
+        onClick={onClose}
+        aria-hidden="true"
+      />
       <div className="absolute inset-0 flex items-center justify-center p-4">
         <div className="w-full max-w-6xl max-h-[92vh] overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
@@ -173,6 +181,21 @@ export default function FormularioSolicitudTurnos() {
   });
 
   // ============================================================
+  // TABLA SOLICITUDES
+  // ============================================================
+  const refrescarMisSolicitudes = useCallback(async () => {
+    setLoadingTabla(true);
+    try {
+      const data = await solicitudTurnoService.listarMisSolicitudes();
+      setMisSolicitudes(Array.isArray(data) ? data : []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingTabla(false);
+    }
+  }, []);
+
+  // ============================================================
   // CARGA INICIAL
   // ============================================================
   const inicializar = useCallback(async () => {
@@ -190,17 +213,14 @@ export default function FormularioSolicitudTurnos() {
       setPeriodosVigentes(periodosData || []);
       setEspecialidades(especialidadesData || []);
 
-      // init turnos por especialidad
       const init = {};
       (especialidadesData || []).forEach((esp) => {
         init[esp.idServicio] = createEmptyRow();
       });
       setTurnosPorEspecialidad(init);
 
-      // cargar tabla de solicitudes
       await refrescarMisSolicitudes();
 
-      // auto seleccionar periodo si solo hay 1 (solo para el modal NUEVA)
       if ((periodosData || []).length === 1) {
         setPeriodoSeleccionado(periodosData[0]);
       }
@@ -210,28 +230,15 @@ export default function FormularioSolicitudTurnos() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refrescarMisSolicitudes]);
 
   useEffect(() => {
     inicializar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const refrescarMisSolicitudes = useCallback(async () => {
-    setLoadingTabla(true);
-    try {
-      const data = await solicitudTurnoService.listarMisSolicitudes();
-      setMisSolicitudes(Array.isArray(data) ? data : []);
-    } catch (e) {
-      console.error(e);
-      // no rompas toda la pantalla por tabla
-    } finally {
-      setLoadingTabla(false);
-    }
-  }, []);
-
   // ============================================================
-  // ACCIONES: ABRIR MODAL
+  // ABRIR MODAL
   // ============================================================
   const abrirNuevaSolicitud = () => {
     setError(null);
@@ -241,7 +248,6 @@ export default function FormularioSolicitudTurnos() {
     setSolicitudActual(null);
     setPeriodoSeleccionado(null);
 
-    // reset tabla del formulario
     const reset = {};
     especialidades.forEach((esp) => (reset[esp.idServicio] = createEmptyRow()));
     setTurnosPorEspecialidad(reset);
@@ -249,6 +255,12 @@ export default function FormularioSolicitudTurnos() {
     setOpenFormModal(true);
   };
 
+  /**
+   * ✅ BORRADOR => EDITAR (carga por ID y mapea a tabla editable)
+   * ✅ ENVIADO/REVISADO => VER (carga por ID y muestra solo resumen + detalle)
+   *
+   * Requisito: solicitudTurnoService.obtenerPorId(idSolicitud)
+   */
   const abrirSolicitudDesdeTabla = async (row) => {
     setError(null);
     setSuccess(null);
@@ -256,14 +268,51 @@ export default function FormularioSolicitudTurnos() {
     const modo = row.estado === "BORRADOR" ? "EDITAR" : "VER";
     setModoModal(modo);
 
-    // set preliminar
-    setSolicitudActual(row);
-
-    // seleccionar periodo (para que se cargue el detalle del backend)
-    const periodo = periodosVigentes.find((p) => p.idPeriodo === row.idPeriodo) || null;
-    setPeriodoSeleccionado(periodo);
-
     setOpenFormModal(true);
+    setLoading(true);
+
+    try {
+      const solicitud = await solicitudTurnoService.obtenerPorId(row.idSolicitud);
+
+      setSolicitudActual(solicitud);
+
+      // Para editar/nueva se usa, para ver solo es informativo
+      const periodo =
+        periodosVigentes.find((p) => p.idPeriodo === solicitud.idPeriodo) || {
+          idPeriodo: solicitud.idPeriodo,
+          descripcion: solicitud.periodoDescripcion,
+          periodo: "",
+        };
+      setPeriodoSeleccionado(periodo);
+
+      if (solicitud.estado === "BORRADOR") {
+        const base = {};
+        especialidades.forEach((esp) => (base[esp.idServicio] = createEmptyRow()));
+
+        (solicitud.detalles || []).forEach((det) => {
+          const idServicio = det.idServicio;
+          if (!idServicio) return;
+
+          base[idServicio] = {
+            ...createEmptyRow(),
+            requiere: det.requiere ?? true,
+            turnos: Number(det.turnosSolicitados ?? det.turnos ?? 0),
+            mananaActiva: !!det.mananaActiva,
+            diasManana: Array.isArray(det.diasManana) ? det.diasManana : [],
+            tardeActiva: !!det.tardeActiva,
+            diasTarde: Array.isArray(det.diasTarde) ? det.diasTarde : [],
+            observacion: det.observacion || "",
+          };
+        });
+
+        setTurnosPorEspecialidad(base);
+      }
+    } catch (e) {
+      console.error(e);
+      setError("No se pudo cargar el detalle de la solicitud.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const cerrarModal = async () => {
@@ -273,21 +322,22 @@ export default function FormularioSolicitudTurnos() {
   };
 
   // ============================================================
-  // CARGAR SOLICITUD EXISTENTE AL SELECCIONAR PERIODO (EN MODAL)
+  // CARGAR SOLICITUD POR PERIODO (solo NUEVA/EDITAR)
   // ============================================================
   useEffect(() => {
     const cargar = async () => {
       if (!openFormModal) return;
       if (!periodoSeleccionado?.idPeriodo) return;
 
+      // ✅ VER: no cargar por periodo (evita que se muestre combo editable)
+      if (modoModal === "VER") return;
+
       try {
-        // Si estás en NUEVA, podría existir una solicitud previa en ese periodo.
         const solicitud = await solicitudTurnoService.obtenerMiSolicitud(periodoSeleccionado.idPeriodo);
 
         if (solicitud) {
           setSolicitudActual(solicitud);
 
-          // Mapear detalles -> tabla
           const base = {};
           especialidades.forEach((esp) => (base[esp.idServicio] = createEmptyRow()));
 
@@ -297,8 +347,8 @@ export default function FormularioSolicitudTurnos() {
 
             base[idServicio] = {
               ...createEmptyRow(),
-              requiere: det.requiere ?? true, // si backend no manda, asumimos true
-              turnos: Number(det.turnos ?? det.turnosSolicitados ?? 0),
+              requiere: det.requiere ?? true,
+              turnos: Number(det.turnosSolicitados ?? det.turnos ?? 0),
               mananaActiva: !!det.mananaActiva,
               diasManana: Array.isArray(det.diasManana) ? det.diasManana : [],
               tardeActiva: !!det.tardeActiva,
@@ -309,12 +359,10 @@ export default function FormularioSolicitudTurnos() {
 
           setTurnosPorEspecialidad(base);
 
-          // si era NUEVA pero ya existe, pasamos a EDITAR/VER según estado real
           if (modoModal === "NUEVA") {
             setModoModal(solicitud.estado === "BORRADOR" ? "EDITAR" : "VER");
           }
         } else {
-          // No existe solicitud para ese periodo: quedamos en NUEVA limpia
           setSolicitudActual(null);
           const reset = {};
           especialidades.forEach((esp) => (reset[esp.idServicio] = createEmptyRow()));
@@ -328,21 +376,29 @@ export default function FormularioSolicitudTurnos() {
 
     cargar();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [openFormModal, periodoSeleccionado?.idPeriodo, especialidades]);
+  }, [openFormModal, periodoSeleccionado?.idPeriodo, especialidades, modoModal]);
 
   // ============================================================
   // CÁLCULOS
   // ============================================================
   const totalTurnos = useMemo(() => {
+    if (modoModal === "VER") return Number(solicitudActual?.totalTurnosSolicitados || 0);
     return Object.values(turnosPorEspecialidad || {}).reduce(
       (acc, row) => acc + Number(row?.turnos || 0),
       0
     );
-  }, [turnosPorEspecialidad]);
+  }, [turnosPorEspecialidad, modoModal, solicitudActual?.totalTurnosSolicitados]);
 
   const especialidadesConTurnos = useMemo(() => {
-    return Object.values(turnosPorEspecialidad || {}).filter((row) => Number(row?.turnos || 0) > 0).length;
-  }, [turnosPorEspecialidad]);
+    if (modoModal === "VER") {
+      return Number(
+        solicitudActual?.totalEspecialidades ?? (solicitudActual?.detalles?.length || 0)
+      );
+    }
+    return Object.values(turnosPorEspecialidad || {}).filter(
+      (row) => Number(row?.turnos || 0) > 0
+    ).length;
+  }, [turnosPorEspecialidad, modoModal, solicitudActual?.totalEspecialidades, solicitudActual?.detalles]);
 
   const esSoloLectura =
     modoModal === "VER" ||
@@ -350,7 +406,7 @@ export default function FormularioSolicitudTurnos() {
     solicitudActual?.estado === "REVISADO";
 
   // ============================================================
-  // GUARDAR BORRADOR (EN MODAL)
+  // GUARDAR BORRADOR
   // ============================================================
   const handleGuardarBorrador = async () => {
     if (!periodoSeleccionado?.idPeriodo) {
@@ -363,7 +419,6 @@ export default function FormularioSolicitudTurnos() {
     setSuccess(null);
 
     try {
-      // 1) pendientes (solo en las que están en requiere)
       const pendientes = obtenerRequeridasPendientes(especialidades, turnosPorEspecialidad);
       if (pendientes.length > 0) {
         const nombres = pendientes.slice(0, 3).map((e) => e.descServicio).join(", ");
@@ -383,14 +438,12 @@ export default function FormularioSolicitudTurnos() {
         return;
       }
 
-      // 2) válidas
       const detallesValidos = obtenerRequeridasValidasDeTabla(especialidades, turnosPorEspecialidad);
       if (detallesValidos.length === 0) {
         setError("No hay especialidades requeridas completas para guardar.");
         return;
       }
 
-      // 3) payload
       const payload = {
         idPeriodo: periodoSeleccionado.idPeriodo,
         detalles: detallesValidos,
@@ -411,7 +464,7 @@ export default function FormularioSolicitudTurnos() {
   };
 
   // ============================================================
-  // ENVIAR (EN MODAL)
+  // ENVIAR
   // ============================================================
   const handleEnviar = async () => {
     if (!periodoSeleccionado?.idPeriodo) {
@@ -479,9 +532,7 @@ export default function FormularioSolicitudTurnos() {
           <FileText className="w-8 h-8" />
           <h1 className="text-2xl font-bold">Solicitudes de Turnos por Telemedicina</h1>
         </div>
-        <p className="text-blue-100">
-          Administra tus solicitudes. Crea una nueva o edita un borrador existente.
-        </p>
+        <p className="text-blue-100">Administra tus solicitudes. Crea una nueva o edita un borrador existente.</p>
       </div>
 
       {/* Alertas */}
@@ -651,7 +702,7 @@ export default function FormularioSolicitudTurnos() {
             ? "Nueva Solicitud"
             : modoModal === "EDITAR"
             ? `Editar Solicitud #${solicitudActual?.idSolicitud ?? ""}`
-            : `Ver Solicitud #${solicitudActual?.idSolicitud ?? ""}`
+            : `Detalle Solicitud #${solicitudActual?.idSolicitud ?? ""}`
         }
       >
         <div className="p-6 space-y-6">
@@ -670,66 +721,131 @@ export default function FormularioSolicitudTurnos() {
 
             <div className="text-sm text-slate-500">
               {solicitudActual?.updatedAt ? (
-                <>Última actualización: <strong>{formatFecha(solicitudActual.updatedAt)}</strong></>
+                <>
+                  Última actualización: <strong>{formatFecha(solicitudActual.updatedAt)}</strong>
+                </>
               ) : (
                 <>—</>
               )}
             </div>
           </div>
 
-          {/* Selección de Periodo */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-            <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[#0A5BA9]" />
-              Periodo de Solicitud
-            </h2>
+          {/* ===================== BLOQUE PERIODO (UX) ===================== */}
+          {!esSoloLectura ? (
+            // ✅ NUEVA / EDITAR: combo
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-[#0A5BA9]" />
+                Periodo de Solicitud
+              </h2>
 
-            {periodosVigentes.length === 0 ? (
-              <div className="text-center py-8 text-slate-500">
-                <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No hay periodos activos.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <select
-                  value={periodoSeleccionado?.idPeriodo || ""}
-                  onChange={(e) => {
-                    const periodo = periodosVigentes.find((p) => p.idPeriodo === parseInt(e.target.value));
-                    setPeriodoSeleccionado(periodo || null);
-                  }}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
-                  disabled={esSoloLectura}
-                >
-                  <option value="">Seleccione un periodo...</option>
-                  {periodosVigentes.map((periodo) => (
-                    <option key={periodo.idPeriodo} value={periodo.idPeriodo}>
-                      {periodo.descripcion} ({periodo.periodo})
-                    </option>
-                  ))}
-                </select>
+              {periodosVigentes.length === 0 ? (
+                <div className="text-center py-8 text-slate-500">
+                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
+                  <p>No hay periodos activos.</p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <select
+                    value={periodoSeleccionado?.idPeriodo || ""}
+                    onChange={(e) => {
+                      const periodo = periodosVigentes.find((p) => p.idPeriodo === parseInt(e.target.value));
+                      setPeriodoSeleccionado(periodo || null);
+                    }}
+                    className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                  >
+                    <option value="">Seleccione un periodo...</option>
+                    {periodosVigentes.map((periodo) => (
+                      <option key={periodo.idPeriodo} value={periodo.idPeriodo}>
+                        {periodo.descripcion} ({periodo.periodo})
+                      </option>
+                    ))}
+                  </select>
 
-                {periodoSeleccionado && (
-                  <div className="p-4 bg-blue-50 rounded-xl">
-                    <div className="flex items-center gap-2 text-blue-800 mb-2">
-                      <Clock className="w-4 h-4" />
-                      <span className="font-semibold">Vigencia del periodo</span>
+                  {periodoSeleccionado && (
+                    <div className="p-4 bg-blue-50 rounded-xl">
+                      <div className="flex items-center gap-2 text-blue-800 mb-2">
+                        <Clock className="w-4 h-4" />
+                        <span className="font-semibold">Vigencia del periodo</span>
+                      </div>
+
+                      {periodoSeleccionado.fechaInicio && periodoSeleccionado.fechaFin ? (
+                        <p className="text-sm text-blue-700">
+                          {new Date(periodoSeleccionado.fechaInicio).toLocaleDateString("es-PE", { dateStyle: "long" })}{" "}
+                          -{" "}
+                          {new Date(periodoSeleccionado.fechaFin).toLocaleDateString("es-PE", { dateStyle: "long" })}
+                        </p>
+                      ) : (
+                        <p className="text-sm text-blue-700">{periodoSeleccionado.descripcion || "—"}</p>
+                      )}
+
+                      {periodoSeleccionado.instrucciones && (
+                        <p className="mt-2 text-sm text-blue-600 italic">{periodoSeleccionado.instrucciones}</p>
+                      )}
                     </div>
-                    <p className="text-sm text-blue-700">
-                      {new Date(periodoSeleccionado.fechaInicio).toLocaleDateString("es-PE", { dateStyle: "long" })}{" "}
-                      -{" "}
-                      {new Date(periodoSeleccionado.fechaFin).toLocaleDateString("es-PE", { dateStyle: "long" })}
-                    </p>
-                    {periodoSeleccionado.instrucciones && (
-                      <p className="mt-2 text-sm text-blue-600 italic">{periodoSeleccionado.instrucciones}</p>
-                    )}
+                  )}
+                </div>
+              )}
+            </div>
+          ) : (
+            // ✅ VER: SIN combo, solo tarjeta informativa
+            <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                <div>
+                  <div className="text-xs text-slate-500">Periodo</div>
+                  <div className="text-lg font-bold text-slate-900">
+                    {solicitudActual?.periodoDescripcion || "—"}
                   </div>
-                )}
-              </div>
-            )}
-          </div>
+                  <div className="text-sm text-slate-600">
+                    ID Periodo: <strong>{solicitudActual?.idPeriodo ?? "—"}</strong>
+                  </div>
+                </div>
 
-          {/* Tabla de especialidades SOLO dentro del modal */}
-          {periodoSeleccionado && especialidades.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(
+                      solicitudActual?.estado || "BORRADOR"
+                    )}`}
+                  >
+                    {solicitudActual?.estado || "—"}
+                  </span>
+
+                  <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
+                    Turnos:{" "}
+                    <span className="ml-1 font-bold">{solicitudActual?.totalTurnosSolicitados ?? 0}</span>
+                  </span>
+
+                  <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
+                    Especialidades:{" "}
+                    <span className="ml-1 font-bold">
+                      {solicitudActual?.totalEspecialidades ?? (solicitudActual?.detalles?.length || 0)}
+                    </span>
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs text-slate-500 mb-1">Enviado</div>
+                  <div className="font-semibold text-slate-900">{formatFecha(solicitudActual?.fechaEnvio)}</div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs text-slate-500 mb-1">Creado</div>
+                  <div className="font-semibold text-slate-900">{formatFecha(solicitudActual?.createdAt)}</div>
+                </div>
+                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="text-xs text-slate-500 mb-1">Actualizado</div>
+                  <div className="font-semibold text-slate-900">{formatFecha(solicitudActual?.updatedAt)}</div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ✅ VER: Detalle UX */}
+          {esSoloLectura && <SolicitudDetalleView solicitud={solicitudActual} />}
+
+          {/* ✅ EDITAR/NUEVA: tabla editable */}
+          {periodoSeleccionado && !esSoloLectura && especialidades.length > 0 && (
             <TurnosPorEspecialidadTabla
               especialidades={especialidades}
               turnosPorEspecialidad={turnosPorEspecialidad}
@@ -748,9 +864,7 @@ export default function FormularioSolicitudTurnos() {
                     Total de turnos solicitados:{" "}
                     <strong className="text-2xl text-[#0A5BA9]">{totalTurnos}</strong>
                   </p>
-                  <p className="text-sm text-slate-500">
-                    en {especialidadesConTurnos} especialidades
-                  </p>
+                  <p className="text-sm text-slate-500">en {especialidadesConTurnos} especialidades</p>
 
                   {valTabla.pendCount > 0 && (
                     <p className="text-sm text-amber-700 mt-1">
@@ -782,8 +896,8 @@ export default function FormularioSolicitudTurnos() {
             </div>
           )}
 
-          {/* Mensaje si es solo lectura */}
-          {periodoSeleccionado && esSoloLectura && (
+          {/* Mensaje final si es solo lectura */}
+          {esSoloLectura && (
             <div className="bg-slate-100 rounded-2xl p-6 text-center">
               <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-600" />
               <h3 className="text-lg font-bold text-slate-800 mb-2">
@@ -795,7 +909,7 @@ export default function FormularioSolicitudTurnos() {
                   : "Tu solicitud ha sido enviada y está pendiente de revisión."}
               </p>
               <p className="text-sm text-slate-500 mt-2">
-                Total solicitado: {solicitudActual?.totalTurnosSolicitados ?? totalTurnos} turnos
+                Total solicitado: {solicitudActual?.totalTurnosSolicitados ?? 0} turnos
               </p>
             </div>
           )}
@@ -806,7 +920,363 @@ export default function FormularioSolicitudTurnos() {
 }
 
 /** =======================================================================
- * TurnosPorEspecialidadTabla (tu tabla)
+ * Vista SOLO LECTURA (VER): UX mejorado
+ * ======================================================================= */
+function SolicitudDetalleView2({ solicitud }) {
+  if (!solicitud) return null;
+
+  const diasArr = (arr) => (Array.isArray(arr) && arr.length ? arr : []);
+
+  const chipClass = (variant) => {
+    const base = "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold border";
+    if (variant === "morning") return `${base} bg-sky-50 text-sky-700 border-sky-200`;
+    if (variant === "afternoon") return `${base} bg-amber-50 text-amber-800 border-amber-200`;
+    return `${base} bg-slate-50 text-slate-700 border-slate-200`;
+  };
+
+  const badgeClass = (active) =>
+    active
+      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+      : "bg-slate-50 text-slate-500 border-slate-200";
+
+  const detalles = Array.isArray(solicitud.detalles) ? solicitud.detalles : [];
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <div className="text-xs text-slate-500">Detalle de la solicitud</div>
+            <div className="text-lg font-bold text-slate-900">Especialidades solicitadas</div>
+            <div className="text-sm text-slate-600">
+              Se muestra exactamente lo registrado en el backend (solo lectura).
+            </div>
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
+              Total turnos: <span className="ml-1 font-bold">{solicitud.totalTurnosSolicitados ?? 0}</span>
+            </span>
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
+              N° especialidades:{" "}
+              <span className="ml-1 font-bold">{solicitud.totalEspecialidades ?? detalles.length}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {detalles.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-10 border border-slate-200 text-center text-slate-500">
+          No hay detalles registrados.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {detalles.map((d) => {
+            const man = !!d.mananaActiva;
+            const tar = !!d.tardeActiva;
+
+            const manDias = diasArr(d.diasManana);
+            const tarDias = diasArr(d.diasTarde);
+
+            return (
+              <div key={d.idDetalle} className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+                <div className="p-5 border-b border-slate-200">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-xs text-slate-500">Especialidad</div>
+                      <div className="text-lg font-bold text-slate-900">{d.nombreEspecialidad || "—"}</div>
+                      <div className="text-xs text-slate-500 mt-1">
+                        {d.codServicio ? `Código: ${d.codServicio}` : "—"} ·{" "}
+                        {d.idServicio ? `Servicio ID: ${d.idServicio}` : "—"}
+                      </div>
+                    </div>
+
+                    <div className="text-right">
+                      <div className="text-xs text-slate-500">Turnos</div>
+                      <div className="text-2xl font-extrabold text-[#0A5BA9]">{d.turnosSolicitados ?? 0}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-5 space-y-4">
+                  <div className="flex flex-wrap gap-2">
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${badgeClass(
+                        man
+                      )}`}
+                    >
+                      Mañana {man ? "activa" : "—"}
+                    </span>
+
+                    <span
+                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${badgeClass(
+                        tar
+                      )}`}
+                    >
+                      Tarde {tar ? "activa" : "—"}
+                    </span>
+
+                    <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
+                      Requiere: <span className="ml-1 font-bold">{d.requiere ? "Sí" : "No"}</span>
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-sm font-bold text-slate-800 mb-2">Días mañana</div>
+                      {man && manDias.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {manDias.map((x) => (
+                            <span key={x} className={chipClass("morning")}>
+                              {x}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500">—</div>
+                      )}
+                    </div>
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-sm font-bold text-slate-800 mb-2">Días tarde</div>
+                      {tar && tarDias.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {tarDias.map((x) => (
+                            <span key={x} className={chipClass("afternoon")}>
+                              {x}
+                            </span>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-sm text-slate-500">—</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl border border-slate-200 p-4">
+                    <div className="text-sm font-bold text-slate-800 mb-1">Observación</div>
+                    <div className="text-sm text-slate-600">{d.observacion?.trim() ? d.observacion : "—"}</div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** =======================================================================
+ * Vista SOLO LECTURA (VER): DETALLE EN TABLA (UX PRO)
+ * ======================================================================= */
+function SolicitudDetalleView({ solicitud }) {
+  if (!solicitud) return null;
+
+  const detalles = Array.isArray(solicitud.detalles) ? solicitud.detalles : [];
+  const DIAS_ORDEN = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
+
+  const ordenaDias = (arr) => {
+    const a = Array.isArray(arr) ? arr : [];
+    const set = new Set(a);
+    return DIAS_ORDEN.filter((d) => set.has(d));
+  };
+
+  const chipDia = (active, variant = "default") => {
+    const base =
+      "inline-flex items-center justify-center min-w-[34px] rounded-full px-2.5 py-1 text-xs font-semibold border transition";
+    if (!active) return `${base} bg-slate-50 text-slate-400 border-slate-200`;
+
+    if (variant === "morning") return `${base} bg-sky-50 text-sky-700 border-sky-200`;
+    if (variant === "afternoon") return `${base} bg-amber-50 text-amber-800 border-amber-200`;
+    return `${base} bg-emerald-50 text-emerald-700 border-emerald-200`;
+  };
+
+  const badge = (active, label, tone = "ok") => {
+    const base = "inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border";
+    if (!active) return <span className={`${base} bg-slate-50 text-slate-500 border-slate-200`}>—</span>;
+
+    if (tone === "morning")
+      return <span className={`${base} bg-sky-50 text-sky-700 border-sky-200`}>{label}</span>;
+    if (tone === "afternoon")
+      return <span className={`${base} bg-amber-50 text-amber-800 border-amber-200`}>{label}</span>;
+
+    return <span className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}>{label}</span>;
+  };
+
+  const formatObs = (t) => (t && String(t).trim().length ? String(t).trim() : "—");
+
+  // Totales por turnos (seguridad UX)
+  const totalTurnosTabla = detalles.reduce((acc, d) => acc + Number(d.turnosSolicitados || 0), 0);
+
+  return (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <div className="text-xs text-slate-500">Detalle de la solicitud</div>
+            <div className="text-lg font-bold text-slate-900">Especialidades solicitadas</div>
+            <div className="text-sm text-slate-600">
+              Vista solo lectura. Información cargada desde el backend.
+            </div>
+          </div>
+
+          <div className="flex gap-2 flex-wrap">
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
+              Total turnos:{" "}
+              <span className="ml-1 font-bold">{solicitud.totalTurnosSolicitados ?? totalTurnosTabla}</span>
+            </span>
+            <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
+              N° especialidades:{" "}
+              <span className="ml-1 font-bold">{solicitud.totalEspecialidades ?? detalles.length}</span>
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabla */}
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+        {/* Cabecera tabla */}
+        <div className="p-5 border-b border-slate-200 flex items-center justify-between gap-3">
+          <div className="text-sm text-slate-700">
+            <span className="font-semibold">Listado</span>{" "}
+            <span className="text-slate-500">({detalles.length})</span>
+          </div>
+
+          <div className="text-xs text-slate-500">
+            * Días marcados por turno (Mañana / Tarde)
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full border-collapse">
+            <thead className="bg-slate-50 text-xs text-slate-700 sticky top-0 z-10">
+              <tr className="[&>th]:px-4 [&>th]:py-3 [&>th]:text-left [&>th]:font-bold border-b border-slate-200">
+                <th className="w-14">#</th>
+                <th className="min-w-[260px]">Especialidad</th>
+                <th className="w-28">Código</th>
+                <th className="w-24 text-right">Turnos</th>
+                <th className="w-28 text-center">Mañana</th>
+                <th className="min-w-[220px] text-center">Días Mañana</th>
+                <th className="w-28 text-center">Tarde</th>
+                <th className="min-w-[220px] text-center">Días Tarde</th>
+                <th className="min-w-[220px]">Observación</th>
+              </tr>
+            </thead>
+
+            <tbody className="divide-y divide-slate-200">
+              {detalles.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
+                    No hay detalles registrados.
+                  </td>
+                </tr>
+              ) : (
+                detalles.map((d, idx) => {
+                  const man = !!d.mananaActiva;
+                  const tar = !!d.tardeActiva;
+
+                  const manDias = ordenaDias(d.diasManana);
+                  const tarDias = ordenaDias(d.diasTarde);
+
+                  return (
+                    <tr key={d.idDetalle ?? `${d.idServicio}-${idx}`} className="hover:bg-slate-50">
+                      <td className="px-4 py-4 text-sm text-slate-500">{idx + 1}</td>
+
+                      <td className="px-4 py-4">
+                        <div className="font-semibold text-slate-900">
+                          {d.nombreEspecialidad || "—"}
+                        </div>
+                        <div className="text-xs text-slate-500">
+                          Servicio ID: <span className="font-semibold">{d.idServicio ?? "—"}</span>
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4 text-sm text-slate-700">
+                        {d.codServicio || "—"}
+                      </td>
+
+                      <td className="px-4 py-4 text-right">
+                        <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border border-blue-200 bg-blue-50 text-[#0A5BA9]">
+                          {Number(d.turnosSolicitados || 0)}
+                        </span>
+                      </td>
+
+                      {/* Mañana */}
+                      <td className="px-4 py-4 text-center">
+                        {badge(man, "Activa", "morning")}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          {DIAS_ORDEN.map((dia) => (
+                            <span
+                              key={`m-${d.idDetalle}-${dia}`}
+                              className={chipDia(man && manDias.includes(dia), "morning")}
+                              title="Día de atención (Mañana)"
+                            >
+                              {dia}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+
+                      {/* Tarde */}
+                      <td className="px-4 py-4 text-center">
+                        {badge(tar, "Activa", "afternoon")}
+                      </td>
+
+                      <td className="px-4 py-4">
+                        <div className="flex flex-wrap gap-2 justify-center">
+                          {DIAS_ORDEN.map((dia) => (
+                            <span
+                              key={`t-${d.idDetalle}-${dia}`}
+                              className={chipDia(tar && tarDias.includes(dia), "afternoon")}
+                              title="Día de atención (Tarde)"
+                            >
+                              {dia}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+
+                      <td className="px-4 py-4 text-sm text-slate-600">
+                        {formatObs(d.observacion)}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+
+            {/* Footer totales */}
+            {detalles.length > 0 && (
+              <tfoot className="bg-white">
+                <tr className="border-t border-slate-200">
+                  <td className="px-4 py-4" colSpan={3}>
+                    <span className="text-sm text-slate-500">Totales</span>
+                  </td>
+                  <td className="px-4 py-4 text-right">
+                    <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-bold border border-slate-200 bg-slate-50 text-slate-700">
+                      {solicitud.totalTurnosSolicitados ?? totalTurnosTabla}
+                    </span>
+                  </td>
+                  <td className="px-4 py-4" colSpan={5}></td>
+                </tr>
+              </tfoot>
+            )}
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+
+
+/** =======================================================================
+ * TurnosPorEspecialidadTabla (tu tabla editable)
  * ======================================================================= */
 function TurnosPorEspecialidadTabla({
   especialidades,
@@ -835,10 +1305,13 @@ function TurnosPorEspecialidadTabla({
       idx,
       row: turnosPorEspecialidad[esp.idServicio] || createEmptyRow(),
     }))
-    .filter(({ esp }) =>
-      (esp.descServicio || "").toLowerCase().includes(search.toLowerCase()) ||
-      (esp.codServicio || "").toLowerCase().includes(search.toLowerCase())
-    )
+    .filter(({ esp }) => {
+      const q = search.toLowerCase();
+      return (
+        (esp.descServicio || "").toLowerCase().includes(q) ||
+        (esp.codServicio || "").toLowerCase().includes(q)
+      );
+    })
     .filter(({ row }) => {
       const st = getEstadoFila(row);
       if (filter === "all") return true;
@@ -849,25 +1322,23 @@ function TurnosPorEspecialidadTabla({
       return true;
     });
 
-  const totals = especialidades.map((esp) => getEstadoFila(turnosPorEspecialidad[esp.idServicio] || createEmptyRow()));
+  const totals = especialidades.map((esp) =>
+    getEstadoFila(turnosPorEspecialidad[esp.idServicio] || createEmptyRow())
+  );
+
   const totalCount = especialidades.length;
-  const reqCount = especialidades.filter((esp) => (turnosPorEspecialidad[esp.idServicio]?.requiere)).length;
+  const reqCount = especialidades.filter((esp) => turnosPorEspecialidad[esp.idServicio]?.requiere).length;
   const okCount = totals.filter((t) => t === "complete").length;
   const pendCount = totals.filter((t) => t === "pending").length;
   const progressPct = reqCount === 0 ? 0 : Math.round((okCount / reqCount) * 100);
 
   const firstPendingId =
-    especialidades.find((esp) =>
-      getEstadoFila(turnosPorEspecialidad[esp.idServicio] || createEmptyRow()) === "pending"
+    especialidades.find(
+      (esp) => getEstadoFila(turnosPorEspecialidad[esp.idServicio] || createEmptyRow()) === "pending"
     )?.idServicio ?? null;
 
   useEffect(() => {
-    onValidationChange?.({
-      pendCount,
-      reqCount,
-      okCount,
-      firstPendingId,
-    });
+    onValidationChange?.({ pendCount, reqCount, okCount, firstPendingId });
   }, [pendCount, reqCount, okCount, firstPendingId, onValidationChange]);
 
   const pendingList = especialidades
@@ -887,17 +1358,6 @@ function TurnosPorEspecialidadTabla({
     }));
   };
 
-  const patchMany = (ids, patchBuilder) => {
-    setTurnosPorEspecialidad((prev) => {
-      const next = { ...prev };
-      ids.forEach((id) => {
-        const patch = typeof patchBuilder === "function" ? patchBuilder(id, next[id]) : patchBuilder;
-        next[id] = { ...createEmptyRow(), ...next[id], ...patch };
-      });
-      return next;
-    });
-  };
-
   const toggleDia = (idServicio, campoDias, dia) => {
     setTurnosPorEspecialidad((prev) => {
       const current = prev[idServicio]?.[campoDias] || [];
@@ -909,34 +1369,6 @@ function TurnosPorEspecialidadTabla({
       };
     });
   };
-
-  // Bulk
-  const visibleIds = visibles.map((v) => v.esp.idServicio);
-  const allIds = especialidades.map((e) => e.idServicio);
-
-  const bulkRequire = () => patchMany(visibleIds, { requiere: true });
-  const bulkMorningWeekdays = () =>
-    patchMany(visibleIds, { mananaActiva: true, diasManana: ["Lun", "Mar", "Mié", "Jue", "Vie"] });
-  const bulkAfternoonWeekdays = () =>
-    patchMany(visibleIds, { tardeActiva: true, diasTarde: ["Lun", "Mar", "Mié", "Jue", "Vie"] });
-  const bulkDefaults = () =>
-    patchMany(visibleIds, (id, row) => ({
-      requiere: true,
-      turnos: Math.max(1, Number(row?.turnos || 0)),
-      mananaActiva: true,
-      diasManana: ["Lun", "Mar", "Mié", "Jue", "Vie"],
-    }));
-  const bulkClearVisible = () =>
-    patchMany(visibleIds, {
-      requiere: false,
-      turnos: 0,
-      mananaActiva: false,
-      diasManana: [],
-      tardeActiva: false,
-      diasTarde: [],
-      observacion: "",
-    });
-  const bulkTurnosUnoTodas = () => patchMany(allIds, { requiere: true, turnos: 1 });
 
   const irAPendiente = () => {
     const firstPending = visibles.find(({ row }) => getEstadoFila(row) === "pending");
@@ -987,93 +1419,7 @@ function TurnosPorEspecialidadTabla({
               <option value="not_required">Solo no requeridas</option>
             </select>
           </div>
-
-
-          { false && ( 
-          <>
-            <div className="lg:col-span-3 flex items-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setSearch("");
-                  setFilter("all");
-                }}
-                className="w-full rounded-2xl border border-gray-200 px-4 py-3 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-                disabled={esSoloLectura}
-              >
-                Limpiar
-              </button>
-
-              <button
-                type="button"
-                onClick={bulkDefaults}
-                className="w-full rounded-2xl px-4 py-3 text-sm font-bold text-white bg-indigo-600 hover:bg-indigo-700"
-                disabled={esSoloLectura}
-              >
-                Por defecto (visibles)
-              </button>
-            </div>
-          </>
-          )}
-
         </div>
-
-        {/* Bulk actions */}
-        { false && ( 
-          <>
-        <div className="mt-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={bulkRequire}
-            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            disabled={esSoloLectura}
-          >
-            Marcar “Requiere” (visibles)
-          </button>
-
-          <button
-            type="button"
-            onClick={bulkMorningWeekdays}
-            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            disabled={esSoloLectura}
-          >
-            Activar Mañana + Lun–Vie (visibles)
-          </button>
-
-          <button
-            type="button"
-            onClick={bulkAfternoonWeekdays}
-            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            disabled={esSoloLectura}
-          >
-            Activar Tarde + Lun–Vie (visibles)
-          </button>
-
-          <button
-            type="button"
-            onClick={bulkClearVisible}
-            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            disabled={esSoloLectura}
-          >
-            Limpiar visibles
-          </button>
-
-          <button
-            type="button"
-            onClick={bulkTurnosUnoTodas}
-            className="rounded-full border border-gray-200 px-4 py-2 text-sm font-semibold text-gray-700 hover:bg-gray-50"
-            disabled={esSoloLectura}
-          >
-            Poner 1 turno (todas)
-          </button>
-        </div>
-
-        <p className="mt-3 text-xs text-gray-500">
-          “Por defecto” = Requiere ✅ + <strong>N° turnos = 1</strong> + Mañana activado + Lun–Vie.
-        </p>
-        </>
-        )}
-
       </div>
 
       {/* Table */}
@@ -1097,11 +1443,7 @@ function TurnosPorEspecialidadTabla({
             {visibles.map(({ esp, idx, row }) => {
               const st = getEstadoFila(row);
               return (
-                <tr
-                  key={esp.idServicio}
-                  id={`row-${esp.idServicio}`}
-                  className="hover:bg-slate-50 transition-colors"
-                >
+                <tr key={esp.idServicio} id={`row-${esp.idServicio}`} className="hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-4 text-sm text-slate-500">{idx + 1}</td>
 
                   <td className="px-4 py-4">
@@ -1128,9 +1470,7 @@ function TurnosPorEspecialidadTabla({
                       min="0"
                       max="99"
                       value={row.turnos ?? 0}
-                      onChange={(e) =>
-                        patchRow(esp.idServicio, { turnos: Math.max(0, parseInt(e.target.value) || 0) })
-                      }
+                      onChange={(e) => patchRow(esp.idServicio, { turnos: Math.max(0, parseInt(e.target.value) || 0) })}
                       disabled={esSoloLectura || !row.requiere}
                       className="w-24 rounded-xl border border-gray-200 px-3 py-2 text-sm text-center font-semibold disabled:bg-slate-50"
                     />
@@ -1222,9 +1562,7 @@ function TurnosPorEspecialidadTabla({
 
                   {/* Estado */}
                   <td className="px-4 py-4 text-center">
-                    <span
-                      className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadge(st)}`}
-                    >
+                    <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadge(st)}`}>
                       {st === "complete" ? "Completa" : st === "pending" ? "Pendiente" : "No requerida"}
                     </span>
                   </td>
