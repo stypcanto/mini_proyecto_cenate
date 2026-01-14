@@ -43,18 +43,29 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
     /**
      * Obtiene todas las acciones de un usuario
      */
+    @Query("""
+        SELECT a FROM TeleECGAuditoria a
+        WHERE a.usuario.idUser = :idUsuario
+        ORDER BY a.fechaAccion DESC
+        """)
     Page<TeleECGAuditoria> findByUsuarioIdOrderByFechaAccionDesc(
-        Long idUsuario,
+        @Param("idUsuario") Long idUsuario,
         Pageable pageable
     );
 
     /**
      * Obtiene acciones de un usuario en un rango de fechas
      */
+    @Query("""
+        SELECT a FROM TeleECGAuditoria a
+        WHERE a.usuario.idUser = :idUsuario
+          AND a.fechaAccion BETWEEN :fechaInicio AND :fechaFin
+        ORDER BY a.fechaAccion DESC
+        """)
     List<TeleECGAuditoria> findByUsuarioIdAndFechaAccionBetweenOrderByFechaAccionDesc(
-        Long idUsuario,
-        LocalDateTime fechaInicio,
-        LocalDateTime fechaFin
+        @Param("idUsuario") Long idUsuario,
+        @Param("fechaInicio") LocalDateTime fechaInicio,
+        @Param("fechaFin") LocalDateTime fechaFin
     );
 
     /**
@@ -93,10 +104,15 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
     /**
      * Cuenta acciones de un usuario en un período
      */
+    @Query("""
+        SELECT COUNT(a) FROM TeleECGAuditoria a
+        WHERE a.usuario.idUser = :idUsuario
+          AND a.fechaAccion BETWEEN :inicio AND :fin
+        """)
     Long countByUsuarioIdAndFechaAccionBetween(
-        Long idUsuario,
-        LocalDateTime inicio,
-        LocalDateTime fin
+        @Param("idUsuario") Long idUsuario,
+        @Param("inicio") LocalDateTime inicio,
+        @Param("fin") LocalDateTime fin
     );
 
     /**
@@ -104,10 +120,10 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
      * Retorna: [id_usuario, nombre_usuario, cantidad_acciones]
      */
     @Query("""
-        SELECT a.usuario.id, a.nombreUsuario, COUNT(a)
+        SELECT a.usuario.idUser, a.nombreUsuario, COUNT(a)
         FROM TeleECGAuditoria a
         WHERE a.fechaAccion >= :desde
-        GROUP BY a.usuario.id, a.nombreUsuario
+        GROUP BY a.usuario.idUser, a.nombreUsuario
         ORDER BY COUNT(a) DESC
         LIMIT 10
         """)
@@ -159,11 +175,11 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
      * Búsqueda de patrones sospechosos (múltiples fallos en corto tiempo)
      */
     @Query("""
-        SELECT a.usuario.id, a.nombreUsuario, COUNT(a)
+        SELECT a.usuario.idUser, a.nombreUsuario, COUNT(a)
         FROM TeleECGAuditoria a
         WHERE a.resultado = 'FALLIDA'
           AND a.fechaAccion >= :hace_una_hora
-        GROUP BY a.usuario.id, a.nombreUsuario
+        GROUP BY a.usuario.idUser, a.nombreUsuario
         HAVING COUNT(a) >= 5
         ORDER BY COUNT(a) DESC
         """)
@@ -174,10 +190,10 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
      * (para detectar accesos concurrentes de ubicaciones distintas)
      */
     @Query("""
-        SELECT a.usuario.id, a.nombreUsuario, COUNT(DISTINCT a.ipUsuario), COUNT(a)
+        SELECT a.usuario.idUser, a.nombreUsuario, COUNT(DISTINCT a.ipUsuario), COUNT(a)
         FROM TeleECGAuditoria a
         WHERE a.fechaAccion >= :desde
-        GROUP BY a.usuario.id, a.nombreUsuario
+        GROUP BY a.usuario.idUser, a.nombreUsuario
         HAVING COUNT(DISTINCT a.ipUsuario) > 1
         ORDER BY COUNT(DISTINCT a.ipUsuario) DESC
         """)
@@ -189,7 +205,7 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
      */
     @Query("""
         SELECT a FROM TeleECGAuditoria a
-        WHERE a.usuario.id = :idUsuario
+        WHERE a.usuario.idUser = :idUsuario
           AND a.fechaAccion BETWEEN :inicio AND :fin
         ORDER BY a.fechaAccion DESC
         """)
@@ -213,7 +229,7 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
         SELECT
             CAST(a.fechaAccion AS DATE),
             COUNT(a),
-            COUNT(DISTINCT a.usuario.id)
+            COUNT(DISTINCT a.usuario.idUser)
         FROM TeleECGAuditoria a
         WHERE a.fechaAccion >= :desde
         GROUP BY CAST(a.fechaAccion AS DATE)
@@ -225,9 +241,15 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
      * Busca accesos desde una IP y usuario específicos
      * Para: análisis detallado de sesiones sospechosas
      */
+    @Query("""
+        SELECT a FROM TeleECGAuditoria a
+        WHERE a.usuario.idUser = :idUsuario
+          AND a.ipUsuario = :ipUsuario
+        ORDER BY a.fechaAccion DESC
+        """)
     List<TeleECGAuditoria> findByUsuarioIdAndIpUsuarioOrderByFechaAccionDesc(
-        Long idUsuario,
-        String ipUsuario
+        @Param("idUsuario") Long idUsuario,
+        @Param("ipUsuario") String ipUsuario
     );
 
     /**
@@ -250,7 +272,7 @@ public interface TeleECGAuditoriaRepository extends JpaRepository<TeleECGAuditor
     @Query("""
         SELECT a FROM TeleECGAuditoria a
         WHERE (:idImagen IS NULL OR a.imagen.idImagen = :idImagen)
-          AND (:idUsuario IS NULL OR a.usuario.id = :idUsuario)
+          AND (:idUsuario IS NULL OR a.usuario.idUser = :idUsuario)
           AND (:accion IS NULL OR a.accion = :accion)
           AND (:resultado IS NULL OR a.resultado = :resultado)
           AND a.fechaAccion BETWEEN :inicio AND :fin
