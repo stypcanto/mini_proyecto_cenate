@@ -352,6 +352,272 @@ Tablas: tele_ecg_auditoria, tele_ecg_estadisticas
 
 ---
 
+## 💡 RECOMENDACIONES PARA CONTINUAR EL PROYECTO
+
+Después de completar la migración TeleEKG v2.0.0, aquí está el **roadmap estratégico recomendado**:
+
+### **📍 Opciones de Continuación (En orden de prioridad)**
+
+#### **🔴 OPCIÓN A: Completar TeleEKG v2.1 - Production Ready** (1-2 horas)
+**Recomendación: ⭐⭐⭐⭐⭐ MUY RECOMENDADO**
+
+```
+Razón: Terminar lo que ya está 97% completo
+       - Solo falta corregir 1 pequeño issue (15 min)
+       - Validar con smoke tests (30 min)
+       - Garantizar que funciona en producción
+
+Tareas:
+├─ Fix TeleECGAuditoriaRepository (15 min) 🔴 CRÍTICO
+├─ Smoke tests end-to-end (30 min) 🟢 OPCIONAL
+├─ Mover integration tests (30 min) 🟡 IMPORTANTE
+└─ Final validation (5 min) 🟢 VERIFICACIÓN
+
+Beneficio: Cierre limpio, app lista para producción
+Impacto: Alto (cierra el módulo TeleEKG completamente)
+Tiempo: 1.5 - 2 horas
+Dependencias: NINGUNA
+```
+
+---
+
+#### **🟢 OPCIÓN B: Implementar Integración TeleEKG + Disponibilidad Médica** (4-6 horas)
+**Recomendación: ⭐⭐⭐⭐⭐ MUY RECOMENDADO**
+
+```
+Razón: TeleEKG está listo, pero falta conectarlo con el módulo de
+       disponibilidad de médicos para que los doctores puedan:
+       - Subir ECG
+       - Procesar en sus horarios disponibles
+       - Vincular con citas
+
+Tareas:
+├─ Crear endpoint: POST /api/teleekgs/{id}/vincular-cita
+├─ Integración: TeleEKG.id + DisponibilidadMedica.id_medico
+├─ Estados: PENDIENTE → PROCESADA → VINCULADA → ATENDIDA
+├─ Notificaciones email a médico (nuevo ECG disponible)
+└─ Tests: 10+ nuevos tests de integración
+
+Beneficio: Flujo end-to-end: paciente sube ECG → médico procesa → cita
+Impacto: CRÍTICO (cierra el loop de telemedicina)
+Tiempo: 4-6 horas
+Dependencias: TeleEKG v2.0.0 (casi listo) + DisponibilidadMedica (existe)
+
+Documentación base: /plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md (v2.0.0)
+```
+
+---
+
+#### **🟡 OPCIÓN C: Implementar Dashboard Analytics TeleEKG** (3-4 horas)
+**Recomendación: ⭐⭐⭐⭐ RECOMENDADO**
+
+```
+Razón: Datos ya están en BD y endpoints existen, falta visualizar
+       Los coordinadores necesitan ver:
+       - # ECGs por estado (pendiente/procesado/rechazado)
+       - Tasa de rechazo por IPRESS
+       - Volumen de datos por institución
+       - Médicos con más carga de trabajo
+       - Tiempos promedio de procesamiento
+
+Tareas:
+├─ Frontend: Crear dashboard React con gráficos
+├─ Componentes: Charts, tablas, cards de KPIs
+├─ Visualizaciones:
+│  ├─ Pie chart: Estados de imágenes
+│  ├─ Bar chart: Carga por IPRESS
+│  ├─ Line chart: Tendencia temporal
+│  └─ Table: Médicos con más ECGs procesados
+├─ Permisos: Solo COORDINADOR y ADMIN
+└─ Tests: 5+ tests de componentes
+
+Beneficio: Visibilidad operacional, capacidad de supervisión
+Impacto: Alto (mejora gobernanza del sistema)
+Tiempo: 3-4 horas
+Dependencias: TeleEKG v2.0.0 (casi listo)
+
+Endpoints ya disponibles: /api/teleekgs/estadisticas, /api/teleekgs/proximas-vencer
+```
+
+---
+
+#### **🟠 OPCIÓN D: Optimizar Módulo Red - Solicitudes IPRESS** (2-3 horas)
+**Recomendación: ⭐⭐⭐ RECOMENDADO**
+
+```
+Razón: Módulo existente según CLAUDE.md, necesita optimización
+       Actualmente manual, se puede automatizar:
+       - Auto-asignar turnos disponibles a IPRESS solicitantes
+       - Notificaciones automáticas
+       - Recordatorios antes de cita
+
+Tareas:
+├─ Revisar: /plan/03_Infraestructura/01_plan_modulo_red.md
+├─ Analizar: Qué está implementado vs. qué falta
+├─ Implementar: Auto-assignment de turnos
+├─ Tests: 10+ tests
+
+Beneficio: Menos intervención manual, mejor UX
+Impacto: Medio (mejora eficiencia)
+Tiempo: 2-3 horas
+Dependencias: Revisar estado actual primero
+```
+
+---
+
+#### **🔵 OPCIÓN E: Firma Digital - Implementar E-Signature** (4-5 horas)
+**Recomendación: ⭐⭐⭐ RECOMENDADO**
+
+```
+Razón: Plan ya existe, necesita implementación
+       Requisito legal/compliance para expedientes médicos
+       Garantiza autenticidad de documentos
+
+Tareas:
+├─ Revisar: /plan/05_Firma_Digital/01_plan_implementacion.md
+├─ Integrar: Librería de firma digital
+├─ Flujo: ECG procesado → Médico firma digitalmente
+├─ Almacenar: Firma + timestamp + hash
+
+Beneficio: Cumplimiento normativo, no hay marcha atrás
+Impacto: CRÍTICO (requisito legal)
+Tiempo: 4-5 horas
+Dependencias: TeleEKG (para firmar ECGs)
+
+Referencias:
+- Plan: /plan/05_Firma_Digital/01_plan_implementacion.md
+- Changelog: /checklist/01_Historial/01_changelog.md (v1.13.0+)
+```
+
+---
+
+### **📊 MATRIZ DE DECISIÓN**
+
+```
+PRIORIDAD      OPCIÓN          TIEMPO    IMPACTO   DEPENDENCIAS   RECOMENDACIÓN
+─────────────────────────────────────────────────────────────────────────────────
+🔴 CRÍTICA     A: Terminar     1-2h      MEDIO     TeleEKG        ⭐⭐⭐⭐⭐ HAZLO AHORA
+               TeleEKG v2.1
+
+🟢 ALTA        B: Integrar     4-6h      CRÍTICO   TeleEKG+       ⭐⭐⭐⭐⭐ HAZLO DESPUÉS
+               con Disponib.              Disponib.
+
+🟡 MEDIA       C: Dashboard    3-4h      ALTO      TeleEKG        ⭐⭐⭐⭐ PARALELO
+               Analytics
+
+🟠 MEDIA       D: Optimizar    2-3h      MEDIO     Red actual     ⭐⭐⭐ OPCIONAL
+               Red/IPRESS
+
+🔵 MEDIA       E: Firma        4-5h      CRÍTICO   TeleEKG        ⭐⭐⭐ DESPUÉS
+               Digital                              (requisito)
+```
+
+---
+
+### **🎯 RECOMENDACIÓN FINAL**
+
+**Secuencia sugerida para próximas sesiones:**
+
+```
+SESIÓN ACTUAL (AHORA):
+└─ ✅ Terminar TeleEKG v2.0.0
+   ├─ Fix TeleECGAuditoriaRepository (15 min)
+   ├─ Smoke tests (30 min)
+   └─ Build validation (5 min)
+
+   👉 RESULTADO: TeleEKG lista para producción ✅
+
+───────────────────────────────────────────────────
+
+PRÓXIMA SESIÓN (SESIÓN +1):
+└─ 🟢 OPCIÓN B: Integración TeleEKG + Disponibilidad Médica (4-6 horas)
+   ├─ Crear vinculación: ECG + Cita médica
+   ├─ Estados: PENDIENTE → PROCESADA → VINCULADA
+   ├─ Notificaciones email
+   └─ Tests de integración
+
+   👉 RESULTADO: Flujo end-to-end de telemedicina ✅
+
+───────────────────────────────────────────────────
+
+SESIÓN +2 (PARALELO CON SESIÓN +1):
+└─ 🟡 OPCIÓN C: Dashboard Analytics (3-4 horas)
+   ├─ Gráficos de estado de ECGs
+   ├─ KPIs por IPRESS
+   ├─ Métricas de médicos
+   └─ Tests de componentes
+
+   👉 RESULTADO: Visibilidad operacional ✅
+
+───────────────────────────────────────────────────
+
+SESIÓN +3:
+└─ 🔵 OPCIÓN E: Firma Digital (4-5 horas)
+   ├─ E-signature en documentos médicos
+   ├─ Compliance normativo
+   └─ Auditoría criptográfica
+
+   👉 RESULTADO: Sistema completo de telemedicina con firma ✅
+```
+
+---
+
+### **💰 ROI (Retorno de Inversión) - Por Opción**
+
+| Opción | Horas | Impacto | ROI | Usuario Final | Recomendación |
+|--------|-------|--------|-----|---------------|---------------|
+| **A** | 1-2h | Cierre | Alto | DevOps/QA | 🔴 HAZLO YA |
+| **B** | 4-6h | Crítico | Muy Alto | Médicos/Pacientes | ⭐ PRIORITARIO |
+| **C** | 3-4h | Alto | Alto | Coordinadores | 🟢 IMPORTANTE |
+| **D** | 2-3h | Medio | Medio | Admisionistas | 🟡 DESPUÉS |
+| **E** | 4-5h | Crítico | Muy Alto | Legal/Compliance | 🔵 OBLIGATORIO |
+
+---
+
+### **⚠️ ADVERTENCIAS IMPORTANTES**
+
+```
+1. NO HACER TODO A LA VEZ
+   └─ TeleEKG requiere focus/testing, NO paralelizar con grandes cambios
+
+2. OPCIÓN B DEPENDE DE OPCIÓN A
+   └─ No implementes integración con TeleEKG sin que esté listo
+
+3. OPCIÓN E TIENE REQUISITOS LEGALES
+   └─ Verificar regulaciones EsSalud antes de implementar
+
+4. TEST COVERAGE ES CRÍTICO
+   └─ Cada opción requiere 80%+ cobertura de tests
+
+5. DOCUMENTACIÓN PRIMERO
+   └─ Antes de cada sesión, actualizar el checkpoint
+```
+
+---
+
+### **📚 REFERENCIAS POR OPCIÓN**
+
+**Opción A (Terminar TeleEKG):**
+- Este checkpoint: `/plan/02_Modulos_Medicos/06_CHECKPOINT_COMPILACION_v1.1.md`
+- Spec técnica: `/spec/04_BaseDatos/08_almacenamiento_teleekgs/01_filesystem_storage.md`
+
+**Opción B (Integración):**
+- Disponibilidad: `/plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` (v2.0.0)
+- Solicitud turnos: `/plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md`
+
+**Opción C (Dashboard):**
+- Endpoints existentes: `TeleECGController` (7 endpoints)
+- Data: `TeleECGService.obtenerEstadisticas()` + `getTasaRechazo()` + etc.
+
+**Opción D (Red):**
+- Plan: `/plan/03_Infraestructura/01_plan_modulo_red.md`
+
+**Opción E (Firma):**
+- Plan: `/plan/05_Firma_Digital/01_plan_implementacion.md`
+- Changelog v1.13.0+: `/checklist/01_Historial/01_changelog.md`
+
+---
+
 ## 🚀 Próximos Pasos - Próxima Sesión
 
 ### NOMBRE PARA CONTINUAR: **"Depuración Runtime TeleEKG - Correcciones Finales"**
