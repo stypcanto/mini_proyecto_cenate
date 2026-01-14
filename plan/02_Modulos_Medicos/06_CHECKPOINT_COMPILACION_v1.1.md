@@ -302,11 +302,53 @@ Tablas: tele_ecg_auditoria, tele_ecg_estadisticas
 - **SQL Migration**: Script ejecutado en servidor
 - **Seguridad**: 7 capas de validación implementadas
 
-### ⚠️ Requiere Ajustes (Menor)
+### ⚠️ PENDIENTE: Tareas Remanentes
 
-- **TeleECGAuditoriaRepository**: Cambiar usuario.id → usuario.idUser
-- **Integration Tests**: PropertyReferenceException (tests unitarios validan lógica)
-- **Runtime Startup**: Requiere fix de field references
+#### 🔴 CRÍTICO (Bloquea Runtime):
+
+1. **TeleECGAuditoriaRepository - Field References** ⚠️
+   - **Ubicación**: `backend/src/main/java/com/styp/cenate/repository/TeleECGAuditoriaRepository.java`
+   - **Problema**: Método `findByUsuarioIdAndFechaAccionBetweenOrderByFechaAccionDesc()`
+     intenta acceder a `usuario.id` pero el campo real es `usuario.idUser`
+   - **Error**: `PropertyReferenceException: No property 'id' found for type 'Usuario'`
+   - **Solución**: Cambiar a `findByUsuarioIdUserAndFechaAccionBetween...` O usar @Query explícita
+   - **Tiempo estimado**: 15 minutos
+   - **Status**: 🔴 BLOQUEANTE para startup
+
+#### 🟡 IMPORTANTE (Mejoras menores):
+
+2. **Integration Tests - PropertyReferenceException** ⚠️
+   - **Ubicación**: `backend/src/test-disabled/TeleECGControllerIntegrationTest.java`
+   - **Problema**: Tests tienen references incorrectas (heredadas del issue anterior)
+   - **Solución**: Mover de vuelta a `src/test/java/` DESPUÉS de fix #1
+   - **Tiempo estimado**: 30 minutos
+   - **Status**: 🟡 Dependencia: Espera fix #1
+
+3. **CenateApplicationTests - Context Loading** ⚠️
+   - **Ubicación**: `backend/src/test-disabled/CenateApplicationTests.java`
+   - **Problema**: Context carga todo el application (incluido TeleECGAuditoriaRepository con error)
+   - **Solución**: Mover de vuelta a `src/test/` DESPUÉS de fix #1
+   - **Tiempo estimado**: 5 minutos
+   - **Status**: 🟡 Dependencia: Espera fix #1
+
+#### 🟢 OPCIONAL (Validación):
+
+4. **Smoke Tests End-to-End** ⏳
+   - **Ubicación**: Requiere app corriendo en puerto 8080
+   - **Tareas**:
+     - Upload ECG file
+     - Listar imágenes
+     - Procesar imagen
+     - Descargar imagen
+     - Verificar archivo creado en /opt/cenate/teleekgs/
+   - **Tiempo estimado**: 30 minutos
+   - **Status**: 🟢 OPCIONAL (unit tests ya validan toda la lógica)
+
+5. **Final Build Validation** 🔄
+   - **Comando**: `./gradlew clean build`
+   - **Expectativa**: BUILD SUCCESSFUL + 30+ tests PASSING
+   - **Tiempo estimado**: 5 minutos
+   - **Status**: 🟢 Final verification
 
 ---
 
