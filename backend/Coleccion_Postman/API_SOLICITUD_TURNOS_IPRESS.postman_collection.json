@@ -1,0 +1,227 @@
+{
+	"info": {
+		"_postman_id": "95f610b7-17d9-4b91-aebf-9074ab7b1b42",
+		"name": "API_SOLICITUD_TURNOS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21759398"
+	},
+	"item": [
+		{
+			"name": "CREAR_PERIODO",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"periodo\": \"202601\",\r\n  \"descripcion\": \"Periodo Enero 2026\",\r\n  \"fechaInicio\": \"2026-01-01\",\r\n  \"fechaFin\": \"2026-01-31\",\r\n  \"instrucciones\": \"se activa enero\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/periodos-solicitud",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"periodos-solicitud"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8080/api/periodos-solicitud/vigentes",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/periodos-solicitud/vigentes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"periodos-solicitud",
+						"vigentes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MIS-SOLICITUDES-PERSONAL-EXTERNO",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/mis-solicitudes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"mis-solicitudes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CONSULTAR SOLICITUD POR CODIGO SOLICITUD",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/4",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"4"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CONSULTAR SOLICITUDES POR FILTRO",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"70073164\",\r\n  \"password\": \"@Erick12345678\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/consultar?idPeriodo=6",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"consultar"
+					],
+					"query": [
+						{
+							"key": "idPeriodo",
+							"value": "6"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "APROBAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/4/aprobar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"4",
+						"aprobar"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

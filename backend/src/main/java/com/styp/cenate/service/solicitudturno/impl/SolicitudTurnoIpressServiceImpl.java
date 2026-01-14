@@ -185,7 +185,11 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 		// Crear solicitud
 		SolicitudTurnoIpress solicitud = SolicitudTurnoIpress.builder().periodo(periodo).personal(personal)
-				.estado("BORRADOR").build();
+				.estado("BORRADOR")
+				.totalEspecialidades(0)
+				.totalTurnosSolicitados(0)
+				.build();
+		
 		solicitud.setUpdatedAt(OffsetDateTime.now());
 		solicitud = solicitudRepository.save(solicitud);
 
@@ -193,6 +197,10 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		if (request.getDetalles() != null && !request.getDetalles().isEmpty()) {
 			agregarDetalles(solicitud, request.getDetalles());
 		}
+		
+	    recalcularTotales(solicitud);
+	    solicitud.setUpdatedAt(OffsetDateTime.now());
+	    solicitud = solicitudRepository.save(solicitud);
 
 		auditar("CREATE_SOLICITUD", String.format("Solicitud creada para IPRESS: %s, Periodo: %s",
 				personal.getIpress() != null ? personal.getIpress().getDescIpress() : "N/A", periodo.getDescripcion()),
@@ -255,7 +263,8 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		if (request.getDetalles() != null && !request.getDetalles().isEmpty()) {
 			agregarDetalles(solicitud, request.getDetalles());
 		}
-
+		
+		recalcularTotales(solicitud);
 		// Actualiza cabecera
 		solicitud.setUpdatedAt(OffsetDateTime.now()); // o @UpdateTimestamp
 
@@ -308,6 +317,12 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		// Validar que el periodo siga activo
 		if (!solicitud.getPeriodo().isActivo()) {
 			throw new RuntimeException("El periodo ya no esta activo");
+		}
+		
+		recalcularTotales(solicitud);
+
+		if (solicitud.getTotalTurnosSolicitados() <= 0) {
+		    throw new RuntimeException("No se puede enviar una solicitud sin turnos");
 		}
 
 		solicitud.enviar();
@@ -464,27 +479,49 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 	}
 
 	private SolicitudTurnoIpressResponse convertToResponseWithDetalles(SolicitudTurnoIpress solicitud) {
+//		SolicitudTurnoIpressResponse response = convertToResponse(solicitud);
+//
+//		// Cargar detalles
+//		List<DetalleSolicitudTurnoResponse> detalles = new ArrayList<>();
+//		int totalTurnos = 0;
+//		int especialidadesConTurnos = 0;
+//
+//		for (DetalleSolicitudTurno detalle : solicitud.getDetalles()) {
+//			detalles.add(convertDetalleToResponse(detalle));
+//
+//			if (detalle.getTurnosSolicitados() != null && detalle.getTurnosSolicitados() > 0) {
+//				totalTurnos += detalle.getTurnosSolicitados();
+//				especialidadesConTurnos++;
+//			}
+//		}
+//
+//		response.setDetalles(detalles);
+//		response.setTotalTurnosSolicitados(totalTurnos);
+//		response.setTotalEspecialidades(especialidadesConTurnos);
+//
+//		return response;
 		SolicitudTurnoIpressResponse response = convertToResponse(solicitud);
 
-		// Cargar detalles
-		List<DetalleSolicitudTurnoResponse> detalles = new ArrayList<>();
-		int totalTurnos = 0;
-		int especialidadesConTurnos = 0;
+	    // Cargar detalles (SIN calcular totales)
+	    List<DetalleSolicitudTurnoResponse> detalles = solicitud.getDetalles().stream()
+	            .map(this::convertDetalleToResponse)
+	            .toList();
 
-		for (DetalleSolicitudTurno detalle : solicitud.getDetalles()) {
-			detalles.add(convertDetalleToResponse(detalle));
+	    response.setDetalles(detalles);
 
-			if (detalle.getTurnosSolicitados() != null && detalle.getTurnosSolicitados() > 0) {
-				totalTurnos += detalle.getTurnosSolicitados();
-				especialidadesConTurnos++;
-			}
-		}
+	    response.setTotalTurnosSolicitados(
+	            solicitud.getTotalTurnosSolicitados() != null
+	                    ? solicitud.getTotalTurnosSolicitados()
+	                    : 0
+	    );
 
-		response.setDetalles(detalles);
-		response.setTotalTurnosSolicitados(totalTurnos);
-		response.setTotalEspecialidades(especialidadesConTurnos);
+	    response.setTotalEspecialidades(
+	            solicitud.getTotalEspecialidades() != null
+	                    ? solicitud.getTotalEspecialidades()
+	                    : 0
+	    );
 
-		return response;
+	    return response;
 	}
 
 	private DetalleSolicitudTurnoResponse convertDetalleToResponse(DetalleSolicitudTurno detalle) {
@@ -556,6 +593,17 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		s.setMotivoRechazo(motivo.trim());
 
 		return SolicitudTurnoEstadoMapper.toResponse(solicitudRepository.save(s));
+	}
+
+	private void recalcularTotales(SolicitudTurnoIpress sol) {
+		int totalTurnos = sol.getDetalles().stream()
+				.mapToInt(d -> Math.max(0, d.getTurnosSolicitados() == null ? 0 : d.getTurnosSolicitados())).sum();
+
+		int totalEspecialidades = (int) sol.getDetalles().stream().filter(d -> Boolean.TRUE.equals(d.getRequiere()))
+				.filter(d -> (d.getTurnosSolicitados() != null && d.getTurnosSolicitados() > 0)).count();
+
+		sol.setTotalTurnosSolicitados(totalTurnos);
+		sol.setTotalEspecialidades(totalEspecialidades);
 	}
 
 }

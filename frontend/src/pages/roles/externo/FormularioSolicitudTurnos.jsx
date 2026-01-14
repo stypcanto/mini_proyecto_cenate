@@ -1,11 +1,13 @@
 // ========================================================================
 // FormularioSolicitudTurnos.jsx
 // ------------------------------------------------------------------------
-// Pantalla principal: Tabla de "Mis Solicitudes" + Botón "Nueva Solicitud"
-// Modal:
-//  - NUEVA: Selector de Periodo + Tabla editable + Guardar/Enviar
-//  - EDITAR (BORRADOR): Periodo SOLO LECTURA (sin cambiar) + Tabla editable
-//  - VER (ENVIADO/REVISADO): NO muestra combo, solo resumen + detalle (UX UI)
+// ✅ FIXES incluidos:
+// 1) "Nueva solicitud" SIEMPRE consulta periodos vigentes (NO cache).
+// 2) La tabla de especialidades ya NO "desaparece": si no hay periodo,
+//    muestra un aviso "Selecciona un periodo".
+// 3) Periodos se refrescan también al abrir modal (NUEVA) y al click "Actualizar".
+// 4) No se crean endpoints nuevos: se usa el MISMO:
+//    GET /api/periodos-solicitud/vigentes
 // ========================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -27,7 +29,7 @@ import {
   Pencil,
   Plus,
   RefreshCw,
-  Lock, // ✅ NUEVO
+  Lock,
 } from "lucide-react";
 
 import { periodoSolicitudService } from "../../../services/periodoSolicitudService";
@@ -55,7 +57,9 @@ const esFilaCompleta = (row) => {
     row.diasManana.length > 0;
 
   const tardeOk =
-    !!row.tardeActiva && Array.isArray(row.diasTarde) && row.diasTarde.length > 0;
+    !!row.tardeActiva &&
+    Array.isArray(row.diasTarde) &&
+    row.diasTarde.length > 0;
 
   const tieneTurnoConDias = mananaOk || tardeOk;
 
@@ -103,6 +107,8 @@ function formatFecha(fechaIso) {
 function estadoBadgeClass(estado) {
   if (estado === "ENVIADO") return "bg-green-50 text-green-700 border-green-200";
   if (estado === "REVISADO") return "bg-purple-50 text-purple-700 border-purple-200";
+  if (estado === "APROBADA") return "bg-emerald-50 text-emerald-700 border-emerald-200";
+  if (estado === "RECHAZADA") return "bg-red-50 text-red-700 border-red-200";
   return "bg-yellow-50 text-yellow-800 border-yellow-200"; // BORRADOR u otro
 }
 
@@ -157,6 +163,8 @@ export default function FormularioSolicitudTurnos() {
 
   // periodos y especialidades
   const [periodosVigentes, setPeriodosVigentes] = useState([]);
+  const [loadingPeriodos, setLoadingPeriodos] = useState(false);
+
   const [especialidades, setEspecialidades] = useState([]);
 
   // tabla solicitudes
@@ -179,6 +187,25 @@ export default function FormularioSolicitudTurnos() {
   });
 
   // ============================================================
+  // Periodos: SIEMPRE en vivo (NO cache)
+  // ============================================================
+  const cargarPeriodosVigentes = useCallback(async () => {
+    setLoadingPeriodos(true);
+    try {
+      const periodosData = await periodoSolicitudService.obtenerVigentes(); // MISMO endpoint
+      const arr = Array.isArray(periodosData) ? periodosData : [];
+      setPeriodosVigentes(arr);
+      return arr;
+    } catch (e) {
+      console.error(e);
+      setPeriodosVigentes([]);
+      return [];
+    } finally {
+      setLoadingPeriodos(false);
+    }
+  }, []);
+
+  // ============================================================
   // TABLA SOLICITUDES
   // ============================================================
   const refrescarMisSolicitudes = useCallback(async () => {
@@ -193,23 +220,27 @@ export default function FormularioSolicitudTurnos() {
     }
   }, []);
 
+  const handleRefreshAll = useCallback(async () => {
+    setError(null);
+    setSuccess(null);
+    await Promise.all([refrescarMisSolicitudes(), cargarPeriodosVigentes()]);
+  }, [refrescarMisSolicitudes, cargarPeriodosVigentes]);
+
   // ============================================================
-  // CARGA INICIAL
+  // CARGA INICIAL (solo una vez)
   // ============================================================
   const inicializar = useCallback(async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const [ipressData, periodosData, especialidadesData] = await Promise.all([
+      const [ipressData, especialidadesData] = await Promise.all([
         solicitudTurnoService.obtenerMiIpress(),
-        periodoSolicitudService.obtenerVigentes(),
         solicitudTurnoService.obtenerEspecialidadesCenate(),
       ]);
 
       setMiIpress(ipressData);
-      setPeriodosVigentes(periodosData || []);
-      setEspecialidades(especialidadesData || []);
+      setEspecialidades(Array.isArray(especialidadesData) ? especialidadesData : []);
 
       const init = {};
       (especialidadesData || []).forEach((esp) => {
@@ -219,9 +250,9 @@ export default function FormularioSolicitudTurnos() {
 
       await refrescarMisSolicitudes();
 
-      if ((periodosData || []).length === 1) {
-        setPeriodoSeleccionado(periodosData[0]);
-      }
+      // ✅ periodos NO se cachean; se consultan por acción / al abrir modal
+      setPeriodosVigentes([]);
+      setPeriodoSeleccionado(null);
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar los datos. Intenta nuevamente.");
@@ -236,9 +267,9 @@ export default function FormularioSolicitudTurnos() {
   }, []);
 
   // ============================================================
-  // ABRIR MODAL
+  // ABRIR MODAL: NUEVA (periodos EN VIVO)
   // ============================================================
-  const abrirNuevaSolicitud = () => {
+  const abrirNuevaSolicitud = async () => {
     setError(null);
     setSuccess(null);
 
@@ -246,18 +277,31 @@ export default function FormularioSolicitudTurnos() {
     setSolicitudActual(null);
     setPeriodoSeleccionado(null);
 
+    // reset tabla
     const reset = {};
     especialidades.forEach((esp) => (reset[esp.idServicio] = createEmptyRow()));
     setTurnosPorEspecialidad(reset);
 
+    // abre modal primero (UX)
     setOpenFormModal(true);
+
+    // consulta periodos en vivo
+    const periodos = await cargarPeriodosVigentes();
+
+    if (periodos.length === 0) {
+      setError("No existen periodos activos en este momento.");
+      return;
+    }
+
+    // auto-selección si solo hay uno
+    if (periodos.length === 1) {
+      setPeriodoSeleccionado(periodos[0]);
+    }
   };
 
   /**
-   * ✅ BORRADOR => EDITAR (carga por ID y mapea a tabla editable)
-   * ✅ ENVIADO/REVISADO => VER (carga por ID y muestra solo resumen + detalle)
-   *
-   * Requisito: solicitudTurnoService.obtenerPorId(idSolicitud)
+   * BORRADOR => EDITAR
+   * ENVIADO/REVISADO/APROBADA/RECHAZADA => VER
    */
   const abrirSolicitudDesdeTabla = async (row) => {
     setError(null);
@@ -271,19 +315,20 @@ export default function FormularioSolicitudTurnos() {
 
     try {
       const solicitud = await solicitudTurnoService.obtenerPorId(row.idSolicitud);
-
       setSolicitudActual(solicitud);
 
-      // set periodo info (si no está en vigentes, igual lo mostramos)
-      const periodo =
-        periodosVigentes.find((p) => p.idPeriodo === solicitud.idPeriodo) || {
-          idPeriodo: solicitud.idPeriodo,
-          descripcion: solicitud.periodoDescripcion,
-          periodo: "",
-          fechaInicio: null,
-          fechaFin: null,
-          instrucciones: null,
-        };
+      // En VER/EDITAR no necesitas consultar periodos cada vez, porque el periodo ya viene en la solicitud.
+      // Igual, si quieres, puedes refrescar periodos de fondo (no es obligatorio).
+      // await cargarPeriodosVigentes();
+
+      const periodo = {
+        idPeriodo: solicitud.idPeriodo,
+        descripcion: solicitud.periodoDescripcion,
+        periodo: "",
+        fechaInicio: null,
+        fechaFin: null,
+        instrucciones: null,
+      };
       setPeriodoSeleccionado(periodo);
 
       // Si es BORRADOR, mapear detalles a tabla editable
@@ -324,18 +369,28 @@ export default function FormularioSolicitudTurnos() {
   };
 
   // ============================================================
+  // Al abrir modal en NUEVA, refrescar periodos (por si cambió a ACTIVO/CERRADO)
+  // ============================================================
+  useEffect(() => {
+    if (!openFormModal) return;
+    if (modoModal !== "NUEVA") return;
+
+    // refresca periodos cada vez que abres NUEVA
+    cargarPeriodosVigentes();
+  }, [openFormModal, modoModal, cargarPeriodosVigentes]);
+
+  // ============================================================
   // CARGAR SOLICITUD POR PERIODO (solo NUEVA)
-  //   ✅ FIX: ya NO debe ejecutarse en EDITAR
   // ============================================================
   useEffect(() => {
     const cargar = async () => {
       if (!openFormModal) return;
       if (!periodoSeleccionado?.idPeriodo) return;
 
-      // ✅ VER: no cargar por periodo
+      // VER: no cargar por periodo
       if (modoModal === "VER") return;
 
-      // ✅ EDITAR: NO volver a cargar por periodo (evita cambiar cabecera / periodo)
+      // EDITAR: NO cargar por periodo
       if (modoModal === "EDITAR" && solicitudActual?.idSolicitud) return;
 
       try {
@@ -409,9 +464,11 @@ export default function FormularioSolicitudTurnos() {
   const esSoloLectura =
     modoModal === "VER" ||
     solicitudActual?.estado === "ENVIADO" ||
-    solicitudActual?.estado === "REVISADO";
+    solicitudActual?.estado === "REVISADO" ||
+    solicitudActual?.estado === "APROBADA" ||
+    solicitudActual?.estado === "RECHAZADA";
 
-  // ✅ NUEVO: periodo bloqueado SOLO cuando estás EDITANDO un BORRADOR ya creado
+  // periodo bloqueado SOLO cuando EDITAS un BORRADOR ya creado
   const periodoBloqueado =
     modoModal === "EDITAR" &&
     !!solicitudActual?.idSolicitud &&
@@ -465,11 +522,11 @@ export default function FormularioSolicitudTurnos() {
       setSolicitudActual(resultado);
       setModoModal(resultado?.estado === "BORRADOR" ? "EDITAR" : "VER");
 
-      // ✅ asegura que periodo quede fijado tras guardar
-      const periodoFix =
-        periodosVigentes.find((p) => p.idPeriodo === resultado?.idPeriodo) ||
-        periodoSeleccionado;
-      setPeriodoSeleccionado(periodoFix || periodoSeleccionado);
+      // fija periodo tras guardar (por si backend retorna con descripcion)
+      setPeriodoSeleccionado({
+        idPeriodo: resultado?.idPeriodo ?? periodoSeleccionado.idPeriodo,
+        descripcion: resultado?.periodoDescripcion ?? periodoSeleccionado.descripcion,
+      });
 
       setSuccess("Borrador guardado exitosamente");
       setTimeout(() => setSuccess(null), 2500);
@@ -634,11 +691,15 @@ export default function FormularioSolicitudTurnos() {
           <div className="flex gap-2">
             <button
               type="button"
-              onClick={refrescarMisSolicitudes}
+              onClick={handleRefreshAll}
               className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center gap-2"
-              disabled={loadingTabla}
+              disabled={loadingTabla || loadingPeriodos}
             >
-              {loadingTabla ? <Loader2 className="w-4 h-4 animate-spin" /> : <RefreshCw className="w-4 h-4" />}
+              {(loadingTabla || loadingPeriodos) ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
               Actualizar
             </button>
 
@@ -746,7 +807,7 @@ export default function FormularioSolicitudTurnos() {
                 Periodo de Solicitud
               </h2>
 
-              {/* ✅ EDITAR: periodo solo lectura (sin combo) */}
+              {/* EDITAR: periodo solo lectura */}
               {periodoBloqueado ? (
                 <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                   <div className="flex items-start justify-between gap-3">
@@ -766,45 +827,40 @@ export default function FormularioSolicitudTurnos() {
                     </span>
                   </div>
 
-                  {(periodoSeleccionado?.fechaInicio || periodoSeleccionado?.fechaFin) && (
-                    <div className="mt-4 p-4 bg-blue-50 rounded-xl">
-                      <div className="flex items-center gap-2 text-blue-800 mb-2">
-                        <Clock className="w-4 h-4" />
-                        <span className="font-semibold">Vigencia del periodo</span>
-                      </div>
-                      {periodoSeleccionado?.fechaInicio && periodoSeleccionado?.fechaFin ? (
-                        <p className="text-sm text-blue-700">
-                          {new Date(periodoSeleccionado.fechaInicio).toLocaleDateString("es-PE", { dateStyle: "long" })}{" "}
-                          -{" "}
-                          {new Date(periodoSeleccionado.fechaFin).toLocaleDateString("es-PE", { dateStyle: "long" })}
-                        </p>
-                      ) : (
-                        <p className="text-sm text-blue-700">{periodoSeleccionado?.descripcion || "—"}</p>
-                      )}
-                      {periodoSeleccionado?.instrucciones && (
-                        <p className="mt-2 text-sm text-blue-600 italic">{periodoSeleccionado.instrucciones}</p>
-                      )}
-                    </div>
-                  )}
-
                   <p className="mt-3 text-xs text-slate-500">
                     El periodo no se puede modificar una vez creada la solicitud.
                   </p>
                 </div>
               ) : (
-                /* ✅ NUEVA: combo */
+                /* NUEVA: combo */
                 <>
+                  {loadingPeriodos && (
+                    <div className="flex items-center gap-2 text-slate-600 mb-3">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Cargando periodos vigentes...
+                    </div>
+                  )}
+
                   {periodosVigentes.length === 0 ? (
                     <div className="text-center py-8 text-slate-500">
                       <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
                       <p>No hay periodos activos.</p>
+                      <button
+                        type="button"
+                        onClick={cargarPeriodosVigentes}
+                        className="mt-3 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+                      >
+                        Reintentar
+                      </button>
                     </div>
                   ) : (
                     <div className="space-y-4">
                       <select
                         value={periodoSeleccionado?.idPeriodo || ""}
                         onChange={(e) => {
-                          const periodo = periodosVigentes.find((p) => p.idPeriodo === parseInt(e.target.value));
+                          const periodo = periodosVigentes.find(
+                            (p) => p.idPeriodo === parseInt(e.target.value, 10)
+                          );
                           setPeriodoSeleccionado(periodo || null);
                         }}
                         className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
@@ -816,36 +872,13 @@ export default function FormularioSolicitudTurnos() {
                           </option>
                         ))}
                       </select>
-
-                      {periodoSeleccionado && (
-                        <div className="p-4 bg-blue-50 rounded-xl">
-                          <div className="flex items-center gap-2 text-blue-800 mb-2">
-                            <Clock className="w-4 h-4" />
-                            <span className="font-semibold">Vigencia del periodo</span>
-                          </div>
-
-                          {periodoSeleccionado.fechaInicio && periodoSeleccionado.fechaFin ? (
-                            <p className="text-sm text-blue-700">
-                              {new Date(periodoSeleccionado.fechaInicio).toLocaleDateString("es-PE", { dateStyle: "long" })}{" "}
-                              -{" "}
-                              {new Date(periodoSeleccionado.fechaFin).toLocaleDateString("es-PE", { dateStyle: "long" })}
-                            </p>
-                          ) : (
-                            <p className="text-sm text-blue-700">{periodoSeleccionado.descripcion || "—"}</p>
-                          )}
-
-                          {periodoSeleccionado.instrucciones && (
-                            <p className="mt-2 text-sm text-blue-600 italic">{periodoSeleccionado.instrucciones}</p>
-                          )}
-                        </div>
-                      )}
                     </div>
                   )}
                 </>
               )}
             </div>
           ) : (
-            // ✅ VER: SIN combo, solo tarjeta informativa
+            // VER: SIN combo, solo tarjeta informativa
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
@@ -873,39 +906,37 @@ export default function FormularioSolicitudTurnos() {
                   </span>
                 </div>
               </div>
-
-              <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs text-slate-500 mb-1">Enviado</div>
-                  <div className="font-semibold text-slate-900">{formatFecha(solicitudActual?.fechaEnvio)}</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs text-slate-500 mb-1">Creado</div>
-                  <div className="font-semibold text-slate-900">{formatFecha(solicitudActual?.createdAt)}</div>
-                </div>
-                <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="text-xs text-slate-500 mb-1">Actualizado</div>
-                  <div className="font-semibold text-slate-900">{formatFecha(solicitudActual?.updatedAt)}</div>
-                </div>
-              </div>
             </div>
           )}
 
-          {/* ✅ VER: Detalle UX (tabla solo lectura) */}
+          {/* VER: detalle */}
           {esSoloLectura && <SolicitudDetalleView solicitud={solicitudActual} />}
 
-          {/* ✅ EDITAR/NUEVA: tabla editable */}
-          {periodoSeleccionado && !esSoloLectura && especialidades.length > 0 && (
-            <TurnosPorEspecialidadTabla
-              especialidades={especialidades}
-              turnosPorEspecialidad={turnosPorEspecialidad}
-              setTurnosPorEspecialidad={setTurnosPorEspecialidad}
-              esSoloLectura={esSoloLectura}
-              onValidationChange={setValTabla}
-            />
+          {/* EDITAR/NUEVA: tabla editable (✅ FIX: ya NO se oculta “en silencio”) */}
+          {!esSoloLectura && (
+            <>
+              {!periodoSeleccionado ? (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center gap-2">
+                  <Info className="w-5 h-5" />
+                  Selecciona un periodo para ver las especialidades.
+                </div>
+              ) : especialidades.length === 0 ? (
+                <div className="bg-slate-50 border border-slate-200 text-slate-700 px-4 py-3 rounded-xl">
+                  No hay especialidades disponibles.
+                </div>
+              ) : (
+                <TurnosPorEspecialidadTabla
+                  especialidades={especialidades}
+                  turnosPorEspecialidad={turnosPorEspecialidad}
+                  setTurnosPorEspecialidad={setTurnosPorEspecialidad}
+                  esSoloLectura={esSoloLectura}
+                  onValidationChange={setValTabla}
+                />
+              )}
+            </>
           )}
 
-          {/* Resumen y Acciones (solo si NO es solo lectura) */}
+          {/* Resumen y Acciones (solo si NO es solo lectura y hay periodo) */}
           {periodoSeleccionado && !esSoloLectura && (
             <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -951,10 +982,21 @@ export default function FormularioSolicitudTurnos() {
             <div className="bg-slate-100 rounded-2xl p-6 text-center">
               <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-600" />
               <h3 className="text-lg font-bold text-slate-800 mb-2">
-                Solicitud {solicitudActual?.estado === "REVISADO" ? "Revisada" : "Enviada"}
+                Solicitud{" "}
+                {solicitudActual?.estado === "REVISADO"
+                  ? "Revisada"
+                  : solicitudActual?.estado === "APROBADA"
+                  ? "Aprobada"
+                  : solicitudActual?.estado === "RECHAZADA"
+                  ? "Rechazada"
+                  : "Enviada"}
               </h3>
               <p className="text-slate-600">
-                {solicitudActual?.estado === "REVISADO"
+                {solicitudActual?.estado === "RECHAZADA"
+                  ? "Tu solicitud fue rechazada. Revisa el motivo y genera una nueva solicitud si corresponde."
+                  : solicitudActual?.estado === "APROBADA"
+                  ? "Tu solicitud fue aprobada."
+                  : solicitudActual?.estado === "REVISADO"
                   ? "Tu solicitud ha sido revisada por el coordinador."
                   : "Tu solicitud ha sido enviada y está pendiente de revisión."}
               </p>
@@ -1141,7 +1183,7 @@ function SolicitudDetalleView({ solicitud }) {
 }
 
 /** =======================================================================
- * TurnosPorEspecialidadTabla (tu tabla editable) - SIN CAMBIOS
+ * TurnosPorEspecialidadTabla (editable)
  * ======================================================================= */
 function TurnosPorEspecialidadTabla({
   especialidades,
@@ -1331,7 +1373,7 @@ function TurnosPorEspecialidadTabla({
                       min="0"
                       max="99"
                       value={row.turnos ?? 0}
-                      onChange={(e) => patchRow(esp.idServicio, { turnos: Math.max(0, parseInt(e.target.value) || 0) })}
+                      onChange={(e) => patchRow(esp.idServicio, { turnos: Math.max(0, parseInt(e.target.value, 10) || 0) })}
                       disabled={esSoloLectura || !row.requiere}
                       className="w-24 rounded-xl border border-gray-200 px-3 py-2 text-sm text-center font-semibold disabled:bg-slate-50"
                     />
