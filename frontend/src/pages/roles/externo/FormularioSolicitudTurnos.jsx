@@ -1,13 +1,17 @@
 // ========================================================================
 // FormularioSolicitudTurnos.jsx
 // ------------------------------------------------------------------------
-// ✅ FIXES incluidos:
+// ✅ Incluye:
 // 1) "Nueva solicitud" SIEMPRE consulta periodos vigentes (NO cache).
 // 2) La tabla de especialidades ya NO "desaparece": si no hay periodo,
 //    muestra un aviso "Selecciona un periodo".
 // 3) Periodos se refrescan también al abrir modal (NUEVA) y al click "Actualizar".
 // 4) No se crean endpoints nuevos: se usa el MISMO:
 //    GET /api/periodos-solicitud/vigentes
+// 5) ✅ NUEVO: Tabla por PERIODO con filtros: Estado, Año (2025/2026/2027) y Periodo.
+//    - Al seleccionar Año => lista Periodos relacionados.
+//    - Tabla muestra: Año, Periodo, Solicitud, Fecha Inicio, Fecha Fin, Estado, Acción.
+//    - Acción: Iniciar (si no hay solicitud), Editar (si es BORRADOR), Ver (otros).
 // ========================================================================
 
 import React, { useState, useEffect, useCallback, useMemo } from "react";
@@ -18,7 +22,6 @@ import {
   Mail,
   Phone,
   Calendar,
-  Clock,
   Save,
   Send,
   Loader2,
@@ -112,6 +115,18 @@ function estadoBadgeClass(estado) {
   return "bg-yellow-50 text-yellow-800 border-yellow-200"; // BORRADOR u otro
 }
 
+// ✅ Helper: obtiene año 2025/2026/2027 desde fechaInicio/fechaFin o texto
+function getYearFromPeriodo(p) {
+  const f = p?.fechaInicio || p?.fechaFin;
+  if (f) {
+    const d = new Date(f);
+    if (!Number.isNaN(d.getTime())) return String(d.getFullYear());
+  }
+  const txt = `${p?.descripcion || ""} ${p?.periodo || ""}`;
+  const m = txt.match(/\b(2025|2026|2027)\b/);
+  return m ? m[1] : "";
+}
+
 /** =======================================================================
  * MODAL SIMPLE
  * ======================================================================= */
@@ -167,9 +182,14 @@ export default function FormularioSolicitudTurnos() {
 
   const [especialidades, setEspecialidades] = useState([]);
 
-  // tabla solicitudes
+  // tabla solicitudes (backend)
   const [misSolicitudes, setMisSolicitudes] = useState([]);
   const [loadingTabla, setLoadingTabla] = useState(false);
+
+  // ✅ NUEVO: filtros para tabla por periodo
+  const [filtroEstado, setFiltroEstado] = useState("ALL"); // ALL | SIN_SOLICITUD | BORRADOR | ENVIADO | ...
+  const [filtroAnio, setFiltroAnio] = useState("2026"); // 2025 | 2026 | 2027
+  const [filtroPeriodoId, setFiltroPeriodoId] = useState("");
 
   // modal
   const [openFormModal, setOpenFormModal] = useState(false);
@@ -206,7 +226,7 @@ export default function FormularioSolicitudTurnos() {
   }, []);
 
   // ============================================================
-  // TABLA SOLICITUDES
+  // TABLA SOLICITUDES (backend)
   // ============================================================
   const refrescarMisSolicitudes = useCallback(async () => {
     setLoadingTabla(true);
@@ -227,7 +247,7 @@ export default function FormularioSolicitudTurnos() {
   }, [refrescarMisSolicitudes, cargarPeriodosVigentes]);
 
   // ============================================================
-  // CARGA INICIAL (solo una vez)
+  // CARGA INICIAL
   // ============================================================
   const inicializar = useCallback(async () => {
     setLoading(true);
@@ -250,16 +270,19 @@ export default function FormularioSolicitudTurnos() {
 
       await refrescarMisSolicitudes();
 
-      // ✅ periodos NO se cachean; se consultan por acción / al abrir modal
+      // periodos no cacheados: se consultan con acciones o filtros
       setPeriodosVigentes([]);
       setPeriodoSeleccionado(null);
+
+      // carga periodos para la tabla por periodo (UX mejor)
+      await cargarPeriodosVigentes();
     } catch (err) {
       console.error(err);
       setError("No se pudieron cargar los datos. Intenta nuevamente.");
     } finally {
       setLoading(false);
     }
-  }, [refrescarMisSolicitudes]);
+  }, [refrescarMisSolicitudes, cargarPeriodosVigentes]);
 
   useEffect(() => {
     inicializar();
@@ -317,10 +340,6 @@ export default function FormularioSolicitudTurnos() {
       const solicitud = await solicitudTurnoService.obtenerPorId(row.idSolicitud);
       setSolicitudActual(solicitud);
 
-      // En VER/EDITAR no necesitas consultar periodos cada vez, porque el periodo ya viene en la solicitud.
-      // Igual, si quieres, puedes refrescar periodos de fondo (no es obligatorio).
-      // await cargarPeriodosVigentes();
-
       const periodo = {
         idPeriodo: solicitud.idPeriodo,
         descripcion: solicitud.periodoDescripcion,
@@ -366,16 +385,17 @@ export default function FormularioSolicitudTurnos() {
     setOpenFormModal(false);
     setSaving(false);
     await refrescarMisSolicitudes();
+    // opcional: refrescar periodos también (si cambian estados)
+    // await cargarPeriodosVigentes();
   };
 
   // ============================================================
-  // Al abrir modal en NUEVA, refrescar periodos (por si cambió a ACTIVO/CERRADO)
+  // Al abrir modal en NUEVA, refrescar periodos
   // ============================================================
   useEffect(() => {
     if (!openFormModal) return;
     if (modoModal !== "NUEVA") return;
 
-    // refresca periodos cada vez que abres NUEVA
     cargarPeriodosVigentes();
   }, [openFormModal, modoModal, cargarPeriodosVigentes]);
 
@@ -440,7 +460,7 @@ export default function FormularioSolicitudTurnos() {
   }, [openFormModal, periodoSeleccionado?.idPeriodo, especialidades, modoModal, solicitudActual?.idSolicitud]);
 
   // ============================================================
-  // CÁLCULOS
+  // CÁLCULOS (Modal)
   // ============================================================
   const totalTurnos = useMemo(() => {
     if (modoModal === "VER") return Number(solicitudActual?.totalTurnosSolicitados || 0);
@@ -588,6 +608,84 @@ export default function FormularioSolicitudTurnos() {
   };
 
   // ============================================================
+  // ✅ TABLA POR PERIODO: joins + filtros
+  // ============================================================
+  const solicitudPorPeriodo = useMemo(() => {
+    const map = new Map();
+    (misSolicitudes || []).forEach((s) => {
+      if (s?.idPeriodo != null) map.set(Number(s.idPeriodo), s);
+    });
+    return map;
+  }, [misSolicitudes]);
+
+  const aniosDisponibles = useMemo(() => ["2025", "2026", "2027"], []);
+
+  const periodosPorAnio = useMemo(() => {
+    const arr = Array.isArray(periodosVigentes) ? periodosVigentes : [];
+    if (!filtroAnio) return arr;
+    return arr.filter((p) => getYearFromPeriodo(p) === String(filtroAnio));
+  }, [periodosVigentes, filtroAnio]);
+
+  const filasPorPeriodo = useMemo(() => {
+    const arr = Array.isArray(periodosVigentes) ? periodosVigentes : [];
+
+    let base = arr;
+
+    if (filtroAnio) base = base.filter((p) => getYearFromPeriodo(p) === String(filtroAnio));
+    if (filtroPeriodoId) base = base.filter((p) => String(p.idPeriodo) === String(filtroPeriodoId));
+
+    let rows = base.map((p) => {
+      const sol = solicitudPorPeriodo.get(Number(p.idPeriodo)) || null;
+      return {
+        anio: getYearFromPeriodo(p) || "—",
+        idPeriodo: p.idPeriodo,
+        periodoLabel: p.descripcion || p.periodo || `Periodo #${p.idPeriodo}`,
+        fechaInicio: p.fechaInicio || null,
+        fechaFin: p.fechaFin || null,
+        solicitud: sol,
+        estado: sol?.estado || "SIN_SOLICITUD",
+      };
+    });
+
+    if (filtroEstado && filtroEstado !== "ALL") {
+      rows = rows.filter((r) => r.estado === filtroEstado);
+    }
+
+    rows.sort((a, b) => {
+      const da = a.fechaInicio ? new Date(a.fechaInicio).getTime() : 0;
+      const db = b.fechaInicio ? new Date(b.fechaInicio).getTime() : 0;
+      return db - da;
+    });
+
+    return rows;
+  }, [periodosVigentes, filtroAnio, filtroPeriodoId, filtroEstado, solicitudPorPeriodo]);
+
+  const abrirDesdePeriodo = async (fila) => {
+    setError(null);
+    setSuccess(null);
+
+    // si ya existe solicitud para ese periodo => abrirla
+    if (fila?.solicitud?.idSolicitud) {
+      return abrirSolicitudDesdeTabla(fila.solicitud);
+    }
+
+    // si NO existe => iniciar nueva con periodo ya seleccionado
+    setModoModal("NUEVA");
+    setSolicitudActual(null);
+
+    const reset = {};
+    especialidades.forEach((esp) => (reset[esp.idServicio] = createEmptyRow()));
+    setTurnosPorEspecialidad(reset);
+
+    setOpenFormModal(true);
+
+    await cargarPeriodosVigentes();
+
+    const p = (periodosVigentes || []).find((x) => Number(x.idPeriodo) === Number(fila.idPeriodo));
+    setPeriodoSeleccionado(p || { idPeriodo: fila.idPeriodo, descripcion: fila.periodoLabel });
+  };
+
+  // ============================================================
   // RENDER
   // ============================================================
   if (loading) {
@@ -677,86 +775,185 @@ export default function FormularioSolicitudTurnos() {
         )}
       </div>
 
-      {/* Tabla Mis Solicitudes + Botón Nueva */}
+      {/* ✅ Tabla por Periodo (Año/Periodo/Estado) */}
       <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-4">
-          <div>
-            <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-              <FileText className="w-5 h-5 text-[#0A5BA9]" />
-              Mis Solicitudes
-            </h2>
-            <p className="text-sm text-slate-500">Selecciona una solicitud para ver/editar.</p>
+        <div className="flex flex-col gap-4 mb-4">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <FileText className="w-5 h-5 text-[#0A5BA9]" />
+                Solicitudes por Periodo
+              </h2>
+              <p className="text-sm text-slate-500">
+                Filtra por año/periodo/estado. Si no hay solicitud, usa <strong>Iniciar</strong> para registrar turnos.
+              </p>
+            </div>
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={handleRefreshAll}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center gap-2"
+                disabled={loadingTabla || loadingPeriodos}
+              >
+                {(loadingTabla || loadingPeriodos) ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Actualizar
+              </button>
+
+              <button
+                type="button"
+                onClick={abrirNuevaSolicitud}
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-bold shadow hover:shadow-lg flex items-center gap-2"
+              >
+                <Plus className="w-4 h-4" />
+                Nueva solicitud
+              </button>
+            </div>
           </div>
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              onClick={handleRefreshAll}
-              className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center gap-2"
-              disabled={loadingTabla || loadingPeriodos}
-            >
-              {(loadingTabla || loadingPeriodos) ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              Actualizar
-            </button>
+          {/* Filtros */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+            {/* Año */}
+            <div className="md:col-span-3">
+              <label className="text-sm font-semibold text-slate-700">Año</label>
+              <select
+                className="mt-1 w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                value={filtroAnio}
+                onChange={(e) => {
+                  const y = e.target.value;
+                  setFiltroAnio(y);
+                  setFiltroPeriodoId("");
+                }}
+              >
+                {aniosDisponibles.map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-            <button
-              type="button"
-              onClick={abrirNuevaSolicitud}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-bold shadow hover:shadow-lg flex items-center gap-2"
-            >
-              <Plus className="w-4 h-4" />
-              Nueva solicitud
-            </button>
+            {/* Periodo (depende del año) */}
+            <div className="md:col-span-6">
+              <label className="text-sm font-semibold text-slate-700">Periodo</label>
+              <select
+                className="mt-1 w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                value={filtroPeriodoId}
+                onChange={(e) => setFiltroPeriodoId(e.target.value)}
+              >
+                <option value="">Todos los periodos</option>
+                {periodosPorAnio.map((p) => (
+                  <option key={p.idPeriodo} value={p.idPeriodo}>
+                    {p.descripcion} ({p.periodo})
+                  </option>
+                ))}
+              </select>
+              <div className="text-xs text-slate-500 mt-1">
+                * Al seleccionar el año se cargan los periodos relacionados.
+              </div>
+            </div>
+
+            {/* Estado */}
+            <div className="md:col-span-3">
+              <label className="text-sm font-semibold text-slate-700">Estado</label>
+              <select
+                className="mt-1 w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+              >
+                <option value="ALL">Todos</option>
+                <option value="SIN_SOLICITUD">Sin solicitud</option>
+                <option value="BORRADOR">Borrador</option>
+                <option value="ENVIADO">Enviado</option>
+                <option value="REVISADO">Revisado</option>
+                <option value="APROBADA">Aprobada</option>
+                <option value="RECHAZADA">Rechazada</option>
+              </select>
+            </div>
           </div>
         </div>
 
-        {misSolicitudes.length === 0 ? (
+        {/* Tabla */}
+        {filasPorPeriodo.length === 0 ? (
           <div className="text-center py-10 text-slate-500">
-            Aún no tienes solicitudes registradas. Haz clic en <strong>Nueva solicitud</strong>.
+            No hay periodos (o solicitudes) para los filtros seleccionados.
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
               <thead className="bg-slate-50 text-sm text-slate-700">
                 <tr>
-                  <th className="px-4 py-3 text-left">ID</th>
+                  <th className="px-4 py-3 text-left">Año</th>
                   <th className="px-4 py-3 text-left">Periodo</th>
+                  <th className="px-4 py-3 text-left">Solicitud</th>
+                  <th className="px-4 py-3 text-left">Inicio</th>
+                  <th className="px-4 py-3 text-left">Fin</th>
                   <th className="px-4 py-3 text-left">Estado</th>
-                  <th className="px-4 py-3 text-left">Creado</th>
-                  <th className="px-4 py-3 text-left">Actualizado</th>
                   <th className="px-4 py-3 text-right">Acción</th>
                 </tr>
               </thead>
 
               <tbody className="divide-y divide-slate-200">
-                {misSolicitudes.map((row) => {
-                  const esBorrador = row.estado === "BORRADOR";
+                {filasPorPeriodo.map((r) => {
+                  const sol = r.solicitud;
+                  const esBorrador = sol?.estado === "BORRADOR";
+                  const tieneSol = !!sol?.idSolicitud;
+
                   return (
-                    <tr key={row.idSolicitud} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-4 text-sm text-slate-700 font-semibold">{row.idSolicitud}</td>
+                    <tr key={r.idPeriodo} className="hover:bg-slate-50 transition-colors">
+                      <td className="px-4 py-4 text-sm text-slate-700 font-semibold">{r.anio}</td>
+
                       <td className="px-4 py-4 text-sm text-slate-700">
-                        <div className="font-semibold">{row.periodoDescripcion}</div>
-                        <div className="text-xs text-slate-500">Periodo ID: {row.idPeriodo}</div>
+                        <div className="font-semibold">{r.periodoLabel}</div>
+                        <div className="text-xs text-slate-500">Periodo ID: {r.idPeriodo}</div>
                       </td>
+
+                      <td className="px-4 py-4 text-sm text-slate-700">
+                        {tieneSol ? (
+                          <span className="font-semibold">#{sol.idSolicitud}</span>
+                        ) : (
+                          <span className="text-slate-400">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-4 py-4 text-sm text-slate-600">{formatFecha(r.fechaInicio)}</td>
+                      <td className="px-4 py-4 text-sm text-slate-600">{formatFecha(r.fechaFin)}</td>
+
                       <td className="px-4 py-4">
-                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(row.estado)}`}>
-                          {row.estado}
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${
+                            r.estado === "SIN_SOLICITUD"
+                              ? "bg-slate-50 text-slate-600 border-slate-200"
+                              : estadoBadgeClass(r.estado)
+                          }`}
+                        >
+                          {r.estado === "SIN_SOLICITUD" ? "SIN SOLICITUD" : r.estado}
                         </span>
                       </td>
-                      <td className="px-4 py-4 text-sm text-slate-600">{formatFecha(row.createdAt)}</td>
-                      <td className="px-4 py-4 text-sm text-slate-600">{formatFecha(row.updatedAt)}</td>
+
                       <td className="px-4 py-4 text-right">
                         <button
                           type="button"
-                          onClick={() => abrirSolicitudDesdeTabla(row)}
+                          onClick={() => abrirDesdePeriodo(r)}
                           className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
                         >
-                          {esBorrador ? <Pencil className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          {esBorrador ? "Editar" : "Ver"}
+                          {!tieneSol ? (
+                            <>
+                              <Plus className="w-4 h-4" /> Iniciar
+                            </>
+                          ) : esBorrador ? (
+                            <>
+                              <Pencil className="w-4 h-4" /> Editar
+                            </>
+                          ) : (
+                            <>
+                              <Eye className="w-4 h-4" /> Ver
+                            </>
+                          )}
                         </button>
                       </td>
                     </tr>
@@ -764,6 +961,10 @@ export default function FormularioSolicitudTurnos() {
                 })}
               </tbody>
             </table>
+
+            <div className="mt-3 text-xs text-slate-500">
+              * “Iniciar” abre el formulario para registrar turnos en ese periodo.
+            </div>
           </div>
         )}
       </div>
@@ -785,14 +986,20 @@ export default function FormularioSolicitudTurnos() {
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
             <div className="text-sm text-slate-600">
               Estado:{" "}
-              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(solicitudActual?.estado || "BORRADOR")}`}>
+              <span
+                className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(
+                  solicitudActual?.estado || "BORRADOR"
+                )}`}
+              >
                 {solicitudActual?.estado || "—"}
               </span>
             </div>
 
             <div className="text-sm text-slate-500">
               {solicitudActual?.updatedAt ? (
-                <>Última actualización: <strong>{formatFecha(solicitudActual.updatedAt)}</strong></>
+                <>
+                  Última actualización: <strong>{formatFecha(solicitudActual.updatedAt)}</strong>
+                </>
               ) : (
                 <>—</>
               )}
@@ -817,7 +1024,8 @@ export default function FormularioSolicitudTurnos() {
                         {solicitudActual?.periodoDescripcion || periodoSeleccionado?.descripcion || "—"}
                       </div>
                       <div className="text-sm text-slate-600 mt-1">
-                        ID Periodo: <strong>{solicitudActual?.idPeriodo ?? periodoSeleccionado?.idPeriodo ?? "—"}</strong>
+                        ID Periodo:{" "}
+                        <strong>{solicitudActual?.idPeriodo ?? periodoSeleccionado?.idPeriodo ?? "—"}</strong>
                       </div>
                     </div>
 
@@ -883,19 +1091,26 @@ export default function FormularioSolicitudTurnos() {
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                 <div>
                   <div className="text-xs text-slate-500">Periodo</div>
-                  <div className="text-lg font-bold text-slate-900">{solicitudActual?.periodoDescripcion || "—"}</div>
+                  <div className="text-lg font-bold text-slate-900">
+                    {solicitudActual?.periodoDescripcion || "—"}
+                  </div>
                   <div className="text-sm text-slate-600">
                     ID Periodo: <strong>{solicitudActual?.idPeriodo ?? "—"}</strong>
                   </div>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(solicitudActual?.estado || "BORRADOR")}`}>
+                  <span
+                    className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(
+                      solicitudActual?.estado || "BORRADOR"
+                    )}`}
+                  >
                     {solicitudActual?.estado || "—"}
                   </span>
 
                   <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
-                    Turnos: <span className="ml-1 font-bold">{solicitudActual?.totalTurnosSolicitados ?? 0}</span>
+                    Turnos:{" "}
+                    <span className="ml-1 font-bold">{solicitudActual?.totalTurnosSolicitados ?? 0}</span>
                   </span>
 
                   <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
@@ -912,7 +1127,7 @@ export default function FormularioSolicitudTurnos() {
           {/* VER: detalle */}
           {esSoloLectura && <SolicitudDetalleView solicitud={solicitudActual} />}
 
-          {/* EDITAR/NUEVA: tabla editable (✅ FIX: ya NO se oculta “en silencio”) */}
+          {/* EDITAR/NUEVA: tabla editable */}
           {!esSoloLectura && (
             <>
               {!periodoSeleccionado ? (
@@ -1041,7 +1256,8 @@ function SolicitudDetalleView({ solicitud }) {
     if (!active) return <span className={`${base} bg-slate-50 text-slate-500 border-slate-200`}>—</span>;
 
     if (tone === "morning") return <span className={`${base} bg-sky-50 text-sky-700 border-sky-200`}>{label}</span>;
-    if (tone === "afternoon") return <span className={`${base} bg-amber-50 text-amber-800 border-amber-200`}>{label}</span>;
+    if (tone === "afternoon")
+      return <span className={`${base} bg-amber-50 text-amber-800 border-amber-200`}>{label}</span>;
 
     return <span className={`${base} bg-emerald-50 text-emerald-700 border-emerald-200`}>{label}</span>;
   };
@@ -1062,7 +1278,8 @@ function SolicitudDetalleView({ solicitud }) {
 
           <div className="flex gap-2 flex-wrap">
             <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
-              Total turnos: <span className="ml-1 font-bold">{solicitud.totalTurnosSolicitados ?? totalTurnosTabla}</span>
+              Total turnos:{" "}
+              <span className="ml-1 font-bold">{solicitud.totalTurnosSolicitados ?? totalTurnosTabla}</span>
             </span>
             <span className="inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border border-slate-200 bg-slate-50 text-slate-700">
               N° especialidades: <span className="ml-1 font-bold">{solicitud.totalEspecialidades ?? detalles.length}</span>
@@ -1074,7 +1291,8 @@ function SolicitudDetalleView({ solicitud }) {
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
         <div className="p-5 border-b border-slate-200 flex items-center justify-between gap-3">
           <div className="text-sm text-slate-700">
-            <span className="font-semibold">Listado</span> <span className="text-slate-500">({detalles.length})</span>
+            <span className="font-semibold">Listado</span>{" "}
+            <span className="text-slate-500">({detalles.length})</span>
           </div>
           <div className="text-xs text-slate-500">* Días marcados por turno (Mañana / Tarde)</div>
         </div>
@@ -1373,7 +1591,9 @@ function TurnosPorEspecialidadTabla({
                       min="0"
                       max="99"
                       value={row.turnos ?? 0}
-                      onChange={(e) => patchRow(esp.idServicio, { turnos: Math.max(0, parseInt(e.target.value, 10) || 0) })}
+                      onChange={(e) =>
+                        patchRow(esp.idServicio, { turnos: Math.max(0, parseInt(e.target.value, 10) || 0) })
+                      }
                       disabled={esSoloLectura || !row.requiere}
                       className="w-24 rounded-xl border border-gray-200 px-3 py-2 text-sm text-center font-semibold disabled:bg-slate-50"
                     />
