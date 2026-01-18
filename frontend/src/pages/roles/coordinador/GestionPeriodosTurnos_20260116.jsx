@@ -1,11 +1,9 @@
 // ========================================================================
-// GestionPeriodosTurnos.jsx - Panel del Coordinador (AJUSTADO a TUS SERVICIOS)
+// GestionPeriodosTurnos.jsx - Panel del Coordinador
 // ------------------------------------------------------------------------
 // ✅ Tabs: Períodos | Solicitudes
-// ✅ Botón: "Aperturar Nuevo Periodo" => abre modal (mes/año + fechas)
-// ✅ Estados considerados: BORRADOR | ACTIVO | CERRADO
-// ✅ Usa: periodoSolicitudService (obtenerTodos, obtenerVigentes, crear, cambiarEstado)
-// ✅ Usa: solicitudTurnosService (obtenerTodas, obtenerPorId, aprobarSolicitud, rechazarSolicitud)
+// ✅ Ver Detalle: carga /api/solicitudes-turno/{idSolicitud} y muestra en modo lectura (bonito)
+// ✅ Botones Aprobar/Rechazar SOLO si estado === "ENVIADO" (en lista y en modal)
 // ========================================================================
 
 import React, { useEffect, useMemo, useState } from "react";
@@ -29,7 +27,6 @@ import {
   Hash,
   MapPin,
   ClipboardList,
-  BarChart3,
 } from "lucide-react";
 
 import { periodoSolicitudService } from "../../../services/periodoSolicitudService";
@@ -38,15 +35,6 @@ import { solicitudTurnosService } from "../../../services/solicitudTurnosService
 // ------------------------------
 // Helpers UI
 // ------------------------------
-const fmtDate = (val) => {
-  if (!val) return "—";
-  try {
-    return new Date(val).toLocaleDateString("es-PE");
-  } catch {
-    return String(val);
-  }
-};
-
 const fmtDateTime = (val) => {
   if (!val) return "—";
   try {
@@ -75,33 +63,6 @@ const yesNoPill = (yes) => (
   </span>
 );
 
-const safeNum = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
-
-const monthNames = [
-  "Enero",
-  "Febrero",
-  "Marzo",
-  "Abril",
-  "Mayo",
-  "Junio",
-  "Julio",
-  "Agosto",
-  "Septiembre",
-  "Octubre",
-  "Noviembre",
-  "Diciembre",
-];
-
-const pad2 = (v) => String(v).padStart(2, "0");
-
-const yyyymmFromYearMonth = (year, monthIndex0) => `${year}${pad2(monthIndex0 + 1)}`;
-
-const firstDayOfMonth = (year, monthIndex0) => `${year}-${pad2(monthIndex0 + 1)}-01`;
-const lastDayOfMonth = (year, monthIndex0) => {
-  const d = new Date(year, monthIndex0 + 1, 0);
-  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
-};
-
 // ========================================================================
 // ✅ Componente principal
 // ========================================================================
@@ -112,8 +73,6 @@ export default function GestionPeriodosTurnos() {
   const [loadingSolicitudes, setLoadingSolicitudes] = useState(false);
 
   const [periodos, setPeriodos] = useState([]);
-  const [periodoVigente, setPeriodoVigente] = useState(null);
-
   const [solicitudes, setSolicitudes] = useState([]);
 
   const [showNuevoPeriodoModal, setShowNuevoPeriodoModal] = useState(false);
@@ -134,7 +93,7 @@ export default function GestionPeriodosTurnos() {
   // Cargar datos iniciales
   // ============================================================
   useEffect(() => {
-    cargarPeriodosYVigente();
+    cargarPeriodos();
   }, []);
 
   useEffect(() => {
@@ -144,23 +103,14 @@ export default function GestionPeriodosTurnos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeTab, filtros.estado, filtros.periodo, filtros.busqueda]);
 
-  const cargarPeriodosYVigente = async () => {
+  const cargarPeriodos = async () => {
     setLoadingPeriodos(true);
     try {
-      const [all, vig] = await Promise.all([
-        periodoSolicitudService.obtenerTodos(),
-        periodoSolicitudService.obtenerVigentes(),
-      ]);
-
-      setPeriodos(Array.isArray(all) ? all : []);
-
-      // tu API /vigentes devuelve array (puede haber 1)
-      const vigente = Array.isArray(vig) && vig.length ? vig[0] : null;
-      setPeriodoVigente(vigente);
+      const data = await periodoSolicitudService.obtenerTodos();
+      setPeriodos(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error al cargar períodos:", err);
       setPeriodos([]);
-      setPeriodoVigente(null);
     } finally {
       setLoadingPeriodos(false);
     }
@@ -201,26 +151,23 @@ export default function GestionPeriodosTurnos() {
   // ============================================================
   const handleTogglePeriodo = async (periodo) => {
     try {
-      // SOLO estados reales
-      // ACTIVO <-> CERRADO
       const nuevoEstado = periodo.estado === "ACTIVO" ? "CERRADO" : "ACTIVO";
       await periodoSolicitudService.cambiarEstado(periodo.idPeriodo, nuevoEstado);
-      await cargarPeriodosYVigente();
+      await cargarPeriodos();
     } catch (err) {
       console.log(err);
       window.alert("Error al cambiar estado del período");
     }
   };
 
-  const handleCrearPeriodo = async (nuevoPeriodoUI) => {
+  const handleCrearPeriodo = async (nuevoPeriodo) => {
     try {
-      // Tu service crea se encarga de mapToApiPayload
-      await periodoSolicitudService.crear(nuevoPeriodoUI);
-      await cargarPeriodosYVigente();
+      await periodoSolicitudService.crear(nuevoPeriodo);
+      await cargarPeriodos();
       setShowNuevoPeriodoModal(false);
     } catch (err) {
       console.log(err);
-      window.alert("Error al aperturar el período");
+      window.alert("Error al crear período");
     }
   };
 
@@ -231,7 +178,7 @@ export default function GestionPeriodosTurnos() {
     try {
       setPrefillRechazo(false);
       setLoadingDetalle(true);
-      setShowDetalleModal(true);
+      setShowDetalleModal(true); // abre rápido (con loader)
       const detalle = await solicitudTurnosService.obtenerPorId(solicitud.idSolicitud);
       setSolicitudDetalle(detalle);
     } catch (err) {
@@ -274,6 +221,7 @@ export default function GestionPeriodosTurnos() {
   };
 
   const abrirRechazoRapido = async (solicitud) => {
+    // Abre modal directo en “Rechazo”, cargando detalle real para mostrar bien la tabla
     try {
       setPrefillRechazo(true);
       setLoadingDetalle(true);
@@ -292,10 +240,10 @@ export default function GestionPeriodosTurnos() {
 
   const getEstadoBadge = (estado) => {
     const badges = {
-      BORRADOR: "bg-yellow-100 text-yellow-800 border-yellow-300",
       ACTIVO: "bg-green-100 text-green-800 border-green-300",
+      INACTIVO: "bg-gray-100 text-gray-800 border-gray-300",
       CERRADO: "bg-red-100 text-red-800 border-red-300",
-
+      BORRADOR: "bg-yellow-100 text-yellow-800 border-yellow-300",
       ENVIADO: "bg-blue-100 text-blue-800 border-blue-300",
       APROBADA: "bg-green-100 text-green-800 border-green-300",
       RECHAZADA: "bg-red-100 text-red-800 border-red-300",
@@ -305,90 +253,17 @@ export default function GestionPeriodosTurnos() {
   };
 
   // ============================================================
-  // Estadísticas (cards superiores) - basado en periodo vigente
+  // Render
   // ============================================================
-  const stats = useMemo(() => {
-    // Soporta nombres diferentes que puedas tener
-    const total = safeNum(
-      periodoVigente?.totalTurnos ??
-        periodoVigente?.turnosTotales ??
-        periodoVigente?.total_turnos
-    );
-
-    const asignados = safeNum(
-      periodoVigente?.turnosAsignados ??
-        periodoVigente?.asignados ??
-        periodoVigente?.turnos_asignados
-    );
-
-    const ocupacion = total > 0 ? (asignados / total) * 100 : 0;
-
-    const nombrePeriodo =
-      periodoVigente?.descripcion ||
-      periodoVigente?.nombrePeriodo ||
-      (periodoVigente?.periodo
-        ? `${periodoVigente.periodo}`
-        : "—");
-
-    return { total, asignados, ocupacion, nombrePeriodo };
-  }, [periodoVigente]);
-
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-7xl mx-auto">
-
         {/* Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Períodos y Solicitudes</h1>
-          <p className="text-gray-600">Administre los períodos (BORRADOR/ACTIVO/CERRADO) y revise solicitudes de IPRESS</p>
-        </div>
-
-        {/* Cards superiores estilo dashboard (si hay vigente) */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <CardStat
-            title="Periodo Aperturado"
-            value={stats.nombrePeriodo}
-            subtitle={periodoVigente?.fechaInicio ? `Abierto desde ${fmtDate(periodoVigente.fechaInicio)}` : "—"}
-            icon={<Calendar className="w-5 h-5" />}
-            tone="green"
-          />
-          <CardStat
-            title="Turnos Disponibles"
-            value={stats.total}
-            subtitle="Periodo actual"
-            icon={<BarChart3 className="w-5 h-5" />}
-            tone="blue"
-          />
-          <CardStat
-            title="Turnos Asignados"
-            value={stats.asignados}
-            subtitle={`${stats.ocupacion.toFixed(1)}% de ocupación`}
-            icon={<Clock className="w-5 h-5" />}
-            tone="orange"
-          />
-          <CardStat
-            title="Periodos Gestionados"
-            value={Array.isArray(periodos) ? periodos.length : 0}
-            subtitle="Histórico"
-            icon={<FileText className="w-5 h-5" />}
-            tone="purple"
-          />
-        </div>
-
-        {/* Barra progreso */}
-        <div className="bg-white rounded-lg shadow-sm p-4 mb-6">
-          <div className="flex items-center justify-between mb-2 text-sm text-gray-600">
-            <span>Progreso de asignación del periodo activo</span>
-            <span className="font-medium text-gray-800">
-              {stats.asignados} de {stats.total} turnos ({stats.ocupacion.toFixed(1)}%)
-            </span>
-          </div>
-          <div className="w-full bg-gray-100 rounded-full h-3 overflow-hidden">
-            <div
-              className="h-3 rounded-full bg-blue-600"
-              style={{ width: `${Math.min(100, Math.max(0, stats.ocupacion))}%` }}
-            />
-          </div>
+          <p className="text-gray-600">
+            Administre los períodos de solicitud y revise las peticiones de turnos de las IPRESS
+          </p>
         </div>
 
         {/* Tabs */}
@@ -449,12 +324,9 @@ export default function GestionPeriodosTurnos() {
           />
         )}
 
-        {/* Modal Nuevo Período (Apertura) */}
+        {/* Modal Nuevo Período */}
         {showNuevoPeriodoModal && (
-          <ModalAperturarPeriodo
-            onClose={() => setShowNuevoPeriodoModal(false)}
-            onCrear={handleCrearPeriodo}
-          />
+          <ModalNuevoPeriodo onClose={() => setShowNuevoPeriodoModal(false)} onCrear={handleCrearPeriodo} />
         )}
 
         {/* Modal Detalle */}
@@ -479,31 +351,7 @@ export default function GestionPeriodosTurnos() {
 }
 
 // ========================================================================
-// Mini componente: Card estadística
-// ========================================================================
-function CardStat({ title, value, subtitle, icon, tone = "blue" }) {
-  const toneMap = {
-    green: "bg-green-50 border-green-200 text-green-800",
-    blue: "bg-blue-50 border-blue-200 text-blue-800",
-    orange: "bg-orange-50 border-orange-200 text-orange-800",
-    purple: "bg-purple-50 border-purple-200 text-purple-800",
-  };
-  const cls = toneMap[tone] || toneMap.blue;
-
-  return (
-    <div className={`rounded-xl border p-4 ${cls}`}>
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold">{title}</p>
-        <div className="opacity-80">{icon}</div>
-      </div>
-      <p className="text-2xl font-bold">{value ?? "—"}</p>
-      <p className="text-xs mt-1 opacity-80">{subtitle ?? "—"}</p>
-    </div>
-  );
-}
-
-// ========================================================================
-// Tab: Periodos (con botón "Aperturar Nuevo Periodo")
+// Tab: Periodos
 // ========================================================================
 function TabPeriodos({ periodos, loading, onTogglePeriodo, onCrearPeriodo, getEstadoBadge }) {
   if (loading) {
@@ -517,15 +365,13 @@ function TabPeriodos({ periodos, loading, onTogglePeriodo, onCrearPeriodo, getEs
   return (
     <div className="bg-white rounded-lg shadow-sm">
       <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Historial de Períodos</h2>
-
-        {/* ✅ según tu requerimiento */}
+        <h2 className="text-xl font-semibold text-gray-900">Períodos de Solicitud</h2>
         <button
           onClick={onCrearPeriodo}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
         >
           <Plus className="w-5 h-5" />
-          Aperturar Nuevo Periodo
+          Nuevo Período
         </button>
       </div>
 
@@ -534,7 +380,7 @@ function TabPeriodos({ periodos, loading, onTogglePeriodo, onCrearPeriodo, getEs
           <div className="p-12 text-center text-gray-500">
             <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-400" />
             <p className="text-lg mb-2">No hay períodos configurados</p>
-            <p className="text-sm">Aperture un nuevo período para comenzar</p>
+            <p className="text-sm">Cree un nuevo período para comenzar a recibir solicitudes</p>
           </div>
         ) : (
           periodos.map((periodo) => (
@@ -543,41 +389,43 @@ function TabPeriodos({ periodos, loading, onTogglePeriodo, onCrearPeriodo, getEs
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h3 className="text-lg font-semibold text-gray-900">
-                      {periodo.descripcion ?? periodo.nombrePeriodo ?? `Periodo ${periodo.periodo ?? periodo.idPeriodo}`}
+                      {periodo.nombrePeriodo ?? periodo.descripcion ?? `Periodo ${periodo.idPeriodo}`}
                     </h3>
-
                     <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getEstadoBadge(periodo.estado)}`}>
                       {periodo.estado}
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                  <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      <span>Inicio: {periodo.fechaInicio ? fmtDate(periodo.fechaInicio) : "—"}</span>
+                      <span>
+                        Inicio:{" "}
+                        {periodo.fechaInicio ? new Date(periodo.fechaInicio).toLocaleDateString("es-PE") : "N/A"}
+                      </span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      <span>Fin: {periodo.fechaFin ? fmtDate(periodo.fechaFin) : "—"}</span>
+                      <span>
+                        Fin:{" "}
+                        {periodo.fechaFin ? new Date(periodo.fechaFin).toLocaleDateString("es-PE") : "N/A"}
+                      </span>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <FileText className="w-4 h-4" />
-                      <span>Total Solicitudes: {safeNum(periodo.totalSolicitudes)}</span>
+                      <span>Solicitudes: {periodo.totalSolicitudes || 0}</span>
                     </div>
-
                     <div className="flex items-center gap-2">
                       <CheckCircle2 className="w-4 h-4" />
-                      <span>Aprobadas: {safeNum(periodo.solicitudesAprobadas)}</span>
+                      <span>Aprobadas: {periodo.solicitudesAprobadas || 0}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Toggle solo ACTIVO/CERRADO */}
                 <button
                   onClick={() => onTogglePeriodo(periodo)}
                   className="ml-6 p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                  title={periodo.estado === "ACTIVO" ? "Cerrar período" : "Activar período"}
+                  title={periodo.estado === "ACTIVO" ? "Desactivar" : "Activar"}
                 >
                   {periodo.estado === "ACTIVO" ? (
                     <ToggleRight className="w-8 h-8 text-green-600" />
@@ -610,11 +458,10 @@ function TabSolicitudes({
 }) {
   const safeSolicitudes = Array.isArray(solicitudes) ? solicitudes : [];
 
+  // Para mostrar el nombre del periodo en la tarjeta (si lo tienes cargado)
   const periodoMap = useMemo(() => {
     const m = new Map();
-    (periodos || []).forEach((p) =>
-      m.set(Number(p.idPeriodo), p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`)
-    );
+    (periodos || []).forEach((p) => m.set(Number(p.idPeriodo), p.nombrePeriodo ?? p.descripcion ?? `Periodo ${p.idPeriodo}`));
     return m;
   }, [periodos]);
 
@@ -652,9 +499,9 @@ function TabSolicitudes({
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Todos los períodos</option>
-              {(periodos || []).map((p) => (
+              {periodos.map((p) => (
                 <option key={p.idPeriodo} value={p.idPeriodo}>
-                  {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
+                  {p.nombrePeriodo ?? p.descripcion ?? `Periodo ${p.idPeriodo}`}
                 </option>
               ))}
             </select>
@@ -685,7 +532,7 @@ function TabSolicitudes({
         <div className="p-12 text-center text-gray-500">
           <FileText className="w-16 h-16 mx-auto mb-4 text-gray-400" />
           <p className="text-lg mb-2">No se encontraron solicitudes</p>
-          <p className="text-sm">Ajuste los filtros o espere a que las IPRESS envíen solicitudes</p>
+          <p className="text-sm">Ajuste los filtros o espere a que las IPRESS envíen sus solicitudes</p>
         </div>
       ) : (
         <div className="divide-y divide-gray-200">
@@ -719,7 +566,7 @@ function TabSolicitudes({
 
                       <div className="flex items-center gap-2">
                         <Clock className="w-4 h-4" />
-                        <span>Creación: {fmtDateTime(solicitud.fechaCreacion || solicitud.createdAt)}</span>
+                        <span>Creación: {fmtDateTime(solicitud.fechaCreacion)}</span>
                       </div>
 
                       <div className="flex items-center gap-2">
@@ -729,7 +576,7 @@ function TabSolicitudes({
 
                       <div className="flex items-center gap-2 md:col-span-2">
                         <Users className="w-4 h-4" />
-                        <span>Actualización: {fmtDateTime(solicitud.fechaActualizacion || solicitud.updatedAt)}</span>
+                        <span>Actualización: {fmtDateTime(solicitud.fechaActualizacion)}</span>
                       </div>
                     </div>
                   </div>
@@ -775,126 +622,75 @@ function TabSolicitudes({
 }
 
 // ========================================================================
-// Modal: APERTURAR Período (mes/año + fechas) -> usa TU service.crear()
+// Modal: Nuevo Período
 // ========================================================================
-function ModalAperturarPeriodo({ onClose, onCrear }) {
-  const now = new Date();
-  const [mes, setMes] = useState(now.getMonth()); // 0-11
-  const [anio, setAnio] = useState(now.getFullYear());
-
-  const [fechaInicio, setFechaInicio] = useState(firstDayOfMonth(anio, mes));
-  const [fechaFin, setFechaFin] = useState(lastDayOfMonth(anio, mes));
-
-  // Auto recalcular fechas al cambiar mes/año
-  useEffect(() => {
-    setFechaInicio(firstDayOfMonth(anio, mes));
-    setFechaFin(lastDayOfMonth(anio, mes));
-  }, [anio, mes]);
-
-  const periodoCodigo = yyyymmFromYearMonth(anio, mes);
-  const descripcion = `${monthNames[mes]} ${anio}`;
+function ModalNuevoPeriodo({ onClose, onCrear }) {
+  const [formData, setFormData] = useState({
+    nombrePeriodo: "",
+    fechaInicio: "",
+    fechaFin: "",
+    descripcion: "",
+  });
 
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // IMPORTANTE: Tu PeriodoSolicitudService.mapToApiPayload acepta:
-    // { periodo, descripcion, fechaInicio, fechaFin, instrucciones }
-    onCrear({
-      periodo: periodoCodigo,
-      descripcion,
-      fechaInicio,
-      fechaFin,
-      instrucciones: null,
-    });
+    onCrear(formData);
   };
-
-  const years = useMemo(() => {
-    const base = now.getFullYear();
-    return Array.from({ length: 6 }, (_, i) => base - 2 + i); // 2 atrás, 3 adelante
-  }, [now]);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-gray-900">Aperturar Nuevo Periodo</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <XCircle className="w-7 h-7" />
-          </button>
+      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
+        <div className="p-6 border-b border-gray-200">
+          <h3 className="text-xl font-semibold text-gray-900">Crear Nuevo Período</h3>
         </div>
 
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4 text-sm text-blue-800">
-            <div className="font-semibold mb-1">Importante:</div>
-            <div>
-              Al aperturar un nuevo período, el período activo actual se cerrará automáticamente
-              y se habilitará la solicitud de turnos para el mes seleccionado.
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Nombre del Período *</label>
+            <input
+              type="text"
+              required
+              value={formData.nombrePeriodo}
+              onChange={(e) => setFormData({ ...formData, nombrePeriodo: e.target.value })}
+              placeholder="Ej: Febrero 2026"
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Selecciona el mes</label>
-              <select
-                value={mes}
-                onChange={(e) => setMes(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                {monthNames.map((m, idx) => (
-                  <option key={m} value={idx}>
-                    {m}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Selecciona el año</label>
-              <select
-                value={anio}
-                onChange={(e) => setAnio(Number(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              >
-                {years.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio *</label>
+            <input
+              type="date"
+              required
+              value={formData.fechaInicio}
+              onChange={(e) => setFormData({ ...formData, fechaInicio: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
-              <input
-                type="date"
-                required
-                value={fechaInicio}
-                onChange={(e) => setFechaInicio(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Fin</label>
-              <input
-                type="date"
-                required
-                value={fechaFin}
-                onChange={(e) => setFechaFin(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Fin *</label>
+            <input
+              type="date"
+              required
+              value={formData.fechaFin}
+              onChange={(e) => setFormData({ ...formData, fechaFin: e.target.value })}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
 
-          <div className="rounded-xl border border-green-200 bg-green-50 p-4 text-center">
-            <div className="text-sm text-green-800 font-semibold">Periodo a aperturar:</div>
-            <div className="text-2xl font-extrabold text-green-900 mt-1">{descripcion}</div>
-            <div className="text-xs text-green-700 mt-1">Código: {periodoCodigo}</div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Descripción (opcional)</label>
+            <textarea
+              value={formData.descripcion}
+              onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+              rows={3}
+              placeholder="Descripción del período..."
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
           </div>
 
-          <div className="flex gap-3 pt-2">
+          <div className="flex gap-3 pt-4">
             <button
               type="button"
               onClick={onClose}
@@ -902,12 +698,8 @@ function ModalAperturarPeriodo({ onClose, onCrear }) {
             >
               Cancelar
             </button>
-
-            <button
-              type="submit"
-              className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
-            >
-              Confirmar Apertura
+            <button type="submit" className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+              Crear Período
             </button>
           </div>
         </form>
@@ -952,7 +744,9 @@ function ModalDetalleSolicitud({
               </h3>
 
               <div className="flex flex-wrap items-center gap-3">
-                <span className="text-gray-700 font-medium">{solicitud?.nombreIpress ?? "Cargando..."}</span>
+                <span className="text-gray-700 font-medium">
+                  {solicitud?.nombreIpress ?? "Cargando..."}
+                </span>
 
                 {solicitud?.estado && (
                   <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getEstadoBadge(solicitud.estado)}`}>
@@ -998,10 +792,13 @@ function ModalDetalleSolicitud({
                     <Row label="Total Turnos" value={solicitud.totalTurnosSolicitados ?? "—"} />
                   </div>
 
-                  <div className="mt-3 flex flex-wrap gap-2 items-center">
-                    {yesNoPill(!!solicitud.borrador)} <span className="text-xs text-gray-500">Borrador</span>
-                    {yesNoPill(!!solicitud.enviado)} <span className="text-xs text-gray-500">Enviado</span>
-                    {yesNoPill(!!solicitud.revisado)} <span className="text-xs text-gray-500">Revisado</span>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {yesNoPill(!!solicitud.borrador)}
+                    <span className="text-xs text-gray-500">Borrador</span>
+                    {yesNoPill(!!solicitud.enviado)}
+                    <span className="text-xs text-gray-500">Enviado</span>
+                    {yesNoPill(!!solicitud.revisado)}
+                    <span className="text-xs text-gray-500">Revisado</span>
                   </div>
                 </div>
 
@@ -1029,8 +826,16 @@ function ModalDetalleSolicitud({
                   <div className="space-y-2 text-sm">
                     <Row label="DNI" value={solicitud.dniUsuario ?? "—"} />
                     <Row label="Nombre" value={solicitud.nombreCompleto ?? "—"} />
-                    <Row label="Email" value={solicitud.emailContacto ?? "—"} icon={<Mail className="w-4 h-4 text-gray-400" />} />
-                    <Row label="Teléfono" value={solicitud.telefonoContacto ?? "—"} icon={<Phone className="w-4 h-4 text-gray-400" />} />
+                    <Row
+                      label="Email"
+                      value={solicitud.emailContacto ?? "—"}
+                      icon={<Mail className="w-4 h-4 text-gray-400" />}
+                    />
+                    <Row
+                      label="Teléfono"
+                      value={solicitud.telefonoContacto ?? "—"}
+                      icon={<Phone className="w-4 h-4 text-gray-400" />}
+                    />
                   </div>
                 </div>
               </div>
