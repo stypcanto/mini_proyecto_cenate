@@ -323,9 +323,26 @@ public class TeleECGService {
         long pendientes = teleECGImagenRepository.countByEstadoAndStatImagenEquals("PENDIENTE", "A");
         long procesadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("PROCESADA", "A");
         long rechazadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("RECHAZADA", "A");
+        long vinculadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("VINCULADA", "A");
+        long activas = teleECGImagenRepository.countByStatImagenEquals("A");
 
-        TeleECGEstadisticasDTO estadisticas = new TeleECGEstadisticasDTO();
-        // TODO: Mapear campos a DTO cuando TeleECGEstadisticasDTO esté completamente definido
+        TeleECGEstadisticasDTO estadisticas = TeleECGEstadisticasDTO.builder()
+            .fecha(LocalDateTime.now().toLocalDate())
+            .totalImagenesCargadas(totalImagenes)
+            .totalImagenesProcesadas(procesadas)
+            .totalImagenesRechazadas(rechazadas)
+            .totalImagenesVinculadas(vinculadas)
+            .totalImagenesPendientes(pendientes)
+            .totalImagenesActivas(activas)
+            .tasaRechazoPorcentaje(totalImagenes > 0 ? (rechazadas * 100.0 / totalImagenes) : 0.0)
+            .tasaVinculacionPorcentaje(procesadas > 0 ? (vinculadas * 100.0 / procesadas) : 0.0)
+            .tasaProcesamientoPorcentaje(totalImagenes > 0 ? (procesadas * 100.0 / totalImagenes) : 0.0)
+            .porcentajePendientes(totalImagenes > 0 ? (pendientes * 100.0 / totalImagenes) : 0.0)
+            .statusSalud("SALUDABLE")
+            .statusDetalles("Sistema funcionando normalmente")
+            .build();
+
+        estadisticas.determinarStatus();
         return estadisticas;
     }
 
@@ -366,13 +383,47 @@ public class TeleECGService {
     // ============================================================
 
     /**
-     * Convertir TeleECGImagen a DTO
+     * Convertir TeleECGImagen a DTO con todos los campos mapeados
      */
     private TeleECGImagenDTO convertirADTO(TeleECGImagen imagen) {
         if (imagen == null) return null;
 
         TeleECGImagenDTO dto = new TeleECGImagenDTO();
-        // Mapear campos (asumiendo que TeleECGImagenDTO tiene setters)
+        dto.setIdImagen(imagen.getIdImagen());
+        dto.setNumDocPaciente(imagen.getNumDocPaciente());
+        dto.setNombresPaciente(imagen.getNombresPaciente());
+        dto.setApellidosPaciente(imagen.getApellidosPaciente());
+        dto.setPacienteNombreCompleto(imagen.getApellidosPaciente() + ", " + imagen.getNombresPaciente());
+        dto.setCodigoIpress(imagen.getCodigoIpress());
+        dto.setNombreIpress(imagen.getNombreIpress());
+        dto.setNombreArchivo(imagen.getNombreArchivo());
+        dto.setNombreOriginal(imagen.getNombreOriginal());
+        dto.setExtension(imagen.getExtension());
+        dto.setMimeType(imagen.getMimeType());
+        dto.setSizeBytes(imagen.getSizeBytes());
+        dto.setTamanoFormato(TeleECGImagenDTO.formatoTamanio(imagen.getSizeBytes()));
+        dto.setSha256(imagen.getSha256());
+        dto.setStorageTipo(imagen.getStorageTipo());
+        dto.setStorageRuta(imagen.getStorageRuta());
+        dto.setStorageBucket(imagen.getStorageBucket());
+        dto.setEstado(imagen.getEstado());
+        dto.setEstadoFormato(TeleECGImagenDTO.formatoEstado(imagen.getEstado()));
+        dto.setMotivoRechazo(imagen.getMotivoRechazo());
+        dto.setObservaciones(imagen.getObservaciones());
+        dto.setFechaEnvio(imagen.getFechaEnvio());
+        dto.setFechaRecepcion(imagen.getFechaRecepcion());
+        dto.setFechaExpiracion(imagen.getFechaExpiracion());
+
+        if (imagen.getFechaExpiracion() != null) {
+            dto.setDiasRestantes(TeleECGImagenDTO.calcularDiasRestantes(imagen.getFechaExpiracion()));
+            dto.setVigencia(TeleECGImagenDTO.obtenerVigencia(imagen.getFechaExpiracion()));
+        }
+
+        dto.setStatImagen(imagen.getStatImagen());
+        dto.setTotalAccesos(imagen.getTotalAccesos());
+        dto.setCreatedAt(imagen.getCreatedAt());
+        dto.setUpdatedAt(imagen.getUpdatedAt());
+
         return dto;
     }
 

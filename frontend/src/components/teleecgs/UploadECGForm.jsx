@@ -185,6 +185,8 @@ export default function UploadECGForm({ onUpload, onClose }) {
         datosCompletos.apellidos
       );
 
+      console.log("✅ Imagen enviada:", imagen.nombre, "Respuesta:", response);
+
       // Actualizar estado a "Enviada"
       setImagenesSeleccionadas(
         imagenesSeleccionadas.map(img =>
@@ -192,9 +194,14 @@ export default function UploadECGForm({ onUpload, onClose }) {
         )
       );
 
-      console.log("✅ Imagen enviada:", imagen.nombre);
+      // Llamar al callback con la respuesta del servidor
+      if (response && onUpload) {
+        onUpload(response);
+      }
     } catch (err) {
-      setError(err.response?.data?.error || "❌ Error al subir la imagen");
+      const errorMsg = err?.message || err?.response?.data?.error || "❌ Error al subir la imagen";
+      setError(errorMsg);
+      console.error("❌ Error en enviarImagenIndividual:", err);
     } finally {
       setLoading({ ...loading, [imagen.id]: false });
     }

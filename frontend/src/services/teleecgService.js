@@ -1,4 +1,4 @@
-import apiClient from "./apiClient";
+import apiClient, { API_BASE_URL, getToken } from "./apiClient";
 
 /**
  * 🫀 Servicio para gestionar operaciones de TeleECG
@@ -7,16 +7,55 @@ import apiClient from "./apiClient";
 const teleecgService = {
   /**
    * Subir una imagen ECG
+   *
+   * El backend espera:
+   * - Query parameters: numDocPaciente, nombresPaciente, apellidosPaciente
+   * - Multipart form field: archivo (file)
    */
   subirImagenECG: async (archivo, numDocPaciente, nombres, apellidos) => {
-    const formData = new FormData();
-    formData.append("archivo", archivo);
-    formData.append("numDocPaciente", numDocPaciente);
-    formData.append("nombresPaciente", nombres);
-    formData.append("apellidosPaciente", apellidos);
+    try {
+      // 1. Build query parameters
+      const params = new URLSearchParams();
+      params.append("numDocPaciente", numDocPaciente);
+      params.append("nombresPaciente", nombres);
+      params.append("apellidosPaciente", apellidos);
 
-    // Pass auth=true as third parameter
-    return apiClient.post("/teleekgs/upload", formData, true);
+      // 2. Build FormData with file only
+      const formData = new FormData();
+      formData.append("archivo", archivo);
+
+      // 3. Get token for authorization
+      const token = getToken();
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      // 4. Make the request with proper multipart/form-data handling
+      const url = `${API_BASE_URL}/teleekgs/upload?${params.toString()}`;
+      console.log("📤 [UPLOAD ECG]:", url);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers, // Don't set Content-Type, let browser set it for multipart
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
+        console.error("❌ [Upload Error]:", errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log("✅ [Upload Success]:", result);
+      return result;
+    } catch (error) {
+      console.error("❌ [Upload Exception]:", error.message);
+      throw error;
+    }
   },
 
   /**

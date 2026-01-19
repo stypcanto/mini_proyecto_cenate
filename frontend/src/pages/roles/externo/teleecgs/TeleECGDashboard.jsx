@@ -44,9 +44,13 @@ export default function TeleECGDashboard() {
     try {
       setLoading(true);
       const response = await teleeckgService.listarImagenes();
-      setEcgs(response.data?.content || []);
+      // El servicio retorna directamente los datos (puede ser Page o array)
+      const ecgData = response?.content || response?.data || response || [];
+      setEcgs(Array.isArray(ecgData) ? ecgData : []);
+      console.log("✅ ECGs cargados:", ecgData);
     } catch (error) {
       console.error("❌ Error al cargar ECGs:", error);
+      setEcgs([]);
     } finally {
       setLoading(false);
     }
@@ -55,7 +59,15 @@ export default function TeleECGDashboard() {
   const cargarEstadisticas = async () => {
     try {
       const response = await teleeckgService.obtenerEstadisticas();
-      setStats(response.data || stats);
+      // El servicio retorna directamente los datos
+      const statsData = response || {};
+      setStats({
+        total: statsData.totalImagenesCargadas || 0,
+        pendientes: statsData.totalImagenesPendientes || 0,
+        procesadas: statsData.totalImagenesProcesadas || 0,
+        rechazadas: statsData.totalImagenesRechazadas || 0,
+      });
+      console.log("✅ Estadísticas cargadas:", statsData);
     } catch (error) {
       console.error("❌ Error al cargar estadísticas:", error);
     }
