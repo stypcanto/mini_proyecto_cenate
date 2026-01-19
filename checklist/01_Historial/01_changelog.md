@@ -4,6 +4,42 @@
 
 ---
 
+## v1.20.2 (2026-01-19) - 🔐 Restricción de Acceso: Módulo Personal Externo
+
+### 📋 Control de Permisos MBAC
+
+**Descripción**: Se implementó restricción de acceso para usuarios del módulo **Personal Externo** (rol `INSTITUCION_EX`). Estos usuarios no pueden acceder a:
+- ❌ Buscar Asegurado
+- ❌ Dashboard Asegurados
+- ❌ Auditoría (Logs del Sistema)
+
+**Estado**: ✅ **COMPLETADO**
+
+**Cambios en BD**:
+- Desactivados permisos en tabla `segu_permisos_rol_pagina` para rol 18 (INSTITUCION_EX)
+- Página 19: Auditoría → `puede_ver = FALSE, activo = FALSE`
+- Página 20: Buscar Asegurado → `puede_ver = FALSE, activo = FALSE`
+- Página 21: Dashboard Asegurados → `puede_ver = FALSE, activo = FALSE`
+
+**Módulos Permitidos para EXTERNO**:
+- ✅ Bienvenida (BienvenidaExterno.jsx)
+- ✅ Formulario de Diagnóstico
+- ✅ Solicitud de Turnos
+- ✅ Gestión de Modalidad de Atención
+- ✅ TeleECG (solo en PADOMI)
+
+**Impacto Inmediato**:
+- Menú lateral oculta automáticamente esas opciones para Personal Externo
+- Intentos de acceso directo por URL se bloquean con "Acceso Denegado"
+- Los cambios son efectivos sin redeploy (permisos se cargan desde BD)
+
+**Script Ejecutado**:
+```
+spec/04_BaseDatos/06_scripts/040_restriccion_externo_asegurados.sql
+```
+
+---
+
 ## v1.20.1 (2026-01-19) - 🔧 HOTFIX: TELEECG Exclusivo para PADOMI
 
 ### 📋 Cambio de Configuración
