@@ -1,5 +1,5 @@
 import React from "react";
-import { Eye, Download, Trash2, Calendar, User } from "lucide-react";
+import { Eye, Download, Trash2, Calendar, User, Phone } from "lucide-react";
 
 /**
  * 📋 Tabla de ECGs por pacientes
@@ -35,10 +35,16 @@ export default function ListaECGsPacientes({ ecgs, onVer, onDescargar, onElimina
               Paciente
             </th>
             <th className="px-6 py-4 text-left text-sm font-semibold">
-              Estado
+              Teléfono
             </th>
             <th className="px-6 py-4 text-left text-sm font-semibold">
-              Tamaño
+              Edad
+            </th>
+            <th className="px-6 py-4 text-left text-sm font-semibold">
+              Género
+            </th>
+            <th className="px-6 py-4 text-left text-sm font-semibold">
+              Estado
             </th>
             <th className="px-6 py-4 text-center text-sm font-semibold">
               Acciones
@@ -73,15 +79,22 @@ export default function ListaECGsPacientes({ ecgs, onVer, onDescargar, onElimina
                   </div>
                 </div>
               </td>
+              <td className="px-6 py-4 text-sm text-gray-700">
+                <div className="flex items-center gap-2">
+                  <Phone className="w-4 h-4 text-gray-400" />
+                  {ecg.telefonoPrincipalPaciente || "-"}
+                </div>
+              </td>
+              <td className="px-6 py-4 text-sm text-gray-700">
+                {ecg.edadPaciente || "-"}
+              </td>
+              <td className="px-6 py-4 text-sm text-gray-700">
+                {ecg.generoPaciente || "-"}
+              </td>
               <td className="px-6 py-4 text-sm">
                 <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(ecg.estado)}`}>
                   {ecg.estado}
                 </span>
-              </td>
-              <td className="px-6 py-4 text-sm text-gray-700">
-                {ecg.tamanioByte
-                  ? (ecg.tamanioByte / 1024 / 1024).toFixed(2) + " MB"
-                  : "-"}
               </td>
               <td className="px-6 py-4 text-center">
                 <div className="flex items-center justify-center gap-2">

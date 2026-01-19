@@ -419,6 +419,19 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
     requiredAction: 'ver',
   },
+
+  // ========================================================================
+  // 🫀 MÓDULO TELEECG (ADMIN - Vista Consolidada)
+  // ========================================================================
+  '/teleecg/recibidas': {
+    component: lazy(() => import('../pages/teleecg/TeleECGRecibidas')),
+    requiredAction: 'ver',
+  },
+
+  '/teleecg/estadisticas': {
+    component: lazy(() => import('../pages/teleecg/TeleECGRecibidas')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================

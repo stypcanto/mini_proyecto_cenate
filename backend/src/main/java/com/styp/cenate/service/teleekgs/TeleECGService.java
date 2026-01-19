@@ -372,6 +372,24 @@ public class TeleECGService {
     }
 
     /**
+     * Eliminar una imagen ECG de la base de datos (eliminación física)
+     */
+    public void eliminarImagen(Long idImagen, Long idUsuario, String ipCliente) {
+        log.info("🗑️ Eliminando imagen ECG: {}", idImagen);
+
+        TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
+            .orElseThrow(() -> new RuntimeException("Imagen no encontrada"));
+
+        // Registrar auditoría antes de eliminar
+        registrarAuditoria(imagen, idUsuario, "ELIMINADA", ipCliente, "EXITOSA");
+
+        // Eliminar de la BD (la cascada DELETE en auditoria lo elimina todo)
+        teleECGImagenRepository.deleteById(idImagen);
+
+        log.info("✅ Imagen eliminada: {}", idImagen);
+    }
+
+    /**
      * Obtener auditoría de imagen
      */
     public Page<TeleECGAuditoriaDTO> obtenerAuditoria(Long idImagen, Pageable pageable) {
@@ -399,6 +417,35 @@ public class TeleECGService {
         dto.setNombresPaciente(imagen.getNombresPaciente());
         dto.setApellidosPaciente(imagen.getApellidosPaciente());
         dto.setPacienteNombreCompleto(imagen.getApellidosPaciente() + ", " + imagen.getNombresPaciente());
+
+        // Obtener datos adicionales del asegurado por número de documento
+        try {
+            Optional<Asegurado> asegurado = aseguradoRepository.findByDocPaciente(imagen.getNumDocPaciente());
+            if (asegurado.isPresent()) {
+                Asegurado paciente = asegurado.get();
+                dto.setGeneroPaciente(paciente.getSexo());
+
+                // Calcular edad desde fecha de nacimiento
+                if (paciente.getFecnacimpaciente() != null) {
+                    java.time.LocalDate today = java.time.LocalDate.now();
+                    long edadLong = java.time.temporal.ChronoUnit.YEARS.between(
+                        paciente.getFecnacimpaciente(),
+                        today
+                    );
+                    dto.setEdadPaciente((int) edadLong);
+                }
+
+                // Preferir teléfono celular sobre fijo
+                String telefono = paciente.getTelCelular();
+                if (telefono == null || telefono.isEmpty()) {
+                    telefono = paciente.getTelFijo();
+                }
+                dto.setTelefonoPrincipalPaciente(telefono);
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudieron obtener datos adicionales del paciente: {}", imagen.getNumDocPaciente());
+        }
+
         dto.setCodigoIpress(imagen.getCodigoIpress());
         dto.setNombreIpress(imagen.getNombreIpress());
         dto.setNombreArchivo(imagen.getNombreArchivo());
@@ -459,6 +506,15 @@ public class TeleECGService {
         try {
             TeleECGAuditoria auditoria = new TeleECGAuditoria();
             auditoria.setImagen(imagen);
+
+            // Buscar usuario por ID si está disponible
+            if (idUsuario != null) {
+                usuarioRepository.findById(idUsuario).ifPresent(usuario -> {
+                    auditoria.setUsuario(usuario);
+                    auditoria.setNombreUsuario(usuario.getNameUser());
+                });
+            }
+
             auditoria.setAccion(accion);
             auditoria.setResultado(resultado);
             auditoria.setIpUsuario(ipCliente);

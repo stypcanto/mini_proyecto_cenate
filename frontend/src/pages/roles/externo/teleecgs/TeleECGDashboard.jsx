@@ -81,14 +81,16 @@ export default function TeleECGDashboard() {
 
   const manejarEliminar = async (idImagen) => {
     // eslint-disable-next-line no-restricted-globals
-    if (!confirm("¿Estás seguro de que deseas eliminar esta imagen?")) return;
+    if (!confirm("¿Estás seguro de que deseas eliminar esta imagen? Esta acción no se puede deshacer.")) return;
 
     try {
-      await teleeckgService.rechazarImagen(idImagen, "Eliminado por usuario");
+      await teleeckgService.eliminarImagen(idImagen);
       setEcgs(ecgs.filter((e) => e.idImagen !== idImagen));
-      cargarEstadisticas();
+      await cargarEstadisticas();
+      console.log("✅ Imagen eliminada y estadísticas actualizadas");
     } catch (error) {
       console.error("❌ Error al eliminar ECG:", error);
+      alert("Error al eliminar la imagen. Intenta nuevamente.");
     }
   };
 
@@ -100,9 +102,22 @@ export default function TeleECGDashboard() {
     }
   };
 
-  const abrirVisor = (ecg) => {
-    setSelectedECG(ecg);
-    setShowVisor(true);
+  const abrirVisor = async (ecg) => {
+    try {
+      // Cargar la imagen en base64
+      const imagenData = await teleeckgService.verPreview(ecg.idImagen);
+      // Combinar datos del ECG con la imagen cargada
+      const ecgConImagen = {
+        ...ecg,
+        contenidoImagen: imagenData.contenidoImagen,
+        tipoContenido: imagenData.tipoContenido,
+      };
+      setSelectedECG(ecgConImagen);
+      setShowVisor(true);
+    } catch (error) {
+      console.error("❌ Error al cargar imagen:", error);
+      alert("No se pudo cargar la imagen. Intenta nuevamente.");
+    }
   };
 
   // Filtrar ECGs por búsqueda

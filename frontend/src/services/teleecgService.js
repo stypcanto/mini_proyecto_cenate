@@ -60,13 +60,57 @@ const teleecgService = {
 
   /**
    * Listar todas las imágenes ECG
+   * Convierte snake_case del API a camelCase para el frontend
    */
   listarImagenes: async (numDocPaciente = "", page = 0) => {
     const params = new URLSearchParams();
     if (numDocPaciente) params.append("numDocPaciente", numDocPaciente);
     params.append("page", page);
 
-    return apiClient.get(`/teleekgs/listar?${params}`, true);
+    const response = await apiClient.get(`/teleekgs/listar?${params}`, true);
+
+    // El API retorna: { success, message, code, data: { content: [...], pageable: {...}, ... } }
+    // El componente espera: { content: [...], pageable: {...}, ... }
+    const apiData = response?.data || response || {};
+
+    // Transformar propiedades de snake_case a camelCase
+    if (apiData && Array.isArray(apiData.content)) {
+      apiData.content = apiData.content.map(ecg => ({
+        idImagen: ecg.id_imagen,
+        numDocPaciente: ecg.num_doc_paciente,
+        nombresPaciente: ecg.nombres_paciente,
+        apellidosPaciente: ecg.apellidos_paciente,
+        pacienteNombreCompleto: ecg.paciente_nombre_completo,
+        generoPaciente: ecg.genero_paciente,
+        edadPaciente: ecg.edad_paciente,
+        telefonoPrincipalPaciente: ecg.telefono_principal_paciente,
+        codigoIpress: ecg.codigo_ipress,
+        nombreIpress: ecg.nombre_ipress,
+        nombreArchivo: ecg.nombre_archivo,
+        nombreOriginal: ecg.nombre_original,
+        extension: ecg.extension,
+        mimeType: ecg.mime_type,
+        sizeBytes: ecg.size_bytes,
+        estado: ecg.estado,
+        fechaEnvio: ecg.fecha_envio,
+        fechaRecepcion: ecg.fecha_recepcion,
+        fechaExpiracion: ecg.fecha_expiracion,
+        storageTipo: ecg.storage_tipo,
+        storageRuta: ecg.storage_ruta,
+        sha256: ecg.sha256,
+        // Propiedades formateadas
+        tamanoFormato: ecg.tamanio_formato,
+        estadoFormato: ecg.estado_formato,
+        fechaEnvioFormato: ecg.fecha_envio_formato,
+        diasRestantes: ecg.dias_restantes,
+        vigencia: ecg.vigencia,
+        // Mantener originales también
+        ...ecg
+      }));
+    }
+
+    // Retornar directamente el objeto transformado (sin la envoltura de success/message/code)
+    return apiData;
   },
 
   /**
@@ -95,10 +139,44 @@ const teleecgService = {
   },
 
   /**
-   * Ver preview de una imagen ECG
+   * Ver preview de una imagen ECG (retorna base64 para mostrar en modal)
    */
   verPreview: async (idImagen) => {
-    return apiClient.get(`/teleekgs/${idImagen}/preview`, true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/teleekgs/preview/${idImagen}`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${getToken()}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Obtener el blob de la imagen
+      const blob = await response.blob();
+
+      // Convertir a base64
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          // Extraer solo la parte base64 (sin el prefijo data:...)
+          const base64 = reader.result.split(',')[1];
+          resolve({
+            success: true,
+            contenidoImagen: base64,
+            tipoContenido: response.headers.get('content-type') || 'image/jpeg',
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('❌ Error al cargar preview:', error.message);
+      throw error;
+    }
   },
 
   /**
@@ -106,6 +184,7 @@ const teleecgService = {
    */
   procesarImagen: async (idImagen, observaciones = "") => {
     return apiClient.put(`/teleekgs/${idImagen}/procesar`, {
+      accion: "PROCESAR",
       observaciones,
     }, true);
   },
@@ -114,17 +193,26 @@ const teleecgService = {
    * Rechazar una imagen ECG
    */
   rechazarImagen: async (idImagen, motivo = "") => {
-    return apiClient.put(`/teleekgs/${idImagen}/rechazar`, {
+    return apiClient.put(`/teleekgs/${idImagen}/procesar`, {
+      accion: "RECHAZAR",
       motivo,
     }, true);
+  },
+
+  /**
+   * Eliminar una imagen ECG (eliminación física de la base de datos)
+   */
+  eliminarImagen: async (idImagen) => {
+    return apiClient.delete(`/teleekgs/${idImagen}`, true);
   },
 
   /**
    * Vincular una imagen con un paciente registrado
    */
   vincularPaciente: async (idImagen, idUsuarioPaciente) => {
-    return apiClient.put(`/teleekgs/${idImagen}/vincular-paciente`, {
-      idUsuarioPaciente,
+    return apiClient.put(`/teleekgs/${idImagen}/procesar`, {
+      accion: "VINCULAR",
+      idUsuarioVincular: idUsuarioPaciente,
     }, true);
   },
 

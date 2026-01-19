@@ -62,6 +62,24 @@ public class TeleECGImagenDTO {
     private String pacienteNombreCompleto;
 
     /**
+     * Género del paciente
+     */
+    @JsonProperty("genero_paciente")
+    private String generoPaciente;
+
+    /**
+     * Edad del paciente
+     */
+    @JsonProperty("edad_paciente")
+    private Integer edadPaciente;
+
+    /**
+     * Teléfono principal del paciente
+     */
+    @JsonProperty("telefono_principal_paciente")
+    private String telefonoPrincipalPaciente;
+
+    /**
      * Código de la IPRESS que envió el ECG
      */
     @JsonProperty("codigo_ipress")

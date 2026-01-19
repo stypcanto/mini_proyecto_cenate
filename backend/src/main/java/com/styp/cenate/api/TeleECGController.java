@@ -2,11 +2,13 @@ package com.styp.cenate.api;
 
 import com.styp.cenate.dto.ApiResponse;
 import com.styp.cenate.dto.teleekgs.*;
+import com.styp.cenate.dto.IpressResponse;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.exception.ValidationException;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.service.teleekgs.TeleECGService;
+import com.styp.cenate.service.ipress.IpressService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,6 +53,9 @@ public class TeleECGController {
     @Autowired
     private UsuarioRepository usuarioRepository;
 
+    @Autowired
+    private IpressService ipressService;
+
     @PostConstruct
     public void init() {
         log.info("✅ TeleECGController inicializado exitosamente");
@@ -81,13 +86,18 @@ public class TeleECGController {
             dto.setNumDocPaciente(numDocPaciente);
             dto.setNombresPaciente(nombresPaciente);
             dto.setApellidosPaciente(apellidosPaciente);
+            dto.setArchivo(archivo);
 
             Long idUsuario = getUsuarioActual();
             String ipCliente = request.getRemoteAddr();
             String navegador = request.getHeader("User-Agent");
 
+            // Obtener IPRESS del usuario actual
+            IpressResponse ipressActual = ipressService.obtenerIpressPorUsuarioActual();
+            Long idIpressActual = ipressActual.getIdIpress();
+
             TeleECGImagenDTO resultado = teleECGService.subirImagenECG(
-                dto, 1L, idUsuario, ipCliente, navegador
+                dto, idIpressActual, idUsuario, ipCliente, navegador
             );
 
             return ResponseEntity.ok(new ApiResponse<>(
@@ -139,19 +149,19 @@ public class TeleECGController {
     /**
      * Obtener detalles de imagen
      */
-    @GetMapping("/{id}/detalles")
+    @GetMapping("/{idImagen}/detalles")
     @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
     @Operation(summary = "Obtener detalles de imagen")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> obtenerDetalles(
-            @PathVariable Long id,
+            @PathVariable Long idImagen,
             HttpServletRequest request) {
 
-        log.info("🔍 Obteniendo detalles - ID: {}", id);
+        log.info("🔍 Obteniendo detalles - ID: {}", idImagen);
 
         try {
             Long idUsuario = getUsuarioActual();
             TeleECGImagenDTO resultado = teleECGService.obtenerDetallesImagen(
-                id, idUsuario, request.getRemoteAddr()
+                idImagen, idUsuario, request.getRemoteAddr()
             );
 
             return ResponseEntity.ok(new ApiResponse<>(
@@ -170,24 +180,24 @@ public class TeleECGController {
     /**
      * Descargar imagen
      */
-    @GetMapping("/{id}/descargar")
+    @GetMapping("/{idImagen}/descargar")
     @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
     @Operation(summary = "Descargar imagen ECG")
     public ResponseEntity<byte[]> descargarImagen(
-            @PathVariable Long id,
+            @PathVariable Long idImagen,
             HttpServletRequest request) {
 
-        log.info("⬇️ Descargando - ID: {}", id);
+        log.info("⬇️ Descargando - ID: {}", idImagen);
 
         try {
             Long idUsuario = getUsuarioActual();
             byte[] contenido = teleECGService.descargarImagen(
-                id, idUsuario, request.getRemoteAddr()
+                idImagen, idUsuario, request.getRemoteAddr()
             );
 
             // Obtener metadata para headers correctos
             TeleECGImagenDTO imagen = teleECGService.obtenerDetallesImagen(
-                id, idUsuario, request.getRemoteAddr()
+                idImagen, idUsuario, request.getRemoteAddr()
             );
 
             return ResponseEntity.ok()
@@ -203,22 +213,57 @@ public class TeleECGController {
     }
 
     /**
+     * Ver preview de imagen (mostrar inline en navegador)
+     */
+    @GetMapping("/preview/{imagenId}")
+    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
+    @Operation(summary = "Ver preview de imagen ECG")
+    public ResponseEntity<byte[]> verPreview(
+            @PathVariable Long imagenId,
+            HttpServletRequest request) {
+
+        log.info("👁️ Preview - ID: {}", imagenId);
+
+        try {
+            Long idUsuario = getUsuarioActual();
+            byte[] contenido = teleECGService.descargarImagen(
+                imagenId, idUsuario, request.getRemoteAddr()
+            );
+
+            // Obtener metadata para headers correctos
+            TeleECGImagenDTO imagen = teleECGService.obtenerDetallesImagen(
+                imagenId, idUsuario, request.getRemoteAddr()
+            );
+
+            return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(imagen.getMimeType() != null ? imagen.getMimeType() : "image/jpeg"))
+                // Sin Content-Disposition: attachment, se muestra inline
+                .header("Content-Length", String.valueOf(imagen.getSizeBytes()))
+                .header("Cache-Control", "public, max-age=3600")
+                .body(contenido);
+        } catch (Exception e) {
+            log.error("❌ Error en preview", e);
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
      * Procesar imagen
      */
-    @PutMapping("/{id}/procesar")
+    @PutMapping("/{idImagen}/procesar")
     @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "editar")
     @Operation(summary = "Procesar imagen ECG")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> procesarImagen(
-            @PathVariable Long id,
+            @PathVariable Long idImagen,
             @Valid @RequestBody ProcesarImagenECGDTO dto,
             HttpServletRequest request) {
 
-        log.info("⚙️ Procesando - ID: {} Acción: {}", id, dto.getAccion());
+        log.info("⚙️ Procesando - ID: {} Acción: {}", idImagen, dto.getAccion());
 
         try {
             Long idUsuario = getUsuarioActual();
             TeleECGImagenDTO resultado = teleECGService.procesarImagen(
-                id, dto, idUsuario, request.getRemoteAddr()
+                idImagen, dto, idUsuario, request.getRemoteAddr()
             );
 
             return ResponseEntity.ok(new ApiResponse<>(
@@ -237,19 +282,19 @@ public class TeleECGController {
     /**
      * Obtener auditoría
      */
-    @GetMapping("/{id}/auditoria")
+    @GetMapping("/{idImagen}/auditoria")
     @CheckMBACPermission(pagina = "/teleekgs/auditoria", accion = "ver")
     @Operation(summary = "Obtener auditoría de imagen")
     public ResponseEntity<ApiResponse<Page<TeleECGAuditoriaDTO>>> obtenerAuditoria(
-            @PathVariable Long id,
+            @PathVariable Long idImagen,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        log.info("📜 Auditoría - ID: {}", id);
+        log.info("📜 Auditoría - ID: {}", idImagen);
 
         try {
             Pageable pageable = PageRequest.of(page, size);
-            Page<TeleECGAuditoriaDTO> resultado = teleECGService.obtenerAuditoria(id, pageable);
+            Page<TeleECGAuditoriaDTO> resultado = teleECGService.obtenerAuditoria(idImagen, pageable);
 
             return ResponseEntity.ok(new ApiResponse<>(
                 true,
@@ -311,6 +356,35 @@ public class TeleECGController {
             ));
         } catch (Exception e) {
             log.error("❌ Error", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        }
+    }
+
+    /**
+     * Eliminar una imagen ECG de la base de datos
+     */
+    @DeleteMapping("/{idImagen}")
+    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "eliminar")
+    @Operation(summary = "Eliminar imagen ECG")
+    public ResponseEntity<ApiResponse<Void>> eliminarImagen(
+            @PathVariable Long idImagen,
+            HttpServletRequest request) {
+
+        log.info("🗑️ Eliminando imagen: {}", idImagen);
+
+        try {
+            Long idUsuario = getUsuarioActual();
+            teleECGService.eliminarImagen(idImagen, idUsuario, request.getRemoteAddr());
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "Imagen eliminada exitosamente",
+                "200",
+                null
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error eliminando imagen", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>(false, e.getMessage(), "400", null));
         }
