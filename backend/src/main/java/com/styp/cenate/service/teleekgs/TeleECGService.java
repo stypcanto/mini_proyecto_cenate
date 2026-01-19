@@ -181,8 +181,12 @@ public class TeleECGService {
 
         log.info("📋 Listando imágenes - Filtro DNI: {}, Estado: {}", numDoc, estado);
 
+        // Usar LocalDateTime.MIN/MAX como fallback para evitar problemas con NULL en PostgreSQL
+        LocalDateTime desde = fechaDesde != null ? fechaDesde : LocalDateTime.of(1900, 1, 1, 0, 0);
+        LocalDateTime hasta = fechaHasta != null ? fechaHasta : LocalDateTime.of(2999, 12, 31, 23, 59);
+
         Page<TeleECGImagen> pagina = teleECGImagenRepository.buscarFlexible(
-            numDoc, estado, idIpress, fechaDesde, fechaHasta, pageable
+            numDoc, estado, idIpress, desde, hasta, pageable
         );
 
         return pagina.map(this::convertirADTO);
@@ -324,7 +328,8 @@ public class TeleECGService {
         long procesadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("PROCESADA", "A");
         long rechazadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("RECHAZADA", "A");
         long vinculadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("VINCULADA", "A");
-        long activas = teleECGImagenRepository.countByStatImagenEquals("A");
+        // Activas = pendientes + procesadas + rechazadas + vinculadas (todas con stat_imagen='A')
+        long activas = pendientes + procesadas + rechazadas + vinculadas;
 
         TeleECGEstadisticasDTO estadisticas = TeleECGEstadisticasDTO.builder()
             .fecha(LocalDateTime.now().toLocalDate())
@@ -420,7 +425,6 @@ public class TeleECGService {
         }
 
         dto.setStatImagen(imagen.getStatImagen());
-        dto.setTotalAccesos(imagen.getTotalAccesos());
         dto.setCreatedAt(imagen.getCreatedAt());
         dto.setUpdatedAt(imagen.getUpdatedAt());
 

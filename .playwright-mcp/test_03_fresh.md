@@ -1,0 +1,162 @@
+### New console messages
+- [WARNING] Error with Feature-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+- [WARNING] Error with Feature-Policy header: Some features are specified in both Feature-Policy and P...
+- [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+- [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/rea...
+- [INFO] 🌐 [API Base URL]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:5160...
+- [INFO] 🔧 [Environment]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:51604
+- [INFO] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:51605
+- [LOG] 🌐 [API Base URL]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:55484
+- [LOG] 🔧 [REACT_APP_API_URL]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:...
+- [LOG] 📍 [Window Location]: http://localhost:3000/ @ http://localhost:3000/static/js/bundle.js:55486
+- [LOG] Cargando permisos para usuario ID: 59 @ http://localhost:3000/static/js/bundle.js:50651
+- [LOG] 🚀 [GET] http://localhost:8080/api/menu-usuario/usuario/59 @ http://localhost:3000/static/js/b...
+- [LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:51505
+- [LOG] Cargando permisos para usuario ID: 59 @ http://localhost:3000/static/js/bundle.js:50651
+- [LOG] 🚀 [GET] http://localhost:8080/api/menu-usuario/usuario/59 @ http://localhost:3000/static/js/b...
+- [LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:51505
+- [LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:51472
+- [LOG] ✅ [Response Data]: [Object] @ http://localhost:3000/static/js/bundle.js:51493
+- [LOG] Permisos cargados: 5 rutas @ http://localhost:3000/static/js/bundle.js:50693
+- [LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:51472
+- [LOG] ✅ [Response Data]: [Object] @ http://localhost:3000/static/js/bundle.js:51493
+- [LOG] Permisos cargados: 5 rutas @ http://localhost:3000/static/js/bundle.js:50693
+- [ERROR] Failed to load resource: the server responded with a status of 401 (Unauthorized) @ https://...
+
+### Page state
+- Page URL: http://localhost:3000/
+- Page Title: Intranet CENATE
+- Page Snapshot:
+```yaml
+- generic [ref=e3]:
+  - banner [ref=e4]:
+    - img "Logo EsSalud" [ref=e6]
+    - link "Iniciar sesión" [ref=e9] [cursor=pointer]:
+      - /url: /login
+  - main [ref=e10]:
+    - generic [ref=e11]:
+      - img "Fondo institucional CENATE" [ref=e12]
+      - generic [ref=e13]:
+        - img "Logo CENATE" [ref=e14]
+        - heading "Bienvenidos al" [level=1] [ref=e15]
+        - paragraph [ref=e16]: Centro Nacional de Telemedicina - EsSalud
+    - generic [ref=e17]:
+      - generic [ref=e18]:
+        - heading "Acerca del CENATE" [level=2] [ref=e19]
+        - paragraph [ref=e20]:
+          - text: El
+          - strong [ref=e21]: Centro Nacional de Telemedicina (CENATE)
+          - text: es el órgano prestador nacional desconcentrado del Seguro Social de Salud – EsSalud, responsable de brindar servicios de salud a distancia a través de los componentes de promoción, prevención, recuperación y rehabilitación, haciendo uso de las
+          - strong [ref=e22]: Tecnologías de la Información y Comunicación (TIC)
+          - text: .
+        - paragraph [ref=e23]: Fue creado con el propósito de acercar los servicios de salud a todas las regiones del país, garantizando el acceso oportuno y equitativo a la atención médica especializada, especialmente en las zonas rurales o de difícil acceso.
+      - generic [ref=e24]:
+        - generic [ref=e25]:
+          - heading "Misión" [level=3] [ref=e26]
+          - paragraph [ref=e27]: Brindar servicios de salud a distancia de manera oportuna, equitativa y con calidad, haciendo uso de las TIC, para contribuir al bienestar de los asegurados y la mejora del acceso a los servicios de salud.
+        - generic [ref=e28]:
+          - heading "Visión" [level=3] [ref=e29]
+          - paragraph [ref=e30]: Ser el referente nacional en la prestación de servicios de salud a distancia mediante tecnologías digitales, fortaleciendo el sistema de salud y garantizando atención médica de calidad en todo el Perú.
+      - generic [ref=e31]:
+        - heading "Avances de Telesalud del CENATE" [level=2] [ref=e32]
+        - iframe [ref=e34]:
+          - generic [ref=f32e4]:
+            - generic:
+              - generic [ref=f32e5]:
+                - generic [ref=f32e6]: Este contenido no está disponible.
+                - link "Más información sobre Power BI." [ref=f32e8] [cursor=pointer]:
+                  - /url: https://go.microsoft.com/fwlink/?LinkID=722383&clcid=0x409
+              - generic [ref=f32e10]:
+                - link "Microsoft Power BI (se abre en una pestaña nueva)" [ref=f32e11] [cursor=pointer]:
+                  - /url: https://go.microsoft.com/fwlink/?LinkID=722383&clcid=0x409
+                  - text: Microsoft Power BI
+                - generic:
+                  - generic:  
+                - generic [ref=f32e12]:
+                  - button "Acerca de Power BI" [ref=f32e13] [cursor=pointer]:
+                    - generic [ref=f32e14]: 
+                  - link "":
+                    - /url: https://learn.microsoft.com/power-bi/support/service-support-options#how-do-i-contact-support
+                    - generic [ref=f32e15] [cursor=pointer]: 
+                  - button "Abrir en modo de pantalla completa" [ref=f32e16] [cursor=pointer]:
+                    - generic [ref=f32e17]: 
+        - paragraph [ref=e35]: Para ver los detalles de cada indicador, revise las tarjetas de los ejes de desarrollo en la parte inferior.
+      - heading "Ejes del desarrollo de la Telesalud" [level=2] [ref=e36]
+      - paragraph [ref=e37]:
+        - text: El CENATE es responsable de impulsar los cuatro ejes de desarrollo de la Telesalud en las Instituciones Prestadoras de Servicios de Salud (IPRESS) de EsSalud.
+        - strong [ref=e38]: Haz clic en cada tarjeta para ver el dashboard correspondiente.
+      - generic [ref=e39]:
+        - generic [ref=e41] [cursor=pointer]:
+          - generic [ref=e42]: 🏥
+          - generic [ref=e43]:
+            - heading "Telemedicina" [level=3] [ref=e44]
+            - paragraph [ref=e45]: Implementando servicios síncronos y asíncronos como Teleconsulta, Telemonitoreo, Teleinterconsulta y Teleapoyo al diagnóstico.
+            - generic [ref=e46]: Ver Dashboard →
+        - generic [ref=e48] [cursor=pointer]:
+          - generic [ref=e49]: 📚
+          - generic [ref=e50]:
+            - heading "TeleIEC" [level=3] [ref=e51]
+            - paragraph [ref=e52]: Desarrollando estrategias de información, educación y comunicación en salud para la población asegurada, enfocadas en el Modelo de Cuidado Integral de Salud (MCI).
+            - generic [ref=e53]: Ver Dashboard →
+        - generic [ref=e55] [cursor=pointer]:
+          - generic [ref=e56]: 📊
+          - generic [ref=e57]:
+            - heading "Telegestión" [level=3] [ref=e58]
+            - paragraph [ref=e59]: Proponiendo y formulando la planificación, organización, ejecución y control de la Red Funcional de Telesalud de EsSalud.
+            - generic [ref=e60]: Ver Dashboard →
+        - generic [ref=e62] [cursor=pointer]:
+          - generic [ref=e63]: 🎓
+          - generic [ref=e64]:
+            - heading "Telecapacitación" [level=3] [ref=e65]
+            - paragraph [ref=e66]: Fortaleciendo las competencias del personal de la salud mediante programas de formación continua con énfasis en gestión sanitaria y clínica.
+            - generic [ref=e67]: Ver Dashboard →
+      - generic [ref=e68]:
+        - heading "Plataformas y servicios" [level=2] [ref=e69]
+        - generic [ref=e70]:
+          - link "Realizar una consulta por telemedicina" [ref=e71] [cursor=pointer]:
+            - /url: https://www.gob.pe/52766-realizar-una-consulta-por-telemedicina
+          - link "Programa \"TELEEDUCA\"" [ref=e72] [cursor=pointer]:
+            - /url: https://teleeduca.essalud.gob.pe/
+          - link "Telecapacitaciones y TeleIEC" [ref=e73] [cursor=pointer]:
+            - /url: https://telecapacitaciones.essalud.gob.pe/
+      - generic [ref=e74]:
+        - heading "Información de Contacto" [level=2] [ref=e75]
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - generic [ref=e78]: 📍
+            - paragraph [ref=e79]: Dirección
+            - paragraph [ref=e80]:
+              - text: Jr. Domingo Cueto 120, Jesús María
+              - text: Lima, Perú
+          - generic [ref=e81]:
+            - generic [ref=e82]: ✉️
+            - paragraph [ref=e83]: Correo
+            - paragraph [ref=e84]: cenate.contacto@essalud.gob.pe
+          - generic [ref=e85]:
+            - generic [ref=e86]: ⏰
+            - paragraph [ref=e87]: Horario
+            - paragraph [ref=e88]:
+              - text: Lunes a Viernes
+              - text: 8:00 am - 5:00 pm
+  - contentinfo [ref=e89]:
+    - generic [ref=e90]:
+      - generic [ref=e91]:
+        - heading "Centro Nacional de Telemedicina – CENATE" [level=3] [ref=e92]
+        - paragraph [ref=e93]: Somos el órgano prestador nacional desconcentrado del Seguro Social de Salud – EsSalud, brindando servicios de telesalud en promoción, prevención, recuperación y rehabilitación.
+        - paragraph [ref=e94]: "Dirección: Av. Gral. Juan Antonio Álvarez de Arenales 1302, Lima – Perú"
+      - generic [ref=e95]:
+        - heading "Enlaces útiles" [level=3] [ref=e96]
+        - list [ref=e97]:
+          - listitem [ref=e98]:
+            - link "Portal CENATE" [ref=e99] [cursor=pointer]:
+              - /url: https://www.gob.pe/cenate
+          - listitem [ref=e100]:
+            - link "TeleEduca" [ref=e101] [cursor=pointer]:
+              - /url: https://teleeduca.essalud.gob.pe/
+          - listitem [ref=e102]:
+            - link "Telecapacitaciones" [ref=e103] [cursor=pointer]:
+              - /url: https://telecapacitaciones.essalud.gob.pe/
+    - generic [ref=e104]:
+      - paragraph [ref=e105]: © 2026 CENATE – EsSalud. Todos los derechos reservados.
+      - paragraph [ref=e106]: v1.18.0
+```

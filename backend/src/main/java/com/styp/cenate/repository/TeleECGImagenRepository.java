@@ -222,10 +222,10 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
         SELECT t FROM TeleECGImagen t
         WHERE (:numDoc IS NULL OR t.numDocPaciente LIKE %:numDoc%)
           AND (:estado IS NULL OR t.estado = :estado)
-          AND (:idIpress IS NULL OR t.ipressOrigen.id = :idIpress)
+          AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
           AND t.statImagen = 'A'
-          AND (:fechaDesde IS NULL OR t.fechaEnvio >= :fechaDesde)
-          AND (:fechaHasta IS NULL OR t.fechaEnvio <= :fechaHasta)
+          AND t.fechaEnvio >= :fechaDesde
+          AND t.fechaEnvio <= :fechaHasta
         ORDER BY t.fechaEnvio DESC
         """)
     Page<TeleECGImagen> buscarFlexible(
