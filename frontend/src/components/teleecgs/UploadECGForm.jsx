@@ -47,8 +47,8 @@ export default function UploadECGForm({ onUpload, onClose }) {
 
       const response = await gestionPacientesService.buscarAseguradoPorDni(numDocPaciente);
 
-      if (response.data) {
-        const paciente = response.data;
+      if (response && response.numDoc) {
+        const paciente = response;
 
         // El formato es "APELLIDOS NOMBRES" en el campo apellidosNombres
         let nombres = "";
@@ -71,11 +71,16 @@ export default function UploadECGForm({ onUpload, onClose }) {
         setDatosCompletos({
           apellidos,
           nombres,
-          sexo: paciente.sexo || "-",
+          sexo: paciente.sexo === "M" ? "M" : paciente.sexo === "F" ? "F" : paciente.sexo || "-",
           codigo: paciente.pkAsegurado || paciente.numDoc || numDocPaciente,
         });
         setPacienteEncontrado(true);
-        console.log("✅ Paciente encontrado:", { nombres, apellidos });
+        console.log("✅ Paciente encontrado:", {
+          nombres,
+          apellidos,
+          sexo: paciente.sexo,
+          codigo: paciente.pkAsegurado || paciente.numDoc
+        });
       } else {
         setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "" });
         setPacienteEncontrado(false);
@@ -85,7 +90,10 @@ export default function UploadECGForm({ onUpload, onClose }) {
       setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "" });
       setPacienteEncontrado(false);
       setError("⚠️ No se encontraron datos disponibles para este DNI en el sistema");
-      console.log("ℹ️ Búsqueda de paciente:", err.message);
+      console.error("❌ Error al buscar paciente:", {
+        message: err.message,
+        error: err
+      });
     } finally {
       setSearchingPaciente(false);
     }
