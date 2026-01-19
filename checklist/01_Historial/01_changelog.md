@@ -4,6 +4,122 @@
 
 ---
 
+## v1.20.0 (2026-01-19) - TeleECG: Menú Jerárquico de 2 Niveles + Fixes Críticos 🫀
+
+### 🎯 Implementación: Submenu Jerárquico y Fixes de LAZY Loading
+
+**Estado**: ✅ **COMPLETADO Y TESTEADO**
+
+**Descripción**: Implementación de menú jerárquico de 2 niveles para TELE EKG (padre + 3 subpáginas). Resolución de issues críticos con LAZY loading, modelo de permisos y registro de rutas.
+
+---
+
+#### 📊 Bugs Resueltos
+
+| Issue | Causa Raíz | Solución | Impacto |
+|-------|-----------|---------|--------|
+| **Subpáginas NULL** | JPA LAZY loading default en OneToMany | JPQL FETCH JOIN en PaginaRepository | API retorna estructura jerárquica |
+| **Subpáginas duplicadas** | Permisos independientes en subpáginas | Eliminar registros + herencia desde padre | Menú correcto (5 items, 1 con submenu) |
+| **Frontend sin datos** | usePermissions no pasaba `subpaginas` | Agregar field a mapeo en getModulosConDetalle() | React recibe datos jerárquicos |
+| **Navegación rota** | Ruta `/roles/externo/teleecgs` faltaba en componentRegistry | Registrar ruta principal TeleECGDashboard | Navegación correcta, sin redirigir a home |
+
+#### ✨ Cambios Implementados
+
+##### BACKEND
+
+**`PaginaRepository.java`** - FETCH JOIN para subpáginas
+```java
+@Query("SELECT DISTINCT p FROM PaginaModulo p LEFT JOIN FETCH p.subpaginas sub " +
+       "WHERE p.activo = true AND p.paginaPadre IS NULL " +
+       "ORDER BY p.orden ASC, sub.orden ASC")
+List<PaginaModulo> findAllWithSubpaginas();
+```
+
+**`MenuUsuarioServiceImpl.java`** - 2 cambios críticos
+- Línea 139: `obtenerMenuDesdePermisosModulares()` usa `findAllWithSubpaginas()`
+- Línea 304: `obtenerMenuParaAdminDesdePermisos()` usa `findAllWithSubpaginas()`
+- Líneas 454-476: `construirPaginasConSubmenus()` - cambiar filtro de permisos independientes → herencia desde padre
+
+**`PaginaMenuDTO.java`** - Agregar estructura jerárquica
+```java
+List<PaginaMenuDTO> subpaginas; // para retornar en API
+```
+
+##### BASE DE DATOS
+
+**Permisos**: Eliminar registros independientes para subpáginas
+```sql
+DELETE FROM permisos_modulares WHERE id_user = 59 AND id_pagina IN (91, 92, 93);
+-- Las subpáginas (91, 92, 93) ahora heredan permisos del padre (94)
+```
+
+##### FRONTEND
+
+**`componentRegistry.js`** - Ruta faltante
+```javascript
+'/roles/externo/teleecgs': {
+  component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
+  requiredAction: 'ver',
+},
+```
+
+**`usePermissions.js`** - Preservar estructura jerárquica
+```javascript
+id_pagina: p.id_pagina || p.idPagina,  // Requerido por DynamicSidebar
+subpaginas: p.subpaginas || null,      // Pasar datos jerárquicos a componentes
+```
+
+**`TeleECGDashboard.jsx`** - Fix ESLint
+```javascript
+// eslint-disable-next-line no-restricted-globals
+if (!confirm("¿Estás seguro...")) return;
+```
+
+##### NUEVOS COMPONENTES
+
+| Componente | Ruta | Funcionalidad |
+|-----------|------|--------------|
+| **TeleECGDashboard** | `/roles/externo/teleecgs` | Dashboard principal con estadísticas, búsqueda, upload |
+| **UploadECGForm** | Modal | Formulario de carga de ECGs |
+| **VisorECGModal** | Modal | Visualización y descarga de ECGs |
+| **ListaECGsPacientes** | Tabla | Lista con acciones (ver, descargar, eliminar) |
+| **RegistroPacientes** | `/roles/externo/teleecgs/registro-pacientes` | Registro de pacientes |
+| **TeleECGEstadisticas** | `/roles/externo/teleecgs/estadisticas` | Estadísticas de ECGs |
+| **teleecgService.js** | Service | API para operaciones CRUD ECG |
+
+#### ✅ Testing Realizado
+
+**Usuario Testeo**: 84151616 (asignado a PADOMI)
+
+| Escenario | Resultado |
+|-----------|-----------|
+| Sidebar muestra TELE EKG | ✅ Visible, expandible/colapsable |
+| Submenu lista 3 subpáginas | ✅ "Subir ECGs", "Registro Pacientes", "Estadísticas" |
+| Click en "Subir ECGs" | ✅ Navega a `/roles/externo/teleecgs` (antes redirigía a home) |
+| TeleECGDashboard carga | ✅ Muestra estadísticas (Total, Pendientes, Procesadas, Rechazadas) |
+| Tabla ECGs visible | ✅ Search, upload, descargar, eliminar funcionales |
+| Navegación subpáginas | ✅ Todas las rutas funcionan correctamente |
+
+#### 🏗️ Estructura Jerárquica Final
+
+```
+TELE EKG (Página 94 - PADRE)
+├── Subir Electrocardiogramas (Página 91 - HIJO)
+├── Registro de Pacientes (Página 92 - HIJO)
+└── Estadísticas (Página 93 - HIJO)
+
+Permisos:
+- Usuario tiene permiso en página padre (94)
+- Subpáginas heredan permiso automáticamente (sin registros independientes)
+- DynamicSidebar detecta field subpaginas y renderiza como PaginaConSubmenu
+```
+
+#### 📝 Commits Asociados
+
+- `fe2ccc3` - Implementar TeleECG con menú jerárquico de 2 niveles + fixes críticos
+
+---
+
 ## v1.19.0 (2026-01-13) - Migración TeleEKG: BYTEA a Filesystem Storage
 
 ### 🎯 Arquitectura: Almacenamiento de ECG en Filesystem
