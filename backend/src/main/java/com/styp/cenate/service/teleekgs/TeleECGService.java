@@ -19,6 +19,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.annotation.PostConstruct;
 
 import java.io.IOException;
 import java.time.LocalDateTime;
@@ -39,6 +40,11 @@ import java.util.stream.Collectors;
 @Slf4j
 @Transactional
 public class TeleECGService {
+
+    @PostConstruct
+    public void init() {
+        log.info("✅ TeleECGService inicializado exitosamente");
+    }
 
     @Autowired
     private TeleECGImagenRepository teleECGImagenRepository;

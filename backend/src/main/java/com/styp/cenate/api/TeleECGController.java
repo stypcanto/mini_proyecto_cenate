@@ -26,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import jakarta.annotation.PostConstruct;
 
 /**
  * REST Controller para gestión de TeleEKG
@@ -45,6 +46,16 @@ public class TeleECGController {
 
     @Autowired
     private TeleECGService teleECGService;
+
+    @PostConstruct
+    public void init() {
+        log.info("✅ TeleECGController inicializado exitosamente");
+        if (teleECGService != null) {
+            log.info("✅ TeleECGService inyectado correctamente");
+        } else {
+            log.error("❌ ERROR: TeleECGService no fue inyectado");
+        }
+    }
 
     /**
      * Subir nueva imagen ECG
