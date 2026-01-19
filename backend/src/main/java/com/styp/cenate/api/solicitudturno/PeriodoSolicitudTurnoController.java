@@ -139,7 +139,7 @@ public class PeriodoSolicitudTurnoController {
     @PutMapping("/{id}/estado")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
     public ResponseEntity<PeriodoSolicitudTurnoResponse> cambiarEstado(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody Map<String, String> body) {
         String nuevoEstado = body.get("estado");
         log.info("Cambiando estado del periodo {} a {}", id, nuevoEstado);

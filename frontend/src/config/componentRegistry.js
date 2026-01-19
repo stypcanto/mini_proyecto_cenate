@@ -183,7 +183,7 @@ export const componentRegistry = {
   },
 
   '/roles/coordinador/gestion-periodos': {
-    component: lazy(() => import('../pages/roles/coordinador/GestionPeriodosTurnos')),
+    component: lazy(() => import('../pages/roles/coordinador/gestion-periodos/GestionPeriodosTurnos')),
     requiredAction: 'ver',
   },
 
