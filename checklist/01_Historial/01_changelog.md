@@ -4,6 +4,36 @@
 
 ---
 
+## v1.20.1 (2026-01-19) - 🔧 HOTFIX: TELEECG Exclusivo para PADOMI
+
+### 📋 Cambio de Configuración
+
+**Descripción**: Se configuró el módulo TELEECG para que esté **ACTIVO SOLO EN PADOMI** (Programa de Atención Domiciliaria).
+
+**Estado**: ✅ **COMPLETADO**
+
+**Cambios en BD**:
+- ❌ TELEECG deshabilitado en 19 IPRESS (CAP III, Hospitales, Policlínicos)
+- ✅ TELEECG habilitado en 1 IPRESS: **PROGRAMA DE ATENCION DOMICILIARIA-PADOMI** (id=413)
+
+**Impacto**:
+- Todos los usuarios que se registren en PADOMI verán automáticamente el módulo TELEECG en su página de bienvenida
+- Usuarios de otras IPRESS NO verán el módulo TELEECG
+- El cambio es efectivo inmediatamente sin necesidad de redeploy
+
+**Script SQL ejecutado**:
+```sql
+UPDATE ipress_modulos_config
+SET habilitado = false, updated_at = NOW()
+WHERE modulo_codigo = 'TELEECG' AND id_ipress != 413;
+
+UPDATE ipress_modulos_config
+SET habilitado = true, updated_at = NOW()
+WHERE modulo_codigo = 'TELEECG' AND id_ipress = 413;
+```
+
+---
+
 ## v1.20.0 (2026-01-19) - TeleECG: Menú Jerárquico de 2 Niveles + Fixes Críticos 🫀
 
 ### 🎯 Implementación: Submenu Jerárquico y Fixes de LAZY Loading

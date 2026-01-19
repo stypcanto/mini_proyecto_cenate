@@ -15,11 +15,8 @@ const teleecgService = {
     formData.append("nombresPaciente", nombres);
     formData.append("apellidosPaciente", apellidos);
 
-    return apiClient.post("/teleekgs/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
+    // Pass auth=true as third parameter
+    return apiClient.post("/teleekgs/upload", formData, true);
   },
 
   /**
@@ -30,25 +27,23 @@ const teleecgService = {
     if (numDocPaciente) params.append("numDocPaciente", numDocPaciente);
     params.append("page", page);
 
-    return apiClient.get(`/teleekgs/listar?${params}`);
+    return apiClient.get(`/teleekgs/listar?${params}`, true);
   },
 
   /**
    * Obtener detalles de una imagen ECG
    */
   obtenerDetalles: async (idImagen) => {
-    return apiClient.get(`/teleekgs/${idImagen}/detalles`);
+    return apiClient.get(`/teleekgs/${idImagen}/detalles`, true);
   },
 
   /**
    * Descargar una imagen ECG
    */
   descargarImagen: async (idImagen, nombreArchivo) => {
-    return apiClient.get(`/teleekgs/${idImagen}/descargar`, {
-      responseType: "blob",
-    }).then((response) => {
+    return apiClient.get(`/teleekgs/${idImagen}/descargar`, true).then((response) => {
       // Crear un URL de blob y descargar
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const url = window.URL.createObjectURL(new Blob([response]));
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", nombreArchivo || "ecg.jpg");
@@ -64,9 +59,7 @@ const teleecgService = {
    * Ver preview de una imagen ECG
    */
   verPreview: async (idImagen) => {
-    return apiClient.get(`/teleekgs/${idImagen}/preview`, {
-      responseType: "blob",
-    });
+    return apiClient.get(`/teleekgs/${idImagen}/preview`, true);
   },
 
   /**
@@ -75,7 +68,7 @@ const teleecgService = {
   procesarImagen: async (idImagen, observaciones = "") => {
     return apiClient.put(`/teleekgs/${idImagen}/procesar`, {
       observaciones,
-    });
+    }, true);
   },
 
   /**
@@ -84,7 +77,7 @@ const teleecgService = {
   rechazarImagen: async (idImagen, motivo = "") => {
     return apiClient.put(`/teleekgs/${idImagen}/rechazar`, {
       motivo,
-    });
+    }, true);
   },
 
   /**
@@ -93,38 +86,36 @@ const teleecgService = {
   vincularPaciente: async (idImagen, idUsuarioPaciente) => {
     return apiClient.put(`/teleekgs/${idImagen}/vincular-paciente`, {
       idUsuarioPaciente,
-    });
+    }, true);
   },
 
   /**
    * Obtener auditoría de una imagen
    */
   obtenerAuditoria: async (idImagen) => {
-    return apiClient.get(`/teleekgs/${idImagen}/auditoria`);
+    return apiClient.get(`/teleekgs/${idImagen}/auditoria`, true);
   },
 
   /**
    * Obtener estadísticas
    */
   obtenerEstadisticas: async () => {
-    return apiClient.get("/teleekgs/estadisticas");
+    return apiClient.get("/teleekgs/estadisticas", true);
   },
 
   /**
    * Obtener imágenes próximas a vencer
    */
   obtenerProximasVencer: async () => {
-    return apiClient.get("/teleekgs/proximas-vencer");
+    return apiClient.get("/teleekgs/proximas-vencer", true);
   },
 
   /**
    * Exportar estadísticas a Excel
    */
   exportarExcel: async () => {
-    return apiClient.get("/teleekgs/estadisticas/exportar", {
-      responseType: "blob",
-    }).then((response) => {
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+    return apiClient.get("/teleekgs/estadisticas/exportar", true).then((response) => {
+      const url = window.URL.createObjectURL(new Blob([response]));
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", `estadisticas-teleekgs-${new Date().toISOString().split('T')[0]}.xlsx`);

@@ -19,6 +19,7 @@
 8. [Seguridad y Auditoría](#seguridad-y-auditoría)
 9. [Testing](#testing)
 10. [Notas de Implementación](#notas-de-implementación)
+11. [Configuración de Módulos por IPRESS](#configuración-de-módulos-por-ipress-nuevo)
 
 ---
 
@@ -450,6 +451,71 @@ WHERE action = 'ACTUALIZAR_MODALIDAD';
 
 ---
 
+---
+
+## 🎛️ Configuración de Módulos por IPRESS (NUEVO)
+
+### ⭐ Documento Completo
+
+**Ver:** `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md`
+
+Este documento detalla:
+- Cómo funciona el sistema de activación de módulos por IPRESS
+- Tabla de control `ipress_modulos_config`
+- Backend (Repository, Service, Controller, DTO)
+- Frontend (Service, Component)
+- Casos de uso y procedimientos administrativos
+- FAQ
+
+### Resumen Rápido
+
+Cada IPRESS tiene su propia configuración de módulos en la tabla `ipress_modulos_config`:
+
+```sql
+SELECT * FROM ipress_modulos_config WHERE id_ipress = 413;
+-- Resultado: 4 módulos, todos habilitados para PADOMI
+```
+
+**Página de Bienvenida** carga dinámicamente solo los módulos `habilitado = true`:
+
+```javascript
+const modulos = await ipressService.obtenerModulosDisponibles();
+// Retorna solo módulos activos para la IPRESS del usuario
+```
+
+### Caso: TELEECG Exclusivo para PADOMI (v1.20.1)
+
+**Configuración Actual:**
+
+| Módulo | IPRESS | Habilitado |
+|--------|--------|-----------|
+| TELEECG | PADOMI (413) | ✅ true |
+| TELEECG | Hospital Central (14) | ❌ false |
+| TELEECG | Otros 18 hospitales | ❌ false |
+
+**Cómo cambió:**
+
+```sql
+-- Línea 1-3: Deshabilitar en todas EXCEPTO PADOMI
+UPDATE ipress_modulos_config
+SET habilitado = false
+WHERE modulo_codigo = 'TELEECG' AND id_ipress != 413;
+
+-- Línea 5-7: Confirmar en PADOMI
+UPDATE ipress_modulos_config
+SET habilitado = true
+WHERE modulo_codigo = 'TELEECG' AND id_ipress = 413;
+```
+
+**Impacto Inmediato:**
+- ✅ Usuarios PADOMI ven TELEECG → bienvenida actualizada
+- ❌ Usuarios otros hospitales no ven TELEECG
+- ⚡ Sin necesidad de redeploy
+
+**Script Completo:** `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql`
+
+---
+
 ## 📞 Contacto y Soporte
 
 **Equipo CENATE**
@@ -461,5 +527,5 @@ Reportar en: [GitHub Issues](https://github.com/anthropics/claude-code/issues)
 
 ---
 
-**Última actualización:** 7 de Enero, 2026
+**Última actualización:** 19 de Enero, 2026 (v1.20.1 - TELEECG exclusivo PADOMI)
 **Siguiente revisión:** Cuando nuevas funcionalidades se agreguen

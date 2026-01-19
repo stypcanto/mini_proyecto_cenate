@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.18.0** (2026-01-07)
+> Sistema de Telemedicina - EsSalud | **v1.20.1** (2026-01-19)
 
 ---
 
@@ -37,6 +37,11 @@
   - Página de Bienvenida Personalizada (NUEVO)
   - Formulario de Diagnóstico
   - Solicitud de Turnos
+- **⭐ Configuración de Módulos por IPRESS:** `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` (NUEVO v1.20.1)
+  - Sistema de activación de módulos por IPRESS
+  - Tabla `ipress_modulos_config`
+  - Caso: TELEECG exclusivo para PADOMI
+  - Procedimientos administrativos
 
 ### 💾 Base de Datos
 - **Modelo Usuarios:** `spec/04_BaseDatos/01_modelo_usuarios/01_modelo_usuarios.md`
@@ -174,6 +179,7 @@ Password: @Cenate2025
 | **Navegación Dinámica de Pestañas** | Ver changelog v1.17.1 | ✅ Implementado |
 | **Creación de Usuarios con Email** | `plan/01_Seguridad_Auditoria/03_plan_unificacion_creacion_usuarios.md` | ✅ Implementado (v1.18.0) |
 | **Personal Externo (Gestión Modalidad + Bienvenida)** | `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` | ✅ Implementado (v1.18.0) |
+| **TELEECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
@@ -303,4 +309,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.18.0 | 2026-01-07*
+*Versión 1.20.1 | 2026-01-19*
