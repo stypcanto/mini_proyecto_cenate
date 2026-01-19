@@ -1,0 +1,71 @@
+// src/pages/coordinador/turnos/utils/ui.js
+
+export const monthNames = [
+  "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre",
+];
+
+export const pad2 = (v) => String(v).padStart(2, "0");
+
+export const fmtDate = (val) => {
+  if (!val) return "—";
+  try {
+    return new Date(val).toLocaleDateString("es-PE");
+  } catch {
+    return String(val);
+  }
+};
+
+export const fmtDateTime = (val) => {
+  if (!val) return "—";
+  try {
+    return new Date(val).toLocaleString("es-PE", { hour12: true });
+  } catch {
+    return String(val);
+  }
+};
+
+export const safeNum = (n) => (Number.isFinite(Number(n)) ? Number(n) : 0);
+
+export const yyyymmFromYearMonth = (year, monthIndex0) =>
+  `${year}${pad2(monthIndex0 + 1)}`;
+
+export const firstDayOfMonth = (year, monthIndex0) =>
+  `${year}-${pad2(monthIndex0 + 1)}-01`;
+
+export const lastDayOfMonth = (year, monthIndex0) => {
+  const d = new Date(year, monthIndex0 + 1, 0);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+};
+
+export const chipDay = (d) => (
+  <span
+    key={d}
+    className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border border-indigo-200 bg-indigo-50 text-indigo-700"
+  >
+    {d}
+  </span>
+);
+
+export const yesNoPill = (yes) => (
+  <span
+    className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium border ${
+      yes ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200 bg-gray-50 text-gray-600"
+    }`}
+  >
+    {yes ? "Sí" : "No"}
+  </span>
+);
+
+export const getEstadoBadgeDefault = (estado) => {
+  const badges = {
+    BORRADOR: "bg-yellow-100 text-yellow-800 border-yellow-300",
+    ACTIVO: "bg-green-100 text-green-800 border-green-300",
+    CERRADO: "bg-red-100 text-red-800 border-red-300",
+    ENVIADO: "bg-blue-100 text-blue-800 border-blue-300",
+    APROBADA: "bg-green-100 text-green-800 border-green-300",
+    RECHAZADA: "bg-red-100 text-red-800 border-red-300",
+    REVISADO: "bg-purple-100 text-purple-800 border-purple-300",
+  };
+  return badges[estado] || "bg-gray-100 text-gray-800 border-gray-300";
+};
