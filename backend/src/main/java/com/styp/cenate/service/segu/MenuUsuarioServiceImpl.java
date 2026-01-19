@@ -135,8 +135,8 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 						m -> m
 				));
 
-		// 3. Cargar información de las páginas
-		Map<Integer, PaginaModulo> paginasMap = paginaRepository.findAll()
+		// 3. Cargar información de las páginas con subpáginas cargadas (EAGER)
+		Map<Integer, PaginaModulo> paginasMap = paginaRepository.findAllWithSubpaginas()
 				.stream()
 				.collect(Collectors.toMap(
 						PaginaModulo::getIdPagina,
@@ -166,25 +166,8 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 				continue;
 			}
 
-			// Construir lista de páginas
-			List<PaginaMenuDTO> paginas = permisosModulo.stream()
-					.map(p -> {
-						PaginaModulo pagina = paginasMap.get(p.getIdPagina());
-						return new PaginaMenuDTO(
-								pagina != null ? pagina.getRutaPagina() : null,
-								pagina != null ? pagina.getOrden() : null,
-								pagina != null ? pagina.getNombrePagina() : "Página " + p.getIdPagina(),
-								p.getIdPagina(),
-								Boolean.TRUE.equals(p.getPuedeVer()),
-								Boolean.TRUE.equals(p.getPuedeCrear()),
-								Boolean.TRUE.equals(p.getPuedeEditar()),
-								Boolean.TRUE.equals(p.getPuedeEliminar()),
-								Boolean.TRUE.equals(p.getPuedeExportar())
-						);
-					})
-					.filter(p -> p.ruta() != null) // Solo incluir páginas válidas
-					.sorted(Comparator.comparing(PaginaMenuDTO::orden, Comparator.nullsLast(Integer::compareTo)))
-					.collect(Collectors.toList());
+			// Construir lista de páginas con soporte para subpáginas
+			List<PaginaMenuDTO> paginas = construirPaginasConSubmenus(permisosModulo, paginasMap);
 
 			if (paginas.isEmpty()) {
 				log.debug("⚠️ Módulo {} no tiene páginas válidas con permiso de ver", modulo.getNombreModulo());
@@ -253,22 +236,10 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 		for (ModuloSistema modulo : modulos) {
 			if (!Boolean.TRUE.equals(modulo.getActivo())) continue;
 
-			// Construir lista de páginas con todos los permisos
-			List<PaginaMenuDTO> paginas = modulo.getPaginas().stream()
-					.filter(p -> Boolean.TRUE.equals(p.getActivo()))
-					.map(p -> new PaginaMenuDTO(
-							p.getRutaPagina(),
-							p.getOrden(),
-							p.getNombrePagina(),
-							p.getIdPagina(),
-							true,  // puede ver
-							true,  // puede crear
-							true,  // puede editar
-							true,  // puede eliminar
-							true   // puede exportar
-					))
-					.sorted(Comparator.comparing(PaginaMenuDTO::orden, Comparator.nullsLast(Integer::compareTo)))
-					.collect(Collectors.toList());
+			// Construir lista de páginas con soporte para subpáginas
+			List<PaginaMenuDTO> paginas = construirPaginasConSubmenusAdmin(
+				modulo.getPaginas() != null ? new ArrayList<>(modulo.getPaginas()) : new ArrayList<>()
+			);
 
 			if (paginas.isEmpty()) continue;
 
@@ -330,7 +301,7 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 				.filter(m -> Boolean.TRUE.equals(m.getActivo()))
 				.collect(Collectors.toMap(ModuloSistema::getIdModulo, m -> m));
 
-		Map<Integer, PaginaModulo> paginasMap = paginaRepository.findAll()
+		Map<Integer, PaginaModulo> paginasMap = paginaRepository.findAllWithSubpaginas()
 				.stream()
 				.filter(p -> Boolean.TRUE.equals(p.getActivo()))
 				.collect(Collectors.toMap(PaginaModulo::getIdPagina, p -> p));
@@ -395,6 +366,142 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 		menu.sort(Comparator.comparing(MenuUsuarioDTO::orden, Comparator.nullsLast(Integer::compareTo)));
 		log.info("👑 Menú para admin basado en permisos generado con {} módulos", menu.size());
 		return menu;
+	}
+
+	/**
+	 * Construye la lista de páginas con subpáginas para menú de admin (con todos los permisos)
+	 */
+	private List<PaginaMenuDTO> construirPaginasConSubmenusAdmin(List<PaginaModulo> paginasModulo) {
+		List<PaginaMenuDTO> paginasMenu = new ArrayList<>();
+
+		if (paginasModulo == null || paginasModulo.isEmpty()) {
+			return paginasMenu;
+		}
+
+		// Procesar solo páginas padre (sin página padre)
+		for (PaginaModulo pagina : paginasModulo) {
+			if (!Boolean.TRUE.equals(pagina.getActivo())) continue;
+			if (pagina.getPaginaPadre() != null) continue; // Saltar si es una subpágina
+
+			// Construir subpáginas si existen
+			List<PaginaMenuDTO> subpaginas = new ArrayList<>();
+			if (pagina.getSubpaginas() != null && !pagina.getSubpaginas().isEmpty()) {
+				subpaginas = pagina.getSubpaginas().stream()
+						.filter(sub -> Boolean.TRUE.equals(sub.getActivo()))
+						.sorted(Comparator.comparing(PaginaModulo::getOrden, Comparator.nullsLast(Integer::compareTo)))
+						.map(sub -> new PaginaMenuDTO(
+								sub.getRutaPagina(),
+								sub.getOrden(),
+								sub.getNombrePagina(),
+								sub.getIdPagina(),
+								true,
+								true,
+								true,
+								true,
+								true,
+								null
+						))
+						.collect(Collectors.toList());
+			}
+
+			// Crear DTO de página padre
+			PaginaMenuDTO paginaDTO = new PaginaMenuDTO(
+					pagina.getRutaPagina(),
+					pagina.getOrden(),
+					pagina.getNombrePagina(),
+					pagina.getIdPagina(),
+					true,
+					true,
+					true,
+					true,
+					true,
+					subpaginas.isEmpty() ? null : subpaginas
+			);
+
+			paginasMenu.add(paginaDTO);
+		}
+
+		// Ordenar por orden
+		paginasMenu.sort(Comparator.comparing(PaginaMenuDTO::orden, Comparator.nullsLast(Integer::compareTo)));
+
+		return paginasMenu;
+	}
+
+	/**
+	 * Construye la lista de páginas del menú con soporte para subpáginas (2 niveles)
+	 * Agrupa las subpáginas bajo sus páginas padre
+	 */
+	private List<PaginaMenuDTO> construirPaginasConSubmenus(
+			List<PermisoModular> permisosModulo,
+			Map<Integer, PaginaModulo> paginasMap) {
+
+		// Separar páginas padres e hijas
+		Map<Integer, PaginaModulo> paginasConPermisos = new LinkedHashMap<>();
+		for (PermisoModular p : permisosModulo) {
+			PaginaModulo pagina = paginasMap.get(p.getIdPagina());
+			if (pagina != null && pagina.getRutaPagina() != null) {
+				paginasConPermisos.put(p.getIdPagina(), pagina);
+			}
+		}
+
+		// Crear DTOs de páginas padre solamente (excluir las que son hijas)
+		List<PaginaMenuDTO> paginasMenu = new ArrayList<>();
+
+		for (Map.Entry<Integer, PaginaModulo> entry : paginasConPermisos.entrySet()) {
+			PaginaModulo pagina = entry.getValue();
+
+			// Solo procesar páginas que NO son subpáginas (id_pagina_padre es NULL)
+			if (pagina.getPaginaPadre() == null) {
+				// Encontrar subpáginas de esta página
+				// Las subpáginas heredan permisos del padre, no necesitan permisos propios
+				List<PaginaMenuDTO> subpaginas = new ArrayList<>();
+
+				if (pagina.getSubpaginas() != null && !pagina.getSubpaginas().isEmpty()) {
+					subpaginas = pagina.getSubpaginas().stream()
+							.filter(sub -> Boolean.TRUE.equals(sub.getActivo())) // Solo páginas activas
+							.sorted(Comparator.comparing(PaginaModulo::getOrden, Comparator.nullsLast(Integer::compareTo)))
+							.map(sub -> new PaginaMenuDTO(
+									sub.getRutaPagina(),
+									sub.getOrden(),
+									sub.getNombrePagina(),
+									sub.getIdPagina(),
+									true, // Heredar permiso del padre
+									true,
+									true,
+									true,
+									true,
+									null // Las subpáginas no tienen más subpáginas
+							))
+							.collect(Collectors.toList());
+				}
+
+				// Encontrar el permiso para esta página
+				PermisoModular permisoPagina = permisosModulo.stream()
+						.filter(p -> p.getIdPagina().equals(pagina.getIdPagina()))
+						.findFirst()
+						.orElse(null);
+
+				PaginaMenuDTO paginaDTO = new PaginaMenuDTO(
+						pagina.getRutaPagina(),
+						pagina.getOrden(),
+						pagina.getNombrePagina(),
+						pagina.getIdPagina(),
+						true, // Ya está filtrado por puedeVer
+						permisoPagina != null ? Boolean.TRUE.equals(permisoPagina.getPuedeCrear()) : false,
+						permisoPagina != null ? Boolean.TRUE.equals(permisoPagina.getPuedeEditar()) : false,
+						permisoPagina != null ? Boolean.TRUE.equals(permisoPagina.getPuedeEliminar()) : false,
+						permisoPagina != null ? Boolean.TRUE.equals(permisoPagina.getPuedeExportar()) : false,
+						subpaginas.isEmpty() ? null : subpaginas
+				);
+
+				paginasMenu.add(paginaDTO);
+			}
+		}
+
+		// Ordenar por orden
+		paginasMenu.sort(Comparator.comparing(PaginaMenuDTO::orden, Comparator.nullsLast(Integer::compareTo)));
+
+		return paginasMenu;
 	}
 
 }

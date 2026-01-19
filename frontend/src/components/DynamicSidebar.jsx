@@ -423,12 +423,74 @@ function TooltipWrapper({ children, collapsed, text }) {
   );
 }
 
+// Componente para renderizar una página con submenú (nivel 3)
+function PaginaConSubmenu({ pagina, location, nombreModulo }) {
+  const [isSubOpen, setIsSubOpen] = React.useState(false);
+  const hasActiveSubpage = pagina.subpaginas?.some((sub) => location.pathname === sub.ruta);
+  const subStateKey = `${nombreModulo}-${pagina.id_pagina}`;
+
+  return (
+    <div className="space-y-1">
+      {/* Botón padre con chevron */}
+      <button
+        onClick={() => setIsSubOpen(!isSubOpen)}
+        className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+          hasActiveSubpage
+            ? "bg-slate-800/80 text-blue-400"
+            : "hover:bg-slate-800/60 text-slate-400 hover:text-white"
+        }`}
+      >
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          <FileText className="w-4 h-4 flex-shrink-0" />
+          <span className="truncate">{pagina.nombre}</span>
+        </div>
+        {isSubOpen ? (
+          <ChevronDown className="w-4 h-4 flex-shrink-0" />
+        ) : (
+          <ChevronRight className="w-4 h-4 flex-shrink-0" />
+        )}
+      </button>
+
+      {/* Subpáginas */}
+      {isSubOpen && (
+        <div className="ml-3 pl-3 border-l-2 border-slate-700/30 space-y-1 animate-fadeIn">
+          {pagina.subpaginas.map((subpagina, subIdx) => {
+            const isActive = location.pathname === subpagina.ruta;
+            return (
+              <NavLink
+                key={subpagina.id_pagina || subIdx}
+                to={subpagina.ruta}
+                className={`flex items-center gap-3 px-4 py-2 rounded-lg text-xs font-medium transition-all block ${
+                  isActive
+                    ? "bg-[#0A5BA9] text-white shadow-md"
+                    : "hover:bg-slate-800/40 text-slate-400 hover:text-white"
+                }`}
+              >
+                <span className="text-slate-500">└─</span>
+                <span className="truncate">{subpagina.nombre}</span>
+              </NavLink>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Componente para renderizar modulos dinamicos con iconos de la BD
 function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, openSections, collapsed, getIconComponent }) {
   const { nombreModulo, icono, paginas } = modulo;
   const ModuleIcon = getIconComponent(icono);
   const isOpen = openSections[nombreModulo];
-  const hasActiveChild = paginas.some((p) => location.pathname === p.ruta);
+
+  // Verificar si alguna página o subpágina está activa
+  const hasActiveChild = paginas.some((p) => {
+    if (location.pathname === p.ruta) return true;
+    if (p.subpaginas && p.subpaginas.length > 0) {
+      return p.subpaginas.some((sub) => location.pathname === sub.ruta);
+    }
+    return false;
+  });
 
   const [tooltipPosition, setTooltipPosition] = React.useState({ top: 0, left: 0 });
   const [showTooltip, setShowTooltip] = React.useState(false);
@@ -513,21 +575,36 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
       {isOpen && (
         <div className="ml-3 pl-3 border-l-2 border-slate-700/50 space-y-1 animate-fadeIn">
           {paginas.map((pagina, idx) => {
-            const isActive = location.pathname === pagina.ruta;
-            return (
-              <NavLink
-                key={pagina.idPagina || idx}
-                to={pagina.ruta}
-                className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
-                  isActive
-                    ? "bg-[#0A5BA9] text-white shadow-md"
-                    : "hover:bg-slate-800/60 text-slate-400 hover:text-white"
-                }`}
-              >
-                <FileText className="w-4 h-4" />
-                <span className="truncate">{pagina.nombre}</span>
-              </NavLink>
-            );
+            // Verificar si tiene subpáginas
+            const tieneSubpaginas = pagina.subpaginas && pagina.subpaginas.length > 0;
+
+            if (tieneSubpaginas) {
+              return (
+                <PaginaConSubmenu
+                  key={pagina.id_pagina || idx}
+                  pagina={pagina}
+                  location={location}
+                  nombreModulo={nombreModulo}
+                />
+              );
+            } else {
+              // Renderizar como página normal
+              const isActive = location.pathname === pagina.ruta;
+              return (
+                <NavLink
+                  key={pagina.id_pagina || idx}
+                  to={pagina.ruta}
+                  className={`flex items-center gap-3 px-4 py-2.5 rounded-lg text-sm font-medium transition-all ${
+                    isActive
+                      ? "bg-[#0A5BA9] text-white shadow-md"
+                      : "hover:bg-slate-800/60 text-slate-400 hover:text-white"
+                  }`}
+                >
+                  <FileText className="w-4 h-4" />
+                  <span className="truncate">{pagina.nombre}</span>
+                </NavLink>
+              );
+            }
           })}
         </div>
       )}

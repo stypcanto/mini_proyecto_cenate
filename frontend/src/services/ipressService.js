@@ -156,6 +156,20 @@ class IpressService {
       throw error;
     }
   }
+
+  /**
+   * Obtener módulos disponibles para la IPRESS del usuario logueado
+   * @returns {Promise<Object>} Lista de módulos disponibles
+   */
+  async obtenerModulosDisponibles() {
+    try {
+      const response = await apiClient.get("/ipress/mi-ipress/modulos-disponibles", true);
+      return response.data || response;
+    } catch (error) {
+      console.error("❌ Error al obtener módulos disponibles:", error);
+      throw error;
+    }
+  }
 }
 
 export default new IpressService();

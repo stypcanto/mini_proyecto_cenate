@@ -15,31 +15,83 @@ import {
   CheckCircle2,
   Info,
   LogOut,
+  Activity,
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import ipressService from "../../../services/ipressService";
+
+// Mapeo de íconos dinámicos
+const iconMap = {
+  FileText: FileText,
+  Calendar: Calendar,
+  Settings: Settings,
+  Activity: Activity,
+};
 
 export default function BienvenidaExterno() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [ipress, setIpress] = useState(null);
+  const [modulos, setModulos] = useState([]);
 
   useEffect(() => {
-    // Cargar datos de IPRESS del usuario
-    const fetchIpress = async () => {
+    // Cargar datos de IPRESS y módulos disponibles
+    const fetchData = async () => {
       try {
-        const data = await ipressService.obtenerMiIpress();
-        setIpress(data.data || data);
+        // Cargar IPRESS
+        const ipressData = await ipressService.obtenerMiIpress();
+        setIpress(ipressData.data || ipressData);
+
+        // Cargar módulos disponibles
+        const modulosData = await ipressService.obtenerModulosDisponibles();
+        // Ordenar por campo 'orden'
+        const modulosOrdenados = (modulosData.data || []).sort(
+          (a, b) => (a.orden || 0) - (b.orden || 0)
+        );
+        setModulos(modulosOrdenados);
       } catch (error) {
-        console.error("❌ Error al cargar IPRESS:", error);
+        console.error("❌ Error al cargar datos:", error);
+        // Fallback: módulos estáticos si hay error
+        setModulos([
+          {
+            id: 1,
+            moduloCodigo: "FORMULARIO_DIAGNOSTICO",
+            moduloNombre: "Formulario de Diagnóstico",
+            descripcion: "Complete el diagnóstico situacional de telesalud",
+            icono: "FileText",
+            color: "indigo",
+            orden: 1,
+            ruta: "/roles/externo/formulario-diagnostico",
+          },
+          {
+            id: 2,
+            moduloCodigo: "SOLICITUD_TURNOS",
+            moduloNombre: "Solicitud de Turnos",
+            descripcion: "Solicite turnos de telemedicina para sus pacientes",
+            icono: "Calendar",
+            color: "blue",
+            orden: 2,
+            ruta: "/roles/externo/solicitud-turnos",
+          },
+          {
+            id: 3,
+            moduloCodigo: "MODALIDAD_ATENCION",
+            moduloNombre: "Gestión de Modalidad de Atención",
+            descripcion: "Actualice la modalidad de atención de su institución",
+            icono: "Settings",
+            color: "purple",
+            orden: 3,
+            ruta: "/roles/externo/gestion-modalidad",
+          },
+        ]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchIpress();
+    fetchData();
   }, []);
 
   // 🎯 Determinar saludo según género
@@ -52,33 +104,16 @@ export default function BienvenidaExterno() {
     return "¡Bienvenido(a) al Sistema CENATE!";
   };
 
-  // 📋 Opciones del módulo
-  const opciones = [
-    {
-      id: 1,
-      nombre: "Formulario de Diagnóstico",
-      descripcion: "Complete el diagnóstico situacional de telesalud",
-      icono: FileText,
-      ruta: "/roles/externo/formulario-diagnostico",
-      color: "indigo",
-    },
-    {
-      id: 2,
-      nombre: "Solicitud de Turnos",
-      descripcion: "Solicite turnos de telemedicina para sus pacientes",
-      icono: Calendar,
-      ruta: "/roles/externo/solicitud-turnos",
-      color: "blue",
-    },
-    {
-      id: 3,
-      nombre: "Gestión de Modalidad de Atención",
-      descripcion: "Actualice la modalidad de atención de su institución",
-      icono: Settings,
-      ruta: "/roles/externo/gestion-modalidad",
-      color: "purple",
-    },
-  ];
+  // 📋 Mapeo de íconos adicionales dinámicos
+  const getIconComponent = (iconoNombre) => {
+    const iconMap = {
+      FileText: FileText,
+      Calendar: Calendar,
+      Settings: Settings,
+      Activity: Activity,
+    };
+    return iconMap[iconoNombre] || FileText;
+  };
 
   if (loading) {
     return (
@@ -176,45 +211,57 @@ export default function BienvenidaExterno() {
             📋 Opciones Disponibles
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {opciones.map((opcion) => {
-              const Icon = opcion.icono;
-              const colorClasses = {
-                indigo: "from-indigo-500 to-indigo-600",
-                blue: "from-blue-500 to-blue-600",
-                purple: "from-purple-500 to-purple-600",
-              };
+            {modulos && modulos.length > 0 ? (
+              modulos.map((modulo) => {
+                const Icon = getIconComponent(modulo.icono);
+                const colorClasses = {
+                  indigo: "from-indigo-500 to-indigo-600",
+                  blue: "from-blue-500 to-blue-600",
+                  purple: "from-purple-500 to-purple-600",
+                  rose: "from-rose-500 to-rose-600",
+                  red: "from-red-500 to-red-600",
+                  green: "from-green-500 to-green-600",
+                  amber: "from-amber-500 to-amber-600",
+                };
 
-              return (
-                <div
-                  key={opcion.id}
-                  className="group cursor-pointer"
-                  onClick={() => navigate(opcion.ruta)}
-                >
-                  <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-                    {/* Header con color */}
-                    <div
-                      className={`bg-gradient-to-br ${
-                        colorClasses[opcion.color]
-                      } p-6 text-white`}
-                    >
-                      <Icon className="w-12 h-12 mb-4" />
-                      <h3 className="text-xl font-bold">{opcion.nombre}</h3>
-                    </div>
+                return (
+                  <div
+                    key={modulo.id}
+                    className="group cursor-pointer"
+                    onClick={() => navigate(modulo.ruta)}
+                  >
+                    <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
+                      {/* Header con color */}
+                      <div
+                        className={`bg-gradient-to-br ${
+                          colorClasses[modulo.color] || "from-gray-500 to-gray-600"
+                        } p-6 text-white`}
+                      >
+                        <Icon className="w-12 h-12 mb-4" />
+                        <h3 className="text-xl font-bold">
+                          {modulo.moduloNombre}
+                        </h3>
+                      </div>
 
-                    {/* Body */}
-                    <div className="p-6">
-                      <p className="text-gray-600 mb-4">
-                        {opcion.descripcion}
-                      </p>
-                      <div className="flex items-center gap-2 text-indigo-600 font-semibold group-hover:gap-4 transition-all duration-300">
-                        <span>Acceder</span>
-                        <ArrowRight className="w-4 h-4" />
+                      {/* Body */}
+                      <div className="p-6">
+                        <p className="text-gray-600 mb-4">
+                          {modulo.descripcion}
+                        </p>
+                        <div className="flex items-center gap-2 text-indigo-600 font-semibold group-hover:gap-4 transition-all duration-300">
+                          <span>Acceder</span>
+                          <ArrowRight className="w-4 h-4" />
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="col-span-full text-center py-8">
+                <p className="text-gray-600">No hay módulos disponibles</p>
+              </div>
+            )}
           </div>
         </div>
 

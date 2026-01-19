@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.*;
 import com.styp.cenate.dto.IpressRequest;
 import com.styp.cenate.dto.IpressResponse;
 import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
+import com.styp.cenate.dto.ModuloDisponibleDTO;
 import com.styp.cenate.service.ipress.IpressService;
 
 import java.util.HashMap;
@@ -119,6 +120,26 @@ public class IpressController {
         response.put("status", 200);
         response.put("data", ipress);
         response.put("message", "Modalidad de atención actualizada exitosamente");
+        return ResponseEntity.ok(response);
+    }
+
+    // ============================================================
+    // 🔹 Obtener módulos disponibles para la IPRESS del usuario
+    // ============================================================
+    /**
+     * GET /api/ipress/mi-ipress/modulos-disponibles
+     * Obtiene los módulos habilitados para la IPRESS del usuario logueado
+     * Requiere rol: EXTERNO, ADMIN o SUPERADMIN
+     */
+    @GetMapping("/mi-ipress/modulos-disponibles")
+    @PreAuthorize("hasAnyRole('INSTITUCION_EX', 'ADMIN', 'SUPERADMIN')")
+    public ResponseEntity<Map<String, Object>> obtenerModulosDisponibles() {
+        log.info("📋 Obteniendo módulos disponibles para la IPRESS del usuario");
+        List<ModuloDisponibleDTO> modulos = ipressService.obtenerModulosDisponibles();
+        Map<String, Object> response = new HashMap<>();
+        response.put("status", 200);
+        response.put("data", modulos);
+        response.put("message", "Módulos obtenidos exitosamente");
         return ResponseEntity.ok(response);
     }
 

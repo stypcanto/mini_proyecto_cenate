@@ -387,6 +387,22 @@ export const componentRegistry = {
     requiredAction: 'ver',
     requiredRoles: ['ENFERMERIA', 'SUPERADMIN'], // Enfermeras y SUPERADMIN pueden ver
   },
+
+  // Rutas adicionales para TeleECG
+  '/roles/externo/teleecgs': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
+    requiredAction: 'ver',
+  },
+
+  '/roles/externo/teleecgs/registro-pacientes': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/RegistroPacientes')),
+    requiredAction: 'ver',
+  },
+
+  '/roles/externo/teleecgs/estadisticas': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGEstadisticas')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================

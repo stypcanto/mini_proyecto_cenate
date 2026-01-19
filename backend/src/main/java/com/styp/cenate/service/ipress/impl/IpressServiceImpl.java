@@ -11,17 +11,20 @@ import com.styp.cenate.dto.IpressResponse;
 import com.styp.cenate.dto.MacroregionResponse;
 import com.styp.cenate.dto.RedResponse;
 import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
+import com.styp.cenate.dto.ModuloDisponibleDTO;
 import com.styp.cenate.model.Ipress;
 import com.styp.cenate.model.Macroregion;
 import com.styp.cenate.model.ModalidadAtencion;
 import com.styp.cenate.model.Red;
 import com.styp.cenate.model.Usuario;
 import com.styp.cenate.model.PersonalExterno;
+import com.styp.cenate.model.IpressModuloConfig;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.ModalidadAtencionRepository;
 import com.styp.cenate.repository.RedRepository;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.PersonalExternoRepository;
+import com.styp.cenate.repository.IpressModuloConfigRepository;
 import com.styp.cenate.service.ipress.IpressService;
 import com.styp.cenate.service.auditlog.AuditLogService;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -45,6 +48,7 @@ public class IpressServiceImpl implements IpressService {
     private final ModalidadAtencionRepository modalidadAtencionRepository;
     private final UsuarioRepository usuarioRepository;
     private final PersonalExternoRepository personalExternoRepository;
+    private final IpressModuloConfigRepository ipressModuloConfigRepository;
     private final AuditLogService auditLogService;
 
     @Override
@@ -359,5 +363,36 @@ public class IpressServiceImpl implements IpressService {
                 .createAt(ipress.getCreateAt())
                 .updateAt(ipress.getUpdateAt())
                 .build();
+    }
+
+    // ===========================
+    // MÓDULOS DISPONIBLES
+    // ===========================
+
+    @Override
+    public List<ModuloDisponibleDTO> obtenerModulosDisponibles() {
+        log.info("📋 Obteniendo módulos disponibles para el usuario logueado");
+        IpressResponse ipress = obtenerIpressPorUsuarioActual();
+        return obtenerModulosDisponiblesPorIpress(ipress.getIdIpress());
+    }
+
+    @Override
+    public List<ModuloDisponibleDTO> obtenerModulosDisponiblesPorIpress(Long idIpress) {
+        log.info("📋 Obteniendo módulos disponibles para IPRESS: {}", idIpress);
+
+        List<IpressModuloConfig> modulos = ipressModuloConfigRepository.findModulosHabilitados(idIpress);
+
+        return modulos.stream()
+                .map(config -> ModuloDisponibleDTO.builder()
+                        .id(config.getId())
+                        .moduloCodigo(config.getModuloCodigo())
+                        .moduloNombre(config.getModuloNombre())
+                        .descripcion(config.getDescripcion())
+                        .icono(config.getIcono())
+                        .color(config.getColor())
+                        .orden(config.getOrden())
+                        .habilitado(config.getHabilitado())
+                        .build())
+                .collect(Collectors.toList());
     }
 }

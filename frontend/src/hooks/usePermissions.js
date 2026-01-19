@@ -78,6 +78,7 @@ export const usePermissions = (userId) => {
         .filter((p) => p.puedeVer || p.puede_ver)
         .map((p) => ({
           idPagina: p.id_pagina || p.idPagina,
+          id_pagina: p.id_pagina || p.idPagina,
           nombre: p.nombre,
           ruta: p.ruta,
           orden: p.orden,
@@ -88,6 +89,7 @@ export const usePermissions = (userId) => {
           puedeExportar: p.puedeExportar || p.puede_exportar || false,
           puedeImportar: p.puedeImportar || p.puede_importar || false,
           puedeAprobar: p.puedeAprobar || p.puede_aprobar || false,
+          subpaginas: p.subpaginas || null,
         }))
     })).filter(m => m.paginas.length > 0);
   }, [modulos]);

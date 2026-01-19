@@ -3,6 +3,7 @@ package com.styp.cenate.service.ipress;
 import com.styp.cenate.dto.IpressRequest;
 import com.styp.cenate.dto.IpressResponse;
 import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
+import com.styp.cenate.dto.ModuloDisponibleDTO;
 import java.util.List;
 
 /**
@@ -56,6 +57,19 @@ public interface IpressService {
      * @return IPRESS del usuario logueado
      */
     IpressResponse obtenerIpressPorUsuarioActual();
+
+    /**
+     * Obtiene los módulos disponibles (habilitados) para la IPRESS del usuario logueado
+     * @return Lista de módulos disponibles con información de navegación
+     */
+    List<ModuloDisponibleDTO> obtenerModulosDisponibles();
+
+    /**
+     * Obtiene los módulos disponibles para una IPRESS específica
+     * @param idIpress ID de la IPRESS
+     * @return Lista de módulos disponibles
+     */
+    List<ModuloDisponibleDTO> obtenerModulosDisponiblesPorIpress(Long idIpress);
 
     // ===========================
     // ELIMINAR (DELETE)

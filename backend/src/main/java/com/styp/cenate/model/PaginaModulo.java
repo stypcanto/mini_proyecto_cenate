@@ -52,6 +52,23 @@ public class PaginaModulo {
     @JsonBackReference
     private ModuloSistema modulo;
 
+    /**
+     * Referencia a página padre (para submenús)
+     * NULL si es una página de nivel 1
+     * Si tiene valor, esta página es un subitem de otra
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_pagina_padre", nullable = true)
+    @JsonBackReference
+    private PaginaModulo paginaPadre;
+
+    /**
+     * Subpáginas (items hijos si esta es una página contenedora)
+     */
+    @OneToMany(mappedBy = "paginaPadre", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @JsonManagedReference
+    private List<PaginaModulo> subpaginas;
+
     // ============================================================
     // 🔹 Propiedades base
     // ============================================================
