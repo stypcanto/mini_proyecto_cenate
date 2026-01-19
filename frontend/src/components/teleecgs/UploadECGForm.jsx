@@ -1,17 +1,23 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Upload, X, AlertCircle, CheckCircle, Loader, Search } from "lucide-react";
+import { Upload, X, AlertCircle, CheckCircle, Loader, Heart, FileText, User } from "lucide-react";
 import teleeckgService from "../../services/teleecgService";
 import gestionPacientesService from "../../services/gestionPacientesService";
 
 /**
- * 📤 Componente para subir ECGs con drag-and-drop
- * Busca automáticamente datos del paciente por DNI
+ * 📤 Formulario Profesional de Envío de ECG
+ * - Búsqueda automática de paciente por DNI
+ * - Información del paciente auto-cargada (solo lectura)
+ * - Interfaz médica y profesional
  */
 export default function UploadECGForm({ onUpload, onClose }) {
   const [archivo, setArchivo] = useState(null);
   const [numDocPaciente, setNumDocPaciente] = useState("");
-  const [nombresPaciente, setNombresPaciente] = useState("");
-  const [apellidosPaciente, setApellidosPaciente] = useState("");
+  const [datosCompletos, setDatosCompletos] = useState({
+    apellidos: "",
+    nombres: "",
+    sexo: "",
+    codigo: "",
+  });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
@@ -27,8 +33,7 @@ export default function UploadECGForm({ onUpload, onClose }) {
     } else {
       // Limpiar si borra el DNI
       if (numDocPaciente.length === 0) {
-        setNombresPaciente("");
-        setApellidosPaciente("");
+        setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "" });
         setPacienteEncontrado(false);
         setError("");
       }
@@ -44,21 +49,43 @@ export default function UploadECGForm({ onUpload, onClose }) {
 
       if (response.data) {
         const paciente = response.data;
-        setNombresPaciente(paciente.nombreAsegurado || paciente.nombres || "");
-        setApellidosPaciente(paciente.apellidoAsegurado || paciente.apellidos || "");
+
+        // El formato es "APELLIDOS NOMBRES" en el campo apellidosNombres
+        let nombres = "";
+        let apellidos = "";
+
+        if (paciente.apellidosNombres) {
+          const partes = paciente.apellidosNombres.trim().split(" ");
+          if (partes.length > 2) {
+            apellidos = partes.slice(0, 2).join(" ");
+            nombres = partes.slice(2).join(" ");
+          } else if (partes.length === 2) {
+            apellidos = partes[0];
+            nombres = partes[1];
+          } else {
+            apellidos = partes[0];
+            nombres = "";
+          }
+        }
+
+        setDatosCompletos({
+          apellidos,
+          nombres,
+          sexo: paciente.sexo || "-",
+          codigo: paciente.pkAsegurado || paciente.numDoc || numDocPaciente,
+        });
         setPacienteEncontrado(true);
+        console.log("✅ Paciente encontrado:", { nombres, apellidos });
       } else {
-        setError("No se encontró paciente con este DNI");
+        setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "" });
         setPacienteEncontrado(false);
-        setNombresPaciente("");
-        setApellidosPaciente("");
+        setError("⚠️ No se encontraron datos disponibles para este DNI en el sistema");
       }
     } catch (err) {
-      // No mostrar error si el paciente no existe, solo limpiar los campos
-      setNombresPaciente("");
-      setApellidosPaciente("");
+      setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "" });
       setPacienteEncontrado(false);
-      console.log("ℹ️ Paciente no encontrado o error en búsqueda:", err.message);
+      setError("⚠️ No se encontraron datos disponibles para este DNI en el sistema");
+      console.log("ℹ️ Búsqueda de paciente:", err.message);
     } finally {
       setSearchingPaciente(false);
     }
@@ -116,19 +143,11 @@ export default function UploadECGForm({ onUpload, onClose }) {
 
     // Validaciones
     if (!archivo) {
-      setError("Por favor selecciona una imagen");
+      setError("🖼️ Por favor selecciona una imagen");
       return;
     }
-    if (!numDocPaciente) {
-      setError("El DNI del paciente es requerido");
-      return;
-    }
-    if (!nombresPaciente) {
-      setError("Los nombres del paciente son requeridos");
-      return;
-    }
-    if (!apellidosPaciente) {
-      setError("Los apellidos del paciente son requeridos");
+    if (!pacienteEncontrado) {
+      setError("👤 Primero busca un paciente válido ingresando su DNI");
       return;
     }
 
@@ -139,8 +158,8 @@ export default function UploadECGForm({ onUpload, onClose }) {
       const response = await teleeckgService.subirImagenECG(
         archivo,
         numDocPaciente,
-        nombresPaciente,
-        apellidosPaciente
+        datosCompletos.nombres,
+        datosCompletos.apellidos
       );
 
       setSuccess(true);
@@ -148,7 +167,7 @@ export default function UploadECGForm({ onUpload, onClose }) {
         onUpload(response.data);
       }, 1500);
     } catch (err) {
-      setError(err.response?.data?.error || "Error al subir la imagen");
+      setError(err.response?.data?.error || "❌ Error al subir la imagen");
     } finally {
       setLoading(false);
     }
@@ -172,160 +191,193 @@ export default function UploadECGForm({ onUpload, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-lg">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
-            <Upload className="w-6 h-6 text-blue-600" />
-            Subir Electrocardiograma
-          </h2>
+      <div className="bg-white rounded-xl max-w-2xl w-full shadow-2xl overflow-hidden">
+        {/* Header Profesional */}
+        <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="bg-white/20 p-2.5 rounded-lg">
+              <Heart className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-white">Envío de Electrocardiograma</h2>
+              <p className="text-blue-100 text-xs mt-0.5">Centro Nacional de Telemedicina - EsSalud</p>
+            </div>
+          </div>
           <button
             onClick={onClose}
-            className="p-1 hover:bg-gray-100 rounded-lg transition-colors"
+            className="p-1 hover:bg-white/20 rounded-lg transition-colors"
           >
-            <X className="w-5 h-5 text-gray-600" />
+            <X className="w-6 h-6 text-white" />
           </button>
         </div>
 
-        {/* Formulario */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {/* DNI */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              DNI del Paciente *
-            </label>
-            <div className="relative">
-              <input
-                type="text"
-                value={numDocPaciente}
-                onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, ''))}
-                placeholder="Ej: 12345678"
-                maxLength="8"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
-              {searchingPaciente && (
-                <Loader className="absolute right-3 top-2.5 w-5 h-5 animate-spin text-blue-600" />
-              )}
-              {pacienteEncontrado && !searchingPaciente && (
-                <CheckCircle className="absolute right-3 top-2.5 w-5 h-5 text-green-600" />
-              )}
+        {/* Contenido */}
+        <form onSubmit={handleSubmit} className="p-6 space-y-5">
+          {/* 1️⃣ Sección de Búsqueda de Paciente */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+              <User className="w-4 h-4" />
+              Datos del Paciente
+            </h3>
+
+            {/* DNI Input */}
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+                DNI del Paciente *
+              </label>
+              <div className="relative">
+                <input
+                  type="text"
+                  value={numDocPaciente}
+                  onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, ''))}
+                  placeholder="Ingresa 8 dígitos"
+                  maxLength="8"
+                  disabled={searchingPaciente}
+                  className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-lg font-semibold"
+                />
+                <div className="absolute right-3 top-2.5">
+                  {searchingPaciente && (
+                    <Loader className="w-5 h-5 animate-spin text-blue-600" />
+                  )}
+                  {pacienteEncontrado && !searchingPaciente && (
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* Datos Auto-cargados */}
+            {pacienteEncontrado && (
+              <div className="mt-4 grid grid-cols-2 gap-3">
+                {/* Apellidos */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Apellidos</label>
+                  <div className="bg-white border-2 border-green-300 rounded-lg px-3 py-2">
+                    <p className="text-sm font-semibold text-gray-800">{datosCompletos.apellidos}</p>
+                  </div>
+                </div>
+
+                {/* Nombres */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Nombres</label>
+                  <div className="bg-white border-2 border-green-300 rounded-lg px-3 py-2">
+                    <p className="text-sm font-semibold text-gray-800">{datosCompletos.nombres}</p>
+                  </div>
+                </div>
+
+                {/* Sexo */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Sexo</label>
+                  <div className="bg-white border-2 border-green-300 rounded-lg px-3 py-2">
+                    <p className="text-sm font-semibold text-gray-800">
+                      {datosCompletos.sexo === "M" ? "Masculino" : datosCompletos.sexo === "F" ? "Femenino" : datosCompletos.sexo}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Código */}
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">Código Asegurado</label>
+                  <div className="bg-white border-2 border-green-300 rounded-lg px-3 py-2">
+                    <p className="text-xs font-mono text-gray-700">{datosCompletos.codigo}</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Mensaje si no se encuentra */}
+            {!searchingPaciente && !pacienteEncontrado && numDocPaciente && (
+              <div className="mt-3 p-3 bg-amber-50 border border-amber-300 rounded-lg">
+                <p className="text-sm text-amber-800 font-medium">⚠️ Ingresa un DNI válido para buscar los datos del paciente</p>
+              </div>
+            )}
           </div>
 
-          {/* Nombres */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombres {pacienteEncontrado && <span className="text-xs text-green-600">(Autocargado)</span>}
-            </label>
-            <input
-              type="text"
-              value={nombresPaciente}
-              onChange={(e) => setNombresPaciente(e.target.value)}
-              placeholder="Ej: Juan Carlos"
-              readOnly={pacienteEncontrado}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                pacienteEncontrado
-                  ? "border-green-300 bg-green-50 cursor-not-allowed"
-                  : "border-gray-300 focus:ring-blue-600"
-              }`}
-            />
-          </div>
+          {/* 2️⃣ Sección de Carga de Archivo */}
+          <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+            <h3 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+              <FileText className="w-4 h-4" />
+              Electrocardiograma (ECG)
+            </h3>
 
-          {/* Apellidos */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Apellidos {pacienteEncontrado && <span className="text-xs text-green-600">(Autocargado)</span>}
-            </label>
-            <input
-              type="text"
-              value={apellidosPaciente}
-              onChange={(e) => setApellidosPaciente(e.target.value)}
-              placeholder="Ej: García López"
-              readOnly={pacienteEncontrado}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
-                pacienteEncontrado
-                  ? "border-green-300 bg-green-50 cursor-not-allowed"
-                  : "border-gray-300 focus:ring-blue-600"
-              }`}
-            />
-          </div>
-
-          {/* Drag & Drop */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Imagen ECG (JPEG o PNG) *
-            </label>
             <div
               onDragEnter={handleDrag}
               onDragLeave={handleDrag}
               onDragOver={handleDrag}
               onDrop={handleDrop}
-              className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                dragActive
-                  ? "border-blue-600 bg-blue-50"
-                  : "border-gray-300 hover:border-blue-600"
-              }`}
               onClick={() => inputRef.current?.click()}
+              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-all ${
+                dragActive
+                  ? "border-indigo-600 bg-indigo-100 scale-102"
+                  : "border-indigo-300 hover:border-indigo-600"
+              }`}
             >
               <input
                 ref={inputRef}
                 type="file"
                 accept="image/jpeg,image/png"
                 onChange={handleChange}
+                disabled={!pacienteEncontrado}
                 className="hidden"
               />
 
               {archivo ? (
-                <>
-                  <CheckCircle className="w-10 h-10 text-green-600 mx-auto mb-2" />
-                  <p className="text-sm text-green-600 font-medium">{archivo.name}</p>
-                  <p className="text-xs text-gray-500 mt-1">
+                <div className="space-y-2">
+                  <CheckCircle className="w-12 h-12 text-green-600 mx-auto" />
+                  <p className="text-sm font-bold text-green-700">{archivo.name}</p>
+                  <p className="text-xs text-green-600">
                     {(archivo.size / 1024 / 1024).toFixed(2)} MB
                   </p>
-                </>
+                </div>
               ) : (
-                <>
-                  <Upload className="w-10 h-10 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm font-medium text-gray-700">
-                    Arrastra tu imagen aquí o haz clic
+                <div className="space-y-2">
+                  <Upload className="w-12 h-12 text-indigo-400 mx-auto" />
+                  <p className="text-sm font-semibold text-indigo-900">
+                    {pacienteEncontrado ? "Carga tu electrocardiograma" : "Busca un paciente primero"}
                   </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    JPEG o PNG, máximo 5MB
+                  <p className="text-xs text-indigo-700">
+                    Arrastra aquí o haz clic • JPEG o PNG • Máximo 5MB
                   </p>
-                </>
+                </div>
               )}
             </div>
           </div>
 
-          {/* Error */}
+          {/* Mensaje de Error */}
           {error && (
-            <div className="flex gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
-              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0" />
-              <p className="text-sm text-red-600">{error}</p>
+            <div className="flex gap-3 bg-red-50 border-l-4 border-red-600 rounded-lg p-4">
+              <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-semibold text-red-700">Error</p>
+                <p className="text-sm text-red-600 mt-0.5">{error}</p>
+              </div>
             </div>
           )}
 
-          {/* Botones */}
-          <div className="flex gap-3 pt-4">
+          {/* Botones de Acción */}
+          <div className="flex gap-3 pt-4 border-t">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+              className="flex-1 px-4 py-3 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg font-semibold transition-colors"
             >
               Cancelar
             </button>
             <button
               type="submit"
-              disabled={loading || !archivo}
-              className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              disabled={loading || !pacienteEncontrado || !archivo}
+              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
             >
               {loading ? (
                 <>
                   <Loader className="w-4 h-4 animate-spin" />
-                  Subiendo...
+                  Enviando...
                 </>
               ) : (
-                "Subir ECG"
+                <>
+                  <Upload className="w-4 h-4" />
+                  Enviar ECG
+                </>
               )}
             </button>
           </div>
