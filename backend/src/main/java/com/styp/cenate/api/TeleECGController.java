@@ -4,6 +4,7 @@ import com.styp.cenate.dto.ApiResponse;
 import com.styp.cenate.dto.teleekgs.*;
 import com.styp.cenate.exception.ResourceNotFoundException;
 import com.styp.cenate.exception.ValidationException;
+import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.service.teleekgs.TeleECGService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,6 +47,9 @@ public class TeleECGController {
 
     @Autowired
     private TeleECGService teleECGService;
+
+    @Autowired
+    private UsuarioRepository usuarioRepository;
 
     @PostConstruct
     public void init() {
@@ -313,10 +317,40 @@ public class TeleECGController {
     }
 
     /**
-     * Obtener ID de usuario actual
+     * Obtener ID de usuario actual del token JWT
+     * Extrae el username (num_doc) y busca el id_user en la BD
      */
     private Long getUsuarioActual() {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        return 1L; // TODO: Extraer del token JWT
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null) {
+                log.warn("⚠️ No hay autenticación en el contexto");
+                return 1L;
+            }
+
+            Object principal = auth.getPrincipal();
+            if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+                org.springframework.security.core.userdetails.UserDetails userDetails =
+                    (org.springframework.security.core.userdetails.UserDetails) principal;
+                String username = userDetails.getUsername();
+
+                // El username es el num_doc del usuario
+                log.debug("🔍 Buscando usuario con username: {}", username);
+
+                var usuario = usuarioRepository.findByNameUser(username);
+                if (usuario.isPresent()) {
+                    Long idUsuario = usuario.get().getIdUser();
+                    log.debug("✅ Usuario encontrado: {} con ID: {}", username, idUsuario);
+                    return idUsuario;
+                } else {
+                    log.warn("❌ Usuario no encontrado en BD: {}", username);
+                }
+            }
+        } catch (Exception e) {
+            log.error("❌ Error extrayendo usuario actual", e);
+        }
+
+        log.warn("⚠️ Retornando 1L como fallback");
+        return 1L;
     }
 }

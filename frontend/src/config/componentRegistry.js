@@ -388,19 +388,35 @@ export const componentRegistry = {
     requiredRoles: ['ENFERMERIA', 'SUPERADMIN'], // Enfermeras y SUPERADMIN pueden ver
   },
 
-  // Rutas adicionales para TeleECG
+  // Rutas adicionales para TeleECG (ambos formatos para compatibilidad)
   '/roles/externo/teleecgs': {
     component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
     requiredAction: 'ver',
   },
 
   '/roles/externo/teleecgs/registro-pacientes': {
-    component: lazy(() => import('../pages/roles/externo/teleecgs/RegistroPacientes')),
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
     requiredAction: 'ver',
   },
 
   '/roles/externo/teleecgs/estadisticas': {
-    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGEstadisticas')),
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
+    requiredAction: 'ver',
+  },
+
+  // Rutas nuevas de TeleECG (según menu links)
+  '/teleekgs/upload': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
+    requiredAction: 'ver',
+  },
+
+  '/teleekgs/listar': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
+    requiredAction: 'ver',
+  },
+
+  '/teleekgs/dashboard': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
     requiredAction: 'ver',
   },
 };
