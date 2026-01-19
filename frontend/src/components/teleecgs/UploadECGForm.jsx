@@ -1,9 +1,11 @@
-import React, { useState, useRef } from "react";
-import { Upload, X, AlertCircle, CheckCircle, Loader } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Upload, X, AlertCircle, CheckCircle, Loader, Search } from "lucide-react";
 import teleeckgService from "../../services/teleecgService";
+import gestionPacientesService from "../../services/gestionPacientesService";
 
 /**
  * 📤 Componente para subir ECGs con drag-and-drop
+ * Busca automáticamente datos del paciente por DNI
  */
 export default function UploadECGForm({ onUpload, onClose }) {
   const [archivo, setArchivo] = useState(null);
@@ -14,7 +16,53 @@ export default function UploadECGForm({ onUpload, onClose }) {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [searchingPaciente, setSearchingPaciente] = useState(false);
+  const [pacienteEncontrado, setPacienteEncontrado] = useState(false);
   const inputRef = useRef(null);
+
+  // Buscar paciente por DNI cuando cambia
+  useEffect(() => {
+    if (numDocPaciente.length === 8) {
+      buscarPacientePorDni();
+    } else {
+      // Limpiar si borra el DNI
+      if (numDocPaciente.length === 0) {
+        setNombresPaciente("");
+        setApellidosPaciente("");
+        setPacienteEncontrado(false);
+        setError("");
+      }
+    }
+  }, [numDocPaciente]);
+
+  const buscarPacientePorDni = async () => {
+    try {
+      setSearchingPaciente(true);
+      setError("");
+
+      const response = await gestionPacientesService.buscarAseguradoPorDni(numDocPaciente);
+
+      if (response.data) {
+        const paciente = response.data;
+        setNombresPaciente(paciente.nombreAsegurado || paciente.nombres || "");
+        setApellidosPaciente(paciente.apellidoAsegurado || paciente.apellidos || "");
+        setPacienteEncontrado(true);
+      } else {
+        setError("No se encontró paciente con este DNI");
+        setPacienteEncontrado(false);
+        setNombresPaciente("");
+        setApellidosPaciente("");
+      }
+    } catch (err) {
+      // No mostrar error si el paciente no existe, solo limpiar los campos
+      setNombresPaciente("");
+      setApellidosPaciente("");
+      setPacienteEncontrado(false);
+      console.log("ℹ️ Paciente no encontrado o error en búsqueda:", err.message);
+    } finally {
+      setSearchingPaciente(false);
+    }
+  };
 
   const validarArchivo = (file) => {
     const tiposValidos = ["image/jpeg", "image/png"];
@@ -146,41 +194,59 @@ export default function UploadECGForm({ onUpload, onClose }) {
             <label className="block text-sm font-medium text-gray-700 mb-1">
               DNI del Paciente *
             </label>
-            <input
-              type="text"
-              value={numDocPaciente}
-              onChange={(e) => setNumDocPaciente(e.target.value)}
-              placeholder="Ej: 12345678"
-              maxLength="8"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                value={numDocPaciente}
+                onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="Ej: 12345678"
+                maxLength="8"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+              {searchingPaciente && (
+                <Loader className="absolute right-3 top-2.5 w-5 h-5 animate-spin text-blue-600" />
+              )}
+              {pacienteEncontrado && !searchingPaciente && (
+                <CheckCircle className="absolute right-3 top-2.5 w-5 h-5 text-green-600" />
+              )}
+            </div>
           </div>
 
           {/* Nombres */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nombres *
+              Nombres {pacienteEncontrado && <span className="text-xs text-green-600">(Autocargado)</span>}
             </label>
             <input
               type="text"
               value={nombresPaciente}
               onChange={(e) => setNombresPaciente(e.target.value)}
               placeholder="Ej: Juan Carlos"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              readOnly={pacienteEncontrado}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                pacienteEncontrado
+                  ? "border-green-300 bg-green-50 cursor-not-allowed"
+                  : "border-gray-300 focus:ring-blue-600"
+              }`}
             />
           </div>
 
           {/* Apellidos */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Apellidos *
+              Apellidos {pacienteEncontrado && <span className="text-xs text-green-600">(Autocargado)</span>}
             </label>
             <input
               type="text"
               value={apellidosPaciente}
               onChange={(e) => setApellidosPaciente(e.target.value)}
               placeholder="Ej: García López"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              readOnly={pacienteEncontrado}
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
+                pacienteEncontrado
+                  ? "border-green-300 bg-green-50 cursor-not-allowed"
+                  : "border-gray-300 focus:ring-blue-600"
+              }`}
             />
           </div>
 
