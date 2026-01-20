@@ -167,7 +167,7 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 			}
 
 			// Construir lista de páginas con soporte para subpáginas
-			List<PaginaMenuDTO> paginas = construirPaginasConSubmenus(permisosModulo, paginasMap);
+			List<PaginaMenuDTO> paginas = construirPaginasConSubmenus(permisosModulo, paginasMap, modulo.getNombreModulo());
 
 			if (paginas.isEmpty()) {
 				log.debug("⚠️ Módulo {} no tiene páginas válidas con permiso de ver", modulo.getNombreModulo());
@@ -428,12 +428,52 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 	}
 
 	/**
+	 * Filtra páginas específicas según el módulo
+	 * Por ejemplo: retirar páginas del módulo "Gestión de Personal Externo"
+	 */
+	private Map<Integer, PaginaModulo> filtrarPaginasSegunModulo(
+			Map<Integer, PaginaModulo> paginasMap,
+			String nombreModulo) {
+
+		// Filtrar páginas para "Gestión de Personal Externo"
+		if (nombreModulo != null && nombreModulo.toLowerCase().contains("personal externo")) {
+			log.info("🔍 Filtrando páginas para módulo: {}", nombreModulo);
+
+			// Crear nueva lista sin las páginas que queremos remover
+			Map<Integer, PaginaModulo> paginasFiltradas = new LinkedHashMap<>();
+
+			for (Map.Entry<Integer, PaginaModulo> entry : paginasMap.entrySet()) {
+				PaginaModulo pagina = entry.getValue();
+				String nombrePagina = pagina.getNombrePagina() != null ? pagina.getNombrePagina().toLowerCase() : "";
+
+				// Remover estas páginas específicas
+				if (nombrePagina.contains("auditoría") ||
+					nombrePagina.contains("auditoria") ||
+					nombrePagina.contains("buscar asegurado") ||
+					nombrePagina.contains("dashboard asegurado") ||
+					nombrePagina.contains("dashboard asegurados")) {
+					log.info("❌ Removiendo página: {}", pagina.getNombrePagina());
+					continue; // Saltar esta página
+				}
+
+				paginasFiltradas.put(entry.getKey(), pagina);
+			}
+
+			return paginasFiltradas;
+		}
+
+		return paginasMap;
+	}
+
+	/**
 	 * Construye la lista de páginas del menú con soporte para subpáginas (2 niveles)
 	 * Agrupa las subpáginas bajo sus páginas padre
+	 * Filtra páginas específicas según el módulo
 	 */
 	private List<PaginaMenuDTO> construirPaginasConSubmenus(
 			List<PermisoModular> permisosModulo,
-			Map<Integer, PaginaModulo> paginasMap) {
+			Map<Integer, PaginaModulo> paginasMap,
+			String nombreModulo) {
 
 		// Separar páginas padres e hijas
 		Map<Integer, PaginaModulo> paginasConPermisos = new LinkedHashMap<>();
@@ -443,6 +483,9 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 				paginasConPermisos.put(p.getIdPagina(), pagina);
 			}
 		}
+
+		// Filtrar páginas específicas para módulos específicos
+		paginasConPermisos = filtrarPaginasSegunModulo(paginasConPermisos, nombreModulo);
 
 		// Crear DTOs de páginas padre solamente (excluir las que son hijas)
 		List<PaginaMenuDTO> paginasMenu = new ArrayList<>();
