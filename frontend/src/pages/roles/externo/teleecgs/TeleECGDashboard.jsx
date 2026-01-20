@@ -34,6 +34,10 @@ export default function TeleECGDashboard() {
     rechazadas: 0,
   });
 
+  // Estados para acciones CRUD (Procesar, Rechazar)
+  const [accionando, setAccionando] = useState(false);
+  const [imagenEnAccion, setImagenEnAccion] = useState(null);
+
   // Cargar ECGs al montarse el componente
   useEffect(() => {
     cargarECGs();
@@ -99,6 +103,48 @@ export default function TeleECGDashboard() {
       await teleeckgService.descargarImagen(idImagen, nombreArchivo);
     } catch (error) {
       console.error("❌ Error al descargar ECG:", error);
+    }
+  };
+
+  // Procesar/Aceptar ECG
+  const manejarProcesar = async (idImagen) => {
+    const observaciones = prompt("Ingresa observaciones (opcional):");
+    if (observaciones === null) return;
+
+    try {
+      setAccionando(true);
+      setImagenEnAccion(idImagen);
+      await teleeckgService.procesarImagen(idImagen, observaciones);
+      console.log("✅ ECG procesada correctamente");
+      await cargarECGs();
+      await cargarEstadisticas();
+    } catch (error) {
+      console.error("❌ Error al procesar ECG:", error);
+      alert("Error al procesar la imagen. Intenta nuevamente.");
+    } finally {
+      setAccionando(false);
+      setImagenEnAccion(null);
+    }
+  };
+
+  // Rechazar ECG
+  const manejarRechazar = async (idImagen) => {
+    const motivo = prompt("Ingresa el motivo del rechazo:");
+    if (motivo === null || !motivo.trim()) return;
+
+    try {
+      setAccionando(true);
+      setImagenEnAccion(idImagen);
+      await teleeckgService.rechazarImagen(idImagen, motivo);
+      console.log("✅ ECG rechazada correctamente");
+      await cargarECGs();
+      await cargarEstadisticas();
+    } catch (error) {
+      console.error("❌ Error al rechazar ECG:", error);
+      alert("Error al rechazar la imagen. Intenta nuevamente.");
+    } finally {
+      setAccionando(false);
+      setImagenEnAccion(null);
     }
   };
 
@@ -239,6 +285,10 @@ export default function TeleECGDashboard() {
               onVer={abrirVisor}
               onDescargar={manejarDescargar}
               onEliminar={manejarEliminar}
+              onProcesar={manejarProcesar}
+              onRechazar={manejarRechazar}
+              accionando={accionando}
+              imagenEnAccion={imagenEnAccion}
             />
           )}
         </div>

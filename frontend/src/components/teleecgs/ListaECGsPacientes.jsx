@@ -1,10 +1,20 @@
 import React from "react";
-import { Eye, Download, Trash2, Calendar, User, Phone } from "lucide-react";
+import { Eye, Download, Trash2, Calendar, User, Phone, CheckCircle, XCircle, Loader } from "lucide-react";
 
 /**
  * 📋 Tabla de ECGs por pacientes
+ * ✅ v1.1.0 - Agregadas acciones Procesar y Rechazar para PENDIENTE
  */
-export default function ListaECGsPacientes({ ecgs, onVer, onDescargar, onEliminar }) {
+export default function ListaECGsPacientes({
+  ecgs,
+  onVer,
+  onDescargar,
+  onEliminar,
+  onProcesar,
+  onRechazar,
+  accionando = false,
+  imagenEnAccion = null
+}) {
   const getEstadoBadge = (estado) => {
     const estilos = {
       PENDIENTE:
@@ -97,11 +107,12 @@ export default function ListaECGsPacientes({ ecgs, onVer, onDescargar, onElimina
                 </span>
               </td>
               <td className="px-6 py-4 text-center">
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-center gap-2 flex-wrap">
                   {/* Ver */}
                   <button
                     onClick={() => onVer(ecg)}
-                    className="p-2 hover:bg-blue-100 rounded-lg transition-colors text-blue-600"
+                    disabled={accionando && imagenEnAccion === ecg.idImagen}
+                    className="p-2 hover:bg-blue-100 rounded-lg transition-colors text-blue-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Ver imagen"
                   >
                     <Eye className="w-4 h-4" />
@@ -110,19 +121,57 @@ export default function ListaECGsPacientes({ ecgs, onVer, onDescargar, onElimina
                   {/* Descargar */}
                   <button
                     onClick={() => onDescargar(ecg.idImagen, ecg.nombreArchivo)}
-                    className="p-2 hover:bg-green-100 rounded-lg transition-colors text-green-600"
+                    disabled={accionando && imagenEnAccion === ecg.idImagen}
+                    className="p-2 hover:bg-green-100 rounded-lg transition-colors text-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Descargar"
                   >
                     <Download className="w-4 h-4" />
                   </button>
 
+                  {/* Procesar (si está pendiente) */}
+                  {ecg.estado === "PENDIENTE" && (
+                    <button
+                      onClick={() => onProcesar(ecg.idImagen)}
+                      disabled={accionando && imagenEnAccion === ecg.idImagen}
+                      className="p-2 hover:bg-green-100 rounded-lg transition-colors text-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Aceptar/Procesar"
+                    >
+                      {accionando && imagenEnAccion === ecg.idImagen ? (
+                        <Loader className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <CheckCircle className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+
+                  {/* Rechazar (si está pendiente) */}
+                  {ecg.estado === "PENDIENTE" && (
+                    <button
+                      onClick={() => onRechazar(ecg.idImagen)}
+                      disabled={accionando && imagenEnAccion === ecg.idImagen}
+                      className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Rechazar"
+                    >
+                      {accionando && imagenEnAccion === ecg.idImagen ? (
+                        <Loader className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <XCircle className="w-4 h-4" />
+                      )}
+                    </button>
+                  )}
+
                   {/* Eliminar */}
                   <button
                     onClick={() => onEliminar(ecg.idImagen)}
-                    className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600"
+                    disabled={accionando && imagenEnAccion === ecg.idImagen}
+                    className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
                     title="Eliminar"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    {accionando && imagenEnAccion === ecg.idImagen ? (
+                      <Loader className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </td>

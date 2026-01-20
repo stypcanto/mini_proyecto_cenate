@@ -13,6 +13,7 @@ import {
 import toast from "react-hot-toast";
 import teleekgService from "../../services/teleekgService";
 import DetallesImagenECG from "./DetallesImagenECG";
+import ConfirmDialog from "../modals/ConfirmDialog";
 
 export default function ListarImagenesECG({ onSuccess }) {
   const [imagenes, setImagenes] = useState([]);
@@ -35,6 +36,10 @@ export default function ListarImagenesECG({ onSuccess }) {
   // Estados para acciones
   const [accionando, setAccionando] = useState(false);
   const [imagenEnAccion, setImagenEnAccion] = useState(null);
+
+  // Estados para confirmación de eliminación
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [imagenParaEliminar, setImagenParaEliminar] = useState(null);
 
   const estados = [
     { value: "", label: "Todos los estados" },
@@ -163,17 +168,20 @@ export default function ListarImagenesECG({ onSuccess }) {
     }
   };
 
-  // Eliminar ECG
-  const handleEliminar = async (idImagen) => {
-    // eslint-disable-next-line no-restricted-globals
-    if (!confirm("⚠️ ¿Estás seguro de que deseas eliminar este ECG? Esta acción no se puede deshacer.")) {
-      return;
-    }
+  // Mostrar dialogo de confirmación para eliminar
+  const handleEliminar = (idImagen) => {
+    setImagenParaEliminar(idImagen);
+    setConfirmDialogOpen(true);
+  };
+
+  // Confirmar eliminación de ECG
+  const confirmarEliminar = async () => {
+    if (!imagenParaEliminar) return;
 
     try {
       setAccionando(true);
-      setImagenEnAccion(idImagen);
-      await teleekgService.eliminarImagen(idImagen);
+      setImagenEnAccion(imagenParaEliminar);
+      await teleekgService.eliminarImagen(imagenParaEliminar);
       toast.success("✅ ECG eliminada correctamente");
       cargarImagenes();
       if (onSuccess) onSuccess();
@@ -183,6 +191,8 @@ export default function ListarImagenesECG({ onSuccess }) {
     } finally {
       setAccionando(false);
       setImagenEnAccion(null);
+      setConfirmDialogOpen(false);
+      setImagenParaEliminar(null);
     }
   };
 
@@ -460,6 +470,21 @@ export default function ListarImagenesECG({ onSuccess }) {
           }}
         />
       )}
+
+      {/* Dialogo Confirmación Eliminación */}
+      <ConfirmDialog
+        isOpen={confirmDialogOpen}
+        onClose={() => {
+          setConfirmDialogOpen(false);
+          setImagenParaEliminar(null);
+        }}
+        onConfirm={confirmarEliminar}
+        title="Eliminar ECG"
+        message="¿Estás seguro de que deseas eliminar este ECG? Esta acción no se puede deshacer."
+        confirmText="Sí, eliminar"
+        cancelText="Cancelar"
+        type="danger"
+      />
     </div>
   );
 }

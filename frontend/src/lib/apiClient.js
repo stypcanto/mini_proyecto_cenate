@@ -141,13 +141,19 @@ export const apiClient = {
     }).then(handleResponse);
   },
 
-  delete: (endpoint, auth = false) => {
+  delete: (endpoint, body = null, auth = false) => {
     const url = buildUrl(endpoint);
-    console.log(`🚀 [DELETE] ${url}`);
-    return fetch(url, {
+    console.log(`🚀 [DELETE] ${url}`, body);
+    const options = {
       method: "DELETE",
       headers: buildHeaders(auth)
-    }).then(handleResponse);
+    };
+
+    if (body) {
+      options.body = JSON.stringify(body);
+    }
+
+    return fetch(url, options).then(handleResponse);
   },
 
   // NUEVO MÉTODO SOLO PARA GET CON PARAMS

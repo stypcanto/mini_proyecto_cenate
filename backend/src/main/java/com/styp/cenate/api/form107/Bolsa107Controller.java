@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -701,6 +702,58 @@ public class Bolsa107Controller {
 
                 } catch (Exception e) {
                         log.error("❌ Error al actualizar paciente: ", e);
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("error", e.getMessage()));
+                }
+        }
+
+        /**
+         * Eliminar múltiples pacientes de la Bolsa 107
+         *
+         * @param request Map con "ids" (array de IDs a eliminar)
+         * @return Resultado de la operación
+         */
+        @DeleteMapping("/pacientes")
+        @Transactional
+        public ResponseEntity<?> eliminarPacientes(@RequestBody Map<String, Object> request) {
+                log.info("🗑️ Eliminando múltiples pacientes de la Bolsa 107");
+
+                try {
+                        // Extraer lista de IDs
+                        List<?> idsList = (List<?>) request.get("ids");
+                        if (idsList == null || idsList.isEmpty()) {
+                                return ResponseEntity.badRequest()
+                                                .body(Map.of("error", "Debes seleccionar al menos un paciente para eliminar"));
+                        }
+
+                        // Convertir IDs a Long
+                        List<Long> ids = idsList.stream()
+                                        .map(id -> Long.parseLong(id.toString()))
+                                        .collect(Collectors.toList());
+
+                        // Validar que todos los IDs existan
+                        List<Bolsa107Item> itemsAEliminar = itemRepository.findAllById(ids);
+                        if (itemsAEliminar.size() != ids.size()) {
+                                return ResponseEntity.badRequest()
+                                                .body(Map.of("error", "Algunos pacientes no fueron encontrados"));
+                        }
+
+                        // Eliminar los pacientes
+                        itemRepository.deleteAllInBatch(itemsAEliminar);
+
+                        log.info("✅ Se eliminaron {} pacientes correctamente", ids.size());
+
+                        return ResponseEntity.ok(Map.of(
+                                        "success", true,
+                                        "message", "Se eliminaron " + ids.size() + " paciente(s) correctamente",
+                                        "deletedCount", ids.size()));
+
+                } catch (NumberFormatException e) {
+                        log.error("❌ Error: IDs inválidos", e);
+                        return ResponseEntity.badRequest()
+                                        .body(Map.of("error", "IDs de pacientes inválidos"));
+                } catch (Exception e) {
+                        log.error("❌ Error al eliminar pacientes: ", e);
                         return ResponseEntity.badRequest()
                                         .body(Map.of("error", e.getMessage()));
                 }

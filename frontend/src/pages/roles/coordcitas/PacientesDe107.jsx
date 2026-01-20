@@ -52,6 +52,8 @@ export default function PacientesDe107() {
     const [filterDerivacion, setFilterDerivacion] = useState("");
     const [filterDepartamento, setFilterDepartamento] = useState("");
     const [filterIpress, setFilterIpress] = useState("");
+    const [filterFechaDesde, setFilterFechaDesde] = useState("");
+    const [filterFechaHasta, setFilterFechaHasta] = useState("");
     const [selectedIds, setSelectedIds] = useState([]);
     const [stats, setStats] = useState({
         total: 0,
@@ -134,7 +136,23 @@ export default function PacientesDe107() {
             const matchDepartamento = !filterDepartamento || p.departamento === filterDepartamento;
             const matchIpress = !filterIpress || p.desc_ipress === filterIpress;
 
-            return matchSearch && matchDerivacion && matchDepartamento && matchIpress;
+            // Filtro de rango de fechas
+            let matchFecha = true;
+            if (filterFechaDesde || filterFechaHasta) {
+                const fechaPaciente = new Date(p.created_at);
+                if (filterFechaDesde) {
+                    const desdeDate = new Date(filterFechaDesde);
+                    desdeDate.setHours(0, 0, 0, 0); // Inicio del día
+                    matchFecha = matchFecha && fechaPaciente >= desdeDate;
+                }
+                if (filterFechaHasta) {
+                    const hastaDate = new Date(filterFechaHasta);
+                    hastaDate.setHours(23, 59, 59, 999); // Fin del día
+                    matchFecha = matchFecha && fechaPaciente <= hastaDate;
+                }
+            }
+
+            return matchSearch && matchDerivacion && matchDepartamento && matchIpress && matchFecha;
         })
         .sort((a, b) => {
             // Ordenar por fecha de creación (más antiguo primero)
@@ -183,7 +201,7 @@ export default function PacientesDe107() {
     // Resetear página cuando cambian los filtros
     useEffect(() => {
         setCurrentPage(1);
-    }, [searchTerm, filterDerivacion, filterDepartamento, filterIpress]);
+    }, [searchTerm, filterDerivacion, filterDepartamento, filterIpress, filterFechaDesde, filterFechaHasta]);
 
     // Función de agrupación inteligente
     const agruparPacientes = () => {
@@ -333,6 +351,13 @@ export default function PacientesDe107() {
     const confirmarDesasignacion = async () => {
         if (!pacienteParaDesasignar) return;
 
+        // Si es eliminación múltiple
+        if (pacienteParaDesasignar.isMultiple) {
+            await confirmarEliminacion();
+            return;
+        }
+
+        // Si es desasignación individual
         try {
             await apiClient.post('/api/bolsa107/desasignar-gestor', {
                 id_item: pacienteParaDesasignar.id_item
@@ -434,6 +459,46 @@ export default function PacientesDe107() {
             edad--;
         }
         return edad;
+    };
+
+    // Eliminar pacientes seleccionados
+    const handleEliminarSeleccionados = () => {
+        if (selectedIds.length === 0) {
+            toast.error("Selecciona al menos un paciente para eliminar");
+            return;
+        }
+
+        // Contar pacientes seleccionados para mostrar en el mensaje
+        const pacientesSeleccionados = pacientes.filter(p => selectedIds.includes(p.id_item));
+        const nombresStr = pacientesSeleccionados.slice(0, 3).map(p => p.paciente).join(", ");
+        const restantes = pacientesSeleccionados.length > 3 ? ` y ${pacientesSeleccionados.length - 3} más` : "";
+
+        // Mostrar confirmación
+        setPacienteParaDesasignar({
+            paciente: `${selectedIds.length} paciente(s): ${nombresStr}${restantes}`,
+            id_item: null,
+            isMultiple: true
+        });
+        setConfirmDialogOpen(true);
+    };
+
+    // Confirmar eliminación de múltiples pacientes
+    const confirmarEliminacion = async () => {
+        if (!selectedIds || selectedIds.length === 0) return;
+
+        try {
+            await apiClient.delete('/api/bolsa107/pacientes', {
+                ids: selectedIds
+            }, true); // true = auth required
+
+            toast.success(`✅ Se eliminaron ${selectedIds.length} paciente(s) correctamente`);
+            setSelectedIds([]); // Limpiar selección
+            cargarPacientes(); // Recargar lista
+            setConfirmDialogOpen(false);
+        } catch (error) {
+            console.error(error);
+            toast.error("❌ Error al eliminar los pacientes");
+        }
     };
 
     return (
@@ -613,6 +678,47 @@ export default function PacientesDe107() {
                         </div>
                     </div>
 
+                    {/* Filtros de Fecha */ }
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4 pt-4 border-t border-slate-200">
+                        <div className="lg:col-span-1">
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Fecha Desde
+                            </label>
+                            <input
+                                type="date"
+                                value={ filterFechaDesde }
+                                onChange={ (e) => setFilterFechaDesde(e.target.value) }
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+
+                        <div className="lg:col-span-1">
+                            <label className="block text-sm font-semibold text-slate-700 mb-2">
+                                Fecha Hasta
+                            </label>
+                            <input
+                                type="date"
+                                value={ filterFechaHasta }
+                                onChange={ (e) => setFilterFechaHasta(e.target.value) }
+                                className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                            />
+                        </div>
+
+                        { (filterFechaDesde || filterFechaHasta) && (
+                            <div className="lg:col-span-2 flex items-end">
+                                <button
+                                    onClick={ () => {
+                                        setFilterFechaDesde("");
+                                        setFilterFechaHasta("");
+                                    } }
+                                    className="w-full px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg font-semibold transition-colors"
+                                >
+                                    Limpiar fechas
+                                </button>
+                            </div>
+                        ) }
+                    </div>
+
                     {/* Botón de Agrupación Inteligente */ }
                     <div className="mt-4">
                         { !agrupacionActiva ? (
@@ -698,6 +804,13 @@ export default function PacientesDe107() {
                                 >
                                     <Download className="w-4 h-4 mr-2" />
                                     Exportar
+                                </Button>
+                                <Button
+                                    onClick={ handleEliminarSeleccionados }
+                                    className="bg-red-600 hover:bg-red-700 text-white"
+                                >
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Eliminar
                                 </Button>
                                 <Button
                                     onClick={ () => setSelectedIds([]) }
@@ -1112,16 +1225,20 @@ export default function PacientesDe107() {
                 />
             ) }
 
-            {/* Dialogo Confirmación Desasignación */ }
+            {/* Dialogo Confirmación Desasignación o Eliminación */ }
             <ConfirmDialog
                 isOpen={ confirmDialogOpen }
                 onClose={ () => setConfirmDialogOpen(false) }
                 onConfirm={ confirmarDesasignacion }
-                title="Eliminar Asignación"
-                message={ `¿Estás seguro de quitar la asignación del gestor para ${pacienteParaDesasignar?.paciente}? El paciente volverá a estado 'Sin asignar'.` }
-                confirmText="Sí, eliminar"
+                title={ pacienteParaDesasignar?.isMultiple ? "Eliminar Pacientes" : "Eliminar Asignación" }
+                message={
+                    pacienteParaDesasignar?.isMultiple
+                        ? `¿Estás seguro de que deseas eliminar estos pacientes de la Bolsa 107?\n\n${pacienteParaDesasignar?.paciente}\n\nEsta acción no se puede deshacer.`
+                        : `¿Estás seguro de quitar la asignación del gestor para ${pacienteParaDesasignar?.paciente}? El paciente volverá a estado 'Sin asignar'.`
+                }
+                confirmText={ pacienteParaDesasignar?.isMultiple ? "Sí, eliminar" : "Sí, eliminar" }
                 cancelText="Cancelar"
-                type="warning"
+                type={ pacienteParaDesasignar?.isMultiple ? "danger" : "warning" }
             />
         </div>
     );
