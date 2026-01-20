@@ -1,6 +1,7 @@
 // ========================================================================
 // 📋 ListarImagenesECG.jsx – Componente para Listar y Filtrar ECGs
-// ✅ VERSIÓN 1.0.0 - CENATE 2026
+// ✅ VERSIÓN 1.1.0 - CENATE 2026
+// Funcionalidades: READ, UPDATE (Procesar/Rechazar), DELETE (Eliminar)
 // ========================================================================
 
 import React, { useState, useEffect } from "react";
@@ -30,6 +31,10 @@ export default function ListarImagenesECG({ onSuccess }) {
 
   // Modal de detalles
   const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
+
+  // Estados para acciones
+  const [accionando, setAccionando] = useState(false);
+  const [imagenEnAccion, setImagenEnAccion] = useState(null);
 
   const estados = [
     { value: "", label: "Todos los estados" },
@@ -114,6 +119,70 @@ export default function ListarImagenesECG({ onSuccess }) {
     setFechaDesde("");
     setFechaHasta("");
     setPage(0);
+  };
+
+  // Procesar/Aceptar ECG
+  const handleProcesar = async (idImagen) => {
+    const observaciones = prompt("Ingresa observaciones (opcional):");
+    if (observaciones === null) return;
+
+    try {
+      setAccionando(true);
+      setImagenEnAccion(idImagen);
+      await teleekgService.procesarImagen(idImagen, observaciones);
+      toast.success("✅ ECG procesada correctamente");
+      cargarImagenes();
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("❌ Error al procesar ECG");
+    } finally {
+      setAccionando(false);
+      setImagenEnAccion(null);
+    }
+  };
+
+  // Rechazar ECG
+  const handleRechazar = async (idImagen) => {
+    const motivo = prompt("Ingresa el motivo del rechazo:");
+    if (motivo === null || !motivo.trim()) return;
+
+    try {
+      setAccionando(true);
+      setImagenEnAccion(idImagen);
+      await teleekgService.rechazarImagen(idImagen, motivo);
+      toast.success("✅ ECG rechazada correctamente");
+      cargarImagenes();
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("❌ Error al rechazar ECG");
+    } finally {
+      setAccionando(false);
+      setImagenEnAccion(null);
+    }
+  };
+
+  // Eliminar ECG
+  const handleEliminar = async (idImagen) => {
+    if (!confirm("⚠️ ¿Estás seguro de que deseas eliminar este ECG? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    try {
+      setAccionando(true);
+      setImagenEnAccion(idImagen);
+      await teleekgService.eliminarImagen(idImagen);
+      toast.success("✅ ECG eliminada correctamente");
+      cargarImagenes();
+      if (onSuccess) onSuccess();
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("❌ Error al eliminar ECG");
+    } finally {
+      setAccionando(false);
+      setImagenEnAccion(null);
+    }
   };
 
   return (
@@ -277,20 +346,71 @@ export default function ListarImagenesECG({ onSuccess }) {
                       {new Date(imagen.fechaEnvio).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex justify-center gap-2">
+                      <div className="flex justify-center gap-1 flex-wrap">
+                        {/* Ver detalles */}
                         <button
                           onClick={() => setImagenSeleccionada(imagen)}
-                          className="p-2 hover:bg-blue-100 rounded text-blue-600 transition"
+                          disabled={accionando && imagenEnAccion === imagen.idImagen}
+                          className="p-2 hover:bg-blue-100 rounded text-blue-600 transition disabled:opacity-50"
                           title="Ver detalles"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
+
+                        {/* Descargar */}
                         <button
                           onClick={() => handleDescargar(imagen.idImagen, imagen.nombreArchivo)}
-                          className="p-2 hover:bg-green-100 rounded text-green-600 transition"
+                          disabled={accionando && imagenEnAccion === imagen.idImagen}
+                          className="p-2 hover:bg-green-100 rounded text-green-600 transition disabled:opacity-50"
                           title="Descargar"
                         >
                           <Download className="w-4 h-4" />
+                        </button>
+
+                        {/* Procesar (si está pendiente) */}
+                        {imagen.estado === "PENDIENTE" && (
+                          <button
+                            onClick={() => handleProcesar(imagen.idImagen)}
+                            disabled={accionando && imagenEnAccion === imagen.idImagen}
+                            className="p-2 hover:bg-green-100 rounded text-green-600 transition disabled:opacity-50"
+                            title="Aceptar/Procesar"
+                          >
+                            {accionando && imagenEnAccion === imagen.idImagen ? (
+                              <Loader className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <CheckCircle className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+
+                        {/* Rechazar (si está pendiente) */}
+                        {imagen.estado === "PENDIENTE" && (
+                          <button
+                            onClick={() => handleRechazar(imagen.idImagen)}
+                            disabled={accionando && imagenEnAccion === imagen.idImagen}
+                            className="p-2 hover:bg-red-100 rounded text-red-600 transition disabled:opacity-50"
+                            title="Rechazar"
+                          >
+                            {accionando && imagenEnAccion === imagen.idImagen ? (
+                              <Loader className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <XCircle className="w-4 h-4" />
+                            )}
+                          </button>
+                        )}
+
+                        {/* Eliminar */}
+                        <button
+                          onClick={() => handleEliminar(imagen.idImagen)}
+                          disabled={accionando && imagenEnAccion === imagen.idImagen}
+                          className="p-2 hover:bg-red-100 rounded text-red-600 transition disabled:opacity-50"
+                          title="Eliminar"
+                        >
+                          {accionando && imagenEnAccion === imagen.idImagen ? (
+                            <Loader className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
                         </button>
                       </div>
                     </td>
