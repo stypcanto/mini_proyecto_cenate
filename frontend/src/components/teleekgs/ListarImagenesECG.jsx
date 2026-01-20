@@ -165,6 +165,7 @@ export default function ListarImagenesECG({ onSuccess }) {
 
   // Eliminar ECG
   const handleEliminar = async (idImagen) => {
+    // eslint-disable-next-line no-restricted-globals
     if (!confirm("⚠️ ¿Estás seguro de que deseas eliminar este ECG? Esta acción no se puede deshacer.")) {
       return;
     }
