@@ -221,7 +221,7 @@ export const componentRegistry = {
   },
 
   '/roles/externo/solicitud-turnos': {
-    component: lazy(() => import('../pages/roles/externo/FormularioSolicitudTurnos')),
+    component: lazy(() => import('../pages/roles/externo/solicitud-turnos/FormularioSolicitudTurnos')),
     requiredAction: 'ver',
   },
 
