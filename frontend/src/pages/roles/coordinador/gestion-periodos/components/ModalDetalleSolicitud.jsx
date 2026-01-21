@@ -17,6 +17,7 @@ import {
   Save,
 } from "lucide-react";
 import { chipDay, fmtDateTime, yesNoPill } from "../utils/ui";
+import { solicitudTurnosService } from "../../../../../services/solicitudTurnosService";
 
 export default function ModalDetalleSolicitud({
   loading,
@@ -26,11 +27,13 @@ export default function ModalDetalleSolicitud({
   onRechazar,
   getEstadoBadge,
   prefillRechazo = false,
+  onRecargarDetalle,
 }) {
   const [motivoRechazo, setMotivoRechazo] = useState("");
   const [showRechazoForm, setShowRechazoForm] = useState(prefillRechazo);
   const [observacionesDetalle, setObservacionesDetalle] = useState({});
   const [modalObservacion, setModalObservacion] = useState({ show: false, detalle: null, observacion: "" });
+  const [modalAccion, setModalAccion] = useState({ show: false, tipo: null, detalle: null, observacion: "" });
 
   useEffect(() => {
     setShowRechazoForm(prefillRechazo);
@@ -45,11 +48,12 @@ export default function ModalDetalleSolicitud({
     }
   }, [prefillRechazo, solicitud?.idSolicitud, solicitud?.detalles]);
 
-  const abrirModalObservacion = (detalle) => {
+  const abrirModalObservacion = (detalle, soloLectura = false) => {
     setModalObservacion({
       show: true,
       detalle: detalle,
-      observacion: observacionesDetalle[detalle.idDetalle] || ""
+      observacion: observacionesDetalle[detalle.idDetalle] || "",
+      soloLectura: soloLectura
     });
   };
 
@@ -57,13 +61,45 @@ export default function ModalDetalleSolicitud({
     setModalObservacion({ show: false, detalle: null, observacion: "" });
   };
 
-  const guardarObservacion = () => {
+  const abrirModalAprobarDetalle = (detalle) => {
+    setModalAccion({
+      show: true,
+      tipo: 'aprobar',
+      detalle: detalle,
+      observacion: observacionesDetalle[detalle.idDetalle] || ""
+    });
+  };
+
+  const abrirModalRechazarDetalle = (detalle) => {
+    setModalAccion({
+      show: true,
+      tipo: 'rechazar',
+      detalle: detalle,
+      observacion: observacionesDetalle[detalle.idDetalle] || ""
+    });
+  };
+
+  const cerrarModalAccion = () => {
+    setModalAccion({ show: false, tipo: null, detalle: null, observacion: "" });
+  };
+
+  const guardarObservacion = async () => {
     if (modalObservacion.detalle) {
-      setObservacionesDetalle(prev => ({
-        ...prev,
-        [modalObservacion.detalle.idDetalle]: modalObservacion.observacion
-      }));
-      cerrarModalObservacion();
+      try {
+        await solicitudTurnosService.actualizarObservacionDetalle(
+          modalObservacion.detalle.idDetalle, 
+          modalObservacion.observacion
+        );
+        setObservacionesDetalle(prev => ({
+          ...prev,
+          [modalObservacion.detalle.idDetalle]: modalObservacion.observacion
+        }));
+        cerrarModalObservacion();
+        alert("Observación guardada exitosamente");
+      } catch (error) {
+        console.error("Error al guardar observación:", error);
+        alert("Error al guardar la observación. Intente nuevamente.");
+      }
     }
   };
 
@@ -77,9 +113,15 @@ export default function ModalDetalleSolicitud({
   const handleAprobarDetalle = async (detalle) => {
     if (!window.confirm(`¿Aprobar especialidad ${detalle.nombreServicio}?`)) return;
     const obs = observacionesDetalle[detalle.idDetalle] || "";
-    console.log("Aprobar detalle:", detalle.idDetalle, "Observación:", obs);
-    // TODO: Llamar al endpoint para aprobar especialidad individual
-    alert("Funcionalidad de aprobar especialidad individual pendiente de implementar");
+    try {
+      await solicitudTurnosService.aprobarDetalle(detalle.idDetalle, obs);
+      alert("Especialidad aprobada exitosamente");
+      // Recargar detalles actualizados
+      window.location.reload(); // O mejor, recargar solo el detalle
+    } catch (error) {
+      console.error("Error al aprobar detalle:", error);
+      alert("Error al aprobar la especialidad. Intente nuevamente.");
+    }
   };
 
   const handleRechazarDetalle = async (detalle) => {
@@ -89,9 +131,42 @@ export default function ModalDetalleSolicitud({
       return;
     }
     if (!window.confirm(`¿Rechazar especialidad ${detalle.nombreServicio}?`)) return;
-    console.log("Rechazar detalle:", detalle.idDetalle, "Observación:", obs);
-    // TODO: Llamar al endpoint para rechazar especialidad individual
-    alert("Funcionalidad de rechazar especialidad individual pendiente de implementar");
+    try {
+      await solicitudTurnosService.rechazarDetalle(detalle.idDetalle, obs);
+      alert("Especialidad rechazada exitosamente");
+      // Recargar detalles actualizados
+      window.location.reload(); // O mejor, recargar solo el detalle
+    } catch (error) {
+      console.error("Error al rechazar detalle:", error);
+      alert("Error al rechazar la especialidad. Intente nuevamente.");
+    }
+  };
+
+  const confirmarAccionDetalle = async () => {
+    const { tipo, detalle, observacion } = modalAccion;
+    
+    if (tipo === 'rechazar' && !observacion.trim()) {
+      alert("Debe ingresar una observación para rechazar la especialidad");
+      return;
+    }
+
+    try {
+      if (tipo === 'aprobar') {
+        await solicitudTurnosService.aprobarDetalle(detalle.idDetalle, observacion);
+        alert("Especialidad aprobada exitosamente");
+      } else {
+        await solicitudTurnosService.rechazarDetalle(detalle.idDetalle, observacion);
+        alert("Especialidad rechazada exitosamente");
+      }
+      cerrarModalAccion();
+      // Recargar detalles actualizados sin cerrar modal
+      if (onRecargarDetalle) {
+        await onRecargarDetalle(solicitud.idSolicitud);
+      }
+    } catch (error) {
+      console.error(`Error al ${tipo} detalle:`, error);
+      alert(`Error al ${tipo === 'aprobar' ? 'aprobar' : 'rechazar'} la especialidad. Intente nuevamente.`);
+    }
   };
 
   const isEnviado = solicitud?.estado === "ENVIADO";
@@ -237,8 +312,13 @@ export default function ModalDetalleSolicitud({
                     </thead>
 
                     <tbody className="divide-y divide-gray-200">
-                      {detalles.map((d, idx) => (
-                        <tr key={d.idDetalle ?? idx} className="hover:bg-gray-50">
+                      {detalles.map((d, idx) => {
+                        const estaPendiente = !d.estado || d.estado === 'PENDIENTE';
+                        const estaAprobado = d.estado === 'APROBADO';
+                        const estaRechazado = d.estado === 'RECHAZADO';
+                        
+                        return (
+                        <tr key={d.idDetalle ?? idx} className={`hover:bg-gray-50 ${!estaPendiente ? 'bg-gray-50' : ''}`}>
                           <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
 
                           <td className="px-4 py-3">
@@ -277,16 +357,29 @@ export default function ModalDetalleSolicitud({
 
                           <td className="px-4 py-3">
                             <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => abrirModalObservacion(d)}
-                                disabled={!isEnviado}
-                                className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                title="Registrar observación"
-                              >
-                                <MessageSquare className="w-4 h-4" />
-                                {observacionesDetalle[d.idDetalle]?.trim() ? "Editar" : "Añadir"}
-                              </button>
-                              {observacionesDetalle[d.idDetalle]?.trim() && (
+                              {estaPendiente ? (
+                                <button
+                                  onClick={() => abrirModalObservacion(d, false)}
+                                  disabled={!isEnviado}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                  title="Registrar observación"
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                  {observacionesDetalle[d.idDetalle]?.trim() ? "Editar" : "Añadir"}
+                                </button>
+                              ) : observacionesDetalle[d.idDetalle]?.trim() ? (
+                                <button
+                                  onClick={() => abrirModalObservacion(d, true)}
+                                  className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-600 text-white text-xs font-medium rounded-lg hover:bg-gray-700 transition-colors"
+                                  title="Ver observación (solo lectura)"
+                                >
+                                  <MessageSquare className="w-4 h-4" />
+                                  Ver
+                                </button>
+                              ) : (
+                                <span className="text-xs text-gray-500">Sin observación</span>
+                              )}
+                              {observacionesDetalle[d.idDetalle]?.trim() && estaPendiente && (
                                 <span className="text-xs text-green-600 font-medium">✓ Registrada</span>
                               )}
                             </div>
@@ -294,26 +387,32 @@ export default function ModalDetalleSolicitud({
 
                           {isEnviado && (
                             <td className="px-4 py-3">
-                              <div className="flex gap-1 justify-center">
-                                <button
-                                  onClick={() => handleAprobarDetalle(d)}
-                                  className="p-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                                  title="Aprobar especialidad"
-                                >
-                                  <CheckCircle2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleRechazarDetalle(d)}
-                                  className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                                  title="Rechazar especialidad"
-                                >
-                                  <XCircle className="w-4 h-4" />
-                                </button>
-                              </div>
+                              {estaPendiente ? (
+                                <div className="flex gap-1 justify-center">
+                                  <button
+                                    onClick={() => abrirModalAprobarDetalle(d)}
+                                    className="p-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
+                                    title="Aprobar especialidad"
+                                  >
+                                    <CheckCircle2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => abrirModalRechazarDetalle(d)}
+                                    className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                                    title="Rechazar especialidad"
+                                  >
+                                    <XCircle className="w-4 h-4" />
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex justify-center">
+                                  <span className="text-gray-400 text-lg font-bold">—</span>
+                                </div>
+                              )}
                             </td>
                           )}
                         </tr>
-                      ))}
+                      )})}
                     </tbody>
                   </table>
                 </div>
@@ -386,7 +485,7 @@ export default function ModalDetalleSolicitud({
                 <div>
                   <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
                     <MessageSquare className="w-5 h-5 text-blue-600" />
-                    Registrar Observación
+                    {modalObservacion.soloLectura ? "Consultar Observación" : "Registrar Observación"}
                   </h4>
                   <p className="text-sm text-gray-600 mt-1">
                     {modalObservacion.detalle?.nombreServicio ?? modalObservacion.detalle?.nombreEspecialidad}
@@ -406,18 +505,25 @@ export default function ModalDetalleSolicitud({
 
             <div className="p-6">
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Observación
+                Observación {modalObservacion.soloLectura && <span className="text-xs text-gray-500">(Solo lectura)</span>}
               </label>
               <textarea
                 value={modalObservacion.observacion}
                 onChange={(e) => setModalObservacion(prev => ({ ...prev, observacion: e.target.value }))}
-                placeholder="Escriba aquí sus observaciones sobre esta especialidad..."
+                placeholder={modalObservacion.soloLectura ? "" : "Escriba aquí sus observaciones sobre esta especialidad..."}
                 rows={6}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                readOnly={modalObservacion.soloLectura}
+                className={`w-full px-4 py-3 border border-gray-300 rounded-lg resize-none ${
+                  modalObservacion.soloLectura 
+                    ? 'bg-gray-50 text-gray-700 cursor-default' 
+                    : 'focus:ring-2 focus:ring-blue-500 focus:border-blue-500'
+                }`}
               />
-              <p className="text-xs text-gray-500 mt-2">
-                {modalObservacion.observacion.length} caracteres
-              </p>
+              {!modalObservacion.soloLectura && (
+                <p className="text-xs text-gray-500 mt-2">
+                  {modalObservacion.observacion.length} caracteres
+                </p>
+              )}
             </div>
 
             <div className="p-6 border-t border-gray-200 flex gap-3">
@@ -425,14 +531,115 @@ export default function ModalDetalleSolicitud({
                 onClick={cerrarModalObservacion}
                 className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
               >
+                {modalObservacion.soloLectura ? "Cerrar" : "Cancelar"}
+              </button>
+              {!modalObservacion.soloLectura && (
+                <button
+                  onClick={guardarObservacion}
+                  className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                >
+                  <Save className="w-4 h-4" />
+                  Guardar Observación
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Aprobar/Rechazar Especialidad */}
+      {modalAccion.show && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className={`text-lg font-semibold flex items-center gap-2 ${
+                    modalAccion.tipo === 'aprobar' ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    {modalAccion.tipo === 'aprobar' ? (
+                      <>
+                        <CheckCircle2 className="w-5 h-5" />
+                        Aprobar Especialidad
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-5 h-5" />
+                        Rechazar Especialidad
+                      </>
+                    )}
+                  </h4>
+                  <p className="text-sm text-gray-600 mt-2">
+                    {modalAccion.detalle?.nombreServicio ?? modalAccion.detalle?.nombreEspecialidad}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Código: {modalAccion.detalle?.codigoServicio ?? modalAccion.detalle?.codServicio}
+                  </p>
+                </div>
+                <button
+                  onClick={cerrarModalAccion}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Observación {modalAccion.tipo === 'rechazar' && <span className="text-red-600">*</span>}
+                {modalAccion.tipo === 'aprobar' && <span className="text-gray-500 text-xs ml-1">(Opcional)</span>}
+              </label>
+              <textarea
+                value={modalAccion.observacion}
+                onChange={(e) => setModalAccion(prev => ({ ...prev, observacion: e.target.value }))}
+                placeholder={modalAccion.tipo === 'rechazar' 
+                  ? "Indique el motivo del rechazo (obligatorio)..." 
+                  : "Agregue observaciones adicionales (opcional)..."}
+                rows={6}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 resize-none ${
+                  modalAccion.tipo === 'rechazar' 
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    : 'border-gray-300 focus:ring-green-500 focus:border-green-500'
+                }`}
+              />
+              {modalAccion.tipo === 'rechazar' && !modalAccion.observacion.trim() && (
+                <p className="text-xs text-red-600 mt-2">
+                  * La observación es obligatoria para rechazar una especialidad
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                {modalAccion.observacion.length} caracteres
+              </p>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={cerrarModalAccion}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
                 Cancelar
               </button>
               <button
-                onClick={guardarObservacion}
-                className="flex-1 px-4 py-2.5 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                onClick={confirmarAccionDetalle}
+                disabled={modalAccion.tipo === 'rechazar' && !modalAccion.observacion.trim()}
+                className={`flex-1 px-4 py-2.5 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  modalAccion.tipo === 'aprobar'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
               >
-                <Save className="w-4 h-4" />
-                Guardar Observación
+                {modalAccion.tipo === 'aprobar' ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Confirmar Aprobación
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4" />
+                    Confirmar Rechazo
+                  </>
+                )}
               </button>
             </div>
           </div>

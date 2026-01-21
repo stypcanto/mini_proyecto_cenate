@@ -5,7 +5,11 @@ import java.util.List;
 import com.styp.cenate.dto.MiIpressResponse;
 import com.styp.cenate.dto.SolicitudTurnoIpressRequest;
 import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleDecisionRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleDecisionResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleObservacionUpdateRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleObservacionUpdateResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
@@ -115,4 +119,10 @@ public interface SolicitudTurnoIpressService {
 	SolicitudTurnoDetalleFullResponse obtenerPorIdFull(Long id);
 
 	SolicitudTurnoIpressResponse guardarBorradorDesdeFrontend(SolicitudTurnoIpressBorradorRequest request);
+	
+	DetalleObservacionUpdateResponse actualizarObservacionDetalle(Long idDetalle, DetalleObservacionUpdateRequest request);
+	
+	DetalleDecisionResponse aprobarDetalle(Long idDetalle, DetalleDecisionRequest body);
+	DetalleDecisionResponse rechazarDetalle(Long idDetalle, DetalleDecisionRequest body);
+
 }

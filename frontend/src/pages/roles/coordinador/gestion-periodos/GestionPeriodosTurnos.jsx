@@ -137,6 +137,19 @@ export default function GestionPeriodosTurnos() {
     }
   };
 
+  const handleRecargarDetalle = async (idSolicitud) => {
+    try {
+      setLoadingDetalle(true);
+      const detalle = await solicitudTurnosService.obtenerPorId(idSolicitud);
+      setSolicitudDetalle(detalle);
+    } catch (err) {
+      console.error(err);
+      window.alert("Error al recargar detalle de la solicitud");
+    } finally {
+      setLoadingDetalle(false);
+    }
+  };
+
   const abrirRechazoRapido = async (solicitud) => {
     try {
       setPrefillRechazo(true);
@@ -197,49 +210,49 @@ export default function GestionPeriodosTurnos() {
   }, [periodos]);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-6">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Gestión de Períodos y Solicitudes</h1>
-          <p className="text-gray-600">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">Gestión de Períodos y Solicitudes</h1>
+          <p className="text-sm text-gray-600">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
         </div>
 
         {activeTab === "periodos" && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-            <CardStat title="Períodos" value={stats.total} subtitle="Total registrados" icon={<Calendar className="w-5 h-5" />} tone="blue" />
-            <CardStat title="Activos" value={stats.activos} subtitle="En captura" icon={<Calendar className="w-5 h-5" />} tone="green" />
-            <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-5 h-5" />} tone="orange" />
-            <CardStat title="Borradores" value={stats.borradores} subtitle="Sin publicar" icon={<Calendar className="w-5 h-5" />} tone="purple" />
+          <div className="grid grid-cols-4 gap-2 mb-4">
+            <CardStat title="Períodos" value={stats.total} subtitle="Total registrados" icon={<Calendar className="w-4 h-4" />} tone="blue" />
+            <CardStat title="Activos" value={stats.activos} subtitle="En captura" icon={<Calendar className="w-4 h-4" />} tone="green" />
+            <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-4 h-4" />} tone="orange" />
+            <CardStat title="Borradores" value={stats.borradores} subtitle="Sin publicar" icon={<Calendar className="w-4 h-4" />} tone="purple" />
           </div>
         )}
 
-        <div className="bg-white rounded-lg shadow-sm mb-6">
+        <div className="bg-white rounded-lg shadow-sm mb-4">
           <div className="border-b border-gray-200">
             <nav className="flex -mb-px">
               <button
                 onClick={() => setActiveTab("periodos")}
-                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === "periodos"
                     ? "border-green-600 text-green-700"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <Calendar className="w-5 h-5" />
+                  <Calendar className="w-4 h-4" />
                   <span>Períodos</span>
                 </div>
               </button>
 
               <button
                 onClick={() => setActiveTab("solicitudes")}
-                className={`px-6 py-4 text-sm font-medium border-b-2 transition-colors ${
+                className={`px-5 py-3 text-sm font-medium border-b-2 transition-colors ${
                   activeTab === "solicitudes"
                     ? "border-blue-600 text-blue-700"
                     : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <FileText className="w-5 h-5" />
+                  <FileText className="w-4 h-4" />
                   <span>Solicitudes</span>
                 </div>
               </button>
@@ -286,6 +299,7 @@ export default function GestionPeriodosTurnos() {
             onRechazar={handleRechazarSolicitud}
             getEstadoBadge={getEstadoBadge}
             prefillRechazo={prefillRechazo}
+            onRecargarDetalle={handleRecargarDetalle}
           />
         )}
 

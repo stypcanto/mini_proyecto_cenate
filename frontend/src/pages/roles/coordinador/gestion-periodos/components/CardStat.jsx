@@ -11,13 +11,13 @@ export default function CardStat({ title, value, subtitle, icon, tone = "blue" }
   const cls = toneMap[tone] || toneMap.blue;
 
   return (
-    <div className={`rounded-xl border p-4 ${cls}`}>
-      <div className="flex items-center justify-between mb-2">
-        <p className="text-sm font-semibold">{title}</p>
+    <div className={`rounded-lg border p-2.5 ${cls}`}>
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-xs font-semibold">{title}</p>
         <div className="opacity-80">{icon}</div>
       </div>
-      <p className="text-2xl font-bold">{value ?? "—"}</p>
-      <p className="text-xs mt-1 opacity-80">{subtitle ?? "—"}</p>
+      <p className="text-xl font-bold">{value ?? "—"}</p>
+      <p className="text-[10px] mt-0.5 opacity-80">{subtitle ?? "—"}</p>
     </div>
   );
 }

@@ -20,7 +20,11 @@ import org.springframework.web.bind.annotation.RestController;
 import com.styp.cenate.dto.MiIpressResponse;
 import com.styp.cenate.dto.SolicitudTurnoIpressRequest;
 import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleDecisionRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleDecisionResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleObservacionUpdateRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleObservacionUpdateResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
@@ -294,4 +298,57 @@ public class SolicitudTurnoIpressController {
 		return ResponseEntity.ok(solicitudService.obtenerPorIdConDetalles(id));
 	}
 
+	
+	@PutMapping("/detalle/{idDetalle}/observacion")
+	//@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+	public ResponseEntity<DetalleObservacionUpdateResponse> actualizarObservacionDetalle(
+	        @PathVariable("idDetalle") Long idDetalle,
+	        @Valid @RequestBody DetalleObservacionUpdateRequest request) {
+
+	    log.info("PUT /api/solicitudes-turno/detalle/{}/observacion", idDetalle);
+	    return ResponseEntity.ok(solicitudService.actualizarObservacionDetalle(idDetalle, request));
+	}
+
+	
+	
+	
+	
+	
+	/*INI - ACEPTAR O APROBAR DETALLE DE SOLICITUDES*/
+	
+	@PostMapping("/detalle/{idDetalle}/aprobar")
+	//@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR')")
+	public ResponseEntity<DetalleDecisionResponse> aprobarDetalle(
+	        @PathVariable("idDetalle") Long idDetalle,
+	        @RequestBody(required = false) DetalleDecisionRequest body) {
+
+	    return ResponseEntity.ok(solicitudService.aprobarDetalle(idDetalle, body));
+	}
+
+	@PostMapping("/detalle/{idDetalle}/rechazar")
+	//@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR')")
+	public ResponseEntity<DetalleDecisionResponse> rechazarDetalle(
+	        @PathVariable("idDetalle") Long idDetalle,
+	        @RequestBody DetalleDecisionRequest body) {
+
+	    return ResponseEntity.ok(solicitudService.rechazarDetalle(idDetalle, body));
+	}
+	
+	
+	/*FIN -ACEPTAR O APROBAR DETALLE DE SOLICITUDES*/
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
 }

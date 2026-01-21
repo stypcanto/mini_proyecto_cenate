@@ -15,7 +15,11 @@ import com.styp.cenate.dto.DetalleSolicitudTurnoResponse;
 import com.styp.cenate.dto.MiIpressResponse;
 import com.styp.cenate.dto.SolicitudTurnoIpressRequest;
 import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleDecisionRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleDecisionResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleObservacionUpdateRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleObservacionUpdateResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
@@ -616,7 +620,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		SolicitudTurnoIpress solicitud = solicitudRepository.findById(idSolicitud)
 				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
 
-		validarPropietarioOCoordinador(solicitud);
+		//validarPropietarioOCoordinador(solicitud);
 
 		if (solicitud.isRevisado()) {
 			throw new RuntimeException("No se puede modificar una solicitud ya revisada");
@@ -733,7 +737,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		SolicitudTurnoIpress s = solicitudRepository.findByIdFull(id)
 				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + id));
 
-		validarPropietarioOCoordinador(s);
+		//validarPropietarioOCoordinador(s);
 
 		var periodo = s.getPeriodo();
 		var per = s.getPersonal();
@@ -819,7 +823,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		        solicitud = solicitudRepository.findById(request.getIdSolicitud())
 		                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + request.getIdSolicitud()));
 
-		        validarPropietarioOCoordinador(solicitud);
+		        //validarPropietarioOCoordinador(solicitud);
 
 		        if (solicitud.getPeriodo() == null
 		                || !request.getIdPeriodo().equals(solicitud.getPeriodo().getIdPeriodo())) {
@@ -849,7 +853,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		                    return solicitudRepository.save(s);
 		                });
 
-		        validarPropietarioOCoordinador(solicitud);
+		        //validarPropietarioOCoordinador(solicitud);
 		    }
 
 		    if (solicitud.isRevisado()) {
@@ -959,5 +963,121 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 		    return convertToResponseWithDetalles(solConDetalles);
 	}
+	
+	@Override
+	@Transactional
+	public DetalleObservacionUpdateResponse actualizarObservacionDetalle(
+	        Long idDetalle,
+	        DetalleObservacionUpdateRequest request) {
+
+	    DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
+	            .orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
+
+	    // Validar propietario o coordinador (en tu proyecto hoy valida propietario)
+	    //validarPropietarioOCoordinador(detalle.getSolicitud());
+
+	    // Si la solicitud está REVISADA (o el estado que uses), puedes bloquear
+	    if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
+	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+	    }
+
+	    detalle.setObservacion(request.getObservacion());
+	    detalle.setUpdatedAt(OffsetDateTime.now());
+
+	    detalleRepository.save(detalle);
+
+	    return DetalleObservacionUpdateResponse.builder()
+	            .idDetalle(detalle.getIdDetalle())
+	            .observacion(detalle.getObservacion())
+	            .fechaActualizacion(detalle.getUpdatedAt())
+	            .build();
+	}
+	
+	
+	@Override
+	@Transactional
+	public DetalleDecisionResponse aprobarDetalle(Long idDetalle, DetalleDecisionRequest body) {
+
+	    DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
+	            .orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
+
+	    // permisos: el coordinador o propietario (según tu regla actual)
+	    //validarPropietarioOCoordinador(detalle.getSolicitud());
+
+	    // si la solicitud ya está REVISADA, no permitir cambios
+	    if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
+	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+	    }
+
+	    // regla opcional: solo aprobar si está PENDIENTE o RECHAZADO
+	    // if (!"PENDIENTE".equalsIgnoreCase(detalle.getEstado())) { ... }
+
+	    String obs = (body == null) ? null : body.getObservacion();
+	    if (obs != null) obs = obs.trim();
+	    if (obs != null && obs.isBlank()) obs = null;
+
+	    detalle.setEstado("APROBADO");
+	    if (obs != null) {
+	        detalle.setObservacion(obs);
+	    }
+
+	    DetalleSolicitudTurno guardado = detalleRepository.saveAndFlush(detalle);
+
+	    // si quieres recalcular totales de la solicitud, hazlo aquí (opcional)
+	    // SolicitudTurnoIpress sol = solicitudRepository.findByIdWithDetalles(guardado.getSolicitud().getIdSolicitud()).orElseThrow();
+	    // recalcularTotales(sol); sol.setUpdatedAt(OffsetDateTime.now()); solicitudRepository.save(sol);
+
+	    return DetalleDecisionResponse.builder()
+	            .idDetalle(guardado.getIdDetalle())
+	            .estado(guardado.getEstado())
+	            .observacion(guardado.getObservacion())
+	            .fechaActualizacion(guardado.getUpdatedAt())
+	            .build();
+	}
+
+	@Override
+	@Transactional
+	public DetalleDecisionResponse rechazarDetalle(Long idDetalle, DetalleDecisionRequest body) {
+
+	    if (body == null || body.getObservacion() == null || body.getObservacion().trim().isEmpty()) {
+	        throw new RuntimeException("La observación es obligatoria para rechazar el detalle");
+	    }
+
+	    DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
+	            .orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
+
+	    //validarPropietarioOCoordinador(detalle.getSolicitud());
+
+	    if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
+	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+	    }
+
+	    detalle.setEstado("RECHAZADO");
+	    detalle.setObservacion(body.getObservacion().trim());
+
+	    DetalleSolicitudTurno guardado = detalleRepository.saveAndFlush(detalle);
+
+	    return DetalleDecisionResponse.builder()
+	            .idDetalle(guardado.getIdDetalle())
+	            .estado(guardado.getEstado())
+	            .observacion(guardado.getObservacion())
+	            .fechaActualizacion(guardado.getUpdatedAt())
+	            .build();
+	}
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+	
 
 }

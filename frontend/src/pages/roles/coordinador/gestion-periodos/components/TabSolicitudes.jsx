@@ -1,5 +1,5 @@
 // src/pages/coordinador/turnos/components/TabSolicitudes.jsx
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Calendar,
   Clock,
@@ -14,6 +14,8 @@ import {
   Users,
   TrendingUp,
   Send,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { fmtDateTime } from "../utils/ui";
 
@@ -29,6 +31,7 @@ export default function TabSolicitudes({
   periodos,
 }) {
   const safeSolicitudes = Array.isArray(solicitudes) ? solicitudes : [];
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
   const periodoMap = useMemo(() => {
     const m = new Map();
@@ -48,73 +51,106 @@ export default function TabSolicitudes({
     return { total, enviadas, aprobadas, rechazadas, borradores };
   }, [safeSolicitudes]);
 
+  // Ordenamiento
+  const sortedSolicitudes = useMemo(() => {
+    if (!sortConfig.key) return safeSolicitudes;
+
+    return [...safeSolicitudes].sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+
+      if (sortConfig.key === 'nombreIpress') {
+        aVal = (aVal || '').toLowerCase();
+        bVal = (bVal || '').toLowerCase();
+      }
+
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [safeSolicitudes, sortConfig]);
+
+  const handleSort = (key) => {
+    setSortConfig({
+      key,
+      direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc',
+    });
+  };
+
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) return null;
+    return sortConfig.direction === 'asc' ? 
+      <ChevronUp className="w-4 h-4 inline ml-1" /> : 
+      <ChevronDown className="w-4 h-4 inline ml-1" />;
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Estadísticas rápidas */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+    <div className="space-y-4">
+      {/* Estadísticas compactas */}
+      <div className="grid grid-cols-5 gap-2">
+        <div className="bg-white rounded-lg p-3 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-600 font-medium">Total</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
+              <p className="text-xs text-gray-600 mb-0.5">Total</p>
+              <p className="text-xl font-bold text-gray-900">{stats.total}</p>
             </div>
-            <FileText className="w-8 h-8 text-gray-400" />
+            <FileText className="w-6 h-6 text-gray-400" />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 border border-blue-200 shadow-sm">
+        <div className="bg-white rounded-lg p-3 border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-blue-600 font-medium">Enviadas</p>
-              <p className="text-2xl font-bold text-blue-700">{stats.enviadas}</p>
+              <p className="text-xs text-blue-600 mb-0.5">Enviadas</p>
+              <p className="text-xl font-bold text-blue-700">{stats.enviadas}</p>
             </div>
-            <Send className="w-8 h-8 text-blue-400" />
+            <Send className="w-6 h-6 text-blue-400" />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 border border-green-200 shadow-sm">
+        <div className="bg-white rounded-lg p-3 border border-green-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-green-600 font-medium">Aprobadas</p>
-              <p className="text-2xl font-bold text-green-700">{stats.aprobadas}</p>
+              <p className="text-xs text-green-600 mb-0.5">Aprobadas</p>
+              <p className="text-xl font-bold text-green-700">{stats.aprobadas}</p>
             </div>
-            <CheckCircle2 className="w-8 h-8 text-green-400" />
+            <CheckCircle2 className="w-6 h-6 text-green-400" />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 border border-red-200 shadow-sm">
+        <div className="bg-white rounded-lg p-3 border border-red-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-red-600 font-medium">Rechazadas</p>
-              <p className="text-2xl font-bold text-red-700">{stats.rechazadas}</p>
+              <p className="text-xs text-red-600 mb-0.5">Rechazadas</p>
+              <p className="text-xl font-bold text-red-700">{stats.rechazadas}</p>
             </div>
-            <XCircle className="w-8 h-8 text-red-400" />
+            <XCircle className="w-6 h-6 text-red-400" />
           </div>
         </div>
 
-        <div className="bg-white rounded-xl p-4 border border-gray-200 shadow-sm">
+        <div className="bg-white rounded-lg p-3 border border-gray-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-600 font-medium">Borradores</p>
-              <p className="text-2xl font-bold text-gray-700">{stats.borradores}</p>
+              <p className="text-xs text-gray-600 mb-0.5">Borradores</p>
+              <p className="text-xl font-bold text-gray-700">{stats.borradores}</p>
             </div>
-            <FileText className="w-8 h-8 text-gray-400" />
+            <FileText className="w-6 h-6 text-gray-400" />
           </div>
         </div>
       </div>
 
-      {/* Panel de filtros mejorado */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Filtros compactos */}
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+        <div className="grid grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <Filter className="w-4 h-4 inline mr-1" />
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <Filter className="w-3 h-3 inline mr-1" />
               Estado
             </label>
             <select
               value={filtros.estado}
               onChange={(e) => setFiltros({ ...filtros, estado: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="TODAS">Todas</option>
               <option value="BORRADOR">BORRADOR</option>
@@ -125,14 +161,14 @@ export default function TabSolicitudes({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <Calendar className="w-4 h-4 inline mr-1" />
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <Calendar className="w-3 h-3 inline mr-1" />
               Período
             </label>
             <select
               value={filtros.periodo}
               onChange={(e) => setFiltros({ ...filtros, periodo: e.target.value })}
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Todos los períodos</option>
               {(periodos || []).map((p) => (
@@ -144,8 +180,8 @@ export default function TabSolicitudes({
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              <Search className="w-4 h-4 inline mr-1" />
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <Search className="w-3 h-3 inline mr-1" />
               Buscar IPRESS
             </label>
             <input
@@ -153,121 +189,134 @@ export default function TabSolicitudes({
               value={filtros.busqueda}
               onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
               placeholder="Nombre o código..."
-              className="w-full px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
         </div>
       </div>
 
-      {/* Lista de solicitudes mejorada */}
+      {/* Tabla compacta */}
       {loading ? (
-        <div className="flex items-center justify-center py-16 bg-white rounded-xl">
+        <div className="flex items-center justify-center py-12 bg-white rounded-lg">
           <div className="text-center">
-            <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-            <p className="text-gray-600">Cargando solicitudes...</p>
+            <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-3" />
+            <p className="text-sm text-gray-600">Cargando solicitudes...</p>
           </div>
         </div>
       ) : safeSolicitudes.length === 0 ? (
-        <div className="bg-white rounded-xl p-16 text-center border border-gray-200">
-          <FileText className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No se encontraron solicitudes</h3>
-          <p className="text-gray-500">Ajuste los filtros o espere a que las IPRESS envíen solicitudes</p>
+        <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
+          <FileText className="w-16 h-16 mx-auto mb-3 text-gray-300" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">No se encontraron solicitudes</h3>
+          <p className="text-sm text-gray-500">Ajuste los filtros o espere a que las IPRESS envíen solicitudes</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {safeSolicitudes.map((s) => {
-            const periodoLabel = periodoMap.get(Number(s.idPeriodo)) ?? `Periodo ${s.idPeriodo}`;
-            const isEnviado = s.estado === "ENVIADO";
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th 
+                    className="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('idSolicitud')}
+                  >
+                    # <SortIcon columnKey="idSolicitud" />
+                  </th>
+                  <th 
+                    className="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('nombreIpress')}
+                  >
+                    IPRESS <SortIcon columnKey="nombreIpress" />
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">
+                    Periodo
+                  </th>
+                  <th 
+                    className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('totalEspecialidades')}
+                  >
+                    Esp. <SortIcon columnKey="totalEspecialidades" />
+                  </th>
+                  <th 
+                    className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('totalTurnosSolicitados')}
+                  >
+                    Turnos <SortIcon columnKey="totalTurnosSolicitados" />
+                  </th>
+                  <th 
+                    className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('estado')}
+                  >
+                    Estado <SortIcon columnKey="estado" />
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">
+                    Fecha Envío
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {sortedSolicitudes.map((s) => {
+                  const periodoLabel = periodoMap.get(Number(s.idPeriodo)) ?? `Periodo ${s.idPeriodo}`;
 
-            return (
-              <div
-                key={s.idSolicitud}
-                className="bg-white rounded-xl border-2 border-gray-200 hover:border-blue-300 transition-all shadow-sm hover:shadow-md overflow-hidden"
-              >
-                <div className="p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                          <Building2 className="w-5 h-5 text-blue-600" />
-                        </div>
+                  return (
+                    <tr key={s.idSolicitud} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3 py-2 text-sm text-gray-900 font-medium">
+                        {s.idSolicitud}
+                      </td>
+                      <td className="px-3 py-2">
                         <div>
-                          <h3 className="text-xl font-bold text-gray-900">{s.nombreIpress}</h3>
-                          <p className="text-sm text-gray-500">Solicitud #{s.idSolicitud}</p>
+                          <div className="text-sm font-medium text-gray-900">{s.nombreIpress}</div>
+                          {s.codIpress && (
+                            <div className="text-xs text-gray-500">Cód: {s.codIpress}</div>
+                          )}
                         </div>
-                      </div>
-                    </div>
-                    <span className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 ${getEstadoBadge(s.estado)}`}>
-                      {s.estado}
-                    </span>
-                  </div>
-
-                  {/* Información destacada */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    {s.totalTurnosSolicitados !== undefined && (
-                      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-3 border border-blue-200">
-                        <div className="flex items-center gap-2 mb-1">
-                          <TrendingUp className="w-4 h-4 text-blue-600" />
-                          <span className="text-xs font-medium text-blue-700">Total Turnos</span>
-                        </div>
-                        <p className="text-2xl font-bold text-blue-700">{s.totalTurnosSolicitados}</p>
-                      </div>
-                    )}
-
-                    {s.totalEspecialidades !== undefined && (
-                      <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-3 border border-purple-200">
-                        <div className="flex items-center gap-2 mb-1">
-                          <Users className="w-4 h-4 text-purple-600" />
-                          <span className="text-xs font-medium text-purple-700">Especialidades</span>
-                        </div>
-                        <p className="text-2xl font-bold text-purple-700">{s.totalEspecialidades}</p>
-                      </div>
-                    )}
-
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Calendar className="w-4 h-4 text-gray-600" />
-                        <span className="text-xs font-medium text-gray-700">Periodo</span>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-900">{periodoLabel}</p>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Clock className="w-4 h-4 text-gray-600" />
-                        <span className="text-xs font-medium text-gray-700">Fecha Envío</span>
-                      </div>
-                      <p className="text-sm font-semibold text-gray-900">{fmtDateTime(s.fechaEnvio)}</p>
-                    </div>
-                  </div>
-
-                  {/* Fechas adicionales */}
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4 pb-4 border-b border-gray-200">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Creación: <span className="font-medium">{fmtDateTime(s.fechaCreacion || s.createdAt)}</span></span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Actualización: <span className="font-medium">{fmtDateTime(s.fechaActualizacion || s.updatedAt)}</span></span>
-                    </div>
-                  </div>
-
-                  {/* Botones de acción */}
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => onVerDetalle(s)}
-                      className="flex-1 flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Ver Detalle
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-gray-700">
+                        {periodoLabel}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
+                          {s.totalEspecialidades ?? 0}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                          {s.totalTurnosSolicitados ?? 0}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className={`inline-block px-2 py-1 rounded-md text-xs font-semibold border ${getEstadoBadge(s.estado)}`}>
+                          {s.estado}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-xs text-gray-600">
+                        {fmtDateTime(s.fechaEnvio)}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          onClick={() => onVerDetalle(s)}
+                          className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-600 text-white text-xs font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                          title="Ver detalle"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          Ver
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Footer con contador */}
+          <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
+            <p className="text-xs text-gray-600">
+              Mostrando <span className="font-semibold">{sortedSolicitudes.length}</span> solicitud{sortedSolicitudes.length !== 1 ? 'es' : ''}
+            </p>
+          </div>
         </div>
       )}
     </div>

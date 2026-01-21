@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useMemo } from "react";
 import {
   Calendar,
   Loader2,
@@ -11,6 +11,8 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 
 import { fmtDate, safeNum } from "../utils/ui";
@@ -37,108 +39,158 @@ export default function TabPeriodos({
   onVerDetallePeriodo,
   getEstadoBadge,
 }) {
+  const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  const sortedPeriodos = useMemo(() => {
+    if (!sortConfig.key) return periodos || [];
+
+    return [...(periodos || [])].sort((a, b) => {
+      let aVal = a[sortConfig.key];
+      let bVal = b[sortConfig.key];
+
+      if (sortConfig.key === 'descripcion' || sortConfig.key === 'nombrePeriodo') {
+        aVal = (aVal || '').toLowerCase();
+        bVal = (bVal || '').toLowerCase();
+      }
+
+      if (aVal < bVal) return sortConfig.direction === 'asc' ? -1 : 1;
+      if (aVal > bVal) return sortConfig.direction === 'asc' ? 1 : -1;
+      return 0;
+    });
+  }, [periodos, sortConfig]);
+
+  const handleSort = (key) => {
+    setSortConfig({
+      key,
+      direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc',
+    });
+  };
+
+  const SortIcon = ({ columnKey }) => {
+    if (sortConfig.key !== columnKey) return null;
+    return sortConfig.direction === 'asc' ? 
+      <ChevronUp className="w-4 h-4 inline ml-1" /> : 
+      <ChevronDown className="w-4 h-4 inline ml-1" />;
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-16 bg-white rounded-xl">
+      <div className="flex items-center justify-center py-12 bg-white rounded-lg">
         <div className="text-center">
-          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Cargando periodos...</p>
+          <Loader2 className="w-10 h-10 animate-spin text-blue-600 mx-auto mb-3" />
+          <p className="text-sm text-gray-600">Cargando periodos...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-3">
       {/* Header con botón de crear */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex justify-between items-center">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Historial de Periodos</h2>
-          <p className="text-sm text-gray-600 mt-1">Administre los periodos de solicitud de turnos</p>
+          <h2 className="text-xl font-bold text-gray-900">Historial de Periodos</h2>
+          <p className="text-xs text-gray-600 mt-0.5">Administre los periodos de solicitud de turnos</p>
         </div>
 
         <button
           onClick={onCrearPeriodo}
-          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg"
+          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-sm hover:shadow-md"
         >
-          <Plus className="w-5 h-5" />
+          <Plus className="w-4 h-4" />
           Aperturar Nuevo Periodo
         </button>
       </div>
 
       {(periodos || []).length === 0 ? (
-        <div className="bg-white rounded-xl p-16 text-center border border-gray-200">
-          <Calendar className="w-20 h-20 mx-auto mb-4 text-gray-300" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay períodos configurados</h3>
-          <p className="text-gray-500">Aperture un nuevo período para comenzar a gestionar solicitudes</p>
+        <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
+          <Calendar className="w-16 h-16 mx-auto mb-3 text-gray-300" />
+          <h3 className="text-lg font-semibold text-gray-900 mb-1">No hay períodos configurados</h3>
+          <p className="text-sm text-gray-500">Aperture un nuevo período para comenzar a gestionar solicitudes</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-4">
-          {(periodos || []).map((p) => {
-            const total = safeNum(p.totalTurnos ?? p.turnosDisponibles ?? p.total ?? 0);
-            const asignados = safeNum(p.turnosAsignados ?? p.asignados ?? 0);
-            const ocupacion = calcOcupacion(p);
-            const isActivo = p.estado === "ACTIVO";
-            const isCerrado = p.estado === "CERRADO";
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-gray-50 border-b border-gray-200">
+                <tr>
+                  <th 
+                    className="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('idPeriodo')}
+                  >
+                    ID <SortIcon columnKey="idPeriodo" />
+                  </th>
+                  <th 
+                    className="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('descripcion')}
+                  >
+                    Descripción <SortIcon columnKey="descripcion" />
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                    Total
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                    Asignados
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                    Disponibles
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                    Ocupación
+                  </th>
+                  <th 
+                    className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    onClick={() => handleSort('estado')}
+                  >
+                    Estado <SortIcon columnKey="estado" />
+                  </th>
+                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">
+                    Fechas
+                  </th>
+                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                    Acciones
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-200">
+                {sortedPeriodos.map((p) => {
+                  const total = safeNum(p.totalTurnos ?? p.turnosDisponibles ?? p.total ?? 0);
+                  const asignados = safeNum(p.turnosAsignados ?? p.asignados ?? 0);
+                  const disponibles = total - asignados;
+                  const ocupacion = calcOcupacion(p);
+                  const isActivo = p.estado === "ACTIVO";
+                  const isCerrado = p.estado === "CERRADO";
 
-            return (
-              <div
-                key={p.idPeriodo}
-                className="bg-white rounded-xl border-2 border-gray-200 hover:border-green-300 transition-all shadow-sm hover:shadow-md overflow-hidden"
-              >
-                <div className="p-6">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          isActivo ? 'bg-green-100' : isCerrado ? 'bg-orange-100' : 'bg-purple-100'
-                        }`}>
-                          <Calendar className={`w-5 h-5 ${
-                            isActivo ? 'text-green-600' : isCerrado ? 'text-orange-600' : 'text-purple-600'
-                          }`} />
+                  return (
+                    <tr key={p.idPeriodo} className="hover:bg-gray-50 transition-colors">
+                      <td className="px-3 py-2 text-sm text-gray-900 font-medium">
+                        {p.idPeriodo}
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="text-sm font-medium text-gray-900">
+                          {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
                         </div>
-                        <div>
-                          <h3 className="text-xl font-bold text-gray-900">
-                            {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
-                          </h3>
-                          <p className="text-sm text-gray-500">ID: {p.idPeriodo}</p>
-                        </div>
-                      </div>
-                    </div>
-                    <span className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 ${getEstadoBadge(p.estado)}`}>
-                      {p.estado}
-                    </span>
-                  </div>
-
-                  {/* Estadísticas destacadas */}
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <TrendingUp className="w-4 h-4 text-blue-600" />
-                        <span className="text-xs font-medium text-blue-700">Total Turnos</span>
-                      </div>
-                      <p className="text-2xl font-bold text-blue-700">{total}</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Users className="w-4 h-4 text-green-600" />
-                        <span className="text-xs font-medium text-green-700">Asignados</span>
-                      </div>
-                      <p className="text-2xl font-bold text-green-700">{asignados}</p>
-                    </div>
-
-                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <CheckCircle2 className="w-4 h-4 text-purple-600" />
-                        <span className="text-xs font-medium text-purple-700">Ocupación</span>
-                      </div>
-                      <div className="space-y-1">
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
+                          {total}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
+                          {asignados}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
+                          {disponibles}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden min-w-[60px]">
                             <div
-                              className={`h-2.5 ${
+                              className={`h-2 ${
                                 ocupacion >= 80 ? 'bg-green-500' :
                                 ocupacion >= 50 ? 'bg-yellow-500' :
                                 'bg-red-500'
@@ -146,68 +198,67 @@ export default function TabPeriodos({
                               style={{ width: `${ocupacion}%` }}
                             />
                           </div>
+                          <span className="text-xs font-semibold text-gray-700 min-w-[40px]">
+                            {ocupacion.toFixed(1)}%
+                          </span>
                         </div>
-                        <p className="text-lg font-bold text-purple-700">{ocupacion.toFixed(1)}%</p>
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-                      <div className="flex items-center gap-2 mb-1">
-                        <Users className="w-4 h-4 text-gray-600" />
-                        <span className="text-xs font-medium text-gray-700">Disponibles</span>
-                      </div>
-                      <p className="text-2xl font-bold text-gray-700">{total - asignados}</p>
-                    </div>
-                  </div>
-
-                  {/* Fechas */}
-                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4 pb-4 border-b border-gray-200">
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Fecha de apertura: <span className="font-medium">{p.fechaInicio ? fmtDate(p.fechaInicio) : "—"}</span></span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="w-3.5 h-3.5" />
-                      <span>Fecha de cierre: <span className="font-medium">{p.fechaFin ? fmtDate(p.fechaFin) : "—"}</span></span>
-                    </div>
-                  </div>
-
-                  {/* Botones de acción */}
-                  <div className="flex flex-wrap gap-2">
-                    <button
-                      onClick={() => onVerDetallePeriodo?.(p)}
-                      className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
-                    >
-                      <Eye className="w-4 h-4" />
-                      Ver Detalle
-                    </button>
-
-                    <button
-                      onClick={() => onTogglePeriodo(p)}
-                      className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-2.5 font-semibold rounded-xl transition-all shadow-sm hover:shadow-md ${
-                        isActivo
-                          ? 'bg-orange-600 text-white hover:bg-orange-700'
-                          : 'bg-green-600 text-white hover:bg-green-700'
-                      }`}
-                      title={isActivo ? "Cerrar período" : "Activar período"}
-                    >
-                      {isActivo ? (
-                        <>
-                          <XCircle className="w-4 h-4" />
-                          Cerrar Periodo
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="w-4 h-4" />
-                          Activar Periodo
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <span className={`inline-block px-2 py-1 rounded-md text-xs font-semibold border ${getEstadoBadge(p.estado)}`}>
+                          {p.estado}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="text-xs text-gray-600 space-y-0.5">
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{p.fechaInicio ? fmtDate(p.fechaInicio) : "—"}</span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            <span>{p.fechaFin ? fmtDate(p.fechaFin) : "—"}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div className="flex items-center justify-center gap-1">
+                          <button
+                            onClick={() => onVerDetallePeriodo?.(p)}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-blue-600 text-white text-xs font-medium rounded hover:bg-blue-700 transition-colors"
+                            title="Ver detalle"
+                          >
+                            <Eye className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => onTogglePeriodo(p)}
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                              isActivo
+                                ? 'bg-orange-600 text-white hover:bg-orange-700'
+                                : 'bg-green-600 text-white hover:bg-green-700'
+                            }`}
+                            title={isActivo ? "Cerrar período" : "Activar período"}
+                          >
+                            {isActivo ? (
+                              <XCircle className="w-3 h-3" />
+                            ) : (
+                              <CheckCircle2 className="w-3 h-3" />
+                            )}
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Footer con contador */}
+          <div className="bg-gray-50 px-4 py-2 border-t border-gray-200">
+            <p className="text-xs text-gray-600">
+              Mostrando <span className="font-semibold">{sortedPeriodos.length}</span> período{sortedPeriodos.length !== 1 ? 's' : ''}
+            </p>
+          </div>
         </div>
       )}
     </div>

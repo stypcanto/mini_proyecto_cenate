@@ -97,6 +97,33 @@ async obtenerTodas(filtros = {}) {
     return data;
   },
 
+  /**
+   * Actualizar observación de un detalle de solicitud (solo coordinador)
+   */
+  async actualizarObservacionDetalle(idDetalle, observacion) {
+    const body = { observacion };
+    const data = await apiClient.put(`${BASE_URL}/detalle/${idDetalle}/observacion`, body, true);
+    return data;
+  },
+
+  /**
+   * Aprobar detalle individual de solicitud (solo coordinador)
+   */
+  async aprobarDetalle(idDetalle, observacion = "") {
+    const body = { observacion };
+    const data = await apiClient.post(`${BASE_URL}/detalle/${idDetalle}/aprobar`, body, true);
+    return data;
+  },
+
+  /**
+   * Rechazar detalle individual de solicitud (solo coordinador)
+   */
+  async rechazarDetalle(idDetalle, observacion) {
+    const body = { observacion };
+    const data = await apiClient.post(`${BASE_URL}/detalle/${idDetalle}/rechazar`, body, true);
+    return data;
+  },
+
 
   /**
    * Eliminar solicitud (solo BORRADOR)
