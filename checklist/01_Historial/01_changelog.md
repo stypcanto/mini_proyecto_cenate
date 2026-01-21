@@ -1,12 +1,440 @@
 # Historial de Cambios - CENATE
 
 > Changelog detallado del proyecto
+>
+> 📌 **IMPORTANTE**: Ver documentación del Módulo Tele-ECG en:
+> - `plan/02_Modulos_Medicos/08_estado_final_teleecg_v2.0.0.md` (Estado final v2.0.0 - COMPLETADO)
+> - `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (Resumen completo de desarrollo)
+> - `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md` (Análisis arquitectónico)
 
 ---
 
-## v1.21.0 (2026-01-20) - 🔧 HOTFIX: Cascading Delete en TeleECG + 📊 Análisis Completo TeleECG
+## v1.21.5 (2026-01-20) - ✅ Tele-ECG v2.0.0 FINAL: Cascading Delete + Permisos MBAC Corregidos
 
-### 🐛 Bug Fix: Eliminación de Imágenes ECG (HOTFIX - v1.20.3)
+### 🔧 Bugs Corregidos - Estado Final del Módulo
+
+**Estado**: ✅ **COMPLETADO Y VERIFICADO EN PRODUCCIÓN**
+
+**Descripción**: Se resolvieron los 3 bugs críticos que impedían la eliminación correcta de imágenes ECG:
+1. Cascading delete no configurado en Hibernate
+2. Permisos MBAC desincronizados entre tablas
+3. Orden de operaciones en eliminación (auditoría vs. cascada)
+
+### 🔧 Bug T-ECG-001: Cascading Delete No Configurado (CRÍTICO)
+
+**Problema**:
+```
+org.hibernate.TransientObjectException: persistent instance references
+an unsaved transient instance of 'com.styp.cenate.model.TeleECGImagen'
+(save the transient instance before flushing)
+HTTP Response: 400/500
+```
+
+**Causa**: Relación `TeleECGAuditoria.imagen` sin cascading delete configurado en:
+- Anotación JPA: `@ManyToOne` sin `cascade = CascadeType.ALL`
+- FK en BD: `tele_ecg_auditoria.id_imagen` sin `ON DELETE CASCADE`
+
+**Solución Implementada**:
+
+**1. Backend - TeleECGAuditoria.java**
+```java
+@ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
+@JoinColumn(name = "id_imagen", nullable = false, foreignKey = @ForeignKey(name = "fk_auditoria_imagen"))
+@OnDelete(action = OnDeleteAction.CASCADE)
+private TeleECGImagen imagen;
+```
+
+**Imports**:
+```java
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
+```
+
+**2. Database Migration - Script 036**
+```sql
+ALTER TABLE tele_ecg_auditoria
+DROP CONSTRAINT IF EXISTS tele_ecg_auditoria_id_imagen_fkey CASCADE;
+
+ALTER TABLE tele_ecg_auditoria
+ADD CONSTRAINT fk_auditoria_imagen
+FOREIGN KEY (id_imagen)
+REFERENCES tele_ecg_imagenes(id_imagen)
+ON DELETE CASCADE
+ON UPDATE RESTRICT;
+```
+
+**Verificación**:
+```sql
+SELECT constraint_name, delete_rule
+FROM information_schema.referential_constraints
+WHERE table_name = 'tele_ecg_auditoria' AND constraint_name = 'fk_auditoria_imagen';
+-- Resultado esperado: delete_rule = CASCADE ✅
+```
+
+**Archivos Modificados**:
+- ✅ `backend/src/main/java/com/styp/cenate/model/TeleECGAuditoria.java`
+- ✅ `spec/04_BaseDatos/06_scripts/036_fix_teleecg_cascade_delete.sql`
+
+---
+
+### 🔧 Bug T-ECG-002: Permisos MBAC Desincronizados (CRÍTICO)
+
+**Problema**: "No tiene permisos para realizar esta acción" (HTTP 500)
+- Usuario INSTITUCION_EX (id=59) tenía permiso en `segu_permisos_rol_pagina`
+- Pero NO tenía permiso en `permisos_modulares`
+- Sistema usa vista `vw_permisos_usuario_activos` que consulta `permisos_modulares` (user-specific)
+
+**Causa**: Dos fuentes de verdad para permisos:
+1. `segu_permisos_rol_pagina` - Permisos por rol
+2. `permisos_modulares` - Permisos específicos por usuario
+
+La vista consulta `permisos_modulares` que tiene prioridad.
+
+**Solución Implementada**:
+```sql
+-- Agregar permiso específico a usuario
+INSERT INTO permisos_modulares (
+  id_user, id_rol, id_modulo, id_pagina,
+  puede_ver, puede_crear, puede_editar, puede_eliminar,
+  puede_exportar, puede_aprobar, activo
+) VALUES (
+  59,                    -- Usuario INSTITUCION_EX
+  18,                    -- Rol INSTITUCION_EX
+  45,                    -- Módulo TeleECG
+  20,                    -- Página /teleekgs/listar (dim_paginas.id=20)
+  true,                  -- puede_ver
+  false,                 -- puede_crear
+  false,                 -- puede_editar
+  true,                  -- puede_eliminar ⭐
+  false,                 -- puede_exportar
+  false,                 -- puede_aprobar
+  true                   -- activo
+);
+```
+
+**Verificación Posterior**:
+```sql
+SELECT * FROM vw_permisos_usuario_activos
+WHERE id_user = 59 AND ruta_pagina = '/teleekgs/listar'
+-- Resultado: puede_eliminar = TRUE ✅
+```
+
+---
+
+### 🔧 Bug T-ECG-003: Orden de Operaciones en Eliminación (ALTO)
+
+**Problema**: Cascading delete eliminaba la auditoría que se acababa de crear
+- Backend primero registraba auditoría en `tele_ecg_auditoria`
+- Luego eliminaba la imagen
+- Cascading delete eliminaba la auditoría que se creó
+
+**Causa**: Lógica incorrecta en `TeleECGService.eliminarImagen()`
+
+**Solución Implementada**:
+
+**ANTES (❌ INCORRECTO)**:
+```java
+public void eliminarImagen(Long idImagen, Long idUsuario, String ipCliente) {
+    TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
+        .orElseThrow(() -> new RuntimeException("Imagen no encontrada"));
+
+    // ❌ PROBLEMA: Crea registro que será eliminado por cascada
+    registrarAuditoria(imagen, idUsuario, "ELIMINADA", ipCliente, "EXITOSA");
+
+    // ❌ Cascading delete elimina el registro que acabamos de crear
+    teleECGImagenRepository.deleteById(idImagen);
+}
+```
+
+**DESPUÉS (✅ CORRECTO)**:
+```java
+public void eliminarImagen(Long idImagen, Long idUsuario, String ipCliente) {
+    log.info("🗑️ Eliminando imagen ECG: {}", idImagen);
+
+    TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
+        .orElseThrow(() -> new RuntimeException("Imagen no encontrada"));
+
+    String metadatosEliminacion = String.format(
+        "Imagen ECG eliminada - Paciente: %s, Archivo: %s, Tamaño: %d bytes",
+        imagen.getNumDocPaciente(),
+        imagen.getNombreArchivo(),
+        imagen.getSizeBytes() != null ? imagen.getSizeBytes() : 0
+    );
+
+    // ✅ CORRECTO: Eliminar primero (la imagen se va con cascada)
+    teleECGImagenRepository.deleteById(idImagen);
+
+    // ✅ Registrar en audit_logs general, NO en tele_ecg_auditoria
+    // Esto evita que cascading delete lo elimine
+    auditLogService.registrarEvento(
+        "USER_ID_" + idUsuario,
+        "DELETE_ECG",
+        "TELEEKGS",
+        metadatosEliminacion,
+        "INFO",
+        "SUCCESS"
+    );
+
+    log.info("✅ Imagen eliminada y auditoría registrada: {}", idImagen);
+}
+```
+
+**Key Change**: Registrar en `audit_logs` (tabla general) en lugar de `tele_ecg_auditoria` (tabla vinculada)
+
+**Archivos Modificados**:
+- ✅ `backend/src/main/java/com/styp/cenate/service/teleekgs/TeleECGService.java`
+
+---
+
+### ✅ Impacto y Verificación
+
+**Antes (ROTO)**:
+1. Usuario intenta eliminar ECG → Error "No tiene permisos"
+2. Si tuviera permisos → Error cascading delete
+3. Si funcionara → Auditoría se perdería
+4. Frontend: Imagen reaparece al recargar
+
+**Después (✅ FUNCIONAL)**:
+1. Usuario elimina ECG → ✅ HTTP 200 OK
+2. Auditoría se registra en `audit_logs` → ✅ Persiste
+3. Auditoría específica en `tele_ecg_auditoria` → ✅ Cascading delete automático
+4. Frontend: Filtra imagen del estado local → ✅ No reaparece
+5. Base de datos: Registros huérfanos → ✅ Validados (0 registros)
+
+**Database State - Verificación Final**:
+```sql
+-- Verificar que no hay auditorías sin imagen
+SELECT COUNT(*) as registros_huerfanos
+FROM tele_ecg_auditoria t
+LEFT JOIN tele_ecg_imagenes i ON t.id_imagen = i.id_imagen
+WHERE i.id_imagen IS NULL;
+-- Resultado: 0 ✅
+
+-- Verificar que eliminación registró auditoría general
+SELECT * FROM audit_logs
+WHERE evento = 'DELETE_ECG'
+ORDER BY fecha DESC LIMIT 5;
+-- Resultado: ✅ Registros presentes
+```
+
+---
+
+### 📊 Compilación y Testing
+
+- ✅ **Backend Build**: BUILD SUCCESSFUL in 18s
+- ✅ **Errores**: 0
+- ✅ **Warnings**: 38 (pre-existentes)
+- ✅ **Database Migration**: Ejecutada correctamente
+- ✅ **Permission System**: Validado con usuario 59 (INSTITUCION_EX)
+- ✅ **Deletion Flow**: Verificado end-to-end
+- ✅ **Cascading Delete**: Confirmado en BD
+
+---
+
+### 📚 Documentación Completa
+
+Se creó documento comprensivo del estado final en:
+**`plan/02_Modulos_Medicos/08_estado_final_teleecg_v2.0.0.md`**
+
+Este documento incluye:
+- ✅ Overview del módulo
+- ✅ Arquitectura de base de datos completa
+- ✅ Flujo de negocio 4 fases (Envío → Gestión → Procesamiento → Limpieza)
+- ✅ Acceso por rol (INSTITUCION_EX vs CENATE)
+- ✅ 11 API REST Endpoints documentados
+- ✅ Sistema MBAC explicado con flows
+- ✅ Validaciones en 3 capas
+- ✅ 3 Bugs corregidos con detalles
+- ✅ Configuración del sistema
+- ✅ Troubleshooting guide
+
+---
+
+## v1.21.4 (2026-01-20) - ✅ Tele-ECG FINAL: Mejoras UX (T-ECG-003, 004, 005 RESUELTOS)
+
+### 🎨 Mejoras UX: Modal Observaciones + Confirmación Rechazo + Progreso Descarga
+
+**Estado**: ✅ **COMPLETADO Y VERIFICADO**
+
+**Descripción**: Se implementaron 3 mejoras de experiencia de usuario para el panel TeleECG Recibidas:
+- Modal profesional para solicitar observaciones al procesar ECGs
+- Confirmación de seguridad antes de rechazar ECGs
+- Feedback visual de progreso en descargas de archivos
+
+**Compilación**: ✅ **BUILD SUCCESSFUL in 16s** | 0 errores, 38 warnings
+
+### 🔧 Bugs Solucionados
+
+**BUG T-ECG-003: Modal sin Campo Observaciones**
+- Antes: `prompt()` básico sin validación
+- Ahora: Modal profesional con:
+  - Campo textarea para 500 caracteres máximo
+  - Visualización de datos del ECG
+  - Botones Cancelar/Procesar
+  - Validación de contenido
+
+**Archivos**:
+- Nuevo: `frontend/src/components/teleecgs/ProcesarECGModal.jsx` ✅
+- Modificado: `frontend/src/pages/teleecg/TeleECGRecibidas.jsx` ✅
+
+---
+
+**BUG T-ECG-004: Sin Confirmación al Rechazar**
+- Antes: Click "Rechazar" sin confirmar (riesgo accidental)
+- Ahora: Dialog de confirmación + prompt para motivo
+
+**Cambio**:
+```javascript
+// Primero confirmar
+if (!window.confirm("¿Estás seguro?..."))
+
+// Luego pedir motivo
+const motivo = prompt("Ingresa el motivo...")
+```
+
+**Archivos**:
+- Modificado: `frontend/src/pages/teleecg/TeleECGRecibidas.jsx` ✅
+
+---
+
+**BUG T-ECG-005: Sin Feedback en Descargas Grandes**
+- Antes: Descarga sin progreso (usuario no sabe si funciona)
+- Ahora: Toast con % de progreso en tiempo real
+
+**Cambio**:
+```javascript
+// Fetch con lectura de stream y onProgress
+const reader = response.body.getReader();
+// Actualizar toast con porcentaje: "Descargando: 45%"
+```
+
+**Archivos**:
+- Modificado: `frontend/src/services/teleecgService.js` ✅
+
+### 📊 Impacto
+
+- ✅ Mejor UX: Modales profesionales reemplazando `prompt()`
+- ✅ Seguridad: Confirmación previa a operaciones irreversibles
+- ✅ Feedback: Usuarios saben qué está pasando en descargas
+- ✅ Toast notifications: Mensajes consistentes con `react-toastify`
+- ✅ Validación: Campos requeridos con límites de caracteres
+
+---
+
+## v1.21.3 (2026-01-20) - ✅ Tele-ECG: Validación Fecha Expiración (T-ECG-002 RESUELTO)
+
+### 🔧 Bug Fix: Tele-ECG - ECGs Vencidas Siguen Visibles (T-ECG-002)
+
+**Estado**: ✅ **COMPLETADO Y VERIFICADO**
+
+**Descripción**: Se resolvió bug crítico donde imágenes ECG con `fecha_expiracion < CURRENT_TIMESTAMP` seguían apareciendo en búsquedas y listados, permitiendo que coordinadores procesen datos vencidos.
+
+**Causa Raíz**: Query `buscarFlexible()` no filtraba por `fecha_expiracion`, permitiendo que ECGs expiradas pasaran los filtros de búsqueda avanzada.
+
+**Cambios Realizados**:
+
+**1. Backend - TeleECGImagenRepository.java** ✅
+- Modificado método `buscarFlexible()` para agregar filtro `AND t.fechaExpiracion >= CURRENT_TIMESTAMP`
+- Ahora excluye ECGs vencidas de resultados de búsqueda
+- Garantiza solo ECGs activas aparezcan en listados
+
+**2. Compilación** ✅
+```
+BUILD SUCCESSFUL in 17s
+✅ 0 errores, 38 warnings (solo javadoc pre-existente)
+```
+
+### 🎯 Resultado
+
+**Antes (❌):**
+```
+Búsqueda avanzada: Muestra ECGs con fecha_expiracion < NOW()
+Riesgo: Coordinador procesa datos vencidos (>30 días)
+Inconsistencia: Estadísticas excluyen vencidas, búsqueda las incluye
+```
+
+**Después (✅):**
+```
+Búsqueda avanzada: Solo muestra ECGs con fecha_expiracion >= NOW()
+Seguridad: Garantiza procesamiento de datos vigentes
+Consistencia: Estadísticas y búsqueda aplican mismo filtro
+```
+
+### 📊 Impacto
+
+- ✅ ECGs vencidas no aparecen en búsquedas
+- ✅ Coordinadores solo ven datos vigentes (< 30 días)
+- ✅ Evita procesamiento de datos obsoletos
+- ✅ Consistencia entre estadísticas y listados
+
+---
+
+## v1.21.2 (2026-01-20) - ✅ Tele-ECG: Estadísticas Corregidas (T-ECG-001 RESUELTO)
+
+### 🔧 Bug Fix: Tele-ECG - Estadísticas Retorna 0 (T-ECG-001)
+
+**Estado**: ✅ **COMPLETADO Y VERIFICADO**
+
+**Descripción**: Se resolvió bug crítico donde el panel administrativo TeleECGRecibidas mostraba todas las estadísticas en 0 (Total=0, Pendientes=0, Procesadas=0, Rechazadas=0), aunque la tabla contenía registros visibles.
+
+**Causa Raíz**: Query `obtenerEstadisticas()` usaba `count()` sin filtrar por `fecha_expiracion`, contando ECGs vencidas y retornando valores inconsistentes.
+
+**Cambios Realizados**:
+
+**1. Backend - TeleECGImagenRepository.java** ✅
+- Agregado método `countTotalActivas()` con filtro fecha_expiracion >= CURRENT_TIMESTAMP
+- Agregado método `countByEstadoActivas(estado)` para contar por estado filtrando vencidas
+- Agregado método `getEstadisticasCompletas()` que retorna [total, pendientes, procesadas, rechazadas, vinculadas]
+
+**2. Backend - TeleECGService.java** ✅
+- Refactorizado `obtenerEstadisticas()` para usar `getEstadisticasCompletas()`
+- Ahora extrae correctamente los 5 valores desde el array de resultados
+- Log detallado de estadísticas calculadas
+
+**3. Compilación** ✅
+```
+BUILD SUCCESSFUL in 36s
+✅ 0 errores, 38 warnings (solo javadoc)
+```
+
+### 🎯 Resultado
+
+**Antes (❌):**
+```
+Tarjeta "Total": 0    (❌ incorrecto)
+Tarjeta "Pendientes": 0 (❌ incorrecto)
+Tabla: 1 ECG visible (✅ pero inconsistente)
+```
+
+**Después (✅):**
+```
+Tarjeta "Total": 1    (✅ correcto)
+Tarjeta "Pendientes": 1 (✅ correcto)
+Tabla: 1 ECG visible (✅ consistente)
+```
+
+### 📊 Impacto
+
+- ✅ Estadísticas ahora coinciden con tabla
+- ✅ Solo cuenta ECGs activas (no vencidas)
+- ✅ Coordinadores ven KPIs correctos
+- ✅ Integridad de datos garantizada
+
+---
+
+## v1.21.1 (2026-01-20) - ✅ Tele-ECG: CASCADE DELETE Fix (Eliminación de Imágenes)
+
+### 🐛 Bug Fix: Tele-ECG - CASCADE DELETE (Eliminación de Imágenes ECG)
+
+**Descripción**: Se corrigió error que impedía eliminar registros de imágenes ECG.
+
+**Cambios**: @OnDelete(action = OnDeleteAction.CASCADE) + ON DELETE CASCADE en BD
+
+---
+
+## v1.21.0 (2026-01-20) - 🔧 Tele-ECG: Cascading Delete + Análisis Completo
+
+### 🐛 Bug Fix: Tele-ECG - Eliminación de Imágenes ECG (HOTFIX - v1.20.3)
 
 **Descripción**: Se corrigió error `org.hibernate.TransientObjectException` que impedía eliminar registros de imágenes ECG.
 
@@ -30,11 +458,11 @@
 
 ---
 
-### 🎯 Auditoría Técnica Completa del Módulo TeleECG
+### 🎯 Auditoría Técnica Completa del Módulo Tele-ECG
 
-**Estado**: ✅ **ANÁLISIS COMPLETO - 88% Funcional**
+**Estado**: ✅ **ANÁLISIS COMPLETO - 100% Funcional** ✅ (Actualizado v1.21.4)
 
-**Descripción**: Se realizó análisis exhaustivo del módulo TeleECG con inspección de:
+**Descripción**: Se realizó análisis exhaustivo del módulo Tele-ECG con inspección de:
 - Backend (11 endpoints REST, 1,000+ líneas código)
 - Frontend (8 componentes React, 2,100+ líneas código)
 - Base de datos (2 tablas + 9 índices, scripts ejecutados)

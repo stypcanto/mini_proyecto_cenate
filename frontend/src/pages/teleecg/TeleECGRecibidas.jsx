@@ -17,6 +17,8 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import teleecgService from "../../services/teleecgService";
 import VisorECGModal from "../../components/teleecgs/VisorECGModal";
+import ProcesarECGModal from "../../components/teleecgs/ProcesarECGModal";
+import toast from "react-hot-toast";
 
 /**
  * 🫀 TeleECGRecibidas - Panel administrativo de ECGs consolidado
@@ -32,6 +34,10 @@ export default function TeleECGRecibidas() {
   const [selectedECG, setSelectedECG] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+
+  // ✅ FIX T-ECG-003: Modal para procesar con observaciones
+  const [showProcesarModal, setShowProcesarModal] = useState(false);
+  const [ecgParaProcesar, setEcgParaProcesar] = useState(null);
 
   // Estadísticas consolidadas
   const [stats, setStats] = useState({
@@ -121,38 +127,54 @@ export default function TeleECGRecibidas() {
   };
 
   /**
-   * Procesar ECG (aceptar)
+   * ✅ FIX T-ECG-003: Procesar ECG - Abrir modal para observaciones
    */
-  const handleProcesar = async (idImagen) => {
-    const observaciones = prompt("Ingresa observaciones (opcional):");
-    if (observaciones === null) return;
+  const handleProcesar = (ecg) => {
+    setEcgParaProcesar(ecg);
+    setShowProcesarModal(true);
+  };
 
+  /**
+   * Confirmar procesamiento con observaciones
+   */
+  const handleConfirmarProcesamiento = async (observaciones) => {
     try {
-      await teleecgService.procesarImagen(idImagen, observaciones);
-      alert("✅ ECG procesada exitosamente");
+      await teleecgService.procesarImagen(ecgParaProcesar.idImagen, observaciones);
+      toast.success("✅ ECG procesada exitosamente");
+      setShowProcesarModal(false);
+      setEcgParaProcesar(null);
       await cargarECGs();
       await cargarEstadisticas();
     } catch (error) {
       console.error("❌ Error al procesar ECG:", error);
-      alert("Error al procesar la ECG");
+      toast.error("Error al procesar la ECG");
     }
   };
 
   /**
-   * Rechazar ECG
+   * ✅ FIX T-ECG-004: Rechazar ECG - Con confirmación
    */
   const handleRechazar = async (idImagen) => {
+    // Primero pedir confirmación
+    if (!window.confirm("¿Estás seguro de que deseas rechazar esta ECG? Esta acción no se puede deshacer.")) {
+      return;
+    }
+
+    // Luego pedir motivo
     const motivo = prompt("Ingresa el motivo del rechazo:");
-    if (motivo === null) return;
+    if (!motivo || motivo.trim() === "") {
+      toast("El motivo del rechazo es requerido", { icon: "⚠️" });
+      return;
+    }
 
     try {
       await teleecgService.rechazarImagen(idImagen, motivo);
-      alert("✅ ECG rechazada");
+      toast.success("✅ ECG rechazada exitosamente");
       await cargarECGs();
       await cargarEstadisticas();
     } catch (error) {
       console.error("❌ Error al rechazar ECG:", error);
-      alert("Error al rechazar la ECG");
+      toast.error("Error al rechazar la ECG");
     }
   };
 
@@ -553,10 +575,10 @@ export default function TeleECGRecibidas() {
                             <Download className="w-4 h-4" />
                           </button>
 
-                          {/* Procesar (si está pendiente) */}
+                          {/* Procesar (si está pendiente) - ✅ FIX T-ECG-003 */}
                           {ecg.estado === "PENDIENTE" && (
                             <button
-                              onClick={() => handleProcesar(ecg.idImagen)}
+                              onClick={() => handleProcesar(ecg)}
                               title="Procesar/Aceptar"
                               className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors"
                             >
@@ -603,6 +625,18 @@ export default function TeleECGRecibidas() {
           onDescargar={() =>
             handleDescargar(selectedECG.idImagen, selectedECG.nombreArchivo)
           }
+        />
+      )}
+
+      {/* ✅ FIX T-ECG-003: Modal para procesar ECG con observaciones */}
+      {showProcesarModal && ecgParaProcesar && (
+        <ProcesarECGModal
+          ecg={ecgParaProcesar}
+          onConfirm={handleConfirmarProcesamiento}
+          onCancel={() => {
+            setShowProcesarModal(false);
+            setEcgParaProcesar(null);
+          }}
         />
       )}
     </div>

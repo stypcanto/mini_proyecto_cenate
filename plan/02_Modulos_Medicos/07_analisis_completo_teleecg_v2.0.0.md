@@ -34,14 +34,15 @@ El módulo **TeleECG** es un sistema **production-ready** para gestión centrali
 
 | Aspecto | Status | Completitud | Notas |
 |---------|--------|-------------|-------|
-| **Backend** | ✅ Listo | 100% | 11 endpoints, 1,000+ líneas, sin bugs críticos |
+| **Backend** | ✅ Listo | 100% | 11 endpoints, 1,000+ líneas, CASCADE DELETE ✅ |
 | **Frontend** | ✅ Funcional | 100% | 8 componentes, 2,100+ líneas, UX issues menores |
-| **Base de Datos** | ✅ Operativo | 100% | Ejecutado en 10.0.89.13, scripts validados |
+| **Base de Datos** | ✅ Operativo | 100% | Ejecutado en 10.0.89.13, FK CASCADE ✅ |
 | **Seguridad** | ✅ Compliant | 100% | OWASP Top 10, JWT, MBAC, auditoría completa |
 | **Testing** | ✅ Exhaustivo | 89% | 65+ tests automatizados |
-| **Deployment** | ⏳ Pendiente | 12% | Requiere bug fixes + validación |
+| **Deployment** | ⏳ Pendiente | 12% | Requiere 4 bug fixes restantes + validación |
 
-**Progreso Total: 88%** → 100% después de fixes (Fase 5)
+**Progreso Total: 88% → 89%** (1 bug resuelto)
+**Target: 100%** después de fixes pendientes (Fase 5)
 
 ### ⏱️ Timeline Estimado
 
@@ -412,7 +413,18 @@ CREATE INDEX idx_tele_ecg_compuesto ON tele_ecg_imagenes(num_doc_paciente, estad
 
 ---
 
-## BUGS IDENTIFICADOS
+## BUGS IDENTIFICADOS Y ESTADO
+
+### ✅ BUGS RESUELTOS
+
+**BUG CASCADE DELETE (v1.21.1)** - 🔴 ERA CRÍTICO
+- ✅ FK Cascade Delete entre `tele_ecg_auditoria` e `tele_ecg_imagenes`
+- ✅ Compilación: BUILD SUCCESSFUL
+- ✅ FK Constraint verificada: delete_rule = CASCADE
+- ✅ Eliminación de imágenes funciona sin errores
+- 📁 Script: `spec/04_BaseDatos/06_scripts/036_fix_teleecg_cascade_delete.sql`
+
+---
 
 ### 🔴 CRÍTICOS (Bloquean deployment)
 

@@ -217,6 +217,8 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     /**
      * Búsqueda flexible con múltiples filtros
      * Usado por: filtrados avanzados en frontend
+     * ✅ FIX T-ECG-002: Agregado filtro fecha_expiracion >= CURRENT_TIMESTAMP
+     *    Evita que ECGs vencidas aparezcan en los resultados de búsqueda
      */
     @Query("""
         SELECT t FROM TeleECGImagen t
@@ -226,6 +228,7 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
           AND t.statImagen = 'A'
           AND t.fechaEnvio >= :fechaDesde
           AND t.fechaEnvio <= :fechaHasta
+          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
         ORDER BY t.fechaEnvio DESC
         """)
     Page<TeleECGImagen> buscarFlexible(
@@ -287,4 +290,44 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
         @Param("sha256") String sha256,
         @Param("hace_x_minutos") LocalDateTime hacexMinutos
     );
+
+    /**
+     * ✅ FIX T-ECG-001: Obtener total de imágenes ACTIVAS y NO VENCIDAS
+     * Agregado: Filtro fecha_expiracion >= CURRENT_TIMESTAMP
+     * Evita contar ECGs que ya pasaron su periodo de 30 días
+     */
+    @Query("""
+        SELECT COUNT(t) FROM TeleECGImagen t
+        WHERE t.statImagen = 'A'
+          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+        """)
+    Long countTotalActivas();
+
+    /**
+     * ✅ FIX T-ECG-001: Contar imágenes por estado (ACTIVAS + NO VENCIDAS)
+     */
+    @Query("""
+        SELECT COUNT(t) FROM TeleECGImagen t
+        WHERE t.estado = :estado
+          AND t.statImagen = 'A'
+          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+        """)
+    Long countByEstadoActivas(@Param("estado") String estado);
+
+    /**
+     * ✅ FIX T-ECG-001: Obtener todas las estadísticas en una sola query
+     * Retorna: [total, pendientes, procesadas, rechazadas, vinculadas]
+     */
+    @Query("""
+        SELECT
+            COUNT(t) as total,
+            SUM(CASE WHEN t.estado = 'PENDIENTE' THEN 1 ELSE 0 END) as pendientes,
+            SUM(CASE WHEN t.estado = 'PROCESADA' THEN 1 ELSE 0 END) as procesadas,
+            SUM(CASE WHEN t.estado = 'RECHAZADA' THEN 1 ELSE 0 END) as rechazadas,
+            SUM(CASE WHEN t.estado = 'VINCULADA' THEN 1 ELSE 0 END) as vinculadas
+        FROM TeleECGImagen t
+        WHERE t.statImagen = 'A'
+          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+        """)
+    Object[] getEstadisticasCompletas();
 }

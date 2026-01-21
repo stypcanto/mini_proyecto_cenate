@@ -525,3 +525,125 @@ El módulo TeleEKG está completamente testeado, documentado y listo para desple
 **Estado Actual (2026-01-13):** 🎉 88% Completado - Fase 4 (Testing & QA) ✅ FINALIZADA
 **Estado Final Esperado:** 🎉 Go-live Fase 5 (Deployment) - Pendiente confirmación usuario
 
+---
+
+# FASE 5: DEPLOYMENT & FIXES (ACTUALIZADO 2026-01-20)
+
+**Duración Estimada:** 3-5 días | **Estado:** ⏳ 12% EN PROGRESO
+
+## 5.1 Bugs Identificados y Estado (Análisis 2026-01-20)
+
+### Bugs Resueltos
+
+| ID | Severidad | Descripción | Resolución | Estado |
+|----|-----------|-------------|-----------|--------|
+| T-ECG-CASCADE | 🔴 ERA CRÍTICO | FK Cascade Delete no configurado | Backend + BD actualizado | ✅ RESUELTO (v1.21.1) |
+
+### Bugs Pendientes
+
+| ID | Severidad | Descripción | Ubicación | Estimado | Estado |
+|----|-----------|-------------|-----------|----------|--------|
+| T-ECG-001 | 🔴 CRÍTICO | Estadísticas BD retorna 0 | TeleECGImagenRepository | 2h | ⏳ |
+| T-ECG-002 | 🔴 CRÍTICO | ECGs vencidas visibles | TeleECGImagenRepository | 1h | ⏳ |
+| T-ECG-003 | 🟠 MEDIO | Modal sin observaciones | TeleECGRecibidas.jsx | 2h | ⏳ |
+| T-ECG-004 | 🟡 BAJO | Sin confirmación rechazo | TeleECGRecibidas.jsx | 1h | ⏳ |
+| T-ECG-005 | 🟡 BAJO | Sin feedback descarga | teleecgService.js | 2h | ⏳ |
+
+**Resumen:** 6 bugs identificados | 1 resuelto ✅ | 5 pendientes | **Críticos:** 2 | **Estimado Fix Restante:** 7 horas
+
+### 5.1.1 Fijar Bugs Críticos
+
+| # | Tarea | Estado | Responsable | Estimado | Notas |
+|---|-------|--------|-------------|----------|-------|
+| 5.1.1.1 | Arreglar query estadísticas BD (T-ECG-001) | ⏳ Pendiente | Backend | 2h | Ver doc: 07_analisis_completo_teleecg_v2.0.0.md |
+| 5.1.1.2 | Filtrar ECGs vencidas en queries (T-ECG-002) | ⏳ Pendiente | Backend | 1h | Agregar AND fecha_expiracion >= CURRENT_TIMESTAMP |
+| 5.1.1.3 | Testing después de fixes | ⏳ Pendiente | QA | 1h | Ejecutar 65+ tests |
+
+### 5.1.2 Mejorar UX
+
+| # | Tarea | Estado | Responsable | Estimado | Notas |
+|---|-------|--------|-------------|----------|-------|
+| 5.1.2.1 | Agregar modal observaciones procesar (T-ECG-003) | ⏳ Pendiente | Frontend | 2h | Modal prompt() antes de PROCESAR |
+| 5.1.2.2 | Agregar confirmación rechazar (T-ECG-004) | ⏳ Pendiente | Frontend | 1h | confirm() dialog |
+| 5.1.2.3 | Barra progreso descarga (T-ECG-005) | ⏳ Pendiente | Frontend | 2h | Toast notification con porcentaje |
+
+## 5.2 Preparativos Pre-Deploy
+
+| # | Tarea | Estado | Responsable | Responsable | Notas |
+|---|-------|--------|-------------|-------------|-------|
+| 5.2.1 | Verificar servidor 10.0.89.13 conectividad | ⏳ Pendiente | DevOps | SSH test |
+| 5.2.2 | Validar /opt/cenate/teleekgs/ directory | ⏳ Pendiente | DevOps | chmod 755, escritura |
+| 5.2.3 | Verificar tablas BD existentes | ⏳ Pendiente | DBA | psql query |
+| 5.2.4 | Validar SMTP relay funcional | ⏳ Pendiente | DevOps | Test email envío |
+| 5.2.5 | Backup completo BD (antes deploy) | ⏳ Pendiente | DBA | pg_dump maestro_cenate |
+| 5.2.6 | Backup filesystem /opt/cenate/teleekgs/ | ⏳ Pendiente | DevOps | tar.gz |
+
+## 5.3 Build & Deploy
+
+| # | Tarea | Estado | Responsable | Notas |
+|---|-------|--------|-------------|-------|
+| 5.3.1 | Backend: ./gradlew clean build | ⏳ Pendiente | Backend | JAR generado |
+| 5.3.2 | Frontend: npm run build | ⏳ Pendiente | Frontend | dist/ generado |
+| 5.3.3 | Deploy a staging (puerto 8081, 3001) | ⏳ Pendiente | DevOps | Test 1-2 horas |
+| 5.3.4 | Deploy a producción (puerto 8080, 3000) | ⏳ Pendiente | DevOps | Validar health checks |
+| 5.3.5 | Monitoreo 24h post-deploy | ⏳ Pendiente | DevOps | Alertas: errors, disk space |
+
+## 5.4 Validación Post-Deploy
+
+| # | Escenario | Estado | Esperado |
+|---|-----------|--------|----------|
+| 5.4.1 | Upload ECG 5MB JPEG | ⏳ Pendiente | ✅ Subido, estado PENDIENTE |
+| 5.4.2 | Listar ECGs con filtros | ⏳ Pendiente | ✅ Tabla muestra datos + estadísticas correctas |
+| 5.4.3 | Procesar ECG (con observaciones) | ⏳ Pendiente | ✅ Modal pide notas, estado → PROCESADA |
+| 5.4.4 | Rechazar ECG (con confirmación) | ⏳ Pendiente | ✅ confirm() + motivo, estado → RECHAZADA |
+| 5.4.5 | Descargar ECG (con progreso) | ⏳ Pendiente | ✅ Barra progreso visible |
+| 5.4.6 | Auditoría registra acciones | ⏳ Pendiente | ✅ GET /api/teleekgs/{id}/auditoria retorna eventos |
+| 5.4.7 | Scheduler limpieza 2am | ⏳ Pendiente | ✅ ECGs vencidas → inactivas |
+
+## 5.5 Documentación Usuarios
+
+| # | Documento | Estado | Responsable | Notas |
+|---|-----------|--------|-------------|-------|
+| 5.5.1 | Manual PDF: "Cómo enviar un ECG (IPRESS)" | ⏳ Pendiente | Docs | Español, screenshots |
+| 5.5.2 | Manual PDF: "Cómo procesar ECGs (Coordinador)" | ⏳ Pendiente | Docs | Español, screenshots |
+| 5.5.3 | Video tutorial YouTube (screencast) | ⏳ Pendiente | Docs | 5-10 minutos |
+| 5.5.4 | FAQ resolución problemas comunes | ⏳ Pendiente | Docs | Preguntas frecuentes |
+| 5.5.5 | Email notificación usuarios | ⏳ Pendiente | Marketing | "TeleECG ya disponible" |
+
+## 5.6 Resumen Estado Fase 5
+
+```
+PRE-DEPLOYMENT (Actual):       ⏳ 20% (↑ from 12%)
+├─ Bugs identificados:         ✅ 100%
+├─ Bugs resueltos:             ✅ 1/6 (CASCADE DELETE)
+├─ Fixes pendientes:           ✅ 5 identificados + Código fuente
+├─ Documentación:              ✅ 100%
+└─ Preparativos:               ⏳ 0%
+
+DEPLOYMENT:                    ⏳ 0%
+├─ Build Backend/Frontend:     ⏳ 0%
+├─ Deploy Staging:             ⏳ 0%
+├─ Deploy Producción:          ⏳ 0%
+└─ Validación:                 ⏳ 0%
+
+POST-DEPLOYMENT:               ⏳ 0%
+├─ Documentación usuarios:     ⏳ 0%
+├─ Capacitación:               ⏳ 0%
+└─ Monitoreo 24h:              ⏳ 0%
+
+PROGRESO TOTAL: 12% → 20% (bug CASCADE DELETE resuelto)
+DESTINO FINAL: 100% (estimado 3-4 días más)
+
+Estado Módulo:
+  v1.21.0 → v1.21.1: 88% → 89% (CASCADE DELETE ✅)
+  Target:            89% → 100% (después de 5 fixes restantes)
+```
+
+---
+
+**Documentación Asociada:**
+- Análisis Completo: `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md` (NUEVA)
+- Reporte de Bugs: `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` (NUEVA)
+
+**Próxima Actualización:** Después de fijar bugs + validar en servidor
+

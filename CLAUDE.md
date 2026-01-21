@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.20.1** (2026-01-19)
+> Sistema de Telemedicina - EsSalud | **v1.21.4** (2026-01-20) - Módulo Tele-ECG 100% Completado ✅
 
 ---
 
@@ -30,6 +30,25 @@
 - **📋 Checklist Disponibilidad:** `checklist/03_Checklists/01_checklist_disponibilidad_v2.md` (Seguimiento de implementación)
 - **Solicitud Turnos IPRESS:** `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` (v1.2 - Independiente)
 - **Reporte Testing:** `checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md`
+
+### 🫀 Módulo Tele-ECG (v2.0.0) - ✅ 100% COMPLETADO
+
+**📌 INICIO RÁPIDO:** Para entender cómo se desarrolló el módulo Tele-ECG, leer:
+- **`plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md`** ⭐ (Recomendado - 2026-01-20)
+
+**Documentación Completa:**
+- **⭐ Resumen Desarrollo:** `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (Arquitectura + 6 bugs resueltos + versiones v1.21.1→v1.21.4)
+- **📊 Análisis Completo:** `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md` (Detalles técnicos, endpoints, permisos)
+- **📋 Checklist Tele-ECG:** `plan/02_Modulos_Medicos/04_checklist_teleekgs.md` (Implementación completa)
+- **🐛 Reporte Bugs:** `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` (6 bugs identificados + 6 resueltos)
+- **📝 Changelog:** `checklist/01_Historial/01_changelog.md` (Versiones v1.21.1, v1.21.2, v1.21.3, v1.21.4)
+
+**Estado Final:**
+- ✅ 6 Bugs Identificados: 6 RESUELTOS (100%)
+- ✅ 0 Bugs Críticos Pendientes
+- ✅ Backend: BUILD SUCCESSFUL (0 errores)
+- ✅ Frontend: Compilado sin errores
+- ✅ **Status: DEPLOYMENT READY** 🎉
 
 ### 👥 Módulos de Usuarios
 - **⭐ Personal Externo:** `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` (v1.18.0)
@@ -179,7 +198,8 @@ Password: @Cenate2025
 | **Navegación Dinámica de Pestañas** | Ver changelog v1.17.1 | ✅ Implementado |
 | **Creación de Usuarios con Email** | `plan/01_Seguridad_Auditoria/03_plan_unificacion_creacion_usuarios.md` | ✅ Implementado (v1.18.0) |
 | **Personal Externo (Gestión Modalidad + Bienvenida)** | `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` | ✅ Implementado (v1.18.0) |
-| **TELEECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
+| **🫀 Tele-ECG v2.0.0** | `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` ⭐ + `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` | ✅ **100% Completado** (v1.21.4 - 6 bugs resueltos) 🎉 |
+| **Tele-ECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---

@@ -1,4 +1,5 @@
 import apiClient, { API_BASE_URL, getToken } from "./apiClient";
+import toast from "react-hot-toast";
 
 /**
  * 🫀 Servicio para gestionar operaciones de TeleECG
@@ -121,12 +122,57 @@ const teleecgService = {
   },
 
   /**
-   * Descargar una imagen ECG
+   * ✅ FIX T-ECG-005: Descargar una imagen ECG con feedback visual
+   * Muestra notificación al comenzar y al completar descarga
    */
   descargarImagen: async (idImagen, nombreArchivo) => {
-    return apiClient.get(`/teleekgs/${idImagen}/descargar`, true).then((response) => {
-      // Crear un URL de blob y descargar
-      const url = window.URL.createObjectURL(new Blob([response]));
+    try {
+      // Mostrar notificación inicial
+      toast("Iniciando descarga...", { icon: "📥" });
+
+      const token = getToken();
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const response = await fetch(`${API_BASE_URL}/teleekgs/${idImagen}/descargar`, {
+        method: "GET",
+        headers,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Obtener el tamaño total del archivo (si está disponible)
+      const contentLength = response.headers.get("content-length");
+      const total = parseInt(contentLength, 10);
+
+      // Leer el blob con progreso
+      const reader = response.body.getReader();
+      const chunks = [];
+      let loaded = 0;
+
+      while (true) {
+        const { done, value } = await reader.read();
+
+        if (done) break;
+
+        chunks.push(value);
+        loaded += value.length;
+
+        // Log de progreso en consola para debugging
+        if (total) {
+          const percentCompleted = Math.round((loaded * 100) / total);
+          console.log(`Descargando: ${percentCompleted}%`);
+        }
+      }
+
+      // Crear blob y descargar
+      const blob = new Blob(chunks);
+      const url = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = url;
       link.setAttribute("download", nombreArchivo || "ecg.jpg");
@@ -134,8 +180,16 @@ const teleecgService = {
       link.click();
       link.parentNode.removeChild(link);
       window.URL.revokeObjectURL(url);
+
+      // Mostrar éxito
+      toast.success("✅ Descarga completada");
+
       return response;
-    });
+    } catch (error) {
+      console.error("❌ Error al descargar:", error);
+      toast.error("Error al descargar la imagen");
+      throw error;
+    }
   },
 
   /**

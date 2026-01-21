@@ -323,13 +323,17 @@ public class TeleECGService {
     public TeleECGEstadisticasDTO obtenerEstadisticas() {
         log.info("📊 Generando estadísticas TeleEKG");
 
-        long totalImagenes = teleECGImagenRepository.count();
-        long pendientes = teleECGImagenRepository.countByEstadoAndStatImagenEquals("PENDIENTE", "A");
-        long procesadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("PROCESADA", "A");
-        long rechazadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("RECHAZADA", "A");
-        long vinculadas = teleECGImagenRepository.countByEstadoAndStatImagenEquals("VINCULADA", "A");
-        // Activas = pendientes + procesadas + rechazadas + vinculadas (todas con stat_imagen='A')
-        long activas = pendientes + procesadas + rechazadas + vinculadas;
+        // ✅ FIX T-ECG-001: Usar query que filtra por fecha_expiracion
+        Object[] estadisticasArr = teleECGImagenRepository.getEstadisticasCompletas();
+
+        long totalImagenes = estadisticasArr[0] != null ? ((Number) estadisticasArr[0]).longValue() : 0;
+        long pendientes = estadisticasArr[1] != null ? ((Number) estadisticasArr[1]).longValue() : 0;
+        long procesadas = estadisticasArr[2] != null ? ((Number) estadisticasArr[2]).longValue() : 0;
+        long rechazadas = estadisticasArr[3] != null ? ((Number) estadisticasArr[3]).longValue() : 0;
+        long vinculadas = estadisticasArr[4] != null ? ((Number) estadisticasArr[4]).longValue() : 0;
+
+        log.info("✅ Estadísticas calculadas: Total={}, Pendientes={}, Procesadas={}, Rechazadas={}, Vinculadas={}",
+            totalImagenes, pendientes, procesadas, rechazadas, vinculadas);
 
         TeleECGEstadisticasDTO estadisticas = TeleECGEstadisticasDTO.builder()
             .fecha(LocalDateTime.now().toLocalDate())
@@ -338,7 +342,7 @@ public class TeleECGService {
             .totalImagenesRechazadas(rechazadas)
             .totalImagenesVinculadas(vinculadas)
             .totalImagenesPendientes(pendientes)
-            .totalImagenesActivas(activas)
+            .totalImagenesActivas(totalImagenes)  // Todas activas (ya filtradas por fecha_expiracion)
             .tasaRechazoPorcentaje(totalImagenes > 0 ? (rechazadas * 100.0 / totalImagenes) : 0.0)
             .tasaVinculacionPorcentaje(procesadas > 0 ? (vinculadas * 100.0 / procesadas) : 0.0)
             .tasaProcesamientoPorcentaje(totalImagenes > 0 ? (procesadas * 100.0 / totalImagenes) : 0.0)
@@ -373,6 +377,11 @@ public class TeleECGService {
 
     /**
      * Eliminar una imagen ECG de la base de datos (eliminación física)
+     *
+     * IMPORTANTE: No registrar auditoría antes de eliminar porque el cascading delete
+     * eliminaría también el registro de auditoría que acaba de crearse.
+     * La auditoría se registra DESPUÉS de verificar que la imagen existe, pero
+     * el registro se guarda sin vincular a la imagen (si es necesario auditar).
      */
     public void eliminarImagen(Long idImagen, Long idUsuario, String ipCliente) {
         log.info("🗑️ Eliminando imagen ECG: {}", idImagen);
@@ -380,13 +389,28 @@ public class TeleECGService {
         TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
             .orElseThrow(() -> new RuntimeException("Imagen no encontrada"));
 
-        // Registrar auditoría antes de eliminar
-        registrarAuditoria(imagen, idUsuario, "ELIMINADA", ipCliente, "EXITOSA");
+        // Guardar datos de auditoría ANTES de eliminar
+        String metadatosEliminacion = String.format(
+            "Imagen ECG eliminada - Paciente: %s, Archivo: %s, Tamaño: %d bytes",
+            imagen.getNumDocPaciente(),
+            imagen.getNombreArchivo(),
+            imagen.getSizeBytes() != null ? imagen.getSizeBytes() : 0
+        );
 
-        // Eliminar de la BD (la cascada DELETE en auditoria lo elimina todo)
+        // Eliminar de la BD (cascading delete elimina auditoría relacionada)
         teleECGImagenRepository.deleteById(idImagen);
 
-        log.info("✅ Imagen eliminada: {}", idImagen);
+        // Registrar en log de auditoría general del sistema (no vinculado a imagen)
+        auditLogService.registrarEvento(
+            "USER_ID_" + idUsuario,
+            "DELETE_ECG",
+            "TELEEKGS",
+            metadatosEliminacion,
+            "INFO",
+            "SUCCESS"
+        );
+
+        log.info("✅ Imagen eliminada y auditoría registrada: {}", idImagen);
     }
 
     /**
