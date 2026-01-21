@@ -1,14 +1,16 @@
 // ========================================================================
 // 🎠 CarrouselECGModal.jsx – Visualizador de Múltiples ECGs en Carrusel
-// ✅ VERSIÓN 1.0.0 - CENATE 2026
+// ✅ VERSIÓN 1.1.0 - CENATE 2026
 // Especialmente diseñado para PADOMI (4-10 imágenes por paciente)
+// v1.1.0: Carga dinámica de imágenes desde API
 // ========================================================================
 
-import React, { useState } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   X, ChevronLeft, ChevronRight, Download, ZoomIn, ZoomOut,
-  RotateCw, AlertCircle
+  RotateCw, AlertCircle, Loader2
 } from "lucide-react";
+import teleecgService from "../../services/teleecgService";
 
 /**
  * Carrusel de múltiples imágenes ECG con navegación
@@ -22,6 +24,49 @@ export default function CarrouselECGModal({ imagenes, paciente, onClose, onDesca
   const [currentIndex, setCurrentIndex] = useState(0);
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
+
+  // v1.1.0: Estado para imágenes cargadas dinámicamente
+  const [loadedImages, setLoadedImages] = useState({});
+  const [loadingImage, setLoadingImage] = useState(false);
+  const [imageError, setImageError] = useState(null);
+
+  // v1.1.0: Cargar imagen actual desde API
+  const cargarImagen = useCallback(async (index) => {
+    const imagen = imagenes[index];
+    if (!imagen) return;
+
+    const idImagen = imagen.id_imagen || imagen.idImagen;
+
+    // Si ya está cargada, no recargar
+    if (loadedImages[idImagen]) return;
+
+    setLoadingImage(true);
+    setImageError(null);
+
+    try {
+      console.log(`📥 Cargando imagen ${idImagen}...`);
+      const data = await teleecgService.verPreview(idImagen);
+
+      setLoadedImages(prev => ({
+        ...prev,
+        [idImagen]: {
+          contenidoImagen: data.contenidoImagen,
+          tipoContenido: data.tipoContenido || 'image/jpeg'
+        }
+      }));
+      console.log(`✅ Imagen ${idImagen} cargada`);
+    } catch (error) {
+      console.error(`❌ Error cargando imagen ${idImagen}:`, error);
+      setImageError(`Error al cargar la imagen: ${error.message}`);
+    } finally {
+      setLoadingImage(false);
+    }
+  }, [imagenes, loadedImages]);
+
+  // v1.1.0: Cargar imagen al cambiar de índice
+  useEffect(() => {
+    cargarImagen(currentIndex);
+  }, [currentIndex, cargarImagen]);
 
   if (!imagenes || imagenes.length === 0) {
     return (
@@ -43,8 +88,12 @@ export default function CarrouselECGModal({ imagenes, paciente, onClose, onDesca
   }
 
   const imagenActual = imagenes[currentIndex];
-  const imageUrl = imagenActual?.contenidoImagen
-    ? `data:${imagenActual?.tipoContenido};base64,${imagenActual?.contenidoImagen}`
+  const idImagenActual = imagenActual?.id_imagen || imagenActual?.idImagen;
+
+  // v1.1.0: Obtener imagen cargada del estado
+  const loadedImage = loadedImages[idImagenActual];
+  const imageUrl = loadedImage?.contenidoImagen
+    ? `data:${loadedImage.tipoContenido || 'image/jpeg'};base64,${loadedImage.contenidoImagen}`
     : null;
 
   const siguienteFoto = () => {
@@ -115,7 +164,23 @@ export default function CarrouselECGModal({ imagenes, paciente, onClose, onDesca
           <div className="flex-1 flex flex-col bg-gray-100">
             {/* Visor */}
             <div className="flex-1 flex items-center justify-center relative overflow-auto">
-              {imageUrl ? (
+              {loadingImage ? (
+                <div className="text-center text-gray-500">
+                  <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                  <p>Cargando imagen...</p>
+                </div>
+              ) : imageError ? (
+                <div className="text-center text-red-500">
+                  <AlertCircle className="w-12 h-12 mx-auto mb-4" />
+                  <p>{imageError}</p>
+                  <button
+                    onClick={() => cargarImagen(currentIndex)}
+                    className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Reintentar
+                  </button>
+                </div>
+              ) : imageUrl ? (
                 <img
                   src={imageUrl}
                   alt={`ECG ${currentIndex + 1}`}
@@ -127,7 +192,8 @@ export default function CarrouselECGModal({ imagenes, paciente, onClose, onDesca
                 />
               ) : (
                 <div className="text-center text-gray-500">
-                  <p>No hay imagen disponible</p>
+                  <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+                  <p>Cargando imagen...</p>
                 </div>
               )}
 
@@ -207,8 +273,10 @@ export default function CarrouselECGModal({ imagenes, paciente, onClose, onDesca
                 <p className="text-xs font-semibold text-gray-600 mb-2">Imágenes</p>
                 <div className="flex flex-wrap gap-2">
                   {imagenes.map((img, index) => {
-                    const thumbUrl = img?.contenidoImagen
-                      ? `data:${img?.tipoContenido};base64,${img?.contenidoImagen}`
+                    const imgId = img?.id_imagen || img?.idImagen;
+                    const loadedImg = loadedImages[imgId];
+                    const thumbUrl = loadedImg?.contenidoImagen
+                      ? `data:${loadedImg.tipoContenido || 'image/jpeg'};base64,${loadedImg.contenidoImagen}`
                       : null;
 
                     return (
@@ -232,7 +300,7 @@ export default function CarrouselECGModal({ imagenes, paciente, onClose, onDesca
                           />
                         ) : (
                           <div className="w-full h-full bg-gray-100 flex items-center justify-center text-xs text-gray-500">
-                            ?
+                            {index + 1}
                           </div>
                         )}
                         <div className="absolute inset-0 flex items-center justify-center bg-black/20 text-white text-xs font-bold">

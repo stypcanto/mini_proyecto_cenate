@@ -1,15 +1,15 @@
-# 🐛 REPORTE DE BUGS - Módulo Tele-ECG v2.0.0
+# 🐛 REPORTE DE BUGS - Módulo Tele-ECG v3.1.0
 
 **Proyecto:** CENATE - Centro Nacional de Telemedicina
-**Módulo:** Tele-ECG v2.0.0 (Filesystem Storage)
-**Fecha Reporte:** 2026-01-20
+**Módulo:** Tele-ECG v3.1.0 (Almacenamiento BYTEA + Filesystem Dual)
+**Fecha Reporte:** 2026-01-20 (Actualizado: 2026-01-21)
 **Fase:** 5 - Deployment (COMPLETADO ✅)
 **Analista:** Ing. Styp Canto Rondón
 
 > 📌 **DOCUMENTACIÓN RELACIONADA:**
 > - Resumen Desarrollo: `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md`
 > - Análisis Completo: `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md`
-> - Changelog: `checklist/01_Historial/01_changelog.md` (v1.21.1 → v1.21.4)
+> - Changelog: `checklist/01_Historial/01_changelog.md` (v1.21.1 → v1.22.1)
 
 ---
 
@@ -17,8 +17,8 @@
 
 | Métrica | Valor |
 |---------|-------|
-| **Total Bugs Identificados** | 6 |
-| **Bugs Resueltos** | 6 ✅ **TODOS COMPLETADOS** |
+| **Total Bugs Identificados** | 12 (6 originales + 6 almacenamiento BYTEA) |
+| **Bugs Resueltos** | 12 ✅ **TODOS COMPLETADOS** |
 | **Bugs Pendientes** | 0 |
 | **Críticos (🔴)** | 0 RESTANTES ✅ |
 | **Medios (🟠)** | 0 RESTANTES ✅ |
@@ -328,10 +328,169 @@ while (true) {
 
 ---
 
+---
+
+## ✅ BUGS BYTEA RESUELTOS (v1.22.1)
+
+### BUG #T-ECG-BYTEA-001: Columna contenido_imagen No Existe
+
+**Identificación:**
+```
+ID:             T-ECG-BYTEA-001
+Severidad:      🔴 CRÍTICO
+Componente:     Base de Datos
+Archivo:        spec/04_BaseDatos/06_scripts/041_teleecg_bytea_storage.sql
+Impacto:        IMÁGENES NO SE PODÍAN SUBIR
+Estado:         ✅ RESUELTO (v1.22.1)
+```
+
+**Solución Implementada:**
+```sql
+ALTER TABLE tele_ecg_imagenes
+ADD COLUMN contenido_imagen BYTEA;
+```
+
+---
+
+### BUG #T-ECG-BYTEA-002: BYTEA Mapeado como BIGINT (Hibernate 6)
+
+**Identificación:**
+```
+ID:             T-ECG-BYTEA-002
+Severidad:      🔴 CRÍTICO
+Componente:     Backend - TeleECGImagen.java
+Error:          column "contenido_imagen" is of type bytea but expression is of type bigint
+Impacto:        ERROR EN INSERT DE IMÁGENES
+Estado:         ✅ RESUELTO (v1.22.1)
+```
+
+**Problema**: Hibernate 6 con `@Lob` generaba tipo incorrecto.
+
+**Solución Implementada:**
+```java
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+// Antes: @Lob (INCORRECTO)
+// Después:
+@JdbcTypeCode(SqlTypes.BINARY)
+@Column(name = "contenido_imagen")
+private byte[] contenidoImagen;
+```
+
+---
+
+### BUG #T-ECG-BYTEA-003: JSONB Mapeado como VARCHAR (Hibernate 6)
+
+**Identificación:**
+```
+ID:             T-ECG-BYTEA-003
+Severidad:      🔴 CRÍTICO
+Componente:     Backend - TeleECGImagen.java
+Error:          column "nota_clinica_hallazgos" is of type jsonb but expression is of type character varying
+Impacto:        ERROR EN INSERT DE NOTA CLÍNICA
+Estado:         ✅ RESUELTO (v1.22.1)
+```
+
+**Solución Implementada:**
+```java
+@JdbcTypeCode(SqlTypes.JSON)
+@Column(name = "nota_clinica_hallazgos", columnDefinition = "jsonb")
+private String notaClinicaHallazgos;
+
+@JdbcTypeCode(SqlTypes.JSON)
+@Column(name = "nota_clinica_plan_seguimiento", columnDefinition = "jsonb")
+private String notaClinicaPlanSeguimiento;
+```
+
+---
+
+### BUG #T-ECG-BYTEA-004: Constraint chk_storage_tipo No Incluye DATABASE
+
+**Identificación:**
+```
+ID:             T-ECG-BYTEA-004
+Severidad:      🟠 MEDIO
+Componente:     Base de Datos
+Error:          violates check constraint "chk_storage_tipo"
+Impacto:        NO SE PODÍA GUARDAR CON storage_tipo='DATABASE'
+Estado:         ✅ RESUELTO (v1.22.1)
+```
+
+**Solución Implementada:**
+```sql
+ALTER TABLE tele_ecg_imagenes DROP CONSTRAINT chk_storage_tipo;
+ALTER TABLE tele_ecg_imagenes ADD CONSTRAINT chk_storage_tipo
+CHECK (storage_tipo IN ('FILESYSTEM', 'S3', 'MINIO', 'DATABASE'));
+```
+
+---
+
+### BUG #T-ECG-BYTEA-005: Imágenes No Cargan en CarrouselECGModal
+
+**Identificación:**
+```
+ID:             T-ECG-BYTEA-005
+Severidad:      🟠 MEDIO
+Componente:     Frontend - CarrouselECGModal.jsx
+Problema:       Carrusel esperaba contenidoImagen pre-cargado
+Impacto:        IMÁGENES NO SE VISUALIZABAN EN CARRUSEL
+Estado:         ✅ RESUELTO (v1.22.1)
+```
+
+**Solución Implementada:**
+```jsx
+// Estado para imágenes cargadas dinámicamente
+const [loadedImages, setLoadedImages] = useState({});
+
+// Cargar imagen desde API cuando se necesita
+const cargarImagen = useCallback(async (index) => {
+  const data = await teleecgService.verPreview(idImagen);
+  setLoadedImages(prev => ({
+    ...prev,
+    [idImagen]: {
+      contenidoImagen: data.contenidoImagen,
+      tipoContenido: data.tipoContenido || 'image/jpeg'
+    }
+  }));
+}, [imagenes, loadedImages]);
+
+// Generar URL de imagen
+const imageUrl = `data:${tipoContenido};base64,${contenidoImagen}`;
+```
+
+---
+
+### BUG #T-ECG-BYTEA-006: Imágenes No Cargan en ModalEvaluacionECG (Triaje Clínico)
+
+**Identificación:**
+```
+ID:             T-ECG-BYTEA-006
+Severidad:      🟠 MEDIO
+Componente:     Frontend - ModalEvaluacionECG.jsx
+Problema:       Mostraba [object Object] en lugar de imagen
+Impacto:        IMÁGENES NO SE VISUALIZABAN EN TRIAJE CLÍNICO
+Estado:         ✅ RESUELTO (v1.22.1)
+```
+
+**Solución Implementada:**
+```jsx
+const cargarImagenIndice = async (index, imagenes) => {
+  const data = await teleecgService.verPreview(idImagen);
+  if (data && data.contenidoImagen) {
+    const tipoContenido = data.tipoContenido || 'image/jpeg';
+    const dataUrl = `data:${tipoContenido};base64,${data.contenidoImagen}`;
+    setImagenData(dataUrl);
+  }
+};
+```
+
+---
+
 ## ✅ TODOS LOS BUGS RESUELTOS - DEPLOYMENT READY
 
 **Resumen Final:**
-- ✅ 6 bugs identificados: **6 RESUELTOS (100%)**
+- ✅ 12 bugs identificados: **12 RESUELTOS (100%)**
 - ✅ 0 bugs críticos pendientes
 - ✅ 0 bugs medios pendientes
 - ✅ 0 bugs menores pendientes
@@ -343,6 +502,7 @@ while (true) {
 - v1.21.2: T-ECG-001 (Estadísticas)
 - v1.21.3: T-ECG-002 (Fecha Expiración)
 - v1.21.4: T-ECG-003, T-ECG-004, T-ECG-005 (UX)
+- v1.22.1: T-ECG-BYTEA-001 a 006 (Almacenamiento BYTEA + Visualización)
 
 ---
 
@@ -796,14 +956,15 @@ Admin:       Styp Canto (SUPERADMIN)
 
 **Status Final**: 🎉 **DEPLOYMENT READY**
 
-El Módulo Tele-ECG v2.0.0 ha sido completamente desarrollado, probado y documentado:
+El Módulo Tele-ECG v3.1.0 ha sido completamente desarrollado, probado y documentado:
 
-- ✅ **6 bugs identificados**: 6 RESUELTOS (100%)
+- ✅ **12 bugs identificados**: 12 RESUELTOS (100%)
 - ✅ **0 bugs críticos**: NINGUNO PENDIENTE
 - ✅ **0 bugs medios**: NINGUNO PENDIENTE
 - ✅ **0 bugs menores**: NINGUNO PENDIENTE
 - ✅ **Backend**: BUILD SUCCESSFUL (0 errores)
 - ✅ **Frontend**: Compilado sin errores
+- ✅ **Almacenamiento**: BYTEA (DATABASE) + Filesystem (FILESYSTEM) dual
 - ✅ **Documentación**: COMPLETA
 
 ### Documentación Referenciada

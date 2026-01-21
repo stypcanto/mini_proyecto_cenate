@@ -10,6 +10,189 @@
 
 ---
 
+## v1.22.1 (2026-01-21) - ✅ Tele-ECG: Almacenamiento BYTEA en PostgreSQL + Visualización Dinámica
+
+### 🎯 Descripción
+
+**Implementación de almacenamiento de imágenes ECG directamente en PostgreSQL usando BYTEA** en lugar de filesystem, y corrección de visualización de imágenes en los modales de CENATE.
+
+**Cambios principales**:
+1. ✅ Nueva columna `contenido_imagen` (BYTEA) en `tele_ecg_imagenes`
+2. ✅ Corrección de mappings JPA para Hibernate 6 (BYTEA + JSONB)
+3. ✅ Actualización de constraint `chk_storage_tipo` para incluir 'DATABASE'
+4. ✅ Carga dinámica de imágenes en `CarrouselECGModal.jsx`
+5. ✅ Visualización correcta en `ModalEvaluacionECG.jsx` (Triaje Clínico - ECG)
+
+**Estado**: ✅ **COMPLETADO**
+
+### 📋 Cambios Principales
+
+#### 1️⃣ Base de Datos - Nueva Columna BYTEA
+
+**Script SQL**: `spec/04_BaseDatos/06_scripts/041_teleecg_bytea_storage.sql`
+
+```sql
+-- Agregar columna BYTEA para almacenamiento en BD
+ALTER TABLE tele_ecg_imagenes
+ADD COLUMN contenido_imagen BYTEA;
+
+-- Cambiar default de storage_tipo a 'DATABASE'
+ALTER TABLE tele_ecg_imagenes
+ALTER COLUMN storage_tipo SET DEFAULT 'DATABASE';
+
+-- Actualizar constraint para incluir 'DATABASE'
+ALTER TABLE tele_ecg_imagenes DROP CONSTRAINT chk_storage_tipo;
+ALTER TABLE tele_ecg_imagenes ADD CONSTRAINT chk_storage_tipo
+CHECK (storage_tipo IN ('FILESYSTEM', 'S3', 'MINIO', 'DATABASE'));
+```
+
+#### 2️⃣ Backend - Corrección de Mappings JPA (Hibernate 6)
+
+**Archivo**: `backend/src/main/java/com/styp/cenate/model/TeleECGImagen.java`
+
+**Problema**: Hibernate 6 requiere anotaciones específicas para tipos BYTEA y JSONB.
+
+**Solución**:
+```java
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+// BYTEA field - Antes: @Lob (causaba error bigint)
+@JdbcTypeCode(SqlTypes.BINARY)
+@Column(name = "contenido_imagen")
+private byte[] contenidoImagen;
+
+// JSONB fields - Antes: sin anotación (causaba error varchar)
+@JdbcTypeCode(SqlTypes.JSON)
+@Column(name = "nota_clinica_hallazgos", columnDefinition = "jsonb")
+private String notaClinicaHallazgos;
+
+@JdbcTypeCode(SqlTypes.JSON)
+@Column(name = "nota_clinica_plan_seguimiento", columnDefinition = "jsonb")
+private String notaClinicaPlanSeguimiento;
+```
+
+#### 3️⃣ Frontend - Carga Dinámica en CarrouselECGModal
+
+**Archivo**: `frontend/src/components/teleecgs/CarrouselECGModal.jsx`
+
+**Problema**: El carrusel esperaba `contenidoImagen` pre-cargado, pero el API de listado solo retorna metadatos.
+
+**Solución**: Carga dinámica de imágenes vía API `teleecgService.verPreview()`:
+```jsx
+import React, { useState, useEffect, useCallback } from "react";
+import teleecgService from "../../services/teleecgService";
+
+// Estado para imágenes cargadas dinámicamente
+const [loadedImages, setLoadedImages] = useState({});
+const [loadingImage, setLoadingImage] = useState(false);
+
+// Cargar imagen desde API cuando se necesita
+const cargarImagen = useCallback(async (index) => {
+  const imagen = imagenes[index];
+  const idImagen = imagen?.id_imagen || imagen?.idImagen;
+  if (loadedImages[idImagen]) return;
+
+  setLoadingImage(true);
+  try {
+    const data = await teleecgService.verPreview(idImagen);
+    setLoadedImages(prev => ({
+      ...prev,
+      [idImagen]: {
+        contenidoImagen: data.contenidoImagen,
+        tipoContenido: data.tipoContenido || 'image/jpeg'
+      }
+    }));
+  } catch (error) {
+    setImageError(`Error al cargar la imagen: ${error.message}`);
+  } finally {
+    setLoadingImage(false);
+  }
+}, [imagenes, loadedImages]);
+
+// Generar URL de imagen desde data cargada
+const loadedImage = loadedImages[idImagenActual];
+const imageUrl = loadedImage?.contenidoImagen
+  ? `data:${loadedImage.tipoContenido};base64,${loadedImage.contenidoImagen}`
+  : null;
+```
+
+#### 4️⃣ Frontend - Visualización en ModalEvaluacionECG (Triaje Clínico)
+
+**Archivo**: `frontend/src/components/teleecgs/ModalEvaluacionECG.jsx`
+
+**Problema**: El modal mostraba `[object Object]` en lugar de la imagen.
+
+**Solución**: Conversión correcta de respuesta API a data URL:
+```jsx
+const cargarImagenIndice = async (index, imagenes) => {
+  try {
+    const imagen = imagenes[index];
+    const idImagen = imagen?.id_imagen || imagen?.idImagen;
+    setZoom(100);
+    setRotacion(0);
+    setImagenData(null); // Mostrar indicador de carga
+
+    const data = await teleecgService.verPreview(idImagen);
+    if (data && data.contenidoImagen) {
+      const tipoContenido = data.tipoContenido || 'image/jpeg';
+      const dataUrl = `data:${tipoContenido};base64,${data.contenidoImagen}`;
+      setImagenData(dataUrl);
+    } else if (typeof data === 'string' && data.startsWith('data:')) {
+      setImagenData(data);
+    }
+  } catch (error) {
+    console.error("❌ Error cargando imagen:", error);
+    setImagenData(null);
+  }
+};
+```
+
+### 🐛 Bugs Resueltos
+
+| ID | Severidad | Problema | Solución |
+|----|-----------|----------|----------|
+| T-ECG-BYTEA-001 | 🔴 CRÍTICO | `column contenido_imagen does not exist` | Ejecutar script SQL 041 |
+| T-ECG-BYTEA-002 | 🔴 CRÍTICO | `bytea but expression is bigint` (Hibernate) | `@JdbcTypeCode(SqlTypes.BINARY)` |
+| T-ECG-BYTEA-003 | 🔴 CRÍTICO | `jsonb but expression is varchar` (Hibernate) | `@JdbcTypeCode(SqlTypes.JSON)` |
+| T-ECG-BYTEA-004 | 🟠 MEDIO | `violates chk_storage_tipo constraint` | Actualizar CHECK con 'DATABASE' |
+| T-ECG-BYTEA-005 | 🟠 MEDIO | Imágenes no se visualizan en Carrusel | Carga dinámica con `verPreview()` |
+| T-ECG-BYTEA-006 | 🟠 MEDIO | Imágenes no se visualizan en Triaje Clínico | Conversión a data URL |
+
+### 📁 Archivos Modificados
+
+```
+Backend:
+├── TeleECGImagen.java
+│   ├── [+] import JdbcTypeCode, SqlTypes
+│   ├── [✏️] @JdbcTypeCode(SqlTypes.BINARY) en contenidoImagen
+│   └── [✏️] @JdbcTypeCode(SqlTypes.JSON) en campos JSONB
+
+Database:
+└── 041_teleecg_bytea_storage.sql (NUEVO)
+    ├── [+] columna contenido_imagen BYTEA
+    ├── [+] default storage_tipo = 'DATABASE'
+    └── [+] constraint actualizado
+
+Frontend:
+├── CarrouselECGModal.jsx
+│   ├── [+] estado loadedImages, loadingImage
+│   ├── [+] función cargarImagen()
+│   └── [✏️] renderizado con carga dinámica
+│
+└── ModalEvaluacionECG.jsx
+    └── [✏️] cargarImagenIndice() con conversión data URL
+```
+
+### 📊 Notas de Migración
+
+- **Imágenes NUEVAS**: Se guardan en BD (`storage_tipo = 'DATABASE'`)
+- **Imágenes EXISTENTES**: Siguen en filesystem (`storage_tipo = 'FILESYSTEM'`)
+- **Código Java**: Detecta automáticamente el tipo y lee de la ubicación correcta
+- **Compatibilidad**: 100% hacia atrás, no requiere migrar imágenes existentes
+
+---
+
 ## v1.22.0 (2026-01-21) - ✅ Tele-ECG: Columna Evaluación CENATE + Agrupación Pacientes
 
 ### 🎯 Descripción

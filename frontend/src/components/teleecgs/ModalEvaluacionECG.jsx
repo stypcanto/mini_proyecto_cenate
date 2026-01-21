@@ -111,15 +111,40 @@ export default function ModalEvaluacionECG({
       // Restablecer zoom y rotación al cambiar imagen
       setZoom(100);
       setRotacion(0);
+      setImagenData(null); // Mostrar loading
 
       // Intentar preview, si falla descargar directamente
       try {
         const data = await teleecgService.verPreview(idImagen);
-        setImagenData(data);
+        // Convertir a data URL si es objeto con contenidoImagen
+        if (data && data.contenidoImagen) {
+          const tipoContenido = data.tipoContenido || 'image/jpeg';
+          const dataUrl = `data:${tipoContenido};base64,${data.contenidoImagen}`;
+          setImagenData(dataUrl);
+        } else if (typeof data === 'string' && data.startsWith('data:')) {
+          // Ya es un data URL
+          setImagenData(data);
+        } else {
+          console.warn("⚠️ Formato de respuesta no reconocido:", data);
+          setImagenData(null);
+        }
       } catch (previewError) {
         console.warn("⚠️ Preview no disponible, descargando directamente...");
-        const data = await teleecgService.descargarImagenBase64(idImagen);
-        setImagenData(data);
+        try {
+          const data = await teleecgService.descargarImagenBase64(idImagen);
+          if (data && data.contenidoImagen) {
+            const tipoContenido = data.tipoContenido || 'image/jpeg';
+            const dataUrl = `data:${tipoContenido};base64,${data.contenidoImagen}`;
+            setImagenData(dataUrl);
+          } else if (typeof data === 'string' && data.startsWith('data:')) {
+            setImagenData(data);
+          } else {
+            setImagenData(null);
+          }
+        } catch (downloadError) {
+          console.error("❌ Error descargando imagen:", downloadError);
+          setImagenData(null);
+        }
       }
     } catch (error) {
       console.error("❌ Error cargando imagen:", error);
@@ -334,11 +359,16 @@ export default function ModalEvaluacionECG({
                         className="max-h-full max-w-full object-contain"
                       />
                     </div>
+                  ) : imagenesActuales.length > 0 ? (
+                    <div className="flex-1 flex flex-col items-center justify-center">
+                      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+                      <p className="text-gray-500">Cargando imagen...</p>
+                    </div>
                   ) : (
                     <div className="flex-1 flex items-center justify-center">
                       <AlertCircle className="text-gray-400" size={48} />
                       <p className="text-gray-500 ml-2">
-                        No se pudo cargar la imagen
+                        No hay imágenes disponibles
                       </p>
                     </div>
                   )}

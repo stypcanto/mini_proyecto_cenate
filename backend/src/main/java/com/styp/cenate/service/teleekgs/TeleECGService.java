@@ -135,30 +135,34 @@ public class TeleECGService {
             throw new RuntimeException("Imagen duplicada detectada (ID: " + duplicado.get().getIdImagen() + ")");
         }
 
-        // 4. Guardar archivo en filesystem
-        String rutaCompleta = fileStorageService.guardarArchivo(
-            dto.getArchivo(),
-            dto.getNumDocPaciente(),
-            ipressOrigen.getCodIpress()
-        );
-        log.info("✅ Archivo guardado: {}", rutaCompleta);
-
-        // 5. Verificar integridad
-        if (!fileStorageService.verificarIntegridad(rutaCompleta, sha256)) {
-            fileStorageService.eliminarArchivo(rutaCompleta);
-            throw new RuntimeException("Error de integridad al guardar archivo");
+        // 4. v1.22.0: Leer contenido de imagen para almacenar en BD (BYTEA)
+        byte[] contenidoImagen;
+        try {
+            contenidoImagen = dto.getArchivo().getBytes();
+            log.info("✅ Imagen leída para BD: {} bytes", contenidoImagen.length);
+        } catch (IOException e) {
+            throw new RuntimeException("Error al leer contenido de imagen: " + e.getMessage(), e);
         }
 
-        // 6. Crear registro en BD
+        // 5. Generar nombre de archivo único (para referencia)
+        String timestamp = LocalDateTime.now()
+            .format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd_HHmmss"));
+        String unique = java.util.UUID.randomUUID().toString().substring(0, 4);
+        String extension = obtenerExtension(dto.getArchivo().getOriginalFilename());
+        String nombreArchivo = String.format("%s_%s_%s.%s",
+            dto.getNumDocPaciente(), timestamp, unique, extension);
+
+        // 6. v1.22.0: Crear registro en BD con imagen BYTEA
         TeleECGImagen imagen = new TeleECGImagen();
         imagen.setNumDocPaciente(dto.getNumDocPaciente());
         imagen.setNombresPaciente(dto.getNombresPaciente());
         imagen.setApellidosPaciente(dto.getApellidosPaciente());
-        imagen.setStorageTipo("FILESYSTEM");
-        imagen.setStorageRuta(rutaCompleta);
-        imagen.setNombreArchivo(new java.io.File(rutaCompleta).getName());
+        imagen.setStorageTipo("DATABASE");  // v1.22.0: Almacenamiento en BD
+        imagen.setStorageRuta("bytea://" + nombreArchivo);  // Referencia simbólica
+        imagen.setContenidoImagen(contenidoImagen);  // v1.22.0: BYTEA content
+        imagen.setNombreArchivo(nombreArchivo);
         imagen.setNombreOriginal(dto.getArchivo().getOriginalFilename());
-        imagen.setExtension(obtenerExtension(dto.getArchivo().getOriginalFilename()));
+        imagen.setExtension(extension);
         imagen.setMimeType(dto.getArchivo().getContentType());
         imagen.setSizeBytes(dto.getArchivo().getSize());
         imagen.setSha256(sha256);
@@ -236,6 +240,7 @@ public class TeleECGService {
 
     /**
      * Descargar contenido de imagen (JPEG/PNG)
+     * v1.22.0: Lee desde BYTEA en BD o filesystem (legacy)
      */
     public byte[] descargarImagen(Long idImagen, Long idUsuario, String ipCliente) throws IOException {
         log.info("⬇️ Descargando imagen: {}", idImagen);
@@ -243,8 +248,18 @@ public class TeleECGService {
         TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
             .orElseThrow(() -> new RuntimeException("Imagen no encontrada"));
 
-        // Leer desde filesystem
-        byte[] contenido = fileStorageService.leerArchivo(imagen.getStorageRuta());
+        byte[] contenido;
+
+        // v1.22.0: Verificar tipo de almacenamiento
+        if ("DATABASE".equals(imagen.getStorageTipo()) && imagen.getContenidoImagen() != null) {
+            // Leer desde BD (BYTEA)
+            contenido = imagen.getContenidoImagen();
+            log.info("✅ Imagen leída desde BD: {} bytes", contenido.length);
+        } else {
+            // Legacy: Leer desde filesystem
+            contenido = fileStorageService.leerArchivo(imagen.getStorageRuta());
+            log.info("✅ Imagen leída desde filesystem: {} bytes", contenido.length);
+        }
 
         // Registrar auditoría
         registrarAuditoria(imagen, idUsuario, "DESCARGADA", ipCliente, "EXITOSA");

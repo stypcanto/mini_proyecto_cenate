@@ -1,9 +1,9 @@
-# 📋 Resumen de Desarrollo - Módulo Tele-ECG v3.0.0
+# 📋 Resumen de Desarrollo - Módulo Tele-ECG v3.1.0
 
 > **Documento de Referencia del Desarrollo del Módulo Tele-ECG**
 > Fecha: 2026-01-20 (Actualizado: 2026-01-21)
 > Autor: Ing. Styp Canto Rondón
-> Versión Final: v1.21.6 (Triaje Clínico con Nota Clínica - v3.0.0)
+> Versión Final: v1.22.1 (Almacenamiento BYTEA + Visualización Dinámica - v3.1.0)
 
 ---
 
@@ -19,18 +19,19 @@ El **Módulo Tele-ECG** es un subsistema completo de CENATE que gestiona la rece
 
 | Métrica | Valor |
 |---------|-------|
-| **Versión Final** | v1.21.6 (2026-01-21 - Triaje Clínico + Nota Clínica v3.0.0) |
-| **Bugs Identificados** | 10 (6 funcionalidad + 2 navegación + 1 consolidación + 1 nota clínica) |
-| **Bugs Resueltos** | 10 (100%) ✅ |
-| **Horas de Desarrollo** | ~15 horas |
-| **Archivos Modificados** | 14 (Backend + Frontend + Config + DTO) |
-| **Archivos Creados** | 5 (Modal + Estadísticas + DTO Agrupación + DTO NotaClinica + Migration) |
-| **Líneas de Código** | ~2000+ líneas |
-| **Estado Módulo** | **100% COMPLETADO + TRIAJE CLÍNICO INTEGRADO** 🎉 |
-| **Ciclo PADOMI** | ✅ Upload → Procesar → Auditoría |
+| **Versión Final** | v1.22.1 (2026-01-21 - Almacenamiento BYTEA + Visualización Dinámica v3.1.0) |
+| **Bugs Identificados** | 16 (10 previos + 6 almacenamiento BYTEA) |
+| **Bugs Resueltos** | 16 (100%) ✅ |
+| **Horas de Desarrollo** | ~18 horas |
+| **Archivos Modificados** | 17 (Backend + Frontend + Config + DTO + Scripts SQL) |
+| **Archivos Creados** | 6 (Modal + Estadísticas + DTO Agrupación + DTO NotaClinica + Migration + Script BYTEA) |
+| **Líneas de Código** | ~2200+ líneas |
+| **Estado Módulo** | **100% COMPLETADO + ALMACENAMIENTO BYTEA** 🎉 |
+| **Ciclo PADOMI** | ✅ Upload → Procesar → Auditoría (Almacenamiento BD) |
 | **Ciclo CENATE** | ✅ Recepción → Consolidación → Evaluación + Nota Clínica → Descarga |
 | **Consolidación ECGs** | ✅ 1 fila/asegurado con carrusel de 4 imágenes |
 | **Triaje Clínico** | ✅ 3 tabs (Ver, Evaluar, Nota Clínica) con almacenamiento JSONB |
+| **Almacenamiento** | ✅ BYTEA en PostgreSQL (DATABASE) + Filesystem (FILESYSTEM) dual |
 
 ---
 
@@ -103,13 +104,21 @@ Tablas:
 │   ├── fecha_expiracion (Auto +30 días)
 │   ├── observaciones (T-ECG-003)
 │   ├── motivo_rechazo (T-ECG-004)
-│   └── stat_imagen (A=Activo, I=Inactivo)
+│   ├── stat_imagen (A=Activo, I=Inactivo)
+│   ├── contenido_imagen (BYTEA) ✅ v1.22.1 - Almacenamiento en BD
+│   ├── storage_tipo (ENUM: FILESYSTEM, DATABASE, S3, MINIO) ✅ v1.22.1
+│   ├── nota_clinica_hallazgos (JSONB) - Hallazgos clínicos
+│   └── nota_clinica_plan_seguimiento (JSONB) - Plan de seguimiento
 │
 └── tele_ecg_auditoria (Auditoría)
     ├── FK CASCADE DELETE (T-ECG-CASCADE)
     ├── id_usuario
     ├── accion
     └── ip_cliente
+
+Almacenamiento Dual (v1.22.1):
+├── storage_tipo = 'DATABASE' → contenido_imagen (BYTEA) - NUEVAS imágenes
+└── storage_tipo = 'FILESYSTEM' → ruta_archivo (/opt/cenate/teleekgs/) - imágenes EXISTENTES
 ```
 
 ---
@@ -396,6 +405,103 @@ nota_clinica_plan_seguimiento:
 - `TeleECGController.java` (+48 líneas, endpoint nota-clinica)
 - `ModalEvaluacionECG.jsx` (+18 líneas, flujo dual guardado)
 - `teleecgService.js` (+28 líneas, método guardarNotaClinica)
+
+---
+
+### 1️⃣1️⃣ **T-ECG-BYTEA-001 a 006** (v1.22.1 - NUEVO)
+**Severidad**: 🔴 CRÍTICO (almacenamiento) / 🟠 MEDIO (visualización)
+**Problema**: Imágenes nuevas no se podían cargar ni visualizar en la BD
+**Solicitud**: Implementar almacenamiento BYTEA en PostgreSQL + visualización dinámica
+
+**Solución** - Almacenamiento BYTEA + Visualización Dinámica:
+
+**1. Base de Datos (SQL Script 041):**
+```sql
+-- Nueva columna BYTEA
+ALTER TABLE tele_ecg_imagenes
+ADD COLUMN contenido_imagen BYTEA;
+
+-- Default a DATABASE para nuevas imágenes
+ALTER TABLE tele_ecg_imagenes
+ALTER COLUMN storage_tipo SET DEFAULT 'DATABASE';
+
+-- Constraint actualizado
+ALTER TABLE tele_ecg_imagenes DROP CONSTRAINT chk_storage_tipo;
+ALTER TABLE tele_ecg_imagenes ADD CONSTRAINT chk_storage_tipo
+CHECK (storage_tipo IN ('FILESYSTEM', 'S3', 'MINIO', 'DATABASE'));
+```
+
+**2. Backend (TeleECGImagen.java) - Mappings Hibernate 6:**
+```java
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
+// BYTEA - Antes @Lob causaba error "bigint"
+@JdbcTypeCode(SqlTypes.BINARY)
+@Column(name = "contenido_imagen")
+private byte[] contenidoImagen;
+
+// JSONB - Antes causaba error "varchar"
+@JdbcTypeCode(SqlTypes.JSON)
+@Column(name = "nota_clinica_hallazgos", columnDefinition = "jsonb")
+private String notaClinicaHallazgos;
+```
+
+**3. Frontend (CarrouselECGModal.jsx) - Carga Dinámica:**
+```javascript
+// Carga imagen desde API cuando se necesita
+const cargarImagen = useCallback(async (index) => {
+  const data = await teleecgService.verPreview(idImagen);
+  setLoadedImages(prev => ({
+    ...prev,
+    [idImagen]: {
+      contenidoImagen: data.contenidoImagen,
+      tipoContenido: data.tipoContenido || 'image/jpeg'
+    }
+  }));
+}, [imagenes, loadedImages]);
+
+// Generar URL desde base64
+const imageUrl = `data:${tipoContenido};base64,${contenidoImagen}`;
+```
+
+**4. Frontend (ModalEvaluacionECG.jsx) - Conversión Data URL:**
+```javascript
+const cargarImagenIndice = async (index, imagenes) => {
+  const data = await teleecgService.verPreview(idImagen);
+  if (data && data.contenidoImagen) {
+    const tipoContenido = data.tipoContenido || 'image/jpeg';
+    const dataUrl = `data:${tipoContenido};base64,${data.contenidoImagen}`;
+    setImagenData(dataUrl);
+  }
+};
+```
+
+**Bugs Resueltos:**
+
+| ID | Severidad | Problema | Solución |
+|----|-----------|----------|----------|
+| T-ECG-BYTEA-001 | 🔴 CRÍTICO | Columna `contenido_imagen` no existe | Script SQL 041 |
+| T-ECG-BYTEA-002 | 🔴 CRÍTICO | `bytea but expression bigint` | `@JdbcTypeCode(SqlTypes.BINARY)` |
+| T-ECG-BYTEA-003 | 🔴 CRÍTICO | `jsonb but expression varchar` | `@JdbcTypeCode(SqlTypes.JSON)` |
+| T-ECG-BYTEA-004 | 🟠 MEDIO | Violación constraint `chk_storage_tipo` | Actualizar CHECK |
+| T-ECG-BYTEA-005 | 🟠 MEDIO | Imágenes no cargan en Carrusel | Carga dinámica API |
+| T-ECG-BYTEA-006 | 🟠 MEDIO | Imágenes no cargan en Triaje Clínico | Conversión data URL |
+
+**Archivos Creados:**
+- `041_teleecg_bytea_storage.sql` (93 líneas) - Script SQL
+
+**Archivos Modificados:**
+- `TeleECGImagen.java` (+3 imports, +2 anotaciones JdbcTypeCode)
+- `CarrouselECGModal.jsx` (+50 líneas, carga dinámica)
+- `ModalEvaluacionECG.jsx` (+20 líneas, conversión data URL)
+
+**Resultado**:
+- ✅ Imágenes nuevas se almacenan en BD (BYTEA)
+- ✅ Imágenes antiguas siguen leyéndose de filesystem
+- ✅ Visualización funciona en Carrusel y Triaje Clínico
+- ✅ Backend compilado: BUILD SUCCESSFUL
+- ✅ Frontend desplegado sin errores
 
 ---
 
@@ -717,10 +823,12 @@ nota_clinica_plan_seguimiento:
 ### Backend
 - **Framework**: Spring Boot 3.5.6
 - **Lenguaje**: Java 17
-- **ORM**: Hibernate/JPA
+- **ORM**: Hibernate 6 / JPA (con `@JdbcTypeCode` para BYTEA y JSONB)
 - **Seguridad**: JWT + MBAC
 - **Auditoría**: AuditLogService
-- **Storage**: Filesystem (`/opt/cenate/teleekgs/`)
+- **Storage Dual** (v1.22.1):
+  - **DATABASE**: BYTEA en PostgreSQL (nuevas imágenes)
+  - **FILESYSTEM**: `/opt/cenate/teleekgs/` (imágenes legacy)
 
 ### Frontend
 - **Framework**: React 19
@@ -761,7 +869,9 @@ v1.21.2 → T-ECG-001: Estadísticas
 v1.21.3 → T-ECG-002: Fecha Expiración
 v1.21.4 → T-ECG-003, 004, 005: UX Mejorada
 v1.21.5 → T-ECG-NAV-EXT, T-ECG-NAV-ADMIN: Navegación Corregida
-         → T-ECG-CONSOLIDACION: Agrupación por Asegurado + Carrusel (FINAL)
+         → T-ECG-CONSOLIDACION: Agrupación por Asegurado + Carrusel
+v1.21.6 → T-ECG-NOTA-CLINICA: Triaje Clínico + Nota Clínica v3.0.0
+v1.22.1 → T-ECG-BYTEA: Almacenamiento BYTEA + Visualización Dinámica v3.1.0 (FINAL)
 ```
 
 ### Estado Módulo
@@ -937,7 +1047,19 @@ DESPUÉS (v1.21.5): 1 fila consolidada ✅
 
 ---
 
-**Estado Final**: ✅ **MÓDULO TELE-ECG v1.21.6 - 100% COMPLETADO CON TRIAJE CLÍNICO Y NOTA CLÍNICA (v3.0.0)**
+**Estado Final**: ✅ **MÓDULO TELE-ECG v1.22.1 - 100% COMPLETADO CON ALMACENAMIENTO BYTEA (v3.1.0)**
+
+### Cambios v1.22.1 Respecto v1.21.6:
+- ✅ Nueva columna `contenido_imagen` (BYTEA) para almacenamiento en BD
+- ✅ Mappings Hibernate 6: `@JdbcTypeCode(SqlTypes.BINARY)` para BYTEA
+- ✅ Mappings Hibernate 6: `@JdbcTypeCode(SqlTypes.JSON)` para JSONB
+- ✅ Constraint `chk_storage_tipo` actualizado con 'DATABASE'
+- ✅ Carga dinámica de imágenes en CarrouselECGModal.jsx
+- ✅ Visualización correcta en ModalEvaluacionECG.jsx (Triaje Clínico)
+- ✅ Almacenamiento dual: DATABASE (nuevas) + FILESYSTEM (legacy)
+- ✅ Script SQL 041_teleecg_bytea_storage.sql
+- ✅ 6 bugs resueltos (T-ECG-BYTEA-001 a 006)
+- ✅ Backend y Frontend desplegados sin errores
 
 ### Cambios v1.21.6 Respecto v1.21.5:
 - ✅ Implementación Nota Clínica (v3.0.0 Backend)

@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 
@@ -78,13 +80,24 @@ public class TeleECGImagen {
     private Usuario usuarioPaciente;
 
     /**
+     * CONTENIDO BINARIO DE LA IMAGEN (v1.22.0 - BYTEA Storage)
+     * Almacena la imagen ECG directamente en PostgreSQL como BYTEA
+     * Máximo: 5MB (5242880 bytes)
+     * Formatos: JPEG, PNG
+     */
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(name = "contenido_imagen")
+    private byte[] contenidoImagen;
+
+    /**
      * TIPO DE ALMACENAMIENTO
-     * FILESYSTEM: Almacenamiento local en /opt/cenate/teleekgs/
+     * DATABASE: Almacenamiento en PostgreSQL como BYTEA (v1.22.0 - Default)
+     * FILESYSTEM: Almacenamiento local en /opt/cenate/teleekgs/ (legacy)
      * S3: Amazon S3 (futuro)
      * MINIO: MinIO compatible S3 (futuro)
      */
     @Column(name = "storage_tipo", nullable = false, length = 20)
-    private String storageTipo = "FILESYSTEM";
+    private String storageTipo = "DATABASE";
 
     /**
      * RUTA COMPLETA DEL ARCHIVO
@@ -364,6 +377,7 @@ public class TeleECGImagen {
      * Estructura: {"ritmo": true, "frecuencia": false, "intervaloPR": true, ...}
      * Campos posibles: ritmo, frecuencia, intervaloPR, duracionQRS, segmentoST, ondaT, eje
      */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "nota_clinica_hallazgos", columnDefinition = "jsonb")
     private String notaClinicaHallazgos;
 
@@ -388,6 +402,7 @@ public class TeleECGImagen {
      *   "otrosPlan": "Descripción adicional"
      * }
      */
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "nota_clinica_plan_seguimiento", columnDefinition = "jsonb")
     private String notaClinicaPlanSeguimiento;
 
