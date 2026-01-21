@@ -149,7 +149,7 @@ export default function TeleECGRecibidas() {
    */
   const handleConfirmarProcesamiento = async (observaciones) => {
     try {
-      await teleecgService.procesarImagen(ecgParaProcesar.idImagen, observaciones);
+      await teleecgService.procesarImagen(ecgParaProcesar.id_imagen || ecgParaProcesar.idImagen, observaciones);
       toast.success("✅ ECG procesada exitosamente");
       setShowProcesarModal(false);
       setEcgParaProcesar(null);
@@ -205,7 +205,7 @@ export default function TeleECGRecibidas() {
    */
   const handleVer = async (ecg) => {
     try {
-      const imagenData = await teleecgService.verPreview(ecg.idImagen);
+      const imagenData = await teleecgService.verPreview(ecg.id_imagen || ecg.idImagen);
       const ecgConImagen = {
         ...ecg,
         contenidoImagen: imagenData.contenidoImagen,
@@ -234,7 +234,7 @@ export default function TeleECGRecibidas() {
     try {
       setEvaluandoImagen(true);
       await teleecgService.evaluarImagen(
-        ecgParaEvaluar.idImagen,
+        ecgParaEvaluar.id_imagen || ecgParaEvaluar.idImagen,
         evaluacion,
         descripcion
       );
