@@ -318,18 +318,19 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      * ✅ FIX T-ECG-001 (v1.21.5): Obtener todas las estadísticas en una sola query
      * Retorna: [total, pendientes (ENVIADA), observadas (OBSERVADA), atendidas (ATENDIDA)]
      * Actualizado para usar los estados correctos de v3.0.0: ENVIADA, OBSERVADA, ATENDIDA
+     * Usando nativeQuery=true para SQL nativo (PostgreSQL)
      */
-    @Query("""
+    @Query(value = """
         SELECT
-            CAST(COUNT(t) as Long) as total,
-            CAST(COALESCE(SUM(CASE WHEN t.estado = 'ENVIADA' THEN 1 ELSE 0 END), 0) as Long) as pendientes,
-            CAST(COALESCE(SUM(CASE WHEN t.estado = 'ATENDIDA' THEN 1 ELSE 0 END), 0) as Long) as procesadas,
-            CAST(COALESCE(SUM(CASE WHEN t.estado = 'OBSERVADA' THEN 1 ELSE 0 END), 0) as Long) as rechazadas,
-            CAST(COALESCE(SUM(CASE WHEN t.estado = 'ATENDIDA' THEN 1 ELSE 0 END), 0) as Long) as vinculadas
-        FROM TeleECGImagen t
-        WHERE t.statImagen = 'A'
-          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
-        """)
+            COUNT(t)::bigint as total,
+            COALESCE(SUM(CASE WHEN t.estado = 'ENVIADA' THEN 1 ELSE 0 END), 0)::bigint as pendientes,
+            COALESCE(SUM(CASE WHEN t.estado = 'ATENDIDA' THEN 1 ELSE 0 END), 0)::bigint as procesadas,
+            COALESCE(SUM(CASE WHEN t.estado = 'OBSERVADA' THEN 1 ELSE 0 END), 0)::bigint as rechazadas,
+            COALESCE(SUM(CASE WHEN t.estado = 'ATENDIDA' THEN 1 ELSE 0 END), 0)::bigint as vinculadas
+        FROM tele_ecg_imagenes t
+        WHERE t.stat_imagen = 'A'
+          AND t.fecha_expiracion >= CURRENT_TIMESTAMP
+        """, nativeQuery = true)
     Object[] getEstadisticasCompletas();
 
     /**
