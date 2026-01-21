@@ -315,16 +315,17 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
     Long countByEstadoActivas(@Param("estado") String estado);
 
     /**
-     * ✅ FIX T-ECG-001: Obtener todas las estadísticas en una sola query
-     * Retorna: [total, pendientes, procesadas, rechazadas, vinculadas]
+     * ✅ FIX T-ECG-001 (v1.21.5): Obtener todas las estadísticas en una sola query
+     * Retorna: [total, pendientes (ENVIADA), observadas (OBSERVADA), atendidas (ATENDIDA)]
+     * Actualizado para usar los estados correctos de v3.0.0: ENVIADA, OBSERVADA, ATENDIDA
      */
     @Query("""
         SELECT
             CAST(COUNT(t) as Long) as total,
-            CAST(COALESCE(SUM(CASE WHEN t.estado = 'PENDIENTE' THEN 1 ELSE 0 END), 0) as Long) as pendientes,
-            CAST(COALESCE(SUM(CASE WHEN t.estado = 'PROCESADA' THEN 1 ELSE 0 END), 0) as Long) as procesadas,
-            CAST(COALESCE(SUM(CASE WHEN t.estado = 'RECHAZADA' THEN 1 ELSE 0 END), 0) as Long) as rechazadas,
-            CAST(COALESCE(SUM(CASE WHEN t.estado = 'VINCULADA' THEN 1 ELSE 0 END), 0) as Long) as vinculadas
+            CAST(COALESCE(SUM(CASE WHEN t.estado = 'ENVIADA' THEN 1 ELSE 0 END), 0) as Long) as pendientes,
+            CAST(COALESCE(SUM(CASE WHEN t.estado = 'ATENDIDA' THEN 1 ELSE 0 END), 0) as Long) as procesadas,
+            CAST(COALESCE(SUM(CASE WHEN t.estado = 'OBSERVADA' THEN 1 ELSE 0 END), 0) as Long) as rechazadas,
+            CAST(COALESCE(SUM(CASE WHEN t.estado = 'ATENDIDA' THEN 1 ELSE 0 END), 0) as Long) as vinculadas
         FROM TeleECGImagen t
         WHERE t.statImagen = 'A'
           AND t.fechaExpiracion >= CURRENT_TIMESTAMP
