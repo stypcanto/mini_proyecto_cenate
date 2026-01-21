@@ -17,6 +17,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import teleecgService from "../../services/teleecgService";
 import VisorECGModal from "../../components/teleecgs/VisorECGModal";
+import CarrouselECGModal from "../../components/teleecgs/CarrouselECGModal";
 import ProcesarECGModal from "../../components/teleecgs/ProcesarECGModal";
 import ModalEvaluacionECG from "../../components/teleecgs/ModalEvaluacionECG";
 import toast from "react-hot-toast";
@@ -73,15 +74,16 @@ export default function TeleECGRecibidas() {
   }, []);
 
   /**
-   * Cargar todas las ECGs
+   * ✅ v1.21.5: Cargar todas las ECGs agrupadas por asegurado
    */
   const cargarECGs = async () => {
     try {
       setLoading(true);
-      const response = await teleecgService.listarImagenes("", 0);
-      const ecgData = response?.content || response?.data || response || [];
-      setEcgs(Array.isArray(ecgData) ? ecgData : []);
-      console.log("✅ ECGs consolidadas cargadas:", ecgData.length);
+      // Usar nuevo endpoint que agrupa por asegurado
+      const response = await teleecgService.listarAgrupoPorAsegurado("", filtros.estado);
+      const ecgData = Array.isArray(response) ? response : [];
+      setEcgs(ecgData);
+      console.log("✅ ECGs agrupadas cargadas:", ecgData.length, "asegurados");
     } catch (error) {
       console.error("❌ Error al cargar ECGs:", error);
       setEcgs([]);
@@ -263,26 +265,27 @@ export default function TeleECGRecibidas() {
   };
 
   /**
-   * Aplicar filtros
+   * ✅ v1.21.5: Aplicar filtros (para datos agrupados por asegurado)
    */
-  const ecgsFiltrados = ecgs.filter((ecg) => {
+  const ecgsFiltrados = ecgs.filter((asegurado) => {
     // Búsqueda por DNI o nombre
     const matchSearch =
       !filtros.searchTerm ||
-      ecg.numDocPaciente?.includes(filtros.searchTerm) ||
-      ecg.nombresPaciente?.toLowerCase().includes(filtros.searchTerm.toLowerCase()) ||
-      ecg.apellidosPaciente?.toLowerCase().includes(filtros.searchTerm.toLowerCase());
+      asegurado.num_doc_paciente?.includes(filtros.searchTerm) ||
+      asegurado.nombres_paciente?.toLowerCase().includes(filtros.searchTerm.toLowerCase()) ||
+      asegurado.apellidos_paciente?.toLowerCase().includes(filtros.searchTerm.toLowerCase());
 
-    // Filtro de estado
+    // Filtro de estado (usando estado_transformado o estado_principal)
+    const estado = asegurado.estado_transformado || asegurado.estado_principal;
     const matchEstado =
-      filtros.estado === "TODOS" || ecg.estado === filtros.estado;
+      filtros.estado === "TODOS" || estado === filtros.estado;
 
     // Filtro de IPRESS
     const matchIpress =
-      filtros.ipress === "TODOS" || ecg.nombreIpress === filtros.ipress;
+      filtros.ipress === "TODOS" || asegurado.nombre_ipress === filtros.ipress;
 
-    // Filtro de fecha
-    const fechaEnvio = new Date(ecg.fechaEnvio);
+    // Filtro de fecha (usando fecha_ultimo_ecg)
+    const fechaEnvio = new Date(asegurado.fecha_ultimo_ecg);
     const matchFecha =
       (!filtros.fechaDesde ||
         fechaEnvio >= new Date(filtros.fechaDesde)) &&
@@ -610,89 +613,123 @@ export default function TeleECGRecibidas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ecgsFiltrados.map((ecg) => (
+                  {ecgsFiltrados.map((asegurado) => (
                     <tr
-                      key={ecg.idImagen}
+                      key={asegurado.num_doc_paciente}
                       className="border-b hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">
-                        {ecg.numDocPaciente}
+                        {asegurado.num_doc_paciente}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {ecg.nombresPaciente} {ecg.apellidosPaciente}
+                        <div className="flex items-center gap-2">
+                          <div>
+                            <p>{asegurado.nombres_paciente} {asegurado.apellidos_paciente}</p>
+                            <p className="text-xs text-gray-500">📌 {asegurado.total_ecgs} ECGs</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
                         <span className="inline-block px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs">
-                          {ecg.nombreIpress || ecg.codigoIpress}
+                          {asegurado.nombre_ipress || asegurado.codigo_ipress}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {formatDate(ecg.fechaEnvio)}
+                        {formatDate(asegurado.fecha_ultimo_ecg)}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">
-                        {formatSize(ecg.sizeBytes)}
+                        <div className="flex flex-col gap-1">
+                          <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded w-fit">
+                            📤 {asegurado.ecgs_pendientes || 0} Enviadas
+                          </span>
+                          {asegurado.ecgs_observadas > 0 && (
+                            <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded w-fit">
+                              ⚠️ {asegurado.ecgs_observadas} Observadas
+                            </span>
+                          )}
+                          {asegurado.ecgs_atendidas > 0 && (
+                            <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded w-fit">
+                              ✅ {asegurado.ecgs_atendidas} Atendidas
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        {getEstadoBadge(ecg)}
-                        {/* Mostrar observaciones si existen */}
-                        {ecg.observaciones && (
-                          <div className="text-xs text-gray-600 mt-1 p-1 bg-gray-50 rounded">
-                            <p className="font-medium">💬 {ecg.observaciones}</p>
-                          </div>
-                        )}
+                        {getEstadoBadge(asegurado)}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        {getEvaluacionBadge(ecg.evaluacion)}
+                        {getEvaluacionBadge(asegurado.evaluacion_principal)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex gap-2 justify-center">
-                          {/* Ver */}
+                          {/* Ver todas las ECGs en un carrusel/modal */}
                           <button
-                            onClick={() => handleVer(ecg)}
-                            title="Ver imagen"
+                            onClick={() => {
+                              setSelectedECG(asegurado);
+                              setShowVisor(true);
+                            }}
+                            title="Ver todas las ECGs"
                             className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"
                           >
                             <Eye className="w-4 h-4" />
                           </button>
 
-                          {/* Descargar */}
+                          {/* Descargar todas las ECGs (ZIP) - TODO: Implementar en backend */}
                           <button
-                            onClick={() =>
-                              handleDescargar(ecg.idImagen, ecg.nombreArchivo)
-                            }
-                            title="Descargar imagen"
-                            className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors"
+                            onClick={() => {
+                              toast.error("Función aún no implementada");
+                            }}
+                            title="Descargar todas (ZIP)"
+                            className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors opacity-50 cursor-not-allowed"
                           >
                             <Download className="w-4 h-4" />
                           </button>
 
-                          {/* Evaluar (v3.0.0 - NUEVO) - Si aún no ha sido evaluada */}
-                          {(!ecg.evaluacion || ecg.evaluacion === "SIN_EVALUAR") && (
+                          {/* Evaluar si alguna no está evaluada */}
+                          {(asegurado.evaluacion_principal === "SIN_EVALUAR" || !asegurado.evaluacion_principal) && (
                             <button
-                              onClick={() => handleEvaluar(ecg)}
-                              title="Evaluar como NORMAL/ANORMAL"
+                              onClick={() => {
+                                if (asegurado.imagenes && asegurado.imagenes.length > 0) {
+                                  setEcgParaEvaluar(asegurado.imagenes[0]);
+                                  setShowEvaluacionModal(true);
+                                }
+                              }}
+                              title="Evaluar grupo"
                               className="p-2 text-purple-600 hover:bg-purple-100 rounded transition-colors"
                             >
                               <CheckCircle className="w-4 h-4" />
                             </button>
                           )}
 
-                          {/* Procesar (si está pendiente) - v3.0.0: Verificar PENDIENTE y ENVIADA */}
-                          {(ecg.estadoTransformado === "PENDIENTE" || ecg.estado === "PENDIENTE" || ecg.estado === "ENVIADA") && (
+                          {/* Procesar si alguna está pendiente */}
+                          {asegurado.ecgs_pendientes > 0 && (
                             <button
-                              onClick={() => handleProcesar(ecg)}
-                              title="Procesar/Aceptar"
+                              onClick={() => {
+                                if (asegurado.imagenes && asegurado.imagenes.length > 0) {
+                                  setEcgParaProcesar(asegurado.imagenes[0]);
+                                  setShowProcesarModal(true);
+                                }
+                              }}
+                              title="Procesar grupo"
                               className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors"
                             >
                               <Check className="w-4 h-4" />
                             </button>
                           )}
 
-                          {/* Rechazar (si está pendiente) - v3.0.0: Verificar PENDIENTE y ENVIADA */}
-                          {(ecg.estadoTransformado === "PENDIENTE" || ecg.estado === "PENDIENTE" || ecg.estado === "ENVIADA") && (
+                          {/* Rechazar si alguna está pendiente */}
+                          {asegurado.ecgs_pendientes > 0 && (
                             <button
-                              onClick={() => handleRechazar(ecg.idImagen)}
-                              title="Rechazar"
+                              onClick={() => {
+                                if (window.confirm(`¿Rechazar todas las ${asegurado.total_ecgs} ECGs de este asegurado?`)) {
+                                  const motivo = prompt("Ingresa el motivo del rechazo:");
+                                  if (motivo && motivo.trim() !== "") {
+                                    // Rechazar la primera imagen (como representativa del grupo)
+                                    handleRechazar(asegurado.imagenes[0].id_imagen);
+                                  }
+                                }
+                              }}
+                              title="Rechazar grupo"
                               className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"
                             >
                               <X className="w-4 h-4" />
@@ -716,8 +753,25 @@ export default function TeleECGRecibidas() {
         )}
       </div>
 
-      {/* 👁️ Modal Visor */}
-      {showVisor && selectedECG && (
+      {/* 👁️ ✅ v1.21.5: Modal Carrusel de Múltiples ECGs por Asegurado */}
+      {showVisor && selectedECG && selectedECG.imagenes && selectedECG.imagenes.length > 0 ? (
+        <CarrouselECGModal
+          imagenes={selectedECG.imagenes}
+          paciente={{
+            numDoc: selectedECG.num_doc_paciente,
+            nombres: selectedECG.nombres_paciente,
+            apellidos: selectedECG.apellidos_paciente,
+          }}
+          onClose={() => {
+            setShowVisor(false);
+            setSelectedECG(null);
+          }}
+          onDescargar={() => {
+            toast.error("Función de descarga múltiple aún no implementada");
+          }}
+        />
+      ) : showVisor && selectedECG ? (
+        // Fallback a visor individual si no tiene múltiples imágenes
         <VisorECGModal
           ecg={selectedECG}
           onClose={() => {
@@ -728,7 +782,7 @@ export default function TeleECGRecibidas() {
             handleDescargar(selectedECG.idImagen, selectedECG.nombreArchivo)
           }
         />
-      )}
+      ) : null}
 
       {/* ✅ FIX T-ECG-003: Modal para procesar ECG con observaciones */}
       {showProcesarModal && ecgParaProcesar && (

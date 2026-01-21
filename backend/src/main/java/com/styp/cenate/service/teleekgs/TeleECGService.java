@@ -649,6 +649,120 @@ public class TeleECGService {
     }
 
     /**
+     * Listar ECGs agrupadas por asegurado (v1.21.5)
+     *
+     * Retorna una lista de asegurados con todas sus ECGs agrupadas
+     * Ideal para dashboard que muestra 1 fila por asegurado
+     */
+    public List<AseguradoConECGsDTO> listarAgrupaPorAsegurado(
+            String numDoc,
+            String estado,
+            Long idIpress,
+            LocalDateTime fechaDesde,
+            LocalDateTime fechaHasta) {
+
+        log.info("📋 Listando ECGs agrupadas por asegurado - Filtro DNI: {}, Estado: {}", numDoc, estado);
+
+        // Usar LocalDateTime.MIN/MAX como fallback
+        LocalDateTime desde = fechaDesde != null ? fechaDesde : LocalDateTime.of(1900, 1, 1, 0, 0);
+        LocalDateTime hasta = fechaHasta != null ? fechaHasta : LocalDateTime.of(2999, 12, 31, 23, 59);
+
+        // Obtener todas las imágenes sin paginación (sin límite)
+        List<TeleECGImagen> imagenes = teleECGImagenRepository.buscarFlexibleSinPaginacion(
+            numDoc, estado, idIpress, desde, hasta
+        );
+
+        // Agrupar por DNI del paciente
+        Map<String, List<TeleECGImagen>> imagenesPorDni = imagenes.stream()
+            .collect(Collectors.groupingBy(TeleECGImagen::getNumDocPaciente));
+
+        // Convertir cada grupo a AseguradoConECGsDTO
+        List<AseguradoConECGsDTO> resultado = new ArrayList<>();
+
+        for (Map.Entry<String, List<TeleECGImagen>> entry : imagenesPorDni.entrySet()) {
+            String dni = entry.getKey();
+            List<TeleECGImagen> imagenesDelAsegurado = entry.getValue();
+
+            // Obtener primer imagen como referencia para datos del asegurado
+            TeleECGImagen primeraImagen = imagenesDelAsegurado.get(0);
+
+            // Convertir la primera imagen a DTO para acceder a los campos de paciente
+            TeleECGImagenDTO primerDTO = convertirADTO(primeraImagen);
+
+            // Contar por estado
+            long pendientes = imagenesDelAsegurado.stream()
+                .filter(img -> "ENVIADA".equals(img.getEstado()))
+                .count();
+            long observadas = imagenesDelAsegurado.stream()
+                .filter(img -> "OBSERVADA".equals(img.getEstado()))
+                .count();
+            long atendidas = imagenesDelAsegurado.stream()
+                .filter(img -> "ATENDIDA".equals(img.getEstado()))
+                .count();
+
+            // Convertir todas las imágenes a DTOs
+            List<TeleECGImagenDTO> dtos = imagenesDelAsegurado.stream()
+                .map(this::convertirADTO)
+                .collect(Collectors.toList());
+
+            // Determinar estado principal (si alguna está pendiente, mostrar PENDIENTE)
+            String estadoPrincipal = primeraImagen.getEstado();
+            if (pendientes > 0) {
+                estadoPrincipal = "ENVIADA";
+            }
+
+            // Obtener evaluación principal (NORMAL/ANORMAL si existe alguna)
+            String evaluacionPrincipal = imagenesDelAsegurado.stream()
+                .filter(img -> img.getEvaluacion() != null && !img.getEvaluacion().isEmpty())
+                .map(TeleECGImagen::getEvaluacion)
+                .findFirst()
+                .orElse("SIN_EVALUAR");
+
+            AseguradoConECGsDTO asegurado = AseguradoConECGsDTO.builder()
+                .numDocPaciente(dni)
+                .nombresPaciente(primeraImagen.getNombresPaciente())
+                .apellidosPaciente(primeraImagen.getApellidosPaciente())
+                .pacienteNombreCompleto(
+                    primeraImagen.getNombresPaciente() + " " + primeraImagen.getApellidosPaciente()
+                )
+                .nombreIpress(primeraImagen.getNombreIpress())
+                .codigoIpress(primeraImagen.getCodigoIpress())
+                .telefonoPrincipal(primerDTO.getTelefonoPrincipalPaciente())
+                .edadPaciente(primerDTO.getEdadPaciente())
+                .generoPaciente(primerDTO.getGeneroPaciente())
+                .totalEcgs((long) imagenesDelAsegurado.size())
+                .fechaPrimerEcg(imagenesDelAsegurado.stream()
+                    .map(TeleECGImagen::getFechaEnvio)
+                    .min(Comparator.naturalOrder())
+                    .orElse(null))
+                .fechaUltimoEcg(imagenesDelAsegurado.stream()
+                    .map(TeleECGImagen::getFechaEnvio)
+                    .max(Comparator.naturalOrder())
+                    .orElse(null))
+                .estadoPrincipal(estadoPrincipal)
+                .estadoTransformado(estadoPrincipal)  // Será transformado en el controller
+                .evaluacionPrincipal(evaluacionPrincipal)
+                .ecgsPendientes(pendientes)
+                .ecgsObservadas(observadas)
+                .ecgsAtendidas(atendidas)
+                .imagenes(dtos)
+                .build();
+
+            resultado.add(asegurado);
+        }
+
+        // Ordenar por fecha último ECG descendente (más recientes primero)
+        resultado.sort((a, b) -> {
+            LocalDateTime fechaA = a.getFechaUltimoEcg() != null ? a.getFechaUltimoEcg() : LocalDateTime.MIN;
+            LocalDateTime fechaB = b.getFechaUltimoEcg() != null ? b.getFechaUltimoEcg() : LocalDateTime.MIN;
+            return fechaB.compareTo(fechaA);
+        });
+
+        log.info("✅ ECGs agrupadas: {} asegurados encontrados", resultado.size());
+        return resultado;
+    }
+
+    /**
      * Registrar evento en auditoría
      */
     private void registrarAuditoria(TeleECGImagen imagen, Long idUsuario, String accion,

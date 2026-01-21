@@ -418,6 +418,29 @@ const teleecgService = {
       throw error;
     }
   },
+
+  /**
+   * ✅ v1.21.5: Listar ECGs agrupadas por asegurado
+   * Retorna una lista de asegurados con todas sus ECGs agrupadas
+   * Ideal para dashboard que muestra 1 fila por asegurado
+   */
+  listarAgrupoPorAsegurado: async (numDoc = "", estado = "") => {
+    try {
+      const params = new URLSearchParams();
+      if (numDoc) params.append("numDoc", numDoc);
+      if (estado && estado !== "TODOS") params.append("estado", estado);
+
+      const url = `/teleekgs/agrupar-por-asegurado?${params.toString()}`;
+      console.log("📋 [LISTAR AGRUPADO]:", url);
+
+      const response = await apiClient.get(url, true);
+      console.log("✅ [Agrupadas Cargadas]:", response.data?.length || 0, "asegurados");
+      return response.data || [];
+    } catch (error) {
+      console.error("❌ Error al listar agrupadas:", error.message);
+      throw error;
+    }
+  },
 };
 
 export default teleecgService;

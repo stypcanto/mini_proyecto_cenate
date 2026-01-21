@@ -31,7 +31,9 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import jakarta.annotation.PostConstruct;
 
 /**
@@ -376,6 +378,60 @@ public class TeleECGController {
             ));
         } catch (Exception e) {
             log.error("❌ Error en listado", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        }
+    }
+
+    /**
+     * Listar ECGs agrupadas por asegurado (v1.21.5)
+     *
+     * Retorna una lista de asegurados con todas sus ECGs agrupadas
+     * Ideal para dashboard que muestra 1 fila por asegurado en lugar de 1 fila por imagen
+     */
+    @GetMapping("/agrupar-por-asegurado")
+    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
+    @Operation(summary = "Listar ECGs agrupadas por asegurado")
+    public ResponseEntity<ApiResponse<List<AseguradoConECGsDTO>>> listarAgrupoPorAsegurado(
+            @Parameter(description = "Número de documento") @RequestParam(required = false) String numDoc,
+            @Parameter(description = "Estado") @RequestParam(required = false) String estado) {
+
+        log.info("📋 Listando ECGs agrupadas por asegurado - DNI: {}, Estado: {}", numDoc, estado);
+
+        try {
+            List<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
+                numDoc, estado, null, null, null
+            );
+
+            // v3.0.0: Aplicar transformación de estado según rol
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+            resultado = resultado.stream()
+                .peek(asegurado -> {
+                    // Transformar estado del grupo
+                    if (asegurado.getEstadoPrincipal() != null) {
+                        // Determinar si es usuario externo
+                        boolean esExterno = usuarioActual != null && usuarioActual.getRoles() != null &&
+                            usuarioActual.getRoles().stream()
+                                .anyMatch(r -> r.getDescRol() != null &&
+                                    (r.getDescRol().contains("EXTERNO") || r.getDescRol().contains("INSTITUCION")));
+
+                        String estadoTransformado = estadoTransformer.transformarEstado(
+                            asegurado.getEstadoPrincipal(),
+                            esExterno
+                        );
+                        asegurado.setEstadoTransformado(estadoTransformado);
+                    }
+                })
+                .collect(Collectors.toList());
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "ECGs agrupadas por asegurado",
+                "200",
+                resultado
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error en listado agrupado", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>(false, e.getMessage(), "400", null));
         }

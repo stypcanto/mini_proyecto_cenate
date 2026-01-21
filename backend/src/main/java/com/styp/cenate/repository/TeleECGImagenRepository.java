@@ -330,4 +330,28 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
           AND t.fechaExpiracion >= CURRENT_TIMESTAMP
         """)
     Object[] getEstadisticasCompletas();
+
+    /**
+     * Búsqueda flexible sin paginación (v1.21.5)
+     * Retorna todas las imágenes que coincidan con los filtros
+     * Usado para agrupar ECGs por asegurado sin límite de resultados
+     */
+    @Query("""
+        SELECT t FROM TeleECGImagen t
+        WHERE (:numDoc IS NULL OR t.numDocPaciente LIKE %:numDoc%)
+          AND (:estado IS NULL OR t.estado = :estado)
+          AND (:idIpress IS NULL OR t.ipressOrigen.idIpress = :idIpress)
+          AND t.statImagen = 'A'
+          AND t.fechaEnvio >= :fechaDesde
+          AND t.fechaEnvio <= :fechaHasta
+          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+        ORDER BY t.fechaEnvio DESC
+        """)
+    List<TeleECGImagen> buscarFlexibleSinPaginacion(
+        @Param("numDoc") String numDoc,
+        @Param("estado") String estado,
+        @Param("idIpress") Long idIpress,
+        @Param("fechaDesde") LocalDateTime fechaDesde,
+        @Param("fechaHasta") LocalDateTime fechaHasta
+    );
 }
