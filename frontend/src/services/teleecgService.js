@@ -231,7 +231,50 @@ const teleecgService = {
   },
 
   /**
+   * Descargar imagen y convertir a base64 (fallback para verPreview)
+   */
+  descargarImagenBase64: async (idImagen) => {
+    try {
+      const token = getToken();
+      const response = await fetch(`${API_BASE_URL}/teleekgs/${idImagen}/descargar`, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+        credentials: 'include',
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Obtener el blob de la imagen
+      const blob = await response.blob();
+
+      // Convertir a base64
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          // Extraer solo la parte base64 (sin el prefijo data:...)
+          const base64 = reader.result.split(',')[1];
+          resolve({
+            success: true,
+            contenidoImagen: base64,
+            tipoContenido: response.headers.get('content-type') || 'image/jpeg',
+          });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('❌ Error al descargar imagen como base64:', error.message);
+      throw error;
+    }
+  },
+
+  /**
    * Ver preview de una imagen ECG (retorna base64 para mostrar en modal)
+   * Con fallback a descargar directamente si /preview no funciona
    */
   verPreview: async (idImagen) => {
     try {
@@ -244,7 +287,9 @@ const teleecgService = {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
+        console.warn(`⚠️ Preview retornó ${response.status}, intentando descarga directa...`);
+        // Si preview falla, intentar descargar directamente
+        return await teleecgService.descargarImagenBase64(idImagen);
       }
 
       // Obtener el blob de la imagen
