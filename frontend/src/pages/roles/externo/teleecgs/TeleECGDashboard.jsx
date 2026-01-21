@@ -169,7 +169,41 @@ export default function TeleECGDashboard() {
     }
   };
 
-  // Filtrar ECGs por búsqueda
+  // Agrupar imágenes por paciente (numDocPaciente)
+  const agruparImagenesPorPaciente = (imagenesLista) => {
+    const agrupadas = {};
+
+    imagenesLista.forEach(imagen => {
+      const key = imagen.numDocPaciente;
+      if (!agrupadas[key]) {
+        agrupadas[key] = {
+          numDocPaciente: imagen.numDocPaciente,
+          nombresPaciente: imagen.nombresPaciente,
+          apellidosPaciente: imagen.apellidosPaciente,
+          telefonoPrincipalPaciente: imagen.telefonoPrincipalPaciente,
+          edadPaciente: imagen.edadPaciente,
+          generoPaciente: imagen.generoPaciente,
+          imagenes: [],
+          estado: imagen.estadoTransformado || imagen.estado,
+          fechaPrimera: imagen.fechaEnvio,
+        };
+      }
+      agrupadas[key].imagenes.push(imagen);
+    });
+
+    return Object.values(agrupadas);
+  };
+
+  // Obtener pacientes agrupados
+  const pacientesAgrupados = agruparImagenesPorPaciente(ecgs);
+
+  // Filtrar pacientes agrupados por búsqueda
+  const pacientesFiltrados = pacientesAgrupados.filter((paciente) =>
+    paciente.numDocPaciente?.includes(searchTerm) ||
+    paciente.nombresPaciente?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  // Filtrar ECGs por búsqueda (para compatibilidad con componente ListaECGsPacientes)
   const ecgsFiltrados = ecgs.filter((ecg) =>
     ecg.numDocPaciente?.includes(searchTerm) ||
     ecg.nombresPaciente?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -198,8 +232,9 @@ export default function TeleECGDashboard() {
               <div>
                 <p className="text-gray-600 text-sm font-medium">Total</p>
                 <p className="text-2xl font-bold text-gray-800">
-                  {stats.total || ecgs.length}
+                  {stats.total || pacientesAgrupados.length}
                 </p>
+                <p className="text-xs text-gray-500 mt-1">{ecgs.length} ECGs</p>
               </div>
               <ImageIcon className="w-10 h-10 text-blue-600 opacity-20" />
             </div>
@@ -210,8 +245,9 @@ export default function TeleECGDashboard() {
               <div>
                 <p className="text-gray-600 text-sm font-medium">Enviadas</p>
                 <p className="text-2xl font-bold text-yellow-600">
-                  {stats.enviadas || ecgs.filter((e) => e.estadoTransformado === "ENVIADA" || e.estado === "ENVIADA").length}
+                  {stats.enviadas || pacientesAgrupados.filter((p) => p.estado === "ENVIADA").length}
                 </p>
+                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "ENVIADA" || e.estado === "ENVIADA").length} ECGs</p>
               </div>
               <Upload className="w-10 h-10 text-yellow-500 opacity-20" />
             </div>
@@ -222,8 +258,9 @@ export default function TeleECGDashboard() {
               <div>
                 <p className="text-gray-600 text-sm font-medium">Atendidas</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {stats.atendidas || ecgs.filter((e) => e.estadoTransformado === "ATENDIDA" || e.estado === "ATENDIDA").length}
+                  {stats.atendidas || pacientesAgrupados.filter((p) => p.estado === "ATENDIDA").length}
                 </p>
+                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "ATENDIDA" || e.estado === "ATENDIDA").length} ECGs</p>
               </div>
               <Eye className="w-10 h-10 text-green-600 opacity-20" />
             </div>
@@ -234,8 +271,9 @@ export default function TeleECGDashboard() {
               <div>
                 <p className="text-gray-600 text-sm font-medium">Rechazadas</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {stats.rechazadas || ecgs.filter((e) => e.estadoTransformado === "RECHAZADA" || e.estado === "RECHAZADA").length}
+                  {stats.rechazadas || pacientesAgrupados.filter((p) => p.estado === "RECHAZADA").length}
                 </p>
+                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "RECHAZADA" || e.estado === "RECHAZADA").length} ECGs</p>
               </div>
               <Trash2 className="w-10 h-10 text-red-600 opacity-20" />
             </div>
