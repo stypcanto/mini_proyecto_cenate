@@ -1,5 +1,5 @@
 // src/pages/coordinador/turnos/components/ModalDetalleSolicitud.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import {
   Clock,
   FileText,
@@ -15,6 +15,10 @@ import {
   Loader2,
   MessageSquare,
   Save,
+  Search,
+  Filter,
+  CheckCheck,
+  XOctagon,
 } from "lucide-react";
 import { chipDay, fmtDateTime, yesNoPill } from "../utils/ui";
 import { solicitudTurnosService } from "../../../../../services/solicitudTurnosService";
@@ -34,6 +38,8 @@ export default function ModalDetalleSolicitud({
   const [observacionesDetalle, setObservacionesDetalle] = useState({});
   const [modalObservacion, setModalObservacion] = useState({ show: false, detalle: null, observacion: "" });
   const [modalAccion, setModalAccion] = useState({ show: false, tipo: null, detalle: null, observacion: "" });
+  const [busquedaEspecialidad, setBusquedaEspecialidad] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("TODOS");
 
   useEffect(() => {
     setShowRechazoForm(prefillRechazo);
@@ -172,99 +178,130 @@ export default function ModalDetalleSolicitud({
   const isEnviado = solicitud?.estado === "ENVIADO";
   const detalles = Array.isArray(solicitud?.detalles) ? solicitud.detalles : [];
 
+  // Estadísticas y filtrado
+  const estadisticas = useMemo(() => {
+    const pendientes = detalles.filter(d => !d.estado || d.estado === 'PENDIENTE').length;
+    const aprobados = detalles.filter(d => d.estado === 'APROBADO').length;
+    const rechazados = detalles.filter(d => d.estado === 'RECHAZADO').length;
+    return { pendientes, aprobados, rechazados, total: detalles.length };
+  }, [detalles]);
+
+  const detallesFiltrados = useMemo(() => {
+    let resultado = detalles;
+
+    // Filtro por búsqueda
+    if (busquedaEspecialidad.trim()) {
+      const busqueda = busquedaEspecialidad.toLowerCase();
+      resultado = resultado.filter(d => 
+        (d.nombreServicio || d.nombreEspecialidad || "").toLowerCase().includes(busqueda) ||
+        (d.codigoServicio || d.codServicio || "").toLowerCase().includes(busqueda)
+      );
+    }
+
+    // Filtro por estado
+    if (filtroEstado !== "TODOS") {
+      resultado = resultado.filter(d => {
+        const estado = d.estado || 'PENDIENTE';
+        return estado === filtroEstado;
+      });
+    }
+
+    return resultado;
+  }, [detalles, busquedaEspecialidad, filtroEstado]);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-6 border-b border-gray-200 sticky top-0 bg-white z-10">
-          <div className="flex items-start justify-between gap-4">
+        <div className="p-3 border-b border-gray-200 sticky top-0 bg-white z-10">
+          <div className="flex items-start justify-between gap-3">
             <div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2 flex items-center gap-2">
-                <ClipboardList className="w-5 h-5 text-gray-700" />
+              <h3 className="text-base font-semibold text-gray-900 mb-1 flex items-center gap-1.5">
+                <ClipboardList className="w-4 h-4 text-gray-700" />
                 Detalle de Solicitud
               </h3>
 
-              <div className="flex flex-wrap items-center gap-3">
-                <span className="text-gray-700 font-medium">{solicitud?.nombreIpress ?? "Cargando..."}</span>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="text-sm text-gray-700 font-medium">{solicitud?.nombreIpress ?? "Cargando..."}</span>
 
                 {solicitud?.estado && (
-                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getEstadoBadge(solicitud.estado)}`}>
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getEstadoBadge(solicitud.estado)}`}>
                     {solicitud.estado}
                   </span>
                 )}
 
                 {solicitud?.periodoDescripcion && (
-                  <span className="text-sm text-gray-500">• {solicitud.periodoDescripcion}</span>
+                  <span className="text-xs text-gray-500">• {solicitud.periodoDescripcion}</span>
                 )}
               </div>
             </div>
 
             <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-              <XCircle className="w-7 h-7" />
+              <XCircle className="w-5 h-5" />
             </button>
           </div>
         </div>
 
         {/* Body */}
-        <div className="p-6 space-y-6">
+        <div className="p-3 space-y-3">
           {loading ? (
-            <div className="flex items-center justify-center py-16">
-              <Loader2 className="w-10 h-10 animate-spin text-blue-600" />
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
             </div>
           ) : !solicitud ? (
-            <div className="p-8 text-center text-gray-500">No hay datos para mostrar.</div>
+            <div className="p-6 text-center text-sm text-gray-500">No hay datos para mostrar.</div>
           ) : (
             <>
               {/* Resumen (cards) */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 gap-2">
                 {/* Solicitud */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Hash className="w-4 h-4 text-gray-500" />
-                    <p className="font-semibold text-gray-900">Solicitud</p>
+                <div className="rounded-lg border border-gray-200 bg-white p-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Hash className="w-3 h-3 text-gray-500" />
+                    <p className="text-xs font-semibold text-gray-900">Solicitud</p>
                   </div>
 
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-1 text-xs">
                     <Row label="ID Solicitud" value={solicitud.idSolicitud} />
                     <Row label="ID Periodo" value={solicitud.idPeriodo} />
-                    <Row label="Total Especialidades" value={solicitud.totalEspecialidades ?? detalles.length} />
-                    <Row label="Total Turnos" value={solicitud.totalTurnosSolicitados ?? "—"} />
+                    <Row label="Especialidades" value={solicitud.totalEspecialidades ?? detalles.length} />
+                    <Row label="Turnos" value={solicitud.totalTurnosSolicitados ?? "—"} />
                   </div>
                 </div>
 
                 {/* IPRESS */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Building2 className="w-4 h-4 text-gray-500" />
-                    <p className="font-semibold text-gray-900">IPRESS</p>
+                <div className="rounded-lg border border-gray-200 bg-white p-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Building2 className="w-3 h-3 text-gray-500" />
+                    <p className="text-xs font-semibold text-gray-900">IPRESS</p>
                   </div>
 
-                  <div className="space-y-2 text-sm">
-                    <Row label="Código RENAES" value={solicitud.codigoRenaes ?? solicitud.codIpress ?? "—"} />
-                    <Row label="Nombre IPRESS" value={solicitud.nombreIpress ?? "—"} />
-                    <Row label="Red" value={solicitud.nombreRed ?? "—"} icon={<MapPin className="w-4 h-4 text-gray-400" />} />
+                  <div className="space-y-1 text-xs">
+                    <Row label="RENAES" value={solicitud.codigoRenaes ?? solicitud.codIpress ?? "—"} />
+                    <Row label="Nombre" value={solicitud.nombreIpress ?? "—"} />
+                    <Row label="Red" value={solicitud.nombreRed ?? "—"} icon={<MapPin className="w-3 h-3 text-gray-400" />} />
                   </div>
                 </div>
 
                 {/* Usuario */}
-                <div className="rounded-xl border border-gray-200 bg-white p-4">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Users className="w-4 h-4 text-gray-500" />
-                    <p className="font-semibold text-gray-900">Usuario / Contacto</p>
+                <div className="rounded-lg border border-gray-200 bg-white p-2">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <Users className="w-3 h-3 text-gray-500" />
+                    <p className="text-xs font-semibold text-gray-900">Usuario</p>
                   </div>
 
-                  <div className="space-y-2 text-sm">
-                    <Row label="ID Usuario" value={solicitud.idUsuarioCreador ?? "—"} />
+                  <div className="space-y-1 text-xs">
+                    <Row label="ID" value={solicitud.idUsuarioCreador ?? "—"} />
                     <Row label="Nombre" value={solicitud.nombreUsuarioCreador ?? solicitud.nombreCompleto ?? "—"} />
-                    <Row label="Email" value={solicitud.emailContacto ?? "—"} icon={<Mail className="w-4 h-4 text-gray-400" />} />
-                    <Row label="Teléfono" value={solicitud.telefonoContacto ?? "—"} icon={<Phone className="w-4 h-4 text-gray-400" />} />
+                    <Row label="Email" value={solicitud.emailContacto ?? "—"} icon={<Mail className="w-3 h-3 text-gray-400" />} />
+                    <Row label="Teléfono" value={solicitud.telefonoContacto ?? "—"} icon={<Phone className="w-3 h-3 text-gray-400" />} />
                   </div>
                 </div>
               </div>
 
               {/* Fechas */}
-              <div className="rounded-xl border border-gray-200 bg-gray-50 p-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm text-gray-700">
+              <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
+                <div className="grid grid-cols-3 gap-2 text-xs text-gray-700">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-gray-500" />
                     <span className="font-medium">Creado:</span>
@@ -283,79 +320,176 @@ export default function ModalDetalleSolicitud({
                 </div>
               </div>
 
-              {/* Tabla */}
-              <div className="rounded-xl border border-gray-200 overflow-hidden">
-                <div className="p-4 bg-white border-b border-gray-200 flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-gray-500" />
-                    <h4 className="font-semibold text-gray-900">Especialidades solicitadas</h4>
+              {/* Barra de progreso y estadísticas */}
+              <div className="rounded-lg border border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50 p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-xs font-semibold text-gray-900">Progreso de Revisión</h4>
+                  <span className="text-xs text-gray-600">
+                    {estadisticas.aprobados + estadisticas.rechazados} de {estadisticas.total} procesadas
+                  </span>
+                </div>
+                
+                <div className="flex gap-2 mb-2">
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-2 bg-gradient-to-r from-green-500 to-emerald-500" 
+                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.aprobados / estadisticas.total) * 100 : 0}%` }}
+                    />
                   </div>
-                  <span className="text-sm text-gray-500">{detalles.length} filas</span>
+                  <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                      className="h-2 bg-gradient-to-r from-red-500 to-rose-500" 
+                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.rechazados / estadisticas.total) * 100 : 0}%` }}
+                    />
+                  </div>
                 </div>
 
-                <div className="overflow-x-auto bg-white">
-                  <table className="min-w-full text-sm">
-                    <thead className="bg-gray-50 text-gray-700">
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="bg-white rounded px-2 py-1 text-center">
+                    <div className="text-[10px] text-amber-600 font-medium">Pendientes</div>
+                    <div className="text-base font-bold text-amber-700">{estadisticas.pendientes}</div>
+                  </div>
+                  <div className="bg-white rounded px-2 py-1 text-center">
+                    <div className="text-[10px] text-green-600 font-medium">Aprobadas</div>
+                    <div className="text-base font-bold text-green-700">{estadisticas.aprobados}</div>
+                  </div>
+                  <div className="bg-white rounded px-2 py-1 text-center">
+                    <div className="text-[10px] text-red-600 font-medium">Rechazadas</div>
+                    <div className="text-base font-bold text-red-700">{estadisticas.rechazados}</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Filtros y búsqueda */}
+              <div className="rounded-lg border border-gray-200 bg-white p-2">
+                <div className="flex gap-2">
+                  <div className="flex-1 relative">
+                    <Search className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      value={busquedaEspecialidad}
+                      onChange={(e) => setBusquedaEspecialidad(e.target.value)}
+                      placeholder="Buscar especialidad..."
+                      className="w-full pl-7 pr-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <div className="relative">
+                    <Filter className="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <select
+                      value={filtroEstado}
+                      onChange={(e) => setFiltroEstado(e.target.value)}
+                      className="pl-7 pr-2 py-1 text-xs border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="TODOS">Todos</option>
+                      <option value="PENDIENTE">Pendientes</option>
+                      <option value="APROBADO">Aprobadas</option>
+                      <option value="RECHAZADO">Rechazadas</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Tabla */}
+              <div className="rounded-lg border border-gray-200 overflow-hidden">
+                <div className="p-2 bg-white border-b border-gray-200 flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <FileText className="w-3 h-3 text-gray-500" />
+                    <h4 className="text-xs font-semibold text-gray-900">Especialidades solicitadas</h4>
+                    {busquedaEspecialidad && (
+                      <span className="text-[10px] text-blue-600">
+                        (mostrando {detallesFiltrados.length} de {detalles.length})
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs text-gray-500">{detallesFiltrados.length} filas</span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto bg-white max-h-[400px] overflow-y-auto">
+                  <table className="min-w-full text-xs">
+                    <thead className="bg-gray-50 text-gray-700 sticky top-0">
                       <tr>
-                        <th className="px-4 py-3 text-left font-semibold">#</th>
-                        <th className="px-4 py-3 text-left font-semibold">Especialidad</th>
-                        <th className="px-4 py-3 text-center font-semibold">Estado</th>
-                        <th className="px-4 py-3 text-center font-semibold">Requiere</th>
-                        <th className="px-4 py-3 text-center font-semibold">TM</th>
-                        <th className="px-4 py-3 text-center font-semibold">Mañana</th>
-                        <th className="px-4 py-3 text-center font-semibold">Tarde</th>
-                        <th className="px-4 py-3 text-center font-semibold">TC</th>
-                        <th className="px-4 py-3 text-center font-semibold">TL</th>
-                        <th className="px-4 py-3 text-left font-semibold">Observación</th>
-                        {isEnviado && <th className="px-4 py-3 text-center font-semibold">Acciones</th>}
+                        <th className="px-2 py-1.5 text-left font-semibold">#</th>
+                        <th className="px-2 py-1.5 text-left font-semibold">Especialidad</th>
+                        <th className="px-2 py-1.5 text-center font-semibold">Estado</th>
+                        <th className="px-2 py-1.5 text-center font-semibold">Req</th>
+                        <th className="px-2 py-1.5 text-center font-semibold">TM</th>
+                        <th className="px-2 py-1.5 text-center font-semibold">Mañana</th>
+                        <th className="px-2 py-1.5 text-center font-semibold">Tarde</th>
+                        <th className="px-2 py-1.5 text-center font-semibold">TC</th>
+                        <th className="px-2 py-1.5 text-center font-semibold">TL</th>
+                        <th className="px-2 py-1.5 text-left font-semibold">Observación</th>
+                        {isEnviado && <th className="px-2 py-1.5 text-center font-semibold">Acciones</th>}
                       </tr>
                     </thead>
 
                     <tbody className="divide-y divide-gray-200">
-                      {detalles.map((d, idx) => {
-                        const estaPendiente = !d.estado || d.estado === 'PENDIENTE';
-                        const estaAprobado = d.estado === 'APROBADO';
-                        const estaRechazado = d.estado === 'RECHAZADO';
-                        
-                        return (
-                        <tr key={d.idDetalle ?? idx} className={`hover:bg-gray-50 ${!estaPendiente ? 'bg-gray-50' : ''}`}>
-                          <td className="px-4 py-3 text-gray-500">{idx + 1}</td>
+                      {detallesFiltrados.length === 0 ? (
+                        <tr>
+                          <td colSpan="11" className="px-4 py-8 text-center text-gray-500">
+                            <div className="flex flex-col items-center gap-2">
+                              <FileText className="w-8 h-8 text-gray-300" />
+                              <p className="text-sm">No se encontraron especialidades con los filtros aplicados</p>
+                              {(busquedaEspecialidad || filtroEstado !== "TODOS") && (
+                                <button
+                                  onClick={() => {
+                                    setBusquedaEspecialidad("");
+                                    setFiltroEstado("TODOS");
+                                  }}
+                                  className="text-xs text-blue-600 hover:underline"
+                                >
+                                  Limpiar filtros
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ) : (
+                        detallesFiltrados.map((d, idx) => {
+                          const estaPendiente = !d.estado || d.estado === 'PENDIENTE';
+                          const estaAprobado = d.estado === 'APROBADO';
+                          const estaRechazado = d.estado === 'RECHAZADO';
+                          
+                          return (
+                            <tr key={d.idDetalle ?? idx} className={`hover:bg-gray-50 ${!estaPendiente ? 'bg-gray-50' : ''}`}>
+                          <td className="px-2 py-1.5 text-gray-500">{idx + 1}</td>
 
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1.5">
                             <div className="font-semibold text-gray-900">{d.nombreServicio ?? d.nombreEspecialidad}</div>
-                            <div className="text-xs text-gray-500">Código: {d.codigoServicio ?? d.codServicio ?? "—"}</div>
+                            <div className="text-[10px] text-gray-500">Cód: {d.codigoServicio ?? d.codServicio ?? "—"}</div>
                           </td>
 
-                          <td className="px-4 py-3 text-center">
-                            <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getEstadoBadge(d.estado ?? 'PENDIENTE')}`}>
+                          <td className="px-2 py-1.5 text-center">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getEstadoBadge(d.estado ?? 'PENDIENTE')}`}>
                               {d.estado ?? 'PENDIENTE'}
                             </span>
                           </td>
 
-                          <td className="px-4 py-3 text-center">{yesNoPill(!!d.requiere)}</td>
+                          <td className="px-2 py-1.5 text-center">{yesNoPill(!!d.requiere)}</td>
 
-                          <td className="px-4 py-3 text-center">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                          <td className="px-2 py-1.5 text-center">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700 border border-purple-200">
                               {d.turnoTM ?? 0}
                             </span>
                           </td>
 
-                          <td className="px-4 py-3 text-center">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 border border-blue-200">
+                          <td className="px-2 py-1.5 text-center">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-200">
                               {d.turnoManana ?? 0}
                             </span>
                           </td>
 
-                          <td className="px-4 py-3 text-center">
-                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                          <td className="px-2 py-1.5 text-center">
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-700 border border-orange-200">
                               {d.turnoTarde ?? 0}
                             </span>
                           </td>
 
-                          <td className="px-4 py-3 text-center">{yesNoPill(!!d.tc)}</td>
-                          <td className="px-4 py-3 text-center">{yesNoPill(!!d.tl)}</td>
+                          <td className="px-2 py-1.5 text-center">{yesNoPill(!!d.tc)}</td>
+                          <td className="px-2 py-1.5 text-center">{yesNoPill(!!d.tl)}</td>
 
-                          <td className="px-4 py-3">
+                          <td className="px-2 py-1.5">
                             <div className="flex items-center gap-2">
                               {estaPendiente ? (
                                 <button
@@ -412,9 +546,23 @@ export default function ModalDetalleSolicitud({
                             </td>
                           )}
                         </tr>
-                      )})}
+                        );
+                      })
+                    )}
                     </tbody>
                   </table>
+                </div>
+                
+                {/* Footer de tabla con contador */}
+                <div className="bg-gray-50 px-3 py-1.5 border-t border-gray-200 flex items-center justify-between">
+                  <p className="text-[10px] text-gray-600">
+                    Mostrando {detallesFiltrados.length} de {detalles.length} especialidades
+                  </p>
+                  {estadisticas.pendientes > 0 && (
+                    <span className="text-[10px] text-amber-600 font-medium">
+                      {estadisticas.pendientes} pendiente{estadisticas.pendientes !== 1 ? 's' : ''} de revisar
+                    </span>
+                  )}
                 </div>
               </div>
 
