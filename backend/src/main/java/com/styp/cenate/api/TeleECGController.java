@@ -749,6 +749,56 @@ public class TeleECGController {
         }
     }
 
+    /**
+     * 📋 Guardar Nota Clínica para imagen ECG (v3.0.0)
+     * Endpoint para registrar hallazgos clínicos y plan de seguimiento
+     */
+    @PutMapping("/{idImagen}/nota-clinica")
+    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "editar")
+    @Operation(summary = "Guardar nota clínica del ECG (hallazgos y plan de seguimiento)")
+    public ResponseEntity<ApiResponse<TeleECGImagenDTO>> guardarNotaClinica(
+            @PathVariable Long idImagen,
+            @Valid @RequestBody NotaClinicaDTO notaClinica,
+            HttpServletRequest request) {
+
+        log.info("📋 Guardando Nota Clínica para ECG ID: {}", idImagen);
+
+        try {
+            Long idUsuarioMedico = getUsuarioActual();
+            String ipCliente = request.getRemoteAddr();
+
+            TeleECGImagenDTO resultado = teleECGService.guardarNotaClinica(
+                idImagen,
+                notaClinica,
+                idUsuarioMedico,
+                ipCliente
+            );
+
+            // Aplicar transformación de estado según rol
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+            resultado = aplicarTransformacionEstado(resultado, usuarioActual);
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "Nota clínica guardada exitosamente",
+                "200",
+                resultado
+            ));
+        } catch (ValidationException e) {
+            log.warn("⚠️ Validación en nota clínica: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        } catch (ResourceNotFoundException e) {
+            log.warn("❌ Recurso no encontrado: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, e.getMessage(), "404", null));
+        } catch (Exception e) {
+            log.error("❌ Error en nota clínica", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, e.getMessage(), "500", null));
+        }
+    }
+
     // ============================================================
     // MÉTODOS AUXILIARES - Transformación de Estados (v3.0.0)
     // ============================================================

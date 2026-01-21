@@ -441,6 +441,36 @@ const teleecgService = {
       throw error;
     }
   },
+
+  /**
+   * ✅ v3.0.0: Guardar Nota Clínica para un ECG
+   * Complementa la evaluación médica con hallazgos clínicos y plan de seguimiento
+   * @param {number} idImagen - ID de la imagen ECG
+   * @param {object} notaClinica - Objeto con { hallazgos, observacionesClinicas, planSeguimiento }
+   */
+  guardarNotaClinica: async (idImagen, notaClinica) => {
+    try {
+      const payload = {
+        hallazgos: notaClinica.hallazgos,
+        observacionesClinicas: notaClinica.observacionesClinicas,
+        planSeguimiento: notaClinica.planSeguimiento,
+      };
+
+      console.log("📋 [GUARDAR NOTA CLÍNICA]:", { idImagen, payload });
+
+      const response = await apiClient.put(
+        `/teleekgs/${idImagen}/nota-clinica`,
+        payload,
+        true
+      );
+
+      console.log("✅ [Nota Clínica Guardada]:", response);
+      return response;
+    } catch (error) {
+      console.error("❌ Error al guardar nota clínica:", error.message);
+      throw error;
+    }
+  },
 };
 
 export default teleecgService;

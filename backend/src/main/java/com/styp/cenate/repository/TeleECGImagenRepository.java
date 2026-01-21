@@ -318,21 +318,19 @@ public interface TeleECGImagenRepository extends JpaRepository<TeleECGImagen, Lo
      * ✅ FIX T-ECG-001 (v1.21.5): Obtener todas las estadísticas en una sola query
      * Retorna: [total, pendientes (ENVIADA), observadas (OBSERVADA), atendidas (ATENDIDA)]
      * Actualizado para usar los estados correctos de v3.0.0: ENVIADA, OBSERVADA, ATENDIDA
-     * Usando nativeQuery=true para SQL nativo (PostgreSQL)
-     *
-     * IMPORTANTE: Los CAST deben ser CAST(x AS INTEGER) para que Spring los interprete como números
+     * Usando JPQL con List<Object[]> para mejor mapeo de Hibernate
      */
-    @Query(value = """
+    @Query("""
         SELECT
-            CAST(COUNT(*) AS INTEGER),
-            CAST(COALESCE(SUM(CASE WHEN estado = 'ENVIADA' THEN 1 ELSE 0 END), 0) AS INTEGER),
-            CAST(COALESCE(SUM(CASE WHEN estado = 'OBSERVADA' THEN 1 ELSE 0 END), 0) AS INTEGER),
-            CAST(COALESCE(SUM(CASE WHEN estado = 'ATENDIDA' THEN 1 ELSE 0 END), 0) AS INTEGER)
-        FROM tele_ecg_imagenes
-        WHERE stat_imagen = 'A'
-          AND fecha_expiracion >= CURRENT_TIMESTAMP
-        """, nativeQuery = true)
-    Object[] getEstadisticasCompletas();
+            COUNT(t),
+            SUM(CASE WHEN t.estado = 'ENVIADA' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN t.estado = 'OBSERVADA' THEN 1 ELSE 0 END),
+            SUM(CASE WHEN t.estado = 'ATENDIDA' THEN 1 ELSE 0 END)
+        FROM TeleECGImagen t
+        WHERE t.statImagen = 'A'
+          AND t.fechaExpiracion >= CURRENT_TIMESTAMP
+        """)
+    List<Object[]> getEstadisticasCompletas();
 
     /**
      * Búsqueda flexible sin paginación (v1.21.5)

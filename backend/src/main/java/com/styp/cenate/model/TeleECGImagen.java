@@ -354,6 +354,61 @@ public class TeleECGImagen {
     @Column(name = "ruta_acceso", length = 255)
     private String rutaAcceso;
 
+    // ════════════════════════════════════════════════════════════════
+    // NOTA CLÍNICA (v3.0.0 - NUEVO)
+    // ════════════════════════════════════════════════════════════════
+
+    /**
+     * HALLAZGOS CLÍNICOS (v3.0.0 - Nuevo)
+     * JSON Array de checkboxes seleccionados
+     * Estructura: {"ritmo": true, "frecuencia": false, "intervaloPR": true, ...}
+     * Campos posibles: ritmo, frecuencia, intervaloPR, duracionQRS, segmentoST, ondaT, eje
+     */
+    @Column(name = "nota_clinica_hallazgos", columnDefinition = "jsonb")
+    private String notaClinicaHallazgos;
+
+    /**
+     * OBSERVACIONES CLÍNICAS (v3.0.0 - Nuevo)
+     * Campo texto libre para notas adicionales del médico
+     * Máximo: 2000 caracteres
+     */
+    @Column(name = "nota_clinica_observaciones", columnDefinition = "TEXT", length = 2000)
+    private String notaClinicaObservaciones;
+
+    /**
+     * PLAN DE SEGUIMIENTO (v3.0.0 - Nuevo)
+     * JSON con plan de seguimiento del paciente
+     * Estructura:
+     * {
+     *   "seguimientoMeses": true,
+     *   "seguimientoDias": 6,
+     *   "derivarCardiologo": false,
+     *   "hospitalizar": true,
+     *   "medicamentos": false,
+     *   "otrosPlan": "Descripción adicional"
+     * }
+     */
+    @Column(name = "nota_clinica_plan_seguimiento", columnDefinition = "jsonb")
+    private String notaClinicaPlanSeguimiento;
+
+    /**
+     * USUARIO QUE CREÓ LA NOTA CLÍNICA (v3.0.0 - Nuevo)
+     * FK a dim_usuarios
+     * Típicamente: Médico de CENATE que completó la nota clínica
+     * NULL si no hay nota clínica registrada
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario_nota_clinica", nullable = true)
+    private Usuario usuarioNotaClinica;
+
+    /**
+     * FECHA Y HORA DE LA NOTA CLÍNICA (v3.0.0 - Nuevo)
+     * Se establece cuando el médico guarda la nota clínica
+     * NULL si no hay nota clínica registrada
+     */
+    @Column(name = "fecha_nota_clinica")
+    private LocalDateTime fechaNotaClinica;
+
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();

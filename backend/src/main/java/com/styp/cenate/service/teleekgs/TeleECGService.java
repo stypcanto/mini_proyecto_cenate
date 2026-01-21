@@ -371,13 +371,16 @@ public class TeleECGService {
     public TeleECGEstadisticasDTO obtenerEstadisticas() {
         log.info("📊 Generando estadísticas TeleEKG");
 
-        // ✅ FIX T-ECG-001 v1.21.5: Query simplificada con CAST(x AS INTEGER)
-        // Retorna: [total, pendientes (ENVIADA), observadas (OBSERVADA), atendidas (ATENDIDA)]
-        Object[] estadisticasArr = teleECGImagenRepository.getEstadisticasCompletas();
+        // ✅ FIX T-ECG-001 v1.21.5: Usar List<Object[]> para mejor mapeo de Hibernate
+        // Retorna: [[total, pendientes (ENVIADA), observadas (OBSERVADA), atendidas (ATENDIDA)]]
+        List<Object[]> resultados = teleECGImagenRepository.getEstadisticasCompletas();
 
-        if (estadisticasArr == null || estadisticasArr.length < 4) {
+        Object[] estadisticasArr;
+        if (resultados == null || resultados.isEmpty()) {
             log.warn("⚠️ Estadísticas vacías, retornando zeros");
-            estadisticasArr = new Object[]{0, 0, 0, 0};
+            estadisticasArr = new Object[]{0L, 0L, 0L, 0L};
+        } else {
+            estadisticasArr = resultados.get(0);  // Obtener el primer (único) resultado
         }
 
         long totalImagenes = estadisticasArr[0] != null ? ((Number) estadisticasArr[0]).longValue() : 0;
@@ -537,6 +540,84 @@ public class TeleECGService {
         log.info("✅ Evaluación guardada: ID={}, Evaluación={}", idImagen, evaluacion);
 
         return convertirADTO(imagenActualizada);
+    }
+
+    /**
+     * 📋 Guardar Nota Clínica para una imagen ECG (v3.0.0)
+     * Complementa la evaluación médica con hallazgos clínicos y plan de seguimiento
+     */
+    public TeleECGImagenDTO guardarNotaClinica(Long idImagen, NotaClinicaDTO notaClinica,
+                                               Long idUsuarioMedico, String ipCliente) {
+        log.info("📋 Guardando Nota Clínica para ECG ID: {}", idImagen);
+
+        // 1. Validar entrada
+        if (notaClinica == null) {
+            throw new ValidationException("Nota clínica no puede ser nula");
+        }
+
+        if (notaClinica.getHallazgos() == null || notaClinica.getHallazgos().isEmpty()) {
+            throw new ValidationException("Debe seleccionar al menos un hallazgo");
+        }
+
+        // Validar observaciones si se proporcionan
+        if (notaClinica.getObservacionesClinicas() != null &&
+            notaClinica.getObservacionesClinicas().trim().length() > 2000) {
+            throw new ValidationException("Observaciones no pueden exceder 2000 caracteres");
+        }
+
+        // 2. Buscar imagen
+        TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
+            .orElseThrow(() -> new ResourceNotFoundException("ECG no encontrada: " + idImagen));
+
+        // 3. Validar que no esté vencida
+        if (imagen.getFechaExpiracion().isBefore(LocalDateTime.now())) {
+            throw new ValidationException("ECG ha expirado y no puede ser procesada");
+        }
+
+        // 4. Convertir datos a JSON
+        String hallazgosJson = convertirAJson(notaClinica.getHallazgos());
+        String planSeguimientoJson = convertirAJson(notaClinica.getPlanSeguimiento());
+
+        // 5. Setear datos de nota clínica
+        imagen.setNotaClinicaHallazgos(hallazgosJson);
+        imagen.setNotaClinicaObservaciones(notaClinica.getObservacionesClinicas());
+        imagen.setNotaClinicaPlanSeguimiento(planSeguimientoJson);
+        imagen.setFechaNotaClinica(LocalDateTime.now());
+
+        // Buscar usuario médico
+        if (idUsuarioMedico != null) {
+            usuarioRepository.findById(idUsuarioMedico).ifPresent(imagen::setUsuarioNotaClinica);
+        }
+
+        // 6. Guardar cambios
+        TeleECGImagen imagenActualizada = teleECGImagenRepository.save(imagen);
+
+        // 7. Registrar en auditoría
+        registrarAuditoria(
+            imagenActualizada,
+            idUsuarioMedico,
+            "NOTA_CLINICA",
+            ipCliente,
+            "Nota clínica registrada con hallazgos y plan de seguimiento"
+        );
+
+        log.info("✅ Nota clínica guardada: ID={}", idImagen);
+
+        return convertirADTO(imagenActualizada);
+    }
+
+    /**
+     * Helper: Convertir objeto a JSON string
+     */
+    private String convertirAJson(Object objeto) {
+        if (objeto == null) return null;
+        try {
+            com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+            return mapper.writeValueAsString(objeto);
+        } catch (Exception e) {
+            log.error("Error al convertir objeto a JSON", e);
+            return null;
+        }
     }
 
     // ============================================================

@@ -204,13 +204,25 @@ export default function ModalEvaluacionECG({
         return;
       }
 
-      // Guardar evaluación
+      // 1️⃣ Guardar evaluación
       await onConfirm(evaluacion, observacionesEval.trim() || "", idImagen);
+      toast.success(`✅ Evaluación guardada como ${evaluacion}`);
 
-      // Aquí se podrían guardar también los datos de Nota Clínica
-      // await teleecgService.guardarNotaClinica(idImagen, { hallazgos, observacionesNota, planSeguimiento });
+      // 2️⃣ Guardar Nota Clínica (si hay datos)
+      if (hallazgos && Object.values(hallazgos).some(v => v === true)) {
+        try {
+          await teleecgService.guardarNotaClinica(idImagen, {
+            hallazgos,
+            observacionesClinicas: observacionesNota.trim() || null,
+            planSeguimiento,
+          });
+          toast.success(`✅ Nota clínica guardada exitosamente`);
+        } catch (notaError) {
+          console.error("⚠️ Advertencia: Nota clínica no se guardó:", notaError);
+          toast.error("⚠️ Evaluación guardada, pero hubo error en nota clínica");
+        }
+      }
 
-      toast.success(`✅ ECG evaluada como ${evaluacion}`);
       limpiarFormulario();
       onClose();
     } catch (error) {
