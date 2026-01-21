@@ -97,8 +97,9 @@ public class TeleECGController {
 
     /**
      * ✅ TEST ENDPOINT AL INICIO - Verificar si POST funciona
+     * Este endpoint simple sin multipart verifica si los @PostMapping se registran
      */
-    @PostMapping("/test-inicio")
+    @PostMapping(value = "/test-inicio", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> testInicio() {
         log.info("✅ TEST POST AL INICIO FUNCIONA");
         return ResponseEntity.ok(new ApiResponse<>(
@@ -111,8 +112,9 @@ public class TeleECGController {
 
     /**
      * ✅ TEST ENDPOINT - POST sin multipart
+     * Usado para verificar si el problema es específico de endpoints multipart
      */
-    @PostMapping("/test-post-json")
+    @PostMapping(value = "/test-post-json", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE, consumes = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> testPostJson() {
         log.info("✅ TEST POST JSON FUNCIONA");
         return ResponseEntity.ok(new ApiResponse<>(
@@ -125,13 +127,18 @@ public class TeleECGController {
 
     /**
      * Subir nueva imagen ECG
+     *
+     * IMPORTANTE: El parámetro consumes="multipart/form-data" es CRÍTICO para que Spring
+     * registre correctamente este endpoint como POST handler en el RequestMappingHandlerMapping.
+     * Sin esto, Spring no mapeará las solicitudes POST a este método.
      */
-    @PostMapping(value = "/upload")
+    @PostMapping(value = "/upload", consumes = "multipart/form-data", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Subir imagen ECG")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> subirImagenECG(
             @RequestParam("numDocPaciente") String numDocPaciente,
             @RequestParam("nombresPaciente") String nombresPaciente,
             @RequestParam("apellidosPaciente") String apellidosPaciente,
+            @RequestParam(value = "pkAsegurado", required = false) String pkAsegurado,
             @RequestParam("archivo") MultipartFile archivo,
             HttpServletRequest request) {
 
@@ -142,6 +149,10 @@ public class TeleECGController {
             dto.setNumDocPaciente(numDocPaciente);
             dto.setNombresPaciente(nombresPaciente);
             dto.setApellidosPaciente(apellidosPaciente);
+            // ✅ Pasar el PK del asegurado si se proporciona
+            if (pkAsegurado != null && !pkAsegurado.trim().isEmpty()) {
+                dto.setPkAsegurado(pkAsegurado);
+            }
             dto.setArchivo(archivo);
 
             Long idUsuario = getUsuarioActual();
@@ -182,14 +193,17 @@ public class TeleECGController {
      * ✅ v3.0.0: Subir múltiples imágenes ECG (PADOMI requirement - 4-10 imágenes)
      * Endpoint para cargar batch de imágenes asociadas al mismo paciente
      *
-     * NOTA: consumes="multipart/form-data" es CRÍTICO para que Spring registre este endpoint correctamente
+     * IMPORTANTE: El parámetro consumes="multipart/form-data" es CRÍTICO para que Spring
+     * registre correctamente este endpoint como POST handler en el RequestMappingHandlerMapping.
+     * Sin esto, Spring no mapeará las solicitudes POST a este método.
      */
-    @PostMapping(value = "/upload-multiple")
+    @PostMapping(value = "/upload-multiple", consumes = "multipart/form-data", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Subir múltiples imágenes ECG (PADOMI)")
     public ResponseEntity<?> subirMultiplesImagenes(
             @RequestParam("numDocPaciente") String numDocPaciente,
             @RequestParam("nombresPaciente") String nombresPaciente,
             @RequestParam("apellidosPaciente") String apellidosPaciente,
+            @RequestParam(value = "pkAsegurado", required = false) String pkAsegurado,
             @RequestParam("archivos") MultipartFile[] archivos,
             HttpServletRequest request) {
 
@@ -277,6 +291,10 @@ public class TeleECGController {
                     dto.setNumDocPaciente(numDocPaciente);
                     dto.setNombresPaciente(nombresPaciente);
                     dto.setApellidosPaciente(apellidosPaciente);
+                    // ✅ Pasar el PK del asegurado si se proporciona
+                    if (pkAsegurado != null && !pkAsegurado.trim().isEmpty()) {
+                        dto.setPkAsegurado(pkAsegurado);
+                    }
                     dto.setArchivo(archivo);
 
                     TeleECGImagenDTO resultado = teleECGService.subirImagenECG(

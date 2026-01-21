@@ -33,6 +33,16 @@ import org.springframework.web.multipart.MultipartFile;
 public class SubirImagenECGDTO {
 
     /**
+     * PK del asegurado (opcional)
+     * Formato: String del primary key (ej: "22672403-202405")
+     * Validación: Opcional, proporcionar para búsqueda directa
+     * Ventaja: Evita problemas si el DNI está mal normalizado
+     *
+     * ✅ NUEVO en v1.21.5: Mejora de validación
+     */
+    private String pkAsegurado;
+
+    /**
      * Número de documento del paciente (DNI)
      * Formato: 8 dígitos numéricos
      * Validación: Requerido, exacto 8 dígitos

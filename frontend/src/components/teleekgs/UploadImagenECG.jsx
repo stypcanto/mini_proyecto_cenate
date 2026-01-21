@@ -20,6 +20,7 @@ export default function UploadImagenECG({ onSuccess }) {
 
   // Paciente
   const [numDocPaciente, setNumDocPaciente] = useState("");
+  const [pkAsegurado, setPkAsegurado] = useState(""); // ✅ Guardar PK del asegurado encontrado
   const [datosCompletos, setDatosCompletos] = useState({
     apellidos: "",
     nombres: "",
@@ -80,6 +81,8 @@ export default function UploadImagenECG({ onSuccess }) {
           sexo: paciente.sexo === "M" ? "M" : paciente.sexo === "F" ? "F" : paciente.sexo || "-",
           codigo: paciente.pkAsegurado || paciente.numDoc || numDocPaciente,
         });
+        // ✅ Guardar el PK del asegurado para usarlo en la validación del upload
+        setPkAsegurado(paciente.pkAsegurado || "");
         setPacienteEncontrado(true);
         toast.success("✅ Paciente encontrado");
       } else {
@@ -215,6 +218,10 @@ export default function UploadImagenECG({ onSuccess }) {
       formData.append("numDocPaciente", numDocPaciente);
       formData.append("nombresPaciente", datosCompletos.nombres || "");
       formData.append("apellidosPaciente", datosCompletos.apellidos || "");
+      // ✅ Enviar también el PK del asegurado para mejor validación en backend
+      if (pkAsegurado) {
+        formData.append("pkAsegurado", pkAsegurado);
+      }
 
       archivos.forEach((archivo) => {
         formData.append(`archivos`, archivo);
@@ -258,6 +265,7 @@ export default function UploadImagenECG({ onSuccess }) {
     setArchivos([]);
     setPreviews([]);
     setNumDocPaciente("");
+    setPkAsegurado(""); // ✅ Limpiar PK también
     setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "" });
     setEnviado(false);
     setRespuestaServidor(null);

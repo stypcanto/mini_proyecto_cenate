@@ -98,13 +98,26 @@ public class TeleECGService {
         log.info("📤 Subiendo imagen ECG para paciente: {}", dto.getNumDocPaciente());
 
         // 🔍 0. VALIDACIÓN CRÍTICA: Verificar que el asegurado EXISTE en la BD
-        // Si no existe, lanzar excepción específica
-        Optional<Asegurado> aseguradoVerificacion = aseguradoRepository.findByDocPaciente(dto.getNumDocPaciente());
+        // ✅ v1.21.5: Primero buscar por PK si se proporciona (más directo), sino por DNI
+        Optional<Asegurado> aseguradoVerificacion;
+
+        if (dto.getPkAsegurado() != null && !dto.getPkAsegurado().trim().isEmpty()) {
+            log.info("🔍 Buscando asegurado por PK: {}", dto.getPkAsegurado());
+            aseguradoVerificacion = aseguradoRepository.findById(dto.getPkAsegurado());
+            if (!aseguradoVerificacion.isPresent()) {
+                log.warn("⚠️ PK no encontrado, intentando búsqueda por DNI: {}", dto.getNumDocPaciente());
+                aseguradoVerificacion = aseguradoRepository.findByDocPaciente(dto.getNumDocPaciente());
+            }
+        } else {
+            log.info("🔍 Buscando asegurado por DNI: {}", dto.getNumDocPaciente());
+            aseguradoVerificacion = aseguradoRepository.findByDocPaciente(dto.getNumDocPaciente());
+        }
+
         if (!aseguradoVerificacion.isPresent()) {
-            log.warn("❌ Asegurado no existe en BD: {}", dto.getNumDocPaciente());
+            log.warn("❌ Asegurado no existe en BD - PK: {}, DNI: {}", dto.getPkAsegurado(), dto.getNumDocPaciente());
             throw new ValidationException("El asegurado con DNI " + dto.getNumDocPaciente() + " no existe en la base de datos. Por favor, registra al paciente primero.");
         }
-        log.info("✅ Asegurado validado: {}", dto.getNumDocPaciente());
+        log.info("✅ Asegurado validado correctamente");
 
         // 1. Obtener IPRESS
         Ipress ipressOrigen = ipressRepository.findById(idIpressOrigen)
