@@ -336,6 +336,66 @@ public class TeleECGService {
     }
 
     /**
+     * Rechazar imagen ECG por mala calidad - Devolver a IPRESS
+     * v3.1.0: Nuevo flujo de validación
+     *
+     * Cambios de estado:
+     * - ENVIADA → RECHAZADA (registra motivo y descripción)
+     * - Notifica a IPRESS que debe recargar la imagen
+     * - Auditoría completa de quién rechazó, cuándo y por qué
+     */
+    public TeleECGImagenDTO rechazarImagen(
+            Long idImagen,
+            RechazarImagenECGDTO dto,
+            Long idUsuario,
+            String ipCliente) {
+
+        log.info("❌ Rechazando imagen {} - Motivo: {}", idImagen, dto.getMotivoDescripcion());
+
+        // Validar que el motivo sea válido
+        if (!dto.esMotivoValido()) {
+            throw new ValidationException("Motivo de rechazo inválido: " + dto.getMotivo());
+        }
+
+        TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
+            .orElseThrow(() -> new ResourceNotFoundException("Imagen no encontrada: " + idImagen));
+
+        String estadoAnterior = imagen.getEstado();
+
+        // Solo se pueden rechazar imágenes en estado ENVIADA
+        if (!"ENVIADA".equals(estadoAnterior)) {
+            throw new ValidationException(
+                "Solo se pueden rechazar imágenes en estado ENVIADA, actual: " + estadoAnterior
+            );
+        }
+
+        // Cambiar estado y guardar motivo
+        imagen.setEstado("RECHAZADA");
+        imagen.setMotivoRechazo(dto.getMotivoDescripcion());
+        imagen.setObservaciones(dto.getDescripcion());
+        imagen.setFechaRechazo(LocalDateTime.now());
+
+        // Guardar imagen rechazada
+        imagen = teleECGImagenRepository.save(imagen);
+
+        // Registrar en auditoría
+        registrarAuditoria(
+            imagen,
+            idUsuario,
+            "RECHAZADA",
+            ipCliente,
+            "EXITOSA - Motivo: " + dto.getMotivoDescripcion()
+        );
+
+        log.info("✅ Imagen rechazada: {} → RECHAZADA (Motivo: {})", idImagen, dto.getMotivoDescripcion());
+
+        // TODO: Enviar notificación por email a IPRESS informando del rechazo
+        // emailService.notificarRechazoECG(imagen.getIpressOrigen(), imagen, dto);
+
+        return convertirADTO(imagen);
+    }
+
+    /**
      * Limpiar imágenes vencidas (automático cada 2am)
      */
     @Scheduled(cron = "0 0 2 * * ?")

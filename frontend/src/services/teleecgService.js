@@ -420,6 +420,36 @@ const teleecgService = {
   },
 
   /**
+   * ❌ v3.1.0: Rechazar imagen ECG por validación de calidad
+   * Devuelve la imagen a IPRESS para que cambie la imagen
+   * @param {number} idImagen - ID de la imagen ECG
+   * @param {string} motivo - Motivo predefinido (MALA_CALIDAD, INCOMPLETA, etc)
+   * @param {string} descripcion - Descripción adicional (opcional)
+   */
+  rechazarImagen: async (idImagen, motivo, descripcion = "") => {
+    try {
+      const payload = {
+        motivo,
+        descripcion,
+      };
+
+      console.log("❌ [RECHAZAR ECG]:", { idImagen, motivo });
+
+      const response = await apiClient.put(
+        `/teleekgs/${idImagen}/rechazar`,
+        payload,
+        true
+      );
+
+      console.log("✅ [Imagen Rechazada]:", response);
+      return response;
+    } catch (error) {
+      console.error("❌ Error al rechazar imagen:", error.message);
+      throw error;
+    }
+  },
+
+  /**
    * ✅ v1.21.5: Listar ECGs agrupadas por asegurado
    * Retorna una lista de asegurados con todas sus ECGs agrupadas
    * Ideal para dashboard que muestra 1 fila por asegurado

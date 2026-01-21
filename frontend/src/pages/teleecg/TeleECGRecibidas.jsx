@@ -2,9 +2,6 @@ import React, { useState, useEffect } from "react";
 import {
   Activity,
   Filter,
-  Download,
-  Eye,
-  Check,
   X,
   Search,
   RefreshCw,
@@ -13,12 +10,13 @@ import {
   Clock,
   CheckCircle,
   XCircle,
+  Stethoscope,
+  Edit,
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import teleecgService from "../../services/teleecgService";
 import VisorECGModal from "../../components/teleecgs/VisorECGModal";
 import CarrouselECGModal from "../../components/teleecgs/CarrouselECGModal";
-import ProcesarECGModal from "../../components/teleecgs/ProcesarECGModal";
 import ModalEvaluacionECG from "../../components/teleecgs/ModalEvaluacionECG";
 import toast from "react-hot-toast";
 
@@ -37,11 +35,9 @@ export default function TeleECGRecibidas() {
   const [showVisor, setShowVisor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
-  // ✅ FIX T-ECG-003: Modal para procesar con observaciones
-  const [showProcesarModal, setShowProcesarModal] = useState(false);
-  const [ecgParaProcesar, setEcgParaProcesar] = useState(null);
-
-  // ✅ v3.0.0: Modal para evaluar como NORMAL/ANORMAL + descripción
+  // ✅ v3.1.0: Modal unificado para triaje clínico
+  // Consolidó: showProcesarModal + showEvaluacionModal
+  // Flujo: Validación → Evaluación → Nota Clínica
   const [showEvaluacionModal, setShowEvaluacionModal] = useState(false);
   const [ecgParaEvaluar, setEcgParaEvaluar] = useState(null);
   const [evaluandoImagen, setEvaluandoImagen] = useState(false);
@@ -174,29 +170,8 @@ export default function TeleECGRecibidas() {
     setRefreshing(false);
   };
 
-  /**
-   * ✅ FIX T-ECG-003: Procesar ECG - Abrir modal para observaciones
-   */
-  const handleProcesar = (ecg) => {
-    setEcgParaProcesar(ecg);
-    setShowProcesarModal(true);
-  };
-
-  /**
-   * Confirmar procesamiento con observaciones
-   */
-  const handleConfirmarProcesamiento = async (observaciones) => {
-    try {
-      await teleecgService.procesarImagen(ecgParaProcesar.id_imagen || ecgParaProcesar.idImagen, observaciones);
-      toast.success("✅ ECG procesada exitosamente");
-      setShowProcesarModal(false);
-      setEcgParaProcesar(null);
-      await Promise.all([cargarECGs(), cargarEstadisticasGlobales()]);
-    } catch (error) {
-      console.error("❌ Error al procesar ECG:", error);
-      toast.error("Error al procesar la ECG");
-    }
-  };
+  // ✅ v3.1.0: handleProcesar y handleConfirmarProcesamiento consolidadas en modal unificado
+  // Ahora ambos botones (Atender + Procesar) abren ModalEvaluacionECG con validación
 
   // ❌ ELIMINADO: handleRechazar - No se rechaza en CENATE, solo se atiende
 
@@ -703,29 +678,6 @@ export default function TeleECGRecibidas() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex gap-2 justify-center">
-                          {/* Ver todas las ECGs en un carrusel/modal */}
-                          <button
-                            onClick={() => {
-                              setSelectedECG(asegurado);
-                              setShowVisor(true);
-                            }}
-                            title="Ver todas las ECGs"
-                            className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
-
-                          {/* Descargar todas las ECGs (ZIP) - TODO: Implementar en backend */}
-                          <button
-                            onClick={() => {
-                              toast.error("Función aún no implementada");
-                            }}
-                            title="Descargar todas (ZIP)"
-                            className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors opacity-50 cursor-not-allowed"
-                          >
-                            <Download className="w-4 h-4" />
-                          </button>
-
                           {/* Evaluar si alguna no está evaluada */}
                           {(asegurado.evaluacion_principal === "SIN_EVALUAR" || !asegurado.evaluacion_principal) && (
                             <button
@@ -736,26 +688,27 @@ export default function TeleECGRecibidas() {
                                   setShowEvaluacionModal(true);
                                 }
                               }}
-                              title="Evaluar grupo"
-                              className="p-2 text-purple-600 hover:bg-purple-100 rounded transition-colors"
+                              title="Evaluar (Diagnóstico)"
+                              className="p-2 text-blue-600 hover:bg-blue-100 rounded transition-colors"
                             >
-                              <CheckCircle className="w-4 h-4" />
+                              <Stethoscope className="w-4 h-4" />
                             </button>
                           )}
 
-                          {/* Procesar si alguna está pendiente */}
+                          {/* Procesar si alguna está pendiente - Abre modal unificado v3.1.0 */}
                           {asegurado.ecgs_pendientes > 0 && (
                             <button
                               onClick={() => {
                                 if (asegurado.imagenes && asegurado.imagenes.length > 0) {
-                                  setEcgParaProcesar(asegurado.imagenes[0]);
-                                  setShowProcesarModal(true);
+                                  // Usar el modal unificado (ahora con validación de calidad)
+                                  setEcgParaEvaluar(asegurado);
+                                  setShowEvaluacionModal(true);
                                 }
                               }}
-                              title="Procesar grupo"
-                              className="p-2 text-green-600 hover:bg-green-100 rounded transition-colors"
+                              title="Procesar ECG (Observaciones)"
+                              className="p-2 text-orange-600 hover:bg-orange-100 rounded transition-colors"
                             >
-                              <Check className="w-4 h-4" />
+                              <Edit className="w-4 h-4" />
                             </button>
                           )}
 
@@ -811,18 +764,7 @@ export default function TeleECGRecibidas() {
       ) : null}
 
       {/* ✅ FIX T-ECG-003: Modal para procesar ECG con observaciones */}
-      {showProcesarModal && ecgParaProcesar && (
-        <ProcesarECGModal
-          ecg={ecgParaProcesar}
-          onConfirm={handleConfirmarProcesamiento}
-          onCancel={() => {
-            setShowProcesarModal(false);
-            setEcgParaProcesar(null);
-          }}
-        />
-      )}
-
-      {/* ✅ v3.0.0: Modal para evaluar ECG como NORMAL/ANORMAL + descripción */}
+      {/* ✅ v3.1.0: Modal unificado para triaje clínico - Validación + Evaluación + Nota */}
       {showEvaluacionModal && ecgParaEvaluar && (
         <ModalEvaluacionECG
           isOpen={showEvaluacionModal}

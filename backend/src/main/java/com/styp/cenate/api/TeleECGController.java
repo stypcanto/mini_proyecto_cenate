@@ -502,8 +502,16 @@ public class TeleECGController {
                 .header("Content-Length", String.valueOf(imagen.getSizeBytes()))
                 .body(contenido);
         } catch (Exception e) {
-            log.error("❌ Error descargando", e);
-            return ResponseEntity.notFound().build();
+            log.error("❌ Error descargando imagen {}: {} - {}", idImagen, e.getClass().getSimpleName(), e.getMessage(), e);
+
+            // Diferenciar entre imagen no encontrada y otros errores
+            if (e.getMessage() != null && e.getMessage().contains("no encontrada")) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Log detallado para debugging
+            log.debug("Stack trace completo:", e);
+            return ResponseEntity.status(500).build();
         }
     }
 
@@ -537,8 +545,16 @@ public class TeleECGController {
                 .header("Cache-Control", "public, max-age=3600")
                 .body(contenido);
         } catch (Exception e) {
-            log.error("❌ Error en preview", e);
-            return ResponseEntity.notFound().build();
+            log.error("❌ Error en preview de imagen {}: {} - {}", imagenId, e.getClass().getSimpleName(), e.getMessage(), e);
+
+            // Diferenciar entre imagen no encontrada y otros errores
+            if (e.getMessage() != null && e.getMessage().contains("no encontrada")) {
+                return ResponseEntity.notFound().build();
+            }
+
+            // Log detallado para debugging
+            log.debug("Stack trace completo:", e);
+            return ResponseEntity.status(500).build();
         }
     }
 
@@ -573,6 +589,39 @@ public class TeleECGController {
             ));
         } catch (Exception e) {
             log.error("❌ Error procesando", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        }
+    }
+
+    /**
+     * Rechazar imagen ECG - Devolver a IPRESS para que cambien la imagen
+     * v3.1.0: Nuevo endpoint para validación de calidad
+     */
+    @PutMapping("/{idImagen}/rechazar")
+    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "editar")
+    @Operation(summary = "Rechazar imagen ECG por mala calidad")
+    public ResponseEntity<ApiResponse<TeleECGImagenDTO>> rechazarImagen(
+            @PathVariable Long idImagen,
+            @Valid @RequestBody RechazarImagenECGDTO dto,
+            HttpServletRequest request) {
+
+        log.info("❌ Rechazando imagen - ID: {} Motivo: {}", idImagen, dto.getMotivo());
+
+        try {
+            Long idUsuario = getUsuarioActual();
+            TeleECGImagenDTO resultado = teleECGService.rechazarImagen(
+                idImagen, dto, idUsuario, request.getRemoteAddr()
+            );
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "Imagen rechazada y devuelta a IPRESS",
+                "200",
+                resultado
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error rechazando imagen", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>(false, e.getMessage(), "400", null));
         }

@@ -304,6 +304,15 @@ public class TeleECGImagen {
     private LocalDateTime fechaEvaluacion;
 
     /**
+     * FECHA Y HORA DEL RECHAZO (v3.1.0 - Nuevo)
+     * Se establece cuando el médico rechaza por mala calidad
+     * NULL si estado != RECHAZADA
+     * Auditoría de cuándo se rechazó la imagen
+     */
+    @Column(name = "fecha_rechazo")
+    private LocalDateTime fechaRechazo;
+
+    /**
      * STATUS DE LA IMAGEN EN SISTEMA
      * A = ACTIVA (vigente, < 30 días)
      * I = INACTIVA (vencida, >= 30 días, marcada por limpieza automática)
