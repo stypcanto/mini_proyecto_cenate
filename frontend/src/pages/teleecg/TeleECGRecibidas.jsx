@@ -69,8 +69,6 @@ export default function TeleECGRecibidas() {
   // Cargar ECGs al montarse
   useEffect(() => {
     cargarECGs();
-    cargarEstadisticas();
-    extraerIpressOptions();
   }, []);
 
   /**
@@ -84,6 +82,10 @@ export default function TeleECGRecibidas() {
       const ecgData = Array.isArray(response) ? response : [];
       setEcgs(ecgData);
       console.log("✅ ECGs agrupadas cargadas:", ecgData.length, "asegurados");
+
+      // ✅ v1.21.5 FIX: Calcular estadísticas desde datos ya cargados
+      // Esto garantiza consistencia entre cards y tabla
+      calcularEstadisticasDesdeECGs(ecgData);
     } catch (error) {
       console.error("❌ Error al cargar ECGs:", error);
       setEcgs([]);
@@ -93,24 +95,33 @@ export default function TeleECGRecibidas() {
   };
 
   /**
-   * Cargar estadísticas consolidadas (v3.0.0)
+   * ✅ v1.21.5 FIX: Calcular estadísticas consolidadas desde los ECGs cargados
+   * Esto es más eficiente que hacer otra llamada a la API
+   * y garantiza que los numbers en los cards coincidan con la tabla
    */
-  const cargarEstadisticas = async () => {
-    try {
-      const response = await teleecgService.obtenerEstadisticas();
-      const statsData = response || {};
-      // v3.0.0: Para CENATE, usar nuevos nombres de estados
-      // Fallback a conteo local si API no retorna los nuevos campos
-      setStats({
-        total: statsData.totalImagenesCargadas || statsData.total || 0,
-        pendientes: statsData.totalPendientes || statsData.totalImagenesPendientes || 0,
-        observadas: statsData.totalObservadas || statsData.totalImagenesRechazadas || 0,
-        atendidas: statsData.totalAtendidas || statsData.totalImagenesProcesadas || 0,
-      });
-      console.log("✅ Estadísticas consolidadas (v3.0.0):", statsData);
-    } catch (error) {
-      console.error("❌ Error al cargar estadísticas:", error);
-    }
+  const calcularEstadisticasDesdeECGs = (ecgsData) => {
+    let totalECGs = 0;
+    let pendientes = 0;
+    let observadas = 0;
+    let atendidas = 0;
+
+    // Sumar conteos de cada asegurado
+    ecgsData.forEach((asegurado) => {
+      totalECGs += asegurado.total_ecgs || 0;
+      pendientes += asegurado.ecgs_pendientes || 0;
+      observadas += asegurado.ecgs_observadas || 0;
+      atendidas += asegurado.ecgs_atendidas || 0;
+    });
+
+    const nuevasStats = {
+      total: totalECGs,
+      pendientes: pendientes,
+      observadas: observadas,
+      atendidas: atendidas,
+    };
+
+    setStats(nuevasStats);
+    console.log("✅ Estadísticas calculadas desde ECGs:", nuevasStats);
   };
 
   /**
@@ -127,12 +138,12 @@ export default function TeleECGRecibidas() {
 
   /**
    * Refrescar todos los datos
+   * ✅ v1.21.5 FIX: Simplificado - cargarECGs() ya recalcula estadísticas
    */
   const handleRefresh = async () => {
     setRefreshing(true);
     await cargarECGs();
-    await cargarEstadisticas();
-    extraerIpressOptions();
+    // extraerIpressOptions() se ejecutará automáticamente via useEffect
     setRefreshing(false);
   };
 
@@ -153,8 +164,7 @@ export default function TeleECGRecibidas() {
       toast.success("✅ ECG procesada exitosamente");
       setShowProcesarModal(false);
       setEcgParaProcesar(null);
-      await cargarECGs();
-      await cargarEstadisticas();
+      await cargarECGs(); // Recalcula estadísticas automáticamente
     } catch (error) {
       console.error("❌ Error al procesar ECG:", error);
       toast.error("Error al procesar la ECG");
@@ -180,8 +190,7 @@ export default function TeleECGRecibidas() {
     try {
       await teleecgService.rechazarImagen(idImagen, motivo);
       toast.success("✅ ECG rechazada exitosamente");
-      await cargarECGs();
-      await cargarEstadisticas();
+      await cargarECGs(); // Recalcula estadísticas automáticamente
     } catch (error) {
       console.error("❌ Error al rechazar ECG:", error);
       toast.error("Error al rechazar la ECG");
@@ -258,8 +267,7 @@ export default function TeleECGRecibidas() {
       toast.success(`✅ ECG evaluada como ${evaluacion}`);
       setShowEvaluacionModal(false);
       setEcgParaEvaluar(null);
-      await cargarECGs();
-      await cargarEstadisticas();
+      await cargarECGs(); // Recalcula estadísticas automáticamente
     } catch (error) {
       console.error("❌ Error al evaluar ECG:", error);
       toast.error(error.message || "Error al guardar evaluación");
