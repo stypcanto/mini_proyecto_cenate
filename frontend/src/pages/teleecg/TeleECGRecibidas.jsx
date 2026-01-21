@@ -102,7 +102,8 @@ export default function TeleECGRecibidas() {
   const cargarEstadisticasGlobales = async () => {
     try {
       const response = await teleecgService.obtenerEstadisticas();
-      const statsData = response || {};
+      // ✅ El API retorna { success, message, code, data: {...} }
+      const statsData = response?.data || response || {};
 
       setStats({
         total: statsData.totalImagenesCargadas || statsData.total || 0,
