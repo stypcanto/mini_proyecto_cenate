@@ -132,7 +132,7 @@ public class TeleECGController {
      * registre correctamente este endpoint como POST handler en el RequestMappingHandlerMapping.
      * Sin esto, Spring no mapeará las solicitudes POST a este método.
      */
-    @PostMapping(value = "/upload", consumes = "multipart/form-data", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/upload", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE, produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Subir imagen ECG")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> subirImagenECG(
             @RequestParam("numDocPaciente") String numDocPaciente,
@@ -197,7 +197,7 @@ public class TeleECGController {
      * registre correctamente este endpoint como POST handler en el RequestMappingHandlerMapping.
      * Sin esto, Spring no mapeará las solicitudes POST a este método.
      */
-    @PostMapping(value = "/upload-multiple", consumes = "multipart/form-data", produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value = "/upload-multiple", consumes = org.springframework.http.MediaType.MULTIPART_FORM_DATA_VALUE, produces = org.springframework.http.MediaType.APPLICATION_JSON_VALUE)
     @Operation(summary = "Subir múltiples imágenes ECG (PADOMI)")
     public ResponseEntity<?> subirMultiplesImagenes(
             @RequestParam("numDocPaciente") String numDocPaciente,

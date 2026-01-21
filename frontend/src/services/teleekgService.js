@@ -3,6 +3,7 @@
 // ✅ VERSIÓN 1.0.0 - CENATE 2026
 // ========================================================================
 
+import axios from "axios";
 import apiClient from './apiClient';
 
 // ✅ FIX: REACT_APP_API_URL ya incluye /api, así que no duplicamos
@@ -11,9 +12,10 @@ const API_BASE_URL = `${process.env.REACT_APP_API_URL || "http://localhost:8080/
 // ✅ Función auxiliar para obtener el token correctamente
 const getAuthToken = () => {
   try {
-    const token = localStorage.getItem("token");
+    // ✅ v1.21.5: Usar la clave correcta 'auth.token' que usa AuthContext
+    const token = localStorage.getItem("auth.token");
     if (!token) {
-      console.warn("⚠️ No hay token en localStorage");
+      console.warn("⚠️ No hay token en localStorage con clave 'auth.token'");
       return null;
     }
     return token;
