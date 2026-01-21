@@ -228,16 +228,33 @@ export default function TeleECGRecibidas() {
   };
 
   /**
-   * ✅ v3.0.0: Confirmar evaluación y guardar
+   * ✅ v5.0.0: Confirmar evaluación y guardar (con opción de marcar como atendido)
+   * Ahora recibe directamente el idImagen desde el modal
    */
-  const handleConfirmarEvaluacion = async (evaluacion, descripcion) => {
+  const handleConfirmarEvaluacion = async (evaluacion, descripcion, idImagen) => {
     try {
       setEvaluandoImagen(true);
+
+      console.log("📋 [CALLBACK] Evaluación recibida:", {
+        evaluacion,
+        descripcion: descripcion.substring(0, 50) + "...",
+        idImagen,
+      });
+
+      // Si no viene idImagen, intentar obtenerlo del objeto ecgParaEvaluar
+      const finalIdImagen = idImagen || ecgParaEvaluar?.id_imagen || ecgParaEvaluar?.idImagen;
+
+      if (!finalIdImagen) {
+        throw new Error("No se pudo obtener el ID de la imagen para evaluar");
+      }
+
+      // Guardar la evaluación
       await teleecgService.evaluarImagen(
-        ecgParaEvaluar.id_imagen || ecgParaEvaluar.idImagen,
+        finalIdImagen,
         evaluacion,
         descripcion
       );
+
       toast.success(`✅ ECG evaluada como ${evaluacion}`);
       setShowEvaluacionModal(false);
       setEcgParaEvaluar(null);
@@ -297,13 +314,15 @@ export default function TeleECGRecibidas() {
 
   /**
    * Badge de estado (v3.0.0: Nuevos estados para CENATE)
-   * Usa estadoTransformado si está disponible (para CENATE es PENDIENTE, OBSERVADA, ATENDIDA)
+   * Usa estado_transformado si está disponible (para CENATE es PENDIENTE, OBSERVADA, ATENDIDA)
+   * ✅ FIX: Acceder por snake_case ya que API retorna en snake_case
    */
   const getEstadoBadge = (ecg) => {
-    // Preferir estadoTransformado si está disponible
-    const estado = ecg.estadoTransformado || ecg.estado;
+    // Preferir estado_transformado si está disponible (snake_case desde API)
+    const estado = ecg.estado_transformado || ecg.estado_principal || ecg.estadoTransformado || ecg.estado;
 
     const badges = {
+      // Estados transformados para CENATE
       PENDIENTE: (
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
           <Clock className="w-3 h-3" /> Pendiente
@@ -319,6 +338,12 @@ export default function TeleECGRecibidas() {
           <CheckCircle className="w-3 h-3" /> Atendida
         </span>
       ),
+      // Estados raw de BD v3.0.0 como fallback
+      ENVIADA: (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          <Clock className="w-3 h-3" /> Enviada
+        </span>
+      ),
       // Legacy states for backward compatibility
       PROCESADA: (
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
@@ -331,7 +356,12 @@ export default function TeleECGRecibidas() {
         </span>
       ),
     };
-    return badges[estado] || estado;
+    // Si no hay badge definido, mostrar el estado como texto
+    return badges[estado] || (
+      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+        {estado || "Desconocido"}
+      </span>
+    );
   };
 
   /**
@@ -690,7 +720,8 @@ export default function TeleECGRecibidas() {
                             <button
                               onClick={() => {
                                 if (asegurado.imagenes && asegurado.imagenes.length > 0) {
-                                  setEcgParaEvaluar(asegurado.imagenes[0]);
+                                  // Pasar el objeto completo del asegurado para ver TODAS las imágenes en carrusel
+                                  setEcgParaEvaluar(asegurado);
                                   setShowEvaluacionModal(true);
                                 }
                               }}
