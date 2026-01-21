@@ -3,9 +3,115 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación del Módulo Tele-ECG en:
-> - `plan/02_Modulos_Medicos/08_estado_final_teleecg_v2.0.0.md` (Estado final v2.0.0 - COMPLETADO)
-> - `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (Resumen completo de desarrollo)
+> - ⭐ `plan/02_Modulos_Medicos/10_resumen_desarrollo_tele_ecg_v1.22.0.md` (NUEVO - v1.22.0 Evaluación CENATE)
+> - `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (Resumen completo v1.21.5)
+> - `plan/02_Modulos_Medicos/08_estado_final_teleecg_v2.0.0.md` (Estado final v2.0.0)
 > - `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md` (Análisis arquitectónico)
+
+---
+
+## v1.22.0 (2026-01-21) - ✅ Tele-ECG: Columna Evaluación CENATE + Agrupación Pacientes
+
+### 🎯 Descripción
+
+**Mejora de UX en "Registro de Pacientes"**: Agregar columna de evaluación de ECGs (NORMAL/ANORMAL) y agrupar todas las imágenes del mismo paciente en una sola fila para evitar repetición visual.
+
+**Cambios**:
+1. ✅ Nueva columna "Evaluación (Solo CENATE)" con badges de color
+2. ✅ Agrupación automática de pacientes (4 filas → 1 fila)
+3. ✅ Contador visual de ECGs por paciente
+4. ✅ Read-only para usuarios externos
+
+**Estado**: ✅ **COMPLETADO**
+
+### 📋 Cambios Principales
+
+#### 1️⃣ Frontend - RegistroPacientes.jsx
+
+**Nueva Función**:
+```javascript
+// Agrupar imágenes por paciente (numDocPaciente)
+const agruparImagenesPorPaciente = (imagenesLista) => {
+  const agrupadas = {};
+  imagenesLista.forEach(imagen => {
+    const key = imagen.numDocPaciente;
+    if (!agrupadas[key]) {
+      agrupadas[key] = {
+        numDocPaciente: imagen.numDocPaciente,
+        nombresPaciente: imagen.nombresPaciente,
+        apellidosPaciente: imagen.apellidosPaciente,
+        imagenes: [],
+        estado: imagen.estadoTransformado || imagen.estado,
+        evaluacion: imagen.evaluacion,
+        fechaPrimera: imagen.fechaEnvio,
+      };
+    }
+    agrupadas[key].imagenes.push(imagen);
+  });
+  return Object.values(agrupadas);
+};
+```
+
+**Nueva Columna**:
+```jsx
+<th className="px-6 py-4 text-left text-sm font-semibold">
+  Evaluación (Solo CENATE)
+</th>
+
+<td className="px-6 py-4 text-sm">
+  {paciente.imagenes[0]?.evaluacion ? (
+    <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+      paciente.imagenes[0].evaluacion === 'NORMAL'
+        ? 'bg-green-100 text-green-800 border border-green-300'
+        : paciente.imagenes[0].evaluacion === 'ANORMAL'
+        ? 'bg-red-100 text-red-800 border border-red-300'
+        : 'bg-gray-100 text-gray-800 border border-gray-300'
+    }`}>
+      {paciente.imagenes[0].evaluacion}
+    </span>
+  ) : (
+    <span className="text-gray-500 text-xs">—</span>
+  )}
+</td>
+```
+
+**Contador de ECGs**:
+```jsx
+<p className="text-xs text-blue-600 font-semibold">
+  📸 {paciente.imagenes.length} ECG{paciente.imagenes.length !== 1 ? 's' : ''}
+</p>
+```
+
+#### 2️⃣ Resultados Visuales
+
+**Antes**:
+```
+Total de ECGs: 4
+Filas: 4 (VICTOR RAUL aparece 4 veces)
+```
+
+**Después**:
+```
+Total de ECGs: 4 (1 paciente)
+Filas: 1 (VICTOR RAUL aparece 1 vez)
+Indicador: 📸 4 ECGs
+Evaluación: SIN_EVALUAR (gris) | NORMAL (verde) | ANORMAL (rojo)
+```
+
+#### 3️⃣ Archivos Modificados
+
+```
+frontend/src/pages/roles/externo/teleecgs/RegistroPacientes.jsx
+├── [+] función agruparImagenesPorPaciente() (20 líneas)
+├── [+] encabezado "Evaluación (Solo CENATE)" (1 línea)
+├── [+] celda evaluación con badges (20 líneas)
+├── [+] agrupación en filtrar() (7 líneas)
+├── [+] contador pacientes (1 línea)
+└── [✏️] mapeo tabla (actualizado)
+
+Total: ~120 líneas modificadas
+Versión: v1.22.0
+```
 
 ---
 

@@ -401,6 +401,7 @@ export default function ListarImagenesECG({ onSuccess }) {
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">DNI</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Paciente</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Estado</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Evaluación (Solo CENATE)</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">ECGs</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Tamaño Total</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Fecha Envío</th>
@@ -425,6 +426,21 @@ export default function ListarImagenesECG({ onSuccess }) {
                       }`}>
                         {paciente.estado}
                       </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      {paciente.imagenes[0]?.evaluacion ? (
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                          paciente.imagenes[0].evaluacion === 'NORMAL'
+                            ? 'bg-green-100 text-green-800 border border-green-300'
+                            : paciente.imagenes[0].evaluacion === 'ANORMAL'
+                            ? 'bg-red-100 text-red-800 border border-red-300'
+                            : 'bg-gray-100 text-gray-800 border border-gray-300'
+                        }`}>
+                          {paciente.imagenes[0].evaluacion}
+                        </span>
+                      ) : (
+                        <span className="text-gray-500 text-xs">—</span>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">

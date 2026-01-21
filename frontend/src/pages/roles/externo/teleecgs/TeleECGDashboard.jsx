@@ -292,6 +292,7 @@ export default function TeleECGDashboard() {
               onRechazar={manejarRechazar}
               accionando={accionando}
               imagenEnAccion={imagenEnAccion}
+              onRefresh={cargarECGs}
             />
           )}
         </div>

@@ -298,6 +298,81 @@ const teleekgService = {
       console.error("Error al exportar estadísticas:", error);
       throw error;
     }
+  },
+
+  /**
+   * ✅ v3.1.0: Obtener preview de imagen como base64 para carousel
+   * @param {number} idImagen - ID de la imagen
+   * @returns {Promise<Object>} { contenidoImagen: base64, tipoContenido: mimeType }
+   */
+  verPreview: async (idImagen) => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/preview/${idImagen}`, {
+        method: 'GET',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {},
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        console.warn(`⚠️ Error al obtener preview ${idImagen}:`, response.status);
+        return { contenidoImagen: null, tipoContenido: null };
+      }
+
+      const blob = await response.blob();
+      const mimeType = response.headers.get('content-type') || blob.type || 'image/jpeg';
+
+      // Convertir blob a base64
+      const reader = new FileReader();
+      return new Promise((resolve) => {
+        reader.onload = () => {
+          const base64String = reader.result.split(',')[1]; // Quitar el prefijo "data:..."
+          resolve({
+            contenidoImagen: base64String,
+            tipoContenido: mimeType
+          });
+        };
+        reader.onerror = () => {
+          console.error('Error al leer preview como base64');
+          resolve({ contenidoImagen: null, tipoContenido: null });
+        };
+        reader.readAsDataURL(blob);
+      });
+    } catch (error) {
+      console.error('Error al obtener preview:', error);
+      return { contenidoImagen: null, tipoContenido: null };
+    }
+  },
+
+  /**
+   * ✅ v3.2.1: Eliminar una imagen ECG
+   * @param {number} idImagen - ID de la imagen
+   * @returns {Promise<Object>} Respuesta del servidor
+   */
+  eliminarImagen: async (idImagen) => {
+    try {
+      const token = getAuthToken();
+      const response = await fetch(`${API_BASE_URL}/${idImagen}`, {
+        method: 'DELETE',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {},
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.data || data;
+    } catch (error) {
+      console.error(`Error al eliminar imagen ${idImagen}:`, error);
+      throw error;
+    }
   }
 };
 
