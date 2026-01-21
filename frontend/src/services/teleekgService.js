@@ -5,7 +5,8 @@
 
 import axios from "axios";
 
-const API_BASE_URL = `${process.env.REACT_APP_API_URL || "http://localhost:8080"}/api/teleekgs`;
+// ✅ FIX: REACT_APP_API_URL ya incluye /api, así que no duplicamos
+const API_BASE_URL = `${process.env.REACT_APP_API_URL || "http://localhost:8080/api"}/teleekgs`;
 
 const teleekgService = {
   /**
@@ -17,13 +18,35 @@ const teleekgService = {
     try {
       const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
         headers: {
-          "Content-Type": "multipart/form-data",
+          // ✅ FIX: DO NOT set Content-Type manually for multipart/form-data
+          // axios will automatically set it with correct boundary parameters
           Authorization: `Bearer ${localStorage.getItem("token")}`
         }
       });
       return response.data.data;
     } catch (error) {
       console.error("Error al subir imagen:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Subir múltiples imágenes ECG (4-10 imágenes con detección de duplicados)
+   * @param {FormData} formData - Contiene archivos, DNI, nombres, apellidos
+   * @returns {Promise<Array>} Array de imágenes subidas con detalles
+   */
+  subirMultiplesImagenes: async (formData) => {
+    try {
+      const response = await axios.post(`${API_BASE_URL}/upload-multiple`, formData, {
+        headers: {
+          // ✅ FIX: DO NOT set Content-Type manually for multipart/form-data
+          // axios will automatically set it with correct boundary parameters
+          Authorization: `Bearer ${localStorage.getItem("token")}`
+        }
+      });
+      return response.data.data;
+    } catch (error) {
+      console.error("Error al subir múltiples imágenes:", error);
       throw error;
     }
   },

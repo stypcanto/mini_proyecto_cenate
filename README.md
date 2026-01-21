@@ -31,7 +31,7 @@
 - [Módulos Implementados](#módulos-implementados)
 - [📚 Documentación](#-documentación)
 - [Seguridad](#seguridad)
-- [API REST](#api-rest)
+- [API REST & Swagger](#api-rest) ⭐ **Acceso rápido a documentación interactiva**
 - [Historial de Versiones](#historial-de-versiones)
 - [Contacto](#contacto)
 
@@ -592,6 +592,7 @@ component: lazy(() => import('../pages/Admin'))
 
 | Necesito... | Ver documento |
 |-------------|---------------|
+| **📖 Explorar/probar endpoints interactivamente** | [Swagger UI](http://localhost:8080/swagger-ui.html) ⭐ |
 | **Levantar el proyecto en 5 minutos** | [CLAUDE.md - Quick Start](CLAUDE.md#-quick-start---levantar-el-proyecto) |
 | **Entender qué es CENATE** | [CLAUDE.md - ¿Qué es CENATE?](CLAUDE.md#qué-es-cenate) |
 | **Ver glosario de términos** | [CLAUDE.md - Glosario](CLAUDE.md#glosario-de-términos) |
@@ -721,6 +722,28 @@ public ResponseEntity<?> crearUsuario(...) { ... }
 ---
 
 ## API REST
+
+### 📖 Documentación Interactiva (Swagger/OpenAPI)
+
+**URL:** http://localhost:8080/swagger-ui.html
+
+**Especificación OpenAPI (JSON):** http://localhost:8080/api-docs
+
+Swagger permite:
+- ✅ Visualizar todos los endpoints disponibles
+- ✅ Probar endpoints directamente desde la interfaz
+- ✅ Ver esquemas de request/response
+- ✅ Agregar token JWT en el botón "Authorize" para endpoints protegidos
+- ✅ Consultar códigos de respuesta HTTP
+
+**Instrucciones:**
+1. Abrir http://localhost:8080/swagger-ui.html
+2. Ir a `/api/auth/login` y obtener un token JWT
+3. Hacer clic en "Authorize" (esquina superior derecha)
+4. Pegar el token en el formato: `Bearer {token}`
+5. ¡Listo! Puedes probar todos los endpoints protegidos
+
+---
 
 ### Base URL
 

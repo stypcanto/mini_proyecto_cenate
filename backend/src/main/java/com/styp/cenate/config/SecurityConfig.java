@@ -191,6 +191,15 @@ public class SecurityConfig {
                                                 .requestMatchers("/api/telemedicina/**").authenticated()
 
                                                 // =====================================================
+                                                // 🫀 TELE-ECG (Electrocardiogramas)
+                                                // =====================================================
+                                                // Especificar métodos explícitamente para POST/PUT/DELETE
+                                                .requestMatchers(HttpMethod.GET, "/api/teleekgs/**").authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/teleekgs/**").authenticated()
+                                                .requestMatchers(HttpMethod.PUT, "/api/teleekgs/**").authenticated()
+                                                .requestMatchers(HttpMethod.DELETE, "/api/teleekgs/**").authenticated()
+
+                                                // =====================================================
                                                 // 🧩 ADMINISTRACIÓN GENERAL
                                                 // =====================================================
                                                 // ⚠️ Usuarios: permitir GET para autenticados, resto solo ADMIN

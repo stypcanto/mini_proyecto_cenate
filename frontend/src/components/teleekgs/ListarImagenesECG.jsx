@@ -59,6 +59,30 @@ export default function ListarImagenesECG({ onSuccess }) {
     cargarImagenes();
   }, [page, numDoc, estado, fechaDesde, fechaHasta]);
 
+  // v3.0.0: Agrupar imágenes por paciente (numDocPaciente)
+  const agruparImagenesPorPaciente = (imagenesLista) => {
+    const agrupadas = {};
+
+    imagenesLista.forEach(imagen => {
+      const key = imagen.numDocPaciente;
+      if (!agrupadas[key]) {
+        agrupadas[key] = {
+          numDocPaciente: imagen.numDocPaciente,
+          nombresPaciente: imagen.nombresPaciente,
+          apellidosPaciente: imagen.apellidosPaciente,
+          imagenes: [],
+          estado: imagen.estadoTransformado || imagen.estado,
+          fechaPrimera: imagen.fechaEnvio,
+          tamanioTotal: 0
+        };
+      }
+      agrupadas[key].imagenes.push(imagen);
+      agrupadas[key].tamanioTotal += imagen.tamanioBytes || 0;
+    });
+
+    return Object.values(agrupadas);
+  };
+
   const cargarImagenes = async () => {
     try {
       setLoading(true);
@@ -355,7 +379,7 @@ export default function ListarImagenesECG({ onSuccess }) {
       <div className="bg-white rounded-lg shadow-md overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
           <p className="text-sm text-gray-600">
-            Mostrando {imagenes.length} de {totalElements} registros
+            Mostrando {agruparImagenesPorPaciente(imagenes).length} paciente(s) con {imagenes.length} imagen(es) • Total: {totalElements} registros
           </p>
         </div>
 
@@ -377,118 +401,62 @@ export default function ListarImagenesECG({ onSuccess }) {
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">DNI</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Paciente</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Estado</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Vigencia</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Tamaño</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Fecha</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">ECGs</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Tamaño Total</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">Fecha Envío</th>
                   <th className="px-6 py-3 text-center font-semibold text-gray-700">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200">
-                {imagenes.map((imagen) => (
-                  <tr key={imagen.idImagen} className="hover:bg-gray-50 transition">
-                    <td className="px-6 py-4 font-mono font-medium">{imagen.numDocPaciente}</td>
+                {agruparImagenesPorPaciente(imagenes).map((paciente) => (
+                  <tr key={paciente.numDocPaciente} className="hover:bg-gray-50 transition">
+                    <td className="px-6 py-4 font-mono font-medium">{paciente.numDocPaciente}</td>
                     <td className="px-6 py-4">
                       <div>
-                        <p className="font-medium text-gray-900">{imagen.nombresPaciente}</p>
-                        <p className="text-sm text-gray-500">{imagen.apellidosPaciente}</p>
+                        <p className="font-medium text-gray-900">{paciente.nombresPaciente} {paciente.apellidosPaciente}</p>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      {/* v3.0.0: Mostrar estado transformado si está disponible */}
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-semibold ${getColorEstado(imagen)}`}>
-                        {getIconoEstado(imagen)}
-                        {imagen.estadoTransformado || imagen.estado}
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-semibold ${
+                        paciente.estado === "ENVIADA" ? "bg-yellow-100 text-yellow-800 border-yellow-300" :
+                        paciente.estado === "PENDIENTE" ? "bg-yellow-100 text-yellow-800 border-yellow-300" :
+                        paciente.estado === "PROCESADA" ? "bg-green-100 text-green-800 border-green-300" :
+                        "bg-gray-100 text-gray-800 border-gray-300"
+                      }`}>
+                        {paciente.estado}
                       </span>
-                      {/* Mostrar observaciones si existen */}
-                      {imagen.observaciones && (
-                        <div className="text-xs text-gray-600 mt-1 p-1 bg-gray-50 rounded">
-                          <p className="font-medium">💬 {imagen.observaciones}</p>
-                        </div>
-                      )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`text-xs font-medium ${
-                        imagen.vigencia === "VENCIDA"
-                          ? "text-red-600"
-                          : imagen.vigencia === "PRÓX_A_VENCER"
-                          ? "text-yellow-600"
-                          : "text-green-600"
-                      }`}>
-                        {imagen.vigencia} ({imagen.diasRestantes}d)
+                      <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
+                        📸 {paciente.imagenes.length} ECG{paciente.imagenes.length !== 1 ? 's' : ''}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
-                      {(imagen.tamanioBytes / 1024 / 1024).toFixed(2)}MB
+                      {(paciente.tamanioTotal / 1024 / 1024).toFixed(2)}MB
                     </td>
                     <td className="px-6 py-4 text-gray-500">
-                      {new Date(imagen.fechaEnvio).toLocaleDateString()}
+                      {new Date(paciente.fechaPrimera).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-1 flex-wrap">
-                        {/* v3.0.0: Ver en carrusel (si hay múltiples) o detalles */}
+                        {/* Ver en carrusel con todas las imágenes del paciente */}
                         <button
-                          onClick={() => abrirCarousel(imagen)}
-                          disabled={accionando && imagenEnAccion === imagen.idImagen}
+                          onClick={() => abrirCarousel(paciente.imagenes[0])}
+                          disabled={accionando}
                           className="p-2 hover:bg-blue-100 rounded text-blue-600 transition disabled:opacity-50"
-                          title="Ver en carrusel (PADOMI)"
+                          title={`Ver ${paciente.imagenes.length} imagen(es) en carrusel`}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
 
-                        {/* Descargar */}
+                        {/* Descargar primera imagen */}
                         <button
-                          onClick={() => handleDescargar(imagen.idImagen, imagen.nombreArchivo)}
-                          disabled={accionando && imagenEnAccion === imagen.idImagen}
+                          onClick={() => handleDescargar(paciente.imagenes[0].idImagen, paciente.imagenes[0].nombreArchivo)}
+                          disabled={accionando}
                           className="p-2 hover:bg-green-100 rounded text-green-600 transition disabled:opacity-50"
-                          title="Descargar"
+                          title="Descargar primera imagen"
                         >
                           <Download className="w-4 h-4" />
-                        </button>
-
-                        {/* v3.0.0: Procesar (si está pendiente/enviada) */}
-                        {(imagen.estadoTransformado === "PENDIENTE" || imagen.estado === "PENDIENTE" || imagen.estado === "ENVIADA") && (
-                          <button
-                            onClick={() => handleProcesar(imagen.idImagen)}
-                            disabled={accionando && imagenEnAccion === imagen.idImagen}
-                            className="p-2 hover:bg-green-100 rounded text-green-600 transition disabled:opacity-50"
-                            title="Aceptar/Procesar"
-                          >
-                            {accionando && imagenEnAccion === imagen.idImagen ? (
-                              <Loader className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <CheckCircle className="w-4 h-4" />
-                            )}
-                          </button>
-                        )}
-
-                        {/* v3.0.0: Rechazar (si está pendiente/enviada) */}
-                        {(imagen.estadoTransformado === "PENDIENTE" || imagen.estado === "PENDIENTE" || imagen.estado === "ENVIADA") && (
-                          <button
-                            onClick={() => handleRechazar(imagen.idImagen)}
-                            disabled={accionando && imagenEnAccion === imagen.idImagen}
-                            className="p-2 hover:bg-red-100 rounded text-red-600 transition disabled:opacity-50"
-                            title="Rechazar"
-                          >
-                            {accionando && imagenEnAccion === imagen.idImagen ? (
-                              <Loader className="w-4 h-4 animate-spin" />
-                            ) : (
-                              <XCircle className="w-4 h-4" />
-                            )}
-                          </button>
-                        )}
-
-                        {/* Eliminar */}
-                        <button
-                          onClick={() => handleEliminar(imagen.idImagen)}
-                          disabled={accionando && imagenEnAccion === imagen.idImagen}
-                          className="p-2 hover:bg-red-100 rounded text-red-600 transition disabled:opacity-50"
-                          title="Eliminar"
-                        >
-                          {accionando && imagenEnAccion === imagen.idImagen ? (
-                            <Loader className="w-4 h-4 animate-spin" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
                         </button>
                       </div>
                     </td>

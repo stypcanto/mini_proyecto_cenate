@@ -126,7 +126,7 @@ public class TeleECGController {
     /**
      * Subir nueva imagen ECG
      */
-    @PostMapping(value = "/upload", consumes = "multipart/form-data")
+    @PostMapping(value = "/upload")
     @Operation(summary = "Subir imagen ECG")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> subirImagenECG(
             @RequestParam("numDocPaciente") String numDocPaciente,
@@ -184,7 +184,7 @@ public class TeleECGController {
      *
      * NOTA: consumes="multipart/form-data" es CRÍTICO para que Spring registre este endpoint correctamente
      */
-    @PostMapping(value = "/upload-multiple", consumes = "multipart/form-data")
+    @PostMapping(value = "/upload-multiple")
     @Operation(summary = "Subir múltiples imágenes ECG (PADOMI)")
     public ResponseEntity<?> subirMultiplesImagenes(
             @RequestParam("numDocPaciente") String numDocPaciente,
