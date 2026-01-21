@@ -23,6 +23,7 @@ import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
 import com.styp.cenate.service.solicitudturno.SolicitudTurnoIpressService;
 
@@ -133,20 +134,6 @@ public class SolicitudTurnoIpressController {
 	}
 
 	// ============================================================
-	// Obtener solicitud individual
-	// ============================================================
-
-	/**
-	 * Obtiene una solicitud por ID
-	 */
-	@GetMapping("/{id}")
-	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
-	public ResponseEntity<SolicitudTurnoIpressResponse> obtenerPorId(@PathVariable("id") Long id) {
-		log.info("Obteniendo solicitud con ID: {}", id);
-		return ResponseEntity.ok(solicitudService.obtenerPorIdConDetalles(id));
-	}
-
-	// ============================================================
 	// CRUD - Crear y actualizar
 	// ============================================================
 
@@ -224,14 +211,14 @@ public class SolicitudTurnoIpressController {
 		return ResponseEntity.noContent().build();
 	}
 
-
 	/*
 	 * GET /api/solicitudes-turno/consultar GET
 	 * /api/solicitudes-turno/consultar?estado=BORRADOR GET
 	 * /api/solicitudes-turno/consultar?idPeriodo=7
 	 */
 	@GetMapping("/consultar")
-	public ResponseEntity<List<SolicitudTurnoIpressListadoRow>> listar(@RequestParam(required = false, name = "idPeriodo") Long idPeriodo,
+	public ResponseEntity<List<SolicitudTurnoIpressListadoRow>> listar(
+			@RequestParam(required = false, name = "idPeriodo") Long idPeriodo,
 			@RequestParam(required = false, name = "estado") String estado) {
 		log.info("listar ***********************- idPeriodo : {} - estado : {}", idPeriodo, estado);
 
@@ -253,8 +240,7 @@ public class SolicitudTurnoIpressController {
 	}
 
 	@PostMapping("/{id}/rechazar")
-	public ResponseEntity<?> rechazarSolicitud(@PathVariable("id") Long id,
-			@RequestBody Map<String, String> body) {
+	public ResponseEntity<?> rechazarSolicitud(@PathVariable("id") Long id, @RequestBody Map<String, String> body) {
 		String motivo = body.get("motivo");
 		log.info("POST /api/solicitud-turnos/{}/rechazar - Rechazar solicitud", id);
 		try {
@@ -265,29 +251,43 @@ public class SolicitudTurnoIpressController {
 			throw new RuntimeException("Error al rechazar la solicitud: " + e.getMessage());
 		}
 	}
-	
+
 	@PostMapping("/{idSolicitud}/detalle")
-	//@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
+	// @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR',
+	// 'INSTITUCION_EX')")
 	public ResponseEntity<DetalleSolicitudTurnoUpsertResponse> upsertDetalle(
-	        @PathVariable("idSolicitud") Long idSolicitud,
-	        @Valid @RequestBody DetalleSolicitudTurnoUpsertRequest request) {
+			@PathVariable("idSolicitud") Long idSolicitud,
+			@Valid @RequestBody DetalleSolicitudTurnoUpsertRequest request) {
 
-	    log.info("POST /api/solicitudes-turno/{}/detalle - Upsert detalle servicio {}", idSolicitud, request.getIdServicio());
-	    log.info("POST /api/solicitudes-turno/{}/detalle - body {}", idSolicitud, request.toString());
-	    return ResponseEntity.ok(solicitudService.upsertDetalle(idSolicitud, request));
+		log.info("POST /api/solicitudes-turno/{}/detalle - Upsert detalle servicio {}", idSolicitud,
+				request.getIdServicio());
+		log.info("POST /api/solicitudes-turno/{}/detalle - body {}", idSolicitud, request.toString());
+		return ResponseEntity.ok(solicitudService.upsertDetalle(idSolicitud, request));
 	}
 
-	
 	@GetMapping("/detalle/{idDetalle}/fechas")
-	public ResponseEntity<DetalleFechasResponse> obtenerFechasDetalle(
-	        @PathVariable("idDetalle") Long idDetalle) {
-	    
-	    log.info("GET /api/solicitudes-turno/detalle/{}/fechas", idDetalle);
-	    return ResponseEntity.ok(solicitudService.obtenerFechasDetalle(idDetalle));
+	public ResponseEntity<DetalleFechasResponse> obtenerFechasDetalle(@PathVariable("idDetalle") Long idDetalle) {
+
+		log.info("GET /api/solicitudes-turno/detalle/{}/fechas", idDetalle);
+		return ResponseEntity.ok(solicitudService.obtenerFechasDetalle(idDetalle));
 	}
-	
-	
-	
-	
+
+	@GetMapping("/{id}")
+	// @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR',
+	// 'INSTITUCION_EX', 'EXTERNO')")
+	public ResponseEntity<SolicitudTurnoDetalleFullResponse> obtenerFull(@PathVariable("id") Long id) {
+		log.info("GET /api/solicitudes-turno/{} (full)", id);
+		return ResponseEntity.ok(solicitudService.obtenerPorIdFull(id));
+	}
+
+	/**
+	 * Obtiene una solicitud por ID
+	 */
+	@GetMapping("/{id}/simple")
+	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
+	public ResponseEntity<SolicitudTurnoIpressResponse> obtenerPorId(@PathVariable("id") Long id) {
+		log.info("Obteniendo solicitud con ID: {}", id);
+		return ResponseEntity.ok(solicitudService.obtenerPorIdConDetalles(id));
+	}
 
 }

@@ -8,6 +8,7 @@ import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoEstadoResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
 
@@ -113,6 +114,8 @@ public interface SolicitudTurnoIpressService {
 	DetalleFechasResponse obtenerFechasDetalle(Long idDetalle);
 
 	
+	SolicitudTurnoDetalleFullResponse obtenerPorIdFull(Long id);
+
 	
 
 }

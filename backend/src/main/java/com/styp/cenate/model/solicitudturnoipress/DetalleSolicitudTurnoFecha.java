@@ -44,13 +44,16 @@ public class DetalleSolicitudTurnoFecha {
     @Column(name = "id_detalle_fecha")
     private Long idDetalleFecha;
 
+    @EqualsAndHashCode.Include
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "id_detalle", nullable = false)
     private DetalleSolicitudTurno detalle;
 
+    @EqualsAndHashCode.Include
     @Column(name = "fecha", nullable = false)
     private LocalDate fecha;
 
+    @EqualsAndHashCode.Include
     @Enumerated(EnumType.STRING)
     @Column(name = "bloque", nullable = false, length = 10)
     private BloqueTurno bloque;
