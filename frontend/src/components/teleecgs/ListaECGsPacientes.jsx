@@ -4,10 +4,10 @@ import CarrouselECGModal from "./CarrouselECGModal";
 import teleekgService from "../../services/teleekgService";
 
 /**
- * 📋 Tabla de ECGs por pacientes
+ * 📋 Tabla de EKGs por pacientes
  * ✅ v3.1.0 - Actualizado para agrupar imágenes por paciente + carrusel modal
  */
-export default function ListaECGsPacientes({
+export default function ListaEKGsPacientes({
   ecgs,
   onVer,
   onDescargar,
@@ -136,7 +136,7 @@ export default function ListaECGsPacientes({
   // ✅ v3.2.0: Eliminar TODAS las imágenes del paciente
   const eliminarTodas = (pacienteAgrupado) => {
     const confirmar = window.confirm(
-      `¿Eliminar todos los ${pacienteAgrupado.imagenes.length} ECGs de este paciente? Esta acción no se puede deshacer.`
+      `¿Eliminar todos los ${pacienteAgrupado.imagenes.length} EKGs de este paciente? Esta acción no se puede deshacer.`
     );
     if (!confirmar) return;
 
@@ -201,7 +201,7 @@ export default function ListaECGsPacientes({
                       {paciente.nombresPaciente} {paciente.apellidosPaciente}
                     </p>
                     <p className="text-xs text-blue-600 font-semibold">
-                      📸 {paciente.imagenes.length} ECG{paciente.imagenes.length !== 1 ? 's' : ''}
+                      📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
                     </p>
                   </div>
                 </div>
@@ -257,7 +257,7 @@ export default function ListaECGsPacientes({
                       onClick={() => procesarTodas(paciente)}
                       disabled={accionando}
                       className="p-2 hover:bg-green-100 rounded-lg transition-colors text-green-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={`Procesar todos los ${paciente.imagenes.length} ECGs`}
+                      title={`Procesar todos los ${paciente.imagenes.length} EKGs`}
                     >
                       {accionando ? (
                         <Loader className="w-4 h-4 animate-spin" />
@@ -273,7 +273,7 @@ export default function ListaECGsPacientes({
                       onClick={() => rechazarTodas(paciente)}
                       disabled={accionando}
                       className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                      title={`Rechazar todos los ${paciente.imagenes.length} ECGs`}
+                      title={`Rechazar todos los ${paciente.imagenes.length} EKGs`}
                     >
                       {accionando ? (
                         <Loader className="w-4 h-4 animate-spin" />
@@ -288,7 +288,7 @@ export default function ListaECGsPacientes({
                     onClick={() => eliminarTodas(paciente)}
                     disabled={accionando}
                     className="p-2 hover:bg-red-100 rounded-lg transition-colors text-red-600 disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={`Eliminar todos los ${paciente.imagenes.length} ECGs`}
+                    title={`Eliminar todos los ${paciente.imagenes.length} EKGs`}
                   >
                     {accionando ? (
                       <Loader className="w-4 h-4 animate-spin" />

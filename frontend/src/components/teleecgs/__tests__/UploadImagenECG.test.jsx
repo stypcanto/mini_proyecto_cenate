@@ -1,5 +1,5 @@
 // ========================================================================
-// 📤 UploadImagenECG.test.jsx – Unit Tests para Upload Component
+// 📤 UploadImagenEKG.test.jsx – Unit Tests para Upload Component
 // ✅ VERSIÓN 1.0.0 - Jest + React Testing Library
 // ========================================================================
 
@@ -7,7 +7,7 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import toast from 'react-hot-toast';
-import UploadImagenECG from '../UploadImagenECG';
+import UploadImagenEKG from '../UploadImagenEKG';
 import teleekgService from '../../../services/teleekgService';
 import aseguradosService from '../../../services/aseguradosService';
 
@@ -15,7 +15,7 @@ jest.mock('react-hot-toast');
 jest.mock('../../../services/teleekgService');
 jest.mock('../../../services/aseguradosService');
 
-describe('UploadImagenECG Component', () => {
+describe('UploadImagenEKG Component', () => {
   const mockOnSuccess = jest.fn();
 
   beforeEach(() => {
@@ -28,7 +28,7 @@ describe('UploadImagenECG Component', () => {
 
   describe('Rendering', () => {
     it('debería renderizar el formulario de upload', () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       expect(screen.getByText(/Cargar Electrocardiograma/i)).toBeInTheDocument();
       expect(screen.getByPlaceholderText(/12345678/i)).toBeInTheDocument();
@@ -36,7 +36,7 @@ describe('UploadImagenECG Component', () => {
     });
 
     it('debería mostrar instrucciones de archivo', () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       expect(screen.getByText(/Máximo 5MB/i)).toBeInTheDocument();
       expect(screen.getByText(/JPEG, PNG/i)).toBeInTheDocument();
@@ -45,7 +45,7 @@ describe('UploadImagenECG Component', () => {
 
   describe('Validación DNI', () => {
     it('debería validar que DNI tiene 8 dígitos', async () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const inputDNI = screen.getByPlaceholderText(/12345678/i);
       await userEvent.type(inputDNI, '123'); // Solo 3 dígitos
@@ -54,7 +54,7 @@ describe('UploadImagenECG Component', () => {
     });
 
     it('debería rechazar caracteres no numéricos en DNI', async () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const inputDNI = screen.getByPlaceholderText(/12345678/i);
       await userEvent.type(inputDNI, '1234ABC56');
@@ -63,9 +63,9 @@ describe('UploadImagenECG Component', () => {
     });
 
     it('debería mostrar error si DNI está vacío', async () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
-      const submitButton = screen.getByRole('button', { name: /Cargar ECG/i });
+      const submitButton = screen.getByRole('button', { name: /Cargar EKG/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -74,12 +74,12 @@ describe('UploadImagenECG Component', () => {
     });
 
     it('debería mostrar error si DNI no tiene 8 dígitos', async () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const inputDNI = screen.getByPlaceholderText(/12345678/i);
       await userEvent.type(inputDNI, '1234567'); // 7 dígitos
 
-      const submitButton = screen.getByRole('button', { name: /Cargar ECG/i });
+      const submitButton = screen.getByRole('button', { name: /Cargar EKG/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -90,7 +90,7 @@ describe('UploadImagenECG Component', () => {
 
   describe('Validación Archivo', () => {
     it('debería rechazar archivo si es muy grande (> 5MB)', () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const largeFile = new File(['x'.repeat(6 * 1024 * 1024)], 'large.jpg', {
         type: 'image/jpeg'
@@ -110,7 +110,7 @@ describe('UploadImagenECG Component', () => {
     });
 
     it('debería rechazar archivo con tipo MIME inválido', () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const pdfFile = new File(['content'], 'test.pdf', { type: 'application/pdf' });
 
@@ -127,7 +127,7 @@ describe('UploadImagenECG Component', () => {
     });
 
     it('debería aceptar archivo JPEG válido', () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const validFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
 
@@ -144,7 +144,7 @@ describe('UploadImagenECG Component', () => {
     });
 
     it('debería aceptar archivo PNG válido', () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const validFile = new File(['content'], 'test.png', { type: 'image/png' });
 
@@ -163,12 +163,12 @@ describe('UploadImagenECG Component', () => {
 
   describe('Envío del Formulario', () => {
     it('debería enviar formulario correctamente', async () => {
-      teleekgService.subirImagenECG.mockResolvedValue({
+      teleekgService.subirImagenEKG.mockResolvedValue({
         idImagen: 1,
         estado: 'PENDIENTE'
       });
 
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const inputDNI = screen.getByPlaceholderText(/12345678/i);
       const validFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
@@ -184,21 +184,21 @@ describe('UploadImagenECG Component', () => {
 
       fireEvent.change(inputElement);
 
-      const submitButton = screen.getByRole('button', { name: /Cargar ECG/i });
+      const submitButton = screen.getByRole('button', { name: /Cargar EKG/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
-        expect(teleekgService.subirImagenECG).toHaveBeenCalled();
-        expect(toast.success).toHaveBeenCalledWith('✅ ECG cargado exitosamente');
+        expect(teleekgService.subirImagenEKG).toHaveBeenCalled();
+        expect(toast.success).toHaveBeenCalledWith('✅ EKG cargado exitosamente');
       });
     });
 
     it('debería manejar error de asegurado no existente', async () => {
-      teleekgService.subirImagenECG.mockRejectedValue({
+      teleekgService.subirImagenEKG.mockRejectedValue({
         response: { status: 404, data: { message: 'Asegurado no encontrado' } }
       });
 
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const inputDNI = screen.getByPlaceholderText(/12345678/i);
       const validFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
@@ -214,7 +214,7 @@ describe('UploadImagenECG Component', () => {
 
       fireEvent.change(inputElement);
 
-      const submitButton = screen.getByRole('button', { name: /Cargar ECG/i });
+      const submitButton = screen.getByRole('button', { name: /Cargar EKG/i });
       fireEvent.click(submitButton);
 
       await waitFor(() => {
@@ -225,7 +225,7 @@ describe('UploadImagenECG Component', () => {
 
   describe('Drag and Drop', () => {
     it('debería aceptar archivo con drag and drop', async () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const dropZone = screen.getByRole('button', { name: /Arrastra tu imagen/i }).parentElement;
       const validFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
@@ -245,7 +245,7 @@ describe('UploadImagenECG Component', () => {
 
   describe('Preview de Imagen', () => {
     it('debería mostrar preview después de seleccionar archivo', async () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const validFile = new File(['content'], 'test.jpg', { type: 'image/jpeg' });
 
@@ -267,7 +267,7 @@ describe('UploadImagenECG Component', () => {
 
   describe('Limpiar Formulario', () => {
     it('debería limpiar el formulario', async () => {
-      render(<UploadImagenECG onSuccess={mockOnSuccess} />);
+      render(<UploadImagenEKG onSuccess={mockOnSuccess} />);
 
       const inputDNI = screen.getByPlaceholderText(/12345678/i);
       await userEvent.type(inputDNI, '44914706');

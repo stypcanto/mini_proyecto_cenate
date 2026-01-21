@@ -16,16 +16,16 @@ import ListaECGsPacientes from "../../../../components/teleecgs/ListaECGsPacient
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
 
 /**
- * 🫀 TeleECGDashboard - Página principal de envío de electrocardiogramas
- * IPRESS externas pueden subir y gestionar imágenes de ECG
+ * 🫀 TeleEKGDashboard - Página principal de envío de electrocardiogramas
+ * IPRESS externas pueden subir y gestionar imágenes de EKG
  */
-export default function TeleECGDashboard() {
+export default function TeleEKGDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [ecgs, setEcgs] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedECG, setSelectedECG] = useState(null);
+  const [selectedEKG, setSelectedEKG] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
@@ -38,22 +38,22 @@ export default function TeleECGDashboard() {
   const [accionando, setAccionando] = useState(false);
   const [imagenEnAccion, setImagenEnAccion] = useState(null);
 
-  // Cargar ECGs al montarse el componente
+  // Cargar EKGs al montarse el componente
   useEffect(() => {
-    cargarECGs();
+    cargarEKGs();
     cargarEstadisticas();
   }, []);
 
-  const cargarECGs = async () => {
+  const cargarEKGs = async () => {
     try {
       setLoading(true);
       const response = await teleeckgService.listarImagenes();
       // El servicio retorna directamente los datos (puede ser Page o array)
       const ecgData = response?.content || response?.data || response || [];
       setEcgs(Array.isArray(ecgData) ? ecgData : []);
-      console.log("✅ ECGs cargados:", ecgData);
+      console.log("✅ EKGs cargados:", ecgData);
     } catch (error) {
-      console.error("❌ Error al cargar ECGs:", error);
+      console.error("❌ Error al cargar EKGs:", error);
       setEcgs([]);
     } finally {
       setLoading(false);
@@ -80,8 +80,8 @@ export default function TeleECGDashboard() {
     }
   };
 
-  const manejarUpload = async (nuevoECG) => {
-    setEcgs([nuevoECG, ...ecgs]);
+  const manejarUpload = async (nuevoEKG) => {
+    setEcgs([nuevoEKG, ...ecgs]);
     setShowUploadModal(false);
     cargarEstadisticas();
   };
@@ -96,7 +96,7 @@ export default function TeleECGDashboard() {
       await cargarEstadisticas();
       console.log("✅ Imagen eliminada y estadísticas actualizadas");
     } catch (error) {
-      console.error("❌ Error al eliminar ECG:", error);
+      console.error("❌ Error al eliminar EKG:", error);
       alert("Error al eliminar la imagen. Intenta nuevamente.");
     }
   };
@@ -105,11 +105,11 @@ export default function TeleECGDashboard() {
     try {
       await teleeckgService.descargarImagen(idImagen, nombreArchivo);
     } catch (error) {
-      console.error("❌ Error al descargar ECG:", error);
+      console.error("❌ Error al descargar EKG:", error);
     }
   };
 
-  // Procesar/Aceptar ECG
+  // Procesar/Aceptar EKG
   const manejarProcesar = async (idImagen) => {
     const observaciones = prompt("Ingresa observaciones (opcional):");
     if (observaciones === null) return;
@@ -118,11 +118,11 @@ export default function TeleECGDashboard() {
       setAccionando(true);
       setImagenEnAccion(idImagen);
       await teleeckgService.procesarImagen(idImagen, observaciones);
-      console.log("✅ ECG procesada correctamente");
-      await cargarECGs();
+      console.log("✅ EKG procesada correctamente");
+      await cargarEKGs();
       await cargarEstadisticas();
     } catch (error) {
-      console.error("❌ Error al procesar ECG:", error);
+      console.error("❌ Error al procesar EKG:", error);
       alert("Error al procesar la imagen. Intenta nuevamente.");
     } finally {
       setAccionando(false);
@@ -130,7 +130,7 @@ export default function TeleECGDashboard() {
     }
   };
 
-  // Rechazar ECG
+  // Rechazar EKG
   const manejarRechazar = async (idImagen) => {
     const motivo = prompt("Ingresa el motivo del rechazo:");
     if (motivo === null || !motivo.trim()) return;
@@ -139,11 +139,11 @@ export default function TeleECGDashboard() {
       setAccionando(true);
       setImagenEnAccion(idImagen);
       await teleeckgService.rechazarImagen(idImagen, motivo);
-      console.log("✅ ECG rechazada correctamente");
-      await cargarECGs();
+      console.log("✅ EKG rechazada correctamente");
+      await cargarEKGs();
       await cargarEstadisticas();
     } catch (error) {
-      console.error("❌ Error al rechazar ECG:", error);
+      console.error("❌ Error al rechazar EKG:", error);
       alert("Error al rechazar la imagen. Intenta nuevamente.");
     } finally {
       setAccionando(false);
@@ -155,13 +155,13 @@ export default function TeleECGDashboard() {
     try {
       // Cargar la imagen en base64
       const imagenData = await teleeckgService.verPreview(ecg.idImagen);
-      // Combinar datos del ECG con la imagen cargada
+      // Combinar datos del EKG con la imagen cargada
       const ecgConImagen = {
         ...ecg,
         contenidoImagen: imagenData.contenidoImagen,
         tipoContenido: imagenData.tipoContenido,
       };
-      setSelectedECG(ecgConImagen);
+      setSelectedEKG(ecgConImagen);
       setShowVisor(true);
     } catch (error) {
       console.error("❌ Error al cargar imagen:", error);
@@ -203,7 +203,7 @@ export default function TeleECGDashboard() {
     paciente.nombresPaciente?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Filtrar ECGs por búsqueda (para compatibilidad con componente ListaECGsPacientes)
+  // Filtrar EKGs por búsqueda (para compatibilidad con componente ListaEKGsPacientes)
   const ecgsFiltrados = ecgs.filter((ecg) =>
     ecg.numDocPaciente?.includes(searchTerm) ||
     ecg.nombresPaciente?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -217,7 +217,7 @@ export default function TeleECGDashboard() {
           <div className="flex items-center gap-3 mb-2">
             <Activity className="w-8 h-8 text-red-600" />
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-              Envío de Electrocardiogramas (ECG)
+              Envío de Electrocardiogramas (EKG)
             </h1>
           </div>
           <p className="text-gray-600 ml-11">
@@ -234,7 +234,7 @@ export default function TeleECGDashboard() {
                 <p className="text-2xl font-bold text-gray-800">
                   {stats.total || pacientesAgrupados.length}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">{ecgs.length} ECGs</p>
+                <p className="text-xs text-gray-500 mt-1">{ecgs.length} EKGs</p>
               </div>
               <ImageIcon className="w-10 h-10 text-blue-600 opacity-20" />
             </div>
@@ -247,7 +247,7 @@ export default function TeleECGDashboard() {
                 <p className="text-2xl font-bold text-yellow-600">
                   {stats.enviadas || pacientesAgrupados.filter((p) => p.estado === "ENVIADA").length}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "ENVIADA" || e.estado === "ENVIADA").length} ECGs</p>
+                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "ENVIADA" || e.estado === "ENVIADA").length} EKGs</p>
               </div>
               <Upload className="w-10 h-10 text-yellow-500 opacity-20" />
             </div>
@@ -260,7 +260,7 @@ export default function TeleECGDashboard() {
                 <p className="text-2xl font-bold text-green-600">
                   {stats.atendidas || pacientesAgrupados.filter((p) => p.estado === "ATENDIDA").length}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "ATENDIDA" || e.estado === "ATENDIDA").length} ECGs</p>
+                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "ATENDIDA" || e.estado === "ATENDIDA").length} EKGs</p>
               </div>
               <Eye className="w-10 h-10 text-green-600 opacity-20" />
             </div>
@@ -273,7 +273,7 @@ export default function TeleECGDashboard() {
                 <p className="text-2xl font-bold text-red-600">
                   {stats.rechazadas || pacientesAgrupados.filter((p) => p.estado === "RECHAZADA").length}
                 </p>
-                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "RECHAZADA" || e.estado === "RECHAZADA").length} ECGs</p>
+                <p className="text-xs text-gray-500 mt-1">{ecgs.filter((e) => e.estadoTransformado === "RECHAZADA" || e.estado === "RECHAZADA").length} EKGs</p>
               </div>
               <Trash2 className="w-10 h-10 text-red-600 opacity-20" />
             </div>
@@ -301,23 +301,23 @@ export default function TeleECGDashboard() {
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
             >
               <Plus className="w-5 h-5" />
-              <span>Subir ECG</span>
+              <span>Subir EKG</span>
             </button>
           </div>
         </div>
 
-        {/* 📋 Lista de ECGs */}
+        {/* 📋 Lista de EKGs */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-600 mt-4">Cargando ECGs...</p>
+              <p className="text-gray-600 mt-4">Cargando EKGs...</p>
             </div>
           ) : ecgsFiltrados.length === 0 ? (
             <div className="p-8 text-center">
               <ImageIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 text-lg">
-                {searchTerm ? "No se encontraron ECGs" : "No hay ECGs aún. ¡Sube uno ahora!"}
+                {searchTerm ? "No se encontraron EKGs" : "No hay EKGs aún. ¡Sube uno ahora!"}
               </p>
             </div>
           ) : (
@@ -330,7 +330,7 @@ export default function TeleECGDashboard() {
               onRechazar={manejarRechazar}
               accionando={accionando}
               imagenEnAccion={imagenEnAccion}
-              onRefresh={cargarECGs}
+              onRefresh={cargarEKGs}
             />
           )}
         </div>
@@ -352,7 +352,7 @@ export default function TeleECGDashboard() {
             <div className="overflow-y-auto flex-1">
               <UploadImagenECG onSuccess={() => {
                 setShowUploadModal(false);
-                cargarECGs();
+                cargarEKGs();
               }} />
             </div>
           </div>
@@ -362,12 +362,12 @@ export default function TeleECGDashboard() {
       {/* 👁️ Modal Visor */}
       {showVisor && (
         <VisorECGModal
-          ecg={selectedECG}
+          ecg={selectedEKG}
           onClose={() => {
             setShowVisor(false);
-            setSelectedECG(null);
+            setSelectedEKG(null);
           }}
-          onDescargar={() => manejarDescargar(selectedECG.idImagen, selectedECG.nombreArchivo)}
+          onDescargar={() => manejarDescargar(selectedEKG.idImagen, selectedEKG.nombreArchivo)}
         />
       )}
     </div>

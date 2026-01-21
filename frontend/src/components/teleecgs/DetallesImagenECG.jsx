@@ -1,5 +1,5 @@
 // ========================================================================
-// 📊 DetallesImagenECG.jsx – Modal de Detalles y Acciones
+// 📊 DetallesImagenEKG.jsx – Modal de Detalles y Acciones
 // ✅ VERSIÓN 1.0.0 - CENATE 2026
 // ========================================================================
 
@@ -11,7 +11,7 @@ import {
 import toast from "react-hot-toast";
 import teleekgService from "../../services/teleekgService";
 
-export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
+export default function DetallesImagenEKG({ imagen, onClose, onSuccess }) {
   const [accion, setAccion] = useState(null); // null, 'procesar', 'rechazar', 'vincular'
   const [motivo, setMotivo] = useState("");
   const [loading, setLoading] = useState(false);
@@ -44,10 +44,10 @@ export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
       }
 
       await teleekgService.procesarImagen(imagen.idImagen, payload);
-      toast.success(`ECG ${accion} correctamente`);
+      toast.success(`EKG ${accion} correctamente`);
       onSuccess?.();
     } catch (error) {
-      toast.error(error.response?.data?.message || "Error al procesar ECG");
+      toast.error(error.response?.data?.message || "Error al procesar EKG");
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
       case "procesar":
         return (
           <div className="space-y-4">
-            <p className="text-gray-600">¿Aceptar este ECG como válido?</p>
+            <p className="text-gray-600">¿Aceptar este EKG como válido?</p>
             <div className="flex gap-3">
               <button
                 onClick={handleProcesar}
@@ -102,7 +102,7 @@ export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
                 className="flex-1 bg-red-600 hover:bg-red-700 text-white font-semibold py-2 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? <Loader className="w-4 h-4 animate-spin" /> : <XCircle className="w-4 h-4" />}
-                Rechazar ECG
+                Rechazar EKG
               </button>
               <button
                 onClick={() => {
@@ -163,7 +163,7 @@ export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
       <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-96 overflow-y-auto">
         {/* Header */}
         <div className="sticky top-0 bg-gray-50 border-b border-gray-200 px-6 py-4 flex items-center justify-between">
-          <h2 className="text-xl font-bold">Detalles del ECG</h2>
+          <h2 className="text-xl font-bold">Detalles del EKG</h2>
           <button
             onClick={onClose}
             className="p-2 hover:bg-gray-200 rounded-lg transition"
@@ -262,14 +262,14 @@ export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
                       className="w-full flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition"
                     >
                       <CheckCircle className="w-4 h-4" />
-                      Aceptar ECG
+                      Aceptar EKG
                     </button>
                     <button
                       onClick={() => setAccion("rechazar")}
                       className="w-full flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white font-semibold py-3 rounded-lg transition"
                     >
                       <XCircle className="w-4 h-4" />
-                      Rechazar ECG
+                      Rechazar EKG
                     </button>
                   </>
                 )}

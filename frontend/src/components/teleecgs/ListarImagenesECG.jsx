@@ -1,5 +1,5 @@
 // ========================================================================
-// 📋 ListarImagenesECG.jsx – Componente para Listar y Filtrar ECGs
+// 📋 ListarImagenesEKG.jsx – Componente para Listar y Filtrar EKGs
 // ✅ VERSIÓN 1.1.0 - CENATE 2026
 // Funcionalidades: READ, UPDATE (Procesar/Rechazar), DELETE (Eliminar)
 // ========================================================================
@@ -16,7 +16,7 @@ import DetallesImagenECG from "./DetallesImagenECG";
 import CarrouselECGModal from "./CarrouselECGModal";
 import ConfirmDialog from "../modals/ConfirmDialog";
 
-export default function ListarImagenesECG({ onSuccess }) {
+export default function ListarImagenesEKG({ onSuccess }) {
   const [imagenes, setImagenes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -210,7 +210,7 @@ export default function ListarImagenesECG({ onSuccess }) {
     setPage(0);
   };
 
-  // Procesar/Aceptar ECG
+  // Procesar/Aceptar EKG
   const handleProcesar = async (idImagen) => {
     const observaciones = prompt("Ingresa observaciones (opcional):");
     if (observaciones === null) return;
@@ -219,19 +219,19 @@ export default function ListarImagenesECG({ onSuccess }) {
       setAccionando(true);
       setImagenEnAccion(idImagen);
       await teleekgService.procesarImagen(idImagen, observaciones);
-      toast.success("✅ ECG procesada correctamente");
+      toast.success("✅ EKG procesada correctamente");
       cargarImagenes();
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error:", error);
-      toast.error("❌ Error al procesar ECG");
+      toast.error("❌ Error al procesar EKG");
     } finally {
       setAccionando(false);
       setImagenEnAccion(null);
     }
   };
 
-  // Rechazar ECG
+  // Rechazar EKG
   const handleRechazar = async (idImagen) => {
     const motivo = prompt("Ingresa el motivo del rechazo:");
     if (motivo === null || !motivo.trim()) return;
@@ -240,12 +240,12 @@ export default function ListarImagenesECG({ onSuccess }) {
       setAccionando(true);
       setImagenEnAccion(idImagen);
       await teleekgService.rechazarImagen(idImagen, motivo);
-      toast.success("✅ ECG rechazada correctamente");
+      toast.success("✅ EKG rechazada correctamente");
       cargarImagenes();
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error:", error);
-      toast.error("❌ Error al rechazar ECG");
+      toast.error("❌ Error al rechazar EKG");
     } finally {
       setAccionando(false);
       setImagenEnAccion(null);
@@ -258,7 +258,7 @@ export default function ListarImagenesECG({ onSuccess }) {
     setConfirmDialogOpen(true);
   };
 
-  // Confirmar eliminación de ECG
+  // Confirmar eliminación de EKG
   const confirmarEliminar = async () => {
     if (!imagenParaEliminar) return;
 
@@ -266,12 +266,12 @@ export default function ListarImagenesECG({ onSuccess }) {
       setAccionando(true);
       setImagenEnAccion(imagenParaEliminar);
       await teleekgService.eliminarImagen(imagenParaEliminar);
-      toast.success("✅ ECG eliminada correctamente");
+      toast.success("✅ EKG eliminada correctamente");
       cargarImagenes();
       if (onSuccess) onSuccess();
     } catch (error) {
       console.error("Error:", error);
-      toast.error("❌ Error al eliminar ECG");
+      toast.error("❌ Error al eliminar EKG");
     } finally {
       setAccionando(false);
       setImagenEnAccion(null);
@@ -402,7 +402,7 @@ export default function ListarImagenesECG({ onSuccess }) {
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Paciente</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Estado</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Evaluación (Solo CENATE)</th>
-                  <th className="px-6 py-3 text-left font-semibold text-gray-700">ECGs</th>
+                  <th className="px-6 py-3 text-left font-semibold text-gray-700">EKGs</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Tamaño Total</th>
                   <th className="px-6 py-3 text-left font-semibold text-gray-700">Fecha Envío</th>
                   <th className="px-6 py-3 text-center font-semibold text-gray-700">Acciones</th>
@@ -444,7 +444,7 @@ export default function ListarImagenesECG({ onSuccess }) {
                     </td>
                     <td className="px-6 py-4">
                       <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
-                        📸 {paciente.imagenes.length} ECG{paciente.imagenes.length !== 1 ? 's' : ''}
+                        📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-600">
@@ -546,8 +546,8 @@ export default function ListarImagenesECG({ onSuccess }) {
           setImagenParaEliminar(null);
         }}
         onConfirm={confirmarEliminar}
-        title="Eliminar ECG"
-        message="¿Estás seguro de que deseas eliminar este ECG? Esta acción no se puede deshacer."
+        title="Eliminar EKG"
+        message="¿Estás seguro de que deseas eliminar este EKG? Esta acción no se puede deshacer."
         confirmText="Sí, eliminar"
         cancelText="Cancelar"
         type="danger"

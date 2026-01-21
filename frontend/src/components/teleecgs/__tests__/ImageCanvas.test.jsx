@@ -54,7 +54,7 @@ describe("ImageCanvas Component", () => {
 
     test("debe tener aria-label", () => {
       render(<ImageCanvas imageSrc={validDataUrl} />);
-      const canvas = screen.getByLabelText("ECG Image Canvas");
+      const canvas = screen.getByLabelText("EKG Image Canvas");
       expect(canvas).toBeInTheDocument();
     });
 
@@ -77,7 +77,7 @@ describe("ImageCanvas Component", () => {
       rerender(<ImageCanvas imageSrc={validDataUrl} rotation={90} />);
 
       await waitFor(() => {
-        const canvas = screen.getByLabelText("ECG Image Canvas");
+        const canvas = screen.getByLabelText("EKG Image Canvas");
         expect(canvas).toBeInTheDocument();
       });
     });
@@ -90,7 +90,7 @@ describe("ImageCanvas Component", () => {
       rerender(<ImageCanvas imageSrc={validDataUrl} rotation={180} />);
 
       await waitFor(() => {
-        const canvas = screen.getByLabelText("ECG Image Canvas");
+        const canvas = screen.getByLabelText("EKG Image Canvas");
         expect(canvas).toBeInTheDocument();
       });
     });
@@ -103,7 +103,7 @@ describe("ImageCanvas Component", () => {
       rerender(<ImageCanvas imageSrc={validDataUrl} rotation={270} />);
 
       await waitFor(() => {
-        const canvas = screen.getByLabelText("ECG Image Canvas");
+        const canvas = screen.getByLabelText("EKG Image Canvas");
         expect(canvas).toBeInTheDocument();
       });
     });
@@ -120,7 +120,7 @@ describe("ImageCanvas Component", () => {
       );
 
       await waitFor(() => {
-        const canvas = screen.getByLabelText("ECG Image Canvas");
+        const canvas = screen.getByLabelText("EKG Image Canvas");
         expect(canvas).toBeInTheDocument();
       });
     });
@@ -135,7 +135,7 @@ describe("ImageCanvas Component", () => {
       );
 
       await waitFor(() => {
-        const canvas = screen.getByLabelText("ECG Image Canvas");
+        const canvas = screen.getByLabelText("EKG Image Canvas");
         expect(canvas).toBeInTheDocument();
       });
     });
@@ -150,7 +150,7 @@ describe("ImageCanvas Component", () => {
       );
 
       await waitFor(() => {
-        const canvas = screen.getByLabelText("ECG Image Canvas");
+        const canvas = screen.getByLabelText("EKG Image Canvas");
         expect(canvas).toBeInTheDocument();
       });
     });
@@ -165,7 +165,7 @@ describe("ImageCanvas Component", () => {
       render(<ImageCanvas imageSrc={validDataUrl} filters={filters} />);
 
       await waitFor(() => {
-        const canvas = screen.getByLabelText("ECG Image Canvas");
+        const canvas = screen.getByLabelText("EKG Image Canvas");
         expect(canvas).toBeInTheDocument();
       });
     });
@@ -216,7 +216,7 @@ describe("ImageCanvas Component", () => {
       rerender(<ImageCanvas imageSrc={validDataUrl} rotation={90} />);
 
       await waitFor(() => {
-        const canvas = screen.getByLabelText("ECG Image Canvas");
+        const canvas = screen.getByLabelText("EKG Image Canvas");
         expect(canvas).toBeInTheDocument();
       });
     });

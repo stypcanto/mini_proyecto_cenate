@@ -501,6 +501,22 @@ const teleecgService = {
       throw error;
     }
   },
+
+  /**
+   * ✅ v1.27.0: Cargar especialidades médicas de CENATE
+   * Para interconsulta en plan de seguimiento
+   */
+  obtenerEspecialidades: async () => {
+    try {
+      console.log("📚 [CARGAR ESPECIALIDADES]");
+      const response = await apiClient.get("/especialidades/activas", true);
+      console.log("✅ [Especialidades Cargadas]:", response.data?.length || 0);
+      return response.data || [];
+    } catch (error) {
+      console.error("❌ Error al cargar especialidades:", error.message);
+      return [];
+    }
+  },
 };
 
 export default teleecgService;

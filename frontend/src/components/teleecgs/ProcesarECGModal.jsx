@@ -3,10 +3,10 @@ import { X, Send } from "lucide-react";
 import toast from "react-hot-toast";
 
 /**
- * ✅ Modal para procesar ECG con observaciones
- * Utilizado por: TeleECGRecibidas para solicitar notas/observaciones antes de aceptar
+ * ✅ Modal para procesar EKG con observaciones
+ * Utilizado por: TeleEKGRecibidas para solicitar notas/observaciones antes de aceptar
  */
-export default function ProcesarECGModal({ ecg, onConfirm, onCancel }) {
+export default function ProcesarEKGModal({ ecg, onConfirm, onCancel }) {
   const [observaciones, setObservaciones] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -24,7 +24,7 @@ export default function ProcesarECGModal({ ecg, onConfirm, onCancel }) {
     try {
       await onConfirm(observaciones.trim());
     } catch (error) {
-      toast.error("Error al procesar ECG");
+      toast.error("Error al procesar EKG");
     } finally {
       setIsSubmitting(false);
     }
@@ -47,7 +47,7 @@ export default function ProcesarECGModal({ ecg, onConfirm, onCancel }) {
         {/* Header */}
         <div className="bg-gradient-to-r from-green-600 to-emerald-600 text-white p-6 flex items-center justify-between">
           <div>
-            <h2 className="text-xl font-bold">Procesar ECG</h2>
+            <h2 className="text-xl font-bold">Procesar EKG</h2>
             <p className="text-green-100 text-sm">
               {ecg.nombresPaciente} {ecg.apellidosPaciente}
             </p>
@@ -70,7 +70,7 @@ export default function ProcesarECGModal({ ecg, onConfirm, onCancel }) {
               value={observaciones}
               onChange={(e) => setObservaciones(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Ej: Imagen clara y de buena calidad. ECG válido para procesamiento..."
+              placeholder="Ej: Imagen clara y de buena calidad. EKG válido para procesamiento..."
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none"
               rows="4"
               maxLength="500"
@@ -81,7 +81,7 @@ export default function ProcesarECGModal({ ecg, onConfirm, onCancel }) {
             </p>
           </div>
 
-          {/* Información del ECG */}
+          {/* Información del EKG */}
           <div className="bg-gray-50 p-4 rounded-lg space-y-2 text-sm">
             <div>
               <span className="text-gray-600 font-medium">DNI:</span>

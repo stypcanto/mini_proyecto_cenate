@@ -10,10 +10,10 @@ import {
 import teleecgService from "../../services/teleecgService";
 
 /**
- * 📊 Página de Estadísticas de Tele-ECG (Admin)
+ * 📊 Página de Estadísticas de Tele-EKG (Admin)
  * Vista consolidada para coordinadores/administradores
  */
-export default function TeleECGEstadisticas() {
+export default function TeleEKGEstadisticas() {
   const [stats, setStats] = useState({
     total: 0,
     pendientes: 0,        // v3.0.0: ENVIADA → PENDIENTE para CENATE
@@ -70,7 +70,7 @@ export default function TeleECGEstadisticas() {
             <div className="flex items-center gap-3">
               <BarChart3 className="w-8 h-8 text-blue-600" />
               <h1 className="text-3xl font-bold text-gray-800">
-                Estadísticas de Tele-ECG
+                Estadísticas de Tele-EKG
               </h1>
             </div>
             <button

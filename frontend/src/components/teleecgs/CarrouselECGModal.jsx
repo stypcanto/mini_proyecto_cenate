@@ -1,5 +1,5 @@
 // ========================================================================
-// 🎠 CarrouselECGModal.jsx – Visualizador de Múltiples ECGs en Carrusel
+// 🎠 CarrouselEKGModal.jsx – Visualizador de Múltiples EKGs en Carrusel
 // ✅ VERSIÓN 1.1.0 - CENATE 2026
 // Especialmente diseñado para PADOMI (4-10 imágenes por paciente)
 // v1.1.0: Carga dinámica de imágenes desde API
@@ -13,14 +13,14 @@ import {
 import teleecgService from "../../services/teleecgService";
 
 /**
- * Carrusel de múltiples imágenes ECG con navegación
+ * Carrusel de múltiples imágenes EKG con navegación
  * Props:
  * - imagenes: Array de objetos imagen
  * - paciente: { numDoc, nombres, apellidos }
  * - onClose: Callback al cerrar
  * - onDescargar: Callback para descargar
  */
-export default function CarrouselECGModal({ imagenes, paciente, onClose, onDescargar }) {
+export default function CarrouselEKGModal({ imagenes, paciente, onClose, onDescargar }) {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
@@ -144,7 +144,7 @@ export default function CarrouselECGModal({ imagenes, paciente, onClose, onDesca
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold">
-              ECGs de {paciente?.nombres} {paciente?.apellidos}
+              EKGs de {paciente?.nombres} {paciente?.apellidos}
             </h2>
             <p className="text-blue-100 text-sm">
               DNI: {paciente?.numDoc} | Total: {imagenes.length} imágenes
@@ -183,7 +183,7 @@ export default function CarrouselECGModal({ imagenes, paciente, onClose, onDesca
               ) : imageUrl ? (
                 <img
                   src={imageUrl}
-                  alt={`ECG ${currentIndex + 1}`}
+                  alt={`EKG ${currentIndex + 1}`}
                   style={{
                     transform: `scale(${scale}) rotate(${rotation}deg)`,
                     transition: "transform 0.2s",

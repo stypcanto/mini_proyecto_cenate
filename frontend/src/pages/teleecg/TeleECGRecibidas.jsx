@@ -15,23 +15,23 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import teleecgService from "../../services/teleecgService";
-import VisorECGModal from "../../components/teleecgs/VisorECGModal";
+import VisorEKGModal from "../../components/teleecgs/VisorECGModal";
 import CarrouselECGModal from "../../components/teleecgs/CarrouselECGModal";
 import ModalEvaluacionECG from "../../components/teleecgs/ModalEvaluacionECG";
 import toast from "react-hot-toast";
 
 /**
- * 🫀 TeleECGRecibidas - Panel administrativo de ECGs consolidado
- * Muestra TODAS las ECGs recibidas de TODAS las IPRESS
+ * 🫀 TeleEKGRecibidas - Panel administrativo de EKGs consolidado
+ * Muestra TODAS las EKGs recibidas de TODAS las IPRESS
  * Acceso: ADMIN, SUPERADMIN, COORDINADOR_RED, ENFERMERIA
  */
-export default function TeleECGRecibidas() {
+export default function TeleEKGRecibidas() {
   const { user } = useAuth();
 
   // Estados principales
   const [loading, setLoading] = useState(true);
   const [ecgs, setEcgs] = useState([]);
-  const [selectedECG, setSelectedECG] = useState(null);
+  const [selectedEKG, setSelectedEKG] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -62,25 +62,25 @@ export default function TeleECGRecibidas() {
   // IPRESS disponibles (para el filtro)
   const [ipressOptions, setIpressOptions] = useState([]);
 
-  // Cargar ECGs al montarse
+  // Cargar EKGs al montarse
   useEffect(() => {
-    cargarECGs();
+    cargarEKGs();
     cargarEstadisticasGlobales();
   }, []);
 
   /**
-   * ✅ v1.21.5: Cargar todas las ECGs agrupadas por asegurado (para la tabla)
+   * ✅ v1.21.5: Cargar todas las EKGs agrupadas por asegurado (para la tabla)
    */
-  const cargarECGs = async () => {
+  const cargarEKGs = async () => {
     try {
       setLoading(true);
       // Usar nuevo endpoint que agrupa por asegurado
       const response = await teleecgService.listarAgrupoPorAsegurado("", filtros.estado);
       const ecgData = Array.isArray(response) ? response : [];
       setEcgs(ecgData);
-      console.log("✅ ECGs agrupadas cargadas:", ecgData.length, "asegurados");
+      console.log("✅ EKGs agrupadas cargadas:", ecgData.length, "asegurados");
     } catch (error) {
-      console.error("❌ Error al cargar ECGs:", error);
+      console.error("❌ Error al cargar EKGs:", error);
       setEcgs([]);
     } finally {
       setLoading(false);
@@ -113,40 +113,40 @@ export default function TeleECGRecibidas() {
     } catch (error) {
       console.error("❌ Error al cargar estadísticas globales:", error);
       // Fallback: calcular desde datos cargados si falla API
-      calcularEstadisticasDesdeECGs();
+      calcularEstadisticasDesdeEKGs();
     }
   };
 
   /**
-   * Calcular estadísticas desde ECGs cargados (fallback si API falla)
+   * Calcular estadísticas desde EKGs cargados (fallback si API falla)
    */
-  const calcularEstadisticasDesdeECGs = () => {
-    let totalECGs = 0;
+  const calcularEstadisticasDesdeEKGs = () => {
+    let totalEKGs = 0;
     let pendientes = 0;
     let observadas = 0;
     let atendidas = 0;
 
     // Sumar conteos de cada asegurado
     ecgs.forEach((asegurado) => {
-      totalECGs += asegurado.total_ecgs || 0;
+      totalEKGs += asegurado.total_ecgs || 0;
       pendientes += asegurado.ecgs_pendientes || 0;
       observadas += asegurado.ecgs_observadas || 0;
       atendidas += asegurado.ecgs_atendidas || 0;
     });
 
     const nuevasStats = {
-      total: totalECGs,
+      total: totalEKGs,
       pendientes: pendientes,
       observadas: observadas,
       atendidas: atendidas,
     };
 
     setStats(nuevasStats);
-    console.log("✅ Estadísticas calculadas desde ECGs (fallback):", nuevasStats);
+    console.log("✅ Estadísticas calculadas desde EKGs (fallback):", nuevasStats);
   };
 
   /**
-   * Extraer opciones IPRESS únicas de los ECGs
+   * Extraer opciones IPRESS únicas de los EKGs
    */
   const extraerIpressOptions = () => {
     setTimeout(() => {
@@ -164,7 +164,7 @@ export default function TeleECGRecibidas() {
   const handleRefresh = async () => {
     setRefreshing(true);
     await Promise.all([
-      cargarECGs(),
+      cargarEKGs(),
       cargarEstadisticasGlobales()
     ]);
     setRefreshing(false);
@@ -176,19 +176,19 @@ export default function TeleECGRecibidas() {
   // ❌ ELIMINADO: handleRechazar - No se rechaza en CENATE, solo se atiende
 
   /**
-   * Descargar ECG
+   * Descargar EKG
    */
   const handleDescargar = async (idImagen, nombreArchivo) => {
     try {
       await teleecgService.descargarImagen(idImagen, nombreArchivo);
     } catch (error) {
-      console.error("❌ Error al descargar ECG:", error);
+      console.error("❌ Error al descargar EKG:", error);
       alert("Error al descargar la imagen");
     }
   };
 
   /**
-   * Ver visor de ECG
+   * Ver visor de EKG
    */
   const handleVer = async (ecg) => {
     try {
@@ -198,7 +198,7 @@ export default function TeleECGRecibidas() {
         contenidoImagen: imagenData.contenidoImagen,
         tipoContenido: imagenData.tipoContenido,
       };
-      setSelectedECG(ecgConImagen);
+      setSelectedEKG(ecgConImagen);
       setShowVisor(true);
     } catch (error) {
       console.error("❌ Error al cargar imagen:", error);
@@ -242,12 +242,12 @@ export default function TeleECGRecibidas() {
         descripcion
       );
 
-      toast.success(`✅ ECG evaluada como ${evaluacion}`);
+      toast.success(`✅ EKG evaluada como ${evaluacion}`);
       setShowEvaluacionModal(false);
       setEcgParaEvaluar(null);
-      await Promise.all([cargarECGs(), cargarEstadisticasGlobales()]);
+      await Promise.all([cargarEKGs(), cargarEstadisticasGlobales()]);
     } catch (error) {
-      console.error("❌ Error al evaluar ECG:", error);
+      console.error("❌ Error al evaluar EKG:", error);
       toast.error(error.message || "Error al guardar evaluación");
     } finally {
       setEvaluandoImagen(false);
@@ -406,7 +406,7 @@ export default function TeleECGRecibidas() {
           <div className="flex items-center gap-3 mb-2">
             <Activity className="w-8 h-8 text-red-600" />
             <h1 className="text-3xl md:text-4xl font-bold text-gray-800">
-              TeleECG Recibidas
+              TeleEKG Recibidas
             </h1>
           </div>
           <p className="text-gray-600 ml-11">
@@ -419,7 +419,7 @@ export default function TeleECGRecibidas() {
           <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-600">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Total ECGs</p>
+                <p className="text-gray-600 text-sm font-medium">Total EKGs</p>
                 <p className="text-2xl font-bold text-gray-800">
                   {stats.total}
                 </p>
@@ -583,18 +583,18 @@ export default function TeleECGRecibidas() {
           </div>
         </div>
 
-        {/* 📋 Tabla de ECGs */}
+        {/* 📋 Tabla de EKGs */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {loading ? (
             <div className="p-8 text-center">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-              <p className="text-gray-600 mt-4">Cargando ECGs...</p>
+              <p className="text-gray-600 mt-4">Cargando EKGs...</p>
             </div>
           ) : ecgsFiltrados.length === 0 ? (
             <div className="p-8 text-center">
               <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
               <p className="text-gray-600 text-lg">
-                No se encontraron ECGs con los filtros especificados
+                No se encontraron EKGs con los filtros especificados
               </p>
             </div>
           ) : (
@@ -641,7 +641,7 @@ export default function TeleECGRecibidas() {
                         <div className="flex items-center gap-2">
                           <div>
                             <p>{asegurado.nombres_paciente} {asegurado.apellidos_paciente}</p>
-                            <p className="text-xs text-gray-500">📌 {asegurado.total_ecgs} ECGs</p>
+                            <p className="text-xs text-gray-500">📌 {asegurado.total_ecgs} EKGs</p>
                           </div>
                         </div>
                       </td>
@@ -705,7 +705,7 @@ export default function TeleECGRecibidas() {
                                   setShowEvaluacionModal(true);
                                 }
                               }}
-                              title="Procesar ECG (Observaciones)"
+                              title="Procesar EKG (Observaciones)"
                               className="p-2 text-orange-600 hover:bg-orange-100 rounded transition-colors"
                             >
                               <Edit className="w-4 h-4" />
@@ -727,43 +727,43 @@ export default function TeleECGRecibidas() {
         {/* Información de paginación */}
         {ecgsFiltrados.length > 0 && (
           <div className="mt-4 text-center text-sm text-gray-600">
-            Mostrando {ecgsFiltrados.length} de {ecgs.length} ECGs
+            Mostrando {ecgsFiltrados.length} de {ecgs.length} EKGs
           </div>
         )}
       </div>
 
-      {/* 👁️ ✅ v1.21.5: Modal Carrusel de Múltiples ECGs por Asegurado */}
-      {showVisor && selectedECG && selectedECG.imagenes && selectedECG.imagenes.length > 0 ? (
+      {/* 👁️ ✅ v1.21.5: Modal Carrusel de Múltiples EKGs por Asegurado */}
+      {showVisor && selectedEKG && selectedEKG.imagenes && selectedEKG.imagenes.length > 0 ? (
         <CarrouselECGModal
-          imagenes={selectedECG.imagenes}
+          imagenes={selectedEKG.imagenes}
           paciente={{
-            numDoc: selectedECG.num_doc_paciente,
-            nombres: selectedECG.nombres_paciente,
-            apellidos: selectedECG.apellidos_paciente,
+            numDoc: selectedEKG.num_doc_paciente,
+            nombres: selectedEKG.nombres_paciente,
+            apellidos: selectedEKG.apellidos_paciente,
           }}
           onClose={() => {
             setShowVisor(false);
-            setSelectedECG(null);
+            setSelectedEKG(null);
           }}
           onDescargar={() => {
             toast.error("Función de descarga múltiple aún no implementada");
           }}
         />
-      ) : showVisor && selectedECG ? (
+      ) : showVisor && selectedEKG ? (
         // Fallback a visor individual si no tiene múltiples imágenes
-        <VisorECGModal
-          ecg={selectedECG}
+        <VisorEKGModal
+          ecg={selectedEKG}
           onClose={() => {
             setShowVisor(false);
-            setSelectedECG(null);
+            setSelectedEKG(null);
           }}
           onDescargar={() =>
-            handleDescargar(selectedECG.idImagen, selectedECG.nombreArchivo)
+            handleDescargar(selectedEKG.idImagen, selectedEKG.nombreArchivo)
           }
         />
       ) : null}
 
-      {/* ✅ FIX T-ECG-003: Modal para procesar ECG con observaciones */}
+      {/* ✅ FIX T-EKG-003: Modal para procesar EKG con observaciones */}
       {/* ✅ v3.1.0: Modal unificado para triaje clínico - Validación + Evaluación + Nota */}
       {showEvaluacionModal && ecgParaEvaluar && (
         <ModalEvaluacionECG

@@ -16,7 +16,7 @@ import FilterControlsPanel from "./FilterControlsPanel";
 /**
  * 🖥️ FULLSCREEN IMAGE VIEWER - v1.0.0 (2026-01-21)
  *
- * Visualización a pantalla completa de ECG con:
+ * Visualización a pantalla completa de EKG con:
  * - Zoom ilimitado (50-500%)
  * - Rotación y filtros
  * - Pan/drag para navegación
@@ -88,7 +88,7 @@ export default function FullscreenImageViewer({
       {/* Header */}
       <div className="bg-gray-900 text-white px-6 py-4 flex items-center justify-between border-b border-gray-700">
         <div className="flex items-center gap-4">
-          <h2 className="text-lg font-bold">🔍 Visualizador ECG - Pantalla Completa</h2>
+          <h2 className="text-lg font-bold">🔍 Visualizador EKG - Pantalla Completa</h2>
           <span className="text-sm text-gray-400">
             Imagen {indiceImagen + 1} de {totalImagenes}
           </span>
@@ -123,7 +123,7 @@ export default function FullscreenImageViewer({
                   imageSrc={imagenData}
                   rotation={rotacion}
                   filters={filters}
-                  onImageLoad={() => console.log("✅ ECG cargada en pantalla completa")}
+                  onImageLoad={() => console.log("✅ EKG cargada en pantalla completa")}
                 />
               </TransformComponent>
             )}

@@ -1,9 +1,9 @@
 import React, { useEffect, useRef } from "react";
 
 /**
- * 🖼️ ImageCanvas - Renderizado de Alta Calidad para ECGs
+ * 🖼️ ImageCanvas - Renderizado de Alta Calidad para EKGs
  *
- * Componente que renderiza imágenes ECG en canvas HTML5 con:
+ * Componente que renderiza imágenes EKG en canvas HTML5 con:
  * - Rotación sin pérdida de calidad (imageSmoothingQuality = 'high')
  * - Filtros CSS nativos: invert, contrast, brightness
  * - Optimización para imágenes médicas
@@ -127,7 +127,7 @@ export default function ImageCanvas({ imageSrc, rotation = 0, filters = {}, onIm
         imageRendering: "high-quality",
         display: "block",
       }}
-      aria-label="ECG Image Canvas"
+      aria-label="EKG Image Canvas"
     />
   );
 }

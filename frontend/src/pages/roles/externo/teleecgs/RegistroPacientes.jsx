@@ -11,7 +11,7 @@ import teleeckgService from "../../../../services/teleecgService";
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
 
 /**
- * 👥 Página de Registro de Pacientes con ECGs
+ * 👥 Página de Registro de Pacientes con EKGs
  */
 export default function RegistroPacientes() {
   const [ecgs, setEcgs] = useState([]);
@@ -19,25 +19,25 @@ export default function RegistroPacientes() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterEstado, setFilterEstado] = useState("TODOS");
-  const [selectedECG, setSelectedECG] = useState(null);
+  const [selectedEKG, setSelectedEKG] = useState(null);
   const [showVisor, setShowVisor] = useState(false);
 
   useEffect(() => {
-    cargarECGs();
+    cargarEKGs();
   }, []);
 
   useEffect(() => {
     filtrar();
   }, [searchTerm, filterEstado, ecgs]);
 
-  const cargarECGs = async () => {
+  const cargarEKGs = async () => {
     try {
       setLoading(true);
       const response = await teleeckgService.listarImagenes();
       // El servicio retorna response.data.data que es el page object con content
       setEcgs(response?.content || []);
     } catch (error) {
-      console.error("❌ Error al cargar ECGs:", error);
+      console.error("❌ Error al cargar EKGs:", error);
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export default function RegistroPacientes() {
   };
 
   const abrirVisor = (ecg) => {
-    setSelectedECG(ecg);
+    setSelectedEKG(ecg);
     setShowVisor(true);
   };
 
@@ -166,7 +166,7 @@ export default function RegistroPacientes() {
             <div className="bg-blue-50 rounded-lg p-4">
               <p className="text-sm text-gray-600">Total</p>
               <p className="text-2xl font-bold text-blue-600">{agruparImagenesPorPaciente(ecgs).length}</p>
-              <p className="text-xs text-gray-500">{ecgs.length} ECG{ecgs.length !== 1 ? 's' : ''}</p>
+              <p className="text-xs text-gray-500">{ecgs.length} EKG{ecgs.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
         </div>
@@ -229,7 +229,7 @@ export default function RegistroPacientes() {
                             {paciente.nombresPaciente}
                           </p>
                           <p className="text-xs text-blue-600 font-semibold">
-                            📸 {paciente.imagenes.length} ECG{paciente.imagenes.length !== 1 ? 's' : ''}
+                            📸 {paciente.imagenes.length} EKG{paciente.imagenes.length !== 1 ? 's' : ''}
                           </p>
                         </div>
                       </td>
@@ -293,15 +293,15 @@ export default function RegistroPacientes() {
       </div>
 
       {/* Modal Visor */}
-      {showVisor && selectedECG && (
+      {showVisor && selectedEKG && (
         <VisorECGModal
-          ecg={selectedECG}
+          ecg={selectedEKG}
           onClose={() => {
             setShowVisor(false);
-            setSelectedECG(null);
+            setSelectedEKG(null);
           }}
           onDescargar={() =>
-            manejarDescargar(selectedECG.idImagen, selectedECG.nombreArchivo)
+            manejarDescargar(selectedEKG.idImagen, selectedEKG.nombreArchivo)
           }
         />
       )}

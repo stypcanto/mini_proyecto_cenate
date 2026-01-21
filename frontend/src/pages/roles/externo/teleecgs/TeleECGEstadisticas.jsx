@@ -10,9 +10,9 @@ import {
 import teleeckgService from "../../../../services/teleecgService";
 
 /**
- * 📊 Página de Estadísticas de TeleECG
+ * 📊 Página de Estadísticas de TeleEKG
  */
-export default function TeleECGEstadisticas() {
+export default function TeleEKGEstadisticas() {
   const [stats, setStats] = useState({
     total: 0,
     enviadas: 0,        // v3.0.0: Para externos
@@ -69,7 +69,7 @@ export default function TeleECGEstadisticas() {
             <div className="flex items-center gap-3">
               <BarChart3 className="w-8 h-8 text-blue-600" />
               <h1 className="text-3xl font-bold text-gray-800">
-                Estadísticas de ECG
+                Estadísticas de EKG
               </h1>
             </div>
             <button

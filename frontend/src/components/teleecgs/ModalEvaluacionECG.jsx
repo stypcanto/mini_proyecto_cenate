@@ -24,14 +24,14 @@ import FilterControlsPanel from "./FilterControlsPanel";
 import FullscreenImageViewer from "./FullscreenImageViewer";
 
 /**
- * 🏥 MODAL CONSOLIDADO - TRIAJE CLÍNICO ECG (v7.0.0)
+ * 🏥 MODAL CONSOLIDADO - TRIAJE CLÍNICO EKG (v7.0.0)
  *
  * Flujo médico profesional con 3 TABS:
- * 1. 👁️ VER IMÁGENES - Carrusel de 4 ECGs con zoom 500%/rotación de calidad/filtros avanzados
+ * 1. 👁️ VER IMÁGENES - Carrusel de 6-12 EKGs con zoom 500%/rotación de calidad/filtros avanzados
  * 2. ✓ EVALUACIÓN - Seleccionar Normal/Anormal + Observaciones
- * 3. 📋 NOTA CLÍNICA - Hallazgos y Plan de Seguimiento
+ * 3. 📋 PLAN DE SEGUIMIENTO - Recomendaciones y Seguimiento
  *
- * Versión 7.0.0 (2026-01-21): Visualizador ECG profesional con:
+ * Versión 7.0.0 (2026-01-21): Visualizador EKG profesional con:
  * - Zoom 50-500% sin pixelación (Canvas + react-zoom-pan-pinch)
  * - Rotación de alta calidad (imageSmoothingQuality = 'high')
  * - Filtros de imagen: invertir, contraste, brillo
@@ -112,6 +112,11 @@ export default function ModalEvaluacionECG({
     interconsultaEspecialidad: "", // nombre de especialidad (Cardiología, etc.)
   });
 
+  // 🏥 Estado para autocomplete de especialidades (v1.27.0)
+  const [especialidades, setEspecialidades] = useState([]);
+  const [filteredEspecialidades, setFilteredEspecialidades] = useState([]);
+  const [showEspecialidadesDropdown, setShowEspecialidadesDropdown] = useState(false);
+
   const textareaEvalRef = useRef(null);
   const textareaNotaRef = useRef(null);
 
@@ -120,10 +125,26 @@ export default function ModalEvaluacionECG({
   // ════════════════════════════════════════
   useEffect(() => {
     if (isOpen && ecg) {
-      console.log("📋 Objeto ECG recibido en Modal:", ecg);
+      console.log("📋 Objeto EKG recibido en Modal:", ecg);
       cargarImagenes();
+      cargarEspecialidades();
     }
   }, [isOpen, ecg]);
+
+  // ════════════════════════════════════════
+  // CARGAR ESPECIALIDADES (v1.27.0)
+  // ════════════════════════════════════════
+  const cargarEspecialidades = async () => {
+    try {
+      console.log("📚 Cargando especialidades médicas...");
+      const data = await teleecgService.obtenerEspecialidades();
+      setEspecialidades(data || []);
+      console.log("✅ Especialidades cargadas:", data?.length || 0);
+    } catch (error) {
+      console.error("❌ Error cargando especialidades:", error);
+      setEspecialidades([]);
+    }
+  };
 
   const cargarImagenes = async () => {
     try {
@@ -373,6 +394,37 @@ export default function ModalEvaluacionECG({
     }
   };
 
+  // ════════════════════════════════════════
+  // AUTOCOMPLETE DE ESPECIALIDADES (v1.27.0)
+  // ════════════════════════════════════════
+  const handleEspecialidadChange = (value) => {
+    setPlanSeguimiento({
+      ...planSeguimiento,
+      interconsultaEspecialidad: value,
+    });
+
+    // Filtrar especialidades mientras se escribe
+    if (value.trim().length > 0) {
+      const filtered = especialidades.filter((e) =>
+        e.descServicio.toLowerCase().includes(value.toLowerCase())
+      );
+      setFilteredEspecialidades(filtered);
+      setShowEspecialidadesDropdown(true);
+    } else {
+      setFilteredEspecialidades([]);
+      setShowEspecialidadesDropdown(false);
+    }
+  };
+
+  const handleSelectEspecialidad = (descServicio) => {
+    setPlanSeguimiento({
+      ...planSeguimiento,
+      interconsultaEspecialidad: descServicio,
+    });
+    setShowEspecialidadesDropdown(false);
+    setFilteredEspecialidades([]);
+  };
+
   const handleGuardar = async () => {
     // Validar que haya evaluación
     if (!tipoEvaluacion) {
@@ -457,7 +509,7 @@ export default function ModalEvaluacionECG({
         <div className="flex items-center justify-between p-5 bg-gradient-to-br from-blue-800 via-blue-900 to-blue-950 text-white border-b border-blue-950 shadow-md">
           <div>
             <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-              🏥 Triaje Clínico - ECG
+              🏥 Triaje Clínico - EKG
             </h2>
             <p className="text-sm text-blue-100 mt-1">
               {ecg?.nombres_paciente || ecg?.nombrePaciente || "Paciente"} {ecg?.apellidos_paciente} • DNI: {ecg?.num_doc_paciente || ecg?.numDocPaciente}
@@ -540,7 +592,7 @@ export default function ModalEvaluacionECG({
                             imageSrc={imagenData}
                             rotation={rotacion}
                             filters={filters}
-                            onImageLoad={() => console.log("✅ ECG cargada en canvas")}
+                            onImageLoad={() => console.log("✅ EKG cargada en canvas")}
                           />
                         </TransformComponent>
                       )}
@@ -708,9 +760,20 @@ export default function ModalEvaluacionECG({
                     <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">IPRESS</span>
                     <p className="font-bold text-gray-800 text-sm mt-1">{ecg?.nombre_ipress || ecg?.nombreIpress}</p>
                   </div>
-                  <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center shadow-sm border border-blue-200">
-                    <span className="text-xs font-semibold text-blue-700 uppercase tracking-widest">Total ECGs</span>
-                    <p className="text-3xl font-bold text-blue-900 mt-2">{imagenesActuales.length}</p>
+                  <div className="space-y-3">
+                    <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center shadow-sm border border-blue-200">
+                      <span className="text-xs font-semibold text-blue-700 uppercase tracking-widest">Total EKGs</span>
+                      <p className="text-3xl font-bold text-blue-900 mt-2">{imagenesActuales.length}</p>
+                    </div>
+                    <div className="bg-amber-50 rounded-lg p-3 border border-amber-300 text-center">
+                      <p className="text-xs font-semibold text-amber-800">
+                        ℹ️ Requisitos PADOMI
+                      </p>
+                      <ul className="text-xs text-amber-700 mt-2 space-y-1">
+                        <li>✓ Mínimo: <strong>6 EKGs</strong></li>
+                        <li>✓ Máximo: <strong>12 EKGs</strong></li>
+                      </ul>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -788,7 +851,7 @@ export default function ModalEvaluacionECG({
                         value={descripcionRechazo}
                         onChange={(e) => setDescripcionRechazo(e.target.value)}
                         maxLength="500"
-                        placeholder="Ej: La mitad inferior del ECG está cortada, necesita recaptura..."
+                        placeholder="Ej: La mitad inferior del EKG está cortada, necesita recaptura..."
                         className="w-full px-4 py-2 border-2 border-rose-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white"
                         rows="3"
                       />
@@ -853,7 +916,7 @@ export default function ModalEvaluacionECG({
                 {/* Selección de Tipo de Evaluación */}
                 <div>
                   <label className="block text-sm font-bold text-gray-800 mb-4">
-                    Resultado del ECG * <span className="text-xs text-gray-600">(Normal / Anormal / No Diagnóstico)</span>
+                    Resultado del EKG * <span className="text-xs text-gray-600">(Normal / Anormal / No Diagnóstico)</span>
                   </label>
                   <div className="grid grid-cols-3 gap-3 mb-4">
                     <button
@@ -949,7 +1012,7 @@ export default function ModalEvaluacionECG({
                     Observaciones Médicas (Opcional)
                   </label>
                   <p className="text-xs text-gray-600 mb-2">
-                    Detalles adicionales sobre el análisis del ECG
+                    Detalles adicionales sobre el análisis del EKG
                   </p>
                   <textarea
                     ref={textareaEvalRef}
@@ -996,25 +1059,62 @@ export default function ModalEvaluacionECG({
                   </label>
                 </div>
 
-                {/* Interconsulta con especialidad */}
-                <div className="bg-purple-50 p-5 rounded-lg border-2 border-purple-300">
+                {/* Interconsulta con especialidad - AUTOCOMPLETE (v1.27.0) */}
+                <div className="bg-purple-50 p-5 rounded-lg border-2 border-purple-300 relative">
                   <label className="block text-sm font-bold text-gray-800 mb-3">
                     🏥 Interconsulta con Especialidad (Opcional)
                   </label>
-                  <input
-                    type="text"
-                    value={planSeguimiento.interconsultaEspecialidad}
-                    onChange={(e) =>
-                      setPlanSeguimiento({
-                        ...planSeguimiento,
-                        interconsultaEspecialidad: e.target.value,
-                      })
-                    }
-                    placeholder="Ej: Cardiología, Neumología, Neurología..."
-                    className="w-full px-4 py-2 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={planSeguimiento.interconsultaEspecialidad}
+                      onChange={(e) => handleEspecialidadChange(e.target.value)}
+                      onFocus={() => {
+                        if (planSeguimiento.interconsultaEspecialidad.trim().length > 0) {
+                          setShowEspecialidadesDropdown(true);
+                        }
+                      }}
+                      onBlur={() => {
+                        // Delay para permitir click en dropdown
+                        setTimeout(() => setShowEspecialidadesDropdown(false), 200);
+                      }}
+                      placeholder="Escribe para buscar especialidad..."
+                      className="w-full px-4 py-2 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                    />
+
+                    {/* Dropdown de especialidades */}
+                    {showEspecialidadesDropdown && filteredEspecialidades.length > 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-purple-300 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto">
+                        {filteredEspecialidades.map((esp, index) => (
+                          <button
+                            key={`${esp.idServicio}-${index}`}
+                            type="button"
+                            onClick={() => handleSelectEspecialidad(esp.descServicio)}
+                            className="w-full text-left px-4 py-2 hover:bg-purple-100 transition-colors border-b border-purple-100 last:border-b-0"
+                          >
+                            <span className="text-sm font-semibold text-purple-700">{esp.descServicio}</span>
+                            {esp.codServicio && (
+                              <span className="text-xs text-gray-500 ml-2">({esp.codServicio})</span>
+                            )}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Mensaje si no hay resultados */}
+                    {showEspecialidadesDropdown && planSeguimiento.interconsultaEspecialidad.trim().length > 0 && filteredEspecialidades.length === 0 && (
+                      <div className="absolute top-full left-0 right-0 mt-1 bg-white border-2 border-purple-300 rounded-lg shadow-lg z-50 p-3">
+                        <p className="text-xs text-gray-500">
+                          📭 No se encontraron especialidades con "{planSeguimiento.interconsultaEspecialidad}"
+                        </p>
+                        <p className="text-xs text-gray-600 mt-1">
+                          Puedes escribir libre o seleccionar de la lista
+                        </p>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-xs text-gray-600 mt-2">
-                    Especifica la especialidad médica para la interconsulta
+                    Especifica la especialidad médica para la interconsulta (cargada desde base de datos)
                   </p>
                 </div>
 

@@ -3,7 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { FILTER_PRESETS } from "./useImageFilters";
 
 /**
- * 🎛️ FilterControlsPanel - Panel de Control de Filtros ECG
+ * 🎛️ FilterControlsPanel - Panel de Control de Filtros EKG
  *
  * Componente colapsable que proporciona interfaz para:
  * - Checkbox de inversión de colores

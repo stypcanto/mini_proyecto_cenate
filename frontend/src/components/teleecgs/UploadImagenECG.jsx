@@ -13,7 +13,7 @@ const ALLOWED_TYPES = ["image/jpeg", "image/png"];
 const MIN_IMAGENES = 4;  // Mínimo de imágenes (PADOMI requirement)
 const MAX_IMAGENES = 10; // Máximo de imágenes (PADOMI requirement)
 
-export default function UploadImagenECG({ onSuccess }) {
+export default function UploadImagenEKG({ onSuccess }) {
   // Archivos
   const [archivos, setArchivos] = useState([]);
   const [previews, setPreviews] = useState([]);
@@ -231,7 +231,7 @@ export default function UploadImagenECG({ onSuccess }) {
 
       setRespuestaServidor(respuesta);
       setEnviado(true);
-      toast.success(`✅ ${archivos.length} ECGs cargados exitosamente`);
+      toast.success(`✅ ${archivos.length} EKGs cargados exitosamente`);
 
       setTimeout(() => {
         resetFormulario();
@@ -239,7 +239,7 @@ export default function UploadImagenECG({ onSuccess }) {
       }, 2000);
 
     } catch (error) {
-      console.error("Error al cargar ECGs:", error);
+      console.error("Error al cargar EKGs:", error);
 
       // 🔍 CRÍTICO: Solo mostrar modal de "Crear Asegurado" si el error es ESPECÍFICO
       // No si contiene "asegurado" en cualquier contexto (ej: fallo técnico)
@@ -254,7 +254,7 @@ export default function UploadImagenECG({ onSuccess }) {
         toast.error("El asegurado no existe. Por favor créalo primero.");
         setMostrarCrearAsegurado(true);
       } else {
-        toast.error(error.response?.data?.message || "Error al cargar los ECGs");
+        toast.error(error.response?.data?.message || "Error al cargar los EKGs");
       }
     } finally {
       setLoading(false);
@@ -285,7 +285,7 @@ export default function UploadImagenECG({ onSuccess }) {
         onSuccess={() => {
           setMostrarCrearAsegurado(false);
           setAseguradoNoExiste(false);
-          toast.success("Asegurado creado. Intenta cargar el ECG nuevamente.");
+          toast.success("Asegurado creado. Intenta cargar el EKG nuevamente.");
         }}
       />
     );
@@ -379,7 +379,7 @@ export default function UploadImagenECG({ onSuccess }) {
         <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
           <h3 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
             <FileImage className="w-4 h-4" />
-            Selecciona las Imágenes del ECG * ({archivos.length}/{MAX_IMAGENES})
+            Selecciona las Imágenes del EKG * ({archivos.length}/{MAX_IMAGENES})
           </h3>
           <p className="text-xs text-indigo-700 mb-3">Mínimo {MIN_IMAGENES} imágenes requeridas</p>
 
@@ -470,7 +470,7 @@ export default function UploadImagenECG({ onSuccess }) {
             <div className="flex gap-3">
               <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
               <div className="flex-1">
-                <p className="font-semibold text-green-800">¡{archivos.length} ECGs Cargados Exitosamente!</p>
+                <p className="font-semibold text-green-800">¡{archivos.length} EKGs Cargados Exitosamente!</p>
                 <p className="text-sm text-green-700 mt-2">
                   Todas las imágenes han sido asociadas al paciente DNI: {numDocPaciente}
                 </p>
@@ -506,7 +506,7 @@ export default function UploadImagenECG({ onSuccess }) {
             ) : (
               <>
                 <Upload className="w-4 h-4" />
-                Cargar {archivos.length > 0 ? `${archivos.length} ECGs` : "ECGs"}
+                Cargar {archivos.length > 0 ? `${archivos.length} EKGs` : "EKGs"}
               </>
             )}
           </button>

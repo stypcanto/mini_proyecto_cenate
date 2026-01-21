@@ -4,12 +4,12 @@ import teleeckgService from "../../services/teleecgService";
 import gestionPacientesService from "../../services/gestionPacientesService";
 
 /**
- * 📤 Formulario Profesional de Envío de ECG
+ * 📤 Formulario Profesional de Envío de EKG
  * - Búsqueda automática de paciente por DNI
  * - Información del paciente auto-cargada (solo lectura)
  * - Interfaz médica y profesional
  */
-export default function UploadECGForm({ onUpload, onClose }) {
+export default function UploadEKGForm({ onUpload, onClose }) {
   const [imagenesSeleccionadas, setImagenesSeleccionadas] = useState([]);
   const [numDocPaciente, setNumDocPaciente] = useState("");
   const [datosCompletos, setDatosCompletos] = useState({
@@ -178,7 +178,7 @@ export default function UploadECGForm({ onUpload, onClose }) {
       setLoading({ ...loading, [imagen.id]: true });
       setError("");
 
-      const response = await teleeckgService.subirImagenECG(
+      const response = await teleeckgService.subirImagenEKG(
         imagen.archivo,
         numDocPaciente,
         datosCompletos.nombres,
@@ -235,7 +235,7 @@ export default function UploadECGForm({ onUpload, onClose }) {
             ¡Imagen subida exitosamente!
           </h3>
           <p className="text-gray-600 mb-4">
-            Tu ECG ha sido registrado y está pendiente de revisión
+            Tu EKG ha sido registrado y está pendiente de revisión
           </p>
         </div>
       </div>
@@ -350,7 +350,7 @@ export default function UploadECGForm({ onUpload, onClose }) {
           <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
             <h3 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
               <FileText className="w-4 h-4" />
-              Electrocardiograma (ECG)
+              Electrocardiograma (EKG)
             </h3>
 
             {/* Área de Drag and Drop */}
@@ -484,7 +484,7 @@ export default function UploadECGForm({ onUpload, onClose }) {
               className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-lg font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
             >
               <Upload className="w-4 h-4" />
-              Enviar Todo ECG ({imagenesSeleccionadas.filter(img => img.estado === "Pendiente").length})
+              Enviar Todo EKG ({imagenesSeleccionadas.filter(img => img.estado === "Pendiente").length})
             </button>
           </div>
         </form>

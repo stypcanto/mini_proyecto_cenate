@@ -2,9 +2,9 @@ import React, { useState } from "react";
 import { X, Download, ZoomIn, ZoomOut, RotateCw } from "lucide-react";
 
 /**
- * 👁️ Modal para visualizar imágenes ECG con zoom y rotación
+ * 👁️ Modal para visualizar imágenes EKG con zoom y rotación
  */
-export default function VisorECGModal({ ecg, onClose, onDescargar }) {
+export default function VisorEKGModal({ ecg, onClose, onDescargar }) {
   const [scale, setScale] = useState(1);
   const [rotation, setRotation] = useState(0);
 
@@ -39,7 +39,7 @@ export default function VisorECGModal({ ecg, onClose, onDescargar }) {
         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold">
-              ECG de {ecg.nombresPaciente} {ecg.apellidosPaciente}
+              EKG de {ecg.nombresPaciente} {ecg.apellidosPaciente}
             </h2>
             <p className="text-blue-100 text-sm">
               DNI: {ecg.numDocPaciente} | Fecha: {formatearFecha(ecg.fechaEnvio)}
@@ -58,7 +58,7 @@ export default function VisorECGModal({ ecg, onClose, onDescargar }) {
           {imageUrl ? (
             <img
               src={imageUrl}
-              alt="ECG"
+              alt="EKG"
               style={{
                 transform: `scale(${scale}) rotate(${rotation}deg)`,
                 transition: "transform 0.2s",
