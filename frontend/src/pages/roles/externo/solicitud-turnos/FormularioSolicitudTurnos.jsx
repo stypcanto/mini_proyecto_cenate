@@ -1,20 +1,21 @@
 // ========================================================================
 // FormularioSolicitudTurnos.jsx - Componente Principal
 // ------------------------------------------------------------------------
-// ✅ REQUERIMIENTOS IMPLEMENTADOS (según tu mensaje):
+// ✅ FUNCIONALIDADES IMPLEMENTADAS:
 // 1) Filtros: Tipo de periodo (VIGENTES vs ACTIVOS), Año (2025/2026/2027),
 //    Periodo (depende del año y tipo), Estado (de la solicitud).
 // 2) Tabla por periodo: Año, Periodo, Solicitud, Inicio, Fin, Estado, Acción.
 // 3) Al INICIAR (o EDITAR) NO aparece combo de periodo: se muestra tarjeta detalle
 //    (inicio/fin/creación/actualización/envío/estado/periodo).
-// 4) Registro de turnos NUEVO (UX):
-//    - Combo especialidades
-//    - Calendario del periodo (mes)
-//    - Por día: botones M y T
-//    - Click en M/T -> modal: Teleconsultorio y/o Teleconsulta + cantidades
-//    - Abajo: tabla resumen (día, especialidad, turno, modalidades, cantidades, estado)
-//    - Por día puede tener 2 registros (M y T).
-// 5) Mantiene tus services existentes (solicitudTurnoService / periodoSolicitudService).
+// 4) Registro de turnos - INTERFAZ DE TABLA INTERACTIVA (v2.0):
+//    - Tabla con todas las especialidades disponibles
+//    - Columnas: Especialidad, Turno TM, Turnos Mañana, Turnos Tarde,
+//      Teleconsultorio, Teleconsulta, Total Turnos, Fecha, Estado
+//    - Inputs numéricos editables para configurar turnos por especialidad
+//    - Toggles para activar/desactivar Teleconsultorio y Teleconsulta
+//    - Cálculo automático del total de turnos
+//    - Estados visuales con badges de color
+// 5) Mantiene services existentes (solicitudTurnoService / periodoSolicitudService).
 // ========================================================================
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
@@ -42,10 +43,8 @@ import { solicitudTurnoService } from "../../../../services/solicitudTurnoServic
 
 // Componentes separados
 import Modal from "./components/Modal";
-import ModalConfigTurno from "./components/ModalConfigTurno";
-import CalendarPeriodo from "./components/CalendarPeriodo";
-import TurnosSolicitados from "./components/TurnosSolicitados";
 import PeriodoDetalleCard from "./components/PeriodoDetalleCard";
+import TablaSolicitudEspecialidades from "./components/TablaSolicitudEspecialidades";
 
 // Utilidades
 import { formatFecha, getYearFromPeriodo, estadoBadgeClass } from "./utils/helpers";
@@ -91,20 +90,9 @@ export default function FormularioSolicitudTurnos() {
   // solicitud actual
   const [solicitudActual, setSolicitudActual] = useState(null);
 
-  // registro NUEVO: array de registros por día/turno/especialidad
-  // registro = {ymd, turno:'M'|'T', idServicio, especialidad, codServicio, tc, tl, cantidadTC, cantidadTL, estado}
+  // registros de turnos por especialidad
+  // registro = {idServicio, turnoTM, turnoManana, turnoTarde, tc, tl, fecha, estado}
   const [registros, setRegistros] = useState([]);
-
-  // UX: especialidad seleccionada para calendar
-  const [idServicioSel, setIdServicioSel] = useState("");
-  const especialidadSel = useMemo(
-    () => especialidades.find((e) => String(e.idServicio) === String(idServicioSel)) || null,
-    [especialidades, idServicioSel]
-  );
-
-  // modal configurar turno
-  const [openCfg, setOpenCfg] = useState(false);
-  const [cfgData, setCfgData] = useState(null); // { ymd, turno, esp }
 
   // =====================================================================
   // Periodos: VIGENTES y ACTIVOS (según tu endpoint)
@@ -273,8 +261,22 @@ export default function FormularioSolicitudTurnos() {
         return;
       }
 
-      // EDITAR BORRADOR:
-      setRegistros([]);
+      // EDITAR BORRADOR: Cargar detalles de la solicitud
+      if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
+        const registrosExistentes = solicitud.detalles.map((det) => ({
+          idServicio: det.idServicio,
+          turnoTM: det.turnoTM || 0,
+          turnoManana: det.turnoManana || 0,
+          turnoTarde: det.turnoTarde || 0,
+          tc: det.tc !== undefined ? det.tc : true,
+          tl: det.tl !== undefined ? det.tl : true,
+          fecha: det.fecha || null,
+          estado: det.estado || "PENDIENTE",
+        }));
+        setRegistros(registrosExistentes);
+      } else {
+        setRegistros([]);
+      }
     } catch (e) {
       console.error(e);
       setError("No se pudo cargar el detalle de la solicitud.");
@@ -293,9 +295,8 @@ export default function FormularioSolicitudTurnos() {
     // set periodo seleccionado desde fila (directo)
     setPeriodoSeleccionado(fila.periodoObj);
 
-    // reset registros y selección especialidad
+    // reset registros
     setRegistros([]);
-    setIdServicioSel("");
 
     // si ya existe solicitud, abrirla
     if (fila?.solicitud?.idSolicitud) {
@@ -316,9 +317,7 @@ export default function FormularioSolicitudTurnos() {
     setModoModal("NUEVA");
     setSolicitudActual(null);
     setPeriodoSeleccionado(null);
-
     setRegistros([]);
-    setIdServicioSel("");
 
     setOpenFormModal(true);
     await cargarPeriodos();
@@ -328,8 +327,6 @@ export default function FormularioSolicitudTurnos() {
     setOpenFormModal(false);
     setSaving(false);
     setPeriodoForzado(false);
-    setCfgData(null);
-    setOpenCfg(false);
 
     await refrescarMisSolicitudes();
   };
@@ -345,133 +342,37 @@ export default function FormularioSolicitudTurnos() {
     solicitudActual?.estado === "RECHAZADA";
 
   // =====================================================================
-  // Registros index (por día|turno) para marcar calendario
-  // =====================================================================
-  const registrosIndex = useMemo(() => {
-    const idx = {};
-    (registros || []).forEach((r) => {
-      const k = `${r.ymd}|${r.turno}`;
-      idx[k] = true;
-    });
-    return idx;
-  }, [registros]);
-
-  // =====================================================================
-  // Click M/T en calendario
-  // =====================================================================
-  const handleClickTurno = (ymd, turno) => {
-    if (!especialidadSel) {
-      setError("Selecciona una especialidad antes de registrar turnos en el calendario.");
-      return;
-    }
-    setError(null);
-    setCfgData({ ymd, turno, esp: especialidadSel });
-    setOpenCfg(true);
-  };
-
-  // Confirmar modal -> inserta/actualiza registro por (ymd, turno, idServicio)
-  const onConfirmCfg = (nuevo) => {
-    setRegistros((prev) => {
-      const arr = Array.isArray(prev) ? [...prev] : [];
-      const i = arr.findIndex(
-        (r) => r.ymd === nuevo.ymd && r.turno === nuevo.turno && String(r.idServicio) === String(nuevo.idServicio)
-      );
-
-      // si cantidades 0, eliminar
-      const total = Number(nuevo.cantidadTC || 0) + Number(nuevo.cantidadTL || 0);
-      if (total <= 0) {
-        if (i >= 0) arr.splice(i, 1);
-        return arr;
-      }
-
-      if (i >= 0) {
-        arr[i] = { ...arr[i], ...nuevo };
-      } else {
-        arr.push(nuevo);
-      }
-      return arr;
-    });
-  };
-
-  const onRemoveRegistro = (r) => {
-    setRegistros((prev) =>
-      (Array.isArray(prev) ? prev : []).filter(
-        (x) => !(x.ymd === r.ymd && x.turno === r.turno && String(x.idServicio) === String(r.idServicio))
-      )
-    );
-  };
-
-  const onClearRegistros = () => setRegistros([]);
-
-  // =====================================================================
-  // Payload (para enviar/guardar)
+  // Payload (para enviar/guardar) - Nuevo formato de tabla
   // =====================================================================
   const buildPayload = () => {
     if (!periodoSeleccionado?.idPeriodo) return null;
 
-    // Payload V2 (día/turno)
-    const payloadV2 = {
-      idPeriodo: periodoSeleccionado.idPeriodo,
-      idSolicitud: solicitudActual?.idSolicitud || null,
-      registros: (registros || []).map((r) => ({
-        fecha: r.ymd,
-        turno: r.turno, // M/T
-        idServicio: r.idServicio,
-        tc: r.tc,
-        tl: r.tl,
-        cantidadTC: r.cantidadTC,
-        cantidadTL: r.cantidadTL,
-      })),
+    // Nuevo formato: registros por especialidad con turnoTM, turnoManana, turnoTarde
+    const detalles = (registros || []).map((r) => ({
+      idServicio: r.idServicio,
+      requiere: true,
+      turnos: Number(r.turnoTM || 0) + Number(r.turnoManana || 0) + Number(r.turnoTarde || 0),
+      turnoTM: Number(r.turnoTM || 0),
+      turnoManana: Number(r.turnoManana || 0),
+      turnoTarde: Number(r.turnoTarde || 0),
+      tc: r.tc !== undefined ? r.tc : true,
+      tl: r.tl !== undefined ? r.tl : true,
+      mananaActiva: Number(r.turnoManana || 0) > 0,
+      tardeActiva: Number(r.turnoTarde || 0) > 0,
+      diasManana: Number(r.turnoManana || 0) > 0 ? ["Lun", "Mar", "Mié", "Jue", "Vie"] : [],
+      diasTarde: Number(r.turnoTarde || 0) > 0 ? ["Lun", "Mar", "Mié", "Jue", "Vie"] : [],
+      observacion: "",
+      fecha: r.fecha || null,
+      estado: r.estado || "PENDIENTE",
+    }));
+
+    return {
+      payloadCompat: {
+        idPeriodo: periodoSeleccionado.idPeriodo,
+        idSolicitud: solicitudActual?.idSolicitud || null,
+        detalles,
+      },
     };
-
-    // Payload agregado simple por especialidad (por compat si tu backend aún usa "detalles")
-    const map = new Map();
-    (registros || []).forEach((r) => {
-      const id = Number(r.idServicio);
-      if (!map.has(id)) {
-        map.set(id, {
-          idServicio: id,
-          requiere: true,
-          turnos: 0,
-          mananaActiva: false,
-          diasManana: [],
-          tardeActiva: false,
-          diasTarde: [],
-          observacion: "",
-        });
-      }
-      const det = map.get(id);
-      const suma = Number(r.cantidadTC || 0) + Number(r.cantidadTL || 0);
-      det.turnos += suma;
-
-      const d = new Date(`${r.ymd}T00:00:00`);
-      const dia = d.toLocaleDateString("es-PE", { weekday: "short" });
-      const norm = dia.replace(".", "").toLowerCase();
-      const mapDia = {
-        dom: "Dom",
-        lun: "Lun",
-        mar: "Mar",
-        mié: "Mié",
-        mie: "Mié",
-        jue: "Jue",
-        vie: "Vie",
-        sáb: "Sáb",
-        sab: "Sáb",
-      };
-      const label = mapDia[norm] || "—";
-
-      if (r.turno === "M") {
-        det.mananaActiva = true;
-        if (label !== "—" && !det.diasManana.includes(label)) det.diasManana.push(label);
-      } else {
-        det.tardeActiva = true;
-        if (label !== "—" && !det.diasTarde.includes(label)) det.diasTarde.push(label);
-      }
-    });
-
-    const detalles = Array.from(map.values());
-
-    return { payloadV2, payloadCompat: { idPeriodo: periodoSeleccionado.idPeriodo, detalles } };
   };
 
   // =====================================================================
@@ -940,7 +841,7 @@ export default function FormularioSolicitudTurnos() {
             </div>
           )}
 
-          {/* EDITAR/NUEVA: Registro por especialidad + calendario */}
+          {/* EDITAR/NUEVA: Nueva interfaz de tabla */}
           {!esSoloLectura && (
             <>
               {!periodoSeleccionado?.idPeriodo ? (
@@ -950,51 +851,15 @@ export default function FormularioSolicitudTurnos() {
                 </div>
               ) : (
                 <>
-                  {/* Selector especialidad */}
-                  <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-                    <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-3">
-                      <div className="flex-1">
-                        <label className="text-sm font-bold text-slate-700">Especialidad</label>
-                        <select
-                          value={idServicioSel}
-                          onChange={(e) => setIdServicioSel(e.target.value)}
-                          className="mt-1 w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
-                        >
-                          <option value="">Seleccione una especialidad...</option>
-                          {especialidades.map((e) => (
-                            <option key={e.idServicio} value={e.idServicio}>
-                              {e.descServicio} {e.codServicio ? `(${e.codServicio})` : ""}
-                            </option>
-                          ))}
-                        </select>
-                        <div className="text-xs text-slate-500 mt-2">
-                          * Al seleccionar la especialidad, registra días/turnos en el calendario del periodo.
-                        </div>
-                      </div>
-
-                      <div className="text-sm text-slate-600">
-                        Registros actuales:{" "}
-                        <span className="font-extrabold text-[#0A5BA9]">{registros.length}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Calendario */}
-                  {especialidadSel ? (
-                    <CalendarPeriodo
-                      periodo={periodoSeleccionado}
-                      onClickTurno={handleClickTurno}
-                      registrosIndex={registrosIndex}
-                      esSoloLectura={false}
-                    />
-                  ) : (
-                    <div className="bg-slate-50 border border-slate-200 text-slate-700 px-4 py-3 rounded-xl">
-                      Selecciona una especialidad para mostrar el calendario.
-                    </div>
-                  )}
-
-                  {/* Resumen */}
-                  <TurnosSolicitados registros={registros} onRemove={onRemoveRegistro} onClear={onClearRegistros} />
+                  {/* Nueva tabla de especialidades */}
+                  <TablaSolicitudEspecialidades
+                    especialidades={especialidades}
+                    periodo={periodoSeleccionado}
+                    registros={registros}
+                    onChange={(nuevosRegistros) => setRegistros(nuevosRegistros)}
+                    soloLectura={false}
+                    mostrarEncabezado={false}
+                  />
 
                   {/* Acciones */}
                   <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
@@ -1033,14 +898,6 @@ export default function FormularioSolicitudTurnos() {
             </>
           )}
         </div>
-
-        {/* Modal configurar turno */}
-        <ModalConfigTurno
-          open={openCfg}
-          onClose={() => setOpenCfg(false)}
-          data={cfgData}
-          onConfirm={onConfirmCfg}
-        />
       </Modal>
     </div>
   );
