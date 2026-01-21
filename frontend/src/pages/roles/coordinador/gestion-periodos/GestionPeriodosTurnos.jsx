@@ -204,12 +204,14 @@ export default function GestionPeriodosTurnos() {
           <p className="text-gray-600">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
-          <CardStat title="Períodos" value={stats.total} subtitle="Total registrados" icon={<Calendar className="w-5 h-5" />} tone="blue" />
-          <CardStat title="Activos" value={stats.activos} subtitle="En captura" icon={<Calendar className="w-5 h-5" />} tone="green" />
-          <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-5 h-5" />} tone="orange" />
-          <CardStat title="Borradores" value={stats.borradores} subtitle="Sin publicar" icon={<Calendar className="w-5 h-5" />} tone="purple" />
-        </div>
+        {activeTab === "periodos" && (
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-6">
+            <CardStat title="Períodos" value={stats.total} subtitle="Total registrados" icon={<Calendar className="w-5 h-5" />} tone="blue" />
+            <CardStat title="Activos" value={stats.activos} subtitle="En captura" icon={<Calendar className="w-5 h-5" />} tone="green" />
+            <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-5 h-5" />} tone="orange" />
+            <CardStat title="Borradores" value={stats.borradores} subtitle="Sin publicar" icon={<Calendar className="w-5 h-5" />} tone="purple" />
+          </div>
+        )}
 
         <div className="bg-white rounded-lg shadow-sm mb-6">
           <div className="border-b border-gray-200">
@@ -286,14 +288,14 @@ export default function GestionPeriodosTurnos() {
             prefillRechazo={prefillRechazo}
           />
         )}
-      </div>
 
-      {(loadingPeriodos && periodos.length === 0) ? (
-        <div className="fixed bottom-4 right-4 bg-white border rounded-lg shadow px-3 py-2 flex items-center gap-2 text-sm text-gray-700">
-          <Loader2 className="w-4 h-4 animate-spin" />
-          Cargando...
-        </div>
-      ) : null}
+        {(loadingPeriodos && periodos.length === 0) && (
+          <div className="fixed bottom-4 right-4 bg-white border rounded-lg shadow px-3 py-2 flex items-center gap-2 text-sm text-gray-700">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Cargando...
+          </div>
+        )}
+      </div>
     </div>
   );
 }

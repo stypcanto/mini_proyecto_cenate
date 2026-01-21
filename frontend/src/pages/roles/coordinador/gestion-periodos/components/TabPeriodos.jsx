@@ -6,6 +6,11 @@ import {
   Eye,
   ToggleLeft,
   ToggleRight,
+  TrendingUp,
+  Users,
+  Clock,
+  CheckCircle2,
+  XCircle,
 } from "lucide-react";
 
 import { fmtDate, safeNum } from "../utils/ui";
@@ -29,26 +34,32 @@ export default function TabPeriodos({
   loading,
   onTogglePeriodo,
   onCrearPeriodo,
-  onVerDetallePeriodo, // ✅ nuevo
+  onVerDetallePeriodo,
   getEstadoBadge,
 }) {
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      <div className="flex items-center justify-center py-16 bg-white rounded-xl">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Cargando periodos...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-sm">
-      {/* Header */}
-      <div className="p-6 border-b border-gray-200 flex justify-between items-center">
-        <h2 className="text-xl font-semibold text-gray-900">Historial de Periodos</h2>
+    <div className="space-y-6">
+      {/* Header con botón de crear */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">Historial de Periodos</h2>
+          <p className="text-sm text-gray-600 mt-1">Administre los periodos de solicitud de turnos</p>
+        </div>
 
         <button
           onClick={onCrearPeriodo}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+          className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 text-white font-semibold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg"
         >
           <Plus className="w-5 h-5" />
           Aperturar Nuevo Periodo
@@ -56,118 +67,147 @@ export default function TabPeriodos({
       </div>
 
       {(periodos || []).length === 0 ? (
-        <div className="p-12 text-center text-gray-500">
-          <Calendar className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-          <p className="text-lg mb-2">No hay períodos configurados</p>
-          <p className="text-sm">Aperture un nuevo período para comenzar</p>
+        <div className="bg-white rounded-xl p-16 text-center border border-gray-200">
+          <Calendar className="w-20 h-20 mx-auto mb-4 text-gray-300" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">No hay períodos configurados</h3>
+          <p className="text-gray-500">Aperture un nuevo período para comenzar a gestionar solicitudes</p>
         </div>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead className="bg-gray-50 text-gray-700">
-              <tr>
-                <th className="px-6 py-4 text-left font-semibold">PERIODO</th>
-                <th className="px-6 py-4 text-left font-semibold">ESTADO</th>
-                <th className="px-6 py-4 text-left font-semibold">FECHA APERTURA</th>
-                <th className="px-6 py-4 text-left font-semibold">FECHA CIERRE</th>
-                <th className="px-6 py-4 text-center font-semibold">TOTAL TURNOS</th>
-                <th className="px-6 py-4 text-center font-semibold">TURNOS ASIGNADOS</th>
-                <th className="px-6 py-4 text-center font-semibold">OCUPACIÓN</th>
-                <th className="px-6 py-4 text-left font-semibold">ACCIONES</th>
-              </tr>
-            </thead>
+        <div className="grid grid-cols-1 gap-4">
+          {(periodos || []).map((p) => {
+            const total = safeNum(p.totalTurnos ?? p.turnosDisponibles ?? p.total ?? 0);
+            const asignados = safeNum(p.turnosAsignados ?? p.asignados ?? 0);
+            const ocupacion = calcOcupacion(p);
+            const isActivo = p.estado === "ACTIVO";
+            const isCerrado = p.estado === "CERRADO";
 
-            <tbody className="divide-y divide-gray-200 bg-white">
-              {(periodos || []).map((p) => {
-                const total = safeNum(p.totalTurnos ?? p.turnosDisponibles ?? p.total ?? 0);
-                const asignados = safeNum(p.turnosAsignados ?? p.asignados ?? 0);
-                const ocupacion = calcOcupacion(p);
-
-                return (
-                  <tr key={p.idPeriodo} className="hover:bg-gray-50">
-                    {/* PERIODO */}
-                    <td className="px-6 py-4 font-semibold text-gray-900">
-                      {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
-                    </td>
-
-                    {/* ESTADO */}
-                    <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getEstadoBadge(p.estado)}`}>
-                        {p.estado === "ACTIVO" ? "Activo" : p.estado === "CERRADO" ? "Cerrado" : p.estado}
-                      </span>
-                    </td>
-
-                    {/* FECHA APERTURA */}
-                    <td className="px-6 py-4 text-gray-700">
-                      {p.fechaInicio ? fmtDate(p.fechaInicio) : "—"}
-                    </td>
-
-                    {/* FECHA fin */}
-                    <td className="px-6 py-4 text-gray-700">
-                      {p.fechaFin ? fmtDate(p.fechaFin) : "—"}
-                    </td>
-
-                    {/* TOTAL TURNOS */}
-                    <td className="px-6 py-4 text-center text-gray-700">{total}</td>
-
-                    {/* TURNOS ASIGNADOS */}
-                    <td className="px-6 py-4 text-center text-gray-700">{asignados}</td>
-
-                    {/* OCUPACIÓN (barra como tu imagen) */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center justify-center gap-3">
-                        <div className="w-24 h-2 bg-gray-200 rounded-full overflow-hidden">
-                          <div
-                            className="h-2 bg-green-500"
-                            style={{ width: `${ocupacion}%` }}
-                          />
+            return (
+              <div
+                key={p.idPeriodo}
+                className="bg-white rounded-xl border-2 border-gray-200 hover:border-green-300 transition-all shadow-sm hover:shadow-md overflow-hidden"
+              >
+                <div className="p-6">
+                  {/* Header */}
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          isActivo ? 'bg-green-100' : isCerrado ? 'bg-orange-100' : 'bg-purple-100'
+                        }`}>
+                          <Calendar className={`w-5 h-5 ${
+                            isActivo ? 'text-green-600' : isCerrado ? 'text-orange-600' : 'text-purple-600'
+                          }`} />
                         </div>
-                        <span className="text-gray-700 font-medium text-xs">
-                          {ocupacion.toFixed(1)}%
-                        </span>
+                        <div>
+                          <h3 className="text-xl font-bold text-gray-900">
+                            {p.descripcion ?? p.nombrePeriodo ?? `Periodo ${p.periodo ?? p.idPeriodo}`}
+                          </h3>
+                          <p className="text-sm text-gray-500">ID: {p.idPeriodo}</p>
+                        </div>
                       </div>
-                    </td>
+                    </div>
+                    <span className={`px-4 py-2 rounded-xl text-sm font-semibold border-2 ${getEstadoBadge(p.estado)}`}>
+                      {p.estado}
+                    </span>
+                  </div>
 
-                    {/* ACCIONES (Ver detalle + iconos) */}
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => onVerDetallePeriodo?.(p)}
-                          className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                        >
-                          Ver Detalle
-                        </button>
+                  {/* Estadísticas destacadas */}
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
+                      <div className="flex items-center gap-2 mb-1">
+                        <TrendingUp className="w-4 h-4 text-blue-600" />
+                        <span className="text-xs font-medium text-blue-700">Total Turnos</span>
+                      </div>
+                      <p className="text-2xl font-bold text-blue-700">{total}</p>
+                    </div>
 
+                    <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Users className="w-4 h-4 text-green-600" />
+                        <span className="text-xs font-medium text-green-700">Asignados</span>
+                      </div>
+                      <p className="text-2xl font-bold text-green-700">{asignados}</p>
+                    </div>
+
+                    <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-4 border border-purple-200">
+                      <div className="flex items-center gap-2 mb-2">
+                        <CheckCircle2 className="w-4 h-4 text-purple-600" />
+                        <span className="text-xs font-medium text-purple-700">Ocupación</span>
+                      </div>
+                      <div className="space-y-1">
                         <div className="flex items-center gap-2">
-                          {/* Toggle */}
-                          <button
-                            onClick={() => onTogglePeriodo(p)}
-                            className="w-10 h-10 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center"
-                            title={p.estado === "ACTIVO" ? "Cerrar período" : "Activar período"}
-                          >
-                            {p.estado === "ACTIVO" ? (
-                              <ToggleRight className="w-5 h-5" />
-                            ) : (
-                              <ToggleLeft className="w-5 h-5" />
-                            )}
-                          </button>
-
-                          {/* Ver (iconito) */}
-                          <button
-                            onClick={() => onVerDetallePeriodo?.(p)}
-                            className="w-10 h-10 rounded-lg border border-red-200 text-red-500 hover:bg-red-50 flex items-center justify-center"
-                            title="Ver detalle"
-                          >
-                            <Eye className="w-5 h-5" />
-                          </button>
+                          <div className="flex-1 h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                            <div
+                              className={`h-2.5 ${
+                                ocupacion >= 80 ? 'bg-green-500' :
+                                ocupacion >= 50 ? 'bg-yellow-500' :
+                                'bg-red-500'
+                              }`}
+                              style={{ width: `${ocupacion}%` }}
+                            />
+                          </div>
                         </div>
+                        <p className="text-lg font-bold text-purple-700">{ocupacion.toFixed(1)}%</p>
                       </div>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                      <div className="flex items-center gap-2 mb-1">
+                        <Users className="w-4 h-4 text-gray-600" />
+                        <span className="text-xs font-medium text-gray-700">Disponibles</span>
+                      </div>
+                      <p className="text-2xl font-bold text-gray-700">{total - asignados}</p>
+                    </div>
+                  </div>
+
+                  {/* Fechas */}
+                  <div className="flex flex-wrap gap-4 text-sm text-gray-600 mb-4 pb-4 border-b border-gray-200">
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Fecha de apertura: <span className="font-medium">{p.fechaInicio ? fmtDate(p.fechaInicio) : "—"}</span></span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3.5 h-3.5" />
+                      <span>Fecha de cierre: <span className="font-medium">{p.fechaFin ? fmtDate(p.fechaFin) : "—"}</span></span>
+                    </div>
+                  </div>
+
+                  {/* Botones de acción */}
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => onVerDetallePeriodo?.(p)}
+                      className="flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-2.5 bg-blue-600 text-white font-semibold rounded-xl hover:bg-blue-700 transition-all shadow-sm hover:shadow-md"
+                    >
+                      <Eye className="w-4 h-4" />
+                      Ver Detalle
+                    </button>
+
+                    <button
+                      onClick={() => onTogglePeriodo(p)}
+                      className={`flex-1 min-w-[140px] flex items-center justify-center gap-2 px-5 py-2.5 font-semibold rounded-xl transition-all shadow-sm hover:shadow-md ${
+                        isActivo
+                          ? 'bg-orange-600 text-white hover:bg-orange-700'
+                          : 'bg-green-600 text-white hover:bg-green-700'
+                      }`}
+                      title={isActivo ? "Cerrar período" : "Activar período"}
+                    >
+                      {isActivo ? (
+                        <>
+                          <XCircle className="w-4 h-4" />
+                          Cerrar Periodo
+                        </>
+                      ) : (
+                        <>
+                          <CheckCircle2 className="w-4 h-4" />
+                          Activar Periodo
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       )}
     </div>
