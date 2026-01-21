@@ -18,6 +18,7 @@ import { useAuth } from "../../context/AuthContext";
 import teleecgService from "../../services/teleecgService";
 import VisorECGModal from "../../components/teleecgs/VisorECGModal";
 import ProcesarECGModal from "../../components/teleecgs/ProcesarECGModal";
+import ModalEvaluacionECG from "../../components/teleecgs/ModalEvaluacionECG";
 import toast from "react-hot-toast";
 
 /**
@@ -39,12 +40,17 @@ export default function TeleECGRecibidas() {
   const [showProcesarModal, setShowProcesarModal] = useState(false);
   const [ecgParaProcesar, setEcgParaProcesar] = useState(null);
 
-  // Estadísticas consolidadas
+  // ✅ v3.0.0: Modal para evaluar como NORMAL/ANORMAL + descripción
+  const [showEvaluacionModal, setShowEvaluacionModal] = useState(false);
+  const [ecgParaEvaluar, setEcgParaEvaluar] = useState(null);
+  const [evaluandoImagen, setEvaluandoImagen] = useState(false);
+
+  // Estadísticas consolidadas (v3.0.0: CENATE view con nuevos estados)
   const [stats, setStats] = useState({
     total: 0,
-    pendientes: 0,
-    procesadas: 0,
-    rechazadas: 0,
+    pendientes: 0,      // PENDIENTE = ENVIADA en BD
+    observadas: 0,       // OBSERVADA = con observaciones
+    atendidas: 0,        // ATENDIDA = completadas
   });
 
   // Filtros
@@ -85,19 +91,21 @@ export default function TeleECGRecibidas() {
   };
 
   /**
-   * Cargar estadísticas consolidadas
+   * Cargar estadísticas consolidadas (v3.0.0)
    */
   const cargarEstadisticas = async () => {
     try {
       const response = await teleecgService.obtenerEstadisticas();
       const statsData = response || {};
+      // v3.0.0: Para CENATE, usar nuevos nombres de estados
+      // Fallback a conteo local si API no retorna los nuevos campos
       setStats({
-        total: statsData.totalImagenesCargadas || 0,
-        pendientes: statsData.totalImagenesPendientes || 0,
-        procesadas: statsData.totalImagenesProcesadas || 0,
-        rechazadas: statsData.totalImagenesRechazadas || 0,
+        total: statsData.totalImagenesCargadas || statsData.total || 0,
+        pendientes: statsData.totalPendientes || statsData.totalImagenesPendientes || 0,
+        observadas: statsData.totalObservadas || statsData.totalImagenesRechazadas || 0,
+        atendidas: statsData.totalAtendidas || statsData.totalImagenesProcesadas || 0,
       });
-      console.log("✅ Estadísticas consolidadas:", statsData);
+      console.log("✅ Estadísticas consolidadas (v3.0.0):", statsData);
     } catch (error) {
       console.error("❌ Error al cargar estadísticas:", error);
     }
@@ -210,6 +218,38 @@ export default function TeleECGRecibidas() {
   };
 
   /**
+   * ✅ v3.0.0: Abrir modal de evaluación (NORMAL/ANORMAL + descripción)
+   */
+  const handleEvaluar = (ecg) => {
+    setEcgParaEvaluar(ecg);
+    setShowEvaluacionModal(true);
+  };
+
+  /**
+   * ✅ v3.0.0: Confirmar evaluación y guardar
+   */
+  const handleConfirmarEvaluacion = async (evaluacion, descripcion) => {
+    try {
+      setEvaluandoImagen(true);
+      await teleecgService.evaluarImagen(
+        ecgParaEvaluar.idImagen,
+        evaluacion,
+        descripcion
+      );
+      toast.success(`✅ ECG evaluada como ${evaluacion}`);
+      setShowEvaluacionModal(false);
+      setEcgParaEvaluar(null);
+      await cargarECGs();
+      await cargarEstadisticas();
+    } catch (error) {
+      console.error("❌ Error al evaluar ECG:", error);
+      toast.error(error.message || "Error al guardar evaluación");
+    } finally {
+      setEvaluandoImagen(false);
+    }
+  };
+
+  /**
    * Exportar a Excel
    */
   const handleExportar = async () => {
@@ -253,15 +293,30 @@ export default function TeleECGRecibidas() {
   });
 
   /**
-   * Badge de estado
+   * Badge de estado (v3.0.0: Nuevos estados para CENATE)
+   * Usa estadoTransformado si está disponible (para CENATE es PENDIENTE, OBSERVADA, ATENDIDA)
    */
-  const getEstadoBadge = (estado) => {
+  const getEstadoBadge = (ecg) => {
+    // Preferir estadoTransformado si está disponible
+    const estado = ecg.estadoTransformado || ecg.estado;
+
     const badges = {
       PENDIENTE: (
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
           <Clock className="w-3 h-3" /> Pendiente
         </span>
       ),
+      OBSERVADA: (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+          <AlertCircle className="w-3 h-3" /> Observada
+        </span>
+      ),
+      ATENDIDA: (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <CheckCircle className="w-3 h-3" /> Atendida
+        </span>
+      ),
+      // Legacy states for backward compatibility
       PROCESADA: (
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
           <CheckCircle className="w-3 h-3" /> Procesada
@@ -274,6 +329,30 @@ export default function TeleECGRecibidas() {
       ),
     };
     return badges[estado] || estado;
+  };
+
+  /**
+   * ✅ v3.0.0: Badge para evaluación médica (NORMAL/ANORMAL)
+   */
+  const getEvaluacionBadge = (evaluacion) => {
+    const badges = {
+      NORMAL: (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          <CheckCircle className="w-3 h-3" /> NORMAL
+        </span>
+      ),
+      ANORMAL: (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          <AlertCircle className="w-3 h-3" /> ANORMAL
+        </span>
+      ),
+      SIN_EVALUAR: (
+        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+          <Clock className="w-3 h-3" /> Sin evaluar
+        </span>
+      ),
+    };
+    return badges[evaluacion] || (evaluacion ? evaluacion : badges.SIN_EVALUAR);
   };
 
   /**
@@ -342,27 +421,27 @@ export default function TeleECGRecibidas() {
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-600">
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-purple-600">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Procesadas</p>
-                <p className="text-2xl font-bold text-green-600">
-                  {stats.procesadas}
+                <p className="text-gray-600 text-sm font-medium">Observadas</p>
+                <p className="text-2xl font-bold text-purple-600">
+                  {stats.observadas}
                 </p>
               </div>
-              <CheckCircle className="w-10 h-10 text-green-600 opacity-20" />
+              <AlertCircle className="w-10 h-10 text-purple-600 opacity-20" />
             </div>
           </div>
 
-          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-red-600">
+          <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-600">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Rechazadas</p>
-                <p className="text-2xl font-bold text-red-600">
-                  {stats.rechazadas}
+                <p className="text-gray-600 text-sm font-medium">Atendidas</p>
+                <p className="text-2xl font-bold text-green-600">
+                  {stats.atendidas}
                 </p>
               </div>
-              <XCircle className="w-10 h-10 text-red-600 opacity-20" />
+              <CheckCircle className="w-10 h-10 text-green-600 opacity-20" />
             </div>
           </div>
         </div>
@@ -394,7 +473,7 @@ export default function TeleECGRecibidas() {
               </div>
             </div>
 
-            {/* Estado */}
+            {/* Estado (v3.0.0: Nuevos nombres para CENATE) */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Estado
@@ -407,9 +486,9 @@ export default function TeleECGRecibidas() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               >
                 <option value="TODOS">Todos</option>
-                <option value="PENDIENTE">Pendientes</option>
-                <option value="PROCESADA">Procesadas</option>
-                <option value="RECHAZADA">Rechazadas</option>
+                <option value="PENDIENTE">Pendientes (Enviadas)</option>
+                <option value="OBSERVADA">Observadas (Con problemas)</option>
+                <option value="ATENDIDA">Atendidas (Completadas)</option>
               </select>
             </div>
 
@@ -522,6 +601,9 @@ export default function TeleECGRecibidas() {
                     <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
                       Estado
                     </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      Evaluación
+                    </th>
                     <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
                       Acciones
                     </th>
@@ -551,7 +633,16 @@ export default function TeleECGRecibidas() {
                         {formatSize(ecg.sizeBytes)}
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        {getEstadoBadge(ecg.estado)}
+                        {getEstadoBadge(ecg)}
+                        {/* Mostrar observaciones si existen */}
+                        {ecg.observaciones && (
+                          <div className="text-xs text-gray-600 mt-1 p-1 bg-gray-50 rounded">
+                            <p className="font-medium">💬 {ecg.observaciones}</p>
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">
+                        {getEvaluacionBadge(ecg.evaluacion)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex gap-2 justify-center">
@@ -575,8 +666,19 @@ export default function TeleECGRecibidas() {
                             <Download className="w-4 h-4" />
                           </button>
 
-                          {/* Procesar (si está pendiente) - ✅ FIX T-ECG-003 */}
-                          {ecg.estado === "PENDIENTE" && (
+                          {/* Evaluar (v3.0.0 - NUEVO) - Si aún no ha sido evaluada */}
+                          {(!ecg.evaluacion || ecg.evaluacion === "SIN_EVALUAR") && (
+                            <button
+                              onClick={() => handleEvaluar(ecg)}
+                              title="Evaluar como NORMAL/ANORMAL"
+                              className="p-2 text-purple-600 hover:bg-purple-100 rounded transition-colors"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                            </button>
+                          )}
+
+                          {/* Procesar (si está pendiente) - v3.0.0: Verificar PENDIENTE y ENVIADA */}
+                          {(ecg.estadoTransformado === "PENDIENTE" || ecg.estado === "PENDIENTE" || ecg.estado === "ENVIADA") && (
                             <button
                               onClick={() => handleProcesar(ecg)}
                               title="Procesar/Aceptar"
@@ -586,8 +688,8 @@ export default function TeleECGRecibidas() {
                             </button>
                           )}
 
-                          {/* Rechazar (si está pendiente) */}
-                          {ecg.estado === "PENDIENTE" && (
+                          {/* Rechazar (si está pendiente) - v3.0.0: Verificar PENDIENTE y ENVIADA */}
+                          {(ecg.estadoTransformado === "PENDIENTE" || ecg.estado === "PENDIENTE" || ecg.estado === "ENVIADA") && (
                             <button
                               onClick={() => handleRechazar(ecg.idImagen)}
                               title="Rechazar"
@@ -637,6 +739,20 @@ export default function TeleECGRecibidas() {
             setShowProcesarModal(false);
             setEcgParaProcesar(null);
           }}
+        />
+      )}
+
+      {/* ✅ v3.0.0: Modal para evaluar ECG como NORMAL/ANORMAL + descripción */}
+      {showEvaluacionModal && ecgParaEvaluar && (
+        <ModalEvaluacionECG
+          isOpen={showEvaluacionModal}
+          ecg={ecgParaEvaluar}
+          onClose={() => {
+            setShowEvaluacionModal(false);
+            setEcgParaEvaluar(null);
+          }}
+          onConfirm={handleConfirmarEvaluacion}
+          loading={evaluandoImagen}
         />
       )}
     </div>

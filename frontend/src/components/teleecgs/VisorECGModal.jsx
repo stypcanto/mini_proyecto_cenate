@@ -143,12 +143,15 @@ export default function VisorECGModal({ ecg, onClose, onDescargar }) {
           </div>
           <div>
             <p className="text-gray-600 font-medium">Estado</p>
+            {/* v3.0.0: Mostrar estado transformado si está disponible */}
             <p className={`font-semibold ${
-              ecg.estado === "PROCESADA" ? "text-green-600" :
-              ecg.estado === "PENDIENTE" ? "text-yellow-600" :
-              "text-red-600"
+              (ecg.estadoTransformado || ecg.estado) === "ATENDIDA" ? "text-green-600" :
+              (ecg.estadoTransformado || ecg.estado) === "ENVIADA" || (ecg.estadoTransformado || ecg.estado) === "PENDIENTE" ? "text-yellow-600" :
+              (ecg.estadoTransformado || ecg.estado) === "OBSERVADA" ? "text-purple-600" :
+              (ecg.estadoTransformado || ecg.estado) === "RECHAZADA" ? "text-red-600" :
+              "text-gray-600"
             }`}>
-              {ecg.estado}
+              {ecg.estadoTransformado || ecg.estado}
             </p>
           </div>
         </div>

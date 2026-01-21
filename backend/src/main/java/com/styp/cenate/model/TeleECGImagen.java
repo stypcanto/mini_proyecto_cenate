@@ -202,19 +202,42 @@ public class TeleECGImagen {
     private LocalDateTime fechaExpiracion;
 
     /**
-     * ESTADO del ECG
-     * PENDIENTE: Recibida, esperando revisión
-     * PROCESADA: Aceptada y procesada
-     * RECHAZADA: Rechazada por mala calidad/formato
-     * VINCULADA: Vinculada a un usuario del sistema
+     * ESTADO del ECG (v3.0.0)
+     * ENVIADA: Recibida por CENATE, esperando revisión
+     * OBSERVADA: Revisada pero con observaciones/problemas
+     * ATENDIDA: Aceptada y completada
+     *
+     * Nota: En API se transforma según rol:
+     * - Usuario EXTERNO: ENVIADA → ENVIADA, OBSERVADA → RECHAZADA, ATENDIDA → ATENDIDA
+     * - CENATE: ENVIADA → PENDIENTE, OBSERVADA → OBSERVADA, ATENDIDA → ATENDIDA
      */
     @Column(name = "estado", nullable = false, length = 20)
-    private String estado = "PENDIENTE";
+    private String estado = "ENVIADA";
 
     /**
-     * Razón del rechazo (si estado = RECHAZADA)
-     * Ej: "Imagen borrosa", "Formato inválido"
+     * REFERENCIA A IMAGEN ANTERIOR (para subsanamiento)
+     * Cuando un usuario reenvía una imagen rechazada, se crea:
+     * - Nueva imagen (ENVIADA)
+     * - Con id_imagen_anterior = ID de imagen anterior
+     * - La anterior se marca como fue_subsanado = TRUE
      */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_imagen_anterior", nullable = true)
+    private TeleECGImagen imagenAnterior;
+
+    /**
+     * BANDERA: ¿Fue subsanada?
+     * TRUE: Esta imagen fue corregida/resubida (hay una nueva imagen que la reemplaza)
+     * FALSE: Es la imagen más reciente o no fue rechazada
+     */
+    @Column(name = "fue_subsanado", nullable = false)
+    private Boolean fueSubsanado = false;
+
+    /**
+     * @deprecated Usar campo 'observaciones' en su lugar
+     * Razón del rechazo (si estado = OBSERVADA)
+     */
+    @Deprecated(since = "3.0.0", forRemoval = true)
     @Column(name = "motivo_rechazo", columnDefinition = "TEXT")
     private String motivoRechazo;
 
@@ -224,6 +247,48 @@ public class TeleECGImagen {
      */
     @Column(name = "observaciones", columnDefinition = "TEXT")
     private String observaciones;
+
+    /**
+     * EVALUACIÓN MÉDICA DEL ECG (v3.0.0 - Nuevo)
+     * NORMAL: El ECG se ve normal, sin hallazgos relevantes
+     * ANORMAL: El ECG presenta anomalías/hallazgos clínicos
+     * SIN_EVALUAR: Aún no ha sido evaluado
+     *
+     * Este campo será usado para entrenar modelos de ML posteriormente
+     */
+    @Column(name = "evaluacion", length = 20)
+    private String evaluacion = "SIN_EVALUAR";
+
+    /**
+     * DESCRIPCIÓN DE LA EVALUACIÓN (v3.0.0 - Nuevo)
+     * Texto libre que explica POR QUÉ se marcó como NORMAL o ANORMAL
+     * Ejemplos:
+     * - "Normal: ritmo sinusal regular, sin arritmias, QT normal"
+     * - "Anormal: taquicardia sinusal, posibles cambios isquémicos en derivaciones anteriores"
+     *
+     * Máximo 1000 caracteres para mantener estructurado
+     * Este texto + imagen = dataset de entrenamiento para ML
+     */
+    @Column(name = "descripcion_evaluacion", columnDefinition = "TEXT", length = 1000)
+    private String descripcionEvaluacion;
+
+    /**
+     * USUARIO QUE REALIZÓ LA EVALUACIÓN (v3.0.0 - Nuevo)
+     * FK a dim_usuarios
+     * Típicamente: Médico de CENATE que evaluó el ECG
+     * NULL si evaluacion = SIN_EVALUAR
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_usuario_evaluador", nullable = true)
+    private Usuario usuarioEvaluador;
+
+    /**
+     * FECHA Y HORA DE LA EVALUACIÓN (v3.0.0 - Nuevo)
+     * Se establece cuando el médico guarda la evaluación
+     * NULL si evaluacion = SIN_EVALUAR
+     */
+    @Column(name = "fecha_evaluacion")
+    private LocalDateTime fechaEvaluacion;
 
     /**
      * STATUS DE LA IMAGEN EN SISTEMA
@@ -295,10 +360,13 @@ public class TeleECGImagen {
         this.updatedAt = LocalDateTime.now();
         this.fechaEnvio = LocalDateTime.now();
         if (this.estado == null) {
-            this.estado = "PENDIENTE";
+            this.estado = "ENVIADA";  // v3.0.0: Default ENVIADA en lugar de PENDIENTE
         }
         if (this.statImagen == null) {
             this.statImagen = "A";
+        }
+        if (this.fueSubsanado == null) {
+            this.fueSubsanado = false;
         }
         // Fecha de expiración automáticamente 30 días desde ahora
         if (this.fechaExpiracion == null) {

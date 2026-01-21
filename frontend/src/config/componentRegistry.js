@@ -236,6 +236,22 @@ export const componentRegistry = {
     pathMatch: '/roles/externo/teleekgs',
   },
 
+  // ✅ FIX: Rutas separadas para cada submenu del módulo TeleECG (Externo)
+  '/teleekgs/upload': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
+    requiredAction: 'ver',
+  },
+
+  '/teleekgs/listar': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/RegistroPacientes')),
+    requiredAction: 'ver',
+  },
+
+  '/teleekgs/dashboard': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGEstadisticas')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 📅 MÓDULO CITAS
   // ========================================================================
@@ -404,22 +420,6 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
-  // Rutas nuevas de TeleECG (según menu links)
-  '/teleekgs/upload': {
-    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
-    requiredAction: 'ver',
-  },
-
-  '/teleekgs/listar': {
-    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
-    requiredAction: 'ver',
-  },
-
-  '/teleekgs/dashboard': {
-    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
-    requiredAction: 'ver',
-  },
-
   // ========================================================================
   // 🫀 MÓDULO TELEECG (ADMIN - Vista Consolidada)
   // ========================================================================
@@ -429,7 +429,7 @@ export const componentRegistry = {
   },
 
   '/teleecg/estadisticas': {
-    component: lazy(() => import('../pages/teleecg/TeleECGRecibidas')),
+    component: lazy(() => import('../pages/teleecg/TeleECGEstadisticas')),
     requiredAction: 'ver',
   },
 };

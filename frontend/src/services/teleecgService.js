@@ -7,6 +7,44 @@ import toast from "react-hot-toast";
  */
 const teleecgService = {
   /**
+   * ✅ v3.0.0: Subir múltiples imágenes ECG (PADOMI - 4-10 imágenes)
+   * Envía FormData directamente con múltiples archivos
+   */
+  subirMultiplesImagenes: async (formData) => {
+    try {
+      const token = getToken();
+      const headers = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const url = `${API_BASE_URL}/teleekgs/upload-multiple`;
+      console.log("📤 [UPLOAD MULTIPLES ECGs]:", url);
+
+      const response = await fetch(url, {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include",
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || errorData.error || `HTTP ${response.status}`;
+        console.error("❌ [Upload Error]:", errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const result = await response.json();
+      console.log("✅ [Upload Success]:", result);
+      return result;
+    } catch (error) {
+      console.error("❌ [Upload Exception]:", error.message);
+      throw error;
+    }
+  },
+
+  /**
    * Subir una imagen ECG
    *
    * El backend espera:
@@ -234,22 +272,22 @@ const teleecgService = {
   },
 
   /**
-   * Procesar/aceptar una imagen ECG
+   * Procesar/aceptar una imagen ECG - v3.0.0: Usa acción "ATENDER"
    */
   procesarImagen: async (idImagen, observaciones = "") => {
     return apiClient.put(`/teleekgs/${idImagen}/procesar`, {
-      accion: "PROCESAR",
+      accion: "ATENDER",
       observaciones,
     }, true);
   },
 
   /**
-   * Rechazar una imagen ECG
+   * Rechazar una imagen ECG - v3.0.0: Usa acción "OBSERVAR"
    */
   rechazarImagen: async (idImagen, motivo = "") => {
     return apiClient.put(`/teleekgs/${idImagen}/procesar`, {
-      accion: "RECHAZAR",
-      motivo,
+      accion: "OBSERVAR",
+      observaciones: motivo,  // v3.0.0: El backend usa 'observaciones' en lugar de 'motivo'
     }, true);
   },
 
@@ -306,6 +344,34 @@ const teleecgService = {
       window.URL.revokeObjectURL(url);
       return response;
     });
+  },
+
+  /**
+   * ✅ v3.0.0: Evaluar un ECG como NORMAL o ANORMAL
+   * Médico de CENATE marca y justifica su evaluación
+   * Dataset supervisado para entrenamiento de modelos ML
+   */
+  evaluarImagen: async (idImagen, evaluacion, descripcion) => {
+    try {
+      const payload = {
+        evaluacion,
+        descripcion,
+      };
+
+      console.log("📋 [EVALUAR ECG]:", { idImagen, evaluacion });
+
+      const response = await apiClient.put(
+        `/teleekgs/${idImagen}/evaluar`,
+        payload,
+        true
+      );
+
+      console.log("✅ [Evaluación Guardada]:", response);
+      return response;
+    } catch (error) {
+      console.error("❌ Error al evaluar imagen:", error.message);
+      throw error;
+    }
   },
 };
 

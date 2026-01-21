@@ -8,7 +8,9 @@ import com.styp.cenate.exception.ValidationException;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.service.teleekgs.TeleECGService;
+import com.styp.cenate.service.teleekgs.TeleECGEstadoTransformer;
 import com.styp.cenate.service.ipress.IpressService;
+import com.styp.cenate.model.Usuario;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -51,10 +53,16 @@ public class TeleECGController {
     private TeleECGService teleECGService;
 
     @Autowired
+    private TeleECGEstadoTransformer estadoTransformer;
+
+    @Autowired
     private UsuarioRepository usuarioRepository;
 
     @Autowired
     private IpressService ipressService;
+
+    @Autowired
+    private com.styp.cenate.service.storage.FileStorageService fileStorageService;
 
     @PostConstruct
     public void init() {
@@ -100,6 +108,10 @@ public class TeleECGController {
                 dto, idIpressActual, idUsuario, ipCliente, navegador
             );
 
+            // v3.0.0: Aplicar transformación de estado según rol
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+            resultado = aplicarTransformacionEstado(resultado, usuarioActual);
+
             return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 "Imagen subida exitosamente",
@@ -110,6 +122,153 @@ public class TeleECGController {
             log.error("❌ Error en upload", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        }
+    }
+
+    /**
+     * ✅ v3.0.0: Subir múltiples imágenes ECG (PADOMI requirement - 4-10 imágenes)
+     * Endpoint para cargar batch de imágenes asociadas al mismo paciente
+     */
+    @PostMapping("/upload-multiple")
+    @CheckMBACPermission(pagina = "/teleekgs/upload", accion = "crear")
+    @Operation(summary = "Subir múltiples imágenes ECG (PADOMI)")
+    public ResponseEntity<?> subirMultiplesImagenes(
+            @RequestParam("numDocPaciente") String numDocPaciente,
+            @RequestParam("nombresPaciente") String nombresPaciente,
+            @RequestParam("apellidosPaciente") String apellidosPaciente,
+            @RequestParam("archivos") MultipartFile[] archivos,
+            HttpServletRequest request) {
+
+        log.info("📤 Upload MÚLTIPLES ECGs - DNI: {} - Cantidad: {}", numDocPaciente, archivos.length);
+
+        if (archivos == null || archivos.length == 0) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, "No se proporcionaron archivos", "400", null));
+        }
+
+        if (archivos.length < 4) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, "Mínimo 4 imágenes requeridas (PADOMI)", "400", null));
+        }
+
+        if (archivos.length > 10) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, "Máximo 10 imágenes permitidas (PADOMI)", "400", null));
+        }
+
+        try {
+            // 🔍 PASO 1: Validar duplicados DENTRO del batch antes de procesar
+            log.info("🔍 Validando duplicados dentro del batch...");
+            java.util.Map<String, java.util.List<Integer>> sha256Map = new java.util.HashMap<>();
+
+            for (int i = 0; i < archivos.length; i++) {
+                try {
+                    String sha256 = fileStorageService.calcularSHA256(archivos[i]);
+                    if (sha256Map.containsKey(sha256)) {
+                        // Ya existe este SHA256 en el batch
+                        java.util.List<Integer> indices = sha256Map.get(sha256);
+                        indices.add(i);
+                    } else {
+                        java.util.List<Integer> indices = new java.util.ArrayList<>();
+                        indices.add(i);
+                        sha256Map.put(sha256, indices);
+                    }
+                } catch (Exception e) {
+                    log.error("❌ Error calculando SHA256 para archivo {}: {}", archivos[i].getOriginalFilename(), e.getMessage());
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>(false,
+                            "Error al procesar archivo " + archivos[i].getOriginalFilename() + ": " + e.getMessage(),
+                            "400", null));
+                }
+            }
+
+            // Verificar si hay duplicados dentro del batch
+            for (java.util.Map.Entry<String, java.util.List<Integer>> entry : sha256Map.entrySet()) {
+                if (entry.getValue().size() > 1) {
+                    // Hay duplicadas
+                    StringBuilder mensaje = new StringBuilder();
+                    mensaje.append("⚠️ Imágenes duplicadas dentro del lote detectadas. ");
+
+                    java.util.List<Integer> indices = entry.getValue();
+                    for (int i = 0; i < indices.size(); i++) {
+                        int idx = indices.get(i);
+                        mensaje.append("Imagen ").append(idx + 1);
+                        if (i < indices.size() - 1) {
+                            mensaje.append(" y ");
+                        }
+                    }
+                    mensaje.append(" tienen contenido idéntico. Por favor selecciona imágenes diferentes.");
+
+                    log.warn("{}", mensaje.toString());
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                        .body(new ApiResponse<>(false, mensaje.toString(), "400", null));
+                }
+            }
+
+            Long idUsuario = getUsuarioActual();
+            String ipCliente = request.getRemoteAddr();
+            String navegador = request.getHeader("User-Agent");
+            IpressResponse ipressActual = ipressService.obtenerIpressPorUsuarioActual();
+            Long idIpressActual = ipressActual.getIdIpress();
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+
+            // ✅ PASO 2: Procesar cada archivo (ya validado como único dentro del batch)
+            java.util.List<TeleECGImagenDTO> resultados = new java.util.ArrayList<>();
+            java.util.List<Long> idImagenes = new java.util.ArrayList<>();
+            java.util.List<String> errores = new java.util.ArrayList<>();
+
+            for (MultipartFile archivo : archivos) {
+                try {
+                    SubirImagenECGDTO dto = new SubirImagenECGDTO();
+                    dto.setNumDocPaciente(numDocPaciente);
+                    dto.setNombresPaciente(nombresPaciente);
+                    dto.setApellidosPaciente(apellidosPaciente);
+                    dto.setArchivo(archivo);
+
+                    TeleECGImagenDTO resultado = teleECGService.subirImagenECG(
+                        dto, idIpressActual, idUsuario, ipCliente, navegador
+                    );
+
+                    // Aplicar transformación de estado según rol
+                    resultado = aplicarTransformacionEstado(resultado, usuarioActual);
+                    resultados.add(resultado);
+                    idImagenes.add(resultado.getIdImagen());
+
+                } catch (Exception e) {
+                    log.error("❌ Error procesando archivo: {} - {}", archivo.getOriginalFilename(), e.getMessage());
+                    errores.add(archivo.getOriginalFilename() + ": " + e.getMessage());
+                }
+            }
+
+            if (resultados.isEmpty()) {
+                String detalleErrores = String.join("; ", errores);
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(new ApiResponse<>(false, "No se pudieron procesar los archivos: " + detalleErrores, "400", null));
+            }
+
+            // Respuesta con todas las imágenes subidas
+            java.util.Map<String, Object> response = new java.util.HashMap<>();
+            response.put("total", resultados.size());
+            response.put("totalIntentados", archivos.length);
+            response.put("numDocPaciente", numDocPaciente);
+            response.put("idImagenes", idImagenes);
+            response.put("imagenes", resultados);
+            if (!errores.isEmpty()) {
+                response.put("errores", errores);
+                response.put("mensaje", resultados.size() + " imágenes subidas exitosamente, pero hubo errores en " + errores.size());
+            }
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                resultados.size() + " imagen(es) de " + archivos.length + " subidas exitosamente",
+                "200",
+                response
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error en upload múltiple", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, "Error al procesar múltiples imágenes: " + e.getMessage(), "400", null));
         }
     }
 
@@ -132,6 +291,10 @@ public class TeleECGController {
             Page<TeleECGImagenDTO> resultado = teleECGService.listarImagenes(
                 numDoc, estado, null, null, null, pageable
             );
+
+            // v3.0.0: Aplicar transformación de estado según rol
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+            resultado = aplicarTransformacionEstadoPage(resultado, usuarioActual);
 
             return ResponseEntity.ok(new ApiResponse<>(
                 true,
@@ -163,6 +326,10 @@ public class TeleECGController {
             TeleECGImagenDTO resultado = teleECGService.obtenerDetallesImagen(
                 idImagen, idUsuario, request.getRemoteAddr()
             );
+
+            // v3.0.0: Aplicar transformación de estado según rol
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+            resultado = aplicarTransformacionEstado(resultado, usuarioActual);
 
             return ResponseEntity.ok(new ApiResponse<>(
                 true,
@@ -266,6 +433,10 @@ public class TeleECGController {
                 idImagen, dto, idUsuario, request.getRemoteAddr()
             );
 
+            // v3.0.0: Aplicar transformación de estado según rol
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+            resultado = aplicarTransformacionEstado(resultado, usuarioActual);
+
             return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 "Imagen procesada",
@@ -348,6 +519,14 @@ public class TeleECGController {
         try {
             var resultado = teleECGService.obtenerProximasVencer();
 
+            // v3.0.0: Aplicar transformación de estado según rol
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+            if (resultado != null && !resultado.isEmpty()) {
+                resultado = resultado.stream()
+                    .map(dto -> aplicarTransformacionEstado(dto, usuarioActual))
+                    .toList();
+            }
+
             return ResponseEntity.ok(new ApiResponse<>(
                 true,
                 "Próximas a vencer",
@@ -388,6 +567,113 @@ public class TeleECGController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>(false, e.getMessage(), "400", null));
         }
+    }
+
+    /**
+     * Evaluar una imagen ECG (v3.0.0 - Nuevo)
+     * Médico de CENATE marca como NORMAL o ANORMAL + explicación
+     * Este endpoint recopila datos para entrenar modelos de ML posteriormente
+     */
+    @PutMapping("/{idImagen}/evaluar")
+    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "editar")
+    @Operation(summary = "Evaluar imagen ECG (NORMAL/ANORMAL)")
+    public ResponseEntity<ApiResponse<TeleECGImagenDTO>> evaluarImagen(
+            @PathVariable Long idImagen,
+            @Valid @RequestBody EvaluacionECGDTO evaluacion,
+            HttpServletRequest request) {
+
+        log.info("📋 Evaluando ECG ID: {} - Evaluación: {}", idImagen, evaluacion.getEvaluacion());
+
+        try {
+            Long idUsuarioEvaluador = getUsuarioActual();
+            String ipCliente = request.getRemoteAddr();
+
+            TeleECGImagenDTO resultado = teleECGService.evaluarImagen(
+                idImagen,
+                evaluacion.getEvaluacion(),
+                evaluacion.getDescripcion(),
+                idUsuarioEvaluador,
+                ipCliente
+            );
+
+            // Aplicar transformación de estado según rol
+            Usuario usuarioActual = obtenerUsuarioActualObjeto();
+            resultado = aplicarTransformacionEstado(resultado, usuarioActual);
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                true,
+                "Evaluación guardada exitosamente",
+                "200",
+                resultado
+            ));
+        } catch (ValidationException e) {
+            log.warn("⚠️ Validación en evaluación: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
+        } catch (ResourceNotFoundException e) {
+            log.warn("❌ Recurso no encontrado: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, e.getMessage(), "404", null));
+        } catch (Exception e) {
+            log.error("❌ Error en evaluación", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ApiResponse<>(false, e.getMessage(), "500", null));
+        }
+    }
+
+    // ============================================================
+    // MÉTODOS AUXILIARES - Transformación de Estados (v3.0.0)
+    // ============================================================
+
+    /**
+     * Obtiene el usuario actual de la sesión
+     */
+    private Usuario obtenerUsuarioActualObjeto() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth == null) {
+                log.warn("⚠️ No hay autenticación en el contexto");
+                return null;
+            }
+
+            Object principal = auth.getPrincipal();
+            if (principal instanceof org.springframework.security.core.userdetails.UserDetails) {
+                org.springframework.security.core.userdetails.UserDetails userDetails =
+                    (org.springframework.security.core.userdetails.UserDetails) principal;
+                String username = userDetails.getUsername();
+
+                var usuario = usuarioRepository.findByNameUser(username);
+                if (usuario.isPresent()) {
+                    return usuario.get();
+                }
+            }
+        } catch (Exception e) {
+            log.error("❌ Error extrayendo usuario actual", e);
+        }
+        return null;
+    }
+
+    /**
+     * Aplica transformación de estado a un DTO individual
+     * Transforma el estado según el rol del usuario
+     */
+    private TeleECGImagenDTO aplicarTransformacionEstado(TeleECGImagenDTO dto, Usuario usuario) {
+        if (dto != null) {
+            String estadoTransformado = estadoTransformer.transformarEstado(dto, usuario);
+            dto.setEstadoTransformado(estadoTransformado);
+            dto.setEstadoFormato(TeleECGImagenDTO.formatoEstado(estadoTransformado));
+        }
+        return dto;
+    }
+
+    /**
+     * Aplica transformación a un Page de DTOs
+     */
+    private Page<TeleECGImagenDTO> aplicarTransformacionEstadoPage(Page<TeleECGImagenDTO> page, Usuario usuario) {
+        if (page != null && page.hasContent()) {
+            return page.map(dto -> aplicarTransformacionEstado(dto, usuario));
+        }
+        return page;
     }
 
     /**

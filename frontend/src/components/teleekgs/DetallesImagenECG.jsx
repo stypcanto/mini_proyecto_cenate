@@ -182,8 +182,9 @@ export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
             </div>
             <div>
               <p className="text-sm text-gray-600">Estado</p>
+              {/* v3.0.0: Mostrar estado transformado si está disponible */}
               <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-blue-100 text-blue-800">
-                {imagen.estado}
+                {imagen.estadoTransformado || imagen.estado}
               </span>
             </div>
             <div>
@@ -253,7 +254,8 @@ export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
                   Descargar Imagen
                 </button>
 
-                {imagen.estado === "PENDIENTE" && (
+                {/* v3.0.0: Verificar PENDIENTE y ENVIADA para backward compatibility */}
+                {(imagen.estadoTransformado === "PENDIENTE" || imagen.estado === "PENDIENTE" || imagen.estado === "ENVIADA") && (
                   <>
                     <button
                       onClick={() => setAccion("procesar")}
@@ -268,13 +270,6 @@ export default function DetallesImagenECG({ imagen, onClose, onSuccess }) {
                     >
                       <XCircle className="w-4 h-4" />
                       Rechazar ECG
-                    </button>
-                    <button
-                      onClick={() => setAccion("vincular")}
-                      className="w-full flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded-lg transition"
-                    >
-                      <Link2 className="w-4 h-4" />
-                      Vincular a Asegurado
                     </button>
                   </>
                 )}

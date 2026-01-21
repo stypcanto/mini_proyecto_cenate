@@ -8,11 +8,12 @@ import React, { useState, useEffect } from "react";
 import {
   Search, Filter, Download, Eye, Trash2, CheckCircle, XCircle,
   Clock, Link2, MoreVertical, Loader, ChevronLeft, ChevronRight,
-  AlertTriangle
+  AlertTriangle, Image as ImageIcon
 } from "lucide-react";
 import toast from "react-hot-toast";
 import teleekgService from "../../services/teleekgService";
 import DetallesImagenECG from "./DetallesImagenECG";
+import CarrouselECGModal from "./CarrouselECGModal";
 import ConfirmDialog from "../modals/ConfirmDialog";
 
 export default function ListarImagenesECG({ onSuccess }) {
@@ -33,6 +34,11 @@ export default function ListarImagenesECG({ onSuccess }) {
   // Modal de detalles
   const [imagenSeleccionada, setImagenSeleccionada] = useState(null);
 
+  // v3.0.0: Modal de carrusel para múltiples imágenes (PADOMI)
+  const [carouselAbierto, setCarouselAbierto] = useState(false);
+  const [imagenesCarousel, setImagenesCarousel] = useState([]);
+  const [pacienteCarousel, setPacienteCarousel] = useState(null);
+
   // Estados para acciones
   const [accionando, setAccionando] = useState(false);
   const [imagenEnAccion, setImagenEnAccion] = useState(null);
@@ -41,12 +47,12 @@ export default function ListarImagenesECG({ onSuccess }) {
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [imagenParaEliminar, setImagenParaEliminar] = useState(null);
 
+  // v3.0.0: Nuevos estados para CENATE (ENVIADA transformada a PENDIENTE)
   const estados = [
     { value: "", label: "Todos los estados" },
-    { value: "PENDIENTE", label: "⏳ Pendiente" },
-    { value: "PROCESADA", label: "✅ Procesada" },
-    { value: "RECHAZADA", label: "❌ Rechazada" },
-    { value: "VINCULADA", label: "🔗 Vinculada" }
+    { value: "PENDIENTE", label: "⏳ Pendiente (Enviada)" },
+    { value: "OBSERVADA", label: "👁️ Observada" },
+    { value: "ATENDIDA", label: "✅ Atendida" }
   ];
 
   useEffect(() => {
@@ -76,6 +82,54 @@ export default function ListarImagenesECG({ onSuccess }) {
     }
   };
 
+  // v3.0.0: Obtener todas las imágenes de un paciente para carrusel
+  const obtenerImagenesPaciente = async (numDoc) => {
+    try {
+      const response = await teleekgService.listarImagenes({ numDoc, page: 0, size: 100 });
+      return response.content || [];
+    } catch (error) {
+      console.error("Error al cargar imágenes del paciente:", error);
+      return [];
+    }
+  };
+
+  // v3.0.0: Abrir carrusel con todas las imágenes del paciente
+  const abrirCarousel = async (imagen) => {
+    try {
+      // Obtener todas las imágenes del paciente
+      const todasImagenes = await obtenerImagenesPaciente(imagen.numDocPaciente);
+
+      // Cargar previews de todas las imágenes
+      const imagenesConPreview = await Promise.all(
+        todasImagenes.map(async (img) => {
+          try {
+            const preview = await teleekgService.verPreview(img.idImagen);
+            return { ...img, ...preview };
+          } catch (error) {
+            console.error(`Error al cargar preview para ${img.idImagen}:`, error);
+            return img;
+          }
+        })
+      );
+
+      setPacienteCarousel({
+        numDoc: imagen.numDocPaciente,
+        nombres: imagen.nombresPaciente,
+        apellidos: imagen.apellidosPaciente,
+      });
+      setImagenesCarousel(imagenesConPreview);
+      setCarouselAbierto(true);
+
+      // Badge con cantidad de imágenes
+      if (imagenesConPreview.length > 1) {
+        toast.success(`📸 Carrusel: ${imagenesConPreview.length} imágenes`);
+      }
+    } catch (error) {
+      console.error("Error al abrir carrusel:", error);
+      toast.error("Error al cargar el carrusel de imágenes");
+    }
+  };
+
   const handleDescargar = async (id, nombre) => {
     try {
       toast.loading("Descargando imagen...");
@@ -88,31 +142,37 @@ export default function ListarImagenesECG({ onSuccess }) {
     }
   };
 
-  const getColorEstado = (estado) => {
+  // v3.0.0: Colores para nuevos estados
+  const getColorEstado = (imagen) => {
+    const estado = imagen.estadoTransformado || imagen.estado;
     switch (estado) {
       case "PENDIENTE":
+      case "ENVIADA":
         return "bg-yellow-100 text-yellow-800 border-yellow-300";
-      case "PROCESADA":
+      case "OBSERVADA":
+        return "bg-purple-100 text-purple-800 border-purple-300";
+      case "ATENDIDA":
         return "bg-green-100 text-green-800 border-green-300";
       case "RECHAZADA":
         return "bg-red-100 text-red-800 border-red-300";
-      case "VINCULADA":
-        return "bg-purple-100 text-purple-800 border-purple-300";
       default:
         return "bg-gray-100 text-gray-800 border-gray-300";
     }
   };
 
-  const getIconoEstado = (estado) => {
+  // v3.0.0: Iconos para nuevos estados
+  const getIconoEstado = (imagen) => {
+    const estado = imagen.estadoTransformado || imagen.estado;
     switch (estado) {
       case "PENDIENTE":
+      case "ENVIADA":
         return <Clock className="w-4 h-4" />;
-      case "PROCESADA":
+      case "OBSERVADA":
+        return <AlertTriangle className="w-4 h-4" />;
+      case "ATENDIDA":
         return <CheckCircle className="w-4 h-4" />;
       case "RECHAZADA":
         return <XCircle className="w-4 h-4" />;
-      case "VINCULADA":
-        return <Link2 className="w-4 h-4" />;
       default:
         return null;
     }
@@ -334,10 +394,17 @@ export default function ListarImagenesECG({ onSuccess }) {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-semibold ${getColorEstado(imagen.estado)}`}>
-                        {getIconoEstado(imagen.estado)}
-                        {imagen.estado}
+                      {/* v3.0.0: Mostrar estado transformado si está disponible */}
+                      <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full border text-xs font-semibold ${getColorEstado(imagen)}`}>
+                        {getIconoEstado(imagen)}
+                        {imagen.estadoTransformado || imagen.estado}
                       </span>
+                      {/* Mostrar observaciones si existen */}
+                      {imagen.observaciones && (
+                        <div className="text-xs text-gray-600 mt-1 p-1 bg-gray-50 rounded">
+                          <p className="font-medium">💬 {imagen.observaciones}</p>
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`text-xs font-medium ${
@@ -358,12 +425,12 @@ export default function ListarImagenesECG({ onSuccess }) {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex justify-center gap-1 flex-wrap">
-                        {/* Ver detalles */}
+                        {/* v3.0.0: Ver en carrusel (si hay múltiples) o detalles */}
                         <button
-                          onClick={() => setImagenSeleccionada(imagen)}
+                          onClick={() => abrirCarousel(imagen)}
                           disabled={accionando && imagenEnAccion === imagen.idImagen}
                           className="p-2 hover:bg-blue-100 rounded text-blue-600 transition disabled:opacity-50"
-                          title="Ver detalles"
+                          title="Ver en carrusel (PADOMI)"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
@@ -378,8 +445,8 @@ export default function ListarImagenesECG({ onSuccess }) {
                           <Download className="w-4 h-4" />
                         </button>
 
-                        {/* Procesar (si está pendiente) */}
-                        {imagen.estado === "PENDIENTE" && (
+                        {/* v3.0.0: Procesar (si está pendiente/enviada) */}
+                        {(imagen.estadoTransformado === "PENDIENTE" || imagen.estado === "PENDIENTE" || imagen.estado === "ENVIADA") && (
                           <button
                             onClick={() => handleProcesar(imagen.idImagen)}
                             disabled={accionando && imagenEnAccion === imagen.idImagen}
@@ -394,8 +461,8 @@ export default function ListarImagenesECG({ onSuccess }) {
                           </button>
                         )}
 
-                        {/* Rechazar (si está pendiente) */}
-                        {imagen.estado === "PENDIENTE" && (
+                        {/* v3.0.0: Rechazar (si está pendiente/enviada) */}
+                        {(imagen.estadoTransformado === "PENDIENTE" || imagen.estado === "PENDIENTE" || imagen.estado === "ENVIADA") && (
                           <button
                             onClick={() => handleRechazar(imagen.idImagen)}
                             disabled={accionando && imagenEnAccion === imagen.idImagen}
@@ -457,6 +524,22 @@ export default function ListarImagenesECG({ onSuccess }) {
           </div>
         )}
       </div>
+
+      {/* v3.0.0: Modal de Carrusel (PADOMI - múltiples imágenes) */}
+      {carouselAbierto && imagenesCarousel.length > 0 && (
+        <CarrouselECGModal
+          imagenes={imagenesCarousel}
+          paciente={pacienteCarousel}
+          onClose={() => {
+            setCarouselAbierto(false);
+            setImagenesCarousel([]);
+            setPacienteCarousel(null);
+          }}
+          onDescargar={(imagen) => {
+            handleDescargar(imagen.idImagen, imagen.nombreArchivo);
+          }}
+        />
+      )}
 
       {/* Modal de Detalles */}
       {imagenSeleccionada && (

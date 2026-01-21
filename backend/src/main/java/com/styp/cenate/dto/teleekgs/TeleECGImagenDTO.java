@@ -160,30 +160,87 @@ public class TeleECGImagenDTO {
     private String storageBucket;
 
     /**
-     * ESTADO del ECG
-     * Valores: PENDIENTE, PROCESADA, RECHAZADA, VINCULADA
+     * ESTADO del ECG (v3.0.0)
+     * Valores BD: ENVIADA, OBSERVADA, ATENDIDA
+     * Transformado para UI según rol del usuario
      */
     @JsonProperty("estado")
     private String estado;
 
     /**
+     * ESTADO TRANSFORMADO para la UI según rol del usuario
+     * Usuario EXTERNO: ENVIADA, RECHAZADA (=OBSERVADA), ATENDIDA
+     * CENATE: PENDIENTE (=ENVIADA), OBSERVADA, ATENDIDA
+     */
+    @JsonProperty("estado_transformado")
+    private String estadoTransformado;
+
+    /**
      * ESTADO en formato legible con emoji
-     * Ej: "⏳ PENDIENTE", "✅ PROCESADA", "❌ RECHAZADA"
+     * Ej: "⏳ PENDIENTE", "✅ ATENDIDA", "❌ RECHAZADA"
      */
     @JsonProperty("estado_formato")
     private String estadoFormato;
 
     /**
-     * Razón del rechazo (si aplica)
+     * ID de la imagen anterior (para subsanamiento)
+     * Cuando se reenvía una imagen rechazada, esta es la anterior
+     */
+    @JsonProperty("id_imagen_anterior")
+    private Long idImagenAnterior;
+
+    /**
+     * ¿Fue subsanada? (¿Hay una nueva imagen que reemplazó a esta?)
+     * TRUE: Esta imagen fue rechazada y se reenvió una nueva
+     * FALSE: Es la más reciente o no fue rechazada
+     */
+    @JsonProperty("fue_subsanado")
+    private Boolean fueSubsanado;
+
+    /**
+     * Razón del rechazo (DEPRECATED: usar observaciones en su lugar)
+     * @deprecated
      */
     @JsonProperty("motivo_rechazo")
     private String motivoRechazo;
 
     /**
      * Observaciones sobre el ECG
+     * Utilizado para detallar razones de OBSERVADA (rechazos) o notas generales
      */
     @JsonProperty("observaciones")
     private String observaciones;
+
+    /**
+     * EVALUACIÓN MÉDICA del ECG (v3.0.0 - ML Dataset)
+     * Valores: NORMAL, ANORMAL, SIN_EVALUAR (default)
+     * Usado para crear dataset de entrenamiento para modelos ML
+     */
+    @JsonProperty("evaluacion")
+    private String evaluacion;
+
+    /**
+     * DESCRIPCIÓN DE LA EVALUACIÓN (v3.0.0 - ML Dataset)
+     * Justificación médica: ¿Por qué es NORMAL o ANORMAL?
+     * Ejemplo: "Ritmo sinusal regular, sin arritmias, QT normal"
+     * Máximo 1000 caracteres
+     */
+    @JsonProperty("descripcion_evaluacion")
+    private String descripcionEvaluacion;
+
+    /**
+     * USUARIO EVALUADOR (v3.0.0 - ML Dataset)
+     * Nombre del médico que realizó la evaluación
+     */
+    @JsonProperty("usuario_evaluador_nombre")
+    private String usuarioEvaluadorNombre;
+
+    /**
+     * FECHA DE EVALUACIÓN (v3.0.0 - ML Dataset)
+     * Cuándo se realizó la evaluación médica
+     */
+    @JsonProperty("fecha_evaluacion")
+    private LocalDateTime fechaEvaluacion;
 
     /**
      * Fecha y hora de envío
@@ -293,13 +350,21 @@ public class TeleECGImagenDTO {
     }
 
     /**
-     * Obtiene representación emoji del estado
+     * Obtiene representación emoji del estado (v3.0.0)
+     * Soporta tanto estados internos BD como estados transformados para UI
      */
     public static String formatoEstado(String estado) {
         return switch (estado) {
-            case "PENDIENTE" -> "⏳ PENDIENTE";
-            case "PROCESADA" -> "✅ PROCESADA";
+            // Estados internos en BD
+            case "ENVIADA" -> "✈️ ENVIADA";
+            case "OBSERVADA" -> "👁️ OBSERVADA";
+            case "ATENDIDA" -> "✅ ATENDIDA";
+            // Estados transformados para usuario EXTERNO
             case "RECHAZADA" -> "❌ RECHAZADA";
+            // Estados transformados para CENATE
+            case "PENDIENTE" -> "⏳ PENDIENTE";
+            // Legacy (deprecated)
+            case "PROCESADA" -> "✅ PROCESADA";
             case "VINCULADA" -> "🔗 VINCULADA";
             default -> estado;
         };

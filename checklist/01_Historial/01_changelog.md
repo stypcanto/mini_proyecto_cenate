@@ -9,6 +9,503 @@
 
 ---
 
+## v1.24.0 (2026-01-20) - ✅ Tele-ECG v3.0.0: PADOMI - Carga Múltiple de Imágenes (4-10) + Visualización en Carrusel
+
+### 🎯 Descripción
+
+**Implementación de carga múltiple de ECGs para PADOMI** donde se pueden enviar entre 4 y 10 imágenes en un único envío, todas asociadas al mismo paciente. Incluye visualización en carrusel con navegación, zoom, rotación y detalles de cada imagen.
+
+**Requisitos PADOMI**:
+- Envío mínimo: 4 imágenes
+- Envío máximo: 10 imágenes
+- Todas asociadas al mismo paciente
+- Visualización en carrusel con navegación
+
+**Estado**: ✅ **COMPLETADO**
+
+### 📋 Cambios Principales
+
+#### 1️⃣ Frontend - Componentes Nuevos
+
+**UploadImagenECG.jsx** (ACTUALIZADO):
+- Cambio de seleccionar 1 archivo → Múltiples (4-10)
+- Grid de previews con números
+- Botón para agregar/remover imágenes
+- Validación mínimo 4, máximo 10
+- Indicador de cantidad y tamaño total
+
+**CarrouselECGModal.jsx** (NUEVO):
+- Visualizador de múltiples imágenes
+- Navegación anterior/siguiente
+- Thumbnails en panel lateral
+- Zoom (0.5x - 3x) y rotación (90°)
+- Detalles de imagen actual (estado, observaciones, fecha, tamaño)
+- Botón descargar individual
+- Indicador posición (X de Y)
+
+**ListarImagenesECG.jsx** (ACTUALIZADO):
+- Botón "Ver" ahora abre carrusel si hay múltiples imágenes
+- Función `obtenerImagenesPaciente()` → Carga todas las imágenes del paciente
+- Función `abrirCarousel()` → Carga previews y abre modal
+
+**teleecgService.js** (ACTUALIZADO):
+- Nuevo método: `subirMultiplesImagenes(formData)`
+- Endpoint: POST `/api/teleekgs/upload-multiple`
+
+#### 2️⃣ Backend - Nuevo Endpoint
+
+**TeleECGController.java** (ACTUALIZADO):
+```java
+@PostMapping("/upload-multiple")
+public ResponseEntity<?> subirMultiplesImagenes(
+    @RequestParam("numDocPaciente") String numDocPaciente,
+    @RequestParam("nombresPaciente") String nombresPaciente,
+    @RequestParam("apellidosPaciente") String apellidosPaciente,
+    @RequestParam("archivos") MultipartFile[] archivos,
+    HttpServletRequest request)
+```
+
+**Validaciones**:
+- Mínimo 4 archivos
+- Máximo 10 archivos
+- Procesa cada archivo individualmente
+- Retorna array de IDs y DTOs
+
+**Respuesta** (ejemplo):
+```json
+{
+  "total": 4,
+  "numDocPaciente": "12345678",
+  "idImagenes": [1, 2, 3, 4],
+  "imagenes": [...]
+}
+```
+
+#### 3️⃣ Flujo Completo PADOMI
+
+```
+[PADOMI selecciona 4-10 imágenes]
+    ↓
+[UploadImagenECG.jsx muestra grid con previews]
+    ↓
+[Botón "Cargar 4 ECGs" disponible cuando hay 4+]
+    ↓
+POST /api/teleekgs/upload-multiple (FormData con multiple "archivos")
+    ↓
+[Backend procesa cada archivo, retorna IDs]
+    ↓
+[Éxito: "4 ECGs cargados exitosamente"]
+    ↓
+[En ListarImagenesECG, al hacer clic en "Ver"]
+    ↓
+[CarrouselECGModal se abre con todas las 4 imágenes]
+    ↓
+[Usuario navega entre imágenes con anterior/siguiente]
+```
+
+### 📊 Archivos Modificados
+
+**Backend**:
+- ✅ `backend/src/main/java/com/styp/cenate/api/TeleECGController.java` - Nuevo endpoint
+
+**Frontend**:
+- ✅ `frontend/src/components/teleekgs/UploadImagenECG.jsx` - Soporte múltiples
+- ✅ `frontend/src/components/teleekgs/CarrouselECGModal.jsx` - NUEVO
+- ✅ `frontend/src/components/teleekgs/ListarImagenesECG.jsx` - Integración carrusel
+- ✅ `frontend/src/services/teleecgService.js` - Nuevo método `subirMultiplesImagenes`
+
+**Documentación**:
+- ✅ `spec/01_Backend/09_teleecg_v3.0.0_guia_rapida.md` - Sección PADOMI agregada
+- ✅ `checklist/01_Historial/01_changelog.md` - Este registro
+
+### ✅ Funcionalidades Nuevas
+
+1. **Carga Batch**: 4-10 imágenes en un solo envío
+2. **Carrusel de Visualización**: Navegación fluida entre imágenes
+3. **Zoom Dinámico**: 0.5x a 3x
+4. **Rotación**: 90° incremental
+5. **Panel Lateral**: Thumbnails + detalles de imagen actual
+6. **Descarga Individual**: Descargar cada imagen desde el carrusel
+7. **Validación Frontend**: Prevención de envíos incompletos
+
+### 🧪 Validación
+
+**Backend**:
+- ✅ Compilación exitosa (BUILD SUCCESSFUL)
+- ✅ Validación mínimo 4 imágenes
+- ✅ Validación máximo 10 imágenes
+- ✅ Procesamiento individual de archivos
+- ✅ Transformación de estado por rol
+
+**Frontend**:
+- ✅ Grid de previews con índices
+- ✅ Navegación anterior/siguiente
+- ✅ Zoom/rotación funcional
+- ✅ Carga de previews base64
+- ✅ Descargas individuales
+
+### 📝 Notas de Migración
+
+No requiere cambios en BD (usa estructura existente)
+
+### 🔗 Referencias
+
+- **Guía Rápida**: `spec/01_Backend/09_teleecg_v3.0.0_guia_rapida.md#-padomi---carga-múltiple-de-imágenes`
+- **Componentes Frontend**: `frontend/src/components/teleekgs/`
+- **Servicio**: `frontend/src/services/teleecgService.js`
+
+---
+
+## v1.23.0 (2026-01-20) - ✅ Tele-ECG v3.0.0: Dataset ML Supervisado - Evaluación Médica (NORMAL/ANORMAL)
+
+### 🎯 Descripción
+
+**Implementación de sistema de dataset supervisado para Machine Learning** donde médicos de CENATE evalúan ECGs como NORMAL o ANORMAL con justificación detallada. Este es el primer paso para entrenar modelos ML que automaticen la clasificación de ECGs.
+
+**Enfoque**: 2 fases
+- **Fase 1 (AHORA)**: Colección manual de evaluaciones etiquetadas + descripciones
+- **Fase 2 (Cuando +100 casos)**: Entrenar modelo ML para clasificación automática
+
+**Estado**: ✅ **COMPLETADO**
+
+### 📋 Cambios Principales
+
+#### 1️⃣ Base de Datos - Nuevas Columnas + Vistas Analytics
+
+**Archivo**: `spec/04_BaseDatos/06_scripts/038_teleecg_campos_evaluacion_v3.sql`
+
+**Nuevas Columnas en `tele_ecg_imagenes`**:
+- `evaluacion` VARCHAR(20): NORMAL | ANORMAL | SIN_EVALUAR (default)
+- `descripcion_evaluacion` TEXT (max 1000 chars): Justificación médica de la evaluación
+- `id_usuario_evaluador` BIGINT (FK): Médico que realizó la evaluación
+- `fecha_evaluacion` TIMESTAMP: Cuándo se evaluó
+
+**Nuevas Vistas SQL**:
+- `vw_tele_ecg_dataset_ml`: Exporta dataset completo para ML (imagen + label + descripción + metadata)
+- `vw_tele_ecg_evaluaciones_estadisticas`: Estadísticas de evaluaciones
+
+**Nueva Tabla**:
+- `tele_ecg_evaluacion_log`: Auditoría de cambios en evaluaciones
+
+#### 2️⃣ Backend - Endpoint + DTO + Lógica
+
+**Nuevo Archivo**: `backend/src/main/java/com/styp/cenate/dto/teleekgs/EvaluacionECGDTO.java`
+```java
+@Data
+public class EvaluacionECGDTO {
+  @NotNull
+  @Size(min = 1, max = 20)
+  String evaluacion;  // NORMAL o ANORMAL
+
+  @NotNull
+  @Size(min = 10, max = 1000)
+  String descripcion;  // Mínimo 10 chars (feedback significativo)
+}
+```
+
+**Endpoint**: `PUT /api/teleekgs/{idImagen}/evaluar`
+- **MBAC**: Requiere permiso `editar` en `/teleekgs/listar`
+- **Validación**: DTO + descripción no expirada + usuario autenticado
+- **Respuesta**: TeleECGImagenDTO con campos de evaluación populados
+
+**Método Service**: `evaluarImagen()` en `TeleECGService.java`
+- Valida: evaluacion IN ('NORMAL', 'ANORMAL')
+- Valida: descripcion 10-1000 chars
+- Previene: Evaluación de ECGs expirados (>30 días)
+- Registra: Auditoría automática
+- Retorna: DTO transformado
+
+#### 3️⃣ Frontend - Modal + Integración
+
+**Nuevo Componente**: `frontend/src/components/teleecgs/ModalEvaluacionECG.jsx`
+- **UI Profesional**:
+  - Botones NORMAL (verde) ✅ / ANORMAL (rojo) ⚠️
+  - Textarea para descripción con contador de caracteres (0/1000)
+  - Validación en tiempo real (mín 10, máx 1000 chars)
+  - Muestra info del paciente (DNI, IPRESS, fecha envío)
+  - Loading spinner durante guardado
+- **Validación**:
+  - Evalación requerida
+  - Descripción requerida y 10-1000 chars
+  - Submit deshabilitado si datos incompletos
+
+**Integración**: `frontend/src/pages/teleecg/TeleECGRecibidas.jsx`
+- Nuevo estado: `showEvaluacionModal`, `ecgParaEvaluar`, `evaluandoImagen`
+- Handler: `handleEvaluar()` - abre modal
+- Handler: `handleConfirmarEvaluacion()` - envía evaluación al backend
+- Botón purple 🟣 en tabla: solo visible si `evaluacion === null || 'SIN_EVALUAR'`
+- Toast notifications: éxito/error
+- Auto-recarga de lista tras evaluación
+
+**Servicio**: `frontend/src/services/teleecgService.js`
+- Nuevo método: `evaluarImagen(idImagen, evaluacion, descripcion)`
+- Llama: `PUT /api/teleekgs/{idImagen}/evaluar`
+- Incluye: JWT token + error handling
+
+**Columna de Evaluación en Tabla**: `frontend/src/pages/teleecg/TeleECGRecibidas.jsx`
+- ✅ Columna "Evaluación" agregada entre "Estado" y "Acciones"
+- Badge con colores:
+  - **NORMAL**: Verde ✅ (bg-green-100, text-green-800)
+  - **ANORMAL**: Amarillo ⚠️ (bg-yellow-100, text-yellow-800)
+  - **Sin evaluar**: Gris (por defecto si no evaluado)
+- Función helper `getEvaluacionBadge()` para formatear
+- Visible en tiempo real tras guardar evaluación
+
+### 🧪 Verificación
+
+✅ Backend compilado sin errores
+✅ Migración SQL ejecutada exitosamente
+✅ 4 columnas nuevas creadas en `tele_ecg_imagenes`
+✅ 2 vistas analytics creadas
+✅ Tabla audit log creada
+✅ Componentes frontend creados e integrados
+✅ Columna de evaluación visible en tabla con colores
+✅ Función getEvaluacionBadge() implementada
+
+### 📊 Estadísticas del Cambio
+
+| Métrica | Valor |
+|---------|-------|
+| **Archivos Creados** | 3 (DTO Java, Componente React, SQL Script) |
+| **Archivos Modificados** | 6 (TeleECGImagen, Controller, Service, DTO, teleecgService.js, TeleECGRecibidas) |
+| **Líneas de Código Agregadas** | ~400 |
+| **Nuevas Columnas BD** | 4 |
+| **Nuevas Vistas SQL** | 2 |
+| **Nuevas Tablas BD** | 1 (audit log) |
+| **Funciones Helper Frontend** | 1 (getEvaluacionBadge) |
+
+### 🎓 Cómo Usar
+
+1. **Desde Admin (CENATE)**:
+   - Ir a Tele-ECG → Recibidas
+   - Hacer clic en botón 🟣 "Evaluar" (solo ECGs sin evaluar)
+   - Modal se abre con info del paciente
+   - Seleccionar NORMAL o ANORMAL
+   - Escribir descripción justificando la evaluación (mín 10 chars)
+   - Clic "Guardar Evaluación"
+   - Toast confirma éxito
+
+2. **Backend Data Export**:
+   ```sql
+   -- Obtener dataset ML (100+ registros = listo para entrenar)
+   SELECT * FROM vw_tele_ecg_dataset_ml LIMIT 100;
+   ```
+
+### 📈 Roadmap Futuro (Fase 2)
+
+Cuando se alcancen +100 evaluaciones:
+- [ ] Entrenar modelo ML (CNN/ResNet50 para clasificación de imágenes)
+- [ ] Crear endpoint `/api/teleekgs/{id}/predecir` que use modelo
+- [ ] Mostrar predicción con confianza en UI
+- [ ] A/B testing: predicción manual vs ML
+- [ ] Fine-tuning iterativo del modelo
+
+---
+
+## v1.22.0 (2026-01-20) - ✅ Tele-ECG v3.0.0: Refactoring Estados + Transformación por Rol + Observaciones
+
+### 🎯 Descripción
+
+**Refactoring completo del sistema de estados del módulo TeleECG** con introducción de transformación de estados según rol del usuario y campo de observaciones para detallar rechazos.
+
+**Estado**: ✅ **COMPLETADO**
+
+### 📋 Cambios Principales
+
+#### 1️⃣ Base de Datos - Esquema Actualizado (v3.0.0)
+
+**Archivo**: `spec/04_BaseDatos/06_scripts/037_refactor_teleecg_estados_v3_fixed.sql`
+
+- **Cambio de Estados**:
+  - ❌ Eliminados: `PENDIENTE`, `PROCESADA`, `VINCULADA`, `RECHAZADA` (antiguos)
+  - ✅ Nuevos: `ENVIADA`, `OBSERVADA`, `ATENDIDA`
+  - **Mapeo Automático**: Ejecuta UPDATE para migración de datos existentes
+
+- **Nuevos Campos**:
+  - `id_imagen_anterior` (FK auto-referencial): Rastrea relación entre imágenes rechazadas y reenviadas
+  - `fue_subsanado` (BOOLEAN): Indica si una imagen fue rechazada y se reenvió una nueva
+
+- **Constraint CHECK**: Valida que `estado` esté en {ENVIADA, OBSERVADA, ATENDIDA}
+
+#### 2️⃣ Backend - Modelo y Servicios
+
+**Archivo**: `backend/src/main/java/com/styp/cenate/model/TeleECGImagen.java`
+- Agregados: `imagenAnterior`, `fueSubsanado`
+- Actualizado: Default de estado a `ENVIADA`
+
+**Nuevo Archivo**: `backend/src/main/java/com/styp/cenate/service/teleekgs/TeleECGEstadoTransformer.java`
+- **Transformación de Estados por Rol**:
+  - **Usuario EXTERNO** (PADOMI/IPRESS) ve: ENVIADA ✈️, RECHAZADA ❌, ATENDIDA ✅
+  - **Personal CENATE** ve: PENDIENTE ⏳, OBSERVADA 👁️, ATENDIDA ✅
+- Métodos helpers: `obtenerSimboloEstado()`, `obtenerColorEstado()`, `obtenerDescripcionEstado()`
+
+**Archivo**: `backend/src/main/java/com/styp/cenate/service/teleekgs/TeleECGService.java`
+- **Nuevas Acciones** en `procesarImagen()`:
+  - `ATENDER`: Marca imagen como ATENDIDA
+  - `OBSERVAR`: Marca imagen como OBSERVADA (antes de RECHAZAR) + guarda observaciones
+  - `REENVIADO`: Marca imagen anterior como fue_subsanado = true
+- Inyección de `TeleECGEstadoTransformer`
+
+**Archivo**: `backend/src/main/java/com/styp/cenate/dto/teleekgs/TeleECGImagenDTO.java`
+- Nuevos campos: `estadoTransformado`, `idImagenAnterior`, `fueSubsanado`, `observaciones`
+- Método actualizado: `formatoEstado()` soporta todos los estados nuevos + antiguos
+
+**Archivo**: `backend/src/main/java/com/styp/cenate/api/TeleECGController.java`
+- **Inyección**: `TeleECGEstadoTransformer estadoTransformer`
+- **Métodos Helper**:
+  - `obtenerUsuarioActualObjeto()`: Extrae usuario del SecurityContext
+  - `aplicarTransformacionEstado(dto, usuario)`: Aplica transformación individual
+  - `aplicarTransformacionEstadoPage(page, usuario)`: Aplica a página completa
+- **Endpoints Actualizados** (todas retornan `estadoTransformado`):
+  - `POST /upload` (subirImagenECG)
+  - `GET /listar` (listarImagenes)
+  - `GET /{id}/detalles` (obtenerDetalles)
+  - `PUT /{id}/procesar` (procesarImagen)
+  - `GET /proximas-vencer` (obtenerProximasVencer)
+
+#### 3️⃣ Frontend - Componentes Actualizados
+
+**Componentes Principales**:
+- ✅ `frontend/src/components/teleecgs/ListaECGsPacientes.jsx`: Badge con colores v3.0.0, mostrar observaciones, subsanado
+- ✅ `frontend/src/pages/roles/externo/teleecgs/TeleECGDashboard.jsx`: Stats para EXTERNO (Enviadas/Atendidas/Rechazadas)
+- ✅ `frontend/src/pages/teleecg/TeleECGRecibidas.jsx`: Stats para CENATE (Pendientes/Observadas/Atendidas)
+- ✅ `frontend/src/pages/roles/externo/teleecgs/TeleECGEstadisticas.jsx`: Gráficos para EXTERNO
+- ✅ `frontend/src/pages/teleecg/TeleECGEstadisticas.jsx`: Gráficos para CENATE (sin Vinculadas)
+
+**Componentes Secundarios**:
+- ✅ `frontend/src/components/teleecgs/VisorECGModal.jsx`: Mostrar estado transformado con colores
+- ✅ `frontend/src/components/teleekgs/UploadImagenECG.jsx`: Mostrar estado transformado en respuesta
+- ✅ `frontend/src/components/teleekgs/ListarImagenesECG.jsx`: Estados nuevos + mostrar observaciones
+- ✅ `frontend/src/components/teleekgs/DetallesImagenECG.jsx`: Verificación PENDIENTE/ENVIADA para botones
+
+**Servicios**:
+- ✅ `frontend/src/services/teleecgService.js`: Actualizado a acciones `ATENDER` y `OBSERVAR`
+
+#### 4️⃣ Colores y Estilos (Tailwind)
+
+| Estado | Externo Ve | CENATE Ve | Color | Emoji |
+|--------|-----------|-----------|-------|-------|
+| ENVIADA | ENVIADA ✈️ | PENDIENTE ⏳ | Yellow | 🟨 |
+| OBSERVADA | RECHAZADA ❌ | OBSERVADA 👁️ | Purple/Red | 🟪/🔴 |
+| ATENDIDA | ATENDIDA ✅ | ATENDIDA ✅ | Green | 🟩 |
+
+**Clases Tailwind**:
+- Enviada/Pendiente: `bg-yellow-100 text-yellow-800`
+- Observada: `bg-purple-100 text-purple-800`
+- Atendida: `bg-green-100 text-green-800`
+- Rechazada: `bg-red-100 text-red-800`
+
+### 🔄 Backward Compatibility
+
+✅ Todos los componentes mantienen verificaciones para ambos estados (antiguo y nuevo):
+```javascript
+(imagen.estadoTransformado === "PENDIENTE" || imagen.estado === "PENDIENTE" || imagen.estado === "ENVIADA")
+```
+
+### 📊 Archivos Modificados
+
+**Backend (7 archivos)**:
+1. `model/TeleECGImagen.java` - Nuevos campos
+2. `service/teleekgs/TeleECGService.java` - Nuevas acciones
+3. `service/teleekgs/TeleECGEstadoTransformer.java` - **NUEVO**
+4. `dto/teleekgs/TeleECGImagenDTO.java` - Nuevos campos
+5. `api/TeleECGController.java` - Transformaciones en endpoints
+6. `spec/04_BaseDatos/06_scripts/037_refactor_teleecg_estados_v3_fixed.sql` - Migración DB
+
+**Frontend (13 archivos)**:
+1. `components/teleecgs/ListaECGsPacientes.jsx`
+2. `pages/roles/externo/teleecgs/TeleECGDashboard.jsx`
+3. `pages/teleecg/TeleECGRecibidas.jsx`
+4. `pages/roles/externo/teleecgs/TeleECGEstadisticas.jsx`
+5. `pages/teleecg/TeleECGEstadisticas.jsx`
+6. `components/teleecgs/VisorECGModal.jsx`
+7. `components/teleekgs/UploadImagenECG.jsx`
+8. `components/teleekgs/ListarImagenesECG.jsx`
+9. `components/teleekgs/DetallesImagenECG.jsx`
+10. `services/teleecgService.js`
+
+### ✨ Funcionalidades Nuevas
+
+1. **Observaciones**: Campo de texto para detallar rechazos/observaciones
+2. **Subsanamiento**: Rastreo automático cuando usuario reenvía imagen rechazada
+3. **Transformación por Rol**: Misma BD pero UI diferente según rol del usuario
+4. **Colores Mejorados**: Código de colores consistente en toda la aplicación
+
+### 🧪 Validación
+
+✅ **Acciones Probadas**:
+- Upload ECG (nuevo estado ENVIADA)
+- Listar con filtros (muestra estado transformado)
+- Aceptar (ATENDER → ATENDIDA)
+- Rechazar con observaciones (OBSERVAR → OBSERVADA)
+- Reenvío de imagen rechazada (fue_subsanado = true)
+- Ver detalles (estado transformado según rol)
+
+### 📝 Notas de Migración
+
+- **Sin datos perdidos**: Script UPDATE preserva imágenes existentes
+- **Compatible con v2.0.0**: Respeta cascading delete en auditoría
+- **No requiere acción manual**: Migración automática al ejecutar el script SQL
+
+---
+
+## v1.21.6 (2026-01-20) - ✅ Tele-ECG v2.0.0: Corrección Navegación Externa + Admin (NAV-EXT, NAV-ADMIN)
+
+### ✅ Bugs Corregidos - Navegación
+
+**Estado**: ✅ **COMPLETADO Y VERIFICADO EN NAVEGADOR**
+
+**Descripción**: Se resolvieron 2 bugs críticos de navegación donde las rutas dinámicas mostraban contenido duplicado.
+
+#### 🔧 Bug T-ECG-NAV-EXT: Navegación Externa (IPRESS) - 3 Submenus Duplicados
+
+**Problema**:
+- URL `/teleekgs/upload` → Mostraba tabla ECGs (incorrecto)
+- URL `/teleekgs/listar` → Mostraba tabla ECGs (correcto)
+- URL `/teleekgs/dashboard` → Mostraba tabla ECGs (incorrecto - debería ser estadísticas)
+
+**Causa**: Routes no registradas correctamente en `componentRegistry.js`
+
+**Solución**: Registrar 3 rutas separadas en `componentRegistry.js` (líneas 240-253):
+```javascript
+'/teleekgs/upload': { component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')), requiredAction: 'ver' },
+'/teleekgs/listar': { component: lazy(() => import('../pages/roles/externo/teleecgs/RegistroPacientes')), requiredAction: 'ver' },
+'/teleekgs/dashboard': { component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGEstadisticas')), requiredAction: 'ver' },
+```
+
+**Archivos Modificados**: ✅ `frontend/src/config/componentRegistry.js`
+
+**Resultado**: ✅ Cada submenu IPRESS muestra contenido diferenciado
+
+---
+
+#### 🔧 Bug T-ECG-NAV-ADMIN: Navegación Admin (CENATE) - 2 Opciones Duplicadas
+
+**Problema**:
+- URL `/teleecg/recibidas` → Tabla ECGs (correcto)
+- URL `/teleecg/estadisticas` → Tabla ECGs (incorrecto - debería ser estadísticas)
+
+**Causa**: Ambas rutas apuntaban a `TeleECGRecibidas.jsx`. Componente `TeleECGEstadisticas.jsx` no existía para admin.
+
+**Solución**:
+
+1. **Crear componente**: `/pages/teleecg/TeleECGEstadisticas.jsx` (217 líneas)
+   - Dashboard estadísticas con 5 tarjetas de métricas
+   - Gráficos de distribución de estados
+   - Exportación a Excel
+
+2. **Actualizar** `componentRegistry.js` línea 432:
+   ```javascript
+   '/teleecg/estadisticas': { component: lazy(() => import('../pages/teleecg/TeleECGEstadisticas')), requiredAction: 'ver' },
+   ```
+
+**Archivos Creados**: ✅ `frontend/src/pages/teleecg/TeleECGEstadisticas.jsx`
+**Archivos Modificados**: ✅ `frontend/src/config/componentRegistry.js`
+
+**Resultado**: ✅ Navegación admin 100% funcional
+
+---
+
 ## v1.21.5 (2026-01-20) - ✅ Tele-ECG v2.0.0 FINAL: Cascading Delete + Permisos MBAC Corregidos
 
 ### 🔧 Bugs Corregidos - Estado Final del Módulo

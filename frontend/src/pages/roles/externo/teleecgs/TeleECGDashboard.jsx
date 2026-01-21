@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../../../context/AuthContext";
 import teleeckgService from "../../../../services/teleecgService";
-import UploadECGForm from "../../../../components/teleecgs/UploadECGForm";
+import UploadImagenECG from "../../../../components/teleekgs/UploadImagenECG";
 import ListaECGsPacientes from "../../../../components/teleecgs/ListaECGsPacientes";
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
 
@@ -29,8 +29,8 @@ export default function TeleECGDashboard() {
   const [showVisor, setShowVisor] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
-    pendientes: 0,
-    procesadas: 0,
+    enviadas: 0,
+    atendidas: 0,
     rechazadas: 0,
   });
 
@@ -65,13 +65,16 @@ export default function TeleECGDashboard() {
       const response = await teleeckgService.obtenerEstadisticas();
       // El servicio retorna directamente los datos
       const statsData = response || {};
+      // v3.0.0: Para usuarios externos (IPRESS/PADOMI), contar estados transformados
+      // API debería retornar: totalEnviadas, totalAtendidas, totalRechazadas
+      // Fallback: contar localmente si API no retorna los datos
       setStats({
-        total: statsData.totalImagenesCargadas || 0,
-        pendientes: statsData.totalImagenesPendientes || 0,
-        procesadas: statsData.totalImagenesProcesadas || 0,
-        rechazadas: statsData.totalImagenesRechazadas || 0,
+        total: statsData.totalImagenesCargadas || statsData.total || 0,
+        enviadas: statsData.totalEnviadas || statsData.totalImagenesPendientes || 0,
+        atendidas: statsData.totalAtendidas || statsData.totalImagenesProcesadas || 0,
+        rechazadas: statsData.totalRechazadas || statsData.totalImagenesRechazadas || 0,
       });
-      console.log("✅ Estadísticas cargadas:", statsData);
+      console.log("✅ Estadísticas cargadas (v3.0.0):", statsData);
     } catch (error) {
       console.error("❌ Error al cargar estadísticas:", error);
     }
@@ -205,9 +208,9 @@ export default function TeleECGDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-yellow-500">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Pendientes</p>
+                <p className="text-gray-600 text-sm font-medium">Enviadas</p>
                 <p className="text-2xl font-bold text-yellow-600">
-                  {stats.pendientes || ecgs.filter((e) => e.estado === "PENDIENTE").length}
+                  {stats.enviadas || ecgs.filter((e) => e.estadoTransformado === "ENVIADA" || e.estado === "ENVIADA").length}
                 </p>
               </div>
               <Upload className="w-10 h-10 text-yellow-500 opacity-20" />
@@ -217,9 +220,9 @@ export default function TeleECGDashboard() {
           <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-green-600">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-gray-600 text-sm font-medium">Procesadas</p>
+                <p className="text-gray-600 text-sm font-medium">Atendidas</p>
                 <p className="text-2xl font-bold text-green-600">
-                  {stats.procesadas || ecgs.filter((e) => e.estado === "PROCESADA").length}
+                  {stats.atendidas || ecgs.filter((e) => e.estadoTransformado === "ATENDIDA" || e.estado === "ATENDIDA").length}
                 </p>
               </div>
               <Eye className="w-10 h-10 text-green-600 opacity-20" />
@@ -231,7 +234,7 @@ export default function TeleECGDashboard() {
               <div>
                 <p className="text-gray-600 text-sm font-medium">Rechazadas</p>
                 <p className="text-2xl font-bold text-red-600">
-                  {stats.rechazadas || ecgs.filter((e) => e.estado === "RECHAZADA").length}
+                  {stats.rechazadas || ecgs.filter((e) => e.estadoTransformado === "RECHAZADA" || e.estado === "RECHAZADA").length}
                 </p>
               </div>
               <Trash2 className="w-10 h-10 text-red-600 opacity-20" />
@@ -296,10 +299,25 @@ export default function TeleECGDashboard() {
 
       {/* 📤 Modal Upload */}
       {showUploadModal && (
-        <UploadECGForm
-          onUpload={manejarUpload}
-          onClose={() => setShowUploadModal(false)}
-        />
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col relative">
+            {/* Botón cerrar */}
+            <button
+              onClick={() => setShowUploadModal(false)}
+              className="absolute top-4 right-4 z-10 p-2 hover:bg-gray-100 rounded-lg"
+            >
+              <Plus className="w-5 h-5 rotate-45 text-gray-600" />
+            </button>
+
+            {/* Componente de upload */}
+            <div className="overflow-y-auto flex-1">
+              <UploadImagenECG onSuccess={() => {
+                setShowUploadModal(false);
+                cargarECGs();
+              }} />
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 👁️ Modal Visor */}

@@ -3,7 +3,7 @@ import { Eye, Download, Trash2, Calendar, User, Phone, CheckCircle, XCircle, Loa
 
 /**
  * 📋 Tabla de ECGs por pacientes
- * ✅ v1.1.0 - Agregadas acciones Procesar y Rechazar para PENDIENTE
+ * ✅ v3.0.0 - Actualizado para mostrar estados transformados y observaciones
  */
 export default function ListaECGsPacientes({
   ecgs,
@@ -16,13 +16,24 @@ export default function ListaECGsPacientes({
   imagenEnAccion = null
 }) {
   const getEstadoBadge = (estado) => {
+    // v3.0.0: Soportar nuevos estados + transformados
     const estilos = {
-      PENDIENTE:
-        "bg-yellow-100 text-yellow-800 border border-yellow-300",
-      PROCESADA: "bg-green-100 text-green-800 border border-green-300",
+      // Estados transformados para usuario EXTERNO
+      ENVIADA: "bg-blue-100 text-blue-800 border border-blue-300",
       RECHAZADA: "bg-red-100 text-red-800 border border-red-300",
+      ATENDIDA: "bg-green-100 text-green-800 border border-green-300",
+      // Estados transformados para CENATE
+      PENDIENTE: "bg-yellow-100 text-yellow-800 border border-yellow-300",
+      OBSERVADA: "bg-purple-100 text-purple-800 border border-purple-300",
+      // Legacy (deprecated)
+      PROCESADA: "bg-green-100 text-green-800 border border-green-300",
     };
-    return estilos[estado] || estilos.PENDIENTE;
+    return estilos[estado] || "bg-gray-100 text-gray-800 border border-gray-300";
+  };
+
+  const obtenerEstadoMostrado = (ecg) => {
+    // v3.0.0: Preferir estado transformado si está disponible
+    return ecg.estadoTransformado || ecg.estado;
   };
 
   const formatearFecha = (fecha) => {
@@ -102,9 +113,24 @@ export default function ListaECGsPacientes({
                 {ecg.generoPaciente || "-"}
               </td>
               <td className="px-6 py-4 text-sm">
-                <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(ecg.estado)}`}>
-                  {ecg.estado}
-                </span>
+                <div className="space-y-1">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(obtenerEstadoMostrado(ecg))}`}>
+                    {obtenerEstadoMostrado(ecg)}
+                  </span>
+                  {/* v3.0.0: Mostrar observaciones si existen */}
+                  {ecg.observaciones && (
+                    <div className="text-xs text-gray-600 mt-2 p-2 bg-gray-50 rounded border-l-2 border-gray-300">
+                      <p className="font-medium">💬 Observaciones:</p>
+                      <p>{ecg.observaciones}</p>
+                    </div>
+                  )}
+                  {/* Mostrar si fue subsanada */}
+                  {ecg.fueSubsanado && (
+                    <div className="text-xs text-green-600 mt-2 p-2 bg-green-50 rounded">
+                      ✅ Subsanada (hay una versión mejorada)
+                    </div>
+                  )}
+                </div>
               </td>
               <td className="px-6 py-4 text-center">
                 <div className="flex items-center justify-center gap-2 flex-wrap">
@@ -128,8 +154,8 @@ export default function ListaECGsPacientes({
                     <Download className="w-4 h-4" />
                   </button>
 
-                  {/* Procesar (si está pendiente) */}
-                  {ecg.estado === "PENDIENTE" && (
+                  {/* v3.0.0: Procesar (solo visible en estado PENDIENTE/ENVIADA) */}
+                  {(ecg.estado === "PENDIENTE" || ecg.estado === "ENVIADA") && onProcesar && (
                     <button
                       onClick={() => onProcesar(ecg.idImagen)}
                       disabled={accionando && imagenEnAccion === ecg.idImagen}
@@ -144,8 +170,8 @@ export default function ListaECGsPacientes({
                     </button>
                   )}
 
-                  {/* Rechazar (si está pendiente) */}
-                  {ecg.estado === "PENDIENTE" && (
+                  {/* v3.0.0: Rechazar (solo visible en estado PENDIENTE/ENVIADA) */}
+                  {(ecg.estado === "PENDIENTE" || ecg.estado === "ENVIADA") && onRechazar && (
                     <button
                       onClick={() => onRechazar(ecg.idImagen)}
                       disabled={accionando && imagenEnAccion === ecg.idImagen}

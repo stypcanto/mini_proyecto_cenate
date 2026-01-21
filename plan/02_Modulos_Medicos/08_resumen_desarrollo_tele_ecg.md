@@ -1,9 +1,9 @@
 # 📋 Resumen de Desarrollo - Módulo Tele-ECG v2.0.0
 
 > **Documento de Referencia del Desarrollo del Módulo Tele-ECG**
-> Fecha: 2026-01-20
+> Fecha: 2026-01-20 (Actualizado: 2026-01-20)
 > Autor: Ing. Styp Canto Rondón
-> Versión Final: v1.21.4
+> Versión Final: v1.21.5 (Navegación Corregida)
 
 ---
 
@@ -19,14 +19,16 @@ El **Módulo Tele-ECG** es un subsistema completo de CENATE que gestiona la rece
 
 | Métrica | Valor |
 |---------|-------|
-| **Versión Final** | v1.21.4 (2026-01-20) |
-| **Bugs Identificados** | 6 |
-| **Bugs Resueltos** | 6 (100%) ✅ |
-| **Horas de Desarrollo** | ~10 horas |
-| **Archivos Modificados** | 9 (Backend + Frontend) |
-| **Archivos Creados** | 1 (Modal React) |
-| **Líneas de Código** | ~800+ líneas |
+| **Versión Final** | v1.21.5 (2026-01-20 - Navegación Corregida) |
+| **Bugs Identificados** | 8 (6 funcionalidad + 2 navegación) |
+| **Bugs Resueltos** | 8 (100%) ✅ |
+| **Horas de Desarrollo** | ~12 horas |
+| **Archivos Modificados** | 10 (Backend + Frontend + Config) |
+| **Archivos Creados** | 2 (Modal + Componente Estadísticas) |
+| **Líneas de Código** | ~1200+ líneas |
 | **Estado Módulo** | **100% COMPLETADO** 🎉 |
+| **Nav Externa Corregida** | 3 rutas 🔧 |
+| **Nav Admin Corregida** | 2 rutas 🔧 |
 
 ---
 
@@ -68,13 +70,21 @@ Backend Structure:
 ```
 Frontend Structure:
 ├── Pages
-│   ├── TeleECGRecibidas.jsx (Panel administrativo)
-│   └── TeleECGDashboard.jsx (Upload para IPRESS)
+│   ├── teleecg/ (Admin)
+│   │   ├── TeleECGRecibidas.jsx (Tabla ECGs recibidos)
+│   │   └── TeleECGEstadisticas.jsx ✅ (NUEVO - v1.21.5)
+│   ├── roles/externo/teleecgs/ (IPRESS)
+│   │   ├── TeleECGDashboard.jsx (Upload para IPRESS)
+│   │   ├── RegistroPacientes.jsx (Listado pacientes)
+│   │   └── TeleECGEstadisticas.jsx (Stats externos)
 │
 ├── Components
 │   ├── ProcesarECGModal.jsx ✅ (NUEVO - v1.21.4)
 │   ├── VisorECGModal.jsx (Preview con zoom)
 │   └── ListaECGsPacientes.jsx (Historial)
+│
+├── Config
+│   └── componentRegistry.js ✅ (Rutas dinámicas - v1.21.5)
 │
 └── Services
     └── teleecgService.js (API Client)
@@ -183,6 +193,61 @@ if (!motivo?.trim()) toast.warning("Motivo requerido");
 
 ---
 
+### 7️⃣ **T-ECG-NAV-EXT** (v1.21.5)
+**Severidad**: 🔴 CRÍTICO
+**Problema**: Navegación Externa (IPRESS) - Tres submenus mostraban contenido idéntico
+**Detalles**:
+- URL `/teleekgs/upload` → Mostraba tabla en lugar de formulario
+- URL `/teleekgs/listar` → Mostraba tabla (correcta)
+- URL `/teleekgs/dashboard` → Mostraba tabla (debería ser estadísticas)
+
+**Solución**:
+- Registrar 3 rutas separadas en `componentRegistry.js`:
+  ```javascript
+  '/teleekgs/upload': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGDashboard')),
+    requiredAction: 'ver',
+  },
+  '/teleekgs/listar': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/RegistroPacientes')),
+    requiredAction: 'ver',
+  },
+  '/teleekgs/dashboard': {
+    component: lazy(() => import('../pages/roles/externo/teleecgs/TeleECGEstadisticas')),
+    requiredAction: 'ver',
+  },
+  ```
+
+**Resultado**: ✅ Cada submenu ahora muestra contenido diferenciado y correcto
+
+---
+
+### 8️⃣ **T-ECG-NAV-ADMIN** (v1.21.5)
+**Severidad**: 🔴 CRÍTICO
+**Problema**: Navegación Admin (CENATE) - Dos opciones mostraban la misma tabla
+**Detalles**:
+- URL `/teleecg/recibidas` → Tabla ECGs (correcto)
+- URL `/teleecg/estadisticas` → Tabla ECGs (incorrecto - debería ser estadísticas)
+
+**Solución**:
+1. Crear nuevo componente: `/pages/teleecg/TeleECGEstadisticas.jsx`
+   - Dashboard de estadísticas con 5 tarjetas (Total, Pendientes, Procesadas, Rechazadas, Vinculadas)
+   - Gráficos de distribución de estados (barras de progreso)
+   - Botón de exportación a Excel
+   - 217 líneas de código React
+
+2. Actualizar `componentRegistry.js` línea 432:
+   ```javascript
+   '/teleecg/estadisticas': {
+     component: lazy(() => import('../pages/teleecg/TeleECGEstadisticas')),
+     requiredAction: 'ver',
+   },
+   ```
+
+**Resultado**: ✅ Navegación admin completamente separada y funcional
+
+---
+
 ## 📁 Archivos Modificados
 
 ### Backend
@@ -213,7 +278,7 @@ if (!motivo?.trim()) toast.warning("Motivo requerido");
 
 ### Frontend
 
-#### 1. ProcesarECGModal.jsx ✅ NUEVO
+#### 1. ProcesarECGModal.jsx ✅ NUEVO (v1.21.4)
 ```jsx
 // ✅ FIX T-ECG-003
 - Modal profesional con textarea
@@ -222,7 +287,7 @@ if (!motivo?.trim()) toast.warning("Motivo requerido");
 - 92 líneas de código
 ```
 
-#### 2. TeleECGRecibidas.jsx
+#### 2. TeleECGRecibidas.jsx (v1.21.4)
 ```jsx
 // ✅ FIX T-ECG-003
 - handleProcesar(ecg) - Abre modal
@@ -236,12 +301,38 @@ if (!motivo?.trim()) toast.warning("Motivo requerido");
 - import toast from "react-hot-toast"
 ```
 
-#### 3. teleecgService.js
+#### 3. teleecgService.js (v1.21.4)
 ```javascript
 // ✅ FIX T-ECG-005
 - descargarImagen() - Con feedback toast
 - Fetch con stream reader
 - Cálculo de progreso
+```
+
+#### 4. TeleECGEstadisticas.jsx ✅ NUEVO (v1.21.5 - Admin)
+```jsx
+// ✅ FIX T-ECG-NAV-ADMIN
+- Dashboard de estadísticas para vista admin
+- 5 tarjetas de metrics (Total, Pendientes, Procesadas, Rechazadas, Vinculadas)
+- Gráficos de distribución con barras de progreso
+- Botón de exportación a Excel
+- 217 líneas de código React
+- Integración con teleecgService.obtenerEstadisticas()
+```
+
+#### 5. componentRegistry.js (v1.21.5)
+```javascript
+// ✅ FIX T-ECG-NAV-EXT (Navegación Externa)
+- Registradas 3 rutas separadas:
+  '/teleekgs/upload' → TeleECGDashboard (upload)
+  '/teleekgs/listar' → RegistroPacientes (tabla)
+  '/teleekgs/dashboard' → TeleECGEstadisticas (stats)
+
+// ✅ FIX T-ECG-NAV-ADMIN (Navegación Admin)
+- Actualizada ruta:
+  '/teleecg/estadisticas' → TeleECGEstadisticas (nuevo componente)
+- Ruta existente:
+  '/teleecg/recibidas' → TeleECGRecibidas (tabla)
 ```
 
 ---
@@ -364,7 +455,8 @@ Críticos:         0 ✅
 v1.21.1 → CASCADE DELETE fix
 v1.21.2 → T-ECG-001: Estadísticas
 v1.21.3 → T-ECG-002: Fecha Expiración
-v1.21.4 → T-ECG-003, 004, 005: UX (FINAL)
+v1.21.4 → T-ECG-003, 004, 005: UX Mejorada
+v1.21.5 → T-ECG-NAV-EXT, T-ECG-NAV-ADMIN: Navegación Corregida (FINAL)
 ```
 
 ### Estado Módulo
@@ -418,6 +510,11 @@ UAT:              Pendiente
 4. **Toast notifications**: Unificado a `react-hot-toast`
    - Razón: Consistencia con proyecto existente, mejor integración
 
+5. **Componentes separados por ruta**: v1.21.5
+   - Razón: Garantizar una-a-una correspondencia entre rutas y componentes
+   - Evitar reutilización de componentes con lógica compartida (componentRegistry pattern)
+   - Permitir diferentes UX/comportamiento por rol (Admin vs IPRESS)
+
 ### Lecciones Aprendidas
 
 - ✅ Validaciones en 3 capas son esenciales (Frontend, DTO, BD)
@@ -425,6 +522,9 @@ UAT:              Pendiente
 - ✅ Filtros de fecha deben aplicarse en queries, no en aplicación
 - ✅ Componentes modales mejoran UX significativamente
 - ✅ Confirmaciones dobles previenen errores accidentales
+- ✅ componentRegistry requiere mapeo 1-a-1 ruta→componente (NO reutilizar)
+- ✅ Navegación duplicada causa problemas críticos de UX (testing es clave)
+- ✅ Separar vistas admin vs externo mejora mantenibilidad y experiencia
 
 ---
 
@@ -432,9 +532,32 @@ UAT:              Pendiente
 
 **Desarrollador**: Ing. Styp Canto Rondón
 **Proyecto**: CENATE - Centro Nacional de Telemedicina (EsSalud)
-**Fecha**: 2026-01-20
-**Versión**: v1.21.4
+**Fecha**: 2026-01-20 (v1.21.5 - Navegación Corregida)
+**Versión**: v1.21.5
 
 ---
 
-**Estado Final**: ✅ **MÓDULO TELE-ECG 100% COMPLETADO Y LISTO PARA DEPLOYMENT**
+## ✅ Resumen Ejecutivo v1.21.5
+
+| Aspecto | Estado |
+|---------|--------|
+| **Funcionalidad Backend** | 100% ✅ |
+| **UX Frontend** | 100% ✅ |
+| **Navegación Externa (IPRESS)** | 100% ✅ (3 rutas corregidas) |
+| **Navegación Admin (CENATE)** | 100% ✅ (2 rutas + 1 componente nuevo) |
+| **Auditoría y Logs** | 100% ✅ |
+| **Seguridad (MBAC)** | 100% ✅ |
+| **Bugs Resueltos** | 8/8 (100%) ✅ |
+| **Testing Manual** | ✅ Validado en navegadores |
+| **Deployment** | LISTO 🚀 |
+
+---
+
+**Estado Final**: ✅ **MÓDULO TELE-ECG v1.21.5 - 100% COMPLETADO Y LISTO PARA DEPLOYMENT**
+
+### Cambios v1.21.5 Respecto v1.21.4:
+- ✅ Corrección navegación externa (3 rutas)
+- ✅ Corrección navegación admin (2 rutas + componente TeleECGEstadisticas)
+- ✅ Validación funcional completa en ambos contextos
+- ✅ Documentación actualizada
+- ✅ Cumple con componentRegistry pattern correctamente

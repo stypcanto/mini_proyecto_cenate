@@ -10,6 +10,8 @@ import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.service.email.EmailService;
 import com.styp.cenate.service.auditlog.AuditLogService;
 import com.styp.cenate.service.storage.FileStorageService;
+import com.styp.cenate.exception.ValidationException;
+import com.styp.cenate.exception.ResourceNotFoundException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -69,6 +71,9 @@ public class TeleECGService {
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Autowired
+    private TeleECGEstadoTransformer estadoTransformer;
 
     /**
      * Subir nueva imagen ECG
@@ -138,7 +143,7 @@ public class TeleECGService {
         imagen.setIpressOrigen(ipressOrigen);
         imagen.setCodigoIpress(ipressOrigen.getCodIpress());
         imagen.setNombreIpress(ipressOrigen.getDescIpress());
-        imagen.setEstado("PENDIENTE");
+        imagen.setEstado("ENVIADA");  // v3.0.0: Cambio de PENDIENTE a ENVIADA
         imagen.setStatImagen("A");
         imagen.setIpOrigen(ipOrigen);
         imagen.setNavegador(navegador);
@@ -226,7 +231,12 @@ public class TeleECGService {
     }
 
     /**
-     * Procesar imagen (PROCESAR, RECHAZAR, VINCULAR)
+     * Procesar imagen (v3.0.0 - ATENDER, OBSERVAR, o cambiar estado)
+     *
+     * Acciones disponibles:
+     * - ATENDER: Cambiar ENVIADA/OBSERVADA → ATENDIDA
+     * - OBSERVAR: Cambiar ENVIADA → OBSERVADA (agregar observaciones)
+     * - REENVIADO: Marcar imagen anterior como subsanada
      */
     public TeleECGImagenDTO procesarImagen(
             Long idImagen,
@@ -239,35 +249,51 @@ public class TeleECGService {
         TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
             .orElseThrow(() -> new RuntimeException("Imagen no encontrada"));
 
-        String accionAnterior = imagen.getEstado();
+        String estadoAnterior = imagen.getEstado();
 
-        // Cambiar estado según acción
+        // Cambiar estado según acción (v3.0.0)
         switch (dto.getAccion()) {
-            case "PROCESAR":
-                imagen.setEstado("PROCESADA");
-                imagen.setFechaRecepcion(LocalDateTime.now());
-                registrarAuditoria(imagen, idUsuario, "PROCESADA", ipCliente, "EXITOSA");
+            case "ATENDER":
+                // Cambiar cualquier estado a ATENDIDA
+                if (!estadoAnterior.equals("ATENDIDA")) {
+                    imagen.setEstado("ATENDIDA");
+                    imagen.setFechaRecepcion(LocalDateTime.now());
+                    imagen.setObservaciones(dto.getObservaciones());
+                    registrarAuditoria(imagen, idUsuario, "ATENDIDA", ipCliente, "EXITOSA");
+                    log.info("✅ Imagen atendida: {} → ATENDIDA", estadoAnterior);
+                }
                 break;
 
-            case "RECHAZAR":
-                imagen.setEstado("RECHAZADA");
-                imagen.setMotivoRechazo(dto.getMotivo());
-                registrarAuditoria(imagen, idUsuario, "RECHAZADA", ipCliente, "EXITOSA");
+            case "OBSERVAR":
+                // Cambiar ENVIADA → OBSERVADA con observaciones (problemas detectados)
+                if ("ENVIADA".equals(estadoAnterior)) {
+                    imagen.setEstado("OBSERVADA");
+                    imagen.setObservaciones(dto.getObservaciones());  // Aquí van los motivos/observaciones
+                    registrarAuditoria(imagen, idUsuario, "OBSERVADA", ipCliente, "EXITOSA");
+                    log.info("✅ Observaciones agregadas: {} → OBSERVADA", estadoAnterior);
+                } else {
+                    throw new RuntimeException("Solo se pueden observar imágenes en estado ENVIADA, actual: " + estadoAnterior);
+                }
                 break;
 
-            case "VINCULAR":
-                imagen.setEstado("VINCULADA");
-                registrarAuditoria(imagen, idUsuario, "VINCULADA", ipCliente, "EXITOSA");
+            case "REENVIADO":
+                // Marcar esta imagen como "subsanada" (hay una nueva que la reemplaza)
+                if ("OBSERVADA".equals(estadoAnterior)) {
+                    imagen.setFueSubsanado(true);
+                    registrarAuditoria(imagen, idUsuario, "SUBSANADA", ipCliente, "EXITOSA");
+                    log.info("✅ Imagen marcada como subsanada: ID={}", idImagen);
+                } else {
+                    throw new RuntimeException("Solo imágenes OBSERVADA pueden ser marcadas como subsanadas");
+                }
                 break;
 
             default:
                 throw new RuntimeException("Acción inválida: " + dto.getAccion());
         }
 
-        imagen.setObservaciones(dto.getObservaciones());
         imagen = teleECGImagenRepository.save(imagen);
 
-        log.info("✅ Imagen procesada: {} -> {}", accionAnterior, imagen.getEstado());
+        log.info("✅ Imagen procesada: {} → {}", estadoAnterior, imagen.getEstado());
 
         return convertirADTO(imagen);
     }
@@ -425,6 +451,64 @@ public class TeleECGService {
         return pagina.map(this::convertirAuditDTO);
     }
 
+    /**
+     * Evaluar una imagen ECG (v3.0.0 - Nuevo)
+     * Médico marca como NORMAL o ANORMAL + descripción
+     * Dataset para entrenamiento de modelos ML
+     */
+    public TeleECGImagenDTO evaluarImagen(Long idImagen, String evaluacion, String descripcion,
+                                         Long idUsuarioEvaluador, String ipCliente) {
+        log.info("📋 Evaluando ECG ID: {} - Evaluación: {}", idImagen, evaluacion);
+
+        // 1. Validar entrada
+        if (!evaluacion.equals("NORMAL") && !evaluacion.equals("ANORMAL")) {
+            throw new ValidationException("Evaluación debe ser NORMAL o ANORMAL");
+        }
+
+        if (descripcion == null || descripcion.trim().length() < 10) {
+            throw new ValidationException("Descripción debe tener mínimo 10 caracteres");
+        }
+
+        if (descripcion.length() > 1000) {
+            throw new ValidationException("Descripción no puede exceder 1000 caracteres");
+        }
+
+        // 2. Buscar imagen
+        TeleECGImagen imagen = teleECGImagenRepository.findById(idImagen)
+            .orElseThrow(() -> new ResourceNotFoundException("ECG no encontrada: " + idImagen));
+
+        // 3. Validar que no esté vencida
+        if (imagen.getFechaExpiracion().isBefore(LocalDateTime.now())) {
+            throw new ValidationException("ECG ha expirado y no puede ser evaluada");
+        }
+
+        // 4. Setear datos de evaluación
+        imagen.setEvaluacion(evaluacion);
+        imagen.setDescripcionEvaluacion(descripcion);
+        imagen.setFechaEvaluacion(LocalDateTime.now());
+
+        // Buscar usuario evaluador
+        if (idUsuarioEvaluador != null) {
+            usuarioRepository.findById(idUsuarioEvaluador).ifPresent(imagen::setUsuarioEvaluador);
+        }
+
+        // 5. Guardar cambios
+        TeleECGImagen imagenActualizada = teleECGImagenRepository.save(imagen);
+
+        // 6. Registrar en auditoría
+        registrarAuditoria(
+            imagenActualizada,
+            idUsuarioEvaluador,
+            "EVALUAR",
+            ipCliente,
+            String.format("ECG evaluada como %s", evaluacion)
+        );
+
+        log.info("✅ Evaluación guardada: ID={}, Evaluación={}", idImagen, evaluacion);
+
+        return convertirADTO(imagenActualizada);
+    }
+
     // ============================================================
     // MÉTODOS HELPER
     // ============================================================
@@ -484,8 +568,28 @@ public class TeleECGService {
         dto.setStorageBucket(imagen.getStorageBucket());
         dto.setEstado(imagen.getEstado());
         dto.setEstadoFormato(TeleECGImagenDTO.formatoEstado(imagen.getEstado()));
+        // v3.0.0: Agregar nuevos campos
+        if (imagen.getImagenAnterior() != null && imagen.getImagenAnterior().getIdImagen() != null) {
+            dto.setIdImagenAnterior(imagen.getImagenAnterior().getIdImagen());
+        }
+        dto.setFueSubsanado(imagen.getFueSubsanado() != null ? imagen.getFueSubsanado() : false);
+        // Deprecated: mantener por compatibilidad
         dto.setMotivoRechazo(imagen.getMotivoRechazo());
         dto.setObservaciones(imagen.getObservaciones());
+
+        // v3.0.0: Campos de evaluación para ML dataset
+        dto.setEvaluacion(imagen.getEvaluacion());
+        dto.setDescripcionEvaluacion(imagen.getDescripcionEvaluacion());
+
+        // Obtener nombre del usuario evaluador si existe
+        if (imagen.getUsuarioEvaluador() != null) {
+            usuarioRepository.findById(imagen.getUsuarioEvaluador().getIdUser()).ifPresent(usuario -> {
+                dto.setUsuarioEvaluadorNombre(usuario.getNameUser());
+            });
+        }
+
+        dto.setFechaEvaluacion(imagen.getFechaEvaluacion());
+
         dto.setFechaEnvio(imagen.getFechaEnvio());
         dto.setFechaRecepcion(imagen.getFechaRecepcion());
         dto.setFechaExpiracion(imagen.getFechaExpiracion());
