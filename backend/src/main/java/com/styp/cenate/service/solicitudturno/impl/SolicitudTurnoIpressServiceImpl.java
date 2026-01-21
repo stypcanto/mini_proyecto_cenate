@@ -17,6 +17,7 @@ import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoEstadoResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
 import com.styp.cenate.enumd.BloqueTurno;
@@ -54,14 +55,14 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 	private final SolicitudTurnoIpressRepository solicitudRepository;
 	private final PeriodoSolicitudTurnoRepository periodoRepository;
-	private final DetalleSolicitudTurnoRepository detalleRepository;
+
 	private final PersonalCntRepository personalCntRepository;
 	private final UsuarioRepository usuarioRepository;
 	private final DimServicioEssiRepository servicioEssiRepository;
 	private final AuditLogService auditLogService;
-	
-	private final DetalleSolicitudTurnoFechaRepository detalleFechaRepository;
 
+	private final DetalleSolicitudTurnoRepository detalleRepository;
+	private final DetalleSolicitudTurnoFechaRepository detalleFechaRepository;
 
 	// ========================================
 	// Obtener datos del usuario actual
@@ -194,11 +195,8 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 		// Crear solicitud
 		SolicitudTurnoIpress solicitud = SolicitudTurnoIpress.builder().periodo(periodo).personal(personal)
-				.estado("BORRADOR")
-				.totalEspecialidades(0)
-				.totalTurnosSolicitados(0)
-				.build();
-		
+				.estado("BORRADOR").totalEspecialidades(0).totalTurnosSolicitados(0).build();
+
 		solicitud.setUpdatedAt(OffsetDateTime.now());
 		solicitud = solicitudRepository.save(solicitud);
 
@@ -206,10 +204,10 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		if (request.getDetalles() != null && !request.getDetalles().isEmpty()) {
 			agregarDetalles(solicitud, request.getDetalles());
 		}
-		
-	    recalcularTotales(solicitud);
-	    solicitud.setUpdatedAt(OffsetDateTime.now());
-	    solicitud = solicitudRepository.save(solicitud);
+
+		recalcularTotales(solicitud);
+		solicitud.setUpdatedAt(OffsetDateTime.now());
+		solicitud = solicitudRepository.save(solicitud);
 
 		auditar("CREATE_SOLICITUD", String.format("Solicitud creada para IPRESS: %s, Periodo: %s",
 				personal.getIpress() != null ? personal.getIpress().getDescIpress() : "N/A", periodo.getDescripcion()),
@@ -272,7 +270,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		if (request.getDetalles() != null && !request.getDetalles().isEmpty()) {
 			agregarDetalles(solicitud, request.getDetalles());
 		}
-		
+
 		recalcularTotales(solicitud);
 		// Actualiza cabecera
 		solicitud.setUpdatedAt(OffsetDateTime.now()); // o @UpdateTimestamp
@@ -327,11 +325,11 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		if (!solicitud.getPeriodo().isActivo()) {
 			throw new RuntimeException("El periodo ya no esta activo");
 		}
-		
+
 		recalcularTotales(solicitud);
 
 		if (solicitud.getTotalTurnosSolicitados() <= 0) {
-		    throw new RuntimeException("No se puede enviar una solicitud sin turnos");
+			throw new RuntimeException("No se puede enviar una solicitud sin turnos");
 		}
 
 		solicitud.enviar();
@@ -511,26 +509,19 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 //		return response;
 		SolicitudTurnoIpressResponse response = convertToResponse(solicitud);
 
-	    // Cargar detalles (SIN calcular totales)
-	    List<DetalleSolicitudTurnoResponse> detalles = solicitud.getDetalles().stream()
-	            .map(this::convertDetalleToResponse)
-	            .toList();
+		// Cargar detalles (SIN calcular totales)
+		List<DetalleSolicitudTurnoResponse> detalles = solicitud.getDetalles().stream()
+				.map(this::convertDetalleToResponse).toList();
 
-	    response.setDetalles(detalles);
+		response.setDetalles(detalles);
 
-	    response.setTotalTurnosSolicitados(
-	            solicitud.getTotalTurnosSolicitados() != null
-	                    ? solicitud.getTotalTurnosSolicitados()
-	                    : 0
-	    );
+		response.setTotalTurnosSolicitados(
+				solicitud.getTotalTurnosSolicitados() != null ? solicitud.getTotalTurnosSolicitados() : 0);
 
-	    response.setTotalEspecialidades(
-	            solicitud.getTotalEspecialidades() != null
-	                    ? solicitud.getTotalEspecialidades()
-	                    : 0
-	    );
+		response.setTotalEspecialidades(
+				solicitud.getTotalEspecialidades() != null ? solicitud.getTotalEspecialidades() : 0);
 
-	    return response;
+		return response;
 	}
 
 	private DetalleSolicitudTurnoResponse convertDetalleToResponse(DetalleSolicitudTurno detalle) {
@@ -619,150 +610,195 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 	@Transactional
 	public DetalleSolicitudTurnoUpsertResponse upsertDetalle(Long idSolicitud, DetalleSolicitudTurnoUpsertRequest req) {
 
-	    // 1) Validar solicitud
-	    SolicitudTurnoIpress solicitud = solicitudRepository.findById(idSolicitud)
-	            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+		// 1) Validar solicitud
+		SolicitudTurnoIpress solicitud = solicitudRepository.findById(idSolicitud)
+				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
 
-	    validarPropietarioOCoordinador(solicitud);
+		validarPropietarioOCoordinador(solicitud);
 
-	    if (solicitud.isRevisado()) {
-	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
-	    }
+		if (solicitud.isRevisado()) {
+			throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+		}
 
-	    // 2) Especialidad
-	    DimServicioEssi especialidad = servicioEssiRepository.findById(req.getIdServicio())
-	            .orElseThrow(() -> new RuntimeException("Especialidad no encontrada con ID: " + req.getIdServicio()));
+		// 2) Especialidad
+		DimServicioEssi especialidad = servicioEssiRepository.findById(req.getIdServicio())
+				.orElseThrow(() -> new RuntimeException("Especialidad no encontrada con ID: " + req.getIdServicio()));
 
-	    // 3) Upsert por (solicitud, servicio)
-	    DetalleSolicitudTurno detalle = detalleRepository
-	            .findBySolicitud_IdSolicitudAndEspecialidad_IdServicio(idSolicitud, req.getIdServicio())
-	            .orElseGet(() -> DetalleSolicitudTurno.builder()
-	                    .solicitud(solicitud)
-	                    .especialidad(especialidad)
-	                    .build());
+		// 3) Upsert por (solicitud, servicio)
+		DetalleSolicitudTurno detalle = detalleRepository
+				.findBySolicitud_IdSolicitudAndEspecialidad_IdServicio(idSolicitud, req.getIdServicio()).orElseGet(
+						() -> DetalleSolicitudTurno.builder().solicitud(solicitud).especialidad(especialidad).build());
 
-	    // 4) Set campos según tu JSON + nombres BD
-	    int tm = req.getTurnoTM() == null ? 0 : req.getTurnoTM();
-	    int man = req.getTurnoManana() == null ? 0 : req.getTurnoManana();
-	    int tar = req.getTurnoTarde() == null ? 0 : req.getTurnoTarde();
+		// 4) Set campos según tu JSON + nombres BD
+		int tm = req.getTurnoTM() == null ? 0 : req.getTurnoTM();
+		int man = req.getTurnoManana() == null ? 0 : req.getTurnoManana();
+		int tar = req.getTurnoTarde() == null ? 0 : req.getTurnoTarde();
 
-	    detalle.setRequiere(Boolean.TRUE.equals(req.getRequiere()));
-	    detalle.setTurnosSolicitados(req.getTurnos() == null ? (tm + man + tar) : req.getTurnos());
+		detalle.setRequiere(Boolean.TRUE.equals(req.getRequiere()));
+		detalle.setTurnosSolicitados(req.getTurnos() == null ? (tm + man + tar) : req.getTurnos());
 
-	    detalle.setTurnosTm(tm);
-	    detalle.setTurnosManana(man);
-	    detalle.setTurnosTarde(tar);
+		detalle.setTurnosTm(tm);
+		detalle.setTurnosManana(man);
+		detalle.setTurnosTarde(tar);
 
-	    detalle.setTeleconsultorioActivo(Boolean.TRUE.equals(req.getTc()));
-	    detalle.setTeleconsultaActivo(Boolean.TRUE.equals(req.getTl()));
+		detalle.setTeleconsultorioActivo(Boolean.TRUE.equals(req.getTc()));
+		detalle.setTeleconsultaActivo(Boolean.TRUE.equals(req.getTl()));
 
-	    detalle.setEstado(req.getEstado() == null ? "PENDIENTE" : req.getEstado());
-	    detalle.setObservacion(req.getObservacion());
+		detalle.setEstado(req.getEstado() == null ? "PENDIENTE" : req.getEstado());
+		detalle.setObservacion(req.getObservacion());
 
-	    // Compatibilidad con tus flags antiguos
-	    detalle.setMananaActiva(man > 0);
-	    detalle.setTardeActiva(tar > 0);
+		// Compatibilidad con tus flags antiguos
+		detalle.setMananaActiva(man > 0);
+		detalle.setTardeActiva(tar > 0);
 
-	    detalle = detalleRepository.save(detalle);
+		detalle = detalleRepository.save(detalle);
 
-	   
-	    
-	    log.info("Detalle usado => idDetalle={}, idSolicitud={}, idServicio={}",
-	            detalle.getIdDetalle(),
-	            detalle.getSolicitud().getIdSolicitud(),
-	            detalle.getEspecialidad().getIdServicio());
+		log.info("Detalle usado => idDetalle={}, idSolicitud={}, idServicio={}", detalle.getIdDetalle(),
+				detalle.getSolicitud().getIdSolicitud(), detalle.getEspecialidad().getIdServicio());
 
-	    long antes = detalleFechaRepository.countByDetalle_IdDetalle(detalle.getIdDetalle());
-	    log.info("Fechas antes delete={}", antes);
+		long antes = detalleFechaRepository.countByDetalle_IdDetalle(detalle.getIdDetalle());
+		log.info("Fechas antes delete={}", antes);
 
-	    detalleFechaRepository.deleteByDetalle_IdDetalle(detalle.getIdDetalle());
+		detalleFechaRepository.deleteByDetalle_IdDetalle(detalle.getIdDetalle());
 
-	    long despues = detalleFechaRepository.countByDetalle_IdDetalle(detalle.getIdDetalle());
-	    log.info("Fechas después delete={}", despues);
-	    
-	    
-	    
+		long despues = detalleFechaRepository.countByDetalle_IdDetalle(detalle.getIdDetalle());
+		log.info("Fechas después delete={}", despues);
 
-	    if (req.getFechasDetalle() != null && !req.getFechasDetalle().isEmpty()) {
-	        List<DetalleSolicitudTurnoFecha> nuevas = new ArrayList<>();
+		if (req.getFechasDetalle() != null && !req.getFechasDetalle().isEmpty()) {
+			List<DetalleSolicitudTurnoFecha> nuevas = new ArrayList<>();
 
-	        for (var f : req.getFechasDetalle()) {
-	            var fecha = java.time.LocalDate.parse(f.getFecha());
-	            var bloque = BloqueTurno.valueOf(f.getBloque());
+			for (var f : req.getFechasDetalle()) {
+				var fecha = java.time.LocalDate.parse(f.getFecha());
+				var bloque = BloqueTurno.valueOf(f.getBloque());
 
-	            nuevas.add(DetalleSolicitudTurnoFecha.builder()
-	                    .detalle(detalle)
-	                    .fecha(fecha)
-	                    .bloque(bloque)
-	                    .build());
-	        }
-	        detalleFechaRepository.saveAll(nuevas);
-	    }
+				nuevas.add(DetalleSolicitudTurnoFecha.builder().detalle(detalle).fecha(fecha).bloque(bloque).build());
+			}
+			detalleFechaRepository.saveAll(nuevas);
+		}
 
-	    // 6) Recalcular totales (recargar con detalles para evitar colecciones desfasadas)
-	    SolicitudTurnoIpress solConDetalles = solicitudRepository.findByIdWithDetalles(idSolicitud)
-	            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+		// 6) Recalcular totales (recargar con detalles para evitar colecciones
+		// desfasadas)
+		SolicitudTurnoIpress solConDetalles = solicitudRepository.findByIdWithDetalles(idSolicitud)
+				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
 
-	    recalcularTotales(solConDetalles);
-	    solConDetalles.setUpdatedAt(OffsetDateTime.now());
-	    solicitudRepository.save(solConDetalles);
+		recalcularTotales(solConDetalles);
+		solConDetalles.setUpdatedAt(OffsetDateTime.now());
+		solicitudRepository.save(solConDetalles);
 
-	    // 7) Response
-	    var fechasGuardadas = detalleFechaRepository.findByDetalle_IdDetalleOrderByFechaAsc(detalle.getIdDetalle())
-	            .stream()
-	            .map(x -> DetalleSolicitudTurnoUpsertResponse.FechaDetalleResponse.builder()
-	                    .idDetalleFecha(x.getIdDetalleFecha())
-	                    .fecha(x.getFecha().toString())
-	                    .bloque(x.getBloque().name())
-	                    .build())
-	            .toList();
+		// 7) Response
+		var fechasGuardadas = detalleFechaRepository.findByDetalle_IdDetalleOrderByFechaAsc(detalle.getIdDetalle())
+				.stream()
+				.map(x -> DetalleSolicitudTurnoUpsertResponse.FechaDetalleResponse.builder()
+						.idDetalleFecha(x.getIdDetalleFecha()).fecha(x.getFecha().toString())
+						.bloque(x.getBloque().name()).build())
+				.toList();
 
-	    return DetalleSolicitudTurnoUpsertResponse.builder()
-	            .idDetalle(detalle.getIdDetalle())
-	            .idSolicitud(idSolicitud)
-	            .idServicio(req.getIdServicio())
-	            .turnoTM(detalle.getTurnosTm())
-	            .turnoManana(detalle.getTurnosManana())
-	            .turnoTarde(detalle.getTurnosTarde())
-	            .tc(detalle.getTeleconsultorioActivo())
-	            .tl(detalle.getTeleconsultaActivo())
-	            .estado(detalle.getEstado())
-	            .fechasDetalle(fechasGuardadas)
-	            .build();
+		return DetalleSolicitudTurnoUpsertResponse.builder().idDetalle(detalle.getIdDetalle()).idSolicitud(idSolicitud)
+				.idServicio(req.getIdServicio()).turnoTM(detalle.getTurnosTm()).turnoManana(detalle.getTurnosManana())
+				.turnoTarde(detalle.getTurnosTarde()).tc(detalle.getTeleconsultorioActivo())
+				.tl(detalle.getTeleconsultaActivo()).estado(detalle.getEstado()).fechasDetalle(fechasGuardadas).build();
 	}
-	
+
 	@Override
 	@Transactional(readOnly = true)
 	public DetalleFechasResponse obtenerFechasDetalle(Long idDetalle) {
 
-	    // 1) Traer el detalle (para idServicio y nombreServicio)
-	    DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
-	            .orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
+		// 1) Traer el detalle (para idServicio y nombreServicio)
+		DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
+				.orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
 
-	    // (Opcional) Validar propietario si quieres: que el detalle pertenezca al usuario actual
-	    // validarPropietario(detalle.getSolicitud());
+		// (Opcional) Validar propietario si quieres: que el detalle pertenezca al
+		// usuario actual
+		// validarPropietario(detalle.getSolicitud());
 
-	    Long idServicio = detalle.getEspecialidad() != null ? detalle.getEspecialidad().getIdServicio() : null;
-	    String nombreServicio = detalle.getEspecialidad() != null ? detalle.getEspecialidad().getDescServicio() : null;
+		Long idServicio = detalle.getEspecialidad() != null ? detalle.getEspecialidad().getIdServicio() : null;
+		String nombreServicio = detalle.getEspecialidad() != null ? detalle.getEspecialidad().getDescServicio() : null;
 
-	    // 2) Listar fechas del detalle
-	    var fechas = detalleFechaRepository.findByDetalle_IdDetalleOrderByFechaAsc(idDetalle)
-	            .stream()
-	            .map(f -> DetalleFechasResponse.FechaDetalle.builder()
-	                    .idDetalleFecha(f.getIdDetalleFecha())
-	                    .fecha(f.getFecha().toString())
-	                    .bloque(f.getBloque().name())
-	                    .build())
-	            .toList();
+		// 2) Listar fechas del detalle
+		var fechas = detalleFechaRepository.findByDetalle_IdDetalleOrderByFechaAsc(idDetalle).stream()
+				.map(f -> DetalleFechasResponse.FechaDetalle.builder().idDetalleFecha(f.getIdDetalleFecha())
+						.fecha(f.getFecha().toString()).bloque(f.getBloque().name()).build())
+				.toList();
 
-	    // 3) Armar response
-	    return DetalleFechasResponse.builder()
-	            .idDetalle(detalle.getIdDetalle())
-	            .idServicio(idServicio)
-	            .nombreServicio(nombreServicio)
-	            .fechas(fechas)
-	            .build();
+		// 3) Armar response
+		return DetalleFechasResponse.builder().idDetalle(detalle.getIdDetalle()).idServicio(idServicio)
+				.nombreServicio(nombreServicio).fechas(fechas).build();
 	}
 
+	@Override
+	public SolicitudTurnoDetalleFullResponse obtenerPorIdFull(Long id) {
+
+		SolicitudTurnoIpress s = solicitudRepository.findByIdFull(id)
+				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + id));
+
+		validarPropietarioOCoordinador(s);
+
+		var periodo = s.getPeriodo();
+		var per = s.getPersonal();
+		var ipress = per != null ? per.getIpress() : null;
+
+		var detalles = (s.getDetalles() == null ? List.<DetalleSolicitudTurno>of() : s.getDetalles()).stream()
+				.map(d -> {
+					var esp = d.getEspecialidad();
+
+					var fechas = (d.getFechasDetalle() == null ? List.<DetalleSolicitudTurnoFecha>of()
+							: d.getFechasDetalle()).stream().sorted((a, b) -> {
+								int c = a.getFecha().compareTo(b.getFecha());
+								if (c != 0)
+									return c;
+								return a.getBloque().name().compareTo(b.getBloque().name());
+							})
+							.map(fd -> SolicitudTurnoDetalleFullResponse.FechaDetalleFull.builder()
+									.idDetalleFecha(fd.getIdDetalleFecha()).fecha(fd.getFecha().toString())
+									.bloque(fd.getBloque().name()).createdAt(fd.getCreatedAt()).build())
+							.toList();
+
+					int tm = d.getTurnosTm() == null ? 0 : d.getTurnosTm();
+					int man = d.getTurnosManana() == null ? 0 : d.getTurnosManana();
+					int tar = d.getTurnosTarde() == null ? 0 : d.getTurnosTarde();
+					int total = d.getTurnosSolicitados() == null ? (tm + man + tar) : d.getTurnosSolicitados();
+
+					return SolicitudTurnoDetalleFullResponse.DetalleFull.builder().idDetalle(d.getIdDetalle())
+							.idServicio(esp != null ? esp.getIdServicio() : null)
+							.nombreServicio(esp != null ? esp.getDescServicio() : null)
+							.codigoServicio(esp != null ? esp.getCodServicio() : null)
+							.requiere(Boolean.TRUE.equals(d.getRequiere())).turnos(total).turnoTM(tm).turnoManana(man)
+							.turnoTarde(tar).tc(Boolean.TRUE.equals(d.getTeleconsultorioActivo()))
+							.tl(Boolean.TRUE.equals(d.getTeleconsultaActivo())).observacion(d.getObservacion())
+							.estado(d.getEstado()).fechaCreacion(d.getCreatedAt())
+
+							.fechasDetalle(fechas).build();
+				}).toList();
+
+		return SolicitudTurnoDetalleFullResponse.builder().idSolicitud(s.getIdSolicitud())
+
+				.idPeriodo(periodo != null ? periodo.getIdPeriodo() : null)
+				.periodo(periodo != null ? periodo.getPeriodo() : null) // ajusta getter
+				.periodoDescripcion(periodo != null ? periodo.getDescripcion() : null)
+				.fechaInicio(periodo != null && periodo.getFechaInicio() != null
+						? periodo.getFechaInicio().toLocalDate().toString()
+						: null)
+				.fechaFin(periodo != null && periodo.getFechaFin() != null
+						? periodo.getFechaFin().toLocalDate().toString()
+						: null)
+
+				.estado(s.getEstado())
+
+				.fechaCreacion(s.getCreatedAt()).fechaActualizacion(s.getUpdatedAt()).fechaEnvio(s.getFechaEnvio())
+
+				.totalTurnosSolicitados(s.getTotalTurnosSolicitados()).totalEspecialidades(s.getTotalEspecialidades())
+
+				.idIpress(ipress != null ? ipress.getIdIpress() : null)
+				.nombreIpress(ipress != null ? ipress.getDescIpress() : null)
+				.codigoRenaes(ipress != null ? ipress.getCodIpress() : null) // ajusta si tu campo renaes es otro
+
+				.idUsuarioCreador(per != null && per.getUsuario() != null ? per.getUsuario().getIdUser() : null) // ajusta
+																													// según
+																													// tu
+																													// modelo
+				.nombreUsuarioCreador(per != null ? per.getNombreCompleto() : null)
+
+				.detalles(detalles).build();
+	}
 
 }

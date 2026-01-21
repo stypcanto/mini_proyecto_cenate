@@ -139,6 +139,22 @@ public interface SolicitudTurnoIpressRepository extends JpaRepository<SolicitudT
                 @Param("estado") String estado
         );
     
+
+    
+    @Query("""
+    		  SELECT DISTINCT s
+    		  FROM SolicitudTurnoIpress s
+    		  LEFT JOIN FETCH s.periodo p
+    		  LEFT JOIN FETCH s.personal per
+    		  LEFT JOIN FETCH per.ipress i
+    		  LEFT JOIN FETCH s.detalles d
+    		  LEFT JOIN FETCH d.especialidad esp
+    		  LEFT JOIN FETCH d.fechasDetalle fd
+    		  WHERE s.idSolicitud = :id
+    		""")
+    		Optional<SolicitudTurnoIpress> findByIdFull(@Param("id") Long id);
+    
+    
     
     
     

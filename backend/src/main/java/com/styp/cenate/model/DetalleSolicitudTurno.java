@@ -1,8 +1,8 @@
 package com.styp.cenate.model;
 
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
 
 import org.hibernate.annotations.CreationTimestamp;
 
@@ -135,7 +135,7 @@ public class DetalleSolicitudTurno {
     // =========================
     @OneToMany(mappedBy = "detalle", cascade = CascadeType.ALL, orphanRemoval = true)
     @Builder.Default
-    private List<DetalleSolicitudTurnoFecha> fechasDetalle = new ArrayList<>();
+    private Set<DetalleSolicitudTurnoFecha> fechasDetalle = new LinkedHashSet<>();
     
     
     

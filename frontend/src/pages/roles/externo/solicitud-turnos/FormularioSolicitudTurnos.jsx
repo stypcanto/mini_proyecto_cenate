@@ -984,14 +984,15 @@ export default function FormularioSolicitudTurnos() {
                       </div>
 
                       <div className="flex gap-3">
-                        <button
+                        {/* TODO: Botón Guardar Progreso - Por implementar */}
+                        {/* <button
                           onClick={handleGuardarBorrador}
                           disabled={saving || registros.length === 0}
                           className="px-5 py-2.5 border-2 border-[#0A5BA9] text-[#0A5BA9] font-semibold rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
                         >
                           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                           Guardar Progreso
-                        </button>
+                        </button> */}
 
                         <button
                           onClick={handleEnviar}
