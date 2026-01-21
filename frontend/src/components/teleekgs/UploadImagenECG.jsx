@@ -234,7 +234,15 @@ export default function UploadImagenECG({ onSuccess }) {
     } catch (error) {
       console.error("Error al cargar ECGs:", error);
 
-      if (error.response?.status === 404 || error.message?.includes("asegurado")) {
+      // 🔍 CRÍTICO: Solo mostrar modal de "Crear Asegurado" si el error es ESPECÍFICO
+      // No si contiene "asegurado" en cualquier contexto (ej: fallo técnico)
+      const errMsg = error.response?.data?.message || error.message || "";
+      const isAseguradoNoExisteError =
+        errMsg.toLowerCase().includes("no existe") ||
+        errMsg.toLowerCase().includes("no encontrado") ||
+        (error.response?.status === 404 && errMsg.toLowerCase().includes("asegurado"));
+
+      if (isAseguradoNoExisteError) {
         setAseguradoNoExiste(true);
         toast.error("El asegurado no existe. Por favor créalo primero.");
         setMostrarCrearAsegurado(true);

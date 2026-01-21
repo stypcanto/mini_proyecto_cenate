@@ -166,6 +166,11 @@ public class TeleECGController {
                 "200",
                 resultado
             ));
+        } catch (ValidationException e) {
+            // ❌ Asegurado no existe - Error específico
+            log.warn("⚠️ Validación fallida: {}", e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(new ApiResponse<>(false, e.getMessage(), "404", null));
         } catch (Exception e) {
             log.error("❌ Error en upload", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)

@@ -97,6 +97,15 @@ public class TeleECGService {
 
         log.info("📤 Subiendo imagen ECG para paciente: {}", dto.getNumDocPaciente());
 
+        // 🔍 0. VALIDACIÓN CRÍTICA: Verificar que el asegurado EXISTE en la BD
+        // Si no existe, lanzar excepción específica
+        Optional<Asegurado> aseguradoVerificacion = aseguradoRepository.findByDocPaciente(dto.getNumDocPaciente());
+        if (!aseguradoVerificacion.isPresent()) {
+            log.warn("❌ Asegurado no existe en BD: {}", dto.getNumDocPaciente());
+            throw new ValidationException("El asegurado con DNI " + dto.getNumDocPaciente() + " no existe en la base de datos. Por favor, registra al paciente primero.");
+        }
+        log.info("✅ Asegurado validado: {}", dto.getNumDocPaciente());
+
         // 1. Obtener IPRESS
         Ipress ipressOrigen = ipressRepository.findById(idIpressOrigen)
             .orElseThrow(() -> new RuntimeException("IPRESS no encontrada: " + idIpressOrigen));
