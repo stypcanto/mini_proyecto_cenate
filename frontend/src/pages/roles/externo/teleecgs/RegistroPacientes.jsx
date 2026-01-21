@@ -164,9 +164,9 @@ export default function RegistroPacientes() {
 
             {/* Estadísticas rápidas */}
             <div className="bg-blue-50 rounded-lg p-4">
-              <p className="text-sm text-gray-600">Total de ECGs</p>
-              <p className="text-2xl font-bold text-blue-600">{ecgs.length}</p>
-              <p className="text-xs text-gray-500">({agruparImagenesPorPaciente(ecgs).length} paciente{agruparImagenesPorPaciente(ecgs).length !== 1 ? 's' : ''})</p>
+              <p className="text-sm text-gray-600">Total</p>
+              <p className="text-2xl font-bold text-blue-600">{agruparImagenesPorPaciente(ecgs).length}</p>
+              <p className="text-xs text-gray-500">{ecgs.length} ECG{ecgs.length !== 1 ? 's' : ''}</p>
             </div>
           </div>
         </div>
