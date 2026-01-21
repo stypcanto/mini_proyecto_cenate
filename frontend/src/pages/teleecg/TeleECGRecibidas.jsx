@@ -69,10 +69,11 @@ export default function TeleECGRecibidas() {
   // Cargar ECGs al montarse
   useEffect(() => {
     cargarECGs();
+    cargarEstadisticasGlobales();
   }, []);
 
   /**
-   * ✅ v1.21.5: Cargar todas las ECGs agrupadas por asegurado
+   * ✅ v1.21.5: Cargar todas las ECGs agrupadas por asegurado (para la tabla)
    */
   const cargarECGs = async () => {
     try {
@@ -82,10 +83,6 @@ export default function TeleECGRecibidas() {
       const ecgData = Array.isArray(response) ? response : [];
       setEcgs(ecgData);
       console.log("✅ ECGs agrupadas cargadas:", ecgData.length, "asegurados");
-
-      // ✅ v1.21.5 FIX: Calcular estadísticas desde datos ya cargados
-      // Esto garantiza consistencia entre cards y tabla
-      calcularEstadisticasDesdeECGs(ecgData);
     } catch (error) {
       console.error("❌ Error al cargar ECGs:", error);
       setEcgs([]);
@@ -95,18 +92,44 @@ export default function TeleECGRecibidas() {
   };
 
   /**
-   * ✅ v1.21.5 FIX: Calcular estadísticas consolidadas desde los ECGs cargados
-   * Esto es más eficiente que hacer otra llamada a la API
-   * y garantiza que los numbers en los cards coincidan con la tabla
+   * ✅ v1.21.5 FIX: Cargar estadísticas GLOBALES (sin filtros) para los cards
+   * Los cards muestran TODAS las imágenes del sistema
+   * La tabla muestra solo las imágenes filtradas
+   *
+   * Importante: Esta es la fuente de verdad para los cards
+   * Cuenta IMÁGENES, no PACIENTES
    */
-  const calcularEstadisticasDesdeECGs = (ecgsData) => {
+  const cargarEstadisticasGlobales = async () => {
+    try {
+      const response = await teleecgService.obtenerEstadisticas();
+      const statsData = response || {};
+
+      setStats({
+        total: statsData.totalImagenesCargadas || statsData.total || 0,
+        pendientes: statsData.totalImagenesPendientes || statsData.totalPendientes || 0,
+        observadas: statsData.totalImagenesRechazadas || statsData.totalObservadas || 0,
+        atendidas: statsData.totalImagenesProcesadas || statsData.totalAtendidas || 0,
+      });
+
+      console.log("✅ Estadísticas globales (TODAS las imágenes):", statsData);
+    } catch (error) {
+      console.error("❌ Error al cargar estadísticas globales:", error);
+      // Fallback: calcular desde datos cargados si falla API
+      calcularEstadisticasDesdeECGs();
+    }
+  };
+
+  /**
+   * Calcular estadísticas desde ECGs cargados (fallback si API falla)
+   */
+  const calcularEstadisticasDesdeECGs = () => {
     let totalECGs = 0;
     let pendientes = 0;
     let observadas = 0;
     let atendidas = 0;
 
     // Sumar conteos de cada asegurado
-    ecgsData.forEach((asegurado) => {
+    ecgs.forEach((asegurado) => {
       totalECGs += asegurado.total_ecgs || 0;
       pendientes += asegurado.ecgs_pendientes || 0;
       observadas += asegurado.ecgs_observadas || 0;
@@ -121,7 +144,7 @@ export default function TeleECGRecibidas() {
     };
 
     setStats(nuevasStats);
-    console.log("✅ Estadísticas calculadas desde ECGs:", nuevasStats);
+    console.log("✅ Estadísticas calculadas desde ECGs (fallback):", nuevasStats);
   };
 
   /**
@@ -138,12 +161,14 @@ export default function TeleECGRecibidas() {
 
   /**
    * Refrescar todos los datos
-   * ✅ v1.21.5 FIX: Simplificado - cargarECGs() ya recalcula estadísticas
+   * ✅ v1.21.5 FIX: Recargar tabla Y estadísticas globales
    */
   const handleRefresh = async () => {
     setRefreshing(true);
-    await cargarECGs();
-    // extraerIpressOptions() se ejecutará automáticamente via useEffect
+    await Promise.all([
+      cargarECGs(),
+      cargarEstadisticasGlobales()
+    ]);
     setRefreshing(false);
   };
 
@@ -164,7 +189,7 @@ export default function TeleECGRecibidas() {
       toast.success("✅ ECG procesada exitosamente");
       setShowProcesarModal(false);
       setEcgParaProcesar(null);
-      await cargarECGs(); // Recalcula estadísticas automáticamente
+      await Promise.all([cargarECGs(), cargarEstadisticasGlobales()]);
     } catch (error) {
       console.error("❌ Error al procesar ECG:", error);
       toast.error("Error al procesar la ECG");
@@ -190,7 +215,7 @@ export default function TeleECGRecibidas() {
     try {
       await teleecgService.rechazarImagen(idImagen, motivo);
       toast.success("✅ ECG rechazada exitosamente");
-      await cargarECGs(); // Recalcula estadísticas automáticamente
+      await Promise.all([cargarECGs(), cargarEstadisticasGlobales()]);
     } catch (error) {
       console.error("❌ Error al rechazar ECG:", error);
       toast.error("Error al rechazar la ECG");
@@ -267,7 +292,7 @@ export default function TeleECGRecibidas() {
       toast.success(`✅ ECG evaluada como ${evaluacion}`);
       setShowEvaluacionModal(false);
       setEcgParaEvaluar(null);
-      await cargarECGs(); // Recalcula estadísticas automáticamente
+      await Promise.all([cargarECGs(), cargarEstadisticasGlobales()]);
     } catch (error) {
       console.error("❌ Error al evaluar ECG:", error);
       toast.error(error.message || "Error al guardar evaluación");
