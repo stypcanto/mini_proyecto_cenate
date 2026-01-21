@@ -56,6 +56,7 @@ const CustomSwitch = ({ checked, onChange, disabled = false, color = "green" }) 
  * @param {Object} props.periodo - Periodo seleccionado
  * @param {Array} props.registros - Registros actuales (formato: [{idServicio, turnoTM, turnoM, turnoT, tc, tl, fecha, estado}])
  * @param {Function} props.onChange - Callback cuando cambian los datos
+ * @param {Function} props.onAutoGuardarFechas - Callback para auto-guardar cuando se confirman fechas
  * @param {Boolean} props.soloLectura - Si es solo lectura
  * @param {Boolean} props.mostrarEncabezado - Si muestra el encabezado púrpura (default: true)
  */
@@ -64,6 +65,7 @@ export default function TablaSolicitudEspecialidades({
   periodo = null,
   registros = [],
   onChange = () => {},
+  onAutoGuardarFechas = null,
   soloLectura = false,
   mostrarEncabezado = true,
 }) {
@@ -74,6 +76,7 @@ export default function TablaSolicitudEspecialidades({
     registros.forEach((r) => {
       inicial[r.idServicio] = {
         idServicio: r.idServicio,
+        idDetalle: r.idDetalle || null,
         turnoTM: r.turnoTM || 0,
         turnoManana: r.turnoManana || 0,
         turnoTarde: r.turnoTarde || 0,
@@ -92,6 +95,7 @@ export default function TablaSolicitudEspecialidades({
     registros.forEach((r) => {
       nuevo[r.idServicio] = {
         idServicio: r.idServicio,
+        idDetalle: r.idDetalle || null,
         turnoTM: r.turnoTM || 0,
         turnoManana: r.turnoManana || 0,
         turnoTarde: r.turnoTarde || 0,
@@ -391,8 +395,13 @@ export default function TablaSolicitudEspecialidades({
                           setEspecialidadSeleccionada(esp);
                           setModalFechasOpen(true);
                         }}
-                        className="px-3 py-1.5 rounded-lg border-2 border-blue-500 text-blue-500 text-xs font-semibold hover:bg-blue-50 transition-all"
-                        disabled={soloLectura}
+                        className={`px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
+                          total > 0 && !soloLectura
+                            ? "border-blue-500 text-blue-500 hover:bg-blue-50 cursor-pointer"
+                            : "border-gray-300 text-gray-400 cursor-not-allowed"
+                        }`}
+                        disabled={soloLectura || total === 0}
+                        title={total === 0 ? "Configura turnos primero (TM, Mañana o Tarde)" : "Seleccionar fechas específicas"}
                       >
                         Opcional
                       </button>
@@ -437,10 +446,20 @@ export default function TablaSolicitudEspecialidades({
           especialidad={especialidadSeleccionada.descripcion}
           turnoManana={datos[especialidadSeleccionada.idServicio]?.turnoManana || 0}
           turnoTarde={datos[especialidadSeleccionada.idServicio]?.turnoTarde || 0}
+          idDetalle={datos[especialidadSeleccionada.idServicio]?.idDetalle || null}
           fechasIniciales={datos[especialidadSeleccionada.idServicio]?.fechas || []}
           onConfirm={(fechasSeleccionadas) => {
+            console.log("📅 Fechas seleccionadas en modal:", fechasSeleccionadas);
+            
             // Actualizar las fechas en los datos
             actualizarCampo(especialidadSeleccionada.idServicio, "fechas", fechasSeleccionadas);
+            
+            // Auto-guardar si existe el callback - pasar las fechas directamente
+            if (onAutoGuardarFechas) {
+              // NO esperar el tick - llamar inmediatamente con las fechas
+              onAutoGuardarFechas(especialidadSeleccionada.idServicio, fechasSeleccionadas);
+            }
+            
             setModalFechasOpen(false);
             setEspecialidadSeleccionada(null);
           }}

@@ -5,6 +5,9 @@ import java.util.List;
 import com.styp.cenate.dto.MiIpressResponse;
 import com.styp.cenate.dto.SolicitudTurnoIpressRequest;
 import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoEstadoResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
 
@@ -102,5 +105,14 @@ public interface SolicitudTurnoIpressService {
 	 * Rechazar solicitud (solo coordinador)
 	 */
 	SolicitudTurnoEstadoResponse rechazarSolicitud(Long idSolicitud, String motivo);
+	
+	
+	DetalleSolicitudTurnoUpsertResponse upsertDetalle(Long idSolicitud, DetalleSolicitudTurnoUpsertRequest request);
+
+	
+	DetalleFechasResponse obtenerFechasDetalle(Long idDetalle);
+
+	
+	
 
 }

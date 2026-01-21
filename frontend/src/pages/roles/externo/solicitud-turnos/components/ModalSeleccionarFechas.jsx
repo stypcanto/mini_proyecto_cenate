@@ -5,7 +5,8 @@
 // ========================================================================
 
 import React, { useState, useEffect } from "react";
-import { Calendar, Sun, Moon, X } from "lucide-react";
+import { Calendar, Sun, Moon, X, Loader2 } from "lucide-react";
+import { solicitudTurnoService } from "../../../../../services/solicitudTurnoService";
 
 /**
  * Modal para seleccionar fechas específicas por especialidad
@@ -15,7 +16,8 @@ import { Calendar, Sun, Moon, X } from "lucide-react";
  * @param {String} props.especialidad - Nombre de la especialidad
  * @param {Number} props.turnoManana - Cantidad de turnos mañana
  * @param {Number} props.turnoTarde - Cantidad de turnos tarde
- * @param {Array} props.fechasIniciales - Fechas ya seleccionadas
+ * @param {Number} props.idDetalle - ID del detalle (para cargar fechas del backend)
+ * @param {Array} props.fechasIniciales - Fechas ya seleccionadas (fallback)
  * @param {Function} props.onConfirm - Callback al confirmar (recibe array de fechas)
  */
 export default function ModalSeleccionarFechas({
@@ -24,20 +26,51 @@ export default function ModalSeleccionarFechas({
   especialidad = "",
   turnoManana = 0,
   turnoTarde = 0,
+  idDetalle = null,
   fechasIniciales = [],
   onConfirm = () => {},
 }) {
   const [tipoTurno, setTipoTurno] = useState("MANANA"); // MANANA | TARDE
   const [fechaInput, setFechaInput] = useState("");
   const [fechasSeleccionadas, setFechasSeleccionadas] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setFechasSeleccionadas(fechasIniciales || []);
+      cargarFechas();
       setFechaInput("");
       setTipoTurno("MANANA");
     }
-  }, [open, fechasIniciales]);
+  }, [open, idDetalle]);
+
+  const cargarFechas = async () => {
+    // Si hay idDetalle, cargar desde el backend
+    if (idDetalle) {
+      setLoading(true);
+      try {
+        const response = await solicitudTurnoService.obtenerFechasDetalle(idDetalle);
+        
+        // Convertir formato backend a formato del modal
+        const fechasDelBackend = (response.fechas || []).map(f => ({
+          fecha: f.fecha,
+          turno: f.bloque,  // "MANANA" o "TARDE"
+          id: `${f.fecha}-${f.bloque}`
+        }));
+        
+        console.log("📥 Fechas cargadas desde backend:", fechasDelBackend);
+        setFechasSeleccionadas(fechasDelBackend);
+      } catch (error) {
+        console.error("Error al cargar fechas:", error);
+        // Si falla, usar fechas iniciales como fallback
+        setFechasSeleccionadas(fechasIniciales || []);
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      // Sin idDetalle, usar fechas iniciales
+      setFechasSeleccionadas(fechasIniciales || []);
+    }
+  };
 
   const agregarFecha = () => {
     if (!fechaInput) return;
@@ -104,8 +137,16 @@ export default function ModalSeleccionarFechas({
           </div>
 
           <div className="p-6 space-y-6">
-            {/* Tarjetas de resumen */}
-            <div className="grid grid-cols-2 gap-4">
+            {/* Loading state */}
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <Loader2 className="w-10 h-10 animate-spin text-pink-500 mb-3" />
+                <p className="text-slate-600">Cargando fechas registradas...</p>
+              </div>
+            ) : (
+              <>
+                {/* Tarjetas de resumen */}
+                <div className="grid grid-cols-2 gap-4">
               {/* Turnos Mañana */}
               <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4">
                 <div className="flex items-center gap-2 text-orange-600 mb-2">
@@ -241,12 +282,15 @@ export default function ModalSeleccionarFechas({
                 </div>
               </div>
             )}
+              </>
+            )}
 
             {/* Botón Listo */}
             <button
               type="button"
               onClick={handleConfirmar}
-              className="w-full py-4 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all"
+              disabled={loading}
+              className="w-full py-4 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Listo
             </button>

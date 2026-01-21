@@ -97,7 +97,9 @@ public interface DetalleSolicitudTurnoRepository extends JpaRepository<DetalleSo
     
     
 
+    Optional<DetalleSolicitudTurno> findBySolicitud_IdSolicitudAndEspecialidad_IdServicio(Long idSolicitud, Long idServicio);
 
+    boolean existsBySolicitud_IdSolicitudAndEspecialidad_IdServicio(Long idSolicitud, Long idServicio);
     
     
     

@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.RestController;
 import com.styp.cenate.dto.MiIpressResponse;
 import com.styp.cenate.dto.SolicitudTurnoIpressRequest;
 import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
-import com.styp.cenate.dto.SolicitudTurnosResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
 import com.styp.cenate.service.solicitudturno.SolicitudTurnoIpressService;
 
@@ -139,7 +141,7 @@ public class SolicitudTurnoIpressController {
 	 */
 	@GetMapping("/{id}")
 	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
-	public ResponseEntity<SolicitudTurnoIpressResponse> obtenerPorId(@PathVariable Long id) {
+	public ResponseEntity<SolicitudTurnoIpressResponse> obtenerPorId(@PathVariable("id") Long id) {
 		log.info("Obteniendo solicitud con ID: {}", id);
 		return ResponseEntity.ok(solicitudService.obtenerPorIdConDetalles(id));
 	}
@@ -239,7 +241,7 @@ public class SolicitudTurnoIpressController {
 	}
 
 	@PostMapping("/{id}/aprobar")
-	public ResponseEntity<?> aprobarSolicitud(@PathVariable Long id) {
+	public ResponseEntity<?> aprobarSolicitud(@PathVariable("id") Long id) {
 		log.info("POST /api/solicitud-turnos/{}/aprobar - Aprobar solicitud", id);
 		try {
 			var response = solicitudService.aprobarSolicitud(id);
@@ -251,7 +253,7 @@ public class SolicitudTurnoIpressController {
 	}
 
 	@PostMapping("/{id}/rechazar")
-	public ResponseEntity<?> rechazarSolicitud(@PathVariable Long id,
+	public ResponseEntity<?> rechazarSolicitud(@PathVariable("id") Long id,
 			@RequestBody Map<String, String> body) {
 		String motivo = body.get("motivo");
 		log.info("POST /api/solicitud-turnos/{}/rechazar - Rechazar solicitud", id);
@@ -263,5 +265,29 @@ public class SolicitudTurnoIpressController {
 			throw new RuntimeException("Error al rechazar la solicitud: " + e.getMessage());
 		}
 	}
+	
+	@PostMapping("/{idSolicitud}/detalle")
+	//@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
+	public ResponseEntity<DetalleSolicitudTurnoUpsertResponse> upsertDetalle(
+	        @PathVariable("idSolicitud") Long idSolicitud,
+	        @Valid @RequestBody DetalleSolicitudTurnoUpsertRequest request) {
+
+	    log.info("POST /api/solicitudes-turno/{}/detalle - Upsert detalle servicio {}", idSolicitud, request.getIdServicio());
+	    log.info("POST /api/solicitudes-turno/{}/detalle - body {}", idSolicitud, request.toString());
+	    return ResponseEntity.ok(solicitudService.upsertDetalle(idSolicitud, request));
+	}
+
+	
+	@GetMapping("/detalle/{idDetalle}/fechas")
+	public ResponseEntity<DetalleFechasResponse> obtenerFechasDetalle(
+	        @PathVariable("idDetalle") Long idDetalle) {
+	    
+	    log.info("GET /api/solicitudes-turno/detalle/{}/fechas", idDetalle);
+	    return ResponseEntity.ok(solicitudService.obtenerFechasDetalle(idDetalle));
+	}
+	
+	
+	
+	
 
 }

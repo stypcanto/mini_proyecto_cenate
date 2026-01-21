@@ -179,6 +179,46 @@ class SolicitudTurnoService {
     }
   }
 
+  /**
+   * Guarda o actualiza el detalle de una especialidad específica con sus fechas
+   * @param {number} idSolicitud - ID de la solicitud
+   * @param {Object} detalleData - Datos del detalle de la especialidad
+   * @returns {Promise<Object>} Detalle guardado
+   */
+  async guardarDetalleEspecialidad(idSolicitud, detalleData) {
+    try {
+      const response = await apiClient.post(
+        `/solicitudes-turno/${idSolicitud}/detalle`,
+        detalleData,
+        true
+      );
+      console.log(`Detalle de especialidad guardado exitosamente para solicitud ${idSolicitud}`);
+      return response;
+    } catch (error) {
+      console.error(`Error al guardar detalle de especialidad:`, error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtiene las fechas registradas para un detalle específico
+   * @param {number} idDetalle - ID del detalle de solicitud
+   * @returns {Promise<Object>} Fechas del detalle
+   */
+  async obtenerFechasDetalle(idDetalle) {
+    try {
+      const response = await apiClient.get(
+        `/solicitudes-turno/detalle/${idDetalle}/fechas`,
+        true
+      );
+      console.log(`Fechas obtenidas para detalle ${idDetalle}`);
+      return response;
+    } catch (error) {
+      console.error(`Error al obtener fechas del detalle ${idDetalle}:`, error);
+      throw error;
+    }
+  }
+
   // ============================================================
   // Especialidades CENATE
   // ============================================================

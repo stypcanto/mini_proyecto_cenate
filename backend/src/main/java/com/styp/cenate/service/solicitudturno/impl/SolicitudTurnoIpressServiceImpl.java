@@ -14,8 +14,12 @@ import com.styp.cenate.dto.DetalleSolicitudTurnoResponse;
 import com.styp.cenate.dto.MiIpressResponse;
 import com.styp.cenate.dto.SolicitudTurnoIpressRequest;
 import com.styp.cenate.dto.SolicitudTurnoIpressResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
+import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
+import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoEstadoResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
+import com.styp.cenate.enumd.BloqueTurno;
 import com.styp.cenate.mapper.solicitudturno.SolicitudTurnoEstadoMapper;
 import com.styp.cenate.model.DetalleSolicitudTurno;
 import com.styp.cenate.model.DimServicioEssi;
@@ -25,12 +29,14 @@ import com.styp.cenate.model.PersonalCnt;
 import com.styp.cenate.model.Red;
 import com.styp.cenate.model.SolicitudTurnoIpress;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.model.solicitudturnoipress.DetalleSolicitudTurnoFecha;
 import com.styp.cenate.repository.DetalleSolicitudTurnoRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.repository.PeriodoSolicitudTurnoRepository;
 import com.styp.cenate.repository.PersonalCntRepository;
 import com.styp.cenate.repository.SolicitudTurnoIpressRepository;
 import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.repository.solicitudturnoipress.DetalleSolicitudTurnoFechaRepository;
 import com.styp.cenate.service.auditlog.AuditLogService;
 import com.styp.cenate.service.solicitudturno.SolicitudTurnoIpressService;
 
@@ -53,6 +59,9 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 	private final UsuarioRepository usuarioRepository;
 	private final DimServicioEssiRepository servicioEssiRepository;
 	private final AuditLogService auditLogService;
+	
+	private final DetalleSolicitudTurnoFechaRepository detalleFechaRepository;
+
 
 	// ========================================
 	// Obtener datos del usuario actual
@@ -605,5 +614,155 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		sol.setTotalTurnosSolicitados(totalTurnos);
 		sol.setTotalEspecialidades(totalEspecialidades);
 	}
+
+	@Override
+	@Transactional
+	public DetalleSolicitudTurnoUpsertResponse upsertDetalle(Long idSolicitud, DetalleSolicitudTurnoUpsertRequest req) {
+
+	    // 1) Validar solicitud
+	    SolicitudTurnoIpress solicitud = solicitudRepository.findById(idSolicitud)
+	            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+
+	    validarPropietarioOCoordinador(solicitud);
+
+	    if (solicitud.isRevisado()) {
+	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+	    }
+
+	    // 2) Especialidad
+	    DimServicioEssi especialidad = servicioEssiRepository.findById(req.getIdServicio())
+	            .orElseThrow(() -> new RuntimeException("Especialidad no encontrada con ID: " + req.getIdServicio()));
+
+	    // 3) Upsert por (solicitud, servicio)
+	    DetalleSolicitudTurno detalle = detalleRepository
+	            .findBySolicitud_IdSolicitudAndEspecialidad_IdServicio(idSolicitud, req.getIdServicio())
+	            .orElseGet(() -> DetalleSolicitudTurno.builder()
+	                    .solicitud(solicitud)
+	                    .especialidad(especialidad)
+	                    .build());
+
+	    // 4) Set campos según tu JSON + nombres BD
+	    int tm = req.getTurnoTM() == null ? 0 : req.getTurnoTM();
+	    int man = req.getTurnoManana() == null ? 0 : req.getTurnoManana();
+	    int tar = req.getTurnoTarde() == null ? 0 : req.getTurnoTarde();
+
+	    detalle.setRequiere(Boolean.TRUE.equals(req.getRequiere()));
+	    detalle.setTurnosSolicitados(req.getTurnos() == null ? (tm + man + tar) : req.getTurnos());
+
+	    detalle.setTurnosTm(tm);
+	    detalle.setTurnosManana(man);
+	    detalle.setTurnosTarde(tar);
+
+	    detalle.setTeleconsultorioActivo(Boolean.TRUE.equals(req.getTc()));
+	    detalle.setTeleconsultaActivo(Boolean.TRUE.equals(req.getTl()));
+
+	    detalle.setEstado(req.getEstado() == null ? "PENDIENTE" : req.getEstado());
+	    detalle.setObservacion(req.getObservacion());
+
+	    // Compatibilidad con tus flags antiguos
+	    detalle.setMananaActiva(man > 0);
+	    detalle.setTardeActiva(tar > 0);
+
+	    detalle = detalleRepository.save(detalle);
+
+	   
+	    
+	    log.info("Detalle usado => idDetalle={}, idSolicitud={}, idServicio={}",
+	            detalle.getIdDetalle(),
+	            detalle.getSolicitud().getIdSolicitud(),
+	            detalle.getEspecialidad().getIdServicio());
+
+	    long antes = detalleFechaRepository.countByDetalle_IdDetalle(detalle.getIdDetalle());
+	    log.info("Fechas antes delete={}", antes);
+
+	    detalleFechaRepository.deleteByDetalle_IdDetalle(detalle.getIdDetalle());
+
+	    long despues = detalleFechaRepository.countByDetalle_IdDetalle(detalle.getIdDetalle());
+	    log.info("Fechas después delete={}", despues);
+	    
+	    
+	    
+
+	    if (req.getFechasDetalle() != null && !req.getFechasDetalle().isEmpty()) {
+	        List<DetalleSolicitudTurnoFecha> nuevas = new ArrayList<>();
+
+	        for (var f : req.getFechasDetalle()) {
+	            var fecha = java.time.LocalDate.parse(f.getFecha());
+	            var bloque = BloqueTurno.valueOf(f.getBloque());
+
+	            nuevas.add(DetalleSolicitudTurnoFecha.builder()
+	                    .detalle(detalle)
+	                    .fecha(fecha)
+	                    .bloque(bloque)
+	                    .build());
+	        }
+	        detalleFechaRepository.saveAll(nuevas);
+	    }
+
+	    // 6) Recalcular totales (recargar con detalles para evitar colecciones desfasadas)
+	    SolicitudTurnoIpress solConDetalles = solicitudRepository.findByIdWithDetalles(idSolicitud)
+	            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+
+	    recalcularTotales(solConDetalles);
+	    solConDetalles.setUpdatedAt(OffsetDateTime.now());
+	    solicitudRepository.save(solConDetalles);
+
+	    // 7) Response
+	    var fechasGuardadas = detalleFechaRepository.findByDetalle_IdDetalleOrderByFechaAsc(detalle.getIdDetalle())
+	            .stream()
+	            .map(x -> DetalleSolicitudTurnoUpsertResponse.FechaDetalleResponse.builder()
+	                    .idDetalleFecha(x.getIdDetalleFecha())
+	                    .fecha(x.getFecha().toString())
+	                    .bloque(x.getBloque().name())
+	                    .build())
+	            .toList();
+
+	    return DetalleSolicitudTurnoUpsertResponse.builder()
+	            .idDetalle(detalle.getIdDetalle())
+	            .idSolicitud(idSolicitud)
+	            .idServicio(req.getIdServicio())
+	            .turnoTM(detalle.getTurnosTm())
+	            .turnoManana(detalle.getTurnosManana())
+	            .turnoTarde(detalle.getTurnosTarde())
+	            .tc(detalle.getTeleconsultorioActivo())
+	            .tl(detalle.getTeleconsultaActivo())
+	            .estado(detalle.getEstado())
+	            .fechasDetalle(fechasGuardadas)
+	            .build();
+	}
+	
+	@Override
+	@Transactional(readOnly = true)
+	public DetalleFechasResponse obtenerFechasDetalle(Long idDetalle) {
+
+	    // 1) Traer el detalle (para idServicio y nombreServicio)
+	    DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
+	            .orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
+
+	    // (Opcional) Validar propietario si quieres: que el detalle pertenezca al usuario actual
+	    // validarPropietario(detalle.getSolicitud());
+
+	    Long idServicio = detalle.getEspecialidad() != null ? detalle.getEspecialidad().getIdServicio() : null;
+	    String nombreServicio = detalle.getEspecialidad() != null ? detalle.getEspecialidad().getDescServicio() : null;
+
+	    // 2) Listar fechas del detalle
+	    var fechas = detalleFechaRepository.findByDetalle_IdDetalleOrderByFechaAsc(idDetalle)
+	            .stream()
+	            .map(f -> DetalleFechasResponse.FechaDetalle.builder()
+	                    .idDetalleFecha(f.getIdDetalleFecha())
+	                    .fecha(f.getFecha().toString())
+	                    .bloque(f.getBloque().name())
+	                    .build())
+	            .toList();
+
+	    // 3) Armar response
+	    return DetalleFechasResponse.builder()
+	            .idDetalle(detalle.getIdDetalle())
+	            .idServicio(idServicio)
+	            .nombreServicio(nombreServicio)
+	            .fechas(fechas)
+	            .build();
+	}
+
 
 }

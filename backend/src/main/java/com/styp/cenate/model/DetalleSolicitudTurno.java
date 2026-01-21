@@ -1,10 +1,30 @@
 package com.styp.cenate.model;
 
-import jakarta.persistence.*;
-import lombok.*;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.OffsetDateTime;
+import com.styp.cenate.model.solicitudturnoipress.DetalleSolicitudTurnoFecha;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.GeneratedValue;
+import jakarta.persistence.GenerationType;
+import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToMany;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 /**
  * Entidad que representa el detalle de turnos solicitados por especialidad.
@@ -82,6 +102,47 @@ public class DetalleSolicitudTurno {
     private Boolean requiere = false;
     
     /* FIN CAMPOS NUEVOS AGREGADOS*/
+    
+    
+    
+    
+    @Column(name = "turnos_tm", nullable = false)
+    @Builder.Default
+    private Integer turnosTm = 0; // JSON: turnoTM
+
+    @Column(name = "turnos_manana", nullable = false)
+    @Builder.Default
+    private Integer turnosManana = 0; // JSON: turnoManana
+
+    @Column(name = "turnos_tarde", nullable = false)
+    @Builder.Default
+    private Integer turnosTarde = 0; // JSON: turnoTarde
+
+    @Column(name = "teleconsultorio_activo", nullable = false)
+    @Builder.Default
+    private Boolean teleconsultorioActivo = false; // JSON: tc
+
+    @Column(name = "teleconsulta_activo", nullable = false)
+    @Builder.Default
+    private Boolean teleconsultaActivo = false; // JSON: tl
+
+    @Column(name = "estado", nullable = false, length = 30)
+    @Builder.Default
+    private String estado = "PENDIENTE";
+
+    // =========================
+    // RELACIÓN A FECHAS
+    // =========================
+    @OneToMany(mappedBy = "detalle", cascade = CascadeType.ALL, orphanRemoval = true)
+    @Builder.Default
+    private List<DetalleSolicitudTurnoFecha> fechasDetalle = new ArrayList<>();
+    
+    
+    
+    
+    
+    
+    
     
     
 

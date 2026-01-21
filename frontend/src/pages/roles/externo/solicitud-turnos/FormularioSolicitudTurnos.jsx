@@ -264,14 +264,21 @@ export default function FormularioSolicitudTurnos() {
       // EDITAR BORRADOR: Cargar detalles de la solicitud
       if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
         const registrosExistentes = solicitud.detalles.map((det) => ({
+          idDetalle: det.idDetalle || null,          // ID del detalle para ediciones
           idServicio: det.idServicio,
           turnoTM: det.turnoTM || 0,
           turnoManana: det.turnoManana || 0,
           turnoTarde: det.turnoTarde || 0,
           tc: det.tc !== undefined ? det.tc : true,
           tl: det.tl !== undefined ? det.tl : true,
-          fecha: det.fecha || null,
           estado: det.estado || "PENDIENTE",
+          // Cargar fechas específicas desde detalle_solicitud_turno_fecha
+          // det.fechasDetalle = [{fecha: "2026-01-21", bloque: "MANANA", turnos: 2}, ...]
+          fechas: (det.fechasDetalle || []).map(f => ({
+            fecha: f.fecha,
+            turno: f.bloque,                         // "MANANA" o "TARDE"
+            id: `${f.fecha}-${f.bloque}`
+          }))
         }));
         setRegistros(registrosExistentes);
       } else {
@@ -347,32 +354,51 @@ export default function FormularioSolicitudTurnos() {
   const buildPayload = () => {
     if (!periodoSeleccionado?.idPeriodo) return null;
 
-    // Nuevo formato: registros por especialidad con turnoTM, turnoManana, turnoTarde
-    const detalles = (registros || []).map((r) => ({
-      idServicio: r.idServicio,
-      requiere: true,
-      turnos: Number(r.turnoTM || 0) + Number(r.turnoManana || 0) + Number(r.turnoTarde || 0),
-      turnoTM: Number(r.turnoTM || 0),
-      turnoManana: Number(r.turnoManana || 0),
-      turnoTarde: Number(r.turnoTarde || 0),
-      tc: r.tc !== undefined ? r.tc : true,
-      tl: r.tl !== undefined ? r.tl : true,
-      mananaActiva: Number(r.turnoManana || 0) > 0,
-      tardeActiva: Number(r.turnoTarde || 0) > 0,
-      diasManana: Number(r.turnoManana || 0) > 0 ? ["Lun", "Mar", "Mié", "Jue", "Vie"] : [],
-      diasTarde: Number(r.turnoTarde || 0) > 0 ? ["Lun", "Mar", "Mié", "Jue", "Vie"] : [],
-      observacion: "",
-      fecha: r.fecha || null,
-      estado: r.estado || "PENDIENTE",
-    }));
+    // Estructura: Solicitud -> Detalles (por especialidad) -> Fechas (por detalle)
+    const detalles = (registros || []).map((r) => {
+      const turnoManana = Number(r.turnoManana || 0);
+      const turnoTarde = Number(r.turnoTarde || 0);
+      const turnoTM = Number(r.turnoTM || 0);
 
-    return {
-      payloadCompat: {
-        idPeriodo: periodoSeleccionado.idPeriodo,
-        idSolicitud: solicitudActual?.idSolicitud || null,
-        detalles,
-      },
-    };
+      // Array de fechas con bloques por cada especialidad/detalle
+      // La tabla detalle_solicitud_turno_fecha solo guarda (id_detalle, fecha, bloque)
+      // NO guarda cantidad de turnos - eso está en el detalle
+      const fechasDetalle = (r.fechas || []).map(f => ({
+        fecha: f.fecha,                                    // date
+        bloque: f.turno === "MANANA" ? "MANANA" : "TARDE" // 'MANANA' o 'TARDE'
+      }));
+
+      return {
+        idServicio: r.idServicio,           // FK a servicio_essi (especialidad)
+        idDetalle: r.idDetalle || null,     // si es edición, incluir el id_detalle existente
+        requiere: true,
+        turnos: turnoTM + turnoManana + turnoTarde,
+        turnoTM: turnoTM,
+        turnoManana: turnoManana,           // Cantidad de turnos mañana (a nivel detalle)
+        turnoTarde: turnoTarde,             // Cantidad de turnos tarde (a nivel detalle)
+        tc: r.tc !== undefined ? r.tc : true,
+        tl: r.tl !== undefined ? r.tl : true,
+        observacion: "",
+        estado: r.estado || "PENDIENTE",
+        // Array de fechas específicas para esta especialidad
+        // Backend las insertará en detalle_solicitud_turno_fecha(id_detalle, fecha, bloque)
+        fechasDetalle: fechasDetalle
+      };
+    });
+
+    // Si es nueva solicitud, incluir idPeriodo
+    // Si es edición, solo idSolicitud (el periodo ya está asociado)
+    const payload = solicitudActual?.idSolicitud
+      ? {
+          idSolicitud: solicitudActual.idSolicitud,
+          detalles
+        }
+      : {
+          idPeriodo: periodoSeleccionado.idPeriodo,
+          detalles
+        };
+
+    return { payloadCompat: payload };
   };
 
   // =====================================================================
@@ -397,16 +423,98 @@ export default function FormularioSolicitudTurnos() {
 
       const resultado = await solicitudTurnoService.guardarBorrador(payloadCompat);
 
+      // Actualizar estado de la solicitud con el resultado completo
       setSolicitudActual(resultado);
       setModoModal(resultado?.estado === "BORRADOR" ? "EDITAR" : "VER");
 
-      setSuccess("Borrador guardado exitosamente");
-      setTimeout(() => setSuccess(null), 2000);
+      // Si es una nueva solicitud (no tenía ID), actualizar periodo para bloquear cambios
+      if (!payloadCompat.idSolicitud && resultado?.idSolicitud) {
+        setPeriodoForzado(true);
+      }
+
+      setSuccess("Progreso guardado exitosamente");
+      setTimeout(() => setSuccess(null), 3000);
+      
+      // Refrescar la tabla de solicitudes en segundo plano
+      refrescarMisSolicitudes();
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Error al guardar borrador");
+      setError(err?.message || "Error al guardar el progreso");
     } finally {
       setSaving(false);
+    }
+  };
+
+  // Auto-guardar fechas cuando se confirman en el modal (guardado silencioso)
+  const handleAutoGuardarFechas = async (idServicio, fechasActualizadas) => {
+    // Solo auto-guardar si ya existe una solicitud
+    if (!solicitudActual?.idSolicitud || !periodoSeleccionado?.idPeriodo) {
+      console.warn("⚠️ No se puede auto-guardar: falta solicitud o periodo");
+      return;
+    }
+
+    // Buscar el detalle específico de la especialidad
+    const detalleEspecialidad = registros.find(r => r.idServicio === idServicio);
+    if (!detalleEspecialidad) {
+      console.warn("⚠️ No se encontró el detalle de la especialidad:", idServicio);
+      return;
+    }
+
+    try {
+      const turnoManana = Number(detalleEspecialidad.turnoManana || 0);
+      const turnoTarde = Number(detalleEspecialidad.turnoTarde || 0);
+      const turnoTM = Number(detalleEspecialidad.turnoTM || 0);
+
+      // Usar las fechas que se acaban de actualizar (parámetro) en lugar del estado
+      const fechasDetalle = (fechasActualizadas || []).map(f => ({
+        fecha: f.fecha,
+        bloque: f.turno === "MANANA" ? "MANANA" : "TARDE"
+      }));
+
+      console.log("📅 Fechas a guardar:", fechasDetalle);
+
+      const detallePayload = {
+        idServicio: detalleEspecialidad.idServicio,
+        requiere: true,
+        turnos: turnoTM + turnoManana + turnoTarde,
+        turnoTM: turnoTM,
+        turnoManana: turnoManana,
+        turnoTarde: turnoTarde,
+        tc: detalleEspecialidad.tc !== undefined ? detalleEspecialidad.tc : true,
+        tl: detalleEspecialidad.tl !== undefined ? detalleEspecialidad.tl : true,
+        observacion: detalleEspecialidad.observacion || "",
+        estado: detalleEspecialidad.estado || "PENDIENTE",
+        fechasDetalle: fechasDetalle
+      };
+
+      // Agregar idDetalle solo si existe (para actualización)
+      if (detalleEspecialidad.idDetalle) {
+        detallePayload.idDetalle = detalleEspecialidad.idDetalle;
+      }
+
+      console.log("📤 Enviando payload:", JSON.stringify(detallePayload, null, 2));
+
+      // Guardar solo este detalle
+      const resultado = await solicitudTurnoService.guardarDetalleEspecialidad(
+        solicitudActual.idSolicitud,
+        detallePayload
+      );
+      
+      console.log("✅ Respuesta del servidor:", resultado);
+      
+      // Actualizar el idDetalle en el registro local si es nuevo
+      if (!detalleEspecialidad.idDetalle && resultado?.idDetalle) {
+        setRegistros(prev => prev.map(r => 
+          r.idServicio === idServicio 
+            ? { ...r, idDetalle: resultado.idDetalle }
+            : r
+        ));
+      }
+      
+      console.log("✅ Fechas guardadas para especialidad:", idServicio, "- idDetalle:", resultado?.idDetalle);
+    } catch (err) {
+      console.error("❌ Error al auto-guardar fechas:", err);
+      // No mostrar error al usuario, es guardado en segundo plano
     }
   };
 
@@ -429,15 +537,26 @@ export default function FormularioSolicitudTurnos() {
     try {
       const { payloadCompat } = buildPayload();
 
+      // Primero guardar el borrador (crea o actualiza)
       const guardado = await solicitudTurnoService.guardarBorrador(payloadCompat);
+      
+      // Luego enviar la solicitud
       const enviado = await solicitudTurnoService.enviar(guardado.idSolicitud);
 
+      // Actualizar estado local
       setSolicitudActual(enviado);
       setModoModal("VER");
+      setPeriodoForzado(true);
+      
       setSuccess("Solicitud enviada exitosamente.");
+      
+      // Refrescar la tabla de solicitudes para mostrar el nuevo estado
+      await refrescarMisSolicitudes();
+      
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error(err);
-      setError(err?.message || "Error al enviar");
+      setError(err?.message || "Error al enviar la solicitud");
     } finally {
       setSaving(false);
     }
@@ -560,15 +679,6 @@ export default function FormularioSolicitudTurnos() {
                   <RefreshCw className="w-4 h-4" />
                 )}
                 Actualizar
-              </button>
-
-              <button
-                type="button"
-                onClick={abrirNuevaSolicitud}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-bold shadow hover:shadow-lg flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Nueva solicitud
               </button>
             </div>
           </div>
@@ -857,6 +967,7 @@ export default function FormularioSolicitudTurnos() {
                     periodo={periodoSeleccionado}
                     registros={registros}
                     onChange={(nuevosRegistros) => setRegistros(nuevosRegistros)}
+                    onAutoGuardarFechas={handleAutoGuardarFechas}
                     soloLectura={false}
                     mostrarEncabezado={false}
                   />
@@ -879,7 +990,7 @@ export default function FormularioSolicitudTurnos() {
                           className="px-5 py-2.5 border-2 border-[#0A5BA9] text-[#0A5BA9] font-semibold rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
                         >
                           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
-                          Guardar Borrador
+                          Guardar Progreso
                         </button>
 
                         <button
