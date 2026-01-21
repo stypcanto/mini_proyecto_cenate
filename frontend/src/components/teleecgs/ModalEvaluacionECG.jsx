@@ -264,22 +264,7 @@ export default function ModalEvaluacionECG({
       const activeElement = document.activeElement;
       const isTypingInField = activeElement?.tagName === "TEXTAREA" || activeElement?.tagName === "INPUT";
 
-      if (e.key === "n" || e.key === "N") {
-        if (!isTypingInField) {
-          setEvaluacion("NORMAL");
-          setActiveTab("evaluar");
-        }
-      } else if (e.key === "a" || e.key === "A") {
-        if (!isTypingInField) {
-          setEvaluacion("ANORMAL");
-          setActiveTab("evaluar");
-        }
-      } else if (e.key === "d" || e.key === "D") {
-        if (!isTypingInField) {
-          setEvaluacion("NO_DIAGNOSTICO");
-          setActiveTab("evaluar");
-        }
-      } else if (e.key === "ArrowLeft") {
+      if (e.key === "ArrowLeft") {
         if (!isTypingInField) irImagenAnterior();
       } else if (e.key === "ArrowRight") {
         if (!isTypingInField) irImagenSiguiente();
@@ -383,9 +368,9 @@ export default function ModalEvaluacionECG({
         return;
       }
 
-      // 1️⃣ Guardar evaluación
-      await onConfirm(evaluacion, observacionesEval.trim() || "", idImagen);
-      toast.success(`✅ Evaluación guardada como ${evaluacion}`);
+      // 1️⃣ Guardar evaluación (observacionesEval ahora contiene la evaluación libre)
+      await onConfirm(observacionesEval.trim(), observacionesEval.trim(), idImagen);
+      toast.success(`✅ Evaluación guardada exitosamente`);
 
       // 2️⃣ Guardar Nota Clínica (si hay datos)
       if (hallazgos && Object.values(hallazgos).some(v => v === true)) {
@@ -648,7 +633,7 @@ export default function ModalEvaluacionECG({
 
                 {/* Atajos */}
                 <p className="text-xs text-gray-500 mt-2 mb-3">
-                  ⌨️ Atajos: N=Normal • A=Anormal • D=No Diagnóstico • ←→=Imágenes • +/-=Zoom • R=Rotar • I=Invertir • F=Filtros • 0=Reset • E=Fullscreen • Tab=Siguiente
+                  ⌨️ Atajos: ←→=Imágenes • +/-=Zoom • R=Rotar • I=Invertir • F=Filtros • 0=Reset • E=Fullscreen • Tab=Siguiente
                 </p>
 
                 {/* Panel de filtros colapsable - Posicionado aquí para mejor layout */}
@@ -842,80 +827,33 @@ export default function ModalEvaluacionECG({
           {activeTab === "evaluar" && (
             <div className="max-w-2xl">
               <div className="space-y-6">
-                {/* Selección Resultado */}
+                {/* Evaluación y Observaciones - Campo unificado libre */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-800 mb-3">
-                    Resultado del ECG * <span className="text-xs text-gray-600">(N/A/D)</span>
+                  <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
+                    📝 Evaluación Médica del ECG *
                   </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    <button
-                      onClick={() => setEvaluacion("NORMAL")}
-                      className={`py-3 px-4 rounded-lg font-semibold transition-all ${
-                        evaluacion === "NORMAL"
-                          ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg scale-105 hover:from-emerald-600 hover:to-green-700"
-                          : "bg-gray-200 text-gray-800 hover:bg-gray-300 shadow-sm"
-                      }`}
-                      title="Tecla: N"
-                    >
-                      ✓ NORMAL
-                    </button>
-                    <button
-                      onClick={() => setEvaluacion("ANORMAL")}
-                      className={`py-3 px-4 rounded-lg font-semibold transition-all ${
-                        evaluacion === "ANORMAL"
-                          ? "bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg scale-105 hover:from-rose-700 hover:to-red-700"
-                          : "bg-gray-200 text-gray-800 hover:bg-gray-300 shadow-sm"
-                      }`}
-                      title="Tecla: A"
-                    >
-                      ⚠️ ANORMAL
-                    </button>
-                    <button
-                      onClick={() => setEvaluacion("NO_DIAGNOSTICO")}
-                      className={`py-3 px-4 rounded-lg font-semibold transition-all ${
-                        evaluacion === "NO_DIAGNOSTICO"
-                          ? "bg-gradient-to-r from-orange-600 to-red-700 text-white shadow-lg scale-105 hover:from-orange-700 hover:to-red-800"
-                          : "bg-gray-200 text-gray-800 hover:bg-gray-300 shadow-sm"
-                      }`}
-                      title="Tecla: D"
-                    >
-                      ⚠️ NO DIAGNÓSTICO
-                    </button>
-                  </div>
-                </div>
-
-                {/* Observaciones de evaluación */}
-                <div>
-                  <label className="block text-sm font-bold text-gray-800 mb-2">
-                    Observaciones (Opcional)
-                  </label>
-                  <p className="text-xs text-gray-600 mb-2">
-                    Ritmo, frecuencia, cambios ST, etc.
+                  <p className="text-xs text-gray-600 mb-3">
+                    Escribe tu evaluación completa: diagnóstico, interpretación, hallazgos relevantes, etc.
                   </p>
                   <textarea
                     ref={textareaEvalRef}
                     value={observacionesEval}
                     onChange={(e) =>
-                      setObservacionesEval(e.target.value.slice(0, 1000))
+                      setObservacionesEval(e.target.value)
                     }
-                    placeholder="Ej: Ritmo sinusal regular, 72 bpm, sin cambios agudos..."
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                    rows="5"
+                    placeholder="Ej: ECG dentro de los límites normales. Ritmo sinusal regular a 72 bpm. Eje normal. Intervalo PR normal. Duración QRS normal. Segmentos ST sin cambios. Sin signos de isquemia miocárdica. Recomendación: Seguimiento clínico rutinario..."
+                    className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical font-medium"
+                    rows="10"
                   />
-                  <p className="text-xs text-gray-600 mt-1">
-                    {observacionesEval.length}/1000 caracteres
+                  <p className="text-xs text-gray-600 mt-2">
+                    <span className="font-semibold">{observacionesEval.length}</span> caracteres (sin límite)
                   </p>
                 </div>
 
-                {/* Confirmación */}
+                {/* Info */}
                 <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-sm font-semibold text-blue-900">
-                    ✓ Evaluación seleccionada: <span className="text-lg">
-                      {evaluacion === "NORMAL" && "✓ NORMAL"}
-                      {evaluacion === "ANORMAL" && "⚠️ ANORMAL"}
-                      {evaluacion === "NO_DIAGNOSTICO" && "❓ NO DIAGNÓSTICO"}
-                      {!evaluacion && "—"}
-                    </span>
+                  <p className="text-sm text-blue-900">
+                    ℹ️ <span className="font-semibold">Escribe libremente</span> tu análisis completo del ECG. Incluye diagnóstico, interpretación de hallazgos, cambios detectados y recomendaciones clínicas.
                   </p>
                 </div>
               </div>
@@ -1192,7 +1130,7 @@ export default function ModalEvaluacionECG({
             {activeTab === "nota" && (
               <button
                 onClick={handleGuardar}
-                disabled={loading || !evaluacion}
+                disabled={loading || !observacionesEval.trim()}
                 className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2"
               >
                 ✓ Guardar Evaluación

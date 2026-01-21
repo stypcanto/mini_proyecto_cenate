@@ -10,6 +10,82 @@
 
 ---
 
+## v1.25.0 (2026-01-21) - 📝 Evaluación Médica Libre: Campo de Texto Flexible para Análisis Completo
+
+### 🎯 Descripción
+
+**Eliminación de la dicotomía Normal/Anormal y migración a evaluación de texto libre** para permitir al médico escribir su análisis completo del ECG sin restricciones.
+
+**Cambios principales**:
+1. ✅ **Removidas opciones de botones** (NORMAL/ANORMAL/NO DIAGNÓSTICO)
+2. ✅ **Campo de evaluación libre** para escribir análisis completo
+3. ✅ **Sin límite de caracteres práctico** (hasta 5000 caracteres)
+4. ✅ **Validación flexible** mínimo 10 caracteres para asegurar contenido significativo
+5. ✅ **Backend actualizado** para aceptar evaluaciones de texto libre
+
+**Estado**: ✅ **COMPLETADO**
+
+### 📋 Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `ModalEvaluacionECG.jsx` | Removidas opciones dicotómicas, campo de texto libre |
+| `EvaluacionECGDTO.java` | Validación actualizada (10-5000 caracteres) |
+| `changelog.md` | v1.25.0 documentado |
+
+### 🚀 Nuevas Características
+
+#### 1. Evaluación de Texto Libre
+- **Campo unificado**: Una sola área de texto para evaluación completa
+- **Placeholder guía**: Ejemplo de evaluación médica profesional
+- **Flexible**: Permite cualquier tipo de análisis (Normal, Anormal, descriptivo, etc.)
+
+#### 2. Validación
+- **Mínimo**: 10 caracteres (asegura contenido significativo)
+- **Máximo**: 5000 caracteres (suficiente para evaluación detallada)
+- **Sin restricción de formato**: Cualquier texto es válido
+
+#### 3. Atajos de Teclado Actualizados
+- Removidos: `N`, `A`, `D` (no son relevantes con texto libre)
+- Mantenidos: `←→`, `+/-`, `R`, `I`, `F`, `0`, `E`, `Tab`
+
+### 💾 Backend
+
+**EvaluacionECGDTO.java**:
+```java
+@Size(min = 10, max = 5000, message = "Evaluación debe tener entre 10 y 5000 caracteres")
+private String evaluacion;
+```
+
+**Cambio**:
+- Antes: max = 20 caracteres (limitado a NORMAL/ANORMAL)
+- Ahora: max = 5000 caracteres (evaluación completa)
+
+### 🎨 UX
+
+**Tab de Evaluación (EVALUAR)**:
+- Instrucción clara: "Escribe tu evaluación completa: diagnóstico, interpretación, hallazgos relevantes, etc."
+- Placeholder con ejemplo profesional
+- Contador de caracteres (sin límite visual)
+- Área de texto expandible (rows="10")
+
+### ✅ Testing
+
+- ✅ Frontend: BUILD SUCCESSFUL
+- ✅ Backend: BUILD SUCCESSFUL (0 errores)
+- ✅ Validación: mínimo 10 caracteres funciona
+- ✅ Escritura libre: sin restricciones de contenido
+- ✅ Guardado: EvaluacionECGDTO valida correctamente
+
+### 📊 Beneficios Clínicos
+
+1. **Flexibilidad**: Médico escribe su evaluación profesional sin restricciones
+2. **Documentación**: Mejor registros para auditoría y referencia
+3. **Inteligencia**: Los datos se pueden usar para análisis ML con más contexto
+4. **UX**: Una sola caja de texto, sin confusión de botones
+
+---
+
 ## v1.24.0 (2026-01-21) - 🖥️ Visualizador ECG Fullscreen: Pantalla Completa con Zoom Ilimitado
 
 ### 🎯 Descripción
