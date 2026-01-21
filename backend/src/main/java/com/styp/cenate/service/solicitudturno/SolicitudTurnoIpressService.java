@@ -10,6 +10,7 @@ import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoEstadoResponse;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressBorradorRequest;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
 
 /**
@@ -106,16 +107,12 @@ public interface SolicitudTurnoIpressService {
 	 * Rechazar solicitud (solo coordinador)
 	 */
 	SolicitudTurnoEstadoResponse rechazarSolicitud(Long idSolicitud, String motivo);
-	
-	
+
 	DetalleSolicitudTurnoUpsertResponse upsertDetalle(Long idSolicitud, DetalleSolicitudTurnoUpsertRequest request);
 
-	
 	DetalleFechasResponse obtenerFechasDetalle(Long idDetalle);
 
-	
 	SolicitudTurnoDetalleFullResponse obtenerPorIdFull(Long id);
 
-	
-
+	SolicitudTurnoIpressResponse guardarBorradorDesdeFrontend(SolicitudTurnoIpressBorradorRequest request);
 }

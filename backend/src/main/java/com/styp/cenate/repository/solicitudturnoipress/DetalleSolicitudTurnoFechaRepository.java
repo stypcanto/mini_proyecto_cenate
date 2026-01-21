@@ -15,6 +15,8 @@ public interface DetalleSolicitudTurnoFechaRepository extends JpaRepository<Deta
     
    
     long countByDetalle_IdDetalle(Long idDetalle);
+    void deleteByDetalle_IdDetalleIn(List<Long> ids);
+
 
 
 }

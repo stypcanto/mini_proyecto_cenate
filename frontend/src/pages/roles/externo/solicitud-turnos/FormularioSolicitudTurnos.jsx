@@ -45,6 +45,7 @@ import { solicitudTurnoService } from "../../../../services/solicitudTurnoServic
 import Modal from "./components/Modal";
 import PeriodoDetalleCard from "./components/PeriodoDetalleCard";
 import TablaSolicitudEspecialidades from "./components/TablaSolicitudEspecialidades";
+import VistaSolicitudEnviada from "./components/VistaSolicitudEnviada";
 
 // Utilidades
 import { formatFecha, getYearFromPeriodo, estadoBadgeClass } from "./utils/helpers";
@@ -354,49 +355,73 @@ export default function FormularioSolicitudTurnos() {
   const buildPayload = () => {
     if (!periodoSeleccionado?.idPeriodo) return null;
 
-    // Estructura: Solicitud -> Detalles (por especialidad) -> Fechas (por detalle)
-    const detalles = (registros || []).map((r) => {
+    // Estructura: Solicitud -> Detalles (por especialidad)
+    // Las fechas se guardan con su propio endpoint (handleAutoGuardarFechas)
+    const todosLosDetalles = (registros || []).map((r) => {
       const turnoManana = Number(r.turnoManana || 0);
       const turnoTarde = Number(r.turnoTarde || 0);
       const turnoTM = Number(r.turnoTM || 0);
-
-      // Array de fechas con bloques por cada especialidad/detalle
-      // La tabla detalle_solicitud_turno_fecha solo guarda (id_detalle, fecha, bloque)
-      // NO guarda cantidad de turnos - eso está en el detalle
-      const fechasDetalle = (r.fechas || []).map(f => ({
-        fecha: f.fecha,                                    // date
-        bloque: f.turno === "MANANA" ? "MANANA" : "TARDE" // 'MANANA' o 'TARDE'
-      }));
+      const totalTurnos = turnoTM + turnoManana + turnoTarde;
 
       return {
         idServicio: r.idServicio,           // FK a servicio_essi (especialidad)
         idDetalle: r.idDetalle || null,     // si es edición, incluir el id_detalle existente
-        requiere: true,
-        turnos: turnoTM + turnoManana + turnoTarde,
+        requiere: totalTurnos > 0,          // false si el usuario ya no desea esta especialidad
+        turnos: totalTurnos,
         turnoTM: turnoTM,
         turnoManana: turnoManana,           // Cantidad de turnos mañana (a nivel detalle)
         turnoTarde: turnoTarde,             // Cantidad de turnos tarde (a nivel detalle)
         tc: r.tc !== undefined ? r.tc : true,
         tl: r.tl !== undefined ? r.tl : true,
         observacion: "",
-        estado: r.estado || "PENDIENTE",
-        // Array de fechas específicas para esta especialidad
-        // Backend las insertará en detalle_solicitud_turno_fecha(id_detalle, fecha, bloque)
-        fechasDetalle: fechasDetalle
+        estado: r.estado || "PENDIENTE"
       };
     });
 
-    // Si es nueva solicitud, incluir idPeriodo
-    // Si es edición, solo idSolicitud (el periodo ya está asociado)
-    const payload = solicitudActual?.idSolicitud
-      ? {
-          idSolicitud: solicitudActual.idSolicitud,
-          detalles
-        }
-      : {
-          idPeriodo: periodoSeleccionado.idPeriodo,
-          detalles
-        };
+    console.log("🔍 ========== DEBUG PAYLOAD ==========");
+    console.log("📋 TODOS los registros (estado actual):");
+    registros.forEach(r => {
+      const total = Number(r.turnoTM || 0) + Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
+      console.log(`  - idServicio: ${r.idServicio}, idDetalle: ${r.idDetalle}, TM: ${r.turnoTM}, Mañana: ${r.turnoManana}, Tarde: ${r.turnoTarde}, TOTAL: ${total}`);
+    });
+
+    // Separar especialidades según estado de turnos
+    const detallesConTurnos = todosLosDetalles.filter(d => d.turnos > 0);
+    
+    // Especialidades que tenían datos en BD pero el usuario ya no quiere (turnos = 0 Y tiene idDetalle)
+    const detallesAEliminar = todosLosDetalles.filter(d => {
+      const esParaEliminar = d.turnos === 0 && d.idDetalle !== null && d.idDetalle !== undefined;
+      if (d.turnos === 0) {
+        console.log(`  🔎 Evaluando eliminación - idServicio: ${d.idServicio}, idDetalle: ${d.idDetalle}, turnos: ${d.turnos}, esParaEliminar: ${esParaEliminar}`);
+      }
+      return esParaEliminar;
+    });
+
+    console.log("📊 Especialidades con turnos > 0:", detallesConTurnos.map(d => ({ idServicio: d.idServicio, idDetalle: d.idDetalle, turnos: d.turnos })));
+    console.log("🗑️ Especialidades a eliminar (turnos=0 Y con idDetalle):", detallesAEliminar.map(d => ({ idServicio: d.idServicio, idDetalle: d.idDetalle })));
+    console.log("=====================================");
+
+    // Calcular totales solo de especialidades con turnos
+    const totalTurnosSolicitados = detallesConTurnos.reduce((sum, d) => sum + d.turnos, 0);
+    const totalEspecialidades = detallesConTurnos.length;
+
+    // IDs de detalles a eliminar en backend
+    const detallesEliminar = detallesAEliminar.map(d => d.idDetalle).filter(Boolean);
+
+    // Siempre incluir idPeriodo (requerido por backend)
+    // Si es edición, también incluir idSolicitud
+    const payload = {
+      idPeriodo: periodoSeleccionado.idPeriodo,
+      totalTurnosSolicitados,
+      totalEspecialidades,
+      detalles: detallesConTurnos,  // Solo especialidades con turnos > 0
+      detallesEliminar               // IDs de especialidades que tenían datos pero ahora turnos = 0
+    };
+
+    // Agregar idSolicitud solo si es edición
+    if (solicitudActual?.idSolicitud) {
+      payload.idSolicitud = solicitudActual.idSolicitud;
+    }
 
     return { payloadCompat: payload };
   };
@@ -406,11 +431,7 @@ export default function FormularioSolicitudTurnos() {
   // =====================================================================
   const handleGuardarBorrador = async () => {
     if (!periodoSeleccionado?.idPeriodo) {
-      setError("No hay periodo seleccionado.");
-      return;
-    }
-    if (registros.length === 0) {
-      setError("Registra al menos un turno antes de guardar.");
+      setError("Debes seleccionar un periodo antes de guardar.");
       return;
     }
 
@@ -420,6 +441,10 @@ export default function FormularioSolicitudTurnos() {
 
     try {
       const { payloadCompat } = buildPayload();
+
+      console.log("💾 ============ GUARDAR PROGRESO ============");
+      console.log("📦 Payload completo:", JSON.stringify(payloadCompat, null, 2));
+      console.log("=============================================");
 
       const resultado = await solicitudTurnoService.guardarBorrador(payloadCompat);
 
@@ -432,8 +457,24 @@ export default function FormularioSolicitudTurnos() {
         setPeriodoForzado(true);
       }
 
+      // Si el resultado incluye detalles con idDetalle, actualizar registros locales
+      if (resultado?.detalles?.length > 0) {
+        setRegistros(prev => prev.map(r => {
+          const detalleBackend = resultado.detalles.find(d => d.idServicio === r.idServicio);
+          if (detalleBackend?.idDetalle) {
+            return { ...r, idDetalle: detalleBackend.idDetalle };
+          }
+          return r;
+        }));
+      }
+
       setSuccess("Progreso guardado exitosamente");
       setTimeout(() => setSuccess(null), 3000);
+      
+      // Recargar detalle completo de la solicitud guardada
+      if (resultado?.idSolicitud) {
+        await abrirSolicitudDesdeTabla(resultado);
+      }
       
       // Refrescar la tabla de solicitudes en segundo plano
       refrescarMisSolicitudes();
@@ -553,7 +594,9 @@ export default function FormularioSolicitudTurnos() {
       // Refrescar la tabla de solicitudes para mostrar el nuevo estado
       await refrescarMisSolicitudes();
       
-      setTimeout(() => setSuccess(null), 3000);
+      // Cerrar modal inmediatamente
+      setOpenFormModal(false);
+      setSuccess(null);
     } catch (err) {
       console.error(err);
       setError(err?.message || "Error al enviar la solicitud");
@@ -925,30 +968,9 @@ export default function FormularioSolicitudTurnos() {
             </div>
           )}
 
-          {/* VER (solo lectura) */}
-          {esSoloLectura && (
-            <div className="bg-slate-100 rounded-2xl p-6 text-center">
-              <CheckCircle2 className="w-12 h-12 mx-auto mb-3 text-green-600" />
-              <h3 className="text-lg font-bold text-slate-800 mb-2">
-                Solicitud{" "}
-                {solicitudActual?.estado === "REVISADO"
-                  ? "Revisada"
-                  : solicitudActual?.estado === "APROBADA"
-                  ? "Aprobada"
-                  : solicitudActual?.estado === "RECHAZADA"
-                  ? "Rechazada"
-                  : "Enviada"}
-              </h3>
-              <p className="text-slate-600">
-                {solicitudActual?.estado === "RECHAZADA"
-                  ? "Tu solicitud fue rechazada. Revisa el motivo y genera una nueva solicitud si corresponde."
-                  : solicitudActual?.estado === "APROBADA"
-                  ? "Tu solicitud fue aprobada."
-                  : solicitudActual?.estado === "REVISADO"
-                  ? "Tu solicitud ha sido revisada por el coordinador."
-                  : "Tu solicitud ha sido enviada y está pendiente de revisión."}
-              </p>
-            </div>
+          {/* VER (solo lectura) - Vista completa de la solicitud */}
+          {esSoloLectura && solicitudActual && (
+            <VistaSolicitudEnviada solicitud={solicitudActual} />
           )}
 
           {/* EDITAR/NUEVA: Nueva interfaz de tabla */}
@@ -984,15 +1006,14 @@ export default function FormularioSolicitudTurnos() {
                       </div>
 
                       <div className="flex gap-3">
-                        {/* TODO: Botón Guardar Progreso - Por implementar */}
-                        {/* <button
+                        <button
                           onClick={handleGuardarBorrador}
-                          disabled={saving || registros.length === 0}
+                          disabled={saving}
                           className="px-5 py-2.5 border-2 border-[#0A5BA9] text-[#0A5BA9] font-semibold rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
                         >
                           {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
                           Guardar Progreso
-                        </button> */}
+                        </button>
 
                         <button
                           onClick={handleEnviar}

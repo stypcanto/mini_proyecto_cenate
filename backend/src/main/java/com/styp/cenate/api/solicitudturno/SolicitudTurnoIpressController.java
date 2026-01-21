@@ -24,6 +24,7 @@ import com.styp.cenate.dto.solicitudturno.DetalleFechasResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressBorradorRequest;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
 import com.styp.cenate.service.solicitudturno.SolicitudTurnoIpressService;
 
@@ -148,25 +149,28 @@ public class SolicitudTurnoIpressController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
+
 	/**
 	 * Guarda como borrador (crea o actualiza)
 	 */
+
 	@PostMapping("/borrador")
 	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
 	public ResponseEntity<SolicitudTurnoIpressResponse> guardarBorrador(
-			@Valid @RequestBody SolicitudTurnoIpressRequest request) {
-		log.info("Datos del borrador : {}", request.toString());
-		log.info("Guardando borrador para periodo: {}", request.getIdPeriodo());
-		SolicitudTurnoIpressResponse response = solicitudService.guardarBorrador(request);
-		return ResponseEntity.ok(response);
-	}
+	        @Valid @RequestBody SolicitudTurnoIpressBorradorRequest request) {
 
+	    log.info("Datos del borrador : {}", request);
+	    return ResponseEntity.ok(solicitudService.guardarBorradorDesdeFrontend(request));
+	}
+	
+	
+	
 	/**
 	 * Actualiza una solicitud existente
 	 */
 	@PutMapping("/{id}")
 	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
-	public ResponseEntity<SolicitudTurnoIpressResponse> actualizar(@PathVariable Long id,
+	public ResponseEntity<SolicitudTurnoIpressResponse> actualizar(@PathVariable("id") Long id,
 			@Valid @RequestBody SolicitudTurnoIpressRequest request) {
 		log.info("Actualizando solicitud con ID: {}", id);
 		return ResponseEntity.ok(solicitudService.actualizar(id, request));
@@ -181,7 +185,7 @@ public class SolicitudTurnoIpressController {
 	 */
 	@PutMapping("/{id}/enviar")
 	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
-	public ResponseEntity<SolicitudTurnoIpressResponse> enviar(@PathVariable Long id) {
+	public ResponseEntity<SolicitudTurnoIpressResponse> enviar(@PathVariable("id") Long id) {
 		log.info("Enviando solicitud con ID: {}", id);
 		return ResponseEntity.ok(solicitudService.enviar(id));
 	}
@@ -191,7 +195,7 @@ public class SolicitudTurnoIpressController {
 	 */
 	@PutMapping("/{id}/revisar")
 	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
-	public ResponseEntity<SolicitudTurnoIpressResponse> marcarRevisada(@PathVariable Long id) {
+	public ResponseEntity<SolicitudTurnoIpressResponse> marcarRevisada(@PathVariable("id") Long id) {
 		log.info("Marcando solicitud como revisada, ID: {}", id);
 		return ResponseEntity.ok(solicitudService.marcarRevisada(id));
 	}
@@ -205,7 +209,7 @@ public class SolicitudTurnoIpressController {
 	 */
 	@DeleteMapping("/{id}")
 	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'EXTERNO')")
-	public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+	public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
 		log.info("Eliminando solicitud con ID: {}", id);
 		solicitudService.eliminar(id);
 		return ResponseEntity.noContent().build();

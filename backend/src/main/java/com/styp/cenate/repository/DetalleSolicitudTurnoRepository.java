@@ -103,9 +103,9 @@ public interface DetalleSolicitudTurnoRepository extends JpaRepository<DetalleSo
     
     
     
-    
-    
-    
+    long countBySolicitud_IdSolicitudAndIdDetalleIn(Long idSolicitud, List<Long> ids);
+
+    void deleteByIdDetalleIn(List<Long> ids);
     
     
     

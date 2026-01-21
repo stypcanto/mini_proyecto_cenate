@@ -1,6 +1,6 @@
 import React from "react";
-import { Calendar, Lock } from "lucide-react";
-import { formatFecha } from "../utils/helpers";
+import { Calendar, Lock, FileText, TrendingUp, Users } from "lucide-react";
+import { formatFecha, estadoBadgeClass } from "../utils/helpers";
 
 /**
  * =======================================================================
@@ -9,60 +9,94 @@ import { formatFecha } from "../utils/helpers";
  */
 export default function PeriodoDetalleCard({ periodo, solicitud, modoModal, periodoForzado }) {
   const estado = solicitud?.estado || (modoModal === "NUEVA" ? "BORRADOR" : "—");
+  const totalTurnos = solicitud?.totalTurnosSolicitados || 0;
+  const totalEspecialidades = solicitud?.totalEspecialidades || 0;
 
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-      <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-        <Calendar className="w-5 h-5 text-[#0A5BA9]" />
-        Periodo y Estado
-      </h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+          <Calendar className="w-5 h-5 text-[#0A5BA9]" />
+          Periodo y Estado
+        </h2>
+        
+        {solicitud?.idSolicitud && (
+          <div className="text-sm text-slate-500">
+            Solicitud #{solicitud.idSolicitud}
+          </div>
+        )}
+      </div>
 
       <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <div className="text-xs text-slate-500">Periodo</div>
-            <div className="text-lg font-bold text-slate-900">{periodo?.descripcion || "—"}</div>
-            <div className="text-sm text-slate-600 mt-1">
-              Código: <strong>{periodo?.periodo || "—"}</strong> · ID Periodo:{" "}
-              <strong>{periodo?.idPeriodo ?? "—"}</strong>
+        <div className="flex items-start justify-between gap-3 mb-4">
+          <div className="flex-1">
+            <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Periodo</div>
+            <div className="text-xl font-bold text-slate-900 mb-2">{periodo?.descripcion || "—"}</div>
+            <div className="text-sm text-slate-600">
+              Código: <strong className="text-slate-800">{periodo?.periodo || "—"}</strong> · ID Periodo:{" "}
+              <strong className="text-slate-800">{periodo?.idPeriodo ?? "—"}</strong>
             </div>
           </div>
 
-          <span className="inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold border border-amber-200 bg-amber-50 text-amber-800">
-            <Lock className="w-4 h-4" />
-            {periodoForzado ? "Periodo fijo" : "Bloqueado"}
-          </span>
+          <div className="flex flex-col gap-2 items-end">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${estadoBadgeClass(estado)}`}>
+              {estado}
+            </span>
+            {periodoForzado && (
+              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border border-amber-200 bg-amber-50 text-amber-800">
+                <Lock className="w-3.5 h-3.5" />
+                Periodo fijo
+              </span>
+            )}
+          </div>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+        {/* Estadísticas de la solicitud */}
+        {(totalTurnos > 0 || totalEspecialidades > 0) && (
+          <div className="grid grid-cols-2 gap-3 mb-4">
+            <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
+              <div className="flex items-center gap-2 mb-2">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <div className="text-xs font-semibold text-blue-600 uppercase">Total Turnos</div>
+              </div>
+              <div className="text-3xl font-bold text-blue-700">{totalTurnos}</div>
+            </div>
+
+            <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
+              <div className="flex items-center gap-2 mb-2">
+                <Users className="w-4 h-4 text-purple-600" />
+                <div className="text-xs font-semibold text-purple-600 uppercase">Especialidades</div>
+              </div>
+              <div className="text-3xl font-bold text-purple-700">{totalEspecialidades}</div>
+            </div>
+          </div>
+        )}
+
+        {/* Fechas */}
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500">Estado</div>
-            <div className="font-bold text-slate-900">{estado}</div>
+            <div className="text-xs text-slate-500 mb-1">Fecha inicio</div>
+            <div className="font-semibold text-slate-800 text-sm">{formatFecha(periodo?.fechaInicio)}</div>
           </div>
 
           <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500">Fecha inicio</div>
-            <div className="font-semibold text-slate-800">{formatFecha(periodo?.fechaInicio)}</div>
+            <div className="text-xs text-slate-500 mb-1">Fecha fin</div>
+            <div className="font-semibold text-slate-800 text-sm">{formatFecha(periodo?.fechaFin)}</div>
           </div>
 
           <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500">Fecha fin</div>
-            <div className="font-semibold text-slate-800">{formatFecha(periodo?.fechaFin)}</div>
+            <div className="text-xs text-slate-500 mb-1">Fecha creación</div>
+            <div className="font-semibold text-slate-800 text-sm">{formatFecha(solicitud?.fechaCreacion || solicitud?.createdAt)}</div>
           </div>
 
           <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500">Fecha creación</div>
-            <div className="font-semibold text-slate-800">{formatFecha(solicitud?.createdAt)}</div>
+            <div className="text-xs text-slate-500 mb-1">Fecha actualización</div>
+            <div className="font-semibold text-slate-800 text-sm">{formatFecha(solicitud?.fechaActualizacion || solicitud?.updatedAt)}</div>
           </div>
 
           <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500">Fecha actualización</div>
-            <div className="font-semibold text-slate-800">{formatFecha(solicitud?.updatedAt)}</div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500">Fecha envío</div>
-            <div className="font-semibold text-slate-800">{formatFecha(solicitud?.fechaEnvio)}</div>
+            <div className="text-xs text-slate-500 mb-1">Fecha envío</div>
+            <div className="font-semibold text-slate-800 text-sm">{formatFecha(solicitud?.fechaEnvio) || "—"}</div>
           </div>
         </div>
       </div>

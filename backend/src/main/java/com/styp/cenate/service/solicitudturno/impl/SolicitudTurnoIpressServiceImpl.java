@@ -1,5 +1,6 @@
 package com.styp.cenate.service.solicitudturno.impl;
 
+
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -19,6 +20,7 @@ import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoEstadoResponse;
+import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressBorradorRequest;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
 import com.styp.cenate.enumd.BloqueTurno;
 import com.styp.cenate.mapper.solicitudturno.SolicitudTurnoEstadoMapper;
@@ -799,6 +801,163 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 				.nombreUsuarioCreador(per != null ? per.getNombreCompleto() : null)
 
 				.detalles(detalles).build();
+	}
+
+	@Transactional
+	public SolicitudTurnoIpressResponse guardarBorradorDesdeFrontend(SolicitudTurnoIpressBorradorRequest request) {
+
+		   PersonalCnt personal = obtenerPersonalActual();
+
+		    if (request.getIdPeriodo() == null) {
+		        throw new RuntimeException("idPeriodo es obligatorio");
+		    }
+
+		    // 1) Obtener o crear cabecera
+		    SolicitudTurnoIpress solicitud;
+
+		    if (request.getIdSolicitud() != null) {
+		        solicitud = solicitudRepository.findById(request.getIdSolicitud())
+		                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + request.getIdSolicitud()));
+
+		        validarPropietarioOCoordinador(solicitud);
+
+		        if (solicitud.getPeriodo() == null
+		                || !request.getIdPeriodo().equals(solicitud.getPeriodo().getIdPeriodo())) {
+		            throw new RuntimeException("El idPeriodo no coincide con la solicitud enviada");
+		        }
+
+		    } else {
+		        solicitud = solicitudRepository
+		                .findByPeriodoIdPeriodoAndPersonalIdPers(request.getIdPeriodo(), personal.getIdPers())
+		                .orElseGet(() -> {
+		                    PeriodoSolicitudTurno periodo = periodoRepository.findById(request.getIdPeriodo())
+		                            .orElseThrow(() -> new RuntimeException("Periodo no encontrado: " + request.getIdPeriodo()));
+
+		                    if (!periodo.isActivo()) {
+		                        throw new RuntimeException("El periodo no está activo");
+		                    }
+
+		                    SolicitudTurnoIpress s = SolicitudTurnoIpress.builder()
+		                            .periodo(periodo)
+		                            .personal(personal)
+		                            .estado("BORRADOR")
+		                            .totalEspecialidades(0)
+		                            .totalTurnosSolicitados(0)
+		                            .build();
+
+		                    s.setUpdatedAt(OffsetDateTime.now());
+		                    return solicitudRepository.save(s);
+		                });
+
+		        validarPropietarioOCoordinador(solicitud);
+		    }
+
+		    if (solicitud.isRevisado()) {
+		        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+		    }
+
+		    Long idSolicitud = solicitud.getIdSolicitud();
+
+		    // 2) Eliminar SOLO lo solicitado (y sus fechas)
+		    if (request.getDetallesEliminar() != null && !request.getDetallesEliminar().isEmpty()) {
+
+		        List<Long> idsEliminar = request.getDetallesEliminar();
+
+		        // Seguridad: verificar que TODOS pertenezcan a esta solicitud
+		        long pertenecen = detalleRepository.countBySolicitud_IdSolicitudAndIdDetalleIn(idSolicitud, idsEliminar);
+		        if (pertenecen != idsEliminar.size()) {
+		            throw new RuntimeException("Uno o más detalles a eliminar no pertenecen a la solicitud");
+		        }
+
+		        // IMPORTANTE:
+		        // Si NO tienes cascade/orphanRemoval, borra primero hijos (fechas)
+		        detalleFechaRepository.deleteByDetalle_IdDetalleIn(idsEliminar);
+
+		        // Luego borra detalles
+		        detalleRepository.deleteByIdDetalleIn(idsEliminar);
+		    }
+
+		    // 3) Upsert detalles enviados (NO borrar fechas aquí)
+		    if (request.getDetalles() != null && !request.getDetalles().isEmpty()) {
+
+		        List<DetalleSolicitudTurno> paraGuardar = new ArrayList<>();
+
+		        for (var x : request.getDetalles()) {
+
+		            if (x.getIdServicio() == null) continue;
+
+		            DimServicioEssi esp = servicioEssiRepository.findById(x.getIdServicio())
+		                    .orElseThrow(() -> new RuntimeException("Especialidad no encontrada: " + x.getIdServicio()));
+
+		            DetalleSolicitudTurno d = null;
+
+		            // 3.1) si viene idDetalle, usarlo (y validar pertenencia)
+		            if (x.getIdDetalle() != null) {
+		                d = detalleRepository.findById(x.getIdDetalle()).orElse(null);
+
+		                if (d != null && !d.getSolicitud().getIdSolicitud().equals(idSolicitud)) {
+		                    throw new RuntimeException("El idDetalle " + x.getIdDetalle() + " no pertenece a esta solicitud");
+		                }
+		            }
+
+		            // 3.2) si no hay idDetalle o no existe, buscar por (solicitud, servicio)
+		            if (d == null) {
+		                d = detalleRepository
+		                        .findBySolicitud_IdSolicitudAndEspecialidad_IdServicio(idSolicitud, x.getIdServicio())
+		                        .orElse(null);
+		            }
+
+		            // 3.3) si no existe, crear
+		            if (d == null) {
+		                d = DetalleSolicitudTurno.builder()
+		                        .solicitud(solicitud)
+		                        .especialidad(esp)
+		                        .build();
+		            } else {
+		                d.setEspecialidad(esp);
+		            }
+
+		            int tm  = x.getTurnoTM() == null ? 0 : x.getTurnoTM();
+		            int man = x.getTurnoManana() == null ? 0 : x.getTurnoManana();
+		            int tar = x.getTurnoTarde() == null ? 0 : x.getTurnoTarde();
+		            int total = (x.getTurnos() == null) ? (tm + man + tar) : x.getTurnos();
+
+		            d.setTurnosTm(tm);
+		            d.setTurnosManana(man);
+		            d.setTurnosTarde(tar);
+		            d.setTurnosSolicitados(Math.max(0, total));
+
+		            d.setTeleconsultorioActivo(Boolean.TRUE.equals(x.getTc()));
+		            d.setTeleconsultaActivo(Boolean.TRUE.equals(x.getTl()));
+
+		            d.setObservacion(x.getObservacion());
+		            d.setEstado(x.getEstado() == null ? "PENDIENTE" : x.getEstado());
+
+		            boolean requiere = Boolean.TRUE.equals(x.getRequiere()) && total > 0;
+		            d.setRequiere(requiere);
+
+		            d.setMananaActiva(man > 0);
+		            d.setTardeActiva(tar > 0);
+
+		            // CLAVE: No tocar fechasDetalle aquí
+
+		            paraGuardar.add(d);
+		        }
+
+		        if (!paraGuardar.isEmpty()) {
+		            detalleRepository.saveAll(paraGuardar);
+		        }
+		    }
+
+		    // 4) Recalcular cabecera con lo que quedó en BD
+		    SolicitudTurnoIpress solConDetalles = solicitudRepository.findByIdWithDetalles(idSolicitud)
+		            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
+
+		    recalcularTotales(solConDetalles);
+		    solConDetalles.setUpdatedAt(OffsetDateTime.now());
+		    solicitudRepository.save(solConDetalles);
+
+		    return convertToResponseWithDetalles(solConDetalles);
 	}
 
 }

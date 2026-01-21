@@ -114,9 +114,9 @@ export default function TablaSolicitudEspecialidades({
 
   // Actualizar padre cuando cambian los datos
   const notificarCambio = (nuevosDatos) => {
-    const registrosArray = Object.values(nuevosDatos).filter(
-      (d) => d.turnoTM > 0 || d.turnoManana > 0 || d.turnoTarde > 0
-    );
+    // Pasar TODOS los registros, incluyendo los que tienen turnos = 0
+    // El padre (FormularioSolicitudTurnos) decidirá si eliminarlos o no
+    const registrosArray = Object.values(nuevosDatos);
     onChange(registrosArray);
   };
 
