@@ -105,11 +105,12 @@ export default function TeleECGRecibidas() {
       // ✅ El API retorna { success, message, code, data: {...} }
       const statsData = response?.data || response || {};
 
+      // 🔍 El DTO serializa con @JsonProperty en snake_case
       setStats({
-        total: statsData.totalImagenesCargadas || statsData.total || 0,
-        pendientes: statsData.totalImagenesPendientes || statsData.totalPendientes || 0,
-        observadas: statsData.totalImagenesRechazadas || statsData.totalObservadas || 0,
-        atendidas: statsData.totalImagenesProcesadas || statsData.totalAtendidas || 0,
+        total: statsData.total_imagenes_cargadas || statsData.totalImagenesCargadas || statsData.total || 0,
+        pendientes: statsData.total_imagenes_pendientes || statsData.totalImagenesPendientes || statsData.totalPendientes || 0,
+        observadas: statsData.total_imagenes_rechazadas || statsData.totalImagenesRechazadas || statsData.totalObservadas || 0,
+        atendidas: statsData.total_imagenes_procesadas || statsData.totalImagenesProcesadas || statsData.totalAtendidas || 0,
       });
 
       console.log("✅ Estadísticas globales (TODAS las imágenes):", statsData);
