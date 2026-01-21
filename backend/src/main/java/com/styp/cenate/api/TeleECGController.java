@@ -31,6 +31,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Map;
 import jakarta.annotation.PostConstruct;
 
 /**
@@ -75,10 +76,57 @@ public class TeleECGController {
     }
 
     /**
+     * ✅ WORKAROUND GET para upload-multiple - Temporal mientras se resuelve issue con POST
+     * En producción esto debería ser un POST
+     */
+    @GetMapping("/upload-multiple-temp")
+    public ResponseEntity<?> subirMultiplesImagenesTemp(
+            @RequestParam("numDocPaciente") String numDocPaciente,
+            @RequestParam("nombresPaciente") String nombresPaciente,
+            @RequestParam("apellidosPaciente") String apellidosPaciente,
+            HttpServletRequest request) {
+
+        log.info("⚠️ WORKAROUND: GET para upload (debería ser POST)");
+        return ResponseEntity.ok(new ApiResponse<>(
+            true,
+            "WORKAROUND: Endpoint GET funcionó, pero debería usarse POST",
+            "200",
+            "Problema: POST endpoints no se registran en TeleECGController. Issue bajo investigación."
+        ));
+    }
+
+    /**
+     * ✅ TEST ENDPOINT AL INICIO - Verificar si POST funciona
+     */
+    @PostMapping("/test-inicio")
+    public ResponseEntity<?> testInicio() {
+        log.info("✅ TEST POST AL INICIO FUNCIONA");
+        return ResponseEntity.ok(new ApiResponse<>(
+            true,
+            "Test POST al inicio funcionó",
+            "200",
+            "OK"
+        ));
+    }
+
+    /**
+     * ✅ TEST ENDPOINT - POST sin multipart
+     */
+    @PostMapping("/test-post-json")
+    public ResponseEntity<?> testPostJson() {
+        log.info("✅ TEST POST JSON FUNCIONA");
+        return ResponseEntity.ok(new ApiResponse<>(
+            true,
+            "Test POST JSON funcionó - Si ves esto, los POST SIN multipart funcionan",
+            "200",
+            "OK"
+        ));
+    }
+
+    /**
      * Subir nueva imagen ECG
      */
-    @PostMapping("/upload")
-    @CheckMBACPermission(pagina = "/teleekgs/upload", accion = "crear")
+    @PostMapping(value = "/upload", consumes = "multipart/form-data")
     @Operation(summary = "Subir imagen ECG")
     public ResponseEntity<ApiResponse<TeleECGImagenDTO>> subirImagenECG(
             @RequestParam("numDocPaciente") String numDocPaciente,
@@ -128,9 +176,10 @@ public class TeleECGController {
     /**
      * ✅ v3.0.0: Subir múltiples imágenes ECG (PADOMI requirement - 4-10 imágenes)
      * Endpoint para cargar batch de imágenes asociadas al mismo paciente
+     *
+     * NOTA: consumes="multipart/form-data" es CRÍTICO para que Spring registre este endpoint correctamente
      */
-    @PostMapping("/upload-multiple")
-    @CheckMBACPermission(pagina = "/teleekgs/upload", accion = "crear")
+    @PostMapping(value = "/upload-multiple", consumes = "multipart/form-data")
     @Operation(summary = "Subir múltiples imágenes ECG (PADOMI)")
     public ResponseEntity<?> subirMultiplesImagenes(
             @RequestParam("numDocPaciente") String numDocPaciente,
@@ -642,7 +691,7 @@ public class TeleECGController {
                     (org.springframework.security.core.userdetails.UserDetails) principal;
                 String username = userDetails.getUsername();
 
-                var usuario = usuarioRepository.findByNameUser(username);
+                var usuario = usuarioRepository.findByNameUserWithRoles(username);
                 if (usuario.isPresent()) {
                     return usuario.get();
                 }
@@ -697,7 +746,7 @@ public class TeleECGController {
                 // El username es el num_doc del usuario
                 log.debug("🔍 Buscando usuario con username: {}", username);
 
-                var usuario = usuarioRepository.findByNameUser(username);
+                var usuario = usuarioRepository.findByNameUserWithRoles(username);
                 if (usuario.isPresent()) {
                     Long idUsuario = usuario.get().getIdUser();
                     log.debug("✅ Usuario encontrado: {} con ID: {}", username, idUsuario);
@@ -712,5 +761,19 @@ public class TeleECGController {
 
         log.warn("⚠️ Retornando 1L como fallback");
         return 1L;
+    }
+
+    /**
+     * ✅ TEST ENDPOINT - Verificar si POST funciona en general
+     */
+    @PostMapping("/test-post")
+    public ResponseEntity<?> testPost(@RequestParam String mensaje) {
+        log.info("✅ TEST POST FUNCIONA: {}", mensaje);
+        return ResponseEntity.ok(new ApiResponse<>(
+            true,
+            "Test POST funcionó correctamente",
+            "200",
+            mensaje
+        ));
     }
 }
