@@ -13,6 +13,7 @@ import {
   FileText,
   Filter,
   RefreshCw,
+  Maximize2,
 } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import toast from "react-hot-toast";
@@ -20,6 +21,7 @@ import teleecgService from "../../services/teleecgService";
 import ImageCanvas from "./ImageCanvas";
 import useImageFilters from "./useImageFilters";
 import FilterControlsPanel from "./FilterControlsPanel";
+import FullscreenImageViewer from "./FullscreenImageViewer";
 
 /**
  * 🏥 MODAL CONSOLIDADO - TRIAJE CLÍNICO ECG (v7.0.0)
@@ -58,6 +60,7 @@ export default function ModalEvaluacionECG({
   const transformRef = useRef(null);
   const { filters, updateFilter, resetFilters, applyPreset } = useImageFilters();
   const [showFilterControls, setShowFilterControls] = useState(false);
+  const [showFullscreen, setShowFullscreen] = useState(false);
 
   // ════════════════════════════════════════
   // TAB 1.5: VALIDACIÓN DE CALIDAD (v3.1.0)
@@ -313,6 +316,12 @@ export default function ModalEvaluacionECG({
         // Rotate
         e.preventDefault();
         rotarImagen();
+      } else if (e.key === "e" || e.key === "E") {
+        // Fullscreen
+        if (!isTypingInField) {
+          e.preventDefault();
+          setShowFullscreen(true);
+        }
       }
     };
 
@@ -602,6 +611,17 @@ export default function ModalEvaluacionECG({
                     >
                       <RefreshCw size={20} />
                     </button>
+
+                    <div className="w-px h-6 bg-gray-300" />
+
+                    {/* Fullscreen */}
+                    <button
+                      onClick={() => setShowFullscreen(true)}
+                      className="p-2 hover:bg-gray-200 rounded transition-colors text-blue-600 hover:bg-blue-100"
+                      title="Ampliar pantalla completa (E)"
+                    >
+                      <Maximize2 size={20} />
+                    </button>
                   </div>
                 </div>
 
@@ -628,7 +648,7 @@ export default function ModalEvaluacionECG({
 
                 {/* Atajos */}
                 <p className="text-xs text-gray-500 mt-2 mb-3">
-                  ⌨️ Atajos: N=Normal • A=Anormal • D=No Diagnóstico • ←→=Imágenes • +/-=Zoom • R=Rotar • I=Invertir • F=Filtros • 0=Reset • Tab=Siguiente
+                  ⌨️ Atajos: N=Normal • A=Anormal • D=No Diagnóstico • ←→=Imágenes • +/-=Zoom • R=Rotar • I=Invertir • F=Filtros • 0=Reset • E=Fullscreen • Tab=Siguiente
                 </p>
 
                 {/* Panel de filtros colapsable - Posicionado aquí para mejor layout */}
@@ -1181,6 +1201,27 @@ export default function ModalEvaluacionECG({
           </div>
         </div>
       </div>
+
+      {/* Fullscreen Image Viewer */}
+      <FullscreenImageViewer
+        isOpen={showFullscreen}
+        imagenData={imagenData}
+        indiceImagen={indiceImagen}
+        totalImagenes={imagenesActuales.length}
+        rotacion={rotacion}
+        filters={filters}
+        onClose={() => setShowFullscreen(false)}
+        onRotate={(nuevoAngulo) => setRotacion(nuevoAngulo)}
+        onFilterChange={updateFilter}
+        onResetFilters={resetFilters}
+        onImageNavigation={(direccion) => {
+          if (direccion === "anterior") {
+            irImagenAnterior();
+          } else if (direccion === "siguiente") {
+            irImagenSiguiente();
+          }
+        }}
+      />
     </div>
   );
 }

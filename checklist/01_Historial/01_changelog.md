@@ -10,6 +10,119 @@
 
 ---
 
+## v1.24.0 (2026-01-21) - 🖥️ Visualizador ECG Fullscreen: Pantalla Completa con Zoom Ilimitado
+
+### 🎯 Descripción
+
+**Implementación de modo fullscreen para visualización de ECGs a pantalla completa, permitiendo análisis detallado sin distracciones** directamente desde el modal de Triaje Clínico.
+
+**Características principales**:
+1. ✅ **Vista a pantalla completa** con fondo negro (profesional y enfocado)
+2. ✅ **Zoom ilimitado** (50-500%) sin pixelación
+3. ✅ **Todos los controles disponibles**: rotación, filtros, navegación de imágenes
+4. ✅ **Sincronización de estado** entre modal y fullscreen (zoom, rotación, filtros)
+5. ✅ **Cierre rápido**: Botón X, ESC, o volver al modal
+6. ✅ **Atajo de teclado**: `E` para abrir fullscreen desde modal
+
+**Estado**: ✅ **COMPLETADO**
+
+### 📋 Archivos Nuevos
+
+| Archivo | Líneas | Propósito |
+|---------|--------|----------|
+| `FullscreenImageViewer.jsx` | ~230 | Componente fullscreen con controles completos de imagen |
+
+### 📋 Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `ModalEvaluacionECG.jsx` | +Estado fullscreen, +Botón Expand, +Atajo E, +Integración componente |
+
+### 🚀 Nuevas Características
+
+#### 1. Vista a Pantalla Completa
+- **Diseño**: Header gris oscuro + área negra central + footer con controles
+- **Encabezado**: Título, indicador de imagen actual, botón cerrar
+- **Contenido**: Imagen con TransformWrapper para zoom/pan
+- **Footer**: Controles zoom, rotación, filtros, navegación, reset
+
+#### 2. Sincronización de Estado
+- La imagen mantiene la rotación y filtros aplicados en el modal
+- Los cambios en fullscreen se reflejan al volver al modal
+- Zoom es independiente entre modal y fullscreen
+
+#### 3. Navegación en Fullscreen
+- **Botones**: ◀ Anterior / Siguiente ▶ (deshabilitados en extremos)
+- **Contador**: "Imagen X de Y" en el header
+
+#### 4. Atajos de Teclado
+- **ESC**: Cerrar fullscreen
+- **←→**: Navegar entre imágenes (si hay múltiples)
+- **+/-**: Zoom in/out
+- **R**: Rotar 90°
+- **F**: Mostrar/ocultar filtros
+- **0**: Reset todo
+
+### 🎨 Estilos Visuales
+
+**Tema oscuro profesional**:
+```
+┌─────────────────────────────────────┐
+│ Header: bg-gray-900, text-white     │
+├─────────────────────────────────────┤
+│                                     │
+│  Área negra (bg-black) para imagen  │
+│  Enfoque total en ECG               │
+│                                     │
+├─────────────────────────────────────┤
+│ Footer: bg-gray-900, controles      │
+└─────────────────────────────────────┘
+```
+
+### 🔌 Integración
+
+**Desde ModalEvaluacionECG**:
+```jsx
+<button onClick={() => setShowFullscreen(true)}>
+  <Maximize2 size={20} />
+</button>
+
+<FullscreenImageViewer
+  isOpen={showFullscreen}
+  imagenData={imagenData}
+  rotacion={rotacion}
+  filters={filters}
+  // ... props de navegación y callbacks
+/>
+```
+
+**Props requeridas**:
+- `isOpen`: boolean
+- `imagenData`: base64 string
+- `indiceImagen`: número
+- `totalImagenes`: número
+- `rotacion`: 0|90|180|270
+- `filters`: { invert, contrast, brightness }
+- `onClose`: callback
+- `onRotate`: callback(nuevoAngulo)
+- `onFilterChange`: callback(filtro, valor)
+- `onResetFilters`: callback
+- `onImageNavigation`: callback("anterior"|"siguiente")
+
+### ✅ Testing
+
+- ✅ Componente se renderiza correctamente
+- ✅ Botón Expand abre fullscreen
+- ✅ Atajo E funciona desde modal
+- ✅ ESC cierra fullscreen
+- ✅ Zoom funciona en fullscreen
+- ✅ Rotación se sincroniza
+- ✅ Filtros persisten en fullscreen
+- ✅ Navegación de imágenes funciona
+- ✅ Estado sincronizado modal ↔ fullscreen
+
+---
+
 ## v1.23.0 (2026-01-21) - 🎨 Visualizador ECG Avanzado v7.0.0: Zoom 500% + Filtros + Rotación Calidad Médica
 
 ### 🎯 Descripción
