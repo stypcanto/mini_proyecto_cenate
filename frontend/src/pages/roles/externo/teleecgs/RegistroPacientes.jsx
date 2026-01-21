@@ -156,8 +156,8 @@ export default function RegistroPacientes() {
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
               >
                 <option value="TODOS">Todos los estados</option>
-                <option value="PENDIENTE">Pendientes</option>
-                <option value="PROCESADA">Procesadas</option>
+                <option value="ENVIADA">Enviadas</option>
+                <option value="ATENDIDA">Atendidas</option>
                 <option value="RECHAZADA">Rechazadas</option>
               </select>
             </div>
