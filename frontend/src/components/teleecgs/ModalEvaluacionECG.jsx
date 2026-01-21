@@ -268,48 +268,66 @@ export default function ModalEvaluacionECG({
       const activeElement = document.activeElement;
       const isTypingInField = activeElement?.tagName === "TEXTAREA" || activeElement?.tagName === "INPUT";
 
-      if (e.key === "ArrowLeft") {
-        if (!isTypingInField) irImagenAnterior();
-      } else if (e.key === "ArrowRight") {
-        if (!isTypingInField) irImagenSiguiente();
-      } else if (e.key === "Tab") {
+      // Atajos globales (funcionan en cualquier TAB)
+      if (e.key === "Tab") {
         e.preventDefault();
-        const tabs = ["ver", "evaluar", "nota"];
+        const tabs = ["ver", "evaluar", "plan"];
         const indiceActual = tabs.indexOf(activeTab);
         const siguiente = tabs[(indiceActual + 1) % tabs.length];
         setActiveTab(siguiente);
       } else if (e.ctrlKey && e.key === "Enter") {
         e.preventDefault();
         handleGuardar();
-      } else if (e.key === "+" || e.key === "=") {
-        // Zoom in
-        e.preventDefault();
-        handleZoomMas();
-      } else if (e.key === "-") {
-        // Zoom out
-        e.preventDefault();
-        handleZoomMenos();
-      } else if (e.key === "i" || e.key === "I") {
-        // Toggle invert
-        e.preventDefault();
-        updateFilter("invert", !filters.invert);
-      } else if (e.key === "f" || e.key === "F") {
-        // Toggle filter panel
-        e.preventDefault();
-        setShowFilterControls(!showFilterControls);
-      } else if (e.key === "0") {
-        // Reset all
-        e.preventDefault();
-        handleResetAll();
-      } else if (e.key === "r" || e.key === "R") {
-        // Rotate
-        e.preventDefault();
-        rotarImagen();
       } else if (e.key === "e" || e.key === "E") {
         // Fullscreen
         if (!isTypingInField) {
           e.preventDefault();
           setShowFullscreen(true);
+        }
+      }
+
+      // Atajos específicos para TAB "ver" (solo imagen)
+      if (activeTab === "ver") {
+        if (e.key === "ArrowLeft") {
+          if (!isTypingInField) irImagenAnterior();
+        } else if (e.key === "ArrowRight") {
+          if (!isTypingInField) irImagenSiguiente();
+        } else if (e.key === "+" || e.key === "=") {
+          // Zoom in - SOLO SI NO ESTÁ ESCRIBIENDO
+          if (!isTypingInField) {
+            e.preventDefault();
+            handleZoomMas();
+          }
+        } else if (e.key === "-") {
+          // Zoom out - SOLO SI NO ESTÁ ESCRIBIENDO
+          if (!isTypingInField) {
+            e.preventDefault();
+            handleZoomMenos();
+          }
+        } else if (e.key === "i" || e.key === "I") {
+          // Toggle invert - SOLO SI NO ESTÁ ESCRIBIENDO
+          if (!isTypingInField) {
+            e.preventDefault();
+            updateFilter("invert", !filters.invert);
+          }
+        } else if (e.key === "f" || e.key === "F") {
+          // Toggle filter panel - SOLO SI NO ESTÁ ESCRIBIENDO
+          if (!isTypingInField) {
+            e.preventDefault();
+            setShowFilterControls(!showFilterControls);
+          }
+        } else if (e.key === "0") {
+          // Reset all - SOLO SI NO ESTÁ ESCRIBIENDO
+          if (!isTypingInField) {
+            e.preventDefault();
+            handleResetAll();
+          }
+        } else if (e.key === "r" || e.key === "R") {
+          // Rotate - SOLO SI NO ESTÁ ESCRIBIENDO
+          if (!isTypingInField) {
+            e.preventDefault();
+            rotarImagen();
+          }
         }
       }
     };
