@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 import java.time.LocalDateTime;
 
@@ -58,9 +60,12 @@ public class TeleECGAuditoria {
      * Referencia a la imagen ECG
      * FK a tele_ecg_imagenes
      * Si se elimina la imagen, se elimina toda su auditoría
+     * cascade=ALL: Propagar cambios a nivel Hibernate
+     * @OnDelete: Trigger ON DELETE CASCADE en base de datos
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "id_imagen", nullable = false, foreignKey = @ForeignKey(name = "fk_auditoria_imagen"))
+    @OnDelete(action = OnDeleteAction.CASCADE)
     private TeleECGImagen imagen;
 
     /**
