@@ -10,6 +10,71 @@
 
 ---
 
+## v1.26.0 (2026-01-21) - 🎯 Modal Triaje Clínico Rediseñado: Evaluación con Justificación + Plan Simplificado
+
+### 🎯 Descripción
+
+**Rediseño completo del flujo de evaluación ECG:**
+1. **Rescatado** sistema Normal/Anormal/No Diagnóstico con justificación
+2. **Simplificado** Plan de Seguimiento a solo 2 opciones: Reconsulta en 3 meses + Interconsulta especialidad
+3. **Eliminada** pestaña "Nota Clínica" (demasiado compleja)
+4. **Nuevo flujo**: VER IMÁGENES → EVALUACIÓN (con razones preseleccionadas) → PLAN SEGUIMIENTO
+
+**Estado**: ✅ **COMPLETADO**
+
+### 🎨 Cambios de UI/UX
+
+**TAB 2: EVALUACIÓN**
+- Botones: NORMAL (verde), ANORMAL (rojo), NO_DIAGNÓSTICO (naranja)
+- Razones preseleccionadas dinámicas:
+  - **Si NORMAL**: Ritmo normal, Frecuencia adecuada, Sin cambios agudos, ST normal, Onda T normal
+  - **Si ANORMAL**: Ritmo anormal, Frecuencia anormal, Cambios ST, Onda T invertida, Bloqueo, Hiperkalemia, Isquemia
+- Textarea opcional para observaciones médicas
+
+**TAB 3: PLAN SEGUIMIENTO (SIMPLIFICADO)**
+- ✅ Checkbox: "Recitar en 3 meses" (reconsulta automática)
+- ✅ Campo libre: "Interconsulta con especialidad" (Cardiología, Neumología, etc.)
+- Resumen visual de lo seleccionado
+
+### 📋 Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `ModalEvaluacionECG.jsx` | Rediseño completo de estructura de tabs |
+
+### 🗂️ Estados Actualizados
+
+**Antes**:
+```javascript
+const [evaluacion, setEvaluacion] = useState("");
+const [hallazgos, setHallazgos] = useState({...});
+const [planSeguimiento, setPlanSeguimiento] = useState({
+  seguimientoMeses, seguimientoDias, derivarCardiologo, ...
+})
+```
+
+**Ahora**:
+```javascript
+const [tipoEvaluacion, setTipoEvaluacion] = useState(""); // NORMAL, ANORMAL, NO_DIAGNOSTICO
+const [razonesNormal, setRazonesNormal] = useState({...});
+const [razonesAnormal, setRazonesAnormal] = useState({...});
+const [planSeguimiento, setPlanSeguimiento] = useState({
+  recitarEnTresMeses: boolean,
+  interconsultaEspecialidad: string
+})
+```
+
+### ✅ Testing
+
+- ✅ Frontend: BUILD SUCCESSFUL
+- ✅ Backend: BUILD SUCCESSFUL
+- ✅ Modal: Flujo 3 tabs funcional
+- ✅ Evaluación: Botones + razones dinámicas
+- ✅ Plan: 2 opciones simplificadas
+- ✅ Guardado: Validación correcta
+
+---
+
 ## v1.25.0 (2026-01-21) - 📝 Evaluación Médica Libre: Campo de Texto Flexible para Análisis Completo
 
 ### 🎯 Descripción

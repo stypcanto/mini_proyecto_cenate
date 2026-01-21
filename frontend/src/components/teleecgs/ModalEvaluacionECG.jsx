@@ -82,30 +82,34 @@ export default function ModalEvaluacionECG({
   // ════════════════════════════════════════
   // TAB 2: EVALUACIÓN
   // ════════════════════════════════════════
-  const [evaluacion, setEvaluacion] = useState("");
   const [observacionesEval, setObservacionesEval] = useState("");
+  const [tipoEvaluacion, setTipoEvaluacion] = useState(""); // NORMAL, ANORMAL, NO_DIAGNOSTICO
+
+  // Razones preseleccionadas según tipo de evaluación
+  const [razonesNormal, setRazonesNormal] = useState({
+    ritmoNormal: false,
+    frecuenciaAdecuada: false,
+    sinCambiosAgudos: false,
+    segmentoSTNormal: false,
+    ondaTNormal: false,
+  });
+
+  const [razonesAnormal, setRazonesAnormal] = useState({
+    ritmoAnormal: false,
+    frecuenciaAnormal: false,
+    cambiosEn_ST: false,
+    ondaTInvertida: false,
+    bloqueoCardiaco: false,
+    hiperkalemia: false,
+    isquemiaActiva: false,
+  });
 
   // ════════════════════════════════════════
-  // TAB 3: NOTA CLÍNICA
+  // TAB 3: PLAN DE SEGUIMIENTO (SIMPLIFICADO)
   // ════════════════════════════════════════
-  const [hallazgos, setHallazgos] = useState({
-    ritmo: { presente: false, detalle: "" },
-    frecuencia: { presente: false, detalle: "" },
-    intervaloPR: { presente: false, detalle: "" },
-    duracionQRS: { presente: false, detalle: "" },
-    segmentoST: { presente: false, detalle: "" },
-    ondaT: { presente: false, detalle: "" },
-    eje: { presente: false, detalle: "" },
-  });
-  const [observacionesNota, setObservacionesNota] = useState("");
   const [planSeguimiento, setPlanSeguimiento] = useState({
-    seguimientoMeses: false,
-    seguimientoDias: null,
-    derivarCardiologo: false,
-    prioridadCardiologo: "CONSULTA_EXTERNA", // URGENTE o CONSULTA_EXTERNA
-    hospitalizar: false,
-    medicamentos: false,
-    otrosPlan: "",
+    recitarEnTresMeses: false,
+    interconsultaEspecialidad: "", // nombre de especialidad (Cardiología, etc.)
   });
 
   const textareaEvalRef = useRef(null);
@@ -353,8 +357,8 @@ export default function ModalEvaluacionECG({
 
   const handleGuardar = async () => {
     // Validar que haya evaluación
-    if (!evaluacion) {
-      toast.error("❌ Debes seleccionar Normal o Anormal");
+    if (!tipoEvaluacion) {
+      toast.error("❌ Debes seleccionar Normal, Anormal o No Diagnóstico");
       return;
     }
 
@@ -368,22 +372,22 @@ export default function ModalEvaluacionECG({
         return;
       }
 
-      // 1️⃣ Guardar evaluación (observacionesEval ahora contiene la evaluación libre)
-      await onConfirm(observacionesEval.trim(), observacionesEval.trim(), idImagen);
-      toast.success(`✅ Evaluación guardada exitosamente`);
+      // 1️⃣ Guardar evaluación con tipo (NORMAL/ANORMAL/NO_DIAGNOSTICO) y observaciones
+      await onConfirm(tipoEvaluacion, observacionesEval.trim() || "", idImagen);
+      toast.success(`✅ Evaluación guardada: ${tipoEvaluacion}`);
 
-      // 2️⃣ Guardar Nota Clínica (si hay datos)
-      if (hallazgos && Object.values(hallazgos).some(v => v === true)) {
+      // 2️⃣ Guardar Plan de Seguimiento (si hay datos)
+      if (planSeguimiento.recitarEnTresMeses || planSeguimiento.interconsultaEspecialidad) {
         try {
           await teleecgService.guardarNotaClinica(idImagen, {
-            hallazgos,
-            observacionesClinicas: observacionesNota.trim() || null,
+            hallazgos: {}, // Ya no se usa, pero se envía vacío para compatibilidad
+            observacionesClinicas: "",
             planSeguimiento,
           });
-          toast.success(`✅ Nota clínica guardada exitosamente`);
+          toast.success(`✅ Plan de seguimiento guardado`);
         } catch (notaError) {
-          console.error("⚠️ Advertencia: Nota clínica no se guardó:", notaError);
-          toast.error("⚠️ Evaluación guardada, pero hubo error en nota clínica");
+          console.error("⚠️ Advertencia: Plan no se guardó:", notaError);
+          toast.error("⚠️ Evaluación guardada, pero hubo error en plan de seguimiento");
         }
       }
 
@@ -396,29 +400,30 @@ export default function ModalEvaluacionECG({
   };
 
   const limpiarFormulario = () => {
-    setEvaluacion("");
     setObservacionesEval("");
-    setObservacionesNota("");
+    setTipoEvaluacion("");
+    setRazonesNormal({
+      ritmoNormal: false,
+      frecuenciaAdecuada: false,
+      sinCambiosAgudos: false,
+      segmentoSTNormal: false,
+      ondaTNormal: false,
+    });
+    setRazonesAnormal({
+      ritmoAnormal: false,
+      frecuenciaAnormal: false,
+      cambiosEn_ST: false,
+      ondaTInvertida: false,
+      bloqueoCardiaco: false,
+      hiperkalemia: false,
+      isquemiaActiva: false,
+    });
     setImagenValida(null); // Resetear validación
     setMotivoRechazo("");
     setDescripcionRechazo("");
-    setHallazgos({
-      ritmo: { presente: false, detalle: "" },
-      frecuencia: { presente: false, detalle: "" },
-      intervaloPR: { presente: false, detalle: "" },
-      duracionQRS: { presente: false, detalle: "" },
-      segmentoST: { presente: false, detalle: "" },
-      ondaT: { presente: false, detalle: "" },
-      eje: { presente: false, detalle: "" },
-    });
     setPlanSeguimiento({
-      seguimientoMeses: false,
-      seguimientoDias: null,
-      derivarCardiologo: false,
-      prioridadCardiologo: "CONSULTA_EXTERNA",
-      hospitalizar: false,
-      medicamentos: false,
-      otrosPlan: "",
+      recitarEnTresMeses: false,
+      interconsultaEspecialidad: "",
     });
   };
 
@@ -475,10 +480,10 @@ export default function ModalEvaluacionECG({
             <CheckCircle size={18} /> EVALUACIÓN
           </button>
           <button
-            onClick={() => imagenValida === true && setActiveTab("nota")}
+            onClick={() => imagenValida === true && setActiveTab("plan")}
             disabled={imagenValida !== true}
             className={`flex items-center gap-2 px-6 py-4 font-semibold transition-all text-sm ${
-              activeTab === "nota"
+              activeTab === "plan"
                 ? "text-blue-700 border-b-3 border-blue-700 bg-blue-50"
                 : imagenValida !== true
                   ? "text-gray-300 cursor-not-allowed"
@@ -486,7 +491,7 @@ export default function ModalEvaluacionECG({
             }`}
             title={imagenValida !== true ? "Valida la imagen primero" : ""}
           >
-            <FileText size={18} /> NOTA CLÍNICA
+            <FileText size={18} /> PLAN DE SEGUIMIENTO
           </button>
         </div>
 
@@ -825,265 +830,192 @@ export default function ModalEvaluacionECG({
 
           {/* TAB 2: EVALUACIÓN */}
           {activeTab === "evaluar" && (
-            <div className="max-w-2xl">
+            <div className="max-w-3xl">
               <div className="space-y-6">
-                {/* Evaluación y Observaciones - Campo unificado libre */}
+                {/* Selección de Tipo de Evaluación */}
                 <div>
-                  <label className="block text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-                    📝 Evaluación Médica del ECG *
+                  <label className="block text-sm font-bold text-gray-800 mb-4">
+                    Resultado del ECG * <span className="text-xs text-gray-600">(Normal / Anormal / No Diagnóstico)</span>
                   </label>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Escribe tu evaluación completa: diagnóstico, interpretación, hallazgos relevantes, etc.
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <button
+                      onClick={() => setTipoEvaluacion("NORMAL")}
+                      className={`py-3 px-4 rounded-lg font-semibold transition-all ${
+                        tipoEvaluacion === "NORMAL"
+                          ? "bg-gradient-to-r from-emerald-500 to-green-600 text-white shadow-lg scale-105"
+                          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                      }`}
+                    >
+                      ✓ NORMAL
+                    </button>
+                    <button
+                      onClick={() => setTipoEvaluacion("ANORMAL")}
+                      className={`py-3 px-4 rounded-lg font-semibold transition-all ${
+                        tipoEvaluacion === "ANORMAL"
+                          ? "bg-gradient-to-r from-rose-600 to-red-600 text-white shadow-lg scale-105"
+                          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                      }`}
+                    >
+                      ⚠️ ANORMAL
+                    </button>
+                    <button
+                      onClick={() => setTipoEvaluacion("NO_DIAGNOSTICO")}
+                      className={`py-3 px-4 rounded-lg font-semibold transition-all ${
+                        tipoEvaluacion === "NO_DIAGNOSTICO"
+                          ? "bg-gradient-to-r from-orange-600 to-red-700 text-white shadow-lg scale-105"
+                          : "bg-gray-200 text-gray-800 hover:bg-gray-300"
+                      }`}
+                    >
+                      ❓ NO DIAGNÓSTICO
+                    </button>
+                  </div>
+                </div>
+
+                {/* Razones Preseleccionadas - NORMAL */}
+                {tipoEvaluacion === "NORMAL" && (
+                  <div className="bg-emerald-50 border-2 border-emerald-300 p-4 rounded-lg">
+                    <label className="block text-sm font-bold text-gray-800 mb-3">¿Por qué NORMAL? (Selecciona razones)</label>
+                    <div className="space-y-2">
+                      {Object.entries({
+                        ritmoNormal: "Ritmo normal",
+                        frecuenciaAdecuada: "Frecuencia adecuada",
+                        sinCambiosAgudos: "Sin cambios agudos",
+                        segmentoSTNormal: "Segmento ST normal",
+                        ondaTNormal: "Onda T normal"
+                      }).map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={razonesNormal[key]}
+                            onChange={(e) => setRazonesNormal({...razonesNormal, [key]: e.target.checked})}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Razones Preseleccionadas - ANORMAL */}
+                {tipoEvaluacion === "ANORMAL" && (
+                  <div className="bg-rose-50 border-2 border-rose-300 p-4 rounded-lg">
+                    <label className="block text-sm font-bold text-gray-800 mb-3">¿Por qué ANORMAL? (Selecciona razones)</label>
+                    <div className="space-y-2">
+                      {Object.entries({
+                        ritmoAnormal: "Ritmo anormal",
+                        frecuenciaAnormal: "Frecuencia anormal",
+                        cambiosEn_ST: "Cambios en ST",
+                        ondaTInvertida: "Onda T invertida",
+                        bloqueoCardiaco: "Bloqueo cardíaco",
+                        hiperkalemia: "Hiperkalemia",
+                        isquemiaActiva: "Isquemia activa"
+                      }).map(([key, label]) => (
+                        <label key={key} className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={razonesAnormal[key]}
+                            onChange={(e) => setRazonesAnormal({...razonesAnormal, [key]: e.target.checked})}
+                            className="w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-700">{label}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Observaciones Detalladas */}
+                <div>
+                  <label className="block text-sm font-bold text-gray-800 mb-2">
+                    Observaciones Médicas (Opcional)
+                  </label>
+                  <p className="text-xs text-gray-600 mb-2">
+                    Detalles adicionales sobre el análisis del ECG
                   </p>
                   <textarea
                     ref={textareaEvalRef}
                     value={observacionesEval}
-                    onChange={(e) =>
-                      setObservacionesEval(e.target.value)
-                    }
-                    placeholder="Ej: ECG dentro de los límites normales. Ritmo sinusal regular a 72 bpm. Eje normal. Intervalo PR normal. Duración QRS normal. Segmentos ST sin cambios. Sin signos de isquemia miocárdica. Recomendación: Seguimiento clínico rutinario..."
-                    className="w-full p-4 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-vertical font-medium"
-                    rows="10"
+                    onChange={(e) => setObservacionesEval(e.target.value)}
+                    placeholder="Ej: Ritmo sinusal regular, 72 bpm. Sin cambios agudos. Recomendación: Seguimiento clínico rutinario..."
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    rows="5"
                   />
-                  <p className="text-xs text-gray-600 mt-2">
-                    <span className="font-semibold">{observacionesEval.length}</span> caracteres (sin límite)
-                  </p>
-                </div>
-
-                {/* Info */}
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                  <p className="text-sm text-blue-900">
-                    ℹ️ <span className="font-semibold">Escribe libremente</span> tu análisis completo del ECG. Incluye diagnóstico, interpretación de hallazgos, cambios detectados y recomendaciones clínicas.
+                  <p className="text-xs text-gray-600 mt-1">
+                    {observacionesEval.length} caracteres
                   </p>
                 </div>
               </div>
             </div>
           )}
 
-          {/* TAB 3: NOTA CLÍNICA */}
-          {activeTab === "nota" && (
-            <div className="max-w-3xl space-y-6">
-              {/* Hallazgos - Con Detalles */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-4">
-                  📋 Hallazgos (Marcar y Detallar)
-                </h3>
-                <div className="space-y-3">
-                  {[
-                    { key: "ritmo", label: "Ritmo", placeholder: "Ej: Sinusal, FA, Taquicardia..." },
-                    { key: "frecuencia", label: "Frecuencia", placeholder: "Ej: 72 bpm, Normal..." },
-                    { key: "intervaloPR", label: "Intervalo PR", placeholder: "Ej: Normal, Acortado..." },
-                    { key: "duracionQRS", label: "Duración QRS", placeholder: "Ej: Normal, Ancho..." },
-                    { key: "segmentoST", label: "Segmento ST", placeholder: "Ej: Elevado, Deprimido..." },
-                    { key: "ondaT", label: "Onda T", placeholder: "Ej: Invertida, Simétrica..." },
-                    { key: "eje", label: "Eje", placeholder: "Ej: Normal, Desviado..." },
-                  ].map((item) => (
-                    <div key={item.key} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                      <div className="flex items-center gap-2 mb-2">
-                        <input
-                          type="checkbox"
-                          checked={hallazgos[item.key].presente}
-                          onChange={(e) =>
-                            setHallazgos({
-                              ...hallazgos,
-                              [item.key]: {
-                                ...hallazgos[item.key],
-                                presente: e.target.checked,
-                              },
-                            })
-                          }
-                          className="w-4 h-4 cursor-pointer"
-                        />
-                        <label className="text-sm font-semibold text-gray-800 cursor-pointer flex-1">
-                          {item.label}
-                        </label>
-                      </div>
-                      {hallazgos[item.key].presente && (
-                        <input
-                          type="text"
-                          value={hallazgos[item.key].detalle}
-                          onChange={(e) =>
-                            setHallazgos({
-                              ...hallazgos,
-                              [item.key]: {
-                                ...hallazgos[item.key],
-                                detalle: e.target.value.slice(0, 100),
-                              },
-                            })
-                          }
-                          placeholder={item.placeholder}
-                          className="w-full px-2 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        />
-                      )}
+          {/* TAB 3: PLAN DE SEGUIMIENTO (SIMPLIFICADO) */}
+          {activeTab === "plan" && (
+            <div className="max-w-2xl">
+              <div className="space-y-6">
+                {/* Recitar en 3 meses */}
+                <div className="bg-blue-50 p-5 rounded-lg border-2 border-blue-300">
+                  <label className="flex items-start gap-3 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={planSeguimiento.recitarEnTresMeses}
+                      onChange={(e) =>
+                        setPlanSeguimiento({
+                          ...planSeguimiento,
+                          recitarEnTresMeses: e.target.checked,
+                        })
+                      }
+                      className="w-5 h-5 mt-0.5 cursor-pointer"
+                    />
+                    <div>
+                      <label className="text-sm font-bold text-gray-800">
+                        📅 Recitar en 3 meses
+                      </label>
+                      <p className="text-xs text-gray-600 mt-1">
+                        Paciente debe retornar para reconsulta en 3 meses
+                      </p>
                     </div>
-                  ))}
+                  </label>
                 </div>
-              </div>
 
-              {/* Observaciones clínicas */}
-              <div>
-                <label className="block text-sm font-bold text-gray-800 mb-2">
-                  📝 Observaciones Clínicas
-                </label>
-                <textarea
-                  ref={textareaNotaRef}
-                  value={observacionesNota}
-                  onChange={(e) =>
-                    setObservacionesNota(e.target.value.slice(0, 2000))
-                  }
-                  placeholder="Detalles adicionales de la evaluación clínica..."
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                  rows="4"
-                />
-                <p className="text-xs text-gray-600 mt-1">
-                  {observacionesNota.length}/2000 caracteres
-                </p>
-              </div>
-
-              {/* Plan de seguimiento */}
-              <div>
-                <h3 className="text-lg font-bold text-gray-800 mb-3">
-                  🔄 Plan de Seguimiento
-                </h3>
-                <div className="space-y-3">
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={planSeguimiento.seguimientoMeses}
-                      onChange={(e) =>
-                        setPlanSeguimiento({
-                          ...planSeguimiento,
-                          seguimientoMeses: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700">
-                      Seguimiento en
-                    </span>
-                    <input
-                      type="number"
-                      min="1"
-                      max="12"
-                      value={planSeguimiento.seguimientoDias || 3}
-                      onChange={(e) =>
-                        setPlanSeguimiento({
-                          ...planSeguimiento,
-                          seguimientoDias: parseInt(e.target.value),
-                        })
-                      }
-                      className="w-16 px-2 py-1 border rounded text-sm"
-                      disabled={!planSeguimiento.seguimientoMeses}
-                    />
-                    <span className="text-sm text-gray-700">meses</span>
+                {/* Interconsulta con especialidad */}
+                <div className="bg-purple-50 p-5 rounded-lg border-2 border-purple-300">
+                  <label className="block text-sm font-bold text-gray-800 mb-3">
+                    🏥 Interconsulta con Especialidad (Opcional)
                   </label>
+                  <input
+                    type="text"
+                    value={planSeguimiento.interconsultaEspecialidad}
+                    onChange={(e) =>
+                      setPlanSeguimiento({
+                        ...planSeguimiento,
+                        interconsultaEspecialidad: e.target.value,
+                      })
+                    }
+                    placeholder="Ej: Cardiología, Neumología, Neurología..."
+                    className="w-full px-4 py-2 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
+                  />
+                  <p className="text-xs text-gray-600 mt-2">
+                    Especifica la especialidad médica para la interconsulta
+                  </p>
+                </div>
 
-                  <div className="bg-blue-50 p-3 rounded-lg border border-blue-200">
-                    <label className="flex items-center gap-2 mb-2">
-                      <input
-                        type="checkbox"
-                        checked={planSeguimiento.derivarCardiologo}
-                        onChange={(e) =>
-                          setPlanSeguimiento({
-                            ...planSeguimiento,
-                            derivarCardiologo: e.target.checked,
-                          })
-                        }
-                        className="w-4 h-4 cursor-pointer"
-                      />
-                      <span className="text-sm font-semibold text-gray-800">
-                        🏥 Derivar a cardiólogo
-                      </span>
-                    </label>
-                    {planSeguimiento.derivarCardiologo && (
-                      <div className="pl-6 space-y-2">
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="prioridad"
-                            value="URGENTE"
-                            checked={planSeguimiento.prioridadCardiologo === "URGENTE"}
-                            onChange={(e) =>
-                              setPlanSeguimiento({
-                                ...planSeguimiento,
-                                prioridadCardiologo: e.target.value,
-                              })
-                            }
-                            className="w-4 h-4 cursor-pointer accent-red-600"
-                          />
-                          <span className="text-sm text-red-700 font-semibold">🚨 URGENTE (24-48h)</span>
-                        </label>
-                        <label className="flex items-center gap-2">
-                          <input
-                            type="radio"
-                            name="prioridad"
-                            value="CONSULTA_EXTERNA"
-                            checked={planSeguimiento.prioridadCardiologo === "CONSULTA_EXTERNA"}
-                            onChange={(e) =>
-                              setPlanSeguimiento({
-                                ...planSeguimiento,
-                                prioridadCardiologo: e.target.value,
-                              })
-                            }
-                            className="w-4 h-4 cursor-pointer accent-blue-600"
-                          />
-                          <span className="text-sm text-blue-700 font-semibold">📋 CONSULTA EXTERNA (14 días)</span>
-                        </label>
-                      </div>
+                {/* Resumen */}
+                <div className="bg-green-50 p-4 rounded-lg border border-green-300">
+                  <p className="text-sm font-semibold text-green-900">
+                    ✓ Plan de seguimiento configurado
+                  </p>
+                  <ul className="text-xs text-gray-700 mt-2 space-y-1">
+                    {planSeguimiento.recitarEnTresMeses && (
+                      <li>✓ Reconsulta en 3 meses</li>
                     )}
-                  </div>
-
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={planSeguimiento.hospitalizar}
-                      onChange={(e) =>
-                        setPlanSeguimiento({
-                          ...planSeguimiento,
-                          hospitalizar: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700">
-                      Hospitalizar
-                    </span>
-                  </label>
-
-                  <label className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      checked={planSeguimiento.medicamentos}
-                      onChange={(e) =>
-                        setPlanSeguimiento({
-                          ...planSeguimiento,
-                          medicamentos: e.target.checked,
-                        })
-                      }
-                      className="w-4 h-4 cursor-pointer"
-                    />
-                    <span className="text-sm text-gray-700">
-                      Prescribir medicamentos
-                    </span>
-                  </label>
-
-                  <div>
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Otros
-                    </label>
-                    <textarea
-                      value={planSeguimiento.otrosPlan}
-                      onChange={(e) =>
-                        setPlanSeguimiento({
-                          ...planSeguimiento,
-                          otrosPlan: e.target.value.slice(0, 500),
-                        })
-                      }
-                      placeholder="Otras recomendaciones..."
-                      className="w-full p-2 border border-gray-300 rounded text-sm resize-none"
-                      rows="2"
-                    />
-                  </div>
+                    {planSeguimiento.interconsultaEspecialidad && (
+                      <li>✓ Interconsulta: {planSeguimiento.interconsultaEspecialidad}</li>
+                    )}
+                    {!planSeguimiento.recitarEnTresMeses && !planSeguimiento.interconsultaEspecialidad && (
+                      <li className="text-gray-500">Sin plan de seguimiento (opcional)</li>
+                    )}
+                  </ul>
                 </div>
               </div>
             </div>
@@ -1095,7 +1027,7 @@ export default function ModalEvaluacionECG({
           <div className="text-sm font-semibold text-gray-700">
             {activeTab === "ver" && "📸 Paso 1: Ver imágenes"}
             {activeTab === "evaluar" && "✓ Paso 2: Evaluación"}
-            {activeTab === "nota" && "📋 Paso 3: Nota clínica"}
+            {activeTab === "plan" && "📅 Paso 3: Plan de Seguimiento"}
           </div>
 
           <div className="flex gap-3">
@@ -1115,11 +1047,11 @@ export default function ModalEvaluacionECG({
               </button>
             )}
 
-            {activeTab !== "nota" && (
+            {activeTab !== "plan" && (
               <button
                 onClick={() => {
                   if (activeTab === "ver") setActiveTab("evaluar");
-                  if (activeTab === "evaluar") setActiveTab("nota");
+                  if (activeTab === "evaluar") setActiveTab("plan");
                 }}
                 className="px-5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-md hover:shadow-lg"
               >
@@ -1127,10 +1059,10 @@ export default function ModalEvaluacionECG({
               </button>
             )}
 
-            {activeTab === "nota" && (
+            {activeTab === "plan" && (
               <button
                 onClick={handleGuardar}
-                disabled={loading || !observacionesEval.trim()}
+                disabled={loading || !tipoEvaluacion}
                 className="px-5 py-2 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white rounded-lg font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2"
               >
                 ✓ Guardar Evaluación
