@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Calendar, FileText, Loader2 } from "lucide-react";
 
 import { periodoSolicitudService } from "../../../../services/periodoSolicitudService";
-import { solicitudTurnoService } from "../../../../services/solicitudTurnoService";
+import { solicitudTurnosService } from "../../../../services/solicitudTurnosService";
 
 
 import TabPeriodos from "./components/TabPeriodos";
@@ -68,7 +68,7 @@ export default function GestionPeriodosTurnos() {
   const cargarSolicitudes = async () => {
     setLoadingSolicitudes(true);
     try {
-      const data = await solicitudTurnoService.obtenerTodas(filtros);
+      const data = await solicitudTurnosService.obtenerTodas(filtros);
 
       const list = Array.isArray(data)
         ? data
@@ -125,7 +125,7 @@ export default function GestionPeriodosTurnos() {
       setPrefillRechazo(false);
       setLoadingDetalle(true);
       setShowDetalleModal(true);
-      const detalle = await solicitudTurnoService.obtenerPorId(solicitud.idSolicitud);
+      const detalle = await solicitudTurnosService.obtenerPorId(solicitud.idSolicitud);
       setSolicitudDetalle(detalle);
     } catch (err) {
       console.error(err);
@@ -142,7 +142,7 @@ export default function GestionPeriodosTurnos() {
       setPrefillRechazo(true);
       setLoadingDetalle(true);
       setShowDetalleModal(true);
-      const detalle = await solicitudTurnoService.obtenerPorId(solicitud.idSolicitud);
+      const detalle = await solicitudTurnosService.obtenerPorId(solicitud.idSolicitud);
       setSolicitudDetalle(detalle);
     } catch (err) {
       console.error(err);
@@ -158,7 +158,7 @@ export default function GestionPeriodosTurnos() {
   const handleAprobarSolicitud = async (idSolicitud) => {
     if (!window.confirm("¿Está seguro de aprobar esta solicitud?")) return;
     try {
-      await solicitudTurnoService.aprobarSolicitud(idSolicitud);
+      await solicitudTurnosService.aprobarSolicitud(idSolicitud);
       await cargarSolicitudes();
       setShowDetalleModal(false);
       setSolicitudDetalle(null);
@@ -175,7 +175,7 @@ export default function GestionPeriodosTurnos() {
       return;
     }
     try {
-      await solicitudTurnoService.rechazarSolicitud(idSolicitud, motivo.trim());
+      await solicitudTurnosService.rechazarSolicitud(idSolicitud, motivo.trim());
       await cargarSolicitudes();
       setShowDetalleModal(false);
       setSolicitudDetalle(null);

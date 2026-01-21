@@ -37,8 +37,8 @@ public class AdherenciaController {
      */
     @GetMapping("/paciente/{pkAsegurado}")
     public ResponseEntity<Map<String, Object>> obtenerAdherenciaPaciente(
-            @PathVariable String pkAsegurado,
-            @RequestParam(defaultValue = "30") Integer dias) {
+            @PathVariable("pkAsegurado") String pkAsegurado,
+            @RequestParam(defaultValue = "30", name="dias") Integer dias) {
 
         log.info("📊 GET /api/adherencia/paciente/{} - dias={}", pkAsegurado, dias);
 

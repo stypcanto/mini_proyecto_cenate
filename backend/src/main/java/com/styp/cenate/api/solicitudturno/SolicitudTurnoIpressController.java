@@ -229,8 +229,8 @@ public class SolicitudTurnoIpressController {
 	 * /api/solicitudes-turno/consultar?idPeriodo=7
 	 */
 	@GetMapping("/consultar")
-	public ResponseEntity<List<SolicitudTurnoIpressListadoRow>> listar(@RequestParam(required = false) Long idPeriodo,
-			@RequestParam(required = false) String estado) {
+	public ResponseEntity<List<SolicitudTurnoIpressListadoRow>> listar(@RequestParam(required = false, name = "idPeriodo") Long idPeriodo,
+			@RequestParam(required = false, name = "estado") String estado) {
 		log.info("listar ***********************- idPeriodo : {} - estado : {}", idPeriodo, estado);
 
 		var listado = solicitudService.listar(idPeriodo, estado);
