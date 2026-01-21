@@ -196,31 +196,7 @@ export default function TeleECGRecibidas() {
     }
   };
 
-  /**
-   * ✅ FIX T-ECG-004: Rechazar ECG - Con confirmación
-   */
-  const handleRechazar = async (idImagen) => {
-    // Primero pedir confirmación
-    if (!window.confirm("¿Estás seguro de que deseas rechazar esta ECG? Esta acción no se puede deshacer.")) {
-      return;
-    }
-
-    // Luego pedir motivo
-    const motivo = prompt("Ingresa el motivo del rechazo:");
-    if (!motivo || motivo.trim() === "") {
-      toast("El motivo del rechazo es requerido", { icon: "⚠️" });
-      return;
-    }
-
-    try {
-      await teleecgService.rechazarImagen(idImagen, motivo);
-      toast.success("✅ ECG rechazada exitosamente");
-      await Promise.all([cargarECGs(), cargarEstadisticasGlobales()]);
-    } catch (error) {
-      console.error("❌ Error al rechazar ECG:", error);
-      toast.error("Error al rechazar la ECG");
-    }
-  };
+  // ❌ ELIMINADO: handleRechazar - No se rechaza en CENATE, solo se atiende
 
   /**
    * Descargar ECG
@@ -782,23 +758,7 @@ export default function TeleECGRecibidas() {
                           )}
 
                           {/* Rechazar si alguna está pendiente */}
-                          {asegurado.ecgs_pendientes > 0 && (
-                            <button
-                              onClick={() => {
-                                if (window.confirm(`¿Rechazar todas las ${asegurado.total_ecgs} ECGs de este asegurado?`)) {
-                                  const motivo = prompt("Ingresa el motivo del rechazo:");
-                                  if (motivo && motivo.trim() !== "") {
-                                    // Rechazar la primera imagen (como representativa del grupo)
-                                    handleRechazar(asegurado.imagenes[0].id_imagen);
-                                  }
-                                }
-                              }}
-                              title="Rechazar grupo"
-                              className="p-2 text-red-600 hover:bg-red-100 rounded transition-colors"
-                            >
-                              <X className="w-4 h-4" />
-                            </button>
-                          )}
+                          {/* ❌ BOTÓN RECHAZAR ELIMINADO - Solo se atiende en CENATE, no se rechaza */}
                         </div>
                       </td>
                     </tr>

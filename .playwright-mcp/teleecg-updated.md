@@ -1,0 +1,143 @@
+### New console messages
+- [WARNING] Error with Feature-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+- [WARNING] Error with Feature-Policy header: Some features are specified in both Feature-Policy and P...
+- [WARNING] Error with Permissions-Policy header: Unrecognized feature: 'ambient-light-sensor'. @ :0
+- [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/rea...
+- [INFO] 🌐 [API Base URL]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:5165...
+- [INFO] 🔧 [Environment]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:51658
+- [INFO] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:51659
+- [LOG] 🌐 [API Base URL]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:55538
+- [LOG] 🔧 [REACT_APP_API_URL]: http://localhost:8080/api @ http://localhost:3000/static/js/bundle.js:...
+- [LOG] 📍 [Window Location]: http://localhost:3000/teleekgs/listar @ http://localhost:3000/static/js/...
+- [LOG] Cargando permisos para usuario ID: 59 @ http://localhost:3000/static/js/bundle.js:50701
+- [LOG] 🚀 [GET] http://localhost:8080/api/menu-usuario/usuario/59 @ http://localhost:3000/static/js/b...
+- [LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:51555
+- [LOG] Cargando permisos para usuario ID: 59 @ http://localhost:3000/static/js/bundle.js:50701
+- [LOG] 🚀 [GET] http://localhost:8080/api/menu-usuario/usuario/59 @ http://localhost:3000/static/js/b...
+- [LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:51555
+- [LOG] Cargando permisos para usuario ID: 59 @ http://localhost:3000/static/js/bundle.js:51154
+- [LOG] 🚀 [GET] http://localhost:8080/api/menu-usuario/usuario/59 @ http://localhost:3000/static/js/b...
+- [LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:51555
+- [LOG] 🚀 [GET] http://localhost:8080/api/usuarios/detalle/84151616 @ http://localhost:3000/static/js...
+- [LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:55547
+- [LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:55626
+- [LOG] Cargando permisos para usuario ID: 59 @ http://localhost:3000/static/js/bundle.js:51154
+- [LOG] 🚀 [GET] http://localhost:8080/api/menu-usuario/usuario/59 @ http://localhost:3000/static/js/b...
+- [LOG] 🔐 Token agregado al request @ http://localhost:3000/static/js/bundle.js:51555
+- [LOG] 🚀 [GET] http://localhost:8080/api/usuarios/detalle/84151616 @ http://localhost:3000/static/js...
+- [LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:55547
+- [LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:55626
+- [LOG] 🚀 [GET] http://localhost:8080/api/teleekgs/listar?page=0 @ http://localhost:3000/static/js/bu...
+- [LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:55547
+- [LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:55626
+- [LOG] 🚀 [GET] http://localhost:8080/api/teleekgs/listar?page=0 @ http://localhost:3000/static/js/bu...
+- [LOG] 🔑 Token detectado: Sí @ http://localhost:3000/static/js/bundle.js:55547
+- [LOG] 🔐 Token añadido a la petición @ http://localhost:3000/static/js/bundle.js:55626
+- [LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:51522
+- [LOG] ✅ [Response Data]: [Object] @ http://localhost:3000/static/js/bundle.js:51543
+- [LOG] Permisos cargados: 5 rutas @ http://localhost:3000/static/js/bundle.js:50743
+- [LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:55555
+- [LOG] ✅ [Response Data]: {username: 84151616, estado: ACTIVO, activo: true, locked: false, roles: Ar...
+- [LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:55555
+- [LOG] ✅ [Response Data]: {success: true, message: Imágenes listadas, code: 200, data: Object} @ http...
+- [LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:51522
+- [LOG] ✅ [Response Data]: [Object] @ http://localhost:3000/static/js/bundle.js:51543
+- [LOG] Permisos cargados: 5 rutas @ http://localhost:3000/static/js/bundle.js:50743
+- [LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:55555
+- [LOG] ✅ [Response Data]: {username: 84151616, estado: ACTIVO, activo: true, locked: false, roles: Ar...
+- [LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:51522
+- [LOG] ✅ [Response Data]: [Object] @ http://localhost:3000/static/js/bundle.js:51543
+- [LOG] Permisos cargados: 1 @ http://localhost:3000/static/js/bundle.js:51156
+- [LOG] Icon name received: Users | Found: true @ http://localhost:3000/static/js/bundle.js:45282
+- [LOG] Icon name received: Users | Found: true @ http://localhost:3000/static/js/bundle.js:45282
+- [LOG] Icon name received: Users | Found: true @ http://localhost:3000/static/js/bundle.js:45282
+- [LOG] Icon name received: Users | Found: true @ http://localhost:3000/static/js/bundle.js:45282
+- [LOG] 📥 [Response Status]: 200  @ http://localhost:3000/static/js/bundle.js:55555
+- [LOG] ✅ [Response Data]: {success: true, message: Imágenes listadas, code: 200, data: Object} @ http...
+- [LOG] 📥 [Response] 200  @ http://localhost:3000/static/js/bundle.js:51522
+- [LOG] ✅ [Response Data]: [Object] @ http://localhost:3000/static/js/bundle.js:51543
+- [LOG] Permisos cargados: 1 @ http://localhost:3000/static/js/bundle.js:51156
+- [LOG] Icon name received: Users | Found: true @ http://localhost:3000/static/js/bundle.js:45282
+- [LOG] Icon name received: Users | Found: true @ http://localhost:3000/static/js/bundle.js:45282
+- [LOG] Icon name received: Users | Found: true @ http://localhost:3000/static/js/bundle.js:45282
+- [LOG] Icon name received: Users | Found: true @ http://localhost:3000/static/js/bundle.js:45282
+
+### Page state
+- Page URL: http://localhost:3000/teleekgs/listar
+- Page Title: Intranet CENATE
+- Page Snapshot:
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e10]
+        - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - button "Gestión de Personal Externo" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]:
+              - img [ref=e18]
+              - generic [ref=e23]: Gestión de Personal Externo
+            - img [ref=e24]
+          - generic [ref=e26]:
+            - link "Bienvenida" [ref=e27] [cursor=pointer]:
+              - /url: /roles/externo/bienvenida
+              - img [ref=e28]
+              - generic [ref=e31]: Bienvenida
+            - link "Formulario de Diagnóstico" [ref=e32] [cursor=pointer]:
+              - /url: /roles/externo/formulario-diagnostico
+              - img [ref=e33]
+              - generic [ref=e36]: Formulario de Diagnóstico
+            - link "Solicitud de Turnos" [ref=e37] [cursor=pointer]:
+              - /url: /roles/externo/solicitud-turnos
+              - img [ref=e38]
+              - generic [ref=e41]: Solicitud de Turnos
+            - link "Gestión de Modalidad de Atención" [ref=e42] [cursor=pointer]:
+              - /url: /roles/externo/gestion-modalidad
+              - img [ref=e43]
+              - generic [ref=e46]: Gestión de Modalidad de Atención
+            - button "TELE EKG" [ref=e48] [cursor=pointer]:
+              - generic [ref=e49]:
+                - img [ref=e50]
+                - generic [ref=e53]: TELE EKG
+              - img [ref=e54]
+      - paragraph [ref=e57]: v1.18.0
+  - main "Contenido principal" [ref=e58]:
+    - generic [ref=e60]:
+      - heading [level=1]
+      - button "Menú de usuario" [ref=e63] [cursor=pointer]:
+        - generic [ref=e65]: JL
+        - generic [ref=e66]:
+          - generic "Jesus Lopez" [ref=e67]
+          - generic "PROGRAMA DE ATENCION DOMICILIARIA-PADOMI" [ref=e68]
+        - img [ref=e69]
+    - generic [ref=e72]:
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - generic [ref=e76]:
+            - img [ref=e77]
+            - heading "Registro de Pacientes" [level=1] [ref=e82]
+          - paragraph [ref=e83]: Listado de pacientes con electrocardiogramas registrados
+        - generic [ref=e85]:
+          - generic [ref=e86]:
+            - img [ref=e87]
+            - textbox "Buscar por DNI, nombre o apellido..." [ref=e90]
+          - generic [ref=e91]:
+            - img [ref=e92]
+            - combobox [ref=e94]:
+              - option "Todos los estados" [selected]
+              - option "Pendientes"
+              - option "Procesadas"
+              - option "Rechazadas"
+          - generic [ref=e95]:
+            - paragraph [ref=e96]: Total de ECGs
+            - paragraph [ref=e97]: "0"
+        - generic [ref=e99]:
+          - img [ref=e100]
+          - paragraph [ref=e105]: No se encontraron registros
+      - generic [ref=e106]:
+        - paragraph [ref=e107]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e108]: "v1.18.0 - Personal Externo: Gestión Modalidad + Bienvenida"
+```

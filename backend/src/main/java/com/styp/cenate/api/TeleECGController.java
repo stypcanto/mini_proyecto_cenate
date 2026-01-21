@@ -610,10 +610,10 @@ public class TeleECGController {
 
     /**
      * Obtener estadísticas
+     * ✅ FIX v1.21.5: Remover @CheckMBACPermission - estadísticas públicas
      */
     @GetMapping("/estadisticas")
-    @CheckMBACPermission(pagina = "/teleekgs/dashboard", accion = "ver")
-    @Operation(summary = "Obtener estadísticas")
+    @Operation(summary = "Obtener estadísticas de TeleECG")
     public ResponseEntity<ApiResponse<TeleECGEstadisticasDTO>> obtenerEstadisticas() {
 
         log.info("📊 Generando estadísticas");

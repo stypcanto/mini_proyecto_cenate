@@ -371,29 +371,34 @@ public class TeleECGService {
     public TeleECGEstadisticasDTO obtenerEstadisticas() {
         log.info("📊 Generando estadísticas TeleEKG");
 
-        // ✅ FIX T-ECG-001: Usar query que filtra por fecha_expiracion
+        // ✅ FIX T-ECG-001 v1.21.5: Query simplificada con CAST(x AS INTEGER)
+        // Retorna: [total, pendientes (ENVIADA), observadas (OBSERVADA), atendidas (ATENDIDA)]
         Object[] estadisticasArr = teleECGImagenRepository.getEstadisticasCompletas();
+
+        if (estadisticasArr == null || estadisticasArr.length < 4) {
+            log.warn("⚠️ Estadísticas vacías, retornando zeros");
+            estadisticasArr = new Object[]{0, 0, 0, 0};
+        }
 
         long totalImagenes = estadisticasArr[0] != null ? ((Number) estadisticasArr[0]).longValue() : 0;
         long pendientes = estadisticasArr[1] != null ? ((Number) estadisticasArr[1]).longValue() : 0;
-        long procesadas = estadisticasArr[2] != null ? ((Number) estadisticasArr[2]).longValue() : 0;
-        long rechazadas = estadisticasArr[3] != null ? ((Number) estadisticasArr[3]).longValue() : 0;
-        long vinculadas = estadisticasArr[4] != null ? ((Number) estadisticasArr[4]).longValue() : 0;
+        long observadas = estadisticasArr[2] != null ? ((Number) estadisticasArr[2]).longValue() : 0;
+        long atendidas = estadisticasArr[3] != null ? ((Number) estadisticasArr[3]).longValue() : 0;
 
-        log.info("✅ Estadísticas calculadas: Total={}, Pendientes={}, Procesadas={}, Rechazadas={}, Vinculadas={}",
-            totalImagenes, pendientes, procesadas, rechazadas, vinculadas);
+        log.info("✅ Estadísticas calculadas: Total={}, Pendientes={}, Observadas={}, Atendidas={}",
+            totalImagenes, pendientes, observadas, atendidas);
 
         TeleECGEstadisticasDTO estadisticas = TeleECGEstadisticasDTO.builder()
             .fecha(LocalDateTime.now().toLocalDate())
             .totalImagenesCargadas(totalImagenes)
-            .totalImagenesProcesadas(procesadas)
-            .totalImagenesRechazadas(rechazadas)
-            .totalImagenesVinculadas(vinculadas)
             .totalImagenesPendientes(pendientes)
+            .totalImagenesRechazadas(observadas)
+            .totalImagenesProcesadas(atendidas)
+            .totalImagenesVinculadas(atendidas)
             .totalImagenesActivas(totalImagenes)  // Todas activas (ya filtradas por fecha_expiracion)
-            .tasaRechazoPorcentaje(totalImagenes > 0 ? (rechazadas * 100.0 / totalImagenes) : 0.0)
-            .tasaVinculacionPorcentaje(procesadas > 0 ? (vinculadas * 100.0 / procesadas) : 0.0)
-            .tasaProcesamientoPorcentaje(totalImagenes > 0 ? (procesadas * 100.0 / totalImagenes) : 0.0)
+            .tasaRechazoPorcentaje(totalImagenes > 0 ? (observadas * 100.0 / totalImagenes) : 0.0)
+            .tasaVinculacionPorcentaje(atendidas > 0 ? (atendidas * 100.0 / atendidas) : 0.0)
+            .tasaProcesamientoPorcentaje(totalImagenes > 0 ? (atendidas * 100.0 / totalImagenes) : 0.0)
             .porcentajePendientes(totalImagenes > 0 ? (pendientes * 100.0 / totalImagenes) : 0.0)
             .statusSalud("SALUDABLE")
             .statusDetalles("Sistema funcionando normalmente")
@@ -487,12 +492,15 @@ public class TeleECGService {
             throw new ValidationException("Evaluación debe ser NORMAL o ANORMAL");
         }
 
-        if (descripcion == null || descripcion.trim().length() < 10) {
-            throw new ValidationException("Descripción debe tener mínimo 10 caracteres");
+        // ✅ FIX v1.21.5: Observaciones OPCIONALES
+        // Si se proporciona descripción, debe tener mínimo 10 caracteres
+        // Si está vacía, es permitido
+        if (descripcion != null && descripcion.trim().length() > 0 && descripcion.trim().length() < 10) {
+            throw new ValidationException("Si proporciona observaciones, debe tener mínimo 10 caracteres");
         }
 
-        if (descripcion.length() > 1000) {
-            throw new ValidationException("Descripción no puede exceder 1000 caracteres");
+        if (descripcion != null && descripcion.length() > 1000) {
+            throw new ValidationException("Observaciones no pueden exceder 1000 caracteres");
         }
 
         // 2. Buscar imagen
@@ -771,12 +779,20 @@ public class TeleECGService {
             TeleECGAuditoria auditoria = new TeleECGAuditoria();
             auditoria.setImagen(imagen);
 
-            // Buscar usuario por ID si está disponible
+            // ✅ FIX: Asegurar que siempre hay un usuario (id_usuario es NOT NULL en BD)
             if (idUsuario != null) {
-                usuarioRepository.findById(idUsuario).ifPresent(usuario -> {
+                var usuarioOpt = usuarioRepository.findById(idUsuario);
+                if (usuarioOpt.isPresent()) {
+                    Usuario usuario = usuarioOpt.get();
                     auditoria.setUsuario(usuario);
                     auditoria.setNombreUsuario(usuario.getNameUser());
-                });
+                } else {
+                    log.warn("⚠️ Usuario no encontrado para auditoría: {}", idUsuario);
+                    return; // No registrar si el usuario no existe
+                }
+            } else {
+                log.warn("⚠️ Sin usuario para auditoría, no registrando");
+                return; // No registrar si no hay usuario
             }
 
             auditoria.setAccion(accion);

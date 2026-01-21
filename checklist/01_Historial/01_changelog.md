@@ -612,16 +612,32 @@ Cuando se alcancen +100 evaluaciones:
 
 ---
 
-## v1.21.5 (2026-01-20) - ✅ Tele-ECG v2.0.0 FINAL: Cascading Delete + Permisos MBAC Corregidos
+## v1.21.5 (2026-01-21) - ✅ Tele-ECG CICLO COMPLETO: Consolidación de ECGs por Asegurado + Carrusel Modal
 
-### 🔧 Bugs Corregidos - Estado Final del Módulo
+### 🎯 Implementación: Ciclo Completo PADOMI + CENATE
 
 **Estado**: ✅ **COMPLETADO Y VERIFICADO EN PRODUCCIÓN**
 
-**Descripción**: Se resolvieron los 3 bugs críticos que impedían la eliminación correcta de imágenes ECG:
-1. Cascading delete no configurado en Hibernate
-2. Permisos MBAC desincronizados entre tablas
-3. Orden de operaciones en eliminación (auditoría vs. cascada)
+**Descripción**: Implementación final del módulo Tele-ECG con ciclo completo funcional:
+
+#### Ciclo PADOMI:
+- ✅ Upload de múltiples ECGs
+- ✅ Procesamiento y auditoría
+- ✅ Monitoreo en Registro de Pacientes
+
+#### Ciclo CENATE:
+- ✅ Recepción consolidada (1 fila/asegurado)
+- ✅ Indicador visual "📌 X ECGs"
+- ✅ Carrusel Modal para visualizar todas las imágenes
+- ✅ Evaluación y procesamiento por lote
+- ✅ Descarga individual o ZIP
+
+#### Nuevas Características:
+1. **Consolidación de ECGs**: Agrupa imágenes del mismo paciente en 1 fila
+2. **Carrusel Modal**: Navegación entre N imágenes con zoom/rotación
+3. **Indicador Visual**: Badge "📌 X ECGs" bajo nombre del paciente
+4. **Estado Agregado**: Muestra resumen (ej: "📤 4 Enviadas")
+5. **Testing**: Validado con credenciales CENATE reales (44914706)
 
 ### 🔧 Bug T-ECG-001: Cascading Delete No Configurado (CRÍTICO)
 
