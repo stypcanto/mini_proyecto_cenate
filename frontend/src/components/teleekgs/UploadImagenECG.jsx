@@ -1,15 +1,11 @@
-// ========================================================================
-// 📤 UploadImagenECG.jsx – Componente para Cargar ECGs
-// ✅ VERSIÓN 1.0.0 - CENATE 2026
-// ========================================================================
-
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Upload, X, CheckCircle, AlertCircle, FileImage,
-  Loader, Eye, Download, Plus, Trash2
+  Loader, Heart, User, Trash2, Plus
 } from "lucide-react";
 import toast from "react-hot-toast";
 import teleekgService from "../../services/teleekgService";
+import gestionPacientesService from "../../services/gestionPacientesService";
 import CrearAseguradoForm from "./CrearAseguradoForm";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -18,17 +14,85 @@ const MIN_IMAGENES = 4;  // Mínimo de imágenes (PADOMI requirement)
 const MAX_IMAGENES = 10; // Máximo de imágenes (PADOMI requirement)
 
 export default function UploadImagenECG({ onSuccess }) {
-  const [archivos, setArchivos] = useState([]); // Array de archivos
-  const [previews, setPreviews] = useState([]); // Array de previews
+  // Archivos
+  const [archivos, setArchivos] = useState([]);
+  const [previews, setPreviews] = useState([]);
+
+  // Paciente
   const [numDocPaciente, setNumDocPaciente] = useState("");
-  const [nombresPaciente, setNombresPaciente] = useState("");
-  const [apellidosPaciente, setApellidosPaciente] = useState("");
+  const [datosCompletos, setDatosCompletos] = useState({
+    apellidos: "",
+    nombres: "",
+    sexo: "",
+    codigo: "",
+  });
+  const [searchingPaciente, setSearchingPaciente] = useState(false);
+  const [pacienteEncontrado, setPacienteEncontrado] = useState(false);
+
+  // UI
   const [loading, setLoading] = useState(false);
   const [enviado, setEnviado] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
   const [respuestaServidor, setRespuestaServidor] = useState(null);
   const [mostrarCrearAsegurado, setMostrarCrearAsegurado] = useState(false);
   const [aseguradoNoExiste, setAseguradoNoExiste] = useState(false);
   const fileInputRef = useRef(null);
+
+  // Buscar paciente por DNI cuando cambia
+  useEffect(() => {
+    if (numDocPaciente.length === 8) {
+      buscarPacientePorDni();
+    } else {
+      if (numDocPaciente.length === 0) {
+        setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "" });
+        setPacienteEncontrado(false);
+      }
+    }
+  }, [numDocPaciente]);
+
+  const buscarPacientePorDni = async () => {
+    try {
+      setSearchingPaciente(true);
+      const response = await gestionPacientesService.buscarAseguradoPorDni(numDocPaciente);
+
+      if (response && response.numDoc) {
+        const paciente = response;
+        let nombres = "";
+        let apellidos = "";
+
+        if (paciente.apellidosNombres) {
+          const partes = paciente.apellidosNombres.trim().split(" ");
+          if (partes.length > 2) {
+            apellidos = partes.slice(0, 2).join(" ");
+            nombres = partes.slice(2).join(" ");
+          } else if (partes.length === 2) {
+            apellidos = partes[0];
+            nombres = partes[1];
+          } else {
+            apellidos = partes[0];
+            nombres = "";
+          }
+        }
+
+        setDatosCompletos({
+          apellidos,
+          nombres,
+          sexo: paciente.sexo === "M" ? "M" : paciente.sexo === "F" ? "F" : paciente.sexo || "-",
+          codigo: paciente.pkAsegurado || paciente.numDoc || numDocPaciente,
+        });
+        setPacienteEncontrado(true);
+        toast.success("✅ Paciente encontrado");
+      } else {
+        setPacienteEncontrado(false);
+        toast.error("❌ Paciente no encontrado");
+      }
+    } catch (error) {
+      setPacienteEncontrado(false);
+      console.error("Error buscando paciente:", error);
+    } finally {
+      setSearchingPaciente(false);
+    }
+  };
 
   const validarArchivo = (file) => {
     if (!file) {
@@ -42,7 +106,7 @@ export default function UploadImagenECG({ onSuccess }) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      toast.error(`El archivo no debe superar 5MB (Tu archivo: ${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      toast.error(`El archivo no debe superar 5MB`);
       return false;
     }
 
@@ -52,29 +116,29 @@ export default function UploadImagenECG({ onSuccess }) {
   const agregarArchivos = (nuevosArchivos) => {
     const archivosValidos = [];
     const nuevosPreviews = [];
+    let contador = 0;
 
     for (let file of nuevosArchivos) {
-      // Verificar que no esté duplicado
+      if (archivos.length + archivosValidos.length >= MAX_IMAGENES) {
+        toast.error(`Máximo ${MAX_IMAGENES} imágenes permitidas`);
+        break;
+      }
+
       if (archivos.some(a => a.name === file.name && a.size === file.size)) {
-        toast.error(`"${file.name}" ya fue seleccionado`);
         continue;
       }
 
       if (validarArchivo(file)) {
-        if (archivos.length + archivosValidos.length >= MAX_IMAGENES) {
-          toast.error(`Máximo ${MAX_IMAGENES} imágenes permitidas`);
-          break;
-        }
-
         archivosValidos.push(file);
+        contador++;
 
-        // Crear preview
         const reader = new FileReader();
         reader.onload = (event) => {
           nuevosPreviews.push(event.target?.result);
           if (nuevosPreviews.length === archivosValidos.length) {
             setArchivos([...archivos, ...archivosValidos]);
             setPreviews([...previews, ...nuevosPreviews]);
+            toast.success(`✅ ${contador} imagen(es) agregada(s)`);
           }
         };
         reader.readAsDataURL(file);
@@ -82,25 +146,36 @@ export default function UploadImagenECG({ onSuccess }) {
     }
   };
 
-  const handleArchivoSeleccionado = (e) => {
-    const files = Array.from(e.target.files || []);
-    agregarArchivos(files);
-  };
-
   const handleDragOver = (e) => {
     e.preventDefault();
     e.currentTarget.classList.add("border-blue-500", "bg-blue-50");
+    setDragActive(true);
   };
 
   const handleDragLeave = (e) => {
     e.currentTarget.classList.remove("border-blue-500", "bg-blue-50");
+    setDragActive(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.currentTarget.classList.remove("border-blue-500", "bg-blue-50");
+    setDragActive(false);
     const files = Array.from(e.dataTransfer.files || []);
     agregarArchivos(files);
+  };
+
+  const handleArchivoSeleccionado = (e) => {
+    const files = Array.from(e.target.files || []);
+    agregarArchivos(files);
+  };
+
+  const removerArchivo = (index) => {
+    const nuevosArchivos = archivos.filter((_, i) => i !== index);
+    const nuevosPreviews = previews.filter((_, i) => i !== index);
+    setArchivos(nuevosArchivos);
+    setPreviews(nuevosPreviews);
+    toast.success("Imagen removida");
   };
 
   const validarFormulario = () => {
@@ -109,13 +184,13 @@ export default function UploadImagenECG({ onSuccess }) {
       return false;
     }
 
-    if (numDocPaciente.length !== 8) {
-      toast.error("El DNI debe tener exactamente 8 dígitos");
+    if (!pacienteEncontrado) {
+      toast.error("El paciente no fue encontrado. Verifica el DNI.");
       return false;
     }
 
     if (archivos.length < MIN_IMAGENES) {
-      toast.error(`Debe seleccionar al menos ${MIN_IMAGENES} imágenes (PADOMI requirement)`);
+      toast.error(`Debe seleccionar al menos ${MIN_IMAGENES} imágenes`);
       return false;
     }
 
@@ -136,25 +211,21 @@ export default function UploadImagenECG({ onSuccess }) {
       setLoading(true);
       setAseguradoNoExiste(false);
 
-      // Crear FormData con múltiples archivos
       const formData = new FormData();
       formData.append("numDocPaciente", numDocPaciente);
-      formData.append("nombresPaciente", nombresPaciente || "");
-      formData.append("apellidosPaciente", apellidosPaciente || "");
+      formData.append("nombresPaciente", datosCompletos.nombres || "");
+      formData.append("apellidosPaciente", datosCompletos.apellidos || "");
 
-      // Agregar todos los archivos
-      archivos.forEach((archivo, index) => {
+      archivos.forEach((archivo) => {
         formData.append(`archivos`, archivo);
       });
 
-      // Usar nuevo método para múltiples imágenes
       const respuesta = await teleekgService.subirMultiplesImagenes(formData);
 
       setRespuestaServidor(respuesta);
       setEnviado(true);
       toast.success(`✅ ${archivos.length} ECGs cargados exitosamente`);
 
-      // Reset form
       setTimeout(() => {
         resetFormulario();
         if (onSuccess) onSuccess();
@@ -163,7 +234,6 @@ export default function UploadImagenECG({ onSuccess }) {
     } catch (error) {
       console.error("Error al cargar ECGs:", error);
 
-      // Verificar si es error de asegurado no existe
       if (error.response?.status === 404 || error.message?.includes("asegurado")) {
         setAseguradoNoExiste(true);
         toast.error("El asegurado no existe. Por favor créalo primero.");
@@ -180,29 +250,21 @@ export default function UploadImagenECG({ onSuccess }) {
     setArchivos([]);
     setPreviews([]);
     setNumDocPaciente("");
-    setNombresPaciente("");
-    setApellidosPaciente("");
+    setDatosCompletos({ apellidos: "", nombres: "", sexo: "", codigo: "" });
     setEnviado(false);
     setRespuestaServidor(null);
+    setPacienteEncontrado(false);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
-  };
-
-  const removerArchivo = (index) => {
-    const nuevosArchivos = archivos.filter((_, i) => i !== index);
-    const nuevosPreviews = previews.filter((_, i) => i !== index);
-    setArchivos(nuevosArchivos);
-    setPreviews(nuevosPreviews);
-    toast.success("Imagen removida");
   };
 
   if (mostrarCrearAsegurado && aseguradoNoExiste) {
     return (
       <CrearAseguradoForm
         numDocPaciente={numDocPaciente}
-        nombresPaciente={nombresPaciente}
-        apellidosPaciente={apellidosPaciente}
+        nombresPaciente={datosCompletos.nombres}
+        apellidosPaciente={datosCompletos.apellidos}
         onCancel={() => setMostrarCrearAsegurado(false)}
         onSuccess={() => {
           setMostrarCrearAsegurado(false);
@@ -214,225 +276,248 @@ export default function UploadImagenECG({ onSuccess }) {
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
-      {/* Tarjeta Principal */}
-      <div className="bg-white rounded-lg shadow-md p-8">
-        <h2 className="text-2xl font-bold mb-2 flex items-center gap-2">
-          <Upload className="w-6 h-6 text-blue-600" />
-          Cargar Electrocardiograma
-        </h2>
-        <p className="text-gray-600 mb-6">Máximo 5MB | Formatos: JPEG, PNG</p>
+    <div className="bg-white rounded-xl shadow-2xl overflow-hidden flex flex-col">
+      {/* Header Profesional */}
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 px-6 py-5 flex items-center gap-3">
+        <div className="bg-white/20 p-2.5 rounded-lg">
+          <Heart className="w-6 h-6 text-white" />
+        </div>
+        <div>
+          <h2 className="text-xl font-bold text-white">Cargar Electrocardiograma</h2>
+          <p className="text-blue-100 text-xs mt-0.5">Centro Nacional de Telemedicina - EsSalud</p>
+        </div>
+      </div>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Información del Paciente */}
-          <div className="border-b pb-6">
-            <h3 className="text-lg font-semibold mb-4">Información del Paciente</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  DNI *
-                </label>
-                <input
-                  type="text"
-                  maxLength="8"
-                  placeholder="12345678"
-                  value={numDocPaciente}
-                  onChange={(e) => setNumDocPaciente(e.target.value.replace(/\D/g, ""))}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={enviado || loading}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Nombres
-                </label>
-                <input
-                  type="text"
-                  placeholder="Juan"
-                  value={nombresPaciente}
-                  onChange={(e) => setNombresPaciente(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  disabled={enviado || loading}
-                />
-              </div>
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Apellidos
-              </label>
+      {/* Contenido */}
+      <form onSubmit={handleSubmit} className="p-6 space-y-5 overflow-y-auto flex-1">
+        {/* 1️⃣ Sección de Búsqueda de Paciente */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-blue-900 mb-3 flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Información del Paciente
+          </h3>
+
+          {/* DNI Input */}
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
+              DNI del Paciente *
+            </label>
+            <div className="relative">
               <input
                 type="text"
-                placeholder="Pérez García"
-                value={apellidosPaciente}
-                onChange={(e) => setApellidosPaciente(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                disabled={enviado || loading}
+                value={numDocPaciente}
+                onChange={(e) => setNumDocPaciente(e.target.value.replace(/[^0-9]/g, ''))}
+                placeholder="Ingresa 8 dígitos"
+                maxLength="8"
+                disabled={searchingPaciente}
+                className="w-full px-4 py-2.5 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent text-lg font-semibold"
               />
+              <div className="absolute right-3 top-2.5">
+                {searchingPaciente && (
+                  <Loader className="w-5 h-5 animate-spin text-blue-600" />
+                )}
+                {pacienteEncontrado && !searchingPaciente && (
+                  <CheckCircle className="w-5 h-5 text-green-600" />
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Selector de Múltiples Archivos */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Selecciona las Imágenes del ECG * ({archivos.length}/{MAX_IMAGENES})
-              <span className="text-red-600 text-xs ml-2">Mínimo {MIN_IMAGENES} imágenes requeridas</span>
-            </label>
-
-            {archivos.length === 0 ? (
-              <div
-                onDragOver={handleDragOver}
-                onDragLeave={handleDragLeave}
-                onDrop={handleDrop}
-                onClick={() => fileInputRef.current?.click()}
-                className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition"
-              >
-                <FileImage className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                <p className="text-gray-600 font-medium mb-1">
-                  Arrastra tus imágenes aquí o haz clic para seleccionar
-                </p>
-                <p className="text-sm text-gray-500">JPEG o PNG | Máximo 5MB cada una | {MIN_IMAGENES}-{MAX_IMAGENES} imágenes</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {/* Grilla de previews */}
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {previews.map((preview, index) => (
-                    <div key={index} className="relative group">
-                      <div className="bg-gray-100 rounded-lg overflow-hidden aspect-square">
-                        <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
-                      </div>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition rounded-lg flex items-center justify-center">
-                        <button
-                          type="button"
-                          onClick={() => removerArchivo(index)}
-                          className="opacity-0 group-hover:opacity-100 transition bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"
-                          disabled={enviado || loading}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <div className="absolute top-1 right-1 bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">
-                        {index + 1}
-                      </div>
-                    </div>
-                  ))}
-
-                  {/* Botón agregar más (si no alcanzó máximo) */}
-                  {archivos.length < MAX_IMAGENES && (
-                    <button
-                      type="button"
-                      onClick={() => fileInputRef.current?.click()}
-                      className="border-2 border-dashed border-gray-300 rounded-lg p-4 aspect-square flex items-center justify-center hover:border-blue-500 hover:bg-blue-50 transition"
-                      disabled={enviado || loading}
-                    >
-                      <Plus className="w-6 h-6 text-gray-400" />
-                    </button>
-                  )}
+          {/* Datos Auto-cargados */}
+          {pacienteEncontrado && (
+            <div className="mt-4 grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Apellidos</label>
+                <div className="bg-white border-2 border-green-300 rounded-lg px-3 py-2">
+                  <p className="text-sm font-semibold text-gray-800">{datosCompletos.apellidos}</p>
                 </div>
+              </div>
 
-                {/* Resumen */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <p className="text-sm font-medium text-blue-900">
-                    {archivos.length} imagen(es) seleccionada(s)
-                  </p>
-                  <p className="text-xs text-blue-700 mt-1">
-                    Tamaño total: {(archivos.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2)}MB
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Nombres</label>
+                <div className="bg-white border-2 border-green-300 rounded-lg px-3 py-2">
+                  <p className="text-sm font-semibold text-gray-800">{datosCompletos.nombres}</p>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Sexo</label>
+                <div className="bg-white border-2 border-green-300 rounded-lg px-3 py-2">
+                  <p className="text-sm font-semibold text-gray-800">
+                    {datosCompletos.sexo === "M" ? "Masculino" : datosCompletos.sexo === "F" ? "Femenino" : datosCompletos.sexo}
                   </p>
                 </div>
               </div>
-            )}
 
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png"
-              multiple
-              onChange={handleArchivoSeleccionado}
-              className="hidden"
-              disabled={enviado || loading || archivos.length >= MAX_IMAGENES}
-            />
-          </div>
-
-          {/* Respuesta del Servidor */}
-          {enviado && respuestaServidor && (
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <div className="flex gap-3">
-                <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
-                <div className="flex-1">
-                  <p className="font-semibold text-green-800">¡{archivos.length} ECGs Cargados Exitosamente!</p>
-                  <p className="text-sm text-green-700 mt-2">
-                    Todas las imágenes han sido asociadas al paciente DNI: {respuestaServidor.numDocPaciente || numDocPaciente}
-                  </p>
-                  {respuestaServidor.idImagenes && (
-                    <div className="text-xs text-green-600 mt-2 bg-white rounded p-2 max-h-20 overflow-y-auto">
-                      IDs: {Array.isArray(respuestaServidor.idImagenes) ? respuestaServidor.idImagenes.join(", ") : respuestaServidor.idImagenes}
-                    </div>
-                  )}
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">Código Asegurado</label>
+                <div className="bg-white border-2 border-green-300 rounded-lg px-3 py-2">
+                  <p className="text-xs font-mono text-gray-700">{datosCompletos.codigo}</p>
                 </div>
               </div>
             </div>
           )}
+        </div>
 
-          {/* Botones de Acción */}
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={archivos.length < MIN_IMAGENES || loading || enviado}
-              className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition duration-200 ${
-                archivos.length < MIN_IMAGENES || loading || enviado
-                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+        {/* 2️⃣ Sección de Carga de Archivo */}
+        <div className="bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+          <h3 className="text-sm font-semibold text-indigo-900 mb-3 flex items-center gap-2">
+            <FileImage className="w-4 h-4" />
+            Selecciona las Imágenes del ECG * ({archivos.length}/{MAX_IMAGENES})
+          </h3>
+          <p className="text-xs text-indigo-700 mb-3">Mínimo {MIN_IMAGENES} imágenes requeridas</p>
+
+          {archivos.length === 0 ? (
+            <div
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={() => fileInputRef.current?.click()}
+              className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition ${
+                dragActive
+                  ? "border-indigo-600 bg-indigo-100"
+                  : "border-indigo-300 hover:border-indigo-600"
               }`}
-              title={archivos.length < MIN_IMAGENES ? `Se requieren al menos ${MIN_IMAGENES} imágenes` : ""}
             >
-              {loading ? (
-                <>
-                  <Loader className="w-5 h-5 animate-spin" />
-                  <span className="flex items-center gap-2">
-                    Cargando {archivos.length} imágenes...
-                    <span className="inline-block">
-                      <span className="animate-bounce" style={{animationDelay: "0s"}}>●</span>
-                      <span className="animate-bounce" style={{animationDelay: "0.1s"}}>●</span>
-                      <span className="animate-bounce" style={{animationDelay: "0.2s"}}>●</span>
-                    </span>
-                  </span>
-                </>
-              ) : (
-                <>
-                  <Upload className="w-4 h-4" />
-                  Cargar {archivos.length > 0 ? `${archivos.length} ECGs` : "ECGs"}
-                </>
-              )}
-            </button>
-            {(archivos.length > 0 || enviado) && (
-              <button
-                type="button"
-                onClick={resetFormulario}
-                disabled={loading}
-                className="px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Limpiar
-              </button>
-            )}
+              <FileImage className="w-12 h-12 text-indigo-400 mx-auto mb-3" />
+              <p className="text-sm font-semibold text-indigo-900 mb-1">
+                {pacienteEncontrado ? "Arrastra tus imágenes aquí o haz clic para seleccionar" : "Busca un paciente primero"}
+              </p>
+              <p className="text-xs text-indigo-700">
+                JPEG o PNG • Máximo 5MB cada una • {MIN_IMAGENES}-{MAX_IMAGENES} imágenes
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Grilla de previews */}
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                {previews.map((preview, index) => (
+                  <div key={index} className="relative group">
+                    <div className="bg-gray-100 rounded-lg overflow-hidden aspect-square">
+                      <img src={preview} alt={`Preview ${index + 1}`} className="w-full h-full object-cover" />
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition rounded-lg flex items-center justify-center">
+                      <button
+                        type="button"
+                        onClick={() => removerArchivo(index)}
+                        className="opacity-0 group-hover:opacity-100 transition bg-red-600 hover:bg-red-700 text-white p-2 rounded-lg"
+                        disabled={loading}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                    <div className="absolute top-1 right-1 bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold">
+                      {index + 1}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Botón agregar más */}
+                {archivos.length < MAX_IMAGENES && (
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="border-2 border-dashed border-indigo-300 rounded-lg p-4 aspect-square flex items-center justify-center hover:border-indigo-600 hover:bg-indigo-100 transition"
+                    disabled={loading}
+                  >
+                    <Plus className="w-6 h-6 text-indigo-400" />
+                  </button>
+                )}
+              </div>
+
+              {/* Resumen */}
+              <div className="bg-indigo-100 border border-indigo-300 rounded-lg p-3">
+                <p className="text-sm font-semibold text-indigo-900">
+                  {archivos.length} imagen(es) seleccionada(s)
+                </p>
+                <p className="text-xs text-indigo-700 mt-1">
+                  Tamaño total: {(archivos.reduce((sum, f) => sum + f.size, 0) / 1024 / 1024).toFixed(2)}MB
+                </p>
+              </div>
+            </div>
+          )}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png"
+            multiple
+            onChange={handleArchivoSeleccionado}
+            className="hidden"
+            disabled={loading || archivos.length >= MAX_IMAGENES}
+          />
+        </div>
+
+        {/* Respuesta del Servidor */}
+        {enviado && respuestaServidor && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+            <div className="flex gap-3">
+              <CheckCircle className="w-6 h-6 text-green-600 flex-shrink-0" />
+              <div className="flex-1">
+                <p className="font-semibold text-green-800">¡{archivos.length} ECGs Cargados Exitosamente!</p>
+                <p className="text-sm text-green-700 mt-2">
+                  Todas las imágenes han sido asociadas al paciente DNI: {numDocPaciente}
+                </p>
+              </div>
+            </div>
           </div>
-        </form>
-      </div>
+        )}
+
+        {/* Botones de Acción */}
+        <div className="flex gap-3 pt-4">
+          <button
+            type="submit"
+            disabled={archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado}
+            className={`flex-1 py-3 rounded-lg font-semibold flex items-center justify-center gap-2 transition duration-200 ${
+              archivos.length < MIN_IMAGENES || loading || enviado || !pacienteEncontrado
+                ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 text-white shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            }`}
+            title={archivos.length < MIN_IMAGENES ? `Se requieren al menos ${MIN_IMAGENES} imágenes` : ""}
+          >
+            {loading ? (
+              <>
+                <Loader className="w-5 h-5 animate-spin" />
+                <span className="flex items-center gap-2">
+                  Cargando {archivos.length} imágenes...
+                  <span className="inline-block">
+                    <span className="animate-bounce" style={{animationDelay: "0s"}}>●</span>
+                    <span className="animate-bounce" style={{animationDelay: "0.1s"}}>●</span>
+                    <span className="animate-bounce" style={{animationDelay: "0.2s"}}>●</span>
+                  </span>
+                </span>
+              </>
+            ) : (
+              <>
+                <Upload className="w-4 h-4" />
+                Cargar {archivos.length > 0 ? `${archivos.length} ECGs` : "ECGs"}
+              </>
+            )}
+          </button>
+          {(archivos.length > 0 || enviado) && (
+            <button
+              type="button"
+              onClick={resetFormulario}
+              disabled={loading}
+              className="px-6 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Limpiar
+            </button>
+          )}
+        </div>
+      </form>
 
       {/* Información de Ayuda */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
-          <AlertCircle className="w-5 h-5" />
+      <div className="bg-blue-50 border-t border-blue-200 p-4">
+        <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2 text-sm">
+          <AlertCircle className="w-4 h-4" />
           Información Importante - PADOMI
         </h4>
-        <ul className="text-sm text-blue-800 space-y-1 ml-7">
+        <ul className="text-xs text-blue-800 space-y-1 ml-5">
           <li>• <strong>Mínimo {MIN_IMAGENES} imágenes</strong> requeridas por envío</li>
           <li>• <strong>Máximo {MAX_IMAGENES} imágenes</strong> permitidas por envío</li>
-          <li>• Las imágenes se retienen por 30 días automáticamente</li>
-          <li>• El DNI debe tener exactamente 8 dígitos</li>
           <li>• Todas las imágenes se asociarán al mismo paciente</li>
-          <li>• Se te notificará por correo cuando los ECGs sean procesados</li>
           <li>• Solo se aceptan archivos JPEG y PNG (máx 5MB cada uno)</li>
-          <li>• Visualiza todas las imágenes en formato carrusel en la sección "Ver"</li>
         </ul>
       </div>
     </div>
