@@ -3,10 +3,25 @@
 // ✅ VERSIÓN 1.0.0 - CENATE 2026
 // ========================================================================
 
-import axios from "axios";
+import apiClient from './apiClient';
 
 // ✅ FIX: REACT_APP_API_URL ya incluye /api, así que no duplicamos
 const API_BASE_URL = `${process.env.REACT_APP_API_URL || "http://localhost:8080/api"}/teleekgs`;
+
+// ✅ Función auxiliar para obtener el token correctamente
+const getAuthToken = () => {
+  try {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      console.warn("⚠️ No hay token en localStorage");
+      return null;
+    }
+    return token;
+  } catch (e) {
+    console.error("❌ Error obteniendo token:", e);
+    return null;
+  }
+};
 
 const teleekgService = {
   /**
@@ -16,14 +31,23 @@ const teleekgService = {
    */
   subirImagenECG: async (formData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/upload`, formData, {
-        headers: {
-          // ✅ FIX: DO NOT set Content-Type manually for multipart/form-data
-          // axios will automatically set it with correct boundary parameters
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
+      const token = getAuthToken();
+
+      // ✅ Usar fetch directamente con configuración correcta para multipart
+      const response = await fetch(`${API_BASE_URL}/upload`, {
+        method: 'POST',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {},
+        body: formData
       });
-      return response.data.data;
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      return data.data;
     } catch (error) {
       console.error("Error al subir imagen:", error);
       throw error;
@@ -37,14 +61,26 @@ const teleekgService = {
    */
   subirMultiplesImagenes: async (formData) => {
     try {
-      const response = await axios.post(`${API_BASE_URL}/upload-multiple`, formData, {
-        headers: {
-          // ✅ FIX: DO NOT set Content-Type manually for multipart/form-data
-          // axios will automatically set it with correct boundary parameters
-          Authorization: `Bearer ${localStorage.getItem("token")}`
-        }
+      const token = getAuthToken();
+      console.log("🔑 Token para upload-multiple:", token ? "✅ Presente" : "❌ No encontrado");
+
+      // ✅ Usar fetch directamente con configuración correcta para multipart
+      const response = await fetch(`${API_BASE_URL}/upload-multiple`, {
+        method: 'POST',
+        headers: token ? {
+          'Authorization': `Bearer ${token}`
+        } : {},
+        body: formData
       });
-      return response.data.data;
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error("❌ Error en upload-multiple:", errorData);
+        throw new Error(errorData.message || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      return data.data;
     } catch (error) {
       console.error("Error al subir múltiples imágenes:", error);
       throw error;
