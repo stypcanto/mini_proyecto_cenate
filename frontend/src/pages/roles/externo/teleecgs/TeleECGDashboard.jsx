@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../../../../context/AuthContext";
 import teleeckgService from "../../../../services/teleecgService";
-import UploadImagenECG from "../../../../components/teleekgs/UploadImagenECG";
+import UploadImagenECG from "../../../../components/teleecgs/UploadImagenECG";
 import ListaECGsPacientes from "../../../../components/teleecgs/ListaECGsPacientes";
 import VisorECGModal from "../../../../components/teleecgs/VisorECGModal";
 

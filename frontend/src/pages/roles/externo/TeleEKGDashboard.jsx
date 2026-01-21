@@ -13,9 +13,9 @@ import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import teleekgService from "../../../services/teleekgService";
-import UploadImagenECG from "../../../components/teleekgs/UploadImagenECG";
-import ListarImagenesECG from "../../../components/teleekgs/ListarImagenesECG";
-import EstadisticasTeleEKG from "../../../components/teleekgs/EstadisticasTeleEKG";
+import UploadImagenECG from "../../../components/teleecgs/UploadImagenECG";
+import ListarImagenesECG from "../../../components/teleecgs/ListarImagenesECG";
+import EstadisticasTeleEKG from "../../../components/teleecgs/EstadisticasTeleEKG";
 
 export default function TeleEKGDashboard() {
   const navigate = useNavigate();
