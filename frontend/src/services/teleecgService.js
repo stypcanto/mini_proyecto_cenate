@@ -519,6 +519,53 @@ const teleecgService = {
       return [];
     }
   },
+
+  /**
+   * 🔄 v1.0.0: Actualizar transformaciones de imagen (rotación, flip)
+   * Guarda de forma persistente en BD
+   */
+  actualizarTransformaciones: async (idImagen, rotacion, flipHorizontal, flipVertical) => {
+    try {
+      console.log("🔄 [ACTUALIZAR TRANSFORMACIONES]", { idImagen, rotacion, flipHorizontal, flipVertical });
+      const response = await apiClient.put(
+        `/teleekgs/${idImagen}/transformaciones`,
+        {
+          rotacion,
+          flipHorizontal,
+          flipVertical,
+        },
+        true
+      );
+      console.log("✅ [Transformaciones Guardadas]");
+      return response.data || response;
+    } catch (error) {
+      console.error("❌ Error actualizando transformaciones:", error.message);
+      throw error;
+    }
+  },
+
+  /**
+   * ✂️ v1.0.0: Recortar imagen de forma PERMANENTE
+   * ADVERTENCIA: IRREVERSIBLE - Modifica la imagen original en BD
+   */
+  recortarImagen: async (idImagen, imagenBase64, mimeType = "image/png") => {
+    try {
+      console.log("✂️ [RECORTAR IMAGEN - PERMANENTE]", { idImagen, mimeType });
+      const response = await apiClient.put(
+        `/teleekgs/${idImagen}/recortar`,
+        {
+          imagenBase64,
+          mimeType,
+        },
+        true
+      );
+      console.log("✅ [Imagen Recortada - PERMANENTE]");
+      return response.data || response;
+    } catch (error) {
+      console.error("❌ Error recortando imagen:", error.message);
+      throw error;
+    }
+  },
 };
 
 export default teleecgService;

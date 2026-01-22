@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from "react";
-import { RefreshCw } from "lucide-react";
+import { RefreshCw, FlipHorizontal, FlipVertical } from "lucide-react";
 import { FILTER_PRESETS } from "./useImageFilters";
 
 /**
@@ -29,6 +29,8 @@ export default function FilterControlsPanel({
     invert = false,
     contrast = 100,
     brightness = 100,
+    flipHorizontal = false,
+    flipVertical = false,
   } = filters;
 
   /**
@@ -122,6 +124,38 @@ export default function FilterControlsPanel({
           className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer accent-amber-500"
           title="Ajusta brillo (50-200%)"
         />
+      </div>
+
+      {/* BUTTONS: Flip Horizontal/Vertical */}
+      <div className="space-y-2 bg-white px-3 py-3 rounded-lg border border-indigo-200">
+        <p className="text-xs font-bold text-gray-800 uppercase tracking-wider">🔄 Orientación</p>
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            onClick={() => onFilterChange("flipHorizontal", !flipHorizontal)}
+            className={`px-3 py-2 text-xs font-semibold rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
+              flipHorizontal
+                ? "bg-blue-100 border-blue-500 text-blue-800 shadow-md"
+                : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
+            }`}
+            title="Voltear horizontalmente (espejo izquierda-derecha)"
+          >
+            <FlipHorizontal size={16} />
+            Horizontal
+          </button>
+
+          <button
+            onClick={() => onFilterChange("flipVertical", !flipVertical)}
+            className={`px-3 py-2 text-xs font-semibold rounded-lg border-2 transition-all flex flex-col items-center gap-1 ${
+              flipVertical
+                ? "bg-blue-100 border-blue-500 text-blue-800 shadow-md"
+                : "bg-gray-50 border-gray-300 text-gray-700 hover:bg-gray-100"
+            }`}
+            title="Voltear verticalmente (de cabeza)"
+          >
+            <FlipVertical size={16} />
+            Vertical
+          </button>
+        </div>
       </div>
 
       {/* PRESETS - Diseño mejorado */}

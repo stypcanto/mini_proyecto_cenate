@@ -16,24 +16,32 @@ export const FILTER_PRESETS = {
     invert: false,
     contrast: 100,
     brightness: 100,
+    flipHorizontal: false,
+    flipVertical: false,
   },
   highContrast: {
     label: "Alto Contraste",
     invert: false,
     contrast: 150,
     brightness: 110,
+    flipHorizontal: false,
+    flipVertical: false,
   },
   inverted: {
     label: "Invertido",
     invert: true,
     contrast: 100,
     brightness: 100,
+    flipHorizontal: false,
+    flipVertical: false,
   },
   invertedHighContrast: {
     label: "Invertido + Contraste",
     invert: true,
     contrast: 140,
     brightness: 105,
+    flipHorizontal: false,
+    flipVertical: false,
   },
 };
 
@@ -43,6 +51,8 @@ export default function useImageFilters() {
     invert: false,
     contrast: 100,
     brightness: 100,
+    flipHorizontal: false,
+    flipVertical: false,
   });
 
   /**
@@ -65,7 +75,24 @@ export default function useImageFilters() {
       invert: false,
       contrast: 100,
       brightness: 100,
+      flipHorizontal: false,
+      flipVertical: false,
     });
+  };
+
+  /**
+   * Cargar transformaciones guardadas desde la BD
+   * Se usa cuando se carga una imagen para restaurar flips persistentes
+   * @param {Object} imagen - Objeto de imagen con propiedades flipHorizontal, flipVertical
+   */
+  const loadTransformationsFromDB = (imagen) => {
+    if (imagen) {
+      setFilters((prev) => ({
+        ...prev,
+        flipHorizontal: imagen.flipHorizontal || false,
+        flipVertical: imagen.flipVertical || false,
+      }));
+    }
   };
 
   /**
@@ -85,6 +112,7 @@ export default function useImageFilters() {
     updateFilter,
     resetFilters,
     applyPreset,
+    loadTransformationsFromDB,
     presets: FILTER_PRESETS,
   };
 }

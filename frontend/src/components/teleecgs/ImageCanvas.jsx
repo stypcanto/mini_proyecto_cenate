@@ -6,12 +6,13 @@ import React, { useEffect, useRef } from "react";
  * Componente que renderiza imágenes EKG en canvas HTML5 con:
  * - Rotación sin pérdida de calidad (imageSmoothingQuality = 'high')
  * - Filtros CSS nativos: invert, contrast, brightness
+ * - Transformaciones geométricas: flip horizontal/vertical
  * - Optimización para imágenes médicas
  *
  * @param {Object} props
  * @param {string} props.imageSrc - Data URL base64 de la imagen
  * @param {number} props.rotation - Rotación en grados (0, 90, 180, 270)
- * @param {Object} props.filters - Objeto con filtros { invert, contrast, brightness }
+ * @param {Object} props.filters - Objeto con filtros { invert, contrast, brightness, flipHorizontal, flipVertical }
  * @param {Function} props.onImageLoad - Callback cuando la imagen carga
  */
 export default function ImageCanvas({ imageSrc, rotation = 0, filters = {}, onImageLoad = () => {} }) {
@@ -22,6 +23,8 @@ export default function ImageCanvas({ imageSrc, rotation = 0, filters = {}, onIm
     invert = false,
     contrast = 100,
     brightness = 100,
+    flipHorizontal = false,
+    flipVertical = false,
   } = filters;
 
   // Dibujar imagen en canvas cuando carga o cambian los parámetros
@@ -64,7 +67,7 @@ export default function ImageCanvas({ imageSrc, rotation = 0, filters = {}, onIm
     if (ctx && imageRef.current.complete) {
       drawImageOnCanvas(canvas, ctx, imageRef.current);
     }
-  }, [rotation, invert, contrast, brightness]);
+  }, [rotation, invert, contrast, brightness, flipHorizontal, flipVertical]);
 
   const drawImageOnCanvas = (canvas, ctx, img) => {
     // Calcular dimensiones considerando rotación
@@ -88,6 +91,16 @@ export default function ImageCanvas({ imageSrc, rotation = 0, filters = {}, onIm
       ctx.translate(width / 2, height / 2);
       ctx.rotate((rotation * Math.PI) / 180);
       ctx.translate(-img.width / 2, -img.height / 2);
+    }
+
+    // Aplicar flip (transformación geométrica)
+    if (flipHorizontal || flipVertical) {
+      const scaleX = flipHorizontal ? -1 : 1;
+      const scaleY = flipVertical ? -1 : 1;
+
+      ctx.translate(width / 2, height / 2);
+      ctx.scale(scaleX, scaleY);
+      ctx.translate(-width / 2, -height / 2);
     }
 
     // Aplicar filtros CSS como string

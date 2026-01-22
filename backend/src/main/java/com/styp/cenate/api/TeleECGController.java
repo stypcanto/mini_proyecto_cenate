@@ -942,6 +942,131 @@ public class TeleECGController {
     }
 
     /**
+     * 🔄 ACTUALIZAR TRANSFORMACIONES (v1.0.0 - NUEVO)
+     * Actualizar rotación y flip (horizontal/vertical) de una imagen ECG de forma persistente
+     *
+     * Endpoint: PUT /api/teleekgs/{idImagen}/transformaciones
+     * Body: ActualizarTransformacionesDTO
+     *
+     * Respuesta exitosa:
+     * {
+     *   "status": 200,
+     *   "message": "Transformaciones actualizadas correctamente",
+     *   "data": { imagen actualizada }
+     * }
+     *
+     * @param idImagen ID de la imagen a transformar
+     * @param dto DTO con valores de rotación (0,90,180,270) y flips (true/false)
+     * @param request Para obtener IP del cliente
+     * @return Imagen actualizada con nuevas transformaciones
+     * @since 2026-01-21
+     */
+    @PutMapping("/{idImagen}/transformaciones")
+    @CheckMBACPermission(pagina = "/teleecg", accion = "editar")
+    public ResponseEntity<?> actualizarTransformaciones(
+            @PathVariable Long idImagen,
+            @Valid @RequestBody ActualizarTransformacionesDTO dto,
+            HttpServletRequest request) {
+        try {
+            Long idUsuario = obtenerIdUsuarioActual();
+            String ipCliente = obtenerIPCliente(request);
+
+            TeleECGImagen imagen = teleECGService.actualizarTransformaciones(
+                    idImagen, dto, idUsuario, ipCliente
+            );
+
+            log.info("✅ Transformaciones actualizadas: ID={}, Rot={}, FlipH={}, FlipV={}",
+                    idImagen, dto.getRotacion(), dto.getFlipHorizontal(), dto.getFlipVertical());
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                    true,
+                    "Transformaciones actualizadas correctamente",
+                    "200",
+                    imagen
+            ));
+
+        } catch (RuntimeException e) {
+            log.warn("❌ Error actualizando transformaciones: {}", e.getMessage());
+            return ResponseEntity.status(400).body(new ApiResponse<>(
+                    false,
+                    e.getMessage(),
+                    "400",
+                    null
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error inesperado actualizando transformaciones", e);
+            return ResponseEntity.status(500).body(new ApiResponse<>(
+                    false,
+                    "Error interno del servidor",
+                    "500",
+                    null
+            ));
+        }
+    }
+
+    /**
+     * ✂️ RECORTAR IMAGEN (v1.0.0 - NUEVO)
+     * Recortar imagen de forma PERMANENTE en la base de datos
+     *
+     * ⚠️ ADVERTENCIA: Esta operación es IRREVERSIBLE
+     * - Modifica el contenido binario en PostgreSQL
+     * - Recalcula SHA256 para integridad
+     * - Registra la acción en auditoría
+     * - NO se puede recuperar la imagen original
+     *
+     * Endpoint: PUT /api/teleekgs/{idImagen}/recortar
+     * Body: RecortarImagenDTO
+     *
+     * @param idImagen ID de la imagen a recortar
+     * @param dto DTO con imagen base64 recortada (desde canvas.toDataURL())
+     * @param request Para obtener IP del cliente
+     * @return Imagen actualizada con nuevo contenido
+     * @since 2026-01-21
+     */
+    @PutMapping("/{idImagen}/recortar")
+    @CheckMBACPermission(pagina = "/teleecg", accion = "editar")
+    public ResponseEntity<?> recortarImagen(
+            @PathVariable Long idImagen,
+            @Valid @RequestBody RecortarImagenDTO dto,
+            HttpServletRequest request) {
+        try {
+            Long idUsuario = obtenerIdUsuarioActual();
+            String ipCliente = obtenerIPCliente(request);
+
+            TeleECGImagen imagen = teleECGService.recortarImagen(
+                    idImagen, dto, idUsuario, ipCliente
+            );
+
+            log.warn("⚠️  IMAGEN RECORTADA PERMANENTEMENTE: ID={}, Nuevo tamaño={} bytes",
+                    idImagen, imagen.getSizeBytes());
+
+            return ResponseEntity.ok(new ApiResponse<>(
+                    true,
+                    "Imagen recortada exitosamente (operación permanente)",
+                    "200",
+                    imagen
+            ));
+
+        } catch (RuntimeException e) {
+            log.warn("❌ Error recortando imagen: {}", e.getMessage());
+            return ResponseEntity.status(400).body(new ApiResponse<>(
+                    false,
+                    e.getMessage(),
+                    "400",
+                    null
+            ));
+        } catch (Exception e) {
+            log.error("❌ Error inesperado recortando imagen", e);
+            return ResponseEntity.status(500).body(new ApiResponse<>(
+                    false,
+                    "Error interno del servidor",
+                    "500",
+                    null
+            ));
+        }
+    }
+
+    /**
      * ✅ TEST ENDPOINT - Verificar si POST funciona en general
      */
     @PostMapping("/test-post")
