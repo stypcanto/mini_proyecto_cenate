@@ -8,6 +8,65 @@
 
 ---
 
+## v1.23.4 (2026-01-21) - 🔄 Tele-ECG: Plan de Seguimiento Refactorizado v11.0.0
+
+### 🎯 Descripción
+
+**Mejora clínica significativa** en el Plan de Seguimiento: separación clara entre **Recitación** (control en 3 meses) e **Interconsulta** (derivación a especialista), con soporte para **múltiples especialidades**.
+
+### 🔧 Cambios Técnicos
+
+**Frontend (1 cambio)**:
+- ✅ Component: `ModalEvaluacionECG.jsx` - Refactorización completa del Plan de Seguimiento
+  - ❌ Removido: Campo único `interconsultaEspecialidad` (string)
+  - ✅ Agregado:
+    - `recitarEnTresMeses` + `recitarEspecialidad` (una especialidad)
+    - `interconsulta` + `interconsultaEspecialidades[]` (múltiples especialidades)
+  - ✅ UI: 2 secciones con checkboxes claramente separados
+  - ✅ Multi-select: Agregar/remover especialidades con tags visuales (✕)
+  - ✅ Handlers: Separados para recitación e interconsulta
+  - ✅ Validaciones: Requieren especialidades para guardarse
+
+**Backend (1 cambio)**:
+- ✅ DTO: `NotaClinicaDTO.java` - Documentación de nuevas estructuras JSON
+  - Estructura v11.0.0: `{recitarEnTresMeses, recitarEspecialidad, interconsulta, interconsultaEspecialidades[]}`
+  - Backward compatible: Sigue soportando estructura antigua
+
+### 💡 Mejora Clínica
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Claridad** | ❌ Confuso (un solo input) | ✅ 2 secciones explícitas |
+| **Recitación** | ❌ Sin especialidad | ✅ Especialidad requerida |
+| **Interconsulta** | ❌ Solo una especialidad | ✅ Múltiples especialidades |
+| **UX** | ❌ Input de texto libre | ✅ Multi-select con tags |
+| **Validación** | ❌ Débil | ✅ Requiere datos completos |
+
+### ✅ Build Status
+
+- Frontend: `npm run build` → ✅ SIN ERRORES
+- Backend: DTOs compilados ✅
+- Status: **DEPLOYMENT READY** 🚀
+
+### 📊 Cambios
+
+| Métrica | Valor |
+|---------|-------|
+| Líneas agregadas (Frontend) | ~160 |
+| Líneas removidas (Frontend) | ~25 |
+| Neto Frontend | +135 líneas |
+| Líneas modificadas (Backend DTO) | ~20 |
+| Archivos modificados | 2 |
+
+### 🔐 Nota de Compatibilidad
+
+El campo `notaClinicaPlanSeguimiento` en BD sigue siendo JSON, permitiendo guardar cualquier estructura. Esto asegura:
+- ✅ Compatibilidad hacia atrás
+- ✅ Migración suave si hay datos antiguos
+- ✅ Flexibilidad para cambios futuros
+
+---
+
 ## v1.23.3 (2026-01-21) - ⚡ Tele-ECG: Preset Emergencia v10.2.0
 
 ### 🎯 Descripción
