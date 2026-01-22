@@ -61,6 +61,27 @@ export default function ModalEvaluacionECG({
   const [motivoRechazo, setMotivoRechazo] = useState(""); // MALA_CALIDAD, INCOMPLETA, etc
   const [descripcionRechazo, setDescripcionRechazo] = useState("");
 
+  // ✅ v9.0.0: Constantes de razones clínicas
+  const RAZONES_NORMAL = [
+    { key: 'ritmoNormal', label: 'Ritmo sinusal normal' },
+    { key: 'frecuenciaAdecuada', label: 'Frecuencia cardíaca adecuada (60-100 bpm)' },
+    { key: 'sinCambiosAgudos', label: 'Sin cambios agudos de isquemia' },
+    { key: 'segmentoSTNormal', label: 'Segmento ST sin elevación/depresión' },
+    { key: 'ondaTNormal', label: 'Onda T normal en todas las derivaciones' },
+    { key: 'intervalosPR_QTNormales', label: 'Intervalos PR y QT normales' },
+  ];
+
+  const RAZONES_ANORMAL = [
+    { key: 'ritmoAnormal', label: 'Arritmia (fibrilación auricular, flutter, etc.)' },
+    { key: 'frecuenciaAnormal', label: 'Bradicardia (<60 bpm) o Taquicardia (>100 bpm)' },
+    { key: 'cambiosEn_ST', label: 'Elevación o depresión del segmento ST' },
+    { key: 'ondaTInvertida', label: 'Inversión de onda T patológica' },
+    { key: 'bloqueoCardiaco', label: 'Bloqueo AV o de rama (BRDHH, BRIHH)' },
+    { key: 'hipertrofia', label: 'Signos de hipertrofia ventricular' },
+    { key: 'isquemiaActiva', label: 'Signos de isquemia miocárdica activa' },
+    { key: 'intervaloQTprolongado', label: 'Intervalo QT prolongado (>450ms)' },
+  ];
+
   const MOTIVOS_RECHAZO = [
     { valor: "MALA_CALIDAD", etiqueta: "Mala calidad / Pixelada" },
     { valor: "INCOMPLETA", etiqueta: "Imagen cortada / Incompleta" },
@@ -76,14 +97,16 @@ export default function ModalEvaluacionECG({
   // ════════════════════════════════════════
   const [observacionesEval, setObservacionesEval] = useState("");
   const [tipoEvaluacion, setTipoEvaluacion] = useState(""); // NORMAL, ANORMAL, NO_DIAGNOSTICO
+  const [guardando, setGuardando] = useState(false); // ✅ v9.0.0: Estado para loading
 
-  // Razones preseleccionadas según tipo de evaluación
+  // ✅ v9.0.0: Razones preseleccionadas según tipo de evaluación (actualizado con nuevas keys)
   const [razonesNormal, setRazonesNormal] = useState({
     ritmoNormal: false,
     frecuenciaAdecuada: false,
     sinCambiosAgudos: false,
     segmentoSTNormal: false,
     ondaTNormal: false,
+    intervalosPR_QTNormales: false,
   });
 
   const [razonesAnormal, setRazonesAnormal] = useState({
@@ -92,8 +115,9 @@ export default function ModalEvaluacionECG({
     cambiosEn_ST: false,
     ondaTInvertida: false,
     bloqueoCardiaco: false,
-    hiperkalemia: false,
+    hipertrofia: false,
     isquemiaActiva: false,
+    intervaloQTprolongado: false,
   });
 
   // ════════════════════════════════════════
@@ -342,6 +366,53 @@ export default function ModalEvaluacionECG({
   }, [isOpen, indiceImagen, filters, updateFilter, resetFilters]);
 
   // ════════════════════════════════════════
+  // ✅ v9.0.0: FUNCIONES HELPER PARA VALIDACIÓN
+  // ════════════════════════════════════════
+
+  // Construir texto de evaluación completo con hallazgos
+  const construirTextoEvaluacion = () => {
+    let texto = `EVALUACIÓN: ${tipoEvaluacion}\n\n`;
+
+    if (tipoEvaluacion === "NORMAL") {
+      const seleccionados = RAZONES_NORMAL.filter(r => razonesNormal[r.key]);
+      if (seleccionados.length > 0) {
+        texto += "HALLAZGOS NORMALES:\n";
+        seleccionados.forEach(r => texto += `- ${r.label}\n`);
+        texto += "\n";
+      }
+    }
+
+    if (tipoEvaluacion === "ANORMAL") {
+      const seleccionados = RAZONES_ANORMAL.filter(r => razonesAnormal[r.key]);
+      if (seleccionados.length > 0) {
+        texto += "HALLAZGOS ANORMALES:\n";
+        seleccionados.forEach(r => texto += `- ${r.label}\n`);
+        texto += "\n";
+      }
+    }
+
+    texto += "OBSERVACIONES CLÍNICAS:\n";
+    texto += observacionesEval.trim();
+
+    return texto;
+  };
+
+  // Validar si puede guardar
+  const puedeGuardar = () => {
+    if (!tipoEvaluacion) return false;
+    if (!observacionesEval.trim() || observacionesEval.trim().length < 10) return false;
+
+    if (tipoEvaluacion === "NORMAL") {
+      return Object.values(razonesNormal).some(v => v === true);
+    }
+    if (tipoEvaluacion === "ANORMAL") {
+      return Object.values(razonesAnormal).some(v => v === true);
+    }
+
+    return true; // NO_DIAGNOSTICO no requiere razones
+  };
+
+  // ════════════════════════════════════════
   // GUARDAR - CONSOLIDAR TODOS LOS DATOS
   // ════════════════════════════════════════
   // ════════════════════════════════════════════════════════════════
@@ -417,25 +488,59 @@ export default function ModalEvaluacionECG({
   };
 
   const handleGuardar = async () => {
-    // Validar que haya evaluación
+    // ✅ v9.0.0: VALIDACIONES ESTRICTAS EN TRES NIVELES
+
+    // 1️⃣ Validar que tipo de evaluación esté seleccionado
     if (!tipoEvaluacion) {
       toast.error("❌ Debes seleccionar Normal, Anormal o No Diagnóstico");
       return;
     }
 
+    // 2️⃣ Validar razones (al menos 1 checkbox marcado para NORMAL/ANORMAL)
+    if (tipoEvaluacion === "NORMAL") {
+      const algunaRazonNormal = Object.values(razonesNormal).some(v => v === true);
+      if (!algunaRazonNormal) {
+        toast.error("❌ Debes seleccionar al menos 1 hallazgo que justifique evaluación NORMAL");
+        return;
+      }
+    }
+
+    if (tipoEvaluacion === "ANORMAL") {
+      const algunaRazonAnormal = Object.values(razonesAnormal).some(v => v === true);
+      if (!algunaRazonAnormal) {
+        toast.error("❌ Debes seleccionar al menos 1 hallazgo que justifique evaluación ANORMAL");
+        return;
+      }
+    }
+
+    // 3️⃣ Validar observaciones clínicas (mínimo 10 caracteres)
+    if (!observacionesEval.trim() || observacionesEval.trim().length < 10) {
+      toast.error("❌ Las observaciones clínicas deben tener al menos 10 caracteres");
+      return;
+    }
+
     try {
+      setGuardando(true);
+
       const imagenActual = imagenesActuales[indiceImagen];
-      const idImagen =
-        imagenActual?.id_imagen || imagenActual?.idImagen;
+      const idImagen = imagenActual?.id_imagen || imagenActual?.idImagen;
 
       if (!idImagen) {
         toast.error("❌ No se pudo obtener el ID de la imagen");
+        setGuardando(false);
         return;
       }
 
-      // 1️⃣ Guardar evaluación con tipo (NORMAL/ANORMAL/NO_DIAGNOSTICO) y observaciones
-      await onConfirm(tipoEvaluacion, observacionesEval.trim() || "", idImagen);
-      toast.success(`✅ Evaluación guardada: ${tipoEvaluacion}`);
+      // Construir evaluación completa con hallazgos
+      const evaluacionCompleta = construirTextoEvaluacion();
+      console.log("📝 Evaluación generada:", evaluacionCompleta);
+
+      // 1️⃣ Guardar evaluación con texto completo (hallazgos + observaciones)
+      await onConfirm(tipoEvaluacion, evaluacionCompleta, idImagen);
+      toast.success(`✅ Evaluación guardada correctamente como ${tipoEvaluacion}`, {
+        duration: 3000,
+        icon: '🩺',
+      });
 
       // 2️⃣ Guardar Plan de Seguimiento (si hay datos)
       if (planSeguimiento.recitarEnTresMeses || planSeguimiento.interconsultaEspecialidad) {
@@ -452,14 +557,22 @@ export default function ModalEvaluacionECG({
         }
       }
 
+      // Esperar a que se muestre el toast antes de cerrar
+      await new Promise(resolve => setTimeout(resolve, 800));
+
       limpiarFormulario();
       onClose();
     } catch (error) {
       console.error("❌ Error al guardar:", error);
-      toast.error("Error al guardar evaluación");
+      toast.error("❌ Error al guardar evaluación. Por favor, intenta nuevamente.", {
+        duration: 4000,
+      });
+    } finally {
+      setGuardando(false);
     }
   };
 
+  // ✅ v9.0.0: Actualizado con nuevas keys de RAZONES
   const limpiarFormulario = () => {
     setObservacionesEval("");
     setTipoEvaluacion("");
@@ -469,6 +582,7 @@ export default function ModalEvaluacionECG({
       sinCambiosAgudos: false,
       segmentoSTNormal: false,
       ondaTNormal: false,
+      intervalosPR_QTNormales: false,
     });
     setRazonesAnormal({
       ritmoAnormal: false,
@@ -476,8 +590,9 @@ export default function ModalEvaluacionECG({
       cambiosEn_ST: false,
       ondaTInvertida: false,
       bloqueoCardiaco: false,
-      hiperkalemia: false,
+      hipertrofia: false,
       isquemiaActiva: false,
+      intervaloQTprolongado: false,
     });
     setImagenValida(null); // Resetear validación
     setMotivoRechazo("");
@@ -496,7 +611,7 @@ export default function ModalEvaluacionECG({
   // ════════════════════════════════════════
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+      <div className="bg-white rounded-xl shadow-2xl w-[95vw] max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
         {/* HEADER */}
         <div className="flex items-center justify-between p-4 bg-gradient-to-br from-blue-800 to-blue-950 text-white">
           <div>
@@ -537,6 +652,8 @@ export default function ModalEvaluacionECG({
                 <div className="w-px bg-gray-300" />
                 <button onClick={rotarImagen} className="p-1.5 hover:bg-gray-200 rounded" title="Rotar"><RotateCw size={16} /></button>
                 <button onClick={() => setShowFilterControls(!showFilterControls)} className={`p-1.5 rounded transition-colors ${showFilterControls ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Filtros avanzados"><Filter size={16} /></button>
+                <div className="w-px bg-gray-300" />
+                <button onClick={() => setShowFullscreen(true)} className="p-1.5 hover:bg-purple-200 rounded transition-colors text-purple-600 hover:text-purple-700" title="Expandir a pantalla completa (E)"><Maximize2 size={16} /></button>
               </div>
 
               {/* Panel de Filtros Avanzados (Expandible v8.0.0) */}
@@ -564,10 +681,10 @@ export default function ModalEvaluacionECG({
           <div className="w-96 flex flex-col bg-white overflow-y-auto border-l">
             <div className="p-4 space-y-3 text-sm">
 
-              {/* INFO PACIENTE */}
-              <div className="bg-blue-50 p-2.5 rounded-lg border border-blue-200">
-                <p className="font-bold text-blue-900">{imagenesActuales.length} EKGs</p>
-                <p className="text-xs text-blue-700">Imagen actual {indiceImagen + 1} de {imagenesActuales.length}</p>
+              {/* INFO PACIENTE - ✅ v9.0.0: Accesibilidad WCAG AAA */}
+              <div className="bg-blue-100 p-3 rounded-lg border-2 border-blue-400 shadow-sm">
+                <p className="font-bold text-blue-950 text-sm">{imagenesActuales.length} EKGs</p>
+                <p className="text-sm text-blue-900 font-medium">Imagen actual {indiceImagen + 1} de {imagenesActuales.length}</p>
               </div>
 
               {/* VALIDACIÓN CALIDAD */}
@@ -606,24 +723,117 @@ export default function ModalEvaluacionECG({
 
               {imagenValida === true && (
                 <>
-                  {/* EVALUACIÓN */}
-                  <div className="bg-green-50 p-2.5 rounded-lg border border-green-200">
-                    <p className="font-semibold text-green-900 mb-2 text-xs">Evaluación Médica</p>
-                    <div className="space-y-1">
-                      {["NORMAL", "ANORMAL", "NO_DIAGNOSTICO"].map(tipo => (
-                        <label key={tipo} className="flex items-center gap-2 cursor-pointer text-xs">
-                          <input type="radio" checked={tipoEvaluacion === tipo} onChange={() => setTipoEvaluacion(tipo)} />
-                          {tipo === "NORMAL" ? "Normal" : tipo === "ANORMAL" ? "Anormal" : "No Diagnóstico"}
-                        </label>
-                      ))}
+                  {/* ✅ v9.0.0: EVALUACIÓN CON HALLAZGOS ESTRUCTURADOS Y COLORES SEMÁNTICOS */}
+                  <div className={`p-3 rounded-lg border-2 transition-all ${
+                    tipoEvaluacion === "NORMAL" ? "bg-green-50 border-green-400" :
+                    tipoEvaluacion === "ANORMAL" ? "bg-orange-50 border-orange-400" :
+                    tipoEvaluacion === "NO_DIAGNOSTICO" ? "bg-gray-50 border-gray-400" :
+                    "bg-green-50 border-green-200"
+                  }`}>
+                    <p className={`font-semibold mb-2 text-xs ${
+                      tipoEvaluacion === "NORMAL" ? "text-green-900" :
+                      tipoEvaluacion === "ANORMAL" ? "text-orange-900" :
+                      tipoEvaluacion === "NO_DIAGNOSTICO" ? "text-gray-900" :
+                      "text-green-900"
+                    }`}>Evaluación Médica</p>
+
+                    {/* Radio Buttons con Colores Semánticos */}
+                    <div className="space-y-1 mb-2">
+                      {/* NORMAL - Verde */}
+                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-2 rounded transition-colors ${
+                        tipoEvaluacion === "NORMAL" ? "bg-green-100 border-2 border-green-500" : "hover:bg-gray-50"
+                      }`}>
+                        <input
+                          type="radio"
+                          checked={tipoEvaluacion === "NORMAL"}
+                          onChange={() => setTipoEvaluacion("NORMAL")}
+                          className="w-4 h-4"
+                        />
+                        <span className={`font-semibold ${tipoEvaluacion === "NORMAL" ? "text-green-800" : "text-gray-700"}`}>✓ Normal</span>
+                      </label>
+
+                      {/* ANORMAL - Naranja */}
+                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-2 rounded transition-colors ${
+                        tipoEvaluacion === "ANORMAL" ? "bg-orange-100 border-2 border-orange-500" : "hover:bg-gray-50"
+                      }`}>
+                        <input
+                          type="radio"
+                          checked={tipoEvaluacion === "ANORMAL"}
+                          onChange={() => setTipoEvaluacion("ANORMAL")}
+                          className="w-4 h-4"
+                        />
+                        <span className={`font-semibold ${tipoEvaluacion === "ANORMAL" ? "text-orange-800" : "text-gray-700"}`}>⚠️ Anormal</span>
+                      </label>
+
+                      {/* NO_DIAGNOSTICO - Gris */}
+                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-2 rounded transition-colors ${
+                        tipoEvaluacion === "NO_DIAGNOSTICO" ? "bg-gray-100 border-2 border-gray-500" : "hover:bg-gray-50"
+                      }`}>
+                        <input
+                          type="radio"
+                          checked={tipoEvaluacion === "NO_DIAGNOSTICO"}
+                          onChange={() => setTipoEvaluacion("NO_DIAGNOSTICO")}
+                          className="w-4 h-4"
+                        />
+                        <span className={`font-semibold ${tipoEvaluacion === "NO_DIAGNOSTICO" ? "text-gray-800" : "text-gray-700"}`}>❔ No Diagnóstico</span>
+                      </label>
                     </div>
+
+                    {/* ✅ v9.0.0: CHECKBOXES DE HALLAZGOS PARA NORMAL */}
+                    {tipoEvaluacion === "NORMAL" && (
+                      <div className="mt-2 space-y-1 bg-green-100 p-2 rounded border border-green-300">
+                        <p className="text-xs font-bold text-green-900 mb-1">Hallazgos que justifican evaluación NORMAL:</p>
+                        {RAZONES_NORMAL.map(razon => (
+                          <label key={razon.key} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-green-200 p-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={razonesNormal[razon.key] || false}
+                              onChange={(e) => setRazonesNormal({...razonesNormal, [razon.key]: e.target.checked})}
+                              className="w-3 h-3"
+                            />
+                            <span className="text-green-800">{razon.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* ✅ v9.0.0: CHECKBOXES DE HALLAZGOS PARA ANORMAL */}
+                    {tipoEvaluacion === "ANORMAL" && (
+                      <div className="mt-2 space-y-1 bg-orange-100 p-2 rounded border border-orange-300">
+                        <p className="text-xs font-bold text-orange-900 mb-1">Hallazgos que justifican evaluación ANORMAL:</p>
+                        {RAZONES_ANORMAL.map(razon => (
+                          <label key={razon.key} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-orange-200 p-1 rounded">
+                            <input
+                              type="checkbox"
+                              checked={razonesAnormal[razon.key] || false}
+                              onChange={(e) => setRazonesAnormal({...razonesAnormal, [razon.key]: e.target.checked})}
+                              className="w-3 h-3"
+                            />
+                            <span className="text-orange-800">{razon.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Textarea de Observaciones - Más grande */}
                     {tipoEvaluacion && (
-                      <textarea
-                        value={observacionesEval}
-                        onChange={(e) => setObservacionesEval(e.target.value)}
-                        placeholder="Observaciones clínicas..."
-                        className="w-full mt-2 p-1.5 text-xs border rounded resize-none h-16 focus:outline-none focus:ring-2 focus:ring-green-500"
-                      />
+                      <div className="mt-2">
+                        <textarea
+                          value={observacionesEval}
+                          onChange={(e) => setObservacionesEval(e.target.value)}
+                          placeholder="Observaciones clínicas detalladas (mínimo 10 caracteres)..."
+                          className={`w-full p-2 text-xs border rounded resize-none h-20 focus:outline-none focus:ring-2 ${
+                            tipoEvaluacion === "NORMAL" ? "focus:ring-green-500 border-green-300" :
+                            tipoEvaluacion === "ANORMAL" ? "focus:ring-orange-500 border-orange-300" :
+                            "focus:ring-gray-500 border-gray-300"
+                          }`}
+                        />
+                        <p className={`text-xs mt-1 ${
+                          observacionesEval.trim().length >= 10 ? "text-green-600 font-semibold" : "text-gray-500"
+                        }`}>
+                          {observacionesEval.trim().length}/10 caracteres mínimos
+                        </p>
+                      </div>
                     )}
                   </div>
 
@@ -657,23 +867,73 @@ export default function ModalEvaluacionECG({
               )}
             </div>
 
-            {/* BOTONES ABAJO */}
+            {/* ✅ v9.0.0: BOTONES CON LOADING STATE */}
             <div className="p-4 border-t flex gap-2 bg-gray-50">
-              <button onClick={onClose} className="flex-1 px-3 py-2 text-sm bg-gray-300 text-gray-800 rounded hover:bg-gray-400">Cancelar</button>
+              <button
+                onClick={onClose}
+                disabled={guardando}
+                className="flex-1 px-3 py-2 text-sm bg-gray-300 text-gray-800 rounded hover:bg-gray-400 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Cancelar
+              </button>
               {imagenValida === false && motivoRechazo && (
-                <button onClick={handleRechazar} className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 flex items-center justify-center gap-2">
+                <button
+                  onClick={handleRechazar}
+                  disabled={guardando}
+                  className="flex-1 px-3 py-2 text-sm bg-red-600 text-white rounded hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
                   <AlertCircle size={16} /> Rechazar
                 </button>
               )}
-              {imagenValida === true && tipoEvaluacion && (
-                <button onClick={handleGuardar} className="flex-1 px-3 py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 flex items-center justify-center gap-2">
-                  <Save size={16} /> Guardar
+              {imagenValida === true && (
+                <button
+                  onClick={handleGuardar}
+                  disabled={!puedeGuardar() || guardando}
+                  className={`flex-1 px-3 py-2 text-sm rounded flex items-center justify-center gap-2 transition-colors font-semibold ${
+                    puedeGuardar() && !guardando
+                      ? 'bg-blue-600 hover:bg-blue-700 text-white cursor-pointer'
+                      : 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                  }`}
+                >
+                  {guardando ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Guardando...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={16} /> Guardar Evaluación
+                    </>
+                  )}
                 </button>
               )}
             </div>
           </div>
         </div>
       </div>
+
+      {/* FULLSCREEN VIEWER */}
+      {showFullscreen && (
+        <FullscreenImageViewer
+          isOpen={showFullscreen}
+          imagenData={imagenData}
+          indiceImagen={indiceImagen}
+          totalImagenes={imagenesActuales.length}
+          rotacion={rotacion}
+          filters={filters}
+          onClose={() => setShowFullscreen(false)}
+          onRotate={setRotacion}
+          onFilterChange={updateFilter}
+          onResetFilters={resetFilters}
+          onImageNavigation={(direction) => {
+            if (direction === "siguiente" && indiceImagen < imagenesActuales.length - 1) {
+              irImagenSiguiente();
+            } else if (direction === "anterior" && indiceImagen > 0) {
+              irImagenAnterior();
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
