@@ -745,24 +745,22 @@ export default function ModalEvaluacionECG({
                     <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">DNI</span>
                     <p className="font-bold text-gray-900 text-base mt-1">{ecg?.num_doc_paciente || ecg?.numDocPaciente}</p>
                   </div>
-                  {(ecg?.edad || ecg?.age) && (
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
-                      <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Edad</span>
-                      <p className="font-bold text-gray-900 text-base mt-1">{ecg?.edad || ecg?.age} años</p>
-                    </div>
-                  )}
-                  {(ecg?.genero || ecg?.sexo) && (
-                    <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
-                      <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Género</span>
-                      <p className="font-bold text-gray-900 text-base mt-1">
-                        {ecg?.genero === "M" || ecg?.genero === "MASCULINO" ? "🧑 Masculino" :
-                         ecg?.genero === "F" || ecg?.genero === "FEMENINO" ? "👩 Femenino" :
-                         ecg?.sexo === "M" ? "🧑 Masculino" :
-                         ecg?.sexo === "F" ? "👩 Femenino" :
-                         ecg?.genero || ecg?.sexo || "—"}
-                      </p>
-                    </div>
-                  )}
+                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
+                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Edad</span>
+                    <p className="font-bold text-gray-900 text-base mt-1">
+                      {ecg?.edad || ecg?.age ? `${ecg?.edad || ecg?.age} años` : "No disponible"}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
+                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Género</span>
+                    <p className="font-bold text-gray-900 text-base mt-1">
+                      {ecg?.genero === "M" || ecg?.genero === "MASCULINO" ? "🧑 Masculino" :
+                       ecg?.genero === "F" || ecg?.genero === "FEMENINO" ? "👩 Femenino" :
+                       ecg?.sexo === "M" ? "🧑 Masculino" :
+                       ecg?.sexo === "F" ? "👩 Femenino" :
+                       ecg?.genero || ecg?.sexo ? ecg?.genero || ecg?.sexo : "No disponible"}
+                    </p>
+                  </div>
                   <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                     <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">IPRESS</span>
                     <p className="font-bold text-gray-800 text-sm mt-1">{ecg?.nombre_ipress || ecg?.nombreIpress}</p>
