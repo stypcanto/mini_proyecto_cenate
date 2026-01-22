@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw } from 'lucide-react';
+import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Filter } from 'lucide-react';
 import MillimeterRuler from './MillimeterRuler';
 import FilterControlsPanel from './FilterControlsPanel';
 
@@ -132,9 +132,9 @@ export default function FullscreenImageViewer({
           <button
             onClick={() => setShowFilterPanel(!showFilterPanel)}
             className="p-2 hover:bg-gray-800 rounded transition-colors text-white"
-            title="Filtros"
+            title="Filtros Avanzados"
           >
-            ⚙️
+            <Filter size={18} />
           </button>
           <button
             onClick={onResetFilters}
@@ -188,13 +188,6 @@ export default function FullscreenImageViewer({
         </div>
       </div>
 
-      {/* Backdrop semi-transparente cuando panel está abierto */}
-      {showFilterPanel && (
-        <div
-          className="fixed inset-0 bg-black/40 z-30 transition-opacity duration-300"
-          onClick={() => setShowFilterPanel(false)}
-        />
-      )}
     </div>
   );
 }
