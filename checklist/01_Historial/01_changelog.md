@@ -10,6 +10,70 @@
 
 ---
 
+## v1.27.4 (2026-01-21) - ✨ UX Improvement: Mostrar Siempre Edad y Género
+
+### 🎯 Descripción
+
+**Mejora de accesibilidad y consistencia visual**: Los campos de **Edad** y **Género** ahora son **siempre visibles** en la sección "Información" del modal, mostrando "No disponible" cuando faltan datos, en lugar de ocultarse.
+
+**Problema Anterior**:
+- ❌ Edad solo aparecía si `ecg?.edad` existía
+- ❌ Género solo aparecía si `ecg?.genero` existía
+- ❌ Inconsistencia visual: campos desaparecían sin aviso
+- ❌ Usuarios no sabían si faltaban datos o si el campo no existía
+
+**Solución Implementada**:
+- ✅ Cambiar condicional `{(ecg?.edad) && (...)}` a renderizado siempre
+- ✅ Agregar fallback: `{ecg?.edad ? "${ecg.edad} años" : "No disponible"}`
+- ✅ Mismo tratamiento para Género
+- ✅ Mejor consistencia visual: panel siempre con 5 campos (Paciente, DNI, Edad, Género, IPRESS)
+
+**Estado**: ✅ **COMPLETADO Y TESTEADO**
+
+### 🎨 Cambios Visuales
+
+**Panel Información - Antes vs Después**:
+
+| Campo | Antes | Después |
+|-------|-------|---------|
+| **Paciente** | ✅ Siempre | ✅ Siempre |
+| **DNI** | ✅ Siempre | ✅ Siempre |
+| **Edad** | ❌ Oculto si null | ✅ Siempre (con "No disponible" si null) |
+| **Género** | ❌ Oculto si null | ✅ Siempre (con "No disponible" si null) |
+| **IPRESS** | ✅ Siempre | ✅ Siempre |
+
+### 📝 Código Modificado
+
+**Archivo**: `frontend/src/components/teleecgs/ModalEvaluacionECG.jsx` (líneas 748-763)
+
+```javascript
+// ❌ ANTES (v1.27.3)
+{(ecg?.edad || ecg?.age) && (
+  <div>
+    <span>Edad</span>
+    <p>{ecg?.edad || ecg?.age} años</p>
+  </div>
+)}
+
+// ✅ DESPUÉS (v1.27.4)
+<div>
+  <span>Edad</span>
+  <p>
+    {ecg?.edad || ecg?.age ? `${ecg?.edad || ecg?.age} años` : "No disponible"}
+  </p>
+</div>
+```
+
+### ✅ Testing
+
+- ✅ Frontend: BUILD SUCCESSFUL (0 errores)
+- ✅ Modal: Muestra Edad y Género siempre presentes
+- ✅ Fallback: Muestra "No disponible" cuando faltan datos
+- ✅ UI Consistency: Panel de información siempre con 5 campos
+- ✅ Accesibilidad: Usuarios ven claramente qué datos faltan
+
+---
+
 ## v1.27.3 (2026-01-21) - 🔧 Fix: API Response Parsing de Especialidades
 
 ### 🎯 Descripción
