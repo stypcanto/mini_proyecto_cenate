@@ -51,27 +51,6 @@ export default function PeriodoDetalleCard({ periodo, solicitud, modoModal, peri
           </div>
         </div>
 
-        {/* Estadísticas de la solicitud */}
-        {(totalTurnos > 0 || totalEspecialidades > 0) && (
-          <div className="grid grid-cols-2 gap-3 mb-4">
-            <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200">
-              <div className="flex items-center gap-2 mb-2">
-                <TrendingUp className="w-4 h-4 text-blue-600" />
-                <div className="text-xs font-semibold text-blue-600 uppercase">Total Turnos</div>
-              </div>
-              <div className="text-3xl font-bold text-blue-700">{totalTurnos}</div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200">
-              <div className="flex items-center gap-2 mb-2">
-                <Users className="w-4 h-4 text-purple-600" />
-                <div className="text-xs font-semibold text-purple-600 uppercase">Especialidades</div>
-              </div>
-              <div className="text-3xl font-bold text-purple-700">{totalEspecialidades}</div>
-            </div>
-          </div>
-        )}
-
         {/* Fechas */}
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <div className="p-3 rounded-xl bg-white border border-slate-200">

@@ -67,262 +67,231 @@ export default function VistaSolicitudEnviada({ solicitud }) {
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header con información general */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-blue-500 rounded-xl flex items-center justify-center">
-              <FileText className="w-6 h-6 text-white" />
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <FileText className="w-5 h-5 text-gray-700" />
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Detalle de Solicitud
+            </h3>
+            <div className="flex items-center gap-3 mt-1">
+              <span className="text-sm text-gray-700 font-medium">{solicitud.nombreIpress}</span>
+              <span className={`px-2.5 py-0.5 rounded-md text-xs font-semibold border ${estadoBadgeClass(solicitud.estado)}`}>
+                {solicitud.estado}
+              </span>
+              <span className="text-sm text-gray-500">• {solicitud.periodoDescripcion}</span>
             </div>
-            <div>
-              <h3 className="text-xl font-bold text-gray-900">
-                Solicitud #{solicitud.idSolicitud}
-              </h3>
-              <p className="text-sm text-gray-600">
-                {solicitud.periodoDescripcion}
-              </p>
-            </div>
-          </div>
-          <span
-            className={`px-4 py-2 rounded-xl font-semibold text-sm border-2 ${estadoBadgeClass(
-              solicitud.estado
-            )}`}
-          >
-            {solicitud.estado}
-          </span>
-        </div>
-
-        {/* Grid con información clave */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="bg-white rounded-xl p-4 border border-blue-100">
-            <div className="flex items-center gap-2 text-gray-600 mb-1">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-xs font-medium">Total Turnos</span>
-            </div>
-            <p className="text-2xl font-bold text-blue-600">
-              {solicitud.totalTurnosSolicitados}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 border border-blue-100">
-            <div className="flex items-center gap-2 text-gray-600 mb-1">
-              <Users className="w-4 h-4" />
-              <span className="text-xs font-medium">Especialidades</span>
-            </div>
-            <p className="text-2xl font-bold text-indigo-600">
-              {solicitud.totalEspecialidades}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 border border-blue-100">
-            <div className="flex items-center gap-2 text-gray-600 mb-1">
-              <Calendar className="w-4 h-4" />
-              <span className="text-xs font-medium">Fecha Envío</span>
-            </div>
-            <p className="text-sm font-semibold text-gray-900">
-              {formatFechaCorta(solicitud.fechaEnvio)}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-xl p-4 border border-blue-100">
-            <div className="flex items-center gap-2 text-gray-600 mb-1">
-              <Clock className="w-4 h-4" />
-              <span className="text-xs font-medium">Última Act.</span>
-            </div>
-            <p className="text-sm font-semibold text-gray-900">
-              {formatFechaCorta(solicitud.fechaActualizacion)}
-            </p>
           </div>
         </div>
       </div>
 
-      {/* Información del Usuario e IPRESS */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-2xl p-5 border border-slate-200">
-          <div className="flex items-center gap-2 mb-3">
-            <User className="w-5 h-5 text-gray-600" />
-            <h4 className="font-semibold text-gray-900">Usuario Creador</h4>
+      {/* Información en 3 columnas */}
+      <div className="grid grid-cols-3 gap-6">
+        {/* Solicitud */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+            <Hash className="w-4 h-4 text-gray-500" />
+            <p className="text-sm font-semibold text-gray-900">Solicitud</p>
           </div>
-          <p className="text-gray-700 font-medium">
-            {solicitud.nombreUsuarioCreador}
-          </p>
-          <p className="text-xs text-gray-500 mt-1">
-            ID: {solicitud.idUsuarioCreador}
-          </p>
+          <Row label="ID SOLICITUD" value={solicitud.idSolicitud} />
+          <Row label="ID PERIODO" value={solicitud.idPeriodo} />
+          <Row label="ESPECIALIDADES" value={solicitud.totalEspecialidades} />
+          <Row label="TURNOS" value={solicitud.totalTurnosSolicitados} />
         </div>
 
-        <div className="bg-white rounded-2xl p-5 border border-slate-200">
-          <div className="flex items-center gap-2 mb-3">
-            <Building2 className="w-5 h-5 text-gray-600" />
-            <h4 className="font-semibold text-gray-900">IPRESS</h4>
+        {/* IPRESS */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+            <Building2 className="w-4 h-4 text-gray-500" />
+            <p className="text-sm font-semibold text-gray-900">IPRESS</p>
           </div>
-          <p className="text-gray-700 font-medium">{solicitud.nombreIpress}</p>
-          <p className="text-xs text-gray-500 mt-1">
-            RENAES: {solicitud.codigoRenaes} | ID: {solicitud.idIpress}
-          </p>
+          <Row label="RENAES" value={solicitud.codigoRenaes} />
+          <Row label="NOMBRE" value={solicitud.nombreIpress} />
+          <Row label="RED" value={solicitud.nombreRed || "—"} />
         </div>
-      </div>
 
-      {/* Fechas del Periodo */}
-      <div className="bg-white rounded-2xl p-5 border border-slate-200">
-        <h4 className="font-semibold text-gray-900 mb-3">Periodo de Solicitud</h4>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-          <div>
-            <span className="text-gray-600">Inicio:</span>
-            <p className="font-semibold text-gray-900">
-              {formatFechaCorta(solicitud.fechaInicio)}
-            </p>
+        {/* Usuario */}
+        <div className="space-y-1">
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-200">
+            <User className="w-4 h-4 text-gray-500" />
+            <p className="text-sm font-semibold text-gray-900">Usuario</p>
           </div>
-          <div>
-            <span className="text-gray-600">Fin:</span>
-            <p className="font-semibold text-gray-900">
-              {formatFechaCorta(solicitud.fechaFin)}
-            </p>
-          </div>
-          <div>
-            <span className="text-gray-600">Código Periodo:</span>
-            <p className="font-semibold text-gray-900">{solicitud.periodo}</p>
-          </div>
+          <Row label="ID" value={solicitud.idUsuarioCreador || "—"} />
+          <Row label="NOMBRE" value={solicitud.nombreUsuarioCreador} />
+          <Row label="EMAIL" value={solicitud.emailContacto || "—"} />
+          <Row label="TELÉFONO" value={solicitud.telefonoContacto || "—"} />
         </div>
       </div>
 
-      {/* Lista de Especialidades */}
-      <div className="bg-white rounded-2xl p-6 border border-slate-200">
-        <h4 className="font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5 text-blue-600" />
+      {/* Fechas */}
+      <div className="grid grid-cols-3 gap-6 pt-4 border-t border-gray-200">
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-gray-500" />
+          <div>
+            <div className="text-xs text-gray-500 uppercase">Creado:</div>
+            <div className="text-sm text-gray-900">{formatFecha(solicitud.fechaCreacion || solicitud.createdAt)}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-gray-500" />
+          <div>
+            <div className="text-xs text-gray-500 uppercase">Actualizado:</div>
+            <div className="text-sm text-gray-900">{formatFecha(solicitud.fechaActualizacion || solicitud.updatedAt)}</div>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Clock className="w-4 h-4 text-gray-500" />
+          <div>
+            <div className="text-xs text-gray-500 uppercase">Enviado:</div>
+            <div className="text-sm text-gray-900">{formatFecha(solicitud.fechaEnvio)}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabla compacta de Especialidades */}
+      <div className="bg-white rounded-2xl p-3 border border-slate-200">
+        <h4 className="font-semibold text-gray-900 mb-3 px-2 flex items-center gap-2 text-sm">
+          <Users className="w-4 h-4 text-blue-600" />
           Especialidades Solicitadas
         </h4>
 
-        <div className="space-y-4">
-          {(solicitud.detalles || []).map((detalle, index) => {
-            const totalTurnos = detalle.turnoTM + detalle.turnoManana + detalle.turnoTarde;
-            
-            return (
-              <div
-                key={`${detalle.idDetalle}-${index}`}
-                className="border border-slate-200 rounded-xl p-5 hover:shadow-md transition-shadow"
-              >
-                {/* Header de la especialidad */}
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h5 className="font-bold text-gray-900">
-                        {detalle.nombreServicio}
-                      </h5>
-                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
-                        {detalle.codigoServicio}
+        <div className="max-h-[500px] overflow-y-auto border border-slate-200 rounded-lg">
+          <table className="w-full text-xs">
+            <thead className="bg-slate-50 border-b border-slate-200 sticky top-0">
+              <tr>
+                <th className="px-2 py-2 text-left font-semibold text-gray-700">#</th>
+                <th className="px-2 py-2 text-left font-semibold text-gray-700">Especialidad</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">Estado</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">TM</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">Mañana</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">Tarde</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">Total</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">TC</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">TL</th>
+                <th className="px-2 py-2 text-center font-semibold text-gray-700">Fechas</th>
+                <th className="px-2 py-2 text-left font-semibold text-gray-700">Observación</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(solicitud.detalles || []).length === 0 ? (
+                <tr>
+                  <td colSpan="11" className="px-4 py-8 text-center text-gray-500">
+                    <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                    <p className="text-sm">No hay especialidades registradas</p>
+                  </td>
+                </tr>
+              ) : (
+                (solicitud.detalles || []).map((detalle, index) => {
+                  const totalTurnos = detalle.turnoTM + detalle.turnoManana + detalle.turnoTarde;
+                  const yesNoPill = (valor) =>
+                    valor ? (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-green-100 text-green-700 border border-green-300">
+                        <CheckCircle2 className="w-3 h-3" />
                       </span>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      ID Detalle: {detalle.idDetalle}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {totalTurnos}
-                    </div>
-                    <p className="text-xs text-gray-500">turnos</p>
-                  </div>
-                </div>
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-gray-400 border border-gray-200">
+                        ✕
+                      </span>
+                    );
 
-                {/* Desglose de turnos */}
-                <div className="grid grid-cols-3 gap-3 mb-3">
-                  <div className="bg-purple-50 rounded-lg p-3 border border-purple-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Sunrise className="w-4 h-4 text-purple-600" />
-                      <span className="text-xs font-medium text-gray-700">TM</span>
-                    </div>
-                    <p className="text-lg font-bold text-purple-600">
-                      {detalle.turnoTM}
-                    </p>
-                  </div>
+                  return (
+                    <tr key={`${detalle.idDetalle}-${index}`} className="hover:bg-gray-50 border-b border-slate-100 last:border-b-0">
+                      <td className="px-2 py-1.5 text-gray-500">{index + 1}</td>
+                      
+                      <td className="px-2 py-1.5">
+                        <div className="font-semibold text-gray-900">{detalle.nombreServicio}</div>
+                        <div className="text-[10px] text-gray-500">Cód: {detalle.codigoServicio}</div>
+                      </td>
 
-                  <div className="bg-yellow-50 rounded-lg p-3 border border-yellow-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Sun className="w-4 h-4 text-yellow-600" />
-                      <span className="text-xs font-medium text-gray-700">Mañana</span>
-                    </div>
-                    <p className="text-lg font-bold text-yellow-600">
-                      {detalle.turnoManana}
-                    </p>
-                  </div>
+                      <td className="px-2 py-1.5 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
+                          detalle.estado === "APROBADO"
+                            ? "bg-green-100 text-green-700 border-green-300"
+                            : detalle.estado === "RECHAZADO"
+                            ? "bg-red-100 text-red-700 border-red-300"
+                            : "bg-amber-100 text-amber-700 border-amber-300"
+                        }`}>
+                          {detalle.estado}
+                        </span>
+                      </td>
 
-                  <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
-                    <div className="flex items-center gap-2 mb-1">
-                      <Moon className="w-4 h-4 text-orange-600" />
-                      <span className="text-xs font-medium text-gray-700">Tarde</span>
-                    </div>
-                    <p className="text-lg font-bold text-orange-600">
-                      {detalle.turnoTarde}
-                    </p>
-                  </div>
-                </div>
+                      <td className="px-2 py-1.5 text-center">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700 border border-purple-200">
+                          {detalle.turnoTM}
+                        </span>
+                      </td>
 
-                {/* Toggles TC/TL */}
-                <div className="flex gap-4 mb-3 text-sm">
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-4 h-4 rounded ${
-                        detalle.tc ? "bg-green-500" : "bg-gray-300"
-                      }`}
-                    />
-                    <span className="text-gray-700">Teleconsultorio (TC)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div
-                      className={`w-4 h-4 rounded ${
-                        detalle.tl ? "bg-blue-500" : "bg-gray-300"
-                      }`}
-                    />
-                    <span className="text-gray-700">Teleconsulta (TL)</span>
-                  </div>
-                </div>
+                      <td className="px-2 py-1.5 text-center">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-yellow-100 text-yellow-700 border border-yellow-200">
+                          {detalle.turnoManana}
+                        </span>
+                      </td>
 
-                {/* Observación - Solo si tiene texto */}
-                {detalle.observacion && detalle.observacion.trim() !== "" && (
-                  <div className="bg-blue-50 rounded-lg p-3 border border-blue-200 mb-3">
-                    <h6 className="text-xs font-semibold text-blue-700 mb-1">
-                      Observación:
-                    </h6>
-                    <p className="text-sm text-gray-700">{detalle.observacion}</p>
-                  </div>
-                )}
+                      <td className="px-2 py-1.5 text-center">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-orange-100 text-orange-700 border border-orange-200">
+                          {detalle.turnoTarde}
+                        </span>
+                      </td>
 
-                {/* Fechas detalle */}
-                {detalle.fechasDetalle && detalle.fechasDetalle.length > 0 && (
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
-                    <h6 className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                      <Calendar className="w-3 h-3" />
-                      Fechas Programadas ({detalle.fechasDetalle.length})
-                    </h6>
-                    <div className="flex flex-wrap gap-2">
-                      {detalle.fechasDetalle.map((fecha) => (
-                        <div
-                          key={fecha.idDetalleFecha}
-                          className={`px-3 py-1 rounded-lg text-xs font-medium ${
-                            fecha.bloque === "MANANA"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-orange-100 text-orange-800"
-                          }`}
-                        >
-                          {formatFechaCorta(fecha.fecha)} - {fecha.bloque}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
+                      <td className="px-2 py-1.5 text-center">
+                        <span className="text-base font-bold text-blue-600">{totalTurnos}</span>
+                      </td>
 
-                {/* Estado y fechas de creación */}
-                <div className="mt-3 pt-3 border-t border-gray-200 flex justify-between text-xs text-gray-500">
-                  <span>Estado: <span className="font-semibold">{detalle.estado}</span></span>
-                  <span>Creado: {formatFecha(detalle.fechaCreacion)}</span>
-                </div>
-              </div>
-            );
-          })}
+                      <td className="px-2 py-1.5 text-center">{yesNoPill(detalle.tc)}</td>
+                      <td className="px-2 py-1.5 text-center">{yesNoPill(detalle.tl)}</td>
+
+                      <td className="px-2 py-1.5 text-xs">
+                        {detalle.fechasDetalle && detalle.fechasDetalle.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {detalle.fechasDetalle.map((fechaItem, idx) => (
+                              <span 
+                                key={idx}
+                                className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-50 text-blue-700 border border-blue-200"
+                                title={`${formatFechaCorta(fechaItem.fecha)} - ${fechaItem.bloque}`}
+                              >
+                                <Calendar className="w-2.5 h-2.5" />
+                                {formatFechaCorta(fechaItem.fecha)}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+
+                      <td className="px-2 py-1.5 text-xs max-w-xs">
+                        {detalle.observacion && detalle.observacion.trim() !== "" ? (
+                          <div className="text-gray-700 leading-tight" title={detalle.observacion}>
+                            {detalle.observacion}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
+              )}
+            </tbody>
+          </table>
+        </div>
+        
+        <div className="mt-2 px-2 text-[10px] text-gray-500">
+          Total: {(solicitud.detalles || []).length} especialidad(es) | {solicitud.totalTurnosSolicitados} turno(s)
         </div>
       </div>
+    </div>
+  );
+}
+
+// Componente auxiliar para filas de información
+function Row({ label, value }) {
+  return (
+    <div className="flex items-center justify-between py-1.5">
+      <span className="text-xs text-gray-500 uppercase tracking-wide font-medium">{label}</span>
+      <span className="text-sm text-gray-900 font-medium">{value ?? "—"}</span>
     </div>
   );
 }

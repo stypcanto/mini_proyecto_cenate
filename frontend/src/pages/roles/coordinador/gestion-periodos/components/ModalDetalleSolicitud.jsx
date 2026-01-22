@@ -40,10 +40,13 @@ export default function ModalDetalleSolicitud({
   const [modalAccion, setModalAccion] = useState({ show: false, tipo: null, detalle: null, observacion: "" });
   const [busquedaEspecialidad, setBusquedaEspecialidad] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
+  const [seleccionadas, setSeleccionadas] = useState(new Set());
+  const [mostrarAccionesMasivas, setMostrarAccionesMasivas] = useState(false);
 
   useEffect(() => {
     setShowRechazoForm(prefillRechazo);
     setMotivoRechazo("");
+    setSeleccionadas(new Set());
     // Inicializar observaciones con las existentes
     if (solicitud?.detalles) {
       const obs = {};
@@ -213,26 +216,25 @@ export default function ModalDetalleSolicitud({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="p-3 border-b border-gray-200 sticky top-0 bg-white z-10">
+        <div className="px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10">
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-base font-semibold text-gray-900 mb-1 flex items-center gap-1.5">
-                <ClipboardList className="w-4 h-4 text-gray-700" />
-                Detalle de Solicitud
-              </h3>
-
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm text-gray-700 font-medium">{solicitud?.nombreIpress ?? "Cargando..."}</span>
-
-                {solicitud?.estado && (
-                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${getEstadoBadge(solicitud.estado)}`}>
-                    {solicitud.estado}
-                  </span>
-                )}
-
-                {solicitud?.periodoDescripcion && (
-                  <span className="text-xs text-gray-500">• {solicitud.periodoDescripcion}</span>
-                )}
+            <div className="flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-gray-700" />
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">
+                  Detalle de Solicitud
+                </h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <span className="text-sm text-gray-700 font-medium">{solicitud?.nombreIpress ?? "Cargando..."}</span>
+                  {solicitud?.estado && (
+                    <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getEstadoBadge(solicitud.estado)}`}>
+                      {solicitud.estado}
+                    </span>
+                  )}
+                  {solicitud?.periodoDescripcion && (
+                    <span className="text-sm text-gray-500">• {solicitud.periodoDescripcion}</span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -243,7 +245,7 @@ export default function ModalDetalleSolicitud({
         </div>
 
         {/* Body */}
-        <div className="p-3 space-y-3">
+        <div className="p-4 space-y-3">
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -252,70 +254,110 @@ export default function ModalDetalleSolicitud({
             <div className="p-6 text-center text-sm text-gray-500">No hay datos para mostrar.</div>
           ) : (
             <>
-              {/* Resumen (cards) */}
-              <div className="grid grid-cols-3 gap-2">
+              {/* Información en formato tabla */}
+              <div className="grid grid-cols-3 gap-3 divide-x divide-gray-200">
                 {/* Solicitud */}
-                <div className="rounded-lg border border-gray-200 bg-white p-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Hash className="w-3 h-3 text-gray-500" />
-                    <p className="text-xs font-semibold text-gray-900">Solicitud</p>
+                <div className="pr-3">
+                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-200">
+                    <Hash className="w-4 h-4 text-gray-500" />
+                    <p className="text-sm font-semibold text-gray-900">Solicitud</p>
                   </div>
-
-                  <div className="space-y-1 text-xs">
-                    <Row label="ID Solicitud" value={solicitud.idSolicitud} />
-                    <Row label="ID Periodo" value={solicitud.idPeriodo} />
-                    <Row label="Especialidades" value={solicitud.totalEspecialidades ?? detalles.length} />
-                    <Row label="Turnos" value={solicitud.totalTurnosSolicitados ?? "—"} />
-                  </div>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-1 text-gray-500 uppercase font-medium">ID SOLICITUD</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.idSolicitud}</td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-1 text-gray-500 uppercase font-medium">ID PERIODO</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.idPeriodo}</td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-1 text-gray-500 uppercase font-medium">ESPECIALIDADES</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.totalEspecialidades ?? detalles.length}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-gray-500 uppercase font-medium">TURNOS</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.totalTurnosSolicitados ?? "—"}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
 
                 {/* IPRESS */}
-                <div className="rounded-lg border border-gray-200 bg-white p-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Building2 className="w-3 h-3 text-gray-500" />
-                    <p className="text-xs font-semibold text-gray-900">IPRESS</p>
+                <div className="px-3">
+                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-200">
+                    <Building2 className="w-4 h-4 text-gray-500" />
+                    <p className="text-sm font-semibold text-gray-900">IPRESS</p>
                   </div>
-
-                  <div className="space-y-1 text-xs">
-                    <Row label="RENAES" value={solicitud.codigoRenaes ?? solicitud.codIpress ?? "—"} />
-                    <Row label="Nombre" value={solicitud.nombreIpress ?? "—"} />
-                    <Row label="Red" value={solicitud.nombreRed ?? "—"} icon={<MapPin className="w-3 h-3 text-gray-400" />} />
-                  </div>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-1 text-gray-500 uppercase font-medium">RENAES</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.codigoRenaes ?? solicitud.codIpress ?? "—"}</td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-1 text-gray-500 uppercase font-medium">NOMBRE</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.nombreIpress ?? "—"}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-gray-500 uppercase font-medium">RED</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.nombreRed ?? "—"}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
 
                 {/* Usuario */}
-                <div className="rounded-lg border border-gray-200 bg-white p-2">
-                  <div className="flex items-center gap-1.5 mb-1.5">
-                    <Users className="w-3 h-3 text-gray-500" />
-                    <p className="text-xs font-semibold text-gray-900">Usuario</p>
+                <div className="pl-3">
+                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-200">
+                    <Users className="w-4 h-4 text-gray-500" />
+                    <p className="text-sm font-semibold text-gray-900">Usuario</p>
                   </div>
-
-                  <div className="space-y-1 text-xs">
-                    <Row label="ID" value={solicitud.idUsuarioCreador ?? "—"} />
-                    <Row label="Nombre" value={solicitud.nombreUsuarioCreador ?? solicitud.nombreCompleto ?? "—"} />
-                    <Row label="Email" value={solicitud.emailContacto ?? "—"} icon={<Mail className="w-3 h-3 text-gray-400" />} />
-                    <Row label="Teléfono" value={solicitud.telefonoContacto ?? "—"} icon={<Phone className="w-3 h-3 text-gray-400" />} />
-                  </div>
+                  <table className="w-full text-xs">
+                    <tbody>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-1 text-gray-500 uppercase font-medium">ID</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.idUsuarioCreador ?? "—"}</td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-1 text-gray-500 uppercase font-medium">NOMBRE</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.nombreUsuarioCreador ?? solicitud.nombreCompleto ?? "—"}</td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-1 text-gray-500 uppercase font-medium">EMAIL</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.emailContacto ?? "—"}</td>
+                      </tr>
+                      <tr>
+                        <td className="py-1 text-gray-500 uppercase font-medium">TELÉFONO</td>
+                        <td className="py-1 text-gray-900 text-right">{solicitud.telefonoContacto ?? "—"}</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
               {/* Fechas */}
-              <div className="rounded-lg border border-gray-200 bg-gray-50 p-2">
-                <div className="grid grid-cols-3 gap-2 text-xs text-gray-700">
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">Creado:</span>
-                    <span className="text-gray-600">{fmtDateTime(solicitud.fechaCreacion ?? solicitud.createdAt)}</span>
+              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase font-medium">Creado:</div>
+                    <div className="text-sm text-gray-900">{fmtDateTime(solicitud.fechaCreacion ?? solicitud.createdAt)}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">Actualizado:</span>
-                    <span className="text-gray-600">{fmtDateTime(solicitud.fechaActualizacion ?? solicitud.updatedAt)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase font-medium">Actualizado:</div>
+                    <div className="text-sm text-gray-900">{fmtDateTime(solicitud.fechaActualizacion ?? solicitud.updatedAt)}</div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-gray-500" />
-                    <span className="font-medium">Enviado:</span>
-                    <span className="text-gray-600">{fmtDateTime(solicitud.fechaEnvio)}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-gray-500" />
+                  <div className="flex-1">
+                    <div className="text-xs text-gray-500 uppercase font-medium">Enviado:</div>
+                    <div className="text-sm text-gray-900">{fmtDateTime(solicitud.fechaEnvio)}</div>
                   </div>
                 </div>
               </div>
@@ -359,6 +401,48 @@ export default function ModalDetalleSolicitud({
                   </div>
                 </div>
               </div>
+
+              {/* Acciones masivas */}
+              {seleccionadas.size > 0 && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <CheckCheck className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-900">
+                        {seleccionadas.size} especialidad(es) seleccionada(s)
+                      </span>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          const detallesSeleccionados = detallesFiltrados.filter(d => seleccionadas.has(d.idDetalle));
+                          detallesSeleccionados.forEach(detalle => abrirModalAprobarDetalle(detalle));
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        Aprobar Seleccionadas
+                      </button>
+                      <button
+                        onClick={() => {
+                          const detallesSeleccionados = detallesFiltrados.filter(d => seleccionadas.has(d.idDetalle));
+                          detallesSeleccionados.forEach(detalle => abrirModalRechazarDetalle(detalle));
+                        }}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors"
+                      >
+                        <XOctagon className="w-3.5 h-3.5" />
+                        Rechazar Seleccionadas
+                      </button>
+                      <button
+                        onClick={() => setSeleccionadas(new Set())}
+                        className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-300 text-gray-700 text-xs font-medium rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Limpiar
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Filtros y búsqueda */}
               <div className="rounded-lg border border-gray-200 bg-white p-2">
@@ -410,6 +494,20 @@ export default function ModalDetalleSolicitud({
                   <table className="min-w-full text-xs">
                     <thead className="bg-gray-50 text-gray-700 sticky top-0">
                       <tr>
+                        <th className="px-2 py-1.5 text-center font-semibold">
+                          <input
+                            type="checkbox"
+                            checked={detallesFiltrados.length > 0 && detallesFiltrados.every(d => seleccionadas.has(d.idDetalle))}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSeleccionadas(new Set(detallesFiltrados.map(d => d.idDetalle)));
+                              } else {
+                                setSeleccionadas(new Set());
+                              }
+                            }}
+                            className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                          />
+                        </th>
                         <th className="px-2 py-1.5 text-left font-semibold">#</th>
                         <th className="px-2 py-1.5 text-left font-semibold">Especialidad</th>
                         <th className="px-2 py-1.5 text-center font-semibold">Estado</th>
@@ -427,7 +525,7 @@ export default function ModalDetalleSolicitud({
                     <tbody className="divide-y divide-gray-200">
                       {detallesFiltrados.length === 0 ? (
                         <tr>
-                          <td colSpan="11" className="px-4 py-8 text-center text-gray-500">
+                          <td colSpan="12" className="px-4 py-8 text-center text-gray-500">
                             <div className="flex flex-col items-center gap-2">
                               <FileText className="w-8 h-8 text-gray-300" />
                               <p className="text-sm">No se encontraron especialidades con los filtros aplicados</p>
@@ -450,9 +548,26 @@ export default function ModalDetalleSolicitud({
                           const estaPendiente = !d.estado || d.estado === 'PENDIENTE';
                           const estaAprobado = d.estado === 'APROBADO';
                           const estaRechazado = d.estado === 'RECHAZADO';
+                          const estaSeleccionada = seleccionadas.has(d.idDetalle);
                           
                           return (
                             <tr key={d.idDetalle ?? idx} className={`hover:bg-gray-50 ${!estaPendiente ? 'bg-gray-50' : ''}`}>
+                          <td className="px-2 py-1.5 text-center">
+                            <input
+                              type="checkbox"
+                              checked={estaSeleccionada}
+                              onChange={(e) => {
+                                const nuevasSeleccionadas = new Set(seleccionadas);
+                                if (e.target.checked) {
+                                  nuevasSeleccionadas.add(d.idDetalle);
+                                } else {
+                                  nuevasSeleccionadas.delete(d.idDetalle);
+                                }
+                                setSeleccionadas(nuevasSeleccionadas);
+                              }}
+                              className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                            />
+                          </td>
                           <td className="px-2 py-1.5 text-gray-500">{idx + 1}</td>
 
                           <td className="px-2 py-1.5">
@@ -567,7 +682,7 @@ export default function ModalDetalleSolicitud({
               </div>
 
               {/* Acciones */}
-              {isEnviado && (
+              {/* {isEnviado && (
                 <div className="rounded-xl border border-gray-200 bg-white p-4">
                   {!showRechazoForm ? (
                     <div className="flex flex-col md:flex-row gap-3">
@@ -618,7 +733,7 @@ export default function ModalDetalleSolicitud({
                     </div>
                   )}
                 </div>
-              )}
+              )} */}
             </>
           )}
         </div>
@@ -799,12 +914,9 @@ export default function ModalDetalleSolicitud({
 
 function Row({ label, value, icon = null }) {
   return (
-    <div className="flex items-start justify-between gap-3">
-      <div className="flex items-center gap-2 text-gray-500">
-        {icon}
-        <span className="text-xs uppercase tracking-wide">{label}</span>
-      </div>
-      <div className="text-gray-800 font-medium text-right break-all">{value ?? "—"}</div>
+    <div className="flex items-center justify-between py-1">
+      <span className="text-xs text-gray-500 uppercase font-medium">{label}</span>
+      <span className="text-sm text-gray-900 text-right">{value ?? "—"}</span>
     </div>
   );
 }
