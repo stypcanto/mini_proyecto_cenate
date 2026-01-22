@@ -406,7 +406,7 @@ export default function ModalEvaluacionECG({
     // Filtrar especialidades mientras se escribe
     if (value.trim().length > 0) {
       const filtered = especialidades.filter((e) =>
-        e.descServicio.toLowerCase().includes(value.toLowerCase())
+        e.descripcion.toLowerCase().includes(value.toLowerCase())
       );
       setFilteredEspecialidades(filtered);
       setShowEspecialidadesDropdown(true);
@@ -416,10 +416,10 @@ export default function ModalEvaluacionECG({
     }
   };
 
-  const handleSelectEspecialidad = (descServicio) => {
+  const handleSelectEspecialidad = (descripcion) => {
     setPlanSeguimiento({
       ...planSeguimiento,
-      interconsultaEspecialidad: descServicio,
+      interconsultaEspecialidad: descripcion,
     });
     setShowEspecialidadesDropdown(false);
     setFilteredEspecialidades([]);
@@ -1089,10 +1089,10 @@ export default function ModalEvaluacionECG({
                           <button
                             key={`${esp.idServicio}-${index}`}
                             type="button"
-                            onClick={() => handleSelectEspecialidad(esp.descServicio)}
+                            onClick={() => handleSelectEspecialidad(esp.descripcion)}
                             className="w-full text-left px-4 py-2 hover:bg-purple-100 transition-colors border-b border-purple-100 last:border-b-0"
                           >
-                            <span className="text-sm font-semibold text-purple-700">{esp.descServicio}</span>
+                            <span className="text-sm font-semibold text-purple-700">{esp.descripcion}</span>
                             {esp.codServicio && (
                               <span className="text-xs text-gray-500 ml-2">({esp.codServicio})</span>
                             )}
