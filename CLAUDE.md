@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.24.0** (2026-01-22) - Módulo Tele-ECG Optimización UI v3.2.0 ✅
+> Sistema de Telemedicina - EsSalud | **v1.31.0** (2026-01-22) - Módulo de Bolsas CRUD v1.0.0 + Tele-ECG v1.24.0 ✅
 
 ---
 
@@ -72,6 +72,35 @@
   - Tabla `ipress_modulos_config`
   - Caso: TELEECG exclusivo para PADOMI
   - Procedimientos administrativos
+
+### 📦 Módulo de Bolsas (v1.31.0) - ✅ COMPLETADO
+
+**📌 INICIO RÁPIDO:** Para entender el módulo de Bolsas completo, leer:
+- **`spec/01_Backend/06_resumen_modulo_bolsas_completo.md`** ⭐ (Recomendado - Visión general completa)
+
+**Documentación Técnica:**
+- **⭐ Resumen Módulo Bolsas:** `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0 - Arquitectura, componentes, integración sistémica)
+- **📋 CRUD Tipos de Bolsas:** `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.0.0 - Especificación técnica detallada)
+- **💾 Script SQL Migración:** `spec/04_BaseDatos/06_scripts/V3_0_2__crear_tabla_tipos_bolsas.sql` (DDL y 7 registros iniciales)
+- **📝 Changelog:** `checklist/01_Historial/01_changelog.md` (v1.31.0 - Registro de cambios)
+
+**Versión Actual (v1.31.0) - Módulo de Bolsas CRUD:**
+- 🗄️ **Tabla Catálogo:** `dim_tipos_bolsas` con 7 registros iniciales
+- 🔌 **7 Endpoints REST:** GET (todo/búsqueda/id), POST (crear), PUT (actualizar), DELETE, cambiar estado
+- 📊 **API Estadísticas:** Conteo de registros activos/inactivos
+- 🎨 **UI React:** Componente TiposBolsas.jsx con búsqueda avanzada, modales CRUD, paginación
+- 🔍 **Búsqueda:** Debounce 300ms, filtros por código y descripción
+- 💾 **Almacenamiento:** PostgreSQL con índices GIN para full-text search
+- 🔐 **Seguridad:** Endpoint público `/tipos-bolsas` con fallback offline
+- 🎨 **Design System:** Colores azul (#0D5BA9) consistentes con CENATE
+
+**Estado Final:**
+- ✅ Backend: CRUD completo (7 endpoints)
+- ✅ Frontend: Interfaz React con 4 modales (crear, ver, editar, eliminar)
+- ✅ Base de Datos: Tabla, índices, triggers, 7 registros
+- ✅ Documentación: 2 especificaciones técnicas completas
+- ✅ Build: Compilado sin errores
+- ✅ **Status: PRODUCTION READY** 🎉 (Disponible desde 2026-01-22)
 
 ### 💾 Base de Datos
 - **Modelo Usuarios:** `spec/04_BaseDatos/01_modelo_usuarios/01_modelo_usuarios.md`
@@ -211,6 +240,7 @@ Password: @Cenate2025
 | **Personal Externo (Gestión Modalidad + Bienvenida)** | `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` | ✅ Implementado (v1.18.0) |
 | **🫀 Tele-ECG v2.0.0** | `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` ⭐ + `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` | ✅ **100% Completado** (v1.21.4 - 6 bugs resueltos) 🎉 |
 | **Tele-ECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
+| **📦 Módulo de Bolsas** | `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0) + `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` | ✅ **100% Completado** (v1.31.0 - CRUD completo) 🎉 |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
@@ -255,6 +285,7 @@ Password: @Cenate2025
 - Horarios Existentes → `spec/04_BaseDatos/07_horarios_sistema/01_modelo_horarios_existente.md`
 - Integración Horarios → `spec/04_BaseDatos/07_horarios_sistema/02_guia_integracion_horarios.md`
 - Firma Digital → `plan/05_Firma_Digital/01_plan_implementacion.md`
+- Módulo Bolsas → `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0)
 - Bolsa 107 → `spec/01_Backend/04_auto_normalizacion_excel_107.md`
 - Troubleshooting → `spec/05_Troubleshooting/01_guia_problemas_comunes.md`
 
@@ -340,4 +371,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.22.1 | 2026-01-21*
+*Versión 1.31.0 | 2026-01-22*

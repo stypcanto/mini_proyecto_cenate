@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.14.0-blue)
+![Version](https://img.shields.io/badge/version-1.31.0-blue)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen)
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![React](https://img.shields.io/badge/React-19-blue)
@@ -73,7 +73,14 @@
 
 ## Características Principales
 
-### ✨ Módulos Implementados (v1.14.0)
+### ✨ Módulos Implementados (v1.31.0)
+
+#### 📦 Catálogos y Componentes
+- **Módulo de Bolsas** - CRUD completo de tipos de bolsas (v1.31.0)
+  - Backend: 7 endpoints REST con búsqueda avanzada
+  - Frontend: Interfaz React con 4 modales (crear, ver, editar, eliminar)
+  - Base de datos: Tabla `dim_tipos_bolsas` con 7 registros iniciales
+  - Documentación: [Resumen Módulo](spec/01_Backend/06_resumen_modulo_bolsas_completo.md) + [CRUD Técnico](spec/01_Backend/05_modulo_tipos_bolsas_crud.md)
 
 #### 📋 Desarrollo y Arquitectura
 - **Component Registry** - Sistema de registro dinámico de rutas (v1.14.0)
@@ -337,9 +344,11 @@ mini_proyecto_cenate/
 │   ├── INDICE_DOCUMENTACION.md      # ⭐ Índice maestro de navegación
 │   ├── README.md                    # Este archivo
 │   │
-│   ├── spec/                        # Documentación técnica (11 archivos)
+│   ├── spec/                        # Documentación técnica (13+ archivos)
 │   │   ├── 01_Backend/
-│   │   │   └── 01_api_endpoints.md          # 100+ endpoints documentados
+│   │   │   ├── 01_api_endpoints.md          # 100+ endpoints documentados
+│   │   │   ├── 05_modulo_tipos_bolsas_crud.md # CRUD Tipos de Bolsas (v1.0.0)
+│   │   │   └── 06_resumen_modulo_bolsas_completo.md # Resumen módulo Bolsas (v1.31.0)
 │   │   ├── 03_Arquitectura/
 │   │   │   └── 01_diagramas_sistema.md      # Flujos, capas, MBAC
 │   │   ├── 04_BaseDatos/                    # 135 tablas, 5.4 GB
@@ -612,6 +621,8 @@ component: lazy(() => import('../pages/Admin'))
 
 #### Backend
 - [**01_api_endpoints.md**](spec/01_Backend/01_api_endpoints.md) - Todos los endpoints REST (100+ endpoints)
+- [**05_modulo_tipos_bolsas_crud.md**](spec/01_Backend/05_modulo_tipos_bolsas_crud.md) - CRUD Tipos de Bolsas (v1.0.0)
+- [**06_resumen_modulo_bolsas_completo.md**](spec/01_Backend/06_resumen_modulo_bolsas_completo.md) - Resumen completo módulo de Bolsas (v1.31.0)
 
 #### Arquitectura
 - [**01_diagramas_sistema.md**](spec/03_Arquitectura/01_diagramas_sistema.md) - Flujos completos, capas, MBAC, patrones
@@ -787,6 +798,7 @@ Authorization: Bearer {token}
 
 | Versión | Fecha | Descripción |
 |---------|-------|-------------|
+| **v1.31.0** | 2026-01-22 | 📦 Módulo de Bolsas CRUD Completo (7 endpoints + UI React + 7 registros iniciales) |
 | **v1.14.0** | 2025-12-30 | ✍️ Firma Digital + 📋 Component Registry (sistema de rutas dinámicas) |
 | **v1.13.0** | 2025-12-29 | 🔔 Asignación Automática de Roles + Sistema de Notificaciones |
 | **v1.12.2** | 2025-12-24 | 🐳 Relay SMTP para Docker en macOS |
