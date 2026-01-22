@@ -1235,6 +1235,14 @@ export default function ModalEvaluacionECG({
               irImagenAnterior();
             }
           }}
+          onValida={() => {
+            setImagenValida(true);
+            setShowFullscreen(false);
+          }}
+          onRechaza={() => {
+            setImagenValida(false);
+            setShowFullscreen(false);
+          }}
         />
       )}
     </div>

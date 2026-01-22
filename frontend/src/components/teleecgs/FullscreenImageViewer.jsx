@@ -8,6 +8,8 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  CheckCircle, // ✅ v9.2.0: 9️⃣ Icono para Válida
+  AlertCircle, // ✅ v9.2.0: 9️⃣ Icono para Rechazar
 } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import ImageCanvas from "./ImageCanvas";
@@ -35,6 +37,8 @@ export default function FullscreenImageViewer({
   onFilterChange,
   onResetFilters,
   onImageNavigation,
+  onValida = null, // ✅ v9.2.0: 9️⃣ Callback para botón Válida
+  onRechaza = null, // ✅ v9.2.0: 9️⃣ Callback para botón Rechazar
 }) {
   const transformRef = useRef(null);
   const [showFilterControls, setShowFilterControls] = React.useState(false);
@@ -246,6 +250,32 @@ export default function FullscreenImageViewer({
             <RefreshCw size={20} />
           </button>
         </div>
+
+        {/* ✅ v9.2.0: 9️⃣ BOTONES DE VALIDACIÓN - SIEMPRE VISIBLES EN FULLSCREEN */}
+        {(onValida || onRechaza) && (
+          <div className="mt-4 pt-4 border-t border-gray-700 flex gap-4 justify-center">
+            {onValida && (
+              <button
+                onClick={onValida}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors"
+                title="Marcar como válida"
+              >
+                <CheckCircle size={20} />
+                Válida ✓
+              </button>
+            )}
+            {onRechaza && (
+              <button
+                onClick={onRechaza}
+                className="flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors"
+                title="Rechazar imagen"
+              >
+                <AlertCircle size={20} />
+                Rechazar ✗
+              </button>
+            )}
+          </div>
+        )}
 
         {/* Atajos */}
         <p className="text-xs text-gray-500 mt-3 text-center">
