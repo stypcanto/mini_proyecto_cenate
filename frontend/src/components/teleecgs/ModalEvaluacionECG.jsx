@@ -21,8 +21,7 @@ import useImageFilters from "./useImageFilters";
 import FilterControlsPanel from "./FilterControlsPanel";
 import FullscreenImageViewer from "./FullscreenImageViewer";
 import CalipersPanel from "./CalipersPanel"; // ✅ v9.2.0: Herramienta de medición de intervalos
-import ReferenciaEscalaPanel from "./ReferenciaEscalaPanel"; // ✅ v9.2.0: 4️⃣ Escala de referencia
-import GridPanel from "./GridPanel"; // ✅ v9.2.0: 5️⃣ Cuadrícula proporcional con zoom
+import DetallesPacienteModal from "../modals/DetallesPacienteModal"; // ✅ v11.5.0: Modal con detalles completos del paciente
 
 /**
  * 🏥 MODAL TRIAJE CLÍNICO - EKG (v8.0.0 - Single View)
@@ -57,17 +56,12 @@ export default function ModalEvaluacionECG({
   const { filters, updateFilter, resetFilters, applyPreset } = useImageFilters();
   const [showFilterControls, setShowFilterControls] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [showPacienteDetalles, setShowPacienteDetalles] = useState(false); // ✅ v11.5.0: Modal con información completa del paciente
 
   // ✅ v9.2.0: 3️⃣ CALIPERS - Herramienta de medición de intervalos
   const [showCalipers, setShowCalipers] = useState(false);
   const imageRef = useRef(null);
 
-  // ✅ v9.2.0: 4️⃣ ESCALA DE REFERENCIA - Control de calidad ECG
-  const [showReferencia, setShowReferencia] = useState(false);
-
-  // ✅ v9.2.0: 5️⃣ CUADRÍCULA PROPORCIONAL - Zoom con grid preservado
-  const [showGrid, setShowGrid] = useState(true);
-  const [gridZoomLevel, setGridZoomLevel] = useState(100);
 
   // ════════════════════════════════════════
   // TAB 1.5: VALIDACIÓN DE CALIDAD (v3.1.0)
@@ -325,20 +319,12 @@ export default function ModalEvaluacionECG({
   const handleZoomMas = () => {
     if (transformRef.current?.zoomIn) {
       transformRef.current.zoomIn(0.2);
-      // ✅ v9.2.0: 5️⃣ Actualizar zoom nivel de cuadrícula
-      setTimeout(() => {
-        setGridZoomLevel(getCurrentZoomPercentage());
-      }, 50);
     }
   };
 
   const handleZoomMenos = () => {
     if (transformRef.current?.zoomOut) {
       transformRef.current.zoomOut(0.2);
-      // ✅ v9.2.0: 5️⃣ Actualizar zoom nivel de cuadrícula
-      setTimeout(() => {
-        setGridZoomLevel(getCurrentZoomPercentage());
-      }, 50);
     }
   };
 
@@ -353,8 +339,6 @@ export default function ModalEvaluacionECG({
     setRotacion(0);
     resetFilters();
     setShowFilterControls(false);
-    // ✅ v9.2.0: 5️⃣ Reset zoom nivel de cuadrícula
-    setGridZoomLevel(100);
   };
 
   const getCurrentZoomPercentage = () => {
@@ -699,6 +683,28 @@ export default function ModalEvaluacionECG({
     setInterconsultaBusqueda("");
   };
 
+  // ✅ v11.5.0: Funciones de utilidad para datos del paciente
+  const calcularEdad = (fechaNacimiento) => {
+    if (!fechaNacimiento) return null;
+    try {
+      const fecha = new Date(fechaNacimiento);
+      if (isNaN(fecha.getTime())) return null;
+      const hoy = new Date();
+      let edad = hoy.getFullYear() - fecha.getFullYear();
+      const mes = hoy.getMonth() - fecha.getMonth();
+      if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) edad--;
+      return edad > 0 ? edad : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Obtener información del paciente
+  const edadPaciente = ecg?.edadPaciente || calcularEdad(ecg?.fecha_nacimiento_paciente || ecg?.fecnacimpaciente);
+  const generoPaciente = ecg?.generoPaciente || ecg?.sexo || ecg?.genero_paciente;
+  const nombresPaciente = ecg?.nombres_paciente || ecg?.nombrePaciente;
+  const apellidosPaciente = ecg?.apellidos_paciente || ecg?.apellidosPaciente || "";
+
   if (!isOpen) return null;
 
 
@@ -708,23 +714,37 @@ export default function ModalEvaluacionECG({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl w-[95vw] max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* ✅ v9.2.0: HEADER CON CONTEXTO CLÍNICO PERMANENTE - Paciente + IPRESS Origen */}
+        {/* ✅ v11.5.0: HEADER CON CONTEXTO CLÍNICO PERMANENTE + BOTÓN PACIENTE */}
         <div className="flex items-center justify-between p-4 bg-gradient-to-br from-blue-800 to-blue-950 text-white">
           <div className="flex-1">
             <h2 className="text-xl font-bold">🏥 Triaje Clínico - EKG</h2>
-            {/* 1️⃣ v9.2.0: Datos Paciente SIEMPRE VISIBLES */}
+            {/* 1️⃣ v11.5.0: Datos Paciente SIEMPRE VISIBLES + Edad + Género */}
             <div className="flex flex-wrap gap-3 text-xs text-blue-100 mt-2 pt-2 border-t border-blue-700">
               {/* Paciente */}
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-blue-300">👤 Paciente:</span>
-                <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{ecg?.nombres_paciente || ecg?.nombrePaciente} {ecg?.apellidos_paciente}</span>
+                <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{nombresPaciente} {apellidosPaciente}</span>
               </div>
+              {/* Edad */}
+              {edadPaciente && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-blue-300">🎂 Edad:</span>
+                  <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{edadPaciente} años</span>
+                </div>
+              )}
+              {/* Género */}
+              {generoPaciente && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-blue-300">{generoPaciente === 'M' || generoPaciente === 'MASCULINO' ? '♂️ Género:' : '♀️ Género:'}</span>
+                  <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{generoPaciente === 'M' || generoPaciente === 'MASCULINO' ? 'Masculino' : generoPaciente === 'F' || generoPaciente === 'FEMENINO' ? 'Femenino' : generoPaciente}</span>
+                </div>
+              )}
               {/* DNI */}
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-blue-300">🆔 DNI:</span>
                 <span className="font-mono bg-blue-900/40 px-2 py-1 rounded font-bold text-blue-100">{ecg?.num_doc_paciente}</span>
               </div>
-              {/* 1️⃣ v9.2.0: IPRESS ORIGEN PERMANENTE */}
+              {/* IPRESS ORIGEN */}
               {(ecg?.nombre_ipress || ecg?.nombreIpress) && (
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-blue-300">🏢 IPRESS:</span>
@@ -739,7 +759,16 @@ export default function ModalEvaluacionECG({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-2 ml-4 flex-shrink-0"><X size={20} /></button>
+          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+            <button
+              onClick={() => setShowPacienteDetalles(true)}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors"
+              title="Ver detalles completos del paciente"
+            >
+              📋 Paciente
+            </button>
+            <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-2"><X size={20} /></button>
+          </div>
         </div>
 
         {/* DOS COLUMNAS: Imagen (60%) + Formularios (40%) */}
@@ -775,10 +804,6 @@ export default function ModalEvaluacionECG({
                 <button onClick={() => setShowFilterControls(!showFilterControls)} className={`p-1.5 rounded transition-colors ${showFilterControls ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Filtros avanzados"><Filter size={16} /></button>
                 {/* ✅ v9.2.0: 3️⃣ Botón CALIPERS para medir intervalos */}
                 <button onClick={() => setShowCalipers(!showCalipers)} className={`p-1.5 rounded transition-colors ${showCalipers ? 'bg-cyan-200 text-cyan-600' : 'hover:bg-gray-200'}`} title="Calipers - Medir intervalos"><Ruler size={16} /></button>
-                {/* ✅ v9.2.0: 4️⃣ Botón ESCALA DE REFERENCIA para validar calidad */}
-                <button onClick={() => setShowReferencia(!showReferencia)} className={`p-1.5 rounded transition-colors ${showReferencia ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Escala de referencia - Control de calidad"><span className="text-sm font-bold">📐</span></button>
-                {/* ✅ v9.2.0: 5️⃣ Botón GRID para mostrar cuadrícula proporcional */}
-                <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? 'bg-pink-200 text-pink-600' : 'hover:bg-gray-200'}`} title="Cuadrícula ECG proporcional"><span className="text-sm font-bold">🔲</span></button>
                 <div className="w-px bg-gray-300" />
                 <button onClick={() => setShowFullscreen(true)} className="p-1.5 hover:bg-purple-200 rounded transition-colors text-purple-600 hover:text-purple-700" title="Expandir a pantalla completa (E)"><Maximize2 size={16} /></button>
               </div>
@@ -812,12 +837,6 @@ export default function ModalEvaluacionECG({
                   }}
                 />
               )}
-
-              {/* ✅ v9.2.0: 4️⃣ PANEL DE ESCALA - Control de Calidad ECG */}
-              {showReferencia && <ReferenciaEscalaPanel />}
-
-              {/* ✅ v9.2.0: 5️⃣ PANEL DE CUADRÍCULA - Zoom Proporcional ECG */}
-              {showGrid && <GridPanel zoomLevel={gridZoomLevel} onGridToggle={() => setShowGrid(!showGrid)} />}
 
               {/* VALIDACIÓN CALIDAD */}
               {imagenValida === null && (
@@ -1202,6 +1221,15 @@ export default function ModalEvaluacionECG({
             setImagenValida(false);
             setShowFullscreen(false);
           }}
+        />
+      )}
+
+      {/* ✅ v11.5.0: MODAL DETALLES DEL PACIENTE */}
+      {showPacienteDetalles && (
+        <DetallesPacienteModal
+          isOpen={showPacienteDetalles}
+          paciente={ecg}
+          onClose={() => setShowPacienteDetalles(false)}
         />
       )}
     </div>
