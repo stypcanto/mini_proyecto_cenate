@@ -735,34 +735,44 @@ export default function ModalEvaluacionECG({
                   📋 Información
                 </h3>
                 <div className="space-y-3">
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Paciente</span>
-                    <p className="font-bold text-gray-900 text-base mt-1">
-                      {ecg?.nombres_paciente || ecg?.nombrePaciente} {ecg?.apellidos_paciente}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">DNI</span>
-                    <p className="font-bold text-gray-900 text-base mt-1">{ecg?.num_doc_paciente || ecg?.numDocPaciente}</p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Edad</span>
-                    <p className="font-bold text-gray-900 text-base mt-1">
-                      {ecg?.edadPaciente ? `${ecg.edadPaciente} años` : "No disponible"}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Género</span>
-                    <p className="font-bold text-gray-900 text-base mt-1">
-                      {ecg?.generoPaciente === "M" || ecg?.generoPaciente === "MASCULINO" ? "🧑 Masculino" :
-                       ecg?.generoPaciente === "F" || ecg?.generoPaciente === "FEMENINO" ? "👩 Femenino" :
-                       ecg?.generoPaciente ? ecg.generoPaciente : "No disponible"}
-                    </p>
-                  </div>
-                  <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
-                    <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">IPRESS</span>
-                    <p className="font-bold text-gray-800 text-sm mt-1">{ecg?.nombre_ipress || ecg?.nombreIpress}</p>
-                  </div>
+                  {/* ✅ v1.27.7: Extraer info del paciente de la primera imagen, no del asegurado */}
+                  {(() => {
+                    // Si ecg tiene imagenes (es asegurado agrupado), obtener del primer ECG
+                    // Si no, es un ECG individual
+                    const imagenConInfo = imagenesActuales && imagenesActuales.length > 0 ? imagenesActuales[0] : ecg;
+                    return (
+                      <>
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
+                          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Paciente</span>
+                          <p className="font-bold text-gray-900 text-base mt-1">
+                            {imagenConInfo?.nombres_paciente || imagenConInfo?.nombresPaciente} {imagenConInfo?.apellidos_paciente || imagenConInfo?.apellidosPaciente}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
+                          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">DNI</span>
+                          <p className="font-bold text-gray-900 text-base mt-1">{imagenConInfo?.num_doc_paciente || imagenConInfo?.numDocPaciente}</p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
+                          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Edad</span>
+                          <p className="font-bold text-gray-900 text-base mt-1">
+                            {imagenConInfo?.edadPaciente ? `${imagenConInfo.edadPaciente} años` : "No disponible"}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
+                          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Género</span>
+                          <p className="font-bold text-gray-900 text-base mt-1">
+                            {imagenConInfo?.generoPaciente === "M" || imagenConInfo?.generoPaciente === "MASCULINO" ? "🧑 Masculino" :
+                             imagenConInfo?.generoPaciente === "F" || imagenConInfo?.generoPaciente === "FEMENINO" ? "👩 Femenino" :
+                             imagenConInfo?.generoPaciente ? imagenConInfo.generoPaciente : "No disponible"}
+                          </p>
+                        </div>
+                        <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
+                          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">IPRESS</span>
+                          <p className="font-bold text-gray-800 text-sm mt-1">{imagenConInfo?.nombre_ipress || imagenConInfo?.nombreIpress}</p>
+                        </div>
+                      </>
+                    );
+                  })()}
                   <div className="space-y-3">
                     <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4 text-center shadow-sm border border-blue-200">
                       <span className="text-xs font-semibold text-blue-700 uppercase tracking-widest">Total EKGs</span>
