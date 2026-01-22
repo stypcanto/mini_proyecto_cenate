@@ -502,16 +502,8 @@ public class TeleECGController {
                 .header("Content-Length", String.valueOf(imagen.getSizeBytes()))
                 .body(contenido);
         } catch (Exception e) {
-            log.error("❌ Error descargando imagen {}: {} - {}", idImagen, e.getClass().getSimpleName(), e.getMessage(), e);
-
-            // Diferenciar entre imagen no encontrada y otros errores
-            if (e.getMessage() != null && e.getMessage().contains("no encontrada")) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // Log detallado para debugging
-            log.debug("Stack trace completo:", e);
-            return ResponseEntity.status(500).build();
+            log.error("❌ Error descargando", e);
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -545,16 +537,8 @@ public class TeleECGController {
                 .header("Cache-Control", "public, max-age=3600")
                 .body(contenido);
         } catch (Exception e) {
-            log.error("❌ Error en preview de imagen {}: {} - {}", imagenId, e.getClass().getSimpleName(), e.getMessage(), e);
-
-            // Diferenciar entre imagen no encontrada y otros errores
-            if (e.getMessage() != null && e.getMessage().contains("no encontrada")) {
-                return ResponseEntity.notFound().build();
-            }
-
-            // Log detallado para debugging
-            log.debug("Stack trace completo:", e);
-            return ResponseEntity.status(500).build();
+            log.error("❌ Error en preview", e);
+            return ResponseEntity.notFound().build();
         }
     }
 
@@ -589,39 +573,6 @@ public class TeleECGController {
             ));
         } catch (Exception e) {
             log.error("❌ Error procesando", e);
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                .body(new ApiResponse<>(false, e.getMessage(), "400", null));
-        }
-    }
-
-    /**
-     * Rechazar imagen ECG - Devolver a IPRESS para que cambien la imagen
-     * v3.1.0: Nuevo endpoint para validación de calidad
-     */
-    @PutMapping("/{idImagen}/rechazar")
-    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "editar")
-    @Operation(summary = "Rechazar imagen ECG por mala calidad")
-    public ResponseEntity<ApiResponse<TeleECGImagenDTO>> rechazarImagen(
-            @PathVariable Long idImagen,
-            @Valid @RequestBody RechazarImagenECGDTO dto,
-            HttpServletRequest request) {
-
-        log.info("❌ Rechazando imagen - ID: {} Motivo: {}", idImagen, dto.getMotivo());
-
-        try {
-            Long idUsuario = getUsuarioActual();
-            TeleECGImagenDTO resultado = teleECGService.rechazarImagen(
-                idImagen, dto, idUsuario, request.getRemoteAddr()
-            );
-
-            return ResponseEntity.ok(new ApiResponse<>(
-                true,
-                "Imagen rechazada y devuelta a IPRESS",
-                "200",
-                resultado
-            ));
-        } catch (Exception e) {
-            log.error("❌ Error rechazando imagen", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(new ApiResponse<>(false, e.getMessage(), "400", null));
         }
@@ -939,131 +890,6 @@ public class TeleECGController {
 
         log.warn("⚠️ Retornando 1L como fallback");
         return 1L;
-    }
-
-    /**
-     * 🔄 ACTUALIZAR TRANSFORMACIONES (v1.0.0 - NUEVO)
-     * Actualizar rotación y flip (horizontal/vertical) de una imagen ECG de forma persistente
-     *
-     * Endpoint: PUT /api/teleekgs/{idImagen}/transformaciones
-     * Body: ActualizarTransformacionesDTO
-     *
-     * Respuesta exitosa:
-     * {
-     *   "status": 200,
-     *   "message": "Transformaciones actualizadas correctamente",
-     *   "data": { imagen actualizada }
-     * }
-     *
-     * @param idImagen ID de la imagen a transformar
-     * @param dto DTO con valores de rotación (0,90,180,270) y flips (true/false)
-     * @param request Para obtener IP del cliente
-     * @return Imagen actualizada con nuevas transformaciones
-     * @since 2026-01-21
-     */
-    @PutMapping("/{idImagen}/transformaciones")
-    @CheckMBACPermission(pagina = "/teleecg", accion = "editar")
-    public ResponseEntity<?> actualizarTransformaciones(
-            @PathVariable Long idImagen,
-            @Valid @RequestBody ActualizarTransformacionesDTO dto,
-            HttpServletRequest request) {
-        try {
-            Long idUsuario = obtenerIdUsuarioActual();
-            String ipCliente = obtenerIPCliente(request);
-
-            TeleECGImagen imagen = teleECGService.actualizarTransformaciones(
-                    idImagen, dto, idUsuario, ipCliente
-            );
-
-            log.info("✅ Transformaciones actualizadas: ID={}, Rot={}, FlipH={}, FlipV={}",
-                    idImagen, dto.getRotacion(), dto.getFlipHorizontal(), dto.getFlipVertical());
-
-            return ResponseEntity.ok(new ApiResponse<>(
-                    true,
-                    "Transformaciones actualizadas correctamente",
-                    "200",
-                    imagen
-            ));
-
-        } catch (RuntimeException e) {
-            log.warn("❌ Error actualizando transformaciones: {}", e.getMessage());
-            return ResponseEntity.status(400).body(new ApiResponse<>(
-                    false,
-                    e.getMessage(),
-                    "400",
-                    null
-            ));
-        } catch (Exception e) {
-            log.error("❌ Error inesperado actualizando transformaciones", e);
-            return ResponseEntity.status(500).body(new ApiResponse<>(
-                    false,
-                    "Error interno del servidor",
-                    "500",
-                    null
-            ));
-        }
-    }
-
-    /**
-     * ✂️ RECORTAR IMAGEN (v1.0.0 - NUEVO)
-     * Recortar imagen de forma PERMANENTE en la base de datos
-     *
-     * ⚠️ ADVERTENCIA: Esta operación es IRREVERSIBLE
-     * - Modifica el contenido binario en PostgreSQL
-     * - Recalcula SHA256 para integridad
-     * - Registra la acción en auditoría
-     * - NO se puede recuperar la imagen original
-     *
-     * Endpoint: PUT /api/teleekgs/{idImagen}/recortar
-     * Body: RecortarImagenDTO
-     *
-     * @param idImagen ID de la imagen a recortar
-     * @param dto DTO con imagen base64 recortada (desde canvas.toDataURL())
-     * @param request Para obtener IP del cliente
-     * @return Imagen actualizada con nuevo contenido
-     * @since 2026-01-21
-     */
-    @PutMapping("/{idImagen}/recortar")
-    @CheckMBACPermission(pagina = "/teleecg", accion = "editar")
-    public ResponseEntity<?> recortarImagen(
-            @PathVariable Long idImagen,
-            @Valid @RequestBody RecortarImagenDTO dto,
-            HttpServletRequest request) {
-        try {
-            Long idUsuario = obtenerIdUsuarioActual();
-            String ipCliente = obtenerIPCliente(request);
-
-            TeleECGImagen imagen = teleECGService.recortarImagen(
-                    idImagen, dto, idUsuario, ipCliente
-            );
-
-            log.warn("⚠️  IMAGEN RECORTADA PERMANENTEMENTE: ID={}, Nuevo tamaño={} bytes",
-                    idImagen, imagen.getSizeBytes());
-
-            return ResponseEntity.ok(new ApiResponse<>(
-                    true,
-                    "Imagen recortada exitosamente (operación permanente)",
-                    "200",
-                    imagen
-            ));
-
-        } catch (RuntimeException e) {
-            log.warn("❌ Error recortando imagen: {}", e.getMessage());
-            return ResponseEntity.status(400).body(new ApiResponse<>(
-                    false,
-                    e.getMessage(),
-                    "400",
-                    null
-            ));
-        } catch (Exception e) {
-            log.error("❌ Error inesperado recortando imagen", e);
-            return ResponseEntity.status(500).body(new ApiResponse<>(
-                    false,
-                    "Error interno del servidor",
-                    "500",
-                    null
-            ));
-        }
     }
 
     /**

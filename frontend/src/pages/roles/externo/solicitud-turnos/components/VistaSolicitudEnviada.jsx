@@ -26,14 +26,6 @@ export default function VistaSolicitudEnviada({ solicitud }) {
   const [modalFechas, setModalFechas] = useState(null);
   const [filtroEspecialidad, setFiltroEspecialidad] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("TODAS");
-  
-  if (!solicitud) {
-    return (
-      <div className="text-center py-8 text-gray-500">
-        No hay datos de la solicitud
-      </div>
-    );
-  }
 
   const formatFecha = (fecha) => {
     if (!fecha) return "—";
@@ -80,6 +72,14 @@ export default function VistaSolicitudEnviada({ solicitud }) {
 
     return resultado;
   }, [solicitud.detalles, filtroEspecialidad, filtroEstado]);
+
+  if (!solicitud) {
+    return (
+      <div className="text-center py-8 text-gray-500">
+        No hay datos de la solicitud
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

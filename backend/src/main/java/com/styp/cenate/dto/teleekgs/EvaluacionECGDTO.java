@@ -21,13 +21,12 @@ import lombok.NoArgsConstructor;
 public class EvaluacionECGDTO {
 
     /**
-     * Evaluación Médica: Texto libre del análisis del ECG
-     * v1.25.0: Ahora permite texto libre para evaluación completa del médico
+     * Evaluación: NORMAL o ANORMAL
      * Requerido: Sí
      */
     @NotNull(message = "Evaluación es requerida")
     @NotBlank(message = "Evaluación no puede estar vacía")
-    @Size(min = 10, max = 5000, message = "Evaluación debe tener entre 10 y 5000 caracteres")
+    @Size(min = 1, max = 20, message = "Evaluación debe tener entre 1 y 20 caracteres")
     private String evaluacion;
 
     /**

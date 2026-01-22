@@ -304,18 +304,6 @@ public class TeleECGImagen {
     private LocalDateTime fechaEvaluacion;
 
     /**
-     * FECHA Y HORA DEL RECHAZO (v3.1.0 - Pendiente)
-     * Se establece cuando el médico rechaza por mala calidad
-     * NULL si estado != RECHAZADA
-     * Auditoría de cuándo se rechazó la imagen
-     *
-     * @deprecated: Campo no implementado aún en la BD.
-     * Usar @Transient para evitar que Hibernate intente consultarlo
-     */
-    @Transient
-    private LocalDateTime fechaRechazo;
-
-    /**
      * STATUS DE LA IMAGEN EN SISTEMA
      * A = ACTIVA (vigente, < 30 días)
      * I = INACTIVA (vencida, >= 30 días, marcada por limpieza automática)
@@ -435,45 +423,6 @@ public class TeleECGImagen {
      */
     @Column(name = "fecha_nota_clinica")
     private LocalDateTime fechaNotaClinica;
-
-    // ════════════════════════════════════════════════════════════════
-    // TRANSFORMACIONES PERSISTENTES (v1.0.0 - NUEVO)
-    // Permitir que médicos y personal rotor/voltee imágenes de forma persistente
-    // ════════════════════════════════════════════════════════════════
-
-    /**
-     * ROTACIÓN DE LA IMAGEN (v1.0.0 - Nuevo)
-     * Almacena la rotación aplicada a la imagen en grados
-     * Valores permitidos: 0, 90, 180, 270
-     * Default: 0 (sin rotación)
-     *
-     * Nota: Esta es una transformación VISUAL SOLO. El contenido binario de la imagen no se modifica.
-     * La rotación se aplica cuando se visualiza la imagen (frontend).
-     */
-    @Column(name = "rotacion", nullable = false)
-    private Integer rotacion = 0;
-
-    /**
-     * FLIP HORIZONTAL (v1.0.0 - Nuevo)
-     * TRUE: La imagen está volteada horizontalmente (espejo izquierda-derecha)
-     * FALSE: Imagen normal (sin flip horizontal)
-     * Default: false
-     *
-     * Útil cuando se escanea el papel ECG boca abajo o al revés en el escáner.
-     */
-    @Column(name = "flip_horizontal", nullable = false)
-    private Boolean flipHorizontal = false;
-
-    /**
-     * FLIP VERTICAL (v1.0.0 - Nuevo)
-     * TRUE: La imagen está volteada verticalmente (de cabeza)
-     * FALSE: Imagen normal (sin flip vertical)
-     * Default: false
-     *
-     * Útil cuando se escanea el papel ECG de cabeza en el escáner.
-     */
-    @Column(name = "flip_vertical", nullable = false)
-    private Boolean flipVertical = false;
 
     @PrePersist
     protected void onCreate() {
