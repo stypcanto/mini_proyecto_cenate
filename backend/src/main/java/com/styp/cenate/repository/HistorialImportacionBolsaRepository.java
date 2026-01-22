@@ -82,4 +82,9 @@ public interface HistorialImportacionBolsaRepository extends JpaRepository<Histo
            "ORDER BY h.fechaImportacion DESC " +
            "LIMIT 1")
     HistorialImportacionBolsa findLastImportacionByUsuario(@Param("usuarioId") Long usuarioId);
+
+    /**
+     * Obtiene importaciones activas ordenadas por fecha
+     */
+    List<HistorialImportacionBolsa> findByActivoOrderByFechaImportacionDesc(Boolean activo);
 }

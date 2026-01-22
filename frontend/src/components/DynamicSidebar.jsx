@@ -52,6 +52,10 @@ import {
   Folder,
   MessageSquare,
   Bot,
+  Package,
+  Upload,
+  ListChecks,
+  FolderOpen,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -91,6 +95,10 @@ const iconMap = {
   'BoxSelect': BoxSelect,
   'MessageSquare': MessageSquare,
   'Bot': Bot,
+  'Package': Package,
+  'Upload': Upload,
+  'ListChecks': ListChecks,
+  'FolderOpen': FolderOpen,
 };
 
 const getIconComponent = (iconName) => {
@@ -423,11 +431,26 @@ function TooltipWrapper({ children, collapsed, text }) {
   );
 }
 
+// Función helper para obtener el icono según el módulo y página
+function getPageIcon(nombreModulo, nombrePagina) {
+  if (nombreModulo === 'Bolsas de Pacientes') {
+    if (nombrePagina.toLowerCase().includes('excel') || nombrePagina.toLowerCase().includes('cargar')) {
+      return Upload;
+    } else if (nombrePagina.toLowerCase().includes('solicitud')) {
+      return ListChecks;
+    } else if (nombrePagina.toLowerCase().includes('gestión')) {
+      return FolderOpen;
+    }
+  }
+  return FileText;
+}
+
 // Componente para renderizar una página con submenú (nivel 3)
 function PaginaConSubmenu({ pagina, location, nombreModulo }) {
   const [isSubOpen, setIsSubOpen] = React.useState(false);
   const hasActiveSubpage = pagina.subpaginas?.some((sub) => location.pathname === sub.ruta);
   const subStateKey = `${nombreModulo}-${pagina.id_pagina}`;
+  const PageIcon = getPageIcon(nombreModulo, pagina.nombre);
 
   return (
     <div className="space-y-1">
@@ -441,7 +464,7 @@ function PaginaConSubmenu({ pagina, location, nombreModulo }) {
         }`}
       >
         <div className="flex items-center gap-3 flex-1 min-w-0">
-          <FileText className="w-4 h-4 flex-shrink-0" />
+          <PageIcon className="w-4 h-4 flex-shrink-0" />
           <span className="truncate">{pagina.nombre}</span>
         </div>
         {isSubOpen ? (
@@ -480,7 +503,13 @@ function PaginaConSubmenu({ pagina, location, nombreModulo }) {
 // Componente para renderizar modulos dinamicos con iconos de la BD
 function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, openSections, collapsed, getIconComponent }) {
   const { nombreModulo, icono, paginas } = modulo;
-  const ModuleIcon = getIconComponent(icono);
+
+  // Icono especial para "Bolsas de Pacientes"
+  let ModuleIcon = getIconComponent(icono);
+  if (nombreModulo === 'Bolsas de Pacientes') {
+    ModuleIcon = Package;
+  }
+
   const isOpen = openSections[nombreModulo];
 
   // Verificar si alguna página o subpágina está activa
@@ -590,6 +619,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
             } else {
               // Renderizar como página normal
               const isActive = location.pathname === pagina.ruta;
+              const PageIcon = getPageIcon(nombreModulo, pagina.nombre);
               return (
                 <NavLink
                   key={pagina.id_pagina || idx}
@@ -600,7 +630,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
                       : "hover:bg-slate-800/60 text-slate-400 hover:text-white"
                   }`}
                 >
-                  <FileText className="w-4 h-4" />
+                  <PageIcon className="w-4 h-4" />
                   <span className="truncate">{pagina.nombre}</span>
                 </NavLink>
               );

@@ -47,12 +47,13 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
            "(:dni IS NULL OR s.pacienteDni = :dni) AND " +
            "(:estado IS NULL OR s.estado = :estado) AND " +
            "(:numeroSolicitud IS NULL OR LOWER(s.numeroSolicitud) LIKE LOWER(CONCAT('%', :numeroSolicitud, '%'))) AND " +
-           "s.activo = true")
+           "(:activo IS NULL OR s.activo = :activo)")
     Page<SolicitudBolsa> buscarSolicitudes(
         @Param("nombrePaciente") String nombrePaciente,
         @Param("dni") String dni,
         @Param("estado") String estado,
         @Param("numeroSolicitud") String numeroSolicitud,
+        @Param("activo") Boolean activo,
         Pageable pageable);
 
     /**
@@ -103,4 +104,26 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     Long countAprobadas(
         @Param("fechaInicio") OffsetDateTime fechaInicio,
         @Param("fechaFin") OffsetDateTime fechaFin);
+
+    /**
+     * Cuenta solicitudes activas
+     */
+    Long countByActivo(Boolean activo);
+
+    /**
+     * Obtiene solicitudes por bolsa (alias para findByBolsaIdBolsaAndActivo)
+     */
+    default List<SolicitudBolsa> findByIdBolsaAndActivo(Long idBolsa, Boolean activo) {
+        return findByBolsaIdBolsaAndActivo(idBolsa, activo);
+    }
+
+    /**
+     * Obtiene solicitudes activas ordenadas por fecha
+     */
+    List<SolicitudBolsa> findByActivoOrderByFechaSolicitudDesc(Boolean activo);
+
+    /**
+     * Obtiene solicitudes pendientes ordenadas por fecha ascendente
+     */
+    List<SolicitudBolsa> findByEstadoAndActivoOrderByFechaSolicitudAsc(String estado, Boolean activo);
 }

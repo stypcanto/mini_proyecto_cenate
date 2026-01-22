@@ -84,4 +84,14 @@ public interface BolsaRepository extends JpaRepository<DimBolsa, Long> {
      */
     @Query("SELECT b FROM DimBolsa b WHERE b.estado = 'ACTIVA' AND b.activo = true ORDER BY b.fechaCreacion DESC")
     List<DimBolsa> findAllBolosasActivas();
+
+    /**
+     * Cuenta bolsas activas
+     */
+    Long countByActivo(Boolean activo);
+
+    /**
+     * Obtiene todas las bolsas activas ordenadas por fecha de creación
+     */
+    List<DimBolsa> findByActivoOrderByFechaCreacionDesc(Boolean activo);
 }
