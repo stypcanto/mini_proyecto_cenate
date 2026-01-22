@@ -23,6 +23,7 @@ import FullscreenImageViewer from "./FullscreenImageViewer";
 import CalipersPanel from "./CalipersPanel"; // ✅ v9.2.0: Herramienta de medición de intervalos
 import ReferenciaEscalaPanel from "./ReferenciaEscalaPanel"; // ✅ v9.2.0: 4️⃣ Escala de referencia
 import GridPanel from "./GridPanel"; // ✅ v9.2.0: 5️⃣ Cuadrícula proporcional con zoom
+import DetallesPacienteModal from "../modals/DetallesPacienteModal"; // ✅ v11.5.0: Modal con detalles completos del paciente
 
 /**
  * 🏥 MODAL TRIAJE CLÍNICO - EKG (v8.0.0 - Single View)
@@ -57,6 +58,7 @@ export default function ModalEvaluacionECG({
   const { filters, updateFilter, resetFilters, applyPreset } = useImageFilters();
   const [showFilterControls, setShowFilterControls] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
+  const [showPacienteDetalles, setShowPacienteDetalles] = useState(false); // ✅ v11.5.0: Modal con información completa del paciente
 
   // ✅ v9.2.0: 3️⃣ CALIPERS - Herramienta de medición de intervalos
   const [showCalipers, setShowCalipers] = useState(false);
@@ -699,6 +701,28 @@ export default function ModalEvaluacionECG({
     setInterconsultaBusqueda("");
   };
 
+  // ✅ v11.5.0: Funciones de utilidad para datos del paciente
+  const calcularEdad = (fechaNacimiento) => {
+    if (!fechaNacimiento) return null;
+    try {
+      const fecha = new Date(fechaNacimiento);
+      if (isNaN(fecha.getTime())) return null;
+      const hoy = new Date();
+      let edad = hoy.getFullYear() - fecha.getFullYear();
+      const mes = hoy.getMonth() - fecha.getMonth();
+      if (mes < 0 || (mes === 0 && hoy.getDate() < fecha.getDate())) edad--;
+      return edad > 0 ? edad : null;
+    } catch {
+      return null;
+    }
+  };
+
+  // Obtener información del paciente
+  const edadPaciente = ecg?.edadPaciente || calcularEdad(ecg?.fecha_nacimiento_paciente || ecg?.fecnacimpaciente);
+  const generoPaciente = ecg?.generoPaciente || ecg?.sexo || ecg?.genero_paciente;
+  const nombresPaciente = ecg?.nombres_paciente || ecg?.nombrePaciente;
+  const apellidosPaciente = ecg?.apellidos_paciente || ecg?.apellidosPaciente || "";
+
   if (!isOpen) return null;
 
 
@@ -708,23 +732,37 @@ export default function ModalEvaluacionECG({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl w-[95vw] max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* ✅ v9.2.0: HEADER CON CONTEXTO CLÍNICO PERMANENTE - Paciente + IPRESS Origen */}
+        {/* ✅ v11.5.0: HEADER CON CONTEXTO CLÍNICO PERMANENTE + BOTÓN PACIENTE */}
         <div className="flex items-center justify-between p-4 bg-gradient-to-br from-blue-800 to-blue-950 text-white">
           <div className="flex-1">
             <h2 className="text-xl font-bold">🏥 Triaje Clínico - EKG</h2>
-            {/* 1️⃣ v9.2.0: Datos Paciente SIEMPRE VISIBLES */}
+            {/* 1️⃣ v11.5.0: Datos Paciente SIEMPRE VISIBLES + Edad + Género */}
             <div className="flex flex-wrap gap-3 text-xs text-blue-100 mt-2 pt-2 border-t border-blue-700">
               {/* Paciente */}
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-blue-300">👤 Paciente:</span>
-                <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{ecg?.nombres_paciente || ecg?.nombrePaciente} {ecg?.apellidos_paciente}</span>
+                <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{nombresPaciente} {apellidosPaciente}</span>
               </div>
+              {/* Edad */}
+              {edadPaciente && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-blue-300">🎂 Edad:</span>
+                  <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{edadPaciente} años</span>
+                </div>
+              )}
+              {/* Género */}
+              {generoPaciente && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-blue-300">{generoPaciente === 'M' || generoPaciente === 'MASCULINO' ? '♂️ Género:' : '♀️ Género:'}</span>
+                  <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{generoPaciente === 'M' || generoPaciente === 'MASCULINO' ? 'Masculino' : generoPaciente === 'F' || generoPaciente === 'FEMENINO' ? 'Femenino' : generoPaciente}</span>
+                </div>
+              )}
               {/* DNI */}
               <div className="flex items-center gap-1">
                 <span className="font-semibold text-blue-300">🆔 DNI:</span>
                 <span className="font-mono bg-blue-900/40 px-2 py-1 rounded font-bold text-blue-100">{ecg?.num_doc_paciente}</span>
               </div>
-              {/* 1️⃣ v9.2.0: IPRESS ORIGEN PERMANENTE */}
+              {/* IPRESS ORIGEN */}
               {(ecg?.nombre_ipress || ecg?.nombreIpress) && (
                 <div className="flex items-center gap-1">
                   <span className="font-semibold text-blue-300">🏢 IPRESS:</span>
@@ -739,7 +777,16 @@ export default function ModalEvaluacionECG({
               )}
             </div>
           </div>
-          <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-2 ml-4 flex-shrink-0"><X size={20} /></button>
+          <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+            <button
+              onClick={() => setShowPacienteDetalles(true)}
+              className="px-3 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors"
+              title="Ver información completa del paciente"
+            >
+              📋 Paciente
+            </button>
+            <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-2"><X size={20} /></button>
+          </div>
         </div>
 
         {/* DOS COLUMNAS: Imagen (60%) + Formularios (40%) */}
@@ -1202,6 +1249,15 @@ export default function ModalEvaluacionECG({
             setImagenValida(false);
             setShowFullscreen(false);
           }}
+        />
+      )}
+
+      {/* ✅ v11.5.0: MODAL DETALLES DEL PACIENTE */}
+      {showPacienteDetalles && (
+        <DetallesPacienteModal
+          isOpen={showPacienteDetalles}
+          paciente={ecg}
+          onClose={() => setShowPacienteDetalles(false)}
         />
       )}
     </div>
