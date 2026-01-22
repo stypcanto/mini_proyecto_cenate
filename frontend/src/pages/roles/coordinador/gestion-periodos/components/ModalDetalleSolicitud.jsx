@@ -19,6 +19,7 @@ import {
   Filter,
   CheckCheck,
   XOctagon,
+  Calendar,
 } from "lucide-react";
 import { chipDay, fmtDateTime, yesNoPill } from "../utils/ui";
 import { solicitudTurnosService } from "../../../../../services/solicitudTurnosService";
@@ -39,6 +40,8 @@ export default function ModalDetalleSolicitud({
   const [modalObservacion, setModalObservacion] = useState({ show: false, detalle: null, observacion: "" });
   const [modalAccion, setModalAccion] = useState({ show: false, tipo: null, detalle: null, observacion: "" });
   const [modalAccionMasiva, setModalAccionMasiva] = useState({ show: false, tipo: null, detalles: [], observacion: "" });
+  const [modalFechas, setModalFechas] = useState({ show: false, detalle: null });
+  const [modalCalendario, setModalCalendario] = useState(false);
   const [busquedaEspecialidad, setBusquedaEspecialidad] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [seleccionadas, setSeleccionadas] = useState(new Set());
@@ -246,14 +249,27 @@ export default function ModalDetalleSolicitud({
   };
 
   const isEnviado = solicitud?.estado === "ENVIADO";
-  const detalles = Array.isArray(solicitud?.detalles) ? solicitud.detalles : [];
+  
+  // Deduplicar detalles por idDetalle (fix para backend que envía duplicados)
+  const detalles = useMemo(() => {
+    if (!Array.isArray(solicitud?.detalles)) return [];
+    
+    const detallesUnicos = new Map();
+    solicitud.detalles.forEach(detalle => {
+      if (detalle.idDetalle && !detallesUnicos.has(detalle.idDetalle)) {
+        detallesUnicos.set(detalle.idDetalle, detalle);
+      }
+    });
+    
+    return Array.from(detallesUnicos.values());
+  }, [solicitud?.detalles]);
 
   // Estadísticas y filtrado
   const estadisticas = useMemo(() => {
     const pendientes = detalles.filter(d => !d.estado || d.estado === 'PENDIENTE').length;
-    const aprobados = detalles.filter(d => d.estado === 'APROBADO').length;
-    const rechazados = detalles.filter(d => d.estado === 'RECHAZADO').length;
-    return { pendientes, aprobados, rechazados, total: detalles.length };
+    const asignados = detalles.filter(d => d.estado === 'ASIGNADO').length;
+    const noProcede = detalles.filter(d => d.estado === 'NO PROCEDE').length;
+    return { pendientes, asignados, noProcede, total: detalles.length };
   }, [detalles]);
 
   const detallesFiltrados = useMemo(() => {
@@ -283,29 +299,29 @@ export default function ModalDetalleSolicitud({
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[92vh] overflow-y-auto">
         {/* Header */}
-        <div className="px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-10">
+        <div className="px-4 py-3 border-b-0 sticky top-0 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-t-lg z-10">
           <div className="flex items-start justify-between gap-3">
             <div className="flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-gray-700" />
+              <ClipboardList className="w-5 h-5 text-white" />
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">
+                <h3 className="text-lg font-semibold text-white">
                   Detalle de Solicitud
                 </h3>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-sm text-gray-700 font-medium">{solicitud?.nombreIpress ?? "Cargando..."}</span>
+                  <span className="text-sm text-blue-100 font-medium">{solicitud?.nombreIpress ?? "Cargando..."}</span>
                   {solicitud?.estado && (
                     <span className={`px-2 py-0.5 rounded text-xs font-semibold ${getEstadoBadge(solicitud.estado)}`}>
                       {solicitud.estado}
                     </span>
                   )}
                   {solicitud?.periodoDescripcion && (
-                    <span className="text-sm text-gray-500">• {solicitud.periodoDescripcion}</span>
+                    <span className="text-sm text-blue-100">• {solicitud.periodoDescripcion}</span>
                   )}
                 </div>
               </div>
             </div>
 
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <button onClick={onClose} className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors">
               <XCircle className="w-5 h-5" />
             </button>
           </div>
@@ -321,110 +337,78 @@ export default function ModalDetalleSolicitud({
             <div className="p-6 text-center text-sm text-gray-500">No hay datos para mostrar.</div>
           ) : (
             <>
-              {/* Información en formato tabla */}
-              <div className="grid grid-cols-3 gap-3 divide-x divide-gray-200">
-                {/* Solicitud */}
-                <div className="pr-3">
-                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-200">
-                    <Hash className="w-4 h-4 text-gray-500" />
-                    <p className="text-sm font-semibold text-gray-900">Solicitud</p>
+              {/* Cards de Información Mejorados */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {/* Card RESUMEN */}
+                <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-lg p-3 border border-blue-200 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 bg-blue-600 rounded-lg">
+                      <FileText className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Resumen</h3>
                   </div>
-                  <table className="w-full text-xs">
-                    <tbody>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-1 text-gray-500 uppercase font-medium">ID SOLICITUD</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.idSolicitud}</td>
-                      </tr>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-1 text-gray-500 uppercase font-medium">ID PERIODO</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.idPeriodo}</td>
-                      </tr>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-1 text-gray-500 uppercase font-medium">ESPECIALIDADES</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.totalEspecialidades ?? detalles.length}</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-gray-500 uppercase font-medium">TURNOS</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.totalTurnosSolicitados ?? "—"}</td>
-                      </tr>
-                    </tbody>
-                  </table>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-2 border border-blue-100">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-blue-600" />
+                        <span className="text-xs text-gray-600">Total Especialidades</span>
+                      </div>
+                      <span className="text-xl font-bold text-blue-700">{solicitud.totalEspecialidades ?? detalles.length}</span>
+                    </div>
+                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-2 border border-green-100">
+                      <div className="flex items-center gap-1.5">
+                        <Hash className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-xs text-gray-600">Total Turnos</span>
+                      </div>
+                      <span className="text-xl font-bold text-green-700">{solicitud.totalTurnosSolicitados ?? "—"}</span>
+                    </div>
+                    <div className="bg-white/60 backdrop-blur-sm rounded-lg p-2 border border-purple-100">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                        <span className="text-[10px] font-semibold text-gray-700">Periodo</span>
+                      </div>
+                      <p className="text-xs font-bold text-gray-900">{solicitud.periodoDescripcion}</p>
+                      <p className="text-[10px] text-gray-600 mt-0.5">{solicitud.periodo} • ID: {solicitud.idPeriodo}</p>
+                    </div>
+                  </div>
                 </div>
 
-                {/* IPRESS */}
-                <div className="px-3">
-                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-200">
-                    <Building2 className="w-4 h-4 text-gray-500" />
-                    <p className="text-sm font-semibold text-gray-900">IPRESS</p>
+                {/* Card FECHAS */}
+                <div className="bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 rounded-lg p-3 border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 bg-gray-700 rounded-lg">
+                      <Clock className="w-4 h-4 text-white" />
+                    </div>
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Fechas</h3>
                   </div>
-                  <table className="w-full text-xs">
-                    <tbody>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-1 text-gray-500 uppercase font-medium">RENAES</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.codigoRenaes ?? solicitud.codIpress ?? "—"}</td>
-                      </tr>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-1 text-gray-500 uppercase font-medium">NOMBRE</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.nombreIpress ?? "—"}</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-gray-500 uppercase font-medium">RED</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.nombreRed ?? "—"}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Usuario */}
-                <div className="pl-3">
-                  <div className="flex items-center gap-2 mb-2 pb-1.5 border-b border-gray-200">
-                    <Users className="w-4 h-4 text-gray-500" />
-                    <p className="text-sm font-semibold text-gray-900">Usuario</p>
-                  </div>
-                  <table className="w-full text-xs">
-                    <tbody>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-1 text-gray-500 uppercase font-medium">ID</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.idUsuarioCreador ?? "—"}</td>
-                      </tr>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-1 text-gray-500 uppercase font-medium">NOMBRE</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.nombreUsuarioCreador ?? solicitud.nombreCompleto ?? "—"}</td>
-                      </tr>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-1 text-gray-500 uppercase font-medium">EMAIL</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.emailContacto ?? "—"}</td>
-                      </tr>
-                      <tr>
-                        <td className="py-1 text-gray-500 uppercase font-medium">TELÉFONO</td>
-                        <td className="py-1 text-gray-900 text-right">{solicitud.telefonoContacto ?? "—"}</td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              {/* Fechas */}
-              <div className="grid grid-cols-3 gap-3 pt-3 border-t border-gray-200">
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium">Creado:</div>
-                    <div className="text-sm text-gray-900">{fmtDateTime(solicitud.fechaCreacion ?? solicitud.createdAt)}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium">Actualizado:</div>
-                    <div className="text-sm text-gray-900">{fmtDateTime(solicitud.fechaActualizacion ?? solicitud.updatedAt)}</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-gray-500" />
-                  <div className="flex-1">
-                    <div className="text-xs text-gray-500 uppercase font-medium">Enviado:</div>
-                    <div className="text-sm text-gray-900">{fmtDateTime(solicitud.fechaEnvio)}</div>
+                  <div className="space-y-2">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-2 border border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-[10px] text-gray-500 font-medium mb-0.5">Creación</p>
+                          <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaCreacion ?? solicitud.createdAt)}</p>
+                        </div>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
+                      </div>
+                    </div>
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-2 border border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-[10px] text-gray-500 font-medium mb-0.5">Actualización</p>
+                          <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaActualizacion ?? solicitud.updatedAt)}</p>
+                        </div>
+                        <div className="w-2 h-2 bg-amber-500 rounded-full mt-1"></div>
+                      </div>
+                    </div>
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-2 border border-gray-100">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <p className="text-[10px] text-gray-500 font-medium mb-0.5">Envío</p>
+                          <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaEnvio)}</p>
+                        </div>
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-1"></div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -434,7 +418,7 @@ export default function ModalDetalleSolicitud({
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-semibold text-gray-900">Progreso de Revisión</h4>
                   <span className="text-xs text-gray-600">
-                    {estadisticas.aprobados + estadisticas.rechazados} de {estadisticas.total} procesadas
+                    {estadisticas.asignados + estadisticas.noProcede} de {estadisticas.total} procesadas
                   </span>
                 </div>
                 
@@ -442,13 +426,13 @@ export default function ModalDetalleSolicitud({
                   <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className="h-2 bg-gradient-to-r from-green-500 to-emerald-500" 
-                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.aprobados / estadisticas.total) * 100 : 0}%` }}
+                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.asignados / estadisticas.total) * 100 : 0}%` }}
                     />
                   </div>
                   <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className="h-2 bg-gradient-to-r from-red-500 to-rose-500" 
-                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.rechazados / estadisticas.total) * 100 : 0}%` }}
+                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.noProcede / estadisticas.total) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -459,15 +443,28 @@ export default function ModalDetalleSolicitud({
                     <div className="text-base font-bold text-amber-700">{estadisticas.pendientes}</div>
                   </div>
                   <div className="bg-white rounded px-2 py-1 text-center">
-                    <div className="text-[10px] text-green-600 font-medium">Aprobadas</div>
-                    <div className="text-base font-bold text-green-700">{estadisticas.aprobados}</div>
+                    <div className="text-[10px] text-green-600 font-medium">Asignadas</div>
+                    <div className="text-base font-bold text-green-700">{estadisticas.asignados}</div>
                   </div>
                   <div className="bg-white rounded px-2 py-1 text-center">
-                    <div className="text-[10px] text-red-600 font-medium">Rechazadas</div>
-                    <div className="text-base font-bold text-red-700">{estadisticas.rechazados}</div>
+                    <div className="text-[10px] text-red-600 font-medium">No procede</div>
+                    <div className="text-base font-bold text-red-700">{estadisticas.noProcede}</div>
                   </div>
                 </div>
               </div>
+
+              {/* Botón Ver Calendario */}
+              {detalles.some(d => d.fechasDetalle && d.fechasDetalle.length > 0) && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                  <button
+                    onClick={() => setModalCalendario(true)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Ver Calendario del Periodo
+                  </button>
+                </div>
+              )}
 
               {/* Acciones masivas - Solo disponible si está ENVIADO */}
               {isEnviado && seleccionadas.size > 0 && (
@@ -562,8 +559,8 @@ export default function ModalDetalleSolicitud({
                     >
                       <option value="TODOS">Todos</option>
                       <option value="PENDIENTE">Pendientes</option>
-                      <option value="APROBADO">Aprobadas</option>
-                      <option value="RECHAZADO">Rechazadas</option>
+                      <option value="ASIGNADO">Asignadas</option>
+                      <option value="NO PROCEDE">No procede</option>
                     </select>
                   </div>
                 </div>
@@ -588,9 +585,9 @@ export default function ModalDetalleSolicitud({
 
                 <div className="overflow-x-auto bg-white max-h-[400px] overflow-y-auto">
                   <table className="min-w-full text-xs">
-                    <thead className="bg-gray-50 text-gray-700 sticky top-0">
+                    <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] sticky top-0">
                       <tr>
-                        <th className="px-2 py-1.5 text-center font-semibold">
+                        <th className="px-2 py-2 text-center font-bold text-white">
                           {isEnviado && detallesFiltrados.some(d => !d.estado || d.estado === 'PENDIENTE') && (
                             <input
                               type="checkbox"
@@ -610,17 +607,18 @@ export default function ModalDetalleSolicitud({
                             />
                           )}
                         </th>
-                        <th className="px-2 py-1.5 text-left font-semibold">#</th>
-                        <th className="px-2 py-1.5 text-left font-semibold">Especialidad</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Estado</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Req</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">TM</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Mañana</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Tarde</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">TC</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">TL</th>
-                        <th className="px-2 py-1.5 text-left font-semibold">Observación</th>
-                        {isEnviado && <th className="px-2 py-1.5 text-center font-semibold">Acciones</th>}
+                        <th className="px-2 py-2 text-left font-bold text-white">#</th>
+                        <th className="px-2 py-2 text-left font-bold text-white">Especialidad</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Estado</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Req</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">TM</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Mañana</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Tarde</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">TC</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">TL</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Fechas</th>
+                        <th className="px-2 py-2 text-left font-bold text-white">Observación</th>
+                        {isEnviado && <th className="px-2 py-2 text-center font-bold text-white">Acciones</th>}
                       </tr>
                     </thead>
 
@@ -709,6 +707,28 @@ export default function ModalDetalleSolicitud({
 
                           <td className="px-2 py-1.5 text-center">{yesNoPill(!!d.tc)}</td>
                           <td className="px-2 py-1.5 text-center">{yesNoPill(!!d.tl)}</td>
+
+                          <td className="px-2 py-1.5 text-center">
+                            {d.fechasDetalle && d.fechasDetalle.length > 0 ? (
+                              <button
+                                onClick={() => setModalFechas({ show: true, detalle: d })}
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-200 transition-colors"
+                                title="Ver días seleccionados"
+                              >
+                                <Calendar className="w-3 h-3" />
+                                {d.fechasDetalle.length}
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg cursor-not-allowed"
+                                title="Sin días registrados"
+                              >
+                                <Calendar className="w-3 h-3" />
+                                0
+                              </button>
+                            )}
+                          </td>
 
                           <td className="px-2 py-1.5">
                             <div className="flex items-center gap-2">
@@ -849,25 +869,25 @@ export default function ModalDetalleSolicitud({
       {modalObservacion.show && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
+            <div className="p-6 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-t-xl">
               <div className="flex items-start justify-between">
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                    <MessageSquare className="w-5 h-5 text-blue-600" />
+                  <h4 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-white" />
                     {modalObservacion.soloLectura ? "Consultar Observación" : "Registrar Observación"}
                   </h4>
-                  <p className="text-sm text-gray-600 mt-1">
+                  <p className="text-sm text-blue-100 mt-1">
                     {modalObservacion.detalle?.nombreServicio ?? modalObservacion.detalle?.nombreEspecialidad}
                   </p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-blue-200">
                     Código: {modalObservacion.detalle?.codigoServicio ?? modalObservacion.detalle?.codServicio}
                   </p>
                 </div>
                 <button
                   onClick={cerrarModalObservacion}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
                 >
-                  <XCircle className="w-6 h-6" />
+                  <XCircle className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -920,36 +940,33 @@ export default function ModalDetalleSolicitud({
       {modalAccion.show && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
+            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] p-6 rounded-t-xl">
               <div className="flex items-start justify-between">
-                <div>
-                  <h4 className={`text-lg font-semibold flex items-center gap-2 ${
-                    modalAccion.tipo === 'aprobar' ? 'text-green-700' : 'text-red-700'
-                  }`}>
+                <div className="flex items-center gap-3">
+                  <div className="bg-white bg-opacity-20 p-2 rounded-lg">
                     {modalAccion.tipo === 'aprobar' ? (
-                      <>
-                        <CheckCircle2 className="w-5 h-5" />
-                        Asignar Especialidad
-                      </>
+                      <CheckCircle2 className="w-5 h-5 text-white" />
                     ) : (
-                      <>
-                        <XCircle className="w-5 h-5" />
-                        No Procede
-                      </>
+                      <XCircle className="w-5 h-5 text-white" />
                     )}
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-2">
-                    {modalAccion.detalle?.nombreServicio ?? modalAccion.detalle?.nombreEspecialidad}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Código: {modalAccion.detalle?.codigoServicio ?? modalAccion.detalle?.codServicio}
-                  </p>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-white">
+                      {modalAccion.tipo === 'aprobar' ? 'Asignar Especialidad' : 'No Procede'}
+                    </h4>
+                    <p className="text-sm text-blue-100 mt-1">
+                      {modalAccion.detalle?.nombreServicio ?? modalAccion.detalle?.nombreEspecialidad}
+                    </p>
+                    <p className="text-xs text-blue-200">
+                      Código: {modalAccion.detalle?.codigoServicio ?? modalAccion.detalle?.codServicio}
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={cerrarModalAccion}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
                 >
-                  <XCircle className="w-6 h-6" />
+                  <XCircle className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -1019,33 +1036,30 @@ export default function ModalDetalleSolicitud({
       {modalAccionMasiva.show && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
           <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
-            <div className="p-6 border-b border-gray-200">
+            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] p-6 rounded-t-xl">
               <div className="flex items-start justify-between">
-                <div>
-                  <h4 className={`text-lg font-semibold flex items-center gap-2 ${
-                    modalAccionMasiva.tipo === 'aprobar' ? 'text-green-700' : 'text-red-700'
-                  }`}>
+                <div className="flex items-center gap-3">
+                  <div className="bg-white bg-opacity-20 p-2 rounded-lg">
                     {modalAccionMasiva.tipo === 'aprobar' ? (
-                      <>
-                        <CheckCircle2 className="w-5 h-5" />
-                        Asignar Especialidades
-                      </>
+                      <CheckCircle2 className="w-5 h-5 text-white" />
                     ) : (
-                      <>
-                        <XCircle className="w-5 h-5" />
-                        No Procede
-                      </>
+                      <XCircle className="w-5 h-5 text-white" />
                     )}
-                  </h4>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Se procesarán <span className="font-bold">{modalAccionMasiva.detalles.length}</span> especialidad(es) seleccionada(s)
-                  </p>
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-white">
+                      {modalAccionMasiva.tipo === 'aprobar' ? 'Asignar Especialidades' : 'No Procede'}
+                    </h4>
+                    <p className="text-sm text-blue-100 mt-1">
+                      Se procesarán <span className="font-bold">{modalAccionMasiva.detalles.length}</span> especialidad(es) seleccionada(s)
+                    </p>
+                  </div>
                 </div>
                 <button
                   onClick={cerrarModalAccionMasiva}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
                 >
-                  <XCircle className="w-6 h-6" />
+                  <XCircle className="w-5 h-5" />
                 </button>
               </div>
             </div>
@@ -1129,6 +1143,247 @@ export default function ModalDetalleSolicitud({
                     No Procede {modalAccionMasiva.detalles.length} Especialidad(es)
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Fechas Seleccionadas */}
+      {modalFechas.show && modalFechas.detalle && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] p-6 rounded-t-xl">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                    <Calendar className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-white">
+                      Días Seleccionados
+                    </h4>
+                    <p className="text-sm text-blue-100 mt-1">
+                      {modalFechas.detalle.nombreServicio ?? modalFechas.detalle.nombreEspecialidad}
+                    </p>
+                    <p className="text-xs text-blue-200">
+                      Código: {modalFechas.detalle.codigoServicio ?? modalFechas.detalle.codServicio}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModalFechas({ show: false, detalle: null })}
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 max-h-96 overflow-y-auto">
+              {modalFechas.detalle.fechasDetalle && modalFechas.detalle.fechasDetalle.length > 0 ? (
+                <div className="space-y-2">
+                  {modalFechas.detalle.fechasDetalle.map((fecha, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        fecha.bloque === 'MANANA'
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-orange-50 border-orange-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Calendar className={`w-5 h-5 ${
+                          fecha.bloque === 'MANANA' ? 'text-blue-600' : 'text-orange-600'
+                        }`} />
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {new Date(fecha.fecha + 'T00:00:00').toLocaleDateString('es-PE', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                          <p className="text-xs text-gray-600">{fecha.fecha}</p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          fecha.bloque === 'MANANA'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-orange-600 text-white'
+                        }`}
+                      >
+                        {fecha.bloque === 'MANANA' ? '🌅 Mañana' : '🌆 Tarde'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm">No hay días registrados</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <button
+                onClick={() => setModalFechas({ show: false, detalle: null })}
+                className="w-full px-4 py-2.5 bg-red-600 text-white font-medium rounded-lg hover:bg-red-700 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Calendario del Periodo */}
+      {modalCalendario && solicitud && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] p-6 rounded-t-xl">
+              <div className="flex items-start justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                    <Calendar className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h4 className="text-lg font-bold text-white">
+                      Calendario del Periodo
+                    </h4>
+                    <p className="text-sm text-blue-100 mt-1">
+                      {solicitud.periodoDescripcion} - {solicitud.nombreIpress}
+                    </p>
+                    <p className="text-xs text-blue-200">
+                      {solicitud.fechaInicio} al {solicitud.fechaFin}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModalCalendario(false)}
+                  className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
+                >
+                  <XCircle className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              {(() => {
+                // Obtener todas las fechas registradas de todos los detalles
+                const fechasRegistradas = new Map();
+                detalles.forEach(detalle => {
+                  if (detalle.fechasDetalle) {
+                    detalle.fechasDetalle.forEach(f => {
+                      const key = f.fecha;
+                      if (!fechasRegistradas.has(key)) {
+                        fechasRegistradas.set(key, []);
+                      }
+                      fechasRegistradas.get(key).push({
+                        especialidad: detalle.nombreServicio,
+                        bloque: f.bloque
+                      });
+                    });
+                  }
+                });
+
+                // Generar calendario
+                const inicio = new Date(solicitud.fechaInicio + 'T00:00:00');
+                const fin = new Date(solicitud.fechaFin + 'T00:00:00');
+                const diasCalendario = [];
+                
+                for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
+                  const fechaStr = d.toISOString().split('T')[0];
+                  diasCalendario.push({
+                    fecha: fechaStr,
+                    dia: d.getDate(),
+                    nombreDia: d.toLocaleDateString('es-PE', { weekday: 'short' }),
+                    registros: fechasRegistradas.get(fechaStr) || []
+                  });
+                }
+
+                return (
+                  <div className="grid grid-cols-7 gap-2">
+                    {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(dia => (
+                      <div key={dia} className="text-center font-semibold text-gray-700 text-sm py-2">
+                        {dia}
+                      </div>
+                    ))}
+                    
+                    {/* Espacios vacíos para alinear el primer día */}
+                    {Array(inicio.getDay()).fill(null).map((_, idx) => (
+                      <div key={`empty-${idx}`} className="aspect-square" />
+                    ))}
+                    
+                    {diasCalendario.map((dia) => {
+                      const tieneRegistros = dia.registros.length > 0;
+                      const tieneManana = dia.registros.some(r => r.bloque === 'MANANA');
+                      const tieneTarde = dia.registros.some(r => r.bloque === 'TARDE');
+                      
+                      return (
+                        <div
+                          key={dia.fecha}
+                          className={`aspect-square rounded-lg border-2 p-2 relative ${
+                            tieneRegistros
+                              ? 'border-blue-500 bg-blue-50 cursor-pointer hover:bg-blue-100'
+                              : 'border-gray-200 bg-white'
+                          }`}
+                          title={tieneRegistros ? `${dia.registros.length} turno(s) registrado(s)` : ''}
+                          onClick={() => {
+                            if (tieneRegistros) {
+                              alert(`Día ${dia.dia}\\n\\n` + 
+                                dia.registros.map(r => `• ${r.especialidad} (${r.bloque})`).join('\\n'));
+                            }
+                          }}
+                        >
+                          <div className="text-center">
+                            <div className={`text-xs font-medium ${tieneRegistros ? 'text-blue-900' : 'text-gray-500'}`}>
+                              {dia.nombreDia}
+                            </div>
+                            <div className={`text-lg font-bold ${tieneRegistros ? 'text-blue-700' : 'text-gray-700'}`}>
+                              {dia.dia}
+                            </div>
+                          </div>
+                          
+                          {tieneRegistros && (
+                            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5 justify-center">
+                              {tieneManana && (
+                                <div className="w-2 h-2 rounded-full bg-blue-600" title="Mañana" />
+                              )}
+                              {tieneTarde && (
+                                <div className="w-2 h-2 rounded-full bg-orange-600" title="Tarde" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Leyenda */}
+              <div className="mt-6 flex items-center justify-center gap-6 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-600" />
+                  <span className="text-gray-700">Turno Mañana</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-600" />
+                  <span className="text-gray-700">Turno Tarde</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <button
+                onClick={() => setModalCalendario(false)}
+                className="w-full px-4 py-2.5 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cerrar
               </button>
             </div>
           </div>

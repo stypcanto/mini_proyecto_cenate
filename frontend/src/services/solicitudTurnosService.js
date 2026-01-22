@@ -9,6 +9,9 @@ async obtenerTodas(filtros = {}) {
     const params = {
     estado: filtros.estado && filtros.estado !== "TODAS" ? filtros.estado : undefined,
     idPeriodo: filtros.periodo ? Number(filtros.periodo) : undefined,
+    macroId: filtros.macroId ? Number(filtros.macroId) : undefined,
+    redId: filtros.redId ? Number(filtros.redId) : undefined,
+    ipressId: filtros.ipressId ? Number(filtros.ipressId) : undefined,
   };
 
   console.log("obtenerTodas - PARAMS >>>", params);

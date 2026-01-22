@@ -20,6 +20,30 @@ const formatFechaRango = (fecha) => {
   }
 };
 
+// Helper para calcular rango de fechas del periodo (basado en el código del periodo)
+const calcularRangoPeriodo = (periodo) => {
+  if (!periodo?.periodo) return { min: undefined, max: undefined };
+  
+  try {
+    // El periodo viene en formato AAAAMM (ejemplo: "202601" = Enero 2026)
+    const periodoStr = String(periodo.periodo);
+    const anio = periodoStr.substring(0, 4);
+    const mes = periodoStr.substring(4, 6);
+    
+    // Primer día del mes
+    const primerDia = `${anio}-${mes}-01`;
+    
+    // Último día del mes
+    const ultimoDia = new Date(parseInt(anio), parseInt(mes), 0).getDate();
+    const ultimoDiaStr = `${anio}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
+    
+    return { min: primerDia, max: ultimoDiaStr };
+  } catch (error) {
+    console.error("Error al calcular rango del periodo:", error);
+    return { min: undefined, max: undefined };
+  }
+};
+
 /**
  * Modal para seleccionar fechas específicas por especialidad
  * @param {Object} props
@@ -89,6 +113,16 @@ export default function ModalSeleccionarFechas({
   const agregarFecha = () => {
     if (!fechaInput) return;
 
+    // Verificar límite de turnos
+    const conteoActual = fechasSeleccionadas.filter((f) => f.turno === tipoTurno).length;
+    const limiteActual = tipoTurno === "MANANA" ? turnoManana : turnoTarde;
+    
+    if (conteoActual >= limiteActual) {
+      const nombreTurno = tipoTurno === "MANANA" ? "Mañana" : "Tarde";
+      alert(`Has alcanzado el límite de turnos de ${nombreTurno} (${limiteActual}). No puedes agregar más fechas para este turno.`);
+      return;
+    }
+
     const nueva = {
       fecha: fechaInput,
       turno: tipoTurno,
@@ -121,6 +155,9 @@ export default function ModalSeleccionarFechas({
 
   const fechasManana = contarFechas("MANANA");
   const fechasTarde = contarFechas("TARDE");
+  
+  // Calcular rango de fechas basado en el periodo
+  const rangoPeriodo = calcularRangoPeriodo(periodo);
 
   if (!open) return null;
 
@@ -128,29 +165,29 @@ export default function ModalSeleccionarFechas({
     <div className="fixed inset-0 z-[60]">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="w-full max-w-2xl my-8 overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
+        <div className="w-full max-w-2xl my-8 overflow-hidden rounded-xl bg-white shadow-2xl border border-slate-200">
           {/* Header Azul */}
-          <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] p-6 text-white">
+          <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] p-4 text-white">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                  <Calendar className="w-6 h-6" />
+              <div className="flex items-center gap-2">
+                <div className="bg-white bg-opacity-20 p-1.5 rounded-lg">
+                  <Calendar className="w-4 h-4" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold">Seleccionar Fechas</h2>
-                  <p className="text-blue-100 text-sm">{especialidad}</p>
+                  <h2 className="text-lg font-bold">Seleccionar Fechas</h2>
+                  <p className="text-blue-100 text-xs">{especialidad}</p>
                 </div>
               </div>
               <button
                 onClick={onClose}
-                className="bg-white bg-opacity-20 hover:bg-opacity-30 p-2 rounded-lg transition-all"
+                className="bg-white bg-opacity-20 hover:bg-opacity-30 p-1.5 rounded-lg transition-all"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          <div className="p-6 space-y-6">
+          <div className="p-4 space-y-3">
             {/* Loading state */}
             {loading ? (
               <div className="flex flex-col items-center justify-center py-12">
@@ -160,40 +197,68 @@ export default function ModalSeleccionarFechas({
             ) : (
               <>
                 {/* Tarjetas de resumen */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2">
               {/* Turnos Mañana */}
-              <div className="bg-orange-50 border-2 border-orange-200 rounded-2xl p-4">
-                <div className="flex items-center gap-2 text-orange-600 mb-2">
-                  <Sun className="w-5 h-5" />
-                  <span className="font-bold text-sm">TURNOS MAÑANA</span>
+              <div className={`rounded-lg p-2 border ${
+                fechasManana >= turnoManana 
+                  ? 'bg-red-50 border-red-300' 
+                  : 'bg-orange-50 border-orange-200'
+              }`}>
+                <div className={`flex items-center gap-1 mb-1 ${
+                  fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                }`}>
+                  <Sun className="w-3 h-3" />
+                  <span className="font-bold text-[10px]">TURNOS MAÑANA</span>
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-orange-600">{fechasManana}</span>
-                  <span className="text-lg text-orange-500">/ {turnoManana}</span>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-xl font-bold ${
+                    fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                  }`}>{fechasManana}</span>
+                  <span className={`text-sm ${
+                    fechasManana >= turnoManana ? 'text-red-500' : 'text-orange-500'
+                  }`}>/ {turnoManana}</span>
                 </div>
-                <p className="text-xs text-orange-600 mt-1">{turnoManana - fechasManana} disponible(s)</p>
+                <p className={`text-[9px] mt-0.5 font-semibold ${
+                  fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                }`}>
+                  {fechasManana >= turnoManana ? '⚠️ Límite alcanzado' : `${turnoManana - fechasManana} disponible(s)`}
+                </p>
               </div>
 
               {/* Turnos Tarde */}
-              <div className="bg-purple-50 border-2 border-purple-200 rounded-2xl p-4">
-                <div className="flex items-center gap-2 text-purple-600 mb-2">
-                  <Moon className="w-5 h-5" />
-                  <span className="font-bold text-sm">TURNOS TARDE</span>
+              <div className={`rounded-lg p-2 border ${
+                fechasTarde >= turnoTarde 
+                  ? 'bg-red-50 border-red-300' 
+                  : 'bg-purple-50 border-purple-200'
+              }`}>
+                <div className={`flex items-center gap-1 mb-1 ${
+                  fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                }`}>
+                  <Moon className="w-3 h-3" />
+                  <span className="font-bold text-[10px]">TURNOS TARDE</span>
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-bold text-purple-600">{fechasTarde}</span>
-                  <span className="text-lg text-purple-500">/ {turnoTarde}</span>
+                <div className="flex items-baseline gap-1">
+                  <span className={`text-xl font-bold ${
+                    fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                  }`}>{fechasTarde}</span>
+                  <span className={`text-sm ${
+                    fechasTarde >= turnoTarde ? 'text-red-500' : 'text-purple-500'
+                  }`}>/ {turnoTarde}</span>
                 </div>
-                <p className="text-xs text-purple-600 mt-1">{turnoTarde - fechasTarde} disponible(s)</p>
+                <p className={`text-[9px] mt-0.5 font-semibold ${
+                  fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                }`}>
+                  {fechasTarde >= turnoTarde ? '⚠️ Límite alcanzado' : `${turnoTarde - fechasTarde} disponible(s)`}
+                </p>
               </div>
             </div>
 
             {/* Agregar nueva fecha */}
-            <div className="space-y-3">
-              <h3 className="font-bold text-slate-800">Agregar nueva fecha</h3>
+            <div className="space-y-2">
+              <h3 className="font-bold text-slate-800 text-sm">Agregar nueva fecha</h3>
 
               {/* Botones Mañana/Tarde */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
                   onClick={() => setTipoTurno("MANANA")}
@@ -222,103 +287,161 @@ export default function ModalSeleccionarFechas({
               </div>
 
               {/* Input fecha y botón agregar */}
-              <div className="flex gap-3">
+              <div className="flex gap-2">
                 <input
                   type="date"
                   value={fechaInput}
                   onChange={(e) => setFechaInput(e.target.value)}
-                  min={periodo?.fechaInicio ? periodo.fechaInicio.split('T')[0] : undefined}
-                  max={periodo?.fechaFin ? periodo.fechaFin.split('T')[0] : undefined}
-                  className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                  min={rangoPeriodo.min}
+                  max={rangoPeriodo.max}
+                  className="flex-1 px-3 py-2 text-sm border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                   placeholder="dd/mm/aaaa"
                 />
                 <button
                   type="button"
                   onClick={agregarFecha}
-                  disabled={!fechaInput}
-                  className="px-6 py-3 bg-[#0A5BA9] text-white font-bold rounded-xl hover:bg-[#2563EB] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  disabled={!fechaInput || (tipoTurno === "MANANA" && fechasManana >= turnoManana) || (tipoTurno === "TARDE" && fechasTarde >= turnoTarde)}
+                  className="px-4 py-2 text-sm bg-[#0A5BA9] text-white font-bold rounded-lg hover:bg-[#2563EB] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   + Agregar
                 </button>
               </div>
               
+              {/* Alerta de límite alcanzado */}
+              {((tipoTurno === "MANANA" && fechasManana >= turnoManana) || (tipoTurno === "TARDE" && fechasTarde >= turnoTarde)) && (
+                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
+                  <p className="text-sm text-red-800 font-semibold flex items-center gap-2">
+                    <span>⚠️</span>
+                    Has alcanzado el límite de turnos de {tipoTurno === "MANANA" ? "Mañana" : "Tarde"} ({tipoTurno === "MANANA" ? turnoManana : turnoTarde}). No puedes agregar más fechas para este turno.
+                  </p>
+                </div>
+              )}
+              
               {/* Información del rango de fechas permitido */}
-              {periodo?.fechaInicio && periodo?.fechaFin && (
+              {rangoPeriodo.min && rangoPeriodo.max && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-800">
-                    <span className="font-bold">Rango permitido:</span> {formatFechaRango(periodo.fechaInicio)} - {formatFechaRango(periodo.fechaFin)}
+                    <span className="font-bold">Periodo {periodo?.descripcion}:</span> {formatFechaRango(rangoPeriodo.min)} - {formatFechaRango(rangoPeriodo.max)}
                   </p>
                 </div>
               )}
             </div>
 
             {/* Fechas seleccionadas */}
-            {fechasSeleccionadas.length > 0 && (
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-bold text-slate-800 uppercase text-sm">Fechas Seleccionadas</h3>
-                  <span className="bg-[#0A5BA9] text-white px-3 py-1 rounded-full text-xs font-bold">
-                    {fechasSeleccionadas.length}
-                  </span>
-                </div>
+            {fechasSeleccionadas.length > 0 && (() => {
+              const fechasMananaList = fechasSeleccionadas.filter(f => f.turno === "MANANA");
+              const fechasTardeList = fechasSeleccionadas.filter(f => f.turno === "TARDE");
+              
+              return (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-bold text-slate-800 text-xs uppercase">Fechas Seleccionadas</h3>
+                    <span className="bg-[#0A5BA9] text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                      {fechasSeleccionadas.length}
+                    </span>
+                  </div>
 
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {fechasSeleccionadas.map((f) => (
-                    <div
-                      key={f.id}
-                      className={`flex items-center justify-between p-3 rounded-xl border-2 ${
-                        f.turno === "MANANA"
-                          ? "bg-orange-50 border-orange-200"
-                          : "bg-purple-50 border-purple-200"
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        {f.turno === "MANANA" ? (
-                          <Sun className="w-5 h-5 text-orange-600" />
-                        ) : (
-                          <Moon className="w-5 h-5 text-purple-600" />
-                        )}
-                        <div>
-                          <p className="font-bold text-slate-800">
-                            {new Date(f.fecha + "T00:00:00").toLocaleDateString("es-ES", {
-                              day: "2-digit",
-                              month: "long",
-                              year: "numeric",
-                            })}
-                          </p>
-                          <p
-                            className={`text-xs font-semibold ${
-                              f.turno === "MANANA" ? "text-orange-600" : "text-purple-600"
-                            }`}
-                          >
-                            {f.turno === "MANANA" ? "🌅 Turno Mañana" : "🌙 Turno Tarde"}
-                          </p>
-                        </div>
+                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
+                    {/* Columna Izquierda: Turno Mañana */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 bg-orange-100 px-2 py-1 rounded-lg sticky top-0 z-10">
+                        <Sun className="w-3 h-3 text-orange-600" />
+                        <span className="text-[10px] font-bold text-orange-700 uppercase">Turno Mañana</span>
+                        <span className="ml-auto bg-orange-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold">
+                          {fechasMananaList.length}
+                        </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => eliminarFecha(f.id)}
-                        className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition-all"
-                      >
-                        <X className="w-5 h-5" />
-                      </button>
+                      {fechasMananaList.length > 0 ? (
+                        fechasMananaList.map((f) => (
+                          <div
+                            key={f.id}
+                            className="flex items-center justify-between p-2 rounded-lg bg-orange-50 border border-orange-200"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Sun className="w-3 h-3 text-orange-600" />
+                              <p className="text-xs font-semibold text-slate-800">
+                                {new Date(f.fecha + "T00:00:00").toLocaleDateString("es-ES", {
+                                  day: "2-digit",
+                                  month: "short",
+                                })}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => eliminarFecha(f.id)}
+                              className="p-1 text-red-500 hover:bg-red-50 rounded transition-all"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[10px] text-slate-400 text-center py-2">Sin fechas</p>
+                      )}
                     </div>
-                  ))}
+
+                    {/* Columna Derecha: Turno Tarde */}
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-1.5 bg-purple-100 px-2 py-1 rounded-lg sticky top-0 z-10">
+                        <Moon className="w-3 h-3 text-purple-600" />
+                        <span className="text-[10px] font-bold text-purple-700 uppercase">Turno Tarde</span>
+                        <span className="ml-auto bg-purple-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold">
+                          {fechasTardeList.length}
+                        </span>
+                      </div>
+                      {fechasTardeList.length > 0 ? (
+                        fechasTardeList.map((f) => (
+                          <div
+                            key={f.id}
+                            className="flex items-center justify-between p-2 rounded-lg bg-purple-50 border border-purple-200"
+                          >
+                            <div className="flex items-center gap-2">
+                              <Moon className="w-3 h-3 text-purple-600" />
+                              <p className="text-xs font-semibold text-slate-800">
+                                {new Date(f.fecha + "T00:00:00").toLocaleDateString("es-ES", {
+                                  day: "2-digit",
+                                  month: "short",
+                                })}
+                              </p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => eliminarFecha(f.id)}
+                              className="p-1 text-red-500 hover:bg-red-50 rounded transition-all"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ))
+                      ) : (
+                        <p className="text-[10px] text-slate-400 text-center py-2">Sin fechas</p>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
               </>
             )}
 
-            {/* Botón Guardar */}
-            <button
-              type="button"
-              onClick={handleConfirmar}
-              disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Guardar
-            </button>
+            {/* Botones Cancelar y Guardar */}
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 py-3 bg-red-600 text-white font-bold text-base rounded-lg shadow-lg hover:bg-red-700 hover:shadow-xl transition-all"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmar}
+                disabled={loading}
+                className="flex-1 py-3 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-bold text-base rounded-lg shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Guardar
+              </button>
+            </div>
           </div>
         </div>
       </div>

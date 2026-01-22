@@ -153,7 +153,6 @@ public class SolicitudTurnoIpressController {
 		return ResponseEntity.status(HttpStatus.CREATED).body(response);
 	}
 
-
 	/**
 	 * Guarda como borrador (crea o actualiza)
 	 */
@@ -161,14 +160,12 @@ public class SolicitudTurnoIpressController {
 	@PostMapping("/borrador")
 	@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'INSTITUCION_EX')")
 	public ResponseEntity<SolicitudTurnoIpressResponse> guardarBorrador(
-	        @Valid @RequestBody SolicitudTurnoIpressBorradorRequest request) {
+			@Valid @RequestBody SolicitudTurnoIpressBorradorRequest request) {
 
-	    log.info("Datos del borrador : {}", request);
-	    return ResponseEntity.ok(solicitudService.guardarBorradorDesdeFrontend(request));
+		log.info("Datos del borrador : {}", request);
+		return ResponseEntity.ok(solicitudService.guardarBorradorDesdeFrontend(request));
 	}
-	
-	
-	
+
 	/**
 	 * Actualiza una solicitud existente
 	 */
@@ -224,14 +221,27 @@ public class SolicitudTurnoIpressController {
 	 * /api/solicitudes-turno/consultar?estado=BORRADOR GET
 	 * /api/solicitudes-turno/consultar?idPeriodo=7
 	 */
+	/*
+	 * filtros = { estado: "TODAS", // Valores: "TODAS", "INICIADO", "ENVIADO"
+	 * periodo: "", // ID del periodo busqueda: "", // Búsqueda local en frontend
+	 * macroId: "", // Nuevo - Macroregión (no se envía al backend aún) redId: "",
+	 * // Nuevo - Red (no se envía al backend aún) ipressId: "" // Nuevo - IPRESS
+	 * (no se envía al backend aún) }
+	 * 
+	 **/
 	@GetMapping("/consultar")
 	public ResponseEntity<List<SolicitudTurnoIpressListadoRow>> listar(
 			@RequestParam(required = false, name = "idPeriodo") Long idPeriodo,
-			@RequestParam(required = false, name = "estado") String estado) {
-		log.info("listar ***********************- idPeriodo : {} - estado : {}", idPeriodo, estado);
+			@RequestParam(required = false, name = "estado") String estado,
 
-		var listado = solicitudService.listar(idPeriodo, estado);
-		log.info("Tamano ***************************************************************: {} ", listado.size());
+			@RequestParam(required = false, name = "macroId") Long macroId,
+			@RequestParam(required = false, name = "redId") Long redId,
+			@RequestParam(required = false, name = "ipressId") Long ipressId
+
+	) {
+		log.info("listar**********************************\n - idPeriodo:{} estado:{} macroId:{} redId:{} ipressId:{}", idPeriodo, estado, macroId, redId,
+				ipressId);
+		var listado = solicitudService.listar(idPeriodo, estado, macroId, redId, ipressId);
 		return ResponseEntity.ok(listado);
 	}
 
@@ -298,57 +308,33 @@ public class SolicitudTurnoIpressController {
 		return ResponseEntity.ok(solicitudService.obtenerPorIdConDetalles(id));
 	}
 
-	
 	@PutMapping("/detalle/{idDetalle}/observacion")
-	//@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+	// @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
 	public ResponseEntity<DetalleObservacionUpdateResponse> actualizarObservacionDetalle(
-	        @PathVariable("idDetalle") Long idDetalle,
-	        @Valid @RequestBody DetalleObservacionUpdateRequest request) {
+			@PathVariable("idDetalle") Long idDetalle, @Valid @RequestBody DetalleObservacionUpdateRequest request) {
 
-	    log.info("PUT /api/solicitudes-turno/detalle/{}/observacion", idDetalle);
-	    return ResponseEntity.ok(solicitudService.actualizarObservacionDetalle(idDetalle, request));
+		log.info("PUT /api/solicitudes-turno/detalle/{}/observacion", idDetalle);
+		return ResponseEntity.ok(solicitudService.actualizarObservacionDetalle(idDetalle, request));
 	}
 
-	
-	
-	
-	
-	
-	/*INI - ACEPTAR O APROBAR DETALLE DE SOLICITUDES*/
-	
-	@PostMapping("/detalle/{idDetalle}/aprobar")
-	//@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR')")
-	public ResponseEntity<DetalleDecisionResponse> aprobarDetalle(
-	        @PathVariable("idDetalle") Long idDetalle,
-	        @RequestBody(required = false) DetalleDecisionRequest body) {
+	/* INI - ACEPTAR O APROBAR DETALLE DE SOLICITUDES */
 
-	    return ResponseEntity.ok(solicitudService.aprobarDetalle(idDetalle, body));
+	@PostMapping("/detalle/{idDetalle}/aprobar")
+	// @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR')")
+	public ResponseEntity<DetalleDecisionResponse> aprobarDetalle(@PathVariable("idDetalle") Long idDetalle,
+			@RequestBody(required = false) DetalleDecisionRequest body) {
+
+		return ResponseEntity.ok(solicitudService.aprobarDetalle(idDetalle, body));
 	}
 
 	@PostMapping("/detalle/{idDetalle}/rechazar")
-	//@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR')")
-	public ResponseEntity<DetalleDecisionResponse> rechazarDetalle(
-	        @PathVariable("idDetalle") Long idDetalle,
-	        @RequestBody DetalleDecisionRequest body) {
+	// @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR')")
+	public ResponseEntity<DetalleDecisionResponse> rechazarDetalle(@PathVariable("idDetalle") Long idDetalle,
+			@RequestBody DetalleDecisionRequest body) {
 
-	    return ResponseEntity.ok(solicitudService.rechazarDetalle(idDetalle, body));
+		return ResponseEntity.ok(solicitudService.rechazarDetalle(idDetalle, body));
 	}
-	
-	
-	/*FIN -ACEPTAR O APROBAR DETALLE DE SOLICITUDES*/
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
+
+	/* FIN -ACEPTAR O APROBAR DETALLE DE SOLICITUDES */
+
 }

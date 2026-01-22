@@ -8,95 +8,69 @@ import { formatFecha, estadoBadgeClass } from "../utils/helpers";
  * =======================================================================
  */
 export default function PeriodoDetalleCard({ periodo, solicitud, modoModal, periodoForzado }) {
-  const estado = solicitud?.estado || (modoModal === "NUEVA" ? "BORRADOR" : "—");
-  const totalTurnos = solicitud?.totalTurnosSolicitados || 0;
-  const totalEspecialidades = solicitud?.totalEspecialidades || 0;
+  // Componente simplificado - ya no muestra la sección de detalle
+  // El detalle ahora está en el título del modal
+  return null;
+}
 
+// Componente separado para las fechas que se renderiza después de la tabla
+export function SeccionFechas({ solicitud }) {
   return (
-    <div className="bg-white rounded-xl shadow-lg border border-slate-200">
+    <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl shadow-sm border border-slate-200/60 overflow-hidden">
       {/* Header */}
-      <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-3 border-b border-slate-200">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="bg-[#0A5BA9] bg-opacity-10 p-1.5 rounded-lg">
-              <FileText className="w-4 h-4 text-[#0A5BA9]" />
-            </div>
-            <h2 className="text-base font-bold text-slate-800">Detalle de la Solicitud</h2>
-            {solicitud?.idSolicitud && (
-              <span className="text-xs text-slate-500">• Solicitud #{solicitud.idSolicitud}</span>
-            )}
-          </div>
-          
-          <div className="flex gap-2 items-center">
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${estadoBadgeClass(estado)}`}>
-              {estado}
-            </span>
-            {periodoForzado && (
-              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border border-amber-200 bg-amber-50 text-amber-800">
-                <Lock className="w-3 h-3" />
-                Fijo
-              </span>
-            )}
-          </div>
+      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-4 py-2.5">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-white" />
+          <h3 className="text-sm font-bold text-white uppercase tracking-wide">Registro de Fechas</h3>
         </div>
       </div>
-
-      {/* Contenido en dos columnas */}
-      <div className="p-4 grid grid-cols-2 gap-6">
-        {/* Columna izquierda: Información de fechas */}
-        <div>
-          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
-            <Calendar className="w-4 h-4 text-blue-600" />
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">Fechas</h3>
+      
+      {/* Contenido */}
+      <div className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {/* Fecha de Creación */}
+          <div className="bg-white rounded-lg p-3 border border-slate-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+              </div>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Creación</span>
+            </div>
+            <p className="text-sm font-bold text-slate-900 ml-10">
+              {formatFecha(solicitud?.fechaCreacion || solicitud?.createdAt)}
+            </p>
           </div>
-          <table className="w-full">
-            <tbody className="divide-y divide-slate-100">
-              <tr>
-                <td className="py-2 pr-4 text-sm font-medium text-slate-600 w-2/5">Creación</td>
-                <td className="py-2 text-sm text-slate-900">{formatFecha(solicitud?.fechaCreacion || solicitud?.createdAt)}</td>
-              </tr>
-              <tr>
-                <td className="py-2 pr-4 text-sm font-medium text-slate-600">Actualización</td>
-                <td className="py-2 text-sm text-slate-900">{formatFecha(solicitud?.fechaActualizacion || solicitud?.updatedAt)}</td>
-              </tr>
-              <tr>
-                <td className="py-2 pr-4 text-sm font-medium text-slate-600">Envío</td>
-                <td className="py-2 text-sm text-slate-900">{formatFecha(solicitud?.fechaEnvio) || "—"}</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
 
-        {/* Columna derecha: Resumen */}
-        <div>
-          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
-            <TrendingUp className="w-4 h-4 text-green-600" />
-            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">Resumen</h3>
+          {/* Fecha de Actualización */}
+          <div className="bg-white rounded-lg p-3 border border-slate-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center">
+                <svg className="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+              </div>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Actualización</span>
+            </div>
+            <p className="text-sm font-bold text-slate-900 ml-10">
+              {formatFecha(solicitud?.fechaActualizacion || solicitud?.updatedAt)}
+            </p>
           </div>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-100">
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-blue-600" />
-                <span className="text-sm text-slate-700">Total Especialidades</span>
-              </div>
-              <span className="text-lg font-bold text-blue-700">{totalEspecialidades}</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-100">
-              <div className="flex items-center gap-2">
-                <Hash className="w-4 h-4 text-green-600" />
-                <span className="text-sm text-slate-700">Total Turnos</span>
-              </div>
-              <span className="text-lg font-bold text-green-700">{totalTurnos}</span>
-            </div>
 
-            <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
-              <div className="text-xs text-slate-500 mb-1">Periodo</div>
-              <div className="text-sm font-semibold text-slate-900">{periodo?.descripcion || "—"}</div>
-              <div className="text-xs text-slate-600 mt-1">
-                {periodo?.periodo} • ID: {periodo?.idPeriodo}
+          {/* Fecha de Envío */}
+          <div className="bg-white rounded-lg p-3 border border-slate-200 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-2 mb-1.5">
+              <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                </svg>
               </div>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wide">Envío</span>
             </div>
+            <p className="text-sm font-bold text-slate-900 ml-10">
+              {formatFecha(solicitud?.fechaEnvio) || "—"}
+            </p>
           </div>
         </div>
       </div>

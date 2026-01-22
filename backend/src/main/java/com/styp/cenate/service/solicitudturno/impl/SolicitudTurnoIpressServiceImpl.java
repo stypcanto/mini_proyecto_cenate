@@ -1,6 +1,5 @@
 package com.styp.cenate.service.solicitudturno.impl;
 
-
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -558,14 +557,22 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		return java.util.Arrays.stream(dias.split(",")).map(String::trim).filter(s -> !s.isBlank()).toList();
 	}
 
-	public List<SolicitudTurnoIpressListadoRow> listar(Long idPeriodo, String estado) {
+	public List<SolicitudTurnoIpressListadoRow> listarSimple(Long idPeriodo, String estado) {
 		if (estado != null && ("TODAS".equalsIgnoreCase(estado) || estado.isBlank())) {
 			estado = null;
 		}
 		return solicitudRepository.listarResumen(idPeriodo, estado);
 	}
 
-	//INI A NIVEL DE CABECERA, POR EL MOMENTO SE ENCUENTRA SIN USO
+	public List<SolicitudTurnoIpressListadoRow> listar(Long idPeriodo, String estado, Long macroId, Long redId,
+			Long ipressId) {
+		if (estado != null && (estado.isBlank() || "TODAS".equalsIgnoreCase(estado))) {
+			estado = null;
+		}
+		return solicitudRepository.listarResumen(idPeriodo, estado, macroId, redId, ipressId);
+	}
+
+	// INI A NIVEL DE CABECERA, POR EL MOMENTO SE ENCUENTRA SIN USO
 	@Transactional
 	@Override
 	public SolicitudTurnoEstadoResponse aprobarSolicitud(Long idSolicitud) {
@@ -622,7 +629,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		SolicitudTurnoIpress solicitud = solicitudRepository.findById(idSolicitud)
 				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
 
-		//validarPropietarioOCoordinador(solicitud);
+		// validarPropietarioOCoordinador(solicitud);
 
 		if (solicitud.isRevisado()) {
 			throw new RuntimeException("No se puede modificar una solicitud ya revisada");
@@ -738,8 +745,11 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 		SolicitudTurnoIpress s = solicitudRepository.findByIdFull(id)
 				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + id));
+				
+		// Cargar las fechas de los detalles en una segunda query para evitar duplicación
+		solicitudRepository.findDetallesWithFechasBySolicitudId(id);
 
-		//validarPropietarioOCoordinador(s);
+		// validarPropietarioOCoordinador(s);
 
 		var periodo = s.getPeriodo();
 		var per = s.getPersonal();
@@ -812,274 +822,244 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 	@Transactional
 	public SolicitudTurnoIpressResponse guardarBorradorDesdeFrontend(SolicitudTurnoIpressBorradorRequest request) {
 
-		   PersonalCnt personal = obtenerPersonalActual();
+		PersonalCnt personal = obtenerPersonalActual();
 
-		    if (request.getIdPeriodo() == null) {
-		        throw new RuntimeException("idPeriodo es obligatorio");
-		    }
+		if (request.getIdPeriodo() == null) {
+			throw new RuntimeException("idPeriodo es obligatorio");
+		}
 
-		    // 1) Obtener o crear cabecera
-		    SolicitudTurnoIpress solicitud;
+		// 1) Obtener o crear cabecera
+		SolicitudTurnoIpress solicitud;
 
-		    if (request.getIdSolicitud() != null) {
-		        solicitud = solicitudRepository.findById(request.getIdSolicitud())
-		                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + request.getIdSolicitud()));
+		if (request.getIdSolicitud() != null) {
+			solicitud = solicitudRepository.findById(request.getIdSolicitud())
+					.orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + request.getIdSolicitud()));
 
-		        //validarPropietarioOCoordinador(solicitud);
+			// validarPropietarioOCoordinador(solicitud);
 
-		        if (solicitud.getPeriodo() == null
-		                || !request.getIdPeriodo().equals(solicitud.getPeriodo().getIdPeriodo())) {
-		            throw new RuntimeException("El idPeriodo no coincide con la solicitud enviada");
-		        }
+			if (solicitud.getPeriodo() == null
+					|| !request.getIdPeriodo().equals(solicitud.getPeriodo().getIdPeriodo())) {
+				throw new RuntimeException("El idPeriodo no coincide con la solicitud enviada");
+			}
 
-		    } else {
-		        solicitud = solicitudRepository
-		                .findByPeriodoIdPeriodoAndPersonalIdPers(request.getIdPeriodo(), personal.getIdPers())
-		                .orElseGet(() -> {
-		                    PeriodoSolicitudTurno periodo = periodoRepository.findById(request.getIdPeriodo())
-		                            .orElseThrow(() -> new RuntimeException("Periodo no encontrado: " + request.getIdPeriodo()));
+		} else {
+			solicitud = solicitudRepository
+					.findByPeriodoIdPeriodoAndPersonalIdPers(request.getIdPeriodo(), personal.getIdPers())
+					.orElseGet(() -> {
+						PeriodoSolicitudTurno periodo = periodoRepository.findById(request.getIdPeriodo()).orElseThrow(
+								() -> new RuntimeException("Periodo no encontrado: " + request.getIdPeriodo()));
 
-		                    if (!periodo.isActivo()) {
-		                        throw new RuntimeException("El periodo no está activo");
-		                    }
+						if (!periodo.isActivo()) {
+							throw new RuntimeException("El periodo no está activo");
+						}
 
-		                    SolicitudTurnoIpress s = SolicitudTurnoIpress.builder()
-		                            .periodo(periodo)
-		                            .personal(personal)
-		                            .estado("INICIADO")
-		                            .totalEspecialidades(0)
-		                            .totalTurnosSolicitados(0)
-		                            .build();
+						SolicitudTurnoIpress s = SolicitudTurnoIpress.builder().periodo(periodo).personal(personal)
+								.estado("INICIADO").totalEspecialidades(0).totalTurnosSolicitados(0).build();
 
-		                    s.setUpdatedAt(OffsetDateTime.now());
-		                    return solicitudRepository.save(s);
-		                });
+						s.setUpdatedAt(OffsetDateTime.now());
+						return solicitudRepository.save(s);
+					});
 
-		        //validarPropietarioOCoordinador(solicitud);
-		    }
+			// validarPropietarioOCoordinador(solicitud);
+		}
 
-		    if (solicitud.isRevisado()) {
-		        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
-		    }
+		if (solicitud.isRevisado()) {
+			throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+		}
 
-		    Long idSolicitud = solicitud.getIdSolicitud();
+		Long idSolicitud = solicitud.getIdSolicitud();
 
-		    // 2) Eliminar SOLO lo solicitado (y sus fechas)
-		    if (request.getDetallesEliminar() != null && !request.getDetallesEliminar().isEmpty()) {
+		// 2) Eliminar SOLO lo solicitado (y sus fechas)
+		if (request.getDetallesEliminar() != null && !request.getDetallesEliminar().isEmpty()) {
 
-		        List<Long> idsEliminar = request.getDetallesEliminar();
+			List<Long> idsEliminar = request.getDetallesEliminar();
 
-		        // Seguridad: verificar que TODOS pertenezcan a esta solicitud
-		        long pertenecen = detalleRepository.countBySolicitud_IdSolicitudAndIdDetalleIn(idSolicitud, idsEliminar);
-		        if (pertenecen != idsEliminar.size()) {
-		            throw new RuntimeException("Uno o más detalles a eliminar no pertenecen a la solicitud");
-		        }
+			// Seguridad: verificar que TODOS pertenezcan a esta solicitud
+			long pertenecen = detalleRepository.countBySolicitud_IdSolicitudAndIdDetalleIn(idSolicitud, idsEliminar);
+			if (pertenecen != idsEliminar.size()) {
+				throw new RuntimeException("Uno o más detalles a eliminar no pertenecen a la solicitud");
+			}
 
-		        // IMPORTANTE:
-		        // Si NO tienes cascade/orphanRemoval, borra primero hijos (fechas)
-		        detalleFechaRepository.deleteByDetalle_IdDetalleIn(idsEliminar);
+			// IMPORTANTE:
+			// Si NO tienes cascade/orphanRemoval, borra primero hijos (fechas)
+			detalleFechaRepository.deleteByDetalle_IdDetalleIn(idsEliminar);
 
-		        // Luego borra detalles
-		        detalleRepository.deleteByIdDetalleIn(idsEliminar);
-		    }
+			// Luego borra detalles
+			detalleRepository.deleteByIdDetalleIn(idsEliminar);
+		}
 
-		    // 3) Upsert detalles enviados (NO borrar fechas aquí)
-		    if (request.getDetalles() != null && !request.getDetalles().isEmpty()) {
+		// 3) Upsert detalles enviados (NO borrar fechas aquí)
+		if (request.getDetalles() != null && !request.getDetalles().isEmpty()) {
 
-		        List<DetalleSolicitudTurno> paraGuardar = new ArrayList<>();
+			List<DetalleSolicitudTurno> paraGuardar = new ArrayList<>();
 
-		        for (var x : request.getDetalles()) {
+			for (var x : request.getDetalles()) {
 
-		            if (x.getIdServicio() == null) continue;
+				if (x.getIdServicio() == null)
+					continue;
 
-		            DimServicioEssi esp = servicioEssiRepository.findById(x.getIdServicio())
-		                    .orElseThrow(() -> new RuntimeException("Especialidad no encontrada: " + x.getIdServicio()));
+				DimServicioEssi esp = servicioEssiRepository.findById(x.getIdServicio())
+						.orElseThrow(() -> new RuntimeException("Especialidad no encontrada: " + x.getIdServicio()));
 
-		            DetalleSolicitudTurno d = null;
+				DetalleSolicitudTurno d = null;
 
-		            // 3.1) si viene idDetalle, usarlo (y validar pertenencia)
-		            if (x.getIdDetalle() != null) {
-		                d = detalleRepository.findById(x.getIdDetalle()).orElse(null);
+				// 3.1) si viene idDetalle, usarlo (y validar pertenencia)
+				if (x.getIdDetalle() != null) {
+					d = detalleRepository.findById(x.getIdDetalle()).orElse(null);
 
-		                if (d != null && !d.getSolicitud().getIdSolicitud().equals(idSolicitud)) {
-		                    throw new RuntimeException("El idDetalle " + x.getIdDetalle() + " no pertenece a esta solicitud");
-		                }
-		            }
+					if (d != null && !d.getSolicitud().getIdSolicitud().equals(idSolicitud)) {
+						throw new RuntimeException(
+								"El idDetalle " + x.getIdDetalle() + " no pertenece a esta solicitud");
+					}
+				}
 
-		            // 3.2) si no hay idDetalle o no existe, buscar por (solicitud, servicio)
-		            if (d == null) {
-		                d = detalleRepository
-		                        .findBySolicitud_IdSolicitudAndEspecialidad_IdServicio(idSolicitud, x.getIdServicio())
-		                        .orElse(null);
-		            }
+				// 3.2) si no hay idDetalle o no existe, buscar por (solicitud, servicio)
+				if (d == null) {
+					d = detalleRepository
+							.findBySolicitud_IdSolicitudAndEspecialidad_IdServicio(idSolicitud, x.getIdServicio())
+							.orElse(null);
+				}
 
-		            // 3.3) si no existe, crear
-		            if (d == null) {
-		                d = DetalleSolicitudTurno.builder()
-		                        .solicitud(solicitud)
-		                        .especialidad(esp)
-		                        .build();
-		            } else {
-		                d.setEspecialidad(esp);
-		            }
+				// 3.3) si no existe, crear
+				if (d == null) {
+					d = DetalleSolicitudTurno.builder().solicitud(solicitud).especialidad(esp).build();
+				} else {
+					d.setEspecialidad(esp);
+				}
 
-		            int tm  = x.getTurnoTM() == null ? 0 : x.getTurnoTM();
-		            int man = x.getTurnoManana() == null ? 0 : x.getTurnoManana();
-		            int tar = x.getTurnoTarde() == null ? 0 : x.getTurnoTarde();
-		            int total = (x.getTurnos() == null) ? (tm + man + tar) : x.getTurnos();
+				int tm = x.getTurnoTM() == null ? 0 : x.getTurnoTM();
+				int man = x.getTurnoManana() == null ? 0 : x.getTurnoManana();
+				int tar = x.getTurnoTarde() == null ? 0 : x.getTurnoTarde();
+				int total = (x.getTurnos() == null) ? (tm + man + tar) : x.getTurnos();
 
-		            d.setTurnosTm(tm);
-		            d.setTurnosManana(man);
-		            d.setTurnosTarde(tar);
-		            d.setTurnosSolicitados(Math.max(0, total));
+				d.setTurnosTm(tm);
+				d.setTurnosManana(man);
+				d.setTurnosTarde(tar);
+				d.setTurnosSolicitados(Math.max(0, total));
 
-		            d.setTeleconsultorioActivo(Boolean.TRUE.equals(x.getTc()));
-		            d.setTeleconsultaActivo(Boolean.TRUE.equals(x.getTl()));
+				d.setTeleconsultorioActivo(Boolean.TRUE.equals(x.getTc()));
+				d.setTeleconsultaActivo(Boolean.TRUE.equals(x.getTl()));
 
-		            d.setObservacion(x.getObservacion());
-		            d.setEstado(x.getEstado() == null ? "PENDIENTE" : x.getEstado());
+				d.setObservacion(x.getObservacion());
+				d.setEstado(x.getEstado() == null ? "PENDIENTE" : x.getEstado());
 
-		            boolean requiere = Boolean.TRUE.equals(x.getRequiere()) && total > 0;
-		            d.setRequiere(requiere);
+				boolean requiere = Boolean.TRUE.equals(x.getRequiere()) && total > 0;
+				d.setRequiere(requiere);
 
-		            d.setMananaActiva(man > 0);
-		            d.setTardeActiva(tar > 0);
+				d.setMananaActiva(man > 0);
+				d.setTardeActiva(tar > 0);
 
-		            // CLAVE: No tocar fechasDetalle aquí
+				// CLAVE: No tocar fechasDetalle aquí
 
-		            paraGuardar.add(d);
-		        }
+				paraGuardar.add(d);
+			}
 
-		        if (!paraGuardar.isEmpty()) {
-		            detalleRepository.saveAll(paraGuardar);
-		        }
-		    }
+			if (!paraGuardar.isEmpty()) {
+				detalleRepository.saveAll(paraGuardar);
+			}
+		}
 
-		    // 4) Recalcular cabecera con lo que quedó en BD
-		    SolicitudTurnoIpress solConDetalles = solicitudRepository.findByIdWithDetalles(idSolicitud)
-		            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
+		// 4) Recalcular cabecera con lo que quedó en BD
+		SolicitudTurnoIpress solConDetalles = solicitudRepository.findByIdWithDetalles(idSolicitud)
+				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
 
-		    recalcularTotales(solConDetalles);
-		    solConDetalles.setUpdatedAt(OffsetDateTime.now());
-		    solicitudRepository.save(solConDetalles);
+		recalcularTotales(solConDetalles);
+		solConDetalles.setUpdatedAt(OffsetDateTime.now());
+		solicitudRepository.save(solConDetalles);
 
-		    return convertToResponseWithDetalles(solConDetalles);
+		return convertToResponseWithDetalles(solConDetalles);
 	}
-	
+
 	@Override
 	@Transactional
-	public DetalleObservacionUpdateResponse actualizarObservacionDetalle(
-	        Long idDetalle,
-	        DetalleObservacionUpdateRequest request) {
+	public DetalleObservacionUpdateResponse actualizarObservacionDetalle(Long idDetalle,
+			DetalleObservacionUpdateRequest request) {
 
-	    DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
-	            .orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
+		DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
+				.orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
 
-	    // Validar propietario o coordinador (en tu proyecto hoy valida propietario)
-	    //validarPropietarioOCoordinador(detalle.getSolicitud());
+		// Validar propietario o coordinador (en tu proyecto hoy valida propietario)
+		// validarPropietarioOCoordinador(detalle.getSolicitud());
 
-	    // Si la solicitud está REVISADA (o el estado que uses), puedes bloquear
-	    if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
-	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
-	    }
+		// Si la solicitud está REVISADA (o el estado que uses), puedes bloquear
+		if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
+			throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+		}
 
-	    detalle.setObservacion(request.getObservacion());
-	    detalle.setUpdatedAt(OffsetDateTime.now());
+		detalle.setObservacion(request.getObservacion());
+		detalle.setUpdatedAt(OffsetDateTime.now());
 
-	    detalleRepository.save(detalle);
+		detalleRepository.save(detalle);
 
-	    return DetalleObservacionUpdateResponse.builder()
-	            .idDetalle(detalle.getIdDetalle())
-	            .observacion(detalle.getObservacion())
-	            .fechaActualizacion(detalle.getUpdatedAt())
-	            .build();
+		return DetalleObservacionUpdateResponse.builder().idDetalle(detalle.getIdDetalle())
+				.observacion(detalle.getObservacion()).fechaActualizacion(detalle.getUpdatedAt()).build();
 	}
-	
-	
+
 	@Override
 	@Transactional
 	public DetalleDecisionResponse aprobarDetalle(Long idDetalle, DetalleDecisionRequest body) {
 
-	    DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
-	            .orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
+		DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
+				.orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
 
-	    // permisos: el coordinador o propietario (según tu regla actual)
-	    //validarPropietarioOCoordinador(detalle.getSolicitud());
+		// permisos: el coordinador o propietario (según tu regla actual)
+		// validarPropietarioOCoordinador(detalle.getSolicitud());
 
-	    // si la solicitud ya está REVISADA, no permitir cambios
-	    if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
-	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
-	    }
+		// si la solicitud ya está REVISADA, no permitir cambios
+		if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
+			throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+		}
 
-	    // regla opcional: solo aprobar si está PENDIENTE o RECHAZADO
-	    // if (!"PENDIENTE".equalsIgnoreCase(detalle.getEstado())) { ... }
+		// regla opcional: solo aprobar si está PENDIENTE o RECHAZADO
+		// if (!"PENDIENTE".equalsIgnoreCase(detalle.getEstado())) { ... }
 
-	    String obs = (body == null) ? null : body.getObservacion();
-	    if (obs != null) obs = obs.trim();
-	    if (obs != null && obs.isBlank()) obs = null;
+		String obs = (body == null) ? null : body.getObservacion();
+		if (obs != null)
+			obs = obs.trim();
+		if (obs != null && obs.isBlank())
+			obs = null;
 
-	    detalle.setEstado("ASIGNADO");
-	    if (obs != null) {
-	        detalle.setObservacion(obs);
-	    }
+		detalle.setEstado("ASIGNADO");
+		if (obs != null) {
+			detalle.setObservacion(obs);
+		}
 
-	    DetalleSolicitudTurno guardado = detalleRepository.saveAndFlush(detalle);
+		DetalleSolicitudTurno guardado = detalleRepository.saveAndFlush(detalle);
 
-	    // si quieres recalcular totales de la solicitud, hazlo aquí (opcional)
-	    // SolicitudTurnoIpress sol = solicitudRepository.findByIdWithDetalles(guardado.getSolicitud().getIdSolicitud()).orElseThrow();
-	    // recalcularTotales(sol); sol.setUpdatedAt(OffsetDateTime.now()); solicitudRepository.save(sol);
+		// si quieres recalcular totales de la solicitud, hazlo aquí (opcional)
+		// SolicitudTurnoIpress sol =
+		// solicitudRepository.findByIdWithDetalles(guardado.getSolicitud().getIdSolicitud()).orElseThrow();
+		// recalcularTotales(sol); sol.setUpdatedAt(OffsetDateTime.now());
+		// solicitudRepository.save(sol);
 
-	    return DetalleDecisionResponse.builder()
-	            .idDetalle(guardado.getIdDetalle())
-	            .estado(guardado.getEstado())
-	            .observacion(guardado.getObservacion())
-	            .fechaActualizacion(guardado.getUpdatedAt())
-	            .build();
+		return DetalleDecisionResponse.builder().idDetalle(guardado.getIdDetalle()).estado(guardado.getEstado())
+				.observacion(guardado.getObservacion()).fechaActualizacion(guardado.getUpdatedAt()).build();
 	}
 
 	@Override
 	@Transactional
 	public DetalleDecisionResponse rechazarDetalle(Long idDetalle, DetalleDecisionRequest body) {
 
-	    if (body == null || body.getObservacion() == null || body.getObservacion().trim().isEmpty()) {
-	        throw new RuntimeException("La observación es obligatoria para rechazar el detalle");
-	    }
+		if (body == null || body.getObservacion() == null || body.getObservacion().trim().isEmpty()) {
+			throw new RuntimeException("La observación es obligatoria para rechazar el detalle");
+		}
 
-	    DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
-	            .orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
+		DetalleSolicitudTurno detalle = detalleRepository.findById(idDetalle)
+				.orElseThrow(() -> new RuntimeException("Detalle no encontrado con ID: " + idDetalle));
 
-	    //validarPropietarioOCoordinador(detalle.getSolicitud());
+		// validarPropietarioOCoordinador(detalle.getSolicitud());
 
-	    if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
-	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
-	    }
+		if (detalle.getSolicitud() != null && detalle.getSolicitud().isRevisado()) {
+			throw new RuntimeException("No se puede modificar una solicitud ya revisada");
+		}
 
-	    detalle.setEstado("NO PROCEDE");
-	    detalle.setObservacion(body.getObservacion().trim());
+		detalle.setEstado("NO PROCEDE");
+		detalle.setObservacion(body.getObservacion().trim());
 
-	    DetalleSolicitudTurno guardado = detalleRepository.saveAndFlush(detalle);
+		DetalleSolicitudTurno guardado = detalleRepository.saveAndFlush(detalle);
 
-	    return DetalleDecisionResponse.builder()
-	            .idDetalle(guardado.getIdDetalle())
-	            .estado(guardado.getEstado())
-	            .observacion(guardado.getObservacion())
-	            .fechaActualizacion(guardado.getUpdatedAt())
-	            .build();
+		return DetalleDecisionResponse.builder().idDetalle(guardado.getIdDetalle()).estado(guardado.getEstado())
+				.observacion(guardado.getObservacion()).fechaActualizacion(guardado.getUpdatedAt()).build();
 	}
-
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-
-	
 
 }

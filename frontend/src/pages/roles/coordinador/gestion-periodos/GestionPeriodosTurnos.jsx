@@ -48,6 +48,9 @@ export default function GestionPeriodosTurnos() {
     estado: "TODAS",
     periodo: "",
     busqueda: "",
+    macroId: "",
+    redId: "",
+    ipressId: "",
   });
 
   // Filtros específicos para periodos
@@ -71,10 +74,11 @@ export default function GestionPeriodosTurnos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtrosPeriodos.estado, filtrosPeriodos.anio]);
 
+  // Cargar solicitudes solo al cambiar de tab (no automáticamente con filtros)
   useEffect(() => {
     if (activeTab === "solicitudes") cargarSolicitudes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, filtros.estado, filtros.periodo, filtros.busqueda]);
+  }, [activeTab]);
 
   const cargarPeriodos = async () => {
     setLoadingPeriodos(true);
@@ -343,25 +347,24 @@ export default function GestionPeriodosTurnos() {
     return { total, activos, cerrados, borradores };
   }, [periodos]);
 
+  const statsSolicitudes = useMemo(() => {
+    const total = (solicitudes || []).length;
+    const enviadas = (solicitudes || []).filter((s) => s.estado === "ENVIADO").length;
+    const iniciadas = (solicitudes || []).filter((s) => s.estado === "INICIADO").length;
+    return { total, enviadas, iniciadas };
+  }, [solicitudes]);
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">Gestión de Períodos y Solicitudes</h1>
-            <p className="text-sm text-gray-600">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
+        <div className="mb-4 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg p-6 shadow-lg">
+          <div className="flex items-center gap-3">
+            <FileText className="w-8 h-8 text-white" />
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1">Gestión de Períodos y Solicitudes</h1>
+              <p className="text-sm text-blue-100">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
+            </div>
           </div>
-          
-          {/* Botón Recargar Periodos */}
-          <button
-            onClick={() => cargarPeriodos()}
-            disabled={loadingPeriodos}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-            title="Recargar periodos"
-          >
-            <RefreshCw className={`w-4 h-4 ${loadingPeriodos ? 'animate-spin' : ''}`} />
-            <span className="font-medium">{loadingPeriodos ? 'Recargando...' : 'Recargar'}</span>
-          </button>
         </div>
 
         {activeTab === "periodos" && (
@@ -370,6 +373,14 @@ export default function GestionPeriodosTurnos() {
             <CardStat title="Activos" value={stats.activos} subtitle="En captura" icon={<Calendar className="w-4 h-4" />} tone="green" />
             <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-4 h-4" />} tone="orange" />
             <CardStat title="Borradores" value={stats.borradores} subtitle="Sin publicar" icon={<Calendar className="w-4 h-4" />} tone="purple" />
+          </div>
+        )}
+
+        {activeTab === "solicitudes" && (
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <CardStat title="Total" value={statsSolicitudes.total} subtitle="Solicitudes" icon={<FileText className="w-4 h-4" />} tone="blue" />
+            <CardStat title="Enviadas" value={statsSolicitudes.enviadas} subtitle="Para revisión" icon={<FileText className="w-4 h-4" />} tone="green" />
+            <CardStat title="Iniciadas" value={statsSolicitudes.iniciadas} subtitle="En borrador" icon={<FileText className="w-4 h-4" />} tone="orange" />
           </div>
         )}
 
@@ -431,6 +442,7 @@ export default function GestionPeriodosTurnos() {
             onRechazar={abrirRechazoRapido}
             getEstadoBadge={getEstadoBadge}
             periodos={periodos}
+            onConsultar={cargarSolicitudes}
           />
         )}
 

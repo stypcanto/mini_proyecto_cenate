@@ -50,9 +50,9 @@ export default function ModalAperturarPeriodo({ onClose, onCrear }) {
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-2xl shadow-xl max-w-lg w-full overflow-hidden">
-        <div className="p-6 border-b border-gray-200 flex items-center justify-between">
-          <h3 className="text-xl font-semibold text-gray-900">Aperturar Nuevo Periodo</h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+        <div className="p-6 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] flex items-center justify-between">
+          <h3 className="text-xl font-semibold text-white">Aperturar Nuevo Periodo</h3>
+          <button onClick={onClose} className="text-white hover:text-blue-100">
             <XCircle className="w-7 h-7" />
           </button>
         </div>

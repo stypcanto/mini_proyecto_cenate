@@ -68,6 +68,7 @@ export default function TablaSolicitudEspecialidades({
   onAutoGuardarFechas = null,
   soloLectura = false,
   mostrarEncabezado = true,
+  botonesAccion = null,
 }) {
   // Estado local para las especialidades seleccionadas y sus configuraciones
   const [datos, setDatos] = useState(() => {
@@ -167,15 +168,17 @@ export default function TablaSolicitudEspecialidades({
       case "APROBADO":
         return "bg-green-500 text-white";
       case "ASIGNADO":
-        return "bg-blue-500 text-white";
+        return "bg-green-600 hover:bg-green-700 text-white";
       case "BLOQUEADO":
         return "bg-gray-400 text-white";
       case "PENDIENTE":
-        return "bg-orange-500 text-white";
+        return "bg-amber-600 hover:bg-amber-700 text-white";
       case "NO_PROCEDE":
-        return "bg-orange-500 text-white";
+        return "bg-red-600 hover:bg-red-700 text-white";
+      case "NO PROCEDE":
+        return "bg-red-600 hover:bg-red-700 text-white";
       case "RECHAZADO":
-        return "bg-red-500 text-white";
+        return "bg-red-600 hover:bg-red-700 text-white";
       default:
         return "bg-gray-300 text-gray-700";
     }
@@ -264,32 +267,41 @@ export default function TablaSolicitudEspecialidades({
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
         {/* Filtros */}
         <div className="bg-slate-50 p-4 border-b border-slate-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {/* Filtro por especialidad */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Buscar especialidad..."
-                value={filtroEspecialidad}
-                onChange={(e) => setFiltroEspecialidad(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
-              />
+          <div className="flex flex-col lg:flex-row gap-3 items-start">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3">
+              {/* Filtro por especialidad */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Buscar especialidad..."
+                  value={filtroEspecialidad}
+                  onChange={(e) => setFiltroEspecialidad(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                />
+              </div>
+
+              {/* Filtro por estado */}
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <select
+                  value={filtroEstado}
+                  onChange={(e) => setFiltroEstado(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] appearance-none bg-white"
+                >
+                  <option value="TODAS">Todas</option>
+                  <option value="REGISTRADAS">Registradas</option>
+                  <option value="PENDIENTES">Pendientes</option>
+                </select>
+              </div>
             </div>
 
-            {/* Filtro por estado */}
-            <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-              <select
-                value={filtroEstado}
-                onChange={(e) => setFiltroEstado(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] appearance-none bg-white"
-              >
-                <option value="TODAS">Todas</option>
-                <option value="REGISTRADAS">Registradas</option>
-                <option value="PENDIENTES">Pendientes</option>
-              </select>
-            </div>
+            {/* Botones de Acción */}
+            {botonesAccion && (
+              <div className="flex flex-col gap-2 lg:min-w-[280px]">
+                {botonesAccion}
+              </div>
+            )}
           </div>
 
           {/* Contador de resultados */}
@@ -298,37 +310,33 @@ export default function TablaSolicitudEspecialidades({
           </div>
         </div>
 
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] sticky top-0 z-10">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase">
+                <th className="px-3 py-2 text-left text-[10px] font-bold text-white uppercase">
                   Especialidad
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
-                  Turno<br />TM
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  TM
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
-                  Turnos<br />Mañana
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  Mañana
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
-                  Turnos<br />Tarde
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  Tarde
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
-                  Teleconsultorio
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  TC
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
-                  Teleconsulta
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  TL
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
-                  Total<br />Turnos
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  Total
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
-                  <Calendar className="w-4 h-4 inline mr-1" />
-                  Fecha
-                </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
-                  Estado
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  <Calendar className="w-3 h-3 inline" />
                 </th>
               </tr>
             </thead>
@@ -341,24 +349,24 @@ export default function TablaSolicitudEspecialidades({
                 return (
                   <tr key={esp.idServicio} className="hover:bg-slate-50 transition-colors">
                     {/* Especialidad */}
-                    <td className="px-4 py-4">
-                      <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-lg ${esp.dato?.idDetalle ? 'bg-purple-100' : 'bg-slate-100'}`}>
-                          <Check className={`w-4 h-4 ${esp.dato?.idDetalle ? 'text-purple-600' : 'text-slate-400'}`} />
+                    <td className="px-3 py-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`p-1 rounded ${esp.dato?.idDetalle ? 'bg-purple-100' : 'bg-slate-100'}`}>
+                          <Check className={`w-3 h-3 ${esp.dato?.idDetalle ? 'text-purple-600' : 'text-slate-400'}`} />
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-800">
+                          <div className="font-semibold text-slate-800 text-xs">
                             {esp.descServicio}
                           </div>
-                          <div className="text-xs text-slate-500">
-                            {esp.diasAsignados} día(s) • {esp.dato?.idDetalle ? 'Registrada' : 'Pendiente'}
+                          <div className="text-[10px] text-slate-500">
+                            {esp.diasAsignados} día(s)
                           </div>
                         </div>
                       </div>
                     </td>
 
                     {/* Turno TM */}
-                    <td className="px-4 py-4 text-center">
+                    <td className="px-2 py-2 text-center">
                       <input
                         type="number"
                         min="0"
@@ -373,12 +381,12 @@ export default function TablaSolicitudEspecialidades({
                           }
                         }}
                         disabled={soloLectura}
-                        className="w-16 px-3 py-2 text-center border-2 border-purple-300 rounded-lg font-bold text-purple-600 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100"
+                        className="w-12 px-2 py-1 text-center text-sm border border-purple-300 rounded font-bold text-purple-600 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100"
                       />
                     </td>
 
                     {/* Turnos Mañana */}
-                    <td className="px-4 py-4 text-center">
+                    <td className="px-2 py-2 text-center">
                       <input
                         type="number"
                         min="0"
@@ -391,12 +399,12 @@ export default function TablaSolicitudEspecialidades({
                           )
                         }
                         disabled={soloLectura || (d?.turnoTM > 0)}
-                        className="w-16 px-3 py-2 text-center border-2 border-orange-300 rounded-lg font-bold text-orange-600 focus:ring-2 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100 disabled:opacity-50"
+                        className="w-12 px-2 py-1 text-center text-sm border border-orange-300 rounded font-bold text-orange-600 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100 disabled:opacity-50"
                       />
                     </td>
 
                     {/* Turnos Tarde */}
-                    <td className="px-4 py-4 text-center">
+                    <td className="px-2 py-2 text-center">
                       <input
                         type="number"
                         min="0"
@@ -409,79 +417,55 @@ export default function TablaSolicitudEspecialidades({
                           )
                         }
                         disabled={soloLectura || (d?.turnoTM > 0)}
-                        className="w-16 px-3 py-2 text-center border-2 border-purple-300 rounded-lg font-bold text-purple-600 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:opacity-50"
+                        className="w-12 px-2 py-1 text-center text-sm border border-purple-300 rounded font-bold text-purple-600 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:opacity-50"
                       />
                     </td>
 
                     {/* Teleconsultorio */}
-                    <td className="px-4 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <CustomSwitch
-                          checked={d?.tc || false}
-                          onChange={(checked) => actualizarCampo(esp.idServicio, "tc", checked)}
-                          disabled={soloLectura}
-                          color="green"
-                        />
-                        <span className={`text-sm font-medium ${d?.tc ? 'text-green-600' : 'text-gray-500'}`}>
-                          {d?.tc ? 'Sí' : 'No'}
-                        </span>
-                      </div>
+                    <td className="px-2 py-2 text-center">
+                      <CustomSwitch
+                        checked={d?.tc || false}
+                        onChange={(checked) => actualizarCampo(esp.idServicio, "tc", checked)}
+                        disabled={soloLectura}
+                        color="green"
+                      />
                     </td>
 
                     {/* Teleconsulta */}
-                    <td className="px-4 py-4 text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <CustomSwitch
-                          checked={d?.tl || false}
-                          onChange={(checked) => actualizarCampo(esp.idServicio, "tl", checked)}
-                          disabled={soloLectura}
-                          color="blue"
-                        />
-                        <span className={`text-sm font-medium ${d?.tl ? 'text-blue-600' : 'text-gray-500'}`}>
-                          {d?.tl ? 'Sí' : 'No'}
-                        </span>
-                      </div>
+                    <td className="px-2 py-2 text-center">
+                      <CustomSwitch
+                        checked={d?.tl || false}
+                        onChange={(checked) => actualizarCampo(esp.idServicio, "tl", checked)}
+                        disabled={soloLectura}
+                        color="blue"
+                      />
                     </td>
 
                     {/* Total Turnos */}
-                    <td className="px-4 py-4 text-center">
-                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-cyan-500 text-white font-bold text-lg">
+                    <td className="px-2 py-2 text-center">
+                      <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-cyan-500 text-white font-bold text-sm">
                         {total}
                       </div>
                     </td>
 
                     {/* Fecha */}
-                    <td className="px-4 py-4 text-center">
+                    <td className="px-2 py-2 text-center">
                       <button
                         type="button"
                         onClick={() => {
                           setEspecialidadSeleccionada(esp);
                           setModalFechasOpen(true);
                         }}
-                        className={`px-3 py-1.5 rounded-lg border-2 text-xs font-semibold transition-all ${
+                        className={`p-1 rounded border transition-all ${
                           total > 0 && !soloLectura
                             ? "border-blue-500 text-blue-500 hover:bg-blue-50 cursor-pointer"
                             : "border-gray-300 text-gray-400 cursor-not-allowed"
                         }`}
                         disabled={soloLectura || total === 0}
-                        title={total === 0 ? "Configura turnos primero (TM, Mañana o Tarde)" : "Seleccionar fechas específicas"}
+                        title={total === 0 ? "Configura turnos primero" : "Seleccionar fechas"}
                       >
-                        Opcional
+                        <Calendar className="w-3.5 h-3.5" />
                       </button>
-                    </td>
-
-                    {/* Estado */}
-                    <td className="px-4 py-4 text-center">
-                      <div
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm ${getEstadoBadgeClass(
-                          d?.estado || "PENDIENTE"
-                        )}`}
-                      >
-                        {d?.estado === "ASIGNADO" && <Check className="w-4 h-4" />}
-                        {d?.estado === "APROBADO" && <Check className="w-4 h-4" />}
-                        {d?.estado === "PENDIENTE" && <Calendar className="w-4 h-4" />}
-                        {getEstadoLabel(d?.estado || "PENDIENTE")}
-                      </div>
                     </td>
                   </tr>
                 );

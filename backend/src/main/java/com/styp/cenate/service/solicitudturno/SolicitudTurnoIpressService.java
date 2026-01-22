@@ -100,7 +100,9 @@ public interface SolicitudTurnoIpressService {
 	/*
 	 * Consultar solicitudes de ippress por periodo y estado (Para el admin)
 	 */
-	List<SolicitudTurnoIpressListadoRow> listar(Long idPeriodo, String estado);
+	List<SolicitudTurnoIpressListadoRow> listarSimple(Long idPeriodo, String estado);
+
+	List<SolicitudTurnoIpressListadoRow> listar(Long idPeriodo, String estado, Long macroId, Long redId, Long ipressId);
 
 	/**
 	 * Aprobar solicitud (solo coordinador)
@@ -119,10 +121,12 @@ public interface SolicitudTurnoIpressService {
 	SolicitudTurnoDetalleFullResponse obtenerPorIdFull(Long id);
 
 	SolicitudTurnoIpressResponse guardarBorradorDesdeFrontend(SolicitudTurnoIpressBorradorRequest request);
-	
-	DetalleObservacionUpdateResponse actualizarObservacionDetalle(Long idDetalle, DetalleObservacionUpdateRequest request);
-	
+
+	DetalleObservacionUpdateResponse actualizarObservacionDetalle(Long idDetalle,
+			DetalleObservacionUpdateRequest request);
+
 	DetalleDecisionResponse aprobarDetalle(Long idDetalle, DetalleDecisionRequest body);
+
 	DetalleDecisionResponse rechazarDetalle(Long idDetalle, DetalleDecisionRequest body);
 
 }

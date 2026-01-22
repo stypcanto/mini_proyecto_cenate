@@ -1,0 +1,41 @@
+{
+  "info": {
+    "_postman_id": "86b51c9f-0160-4432-9722-6956d94ed148",
+    "name": "API_FILTROS",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "21759398"
+  },
+  "item": [
+    {
+      "name": "MACROREGIONES",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/filtros/macroregiones",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "filtros",
+            "macroregiones"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}

@@ -1,13 +1,15 @@
 package com.styp.cenate.repository;
 
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
-import com.styp.cenate.model.Ipress;
 
-import java.util.List;
-import java.util.Optional;
+import com.styp.cenate.dto.filtros.IpressOptionDTO;
+import com.styp.cenate.model.Ipress;
 
 @Repository
 public interface IpressRepository extends JpaRepository<Ipress, Long> {
@@ -53,4 +55,20 @@ public interface IpressRepository extends JpaRepository<Ipress, Long> {
      * Contar IPRESS por Red
      */
     Long countByRed_Id(Long idRed);
+    
+    
+    @Query("""
+            SELECT new com.styp.cenate.dto.filtros.IpressOptionDTO(
+                i.idIpress,
+                i.codIpress,
+                i.descIpress,
+                i.red.id
+            )
+            FROM Ipress i
+            WHERE i.red.id = :redId
+            ORDER BY i.descIpress
+        """)
+        List<IpressOptionDTO> listarPorRed(@Param("redId") Long redId);
+    
+    
 }
