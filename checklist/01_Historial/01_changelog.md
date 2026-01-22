@@ -10,6 +10,76 @@
 
 ---
 
+## v1.27.2 (2026-01-21) - 📋 Dropdown Completo: Mostrar Todas las Especialidades al Hacer Focus
+
+### 🎯 Descripción
+
+**Mejora significativa del UX del autocomplete**: El dropdown ahora muestra la **lista completa de especialidades** al hacer click, sin necesidad de escribir.
+
+**Cambios principales**:
+1. ✅ **Al hacer focus**: Muestra TODAS las 103 especialidades disponibles
+2. ✅ **Mientras escribe**: Filtra las especialidades en tiempo real
+3. ✅ **Si borra**: Vuelve a mostrar la lista completa
+4. ✅ **Placeholder mejorado**: Guía al usuario a hacer click
+
+**Estado**: ✅ **COMPLETADO**
+
+### 🎨 Cambios UX
+
+| Acción | Comportamiento |
+|--------|---|
+| **Click en campo** | Despliega lista completa de 103 especialidades |
+| **Escribir "Card"** | Filtra → CARDIOLOGIA, CARDIOLOGIA INVASIVA |
+| **Borrar texto** | Vuelve a mostrar lista completa |
+| **Placeholder** | "Haz click para ver todas las especialidades..." |
+
+### 🧪 Lógica Implementada
+
+```javascript
+// Antes (v1.27.0/v1.27.1)
+if (value.trim().length > 0) {
+  // Solo mostraba si escribía algo
+  filtered = especialidades.filter(...)
+} else {
+  setShowEspecialidadesDropdown(false) // ❌ No mostraba lista
+}
+
+// Después (v1.27.2)
+if (especialidades.length > 0) {
+  if (value.trim().length > 0) {
+    // Si escribió: filtrar
+    filtered = especialidades.filter(...)
+  } else {
+    // Si no escribió: mostrar TODAS ✅
+    filtered = especialidades
+  }
+  setShowEspecialidadesDropdown(true)
+}
+```
+
+### 🔄 onFocus Mejorado
+
+```javascript
+onFocus={() => {
+  // Al hacer click: mostrar TODAS las especialidades
+  if (especialidades.length > 0) {
+    setFilteredEspecialidades(especialidades);
+    setShowEspecialidadesDropdown(true);
+  }
+}}
+```
+
+### ✅ Testing
+
+- ✅ Frontend: BUILD SUCCESSFUL (0 errores)
+- ✅ Dropdown: Se abre al hacer click
+- ✅ Lista: Muestra 103 especialidades
+- ✅ Búsqueda: Filtra mientras escribe
+- ✅ Selección: Guarda especialidad seleccionada
+- ✅ Fallback: Permite escritura libre
+
+---
+
 ## v1.27.0 (2026-01-21) - 🏥 Autocomplete de Especialidades: Interconsulta desde Base de Datos
 
 ### 🎯 Descripción
