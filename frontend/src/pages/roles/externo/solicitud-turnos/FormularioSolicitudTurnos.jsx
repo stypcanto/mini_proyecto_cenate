@@ -1158,6 +1158,11 @@ export default function FormularioSolicitudTurnos() {
                     mostrarEncabezado={false}
                   />
 
+                  {/* Sección de Fechas en modo EDITAR */}
+                  {modoModal === "EDITAR" && solicitudActual && (
+                    <SeccionFechas solicitud={solicitudActual} />
+                  )}
+
                   {/* Acciones */}
                   <div className="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
                     <div className="flex flex-col md:flex-row items-center justify-between gap-3">

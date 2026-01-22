@@ -20,6 +20,30 @@ const formatFechaRango = (fecha) => {
   }
 };
 
+// Helper para calcular rango de fechas del periodo (basado en el código del periodo)
+const calcularRangoPeriodo = (periodo) => {
+  if (!periodo?.periodo) return { min: undefined, max: undefined };
+  
+  try {
+    // El periodo viene en formato AAAAMM (ejemplo: "202601" = Enero 2026)
+    const periodoStr = String(periodo.periodo);
+    const anio = periodoStr.substring(0, 4);
+    const mes = periodoStr.substring(4, 6);
+    
+    // Primer día del mes
+    const primerDia = `${anio}-${mes}-01`;
+    
+    // Último día del mes
+    const ultimoDia = new Date(parseInt(anio), parseInt(mes), 0).getDate();
+    const ultimoDiaStr = `${anio}-${mes}-${String(ultimoDia).padStart(2, '0')}`;
+    
+    return { min: primerDia, max: ultimoDiaStr };
+  } catch (error) {
+    console.error("Error al calcular rango del periodo:", error);
+    return { min: undefined, max: undefined };
+  }
+};
+
 /**
  * Modal para seleccionar fechas específicas por especialidad
  * @param {Object} props
@@ -121,6 +145,9 @@ export default function ModalSeleccionarFechas({
 
   const fechasManana = contarFechas("MANANA");
   const fechasTarde = contarFechas("TARDE");
+  
+  // Calcular rango de fechas basado en el periodo
+  const rangoPeriodo = calcularRangoPeriodo(periodo);
 
   if (!open) return null;
 
@@ -227,8 +254,8 @@ export default function ModalSeleccionarFechas({
                   type="date"
                   value={fechaInput}
                   onChange={(e) => setFechaInput(e.target.value)}
-                  min={periodo?.fechaInicio ? periodo.fechaInicio.split('T')[0] : undefined}
-                  max={periodo?.fechaFin ? periodo.fechaFin.split('T')[0] : undefined}
+                  min={rangoPeriodo.min}
+                  max={rangoPeriodo.max}
                   className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                   placeholder="dd/mm/aaaa"
                 />
@@ -243,10 +270,10 @@ export default function ModalSeleccionarFechas({
               </div>
               
               {/* Información del rango de fechas permitido */}
-              {periodo?.fechaInicio && periodo?.fechaFin && (
+              {rangoPeriodo.min && rangoPeriodo.max && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-xs text-blue-800">
-                    <span className="font-bold">Rango permitido:</span> {formatFechaRango(periodo.fechaInicio)} - {formatFechaRango(periodo.fechaFin)}
+                    <span className="font-bold">Periodo {periodo?.descripcion}:</span> {formatFechaRango(rangoPeriodo.min)} - {formatFechaRango(rangoPeriodo.max)}
                   </p>
                 </div>
               )}

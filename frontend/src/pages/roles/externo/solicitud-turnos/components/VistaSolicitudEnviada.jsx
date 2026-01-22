@@ -340,39 +340,39 @@ export default function VistaSolicitudEnviada({ solicitud }) {
       {/* Modal de Fechas */}
       {modalFechas && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalFechas(null)}>
-          <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-6 py-4 rounded-t-lg flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="bg-white bg-opacity-20 p-2 rounded-lg">
-                  <Calendar className="w-5 h-5" />
+          <div className="bg-white rounded-lg shadow-2xl max-w-md w-full flex flex-col" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-4 py-3 rounded-t-lg flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="bg-white bg-opacity-20 p-1.5 rounded-lg">
+                  <Calendar className="w-4 h-4 text-white" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-bold text-white">Días Seleccionados</h3>
-                  <p className="text-blue-100 text-sm">{modalFechas.nombreServicio} • Código: {modalFechas.codigoServicio}</p>
+                  <h3 className="text-base font-bold text-white">Días Seleccionados</h3>
+                  <p className="text-blue-100 text-xs">{modalFechas.nombreServicio} • Código: {modalFechas.codigoServicio}</p>
                 </div>
               </div>
               <button
                 onClick={() => setModalFechas(null)}
-                className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
+                className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-1.5 transition-colors"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="overflow-y-auto p-4 max-h-96">
+              <div className="grid grid-cols-2 gap-2">
                 {modalFechas.fechasDetalle.map((fechaItem, idx) => (
                   <div
                     key={idx}
-                    className="bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                    className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-3 hover:shadow-md transition-shadow"
                   >
-                    <div className="flex items-center gap-2 mb-2">
-                      <Calendar className="w-5 h-5 text-blue-600" />
-                      <span className="text-xs font-bold text-blue-800 uppercase">Fecha {idx + 1}</span>
+                    <div className="flex items-center gap-1.5 mb-1.5">
+                      <Calendar className="w-4 h-4 text-blue-600" />
+                      <span className="text-[10px] font-bold text-blue-800 uppercase">Fecha {idx + 1}</span>
                     </div>
-                    <div className="text-lg font-black text-blue-900 mb-1">
+                    <div className="text-sm font-black text-blue-900 mb-1.5">
                       {formatFechaCorta(fechaItem.fecha)}
                     </div>
-                    <div className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold ${
+                    <div className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold ${
                       fechaItem.bloque === "MANANA"
                         ? "bg-yellow-200 text-yellow-800"
                         : "bg-orange-200 text-orange-800"
@@ -384,10 +384,10 @@ export default function VistaSolicitudEnviada({ solicitud }) {
                 ))}
               </div>
             </div>
-            <div className="px-6 pb-6">
+            <div className="px-4 pb-4">
               <button
                 onClick={() => setModalFechas(null)}
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium transition-colors"
+                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 font-medium transition-colors text-sm"
               >
                 Cerrar
               </button>
