@@ -105,36 +105,44 @@ export default function GestionBolsasPacientes() {
   const llamadasNoResponsables = 9550;
   const tasaConversion = 39.63;
 
-  // Componentes reutilizables
-  const KPICard = ({ label, value, change, trend, icon: Icon, gradient }) => {
-    const getGradientBg = (gradient) => {
-      if (gradient === 'bg-[#0D5BA9]') return 'from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20';
-      if (gradient === 'bg-[#F97316]') return 'from-orange-50 to-amber-50 dark:from-orange-900/20 dark:to-amber-900/20';
-      if (gradient === 'bg-[#6B7280]') return 'from-gray-50 to-slate-50 dark:from-gray-900/20 dark:to-slate-900/20';
-      if (gradient === 'bg-[#0F4C75]') return 'from-indigo-50 to-blue-50 dark:from-indigo-900/20 dark:to-blue-900/20';
-      return 'from-slate-50 to-gray-50';
+  // Componentes reutilizables - Siguiendo design system
+  const KPICard = ({ label, value, change, trend, icon: Icon, borderColor }) => {
+    // Mapeo de colores para bordes izquierdos (siguiendo design system)
+    const getBorderStyle = (borderColor) => {
+      const borderMap = {
+        blue: 'border-l-4 border-l-[#0D5BA9]',
+        orange: 'border-l-4 border-l-[#F97316]',
+        gray: 'border-l-4 border-l-[#6B7280]',
+        purple: 'border-l-4 border-l-[#A855F7]',
+        red: 'border-l-4 border-l-[#EF4444]'
+      };
+      return borderMap[borderColor] || borderMap.blue;
     };
-    const getBorderColor = (gradient) => {
-      if (gradient === 'bg-[#0D5BA9]') return 'border-blue-100 dark:border-blue-800';
-      if (gradient === 'bg-[#F97316]') return 'border-orange-100 dark:border-orange-800';
-      if (gradient === 'bg-[#6B7280]') return 'border-gray-100 dark:border-gray-800';
-      if (gradient === 'bg-[#0F4C75]') return 'border-indigo-100 dark:border-indigo-800';
-      return 'border-gray-100 dark:border-gray-800';
+
+    const getIconBg = (borderColor) => {
+      const bgMap = {
+        blue: 'bg-[#0D5BA9]',
+        orange: 'bg-[#F97316]',
+        gray: 'bg-[#6B7280]',
+        purple: 'bg-[#A855F7]',
+        red: 'bg-[#EF4444]'
+      };
+      return bgMap[borderColor] || bgMap.blue;
     };
 
     return (
-      <div className={'kpi-card bg-gradient-to-br ' + getGradientBg(gradient) + ' rounded-2xl shadow-sm hover:shadow-lg hover:scale-105 transition-all duration-300 p-7 border ' + getBorderColor(gradient) + ' animate-fadeInUp cursor-pointer group'}>
-        <div className="flex items-start justify-between mb-4">
-          <div className={gradient + ' p-3 rounded-xl shadow-sm group-hover:shadow-md transition-all duration-300 transform group-hover:scale-110'}>
-            <Icon size={24} className="text-white" />
+      <div className={'kpi-card bg-white rounded-lg shadow-sm ' + getBorderStyle(borderColor) + ' p-6 animate-fadeInUp cursor-pointer group hover:shadow-md transition-all duration-200 border border-gray-200'}>
+        <div className="flex items-start justify-between mb-3">
+          <div className={getIconBg(borderColor) + ' p-2 rounded-md'}>
+            <Icon size={20} className="text-white" />
           </div>
-          <div className={'flex items-center gap-1 text-sm font-semibold ' + (trend === 'up' ? 'text-emerald-600' : 'text-red-600')}>
-            <TrendingUp size={16} />
+          <div className={'flex items-center gap-1 text-xs font-semibold ' + (trend === 'up' ? 'text-green-600' : 'text-red-600')}>
+            <TrendingUp size={14} />
             {change}
           </div>
         </div>
-        <p className="text-gray-600 dark:text-gray-300 text-xs font-semibold mb-2 uppercase tracking-wider">{label}</p>
-        <p className="text-3xl font-black text-gray-900 dark:text-white">{value}</p>
+        <p className="text-gray-600 text-xs font-semibold mb-1 uppercase tracking-wider">{label}</p>
+        <p className="text-2xl font-bold text-gray-900">{value}</p>
       </div>
     );
   };
@@ -211,7 +219,7 @@ export default function GestionBolsasPacientes() {
                   change="+5.2%"
                   trend="up"
                   icon={Users}
-                  gradient="bg-[#0D5BA9]"
+                  borderColor="blue"
                 />
                 <KPICard
                   label="No Responsables ⚠️"
@@ -219,7 +227,7 @@ export default function GestionBolsasPacientes() {
                   change="-3.2%"
                   trend="down"
                   icon={AlertCircle}
-                  gradient="bg-[#F97316]"
+                  borderColor="orange"
                 />
                 <KPICard
                   label="Responsables"
@@ -227,7 +235,7 @@ export default function GestionBolsasPacientes() {
                   change="+2.1%"
                   trend="up"
                   icon={CheckCircle}
-                  gradient="bg-[#6B7280]"
+                  borderColor="gray"
                 />
                 <KPICard
                   label="Tasa de Conversión"
@@ -235,7 +243,7 @@ export default function GestionBolsasPacientes() {
                   change="+2.5%"
                   trend="up"
                   icon={Target}
-                  gradient="bg-[#0F4C75]"
+                  borderColor="purple"
                 />
               </div>
             </div>
@@ -296,44 +304,38 @@ export default function GestionBolsasPacientes() {
             </div>
 
             {/* Tabla de Especialidades */}
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 overflow-hidden hover:shadow-lg transition-all duration-300 backdrop-blur-sm animate-fadeInUp">
-              <div className="p-7 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-white/50 dark:from-slate-700/50 to-transparent">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span className="w-1 h-6 bg-gradient-to-b from-[#0D5BA9] to-emerald-600 rounded-full"></span>
-                  Resumen por Especialidad
-                </h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-fadeInUp">
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-900">Resumen por Especialidad</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className={getTableHeaderClass('blue') + ' text-white'}>
+                  <thead className="bg-[#0D5BA9] text-white">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider uppercase">Especialidad</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Bolsas</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Producción</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Asignados</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Productividad</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Tasa Fallo</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Bolsas</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Producción</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Asignados</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Productividad</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Tasa Fallo</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
+                  <tbody className="divide-y divide-gray-200">
                     {dataBolsasProduccion.map((item, idx) => {
                       const porcentaje = Math.round((item.asignados / item.bolsas) * 100);
                       return (
-                        <tr key={idx} className="hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors duration-200 group">
-                          <td className="px-6 py-4 font-semibold text-gray-900">{item.name}</td>
-                          <td className="px-6 py-4 text-center text-gray-700">{item.bolsas}</td>
-                          <td className="px-6 py-4 text-center text-gray-700">{item.produccion}</td>
-                          <td className="px-6 py-4 text-center text-gray-700">{item.asignados}</td>
+                        <tr key={idx} className="h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+                          <td className="px-6 py-4 text-sm text-gray-900">{item.name}</td>
+                          <td className="px-6 py-4 text-center text-sm text-gray-700">{item.bolsas}</td>
+                          <td className="px-6 py-4 text-center text-sm text-gray-700">{item.produccion}</td>
+                          <td className="px-6 py-4 text-center text-sm text-gray-700">{item.asignados}</td>
                           <td className="px-6 py-4 text-center">
-                            <span className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm font-semibold">
-                              <div className="w-12 h-1.5 bg-green-300 rounded-full overflow-hidden">
-                                <div className="h-full bg-[#22C55E]" style={{ width: porcentaje + '%' }} />
-                              </div>
+                            <span className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-semibold">
                               {porcentaje}%
                             </span>
                           </td>
                           <td className="px-6 py-4 text-center">
-                            <span className="bg-red-100 text-red-800 px-3 py-1 rounded-lg text-sm font-semibold">
+                            <span className="bg-red-100 text-red-800 px-2 py-1 rounded-md text-xs font-semibold">
                               {100 - porcentaje}%
                             </span>
                           </td>
@@ -371,22 +373,19 @@ export default function GestionBolsasPacientes() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 overflow-hidden hover:shadow-lg transition-all duration-300 backdrop-blur-sm animate-fadeInUp">
-              <div className="p-7 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-white/50 dark:from-slate-700/50 to-transparent">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span className="w-1 h-6 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full"></span>
-                  Detalle por Especialidad
-                </h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-fadeInUp">
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-900">Detalle por Especialidad</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className={getTableHeaderClass('blue') + ' text-white'}>
+                  <thead className="bg-[#0D5BA9] text-white">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider uppercase">Especialidad</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Bolsas</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Producción</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Asignados</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Tasa Asignación</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Bolsas</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Producción</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Asignados</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Tasa Asignación</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-600">
@@ -439,40 +438,34 @@ export default function GestionBolsasPacientes() {
               </div>
             </div>
 
-            <div className="bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-600 overflow-hidden hover:shadow-lg transition-all duration-300 backdrop-blur-sm animate-fadeInUp">
-              <div className="p-7 border-b border-gray-200 dark:border-gray-600 bg-gradient-to-r from-white/50 dark:from-slate-700/50 to-transparent">
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span className="w-1 h-6 bg-gradient-to-b from-green-600 to-emerald-600 rounded-full"></span>
-                  Análisis Detallado por IPRESS
-                </h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-fadeInUp">
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-900">Análisis Detallado por IPRESS</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className={getTableHeaderClass('green') + ' text-white'}>
+                  <thead className="bg-[#0D5BA9] text-white">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider uppercase">IPRESS</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Bolsas</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Pacientes</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Productividad</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Tasa Fallo</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Bolsas</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Pacientes</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Productividad</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Tasa Fallo</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {dataIPress.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors duration-200 group">
-                        <td className="px-6 py-4 font-semibold text-gray-900">{item.ipress}</td>
-                        <td className="px-6 py-4 text-center text-gray-700">{item.bolsas}</td>
-                        <td className="px-6 py-4 text-center text-gray-700">{item.pacientes}</td>
+                      <tr key={idx} className="h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+                        <td className="px-6 py-4 text-sm text-gray-900">{item.ipress}</td>
+                        <td className="px-6 py-4 text-center text-sm text-gray-700">{item.bolsas}</td>
+                        <td className="px-6 py-4 text-center text-sm text-gray-700">{item.pacientes}</td>
                         <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm font-semibold">
-                            <div className="w-12 h-1.5 bg-green-300 rounded-full overflow-hidden">
-                              <div className="h-full bg-[#22C55E]" style={{ width: item.produccion + '%' }} />
-                            </div>
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-semibold">
                             {item.produccion}%
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-lg text-sm font-semibold">
+                          <span className="bg-orange-100 text-orange-800 px-2 py-1 rounded-md text-xs font-semibold">
                             {(100 - item.produccion).toFixed(1)}%
                           </span>
                         </td>
@@ -520,46 +513,44 @@ export default function GestionBolsasPacientes() {
                     <CartesianGrid strokeDasharray="0" stroke="#e5e7eb" vertical={false} />
                     <XAxis dataKey="gestor" angle={-45} textAnchor="end" height={100} stroke="#9ca3af" style={{ fontSize: '11px' }} />
                     <YAxis domain={[0, 100]} stroke="#9ca3af" style={{ fontSize: '12px' }} />
-                    <Tooltip contentStyle={{ backgroundColor: '#f9fafb', border: 'none', borderRadius: '8px', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }} formatter={(value) => value + '%'} />
+                    <Tooltip contentStyle={{ backgroundColor: '#f9fafb', border: 'none', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }} formatter={(value) => value + '%'} />
                     <Bar dataKey="porcentaje" fill="#86efac" radius={[8, 8, 0, 0]} name="Asignación %" />
                   </BarChart>
                 </ResponsiveContainer>
+                </div>
               </div>
             </div>
 
-            <div className="bg-slate-50 rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-shadow duration-300">
-              <div className="p-7 border-b border-gray-100">
-                <h3 className="text-base font-semibold text-gray-900">Desempeño Detallado de Gestores de Citas</h3>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden animate-fadeInUp">
+              <div className="p-6 border-b border-gray-200 bg-gray-50">
+                <h3 className="text-sm font-semibold text-gray-900">Desempeño Detallado de Gestores de Citas</h3>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className={getTableHeaderClass('purple') + ' text-white'}>
+                  <thead className="bg-[#0D5BA9] text-white">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-semibold tracking-wider uppercase">Gestor</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Bolsas</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Pacientes</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Citados</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Asignación</th>
-                      <th className="px-6 py-4 text-center text-xs font-semibold tracking-wider uppercase">Tasa Fallo</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Gestor</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Bolsas</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Pacientes</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Citados</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Asignación</th>
+                      <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Tasa Fallo</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100">
                     {dataGestores.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors duration-200 group">
-                        <td className="px-6 py-4 font-semibold text-gray-900">{item.gestor}</td>
-                        <td className="px-6 py-4 text-center text-gray-700 font-medium">{item.bolsas}</td>
-                        <td className="px-6 py-4 text-center text-gray-700 font-medium">{item.pacientes}</td>
-                        <td className="px-6 py-4 text-center text-gray-700 font-medium">{item.asignados}</td>
+                      <tr key={idx} className="h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+                        <td className="px-6 py-4 text-sm text-gray-900">{item.gestor}</td>
+                        <td className="px-6 py-4 text-center text-sm text-gray-700">{item.bolsas}</td>
+                        <td className="px-6 py-4 text-center text-sm text-gray-700">{item.pacientes}</td>
+                        <td className="px-6 py-4 text-center text-sm text-gray-700">{item.asignados}</td>
                         <td className="px-6 py-4 text-center">
-                          <span className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-3 py-1 rounded-lg text-sm font-semibold">
-                            <div className="w-12 h-1.5 bg-green-300 rounded-full overflow-hidden">
-                              <div className="h-full bg-[#22C55E]" style={{ width: item.porcentaje + '%' }} />
-                            </div>
+                          <span className="bg-green-100 text-green-800 px-2 py-1 rounded-md text-xs font-semibold">
                             {item.porcentaje}%
                           </span>
                         </td>
                         <td className="px-6 py-4 text-center">
-                          <span className={((100 - item.porcentaje) < 15 ? 'bg-emerald-100 text-emerald-800' : 'bg-orange-100 text-orange-800') + ' px-3 py-1 rounded-lg text-sm font-semibold'}>
+                          <span className={((100 - item.porcentaje) < 15 ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800') + ' px-2 py-1 rounded-md text-xs font-semibold'}>
                             {100 - item.porcentaje}%
                           </span>
                         </td>

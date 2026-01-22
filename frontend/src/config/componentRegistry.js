@@ -197,6 +197,16 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/coordinador/rendimiento-horario': {
+    component: lazy(() => import('../pages/roles/coordinador/RendimientoHorario')),
+    requiredAction: 'ver',
+  },
+
+  '/roles/coordinador/configuracion-feriados': {
+    component: lazy(() => import('../pages/roles/coordinador/ConfiguracionFeriados')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 🌐 MÓDULO EXTERNO
   // ========================================================================
