@@ -8,6 +8,48 @@
 
 ---
 
+## v1.23.3 (2026-01-21) - ⚡ Tele-ECG: Preset Emergencia v10.2.0
+
+### 🎯 Descripción
+
+**Nuevo preset médico optimizado** "🚨 Emergencia" para casos críticos donde la imagen EKG está invertida Y presenta baja calidad de visualización.
+
+### 📊 Características del Preset
+
+| Parámetro | Valor | Justificación |
+|-----------|-------|---------------|
+| **Invertir** | ✅ Sí | Corrige imágenes escaneadas al revés |
+| **Contraste** | 180% | ⬆️ Máximo para realzar trazos débiles |
+| **Brillo** | 115% | ⬆️ Elevado para visualización en emergencias |
+| **Identificación** | 🚨 | Emoji visible para acceso rápido |
+
+### 🔧 Cambios Técnicos
+
+**Frontend (1 cambio)**:
+- ✅ Hook: `useImageFilters.js` - Nuevo preset `emergency` en `FILTER_PRESETS`
+
+### ✅ Build Status
+
+- Frontend: `npm run build` → ✅ SIN ERRORES
+- Status: **DEPLOYMENT READY** 🚀
+
+### 📊 Cambios
+
+| Métrica | Valor |
+|---------|-------|
+| Líneas agregadas | 8 |
+| Archivos modificados | 1 |
+
+### 💡 Nota Clínica
+
+Preset calculado para casos donde:
+1. Imagen está escaneada invertida (boca abajo)
+2. Calidad de captura es pobre/débil
+3. Se requiere máxima claridad para lectura rápida en emergencias
+4. Ambas condiciones ocurren simultáneamente
+
+---
+
 ## v1.23.2 (2026-01-21) - 🎨 Tele-ECG UI/UX: Drawer Overlay Profesional v10.1.0
 
 ### 🎯 Descripción
