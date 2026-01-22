@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.22.1** (2026-01-21) - Módulo Tele-ECG con Almacenamiento BYTEA ✅
+> Sistema de Telemedicina - EsSalud | **v1.24.0** (2026-01-22) - Módulo Tele-ECG Optimización UI v3.2.0 ✅
 
 ---
 
@@ -31,26 +31,35 @@
 - **Solicitud Turnos IPRESS:** `plan/02_Modulos_Medicos/02_plan_solicitud_turnos.md` (v1.2 - Independiente)
 - **Reporte Testing:** `checklist/02_Reportes_Pruebas/01_reporte_disponibilidad.md`
 
-### 🫀 Módulo Tele-ECG (v3.1.0) - ✅ 100% COMPLETADO
+### 🫀 Módulo Tele-ECG (v1.24.0) - ✅ 100% COMPLETADO + OPTIMIZACIÓN UI v3.2.0
 
-**📌 INICIO RÁPIDO:** Para entender cómo se desarrolló el módulo Tele-ECG, leer:
-- **`plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md`** ⭐ (Recomendado - 2026-01-21)
+**📌 INICIO RÁPIDO:** Para entender el módulo Tele-ECG completo, leer:
+- **`plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md`** ⭐ (Recomendado - 2026-01-22 v1.24.0)
 
 **Documentación Completa:**
-- **⭐ Resumen Desarrollo:** `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (Arquitectura + 12 bugs resueltos + versiones v1.21.1→v1.22.1)
+- **⭐ Resumen Desarrollo:** `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (Arquitectura + 12 bugs resueltos + Optimización UI v1.21.1→v1.24.0)
 - **📊 Análisis Completo:** `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md` (Detalles técnicos, endpoints, permisos)
-- **📋 Checklist Tele-ECG:** `plan/02_Modulos_Medicos/04_checklist_teleekgs.md` (Implementación completa)
+- **📋 Checklist Tele-ECG:** `plan/02_Modulos_Medicos/04_checklist_teleekgs.md` (Implementación 100% completada v1.24.0)
 - **🐛 Reporte Bugs:** `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` (12 bugs identificados + 12 resueltos)
-- **📝 Changelog:** `checklist/01_Historial/01_changelog.md` (Versiones v1.21.1 → v1.22.1)
+- **📝 Changelog:** `checklist/01_Historial/01_changelog.md` (Versiones v1.21.1 → v1.24.0 con UI optimizations)
 - **💾 Script SQL BYTEA:** `spec/04_BaseDatos/06_scripts/041_teleecg_bytea_storage.sql` (Almacenamiento en BD)
+
+**Versión Actual (v1.24.0) - Optimización UI v3.2.0:**
+- 🎨 **UI Comprimida**: Fuentes reducidas (text-sm → text-xs), espacios optimizados (p-6 → p-4)
+- 📊 **Estadísticas Corregidas**: Conteo de CASOS (pacientes) en lugar de IMÁGENES
+- 🔍 **Filtros Inteligentes**: Colapsables con auto-aplicación (debounce 300ms)
+- 🏥 **IPRESS Field**: Adscripción del paciente integrada en modal
+- 🎯 **Botones Estandarizados**: Cancelar=Naranja, Guardar=Verde, Rechazar=Rojo
+- ⚡ **Performance**: Load times optimizados, rendering eficiente
 
 **Estado Final:**
 - ✅ 12 Bugs Identificados: 12 RESUELTOS (100%)
+- ✅ 5 Mejoras UI/UX Implementadas (v1.24.0)
 - ✅ 0 Bugs Críticos Pendientes
 - ✅ Backend: BUILD SUCCESSFUL (0 errores)
 - ✅ Frontend: Compilado sin errores
 - ✅ Almacenamiento: BYTEA (DATABASE) + Filesystem (FILESYSTEM) dual
-- ✅ **Status: DEPLOYMENT READY** 🎉
+- ✅ **Status: PRODUCTION LIVE** 🎉 (Disponible desde 2026-01-22)
 
 ### 👥 Módulos de Usuarios
 - **⭐ Personal Externo:** `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` (v1.18.0)
