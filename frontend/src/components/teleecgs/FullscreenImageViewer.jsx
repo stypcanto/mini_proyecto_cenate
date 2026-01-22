@@ -1,16 +1,15 @@
-import React, { useState, useRef } from 'react';
-import { X, ChevronLeft, ChevronRight } from 'lucide-react';
+import React, { useState } from 'react';
+import { X } from 'lucide-react';
 import MillimeterRuler from './MillimeterRuler';
-import ImageCanvas from './ImageCanvas';
 import FilterControlsPanel from './FilterControlsPanel';
 
 /**
  * FullscreenImageViewer - Componente para visualizar imagen en pantalla completa
- * v10.0.0 - Con filtros en tiempo real y navegación de imágenes
+ * v10.0.0 - Con filtros en tiempo real sin desenfoque
  */
 export default function FullscreenImageViewer({
   isOpen = false,
-  imagenData = null,
+  imagenData = "",
   indiceImagen = 0,
   totalImagenes = 0,
   rotacion = 0,
@@ -23,7 +22,6 @@ export default function FullscreenImageViewer({
   onImageNavigation = () => {}
 }) {
   const [showFilterControls, setShowFilterControls] = useState(false);
-  const canvasRef = useRef(null);
 
   if (!isOpen || !imagenData) return null;
 
@@ -33,6 +31,34 @@ export default function FullscreenImageViewer({
 
   const handleFilterChange = (key, value) => {
     onFilterChange(key, value);
+  };
+
+  // Calcular transformaciones CSS
+  const getImageStyle = () => {
+    const transforms = [];
+
+    // Rotación
+    if (rotacion) {
+      transforms.push(`rotate(${rotacion}deg)`);
+    }
+
+    // Flip horizontal y vertical
+    if (filters.flipHorizontal || filters.flipVertical) {
+      const scaleX = filters.flipHorizontal ? -1 : 1;
+      const scaleY = filters.flipVertical ? -1 : 1;
+      transforms.push(`scale(${scaleX}, ${scaleY})`);
+    }
+
+    return {
+      transform: transforms.length > 0 ? transforms.join(' ') : 'none',
+      filter: `
+        invert(${filters.invert ? 100 : 0}%)
+        brightness(${filters.brightness || 100}%)
+        contrast(${filters.contrast || 100}%)
+      `,
+      marginLeft: '60px',
+      marginTop: '40px'
+    };
   };
 
   return (
@@ -56,37 +82,13 @@ export default function FullscreenImageViewer({
         {showFilterControls ? '✕ Cerrar Filtros' : '⚙️ Filtros Avanzados'}
       </button>
 
-      {/* Controles de navegación - Inferior */}
-      <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex items-center gap-4 z-20 bg-black/70 px-6 py-3 rounded-lg">
-        <button
-          onClick={() => onImageNavigation('anterior')}
-          disabled={indiceImagen === 0}
-          className="p-2 bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-white"
-        >
-          <ChevronLeft size={20} />
-        </button>
-        <span className="text-white font-semibold min-w-[100px] text-center">
-          {indiceImagen + 1} de {totalImagenes}
-        </span>
-        <button
-          onClick={() => onImageNavigation('siguiente')}
-          disabled={indiceImagen >= totalImagenes - 1}
-          className="p-2 bg-white/20 hover:bg-white/30 disabled:opacity-50 disabled:cursor-not-allowed rounded transition-colors text-white"
-        >
-          <ChevronRight size={20} />
-        </button>
-      </div>
-
-      {/* Imagen a pantalla completa con canvas para aplicar filtros */}
-      <div className="flex-1 overflow-hidden relative" style={{ marginLeft: '60px', marginTop: '40px' }}>
-        <ImageCanvas
-          ref={canvasRef}
-          imagenData={imagenData}
-          rotacion={rotacion}
-          filters={filters}
-          onRotacionChange={handleRotationChange}
-        />
-      </div>
+      {/* Imagen a pantalla completa */}
+      <img
+        src={imagenData}
+        alt="ECG Fullscreen"
+        className="w-full h-full object-contain"
+        style={getImageStyle()}
+      />
 
       {/* Panel de Filtros Avanzados - Overlay transparente sin blur */}
       {showFilterControls && (
