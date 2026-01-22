@@ -92,6 +92,33 @@ export default function ModalEvaluacionECG({
     { valor: "OTRO", etiqueta: "Otro motivo" },
   ];
 
+  // ✅ v9.1.0: 1️⃣ CLASIFICACIÓN DE URGENCIA MÉDICA (CRÍTICO PARA TRIAGE)
+  const URGENCIAS = [
+    { key: 'NORMAL', label: '✅ Normal', color: 'green', desc: 'Seguimiento en próxima cita' },
+    { key: 'CAMBIOS_INESPECIFICOS', label: '⏳ Cambios inespecíficos', color: 'yellow', desc: 'Seguimiento en 3 meses' },
+    { key: 'PATOLOGICO', label: '⚠️ Patológico', color: 'orange', desc: 'Interconsulta cardio en 1-2 semanas' },
+    { key: 'EMERGENCIA', label: '🚨 EMERGENCIA', color: 'red', desc: 'Derivar a ER AHORA' },
+  ];
+
+  // ✅ v9.1.0: 2️⃣ CONTEXTO CLÍNICO
+  const PRESENTACION_CLINICA = [
+    { key: 'asintomatico', label: 'Asintomático' },
+    { key: 'doloPecho', label: 'Dolor de pecho opresivo' },
+    { key: 'disnea', label: 'Disnea / Falta de aire' },
+    { key: 'sincope', label: 'Síncope' },
+    { key: 'presincope', label: 'Presíncope / Mareo' },
+    { key: 'palpitaciones', label: 'Palpitaciones' },
+  ];
+
+  // ✅ v9.1.0: 3️⃣ DERIVACIONES ESPECÍFICAS POR PARED/ARTERIA
+  const DERIVACIONES = [
+    { key: 'anterior', label: 'Anterior (V1-V3)', arteria: 'LAD' },
+    { key: 'anterolateral', label: 'Anterolateral (V3-V5)', arteria: 'LAD/Diagonal' },
+    { key: 'lateral', label: 'Lateral (I, aVL, V5-V6)', arteria: 'Circunfleja' },
+    { key: 'inferior', label: 'Inferior (II, III, aVF)', arteria: 'RCA' },
+    { key: 'ventriculo_derecho', label: 'Ventrículo Derecho (V4R)', arteria: 'RCA' },
+  ];
+
   // ════════════════════════════════════════
   // TAB 2: EVALUACIÓN
   // ════════════════════════════════════════
@@ -119,6 +146,20 @@ export default function ModalEvaluacionECG({
     isquemiaActiva: false,
     intervaloQTprolongado: false,
   });
+
+  // ✅ v9.1.0: URGENCIA MÉDICA
+  const [urgencia, setUrgencia] = useState("");
+
+  // ✅ v9.1.0: CONTEXTO CLÍNICO DEL PACIENTE
+  const [contextoClinico, setContextoClinico] = useState({
+    presentacionClinica: [], // Array de síntomas: asintomatico, doloPecho, disnea, etc.
+    troponinaNegativa: null, // true=negativa, false=positiva, null=sin dato
+    antecedentesRelevantes: "", // Texto: HTA, DM, Cardiopatía previa, etc.
+    medicacionesActuales: "", // Para correlacionar drogas que alteran ECG
+  });
+
+  // ✅ v9.1.0: DERIVACIONES ESPECÍFICAS AFECTADAS
+  const [derivacionesSeleccionadas, setDerivacionesSeleccionadas] = useState([]);
 
   // ════════════════════════════════════════
   // TAB 3: PLAN DE SEGUIMIENTO (SIMPLIFICADO)
@@ -519,6 +560,18 @@ export default function ModalEvaluacionECG({
       return;
     }
 
+    // ✅ v9.1.0: 4️⃣ VALIDACIÓN CARDIOLÓGICA - Si es ANORMAL, DEBE tener urgencia + contexto
+    if (tipoEvaluacion === "ANORMAL" && !urgencia) {
+      toast.error("🚨 CRÍTICO: Si es ANORMAL debes clasificar la URGENCIA (normal/cambios_inespecíficos/patológico/emergencia)");
+      return;
+    }
+
+    // ✅ v9.1.0: 5️⃣ Si tiene dolor de pecho, avisar si urgencia no es EMERGENCIA
+    if (contextoClinico.presentacionClinica.includes('doloPecho') && urgencia !== 'EMERGENCIA') {
+      toast.error("⚠️ ADVERTENCIA: Dolor de pecho + evaluación ANORMAL probable requiere EMERGENCIA");
+      return;
+    }
+
     try {
       setGuardando(true);
 
@@ -535,8 +588,21 @@ export default function ModalEvaluacionECG({
       const evaluacionCompleta = construirTextoEvaluacion();
       console.log("📝 Evaluación generada:", evaluacionCompleta);
 
-      // 1️⃣ Guardar evaluación con texto completo (hallazgos + observaciones)
-      await onConfirm(tipoEvaluacion, evaluacionCompleta, idImagen);
+      // ✅ v9.1.0: Logging de contexto cardiológico
+      console.log("🩺 v9.1.0 - Contexto Cardiológico:", {
+        urgencia,
+        presentacionClinica: contextoClinico.presentacionClinica,
+        troponinaNegativa: contextoClinico.troponinaNegativa,
+        antecedentes: contextoClinico.antecedentesRelevantes,
+        derivaciones: derivacionesSeleccionadas,
+      });
+
+      // 1️⃣ Guardar evaluación con texto completo (hallazgos + observaciones + urgencia + contexto)
+      await onConfirm(tipoEvaluacion, evaluacionCompleta, idImagen, {
+        urgencia,
+        contextoClinico,
+        derivacionesSeleccionadas,
+      });
       toast.success(`✅ Evaluación guardada correctamente como ${tipoEvaluacion}`, {
         duration: 3000,
         icon: '🩺',
@@ -597,6 +663,15 @@ export default function ModalEvaluacionECG({
     setImagenValida(null); // Resetear validación
     setMotivoRechazo("");
     setDescripcionRechazo("");
+    // ✅ v9.1.0: Resetear nuevos estados cardiológicos
+    setUrgencia("");
+    setContextoClinico({
+      presentacionClinica: [],
+      troponinaNegativa: null,
+      antecedentesRelevantes: "",
+      medicacionesActuales: "",
+    });
+    setDerivacionesSeleccionadas([]);
     setPlanSeguimiento({
       recitarEnTresMeses: false,
       interconsultaEspecialidad: "",
