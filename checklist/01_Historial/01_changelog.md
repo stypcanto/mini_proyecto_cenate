@@ -8,6 +8,52 @@
 
 ---
 
+## v1.29.0 (2026-01-22) - 📏 Tele-ECG: Regla Milimétrica Mejorada v9.3.0
+
+### 🎯 Descripción
+
+**Mejora visual de la regla milimétrica con unidades de medición claras cada 5mm y 10mm** para facilitar la interpretación de medidas en ECGs. Ahora muestra jerarquía visual completa: pequeños cuadraditos (1mm), medianos (5mm) y grandes (10mm).
+
+### 🔧 Cambios Técnicos
+
+**Frontend - MillimeterRuler.jsx (v9.3.0)**:
+- ✅ **Marcas cada 5mm**: Ahora muestra números (5, 10, 15, 20, 25...) en líneas medianas
+- ✅ **Marcas cada 10mm**: Números destacados en cajas blancas (10mm, 20mm, 30mm...)
+- ✅ **Jerarquía visual mejorada**:
+  - 1mm = Línea pequeña (gris claro)
+  - 5mm = Línea mediana + número pequeño (gris oscuro)
+  - 10mm = Línea grande + número grande en caja blanca (negro)
+- ✅ **Ambas reglas actualizadas**: Vertical (izquierda) y Horizontal (superior)
+- ✅ **Bordes y estilos**: Cajas con bordes #333, stroke 1px, rounded corners
+
+### 💡 Mejoras Clínicas
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Unidades 1mm** | Solo línea | ✅ Visible con contexto |
+| **Unidades 5mm** | No mostrado | ✅ Números 5, 10, 15... |
+| **Unidades 10mm** | Solo número | ✅ Número + caja destacada |
+| **Claridad escala** | Ambigua | ✅ Jerarquía clara de medidas |
+| **Referencia médica** | No estándar | ✅ Tipo regla profesional |
+
+### ✅ Build Status
+
+- Frontend: `npm run build` → ✅ SIN ERRORES
+- Integration: ✅ Aplicado en Modal y Fullscreen Viewer
+- Status: **DEPLOYMENT READY** 🚀
+
+### 📊 Cambios
+
+| Métrica | Valor |
+|---------|-------|
+| Funciones actualizadas | 2 (renderVerticalMarks, renderHorizontalMarks) |
+| Números agregados por nivel | 3 (1mm, 5mm, 10mm) |
+| Líneas modificadas | 80+ |
+| Archivos modificados | 1 |
+| Componentes integrados | 2 (Modal + Fullscreen) |
+
+---
+
 ## v1.28.0 (2026-01-22) - 📊 Tele-ECG: Diagnósticos Estructurados v9.7.0
 
 ### 🎯 Descripción

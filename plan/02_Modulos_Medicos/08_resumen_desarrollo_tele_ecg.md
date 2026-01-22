@@ -1,10 +1,11 @@
-# 📋 Resumen de Desarrollo - Módulo Tele-ECG v10.0.0 + Evaluación Clínica Profesional v1.28.0
+# 📋 Resumen de Desarrollo - Módulo Tele-ECG v10.0.0 + Evaluación Clínica Profesional v1.29.0
 
 > **Documento de Referencia del Desarrollo del Módulo Tele-ECG**
 > Fecha: 2026-01-20 (Actualizado: 2026-01-22)
 > Autor: Ing. Styp Canto Rondón
-> **Versión Actual**: v1.28.0 (Diagnósticos Estructurados + Modal Paciente + Multi-especialidad + Search)
+> **Versión Actual**: v1.29.0 (Regla Milimétrica Mejorada + Diagnósticos Estructurados + Modal Paciente + Multi-especialidad + Search)
 > **Versiones Recientes**:
+> - v1.29.0: Regla Milimétrica Mejorada (Unidades 5mm/10mm) v9.3.0
 > - v1.28.0: Diagnósticos Estructurados (Ritmo, PR, QRS) v9.7.0
 > - v1.27.0: Search/Filter Especialidades en Tiempo Real v9.6.0
 > - v1.26.0: Interconsulta Multi-especialidad v11.1.0
@@ -156,6 +157,69 @@ Paciente con FA recurrente, bloqueo de rama derecha, requiere evaluación cardio
 - Status: **DEPLOYMENT READY** 🚀
 
 ---
+
+## 📏 Regla Milimétrica Mejorada v9.3.0 (2026-01-22) - NUEVO
+
+### Jerarquía Visual Clara de Unidades de Medición
+
+**Objetivo**: Facilitar la interpretación de medidas en ECGs con unidades explícitas cada 5mm y 10mm.
+
+#### Antes vs Después
+
+| Nivel | Antes | Después |
+|-------|-------|---------|
+| **1mm** | Línea pequeña | ✅ Línea pequeña + contexto visible |
+| **5mm** | No mostrado | ✅ Números 5, 10, 15, 20, 25... |
+| **10mm** | Solo número | ✅ Número grande en caja blanca destacada |
+| **Claridad** | Ambigua | ✅ Jerarquía profesional |
+
+#### Especificación Visual
+
+```
+📏 REGLA VERTICAL (Izquierda):
+
+|    0mm                    |
+|    1mm  ─    ─    ─       |  ← Líneas pequeñas (1mm)
+|    2mm  ─    ─    ─       |
+|    3mm  ─    ─    ─       |
+|    4mm  ─    ─    ─       |
+|    5mm  ────────────  5   |  ← Línea mediana + número
+|   10mm  ════════════ 10mm │  ← Línea grande + CAJA DESTACADA
+|   15mm  ────────────  15  |  ← Línea mediana + número
+|   20mm  ════════════ 20mm │  ← Línea grande + CAJA DESTACADA
+
+📏 REGLA HORIZONTAL (Superior):
+
+  ┌─ ─ ─┬─ ─ ─┬═════┬─ ─ ─┬═════┐
+  1mm   5mm   10mm  15mm  20mm
+       (líneas medianas + números cada 5mm)
+        (cajas blancas cada 10mm)
+```
+
+#### Implementación Técnica
+
+**MillimeterRuler.jsx (v9.3.0)**:
+- ✅ `renderVerticalMarks()`: Actualizado con 3 niveles de marcas
+- ✅ `renderHorizontalMarks()`: Actualizado con 3 niveles de marcas
+- ✅ Cajas blancas para números cada 10mm: `rect` con stroke #333, fill white
+- ✅ Números cada 5mm: Font 10px, color #666
+- ✅ Números cada 10mm: Font 13px, bold, color #000, en cajas
+- ✅ Ambas reglas: Vertical (80px ancho) + Horizontal (50px alto)
+
+#### Integración
+
+| Componente | Ubicación | Método | Estado |
+|-----------|-----------|--------|--------|
+| ModalEvaluacionECG.jsx | Línea 802 | `<MillimeterRuler zoomLevel={gridZoomLevel} />` | ✅ Activo |
+| FullscreenImageViewer.jsx | Línea 41 | `<MillimeterRuler zoomLevel={zoomLevel} />` | ✅ Activo |
+| GridPanel.jsx | Sobreposición | SVG overlay con sincronización | ✅ Compatible |
+
+#### Build Status
+
+- Frontend: ✅ `npm run build` SIN ERRORES
+- Components: ✅ Integrados en Modal + Fullscreen
+- Zoom sync: ✅ Adapta proporciones cuando zoom cambia
+- Status: **DEPLOYMENT READY** 🚀
 
 ---
 
