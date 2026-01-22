@@ -478,6 +478,9 @@ export default function FormularioSolicitudTurnos() {
       
       // Refrescar la tabla de solicitudes en segundo plano
       refrescarMisSolicitudes();
+      
+      // Retornar el resultado para uso posterior
+      return resultado;
     } catch (err) {
       console.error(err);
       setError(err?.message || "Error al guardar el progreso");
@@ -486,18 +489,61 @@ export default function FormularioSolicitudTurnos() {
     }
   };
 
-  // Auto-guardar fechas cuando se confirman en el modal (guardado silencioso)
+  // Auto-guardar fechas cuando se confirman en el modal
   const handleAutoGuardarFechas = async (idServicio, fechasActualizadas) => {
-    // Solo auto-guardar si ya existe una solicitud
-    if (!solicitudActual?.idSolicitud || !periodoSeleccionado?.idPeriodo) {
-      console.warn("⚠️ No se puede auto-guardar: falta solicitud o periodo");
+    console.log("🔄 handleAutoGuardarFechas llamado:", { 
+      idServicio, 
+      fechasCount: fechasActualizadas?.length,
+      solicitudActual: solicitudActual?.idSolicitud,
+      periodoSeleccionado: periodoSeleccionado?.idPeriodo
+    });
+
+    // Validar que exista periodo
+    if (!periodoSeleccionado?.idPeriodo) {
+      console.warn("⚠️ No se puede auto-guardar: falta periodo");
+      setError("No se puede guardar las fechas. Primero selecciona un periodo.");
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+
+    // Variable para almacenar el ID de la solicitud
+    let idSolicitudActual = solicitudActual?.idSolicitud;
+
+    // Si no existe la solicitud, crearla automáticamente primero
+    if (!idSolicitudActual) {
+      console.log("📝 Creando solicitud automáticamente antes de guardar fechas...");
+      try {
+        const solicitudCreada = await handleGuardarBorrador();
+        console.log("✅ Solicitud creada:", solicitudCreada);
+        idSolicitudActual = solicitudCreada?.idSolicitud;
+        
+        if (!idSolicitudActual) {
+          throw new Error("No se obtuvo idSolicitud después de guardar");
+        }
+      } catch (error) {
+        console.error("❌ Error al crear solicitud automáticamente:", error);
+        setError("No se pudo crear la solicitud. Guarda el borrador manualmente primero.");
+        setTimeout(() => setError(null), 5000);
+        return;
+      }
+    }
+
+    // Verificar que tenemos el ID de la solicitud
+    if (!idSolicitudActual) {
+      console.warn("⚠️ No se pudo obtener idSolicitud");
+      setError("No se puede guardar las fechas. Primero guarda el borrador de la solicitud.");
+      setTimeout(() => setError(null), 5000);
       return;
     }
 
     // Buscar el detalle específico de la especialidad
     const detalleEspecialidad = registros.find(r => r.idServicio === idServicio);
+    console.log("🔍 Detalle encontrado:", detalleEspecialidad);
+    
     if (!detalleEspecialidad) {
       console.warn("⚠️ No se encontró el detalle de la especialidad:", idServicio);
+      setError("No se encontró la especialidad. Intenta guardar el borrador primero.");
+      setTimeout(() => setError(null), 5000);
       return;
     }
 
@@ -515,6 +561,7 @@ export default function FormularioSolicitudTurnos() {
       console.log("📅 Fechas a guardar:", fechasDetalle);
 
       const detallePayload = {
+        idPeriodo: periodoSeleccionado.idPeriodo,
         idServicio: detalleEspecialidad.idServicio,
         requiere: true,
         turnos: turnoTM + turnoManana + turnoTarde,
@@ -533,11 +580,33 @@ export default function FormularioSolicitudTurnos() {
         detallePayload.idDetalle = detalleEspecialidad.idDetalle;
       }
 
-      console.log("📤 Enviando payload:", JSON.stringify(detallePayload, null, 2));
+      console.log("📤 Enviando payload a /solicitudes-turno/" + solicitudActual.idSolicitud + "/detalle:", JSON.stringify(detallePayload, null, 2));
+      console.log("%c╔═══════════════════════════════════════════════════════╗", "color: #0A5BA9; font-weight: bold");
+      console.log("%c║        📤 PAYLOAD GUARDAR FECHA - DETALLE            ║", "color: #0A5BA9; font-weight: bold");
+      console.log("%c╚═══════════════════════════════════════════════════════╝", "color: #0A5BA9; font-weight: bold");
+      console.log("%c🌐 URL:", "color: #2563EB; font-weight: bold", `POST /solicitudes-turno/${idSolicitudActual}/detalle`);
+      console.log("%c📦 Payload:", "color: #16A34A; font-weight: bold");
+      console.table({
+        idPeriodo: detallePayload.idPeriodo,
+        idServicio: detallePayload.idServicio,
+        idDetalle: detallePayload.idDetalle || "NUEVO",
+        turnos: detallePayload.turnos,
+        turnoTM: detallePayload.turnoTM,
+        turnoManana: detallePayload.turnoManana,
+        turnoTarde: detallePayload.turnoTarde,
+        tc: detallePayload.tc,
+        tl: detallePayload.tl,
+        fechasCount: detallePayload.fechasDetalle.length
+      });
+      console.log("%c📅 Fechas Detalle:", "color: #CA8A04; font-weight: bold");
+      console.table(detallePayload.fechasDetalle);
+      console.log("%c📋 JSON Completo:", "color: #9333EA; font-weight: bold");
+      console.log(JSON.stringify(detallePayload, null, 2));
+      console.log("%c═══════════════════════════════════════════════════════", "color: #0A5BA9; font-weight: bold");
 
       // Guardar solo este detalle
       const resultado = await solicitudTurnoService.guardarDetalleEspecialidad(
-        solicitudActual.idSolicitud,
+        idSolicitudActual,
         detallePayload
       );
       
@@ -553,9 +622,15 @@ export default function FormularioSolicitudTurnos() {
       }
       
       console.log("✅ Fechas guardadas para especialidad:", idServicio, "- idDetalle:", resultado?.idDetalle);
+      
+      // Mostrar mensaje de éxito
+      setSuccess(`✅ Fechas guardadas correctamente (${fechasDetalle.length} fecha(s))`);
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("❌ Error al auto-guardar fechas:", err);
-      // No mostrar error al usuario, es guardado en segundo plano
+      const mensajeError = err?.response?.data?.message || err?.message || "Error desconocido";
+      setError(`Error al guardar las fechas: ${mensajeError}`);
+      setTimeout(() => setError(null), 5000);
     }
   };
 

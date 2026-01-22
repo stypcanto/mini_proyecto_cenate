@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Lock, FileText, TrendingUp, Users } from "lucide-react";
+import { Calendar, Lock, FileText, TrendingUp, Users, Hash } from "lucide-react";
 import { formatFecha, estadoBadgeClass } from "../utils/helpers";
 
 /**
@@ -13,69 +13,90 @@ export default function PeriodoDetalleCard({ periodo, solicitud, modoModal, peri
   const totalEspecialidades = solicitud?.totalEspecialidades || 0;
 
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-          <Calendar className="w-5 h-5 text-[#0A5BA9]" />
-          Periodo y Estado
-        </h2>
-        
-        {solicitud?.idSolicitud && (
-          <div className="text-sm text-slate-500">
-            Solicitud #{solicitud.idSolicitud}
-          </div>
-        )}
-      </div>
-
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-        <div className="flex items-start justify-between gap-3 mb-4">
-          <div className="flex-1">
-            <div className="text-xs text-slate-500 uppercase tracking-wide mb-1">Periodo</div>
-            <div className="text-xl font-bold text-slate-900 mb-2">{periodo?.descripcion || "—"}</div>
-            <div className="text-sm text-slate-600">
-              Código: <strong className="text-slate-800">{periodo?.periodo || "—"}</strong> · ID Periodo:{" "}
-              <strong className="text-slate-800">{periodo?.idPeriodo ?? "—"}</strong>
+    <div className="bg-white rounded-xl shadow-lg border border-slate-200">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-4 py-3 border-b border-slate-200">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="bg-[#0A5BA9] bg-opacity-10 p-1.5 rounded-lg">
+              <FileText className="w-4 h-4 text-[#0A5BA9]" />
             </div>
+            <h2 className="text-base font-bold text-slate-800">Detalle de la Solicitud</h2>
+            {solicitud?.idSolicitud && (
+              <span className="text-xs text-slate-500">• Solicitud #{solicitud.idSolicitud}</span>
+            )}
           </div>
-
-          <div className="flex flex-col gap-2 items-end">
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-bold ${estadoBadgeClass(estado)}`}>
+          
+          <div className="flex gap-2 items-center">
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-bold ${estadoBadgeClass(estado)}`}>
               {estado}
             </span>
             {periodoForzado && (
-              <span className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold border border-amber-200 bg-amber-50 text-amber-800">
-                <Lock className="w-3.5 h-3.5" />
-                Periodo fijo
+              <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold border border-amber-200 bg-amber-50 text-amber-800">
+                <Lock className="w-3 h-3" />
+                Fijo
               </span>
             )}
           </div>
         </div>
+      </div>
 
-        {/* Fechas */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500 mb-1">Fecha inicio</div>
-            <div className="font-semibold text-slate-800 text-sm">{formatFecha(periodo?.fechaInicio)}</div>
+      {/* Contenido en dos columnas */}
+      <div className="p-4 grid grid-cols-2 gap-6">
+        {/* Columna izquierda: Información de fechas */}
+        <div>
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
+            <Calendar className="w-4 h-4 text-blue-600" />
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">Fechas</h3>
           </div>
+          <table className="w-full">
+            <tbody className="divide-y divide-slate-100">
+              <tr>
+                <td className="py-2 pr-4 text-sm font-medium text-slate-600 w-2/5">Creación</td>
+                <td className="py-2 text-sm text-slate-900">{formatFecha(solicitud?.fechaCreacion || solicitud?.createdAt)}</td>
+              </tr>
+              <tr>
+                <td className="py-2 pr-4 text-sm font-medium text-slate-600">Actualización</td>
+                <td className="py-2 text-sm text-slate-900">{formatFecha(solicitud?.fechaActualizacion || solicitud?.updatedAt)}</td>
+              </tr>
+              <tr>
+                <td className="py-2 pr-4 text-sm font-medium text-slate-600">Envío</td>
+                <td className="py-2 text-sm text-slate-900">{formatFecha(solicitud?.fechaEnvio) || "—"}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-          <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500 mb-1">Fecha fin</div>
-            <div className="font-semibold text-slate-800 text-sm">{formatFecha(periodo?.fechaFin)}</div>
+        {/* Columna derecha: Resumen */}
+        <div>
+          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-200">
+            <TrendingUp className="w-4 h-4 text-green-600" />
+            <h3 className="text-xs font-bold text-slate-700 uppercase tracking-wide">Resumen</h3>
           </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-100">
+              <div className="flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                <span className="text-sm text-slate-700">Total Especialidades</span>
+              </div>
+              <span className="text-lg font-bold text-blue-700">{totalEspecialidades}</span>
+            </div>
+            
+            <div className="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-100">
+              <div className="flex items-center gap-2">
+                <Hash className="w-4 h-4 text-green-600" />
+                <span className="text-sm text-slate-700">Total Turnos</span>
+              </div>
+              <span className="text-lg font-bold text-green-700">{totalTurnos}</span>
+            </div>
 
-          <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500 mb-1">Fecha creación</div>
-            <div className="font-semibold text-slate-800 text-sm">{formatFecha(solicitud?.fechaCreacion || solicitud?.createdAt)}</div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500 mb-1">Fecha actualización</div>
-            <div className="font-semibold text-slate-800 text-sm">{formatFecha(solicitud?.fechaActualizacion || solicitud?.updatedAt)}</div>
-          </div>
-
-          <div className="p-3 rounded-xl bg-white border border-slate-200">
-            <div className="text-xs text-slate-500 mb-1">Fecha envío</div>
-            <div className="font-semibold text-slate-800 text-sm">{formatFecha(solicitud?.fechaEnvio) || "—"}</div>
+            <div className="p-2 bg-slate-50 rounded-lg border border-slate-100">
+              <div className="text-xs text-slate-500 mb-1">Periodo</div>
+              <div className="text-sm font-semibold text-slate-900">{periodo?.descripcion || "—"}</div>
+              <div className="text-xs text-slate-600 mt-1">
+                {periodo?.periodo} • ID: {periodo?.idPeriodo}
+              </div>
+            </div>
           </div>
         </div>
       </div>
