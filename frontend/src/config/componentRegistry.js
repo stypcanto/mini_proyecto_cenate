@@ -432,6 +432,24 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/teleecg/TeleECGEstadisticas')),
     requiredAction: 'ver',
   },
+
+  // ========================================================================
+  // 📊 MÓDULO BOLSAS
+  // ========================================================================
+  '/bolsas/cargar-excel': {
+    component: lazy(() => import('../pages/bolsas/CargarDesdeExcel')),
+    requiredAction: 'ver',
+  },
+
+  '/bolsas/solicitudes': {
+    component: lazy(() => import('../pages/bolsas/Solicitudes')),
+    requiredAction: 'ver',
+  },
+
+  '/bolsas/gestion-pacientes': {
+    component: lazy(() => import('../pages/bolsas/GestionBolsasPacientes')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================
