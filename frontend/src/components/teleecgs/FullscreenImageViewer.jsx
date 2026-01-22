@@ -84,55 +84,96 @@ export default function FullscreenImageViewer({
       </div>
 
       {/* ═════════════════════════════════════════ */}
-      {/* CONTENEDOR PRINCIPAL - Zoom digital + Imagen + Regla */}
+      {/* CONTENEDOR PRINCIPAL - Zoom digital + Imagen + Reglas Fijas */}
       {/* ═════════════════════════════════════════ */}
-      <TransformWrapper
-        ref={transformRef}
-        initialScale={1}
-        minScale={1}
-        maxScale={5}
-        centerOnInit={true}
-        disabled={false}
-        panning={{
-          disabled: false,
-          velocityDisabled: false,
-        }}
-        pinch={{
-          disabled: false,
-          step: 5,
-        }}
-        wheel={{
-          step: 0.1,
-          wheelEnabled: true,
-          touchPadEnabled: true,
-        }}
-        doubleClick={{
-          disabled: false,
-          step: 0.7,
-          mode: 'zoomIn',
-        }}
-        onTransformed={(instance) => {
-          // Actualizar zoom actual para mostrar filtros automáticamente
-          setCurrentZoom(instance.state.scale);
-        }}
-      >
-        <TransformComponent
-          wrapperClass="flex-1 flex items-center justify-center relative overflow-hidden bg-black"
-          contentClass="flex items-center justify-center"
-        >
-          {/* Regla milimétrica */}
-          <MillimeterRuler zoomLevel={Math.round(currentZoom * 100)} />
+      <div className="flex-1 flex relative overflow-hidden bg-black">
+        {/* REGLA LATERAL IZQUIERDA - Fija */}
+        <div className="w-12 bg-gray-800 border-r border-gray-700 flex flex-col items-center py-2 overflow-y-auto">
+          <div className="text-white text-xs font-bold mb-2">mm</div>
+          {Array.from({ length: 100 }).map((_, i) => (
+            <div
+              key={`ruler-v-${i}`}
+              className="w-full text-center text-xs text-gray-400"
+              style={{
+                height: `${Math.round(currentZoom * 25.4 / 2.54)}px`,
+                borderBottom: i % 5 === 0 ? '2px solid #888' : '1px solid #444',
+              }}
+            >
+              {i % 10 === 0 && <span className="text-[8px]">{i * 5}</span>}
+            </div>
+          ))}
+        </div>
 
-          {/* Imagen con filtros aplicados */}
-          <img
-            src={imagenData}
-            alt="ECG Fullscreen"
-            className="max-w-fit object-contain cursor-grab active:cursor-grabbing"
-            style={getImageStyle()}
-            draggable={false}
-          />
-        </TransformComponent>
-      </TransformWrapper>
+        {/* CONTENEDOR DE ZOOM - Con regla superior */}
+        <div className="flex-1 flex flex-col relative">
+          {/* REGLA SUPERIOR - Fija */}
+          <div className="h-12 bg-gray-800 border-b border-gray-700 flex items-center px-2 overflow-x-auto">
+            <div className="text-white text-xs font-bold mr-4">mm</div>
+            <div className="flex">
+              {Array.from({ length: 200 }).map((_, i) => (
+                <div
+                  key={`ruler-h-${i}`}
+                  className="flex flex-col items-center justify-center text-xs text-gray-400"
+                  style={{
+                    width: `${Math.round(currentZoom * 25.4 / 2.54)}px`,
+                    minWidth: `${Math.round(currentZoom * 25.4 / 2.54)}px`,
+                    borderRight: i % 5 === 0 ? '2px solid #888' : '1px solid #444',
+                    height: '100%',
+                  }}
+                >
+                  {i % 10 === 0 && <span className="text-[8px]">{i * 5}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ÁREA DE ZOOM */}
+          <TransformWrapper
+            ref={transformRef}
+            initialScale={1}
+            minScale={1}
+            maxScale={5}
+            centerOnInit={true}
+            disabled={false}
+            panning={{
+              disabled: false,
+              velocityDisabled: false,
+            }}
+            pinch={{
+              disabled: false,
+              step: 5,
+            }}
+            wheel={{
+              step: 0.1,
+              wheelEnabled: true,
+              touchPadEnabled: true,
+            }}
+            doubleClick={{
+              disabled: false,
+              step: 0.7,
+              mode: 'zoomIn',
+            }}
+            onTransformed={(instance) => {
+              // Actualizar zoom actual para mostrar filtros automáticamente
+              setCurrentZoom(instance.state.scale);
+            }}
+          >
+            <TransformComponent
+              wrapperClass="flex-1 flex items-center justify-center relative overflow-auto bg-black"
+              contentClass="flex items-center justify-center"
+            >
+              {/* Imagen con filtros aplicados */}
+              <img
+                src={imagenData}
+                alt="ECG Fullscreen"
+                className="max-w-fit object-contain cursor-grab active:cursor-grabbing"
+                style={getImageStyle()}
+                draggable={false}
+              />
+            </TransformComponent>
+          </TransformWrapper>
+        </div>
+      </div>
 
       {/* ═════════════════════════════════════════ */}
       {/* TOOLBAR INFERIOR */}
