@@ -21,6 +21,9 @@ import useImageFilters from "./useImageFilters";
 import FilterControlsPanel from "./FilterControlsPanel";
 import FullscreenImageViewer from "./FullscreenImageViewer";
 import CalipersPanel from "./CalipersPanel"; // ✅ v9.2.0: Herramienta de medición de intervalos
+import ReferenciaEscalaPanel from "./ReferenciaEscalaPanel"; // ✅ v9.2.0: 4️⃣ Escala de referencia
+import GridPanel from "./GridPanel"; // ✅ v9.2.0: 5️⃣ Cuadrícula proporcional con zoom
+import MillimeterRuler from "./MillimeterRuler"; // ✅ v9.2.0: 6️⃣ Regla milimétrica (siempre visible)
 import DetallesPacienteModal from "../modals/DetallesPacienteModal"; // ✅ v11.5.0: Modal con detalles completos del paciente
 
 /**
@@ -62,6 +65,12 @@ export default function ModalEvaluacionECG({
   const [showCalipers, setShowCalipers] = useState(false);
   const imageRef = useRef(null);
 
+  // ✅ v9.2.0: 4️⃣ ESCALA DE REFERENCIA - Control de calidad ECG
+  const [showReferencia, setShowReferencia] = useState(false);
+
+  // ✅ v9.2.0: 5️⃣ CUADRÍCULA PROPORCIONAL - Zoom con grid preservado
+  const [showGrid, setShowGrid] = useState(true);
+  const [gridZoomLevel, setGridZoomLevel] = useState(100);
 
   // ════════════════════════════════════════
   // TAB 1.5: VALIDACIÓN DE CALIDAD (v3.1.0)
@@ -319,12 +328,20 @@ export default function ModalEvaluacionECG({
   const handleZoomMas = () => {
     if (transformRef.current?.zoomIn) {
       transformRef.current.zoomIn(0.2);
+      // ✅ v9.2.0: 5️⃣ Actualizar zoom nivel de cuadrícula
+      setTimeout(() => {
+        setGridZoomLevel(getCurrentZoomPercentage());
+      }, 50);
     }
   };
 
   const handleZoomMenos = () => {
     if (transformRef.current?.zoomOut) {
       transformRef.current.zoomOut(0.2);
+      // ✅ v9.2.0: 5️⃣ Actualizar zoom nivel de cuadrícula
+      setTimeout(() => {
+        setGridZoomLevel(getCurrentZoomPercentage());
+      }, 50);
     }
   };
 
@@ -339,6 +356,8 @@ export default function ModalEvaluacionECG({
     setRotacion(0);
     resetFilters();
     setShowFilterControls(false);
+    // ✅ v9.2.0: 5️⃣ Reset zoom nivel de cuadrícula
+    setGridZoomLevel(100);
   };
 
   const getCurrentZoomPercentage = () => {
@@ -776,9 +795,11 @@ export default function ModalEvaluacionECG({
           {/* COLUMNA IZQUIERDA: IMAGEN + CARRUSEL */}
           <div className="flex-1 flex flex-col bg-gray-50 p-4 overflow-y-auto border-r">
             {/* Imagen */}
-            <div className="flex-1 bg-white rounded-lg p-3 flex flex-col min-h-0">
+            <div className="flex-1 bg-white rounded-lg p-3 flex flex-col min-h-0 relative">
               {imagenData ? (
-                <div className="flex-1 flex items-center justify-center overflow-hidden">
+                <div className="flex-1 flex items-center justify-center overflow-hidden relative">
+                  {/* ✅ v9.2.0: 6️⃣ REGLA MILIMÉTRICA - Siempre visible */}
+                  <MillimeterRuler zoomLevel={gridZoomLevel} />
                   <TransformWrapper ref={transformRef} initialScale={1} minScale={0.5} maxScale={5} centerOnInit wheel={{ step: 0.1 }}>
                     {({ zoomIn, zoomOut, resetTransform }) => (
                       <TransformComponent wrapperClass="flex-1 flex items-center justify-center" contentClass="cursor-move">
@@ -786,6 +807,12 @@ export default function ModalEvaluacionECG({
                       </TransformComponent>
                     )}
                   </TransformWrapper>
+
+                  {/* ✅ v9.2.0: 5️⃣ GRID OVERLAY - Cuadrícula superpuesta sobre imagen */}
+                  {showGrid && <GridPanel zoomLevel={gridZoomLevel} onGridToggle={() => setShowGrid(!showGrid)} />}
+
+                  {/* ✅ v9.2.0: 4️⃣ ESCALA OVERLAY - Referencia superpuesta sobre imagen */}
+                  {showReferencia && <ReferenciaEscalaPanel />}
                 </div>
               ) : (
                 <div className="flex items-center justify-center text-gray-400">
@@ -804,6 +831,10 @@ export default function ModalEvaluacionECG({
                 <button onClick={() => setShowFilterControls(!showFilterControls)} className={`p-1.5 rounded transition-colors ${showFilterControls ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Filtros avanzados"><Filter size={16} /></button>
                 {/* ✅ v9.2.0: 3️⃣ Botón CALIPERS para medir intervalos */}
                 <button onClick={() => setShowCalipers(!showCalipers)} className={`p-1.5 rounded transition-colors ${showCalipers ? 'bg-cyan-200 text-cyan-600' : 'hover:bg-gray-200'}`} title="Calipers - Medir intervalos"><Ruler size={16} /></button>
+                {/* ✅ v9.2.0: 4️⃣ Botón ESCALA DE REFERENCIA para validar calidad */}
+                <button onClick={() => setShowReferencia(!showReferencia)} className={`p-1.5 rounded transition-colors ${showReferencia ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Escala de referencia - Control de calidad"><span className="text-sm font-bold">📐</span></button>
+                {/* ✅ v9.2.0: 5️⃣ Botón GRID para mostrar cuadrícula proporcional */}
+                <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? 'bg-pink-200 text-pink-600' : 'hover:bg-gray-200'}`} title="Cuadrícula ECG proporcional"><span className="text-sm font-bold">🔲</span></button>
                 <div className="w-px bg-gray-300" />
                 <button onClick={() => setShowFullscreen(true)} className="p-1.5 hover:bg-purple-200 rounded transition-colors text-purple-600 hover:text-purple-700" title="Expandir a pantalla completa (E)"><Maximize2 size={16} /></button>
               </div>
@@ -1157,9 +1188,9 @@ export default function ModalEvaluacionECG({
       {/* 🎛️ FILTROS AVANZADOS - DRAWER OVERLAY (v10.1.0) */}
       {showFilterControls && (
         <>
-          {/* Backdrop oscuro con desenfoque */}
+          {/* Backdrop transparente sin desenfoque - permite ver imagen en tiempo real */}
           <div
-            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
+            className="fixed inset-0 bg-transparent z-40 transition-opacity duration-300"
             onClick={() => setShowFilterControls(false)}
           />
 
@@ -1202,6 +1233,7 @@ export default function ModalEvaluacionECG({
           totalImagenes={imagenesActuales.length}
           rotacion={rotacion}
           filters={filters}
+          zoomLevel={gridZoomLevel}
           onClose={() => setShowFullscreen(false)}
           onRotate={setRotacion}
           onFilterChange={updateFilter}
