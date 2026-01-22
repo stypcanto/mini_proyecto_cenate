@@ -1,11 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { X, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, RotateCcw, Filter } from 'lucide-react';
+import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import MillimeterRuler from './MillimeterRuler';
 import FilterControlsPanel from './FilterControlsPanel';
 
 /**
  * FullscreenImageViewer - Componente para visualizar imagen en pantalla completa
- * v11.0.0 - Layout profesional con header, imagen centrada, toolbar, panel lateral de filtros
+ * v12.0.0 - Zoom digital real (hasta 500%) + Filtros automáticos + Pan/Pinch
+ *
+ * Características:
+ * - Zoom digital sin pérdida de calidad (1x - 5x / 100% - 500%)
+ * - Rueda del ratón, pinch, doble clic para zoom
+ * - Pan (arrastrar) para navegar imagen ampliada
+ * - Panel de filtros automático cuando zoom > 100%
+ * - Filtros en tiempo real: rotación, brightness, contrast, invert, flip
+ * - Regla milimétrica que se actualiza con zoom
  */
 export default function FullscreenImageViewer({
   isOpen = false,
@@ -22,8 +31,13 @@ export default function FullscreenImageViewer({
   onImageNavigation = () => {}
 }) {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [currentZoom, setCurrentZoom] = useState(1);
+  const transformRef = useRef(null);
 
   if (!isOpen || !imagenData) return null;
+
+  // Mostrar filtros automáticamente si zoom > 100%
+  const autoShowFilters = currentZoom > 1;
 
   // Calcular transformaciones CSS
   const getImageStyle = () => {
@@ -70,20 +84,55 @@ export default function FullscreenImageViewer({
       </div>
 
       {/* ═════════════════════════════════════════ */}
-      {/* CONTENEDOR PRINCIPAL - Imagen + Regla */}
+      {/* CONTENEDOR PRINCIPAL - Zoom digital + Imagen + Regla */}
       {/* ═════════════════════════════════════════ */}
-      <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-black">
-        {/* Regla milimétrica */}
-        <MillimeterRuler zoomLevel={zoomLevel} />
+      <TransformWrapper
+        ref={transformRef}
+        initialScale={1}
+        minScale={1}
+        maxScale={5}
+        centerOnInit={true}
+        disabled={false}
+        panning={{
+          disabled: false,
+          velocityDisabled: false,
+        }}
+        pinch={{
+          disabled: false,
+          step: 5,
+        }}
+        wheel={{
+          step: 0.1,
+          wheelEnabled: true,
+          touchPadEnabled: true,
+        }}
+        doubleClick={{
+          disabled: false,
+          step: 0.7,
+          mode: 'zoomIn',
+        }}
+        onTransformed={(instance) => {
+          // Actualizar zoom actual para mostrar filtros automáticamente
+          setCurrentZoom(instance.state.scale);
+        }}
+      >
+        <TransformComponent
+          wrapperClass="flex-1 flex items-center justify-center relative overflow-hidden bg-black"
+          contentClass="flex items-center justify-center"
+        >
+          {/* Regla milimétrica */}
+          <MillimeterRuler zoomLevel={Math.round(currentZoom * 100)} />
 
-        {/* Imagen centrada */}
-        <img
-          src={imagenData}
-          alt="ECG Fullscreen"
-          className="max-w-[90%] max-h-[85%] object-contain"
-          style={getImageStyle()}
-        />
-      </div>
+          {/* Imagen con filtros aplicados */}
+          <img
+            src={imagenData}
+            alt="ECG Fullscreen"
+            className="max-w-fit object-contain cursor-grab active:cursor-grabbing"
+            style={getImageStyle()}
+            draggable={false}
+          />
+        </TransformComponent>
+      </TransformWrapper>
 
       {/* ═════════════════════════════════════════ */}
       {/* TOOLBAR INFERIOR */}
@@ -115,11 +164,19 @@ export default function FullscreenImageViewer({
           <button className="p-2 hover:bg-gray-800 rounded transition-colors text-white" title="Buscar">
             🔍
           </button>
-          <span className="text-sm text-gray-400 min-w-[60px] text-center">{zoomLevel}%</span>
-          <button className="p-2 hover:bg-gray-800 rounded transition-colors text-white" title="Zoom in">
+          <span className="text-sm text-gray-400 min-w-[60px] text-center">{Math.round(currentZoom * 100)}%</span>
+          <button
+            onClick={() => transformRef.current?.zoomIn(0.5)}
+            className="p-2 hover:bg-gray-800 rounded transition-colors text-white"
+            title="Zoom in"
+          >
             <ZoomIn size={18} />
           </button>
-          <button className="p-2 hover:bg-gray-800 rounded transition-colors text-white" title="Zoom out">
+          <button
+            onClick={() => transformRef.current?.zoomOut(0.5)}
+            className="p-2 hover:bg-gray-800 rounded transition-colors text-white"
+            title="Zoom out"
+          >
             <ZoomOut size={18} />
           </button>
           <button
@@ -158,15 +215,18 @@ export default function FullscreenImageViewer({
 
       {/* ═════════════════════════════════════════ */}
       {/* PANEL LATERAL DE FILTROS - Desliza desde derecha */}
+      {/* Mostrar automáticamente si zoom > 100% o si se abre manualmente */}
       {/* ═════════════════════════════════════════ */}
       <div
         className={`fixed top-0 right-0 h-full w-80 bg-white shadow-2xl z-40 transform transition-transform duration-300 overflow-y-auto ${
-          showFilterPanel ? 'translate-x-0' : 'translate-x-full'
+          showFilterPanel || autoShowFilters ? 'translate-x-0' : 'translate-x-full'
         }`}
       >
         {/* Header del panel */}
-        <div className="bg-indigo-600 text-white p-4 flex items-center justify-between sticky top-0">
-          <h3 className="font-bold">Filtros Avanzados</h3>
+        <div className="bg-indigo-600 text-white p-4 flex items-center justify-between sticky top-0 z-50">
+          <h3 className="font-bold">
+            Filtros Avanzados {autoShowFilters && <span className="text-sm opacity-75">(Zoom {Math.round(currentZoom * 100)}%)</span>}
+          </h3>
           <button
             onClick={() => setShowFilterPanel(false)}
             className="p-1 hover:bg-indigo-700 rounded transition-colors"
