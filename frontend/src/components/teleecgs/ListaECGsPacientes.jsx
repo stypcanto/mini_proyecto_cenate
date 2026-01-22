@@ -60,6 +60,34 @@ export default function ListaEKGsPacientes({
     return edad;
   };
 
+  // ✅ v9.2.0: 2️⃣ SEMÁFORO DE TIEMPO - Calcular minutos desde envío
+  const calcularMinutosTranscurridos = (fechaEnvio) => {
+    if (!fechaEnvio) return null;
+    const ahora = new Date();
+    const envio = new Date(fechaEnvio);
+    const minutosTranscurridos = Math.floor((ahora - envio) / (1000 * 60));
+    return minutosTranscurridos;
+  };
+
+  // ✅ v9.2.0: 2️⃣ Obtener color del semáforo según tiempo transcurrido
+  const obtenerColorSemaforoTiempo = (fechaEnvio) => {
+    const minutos = calcularMinutosTranscurridos(fechaEnvio);
+    if (minutos === null) return "gray";
+    if (minutos < 5) return "green"; // Verde: reciente
+    if (minutos < 20) return "yellow"; // Amarillo: pendiente
+    return "red"; // Rojo: URGENTE (>20 min sin leer)
+  };
+
+  // ✅ v9.2.0: 2️⃣ Obtener ícono de semáforo con indicador de tiempo
+  const obtenerEtiquetaSemaforoTiempo = (fechaEnvio) => {
+    const minutos = calcularMinutosTranscurridos(fechaEnvio);
+    if (minutos === null) return "—";
+    if (minutos < 1) return "🟢 Ahora";
+    if (minutos < 5) return `🟢 ${minutos}m`;
+    if (minutos < 20) return `🟡 ${minutos}m`;
+    return `🔴 ${minutos}m⚠️`;
+  };
+
   // v3.1.0: Agrupar imágenes por paciente (numDocPaciente)
   const agruparImagenesPorPaciente = (imagenesLista) => {
     const agrupadas = {};
@@ -248,9 +276,19 @@ export default function ListaEKGsPacientes({
               </td>
               <td className="px-6 py-4 text-sm">
                 <div className="space-y-1">
+                  {/* ✅ v9.2.0: 2️⃣ SEMÁFORO DE TIEMPO INTEGRADO EN BADGE DE ESTADO */}
                   <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${getEstadoBadge(paciente.estado)}`}>
                     {paciente.estado}
                   </span>
+                  {/* Indicador de tiempo transcurrido */}
+                  <div className={`inline-block px-2 py-0.5 rounded text-xs font-bold ml-2 ${
+                    obtenerColorSemaforoTiempo(paciente.fechaPrimera) === 'green' ? 'bg-green-200 text-green-800' :
+                    obtenerColorSemaforoTiempo(paciente.fechaPrimera) === 'yellow' ? 'bg-yellow-200 text-yellow-800' :
+                    obtenerColorSemaforoTiempo(paciente.fechaPrimera) === 'red' ? 'bg-red-300 text-red-900 animate-pulse' :
+                    'bg-gray-200 text-gray-800'
+                  }`}>
+                    {obtenerEtiquetaSemaforoTiempo(paciente.fechaPrimera)}
+                  </div>
                 </div>
               </td>
               <td className="px-6 py-4 text-center">

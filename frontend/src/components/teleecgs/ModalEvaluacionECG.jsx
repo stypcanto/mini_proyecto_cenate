@@ -11,6 +11,7 @@ import {
   Filter,
   Maximize2,
   Save,
+  Ruler, // ✅ v9.2.0: Icono para Calipers
 } from "lucide-react";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import toast from "react-hot-toast";
@@ -19,6 +20,7 @@ import ImageCanvas from "./ImageCanvas";
 import useImageFilters from "./useImageFilters";
 import FilterControlsPanel from "./FilterControlsPanel";
 import FullscreenImageViewer from "./FullscreenImageViewer";
+import CalipersPanel from "./CalipersPanel"; // ✅ v9.2.0: Herramienta de medición de intervalos
 
 /**
  * 🏥 MODAL TRIAJE CLÍNICO - EKG (v8.0.0 - Single View)
@@ -53,6 +55,10 @@ export default function ModalEvaluacionECG({
   const { filters, updateFilter, resetFilters, applyPreset } = useImageFilters();
   const [showFilterControls, setShowFilterControls] = useState(false);
   const [showFullscreen, setShowFullscreen] = useState(false);
+
+  // ✅ v9.2.0: 3️⃣ CALIPERS - Herramienta de medición de intervalos
+  const [showCalipers, setShowCalipers] = useState(false);
+  const imageRef = useRef(null);
 
   // ════════════════════════════════════════
   // TAB 1.5: VALIDACIÓN DE CALIDAD (v3.1.0)
@@ -162,17 +168,22 @@ export default function ModalEvaluacionECG({
   const [derivacionesSeleccionadas, setDerivacionesSeleccionadas] = useState([]);
 
   // ════════════════════════════════════════
-  // TAB 3: PLAN DE SEGUIMIENTO (SIMPLIFICADO)
-  // ════════════════════════════════════════
+  // TAB 3: PLAN DE SEGUIMIENTO (v11.0.0 - Recitación e Interconsulta Separadas)
+  // ══════════════════════════════════════════════════════════════════════════════
   const [planSeguimiento, setPlanSeguimiento] = useState({
+    // RECITACIÓN (Control en 3 meses)
     recitarEnTresMeses: false,
-    interconsultaEspecialidad: "", // nombre de especialidad (Cardiología, etc.)
+    recitarEspecialidad: "", // especialidad para recitación (ej: Cardiología)
+    // INTERCONSULTA (Derivación a otro especialista)
+    interconsulta: false,
+    interconsultaEspecialidades: [], // array de especialidades para interconsulta
   });
 
-  // 🏥 Estado para autocomplete de especialidades (v1.27.0)
+  // 🏥 Estado para autocomplete de especialidades (v1.27.0 + v11.0.0)
   const [especialidades, setEspecialidades] = useState([]);
   const [filteredEspecialidades, setFilteredEspecialidades] = useState([]);
   const [showEspecialidadesDropdown, setShowEspecialidadesDropdown] = useState(false);
+  const [showInterconsultaDropdown, setShowInterconsultaDropdown] = useState(false);
 
   const textareaEvalRef = useRef(null);
   const textareaNotaRef = useRef(null);
@@ -493,22 +504,21 @@ export default function ModalEvaluacionECG({
   // ════════════════════════════════════════
   // AUTOCOMPLETE DE ESPECIALIDADES (v1.27.0)
   // ════════════════════════════════════════
-  const handleEspecialidadChange = (value) => {
+  // HANDLERS PARA RECITACIÓN (v11.0.0)
+  // ════════════════════════════════════════
+  const handleRecitarEspecialidadChange = (value) => {
     setPlanSeguimiento({
       ...planSeguimiento,
-      interconsultaEspecialidad: value,
+      recitarEspecialidad: value,
     });
 
-    // Mostrar dropdown siempre que hay especialidades
     if (especialidades.length > 0) {
       let filtered;
       if (value.trim().length > 0) {
-        // Si escribe algo, filtrar
         filtered = especialidades.filter((e) =>
           e.descripcion.toLowerCase().includes(value.toLowerCase())
         );
       } else {
-        // Si no escribe nada, mostrar TODAS las especialidades
         filtered = especialidades;
       }
       setFilteredEspecialidades(filtered);
@@ -519,13 +529,57 @@ export default function ModalEvaluacionECG({
     }
   };
 
-  const handleSelectEspecialidad = (descripcion) => {
+  const handleSelectRecitarEspecialidad = (descripcion) => {
     setPlanSeguimiento({
       ...planSeguimiento,
-      interconsultaEspecialidad: descripcion,
+      recitarEspecialidad: descripcion,
     });
     setShowEspecialidadesDropdown(false);
     setFilteredEspecialidades([]);
+  };
+
+  // ════════════════════════════════════════
+  // HANDLERS PARA INTERCONSULTA (v11.0.0)
+  // ════════════════════════════════════════
+  const handleInterconsultaEspecialidadChange = (value) => {
+    // Solo actualiza el input de búsqueda, no agrega a la lista
+    if (especialidades.length > 0) {
+      let filtered;
+      if (value.trim().length > 0) {
+        filtered = especialidades.filter((e) =>
+          e.descripcion.toLowerCase().includes(value.toLowerCase())
+        );
+      } else {
+        filtered = especialidades;
+      }
+      setFilteredEspecialidades(filtered);
+      setShowInterconsultaDropdown(true);
+    } else {
+      setFilteredEspecialidades([]);
+      setShowInterconsultaDropdown(false);
+    }
+  };
+
+  const handleSelectInterconsultaEspecialidad = (descripcion) => {
+    // Agregar especialidad a la lista si no está ya
+    const yaAgregada = planSeguimiento.interconsultaEspecialidades.includes(descripcion);
+    if (!yaAgregada) {
+      setPlanSeguimiento({
+        ...planSeguimiento,
+        interconsultaEspecialidades: [...planSeguimiento.interconsultaEspecialidades, descripcion],
+      });
+    }
+    setShowInterconsultaDropdown(false);
+    setFilteredEspecialidades([]);
+  };
+
+  const handleRemoveInterconsultaEspecialidad = (descripcion) => {
+    setPlanSeguimiento({
+      ...planSeguimiento,
+      interconsultaEspecialidades: planSeguimiento.interconsultaEspecialidades.filter(
+        (e) => e !== descripcion
+      ),
+    });
   };
 
   const handleGuardar = async () => {
@@ -608,8 +662,10 @@ export default function ModalEvaluacionECG({
         icon: '🩺',
       });
 
-      // 2️⃣ Guardar Plan de Seguimiento (si hay datos)
-      if (planSeguimiento.recitarEnTresMeses || planSeguimiento.interconsultaEspecialidad) {
+      // 2️⃣ Guardar Plan de Seguimiento (v11.0.0 - Recitación + Interconsulta)
+      const hayRecitacion = planSeguimiento.recitarEnTresMeses && planSeguimiento.recitarEspecialidad;
+      const hayInterconsulta = planSeguimiento.interconsulta && planSeguimiento.interconsultaEspecialidades.length > 0;
+      if (hayRecitacion || hayInterconsulta) {
         try {
           await teleecgService.guardarNotaClinica(idImagen, {
             hallazgos: {}, // Ya no se usa, pero se envía vacío para compatibilidad
@@ -687,13 +743,38 @@ export default function ModalEvaluacionECG({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-2xl w-[95vw] max-w-7xl max-h-[90vh] overflow-hidden flex flex-col">
-        {/* HEADER */}
+        {/* ✅ v9.2.0: HEADER CON CONTEXTO CLÍNICO PERMANENTE - Paciente + IPRESS Origen */}
         <div className="flex items-center justify-between p-4 bg-gradient-to-br from-blue-800 to-blue-950 text-white">
-          <div>
+          <div className="flex-1">
             <h2 className="text-xl font-bold">🏥 Triaje Clínico - EKG</h2>
-            <p className="text-xs text-blue-100">{ecg?.nombres_paciente || ecg?.nombrePaciente} {ecg?.apellidos_paciente} • DNI: {ecg?.num_doc_paciente}</p>
+            {/* 1️⃣ v9.2.0: Datos Paciente SIEMPRE VISIBLES */}
+            <div className="flex flex-wrap gap-3 text-xs text-blue-100 mt-2 pt-2 border-t border-blue-700">
+              {/* Paciente */}
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-blue-300">👤 Paciente:</span>
+                <span className="font-mono bg-blue-900/40 px-2 py-1 rounded">{ecg?.nombres_paciente || ecg?.nombrePaciente} {ecg?.apellidos_paciente}</span>
+              </div>
+              {/* DNI */}
+              <div className="flex items-center gap-1">
+                <span className="font-semibold text-blue-300">🆔 DNI:</span>
+                <span className="font-mono bg-blue-900/40 px-2 py-1 rounded font-bold text-blue-100">{ecg?.num_doc_paciente}</span>
+              </div>
+              {/* 1️⃣ v9.2.0: IPRESS ORIGEN PERMANENTE */}
+              {(ecg?.nombre_ipress || ecg?.nombreIpress) && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-blue-300">🏢 IPRESS:</span>
+                  <span className="font-mono bg-green-900/40 px-2 py-1 rounded text-green-100">{ecg?.nombre_ipress || ecg?.nombreIpress}</span>
+                </div>
+              )}
+              {ecg?.codigo_ipress && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold text-blue-300">Código:</span>
+                  <span className="font-mono bg-blue-900/40 px-2 py-1 rounded text-xs">{ecg?.codigo_ipress}</span>
+                </div>
+              )}
+            </div>
           </div>
-          <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-2"><X size={20} /></button>
+          <button onClick={onClose} className="text-white hover:bg-white/20 rounded-full p-2 ml-4 flex-shrink-0"><X size={20} /></button>
         </div>
 
         {/* DOS COLUMNAS: Imagen (60%) + Formularios (40%) */}
@@ -727,6 +808,8 @@ export default function ModalEvaluacionECG({
                 <div className="w-px bg-gray-300" />
                 <button onClick={rotarImagen} className="p-1.5 hover:bg-gray-200 rounded" title="Rotar"><RotateCw size={16} /></button>
                 <button onClick={() => setShowFilterControls(!showFilterControls)} className={`p-1.5 rounded transition-colors ${showFilterControls ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Filtros avanzados"><Filter size={16} /></button>
+                {/* ✅ v9.2.0: 3️⃣ Botón CALIPERS para medir intervalos */}
+                <button onClick={() => setShowCalipers(!showCalipers)} className={`p-1.5 rounded transition-colors ${showCalipers ? 'bg-cyan-200 text-cyan-600' : 'hover:bg-gray-200'}`} title="Calipers - Medir intervalos"><Ruler size={16} /></button>
                 <div className="w-px bg-gray-300" />
                 <button onClick={() => setShowFullscreen(true)} className="p-1.5 hover:bg-purple-200 rounded transition-colors text-purple-600 hover:text-purple-700" title="Expandir a pantalla completa (E)"><Maximize2 size={16} /></button>
               </div>
@@ -750,6 +833,16 @@ export default function ModalEvaluacionECG({
                 <p className="font-bold text-blue-950 text-sm">{imagenesActuales.length} EKGs</p>
                 <p className="text-sm text-blue-900 font-medium">Imagen actual {indiceImagen + 1} de {imagenesActuales.length}</p>
               </div>
+
+              {/* ✅ v9.2.0: 3️⃣ PANEL DE CALIPERS - Herramienta de Medición de Intervalos */}
+              {showCalipers && (
+                <CalipersPanel
+                  imagenRef={imageRef}
+                  onMeasurement={(medicion) => {
+                    console.log("📏 v9.2.0 - Medición registrada:", medicion);
+                  }}
+                />
+              )}
 
               {/* VALIDACIÓN CALIDAD */}
               {imagenValida === null && (
@@ -901,28 +994,107 @@ export default function ModalEvaluacionECG({
                     )}
                   </div>
 
-                  {/* PLAN DE SEGUIMIENTO */}
-                  <div className="bg-purple-50 p-2.5 rounded-lg border border-purple-200">
-                    <p className="font-semibold text-purple-900 mb-2 text-xs">Plan de Seguimiento</p>
-                    <label className="flex items-center gap-2 cursor-pointer text-xs mb-2">
-                      <input type="checkbox" checked={planSeguimiento.recitarEnTresMeses} onChange={(e) => setPlanSeguimiento({...planSeguimiento, recitarEnTresMeses: e.target.checked})} />
-                      Recitar en 3 meses
-                    </label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="Especialidad (opcional)"
-                        value={planSeguimiento.interconsultaEspecialidad}
-                        onChange={(e) => handleEspecialidadChange(e.target.value)}
-                        className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
-                      />
-                      {showEspecialidadesDropdown && filteredEspecialidades.length > 0 && (
-                        <div className="absolute top-full mt-1 w-full bg-white border rounded shadow-lg z-10 max-h-32 overflow-y-auto">
-                          {filteredEspecialidades.map(esp => (
-                            <div key={esp.idEspecialidad} onClick={() => handleSelectEspecialidad(esp.descripcion)} className="px-2 py-1 hover:bg-purple-100 cursor-pointer text-xs">
-                              {esp.descripcion}
+                  {/* PLAN DE SEGUIMIENTO (v11.0.0 - Recitación + Interconsulta) */}
+                  <div className="bg-purple-50 p-2.5 rounded-lg border border-purple-200 space-y-3">
+                    <p className="font-semibold text-purple-900 text-xs">📋 Plan de Seguimiento</p>
+
+                    {/* SECCIÓN 1: RECITACIÓN */}
+                    <div className="bg-white p-2 rounded border border-purple-200">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs mb-2">
+                        <input
+                          type="checkbox"
+                          checked={planSeguimiento.recitarEnTresMeses}
+                          onChange={(e) => setPlanSeguimiento({...planSeguimiento, recitarEnTresMeses: e.target.checked})}
+                          className="w-4 h-4"
+                        />
+                        <span className="font-medium text-purple-900">🔄 Recitar en 3 meses</span>
+                      </label>
+
+                      {planSeguimiento.recitarEnTresMeses && (
+                        <div className="relative ml-4">
+                          <input
+                            type="text"
+                            placeholder="Seleccionar especialidad..."
+                            value={planSeguimiento.recitarEspecialidad}
+                            onChange={(e) => handleRecitarEspecialidadChange(e.target.value)}
+                            className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                          />
+                          {showEspecialidadesDropdown && filteredEspecialidades.length > 0 && (
+                            <div className="absolute top-full mt-1 w-full bg-white border rounded shadow-lg z-10 max-h-32 overflow-y-auto">
+                              {filteredEspecialidades.map(esp => (
+                                <div
+                                  key={esp.idEspecialidad}
+                                  onClick={() => handleSelectRecitarEspecialidad(esp.descripcion)}
+                                  className="px-2 py-1 hover:bg-purple-100 cursor-pointer text-xs"
+                                >
+                                  {esp.descripcion}
+                                </div>
+                              ))}
                             </div>
-                          ))}
+                          )}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* SECCIÓN 2: INTERCONSULTA */}
+                    <div className="bg-white p-2 rounded border border-purple-200">
+                      <label className="flex items-center gap-2 cursor-pointer text-xs mb-2">
+                        <input
+                          type="checkbox"
+                          checked={planSeguimiento.interconsulta}
+                          onChange={(e) => setPlanSeguimiento({...planSeguimiento, interconsulta: e.target.checked})}
+                          className="w-4 h-4"
+                        />
+                        <span className="font-medium text-purple-900">🏥 Interconsulta a especialista</span>
+                      </label>
+
+                      {planSeguimiento.interconsulta && (
+                        <div className="ml-4 space-y-2">
+                          {/* Input de búsqueda */}
+                          <div className="relative">
+                            <input
+                              type="text"
+                              placeholder="Buscar y agregar especialidad..."
+                              onChange={(e) => handleInterconsultaEspecialidadChange(e.target.value)}
+                              className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            />
+                            {showInterconsultaDropdown && filteredEspecialidades.length > 0 && (
+                              <div className="absolute top-full mt-1 w-full bg-white border rounded shadow-lg z-10 max-h-32 overflow-y-auto">
+                                {filteredEspecialidades.map(esp => (
+                                  <div
+                                    key={esp.idEspecialidad}
+                                    onClick={() => handleSelectInterconsultaEspecialidad(esp.descripcion)}
+                                    className="px-2 py-1 hover:bg-purple-100 cursor-pointer text-xs"
+                                  >
+                                    {esp.descripcion}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Lista de especialidades seleccionadas */}
+                          {planSeguimiento.interconsultaEspecialidades.length > 0 && (
+                            <div className="flex flex-wrap gap-1">
+                              {planSeguimiento.interconsultaEspecialidades.map((esp) => (
+                                <div
+                                  key={esp}
+                                  className="inline-flex items-center gap-1 bg-purple-200 text-purple-900 px-2 py-1 rounded text-xs font-medium"
+                                >
+                                  {esp}
+                                  <button
+                                    onClick={() => handleRemoveInterconsultaEspecialidad(esp)}
+                                    className="ml-1 hover:text-purple-700 font-bold"
+                                  >
+                                    ✕
+                                  </button>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                          {planSeguimiento.interconsultaEspecialidades.length === 0 && (
+                            <p className="text-xs text-gray-500 italic">Sin especialidades seleccionadas</p>
+                          )}
                         </div>
                       )}
                     </div>
