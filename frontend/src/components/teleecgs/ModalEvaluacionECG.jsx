@@ -748,17 +748,15 @@ export default function ModalEvaluacionECG({
                   <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                     <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Edad</span>
                     <p className="font-bold text-gray-900 text-base mt-1">
-                      {ecg?.edad || ecg?.age ? `${ecg?.edad || ecg?.age} años` : "No disponible"}
+                      {ecg?.edadPaciente ? `${ecg.edadPaciente} años` : "No disponible"}
                     </p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                     <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Género</span>
                     <p className="font-bold text-gray-900 text-base mt-1">
-                      {ecg?.genero === "M" || ecg?.genero === "MASCULINO" ? "🧑 Masculino" :
-                       ecg?.genero === "F" || ecg?.genero === "FEMENINO" ? "👩 Femenino" :
-                       ecg?.sexo === "M" ? "🧑 Masculino" :
-                       ecg?.sexo === "F" ? "👩 Femenino" :
-                       ecg?.genero || ecg?.sexo ? ecg?.genero || ecg?.sexo : "No disponible"}
+                      {ecg?.generoPaciente === "M" || ecg?.generoPaciente === "MASCULINO" ? "🧑 Masculino" :
+                       ecg?.generoPaciente === "F" || ecg?.generoPaciente === "FEMENINO" ? "👩 Femenino" :
+                       ecg?.generoPaciente ? ecg.generoPaciente : "No disponible"}
                     </p>
                   </div>
                   <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
