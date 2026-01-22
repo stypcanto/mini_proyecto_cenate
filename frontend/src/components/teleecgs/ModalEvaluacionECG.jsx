@@ -771,8 +771,8 @@ export default function ModalEvaluacionECG({
                         <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                           <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Género</span>
                           <p className="font-bold text-gray-900 text-base mt-1">
-                            {pacienteInfo.genero === "M" || pacienteInfo.genero === "MASCULINO" ? "🧑 Masculino" :
-                             pacienteInfo.genero === "F" || pacienteInfo.genero === "FEMENINO" ? "👩 Femenino" :
+                            {pacienteInfo.genero === "M" || pacienteInfo.genero === "MASCULINO" ? "Masculino" :
+                             pacienteInfo.genero === "F" || pacienteInfo.genero === "FEMENINO" ? "Femenino" :
                              pacienteInfo.genero ? pacienteInfo.genero : "No disponible"}
                           </p>
                         </div>
