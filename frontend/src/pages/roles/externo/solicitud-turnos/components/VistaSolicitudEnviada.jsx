@@ -82,26 +82,26 @@ export default function VistaSolicitudEnviada({ solicitud }) {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header Mejorado */}
-      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg p-6 text-white shadow-lg">
+    <div className="space-y-4">
+      {/* Header Compacto */}
+      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg p-4 text-white shadow-lg">
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <div className="flex items-center gap-3 mb-2">
-              <FileText className="w-6 h-6" />
-              <h2 className="text-2xl font-bold">Solicitud de Turnos #{solicitud.idSolicitud}</h2>
+            <div className="flex items-center gap-2 mb-1">
+              <FileText className="w-5 h-5" />
+              <h2 className="text-lg font-bold">Solicitud #{solicitud.idSolicitud}</h2>
             </div>
-            <div className="space-y-1 ml-9">
-              <p className="text-blue-100 text-sm">
+            <div className="space-y-0.5 ml-7">
+              <p className="text-blue-100 text-xs">
                 <span className="font-semibold">Periodo:</span> {solicitud.periodoDescripcion} ({solicitud.periodo})
               </p>
-              <p className="text-blue-100 text-sm">
+              <p className="text-blue-100 text-xs">
                 <span className="font-semibold">Rango:</span> {formatFechaCorta(solicitud.fechaInicio)} - {formatFechaCorta(solicitud.fechaFin)}
               </p>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-2">
-            <span className={`px-4 py-1.5 rounded-full text-sm font-bold shadow-md ${
+          <div className="flex flex-col items-end gap-1.5">
+            <span className={`px-3 py-1 rounded-full text-xs font-bold shadow-md ${
               solicitud.estado === "ENVIADO"
                 ? "bg-white text-blue-600"
                 : solicitud.estado === "REVISADO"
@@ -112,11 +112,11 @@ export default function VistaSolicitudEnviada({ solicitud }) {
             }`}>
               {solicitud.estado}
             </span>
-            <div className="flex gap-3 text-sm">
-              <div className="bg-white/20 px-3 py-1 rounded-md backdrop-blur-sm">
-                <span className="font-bold">{solicitud.totalEspecialidades}</span> Especialidades
+            <div className="flex gap-2 text-xs">
+              <div className="bg-white/20 px-2 py-0.5 rounded-md backdrop-blur-sm">
+                <span className="font-bold">{solicitud.totalEspecialidades}</span> Esp.
               </div>
-              <div className="bg-white/20 px-3 py-1 rounded-md backdrop-blur-sm">
+              <div className="bg-white/20 px-2 py-0.5 rounded-md backdrop-blur-sm">
                 <span className="font-bold">{solicitud.totalTurnosSolicitados}</span> Turnos
               </div>
             </div>
@@ -124,84 +124,41 @@ export default function VistaSolicitudEnviada({ solicitud }) {
         </div>
       </div>
 
-      {/* Grid de Información */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {/* Card IPRESS */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
-            <Building2 className="w-5 h-5 text-[#0A5BA9]" />
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">IPRESS</h3>
-          </div>
-          <div className="space-y-2">
-            <InfoRow label="Nombre" value={solicitud.nombreIpress} />
-            <InfoRow label="RENAES" value={solicitud.codigoRenaes} />
-            <InfoRow label="ID" value={solicitud.idIpress} />
-          </div>
-        </div>
-
-        {/* Card Usuario Creador */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
-            <User className="w-5 h-5 text-[#0A5BA9]" />
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Usuario Creador</h3>
-          </div>
-          <div className="space-y-2">
-            <InfoRow label="Nombre" value={solicitud.nombreUsuarioCreador} />
-            <InfoRow label="ID Usuario" value={solicitud.idUsuarioCreador} />
-          </div>
-        </div>
-
-        {/* Card Fechas */}
-        <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm hover:shadow-md transition-shadow">
-          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-gray-200">
-            <Clock className="w-5 h-5 text-[#0A5BA9]" />
-            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Fechas</h3>
-          </div>
-          <div className="space-y-2">
-            <InfoRow label="Creación" value={formatFecha(solicitud.fechaCreacion)} />
-            <InfoRow label="Actualización" value={formatFecha(solicitud.fechaActualizacion)} />
-            <InfoRow label="Envío" value={formatFecha(solicitud.fechaEnvio)} />
-          </div>
-        </div>
-      </div>
-
-      {/* Tabla de Especialidades Mejorada */}
+      {/* Tabla Compacta */}
       <div className="bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-        <div className="bg-gradient-to-r from-gray-50 to-slate-50 px-4 py-3 border-b border-gray-200">
-          <div className="flex items-center justify-between mb-3">
+        <div className="bg-gradient-to-r from-gray-50 to-slate-50 px-3 py-2 border-b border-gray-200">
+          <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#0A5BA9]" />
-              <h3 className="font-bold text-gray-900">Especialidades Solicitadas</h3>
+              <Users className="w-4 h-4 text-[#0A5BA9]" />
+              <h3 className="text-sm font-bold text-gray-900">Especialidades Solicitadas</h3>
             </div>
             <span className="text-xs text-gray-500 font-medium">
-              Mostrando {especialidadesFiltradas.length} de {(solicitud.detalles || []).length} especialidad(es)
+              {especialidadesFiltradas.length} de {(solicitud.detalles || []).length}
             </span>
           </div>
           
-          {/* Filtros */}
-          <div className="flex gap-3">
-            {/* Buscar por especialidad */}
+          {/* Filtros Compactos */}
+          <div className="flex gap-2">
             <div className="flex-1">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <input
                   type="text"
-                  placeholder="Buscar especialidad..."
+                  placeholder="Buscar..."
                   value={filtroEspecialidad}
                   onChange={(e) => setFiltroEspecialidad(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  className="w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 />
               </div>
             </div>
 
-            {/* Filtro por estado */}
-            <div className="w-48">
+            <div className="w-36">
               <div className="relative">
-                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Filter className="absolute left-2 top-1/2 transform -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
                 <select
                   value={filtroEstado}
                   onChange={(e) => setFiltroEstado(e.target.value)}
-                  className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer"
+                  className="w-full pl-8 pr-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white cursor-pointer"
                 >
                   <option value="TODAS">TODAS</option>
                   <option value="PENDIENTE">PENDIENTE</option>
@@ -213,29 +170,28 @@ export default function VistaSolicitudEnviada({ solicitud }) {
           </div>
         </div>
 
-        <div className="overflow-x-auto max-h-[600px]">
-          <table className="w-full text-sm">
+        <div className="overflow-x-auto max-h-[400px]">
+          <table className="w-full text-xs">
             <thead className="bg-gray-50 border-b-2 border-gray-200 sticky top-0">
               <tr>
-                <th className="px-3 py-3 text-left font-bold text-gray-700 w-12">#</th>
-                <th className="px-3 py-3 text-left font-bold text-gray-700">Especialidad</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700">Estado</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700 bg-purple-50">TM</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700 bg-yellow-50">Mañana</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700 bg-orange-50">Tarde</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700 bg-blue-50">Total</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700">TC</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700">TL</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700">Fechas</th>
-                <th className="px-3 py-3 text-center font-bold text-gray-700">Observación</th>
+                <th className="px-2 py-2 text-left font-bold text-gray-700 w-8">#</th>
+                <th className="px-2 py-2 text-left font-bold text-gray-700">Especialidad</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700">Estado</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700 bg-purple-50">TM</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700 bg-yellow-50">Mañana</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700 bg-orange-50">Tarde</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700 bg-blue-50">Total</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700">TC</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700">TL</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700">Fechas</th>
+                <th className="px-2 py-2 text-center font-bold text-gray-700">Obs.</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
-              {especialidadesFiltradas.length === 0 ? (
+            <tbody className="divide-y divide-gray-100">{especialidadesFiltradas.length === 0 ? (
                 <tr>
-                  <td colSpan="11" className="px-4 py-12 text-center text-gray-500">
-                    <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-sm font-medium">
+                  <td colSpan="11" className="px-4 py-8 text-center text-gray-500">
+                    <FileText className="w-10 h-10 text-gray-300 mx-auto mb-2" />
+                    <p className="text-xs font-medium">
                       {(solicitud.detalles || []).length === 0
                         ? "No hay especialidades registradas"
                         : "No se encontraron especialidades con los filtros aplicados"}
@@ -250,17 +206,17 @@ export default function VistaSolicitudEnviada({ solicitud }) {
 
                   return (
                     <tr key={`${detalle.idDetalle}-${index}`} className="hover:bg-blue-50/30 transition-colors">
-                      <td className="px-3 py-3 text-gray-600 font-medium">{index + 1}</td>
+                      <td className="px-2 py-2 text-gray-600 font-medium">{index + 1}</td>
                       
-                      <td className="px-3 py-3">
-                        <div className="font-bold text-gray-900">{detalle.nombreServicio}</div>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          <span className="font-medium">Código:</span> {detalle.codigoServicio}
+                      <td className="px-2 py-2">
+                        <div className="font-bold text-gray-900 text-xs">{detalle.nombreServicio}</div>
+                        <div className="text-[10px] text-gray-500">
+                          {detalle.codigoServicio}
                         </div>
                       </td>
 
-                      <td className="px-3 py-3 text-center">
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
+                      <td className="px-2 py-2 text-center">
+                        <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-bold ${
                           detalle.estado === "ASIGNADO"
                             ? "bg-green-100 text-green-800 border border-green-300"
                             : detalle.estado === "NO PROCEDE"
@@ -273,71 +229,70 @@ export default function VistaSolicitudEnviada({ solicitud }) {
                         </span>
                       </td>
 
-                      <td className="px-3 py-3 text-center bg-purple-50/50">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-lg text-sm font-bold bg-purple-100 text-purple-700 border-2 border-purple-300 shadow-sm">
+                      <td className="px-2 py-2 text-center bg-purple-50/50">
+                        <span className="inline-flex items-center justify-center w-7 h-6 rounded text-xs font-bold bg-purple-100 text-purple-700 border border-purple-300">
                           {detalle.turnoTM || 0}
                         </span>
                       </td>
 
-                      <td className="px-3 py-3 text-center bg-yellow-50/50">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-lg text-sm font-bold bg-yellow-100 text-yellow-700 border-2 border-yellow-300 shadow-sm">
+                      <td className="px-2 py-2 text-center bg-yellow-50/50">
+                        <span className="inline-flex items-center justify-center w-7 h-6 rounded text-xs font-bold bg-yellow-100 text-yellow-700 border border-yellow-300">
                           {detalle.turnoManana || 0}
                         </span>
                       </td>
 
-                      <td className="px-3 py-3 text-center bg-orange-50/50">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-lg text-sm font-bold bg-orange-100 text-orange-700 border-2 border-orange-300 shadow-sm">
+                      <td className="px-2 py-2 text-center bg-orange-50/50">
+                        <span className="inline-flex items-center justify-center w-7 h-6 rounded text-xs font-bold bg-orange-100 text-orange-700 border border-orange-300">
                           {detalle.turnoTarde || 0}
                         </span>
                       </td>
 
-                      <td className="px-3 py-3 text-center bg-blue-50/50">
-                        <span className="inline-flex items-center justify-center w-12 h-10 rounded-lg text-lg font-black bg-blue-100 text-blue-700 border-2 border-blue-400 shadow-md">
+                      <td className="px-2 py-2 text-center bg-blue-50/50">
+                        <span className="inline-flex items-center justify-center w-8 h-7 rounded text-sm font-black bg-blue-100 text-blue-700 border-2 border-blue-400">
                           {totalTurnos}
                         </span>
                       </td>
 
-                      <td className="px-3 py-3 text-center">
+                      <td className="px-2 py-2 text-center">
                         {detalle.tc ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto" />
+                          <CheckCircle2 className="w-4 h-4 text-green-600 mx-auto" />
                         ) : (
-                          <X className="w-6 h-6 text-gray-300 mx-auto" />
+                          <X className="w-4 h-4 text-gray-300 mx-auto" />
                         )}
                       </td>
 
-                      <td className="px-3 py-3 text-center">
+                      <td className="px-2 py-2 text-center">
                         {detalle.tl ? (
-                          <CheckCircle2 className="w-6 h-6 text-green-600 mx-auto" />
+                          <CheckCircle2 className="w-4 h-4 text-green-600 mx-auto" />
                         ) : (
-                          <X className="w-6 h-6 text-gray-300 mx-auto" />
+                          <X className="w-4 h-4 text-gray-300 mx-auto" />
                         )}
                       </td>
 
-                      <td className="px-3 py-3 text-center">
+                      <td className="px-2 py-2 text-center">
                         {tieneFechas ? (
                           <button
                             onClick={() => setModalFechas(detalle)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                            Ver ({detalle.fechasDetalle.length})
+                            <Eye className="w-3 h-3" />
+                            {detalle.fechasDetalle.length}
                           </button>
                         ) : (
-                          <span className="text-gray-400 font-medium">—</span>
+                          <span className="text-gray-400">—</span>
                         )}
                       </td>
 
-                      <td className="px-3 py-3 text-center">
+                      <td className="px-2 py-2 text-center">
                         {tieneObservacion ? (
                           <button
                             onClick={() => setModalObservacion(detalle)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
+                            className="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                           >
-                            <Eye className="w-3.5 h-3.5" />
-                            Ver
+                            <Eye className="w-3 h-3" />
                           </button>
                         ) : (
-                          <span className="text-gray-400 font-medium">—</span>
+                          <span className="text-gray-400">—</span>
                         )}
                       </td>
                     </tr>
@@ -353,7 +308,7 @@ export default function VistaSolicitudEnviada({ solicitud }) {
       {modalObservacion && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalObservacion(null)}>
           <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 rounded-t-lg flex items-center justify-between">
+            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-6 py-4 rounded-t-lg flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-white">Observación</h3>
                 <p className="text-blue-100 text-sm">{modalObservacion.nombreServicio}</p>
@@ -386,16 +341,21 @@ export default function VistaSolicitudEnviada({ solicitud }) {
       {modalFechas && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalFechas(null)}>
           <div className="bg-white rounded-lg shadow-2xl max-w-3xl w-full max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 rounded-t-lg flex items-center justify-between">
-              <div>
-                <h3 className="text-lg font-bold text-white">Fechas Programadas</h3>
-                <p className="text-blue-100 text-sm">{modalFechas.nombreServicio}</p>
+            <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-6 py-4 rounded-t-lg flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="bg-white bg-opacity-20 p-2 rounded-lg">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-white">Días Seleccionados</h3>
+                  <p className="text-blue-100 text-sm">{modalFechas.nombreServicio} • Código: {modalFechas.codigoServicio}</p>
+                </div>
               </div>
               <button
                 onClick={() => setModalFechas(null)}
-                className="text-white hover:bg-white/20 rounded-full p-1 transition-colors"
+                className="text-white bg-white/20 hover:bg-white/30 rounded-lg p-2 transition-colors"
               >
-                <X className="w-6 h-6" />
+                <X className="w-5 h-5" />
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-6">

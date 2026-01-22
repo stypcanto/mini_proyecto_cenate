@@ -76,14 +76,14 @@ export default function ModalEditarPeriodo({ periodo, onClose, onGuardar }) {
       
       <div className="relative bg-white rounded-lg shadow-2xl max-w-lg w-full">
         {/* Header */}
-        <div className="bg-gradient-to-r from-amber-600 to-orange-600 px-6 py-4 rounded-t-lg flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-6 py-4 rounded-t-lg flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white bg-opacity-20 p-2 rounded-lg">
               <Calendar className="w-6 h-6 text-white" />
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">Editar Período</h2>
-              <p className="text-amber-100 text-sm">{periodo.descripcion || `Periodo ${periodo.periodo}`}</p>
+              <p className="text-blue-100 text-sm">{periodo.descripcion || `Periodo ${periodo.periodo}`}</p>
             </div>
           </div>
           <button

@@ -10,7 +10,7 @@ export default function ModalConfirmarEliminacion({ periodo, onClose, onConfirma
       
       <div className="relative bg-white rounded-lg shadow-2xl max-w-md w-full">
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-600 to-red-700 px-6 py-4 rounded-t-lg flex items-center justify-between">
+        <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-6 py-4 rounded-t-lg flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="bg-white bg-opacity-20 p-2 rounded-lg">
               <AlertTriangle className="w-6 h-6 text-white" />

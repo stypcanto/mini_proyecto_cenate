@@ -350,10 +350,13 @@ export default function GestionPeriodosTurnos() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 mb-1">Gestión de Períodos y Solicitudes</h1>
-            <p className="text-sm text-gray-600">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
+        <div className="mb-4 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg p-6 shadow-lg">
+          <div className="flex items-center gap-3">
+            <FileText className="w-8 h-8 text-white" />
+            <div>
+              <h1 className="text-2xl font-bold text-white mb-1">Gestión de Períodos y Solicitudes</h1>
+              <p className="text-sm text-blue-100">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
+            </div>
           </div>
         </div>
 

@@ -43,7 +43,7 @@ import { solicitudTurnoService } from "../../../../services/solicitudTurnoServic
 
 // Componentes separados
 import Modal from "./components/Modal";
-import PeriodoDetalleCard from "./components/PeriodoDetalleCard";
+import PeriodoDetalleCard, { SeccionFechas } from "./components/PeriodoDetalleCard";
 import TablaSolicitudEspecialidades from "./components/TablaSolicitudEspecialidades";
 import VistaSolicitudEnviada from "./components/VistaSolicitudEnviada";
 
@@ -1073,9 +1073,9 @@ export default function FormularioSolicitudTurnos() {
             : `Detalle Solicitud #${solicitudActual?.idSolicitud ?? ""}`
         }
       >
-        <div className="p-6 space-y-6">
+        <div className="p-4 space-y-4">
           {/* Detalle periodo / solicitud (SIN COMBO cuando inicias) */}
-          {(periodoForzado || (modoModal === "EDITAR" && !!solicitudActual?.idPeriodo) || esSoloLectura) ? (
+          {!esSoloLectura && ((periodoForzado || (modoModal === "EDITAR" && !!solicitudActual?.idPeriodo)) ? (
             <PeriodoDetalleCard
               periodo={periodoSeleccionado}
               solicitud={solicitudActual}
@@ -1084,9 +1084,9 @@ export default function FormularioSolicitudTurnos() {
             />
           ) : (
             // flujo libre (si abres "Nueva solicitud" sin iniciar desde tabla)
-            <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-              <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-[#0A5BA9]" />
+            <div className="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+              <h2 className="text-sm font-bold text-slate-800 mb-3 flex items-center gap-2">
+                <Calendar className="w-4 h-4 text-[#0A5BA9]" />
                 Periodo de Solicitud
               </h2>
 
@@ -1098,13 +1098,13 @@ export default function FormularioSolicitudTurnos() {
               )}
 
               {periodos.length === 0 ? (
-                <div className="text-center py-8 text-slate-500">
-                  <Calendar className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                  <p>No hay periodos disponibles.</p>
+                <div className="text-center py-4 text-slate-500">
+                  <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">No hay periodos disponibles.</p>
                   <button
                     type="button"
                     onClick={cargarPeriodos}
-                    className="mt-3 px-4 py-2 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
+                    className="mt-2 px-3 py-1.5 text-sm rounded-lg border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50"
                   >
                     Reintentar
                   </button>
@@ -1116,7 +1116,7 @@ export default function FormularioSolicitudTurnos() {
                     const p = periodos.find((x) => Number(x.idPeriodo) === Number(e.target.value));
                     setPeriodoSeleccionado(p || null);
                   }}
-                  className="w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                 >
                   <option value="">Seleccione un periodo...</option>
                   {periodos.map((p) => (
@@ -1127,19 +1127,22 @@ export default function FormularioSolicitudTurnos() {
                 </select>
               )}
             </div>
-          )}
+          ))}
 
           {/* VER (solo lectura) - Vista completa de la solicitud */}
           {esSoloLectura && solicitudActual && (
-            <VistaSolicitudEnviada solicitud={solicitudActual} />
+            <>
+              <VistaSolicitudEnviada solicitud={solicitudActual} />
+              <SeccionFechas solicitud={solicitudActual} />
+            </>
           )}
 
           {/* EDITAR/NUEVA: Nueva interfaz de tabla */}
           {!esSoloLectura && (
             <>
               {!periodoSeleccionado?.idPeriodo ? (
-                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-xl flex items-center gap-2">
-                  <Info className="w-5 h-5" />
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-3 py-2 text-sm rounded-lg flex items-center gap-2">
+                  <Info className="w-4 h-4" />
                   Selecciona un periodo para registrar turnos.
                 </div>
               ) : (
@@ -1156,32 +1159,32 @@ export default function FormularioSolicitudTurnos() {
                   />
 
                   {/* Acciones */}
-                  <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                      <div className="text-sm text-slate-600">
+                  <div className="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
+                    <div className="flex flex-col md:flex-row items-center justify-between gap-3">
+                      <div className="text-xs text-slate-600">
                         Periodo:{" "}
                         <strong className="text-slate-900">{periodoSeleccionado?.descripcion || "—"}</strong>
-                        <div className="text-xs text-slate-500 mt-1">
+                        <div className="text-xs text-slate-500 mt-0.5">
                           * Guardar crea/actualiza INICIADO. Enviar deja la solicitud en solo lectura.
                         </div>
                       </div>
 
-                      <div className="flex gap-3">
+                      <div className="flex gap-2">
                         <button
                           onClick={handleGuardarBorrador}
                           disabled={saving}
-                          className="px-5 py-2.5 border-2 border-[#0A5BA9] text-[#0A5BA9] font-semibold rounded-xl hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
+                          className="px-4 py-2 text-sm border-2 border-[#0A5BA9] text-[#0A5BA9] font-semibold rounded-lg hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
                         >
-                          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Save className="w-5 h-5" />}
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                           Guardar Progreso
                         </button>
 
                         <button
                           onClick={handleEnviar}
                           disabled={saving || registros.length === 0}
-                          className="px-5 py-2.5 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="px-4 py-2 text-sm bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
-                          {saving ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+                          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                           Enviar Solicitud
                         </button>
                       </div>
