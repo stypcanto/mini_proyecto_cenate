@@ -31,13 +31,20 @@ export default function FullscreenImageViewer({
   onImageNavigation = () => {}
 }) {
   const [showFilterPanel, setShowFilterPanel] = useState(false);
+  const [userClosedPanel, setUserClosedPanel] = useState(false);
   const [currentZoom, setCurrentZoom] = useState(1);
   const transformRef = useRef(null);
 
   if (!isOpen || !imagenData) return null;
 
-  // Mostrar filtros automáticamente si zoom > 100%
-  const autoShowFilters = currentZoom > 1;
+  // Mostrar filtros automáticamente si zoom > 100% Y usuario no los cerró manualmente
+  const autoShowFilters = currentZoom > 1 && !userClosedPanel;
+
+  // Función para cerrar el panel manualmente
+  const handleClosePanel = () => {
+    setShowFilterPanel(false);
+    setUserClosedPanel(true);
+  };
 
   // Calcular transformaciones CSS
   const getImageStyle = () => {
@@ -228,7 +235,13 @@ export default function FullscreenImageViewer({
             <RotateCcw size={18} />
           </button>
           <button
-            onClick={() => setShowFilterPanel(!showFilterPanel)}
+            onClick={() => {
+              setShowFilterPanel(!showFilterPanel);
+              // Si el usuario abre manualmente, permitir cerrar y abrir libremente
+              if (!showFilterPanel) {
+                setUserClosedPanel(false);
+              }
+            }}
             className="p-2 hover:bg-gray-800 rounded transition-colors text-white"
             title="Filtros Avanzados"
           >
@@ -269,8 +282,9 @@ export default function FullscreenImageViewer({
             Filtros Avanzados {autoShowFilters && <span className="text-sm opacity-75">(Zoom {Math.round(currentZoom * 100)}%)</span>}
           </h3>
           <button
-            onClick={() => setShowFilterPanel(false)}
+            onClick={handleClosePanel}
             className="p-1 hover:bg-indigo-700 rounded transition-colors"
+            title="Cerrar panel de filtros"
           >
             <X size={20} />
           </button>
