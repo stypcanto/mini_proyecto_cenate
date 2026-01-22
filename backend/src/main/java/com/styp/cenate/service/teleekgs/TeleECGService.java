@@ -557,18 +557,13 @@ public class TeleECGService {
     }
 
     /**
-     * Evaluar una imagen ECG (v1.29.0 - Triaje Clínico Completo)
-     * Médico marca como NORMAL o ANORMAL + diagnósticos estructurados + contexto clínico
+     * Evaluar una imagen ECG (v3.0.0 - Nuevo)
+     * Médico marca como NORMAL o ANORMAL + descripción
      * Dataset para entrenamiento de modelos ML
      */
     public TeleECGImagenDTO evaluarImagen(Long idImagen, String evaluacion, String descripcion,
-                                         String urgencia, Object contextoClinico,
-                                         java.util.List<String> derivacionesSeleccionadas,
-                                         String motivoNoDiagnostico,
-                                         String diagnosticoRitmo, String diagnosticoPR,
-                                         String diagnosticoQRS,
                                          Long idUsuarioEvaluador, String ipCliente) {
-        log.info("📋 Evaluando ECG ID: {} - Evaluación: {} - v1.29.0 TRIAJE COMPLETO", idImagen, evaluacion);
+        log.info("📋 Evaluando ECG ID: {} - Evaluación: {}", idImagen, evaluacion);
 
         // 1. Validar entrada
         if (!evaluacion.equals("NORMAL") && !evaluacion.equals("ANORMAL")) {
@@ -595,93 +590,31 @@ public class TeleECGService {
             throw new ValidationException("ECG ha expirado y no puede ser evaluada");
         }
 
-        // 4. Setear datos de evaluación básica
+        // 4. Setear datos de evaluación
         imagen.setEvaluacion(evaluacion);
         imagen.setDescripcionEvaluacion(descripcion);
         imagen.setFechaEvaluacion(LocalDateTime.now());
-
-        // 5. ✅ v1.29.0: Setear urgencia
-        if (urgencia != null && !urgencia.isEmpty()) {
-            imagen.setUrgencia(urgencia);
-        }
-
-        // 6. ✅ v1.29.0: Setear contexto clínico como JSON
-        if (contextoClinico != null) {
-            try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                String contextoJson = mapper.writeValueAsString(contextoClinico);
-                imagen.setContextoClinico(contextoJson);
-            } catch (Exception e) {
-                log.warn("⚠️ Error al convertir contexto clínico a JSON: {}", e.getMessage());
-            }
-        }
-
-        // 7. ✅ v1.29.0: Setear derivaciones seleccionadas como JSON
-        if (derivacionesSeleccionadas != null && !derivacionesSeleccionadas.isEmpty()) {
-            try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                String derivacionesJson = mapper.writeValueAsString(derivacionesSeleccionadas);
-                imagen.setDerivacionesSeleccionadas(derivacionesJson);
-            } catch (Exception e) {
-                log.warn("⚠️ Error al convertir derivaciones a JSON: {}", e.getMessage());
-            }
-        }
-
-        // 8. ✅ v1.29.0: Setear motivo no diagnóstico
-        if (motivoNoDiagnostico != null && !motivoNoDiagnostico.isEmpty()) {
-            imagen.setMotivoNoDiagnostico(motivoNoDiagnostico);
-        }
-
-        // 9. ✅ v1.29.0 FINAL: Setear diagnósticos estructurados como JSON
-        if (diagnosticoRitmo != null || diagnosticoPR != null || diagnosticoQRS != null) {
-            try {
-                java.util.Map<String, String> diagnosticos = new java.util.HashMap<>();
-                if (diagnosticoRitmo != null) diagnosticos.put("ritmo", diagnosticoRitmo);
-                if (diagnosticoPR != null) diagnosticos.put("pr", diagnosticoPR);
-                if (diagnosticoQRS != null) diagnosticos.put("qrs", diagnosticoQRS);
-
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                String diagnosticosJson = mapper.writeValueAsString(diagnosticos);
-                imagen.setDiagnosticosEstructurados(diagnosticosJson);
-
-                log.debug("✅ Diagnósticos guardados - Ritmo: {}, PR: {}, QRS: {}",
-                    diagnosticoRitmo, diagnosticoPR, diagnosticoQRS);
-            } catch (Exception e) {
-                log.warn("⚠️ Error al convertir diagnósticos a JSON: {}", e.getMessage());
-            }
-        }
 
         // Buscar usuario evaluador
         if (idUsuarioEvaluador != null) {
             usuarioRepository.findById(idUsuarioEvaluador).ifPresent(imagen::setUsuarioEvaluador);
         }
 
-        // 10. Guardar cambios
+        // 5. Guardar cambios
         TeleECGImagen imagenActualizada = teleECGImagenRepository.save(imagen);
 
-        // 11. Registrar en auditoría
+        // 6. Registrar en auditoría
         registrarAuditoria(
             imagenActualizada,
             idUsuarioEvaluador,
             "EVALUAR",
             ipCliente,
-            String.format("ECG evaluada como %s - Triaje clínico completo (v1.29.0)", evaluacion)
+            String.format("ECG evaluada como %s", evaluacion)
         );
 
-        log.info("✅ Evaluación completa guardada: ID={}, Evaluación={}, Urgencia={}",
-            idImagen, evaluacion, urgencia);
+        log.info("✅ Evaluación guardada: ID={}, Evaluación={}", idImagen, evaluacion);
 
         return convertirADTO(imagenActualizada);
-    }
-
-    /**
-     * ✅ LEGACY OVERLOAD: Evaluar imagen con 5 parámetros (backwards compatibility)
-     * Mantiene compatibilidad con código existente que usa la firma anterior
-     */
-    public TeleECGImagenDTO evaluarImagen(Long idImagen, String evaluacion, String descripcion,
-                                         Long idUsuarioEvaluador, String ipCliente) {
-        return evaluarImagen(idImagen, evaluacion, descripcion, null, null, null, null,
-                           null, null, null, idUsuarioEvaluador, ipCliente);
     }
 
     /**

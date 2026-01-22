@@ -163,11 +163,6 @@ export default function ModalEvaluacionECG({
     intervaloQTprolongado: false,
   });
 
-  // ✅ v11.4.0: DIAGNÓSTICOS ESTRUCTURADOS (Ritmo, Intervalo PR, QRS)
-  const [diagnosticoRitmo, setDiagnosticoRitmo] = useState("");
-  const [diagnosticoPR, setDiagnosticoPR] = useState("");
-  const [diagnosticoQRS, setDiagnosticoQRS] = useState("");
-
   // ✅ v9.1.0: URGENCIA MÉDICA
   const [urgencia, setUrgencia] = useState("");
 
@@ -620,9 +615,6 @@ export default function ModalEvaluacionECG({
         contextoClinico,
         derivacionesSeleccionadas,
         motivoNoDiagnostico: tipoEvaluacion === "NO_DIAGNOSTICO" ? motivoNoDiagnostico : null, // ✅ v9.2.0: 8️⃣ Enviar motivo
-        diagnosticoRitmo,  // ✅ v1.29.0: Diagnósticos estructurados
-        diagnosticoPR,     // ✅ v1.29.0: Diagnósticos estructurados
-        diagnosticoQRS,    // ✅ v1.29.0: Diagnósticos estructurados
       });
       toast.success(`✅ Evaluación guardada correctamente como ${tipoEvaluacion}`, {
         duration: 3000,
@@ -697,10 +689,6 @@ export default function ModalEvaluacionECG({
     setDerivacionesSeleccionadas([]);
     // ✅ v9.2.0: 8️⃣ Resetear motivo de No Diagnóstico
     setMotivoNoDiagnostico("");
-    // ✅ v11.4.0: Resetear diagnósticos estructurados
-    setDiagnosticoRitmo("");
-    setDiagnosticoPR("");
-    setDiagnosticoQRS("");
     // ✅ v11.0.0: Resetear plan de seguimiento
     setPlanSeguimiento({
       recitarEnTresMeses: false,
