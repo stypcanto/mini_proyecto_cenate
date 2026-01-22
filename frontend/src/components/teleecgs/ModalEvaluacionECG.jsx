@@ -731,17 +731,6 @@ export default function ModalEvaluacionECG({
                 <button onClick={() => setShowFullscreen(true)} className="p-1.5 hover:bg-purple-200 rounded transition-colors text-purple-600 hover:text-purple-700" title="Expandir a pantalla completa (E)"><Maximize2 size={16} /></button>
               </div>
 
-              {/* Panel de Filtros Avanzados (Expandible v8.0.0) */}
-              {showFilterControls && (
-                <div className="mt-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200 shadow-md overflow-hidden max-h-96 overflow-y-auto">
-                  <FilterControlsPanel
-                    filters={filters}
-                    onFilterChange={updateFilter}
-                    onReset={resetFilters}
-                    onPresetSelect={applyPreset}
-                  />
-                </div>
-              )}
             </div>
 
             {/* Navegación Imágenes */}
@@ -986,6 +975,45 @@ export default function ModalEvaluacionECG({
           </div>
         </div>
       </div>
+
+      {/* 🎛️ FILTROS AVANZADOS - DRAWER OVERLAY (v10.1.0) */}
+      {showFilterControls && (
+        <>
+          {/* Backdrop oscuro con desenfoque */}
+          <div
+            className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 transition-opacity duration-300"
+            onClick={() => setShowFilterControls(false)}
+          />
+
+          {/* Drawer deslizable desde la derecha */}
+          <div className="fixed right-0 top-0 h-full w-80 bg-white shadow-2xl z-50 overflow-y-auto transform transition-transform duration-300 ease-in-out rounded-l-xl">
+            {/* Header del Drawer */}
+            <div className="sticky top-0 bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-4 py-3 flex items-center justify-between border-b border-indigo-700 shadow-md">
+              <div className="flex items-center gap-2">
+                <Filter size={18} />
+                <h3 className="text-sm font-bold">Filtros Avanzados</h3>
+              </div>
+              <button
+                onClick={() => setShowFilterControls(false)}
+                className="p-1.5 hover:bg-white/20 rounded-lg transition-colors duration-200"
+                title="Cerrar filtros"
+              >
+                <X size={18} />
+              </button>
+            </div>
+
+            {/* Contenido del Drawer */}
+            <div className="p-4">
+              <FilterControlsPanel
+                filters={filters}
+                onFilterChange={updateFilter}
+                onReset={resetFilters}
+                onPresetSelect={applyPreset}
+              />
+            </div>
+          </div>
+        </>
+      )}
 
       {/* FULLSCREEN VIEWER */}
       {showFullscreen && (
