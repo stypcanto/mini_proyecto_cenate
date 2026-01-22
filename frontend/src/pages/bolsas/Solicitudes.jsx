@@ -324,8 +324,8 @@ export default function Solicitudes() {
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen bg-slate-50 p-4">
+      <div className="w-full">
         {/* Header con título y botón */}
         <div className="mb-6 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -386,11 +386,11 @@ export default function Solicitudes() {
         {/* Sección de Lista de Pacientes */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
           {/* Encabezado de sección */}
-          <div className="p-6 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-800 mb-4">Lista de Pacientes</h2>
+          <div className="p-4 border-b border-gray-200">
+            <h2 className="text-lg font-bold text-gray-800 mb-3">Lista de Pacientes</h2>
 
             {/* Búsqueda y Filtros */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
               {/* Búsqueda */}
               <div className="relative md:col-span-2">
                 <Search size={20} className="absolute left-3 top-2.5 text-gray-400" />
@@ -399,7 +399,7 @@ export default function Solicitudes() {
                   placeholder="Buscar paciente, DNI o IPRESS..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  className="w-full pl-10 pr-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
                 />
               </div>
 
@@ -408,7 +408,7 @@ export default function Solicitudes() {
                 <select
                   value={filtroBolsa}
                   onChange={(e) => setFiltroBolsa(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none cursor-pointer"
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs appearance-none cursor-pointer"
                 >
                   <option value="todas">Todas las bolsas</option>
                   <option value="BOLSA 107">BOLSA 107</option>
@@ -427,14 +427,14 @@ export default function Solicitudes() {
                 <select
                   value={filtroRed}
                   onChange={(e) => setFiltroRed(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none cursor-pointer"
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs appearance-none cursor-pointer"
                 >
                   <option value="todas">Todas las redes</option>
                   {redesUnicas.map((red) => (
                     <option key={red} value={red}>{red}</option>
                   ))}
                 </select>
-                <ChevronDown size={18} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
+                <ChevronDown size={16} className="absolute right-2 top-2 text-gray-400 pointer-events-none" />
               </div>
 
               {/* Filtro Especialidades */}
@@ -442,14 +442,14 @@ export default function Solicitudes() {
                 <select
                   value={filtroEspecialidad}
                   onChange={(e) => setFiltroEspecialidad(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none cursor-pointer"
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs appearance-none cursor-pointer"
                 >
                   <option value="todas">Todas las especialidades</option>
                   {especialidadesUnicas.map((especialidad) => (
                     <option key={especialidad} value={especialidad}>{especialidad}</option>
                   ))}
                 </select>
-                <ChevronDown size={18} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
+                <ChevronDown size={16} className="absolute right-2 top-2 text-gray-400 pointer-events-none" />
               </div>
 
               {/* Filtro Estados */}
@@ -457,7 +457,7 @@ export default function Solicitudes() {
                 <select
                   value={filtroEstado}
                   onChange={(e) => setFiltroEstado(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm appearance-none cursor-pointer"
+                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs appearance-none cursor-pointer"
                 >
                   <option value="todos">Todos los estados</option>
                   <option value="pendiente">Pendiente</option>
@@ -465,7 +465,7 @@ export default function Solicitudes() {
                   <option value="atendido">Atendido</option>
                   <option value="observado">Observado</option>
                 </select>
-                <ChevronDown size={18} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
+                <ChevronDown size={16} className="absolute right-2 top-2 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -491,65 +491,65 @@ export default function Solicitudes() {
               </div>
             ) : solicitudesFiltradas.length > 0 ? (
               <table className="w-full">
-                <thead className="bg-blue-700 text-white">
+                <thead className="bg-blue-700 text-white sticky top-0">
                   <tr>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">
+                    <th className="px-3 py-2 text-left text-xs font-semibold">
                       <input
                         type="checkbox"
                         checked={selectedRows.size === solicitudesFiltradas.length && solicitudesFiltradas.length > 0}
                         onChange={toggleAllRows}
-                        className="w-5 h-5 cursor-pointer"
+                        className="w-4 h-4 cursor-pointer"
                       />
                     </th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">DNI</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">NOMBRE</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">TELÉFONO</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">ESPECIALIDAD</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">SEXO</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">RED</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">IPRESS</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">BOLSA</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">FECHA CITA</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">FECHA ASIGNACIÓN</th>
-                    <th className="px-6 py-4 text-left text-sm font-semibold">ESTADO</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold">DIFERIMIENTO</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold">SEMÁFORO</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold">ACCIONES</th>
-                    <th className="px-6 py-4 text-center text-sm font-semibold">USUARIOS</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">DNI</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">NOMBRE</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">TELÉFONO</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">ESPECIALIDAD</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">SEXO</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">RED</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">IPRESS</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">BOLSA</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">FECHA CITA</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">FECHA ASIGNACIÓN</th>
+                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">ESTADO</th>
+                    <th className="px-2 py-2 text-center text-xs font-semibold whitespace-nowrap">DIFERIMIENTO</th>
+                    <th className="px-2 py-2 text-center text-xs font-semibold whitespace-nowrap">SEMÁFORO</th>
+                    <th className="px-2 py-2 text-center text-xs font-semibold whitespace-nowrap">ACCIONES</th>
+                    <th className="px-2 py-2 text-center text-xs font-semibold whitespace-nowrap">USUARIOS</th>
                   </tr>
                 </thead>
                 <tbody>
                   {solicitudesFiltradas.map((solicitud) => (
-                    <tr key={solicitud.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                      <td className="px-6 py-4">
+                    <tr key={solicitud.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors text-xs">
+                      <td className="px-3 py-2">
                         <input
                           type="checkbox"
                           checked={selectedRows.has(solicitud.id)}
                           onChange={() => toggleRowSelection(solicitud.id)}
-                          className="w-5 h-5 cursor-pointer"
+                          className="w-4 h-4 cursor-pointer"
                         />
                       </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
-                      <td className="px-6 py-4 text-sm text-gray-800 font-medium">{solicitud.paciente}</td>
-                      <td className="px-6 py-4 text-sm text-gray-700 flex items-center gap-2">
-                        <Phone size={18} className="text-blue-500 flex-shrink-0" />
+                      <td className="px-2 py-2 font-semibold text-blue-600 whitespace-nowrap">{solicitud.dni}</td>
+                      <td className="px-2 py-2 text-gray-800 font-medium whitespace-nowrap">{solicitud.paciente}</td>
+                      <td className="px-2 py-2 text-gray-700 flex items-center gap-1 whitespace-nowrap">
+                        <Phone size={14} className="text-blue-500 flex-shrink-0" />
                         {solicitud.telefono}
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{solicitud.especialidad}</td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{solicitud.sexo}</td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{solicitud.red}</td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{solicitud.ipress}</td>
-                      <td className="px-6 py-4 text-sm">
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getBolsaColor(solicitud.bolsa)}`}>
+                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.especialidad}</td>
+                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.sexo}</td>
+                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.red}</td>
+                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.ipress}</td>
+                      <td className="px-2 py-2">
+                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getBolsaColor(solicitud.bolsa)}`}>
                           {solicitud.bolsa}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{solicitud.fechaCita}</td>
-                      <td className="px-6 py-4 text-sm text-gray-700">{solicitud.fechaAsignacion}</td>
-                      <td className="px-6 py-4 text-sm">
+                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.fechaCita}</td>
+                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.fechaAsignacion}</td>
+                      <td className="px-2 py-2">
                         <select
                           defaultValue={solicitud.estado}
-                          className={`px-3 py-1 rounded-full text-sm font-semibold border-0 cursor-pointer ${getEstadoBadge(solicitud.estado)}`}
+                          className={`px-2 py-0.5 rounded-full text-xs font-semibold border-0 cursor-pointer ${getEstadoBadge(solicitud.estado)}`}
                         >
                           <option value="pendiente">Pendiente</option>
                           <option value="citado">Citado</option>
@@ -557,48 +557,48 @@ export default function Solicitudes() {
                           <option value="observado">Observado</option>
                         </select>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`text-lg font-bold ${getDiferimiento(solicitud.diferimiento)}`}>
-                          {solicitud.diferimiento} días
+                      <td className="px-2 py-2 text-center whitespace-nowrap">
+                        <span className={`text-sm font-bold ${getDiferimiento(solicitud.diferimiento)}`}>
+                          {solicitud.diferimiento}d
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <Circle size={24} className={`mx-auto ${getSemaforoColor(solicitud.semaforo)}`} fill="currentColor" />
+                      <td className="px-2 py-2 text-center">
+                        <Circle size={18} className={`mx-auto ${getSemaforoColor(solicitud.semaforo)}`} fill="currentColor" />
                       </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-2 py-2 text-center">
                         <button
-                          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-lg transition-colors text-sm font-semibold shadow-sm hover:shadow-md"
+                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded text-xs font-semibold whitespace-nowrap"
                           title="Cambiar celular"
                         >
-                          <Phone size={18} className="font-bold" />
-                          Cambiar celular
+                          <Phone size={14} />
+                          Cambiar
                         </button>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center gap-2">
+                      <td className="px-2 py-2 text-center">
+                        <div className="flex justify-center gap-1">
                           <button
-                            className="p-3 hover:bg-blue-100 rounded-lg transition-colors text-blue-600 hover:text-blue-700 font-semibold"
+                            className="p-2 hover:bg-blue-100 rounded transition-colors text-blue-600 hover:text-blue-700"
                             title="Ver"
                           >
-                            <Eye size={22} />
+                            <Eye size={16} />
                           </button>
                           <button
-                            className="p-3 hover:bg-green-100 rounded-lg transition-colors text-green-600 hover:text-green-700 font-semibold"
+                            className="p-2 hover:bg-green-100 rounded transition-colors text-green-600 hover:text-green-700"
                             title="Agregar usuario"
                           >
-                            <UserPlus size={22} />
+                            <UserPlus size={16} />
                           </button>
                           <button
-                            className="p-3 hover:bg-purple-100 rounded-lg transition-colors text-purple-600 hover:text-purple-700 font-semibold"
+                            className="p-2 hover:bg-purple-100 rounded transition-colors text-purple-600 hover:text-purple-700"
                             title="Usuarios"
                           >
-                            <Users size={22} />
+                            <Users size={16} />
                           </button>
                           <button
-                            className="p-3 hover:bg-orange-100 rounded-lg transition-colors text-orange-600 hover:text-orange-700 font-semibold"
+                            className="p-2 hover:bg-orange-100 rounded transition-colors text-orange-600 hover:text-orange-700"
                             title="Compartir"
                           >
-                            <FileText size={22} />
+                            <FileText size={16} />
                           </button>
                         </div>
                       </td>
