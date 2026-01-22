@@ -8,43 +8,9 @@ import { formatFecha, estadoBadgeClass } from "../utils/helpers";
  * =======================================================================
  */
 export default function PeriodoDetalleCard({ periodo, solicitud, modoModal, periodoForzado }) {
-  const estado = solicitud?.estado || (modoModal === "NUEVA" ? "BORRADOR" : "—");
-  const totalTurnos = solicitud?.totalTurnosSolicitados || 0;
-  const totalEspecialidades = solicitud?.totalEspecialidades || 0;
-
-  return (
-    <>
-      <div className="bg-white rounded-lg shadow-sm border border-slate-200">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-slate-50 to-slate-100 px-3 py-2 border-b border-slate-200">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="bg-[#0A5BA9] bg-opacity-10 p-1 rounded">
-                <FileText className="w-3.5 h-3.5 text-[#0A5BA9]" />
-              </div>
-              <h2 className="text-sm font-bold text-slate-800">Detalle de la Solicitud</h2>
-              {solicitud?.idSolicitud && (
-                <span className="text-xs text-slate-500">• #{solicitud.idSolicitud}</span>
-              )}
-            </div>
-            
-            <div className="flex gap-1.5 items-center">
-              <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold ${estadoBadgeClass(estado)}`}>
-                {estado}
-              </span>
-              {periodoForzado && (
-                <span className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold border border-amber-200 bg-amber-50 text-amber-800">
-                  <Lock className="w-3 h-3" />
-                  Fijo
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-      </div>
-    </>
-  );
+  // Componente simplificado - ya no muestra la sección de detalle
+  // El detalle ahora está en el título del modal
+  return null;
 }
 
 // Componente separado para las fechas que se renderiza después de la tabla

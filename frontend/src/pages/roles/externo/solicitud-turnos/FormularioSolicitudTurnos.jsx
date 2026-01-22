@@ -1006,9 +1006,9 @@ export default function FormularioSolicitudTurnos() {
           {filasPorPeriodo.length === 0 ? (
             <div className="text-center py-6 text-slate-500 text-sm">No hay periodos para los filtros seleccionados.</div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto max-h-[400px] overflow-y-auto">
               <table className="min-w-full border-collapse">
-              <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
+              <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] sticky top-0 z-10">
                 <tr>
                   <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Año</th>
                   <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Periodo</th>
@@ -1091,11 +1091,47 @@ export default function FormularioSolicitudTurnos() {
           modoModal === "NUEVA"
             ? "Nueva Solicitud"
             : modoModal === "EDITAR"
-            ? `Editar Solicitud #${solicitudActual?.idSolicitud ?? ""}`
+            ? (
+              <div className="flex items-center gap-3">
+                <span>Detalle de Solicitud #{solicitudActual?.idSolicitud ?? ""}</span>
+                <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-bold ${estadoBadgeClass(solicitudActual?.estado || "INICIADO")}`}>
+                  {solicitudActual?.estado || "INICIADO"}
+                </span>
+              </div>
+            )
             : `Detalle Solicitud #${solicitudActual?.idSolicitud ?? ""}`
         }
       >
         <div className="p-4 space-y-4">
+          {/* Estadísticas de la solicitud (en modo EDITAR) */}
+          {modoModal === "EDITAR" && solicitudActual && (
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-lg p-3 border border-purple-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="bg-purple-500 p-1.5 rounded">
+                    <FileText className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-[10px] font-bold text-purple-700 uppercase tracking-wide">Especialidades</span>
+                </div>
+                <p className="text-2xl font-bold text-purple-900 ml-8">
+                  {solicitudActual?.totalEspecialidades || 0}
+                </p>
+              </div>
+
+              <div className="bg-gradient-to-br from-cyan-50 to-cyan-100 rounded-lg p-3 border border-cyan-200">
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="bg-cyan-500 p-1.5 rounded">
+                    <Calendar className="w-3.5 h-3.5 text-white" />
+                  </div>
+                  <span className="text-[10px] font-bold text-cyan-700 uppercase tracking-wide">Total Turnos</span>
+                </div>
+                <p className="text-2xl font-bold text-cyan-900 ml-8">
+                  {solicitudActual?.totalTurnosSolicitados || 0}
+                </p>
+              </div>
+            </div>
+          )}
+
           {/* Detalle periodo / solicitud (SIN COMBO cuando inicias) */}
           {!esSoloLectura && ((periodoForzado || (modoModal === "EDITAR" && !!solicitudActual?.idPeriodo)) ? (
             <PeriodoDetalleCard
@@ -1178,29 +1214,12 @@ export default function FormularioSolicitudTurnos() {
                     onAutoGuardarFechas={handleAutoGuardarFechas}
                     soloLectura={false}
                     mostrarEncabezado={false}
-                  />
-
-                  {/* Sección de Fechas en modo EDITAR */}
-                  {modoModal === "EDITAR" && solicitudActual && (
-                    <SeccionFechas solicitud={solicitudActual} />
-                  )}
-
-                  {/* Acciones */}
-                  <div className="bg-white rounded-xl shadow-sm p-4 border border-slate-200">
-                    <div className="flex flex-col md:flex-row items-center justify-between gap-3">
-                      <div className="text-xs text-slate-600">
-                        Periodo:{" "}
-                        <strong className="text-slate-900">{periodoSeleccionado?.descripcion || "—"}</strong>
-                        <div className="text-xs text-slate-500 mt-0.5">
-                          * Guardar crea/actualiza INICIADO. Enviar deja la solicitud en solo lectura.
-                        </div>
-                      </div>
-
-                      <div className="flex gap-2">
+                    botonesAccion={
+                      <>
                         <button
                           onClick={handleGuardarBorrador}
                           disabled={saving}
-                          className="px-4 py-2 text-sm border-2 border-[#0A5BA9] text-[#0A5BA9] font-semibold rounded-lg hover:bg-blue-50 transition-all flex items-center gap-2 disabled:opacity-50"
+                          className="w-full px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
                         >
                           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                           Guardar Progreso
@@ -1209,14 +1228,19 @@ export default function FormularioSolicitudTurnos() {
                         <button
                           onClick={handleEnviar}
                           disabled={saving || registros.length === 0}
-                          className="px-4 py-2 text-sm bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="w-full px-4 py-2 text-sm bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                           Enviar Solicitud
                         </button>
-                      </div>
-                    </div>
-                  </div>
+                      </>
+                    }
+                  />
+
+                  {/* Sección de Fechas en modo EDITAR */}
+                  {modoModal === "EDITAR" && solicitudActual && (
+                    <SeccionFechas solicitud={solicitudActual} />
+                  )}
                 </>
               )}
             </>
