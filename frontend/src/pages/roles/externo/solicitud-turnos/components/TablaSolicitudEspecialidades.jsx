@@ -5,7 +5,7 @@
 // ========================================================================
 
 import React, { useState, useMemo, useEffect } from "react";
-import { Check, X, Calendar, FileText } from "lucide-react";
+import { Check, X, Calendar, FileText, Search, Filter } from "lucide-react";
 import ModalSeleccionarFechas from "./ModalSeleccionarFechas";
 
 // Componente Switch personalizado
@@ -112,6 +112,10 @@ export default function TablaSolicitudEspecialidades({
   const [modalFechasOpen, setModalFechasOpen] = useState(false);
   const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState(null);
 
+  // Filtros
+  const [filtroEspecialidad, setFiltroEspecialidad] = useState("");
+  const [filtroEstado, setFiltroEstado] = useState("TODAS"); // TODAS | REGISTRADAS | NO_REGISTRADAS
+
   // Actualizar padre cuando cambian los datos
   const notificarCambio = (nuevosDatos) => {
     // Pasar TODOS los registros, incluyendo los que tienen turnos = 0
@@ -202,15 +206,38 @@ export default function TablaSolicitudEspecialidades({
     return especialidades.map((esp) => {
       const dato = datos[esp.idServicio] || null;
       const total = calcularTotal(esp.idServicio);
+      const tieneRegistro = dato && total > 0;
 
       return {
         ...esp,
         dato,
         total,
+        tieneRegistro,
         diasAsignados: dato ? total : 0, // Simulación - en realidad vendría del backend
       };
     });
   }, [especialidades, datos]);
+
+  // Especialidades filtradas
+  const especialidadesFiltradas = useMemo(() => {
+    return especialidadesConDatos.filter((esp) => {
+      // Filtro por texto (especialidad)
+      const coincideTexto = esp.descServicio?.toLowerCase().includes(filtroEspecialidad.toLowerCase());
+      
+      // Filtro por estado basado en si está guardada en BD (idDetalle), no en el total actual
+      let coincideEstado = true;
+      if (filtroEstado === "REGISTRADAS") {
+        // Registradas: tienen idDetalle (ya guardadas en BD)
+        coincideEstado = esp.dato?.idDetalle != null;
+      } else if (filtroEstado === "PENDIENTES") {
+        // Pendientes: no tienen idDetalle (sin guardar en BD)
+        coincideEstado = !esp.dato?.idDetalle;
+      }
+      // TODAS: no filtra
+
+      return coincideTexto && coincideEstado;
+    });
+  }, [especialidadesConDatos, filtroEspecialidad, filtroEstado]);
 
   return (
     <div className="space-y-4">
@@ -235,6 +262,42 @@ export default function TablaSolicitudEspecialidades({
 
       {/* Tabla */}
       <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+        {/* Filtros */}
+        <div className="bg-slate-50 p-4 border-b border-slate-200">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {/* Filtro por especialidad */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Buscar especialidad..."
+                value={filtroEspecialidad}
+                onChange={(e) => setFiltroEspecialidad(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+              />
+            </div>
+
+            {/* Filtro por estado */}
+            <div className="relative">
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <select
+                value={filtroEstado}
+                onChange={(e) => setFiltroEstado(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 text-sm border border-slate-200 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] appearance-none bg-white"
+              >
+                <option value="TODAS">Todas</option>
+                <option value="REGISTRADAS">Registradas</option>
+                <option value="PENDIENTES">Pendientes</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Contador de resultados */}
+          <div className="mt-2 text-xs text-slate-600">
+            Mostrando {especialidadesFiltradas.length} de {especialidadesConDatos.length} especialidades
+          </div>
+        </div>
+
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead className="bg-slate-50">
@@ -271,7 +334,7 @@ export default function TablaSolicitudEspecialidades({
             </thead>
 
             <tbody className="divide-y divide-slate-200">
-              {especialidadesConDatos.map((esp) => {
+              {especialidadesFiltradas.map((esp) => {
                 const d = esp.dato;
                 const total = esp.total;
 
@@ -280,15 +343,15 @@ export default function TablaSolicitudEspecialidades({
                     {/* Especialidad */}
                     <td className="px-4 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="bg-purple-100 p-2 rounded-lg">
-                          <Check className="w-4 h-4 text-purple-600" />
+                        <div className={`p-2 rounded-lg ${esp.dato?.idDetalle ? 'bg-purple-100' : 'bg-slate-100'}`}>
+                          <Check className={`w-4 h-4 ${esp.dato?.idDetalle ? 'text-purple-600' : 'text-slate-400'}`} />
                         </div>
                         <div>
                           <div className="font-semibold text-slate-800">
                             {esp.descServicio}
                           </div>
                           <div className="text-xs text-slate-500">
-                            {esp.diasAsignados} día(s)
+                            {esp.diasAsignados} día(s) • {esp.dato?.idDetalle ? 'Registrada' : 'Pendiente'}
                           </div>
                         </div>
                       </div>
@@ -448,16 +511,22 @@ export default function TablaSolicitudEspecialidades({
           turnoTarde={datos[especialidadSeleccionada.idServicio]?.turnoTarde || 0}
           idDetalle={datos[especialidadSeleccionada.idServicio]?.idDetalle || null}
           fechasIniciales={datos[especialidadSeleccionada.idServicio]?.fechas || []}
+          periodo={periodo}
           onConfirm={(fechasSeleccionadas) => {
             console.log("📅 Fechas seleccionadas en modal:", fechasSeleccionadas);
+            console.log("🔧 onAutoGuardarFechas existe?", !!onAutoGuardarFechas);
+            console.log("🔧 especialidadSeleccionada:", especialidadSeleccionada);
             
             // Actualizar las fechas en los datos
             actualizarCampo(especialidadSeleccionada.idServicio, "fechas", fechasSeleccionadas);
             
             // Auto-guardar si existe el callback - pasar las fechas directamente
             if (onAutoGuardarFechas) {
+              console.log("🚀 Llamando a onAutoGuardarFechas...");
               // NO esperar el tick - llamar inmediatamente con las fechas
               onAutoGuardarFechas(especialidadSeleccionada.idServicio, fechasSeleccionadas);
+            } else {
+              console.warn("⚠️ onAutoGuardarFechas NO está definido");
             }
             
             setModalFechasOpen(false);

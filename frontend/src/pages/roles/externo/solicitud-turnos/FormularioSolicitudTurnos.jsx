@@ -235,7 +235,7 @@ export default function FormularioSolicitudTurnos() {
     setError(null);
     setSuccess(null);
 
-    const modo = rowSolicitud.estado === "BORRADOR" ? "EDITAR" : "VER";
+    const modo = rowSolicitud.estado === "INICIADO" ? "EDITAR" : "VER";
     setModoModal(modo);
     setOpenFormModal(true);
     setLoading(true);
@@ -257,12 +257,12 @@ export default function FormularioSolicitudTurnos() {
       );
 
       // VER: solo lectura (no armamos calendario)
-      if (solicitud.estado !== "BORRADOR") {
+      if (solicitud.estado !== "INICIADO") {
         setRegistros([]);
         return;
       }
 
-      // EDITAR BORRADOR: Cargar detalles de la solicitud
+      // EDITAR INICIADO: Cargar detalles de la solicitud
       if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
         const registrosExistentes = solicitud.detalles.map((det) => ({
           idDetalle: det.idDetalle || null,          // ID del detalle para ediciones
@@ -478,6 +478,9 @@ export default function FormularioSolicitudTurnos() {
       
       // Refrescar la tabla de solicitudes en segundo plano
       refrescarMisSolicitudes();
+      
+      // Retornar el resultado para uso posterior
+      return resultado;
     } catch (err) {
       console.error(err);
       setError(err?.message || "Error al guardar el progreso");
@@ -486,35 +489,125 @@ export default function FormularioSolicitudTurnos() {
     }
   };
 
-  // Auto-guardar fechas cuando se confirman en el modal (guardado silencioso)
+  // Auto-guardar fechas cuando se confirman en el modal
   const handleAutoGuardarFechas = async (idServicio, fechasActualizadas) => {
-    // Solo auto-guardar si ya existe una solicitud
-    if (!solicitudActual?.idSolicitud || !periodoSeleccionado?.idPeriodo) {
-      console.warn("⚠️ No se puede auto-guardar: falta solicitud o periodo");
+    console.log("%c═══════════════════════════════════════════════════════", "color: #DC2626; font-weight: bold; font-size: 14px");
+    console.log("%c🚀 INICIO handleAutoGuardarFechas", "color: #DC2626; font-weight: bold; font-size: 14px");
+    console.log("%c═══════════════════════════════════════════════════════", "color: #DC2626; font-weight: bold; font-size: 14px");
+    console.log("📋 Parámetros recibidos:", { 
+      idServicio, 
+      fechasCount: fechasActualizadas?.length,
+      fechasActualizadas,
+      solicitudActual: solicitudActual?.idSolicitud,
+      periodoSeleccionado: periodoSeleccionado?.idPeriodo,
+      registrosCount: registros.length
+    });
+
+    // Validar que exista periodo
+    if (!periodoSeleccionado?.idPeriodo) {
+      console.error("❌ ERROR: No hay periodo seleccionado");
+      setError("No se puede guardar las fechas. Primero selecciona un periodo.");
+      setTimeout(() => setError(null), 5000);
       return;
     }
+    console.log("✅ Periodo validado:", periodoSeleccionado);
 
     // Buscar el detalle específico de la especialidad
     const detalleEspecialidad = registros.find(r => r.idServicio === idServicio);
+    console.log("🔍 Buscando detalle de especialidad:", idServicio);
+    console.log("📦 Registros disponibles:", registros);
+    console.log("🎯 Detalle encontrado:", detalleEspecialidad);
+    
     if (!detalleEspecialidad) {
-      console.warn("⚠️ No se encontró el detalle de la especialidad:", idServicio);
+      console.error("❌ ERROR: No se encontró el detalle de la especialidad:", idServicio);
+      console.log("📋 IDs disponibles:", registros.map(r => r.idServicio));
+      setError("No se encontró la especialidad en los registros.");
+      setTimeout(() => setError(null), 5000);
       return;
     }
+    console.log("✅ Detalle de especialidad encontrado");
+
+    // Validar que tenga turnos configurados
+    const turnoManana = Number(detalleEspecialidad.turnoManana || 0);
+    const turnoTarde = Number(detalleEspecialidad.turnoTarde || 0);
+    const turnoTM = Number(detalleEspecialidad.turnoTM || 0);
+    const totalTurnos = turnoTM + turnoManana + turnoTarde;
+    
+    console.log("🔢 Turnos configurados:", { turnoTM, turnoManana, turnoTarde, totalTurnos });
+
+    if (totalTurnos === 0) {
+      console.error("❌ ERROR: No hay turnos configurados");
+      setError("Primero debes configurar los turnos (TM, Mañana o Tarde) antes de agregar fechas.");
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+    console.log("✅ Turnos validados correctamente");
+
+    // Variable para almacenar el ID de la solicitud
+    let idSolicitudActual = solicitudActual?.idSolicitud;
+    console.log("🆔 ID Solicitud actual:", idSolicitudActual);
+
+    // Si no existe la solicitud, crearla automáticamente primero
+    if (!idSolicitudActual) {
+      console.log("%c📝 CREANDO SOLICITUD AUTOMÁTICAMENTE...", "color: #F59E0B; font-weight: bold; font-size: 14px");
+      console.log("📋 Registros actuales antes de guardar:", registros);
+      
+      try {
+        const solicitudCreada = await handleGuardarBorrador();
+        console.log("%c✅ SOLICITUD CREADA EXITOSAMENTE", "color: #10B981; font-weight: bold; font-size: 14px");
+        console.log("📦 Resultado completo:", solicitudCreada);
+        
+        if (!solicitudCreada?.idSolicitud) {
+          console.error("❌ ERROR: No se obtuvo idSolicitud después de guardar");
+          throw new Error("No se obtuvo idSolicitud después de guardar");
+        }
+        
+        idSolicitudActual = solicitudCreada.idSolicitud;
+        console.log("🆔 Nuevo ID Solicitud:", idSolicitudActual);
+        
+        // Actualizar el estado local con la solicitud creada
+        setSolicitudActual(solicitudCreada);
+        console.log("✅ Estado solicitudActual actualizado");
+        
+        // Esperar un momento para que se actualice el estado
+        console.log("⏳ Esperando actualización de estado...");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log("✅ Estado actualizado");
+        
+      } catch (error) {
+        console.error("%c❌ ERROR AL CREAR SOLICITUD", "color: #DC2626; font-weight: bold; font-size: 14px");
+        console.error("Error completo:", error);
+        const mensaje = error?.message || "Error desconocido";
+        setError(`No se pudo crear la solicitud: ${mensaje}. Guarda el borrador manualmente primero.`);
+        setTimeout(() => setError(null), 5000);
+        return;
+      }
+    } else {
+      console.log("✅ Ya existe solicitud, ID:", idSolicitudActual);
+    }
+
+    // Verificar que tenemos el ID de la solicitud
+    if (!idSolicitudActual) {
+      console.error("❌ ERROR CRÍTICO: No se pudo obtener idSolicitud");
+      setError("No se puede guardar las fechas. Primero guarda el borrador de la solicitud.");
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+    console.log("✅ Validación final: idSolicitud =", idSolicitudActual);
 
     try {
-      const turnoManana = Number(detalleEspecialidad.turnoManana || 0);
-      const turnoTarde = Number(detalleEspecialidad.turnoTarde || 0);
-      const turnoTM = Number(detalleEspecialidad.turnoTM || 0);
-
+      console.log("%c📤 PREPARANDO PAYLOAD PARA GUARDAR FECHAS", "color: #3B82F6; font-weight: bold; font-size: 14px");
+      
       // Usar las fechas que se acaban de actualizar (parámetro) en lugar del estado
       const fechasDetalle = (fechasActualizadas || []).map(f => ({
         fecha: f.fecha,
         bloque: f.turno === "MANANA" ? "MANANA" : "TARDE"
       }));
 
-      console.log("📅 Fechas a guardar:", fechasDetalle);
+      console.log("📅 Fechas transformadas:", fechasDetalle);
 
       const detallePayload = {
+        idPeriodo: periodoSeleccionado.idPeriodo,
         idServicio: detalleEspecialidad.idServicio,
         requiere: true,
         turnos: turnoTM + turnoManana + turnoTarde,
@@ -533,11 +626,33 @@ export default function FormularioSolicitudTurnos() {
         detallePayload.idDetalle = detalleEspecialidad.idDetalle;
       }
 
-      console.log("📤 Enviando payload:", JSON.stringify(detallePayload, null, 2));
+      console.log("📤 Enviando payload a /solicitudes-turno/" + idSolicitudActual + "/detalle:", JSON.stringify(detallePayload, null, 2));
+      console.log("%c╔═══════════════════════════════════════════════════════╗", "color: #0A5BA9; font-weight: bold");
+      console.log("%c║        📤 PAYLOAD GUARDAR FECHA - DETALLE            ║", "color: #0A5BA9; font-weight: bold");
+      console.log("%c╚═══════════════════════════════════════════════════════╝", "color: #0A5BA9; font-weight: bold");
+      console.log("%c🌐 URL:", "color: #2563EB; font-weight: bold", `POST /solicitudes-turno/${idSolicitudActual}/detalle`);
+      console.log("%c📦 Payload:", "color: #16A34A; font-weight: bold");
+      console.table({
+        idPeriodo: detallePayload.idPeriodo,
+        idServicio: detallePayload.idServicio,
+        idDetalle: detallePayload.idDetalle || "NUEVO",
+        turnos: detallePayload.turnos,
+        turnoTM: detallePayload.turnoTM,
+        turnoManana: detallePayload.turnoManana,
+        turnoTarde: detallePayload.turnoTarde,
+        tc: detallePayload.tc,
+        tl: detallePayload.tl,
+        fechasCount: detallePayload.fechasDetalle.length
+      });
+      console.log("%c📅 Fechas Detalle:", "color: #CA8A04; font-weight: bold");
+      console.table(detallePayload.fechasDetalle);
+      console.log("%c📋 JSON Completo:", "color: #9333EA; font-weight: bold");
+      console.log(JSON.stringify(detallePayload, null, 2));
+      console.log("%c═══════════════════════════════════════════════════════", "color: #0A5BA9; font-weight: bold");
 
       // Guardar solo este detalle
       const resultado = await solicitudTurnoService.guardarDetalleEspecialidad(
-        solicitudActual.idSolicitud,
+        idSolicitudActual,
         detallePayload
       );
       
@@ -553,9 +668,49 @@ export default function FormularioSolicitudTurnos() {
       }
       
       console.log("✅ Fechas guardadas para especialidad:", idServicio, "- idDetalle:", resultado?.idDetalle);
+      
+      // Recargar la solicitud completa para actualizar los datos
+      if (idSolicitudActual) {
+        try {
+          const solicitudActualizada = await solicitudTurnoService.obtenerPorId(idSolicitudActual);
+          setSolicitudActual(solicitudActualizada);
+          
+          // Actualizar registros locales con los detalles actualizados
+          if (solicitudActualizada.detalles && Array.isArray(solicitudActualizada.detalles)) {
+            setRegistros(prev => {
+              return prev.map(registro => {
+                const detalleActualizado = solicitudActualizada.detalles.find(d => d.idServicio === registro.idServicio);
+                if (detalleActualizado) {
+                  return {
+                    ...registro,
+                    idDetalle: detalleActualizado.idDetalle,
+                    fechas: (detalleActualizado.fechasDetalle || []).map(f => ({
+                      fecha: f.fecha,
+                      turno: f.bloque,
+                      turnos: f.turnos || 0
+                    })),
+                    observacion: detalleActualizado.observacion
+                  };
+                }
+                return registro;
+              });
+            });
+          }
+          
+          console.log("🔄 Solicitud y registros recargados después de guardar fechas");
+        } catch (reloadErr) {
+          console.error("⚠️ Error al recargar solicitud:", reloadErr);
+        }
+      }
+      
+      // Mostrar mensaje de éxito
+      setSuccess(`✅ Fechas guardadas correctamente (${fechasDetalle.length} fecha(s))`);
+      setTimeout(() => setSuccess(null), 3000);
     } catch (err) {
       console.error("❌ Error al auto-guardar fechas:", err);
-      // No mostrar error al usuario, es guardado en segundo plano
+      const mensajeError = err?.response?.data?.message || err?.message || "Error desconocido";
+      setError(`Error al guardar las fechas: ${mensajeError}`);
+      setTimeout(() => setError(null), 5000);
     }
   };
 
@@ -644,67 +799,67 @@ export default function FormularioSolicitudTurnos() {
       )}
 
       {/* Datos del Usuario */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-        <h2 className="text-lg font-bold text-slate-800 mb-4 flex items-center gap-2">
-          <User className="w-5 h-5 text-[#0A5BA9]" />
+      <div className="bg-white rounded-xl shadow-lg p-4 border border-slate-200">
+        <h2 className="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
+          <User className="w-4 h-4 text-[#0A5BA9]" />
           Datos de Contacto
-          <span className="text-xs font-normal text-slate-500 ml-2">(auto-detectados)</span>
+          <span className="text-[10px] font-normal text-slate-500 ml-2">(auto-detectados)</span>
         </h2>
 
         {miIpress ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="p-4 bg-slate-50 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <Building2 className="w-4 h-4" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
+                <Building2 className="w-3 h-3" />
                 Red / IPRESS
               </div>
-              <p className="font-semibold text-slate-800">{miIpress.nombreRed || "Sin Red"}</p>
-              <p className="text-sm text-slate-600">{miIpress.nombreIpress || "Sin IPRESS"}</p>
+              <p className="font-semibold text-slate-800 text-sm">{miIpress.nombreRed || "Sin Red"}</p>
+              <p className="text-xs text-slate-600">{miIpress.nombreIpress || "Sin IPRESS"}</p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <User className="w-4 h-4" />
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
+                <User className="w-3 h-3" />
                 Coordinador / Usuario
               </div>
-              <p className="font-semibold text-slate-800">{miIpress.nombreCompleto || "N/A"}</p>
-              <p className="text-sm text-slate-600">DNI: {miIpress.dniUsuario || "N/A"}</p>
+              <p className="font-semibold text-slate-800 text-sm">{miIpress.nombreCompleto || "N/A"}</p>
+              <p className="text-xs text-slate-600">DNI: {miIpress.dniUsuario || "N/A"}</p>
             </div>
 
-            <div className="p-4 bg-slate-50 rounded-xl">
-              <div className="flex items-center gap-2 text-slate-500 text-sm mb-1">
-                <Mail className="w-4 h-4" />
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
+                <Mail className="w-3 h-3" />
                 Contacto
               </div>
-              <p className="font-semibold text-slate-800 text-sm">{miIpress.emailContacto || "Sin email"}</p>
-              <p className="text-sm text-slate-600 flex items-center gap-1">
+              <p className="font-semibold text-slate-800 text-xs">{miIpress.emailContacto || "Sin email"}</p>
+              <p className="text-xs text-slate-600 flex items-center gap-1">
                 <Phone className="w-3 h-3" />
                 {miIpress.telefonoContacto || "Sin teléfono"}
               </p>
             </div>
           </div>
         ) : (
-          <div className="text-center py-4 text-slate-500">No se encontraron datos de IPRESS asociados.</div>
+          <div className="text-center py-3 text-slate-500 text-sm">No se encontraron datos de IPRESS asociados.</div>
         )}
 
         {miIpress && !miIpress.datosCompletos && (
-          <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-yellow-800 text-sm flex items-center gap-2">
-            <Info className="w-4 h-4" />
+          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-xs flex items-center gap-2">
+            <Info className="w-3 h-3" />
             {miIpress.mensajeValidacion}
           </div>
         )}
       </div>
 
       {/* Tabla por Periodo + Filtros */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 border border-slate-200">
-        <div className="flex flex-col gap-4 mb-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+      <div className="bg-white rounded-xl shadow-lg p-4 border border-slate-200">
+        <div className="flex flex-col gap-3 mb-3">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div>
-              <h2 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <FileText className="w-5 h-5 text-[#0A5BA9]" />
+              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
+                <FileText className="w-4 h-4 text-[#0A5BA9]" />
                 Solicitudes por Periodo
               </h2>
-              <p className="text-sm text-slate-500">
+              <p className="text-xs text-slate-500">
                 Usa <strong>Iniciar</strong> para registrar turnos por calendario.
               </p>
             </div>
@@ -713,25 +868,25 @@ export default function FormularioSolicitudTurnos() {
               <button
                 type="button"
                 onClick={handleRefreshAll}
-                className="px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 font-semibold hover:bg-slate-50 flex items-center gap-2"
+                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 flex items-center gap-1.5"
                 disabled={loadingTabla || loadingPeriodos}
               >
                 {(loadingTabla || loadingPeriodos) ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3 h-3 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3 h-3" />
                 )}
                 Actualizar
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
             {/* Tipo periodos */}
             <div className="md:col-span-3">
-              <label className="text-sm font-semibold text-slate-700">Tipo de periodos</label>
+              <label className="text-xs font-semibold text-slate-700">Tipo de periodos</label>
               <select
-                className="mt-1 w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                className="mt-1 w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                 value={tipoPeriodos}
                 onChange={(e) => {
                   setTipoPeriodos(e.target.value);
@@ -742,14 +897,13 @@ export default function FormularioSolicitudTurnos() {
                 <option value="VIGENTES">Vigentes</option>
                 <option value="ACTIVOS">Activos</option>
               </select>
-              <div className="text-xs text-slate-500 mt-1">* según tus endpoints /vigentes y /activos</div>
             </div>
 
             {/* Año */}
             <div className="md:col-span-3">
-              <label className="text-sm font-semibold text-slate-700">Año</label>
+              <label className="text-xs font-semibold text-slate-700">Año</label>
               <select
-                className="mt-1 w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                className="mt-1 w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                 value={filtroAnio}
                 onChange={(e) => {
                   setFiltroAnio(e.target.value);
@@ -766,9 +920,9 @@ export default function FormularioSolicitudTurnos() {
 
             {/* Periodo */}
             <div className="md:col-span-4">
-              <label className="text-sm font-semibold text-slate-700">Periodo</label>
+              <label className="text-xs font-semibold text-slate-700">Periodo</label>
               <select
-                className="mt-1 w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                className="mt-1 w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                 value={filtroPeriodoId}
                 onChange={(e) => setFiltroPeriodoId(e.target.value)}
                 disabled={loadingPeriodos}
@@ -780,43 +934,39 @@ export default function FormularioSolicitudTurnos() {
                   </option>
                 ))}
               </select>
-              <div className="text-xs text-slate-500 mt-1">* Al elegir año, se listan periodos relacionados</div>
             </div>
 
             {/* Estado */}
             <div className="md:col-span-2">
-              <label className="text-sm font-semibold text-slate-700">Estado</label>
+              <label className="text-xs font-semibold text-slate-700">Estado</label>
               <select
-                className="mt-1 w-full px-4 py-3 border-2 border-slate-200 rounded-xl bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+                className="mt-1 w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                 value={filtroEstado}
                 onChange={(e) => setFiltroEstado(e.target.value)}
               >
                 <option value="ALL">Todos</option>
                 <option value="SIN_SOLICITUD">Sin solicitud</option>
-                <option value="BORRADOR">Borrador</option>
+                <option value="INICIADO">Iniciado</option>
                 <option value="ENVIADO">Enviado</option>
-                <option value="REVISADO">Revisado</option>
-                <option value="APROBADA">Aprobada</option>
-                <option value="RECHAZADA">Rechazada</option>
               </select>
             </div>
           </div>
         </div>
 
         {filasPorPeriodo.length === 0 ? (
-          <div className="text-center py-10 text-slate-500">No hay periodos para los filtros seleccionados.</div>
+          <div className="text-center py-6 text-slate-500 text-sm">No hay periodos para los filtros seleccionados.</div>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
-              <thead className="bg-slate-50 text-sm text-slate-700">
+              <thead className="bg-slate-50 text-xs text-slate-700">
                 <tr>
-                  <th className="px-4 py-3 text-left">Año</th>
-                  <th className="px-4 py-3 text-left">Periodo</th>
-                  <th className="px-4 py-3 text-left">Solicitud</th>
-                  <th className="px-4 py-3 text-left">Inicio</th>
-                  <th className="px-4 py-3 text-left">Fin</th>
-                  <th className="px-4 py-3 text-left">Estado</th>
-                  <th className="px-4 py-3 text-right">Acción</th>
+                  <th className="px-2 py-2 text-left">Año</th>
+                  <th className="px-2 py-2 text-left">Periodo</th>
+                  <th className="px-2 py-2 text-left">Solicitud</th>
+                  <th className="px-2 py-2 text-left">Inicio</th>
+                  <th className="px-2 py-2 text-left">Fin</th>
+                  <th className="px-2 py-2 text-left">Estado</th>
+                  <th className="px-2 py-2 text-right">Acción</th>
                 </tr>
               </thead>
 
@@ -824,47 +974,47 @@ export default function FormularioSolicitudTurnos() {
                 {filasPorPeriodo.map((r) => {
                   const sol = r.solicitud;
                   const tieneSol = !!sol?.idSolicitud;
-                  const esBorrador = sol?.estado === "BORRADOR";
+                  const esIniciado = sol?.estado === "INICIADO";
 
                   return (
                     <tr key={r.idPeriodo} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-4 py-4 text-sm text-slate-700 font-semibold">{r.anio}</td>
+                      <td className="px-2 py-2 text-xs text-slate-700 font-semibold">{r.anio}</td>
 
-                      <td className="px-4 py-4 text-sm text-slate-700">
+                      <td className="px-2 py-2 text-xs text-slate-700">
                         <div className="font-semibold">{r.periodoLabel}</div>
-                        <div className="text-xs text-slate-500">Código: {r.periodoCode} · ID: {r.idPeriodo}</div>
+                        <div className="text-[10px] text-slate-500">Cód: {r.periodoCode} · ID: {r.idPeriodo}</div>
                       </td>
 
-                      <td className="px-4 py-4 text-sm text-slate-700">
+                      <td className="px-2 py-2 text-xs text-slate-700">
                         {tieneSol ? <span className="font-semibold">#{sol.idSolicitud}</span> : <span className="text-slate-400">—</span>}
                       </td>
 
-                      <td className="px-4 py-4 text-sm text-slate-600">{formatFecha(r.fechaInicio)}</td>
-                      <td className="px-4 py-4 text-sm text-slate-600">{formatFecha(r.fechaFin)}</td>
+                      <td className="px-2 py-2 text-xs text-slate-600">{formatFecha(r.fechaInicio)}</td>
+                      <td className="px-2 py-2 text-xs text-slate-600">{formatFecha(r.fechaFin)}</td>
 
-                      <td className="px-4 py-4">
-                        <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(r.estado)}`}>
+                      <td className="px-2 py-2">
+                        <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${estadoBadgeClass(r.estado)}`}>
                           {r.estado === "SIN_SOLICITUD" ? "SIN SOLICITUD" : r.estado}
                         </span>
                       </td>
 
-                      <td className="px-4 py-4 text-right">
+                      <td className="px-2 py-2 text-right">
                         <button
                           type="button"
                           onClick={() => abrirDesdePeriodo(r)}
-                          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-slate-200 font-semibold text-slate-700 hover:bg-slate-50"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
                         >
                           {!tieneSol ? (
                             <>
-                              <Plus className="w-4 h-4" /> Iniciar
+                              <Plus className="w-3 h-3" /> Iniciar
                             </>
-                          ) : esBorrador ? (
+                          ) : esIniciado ? (
                             <>
-                              <Pencil className="w-4 h-4" /> Editar
+                              <Pencil className="w-3 h-3" /> Editar
                             </>
                           ) : (
                             <>
-                              <Eye className="w-4 h-4" /> Ver
+                              <Eye className="w-3 h-3" /> Ver
                             </>
                           )}
                         </button>
@@ -875,7 +1025,7 @@ export default function FormularioSolicitudTurnos() {
               </tbody>
             </table>
 
-            <div className="mt-3 text-xs text-slate-500">
+            <div className="mt-2 text-[10px] text-slate-500">
               * Al iniciar/editar, se muestra detalle del periodo (sin combo) y registro por calendario.
             </div>
           </div>
@@ -895,24 +1045,6 @@ export default function FormularioSolicitudTurnos() {
         }
       >
         <div className="p-6 space-y-6">
-          {/* Estado actual */}
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-            <div className="text-sm text-slate-600">
-              Estado:{" "}
-              <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold border ${estadoBadgeClass(solicitudActual?.estado || "BORRADOR")}`}>
-                {solicitudActual?.estado || (modoModal === "NUEVA" ? "BORRADOR" : "—")}
-              </span>
-            </div>
-
-            <div className="text-sm text-slate-500">
-              {solicitudActual?.updatedAt ? (
-                <>Última actualización: <strong>{formatFecha(solicitudActual.updatedAt)}</strong></>
-              ) : (
-                <>—</>
-              )}
-            </div>
-          </div>
-
           {/* Detalle periodo / solicitud (SIN COMBO cuando inicias) */}
           {(periodoForzado || (modoModal === "EDITAR" && !!solicitudActual?.idPeriodo) || esSoloLectura) ? (
             <PeriodoDetalleCard
@@ -1001,7 +1133,7 @@ export default function FormularioSolicitudTurnos() {
                         Periodo:{" "}
                         <strong className="text-slate-900">{periodoSeleccionado?.descripcion || "—"}</strong>
                         <div className="text-xs text-slate-500 mt-1">
-                          * Guardar crea/actualiza BORRADOR. Enviar deja la solicitud en solo lectura.
+                          * Guardar crea/actualiza INICIADO. Enviar deja la solicitud en solo lectura.
                         </div>
                       </div>
 

@@ -1,6 +1,6 @@
 // src/pages/coordinador/turnos/GestionPeriodosTurnos.jsx
 import React, { useEffect, useMemo, useState } from "react";
-import { Calendar, FileText, Loader2 } from "lucide-react";
+import { Calendar, FileText, Loader2, RefreshCw } from "lucide-react";
 
 import { periodoSolicitudService } from "../../../../services/periodoSolicitudService";
 import { solicitudTurnosService } from "../../../../services/solicitudTurnosService";
@@ -9,6 +9,8 @@ import { solicitudTurnosService } from "../../../../services/solicitudTurnosServ
 import TabPeriodos from "./components/TabPeriodos";
 import TabSolicitudes from "./components/TabSolicitudes";
 import ModalAperturarPeriodo from "./components/ModalAperturarPeriodo";
+import ModalEditarPeriodo from "./components/ModalEditarPeriodo";
+import ModalConfirmarEliminacion from "./components/ModalConfirmarEliminacion";
 import ModalDetalleSolicitud from "./components/ModalDetalleSolicitud";
 import CardStat from "./components/CardStat";
 
@@ -30,6 +32,11 @@ export default function GestionPeriodosTurnos() {
   const [solicitudes, setSolicitudes] = useState([]);
 
   const [showAperturarModal, setShowAperturarModal] = useState(false);
+  const [showEditarModal, setShowEditarModal] = useState(false);
+  const [periodoAEditar, setPeriodoAEditar] = useState(null);
+  const [showEliminarModal, setShowEliminarModal] = useState(false);
+  const [periodoAEliminar, setPeriodoAEliminar] = useState(null);
+  const [eliminando, setEliminando] = useState(false);
 
   const [showDetalleModal, setShowDetalleModal] = useState(false);
   const [loadingDetalle, setLoadingDetalle] = useState(false);
@@ -43,9 +50,26 @@ export default function GestionPeriodosTurnos() {
     busqueda: "",
   });
 
+  // Filtros específicos para periodos
+  const [filtrosPeriodos, setFiltrosPeriodos] = useState({
+    estado: "TODOS", // TODOS, ACTIVO, CERRADO
+    anio: new Date().getFullYear(), // Año actual por defecto
+  });
+
+  const [aniosDisponibles, setAniosDisponibles] = useState([new Date().getFullYear()]);
+
   useEffect(() => {
     cargarPeriodos();
+    cargarAniosDisponibles();
   }, []);
+
+  // Recargar periodos cuando cambien los filtros
+  useEffect(() => {
+    if (activeTab === "periodos") {
+      cargarPeriodos();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtrosPeriodos.estado, filtrosPeriodos.anio]);
 
   useEffect(() => {
     if (activeTab === "solicitudes") cargarSolicitudes();
@@ -55,13 +79,32 @@ export default function GestionPeriodosTurnos() {
   const cargarPeriodos = async () => {
     setLoadingPeriodos(true);
     try {
-      const data = await periodoSolicitudService.obtenerTodos();
+      // Si hay filtros aplicados, usar el endpoint de filtros
+      const tieneEstadoFiltrado = filtrosPeriodos.estado && filtrosPeriodos.estado !== "TODOS";
+      
+      let data;
+      if (tieneEstadoFiltrado || filtrosPeriodos.anio) {
+        data = await periodoSolicitudService.obtenerConFiltros(filtrosPeriodos);
+      } else {
+        data = await periodoSolicitudService.obtenerTodos();
+      }
+      
       setPeriodos(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Error al cargar periodos:", err);
       setPeriodos([]);
     } finally {
       setLoadingPeriodos(false);
+    }
+  };
+
+  const cargarAniosDisponibles = async () => {
+    try {
+      const anios = await periodoSolicitudService.obtenerAniosDisponibles();
+      setAniosDisponibles(anios.length > 0 ? anios : [new Date().getFullYear()]);
+    } catch (err) {
+      console.error("Error al cargar años disponibles:", err);
+      setAniosDisponibles([new Date().getFullYear()]);
     }
   };
 
@@ -117,6 +160,97 @@ export default function GestionPeriodosTurnos() {
     } catch (err) {
       console.error(err);
       window.alert("Error al aperturar el período");
+    }
+  };
+
+  const handleEditarPeriodo = (periodo) => {
+    console.log("%c🔧 EDITAR PERIODO", "color: #f59e0b; font-weight: bold; font-size: 14px;");
+    console.log("Periodo recibido:", periodo);
+    console.log("Estado del periodo:", periodo?.estado);
+    
+    if (periodo.estado !== "ACTIVO") {
+      window.alert("Solo se pueden editar periodos en estado ACTIVO");
+      return;
+    }
+    
+    console.log("✅ Abriendo modal de edición...");
+    setPeriodoAEditar(periodo);
+    setShowEditarModal(true);
+    
+    // Log del estado después de actualizar
+    setTimeout(() => {
+      console.log("Estado showEditarModal:", true);
+      console.log("periodoAEditar:", periodo);
+    }, 100);
+  };
+
+  const handleGuardarEdicionPeriodo = async (idPeriodo, fechas) => {
+    try {
+      console.log("%c💾 GUARDAR EDICIÓN PERIODO", "color: #059669; font-weight: bold; font-size: 14px;");
+      console.log("🆔 ID Periodo:", idPeriodo);
+      console.log("📦 Fechas a actualizar:");
+      console.table(fechas);
+      
+      await periodoSolicitudService.actualizarFechas(idPeriodo, fechas);
+      setShowEditarModal(false);
+      setPeriodoAEditar(null);
+      await cargarPeriodos();
+      if (activeTab === "solicitudes") await cargarSolicitudes();
+      window.alert("¡Fechas actualizadas correctamente!");
+    } catch (err) {
+      console.error("❌ Error al actualizar fechas:", err);
+      
+      // Extraer el mensaje de error del backend
+      const errorMessage = err.message || "Error desconocido al actualizar las fechas";
+      
+      console.log("💬 Mensaje de error:", errorMessage);
+      window.alert(`Error al actualizar las fechas:\n\n${errorMessage}`);
+      throw err;
+    }
+  };
+
+  const handleEliminarPeriodo = (periodo) => {
+    console.log("%c🗑️ ELIMINAR PERIODO", "color: #dc2626; font-weight: bold; font-size: 14px;");
+    console.log("Periodo a eliminar:", periodo);
+    setPeriodoAEliminar(periodo);
+    setShowEliminarModal(true);
+  };
+
+  const handleConfirmarEliminacion = async () => {
+    if (!periodoAEliminar) return;
+    
+    setEliminando(true);
+    try {
+      console.log("%c🗑️ CONFIRMAR ELIMINACIÓN", "color: #dc2626; font-weight: bold; font-size: 14px;");
+      console.log("🆔 ID del periodo a eliminar:", periodoAEliminar.idPeriodo);
+      console.log("📋 Datos del periodo:");
+      console.table({
+        ID: periodoAEliminar.idPeriodo,
+        Periodo: periodoAEliminar.periodo,
+        Descripcion: periodoAEliminar.descripcion,
+        Estado: periodoAEliminar.estado,
+      });
+      
+      await periodoSolicitudService.eliminar(periodoAEliminar.idPeriodo);
+      
+      setShowEliminarModal(false);
+      setPeriodoAEliminar(null);
+      
+      await cargarPeriodos();
+      if (activeTab === "solicitudes") await cargarSolicitudes();
+      
+      window.alert("¡Período eliminado correctamente!");
+      console.log("✅ Período eliminado exitosamente");
+    } catch (err) {
+      console.error("❌ Error al eliminar:", err);
+      
+      // Extraer el mensaje de error del backend
+      const errorMessage = err.message || "Error desconocido al eliminar el período";
+      
+      console.log("💬 Mensaje de error:", errorMessage);
+      window.alert(`Error al eliminar el período:\n\n${errorMessage}`);
+    } finally {
+      setEliminando(false);
     }
   };
 
@@ -212,9 +346,22 @@ export default function GestionPeriodosTurnos() {
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
-        <div className="mb-4">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">Gestión de Períodos y Solicitudes</h1>
-          <p className="text-sm text-gray-600">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
+        <div className="mb-4 flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">Gestión de Períodos y Solicitudes</h1>
+            <p className="text-sm text-gray-600">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
+          </div>
+          
+          {/* Botón Recargar Periodos */}
+          <button
+            onClick={() => cargarPeriodos()}
+            disabled={loadingPeriodos}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+            title="Recargar periodos"
+          >
+            <RefreshCw className={`w-4 h-4 ${loadingPeriodos ? 'animate-spin' : ''}`} />
+            <span className="font-medium">{loadingPeriodos ? 'Recargando...' : 'Recargar'}</span>
+          </button>
         </div>
 
         {activeTab === "periodos" && (
@@ -267,6 +414,11 @@ export default function GestionPeriodosTurnos() {
             onTogglePeriodo={handleTogglePeriodo}
             onCrearPeriodo={() => setShowAperturarModal(true)}
             getEstadoBadge={getEstadoBadge}
+            onEditarPeriodo={handleEditarPeriodo}
+            onEliminarPeriodo={handleEliminarPeriodo}
+            filtros={filtrosPeriodos}
+            onFiltrosChange={setFiltrosPeriodos}
+            aniosDisponibles={aniosDisponibles}
           />
         ) : (
           <TabSolicitudes
@@ -284,6 +436,30 @@ export default function GestionPeriodosTurnos() {
 
         {showAperturarModal && (
           <ModalAperturarPeriodo onClose={() => setShowAperturarModal(false)} onCrear={handleAperturarPeriodo} />
+        )}
+
+        {showEditarModal && periodoAEditar && (
+          <ModalEditarPeriodo
+            periodo={periodoAEditar}
+            onClose={() => {
+              console.log("Cerrando modal de edición");
+              setShowEditarModal(false);
+              setPeriodoAEditar(null);
+            }}
+            onGuardar={handleGuardarEdicionPeriodo}
+          />
+        )}
+
+        {showEliminarModal && periodoAEliminar && (
+          <ModalConfirmarEliminacion
+            periodo={periodoAEliminar}
+            onClose={() => {
+              setShowEliminarModal(false);
+              setPeriodoAEliminar(null);
+            }}
+            onConfirmar={handleConfirmarEliminacion}
+            eliminando={eliminando}
+          />
         )}
 
         {showDetalleModal && (

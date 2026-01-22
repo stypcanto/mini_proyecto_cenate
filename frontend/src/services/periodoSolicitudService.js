@@ -47,6 +47,52 @@ class PeriodoSolicitudService {
   }
 
   /**
+   * Obtener periodos con filtros
+   * @param {Object} filtros - { estado: string, anio: number, page: number, size: number }
+   * @returns {Promise<Object>} Respuesta paginada con periodos
+   */
+  async obtenerConFiltros(filtros = {}) {
+    try {
+      const params = {};
+      
+      // Solo agregar parámetros si tienen valor
+      if (filtros.estado && filtros.estado !== "TODOS") {
+        params.estado = filtros.estado;
+      }
+      if (filtros.anio) {
+        params.anio = filtros.anio;
+      }
+      params.page = filtros.page || 0;
+      params.size = filtros.size || 100;
+      
+      console.log("%c🔍 FILTRAR PERIODOS", "color: #3b82f6; font-weight: bold; font-size: 14px;");
+      console.log("Filtros aplicados:", params);
+      
+      const data = await apiClient.getWithParams("/periodos-solicitud/filtros", params, true);
+      
+      // Retornar el array de content si es paginado, o el data completo
+      return data?.content ? data.content : (Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error("Error al obtener periodos con filtros:", error);
+      throw error;
+    }
+  }
+
+  /**
+   * Obtener años disponibles de periodos
+   * @returns {Promise<Array<number>>} Lista de años
+   */
+  async obtenerAniosDisponibles() {
+    try {
+      const data = await apiClient.get("/periodos-solicitud/anios", true);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("Error al obtener años disponibles:", error);
+      return [new Date().getFullYear()]; // Fallback al año actual
+    }
+  }
+
+  /**
    * Obtener periodos activos
    * @returns {Promise<Array>} Lista de periodos activos
    */
@@ -168,14 +214,45 @@ class PeriodoSolicitudService {
   }
 
   /**
+   * Actualizar fechas de un periodo
+   * @param {number} id - ID del periodo
+   * @param {Object} fechas - Objeto con fechaInicio y fechaFin
+   * @returns {Promise<Object>} Periodo actualizado
+   */
+  async actualizarFechas(id, fechas) {
+    try {
+      console.log("%c📅 ACTUALIZAR FECHAS - Payload", "color: #f59e0b; font-weight: bold; font-size: 14px;");
+      console.log("📍 URL:", `PUT /periodos-solicitud/${id}/fechas`);
+      console.log("📦 Payload:", fechas);
+      console.table(fechas);
+      
+      const response = await apiClient.put(
+        `/periodos-solicitud/${id}/fechas`,
+        fechas,
+        true
+      );
+      console.log(`Fechas del periodo ${id} actualizadas exitosamente`);
+      return response;
+    } catch (error) {
+      console.error(`Error al actualizar fechas del periodo ${id}:`, error);
+      throw error;
+    }
+  }
+
+  /**
    * Eliminar un periodo
    * @param {number} id - ID del periodo
    * @returns {Promise<void>}
    */
   async eliminar(id) {
     try {
+      console.log("%c🗑️ ELIMINAR PERIODO - Request", "color: #dc2626; font-weight: bold; font-size: 14px;");
+      console.log("📍 URL:", `DELETE /periodos-solicitud/${id}`);
+      console.log("🆔 ID del periodo:", id);
+      console.log("📦 Payload: (ninguno - DELETE no lleva body)");
+      
       await apiClient.delete(`/periodos-solicitud/${id}`, true);
-      console.log(`Periodo ${id} eliminado exitosamente`);
+      console.log(`✅ Periodo ${id} eliminado exitosamente`);
     } catch (error) {
       console.error(`Error al eliminar periodo ${id}:`, error);
       throw error;

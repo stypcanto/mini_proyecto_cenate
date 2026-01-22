@@ -8,6 +8,18 @@ import React, { useState, useEffect } from "react";
 import { Calendar, Sun, Moon, X, Loader2 } from "lucide-react";
 import { solicitudTurnoService } from "../../../../../services/solicitudTurnoService";
 
+// Helper para formatear fecha corta
+const formatFechaRango = (fecha) => {
+  if (!fecha) return "—";
+  try {
+    const fechaStr = fecha.split('T')[0];
+    const [anio, mes, dia] = fechaStr.split('-');
+    return `${dia}/${mes}/${anio}`;
+  } catch {
+    return fecha;
+  }
+};
+
 /**
  * Modal para seleccionar fechas específicas por especialidad
  * @param {Object} props
@@ -19,6 +31,7 @@ import { solicitudTurnoService } from "../../../../../services/solicitudTurnoSer
  * @param {Number} props.idDetalle - ID del detalle (para cargar fechas del backend)
  * @param {Array} props.fechasIniciales - Fechas ya seleccionadas (fallback)
  * @param {Function} props.onConfirm - Callback al confirmar (recibe array de fechas)
+ * @param {Object} props.periodo - Periodo seleccionado con fechaInicio y fechaFin
  */
 export default function ModalSeleccionarFechas({
   open,
@@ -29,6 +42,7 @@ export default function ModalSeleccionarFechas({
   idDetalle = null,
   fechasIniciales = [],
   onConfirm = () => {},
+  periodo = null,
 }) {
   const [tipoTurno, setTipoTurno] = useState("MANANA"); // MANANA | TARDE
   const [fechaInput, setFechaInput] = useState("");
@@ -115,8 +129,8 @@ export default function ModalSeleccionarFechas({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
         <div className="w-full max-w-2xl my-8 overflow-hidden rounded-2xl bg-white shadow-2xl border border-slate-200">
-          {/* Header Rosa */}
-          <div className="bg-gradient-to-r from-pink-500 to-pink-600 p-6 text-white">
+          {/* Header Azul */}
+          <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] p-6 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="bg-white bg-opacity-20 p-2 rounded-lg">
@@ -124,7 +138,7 @@ export default function ModalSeleccionarFechas({
                 </div>
                 <div>
                   <h2 className="text-xl font-bold">Seleccionar Fechas</h2>
-                  <p className="text-pink-100 text-sm">{especialidad}</p>
+                  <p className="text-blue-100 text-sm">{especialidad}</p>
                 </div>
               </div>
               <button
@@ -140,7 +154,7 @@ export default function ModalSeleccionarFechas({
             {/* Loading state */}
             {loading ? (
               <div className="flex flex-col items-center justify-center py-12">
-                <Loader2 className="w-10 h-10 animate-spin text-pink-500 mb-3" />
+                <Loader2 className="w-10 h-10 animate-spin text-[#0A5BA9] mb-3" />
                 <p className="text-slate-600">Cargando fechas registradas...</p>
               </div>
             ) : (
@@ -213,18 +227,29 @@ export default function ModalSeleccionarFechas({
                   type="date"
                   value={fechaInput}
                   onChange={(e) => setFechaInput(e.target.value)}
-                  className="flex-1 px-4 py-3 border-2 border-pink-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                  min={periodo?.fechaInicio ? periodo.fechaInicio.split('T')[0] : undefined}
+                  max={periodo?.fechaFin ? periodo.fechaFin.split('T')[0] : undefined}
+                  className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                   placeholder="dd/mm/aaaa"
                 />
                 <button
                   type="button"
                   onClick={agregarFecha}
                   disabled={!fechaInput}
-                  className="px-6 py-3 bg-pink-500 text-white font-bold rounded-xl hover:bg-pink-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-[#0A5BA9] text-white font-bold rounded-xl hover:bg-[#2563EB] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   + Agregar
                 </button>
               </div>
+              
+              {/* Información del rango de fechas permitido */}
+              {periodo?.fechaInicio && periodo?.fechaFin && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-800">
+                    <span className="font-bold">Rango permitido:</span> {formatFechaRango(periodo.fechaInicio)} - {formatFechaRango(periodo.fechaFin)}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Fechas seleccionadas */}
@@ -232,7 +257,7 @@ export default function ModalSeleccionarFechas({
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h3 className="font-bold text-slate-800 uppercase text-sm">Fechas Seleccionadas</h3>
-                  <span className="bg-pink-500 text-white px-3 py-1 rounded-full text-xs font-bold">
+                  <span className="bg-[#0A5BA9] text-white px-3 py-1 rounded-full text-xs font-bold">
                     {fechasSeleccionadas.length}
                   </span>
                 </div>
@@ -285,14 +310,14 @@ export default function ModalSeleccionarFechas({
               </>
             )}
 
-            {/* Botón Listo */}
+            {/* Botón Guardar */}
             <button
               type="button"
               onClick={handleConfirmar}
               disabled={loading}
-              className="w-full py-4 bg-gradient-to-r from-pink-500 to-pink-600 text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-4 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Listo
+              Guardar
             </button>
           </div>
         </div>

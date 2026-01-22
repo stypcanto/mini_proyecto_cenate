@@ -69,16 +69,17 @@ export default function TeleEKGRecibidas() {
   }, []);
 
   /**
-   * ✅ v1.21.5: Cargar todas las EKGs agrupadas por asegurado (para la tabla)
+   * ✅ v1.21.5: Cargar todas las EKGs (IMÁGENES INDIVIDUALES, no agrupadas)
+   * Esto asegura que contemos IMÁGENES, no PACIENTES
    */
   const cargarEKGs = async () => {
     try {
       setLoading(true);
-      // Usar nuevo endpoint que agrupa por asegurado
-      const response = await teleecgService.listarAgrupoPorAsegurado("", filtros.estado);
+      // Usar endpoint que retorna lista de imágenes individuales
+      const response = await teleecgService.listar(filtros.estado);
       const ecgData = Array.isArray(response) ? response : [];
       setEcgs(ecgData);
-      console.log("✅ EKGs agrupadas cargadas:", ecgData.length, "asegurados");
+      console.log("✅ EKGs individuales cargadas:", ecgData.length, "imágenes");
     } catch (error) {
       console.error("❌ Error al cargar EKGs:", error);
       setEcgs([]);
@@ -119,6 +120,7 @@ export default function TeleEKGRecibidas() {
 
   /**
    * Calcular estadísticas desde EKGs cargados (fallback si API falla)
+   * Cuenta IMÁGENES INDIVIDUALES, no PACIENTES
    */
   const calcularEstadisticasDesdeEKGs = () => {
     let totalEKGs = 0;
@@ -126,12 +128,20 @@ export default function TeleEKGRecibidas() {
     let observadas = 0;
     let atendidas = 0;
 
-    // Sumar conteos de cada asegurado
-    ecgs.forEach((asegurado) => {
-      totalEKGs += asegurado.total_ecgs || 0;
-      pendientes += asegurado.ecgs_pendientes || 0;
-      observadas += asegurado.ecgs_observadas || 0;
-      atendidas += asegurado.ecgs_atendidas || 0;
+    // Contar cada IMAGEN individual según su estado
+    ecgs.forEach((imagen) => {
+      totalEKGs++;
+
+      const estado = imagen.estado || imagen.stat_imagen;
+
+      // Mapear estados a categorías
+      if (estado === "ENVIADA" || estado === "PENDIENTE") {
+        pendientes++;
+      } else if (estado === "OBSERVADA") {
+        observadas++;
+      } else if (estado === "ATENDIDA") {
+        atendidas++;
+      }
     });
 
     const nuevasStats = {
@@ -142,7 +152,7 @@ export default function TeleEKGRecibidas() {
     };
 
     setStats(nuevasStats);
-    console.log("✅ Estadísticas calculadas desde EKGs (fallback):", nuevasStats);
+    console.log("✅ Estadísticas calculadas desde IMÁGENES (fallback):", nuevasStats);
   };
 
   /**

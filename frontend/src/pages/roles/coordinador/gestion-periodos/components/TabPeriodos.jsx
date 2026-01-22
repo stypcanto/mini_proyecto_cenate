@@ -13,6 +13,8 @@ import {
   XCircle,
   ChevronDown,
   ChevronUp,
+  Pencil,
+  Trash2,
 } from "lucide-react";
 
 import { fmtDate, safeNum } from "../utils/ui";
@@ -38,6 +40,11 @@ export default function TabPeriodos({
   onCrearPeriodo,
   onVerDetallePeriodo,
   getEstadoBadge,
+  onEditarPeriodo,
+  onEliminarPeriodo,
+  filtros,
+  onFiltrosChange,
+  aniosDisponibles = [new Date().getFullYear()],
 }) {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
 
@@ -102,6 +109,63 @@ export default function TabPeriodos({
         </button>
       </div>
 
+      {/* Filtros */}
+      {filtros && onFiltrosChange && (
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
+          <div className="flex items-center gap-4">
+            {/* Filtro Estado */}
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Estado
+              </label>
+              <select
+                value={filtros.estado || "TODOS"}
+                onChange={(e) => onFiltrosChange({ ...filtros, estado: e.target.value })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="TODOS">Todos</option>
+                <option value="ACTIVO">Activo</option>
+                <option value="CERRADO">Cerrado</option>
+                <option value="BORRADOR">Borrador</option>
+              </select>
+            </div>
+
+            {/* Filtro Año */}
+            <div className="flex-1">
+              <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+                Año
+              </label>
+              <select
+                value={filtros.anio || new Date().getFullYear()}
+                onChange={(e) => onFiltrosChange({ ...filtros, anio: parseInt(e.target.value) })}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                {aniosDisponibles.map(anio => (
+                  <option key={anio} value={anio}>{anio}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* Botón Limpiar Filtros */}
+            <div className="flex-shrink-0 pt-6">
+              <button
+                onClick={() => onFiltrosChange({ estado: "TODOS", anio: new Date().getFullYear() })}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Limpiar
+              </button>
+            </div>
+          </div>
+
+          {/* Contador de resultados */}
+          <div className="mt-3 text-xs text-gray-600">
+            Mostrando <span className="font-semibold">{(periodos || []).length}</span> periodo(s)
+            {filtros.estado !== "TODOS" && <span> con estado <span className="font-semibold">{filtros.estado}</span></span>}
+            {filtros.anio && <span> del año <span className="font-semibold">{filtros.anio}</span></span>}
+          </div>
+        </div>
+      )}
+
       {(periodos || []).length === 0 ? (
         <div className="bg-white rounded-lg p-12 text-center border border-gray-200">
           <Calendar className="w-16 h-16 mx-auto mb-3 text-gray-300" />
@@ -127,17 +191,17 @@ export default function TabPeriodos({
                     Descripción <SortIcon columnKey="descripcion" />
                   </th>
                   <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
-                    Total
+                    Total Solicitudes
                   </th>
                   <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
-                    Asignados
+                    Solicitudes Enviadas
                   </th>
                   <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
-                    Disponibles
+                    Solicitudes Iniciadas
                   </th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                  {/* <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
                     Ocupación
-                  </th>
+                  </th> */}
                   <th 
                     className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('estado')}
@@ -154,10 +218,10 @@ export default function TabPeriodos({
               </thead>
               <tbody className="divide-y divide-gray-200">
                 {sortedPeriodos.map((p) => {
-                  const total = safeNum(p.totalTurnos ?? p.turnosDisponibles ?? p.total ?? 0);
-                  const asignados = safeNum(p.turnosAsignados ?? p.asignados ?? 0);
-                  const disponibles = total - asignados;
-                  const ocupacion = calcOcupacion(p);
+                  const cantidadSolicitudes = safeNum(p.totalSolicitudes ?? p.cantidadSolicitudes ?? 0);
+                  const solicitudesEnviadas = safeNum(p.solicitudesEnviadas ?? 0);
+                  const solicitudesIniciadas = safeNum(p.solicitudesIniciadas ?? 0);
+                  // const ocupacion = calcOcupacion(p);
                   const isActivo = p.estado === "ACTIVO";
                   const isCerrado = p.estado === "CERRADO";
 
@@ -173,20 +237,20 @@ export default function TabPeriodos({
                       </td>
                       <td className="px-3 py-2 text-center">
                         <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                          {total}
+                          {cantidadSolicitudes}
                         </span>
                       </td>
                       <td className="px-3 py-2 text-center">
                         <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-green-100 text-green-700 text-xs font-semibold">
-                          {asignados}
+                          {solicitudesEnviadas}
                         </span>
                       </td>
                       <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-gray-100 text-gray-700 text-xs font-semibold">
-                          {disponibles}
+                        <span className="inline-flex items-center justify-center w-10 h-8 rounded-full bg-amber-100 text-amber-700 text-xs font-semibold">
+                          {solicitudesIniciadas}
                         </span>
                       </td>
-                      <td className="px-3 py-2">
+                      {/* <td className="px-3 py-2">
                         <div className="flex items-center gap-2">
                           <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden min-w-[60px]">
                             <div
@@ -202,7 +266,7 @@ export default function TabPeriodos({
                             {ocupacion.toFixed(1)}%
                           </span>
                         </div>
-                      </td>
+                      </td> */}
                       <td className="px-3 py-2 text-center">
                         <span className={`inline-block px-2 py-1 rounded-md text-xs font-semibold border ${getEstadoBadge(p.estado)}`}>
                           {p.estado}
@@ -229,6 +293,31 @@ export default function TabPeriodos({
                           >
                             <Eye className="w-3 h-3" />
                           </button>
+                          
+                          {/* Botón Editar - solo disponible si está ACTIVO */}
+                          <button
+                            onClick={() => onEditarPeriodo?.(p)}
+                            disabled={p.estado !== "ACTIVO"}
+                            className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
+                              p.estado === "ACTIVO"
+                                ? 'bg-amber-600 text-white hover:bg-amber-700'
+                                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                            }`}
+                            title={p.estado === "ACTIVO" ? "Editar fechas" : "Solo se puede editar periodos activos"}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </button>
+                          
+                          {/* Botón Eliminar */}
+                          <button
+                            onClick={() => onEliminarPeriodo?.(p)}
+                            className="inline-flex items-center gap-1 px-2 py-1 bg-red-600 text-white text-xs font-medium rounded hover:bg-red-700 transition-colors"
+                            title="Eliminar período"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                          
+                          {/* Botón Activar/Cerrar */}
                           <button
                             onClick={() => onTogglePeriodo(p)}
                             className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
