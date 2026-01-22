@@ -21,6 +21,8 @@ import useImageFilters from "./useImageFilters";
 import FilterControlsPanel from "./FilterControlsPanel";
 import FullscreenImageViewer from "./FullscreenImageViewer";
 import CalipersPanel from "./CalipersPanel"; // ✅ v9.2.0: Herramienta de medición de intervalos
+import ReferenciaEscalaPanel from "./ReferenciaEscalaPanel"; // ✅ v9.2.0: 4️⃣ Escala de referencia
+import GridPanel from "./GridPanel"; // ✅ v9.2.0: 5️⃣ Cuadrícula proporcional con zoom
 
 /**
  * 🏥 MODAL TRIAJE CLÍNICO - EKG (v8.0.0 - Single View)
@@ -59,6 +61,13 @@ export default function ModalEvaluacionECG({
   // ✅ v9.2.0: 3️⃣ CALIPERS - Herramienta de medición de intervalos
   const [showCalipers, setShowCalipers] = useState(false);
   const imageRef = useRef(null);
+
+  // ✅ v9.2.0: 4️⃣ ESCALA DE REFERENCIA - Control de calidad ECG
+  const [showReferencia, setShowReferencia] = useState(false);
+
+  // ✅ v9.2.0: 5️⃣ CUADRÍCULA PROPORCIONAL - Zoom con grid preservado
+  const [showGrid, setShowGrid] = useState(true);
+  const [gridZoomLevel, setGridZoomLevel] = useState(100);
 
   // ════════════════════════════════════════
   // TAB 1.5: VALIDACIÓN DE CALIDAD (v3.1.0)
@@ -182,8 +191,15 @@ export default function ModalEvaluacionECG({
 
   // 🏥 Estado para autocomplete de especialidades (v1.27.0 + v11.0.0)
   const [especialidades, setEspecialidades] = useState([]);
-  const [filteredEspecialidades, setFilteredEspecialidades] = useState([]);
-  const [showEspecialidadesDropdown, setShowEspecialidadesDropdown] = useState(false);
+
+  // RECITACIÓN: inputs de búsqueda
+  const [recitarBusqueda, setRecitarBusqueda] = useState("");
+  const [filteredEspecialidadesRecitar, setFilteredEspecialidadesRecitar] = useState([]);
+  const [showRecitarDropdown, setShowRecitarDropdown] = useState(false);
+
+  // INTERCONSULTA: inputs de búsqueda
+  const [interconsultaBusqueda, setInterconsultaBusqueda] = useState("");
+  const [filteredEspecialidadesInterconsulta, setFilteredEspecialidadesInterconsulta] = useState([]);
   const [showInterconsultaDropdown, setShowInterconsultaDropdown] = useState(false);
 
   const textareaEvalRef = useRef(null);
@@ -318,12 +334,20 @@ export default function ModalEvaluacionECG({
   const handleZoomMas = () => {
     if (transformRef.current?.zoomIn) {
       transformRef.current.zoomIn(0.2);
+      // ✅ v9.2.0: 5️⃣ Actualizar zoom nivel de cuadrícula
+      setTimeout(() => {
+        setGridZoomLevel(getCurrentZoomPercentage());
+      }, 50);
     }
   };
 
   const handleZoomMenos = () => {
     if (transformRef.current?.zoomOut) {
       transformRef.current.zoomOut(0.2);
+      // ✅ v9.2.0: 5️⃣ Actualizar zoom nivel de cuadrícula
+      setTimeout(() => {
+        setGridZoomLevel(getCurrentZoomPercentage());
+      }, 50);
     }
   };
 
@@ -338,6 +362,8 @@ export default function ModalEvaluacionECG({
     setRotacion(0);
     resetFilters();
     setShowFilterControls(false);
+    // ✅ v9.2.0: 5️⃣ Reset zoom nivel de cuadrícula
+    setGridZoomLevel(100);
   };
 
   const getCurrentZoomPercentage = () => {
@@ -502,16 +528,11 @@ export default function ModalEvaluacionECG({
     }
   };
 
-  // ════════════════════════════════════════
-  // AUTOCOMPLETE DE ESPECIALIDADES (v1.27.0)
-  // ════════════════════════════════════════
+    // ════════════════════════════════════════
   // HANDLERS PARA RECITACIÓN (v11.0.0)
   // ════════════════════════════════════════
-  const handleRecitarEspecialidadChange = (value) => {
-    setPlanSeguimiento({
-      ...planSeguimiento,
-      recitarEspecialidad: value,
-    });
+  const handleRecitarBusquedaChange = (value) => {
+    setRecitarBusqueda(value);
 
     if (especialidades.length > 0) {
       let filtered;
@@ -522,11 +543,11 @@ export default function ModalEvaluacionECG({
       } else {
         filtered = especialidades;
       }
-      setFilteredEspecialidades(filtered);
-      setShowEspecialidadesDropdown(true);
+      setFilteredEspecialidadesRecitar(filtered);
+      setShowRecitarDropdown(filtered.length > 0);
     } else {
-      setFilteredEspecialidades([]);
-      setShowEspecialidadesDropdown(false);
+      setFilteredEspecialidadesRecitar([]);
+      setShowRecitarDropdown(false);
     }
   };
 
@@ -535,15 +556,17 @@ export default function ModalEvaluacionECG({
       ...planSeguimiento,
       recitarEspecialidad: descripcion,
     });
-    setShowEspecialidadesDropdown(false);
-    setFilteredEspecialidades([]);
+    setRecitarBusqueda(descripcion);
+    setShowRecitarDropdown(false);
+    setFilteredEspecialidadesRecitar([]);
   };
 
   // ════════════════════════════════════════
   // HANDLERS PARA INTERCONSULTA (v11.0.0)
   // ════════════════════════════════════════
-  const handleInterconsultaEspecialidadChange = (value) => {
-    // Solo actualiza el input de búsqueda, no agrega a la lista
+  const handleInterconsultaBusquedaChange = (value) => {
+    setInterconsultaBusqueda(value);
+
     if (especialidades.length > 0) {
       let filtered;
       if (value.trim().length > 0) {
@@ -553,10 +576,10 @@ export default function ModalEvaluacionECG({
       } else {
         filtered = especialidades;
       }
-      setFilteredEspecialidades(filtered);
-      setShowInterconsultaDropdown(true);
+      setFilteredEspecialidadesInterconsulta(filtered);
+      setShowInterconsultaDropdown(filtered.length > 0);
     } else {
-      setFilteredEspecialidades([]);
+      setFilteredEspecialidadesInterconsulta([]);
       setShowInterconsultaDropdown(false);
     }
   };
@@ -570,8 +593,9 @@ export default function ModalEvaluacionECG({
         interconsultaEspecialidades: [...planSeguimiento.interconsultaEspecialidades, descripcion],
       });
     }
+    setInterconsultaBusqueda(""); // Limpiar input después de seleccionar
     setShowInterconsultaDropdown(false);
-    setFilteredEspecialidades([]);
+    setFilteredEspecialidadesInterconsulta([]);
   };
 
   const handleRemoveInterconsultaEspecialidad = (descripcion) => {
@@ -582,6 +606,7 @@ export default function ModalEvaluacionECG({
       ),
     });
   };
+
 
   const handleGuardar = async () => {
     // ✅ v9.0.0: VALIDACIONES ESTRICTAS EN TRES NIVELES
@@ -824,6 +849,10 @@ export default function ModalEvaluacionECG({
                 <button onClick={() => setShowFilterControls(!showFilterControls)} className={`p-1.5 rounded transition-colors ${showFilterControls ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Filtros avanzados"><Filter size={16} /></button>
                 {/* ✅ v9.2.0: 3️⃣ Botón CALIPERS para medir intervalos */}
                 <button onClick={() => setShowCalipers(!showCalipers)} className={`p-1.5 rounded transition-colors ${showCalipers ? 'bg-cyan-200 text-cyan-600' : 'hover:bg-gray-200'}`} title="Calipers - Medir intervalos"><Ruler size={16} /></button>
+                {/* ✅ v9.2.0: 4️⃣ Botón ESCALA DE REFERENCIA para validar calidad */}
+                <button onClick={() => setShowReferencia(!showReferencia)} className={`p-1.5 rounded transition-colors ${showReferencia ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Escala de referencia - Control de calidad"><span className="text-sm font-bold">📐</span></button>
+                {/* ✅ v9.2.0: 5️⃣ Botón GRID para mostrar cuadrícula proporcional */}
+                <button onClick={() => setShowGrid(!showGrid)} className={`p-1.5 rounded transition-colors ${showGrid ? 'bg-pink-200 text-pink-600' : 'hover:bg-gray-200'}`} title="Cuadrícula ECG proporcional"><span className="text-sm font-bold">🔲</span></button>
                 <div className="w-px bg-gray-300" />
                 <button onClick={() => setShowFullscreen(true)} className="p-1.5 hover:bg-purple-200 rounded transition-colors text-purple-600 hover:text-purple-700" title="Expandir a pantalla completa (E)"><Maximize2 size={16} /></button>
               </div>
@@ -857,6 +886,12 @@ export default function ModalEvaluacionECG({
                   }}
                 />
               )}
+
+              {/* ✅ v9.2.0: 4️⃣ PANEL DE ESCALA - Control de Calidad ECG */}
+              {showReferencia && <ReferenciaEscalaPanel />}
+
+              {/* ✅ v9.2.0: 5️⃣ PANEL DE CUADRÍCULA - Zoom Proporcional ECG */}
+              {showGrid && <GridPanel zoomLevel={gridZoomLevel} onGridToggle={() => setShowGrid(!showGrid)} />}
 
               {/* VALIDACIÓN CALIDAD */}
               {imagenValida === null && (
@@ -1043,13 +1078,13 @@ export default function ModalEvaluacionECG({
                           <input
                             type="text"
                             placeholder="Seleccionar especialidad..."
-                            value={planSeguimiento.recitarEspecialidad}
-                            onChange={(e) => handleRecitarEspecialidadChange(e.target.value)}
+                            value={recitarBusqueda}
+                            onChange={(e) => handleRecitarBusquedaChange(e.target.value)}
                             className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                           />
-                          {showEspecialidadesDropdown && filteredEspecialidades.length > 0 && (
+                          {showRecitarDropdown && filteredEspecialidadesRecitar.length > 0 && (
                             <div className="absolute top-full mt-1 w-full bg-white border rounded shadow-lg z-10 max-h-32 overflow-y-auto">
-                              {filteredEspecialidades.map(esp => (
+                              {filteredEspecialidadesRecitar.map(esp => (
                                 <div
                                   key={esp.idEspecialidad}
                                   onClick={() => handleSelectRecitarEspecialidad(esp.descripcion)}
@@ -1083,12 +1118,13 @@ export default function ModalEvaluacionECG({
                             <input
                               type="text"
                               placeholder="Buscar y agregar especialidad..."
-                              onChange={(e) => handleInterconsultaEspecialidadChange(e.target.value)}
+                              value={interconsultaBusqueda}
+                              onChange={(e) => handleInterconsultaBusquedaChange(e.target.value)}
                               className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
-                            {showInterconsultaDropdown && filteredEspecialidades.length > 0 && (
+                            {showInterconsultaDropdown && filteredEspecialidadesInterconsulta.length > 0 && (
                               <div className="absolute top-full mt-1 w-full bg-white border rounded shadow-lg z-10 max-h-32 overflow-y-auto">
-                                {filteredEspecialidades.map(esp => (
+                                {filteredEspecialidadesInterconsulta.map(esp => (
                                   <div
                                     key={esp.idEspecialidad}
                                     onClick={() => handleSelectInterconsultaEspecialidad(esp.descripcion)}
