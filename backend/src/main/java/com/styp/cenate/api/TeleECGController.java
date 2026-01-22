@@ -11,6 +11,7 @@ import com.styp.cenate.service.teleekgs.TeleECGService;
 import com.styp.cenate.service.teleekgs.TeleECGEstadoTransformer;
 import com.styp.cenate.service.ipress.IpressService;
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.model.TeleECGImagen;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -968,8 +969,8 @@ public class TeleECGController {
             @Valid @RequestBody ActualizarTransformacionesDTO dto,
             HttpServletRequest request) {
         try {
-            Long idUsuario = obtenerIdUsuarioActual();
-            String ipCliente = obtenerIPCliente(request);
+            Long idUsuario = getUsuarioActual();
+            String ipCliente = request.getRemoteAddr();
 
             TeleECGImagen imagen = teleECGService.actualizarTransformaciones(
                     idImagen, dto, idUsuario, ipCliente
@@ -1030,8 +1031,8 @@ public class TeleECGController {
             @Valid @RequestBody RecortarImagenDTO dto,
             HttpServletRequest request) {
         try {
-            Long idUsuario = obtenerIdUsuarioActual();
-            String ipCliente = obtenerIPCliente(request);
+            Long idUsuario = getUsuarioActual();
+            String ipCliente = request.getRemoteAddr();
 
             TeleECGImagen imagen = teleECGService.recortarImagen(
                     idImagen, dto, idUsuario, ipCliente
