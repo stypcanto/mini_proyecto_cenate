@@ -167,15 +167,17 @@ export default function TablaSolicitudEspecialidades({
       case "APROBADO":
         return "bg-green-500 text-white";
       case "ASIGNADO":
-        return "bg-blue-500 text-white";
+        return "bg-green-600 hover:bg-green-700 text-white";
       case "BLOQUEADO":
         return "bg-gray-400 text-white";
       case "PENDIENTE":
-        return "bg-orange-500 text-white";
+        return "bg-amber-600 hover:bg-amber-700 text-white";
       case "NO_PROCEDE":
-        return "bg-orange-500 text-white";
+        return "bg-red-600 hover:bg-red-700 text-white";
+      case "NO PROCEDE":
+        return "bg-red-600 hover:bg-red-700 text-white";
       case "RECHAZADO":
-        return "bg-red-500 text-white";
+        return "bg-red-600 hover:bg-red-700 text-white";
       default:
         return "bg-gray-300 text-gray-700";
     }
@@ -472,16 +474,9 @@ export default function TablaSolicitudEspecialidades({
 
                     {/* Estado */}
                     <td className="px-4 py-4 text-center">
-                      <div
-                        className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm ${getEstadoBadgeClass(
-                          d?.estado || "PENDIENTE"
-                        )}`}
-                      >
-                        {d?.estado === "ASIGNADO" && <Check className="w-4 h-4" />}
-                        {d?.estado === "APROBADO" && <Check className="w-4 h-4" />}
-                        {d?.estado === "PENDIENTE" && <Calendar className="w-4 h-4" />}
+                      <span className="text-sm font-semibold text-gray-900">
                         {getEstadoLabel(d?.estado || "PENDIENTE")}
-                      </div>
+                      </span>
                     </td>
                   </tr>
                 );

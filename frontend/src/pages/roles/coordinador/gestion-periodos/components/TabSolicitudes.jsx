@@ -395,18 +395,6 @@ export default function TabSolicitudes({
                   </th>
                   <th 
                     className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('totalEspecialidades')}
-                  >
-                    Esp. <SortIcon columnKey="totalEspecialidades" />
-                  </th>
-                  <th 
-                    className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
-                    onClick={() => handleSort('totalTurnosSolicitados')}
-                  >
-                    Turnos <SortIcon columnKey="totalTurnosSolicitados" />
-                  </th>
-                  <th 
-                    className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
                     onClick={() => handleSort('estado')}
                   >
                     Estado <SortIcon columnKey="estado" />
@@ -438,16 +426,6 @@ export default function TabSolicitudes({
                       </td>
                       <td className="px-3 py-2 text-sm text-gray-700">
                         {periodoLabel}
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-purple-100 text-purple-700 text-xs font-semibold">
-                          {s.totalEspecialidades ?? 0}
-                        </span>
-                      </td>
-                      <td className="px-3 py-2 text-center">
-                        <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 text-xs font-semibold">
-                          {s.totalTurnosSolicitados ?? 0}
-                        </span>
                       </td>
                       <td className="px-3 py-2 text-center">
                         <span className={`inline-block px-2 py-1 rounded-md text-xs font-semibold border ${getEstadoBadge(s.estado)}`}>

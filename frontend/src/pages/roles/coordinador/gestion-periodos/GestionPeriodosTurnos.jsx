@@ -355,17 +355,6 @@ export default function GestionPeriodosTurnos() {
             <h1 className="text-2xl font-bold text-gray-900 mb-1">Gestión de Períodos y Solicitudes</h1>
             <p className="text-sm text-gray-600">Administre los períodos y revise solicitudes de turnos de las IPRESS</p>
           </div>
-          
-          {/* Botón Recargar Periodos */}
-          <button
-            onClick={() => cargarPeriodos()}
-            disabled={loadingPeriodos}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
-            title="Recargar periodos"
-          >
-            <RefreshCw className={`w-4 h-4 ${loadingPeriodos ? 'animate-spin' : ''}`} />
-            <span className="font-medium">{loadingPeriodos ? 'Recargando...' : 'Recargar'}</span>
-          </button>
         </div>
 
         {activeTab === "periodos" && (

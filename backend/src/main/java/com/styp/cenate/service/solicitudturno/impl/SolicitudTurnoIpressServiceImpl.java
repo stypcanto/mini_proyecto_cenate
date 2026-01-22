@@ -745,6 +745,9 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 		SolicitudTurnoIpress s = solicitudRepository.findByIdFull(id)
 				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + id));
+				
+		// Cargar las fechas de los detalles en una segunda query para evitar duplicación
+		solicitudRepository.findDetallesWithFechasBySolicitudId(id);
 
 		// validarPropietarioOCoordinador(s);
 

@@ -267,9 +267,9 @@ export default function ModalDetalleSolicitud({
   // Estadísticas y filtrado
   const estadisticas = useMemo(() => {
     const pendientes = detalles.filter(d => !d.estado || d.estado === 'PENDIENTE').length;
-    const aprobados = detalles.filter(d => d.estado === 'APROBADO').length;
-    const rechazados = detalles.filter(d => d.estado === 'RECHAZADO').length;
-    return { pendientes, aprobados, rechazados, total: detalles.length };
+    const asignados = detalles.filter(d => d.estado === 'ASIGNADO').length;
+    const noProcede = detalles.filter(d => d.estado === 'NO PROCEDE').length;
+    return { pendientes, asignados, noProcede, total: detalles.length };
   }, [detalles]);
 
   const detallesFiltrados = useMemo(() => {
@@ -450,7 +450,7 @@ export default function ModalDetalleSolicitud({
                 <div className="flex items-center justify-between mb-2">
                   <h4 className="text-xs font-semibold text-gray-900">Progreso de Revisión</h4>
                   <span className="text-xs text-gray-600">
-                    {estadisticas.aprobados + estadisticas.rechazados} de {estadisticas.total} procesadas
+                    {estadisticas.asignados + estadisticas.noProcede} de {estadisticas.total} procesadas
                   </span>
                 </div>
                 
@@ -458,13 +458,13 @@ export default function ModalDetalleSolicitud({
                   <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className="h-2 bg-gradient-to-r from-green-500 to-emerald-500" 
-                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.aprobados / estadisticas.total) * 100 : 0}%` }}
+                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.asignados / estadisticas.total) * 100 : 0}%` }}
                     />
                   </div>
                   <div className="flex-1 h-2 bg-gray-200 rounded-full overflow-hidden">
                     <div 
                       className="h-2 bg-gradient-to-r from-red-500 to-rose-500" 
-                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.rechazados / estadisticas.total) * 100 : 0}%` }}
+                      style={{ width: `${estadisticas.total > 0 ? (estadisticas.noProcede / estadisticas.total) * 100 : 0}%` }}
                     />
                   </div>
                 </div>
@@ -475,12 +475,12 @@ export default function ModalDetalleSolicitud({
                     <div className="text-base font-bold text-amber-700">{estadisticas.pendientes}</div>
                   </div>
                   <div className="bg-white rounded px-2 py-1 text-center">
-                    <div className="text-[10px] text-green-600 font-medium">Aprobadas</div>
-                    <div className="text-base font-bold text-green-700">{estadisticas.aprobados}</div>
+                    <div className="text-[10px] text-green-600 font-medium">Asignadas</div>
+                    <div className="text-base font-bold text-green-700">{estadisticas.asignados}</div>
                   </div>
                   <div className="bg-white rounded px-2 py-1 text-center">
-                    <div className="text-[10px] text-red-600 font-medium">Rechazadas</div>
-                    <div className="text-base font-bold text-red-700">{estadisticas.rechazados}</div>
+                    <div className="text-[10px] text-red-600 font-medium">No procede</div>
+                    <div className="text-base font-bold text-red-700">{estadisticas.noProcede}</div>
                   </div>
                 </div>
               </div>
@@ -591,8 +591,8 @@ export default function ModalDetalleSolicitud({
                     >
                       <option value="TODOS">Todos</option>
                       <option value="PENDIENTE">Pendientes</option>
-                      <option value="APROBADO">Aprobadas</option>
-                      <option value="RECHAZADO">Rechazadas</option>
+                      <option value="ASIGNADO">Asignadas</option>
+                      <option value="NO PROCEDE">No procede</option>
                     </select>
                   </div>
                 </div>

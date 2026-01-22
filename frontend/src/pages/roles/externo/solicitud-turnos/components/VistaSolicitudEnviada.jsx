@@ -261,11 +261,13 @@ export default function VistaSolicitudEnviada({ solicitud }) {
 
                       <td className="px-3 py-3 text-center">
                         <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
-                          detalle.estado === "APROBADO"
+                          detalle.estado === "ASIGNADO"
                             ? "bg-green-100 text-green-800 border border-green-300"
-                            : detalle.estado === "RECHAZADO"
+                            : detalle.estado === "NO PROCEDE"
                             ? "bg-red-100 text-red-800 border border-red-300"
-                            : "bg-amber-100 text-amber-800 border border-amber-300"
+                            : detalle.estado === "PENDIENTE"
+                            ? "bg-amber-100 text-amber-800 border border-amber-300"
+                            : "bg-gray-100 text-gray-800 border border-gray-300"
                         }`}>
                           {detalle.estado}
                         </span>
@@ -329,7 +331,7 @@ export default function VistaSolicitudEnviada({ solicitud }) {
                         {tieneObservacion ? (
                           <button
                             onClick={() => setModalObservacion(detalle)}
-                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-amber-600 text-white hover:bg-amber-700 transition-colors shadow-sm"
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-colors shadow-sm"
                           >
                             <Eye className="w-3.5 h-3.5" />
                             Ver
@@ -351,10 +353,10 @@ export default function VistaSolicitudEnviada({ solicitud }) {
       {modalObservacion && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setModalObservacion(null)}>
           <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-gradient-to-r from-amber-500 to-orange-500 px-6 py-4 rounded-t-lg flex items-center justify-between">
+            <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-6 py-4 rounded-t-lg flex items-center justify-between">
               <div>
                 <h3 className="text-lg font-bold text-white">Observación</h3>
-                <p className="text-amber-100 text-sm">{modalObservacion.nombreServicio}</p>
+                <p className="text-blue-100 text-sm">{modalObservacion.nombreServicio}</p>
               </div>
               <button
                 onClick={() => setModalObservacion(null)}

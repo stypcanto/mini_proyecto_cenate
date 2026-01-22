@@ -9,6 +9,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
+import com.styp.cenate.model.DetalleSolicitudTurno;
 import com.styp.cenate.model.SolicitudTurnoIpress;
 
 /**
@@ -181,12 +182,20 @@ public interface SolicitudTurnoIpressRepository extends JpaRepository<SolicitudT
     		  LEFT JOIN FETCH s.periodo p
     		  LEFT JOIN FETCH s.personal per
     		  LEFT JOIN FETCH per.ipress i
+    		  LEFT JOIN FETCH per.usuario u
     		  LEFT JOIN FETCH s.detalles d
     		  LEFT JOIN FETCH d.especialidad esp
-    		  LEFT JOIN FETCH d.fechasDetalle fd
     		  WHERE s.idSolicitud = :id
     		""")
     		Optional<SolicitudTurnoIpress> findByIdFull(@Param("id") Long id);
+    		
+    @Query("""
+    		  SELECT DISTINCT d
+    		  FROM DetalleSolicitudTurno d
+    		  LEFT JOIN FETCH d.fechasDetalle fd
+    		  WHERE d.solicitud.idSolicitud = :idSolicitud
+    		""")
+    		List<DetalleSolicitudTurno> findDetallesWithFechasBySolicitudId(@Param("idSolicitud") Long idSolicitud);
     
     
     
