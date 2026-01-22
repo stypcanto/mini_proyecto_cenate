@@ -26,7 +26,26 @@ export default function VistaSolicitudEnviada({ solicitud }) {
   const [modalFechas, setModalFechas] = useState(null);
   const [filtroEspecialidad, setFiltroEspecialidad] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("TODAS");
-  
+
+  // Filtrar especialidades (debe estar antes del early return)
+  const especialidadesFiltradas = useMemo(() => {
+    let resultado = solicitud?.detalles || [];
+
+    // Filtro por especialidad
+    if (filtroEspecialidad.trim() !== "") {
+      resultado = resultado.filter((detalle) =>
+        detalle.nombreServicio?.toLowerCase().includes(filtroEspecialidad.toLowerCase())
+      );
+    }
+
+    // Filtro por estado
+    if (filtroEstado !== "TODAS") {
+      resultado = resultado.filter((detalle) => detalle.estado === filtroEstado);
+    }
+
+    return resultado;
+  }, [solicitud?.detalles, filtroEspecialidad, filtroEstado]);
+
   if (!solicitud) {
     return (
       <div className="text-center py-8 text-gray-500">
@@ -61,25 +80,6 @@ export default function VistaSolicitudEnviada({ solicitud }) {
       return fecha;
     }
   };
-
-  // Filtrar especialidades
-  const especialidadesFiltradas = useMemo(() => {
-    let resultado = solicitud.detalles || [];
-
-    // Filtro por especialidad
-    if (filtroEspecialidad.trim() !== "") {
-      resultado = resultado.filter((detalle) =>
-        detalle.nombreServicio?.toLowerCase().includes(filtroEspecialidad.toLowerCase())
-      );
-    }
-
-    // Filtro por estado
-    if (filtroEstado !== "TODAS") {
-      resultado = resultado.filter((detalle) => detalle.estado === filtroEstado);
-    }
-
-    return resultado;
-  }, [solicitud.detalles, filtroEspecialidad, filtroEstado]);
 
   return (
     <div className="space-y-6">
