@@ -566,6 +566,34 @@ const teleecgService = {
       throw error;
     }
   },
+
+  /**
+   * ✅ v11.5.0: Listar TODAS las imágenes individuales (sin agrupar por paciente)
+   * @param {string} estado - Estado a filtrar (TODOS, ENVIADA, OBSERVADA, ATENDIDA)
+   * @returns {Array} Lista de imágenes ECG
+   */
+  listar: async (estado = "TODOS") => {
+    try {
+      const params = new URLSearchParams();
+      if (estado && estado !== "TODOS") {
+        params.append("estado", estado);
+      }
+
+      const queryString = params.toString();
+      const url = queryString ? `/teleekgs?${queryString}` : "/teleekgs";
+
+      console.log("🚀 [GET] Listando EKGs:", url);
+      const response = await apiClient.get(url, true);
+
+      // El response puede venir como array directo o envuelto en .data
+      const data = Array.isArray(response) ? response : response.data || [];
+      console.log("✅ EKGs cargadas:", data.length, "imágenes");
+      return data;
+    } catch (error) {
+      console.error("❌ Error listando EKGs:", error);
+      throw error;
+    }
+  },
 };
 
 export default teleecgService;
