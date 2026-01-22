@@ -8,6 +8,54 @@
 
 ---
 
+## v1.23.2 (2026-01-21) - 🎨 Tele-ECG UI/UX: Drawer Overlay Profesional v10.1.0
+
+### 🎯 Descripción
+
+**Mejora significativa de UX** en el panel de filtros avanzados. Convierte el panel de filtros inline en un drawer overlay profesional que se desliza desde la derecha, manteniendo siempre visible la imagen EKG.
+
+### 🔧 Cambios Técnicos
+
+**Frontend (1 cambio)**:
+- ✅ Component: `ModalEvaluacionECG.jsx` - Refactorización del renderizado de filtros
+  - ❌ Removido: Panel inline en columna izquierda (ocupaba espacio valioso)
+  - ✅ Agregado: Drawer overlay fixed desde derecha con:
+    - Backdrop oscuro con `backdrop-blur-sm` + `bg-black/30` clickeable
+    - Header gradient `from-indigo-600 to-purple-600`
+    - Close button (X) en header
+    - Z-index layering: backdrop z-40, drawer z-50
+    - Smooth transitions: `transition-transform duration-300`
+    - Rounded corners: `rounded-l-xl` (redondeado en esquina izquierda)
+    - Full height: `h-full` con `overflow-y-auto`
+    - Width: `w-80` (320px - tamaño ideal para filtros)
+
+### ✨ Beneficios
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Espacio Imagen** | ❌ Se reduce cuando filtros activos | ✅ Siempre a tamaño completo |
+| **Profundidad Visual** | ❌ Panel inline (2D) | ✅ Drawer overlay (profundidad) |
+| **Usabilidad** | ❌ Scroll en imagen + filtros | ✅ Solo scroll en drawer |
+| **Diseño** | ❌ Básico | ✅ Profesional (header gradient, shadow) |
+| **Accesibilidad** | ❌ Solo botón X | ✅ Botón X + backdrop clickeable |
+| **Animación** | ❌ Ninguna | ✅ Transiciones suaves TailwindCSS |
+
+### ✅ Build Status
+
+- Frontend: `npm run build` → ✅ SIN ERRORES
+- Status: **DEPLOYMENT READY** 🚀
+
+### 📊 Cambios
+
+| Métrica | Valor |
+|---------|-------|
+| Líneas agregadas | 39 |
+| Líneas removidas | 11 |
+| Neto | +28 líneas |
+| Archivos modificados | 1 |
+
+---
+
 ## v1.23.1 (2026-01-21) - 🎬 Tele-ECG: Transformaciones Persistentes v10.0.0 (Rotación + Flip + Crop)
 
 ### 🎯 Descripción
