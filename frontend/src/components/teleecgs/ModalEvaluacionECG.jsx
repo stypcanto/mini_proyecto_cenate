@@ -189,18 +189,9 @@ export default function ModalEvaluacionECG({
     interconsultaEspecialidades: [], // array de especialidades para interconsulta
   });
 
-  // 🏥 Estado para autocomplete de especialidades (v1.27.0 + v11.0.0)
-  const [especialidades, setEspecialidades] = useState([]);
-
-  // RECITACIÓN: inputs de búsqueda
-  const [recitarBusqueda, setRecitarBusqueda] = useState("");
-  const [filteredEspecialidadesRecitar, setFilteredEspecialidadesRecitar] = useState([]);
-  const [showRecitarDropdown, setShowRecitarDropdown] = useState(false);
-
-  // INTERCONSULTA: inputs de búsqueda
+  // 🏥 Estado para interconsulta - input de búsqueda
   const [interconsultaBusqueda, setInterconsultaBusqueda] = useState("");
-  const [filteredEspecialidadesInterconsulta, setFilteredEspecialidadesInterconsulta] = useState([]);
-  const [showInterconsultaDropdown, setShowInterconsultaDropdown] = useState(false);
+  const [especialidades, setEspecialidades] = useState([]);  // Para future autocomplete
 
   const textareaEvalRef = useRef(null);
   const textareaNotaRef = useRef(null);
@@ -529,75 +520,8 @@ export default function ModalEvaluacionECG({
   };
 
     // ════════════════════════════════════════
-  // HANDLERS PARA RECITACIÓN (v11.0.0)
+  // HANDLER PARA REMOVER ESPECIALIDAD (v11.0.0)
   // ════════════════════════════════════════
-  const handleRecitarBusquedaChange = (value) => {
-    setRecitarBusqueda(value);
-
-    if (especialidades.length > 0) {
-      let filtered;
-      if (value.trim().length > 0) {
-        filtered = especialidades.filter((e) =>
-          e.descripcion.toLowerCase().includes(value.toLowerCase())
-        );
-      } else {
-        filtered = especialidades;
-      }
-      setFilteredEspecialidadesRecitar(filtered);
-      setShowRecitarDropdown(filtered.length > 0);
-    } else {
-      setFilteredEspecialidadesRecitar([]);
-      setShowRecitarDropdown(false);
-    }
-  };
-
-  const handleSelectRecitarEspecialidad = (descripcion) => {
-    setPlanSeguimiento({
-      ...planSeguimiento,
-      recitarEspecialidad: descripcion,
-    });
-    setRecitarBusqueda(descripcion);
-    setShowRecitarDropdown(false);
-    setFilteredEspecialidadesRecitar([]);
-  };
-
-  // ════════════════════════════════════════
-  // HANDLERS PARA INTERCONSULTA (v11.0.0)
-  // ════════════════════════════════════════
-  const handleInterconsultaBusquedaChange = (value) => {
-    setInterconsultaBusqueda(value);
-
-    if (especialidades.length > 0) {
-      let filtered;
-      if (value.trim().length > 0) {
-        filtered = especialidades.filter((e) =>
-          e.descripcion.toLowerCase().includes(value.toLowerCase())
-        );
-      } else {
-        filtered = especialidades;
-      }
-      setFilteredEspecialidadesInterconsulta(filtered);
-      setShowInterconsultaDropdown(filtered.length > 0);
-    } else {
-      setFilteredEspecialidadesInterconsulta([]);
-      setShowInterconsultaDropdown(false);
-    }
-  };
-
-  const handleSelectInterconsultaEspecialidad = (descripcion) => {
-    // Agregar especialidad a la lista si no está ya
-    const yaAgregada = planSeguimiento.interconsultaEspecialidades.includes(descripcion);
-    if (!yaAgregada) {
-      setPlanSeguimiento({
-        ...planSeguimiento,
-        interconsultaEspecialidades: [...planSeguimiento.interconsultaEspecialidades, descripcion],
-      });
-    }
-    setInterconsultaBusqueda(""); // Limpiar input después de seleccionar
-    setShowInterconsultaDropdown(false);
-    setFilteredEspecialidadesInterconsulta([]);
-  };
-
   const handleRemoveInterconsultaEspecialidad = (descripcion) => {
     setPlanSeguimiento({
       ...planSeguimiento,
@@ -765,13 +689,15 @@ export default function ModalEvaluacionECG({
     setDerivacionesSeleccionadas([]);
     // ✅ v9.2.0: 8️⃣ Resetear motivo de No Diagnóstico
     setMotivoNoDiagnostico("");
-  };
+    // ✅ v11.0.0: Resetear plan de seguimiento
     setPlanSeguimiento({
       recitarEnTresMeses: false,
       recitarEspecialidad: "",
       interconsulta: false,
       interconsultaEspecialidades: [],
     });
+    setInterconsultaBusqueda("");
+  };
 
   if (!isOpen) return null;
 
@@ -1074,27 +1000,14 @@ export default function ModalEvaluacionECG({
                       </label>
 
                       {planSeguimiento.recitarEnTresMeses && (
-                        <div className="relative ml-4">
+                        <div className="ml-4">
                           <input
                             type="text"
-                            placeholder="Seleccionar especialidad..."
-                            value={recitarBusqueda}
-                            onChange={(e) => handleRecitarBusquedaChange(e.target.value)}
+                            placeholder="Especialidad para recitación (ej: Cardiología)"
+                            value={planSeguimiento.recitarEspecialidad}
+                            onChange={(e) => setPlanSeguimiento({...planSeguimiento, recitarEspecialidad: e.target.value})}
                             className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                           />
-                          {showRecitarDropdown && filteredEspecialidadesRecitar.length > 0 && (
-                            <div className="absolute top-full mt-1 w-full bg-white border rounded shadow-lg z-10 max-h-32 overflow-y-auto">
-                              {filteredEspecialidadesRecitar.map(esp => (
-                                <div
-                                  key={esp.idEspecialidad}
-                                  onClick={() => handleSelectRecitarEspecialidad(esp.descripcion)}
-                                  className="px-2 py-1 hover:bg-purple-100 cursor-pointer text-xs"
-                                >
-                                  {esp.descripcion}
-                                </div>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>
@@ -1113,31 +1026,41 @@ export default function ModalEvaluacionECG({
 
                       {planSeguimiento.interconsulta && (
                         <div className="ml-4 space-y-2">
-                          {/* Input de búsqueda */}
-                          <div className="relative">
+                          <div className="flex gap-2">
                             <input
                               type="text"
-                              placeholder="Buscar y agregar especialidad..."
+                              placeholder="Especialidad (ej: Cardiología)"
                               value={interconsultaBusqueda}
-                              onChange={(e) => handleInterconsultaBusquedaChange(e.target.value)}
-                              className="w-full px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                              onChange={(e) => setInterconsultaBusqueda(e.target.value)}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && interconsultaBusqueda.trim()) {
+                                  if (!planSeguimiento.interconsultaEspecialidades.includes(interconsultaBusqueda.trim())) {
+                                    setPlanSeguimiento({
+                                      ...planSeguimiento,
+                                      interconsultaEspecialidades: [...planSeguimiento.interconsultaEspecialidades, interconsultaBusqueda.trim()],
+                                    });
+                                  }
+                                  setInterconsultaBusqueda("");
+                                }
+                              }}
+                              className="flex-1 px-2 py-1.5 text-xs border rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                             />
-                            {showInterconsultaDropdown && filteredEspecialidadesInterconsulta.length > 0 && (
-                              <div className="absolute top-full mt-1 w-full bg-white border rounded shadow-lg z-10 max-h-32 overflow-y-auto">
-                                {filteredEspecialidadesInterconsulta.map(esp => (
-                                  <div
-                                    key={esp.idEspecialidad}
-                                    onClick={() => handleSelectInterconsultaEspecialidad(esp.descripcion)}
-                                    className="px-2 py-1 hover:bg-purple-100 cursor-pointer text-xs"
-                                  >
-                                    {esp.descripcion}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
+                            <button
+                              onClick={() => {
+                                if (interconsultaBusqueda.trim() && !planSeguimiento.interconsultaEspecialidades.includes(interconsultaBusqueda.trim())) {
+                                  setPlanSeguimiento({
+                                    ...planSeguimiento,
+                                    interconsultaEspecialidades: [...planSeguimiento.interconsultaEspecialidades, interconsultaBusqueda.trim()],
+                                  });
+                                  setInterconsultaBusqueda("");
+                                }
+                              }}
+                              className="px-2 py-1.5 text-xs bg-purple-600 text-white rounded hover:bg-purple-700 font-semibold"
+                            >
+                              Agregar
+                            </button>
                           </div>
 
-                          {/* Lista de especialidades seleccionadas */}
                           {planSeguimiento.interconsultaEspecialidades.length > 0 && (
                             <div className="flex flex-wrap gap-1">
                               {planSeguimiento.interconsultaEspecialidades.map((esp) => (
