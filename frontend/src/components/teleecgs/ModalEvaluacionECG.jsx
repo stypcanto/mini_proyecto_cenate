@@ -735,40 +735,50 @@ export default function ModalEvaluacionECG({
                   📋 Información
                 </h3>
                 <div className="space-y-3">
-                  {/* ✅ v1.27.7: Extraer info del paciente de la primera imagen, no del asegurado */}
+                  {/* ✅ v1.27.8: Extraer info del paciente desde asegurado agrupado o primera imagen */}
                   {(() => {
-                    // Si ecg tiene imagenes (es asegurado agrupado), obtener del primer ECG
-                    // Si no, es un ECG individual
-                    const imagenConInfo = imagenesActuales && imagenesActuales.length > 0 ? imagenesActuales[0] : ecg;
+                    // Prioridad:
+                    // 1. Usar campos del asegurado agrupado (ecg.edadPaciente)
+                    // 2. Caer a primera imagen (imagenesActuales[0].edadPaciente)
+                    // 3. Si es solo un ECG (sin agrupar), usar ecg directamente
+                    const pacienteInfo = {
+                      nombres: ecg?.nombres_paciente || ecg?.nombresPaciente || (imagenesActuales?.[0]?.nombres_paciente) || (imagenesActuales?.[0]?.nombresPaciente) || "N/A",
+                      apellidos: ecg?.apellidos_paciente || ecg?.apellidosPaciente || (imagenesActuales?.[0]?.apellidos_paciente) || (imagenesActuales?.[0]?.apellidosPaciente) || "",
+                      dni: ecg?.num_doc_paciente || ecg?.numDocPaciente || (imagenesActuales?.[0]?.num_doc_paciente) || (imagenesActuales?.[0]?.numDocPaciente) || "N/A",
+                      edad: ecg?.edad_paciente || ecg?.edadPaciente || (imagenesActuales?.[0]?.edad_paciente) || (imagenesActuales?.[0]?.edadPaciente),
+                      genero: ecg?.genero_paciente || ecg?.generoPaciente || (imagenesActuales?.[0]?.genero_paciente) || (imagenesActuales?.[0]?.generoPaciente),
+                      ipress: ecg?.nombre_ipress || ecg?.nombreIpress || (imagenesActuales?.[0]?.nombre_ipress) || (imagenesActuales?.[0]?.nombreIpress) || "N/A"
+                    };
+
                     return (
                       <>
                         <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                           <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Paciente</span>
                           <p className="font-bold text-gray-900 text-base mt-1">
-                            {imagenConInfo?.nombres_paciente || imagenConInfo?.nombresPaciente} {imagenConInfo?.apellidos_paciente || imagenConInfo?.apellidosPaciente}
+                            {pacienteInfo.nombres} {pacienteInfo.apellidos}
                           </p>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                           <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">DNI</span>
-                          <p className="font-bold text-gray-900 text-base mt-1">{imagenConInfo?.num_doc_paciente || imagenConInfo?.numDocPaciente}</p>
+                          <p className="font-bold text-gray-900 text-base mt-1">{pacienteInfo.dni}</p>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                           <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Edad</span>
                           <p className="font-bold text-gray-900 text-base mt-1">
-                            {imagenConInfo?.edadPaciente ? `${imagenConInfo.edadPaciente} años` : "No disponible"}
+                            {pacienteInfo.edad ? `${pacienteInfo.edad} años` : "No disponible"}
                           </p>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                           <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">Género</span>
                           <p className="font-bold text-gray-900 text-base mt-1">
-                            {imagenConInfo?.generoPaciente === "M" || imagenConInfo?.generoPaciente === "MASCULINO" ? "🧑 Masculino" :
-                             imagenConInfo?.generoPaciente === "F" || imagenConInfo?.generoPaciente === "FEMENINO" ? "👩 Femenino" :
-                             imagenConInfo?.generoPaciente ? imagenConInfo.generoPaciente : "No disponible"}
+                            {pacienteInfo.genero === "M" || pacienteInfo.genero === "MASCULINO" ? "🧑 Masculino" :
+                             pacienteInfo.genero === "F" || pacienteInfo.genero === "FEMENINO" ? "👩 Femenino" :
+                             pacienteInfo.genero ? pacienteInfo.genero : "No disponible"}
                           </p>
                         </div>
                         <div className="bg-gray-50 rounded-lg p-3 border border-gray-100 shadow-sm">
                           <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">IPRESS</span>
-                          <p className="font-bold text-gray-800 text-sm mt-1">{imagenConInfo?.nombre_ipress || imagenConInfo?.nombreIpress}</p>
+                          <p className="font-bold text-gray-800 text-sm mt-1">{pacienteInfo.ipress}</p>
                         </div>
                       </>
                     );
