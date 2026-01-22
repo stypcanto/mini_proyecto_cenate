@@ -347,6 +347,13 @@ export default function GestionPeriodosTurnos() {
     return { total, activos, cerrados, borradores };
   }, [periodos]);
 
+  const statsSolicitudes = useMemo(() => {
+    const total = (solicitudes || []).length;
+    const enviadas = (solicitudes || []).filter((s) => s.estado === "ENVIADO").length;
+    const iniciadas = (solicitudes || []).filter((s) => s.estado === "INICIADO").length;
+    return { total, enviadas, iniciadas };
+  }, [solicitudes]);
+
   return (
     <div className="min-h-screen bg-gray-50 p-4">
       <div className="max-w-7xl mx-auto">
@@ -366,6 +373,14 @@ export default function GestionPeriodosTurnos() {
             <CardStat title="Activos" value={stats.activos} subtitle="En captura" icon={<Calendar className="w-4 h-4" />} tone="green" />
             <CardStat title="Cerrados" value={stats.cerrados} subtitle="Históricos" icon={<Calendar className="w-4 h-4" />} tone="orange" />
             <CardStat title="Borradores" value={stats.borradores} subtitle="Sin publicar" icon={<Calendar className="w-4 h-4" />} tone="purple" />
+          </div>
+        )}
+
+        {activeTab === "solicitudes" && (
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            <CardStat title="Total" value={statsSolicitudes.total} subtitle="Solicitudes" icon={<FileText className="w-4 h-4" />} tone="blue" />
+            <CardStat title="Enviadas" value={statsSolicitudes.enviadas} subtitle="Para revisión" icon={<FileText className="w-4 h-4" />} tone="green" />
+            <CardStat title="Iniciadas" value={statsSolicitudes.iniciadas} subtitle="En borrador" icon={<FileText className="w-4 h-4" />} tone="orange" />
           </div>
         )}
 

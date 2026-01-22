@@ -2,18 +2,12 @@
 import React, { useMemo, useState, useEffect } from "react";
 import {
   Calendar,
-  Clock,
   FileText,
-  CheckCircle2,
-  XCircle,
   Eye,
   Search,
   Filter,
   Loader2,
   Building2,
-  Users,
-  TrendingUp,
-  Send,
   ChevronDown,
   ChevronUp,
   MapPin,
@@ -115,14 +109,6 @@ export default function TabSolicitudes({
     return m;
   }, [periodos]);
 
-  // Estadísticas de solicitudes
-  const stats = useMemo(() => {
-    const total = safeSolicitudes.length;
-    const enviadas = safeSolicitudes.filter(s => s.estado === "ENVIADO").length;
-    const iniciadas = safeSolicitudes.filter(s => s.estado === "INICIADO").length;
-    return { total, enviadas, iniciadas };
-  }, [safeSolicitudes]);
-
   // Ordenamiento
   const sortedSolicitudes = useMemo(() => {
     if (!sortConfig.key) return safeSolicitudes;
@@ -157,70 +143,13 @@ export default function TabSolicitudes({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Estadísticas compactas */}
-      <div className="grid grid-cols-5 gap-2">
-        <div className="bg-white rounded-lg p-3 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-600 mb-0.5">Total</p>
-              <p className="text-xl font-bold text-gray-900">{stats.total}</p>
-            </div>
-            <FileText className="w-6 h-6 text-gray-400" />
-          </div>
+    <div className="space-y-3">
+      {/* Header con título */}
+      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg shadow-sm p-4">
+        <div>
+          <h2 className="text-xl font-bold text-white">Historial de Solicitudes</h2>
+          <p className="text-xs text-blue-100 mt-0.5">Revise y gestione las solicitudes de turnos enviadas</p>
         </div>
-
-        <div className="bg-white rounded-lg p-3 border border-blue-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-blue-600 mb-0.5">Enviadas</p>
-              <p className="text-xl font-bold text-blue-700">{stats.enviadas}</p>
-            </div>
-            <Send className="w-6 h-6 text-blue-400" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-3 border border-amber-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-amber-600 mb-0.5">Iniciadas</p>
-              <p className="text-xl font-bold text-amber-700">{stats.iniciadas}</p>
-            </div>
-            <FileText className="w-6 h-6 text-amber-400" />
-          </div>
-        </div>
-
-        {/* Comentadas las estadísticas que ya no se usan
-        <div className="bg-white rounded-lg p-3 border border-green-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-green-600 mb-0.5">Aprobadas</p>
-              <p className="text-xl font-bold text-green-700">{stats.aprobadas}</p>
-            </div>
-            <CheckCircle2 className="w-6 h-6 text-green-400" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-3 border border-red-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-red-600 mb-0.5">Rechazadas</p>
-              <p className="text-xl font-bold text-red-700">{stats.rechazadas}</p>
-            </div>
-            <XCircle className="w-6 h-6 text-red-400" />
-          </div>
-        </div>
-
-        <div className="bg-white rounded-lg p-3 border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs text-gray-600 mb-0.5">Borradores</p>
-              <p className="text-xl font-bold text-gray-700">{stats.borradores}</p>
-            </div>
-            <FileText className="w-6 h-6 text-gray-400" />
-          </div>
-        </div>
-        */}
       </div>
 
       {/* Filtros compactos */}
