@@ -510,8 +510,10 @@ const teleecgService = {
     try {
       console.log("📚 [CARGAR ESPECIALIDADES]");
       const response = await apiClient.get("/especialidades/activas", true);
-      console.log("✅ [Especialidades Cargadas]:", response.data?.length || 0);
-      return response.data || [];
+      // Soporta respuesta como array directo o envuelto en .data
+      const data = Array.isArray(response) ? response : (response.data || []);
+      console.log("✅ [Especialidades Cargadas]:", data?.length || 0);
+      return data;
     } catch (error) {
       console.error("❌ Error al cargar especialidades:", error.message);
       return [];
