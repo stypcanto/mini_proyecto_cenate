@@ -3,8 +3,138 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación del Módulo Tele-ECG en:
-> - ⭐ `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (NUEVO - v10.0.0 Transformaciones Persistentes)
+> - ⭐ `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (ACTUALIZADO - v1.22.1 + Zoom Digital + Filtros)
 > - `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md` (Análisis arquitectónico)
+
+---
+
+## v1.30.0 (2026-01-22) - 🔍 Tele-ECG: Zoom Digital 100%-500% + Filtros Avanzados en Tiempo Real (v12.0.0)
+
+### 🎯 Descripción
+
+**Visualizador EKG profesional con zoom digital sin pérdida de calidad, filtros automáticos, reglas milimétrica fijas y navegación mejorada**. Permite examinar ECGs en detalle hasta 500% con aplicación de filtros en tiempo real mientras se zooma.
+
+### 🔧 Cambios Técnicos
+
+#### **Backend**:
+- ✅ **TeleECGController.java**: Endpoint GET `/api/teleekgs` retorna `List<AseguradoConECGsDTO>` consolidado
+- ✅ **TeleECGService.java**: Usa `listarAgrupaPorAsegurado()` para agregar ECGs por paciente
+- ✅ **Resultado**: Tabla moestra 1 fila por asegurado con totales (total_ecgs, ecgs_pendientes, ecgs_observadas, ecgs_atendidas)
+
+#### **Frontend - FullscreenImageViewer.jsx (v12.0.0)**:
+
+**1. Zoom Digital Real (100% - 500%)**:
+- ✅ Integrar `react-zoom-pan-pinch` con `TransformWrapper` + `TransformComponent`
+- ✅ Soporta múltiples métodos de zoom:
+  - Rueda del ratón: `Scroll` o `Ctrl+Scroll`
+  - Pinch: Dos dedos en pantalla táctil
+  - Doble clic: Zoom +70%
+  - Botones: `+` y `-` en toolbar
+- ✅ Pan/Arrastrar: Navegación cuando imagen > viewport
+- ✅ Rango: minScale=1 (100%), maxScale=5 (500%)
+
+**2. Filtros Automáticos**:
+- ✅ Panel de filtros ABRE automáticamente cuando `zoom > 100%`
+- ✅ Panel CIERRA automáticamente cuando vuelves a `zoom = 100%`
+- ✅ Puedes cerrar manualmente pero reaparece si sigues haciendo zoom
+- ✅ Header muestra: `Filtros Avanzados (Zoom 245%)`
+
+**3. Filtros en Tiempo Real**:
+- ✅ Rotación: 0°, 90°, 180°, 270°
+- ✅ Brightness: 0% - 200%
+- ✅ Contrast: 0% - 200%
+- ✅ Invert: Colores invertidos (blanco ↔ negro)
+- ✅ Flip Horizontal/Vertical: Voltear imagen
+
+**4. Reglas Milimétrica Fijas**:
+- ✅ **Regla Superior**: Horizontal, scrollable, fija arriba
+- ✅ **Regla Lateral**: Vertical, scrollable, fija a la izquierda
+- ✅ Visibles SIEMPRE durante zoom (no desaparecen)
+- ✅ Se redimensionan dinámicamente según zoom level
+- ✅ Etiquetas cada 50mm para referencia
+
+**5. Layout Profesional**:
+- ✅ Header: Título + Contador "Imagen X de Y" + Botón cerrar
+- ✅ Toolbar inferior: Navegación | Herramientas | Acciones
+- ✅ Panel lateral: Filtros desliza desde derecha
+- ✅ Ícono Filter en lugar de rueda
+- ✅ Sin backdrop oscuro (permite ver imagen mientras filtras)
+
+#### **Frontend - TeleECGRecibidas.jsx**:
+- ✅ Corregir React keys: `${numDocPaciente}-${index}` para evitar warnings
+- ✅ Mostrar datos consolidados de asegurado (no imágenes individuales)
+
+#### **Frontend - teleecgService.js**:
+- ✅ Método `listar()`: GET `/api/teleekgs` retorna datos consolidados
+
+### 💡 Mejoras Clínicas
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Zoom máximo** | 100% | ✅ 500% sin pérdida |
+| **Filtros** | Siempre visibles, no interfieren | ✅ Automáticos al hacer zoom |
+| **Reglas** | Desaparecían con zoom | ✅ Siempre visibles, fijas |
+| **Navegación** | Click anterior/siguiente | ✅ Flecha + pan + rueda |
+| **Interactividad** | Estática | ✅ Dinámica en tiempo real |
+| **Visualización tabla** | 4 filas por paciente | ✅ 1 fila consolidada |
+
+### ✅ Build Status
+
+- Frontend: `npm run build` → ✅ SIN ERRORES
+- Backend: `./gradlew build` → ✅ BUILD SUCCESSFUL
+- Status: **DEPLOYMENT READY** 🚀
+
+### 📊 Cambios
+
+| Métrica | Valor |
+|---------|-------|
+| Commits realizados | 5 |
+| Archivos modificados | 4 |
+| Componentes actualizados | 3 (TeleECGRecibidas, FullscreenImageViewer, ModalEvaluacionECG) |
+| Endpoints modificados | 1 |
+| Nuevas dependencias | 0 (react-zoom-pan-pinch ya existía) |
+| Líneas de código | ~250 |
+
+### 🎨 Componentes Implicados
+
+1. **FullscreenImageViewer.jsx** (v12.0.0): Zoom + Filtros + Reglas
+2. **ModalEvaluacionECG.jsx**: Backdrop transparente (sin blur)
+3. **TeleECGRecibidas.jsx**: Consolidación de datos
+4. **teleecgService.js**: Endpoint consolidado
+5. **TeleECGController.java**: Retorna AseguradoConECGsDTO
+
+### 🚀 Funcionalidades Nuevas
+
+```javascript
+// Zoom digital
+- Rueda: Ctrl+Scroll
+- Pinch: 2 dedos
+- Doble clic: Auto zoom
+- Botones: +/- en toolbar
+- Max: 500% sin degradación
+
+// Filtros automáticos
+- Se abren al zoom > 100%
+- Se cierran al zoom = 100%
+- Aplicación en tiempo real
+
+// Reglas visibles
+- Superior: Horizontal scrollable
+- Lateral: Vertical scrollable
+- Ambas actualizan con zoom
+```
+
+### 🔄 Flujo de Uso
+
+1. Abrir Tele-ECG Recibidas → Tabla consolidada (1 fila/paciente)
+2. Click en fila → ModalEvaluacionECG
+3. Click en imagen → FullscreenImageViewer
+4. En fullscreen:
+   - Hacer scroll/pinch/doble-clic para zoom
+   - Panel de filtros aparece automáticamente
+   - Ajustar filtros mientras zoomas
+   - Reglas siempre visibles en bordes
+   - Arrastrar para navegar imagen ampliada
 
 ---
 
