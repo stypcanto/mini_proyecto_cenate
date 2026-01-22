@@ -347,34 +347,32 @@ public class TeleECGController {
     }
 
     /**
-     * ✅ v11.5.0: GET simple para listar TODAS las imágenes (sin paginación)
+     * ✅ v11.5.0: GET consolidado para listar ECGs AGRUPADAS por asegurado
      * Endpoint: GET /api/teleekgs?estado=...
-     * Retorna array simple de imágenes para el frontend
+     * Retorna una fila por asegurado/paciente con conteo consolidado de ECGs
+     * Ideal para dashboard "TeleEKG Recibidas"
      */
     @GetMapping("")
     @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
-    @Operation(summary = "Listar todas las imágenes ECG (sin paginación)")
-    public ResponseEntity<List<TeleECGImagenDTO>> listarTodasImagenes(
+    @Operation(summary = "Listar ECGs agrupadas por asegurado (consolidado)")
+    public ResponseEntity<List<AseguradoConECGsDTO>> listarECGsConsolidadas(
             @Parameter(description = "Estado (TODOS, ENVIADA, OBSERVADA, ATENDIDA)") @RequestParam(required = false, defaultValue = "TODOS") String estado) {
 
-        log.info("🚀 Listando TODAS las imágenes ECG - Estado: {}", estado);
+        log.info("🚀 Listando ECGs CONSOLIDADAS por asegurado - Estado: {}", estado);
 
         try {
-            // Llamar al servicio sin paginación - página 0, 1000 resultados (máximo)
-            Pageable pageable = PageRequest.of(0, 1000);
             String estadoFinal = "TODOS".equals(estado) ? null : estado;
 
-            Page<TeleECGImagenDTO> resultado = teleECGService.listarImagenes(
-                null, estadoFinal, null, null, null, pageable
+            // Usar listarAgrupaPorAsegurado que devuelve datos consolidados
+            List<AseguradoConECGsDTO> resultado = teleECGService.listarAgrupaPorAsegurado(
+                null, estadoFinal, null, null, null
             );
 
-            // Convertir Page a List
-            List<TeleECGImagenDTO> imagenes = resultado.getContent();
-            log.info("✅ Se encontraron {} imágenes", imagenes.size());
+            log.info("✅ Se encontraron {} asegurados con ECGs consolidadas", resultado.size());
 
-            return ResponseEntity.ok(imagenes);
+            return ResponseEntity.ok(resultado);
         } catch (Exception e) {
-            log.error("❌ Error listando imágenes:", e);
+            log.error("❌ Error listando ECGs consolidadas:", e);
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(List.of());
         }
     }
