@@ -639,9 +639,9 @@ export default function TeleEKGRecibidas() {
                   </tr>
                 </thead>
                 <tbody>
-                  {ecgsFiltrados.map((asegurado) => (
+                  {ecgsFiltrados.map((asegurado, index) => (
                     <tr
-                      key={asegurado.num_doc_paciente}
+                      key={`${asegurado.num_doc_paciente}-${index}`}
                       className="border-b hover:bg-gray-50 transition-colors"
                     >
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">

@@ -347,6 +347,39 @@ public class TeleECGController {
     }
 
     /**
+     * ✅ v11.5.0: GET simple para listar TODAS las imágenes (sin paginación)
+     * Endpoint: GET /api/teleekgs?estado=...
+     * Retorna array simple de imágenes para el frontend
+     */
+    @GetMapping("")
+    @CheckMBACPermission(pagina = "/teleekgs/listar", accion = "ver")
+    @Operation(summary = "Listar todas las imágenes ECG (sin paginación)")
+    public ResponseEntity<List<TeleECGImagenDTO>> listarTodasImagenes(
+            @Parameter(description = "Estado (TODOS, ENVIADA, OBSERVADA, ATENDIDA)") @RequestParam(required = false, defaultValue = "TODOS") String estado) {
+
+        log.info("🚀 Listando TODAS las imágenes ECG - Estado: {}", estado);
+
+        try {
+            // Llamar al servicio sin paginación - página 0, 1000 resultados (máximo)
+            Pageable pageable = PageRequest.of(0, 1000);
+            String estadoFinal = "TODOS".equals(estado) ? null : estado;
+
+            Page<TeleECGImagenDTO> resultado = teleECGService.listarImagenes(
+                null, estadoFinal, null, null, null, pageable
+            );
+
+            // Convertir Page a List
+            List<TeleECGImagenDTO> imagenes = resultado.getContent();
+            log.info("✅ Se encontraron {} imágenes", imagenes.size());
+
+            return ResponseEntity.ok(imagenes);
+        } catch (Exception e) {
+            log.error("❌ Error listando imágenes:", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(List.of());
+        }
+    }
+
+    /**
      * Listar imágenes con filtros
      */
     @GetMapping("/listar")
