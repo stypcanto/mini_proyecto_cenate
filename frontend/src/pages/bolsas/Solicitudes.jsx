@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks } from 'lucide-react';
+import PageHeader from '../../components/PageHeader';
+import StatCard from '../../components/StatCard';
+import ListHeader from '../../components/ListHeader';
 
 /**
  * 📋 Solicitudes - Recepción de Bolsa
@@ -310,39 +313,23 @@ export default function Solicitudes() {
     document.body.removeChild(element);
   };
 
-  // Tarjeta de estadística reutilizable
-  const StatCard = ({ label, value, borderColor, textColor, icon }) => (
-    <div className={`bg-white rounded-lg shadow-md p-4 border-l-4 ${borderColor}`}>
-      <div className="flex items-start justify-between">
-        <div>
-          <p className="text-gray-600 text-sm font-medium">{label}</p>
-          <p className={`text-3xl font-bold ${textColor} mt-1`}>{value}</p>
-        </div>
-        <div className={`text-2xl ${textColor} opacity-70`}>{icon}</div>
-      </div>
-    </div>
-  );
 
   return (
     <div className="min-h-screen bg-slate-50 p-4">
       <div className="w-full">
-        {/* Header con título y botón */}
-        <div className="mb-6 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-100 text-blue-700 px-4 py-1 rounded-full text-sm font-semibold flex items-center gap-2">
-              <FolderOpen size={16} />
-              Recepción de Bolsa
-            </div>
-            <h1 className="text-3xl font-bold text-gray-800">Solicitudes</h1>
-          </div>
-          <button
-            onClick={() => {}}
-            className="flex items-center gap-2 px-6 py-3 bg-teal-500 hover:bg-teal-600 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
-          >
-            <Plus size={24} className="font-bold" />
-            Agregar Paciente
-          </button>
-        </div>
+        {/* Header Reutilizable */}
+        <PageHeader
+          badge={{
+            label: "Recepción de Bolsa",
+            bgColor: "bg-blue-100 text-blue-700",
+            icon: FolderOpen
+          }}
+          title="Solicitudes"
+          primaryAction={{
+            label: "Agregar Paciente",
+            onClick: () => {}
+          }}
+        />
 
         {/* Tarjetas de Estadísticas */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
@@ -385,90 +372,48 @@ export default function Solicitudes() {
 
         {/* Sección de Lista de Pacientes */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* Encabezado de sección */}
-          <div className="p-4 border-b border-gray-200">
-            <h2 className="text-lg font-bold text-gray-800 mb-3">Lista de Pacientes</h2>
-
-            {/* Búsqueda y Filtros */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              {/* Búsqueda */}
-              <div className="relative md:col-span-2">
-                <Search size={18} className="absolute left-4 top-3 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Buscar paciente, DNI o IPRESS..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm"
-                />
-              </div>
-
-              {/* Filtro Bolsas */}
-              <div className="relative">
-                <select
-                  value={filtroBolsa}
-                  onChange={(e) => setFiltroBolsa(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
-                >
-                  <option value="todas">Todas las bolsas</option>
-                  <option value="BOLSA 107">BOLSA 107</option>
-                  <option value="BOLSA DENGUE">BOLSA DENGUE</option>
-                  <option value="BOLSAS ENFERMERIA">BOLSAS ENFERMERIA</option>
-                  <option value="BOLSAS EXPLOTADATOS">BOLSAS EXPLOTADATOS</option>
-                  <option value="BOLSAS IVR">BOLSAS IVR</option>
-                  <option value="BOLSAS REPROGRAMACION">BOLSAS REPROGRAMACION</option>
-                  <option value="BOLSA GESTORES TERRITORIAL">BOLSA GESTORES TERRITORIAL</option>
-                </select>
-                <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
-              </div>
-
-              {/* Filtro Redes */}
-              <div className="relative">
-                <select
-                  value={filtroRed}
-                  onChange={(e) => setFiltroRed(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
-                >
-                  <option value="todas">Todas las redes</option>
-                  {redesUnicas.map((red) => (
-                    <option key={red} value={red}>{red}</option>
-                  ))}
-                </select>
-                <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
-              </div>
-
-              {/* Filtro Especialidades */}
-              <div className="relative">
-                <select
-                  value={filtroEspecialidad}
-                  onChange={(e) => setFiltroEspecialidad(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
-                >
-                  <option value="todas">Todas las especialidades</option>
-                  {especialidadesUnicas.map((especialidad) => (
-                    <option key={especialidad} value={especialidad}>{especialidad}</option>
-                  ))}
-                </select>
-                <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
-              </div>
-
-              {/* Filtro Estados */}
-              <div className="relative">
-                <select
-                  value={filtroEstado}
-                  onChange={(e) => setFiltroEstado(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
-                >
-                  <option value="todos">Todos los estados</option>
-                  <option value="pendiente">Pendiente</option>
-                  <option value="citado">Citado</option>
-                  <option value="atendido">Atendido</option>
-                  <option value="observado">Observado</option>
-                </select>
-                <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
-              </div>
-            </div>
-          </div>
+          {/* ListHeader Reutilizable */}
+          <ListHeader
+            title="Lista de Pacientes"
+            searchPlaceholder="Buscar paciente, DNI o IPRESS..."
+            searchValue={searchTerm}
+            onSearchChange={(e) => setSearchTerm(e.target.value)}
+            filters={[
+              {
+                name: "Bolsas",
+                value: filtroBolsa,
+                onChange: (e) => setFiltroBolsa(e.target.value),
+                options: [
+                  { label: "Todas las bolsas", value: "todas" },
+                  { label: "BOLSA 107", value: "BOLSA 107" },
+                  { label: "BOLSA DENGUE", value: "BOLSA DENGUE" },
+                  { label: "BOLSAS ENFERMERIA", value: "BOLSAS ENFERMERIA" },
+                  { label: "BOLSAS EXPLOTADATOS", value: "BOLSAS EXPLOTADATOS" },
+                  { label: "BOLSAS IVR", value: "BOLSAS IVR" },
+                  { label: "BOLSAS REPROGRAMACION", value: "BOLSAS REPROGRAMACION" },
+                  { label: "BOLSA GESTORES TERRITORIAL", value: "BOLSA GESTORES TERRITORIAL" }
+                ]
+              },
+              {
+                name: "Redes",
+                value: filtroRed,
+                onChange: (e) => setFiltroRed(e.target.value),
+                options: [
+                  { label: "Todas las redes", value: "todas" },
+                  ...redesUnicas.map(red => ({ label: red, value: red }))
+                ]
+              },
+              {
+                name: "Especialidades",
+                value: filtroEspecialidad,
+                onChange: (e) => setFiltroEspecialidad(e.target.value),
+                options: [
+                  { label: "Todas las especialidades", value: "todas" },
+                  ...especialidadesUnicas.map(esp => ({ label: esp, value: esp }))
+                ]
+              }
+            ]}
+          />
 
           {/* Botón para descargar selección */}
           {selectedRows.size > 0 && (
