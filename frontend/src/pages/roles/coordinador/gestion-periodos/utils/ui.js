@@ -10,7 +10,11 @@ export const pad2 = (v) => String(v).padStart(2, "0");
 export const fmtDate = (val) => {
   if (!val) return "—";
   try {
-    return new Date(val).toLocaleDateString("es-PE");
+    const fecha = new Date(val);
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    return `${dia}/${mes}/${anio}`;
   } catch {
     return String(val);
   }
@@ -19,7 +23,13 @@ export const fmtDate = (val) => {
 export const fmtDateTime = (val) => {
   if (!val) return "—";
   try {
-    return new Date(val).toLocaleString("es-PE", { hour12: true });
+    const fecha = new Date(val);
+    const dia = String(fecha.getDate()).padStart(2, '0');
+    const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+    const anio = fecha.getFullYear();
+    const hora = String(fecha.getHours()).padStart(2, '0');
+    const minutos = String(fecha.getMinutes()).padStart(2, '0');
+    return `${dia}/${mes}/${anio}, ${hora}:${minutos}`;
   } catch {
     return String(val);
   }

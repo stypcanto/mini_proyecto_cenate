@@ -7,25 +7,33 @@
 /**
  * Formatea una fecha ISO a formato legible en español
  * @param {string} fechaIso - Fecha en formato ISO
- * @returns {string} Fecha formateada
+ * @returns {string} Fecha formateada (dd/MM/yyyy, HH:mm)
  */
 export function formatFecha(fechaIso) {
   if (!fechaIso) return "—";
   const d = new Date(fechaIso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleString("es-PE", { dateStyle: "medium", timeStyle: "short" });
+  const dia = String(d.getDate()).padStart(2, '0');
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const anio = d.getFullYear();
+  const hora = String(d.getHours()).padStart(2, '0');
+  const minuto = String(d.getMinutes()).padStart(2, '0');
+  return `${dia}/${mes}/${anio}, ${hora}:${minuto}`;
 }
 
 /**
  * Formatea solo la fecha (sin hora) en español
  * @param {string} fechaIso - Fecha en formato ISO
- * @returns {string} Fecha formateada
+ * @returns {string} Fecha formateada (dd/MM/yyyy)
  */
 export function formatSoloFecha(fechaIso) {
   if (!fechaIso) return "—";
   const d = new Date(fechaIso);
   if (Number.isNaN(d.getTime())) return "—";
-  return d.toLocaleDateString("es-PE", { year: "numeric", month: "long", day: "numeric" });
+  const dia = String(d.getDate()).padStart(2, '0');
+  const mes = String(d.getMonth() + 1).padStart(2, '0');
+  const anio = d.getFullYear();
+  return `${dia}/${mes}/${anio}`;
 }
 
 /**
