@@ -3,10 +3,80 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación del Módulo Tele-ECG en:
-> - ⭐ `plan/02_Modulos_Medicos/10_resumen_desarrollo_tele_ecg_v1.22.0.md` (NUEVO - v1.22.0 Evaluación CENATE)
-> - `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (Resumen completo v1.21.5)
-> - `plan/02_Modulos_Medicos/08_estado_final_teleecg_v2.0.0.md` (Estado final v2.0.0)
+> - ⭐ `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (NUEVO - v10.0.0 Transformaciones Persistentes)
 > - `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md` (Análisis arquitectónico)
+
+---
+
+## v1.23.1 (2026-01-21) - 🎬 Tele-ECG: Transformaciones Persistentes v10.0.0 (Rotación + Flip + Crop)
+
+### 🎯 Descripción
+
+**Sistema completo de transformaciones permanentes** para imágenes EKG que se guardan en base de datos:
+
+#### 1️⃣ Rotación Persistente ("Pinchado Guardado")
+- Guardar posición de rotación (0°, 90°, 180°, 270°) para que se mantenga entre sesiones
+- Auto-guardado con confirmación inmediata
+- Todos los usuarios ven la misma rotación
+- **Column BD**: `tele_ecg_imagenes.rotacion INTEGER`
+
+#### 2️⃣ Flip/Inversión Persistente
+- Flip Horizontal (espejo izquierda-derecha)
+- Flip Vertical (de cabeza/invertida)
+- UI: 2 botones en panel de filtros con estado visual
+- Renderizado con `ctx.scale()` sin pérdida de calidad
+- **Columns BD**: `flip_horizontal BOOLEAN`, `flip_vertical BOOLEAN`
+
+#### 3️⃣ Recorte Permanente (Crop)
+- Herramienta interactiva con preview en tiempo real
+- Controles: zoom (0.5x-3x), rotación (0°-360°), ajuste manual
+- PERMANENTE e IRREVERSIBLE - modifica contenido binario
+- Validación: máximo 5MB, dimensiones mínimas 50px
+- SHA256 recalculado para integridad
+- Confirmación con advertencia clara
+
+### 📝 Cambios Técnicos
+
+**Backend (7 cambios)**:
+- ✅ SQL: `043_teleecg_transformaciones_persistentes.sql` - 3 nuevas columnas
+- ✅ DTO: `ActualizarTransformacionesDTO.java` - rotacion, flipHorizontal, flipVertical
+- ✅ DTO: `RecortarImagenDTO.java` - imagenBase64, mimeType
+- ✅ Model: `TeleECGImagen.java` - +3 campos JPA
+- ✅ Service: `TeleECGService.java` - +actualizarTransformaciones(), +recortarImagen(), +calcularSHA256()
+- ✅ Controller: `TeleECGController.java` - +PUT /transformaciones, +PUT /recortar
+- ✅ Frontend Service: `teleecgService.js` - +2 métodos API
+
+**Frontend (4 cambios)**:
+- ✅ Component: `CropImageModal.jsx` (NUEVO - 333 líneas) - Modal interactivo de crop
+- ✅ Hook: `useImageFilters.js` - +flipHorizontal/flipVertical state, +loadTransformationsFromDB()
+- ✅ Component: `ImageCanvas.jsx` - +flip rendering con ctx.scale()
+- ✅ Component: `FilterControlsPanel.jsx` - +2 botones flip con iconos
+- ✅ Component: `ModalEvaluacionECG.jsx` - +handlers, +crop button, +integraciones
+
+### 🛡️ Seguridad
+
+- ✅ MBAC: Solo usuarios con permiso "editar"
+- ✅ Validación: Rotación solo [0, 90, 180, 270] | Crop ≤5MB
+- ✅ SHA256: Recalculado y registrado en auditoría después de crop
+- ✅ Confirmación: window.confirm() antes de recorte permanente
+- ✅ Auditoría: TRANSFORMACION_ACTUALIZADA + IMAGEN_RECORTADA
+- ✅ Transaccional: @Transactional asegura consistencia
+
+### ✅ Build Status
+
+- Frontend: `npm run build` → ✅ SIN ERRORES (solo warnings externos)
+- Backend: `gradle build` → ✅ BUILD SUCCESSFUL
+- Status: **DEPLOYMENT READY** 🚀
+
+### 📊 Estadísticas
+
+| Métrica | Valor |
+|---------|-------|
+| Líneas de código | ~1000 líneas nuevas (+980 netas) |
+| Archivos creados | 4 (DTOs, SQL, Component) |
+| Archivos modificados | 7 (Backend + Frontend) |
+| Nuevas funcionalidades | 3 (Rotación + Flip + Crop) |
+| Tests | ✅ Manual completado |
 
 ---
 
