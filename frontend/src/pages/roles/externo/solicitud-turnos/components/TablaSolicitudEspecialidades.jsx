@@ -511,6 +511,7 @@ export default function TablaSolicitudEspecialidades({
           turnoTarde={datos[especialidadSeleccionada.idServicio]?.turnoTarde || 0}
           idDetalle={datos[especialidadSeleccionada.idServicio]?.idDetalle || null}
           fechasIniciales={datos[especialidadSeleccionada.idServicio]?.fechas || []}
+          periodo={periodo}
           onConfirm={(fechasSeleccionadas) => {
             console.log("📅 Fechas seleccionadas en modal:", fechasSeleccionadas);
             console.log("🔧 onAutoGuardarFechas existe?", !!onAutoGuardarFechas);

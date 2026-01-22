@@ -201,7 +201,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 		// Crear solicitud
 		SolicitudTurnoIpress solicitud = SolicitudTurnoIpress.builder().periodo(periodo).personal(personal)
-				.estado("BORRADOR").totalEspecialidades(0).totalTurnosSolicitados(0).build();
+				.estado("INICIADO").totalEspecialidades(0).totalTurnosSolicitados(0).build();
 
 		solicitud.setUpdatedAt(OffsetDateTime.now());
 		solicitud = solicitudRepository.save(solicitud);
@@ -565,6 +565,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		return solicitudRepository.listarResumen(idPeriodo, estado);
 	}
 
+	//INI A NIVEL DE CABECERA, POR EL MOMENTO SE ENCUENTRA SIN USO
 	@Transactional
 	@Override
 	public SolicitudTurnoEstadoResponse aprobarSolicitud(Long idSolicitud) {
@@ -600,6 +601,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 
 		return SolicitudTurnoEstadoMapper.toResponse(solicitudRepository.save(s));
 	}
+	// FIN A NIVEL DE CABECERA, POR EL MOMENTO SE ENCUENTRA SIN USO
 
 	private void recalcularTotales(SolicitudTurnoIpress sol) {
 		int totalTurnos = sol.getDetalles().stream()
@@ -844,7 +846,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		                    SolicitudTurnoIpress s = SolicitudTurnoIpress.builder()
 		                            .periodo(periodo)
 		                            .personal(personal)
-		                            .estado("BORRADOR")
+		                            .estado("INICIADO")
 		                            .totalEspecialidades(0)
 		                            .totalTurnosSolicitados(0)
 		                            .build();
@@ -1016,7 +1018,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 	    if (obs != null) obs = obs.trim();
 	    if (obs != null && obs.isBlank()) obs = null;
 
-	    detalle.setEstado("APROBADO");
+	    detalle.setEstado("ASIGNADO");
 	    if (obs != null) {
 	        detalle.setObservacion(obs);
 	    }
@@ -1052,7 +1054,7 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 	        throw new RuntimeException("No se puede modificar una solicitud ya revisada");
 	    }
 
-	    detalle.setEstado("RECHAZADO");
+	    detalle.setEstado("NO PROCEDE");
 	    detalle.setObservacion(body.getObservacion().trim());
 
 	    DetalleSolicitudTurno guardado = detalleRepository.saveAndFlush(detalle);

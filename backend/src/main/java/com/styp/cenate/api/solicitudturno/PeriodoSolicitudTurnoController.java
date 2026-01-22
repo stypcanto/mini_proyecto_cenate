@@ -3,6 +3,10 @@ package com.styp.cenate.api.solicitudturno;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,6 +24,10 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.styp.cenate.dto.PeriodoSolicitudTurnoRequest;
 import com.styp.cenate.dto.PeriodoSolicitudTurnoResponse;
+import com.styp.cenate.dto.solicitudturno.PeriodoFechasUpdateRequest;
+import com.styp.cenate.dto.solicitudturno.PeriodoFechasUpdateResponse;
+import com.styp.cenate.dto.solicitudturno.PeriodoSolicitudTurnoResumenView;
+import com.styp.cenate.dto.solicitudturno.PeriodoSolicitudTurnoRow;
 import com.styp.cenate.service.solicitudturno.PeriodoSolicitudTurnoService;
 
 import jakarta.validation.Valid;
@@ -150,21 +158,62 @@ public class PeriodoSolicitudTurnoController {
      * Elimina un periodo
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
         log.info("Eliminando periodo con ID: {}", id);
         periodoService.eliminar(id);
         return ResponseEntity.noContent().build();
     }
+    /*ACTUALIZAR FECHA DE INICIO Y FIN DE LOS PERIODOS*/
+    
+    @PutMapping("/{id}/fechas")
+    //@PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    public ResponseEntity<PeriodoFechasUpdateResponse> actualizarFechas(
+            @PathVariable("id") Long id,
+            @Valid @RequestBody PeriodoFechasUpdateRequest req) {
+
+        log.info("PUT /periodos-solicitud/{}/fechas -> inicio={}, fin={}", id, req.getFechaInicio(), req.getFechaFin());
+        return ResponseEntity.ok(periodoService.actualizarFechas(id, req));
+    }
+
+    /* FILTRAR LOS PERIODOS*/
+    /**
+     * Lista periodos con paginación y filtros.
+     * Ejemplo:
+    Ya no sera necesario porque le pasamos por defecto(&sort=fechaInicio,desc)
+	GET /api/periodos-solicitud/filtros?estado=ACTIVO&anio=2026&page=0&size=10&sort=fechaInicio,desc
+	GET /api/periodos-solicitud/filtros?estado=TODOS&anio=2026&page=0&size=10
+     */
+    @GetMapping("/filtros2")
+    public ResponseEntity<Page<PeriodoSolicitudTurnoRow>> listar(
+            @RequestParam(required = false, name="estado") String estado,  // TODOS | ACTIVO | CERRADO
+            @RequestParam(required = false, name="anio") Integer anio,    // 2026
+            @PageableDefault(size = 10, sort = "fechaInicio", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(periodoService.listarConConteoSolicitudes(estado, anio, pageable));
+    }
+    
+    @GetMapping("/filtros")
+    public ResponseEntity<Page<PeriodoSolicitudTurnoResumenView>> listarConResumen(
+            @RequestParam(required = false, name="estado") String estado,  // TODOS | ACTIVO | CERRADO
+            @RequestParam(required = false, name="anio") Integer anio,    // 2026
+            @PageableDefault(size = 10, sort = "fechaInicio", direction = Sort.Direction.DESC) Pageable pageable
+    ) {
+        return ResponseEntity.ok(periodoService.listarConResumen(estado, anio, pageable));
+    }
     
     
- 
     
-    
-    
-    
-    
-    
+
+    /**
+     * Devuelve los años disponibles de los periodos registrados
+     * http://localhost:8080/api/periodos-solicitud/anios
+     */
+    @GetMapping("/anios")
+    //@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN','COORDINADOR')")
+    public ResponseEntity<List<Integer>> listarAnios() {
+        log.info("Listando años disponibles de periodos");
+        return ResponseEntity.ok(periodoService.listarAnios());
+    }
     
     
 }

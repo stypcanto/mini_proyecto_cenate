@@ -8,6 +8,18 @@ import React, { useState, useEffect } from "react";
 import { Calendar, Sun, Moon, X, Loader2 } from "lucide-react";
 import { solicitudTurnoService } from "../../../../../services/solicitudTurnoService";
 
+// Helper para formatear fecha corta
+const formatFechaRango = (fecha) => {
+  if (!fecha) return "—";
+  try {
+    const fechaStr = fecha.split('T')[0];
+    const [anio, mes, dia] = fechaStr.split('-');
+    return `${dia}/${mes}/${anio}`;
+  } catch {
+    return fecha;
+  }
+};
+
 /**
  * Modal para seleccionar fechas específicas por especialidad
  * @param {Object} props
@@ -19,6 +31,7 @@ import { solicitudTurnoService } from "../../../../../services/solicitudTurnoSer
  * @param {Number} props.idDetalle - ID del detalle (para cargar fechas del backend)
  * @param {Array} props.fechasIniciales - Fechas ya seleccionadas (fallback)
  * @param {Function} props.onConfirm - Callback al confirmar (recibe array de fechas)
+ * @param {Object} props.periodo - Periodo seleccionado con fechaInicio y fechaFin
  */
 export default function ModalSeleccionarFechas({
   open,
@@ -29,6 +42,7 @@ export default function ModalSeleccionarFechas({
   idDetalle = null,
   fechasIniciales = [],
   onConfirm = () => {},
+  periodo = null,
 }) {
   const [tipoTurno, setTipoTurno] = useState("MANANA"); // MANANA | TARDE
   const [fechaInput, setFechaInput] = useState("");
@@ -213,6 +227,8 @@ export default function ModalSeleccionarFechas({
                   type="date"
                   value={fechaInput}
                   onChange={(e) => setFechaInput(e.target.value)}
+                  min={periodo?.fechaInicio ? periodo.fechaInicio.split('T')[0] : undefined}
+                  max={periodo?.fechaFin ? periodo.fechaFin.split('T')[0] : undefined}
                   className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
                   placeholder="dd/mm/aaaa"
                 />
@@ -225,6 +241,15 @@ export default function ModalSeleccionarFechas({
                   + Agregar
                 </button>
               </div>
+              
+              {/* Información del rango de fechas permitido */}
+              {periodo?.fechaInicio && periodo?.fechaFin && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <p className="text-xs text-blue-800">
+                    <span className="font-bold">Rango permitido:</span> {formatFechaRango(periodo.fechaInicio)} - {formatFechaRango(periodo.fechaFin)}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Fechas seleccionadas */}
@@ -285,14 +310,14 @@ export default function ModalSeleccionarFechas({
               </>
             )}
 
-            {/* Botón Listo */}
+            {/* Botón Guardar */}
             <button
               type="button"
               onClick={handleConfirmar}
               disabled={loading}
               className="w-full py-4 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-bold text-lg rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Listo
+              Guardar
             </button>
           </div>
         </div>

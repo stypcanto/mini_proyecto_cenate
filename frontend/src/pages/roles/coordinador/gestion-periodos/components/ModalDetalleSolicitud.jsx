@@ -38,6 +38,7 @@ export default function ModalDetalleSolicitud({
   const [observacionesDetalle, setObservacionesDetalle] = useState({});
   const [modalObservacion, setModalObservacion] = useState({ show: false, detalle: null, observacion: "" });
   const [modalAccion, setModalAccion] = useState({ show: false, tipo: null, detalle: null, observacion: "" });
+  const [modalAccionMasiva, setModalAccionMasiva] = useState({ show: false, tipo: null, detalles: [], observacion: "" });
   const [busquedaEspecialidad, setBusquedaEspecialidad] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [seleccionadas, setSeleccionadas] = useState(new Set());
@@ -90,6 +91,28 @@ export default function ModalDetalleSolicitud({
 
   const cerrarModalAccion = () => {
     setModalAccion({ show: false, tipo: null, detalle: null, observacion: "" });
+  };
+
+  const abrirModalAprobarMasivo = (detalles) => {
+    setModalAccionMasiva({
+      show: true,
+      tipo: 'aprobar',
+      detalles: detalles,
+      observacion: ""
+    });
+  };
+
+  const abrirModalRechazarMasivo = (detalles) => {
+    setModalAccionMasiva({
+      show: true,
+      tipo: 'rechazar',
+      detalles: detalles,
+      observacion: ""
+    });
+  };
+
+  const cerrarModalAccionMasiva = () => {
+    setModalAccionMasiva({ show: false, tipo: null, detalles: [], observacion: "" });
   };
 
   const guardarObservacion = async () => {
@@ -175,6 +198,50 @@ export default function ModalDetalleSolicitud({
     } catch (error) {
       console.error(`Error al ${tipo} detalle:`, error);
       alert(`Error al ${tipo === 'aprobar' ? 'aprobar' : 'rechazar'} la especialidad. Intente nuevamente.`);
+    }
+  };
+
+  const confirmarAccionMasiva = async () => {
+    const { tipo, detalles, observacion } = modalAccionMasiva;
+    
+    if (tipo === 'rechazar' && !observacion.trim()) {
+      alert("Debe ingresar una observación para rechazar las especialidades");
+      return;
+    }
+
+    if (!window.confirm(`¿Está seguro de ${tipo === 'aprobar' ? 'aprobar' : 'rechazar'} ${detalles.length} especialidad(es)?`)) {
+      return;
+    }
+
+    try {
+      let exitosas = 0;
+      let fallidas = 0;
+
+      for (const detalle of detalles) {
+        try {
+          if (tipo === 'aprobar') {
+            await solicitudTurnosService.aprobarDetalle(detalle.idDetalle, observacion);
+          } else {
+            await solicitudTurnosService.rechazarDetalle(detalle.idDetalle, observacion);
+          }
+          exitosas++;
+        } catch (error) {
+          console.error(`Error al ${tipo} detalle ${detalle.idDetalle}:`, error);
+          fallidas++;
+        }
+      }
+
+      alert(`Proceso completado:\n✔️ ${exitosas} exitosa(s)\n❌ ${fallidas} fallida(s)`);
+      cerrarModalAccionMasiva();
+      setSeleccionadas(new Set());
+      
+      // Recargar detalles actualizados
+      if (onRecargarDetalle) {
+        await onRecargarDetalle(solicitud.idSolicitud);
+      }
+    } catch (error) {
+      console.error(`Error en acción masiva:`, error);
+      alert(`Error al procesar las especialidades. Intente nuevamente.`);
     }
   };
 
@@ -402,8 +469,8 @@ export default function ModalDetalleSolicitud({
                 </div>
               </div>
 
-              {/* Acciones masivas */}
-              {seleccionadas.size > 0 && (
+              {/* Acciones masivas - Solo disponible si está ENVIADO */}
+              {isEnviado && seleccionadas.size > 0 && (
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
@@ -415,23 +482,35 @@ export default function ModalDetalleSolicitud({
                     <div className="flex gap-2">
                       <button
                         onClick={() => {
-                          const detallesSeleccionados = detallesFiltrados.filter(d => seleccionadas.has(d.idDetalle));
-                          detallesSeleccionados.forEach(detalle => abrirModalAprobarDetalle(detalle));
+                          const detallesSeleccionados = detallesFiltrados.filter(d => 
+                            seleccionadas.has(d.idDetalle) && (!d.estado || d.estado === 'PENDIENTE')
+                          );
+                          if (detallesSeleccionados.length === 0) {
+                            alert("No hay especialidades pendientes seleccionadas");
+                            return;
+                          }
+                          abrirModalAprobarMasivo(detallesSeleccionados);
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-green-600 text-white text-xs font-medium rounded-lg hover:bg-green-700 transition-colors"
                       >
                         <CheckCircle2 className="w-3.5 h-3.5" />
-                        Aprobar Seleccionadas
+                        Asignar Seleccionadas
                       </button>
                       <button
                         onClick={() => {
-                          const detallesSeleccionados = detallesFiltrados.filter(d => seleccionadas.has(d.idDetalle));
-                          detallesSeleccionados.forEach(detalle => abrirModalRechazarDetalle(detalle));
+                          const detallesSeleccionados = detallesFiltrados.filter(d => 
+                            seleccionadas.has(d.idDetalle) && (!d.estado || d.estado === 'PENDIENTE')
+                          );
+                          if (detallesSeleccionados.length === 0) {
+                            alert("No hay especialidades pendientes seleccionadas");
+                            return;
+                          }
+                          abrirModalRechazarMasivo(detallesSeleccionados);
                         }}
                         className="flex items-center gap-1.5 px-3 py-1.5 bg-red-600 text-white text-xs font-medium rounded-lg hover:bg-red-700 transition-colors"
                       >
                         <XOctagon className="w-3.5 h-3.5" />
-                        Rechazar Seleccionadas
+                        No Procede
                       </button>
                       <button
                         onClick={() => setSeleccionadas(new Set())}
@@ -439,6 +518,23 @@ export default function ModalDetalleSolicitud({
                       >
                         Limpiar
                       </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Mensaje informativo para solicitudes que no están ENVIADO */}
+              {!isEnviado && (
+                <div className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+                  <div className="flex items-center gap-2">
+                    <FileText className="w-5 h-5 text-amber-600" />
+                    <div>
+                      <p className="text-sm font-medium text-amber-900">
+                        Solicitud en modo consulta
+                      </p>
+                      <p className="text-xs text-amber-700 mt-0.5">
+                        Las acciones de aprobación, rechazo y comentarios solo están disponibles cuando la solicitud está en estado ENVIADO.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -495,18 +591,24 @@ export default function ModalDetalleSolicitud({
                     <thead className="bg-gray-50 text-gray-700 sticky top-0">
                       <tr>
                         <th className="px-2 py-1.5 text-center font-semibold">
-                          <input
-                            type="checkbox"
-                            checked={detallesFiltrados.length > 0 && detallesFiltrados.every(d => seleccionadas.has(d.idDetalle))}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                setSeleccionadas(new Set(detallesFiltrados.map(d => d.idDetalle)));
-                              } else {
-                                setSeleccionadas(new Set());
+                          {isEnviado && detallesFiltrados.some(d => !d.estado || d.estado === 'PENDIENTE') && (
+                            <input
+                              type="checkbox"
+                              checked={
+                                detallesFiltrados.filter(d => !d.estado || d.estado === 'PENDIENTE').length > 0 &&
+                                detallesFiltrados.filter(d => !d.estado || d.estado === 'PENDIENTE').every(d => seleccionadas.has(d.idDetalle))
                               }
-                            }}
-                            className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                          />
+                              onChange={(e) => {
+                                const pendientes = detallesFiltrados.filter(d => !d.estado || d.estado === 'PENDIENTE');
+                                if (e.target.checked) {
+                                  setSeleccionadas(new Set(pendientes.map(d => d.idDetalle)));
+                                } else {
+                                  setSeleccionadas(new Set());
+                                }
+                              }}
+                              className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                            />
+                          )}
                         </th>
                         <th className="px-2 py-1.5 text-left font-semibold">#</th>
                         <th className="px-2 py-1.5 text-left font-semibold">Especialidad</th>
@@ -553,20 +655,24 @@ export default function ModalDetalleSolicitud({
                           return (
                             <tr key={d.idDetalle ?? idx} className={`hover:bg-gray-50 ${!estaPendiente ? 'bg-gray-50' : ''}`}>
                           <td className="px-2 py-1.5 text-center">
-                            <input
-                              type="checkbox"
-                              checked={estaSeleccionada}
-                              onChange={(e) => {
-                                const nuevasSeleccionadas = new Set(seleccionadas);
-                                if (e.target.checked) {
-                                  nuevasSeleccionadas.add(d.idDetalle);
-                                } else {
-                                  nuevasSeleccionadas.delete(d.idDetalle);
-                                }
-                                setSeleccionadas(nuevasSeleccionadas);
-                              }}
-                              className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
-                            />
+                            {estaPendiente && isEnviado ? (
+                              <input
+                                type="checkbox"
+                                checked={estaSeleccionada}
+                                onChange={(e) => {
+                                  const nuevasSeleccionadas = new Set(seleccionadas);
+                                  if (e.target.checked) {
+                                    nuevasSeleccionadas.add(d.idDetalle);
+                                  } else {
+                                    nuevasSeleccionadas.delete(d.idDetalle);
+                                  }
+                                  setSeleccionadas(nuevasSeleccionadas);
+                                }}
+                                className="w-3.5 h-3.5 rounded border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500"
+                              />
+                            ) : (
+                              <span className="text-gray-400">—</span>
+                            )}
                           </td>
                           <td className="px-2 py-1.5 text-gray-500">{idx + 1}</td>
 
@@ -641,14 +747,14 @@ export default function ModalDetalleSolicitud({
                                   <button
                                     onClick={() => abrirModalAprobarDetalle(d)}
                                     className="p-1.5 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
-                                    title="Aprobar especialidad"
+                                    title="Asignar especialidad"
                                   >
                                     <CheckCircle2 className="w-4 h-4" />
                                   </button>
                                   <button
                                     onClick={() => abrirModalRechazarDetalle(d)}
                                     className="p-1.5 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
-                                    title="Rechazar especialidad"
+                                    title="No procede"
                                   >
                                     <XCircle className="w-4 h-4" />
                                   </button>
@@ -691,7 +797,7 @@ export default function ModalDetalleSolicitud({
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                       >
                         <CheckCircle2 className="w-5 h-5" />
-                        Aprobar Solicitud
+                        Asignar Solicitud
                       </button>
 
                       <button
@@ -699,7 +805,7 @@ export default function ModalDetalleSolicitud({
                         className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                       >
                         <XCircle className="w-5 h-5" />
-                        Rechazar Solicitud
+                        No Procede
                       </button>
                     </div>
                   ) : (
@@ -823,12 +929,12 @@ export default function ModalDetalleSolicitud({
                     {modalAccion.tipo === 'aprobar' ? (
                       <>
                         <CheckCircle2 className="w-5 h-5" />
-                        Aprobar Especialidad
+                        Asignar Especialidad
                       </>
                     ) : (
                       <>
                         <XCircle className="w-5 h-5" />
-                        Rechazar Especialidad
+                        No Procede
                       </>
                     )}
                   </h4>
@@ -895,12 +1001,132 @@ export default function ModalDetalleSolicitud({
                 {modalAccion.tipo === 'aprobar' ? (
                   <>
                     <CheckCircle2 className="w-4 h-4" />
-                    Confirmar Aprobación
+                    Confirmar Asignación
                   </>
                 ) : (
                   <>
                     <XCircle className="w-4 h-4" />
-                    Confirmar Rechazo
+                    Confirmar No Procede
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Aprobar/Rechazar MASIVO */}
+      {modalAccionMasiva.show && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className={`text-lg font-semibold flex items-center gap-2 ${
+                    modalAccionMasiva.tipo === 'aprobar' ? 'text-green-700' : 'text-red-700'
+                  }`}>
+                    {modalAccionMasiva.tipo === 'aprobar' ? (
+                      <>
+                        <CheckCircle2 className="w-5 h-5" />
+                        Asignar Especialidades
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="w-5 h-5" />
+                        No Procede
+                      </>
+                    )}
+                  </h4>
+                  <p className="text-sm text-gray-600 mt-2">
+                    Se procesarán <span className="font-bold">{modalAccionMasiva.detalles.length}</span> especialidad(es) seleccionada(s)
+                  </p>
+                </div>
+                <button
+                  onClick={cerrarModalAccionMasiva}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Lista de especialidades */}
+              <div className="mb-4 max-h-40 overflow-y-auto border border-gray-200 rounded-lg">
+                <div className="divide-y divide-gray-100">
+                  {modalAccionMasiva.detalles.map((detalle, idx) => (
+                    <div key={detalle.idDetalle} className="px-3 py-2 hover:bg-gray-50">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold text-gray-500">{idx + 1}.</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">
+                            {detalle.nombreServicio ?? detalle.nombreEspecialidad}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            Cód: {detalle.codigoServicio ?? detalle.codServicio}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Observación {modalAccionMasiva.tipo === 'rechazar' && <span className="text-red-600">*</span>}
+                {modalAccionMasiva.tipo === 'aprobar' && <span className="text-gray-500 text-xs ml-1">(Opcional)</span>}
+              </label>
+              <p className="text-xs text-gray-600 mb-2">
+                Esta observación se aplicará a todas las especialidades seleccionadas
+              </p>
+              <textarea
+                value={modalAccionMasiva.observacion}
+                onChange={(e) => setModalAccionMasiva(prev => ({ ...prev, observacion: e.target.value }))}
+                placeholder={modalAccionMasiva.tipo === 'rechazar' 
+                  ? "Indique el motivo del rechazo para todas las especialidades (obligatorio)..." 
+                  : "Agregue observaciones para todas las especialidades (opcional)..."}
+                rows={6}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 resize-none ${
+                  modalAccionMasiva.tipo === 'rechazar' 
+                    ? 'border-red-300 focus:ring-red-500 focus:border-red-500' 
+                    : 'border-gray-300 focus:ring-green-500 focus:border-green-500'
+                }`}
+              />
+              {modalAccionMasiva.tipo === 'rechazar' && !modalAccionMasiva.observacion.trim() && (
+                <p className="text-xs text-red-600 mt-2">
+                  * La observación es obligatoria para rechazar especialidades
+                </p>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                {modalAccionMasiva.observacion.length} caracteres
+              </p>
+            </div>
+
+            <div className="p-6 border-t border-gray-200 flex gap-3">
+              <button
+                onClick={cerrarModalAccionMasiva}
+                className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 font-medium rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmarAccionMasiva}
+                disabled={modalAccionMasiva.tipo === 'rechazar' && !modalAccionMasiva.observacion.trim()}
+                className={`flex-1 px-4 py-2.5 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed ${
+                  modalAccionMasiva.tipo === 'aprobar'
+                    ? 'bg-green-600 hover:bg-green-700'
+                    : 'bg-red-600 hover:bg-red-700'
+                }`}
+              >
+                {modalAccionMasiva.tipo === 'aprobar' ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    Asignar {modalAccionMasiva.detalles.length} Especialidad(es)
+                  </>
+                ) : (
+                  <>
+                    <XCircle className="w-4 h-4" />
+                    No Procede {modalAccionMasiva.detalles.length} Especialidad(es)
                   </>
                 )}
               </button>

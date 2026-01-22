@@ -156,7 +156,9 @@ public interface SolicitudTurnoIpressRepository extends JpaRepository<SolicitudT
     
     
     
-    
+    boolean existsByPeriodo_IdPeriodo(Long idPeriodo);
+
+    long countByPeriodo_IdPeriodo(Long idPeriodo);
     
     
     

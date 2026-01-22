@@ -141,9 +141,9 @@ export const apiClient = {
     }).then(handleResponse);
   },
 
-  delete: (endpoint, body = null, auth = false) => {
+  delete: (endpoint, auth = false, body = null) => {
     const url = buildUrl(endpoint);
-    console.log(`🚀 [DELETE] ${url}`, body);
+    console.log(`🚀 [DELETE] ${url}`, body || "(sin body)");
     const options = {
       method: "DELETE",
       headers: buildHeaders(auth)

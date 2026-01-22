@@ -235,7 +235,7 @@ export default function FormularioSolicitudTurnos() {
     setError(null);
     setSuccess(null);
 
-    const modo = rowSolicitud.estado === "BORRADOR" ? "EDITAR" : "VER";
+    const modo = rowSolicitud.estado === "INICIADO" ? "EDITAR" : "VER";
     setModoModal(modo);
     setOpenFormModal(true);
     setLoading(true);
@@ -257,12 +257,12 @@ export default function FormularioSolicitudTurnos() {
       );
 
       // VER: solo lectura (no armamos calendario)
-      if (solicitud.estado !== "BORRADOR") {
+      if (solicitud.estado !== "INICIADO") {
         setRegistros([]);
         return;
       }
 
-      // EDITAR BORRADOR: Cargar detalles de la solicitud
+      // EDITAR INICIADO: Cargar detalles de la solicitud
       if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
         const registrosExistentes = solicitud.detalles.map((det) => ({
           idDetalle: det.idDetalle || null,          // ID del detalle para ediciones
@@ -491,74 +491,120 @@ export default function FormularioSolicitudTurnos() {
 
   // Auto-guardar fechas cuando se confirman en el modal
   const handleAutoGuardarFechas = async (idServicio, fechasActualizadas) => {
-    console.log("🔄 handleAutoGuardarFechas llamado:", { 
+    console.log("%c═══════════════════════════════════════════════════════", "color: #DC2626; font-weight: bold; font-size: 14px");
+    console.log("%c🚀 INICIO handleAutoGuardarFechas", "color: #DC2626; font-weight: bold; font-size: 14px");
+    console.log("%c═══════════════════════════════════════════════════════", "color: #DC2626; font-weight: bold; font-size: 14px");
+    console.log("📋 Parámetros recibidos:", { 
       idServicio, 
       fechasCount: fechasActualizadas?.length,
+      fechasActualizadas,
       solicitudActual: solicitudActual?.idSolicitud,
-      periodoSeleccionado: periodoSeleccionado?.idPeriodo
+      periodoSeleccionado: periodoSeleccionado?.idPeriodo,
+      registrosCount: registros.length
     });
 
     // Validar que exista periodo
     if (!periodoSeleccionado?.idPeriodo) {
-      console.warn("⚠️ No se puede auto-guardar: falta periodo");
+      console.error("❌ ERROR: No hay periodo seleccionado");
       setError("No se puede guardar las fechas. Primero selecciona un periodo.");
       setTimeout(() => setError(null), 5000);
       return;
     }
+    console.log("✅ Periodo validado:", periodoSeleccionado);
+
+    // Buscar el detalle específico de la especialidad
+    const detalleEspecialidad = registros.find(r => r.idServicio === idServicio);
+    console.log("🔍 Buscando detalle de especialidad:", idServicio);
+    console.log("📦 Registros disponibles:", registros);
+    console.log("🎯 Detalle encontrado:", detalleEspecialidad);
+    
+    if (!detalleEspecialidad) {
+      console.error("❌ ERROR: No se encontró el detalle de la especialidad:", idServicio);
+      console.log("📋 IDs disponibles:", registros.map(r => r.idServicio));
+      setError("No se encontró la especialidad en los registros.");
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+    console.log("✅ Detalle de especialidad encontrado");
+
+    // Validar que tenga turnos configurados
+    const turnoManana = Number(detalleEspecialidad.turnoManana || 0);
+    const turnoTarde = Number(detalleEspecialidad.turnoTarde || 0);
+    const turnoTM = Number(detalleEspecialidad.turnoTM || 0);
+    const totalTurnos = turnoTM + turnoManana + turnoTarde;
+    
+    console.log("🔢 Turnos configurados:", { turnoTM, turnoManana, turnoTarde, totalTurnos });
+
+    if (totalTurnos === 0) {
+      console.error("❌ ERROR: No hay turnos configurados");
+      setError("Primero debes configurar los turnos (TM, Mañana o Tarde) antes de agregar fechas.");
+      setTimeout(() => setError(null), 5000);
+      return;
+    }
+    console.log("✅ Turnos validados correctamente");
 
     // Variable para almacenar el ID de la solicitud
     let idSolicitudActual = solicitudActual?.idSolicitud;
+    console.log("🆔 ID Solicitud actual:", idSolicitudActual);
 
     // Si no existe la solicitud, crearla automáticamente primero
     if (!idSolicitudActual) {
-      console.log("📝 Creando solicitud automáticamente antes de guardar fechas...");
+      console.log("%c📝 CREANDO SOLICITUD AUTOMÁTICAMENTE...", "color: #F59E0B; font-weight: bold; font-size: 14px");
+      console.log("📋 Registros actuales antes de guardar:", registros);
+      
       try {
         const solicitudCreada = await handleGuardarBorrador();
-        console.log("✅ Solicitud creada:", solicitudCreada);
-        idSolicitudActual = solicitudCreada?.idSolicitud;
+        console.log("%c✅ SOLICITUD CREADA EXITOSAMENTE", "color: #10B981; font-weight: bold; font-size: 14px");
+        console.log("📦 Resultado completo:", solicitudCreada);
         
-        if (!idSolicitudActual) {
+        if (!solicitudCreada?.idSolicitud) {
+          console.error("❌ ERROR: No se obtuvo idSolicitud después de guardar");
           throw new Error("No se obtuvo idSolicitud después de guardar");
         }
+        
+        idSolicitudActual = solicitudCreada.idSolicitud;
+        console.log("🆔 Nuevo ID Solicitud:", idSolicitudActual);
+        
+        // Actualizar el estado local con la solicitud creada
+        setSolicitudActual(solicitudCreada);
+        console.log("✅ Estado solicitudActual actualizado");
+        
+        // Esperar un momento para que se actualice el estado
+        console.log("⏳ Esperando actualización de estado...");
+        await new Promise(resolve => setTimeout(resolve, 500));
+        console.log("✅ Estado actualizado");
+        
       } catch (error) {
-        console.error("❌ Error al crear solicitud automáticamente:", error);
-        setError("No se pudo crear la solicitud. Guarda el borrador manualmente primero.");
+        console.error("%c❌ ERROR AL CREAR SOLICITUD", "color: #DC2626; font-weight: bold; font-size: 14px");
+        console.error("Error completo:", error);
+        const mensaje = error?.message || "Error desconocido";
+        setError(`No se pudo crear la solicitud: ${mensaje}. Guarda el borrador manualmente primero.`);
         setTimeout(() => setError(null), 5000);
         return;
       }
+    } else {
+      console.log("✅ Ya existe solicitud, ID:", idSolicitudActual);
     }
 
     // Verificar que tenemos el ID de la solicitud
     if (!idSolicitudActual) {
-      console.warn("⚠️ No se pudo obtener idSolicitud");
+      console.error("❌ ERROR CRÍTICO: No se pudo obtener idSolicitud");
       setError("No se puede guardar las fechas. Primero guarda el borrador de la solicitud.");
       setTimeout(() => setError(null), 5000);
       return;
     }
-
-    // Buscar el detalle específico de la especialidad
-    const detalleEspecialidad = registros.find(r => r.idServicio === idServicio);
-    console.log("🔍 Detalle encontrado:", detalleEspecialidad);
-    
-    if (!detalleEspecialidad) {
-      console.warn("⚠️ No se encontró el detalle de la especialidad:", idServicio);
-      setError("No se encontró la especialidad. Intenta guardar el borrador primero.");
-      setTimeout(() => setError(null), 5000);
-      return;
-    }
+    console.log("✅ Validación final: idSolicitud =", idSolicitudActual);
 
     try {
-      const turnoManana = Number(detalleEspecialidad.turnoManana || 0);
-      const turnoTarde = Number(detalleEspecialidad.turnoTarde || 0);
-      const turnoTM = Number(detalleEspecialidad.turnoTM || 0);
-
+      console.log("%c📤 PREPARANDO PAYLOAD PARA GUARDAR FECHAS", "color: #3B82F6; font-weight: bold; font-size: 14px");
+      
       // Usar las fechas que se acaban de actualizar (parámetro) en lugar del estado
       const fechasDetalle = (fechasActualizadas || []).map(f => ({
         fecha: f.fecha,
         bloque: f.turno === "MANANA" ? "MANANA" : "TARDE"
       }));
 
-      console.log("📅 Fechas a guardar:", fechasDetalle);
+      console.log("📅 Fechas transformadas:", fechasDetalle);
 
       const detallePayload = {
         idPeriodo: periodoSeleccionado.idPeriodo,
@@ -580,7 +626,7 @@ export default function FormularioSolicitudTurnos() {
         detallePayload.idDetalle = detalleEspecialidad.idDetalle;
       }
 
-      console.log("📤 Enviando payload a /solicitudes-turno/" + solicitudActual.idSolicitud + "/detalle:", JSON.stringify(detallePayload, null, 2));
+      console.log("📤 Enviando payload a /solicitudes-turno/" + idSolicitudActual + "/detalle:", JSON.stringify(detallePayload, null, 2));
       console.log("%c╔═══════════════════════════════════════════════════════╗", "color: #0A5BA9; font-weight: bold");
       console.log("%c║        📤 PAYLOAD GUARDAR FECHA - DETALLE            ║", "color: #0A5BA9; font-weight: bold");
       console.log("%c╚═══════════════════════════════════════════════════════╝", "color: #0A5BA9; font-weight: bold");
@@ -622,6 +668,40 @@ export default function FormularioSolicitudTurnos() {
       }
       
       console.log("✅ Fechas guardadas para especialidad:", idServicio, "- idDetalle:", resultado?.idDetalle);
+      
+      // Recargar la solicitud completa para actualizar los datos
+      if (idSolicitudActual) {
+        try {
+          const solicitudActualizada = await solicitudTurnoService.obtenerPorId(idSolicitudActual);
+          setSolicitudActual(solicitudActualizada);
+          
+          // Actualizar registros locales con los detalles actualizados
+          if (solicitudActualizada.detalles && Array.isArray(solicitudActualizada.detalles)) {
+            setRegistros(prev => {
+              return prev.map(registro => {
+                const detalleActualizado = solicitudActualizada.detalles.find(d => d.idServicio === registro.idServicio);
+                if (detalleActualizado) {
+                  return {
+                    ...registro,
+                    idDetalle: detalleActualizado.idDetalle,
+                    fechas: (detalleActualizado.fechasDetalle || []).map(f => ({
+                      fecha: f.fecha,
+                      turno: f.bloque,
+                      turnos: f.turnos || 0
+                    })),
+                    observacion: detalleActualizado.observacion
+                  };
+                }
+                return registro;
+              });
+            });
+          }
+          
+          console.log("🔄 Solicitud y registros recargados después de guardar fechas");
+        } catch (reloadErr) {
+          console.error("⚠️ Error al recargar solicitud:", reloadErr);
+        }
+      }
       
       // Mostrar mensaje de éxito
       setSuccess(`✅ Fechas guardadas correctamente (${fechasDetalle.length} fecha(s))`);
@@ -866,11 +946,8 @@ export default function FormularioSolicitudTurnos() {
               >
                 <option value="ALL">Todos</option>
                 <option value="SIN_SOLICITUD">Sin solicitud</option>
-                <option value="BORRADOR">Borrador</option>
+                <option value="INICIADO">Iniciado</option>
                 <option value="ENVIADO">Enviado</option>
-                <option value="REVISADO">Revisado</option>
-                <option value="APROBADA">Aprobada</option>
-                <option value="RECHAZADA">Rechazada</option>
               </select>
             </div>
           </div>
@@ -897,7 +974,7 @@ export default function FormularioSolicitudTurnos() {
                 {filasPorPeriodo.map((r) => {
                   const sol = r.solicitud;
                   const tieneSol = !!sol?.idSolicitud;
-                  const esBorrador = sol?.estado === "BORRADOR";
+                  const esIniciado = sol?.estado === "INICIADO";
 
                   return (
                     <tr key={r.idPeriodo} className="hover:bg-slate-50 transition-colors">
@@ -931,7 +1008,7 @@ export default function FormularioSolicitudTurnos() {
                             <>
                               <Plus className="w-3 h-3" /> Iniciar
                             </>
-                          ) : esBorrador ? (
+                          ) : esIniciado ? (
                             <>
                               <Pencil className="w-3 h-3" /> Editar
                             </>
@@ -1056,7 +1133,7 @@ export default function FormularioSolicitudTurnos() {
                         Periodo:{" "}
                         <strong className="text-slate-900">{periodoSeleccionado?.descripcion || "—"}</strong>
                         <div className="text-xs text-slate-500 mt-1">
-                          * Guardar crea/actualiza BORRADOR. Enviar deja la solicitud en solo lectura.
+                          * Guardar crea/actualiza INICIADO. Enviar deja la solicitud en solo lectura.
                         </div>
                       </div>
 
