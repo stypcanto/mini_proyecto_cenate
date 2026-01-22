@@ -304,12 +304,15 @@ public class TeleECGImagen {
     private LocalDateTime fechaEvaluacion;
 
     /**
-     * FECHA Y HORA DEL RECHAZO (v3.1.0 - Nuevo)
+     * FECHA Y HORA DEL RECHAZO (v3.1.0 - Pendiente)
      * Se establece cuando el médico rechaza por mala calidad
      * NULL si estado != RECHAZADA
      * Auditoría de cuándo se rechazó la imagen
+     *
+     * @deprecated: Campo no implementado aún en la BD.
+     * Usar @Transient para evitar que Hibernate intente consultarlo
      */
-    @Column(name = "fecha_rechazo")
+    @Transient
     private LocalDateTime fechaRechazo;
 
     /**
