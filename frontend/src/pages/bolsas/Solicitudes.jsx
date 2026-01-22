@@ -390,16 +390,16 @@ export default function Solicitudes() {
             <h2 className="text-lg font-bold text-gray-800 mb-3">Lista de Pacientes</h2>
 
             {/* Búsqueda y Filtros */}
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               {/* Búsqueda */}
               <div className="relative md:col-span-2">
-                <Search size={20} className="absolute left-3 top-2.5 text-gray-400" />
+                <Search size={18} className="absolute left-4 top-3 text-gray-400" />
                 <input
                   type="text"
                   placeholder="Buscar paciente, DNI o IPRESS..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs"
+                  className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm"
                 />
               </div>
 
@@ -408,7 +408,7 @@ export default function Solicitudes() {
                 <select
                   value={filtroBolsa}
                   onChange={(e) => setFiltroBolsa(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs appearance-none cursor-pointer"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
                 >
                   <option value="todas">Todas las bolsas</option>
                   <option value="BOLSA 107">BOLSA 107</option>
@@ -419,7 +419,7 @@ export default function Solicitudes() {
                   <option value="BOLSAS REPROGRAMACION">BOLSAS REPROGRAMACION</option>
                   <option value="BOLSA GESTORES TERRITORIAL">BOLSA GESTORES TERRITORIAL</option>
                 </select>
-                <ChevronDown size={18} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
+                <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
               </div>
 
               {/* Filtro Redes */}
@@ -427,14 +427,14 @@ export default function Solicitudes() {
                 <select
                   value={filtroRed}
                   onChange={(e) => setFiltroRed(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs appearance-none cursor-pointer"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
                 >
                   <option value="todas">Todas las redes</option>
                   {redesUnicas.map((red) => (
                     <option key={red} value={red}>{red}</option>
                   ))}
                 </select>
-                <ChevronDown size={16} className="absolute right-2 top-2 text-gray-400 pointer-events-none" />
+                <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
               </div>
 
               {/* Filtro Especialidades */}
@@ -442,14 +442,14 @@ export default function Solicitudes() {
                 <select
                   value={filtroEspecialidad}
                   onChange={(e) => setFiltroEspecialidad(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs appearance-none cursor-pointer"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
                 >
                   <option value="todas">Todas las especialidades</option>
                   {especialidadesUnicas.map((especialidad) => (
                     <option key={especialidad} value={especialidad}>{especialidad}</option>
                   ))}
                 </select>
-                <ChevronDown size={16} className="absolute right-2 top-2 text-gray-400 pointer-events-none" />
+                <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
               </div>
 
               {/* Filtro Estados */}
@@ -457,7 +457,7 @@ export default function Solicitudes() {
                 <select
                   value={filtroEstado}
                   onChange={(e) => setFiltroEstado(e.target.value)}
-                  className="w-full px-2 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs appearance-none cursor-pointer"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
                 >
                   <option value="todos">Todos los estados</option>
                   <option value="pendiente">Pendiente</option>
@@ -465,7 +465,7 @@ export default function Solicitudes() {
                   <option value="atendido">Atendido</option>
                   <option value="observado">Observado</option>
                 </select>
-                <ChevronDown size={16} className="absolute right-2 top-2 text-gray-400 pointer-events-none" />
+                <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -491,65 +491,65 @@ export default function Solicitudes() {
               </div>
             ) : solicitudesFiltradas.length > 0 ? (
               <table className="w-full">
-                <thead className="bg-blue-700 text-white sticky top-0">
-                  <tr>
-                    <th className="px-3 py-2 text-left text-xs font-semibold">
+                <thead className="bg-[#0D5BA9] text-white sticky top-0">
+                  <tr className="border-b-2 border-blue-800">
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
                       <input
                         type="checkbox"
                         checked={selectedRows.size === solicitudesFiltradas.length && solicitudesFiltradas.length > 0}
                         onChange={toggleAllRows}
-                        className="w-4 h-4 cursor-pointer"
+                        className="w-5 h-5 cursor-pointer"
                       />
                     </th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">DNI</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">NOMBRE</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">TELÉFONO</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">ESPECIALIDAD</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">SEXO</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">RED</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">IPRESS</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">BOLSA</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">FECHA CITA</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">FECHA ASIGNACIÓN</th>
-                    <th className="px-2 py-2 text-left text-xs font-semibold whitespace-nowrap">ESTADO</th>
-                    <th className="px-2 py-2 text-center text-xs font-semibold whitespace-nowrap">DIFERIMIENTO</th>
-                    <th className="px-2 py-2 text-center text-xs font-semibold whitespace-nowrap">SEMÁFORO</th>
-                    <th className="px-2 py-2 text-center text-xs font-semibold whitespace-nowrap">ACCIONES</th>
-                    <th className="px-2 py-2 text-center text-xs font-semibold whitespace-nowrap">USUARIOS</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Nombre</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Red</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Bolsa</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Fecha Cita</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Fecha Asignación</th>
+                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Diferimiento</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Semáforo</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
+                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Usuarios</th>
                   </tr>
                 </thead>
                 <tbody>
                   {solicitudesFiltradas.map((solicitud) => (
-                    <tr key={solicitud.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors text-xs">
-                      <td className="px-3 py-2">
+                    <tr key={solicitud.id} className="h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+                      <td className="px-6 py-4">
                         <input
                           type="checkbox"
                           checked={selectedRows.has(solicitud.id)}
                           onChange={() => toggleRowSelection(solicitud.id)}
-                          className="w-4 h-4 cursor-pointer"
+                          className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer"
                         />
                       </td>
-                      <td className="px-2 py-2 font-semibold text-blue-600 whitespace-nowrap">{solicitud.dni}</td>
-                      <td className="px-2 py-2 text-gray-800 font-medium whitespace-nowrap">{solicitud.paciente}</td>
-                      <td className="px-2 py-2 text-gray-700 flex items-center gap-1 whitespace-nowrap">
-                        <Phone size={14} className="text-blue-500 flex-shrink-0" />
+                      <td className="px-6 py-4 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{solicitud.paciente}</td>
+                      <td className="px-6 py-4 text-sm text-gray-700 flex items-center gap-2">
+                        <Phone size={18} className="text-blue-500 flex-shrink-0" />
                         {solicitud.telefono}
                       </td>
-                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.especialidad}</td>
-                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.sexo}</td>
-                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.red}</td>
-                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.ipress}</td>
-                      <td className="px-2 py-2">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getBolsaColor(solicitud.bolsa)}`}>
+                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.especialidad}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.sexo}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.red}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>{solicitud.ipress}</td>
+                      <td className="px-6 py-4">
+                        <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getBolsaColor(solicitud.bolsa)}`}>
                           {solicitud.bolsa}
                         </span>
                       </td>
-                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.fechaCita}</td>
-                      <td className="px-2 py-2 text-gray-700 whitespace-nowrap">{solicitud.fechaAsignacion}</td>
-                      <td className="px-2 py-2">
+                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.fechaCita}</td>
+                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.fechaAsignacion}</td>
+                      <td className="px-6 py-4">
                         <select
                           defaultValue={solicitud.estado}
-                          className={`px-2 py-0.5 rounded-full text-xs font-semibold border-0 cursor-pointer ${getEstadoBadge(solicitud.estado)}`}
+                          className={`px-3 py-1 rounded-md text-xs font-semibold border-0 cursor-pointer ${getEstadoBadge(solicitud.estado)}`}
                         >
                           <option value="pendiente">Pendiente</option>
                           <option value="citado">Citado</option>
@@ -557,48 +557,48 @@ export default function Solicitudes() {
                           <option value="observado">Observado</option>
                         </select>
                       </td>
-                      <td className="px-2 py-2 text-center whitespace-nowrap">
+                      <td className="px-6 py-4 text-center">
                         <span className={`text-sm font-bold ${getDiferimiento(solicitud.diferimiento)}`}>
-                          {solicitud.diferimiento}d
+                          {solicitud.diferimiento} días
                         </span>
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <Circle size={18} className={`mx-auto ${getSemaforoColor(solicitud.semaforo)}`} fill="currentColor" />
+                      <td className="px-6 py-4 text-center">
+                        <Circle size={20} className={`mx-auto ${getSemaforoColor(solicitud.semaforo)}`} fill="currentColor" />
                       </td>
-                      <td className="px-2 py-2 text-center">
+                      <td className="px-6 py-4 text-center">
                         <button
-                          className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded text-xs font-semibold whitespace-nowrap"
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-md text-sm font-semibold transition-colors"
                           title="Cambiar celular"
                         >
-                          <Phone size={14} />
+                          <Phone size={18} />
                           Cambiar
                         </button>
                       </td>
-                      <td className="px-2 py-2 text-center">
-                        <div className="flex justify-center gap-1">
+                      <td className="px-6 py-4 text-center">
+                        <div className="flex items-center justify-center gap-2">
                           <button
-                            className="p-2 hover:bg-blue-100 rounded transition-colors text-blue-600 hover:text-blue-700"
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors text-gray-700"
                             title="Ver"
                           >
-                            <Eye size={16} />
+                            <Eye size={18} />
                           </button>
                           <button
-                            className="p-2 hover:bg-green-100 rounded transition-colors text-green-600 hover:text-green-700"
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors text-gray-700"
                             title="Agregar usuario"
                           >
-                            <UserPlus size={16} />
+                            <UserPlus size={18} />
                           </button>
                           <button
-                            className="p-2 hover:bg-purple-100 rounded transition-colors text-purple-600 hover:text-purple-700"
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors text-gray-700"
                             title="Usuarios"
                           >
-                            <Users size={16} />
+                            <Users size={18} />
                           </button>
                           <button
-                            className="p-2 hover:bg-orange-100 rounded transition-colors text-orange-600 hover:text-orange-700"
+                            className="p-2 hover:bg-red-100 rounded-md transition-colors text-red-600"
                             title="Compartir"
                           >
-                            <FileText size={16} />
+                            <FileText size={18} />
                           </button>
                         </div>
                       </td>
