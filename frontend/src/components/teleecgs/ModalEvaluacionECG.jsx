@@ -131,6 +131,7 @@ export default function ModalEvaluacionECG({
   const [observacionesEval, setObservacionesEval] = useState("");
   const [tipoEvaluacion, setTipoEvaluacion] = useState(""); // NORMAL, ANORMAL, NO_DIAGNOSTICO
   const [guardando, setGuardando] = useState(false); // ✅ v9.0.0: Estado para loading
+  const [motivoNoDiagnostico, setMotivoNoDiagnostico] = useState(""); // ✅ v9.2.0: 8️⃣ Motivo obligatorio para NO_DIAGNOSTICO
 
   // ✅ v9.0.0: Razones preseleccionadas según tipo de evaluación (actualizado con nuevas keys)
   const [razonesNormal, setRazonesNormal] = useState({
@@ -626,6 +627,14 @@ export default function ModalEvaluacionECG({
       return;
     }
 
+    // ✅ v9.2.0: 6️⃣ 8️⃣ VALIDACIÓN FLUJO - Si es NO_DIAGNOSTICO, DEBE tener motivo técnico
+    if (tipoEvaluacion === "NO_DIAGNOSTICO") {
+      if (!motivoNoDiagnostico.trim() || motivoNoDiagnostico.trim().length < 10) {
+        toast.error("❌ REQUERIDO: Debes explicar el motivo de 'No Diagnóstico' (mínimo 10 caracteres)");
+        return;
+      }
+    }
+
     try {
       setGuardando(true);
 
@@ -728,11 +737,15 @@ export default function ModalEvaluacionECG({
       medicacionesActuales: "",
     });
     setDerivacionesSeleccionadas([]);
+    // ✅ v9.2.0: 8️⃣ Resetear motivo de No Diagnóstico
+    setMotivoNoDiagnostico("");
+  };
     setPlanSeguimiento({
       recitarEnTresMeses: false,
-      interconsultaEspecialidad: "",
+      recitarEspecialidad: "",
+      interconsulta: false,
+      interconsultaEspecialidades: [],
     });
-  };
 
   if (!isOpen) return null;
 
@@ -894,45 +907,37 @@ export default function ModalEvaluacionECG({
                       "text-green-900"
                     }`}>Evaluación Médica</p>
 
-                    {/* Radio Buttons con Colores Semánticos */}
-                    <div className="space-y-1 mb-2">
+                    {/* ✅ v9.2.0: 7️⃣ Radio Buttons - Colores VIBRANTES con diferenciación visual */}
+                    <div className="space-y-2 mb-2">
                       {/* NORMAL - Verde */}
-                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-2 rounded transition-colors ${
-                        tipoEvaluacion === "NORMAL" ? "bg-green-100 border-2 border-green-500" : "hover:bg-gray-50"
+                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-2 rounded-lg transition-all shadow-sm ${
+                        tipoEvaluacion === "NORMAL"
+                          ? "bg-green-100 border-2 border-green-600 ring-2 ring-green-300"
+                          : "bg-gray-50 border border-gray-200 hover:bg-green-50"
                       }`}>
-                        <input
-                          type="radio"
-                          checked={tipoEvaluacion === "NORMAL"}
-                          onChange={() => setTipoEvaluacion("NORMAL")}
-                          className="w-4 h-4"
-                        />
-                        <span className={`font-semibold ${tipoEvaluacion === "NORMAL" ? "text-green-800" : "text-gray-700"}`}>✓ Normal</span>
+                        <input type="radio" checked={tipoEvaluacion === "NORMAL"} onChange={() => setTipoEvaluacion("NORMAL")} className="w-4 h-4 accent-green-600" />
+                        <span className={`font-bold ${tipoEvaluacion === "NORMAL" ? "text-green-900" : "text-gray-600"}`}>✓ Normal</span>
                       </label>
 
-                      {/* ANORMAL - Naranja */}
-                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-2 rounded transition-colors ${
-                        tipoEvaluacion === "ANORMAL" ? "bg-orange-100 border-2 border-orange-500" : "hover:bg-gray-50"
+                      {/* ANORMAL - NARANJA VIBRANTE (v9.2.0) */}
+                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-3 rounded-lg transition-all shadow-md hover:shadow-lg ${
+                        tipoEvaluacion === "ANORMAL"
+                          ? "bg-orange-200 border-3 border-orange-600 ring-2 ring-orange-400 shadow-lg"
+                          : "bg-gray-50 border border-gray-200 hover:bg-orange-50"
                       }`}>
-                        <input
-                          type="radio"
-                          checked={tipoEvaluacion === "ANORMAL"}
-                          onChange={() => setTipoEvaluacion("ANORMAL")}
-                          className="w-4 h-4"
-                        />
-                        <span className={`font-semibold ${tipoEvaluacion === "ANORMAL" ? "text-orange-800" : "text-gray-700"}`}>⚠️ Anormal</span>
+                        <input type="radio" checked={tipoEvaluacion === "ANORMAL"} onChange={() => setTipoEvaluacion("ANORMAL")} className="w-4 h-4 accent-orange-600" />
+                        <span className={`font-bold text-lg ${tipoEvaluacion === "ANORMAL" ? "text-orange-950" : "text-gray-600"}`}>⚠️ ANORMAL</span>
+                        {tipoEvaluacion === "ANORMAL" && <span className="ml-auto text-xs bg-orange-600 text-white px-2 py-0.5 rounded-full font-bold animate-pulse">ALERTA</span>}
                       </label>
 
                       {/* NO_DIAGNOSTICO - Gris */}
-                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-2 rounded transition-colors ${
-                        tipoEvaluacion === "NO_DIAGNOSTICO" ? "bg-gray-100 border-2 border-gray-500" : "hover:bg-gray-50"
+                      <label className={`flex items-center gap-2 cursor-pointer text-xs p-2 rounded-lg transition-all shadow-sm ${
+                        tipoEvaluacion === "NO_DIAGNOSTICO"
+                          ? "bg-gray-200 border-2 border-gray-600 ring-2 ring-gray-300"
+                          : "bg-gray-50 border border-gray-200 hover:bg-gray-100"
                       }`}>
-                        <input
-                          type="radio"
-                          checked={tipoEvaluacion === "NO_DIAGNOSTICO"}
-                          onChange={() => setTipoEvaluacion("NO_DIAGNOSTICO")}
-                          className="w-4 h-4"
-                        />
-                        <span className={`font-semibold ${tipoEvaluacion === "NO_DIAGNOSTICO" ? "text-gray-800" : "text-gray-700"}`}>❔ No Diagnóstico</span>
+                        <input type="radio" checked={tipoEvaluacion === "NO_DIAGNOSTICO"} onChange={() => setTipoEvaluacion("NO_DIAGNOSTICO")} className="w-4 h-4 accent-gray-600" />
+                        <span className={`font-bold ${tipoEvaluacion === "NO_DIAGNOSTICO" ? "text-gray-900" : "text-gray-600"}`}>❔ No Diagnóstico</span>
                       </label>
                     </div>
 
@@ -974,7 +979,7 @@ export default function ModalEvaluacionECG({
 
                     {/* Textarea de Observaciones - Más grande */}
                     {tipoEvaluacion && (
-                      <div className="mt-2">
+                      <div className="mt-2 space-y-2">
                         <textarea
                           value={observacionesEval}
                           onChange={(e) => setObservacionesEval(e.target.value)}
@@ -990,6 +995,28 @@ export default function ModalEvaluacionECG({
                         }`}>
                           {observacionesEval.trim().length}/10 caracteres mínimos
                         </p>
+
+                        {/* ✅ v9.2.0: 8️⃣ CAMPO OBLIGATORIO PARA NO_DIAGNOSTICO */}
+                        {tipoEvaluacion === "NO_DIAGNOSTICO" && (
+                          <div className="bg-gray-100 p-2 rounded border-2 border-gray-400">
+                            <label className="block text-xs font-bold text-gray-900 mb-1">
+                              🔴 REQUERIDO: Motivo de 'No Diagnóstico'
+                            </label>
+                            <textarea
+                              value={motivoNoDiagnostico}
+                              onChange={(e) => setMotivoNoDiagnostico(e.target.value)}
+                              placeholder="Explica por qué no se puede hacer diagnóstico (ej: Imagen muy pixelada, movimiento del paciente, etc.)..."
+                              className={`w-full p-2 text-xs border rounded resize-none h-16 focus:outline-none focus:ring-2 focus:ring-gray-500 ${
+                                motivoNoDiagnostico.trim().length >= 10 ? "border-green-400 bg-green-50" : "border-red-300 bg-red-50"
+                              }`}
+                            />
+                            <p className={`text-xs mt-1 font-semibold ${
+                              motivoNoDiagnostico.trim().length >= 10 ? "text-green-700" : "text-red-700"
+                            }`}>
+                              {motivoNoDiagnostico.trim().length}/10 caracteres mínimos
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

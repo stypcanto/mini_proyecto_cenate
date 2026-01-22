@@ -32,8 +32,17 @@ public class NotaClinicaDTO {
     private String observacionesClinicas;
 
     /**
-     * Plan de seguimiento del paciente
-     * Estructura:
+     * Plan de seguimiento del paciente (v11.0.0 - Recitación + Interconsulta)
+     *
+     * Estructura NUEVA:
+     * {
+     *   "recitarEnTresMeses": true,
+     *   "recitarEspecialidad": "Cardiología",
+     *   "interconsulta": true,
+     *   "interconsultaEspecialidades": ["Cardiología", "Electrofisiología"]
+     * }
+     *
+     * Estructura ANTIGUA (deprecated - v3.0.0):
      * {
      *   "seguimientoMeses": true,
      *   "seguimientoDias": 6,
