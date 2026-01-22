@@ -48,6 +48,9 @@ export default function GestionPeriodosTurnos() {
     estado: "TODAS",
     periodo: "",
     busqueda: "",
+    macroId: "",
+    redId: "",
+    ipressId: "",
   });
 
   // Filtros específicos para periodos
@@ -71,10 +74,11 @@ export default function GestionPeriodosTurnos() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtrosPeriodos.estado, filtrosPeriodos.anio]);
 
+  // Cargar solicitudes solo al cambiar de tab (no automáticamente con filtros)
   useEffect(() => {
     if (activeTab === "solicitudes") cargarSolicitudes();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, filtros.estado, filtros.periodo, filtros.busqueda]);
+  }, [activeTab]);
 
   const cargarPeriodos = async () => {
     setLoadingPeriodos(true);
@@ -431,6 +435,7 @@ export default function GestionPeriodosTurnos() {
             onRechazar={abrirRechazoRapido}
             getEstadoBadge={getEstadoBadge}
             periodos={periodos}
+            onConsultar={cargarSolicitudes}
           />
         )}
 

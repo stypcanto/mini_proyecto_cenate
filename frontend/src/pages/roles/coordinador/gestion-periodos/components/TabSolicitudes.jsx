@@ -1,5 +1,5 @@
 // src/pages/coordinador/turnos/components/TabSolicitudes.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Calendar,
   Clock,
@@ -16,8 +16,10 @@ import {
   Send,
   ChevronDown,
   ChevronUp,
+  MapPin,
 } from "lucide-react";
 import { fmtDateTime } from "../utils/ui";
+import { filtrosUbicacionService } from "../../../../../services/filtrosUbicacionService";
 
 export default function TabSolicitudes({
   solicitudes,
@@ -29,9 +31,81 @@ export default function TabSolicitudes({
   onRechazar,
   getEstadoBadge,
   periodos,
+  onConsultar,
 }) {
   const safeSolicitudes = Array.isArray(solicitudes) ? solicitudes : [];
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
+
+  // Estados para filtros en cascada
+  const [macroregiones, setMacroregiones] = useState([]);
+  const [redes, setRedes] = useState([]);
+  const [ipressList, setIpressList] = useState([]);
+  const [loadingFiltros, setLoadingFiltros] = useState(false);
+
+  // Cargar macroregiones al iniciar
+  useEffect(() => {
+    cargarMacroregiones();
+  }, []);
+
+  // Cargar redes cuando cambia macroregión
+  useEffect(() => {
+    if (filtros.macroId) {
+      cargarRedes(filtros.macroId);
+    } else {
+      setRedes([]);
+      setFiltros(prev => ({ ...prev, redId: "", ipressId: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtros.macroId]);
+
+  // Cargar IPRESS cuando cambia red
+  useEffect(() => {
+    if (filtros.redId) {
+      cargarIpress(filtros.redId);
+    } else {
+      setIpressList([]);
+      setFiltros(prev => ({ ...prev, ipressId: "" }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtros.redId]);
+
+  const cargarMacroregiones = async () => {
+    try {
+      setLoadingFiltros(true);
+      const data = await filtrosUbicacionService.obtenerMacroregiones();
+      setMacroregiones(data);
+    } catch (error) {
+      console.error("Error al cargar macroregiones:", error);
+    } finally {
+      setLoadingFiltros(false);
+    }
+  };
+
+  const cargarRedes = async (macroId) => {
+    try {
+      setLoadingFiltros(true);
+      const data = await filtrosUbicacionService.obtenerRedesPorMacro(macroId);
+      setRedes(data);
+    } catch (error) {
+      console.error("Error al cargar redes:", error);
+      setRedes([]);
+    } finally {
+      setLoadingFiltros(false);
+    }
+  };
+
+  const cargarIpress = async (redId) => {
+    try {
+      setLoadingFiltros(true);
+      const data = await filtrosUbicacionService.obtenerIpressPorRed(redId);
+      setIpressList(data);
+    } catch (error) {
+      console.error("Error al cargar IPRESS:", error);
+      setIpressList([]);
+    } finally {
+      setLoadingFiltros(false);
+    }
+  };
 
   const periodoMap = useMemo(() => {
     const m = new Map();
@@ -45,10 +119,8 @@ export default function TabSolicitudes({
   const stats = useMemo(() => {
     const total = safeSolicitudes.length;
     const enviadas = safeSolicitudes.filter(s => s.estado === "ENVIADO").length;
-    const aprobadas = safeSolicitudes.filter(s => s.estado === "APROBADA").length;
-    const rechazadas = safeSolicitudes.filter(s => s.estado === "RECHAZADA").length;
-    const borradores = safeSolicitudes.filter(s => s.estado === "BORRADOR").length;
-    return { total, enviadas, aprobadas, rechazadas, borradores };
+    const iniciadas = safeSolicitudes.filter(s => s.estado === "INICIADO").length;
+    return { total, enviadas, iniciadas };
   }, [safeSolicitudes]);
 
   // Ordenamiento
@@ -108,6 +180,17 @@ export default function TabSolicitudes({
           </div>
         </div>
 
+        <div className="bg-white rounded-lg p-3 border border-amber-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs text-amber-600 mb-0.5">Iniciadas</p>
+              <p className="text-xl font-bold text-amber-700">{stats.iniciadas}</p>
+            </div>
+            <FileText className="w-6 h-6 text-amber-400" />
+          </div>
+        </div>
+
+        {/* Comentadas las estadísticas que ya no se usan
         <div className="bg-white rounded-lg p-3 border border-green-200">
           <div className="flex items-center justify-between">
             <div>
@@ -137,11 +220,12 @@ export default function TabSolicitudes({
             <FileText className="w-6 h-6 text-gray-400" />
           </div>
         </div>
+        */}
       </div>
 
       {/* Filtros compactos */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1.5">
               <Filter className="w-3 h-3 inline mr-1" />
@@ -153,10 +237,8 @@ export default function TabSolicitudes({
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="TODAS">Todas</option>
-              <option value="BORRADOR">BORRADOR</option>
+              <option value="INICIADO">INICIADO</option>
               <option value="ENVIADO">ENVIADO</option>
-              <option value="APROBADA">APROBADA</option>
-              <option value="RECHAZADA">RECHAZADA</option>
             </select>
           </div>
 
@@ -181,17 +263,98 @@ export default function TabSolicitudes({
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <MapPin className="w-3 h-3 inline mr-1" />
+              Macroregión
+            </label>
+            <select
+              value={filtros.macroId || ""}
+              onChange={(e) => setFiltros({ ...filtros, macroId: e.target.value, redId: "", ipressId: "" })}
+              disabled={loadingFiltros}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+            >
+              <option value="">Todas</option>
+              {macroregiones.map((macro) => (
+                <option key={macro.id} value={macro.id}>
+                  {macro.descripcion}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <Building2 className="w-3 h-3 inline mr-1" />
+              Red
+            </label>
+            <select
+              value={filtros.redId || ""}
+              onChange={(e) => setFiltros({ ...filtros, redId: e.target.value, ipressId: "" })}
+              disabled={!filtros.macroId || loadingFiltros}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+            >
+              <option value="">Todas</option>
+              {redes.map((red) => (
+                <option key={red.id} value={red.id}>
+                  {red.codigo} - {red.descripcion}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
+              <Building2 className="w-3 h-3 inline mr-1" />
+              IPRESS
+            </label>
+            <select
+              value={filtros.ipressId || ""}
+              onChange={(e) => setFiltros({ ...filtros, ipressId: e.target.value })}
+              disabled={!filtros.redId || loadingFiltros}
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:bg-gray-100"
+            >
+              <option value="">Todas</option>
+              {ipressList.map((ipress) => (
+                <option key={ipress.id} value={ipress.id}>
+                  {ipress.codigo} - {ipress.descripcion}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-700 mb-1.5">
               <Search className="w-3 h-3 inline mr-1" />
-              Buscar IPRESS
+              Buscar
             </label>
             <input
               type="text"
               value={filtros.busqueda}
               onChange={(e) => setFiltros({ ...filtros, busqueda: e.target.value })}
-              placeholder="Nombre o código..."
+              placeholder="Nombre..."
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+        </div>
+
+        {/* Botón Consultar */}
+        <div className="mt-3 flex justify-end">
+          <button
+            onClick={onConsultar}
+            disabled={loading}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Consultando...
+              </>
+            ) : (
+              <>
+                <Search className="w-4 h-4" />
+                Consultar
+              </>
+            )}
+          </button>
         </div>
       </div>
 

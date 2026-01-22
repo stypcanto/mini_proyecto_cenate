@@ -264,23 +264,52 @@ export default function FormularioSolicitudTurnos() {
 
       // EDITAR INICIADO: Cargar detalles de la solicitud
       if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
-        const registrosExistentes = solicitud.detalles.map((det) => ({
-          idDetalle: det.idDetalle || null,          // ID del detalle para ediciones
-          idServicio: det.idServicio,
-          turnoTM: det.turnoTM || 0,
-          turnoManana: det.turnoManana || 0,
-          turnoTarde: det.turnoTarde || 0,
-          tc: det.tc !== undefined ? det.tc : true,
-          tl: det.tl !== undefined ? det.tl : true,
-          estado: det.estado || "PENDIENTE",
-          // Cargar fechas específicas desde detalle_solicitud_turno_fecha
-          // det.fechasDetalle = [{fecha: "2026-01-21", bloque: "MANANA", turnos: 2}, ...]
-          fechas: (det.fechasDetalle || []).map(f => ({
-            fecha: f.fecha,
-            turno: f.bloque,                         // "MANANA" o "TARDE"
-            id: `${f.fecha}-${f.bloque}`
-          }))
-        }));
+        // Agrupar detalles por idServicio para evitar duplicados
+        // El backend devuelve múltiples registros (con diferentes idDetalle) para la misma especialidad
+        // cuando hay múltiples fechas. Consolidamos todo en un solo registro por especialidad.
+        const detallesAgrupados = new Map();
+        
+        solicitud.detalles.forEach((det) => {
+          const idServicio = det.idServicio;
+          
+          // Si ya existe la especialidad, solo agregar las fechas nuevas
+          if (detallesAgrupados.has(idServicio)) {
+            const existente = detallesAgrupados.get(idServicio);
+            // Agregar fechas del detalle actual (evitando duplicados)
+            if (det.fechasDetalle && Array.isArray(det.fechasDetalle)) {
+              det.fechasDetalle.forEach(f => {
+                const fechaKey = `${f.fecha}-${f.bloque}`;
+                if (!existente.fechas.some(ef => ef.id === fechaKey)) {
+                  existente.fechas.push({
+                    fecha: f.fecha,
+                    turno: f.bloque,
+                    id: fechaKey
+                  });
+                }
+              });
+            }
+          } else {
+            // Primera vez que vemos esta especialidad - crear registro
+            detallesAgrupados.set(idServicio, {
+              idDetalle: det.idDetalle || null, // Tomamos el idDetalle del primer registro
+              idServicio: det.idServicio,
+              turnoTM: det.turnoTM || 0,
+              turnoManana: det.turnoManana || 0,
+              turnoTarde: det.turnoTarde || 0,
+              tc: det.tc !== undefined ? det.tc : true,
+              tl: det.tl !== undefined ? det.tl : true,
+              estado: det.estado || "PENDIENTE",
+              fechas: (det.fechasDetalle || []).map(f => ({
+                fecha: f.fecha,
+                turno: f.bloque,
+                id: `${f.fecha}-${f.bloque}`
+              }))
+            });
+          }
+        });
+        
+        // Convertir Map a Array
+        const registrosExistentes = Array.from(detallesAgrupados.values());
         setRegistros(registrosExistentes);
       } else {
         setRegistros([]);

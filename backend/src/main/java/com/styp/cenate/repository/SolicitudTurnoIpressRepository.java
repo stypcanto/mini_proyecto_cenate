@@ -139,6 +139,40 @@ public interface SolicitudTurnoIpressRepository extends JpaRepository<SolicitudT
                 @Param("estado") String estado
         );
     
+    @Query("""
+    	    SELECT new com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow(
+    	        s.idSolicitud,
+    	        p.idPeriodo,
+    	        s.estado,
+    	        s.fechaEnvio,
+    	        s.createdAt,
+    	        s.updatedAt,
+    	        i.descIpress
+    	    )
+    	    FROM SolicitudTurnoIpress s
+    	    JOIN s.periodo p
+    	    JOIN s.personal per
+    	    JOIN per.ipress i
+    	    JOIN i.red r
+    	    JOIN r.macroregion m
+    	    WHERE (:estado IS NULL OR :estado = '' OR UPPER(s.estado) = UPPER(:estado))
+    	      AND (:idPeriodo IS NULL OR p.idPeriodo = :idPeriodo)
+    	      AND (:ipressId IS NULL OR i.idIpress = :ipressId)
+    	      AND (:redId IS NULL OR r.id = :redId)
+    	      AND (:macroId IS NULL OR m.idMacro = :macroId)
+    	    ORDER BY s.createdAt DESC
+    	""")
+    	List<SolicitudTurnoIpressListadoRow> listarResumen(
+    	        @Param("idPeriodo") Long idPeriodo,
+    	        @Param("estado") String estado,
+    	        @Param("macroId") Long macroId,
+    	        @Param("redId") Long redId,
+    	        @Param("ipressId") Long ipressId
+    	);
+    
+    
+    
+    
 
     
     @Query("""

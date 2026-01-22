@@ -19,6 +19,7 @@ import {
   Filter,
   CheckCheck,
   XOctagon,
+  Calendar,
 } from "lucide-react";
 import { chipDay, fmtDateTime, yesNoPill } from "../utils/ui";
 import { solicitudTurnosService } from "../../../../../services/solicitudTurnosService";
@@ -39,6 +40,8 @@ export default function ModalDetalleSolicitud({
   const [modalObservacion, setModalObservacion] = useState({ show: false, detalle: null, observacion: "" });
   const [modalAccion, setModalAccion] = useState({ show: false, tipo: null, detalle: null, observacion: "" });
   const [modalAccionMasiva, setModalAccionMasiva] = useState({ show: false, tipo: null, detalles: [], observacion: "" });
+  const [modalFechas, setModalFechas] = useState({ show: false, detalle: null });
+  const [modalCalendario, setModalCalendario] = useState(false);
   const [busquedaEspecialidad, setBusquedaEspecialidad] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("TODOS");
   const [seleccionadas, setSeleccionadas] = useState(new Set());
@@ -246,7 +249,20 @@ export default function ModalDetalleSolicitud({
   };
 
   const isEnviado = solicitud?.estado === "ENVIADO";
-  const detalles = Array.isArray(solicitud?.detalles) ? solicitud.detalles : [];
+  
+  // Deduplicar detalles por idDetalle (fix para backend que envía duplicados)
+  const detalles = useMemo(() => {
+    if (!Array.isArray(solicitud?.detalles)) return [];
+    
+    const detallesUnicos = new Map();
+    solicitud.detalles.forEach(detalle => {
+      if (detalle.idDetalle && !detallesUnicos.has(detalle.idDetalle)) {
+        detallesUnicos.set(detalle.idDetalle, detalle);
+      }
+    });
+    
+    return Array.from(detallesUnicos.values());
+  }, [solicitud?.detalles]);
 
   // Estadísticas y filtrado
   const estadisticas = useMemo(() => {
@@ -469,6 +485,19 @@ export default function ModalDetalleSolicitud({
                 </div>
               </div>
 
+              {/* Botón Ver Calendario */}
+              {detalles.some(d => d.fechasDetalle && d.fechasDetalle.length > 0) && (
+                <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                  <button
+                    onClick={() => setModalCalendario(true)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Ver Calendario del Periodo
+                  </button>
+                </div>
+              )}
+
               {/* Acciones masivas - Solo disponible si está ENVIADO */}
               {isEnviado && seleccionadas.size > 0 && (
                 <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
@@ -619,6 +648,7 @@ export default function ModalDetalleSolicitud({
                         <th className="px-2 py-1.5 text-center font-semibold">Tarde</th>
                         <th className="px-2 py-1.5 text-center font-semibold">TC</th>
                         <th className="px-2 py-1.5 text-center font-semibold">TL</th>
+                        <th className="px-2 py-1.5 text-center font-semibold">Fechas</th>
                         <th className="px-2 py-1.5 text-left font-semibold">Observación</th>
                         {isEnviado && <th className="px-2 py-1.5 text-center font-semibold">Acciones</th>}
                       </tr>
@@ -709,6 +739,28 @@ export default function ModalDetalleSolicitud({
 
                           <td className="px-2 py-1.5 text-center">{yesNoPill(!!d.tc)}</td>
                           <td className="px-2 py-1.5 text-center">{yesNoPill(!!d.tl)}</td>
+
+                          <td className="px-2 py-1.5 text-center">
+                            {d.fechasDetalle && d.fechasDetalle.length > 0 ? (
+                              <button
+                                onClick={() => setModalFechas({ show: true, detalle: d })}
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-lg hover:bg-blue-200 transition-colors"
+                                title="Ver días seleccionados"
+                              >
+                                <Calendar className="w-3 h-3" />
+                                {d.fechasDetalle.length}
+                              </button>
+                            ) : (
+                              <button
+                                disabled
+                                className="inline-flex items-center gap-1 px-2 py-1 bg-gray-100 text-gray-400 text-xs font-medium rounded-lg cursor-not-allowed"
+                                title="Sin días registrados"
+                              >
+                                <Calendar className="w-3 h-3" />
+                                0
+                              </button>
+                            )}
+                          </td>
 
                           <td className="px-2 py-1.5">
                             <div className="flex items-center gap-2">
@@ -1129,6 +1181,239 @@ export default function ModalDetalleSolicitud({
                     No Procede {modalAccionMasiva.detalles.length} Especialidad(es)
                   </>
                 )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Fechas Seleccionadas */}
+      {modalFechas.show && modalFechas.detalle && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="text-lg font-semibold text-blue-700 flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Días Seleccionados
+                  </h4>
+                  <p className="text-sm text-gray-600 mt-2">
+                    {modalFechas.detalle.nombreServicio ?? modalFechas.detalle.nombreEspecialidad}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Código: {modalFechas.detalle.codigoServicio ?? modalFechas.detalle.codServicio}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setModalFechas({ show: false, detalle: null })}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 max-h-96 overflow-y-auto">
+              {modalFechas.detalle.fechasDetalle && modalFechas.detalle.fechasDetalle.length > 0 ? (
+                <div className="space-y-2">
+                  {modalFechas.detalle.fechasDetalle.map((fecha, idx) => (
+                    <div
+                      key={idx}
+                      className={`flex items-center justify-between p-3 rounded-lg border ${
+                        fecha.bloque === 'MANANA'
+                          ? 'bg-blue-50 border-blue-200'
+                          : 'bg-orange-50 border-orange-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Calendar className={`w-5 h-5 ${
+                          fecha.bloque === 'MANANA' ? 'text-blue-600' : 'text-orange-600'
+                        }`} />
+                        <div>
+                          <p className="text-sm font-semibold text-gray-900">
+                            {new Date(fecha.fecha + 'T00:00:00').toLocaleDateString('es-PE', {
+                              weekday: 'long',
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </p>
+                          <p className="text-xs text-gray-600">{fecha.fecha}</p>
+                        </div>
+                      </div>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          fecha.bloque === 'MANANA'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-orange-600 text-white'
+                        }`}
+                      >
+                        {fecha.bloque === 'MANANA' ? '🌅 Mañana' : '🌆 Tarde'}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-2" />
+                  <p className="text-sm">No hay días registrados</p>
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <button
+                onClick={() => setModalFechas({ show: false, detalle: null })}
+                className="w-full px-4 py-2.5 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Calendario del Periodo */}
+      {modalCalendario && solicitud && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-start justify-between">
+                <div>
+                  <h4 className="text-lg font-semibold text-blue-700 flex items-center gap-2">
+                    <Calendar className="w-5 h-5" />
+                    Calendario del Periodo
+                  </h4>
+                  <p className="text-sm text-gray-600 mt-2">
+                    {solicitud.periodoDescripcion} - {solicitud.nombreIpress}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {solicitud.fechaInicio} al {solicitud.fechaFin}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setModalCalendario(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <XCircle className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 overflow-y-auto flex-1">
+              {(() => {
+                // Obtener todas las fechas registradas de todos los detalles
+                const fechasRegistradas = new Map();
+                detalles.forEach(detalle => {
+                  if (detalle.fechasDetalle) {
+                    detalle.fechasDetalle.forEach(f => {
+                      const key = f.fecha;
+                      if (!fechasRegistradas.has(key)) {
+                        fechasRegistradas.set(key, []);
+                      }
+                      fechasRegistradas.get(key).push({
+                        especialidad: detalle.nombreServicio,
+                        bloque: f.bloque
+                      });
+                    });
+                  }
+                });
+
+                // Generar calendario
+                const inicio = new Date(solicitud.fechaInicio + 'T00:00:00');
+                const fin = new Date(solicitud.fechaFin + 'T00:00:00');
+                const diasCalendario = [];
+                
+                for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
+                  const fechaStr = d.toISOString().split('T')[0];
+                  diasCalendario.push({
+                    fecha: fechaStr,
+                    dia: d.getDate(),
+                    nombreDia: d.toLocaleDateString('es-PE', { weekday: 'short' }),
+                    registros: fechasRegistradas.get(fechaStr) || []
+                  });
+                }
+
+                return (
+                  <div className="grid grid-cols-7 gap-2">
+                    {['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'].map(dia => (
+                      <div key={dia} className="text-center font-semibold text-gray-700 text-sm py-2">
+                        {dia}
+                      </div>
+                    ))}
+                    
+                    {/* Espacios vacíos para alinear el primer día */}
+                    {Array(inicio.getDay()).fill(null).map((_, idx) => (
+                      <div key={`empty-${idx}`} className="aspect-square" />
+                    ))}
+                    
+                    {diasCalendario.map((dia) => {
+                      const tieneRegistros = dia.registros.length > 0;
+                      const tieneManana = dia.registros.some(r => r.bloque === 'MANANA');
+                      const tieneTarde = dia.registros.some(r => r.bloque === 'TARDE');
+                      
+                      return (
+                        <div
+                          key={dia.fecha}
+                          className={`aspect-square rounded-lg border-2 p-2 relative ${
+                            tieneRegistros
+                              ? 'border-blue-500 bg-blue-50 cursor-pointer hover:bg-blue-100'
+                              : 'border-gray-200 bg-white'
+                          }`}
+                          title={tieneRegistros ? `${dia.registros.length} turno(s) registrado(s)` : ''}
+                          onClick={() => {
+                            if (tieneRegistros) {
+                              alert(`Día ${dia.dia}\\n\\n` + 
+                                dia.registros.map(r => `• ${r.especialidad} (${r.bloque})`).join('\\n'));
+                            }
+                          }}
+                        >
+                          <div className="text-center">
+                            <div className={`text-xs font-medium ${tieneRegistros ? 'text-blue-900' : 'text-gray-500'}`}>
+                              {dia.nombreDia}
+                            </div>
+                            <div className={`text-lg font-bold ${tieneRegistros ? 'text-blue-700' : 'text-gray-700'}`}>
+                              {dia.dia}
+                            </div>
+                          </div>
+                          
+                          {tieneRegistros && (
+                            <div className="absolute bottom-1 left-1 right-1 flex gap-0.5 justify-center">
+                              {tieneManana && (
+                                <div className="w-2 h-2 rounded-full bg-blue-600" title="Mañana" />
+                              )}
+                              {tieneTarde && (
+                                <div className="w-2 h-2 rounded-full bg-orange-600" title="Tarde" />
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
+              {/* Leyenda */}
+              <div className="mt-6 flex items-center justify-center gap-6 text-xs">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-blue-600" />
+                  <span className="text-gray-700">Turno Mañana</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-orange-600" />
+                  <span className="text-gray-700">Turno Tarde</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-6 border-t border-gray-200">
+              <button
+                onClick={() => setModalCalendario(false)}
+                className="w-full px-4 py-2.5 bg-gray-600 text-white font-medium rounded-lg hover:bg-gray-700 transition-colors"
+              >
+                Cerrar
               </button>
             </div>
           </div>
