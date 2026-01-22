@@ -74,6 +74,12 @@ public class TeleECGImagenDTO {
     private Integer edadPaciente;
 
     /**
+     * Fecha de nacimiento del paciente
+     */
+    @JsonProperty("fecha_nacimiento_paciente")
+    private java.time.LocalDate fechaNacimientoPaciente;
+
+    /**
      * Teléfono principal del paciente
      */
     @JsonProperty("telefono_principal_paciente")

@@ -47,6 +47,19 @@ export default function ListaEKGsPacientes({
     return new Date(fecha).toLocaleDateString("es-PE");
   };
 
+  // v1.27.5: Calcular edad desde fecha de nacimiento
+  const calcularEdad = (fechaNacimiento) => {
+    if (!fechaNacimiento) return null;
+    const hoy = new Date();
+    const nac = new Date(fechaNacimiento);
+    let edad = hoy.getFullYear() - nac.getFullYear();
+    const mes = hoy.getMonth() - nac.getMonth();
+    if (mes < 0 || (mes === 0 && hoy.getDate() < nac.getDate())) {
+      edad--;
+    }
+    return edad;
+  };
+
   // v3.1.0: Agrupar imágenes por paciente (numDocPaciente)
   const agruparImagenesPorPaciente = (imagenesLista) => {
     const agrupadas = {};
@@ -61,6 +74,7 @@ export default function ListaEKGsPacientes({
           telefonoPrincipalPaciente: imagen.telefonoPrincipalPaciente,
           edadPaciente: imagen.edadPaciente,
           generoPaciente: imagen.generoPaciente,
+          fechaNacimientoPaciente: imagen.fechaNacimientoPaciente, // v1.27.5: Agregar fecha nacimiento
           imagenes: [],
           estado: imagen.estadoTransformado || imagen.estado,
           fechaPrimera: imagen.fechaEnvio,
@@ -164,6 +178,9 @@ export default function ListaEKGsPacientes({
               Teléfono
             </th>
             <th className="px-6 py-4 text-left text-sm font-semibold">
+              Fecha Nacimiento
+            </th>
+            <th className="px-6 py-4 text-left text-sm font-semibold">
               Edad
             </th>
             <th className="px-6 py-4 text-left text-sm font-semibold">
@@ -212,11 +229,22 @@ export default function ListaEKGsPacientes({
                   {paciente.telefonoPrincipalPaciente || "-"}
                 </div>
               </td>
+              {/* v1.27.5: Columna de Fecha Nacimiento */}
               <td className="px-6 py-4 text-sm text-gray-700">
-                {paciente.edadPaciente || "-"}
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-gray-400" />
+                  {paciente.fechaNacimientoPaciente ? formatearFecha(paciente.fechaNacimientoPaciente) : "-"}
+                </div>
               </td>
               <td className="px-6 py-4 text-sm text-gray-700">
-                {paciente.generoPaciente || "-"}
+                {paciente.fechaNacimientoPaciente
+                  ? `${calcularEdad(paciente.fechaNacimientoPaciente)} años`
+                  : (paciente.edadPaciente || "-")}
+              </td>
+              <td className="px-6 py-4 text-sm text-gray-700">
+                {paciente.generoPaciente === "M" || paciente.generoPaciente === "MASCULINO" ? "🧑 Masculino" :
+                 paciente.generoPaciente === "F" || paciente.generoPaciente === "FEMENINO" ? "👩 Femenino" :
+                 paciente.generoPaciente || "-"}
               </td>
               <td className="px-6 py-4 text-sm">
                 <div className="space-y-1">

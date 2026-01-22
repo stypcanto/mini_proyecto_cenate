@@ -719,8 +719,11 @@ public class TeleECGService {
                 Asegurado paciente = asegurado.get();
                 dto.setGeneroPaciente(paciente.getSexo());
 
-                // Calcular edad desde fecha de nacimiento
+                // v1.27.5: Agregar fecha de nacimiento
                 if (paciente.getFecnacimpaciente() != null) {
+                    dto.setFechaNacimientoPaciente(paciente.getFecnacimpaciente());
+
+                    // Calcular edad desde fecha de nacimiento
                     java.time.LocalDate today = java.time.LocalDate.now();
                     long edadLong = java.time.temporal.ChronoUnit.YEARS.between(
                         paciente.getFecnacimpaciente(),
