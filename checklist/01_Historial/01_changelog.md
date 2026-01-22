@@ -2,9 +2,149 @@
 
 > Changelog detallado del proyecto
 >
-> 📌 **IMPORTANTE**: Ver documentación del Módulo Tele-ECG en:
-> - ⭐ `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (ACTUALIZADO - v1.22.1 + Zoom Digital + Filtros)
-> - `plan/02_Modulos_Medicos/07_analisis_completo_teleecg_v2.0.0.md` (Análisis arquitectónico)
+> 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ Módulo Tele-ECG: `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (v1.24.0 + UI optimizado)
+> - ⭐ **Módulo Bolsas**: `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0 - NUEVO)
+> - ⭐ **CRUD Tipos Bolsas**: `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.0.0 - NUEVO)
+
+---
+
+## v1.31.0 (2026-01-22) - 🏥 Módulo de Bolsas: CRUD Tipos de Bolsas v1.0.0 + Design System CENATE
+
+### 🎯 Descripción
+
+**Sistema completo de gestión del catálogo de tipos de bolsas**. Proporciona interfaz profesional para administrar clasificaciones de pacientes con CRUD completo, búsqueda avanzada y diseño según Design System CENATE (#0D5BA9).
+
+### 🔧 Cambios Técnicos
+
+#### **Backend**:
+- ✅ **GestionTiposBolsasController.java**: 7 endpoints REST (CRUD + estadísticas)
+- ✅ **TipoBolsaService.java + TipoBolsaServiceImpl.java**: Lógica completa CRUD
+- ✅ **TipoBolsaRepository.java**: Queries personalizadas (búsqueda, filtrado)
+- ✅ **TipoBolsa.java**: Entity con auditoría automática
+- ✅ **TipoBolsaResponse.java**: DTO para API
+- ✅ **SecurityConfig.java**: Endpoints públicos sin autenticación
+- ✅ **V3_0_2__crear_tabla_tipos_bolsas.sql**: Migración con 7 registros iniciales
+
+**Tabla Base de Datos:**
+```sql
+dim_tipos_bolsas:
+├─ id_tipo_bolsa (PK)
+├─ cod_tipo_bolsa (UNIQUE)
+├─ desc_tipo_bolsa (TEXT)
+├─ stat_tipo_bolsa (A|I)
+├─ created_at (TIMESTAMP)
+└─ updated_at (TIMESTAMP)
+```
+
+**7 Tipos Predefinidos:**
+1. BOLSA_107 - Importación de pacientes masiva
+2. BOLSA_DENGUE - Control epidemiológico
+3. BOLSAS_ENFERMERIA - Atenciones de enfermería
+4. BOLSAS_EXPLOTADATOS - Análisis y reportes
+5. BOLSAS_IVR - Sistema interactivo de respuesta de voz
+6. BOLSAS_REPROGRAMACION - Citas reprogramadas
+7. BOLSA_GESTORES_TERRITORIAL - Gestión territorial
+
+#### **Frontend**:
+- ✅ **TiposBolsas.jsx**: Componente React con tabla, modales y búsqueda
+- ✅ **tiposBolsasService.js**: API client con fallback offline
+- ✅ **Integración en TabsNavigation.jsx**: Nuevo tab en Admin
+- ✅ **Integración en UsersManagement.jsx**: Render del componente
+
+**Características:**
+- Tabla profesional con paginación (30 items/página)
+- Búsqueda avanzada: filtro código + descripción (debounce 300ms)
+- Modales: Crear, Editar, Ver Detalles, Confirmar Eliminar
+- Toggle de estado: Activo (A) ↔ Inactivo (I)
+- Diseño CENATE: Color primario #0D5BA9 en headers
+- Fallback offline: CRUD funciona sin backend (datos locales)
+- Auditoría: Timestamps automáticos (created_at, updated_at)
+
+#### **Endpoints REST** (7 total):
+```
+GET    /tipos-bolsas/todos              → Lista todos los activos
+GET    /tipos-bolsas/{id}               → Obtener por ID
+GET    /tipos-bolsas/buscar?...         → Búsqueda paginada
+GET    /tipos-bolsas/estadisticas       → Estadísticas
+POST   /tipos-bolsas                    → Crear nuevo
+PUT    /tipos-bolsas/{id}               → Actualizar
+PATCH  /tipos-bolsas/{id}/estado        → Cambiar estado
+DELETE /tipos-bolsas/{id}               → Eliminar
+```
+
+#### **Documentación Completa**:
+- ✅ `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (Documentación técnica)
+- ✅ `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (Resumen módulo completo)
+- ✅ Changelog actualizado
+
+### 💡 Mejoras Implementadas
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| **Gestión Tipos** | Manual / No visible | ✅ CRUD profesional |
+| **Catálogo** | Hardcoded | ✅ BD + Migraciones |
+| **Búsqueda** | N/A | ✅ Avanzada con filtros |
+| **Interfaz** | N/A | ✅ Tabla + Modales |
+| **Diseño** | N/A | ✅ CENATE #0D5BA9 |
+| **Offline** | N/A | ✅ Fallback local |
+| **Auditoría** | Manual | ✅ Timestamps automáticos |
+| **Documentación** | Parcial | ✅ Completa + Resumen |
+
+### ✅ Build Status
+
+- Backend: `./gradlew bootJar -x test` → ✅ BUILD SUCCESSFUL
+- Frontend: `npm run build` → ✅ SIN ERRORES
+- Database: Migraciones Flyway → ✅ APLICADAS (7 registros)
+- Status: **DEPLOYMENT READY** 🚀
+
+### 📊 Cambios
+
+| Métrica | Valor |
+|---------|-------|
+| Archivos nuevos | 10 |
+| Archivos modificados | 5 |
+| Componentes creados | 2 (React) |
+| Endpoints nuevos | 7 |
+| Registros BD | 7 |
+| Líneas de código | ~2000 |
+| Documentación | 2 archivos MD |
+| Commits | 1 (fff57d6) |
+
+### 🎨 Componentes
+
+1. **Backend** (Java/Spring):
+   - 1 Controller (7 endpoints)
+   - 1 Service Interface + 1 Implementation
+   - 1 Repository (JPA + Custom queries)
+   - 1 Entity (JPA)
+   - 1 DTO Response
+   - 1 Migración SQL (Flyway)
+
+2. **Frontend** (React):
+   - 1 Componente principal (TiposBolsas.jsx)
+   - 1 Servicio API (tiposBolsasService.js)
+   - 2 Integraciones (TabsNavigation, UsersManagement)
+
+3. **Base de Datos**:
+   - 1 Tabla (dim_tipos_bolsas)
+   - 1 Migración (V3_0_2)
+   - 3 Índices
+   - 1 Trigger
+
+### 🚀 Acceso en Producción
+
+**URL:** http://localhost:3000/admin/users
+**Navegación:** Admin → Más → Tipos de Bolsas
+**Status:** ✅ LIVE
+
+### 🔗 Integración
+
+- ✅ Con Bolsa 107 (Importación)
+- ✅ Con Solicitud de Turnos
+- ✅ Con módulo de Auditoría
+- ✅ Con Disponibilidad Médica
+- ✅ Con Reportes
 
 ---
 
