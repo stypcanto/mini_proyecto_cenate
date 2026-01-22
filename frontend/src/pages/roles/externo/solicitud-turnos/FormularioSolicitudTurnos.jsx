@@ -36,6 +36,13 @@ import {
   Pencil,
   Plus,
   RefreshCw,
+  BookOpen,
+  X,
+  ListChecks,
+  Clock,
+  FileCheck,
+  Users,
+  ArrowRight,
 } from "lucide-react";
 
 import { periodoSolicitudService } from "../../../../services/periodoSolicitudService";
@@ -49,6 +56,12 @@ import VistaSolicitudEnviada from "./components/VistaSolicitudEnviada";
 
 // Utilidades
 import { formatFecha, getYearFromPeriodo, estadoBadgeClass } from "./utils/helpers";
+
+// Clases reutilizables para botones con hover
+const BUTTON_HOVER_CLASS = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200 hover:shadow-md";
+const BUTTON_WHITE_HOVER_CLASS = "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200 hover:shadow-md";
+const BUTTON_SAVE_CLASS = "w-full px-4 py-2 text-sm bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
+const BUTTON_SEND_CLASS = "w-full px-4 py-2 text-sm bg-gradient-to-r from-purple-600 to-purple-700 text-white font-semibold rounded-lg hover:from-purple-700 hover:to-purple-800 hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed";
 
 /** =======================================================================
  * COMPONENTE PRINCIPAL
@@ -84,6 +97,7 @@ export default function FormularioSolicitudTurnos() {
   // modal
   const [openFormModal, setOpenFormModal] = useState(false);
   const [modoModal, setModoModal] = useState("NUEVA"); // NUEVA | EDITAR | VER
+  const [openInfoModal, setOpenInfoModal] = useState(false);
 
   // periodo seleccionado
   const [periodoSeleccionado, setPeriodoSeleccionado] = useState(null);
@@ -410,8 +424,8 @@ export default function FormularioSolicitudTurnos() {
         turnoTM: turnoTM,
         turnoManana: turnoManana,           // Cantidad de turnos mañana (a nivel detalle)
         turnoTarde: turnoTarde,             // Cantidad de turnos tarde (a nivel detalle)
-        tc: r.tc !== undefined ? r.tc : true,
-        tl: r.tl !== undefined ? r.tl : true,
+        tc: r.tc !== undefined ? r.tc : false,
+        tl: r.tl !== undefined ? r.tl : false,
         observacion: "",
         estado: r.estado || "PENDIENTE"
       };
@@ -444,6 +458,12 @@ export default function FormularioSolicitudTurnos() {
     const totalTurnosSolicitados = detallesConTurnos.reduce((sum, d) => sum + d.turnos, 0);
     const totalEspecialidades = detallesConTurnos.length;
 
+    console.log("🧮 ========== CÁLCULO DE TOTALES ==========");
+    console.log("📊 Detalles con turnos:", detallesConTurnos);
+    console.log("🔢 Total Turnos Solicitados:", totalTurnosSolicitados);
+    console.log("📋 Total Especialidades:", totalEspecialidades);
+    console.log("==========================================");
+
     // IDs de detalles a eliminar en backend
     const detallesEliminar = detallesAEliminar.map(d => d.idDetalle).filter(Boolean);
 
@@ -474,6 +494,23 @@ export default function FormularioSolicitudTurnos() {
       return;
     }
 
+    // Validación adicional: verificar que haya registros con turnos
+    const registrosConTurnos = registros.filter(r => {
+      const total = Number(r.turnoTM || 0) + Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
+      return total > 0;
+    });
+
+    console.log("🔍 ========== VALIDACIÓN PREVIA ==========");
+    console.log("📋 Total de registros:", registros.length);
+    console.log("✅ Registros con turnos:", registrosConTurnos.length);
+    console.log("📊 Registros actuales:", registros);
+    console.log("==========================================");
+
+    if (registrosConTurnos.length === 0) {
+      setError("Debes configurar al menos una especialidad con turnos antes de guardar.");
+      return;
+    }
+
     setSaving(true);
     setError(null);
     setSuccess(null);
@@ -486,6 +523,13 @@ export default function FormularioSolicitudTurnos() {
       console.log("=============================================");
 
       const resultado = await solicitudTurnoService.guardarBorrador(payloadCompat);
+
+      console.log("✅ ============ RESPUESTA DEL BACKEND ============");
+      console.log("📦 Resultado completo:", JSON.stringify(resultado, null, 2));
+      console.log("📊 Total Especialidades (backend):", resultado?.totalEspecialidades);
+      console.log("🎯 Total Turnos (backend):", resultado?.totalTurnosSolicitados);
+      console.log("📋 Detalles (backend):", resultado?.detalles?.length);
+      console.log("=================================================");
 
       // Actualizar estado de la solicitud con el resultado completo
       setSolicitudActual(resultado);
@@ -812,7 +856,8 @@ export default function FormularioSolicitudTurnos() {
   }
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+    <>
+      <div className="space-y-6 p-6 max-w-6xl mx-auto">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center gap-3 mb-2">
@@ -837,65 +882,31 @@ export default function FormularioSolicitudTurnos() {
         </div>
       )}
 
-      {/* Datos del Usuario */}
+      {/* Sección Informativa del Sistema */}
       <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
         <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-4 py-3">
           <h2 className="text-base font-bold text-white mb-0.5 flex items-center gap-2">
-            <User className="w-4 h-4" />
-            Datos de Contacto
+            <Info className="w-4 h-4" />
+            Información del Sistema
           </h2>
-          <p className="text-xs text-blue-100">(auto-detectados)</p>
+          <p className="text-xs text-blue-100">Gestión de Solicitudes de Turnos</p>
         </div>
 
-        <div className="p-4">
-        {miIpress ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="bg-blue-600 text-white p-2 rounded-lg">
-                  <Building2 className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-semibold text-blue-900">Red / IPRESS</span>
-              </div>
-              <p className="font-bold text-gray-900 text-sm mb-1">{miIpress.nombreIpress || "Sin IPRESS"}</p>
-              <p className="text-xs text-blue-700 font-medium">{miIpress.nombreRed || "Sin Red"}</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="bg-purple-600 text-white p-2 rounded-lg">
-                  <User className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-semibold text-purple-900">Coordinador / Usuario</span>
-              </div>
-              <p className="font-bold text-gray-900 text-sm mb-1">{miIpress.nombreCompleto || "N/A"}</p>
-              <p className="text-xs text-purple-700 font-medium">DNI: {miIpress.dniUsuario || "N/A"}</p>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-2 mb-3">
-                <div className="bg-green-600 text-white p-2 rounded-lg">
-                  <Mail className="w-4 h-4" />
-                </div>
-                <span className="text-xs font-semibold text-green-900">Contacto</span>
-              </div>
-              <p className="font-medium text-gray-900 text-xs mb-2 break-all">{miIpress.emailContacto || "Sin email"}</p>
-              <div className="flex items-center gap-1.5 text-xs text-green-700 font-medium">
-                <Phone className="w-3 h-3" />
-                {miIpress.telefonoContacto || "Sin teléfono"}
-              </div>
+        <div className="p-6">
+          <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5">
+            <p className="text-sm text-gray-700 leading-relaxed text-justify mb-4">
+              El presente formulario constituye una herramienta integral diseñada para facilitar la gestión y administración de solicitudes de turnos médicos por parte del personal externo vinculado a las Instituciones Prestadoras de Servicios de Salud (IPRESS) dentro del sistema CENATE.
+            </p>
+            <div className="flex justify-end">
+              <button
+                onClick={() => setOpenInfoModal(true)}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-lg hover:bg-blue-700 transition-all hover:shadow-md"
+              >
+                <BookOpen className="w-4 h-4" />
+                Ver más
+              </button>
             </div>
           </div>
-        ) : (
-          <div className="text-center py-3 text-slate-500 text-sm">No se encontraron datos de IPRESS asociados.</div>
-        )}
-
-        {miIpress && !miIpress.datosCompletos && (
-          <div className="mt-3 p-2 bg-yellow-50 border border-yellow-200 rounded-lg text-yellow-800 text-xs flex items-center gap-2">
-            <Info className="w-3 h-3" />
-            {miIpress.mensajeValidacion}
-          </div>
-        )}
         </div>
       </div>
 
@@ -917,7 +928,7 @@ export default function FormularioSolicitudTurnos() {
               <button
                 type="button"
                 onClick={handleRefreshAll}
-                className="px-3 py-1.5 rounded-lg bg-white text-[#0A5BA9] text-sm font-semibold hover:bg-blue-50 flex items-center gap-1.5 transition-colors"
+                className={BUTTON_WHITE_HOVER_CLASS}
                 disabled={loadingTabla || loadingPeriodos}
               >
                 {(loadingTabla || loadingPeriodos) ? (
@@ -1013,8 +1024,8 @@ export default function FormularioSolicitudTurnos() {
                   <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Año</th>
                   <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Periodo</th>
                   <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Solicitud</th>
-                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Inicio</th>
-                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Fin</th>
+                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Fecha de Apertura</th>
+                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Fecha de Cierre</th>
                   <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Estado</th>
                   <th className="px-2 py-2.5 text-right text-xs font-bold text-white">Acción</th>
                 </tr>
@@ -1052,7 +1063,7 @@ export default function FormularioSolicitudTurnos() {
                         <button
                           type="button"
                           onClick={() => abrirDesdePeriodo(r)}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50"
+                          className={BUTTON_HOVER_CLASS}
                         >
                           {!tieneSol ? (
                             <>
@@ -1210,7 +1221,13 @@ export default function FormularioSolicitudTurnos() {
                     especialidades={especialidades}
                     periodo={periodoSeleccionado}
                     registros={registros}
-                    onChange={(nuevosRegistros) => setRegistros(nuevosRegistros)}
+                    onChange={(nuevosRegistros) => {
+                      console.log("🔄 ========== CAMBIO EN TABLA ==========");
+                      console.log("📋 Nuevos registros recibidos:", nuevosRegistros);
+                      console.log("📊 Cantidad:", nuevosRegistros?.length);
+                      console.log("=======================================");
+                      setRegistros(nuevosRegistros);
+                    }}
                     onAutoGuardarFechas={handleAutoGuardarFechas}
                     soloLectura={false}
                     mostrarEncabezado={false}
@@ -1219,7 +1236,7 @@ export default function FormularioSolicitudTurnos() {
                         <button
                           onClick={handleGuardarBorrador}
                           disabled={saving}
-                          className="w-full px-4 py-2 text-sm bg-gradient-to-r from-green-600 to-green-700 text-white font-semibold rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                          className={BUTTON_SAVE_CLASS}
                         >
                           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                           Guardar Progreso
@@ -1228,7 +1245,7 @@ export default function FormularioSolicitudTurnos() {
                         <button
                           onClick={handleEnviar}
                           disabled={saving || registros.length === 0}
-                          className="w-full px-4 py-2 text-sm bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] text-white font-semibold rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className={BUTTON_SEND_CLASS}
                         >
                           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                           Enviar Solicitud
@@ -1248,5 +1265,189 @@ export default function FormularioSolicitudTurnos() {
         </div>
       </Modal>
     </div>
+
+    {/* Modal de Información Detallada - Independiente con z-index superior */}
+    {openInfoModal && (
+      <div className="fixed inset-0 z-[60]">
+        <div className="absolute inset-0 bg-black/50" onClick={() => setOpenInfoModal(false)} />
+        <div className="absolute inset-0 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl relative">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-6 py-4 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 p-2 rounded-lg">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-bold text-white">Información del Sistema</h2>
+                <p className="text-blue-100 text-sm">Guía completa de funcionalidades</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setOpenInfoModal(false)}
+              className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Contenido con scroll */}
+          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+            {/* Funcionalidades Principales */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <ListChecks className="w-5 h-5 text-blue-600" />
+                Funcionalidades Principales
+              </h3>
+              <p className="text-sm text-gray-700 mb-4 leading-relaxed">
+                El sistema permite a los profesionales de la salud registrar y gestionar sus requerimientos de turnos asistenciales de manera estructurada, considerando los siguientes componentes:
+              </p>
+
+              <div className="space-y-4">
+                {/* 1. Gestión de Periodos */}
+                <div className="bg-blue-50 border-l-4 border-blue-500 rounded-r-lg p-4">
+                  <h4 className="font-bold text-blue-900 mb-2 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    1. Gestión de Periodos de Solicitud
+                  </h4>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    El formulario presenta los periodos habilitados para solicitud de turnos, diferenciados entre periodos vigentes y activos, permitiendo la selección del periodo correspondiente según el calendario establecido por la institución.
+                  </p>
+                </div>
+
+                {/* 2. Configuración de Turnos */}
+                <div className="bg-purple-50 border-l-4 border-purple-500 rounded-r-lg p-4">
+                  <h4 className="font-bold text-purple-900 mb-2 flex items-center gap-2">
+                    <Clock className="w-4 h-4" />
+                    2. Configuración de Turnos por Especialidad
+                  </h4>
+                  <p className="text-sm text-gray-700 mb-2 leading-relaxed">
+                    Para cada especialidad médica disponible, el sistema permite especificar:
+                  </p>
+                  <ul className="list-disc list-inside text-sm text-gray-700 space-y-1 ml-4">
+                    <li>Turnos de tiempo completo</li>
+                    <li>Turnos de mañana</li>
+                    <li>Turnos de tarde</li>
+                    <li>Habilitación de modalidad Teleconsulta</li>
+                    <li>Habilitación de modalidad Teleconsultorio</li>
+                  </ul>
+                </div>
+
+                {/* 3. Gestión de Fechas */}
+                <div className="bg-green-50 border-l-4 border-green-500 rounded-r-lg p-4">
+                  <h4 className="font-bold text-green-900 mb-2 flex items-center gap-2">
+                    <Calendar className="w-4 h-4" />
+                    3. Gestión de Fechas Específicas
+                  </h4>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    Una vez configurada la cantidad de turnos por especialidad, el sistema habilita la selección detallada de las fechas en las que se desea prestar servicios, asegurando una planificación precisa de la disponibilidad profesional.
+                  </p>
+                </div>
+
+                {/* 4. Seguimiento */}
+                <div className="bg-amber-50 border-l-4 border-amber-500 rounded-r-lg p-4">
+                  <h4 className="font-bold text-amber-900 mb-2 flex items-center gap-2">
+                    <FileCheck className="w-4 h-4" />
+                    4. Seguimiento y Trazabilidad
+                  </h4>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    El formulario mantiene un registro histórico de todas las solicitudes generadas, clasificadas por estado (Borrador, Enviada, Revisada, Aprobada, Rechazada), facilitando el seguimiento del proceso de asignación de turnos.
+                  </p>
+                </div>
+
+                {/* 5. Filtros */}
+                <div className="bg-indigo-50 border-l-4 border-indigo-500 rounded-r-lg p-4">
+                  <h4 className="font-bold text-indigo-900 mb-2 flex items-center gap-2">
+                    <Users className="w-4 h-4" />
+                    5. Filtros y Búsqueda Avanzada
+                  </h4>
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    Incorpora mecanismos de filtrado por año, periodo, estado de solicitud y especialidad, optimizando la navegación y consulta de información.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Flujo de Trabajo */}
+            <div>
+              <h3 className="text-lg font-bold text-gray-900 mb-3 flex items-center gap-2">
+                <ArrowRight className="w-5 h-5 text-purple-600" />
+                Flujo de Trabajo
+              </h3>
+              <p className="text-sm text-gray-700 mb-4 leading-relaxed">
+                El proceso operativo contempla las siguientes etapas:
+              </p>
+
+              <div className="relative">
+                <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gradient-to-b from-blue-500 to-purple-500"></div>
+                <div className="space-y-4 ml-2">
+                  {/* Paso 1 */}
+                  <div className="flex items-start gap-3 relative">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-blue-500 text-white font-bold flex items-center justify-center text-sm shadow-md z-10">
+                      1
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 flex-1 shadow-sm">
+                      <p className="text-sm text-gray-700 leading-relaxed">Inicio de solicitud seleccionando el periodo correspondiente</p>
+                    </div>
+                  </div>
+
+                  {/* Paso 2 */}
+                  <div className="flex items-start gap-3 relative">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-indigo-500 text-white font-bold flex items-center justify-center text-sm shadow-md z-10">
+                      2
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 flex-1 shadow-sm">
+                      <p className="text-sm text-gray-700 leading-relaxed">Configuración de especialidades y cantidad de turnos requeridos</p>
+                    </div>
+                  </div>
+
+                  {/* Paso 3 */}
+                  <div className="flex items-start gap-3 relative">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-purple-500 text-white font-bold flex items-center justify-center text-sm shadow-md z-10">
+                      3
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 flex-1 shadow-sm">
+                      <p className="text-sm text-gray-700 leading-relaxed">Selección de fechas específicas para cada especialidad</p>
+                    </div>
+                  </div>
+
+                  {/* Paso 4 */}
+                  <div className="flex items-start gap-3 relative">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-violet-500 text-white font-bold flex items-center justify-center text-sm shadow-md z-10">
+                      4
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 flex-1 shadow-sm">
+                      <p className="text-sm text-gray-700 leading-relaxed">Guardado de progreso (modo borrador) para modificaciones posteriores</p>
+                    </div>
+                  </div>
+
+                  {/* Paso 5 */}
+                  <div className="flex items-start gap-3 relative">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-fuchsia-500 text-white font-bold flex items-center justify-center text-sm shadow-md z-10">
+                      5
+                    </div>
+                    <div className="bg-white border border-gray-200 rounded-lg p-3 flex-1 shadow-sm">
+                      <p className="text-sm text-gray-700 leading-relaxed">Envío formal de la solicitud para su revisión y aprobación por las instancias competentes</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="border-t border-gray-200 px-6 py-4 bg-gray-50">
+            <button
+              onClick={() => setOpenInfoModal(false)}
+              className="w-full px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all"
+            >
+              Cerrar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    )}
+    </>
   );
 }

@@ -46,6 +46,8 @@ import com.styp.cenate.repository.solicitudturnoipress.DetalleSolicitudTurnoFech
 import com.styp.cenate.service.auditlog.AuditLogService;
 import com.styp.cenate.service.solicitudturno.SolicitudTurnoIpressService;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,6 +59,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Transactional(readOnly = true)
 public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressService {
+
+	@PersistenceContext
+	private EntityManager entityManager;
 
 	private final SolicitudTurnoIpressRepository solicitudRepository;
 	private final PeriodoSolicitudTurnoRepository periodoRepository;
@@ -891,12 +896,15 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 		// 3) Upsert detalles enviados (NO borrar fechas aquí)
 		if (request.getDetalles() != null && !request.getDetalles().isEmpty()) {
 
+			log.info("Procesando {} detalles recibidos del frontend", request.getDetalles().size());
 			List<DetalleSolicitudTurno> paraGuardar = new ArrayList<>();
 
 			for (var x : request.getDetalles()) {
 
-				if (x.getIdServicio() == null)
+				if (x.getIdServicio() == null) {
+					log.warn("Detalle sin idServicio, se omite");
 					continue;
+				}
 
 				DimServicioEssi esp = servicioEssiRepository.findById(x.getIdServicio())
 						.orElseThrow(() -> new RuntimeException("Especialidad no encontrada: " + x.getIdServicio()));
@@ -950,24 +958,39 @@ public class SolicitudTurnoIpressServiceImpl implements SolicitudTurnoIpressServ
 				d.setTardeActiva(tar > 0);
 
 				// CLAVE: No tocar fechasDetalle aquí
+				
+				log.info("Detalle preparado - idServicio: {}, total: {}, requiere: {}, idDetalle: {}", 
+					x.getIdServicio(), total, requiere, d.getIdDetalle());
 
 				paraGuardar.add(d);
 			}
 
 			if (!paraGuardar.isEmpty()) {
+				log.info("Guardando {} detalles en BD", paraGuardar.size());
 				detalleRepository.saveAll(paraGuardar);
+				detalleRepository.flush(); // Asegurar que los cambios se persistan inmediatamente
+				log.info("Detalles guardados exitosamente");
+			} else {
+				log.warn("No hay detalles para guardar");
 			}
 		}
 
 		// 4) Recalcular cabecera con lo que quedó en BD
-		SolicitudTurnoIpress solConDetalles = solicitudRepository.findByIdWithDetalles(idSolicitud)
-				.orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + idSolicitud));
+		// Refrescar la solicitud actual para cargar los detalles guardados
+		log.info("Refrescando solicitud {} desde BD", idSolicitud);
+		solicitudRepository.flush(); // Asegurar que todo está en BD
+		entityManager.refresh(solicitud); // Refrescar la entidad desde BD
+		entityManager.flush(); // Sincronizar con BD
+		
+		log.info("Solicitud refrescada. Detalles encontrados: {}", solicitud.getDetalles().size());
+		recalcularTotales(solicitud);
+		log.info("Totales recalculados - Turnos: {}, Especialidades: {}", 
+			solicitud.getTotalTurnosSolicitados(), solicitud.getTotalEspecialidades());
+		solicitud.setUpdatedAt(OffsetDateTime.now());
+		solicitudRepository.save(solicitud);
+		solicitudRepository.flush(); // Asegurar que los totales se guarden
 
-		recalcularTotales(solConDetalles);
-		solConDetalles.setUpdatedAt(OffsetDateTime.now());
-		solicitudRepository.save(solConDetalles);
-
-		return convertToResponseWithDetalles(solConDetalles);
+		return convertToResponseWithDetalles(solicitud);
 	}
 
 	@Override

@@ -162,7 +162,7 @@ public class SolicitudTurnoIpressController {
 	public ResponseEntity<SolicitudTurnoIpressResponse> guardarBorrador(
 			@Valid @RequestBody SolicitudTurnoIpressBorradorRequest request) {
 
-		log.info("Datos del borrador : {}", request);
+		log.info("Datos del borrador ****** : {}", request.toString());
 		return ResponseEntity.ok(solicitudService.guardarBorradorDesdeFrontend(request));
 	}
 

@@ -81,8 +81,8 @@ export default function TablaSolicitudEspecialidades({
         turnoTM: r.turnoTM || 0,
         turnoManana: r.turnoManana || 0,
         turnoTarde: r.turnoTarde || 0,
-        tc: r.tc !== undefined ? r.tc : true,
-        tl: r.tl !== undefined ? r.tl : true,
+        tc: r.tc !== undefined ? r.tc : false,
+        tl: r.tl !== undefined ? r.tl : false,
         fechas: r.fechas || [],
         estado: r.estado || "PENDIENTE",
       };
@@ -100,8 +100,8 @@ export default function TablaSolicitudEspecialidades({
         turnoTM: r.turnoTM || 0,
         turnoManana: r.turnoManana || 0,
         turnoTarde: r.turnoTarde || 0,
-        tc: r.tc !== undefined ? r.tc : true,
-        tl: r.tl !== undefined ? r.tl : true,
+        tc: r.tc !== undefined ? r.tc : false,
+        tl: r.tl !== undefined ? r.tl : false,
         fechas: r.fechas || [],
         estado: r.estado || "PENDIENTE",
       };
@@ -136,8 +136,8 @@ export default function TablaSolicitudEspecialidades({
           turnoTM: 0,
           turnoManana: 0,
           turnoTarde: 0,
-          tc: true,
-          tl: true,
+          tc: false,
+          tl: false,
           fechas: [],
           estado: "PENDIENTE",
         };
@@ -318,7 +318,7 @@ export default function TablaSolicitudEspecialidades({
                   Especialidad
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
-                  TM
+                  Turno Completo
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   Mañana
@@ -327,10 +327,10 @@ export default function TablaSolicitudEspecialidades({
                   Tarde
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
-                  TC
+                  Teleconsulta
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
-                  TL
+                  Teleconsultorio
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   Total
@@ -421,23 +421,27 @@ export default function TablaSolicitudEspecialidades({
                       />
                     </td>
 
-                    {/* Teleconsultorio */}
+                    {/* Teleconsulta */}
                     <td className="px-2 py-2 text-center">
-                      <CustomSwitch
-                        checked={d?.tc || false}
-                        onChange={(checked) => actualizarCampo(esp.idServicio, "tc", checked)}
-                        disabled={soloLectura}
-                        color="green"
+                      <input
+                        type="checkbox"
+                        checked={d?.tl || false}
+                        onChange={(e) => actualizarCampo(esp.idServicio, "tl", e.target.checked)}
+                        disabled={soloLectura || total === 0}
+                        className="w-4 h-4 text-green-600 bg-gray-100 border-gray-300 rounded focus:ring-green-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        title={total === 0 ? "Configura turnos primero" : ""}
                       />
                     </td>
 
-                    {/* Teleconsulta */}
+                    {/* Teleconsultorio */}
                     <td className="px-2 py-2 text-center">
-                      <CustomSwitch
-                        checked={d?.tl || false}
-                        onChange={(checked) => actualizarCampo(esp.idServicio, "tl", checked)}
-                        disabled={soloLectura}
-                        color="blue"
+                      <input
+                        type="checkbox"
+                        checked={d?.tc || false}
+                        onChange={(e) => actualizarCampo(esp.idServicio, "tc", e.target.checked)}
+                        disabled={soloLectura || total === 0}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                        title={total === 0 ? "Configura turnos primero" : ""}
                       />
                     </td>
 
