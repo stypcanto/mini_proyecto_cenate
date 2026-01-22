@@ -536,8 +536,20 @@ export default function ModalEvaluacionECG({
                 <button onClick={handleZoomMas} className="p-1.5 hover:bg-gray-200 rounded" title="Zoom +"><ZoomIn size={16} /></button>
                 <div className="w-px bg-gray-300" />
                 <button onClick={rotarImagen} className="p-1.5 hover:bg-gray-200 rounded" title="Rotar"><RotateCw size={16} /></button>
-                <button onClick={() => setShowFilterControls(!showFilterControls)} className="p-1.5 hover:bg-gray-200 rounded" title="Filtros"><Filter size={16} /></button>
+                <button onClick={() => setShowFilterControls(!showFilterControls)} className={`p-1.5 rounded transition-colors ${showFilterControls ? 'bg-indigo-200 text-indigo-600' : 'hover:bg-gray-200'}`} title="Filtros avanzados"><Filter size={16} /></button>
               </div>
+
+              {/* Panel de Filtros Avanzados (Expandible v8.0.0) */}
+              {showFilterControls && (
+                <div className="mt-2 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-lg border border-indigo-200 shadow-md overflow-hidden max-h-96 overflow-y-auto">
+                  <FilterControlsPanel
+                    filters={filters}
+                    onFilterChange={updateFilter}
+                    onReset={resetFilters}
+                    onPresetSelect={applyPreset}
+                  />
+                </div>
+              )}
             </div>
 
             {/* Navegación Imágenes */}
