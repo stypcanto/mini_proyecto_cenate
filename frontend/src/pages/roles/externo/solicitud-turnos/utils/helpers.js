@@ -76,12 +76,12 @@ export function getYearFromPeriodo(p) {
  * @returns {string} Clases CSS
  */
 export function estadoBadgeClass(estado) {
-  if (estado === "ENVIADO") return "bg-green-50 text-green-700 border-green-200";
-  if (estado === "REVISADO") return "bg-purple-50 text-purple-700 border-purple-200";
-  if (estado === "APROBADA") return "bg-emerald-50 text-emerald-700 border-emerald-200";
-  if (estado === "RECHAZADA") return "bg-red-50 text-red-700 border-red-200";
-  if (estado === "SIN_SOLICITUD") return "bg-slate-50 text-slate-600 border-slate-200";
-  return "bg-yellow-50 text-yellow-800 border-yellow-200"; // BORRADOR u otro
+  if (estado === "ENVIADO") return "bg-green-100 text-green-700 border-green-300";
+  if (estado === "REVISADO") return "bg-purple-100 text-purple-700 border-purple-300";
+  if (estado === "APROBADA") return "bg-emerald-100 text-emerald-700 border-emerald-300";
+  if (estado === "RECHAZADA") return "bg-red-100 text-red-700 border-red-300";
+  if (estado === "SIN_SOLICITUD") return "bg-gray-100 text-gray-600 border-gray-300";
+  return "bg-yellow-100 text-yellow-800 border-yellow-300"; // BORRADOR u otro
 }
 
 /**

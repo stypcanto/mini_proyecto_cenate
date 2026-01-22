@@ -79,6 +79,7 @@ export default function FormularioSolicitudTurnos() {
   const [filtroAnio, setFiltroAnio] = useState("2026");
   const [filtroPeriodoId, setFiltroPeriodoId] = useState("");
   const [filtroEstado, setFiltroEstado] = useState("ALL");
+  const [aniosDisponibles, setAniosDisponibles] = useState([2026]);
 
   // modal
   const [openFormModal, setOpenFormModal] = useState(false);
@@ -141,6 +142,16 @@ export default function FormularioSolicitudTurnos() {
     await Promise.all([refrescarMisSolicitudes(), cargarPeriodos()]);
   }, [refrescarMisSolicitudes, cargarPeriodos]);
 
+  const cargarAniosDisponibles = useCallback(async () => {
+    try {
+      const anios = await periodoSolicitudService.obtenerAniosDisponibles();
+      setAniosDisponibles(anios.length > 0 ? anios : [new Date().getFullYear()]);
+    } catch (err) {
+      console.error("Error al cargar años disponibles:", err);
+      setAniosDisponibles([new Date().getFullYear()]);
+    }
+  }, []);
+
   // =====================================================================
   // Inicialización
   // =====================================================================
@@ -152,6 +163,7 @@ export default function FormularioSolicitudTurnos() {
       const [ipressData, especialidadesData] = await Promise.all([
         solicitudTurnoService.obtenerMiIpress(),
         solicitudTurnoService.obtenerEspecialidadesCenate(),
+        cargarAniosDisponibles(),
       ]);
 
       setMiIpress(ipressData);
@@ -164,7 +176,7 @@ export default function FormularioSolicitudTurnos() {
     } finally {
       setLoading(false);
     }
-  }, [cargarPeriodos, refrescarMisSolicitudes]);
+  }, [cargarPeriodos, refrescarMisSolicitudes, cargarAniosDisponibles]);
 
   useEffect(() => {
     inicializar();
@@ -186,8 +198,6 @@ export default function FormularioSolicitudTurnos() {
     });
     return map;
   }, [misSolicitudes]);
-
-  const aniosDisponibles = useMemo(() => ["2025", "2026", "2027"], []);
 
   const periodosPorAnio = useMemo(() => {
     const arr = Array.isArray(periodos) ? periodos : [];
@@ -828,43 +838,52 @@ export default function FormularioSolicitudTurnos() {
       )}
 
       {/* Datos del Usuario */}
-      <div className="bg-white rounded-xl shadow-lg p-4 border border-slate-200">
-        <h2 className="text-base font-bold text-slate-800 mb-3 flex items-center gap-2">
-          <User className="w-4 h-4 text-[#0A5BA9]" />
-          Datos de Contacto
-          <span className="text-[10px] font-normal text-slate-500 ml-2">(auto-detectados)</span>
-        </h2>
+      <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-4 py-3">
+          <h2 className="text-base font-bold text-white mb-0.5 flex items-center gap-2">
+            <User className="w-4 h-4" />
+            Datos de Contacto
+          </h2>
+          <p className="text-xs text-blue-100">(auto-detectados)</p>
+        </div>
 
+        <div className="p-4">
         {miIpress ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
-                <Building2 className="w-3 h-3" />
-                Red / IPRESS
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="bg-gradient-to-br from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-blue-600 text-white p-2 rounded-lg">
+                  <Building2 className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-semibold text-blue-900">Red / IPRESS</span>
               </div>
-              <p className="font-semibold text-slate-800 text-sm">{miIpress.nombreRed || "Sin Red"}</p>
-              <p className="text-xs text-slate-600">{miIpress.nombreIpress || "Sin IPRESS"}</p>
+              <p className="font-bold text-gray-900 text-sm mb-1">{miIpress.nombreIpress || "Sin IPRESS"}</p>
+              <p className="text-xs text-blue-700 font-medium">{miIpress.nombreRed || "Sin Red"}</p>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
-                <User className="w-3 h-3" />
-                Coordinador / Usuario
+            <div className="bg-gradient-to-br from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-purple-600 text-white p-2 rounded-lg">
+                  <User className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-semibold text-purple-900">Coordinador / Usuario</span>
               </div>
-              <p className="font-semibold text-slate-800 text-sm">{miIpress.nombreCompleto || "N/A"}</p>
-              <p className="text-xs text-slate-600">DNI: {miIpress.dniUsuario || "N/A"}</p>
+              <p className="font-bold text-gray-900 text-sm mb-1">{miIpress.nombreCompleto || "N/A"}</p>
+              <p className="text-xs text-purple-700 font-medium">DNI: {miIpress.dniUsuario || "N/A"}</p>
             </div>
 
-            <div className="p-3 bg-slate-50 rounded-lg">
-              <div className="flex items-center gap-1.5 text-slate-500 text-xs mb-1">
-                <Mail className="w-3 h-3" />
-                Contacto
+            <div className="bg-gradient-to-br from-green-50 to-green-100 border border-green-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+              <div className="flex items-center gap-2 mb-3">
+                <div className="bg-green-600 text-white p-2 rounded-lg">
+                  <Mail className="w-4 h-4" />
+                </div>
+                <span className="text-xs font-semibold text-green-900">Contacto</span>
               </div>
-              <p className="font-semibold text-slate-800 text-xs">{miIpress.emailContacto || "Sin email"}</p>
-              <p className="text-xs text-slate-600 flex items-center gap-1">
+              <p className="font-medium text-gray-900 text-xs mb-2 break-all">{miIpress.emailContacto || "Sin email"}</p>
+              <div className="flex items-center gap-1.5 text-xs text-green-700 font-medium">
                 <Phone className="w-3 h-3" />
                 {miIpress.telefonoContacto || "Sin teléfono"}
-              </p>
+              </div>
             </div>
           </div>
         ) : (
@@ -877,18 +896,19 @@ export default function FormularioSolicitudTurnos() {
             {miIpress.mensajeValidacion}
           </div>
         )}
+        </div>
       </div>
 
       {/* Tabla por Periodo + Filtros */}
-      <div className="bg-white rounded-xl shadow-lg p-4 border border-slate-200">
-        <div className="flex flex-col gap-3 mb-3">
+      <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+        <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-4 py-3">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div>
-              <h2 className="text-base font-bold text-slate-800 flex items-center gap-2">
-                <FileText className="w-4 h-4 text-[#0A5BA9]" />
+              <h2 className="text-base font-bold text-white flex items-center gap-2">
+                <FileText className="w-4 h-4" />
                 Solicitudes por Periodo
               </h2>
-              <p className="text-xs text-slate-500">
+              <p className="text-xs text-blue-100 mt-0.5">
                 Usa <strong>Iniciar</strong> para registrar turnos por calendario.
               </p>
             </div>
@@ -897,7 +917,7 @@ export default function FormularioSolicitudTurnos() {
               <button
                 type="button"
                 onClick={handleRefreshAll}
-                className="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-sm font-semibold hover:bg-slate-50 flex items-center gap-1.5"
+                className="px-3 py-1.5 rounded-lg bg-white text-[#0A5BA9] text-sm font-semibold hover:bg-blue-50 flex items-center gap-1.5 transition-colors"
                 disabled={loadingTabla || loadingPeriodos}
               >
                 {(loadingTabla || loadingPeriodos) ? (
@@ -909,8 +929,10 @@ export default function FormularioSolicitudTurnos() {
               </button>
             </div>
           </div>
+        </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2">
+        <div className="p-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 mb-4">
             {/* Tipo periodos */}
             <div className="md:col-span-3">
               <label className="text-xs font-semibold text-slate-700">Tipo de periodos</label>
@@ -980,13 +1002,12 @@ export default function FormularioSolicitudTurnos() {
               </select>
             </div>
           </div>
-        </div>
 
-        {filasPorPeriodo.length === 0 ? (
-          <div className="text-center py-6 text-slate-500 text-sm">No hay periodos para los filtros seleccionados.</div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse">
+          {filasPorPeriodo.length === 0 ? (
+            <div className="text-center py-6 text-slate-500 text-sm">No hay periodos para los filtros seleccionados.</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse">
               <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
                 <tr>
                   <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Año</th>
@@ -1058,7 +1079,8 @@ export default function FormularioSolicitudTurnos() {
               * Al iniciar/editar, se muestra detalle del periodo (sin combo) y registro por calendario.
             </div>
           </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ========================= MODAL FORMULARIO ========================= */}
