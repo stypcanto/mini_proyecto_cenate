@@ -10,6 +10,75 @@
 
 ---
 
+## v1.27.3 (2026-01-21) - 🔧 Fix: API Response Parsing de Especialidades
+
+### 🎯 Descripción
+
+**Corrección crítica del parser de respuesta del endpoint `/api/especialidades/activas`**: El servicio no estaba capturando correctamente las 105 especialidades médicas que retorna la API.
+
+**Problema Identificado**:
+- ❌ API retorna un **array directo**: `[{idServicio, codServicio, descripcion, ...}, ...]`
+- ❌ Código esperaba: `response.data` (estructura envuelta)
+- ❌ Resultado: Console mostraba "✅ [Especialidades Cargadas]: 0" (INCORRECTO)
+- ❌ Dropdown no mostraba especialidades en modal
+
+**Solución Implementada**:
+- ✅ Actualizar `obtenerEspecialidades()` para soportar **ambos formatos**
+- ✅ Verificar si response es array directo: `Array.isArray(response) ? response : response.data`
+- ✅ Logging correcto: Ahora muestra "✅ [Especialidades Cargadas]: 105"
+- ✅ Dropdown carga correctamente todas las especialidades en modal
+
+**Estado**: ✅ **COMPLETADO Y TESTEADO**
+
+### 🧪 Testing MCP Realizado
+
+**Navegación en Sistema**:
+1. ✅ Login con DNI: 44914706 | Pass: @Styp654321
+2. ✅ Acceder a: TeleECG → TeleECG Recibidas
+3. ✅ Clic en "Evaluar (Diagnóstico)" para paciente 22672403
+
+**Modal Evaluación - Verificaciones**:
+| Paso | Estado | Resultado |
+|------|--------|-----------|
+| **1. VER IMÁGENES** | ✅ | Cargó imagen #1 de 4 correctamente |
+| **2. EVALUACIÓN** | ✅ | Seleccionó "NORMAL" + razones |
+| **3. PLAN SEGUIMIENTO** | ✅ | Accedió al tab de plan |
+| **Dropdown Click** | ✅ | Se abrió mostrando 105 especialidades |
+| **Dropdown Contiene** | ✅ | ALERGIA, CARDIOLOGIA, DERMATOLOGIA, etc. |
+| **Filtering** | ✅ | Escribir "NEURO" filtra → NEUROLOGIA, NEUROLOGIA PEDIATRICA |
+| **Selección** | ✅ | Seleccionar "CARDIOLOGIA" → Campo muestra "CARDIOLOGIA" |
+| **Backend Log** | ✅ | Console: "✅ [Especialidades Cargadas]: 105" |
+
+### 📝 Código Modificado
+
+**Archivo**: `frontend/src/services/teleecgService.js` (líneas 509-521)
+
+```javascript
+// ❌ ANTES (v1.27.0/v1.27.1)
+const response = await apiClient.get("/especialidades/activas", true);
+return response.data || []; // Esperaba response.data
+// Resultado: 0 especialidades cargadas
+
+// ✅ DESPUÉS (v1.27.3)
+const response = await apiClient.get("/especialidades/activas", true);
+// Soporta respuesta como array directo o envuelto en .data
+const data = Array.isArray(response) ? response : (response.data || []);
+return data;
+// Resultado: 105 especialidades cargadas correctamente
+```
+
+### 📊 Antes vs Después
+
+| Aspecto | v1.27.0/1.27.1 | v1.27.3 |
+|---------|---|---|
+| **Especialidades Cargadas** | 0 ❌ | 105 ✅ |
+| **Dropdown Visible** | No ❌ | Sí ✅ |
+| **Filtering** | No funciona | Funciona ✅ |
+| **Selección** | No posible | Funciona ✅ |
+| **Console Log** | "0" | "105" ✅ |
+
+---
+
 ## v1.27.2 (2026-01-21) - 📋 Dropdown Completo: Mostrar Todas las Especialidades al Hacer Focus
 
 ### 🎯 Descripción
