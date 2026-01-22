@@ -770,6 +770,13 @@ public class TeleECGController {
                 idImagen,
                 evaluacion.getEvaluacion(),
                 evaluacion.getDescripcion(),
+                evaluacion.getUrgencia(),
+                evaluacion.getContextoClinico(),
+                evaluacion.getDerivacionesSeleccionadas(),
+                evaluacion.getMotivoNoDiagnostico(),
+                evaluacion.getDiagnosticoRitmo(),
+                evaluacion.getDiagnosticoPR(),
+                evaluacion.getDiagnosticoQRS(),
                 idUsuarioEvaluador,
                 ipCliente
             );
