@@ -43,6 +43,14 @@ export const FILTER_PRESETS = {
     flipHorizontal: false,
     flipVertical: false,
   },
+  emergency: {
+    label: "🚨 Emergencia",
+    invert: true,
+    contrast: 180,
+    brightness: 115,
+    flipHorizontal: false,
+    flipVertical: false,
+  },
 };
 
 export default function useImageFilters() {
