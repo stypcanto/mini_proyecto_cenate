@@ -2,10 +2,11 @@
 
 > Arquitectura, componentes y flujos del sistema completo de gestión de bolsas de pacientes
 
-**Versión:** v1.31.0 (Backend v1.31.0, Frontend v1.1.0)
+**Versión:** v1.32.1 (Backend v1.31.0, Frontend v1.32.1 + Componentes Reutilizables)
 **Fecha:** 2026-01-22
-**Status:** ✅ PRODUCCIÓN LIVE
+**Status:** ✅ PRODUCCIÓN LIVE + Estructura Estándar Implementada
 **Design System:** CENATE v1.0.0 (100% conforme en todas las tablas)
+**Componentes Reutilizables:** PageHeader, StatCard, ListHeader (v1.0.0)
 
 ---
 
@@ -424,6 +425,103 @@ DELETE /tipos-bolsas/{id}                     ✅
 
 ---
 
+## 📥 Importación de Pacientes desde Excel (v1.32.1)
+
+### Estructura del Archivo Excel
+
+**14 Columnas Obligatorias en Orden Exacto:**
+
+```
+A: REGISTRO
+B: OPCIONES DE INGRESO DE LLAMADA
+C: TELEFONO
+D: TIPO DE DOCUMENTO              ⚠️ OBLIGATORIO
+E: DNI                            ⚠️ OBLIGATORIO
+F: APELLIDOS Y NOMBRES            ⚠️ OBLIGATORIO
+G: SEXO                           ⚠️ OBLIGATORIO
+H: FechaNacimiento                ⚠️ OBLIGATORIO
+I: DEPARTAMENTO
+J: PROVINCIA
+K: DISTRITO
+L: MOTIVO DE LA LLAMADA
+M: AFILIACION
+N: DERIVACION INTERNA             ⚠️ OBLIGATORIO
+```
+
+**6 Campos Obligatorios (NUNCA vacíos):**
+1. TIPO DE DOCUMENTO (DNI, PASAPORTE, etc.)
+2. DNI (sin guiones: 12345678)
+3. APELLIDOS Y NOMBRES (Gonzales Flores María)
+4. SEXO (Masculino/Femenino/M/F)
+5. FechaNacimiento (DD/MM/YYYY)
+6. DERIVACION INTERNA (Cardiología, Nutrición, etc.)
+
+**Documentación Completa:**
+- `spec/03_Frontend/02_estructura_excel_pacientes.md` (Guía detallada + validaciones)
+- `spec/03_Frontend/PLANTILLA_EXCEL_PACIENTES.csv` (Plantilla con ejemplos)
+
+**Características:**
+- ✅ Auto-normalización de cabeceras (+50 variaciones)
+- ✅ Validación multicapa (frontend → backend → BD)
+- ✅ Duplicados detectados (DNI + TIPO DOCUMENTO)
+- ✅ Reporte JSON con OK/ERROR por fila
+- ✅ Importación masiva (sin límite de filas)
+
+---
+
+## 🎨 Componentes Reutilizables (v1.32.0)
+
+### Tres Componentes Base
+
+**1. PageHeader** - Encabezado estándar de página
+```jsx
+<PageHeader
+  badge={{ label: "Recepción de Bolsa", bgColor: "bg-blue-100 text-blue-700", icon: FolderOpen }}
+  title="Solicitudes"
+  primaryAction={{ label: "Agregar Paciente", onClick: () => {} }}
+/>
+```
+
+**2. StatCard** - Tarjeta de estadística con color
+```jsx
+<StatCard
+  label="Total Pacientes"
+  value={8}
+  borderColor="border-blue-500"
+  textColor="text-blue-600"
+  icon="👥"
+/>
+```
+
+**3. ListHeader** - Búsqueda y filtros dinámicos
+```jsx
+<ListHeader
+  title="Lista de Pacientes"
+  searchPlaceholder="Buscar DNI, nombre o IPRESS..."
+  searchValue={searchTerm}
+  onSearchChange={(e) => setSearchTerm(e.target.value)}
+  filters={[...]}  // Array de filtros
+/>
+```
+
+**Beneficios:**
+- ✅ DRY (reutilizable en todas las páginas)
+- ✅ Consistencia de UI/UX
+- ✅ Cambios centralizados
+- ✅ 100% conforme Design System CENATE
+
+**Documentación:**
+- `frontend/src/components/README.md` (Guía completa + ejemplos)
+- `spec/03_Frontend/01_estructura_minima_paginas.md` (Patrón arquitectónico)
+- `frontend/src/pages/bolsas/PLANTILLA_PAGINA_MINIMA.jsx` (Ejemplo funcional)
+
+**Componentes que Usan:**
+- Solicitudes.jsx ✅
+- GestionBolsasPacientes.jsx ✅
+- Extensibles a otras páginas
+
+---
+
 ## 📊 Métricas del Módulo Completo
 
 | Métrica | Valor |
@@ -433,10 +531,11 @@ DELETE /tipos-bolsas/{id}                     ✅
 | **Controladores** | 3+ (TipoBolsas, ImportExcel, Pacientes) |
 | **Endpoints REST** | 25+ |
 | **Tablas BD** | 7+ |
-| **Componentes React** | 5+ |
+| **Componentes React** | 8+ (5 base + 3 reutilizables) |
 | **Scripts SQL** | 7+ |
-| **Líneas de código** | ~5,000+ |
-| **Documentación** | 7+ archivos MD |
+| **Líneas de código** | ~7,500+ |
+| **Documentación** | 12+ archivos MD |
+| **Componentes Reutilizables** | 3 (PageHeader, StatCard, ListHeader) |
 | **Test Coverage** | Manual (curl + navegador) |
 
 ---
@@ -489,7 +588,16 @@ curl "http://localhost:8080/tipos-bolsas/buscar?busqueda=BOLSA&page=0&size=10"
 
 ## 📈 Roadmap Futuro
 
-### v1.32.0 (Próximos meses)
+### v1.32.1 (COMPLETADO) ✅
+
+- [x] Componentes reutilizables (PageHeader, StatCard, ListHeader)
+- [x] Estructura mínima de páginas estandarizada
+- [x] Documentación completa de Excel (14 columnas, 6 obligatorios)
+- [x] Plantilla Excel descargable con ejemplos
+- [x] Auto-normalización de cabeceras (+50 variaciones)
+- [x] Refactorización de Solicitudes.jsx con componentes reutilizables
+
+### v1.33.0 (Próximos meses)
 
 - [ ] Auditoría completa de cambios por usuario
 - [ ] Reportes por tipo de bolsa
@@ -498,19 +606,21 @@ curl "http://localhost:8080/tipos-bolsas/buscar?busqueda=BOLSA&page=0&size=10"
 - [ ] Batch processing para importaciones
 - [ ] API webhooks para eventos
 
-### v1.33.0 (Largo plazo)
+### v1.34.0 (Largo plazo)
 
 - [ ] ML para clasificación automática
 - [ ] Integración con ESSI en tiempo real
 - [ ] Dashboard de bolsas
 - [ ] Alertas y notificaciones
-- [ ] Exportación de datos
+- [ ] Exportación de datos avanzada
 
 ---
 
-**Status Final:** ✅ **PRODUCCIÓN LIVE v1.31.0**
+**Status Final:** ✅ **PRODUCCIÓN LIVE v1.32.1**
+
+**Componentes:** Backend v1.31.0 + Frontend v1.32.1 + Reutilizables v1.0.0
 
 **Documento creado por:** Claude Code
-**Versión:** v1.31.0
+**Versión:** v1.32.1
 **Última actualización:** 2026-01-22
-**Estado:** ACTIVO ✅
+**Estado:** ACTIVO ✅ (Estructura Estándar Implementada)

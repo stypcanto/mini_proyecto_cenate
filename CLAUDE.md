@@ -138,9 +138,10 @@ mini_proyecto_cenate/
 ├── spec/                    # 📚 DOCUMENTACIÓN TÉCNICA DETALLADA
 │   ├── 01_Backend/          # API, endpoints, lógica de negocio
 │   ├── 02_Frontend/         # Componentes React (próximamente)
-│   ├── 03_Arquitectura/     # Diagramas, flujos del sistema
-│   ├── 04_BaseDatos/        # Modelo, auditoría, análisis, scripts SQL
-│   └── 05_Troubleshooting/  # Guía de problemas comunes
+│   ├── 03_Frontend/         # ⭐ NEW: Estructura mínima, Excel, componentes
+│   ├── 04_Arquitectura/     # Diagramas, flujos del sistema
+│   ├── 05_BaseDatos/        # Modelo, auditoría, análisis, scripts SQL
+│   └── 06_Troubleshooting/  # Guía de problemas comunes
 │
 ├── plan/                    # 📋 PLANIFICACIÓN DE MÓDULOS
 │   ├── 01_Seguridad_Auditoria/
@@ -167,9 +168,11 @@ mini_proyecto_cenate/
 │
 └── frontend/                # React (puerto 3000)
     └── src/
-        ├── components/      # UI reutilizable
+        ├── components/      # ⭐ UI reutilizable (PageHeader, StatCard, ListHeader)
         ├── context/         # AuthContext, PermisosContext
         ├── pages/           # Vistas (31+)
+        │   ├── bolsas/      # Solicitudes.jsx (v1.32.1 con componentes)
+        │   └── ...
         └── services/        # API services
 ```
 
@@ -240,7 +243,7 @@ Password: @Cenate2025
 | **Personal Externo (Gestión Modalidad + Bienvenida)** | `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` | ✅ Implementado (v1.18.0) |
 | **🫀 Tele-ECG v2.0.0** | `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` ⭐ + `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` | ✅ **100% Completado** (v1.21.4 - 6 bugs resueltos) 🎉 |
 | **Tele-ECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
-| **📦 Módulo de Bolsas** | `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0) + `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` | ✅ **100% Completado** (v1.31.0 - CRUD completo) 🎉 |
+| **📦 Módulo de Bolsas** | `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1) ⭐ + Estructura Excel + Componentes Reutilizables | ✅ **100% Completado** (v1.32.1 - CRUD + Excel + Componentes) 🎉 |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
@@ -285,9 +288,12 @@ Password: @Cenate2025
 - Horarios Existentes → `spec/04_BaseDatos/07_horarios_sistema/01_modelo_horarios_existente.md`
 - Integración Horarios → `spec/04_BaseDatos/07_horarios_sistema/02_guia_integracion_horarios.md`
 - Firma Digital → `plan/05_Firma_Digital/01_plan_implementacion.md`
-- Módulo Bolsas → `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0)
+- Módulo Bolsas → `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1) ⭐
+- Excel Pacientes → `spec/03_Frontend/02_estructura_excel_pacientes.md` (14 columnas, 6 obligatorios)
+- Componentes Reutilizables → `frontend/src/components/README.md` (PageHeader, StatCard, ListHeader)
+- Estructura Mínima Páginas → `spec/03_Frontend/01_estructura_minima_paginas.md` (Patrón arquitectónico)
 - Bolsa 107 → `spec/01_Backend/04_auto_normalizacion_excel_107.md`
-- Troubleshooting → `spec/05_Troubleshooting/01_guia_problemas_comunes.md`
+- Troubleshooting → `spec/06_Troubleshooting/01_guia_problemas_comunes.md`
 
 ### 💻 Al Implementar Nuevas Funcionalidades
 
@@ -371,4 +377,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.31.0 | 2026-01-22*
+*Versión 1.32.1 | 2026-01-22 | Estructura Estándar + Excel + Componentes Reutilizables*
