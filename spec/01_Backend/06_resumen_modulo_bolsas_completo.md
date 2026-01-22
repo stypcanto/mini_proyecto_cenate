@@ -2,9 +2,10 @@
 
 > Arquitectura, componentes y flujos del sistema completo de gestión de bolsas de pacientes
 
-**Versión:** v1.31.0
+**Versión:** v1.31.0 (Backend v1.31.0, Frontend v1.1.0)
 **Fecha:** 2026-01-22
 **Status:** ✅ PRODUCCIÓN LIVE
+**Design System:** CENATE v1.0.0 (100% conforme en todas las tablas)
 
 ---
 
@@ -53,10 +54,15 @@ El **Módulo de Bolsas** es el corazón del sistema CENATE. Gestiona todas las c
 ### 2. **TIPOS DE BOLSAS** - Catálogo de Clasificaciones
 - **Propósito:** Definir todas las categorías de bolsas posibles
 - **Cantidad:** 7 tipos predefinidos + extensibles
-- **Funcionalidad:** CRUD completo
-- **Auditoría:** Timestamps automáticos
+- **Funcionalidad:** CRUD completo (Create, Read, Update, Delete)
+- **Auditoría:** Timestamps automáticos (created_at, updated_at)
 - **Documentación:** `spec/01_Backend/05_modulo_tipos_bolsas_crud.md`
-- **Status:** ✅ Producción v1.0.0
+- **Status:** ✅ Producción v1.1.0
+- **Componentes:**
+  - Backend: Entity, Repository, Service, Controller (7 endpoints)
+  - Frontend: TiposBolsas.jsx (admin) + Solicitudes.jsx (gestión)
+  - Base de datos: dim_tipos_bolsas (7 registros iniciales)
+  - Design System: 100% conforme CENATE v1.0.0
 
 ### 3. **BOLSAS DE ESPECIALIDADES** - Por clasificación
 - **Bolsa Dengue:** Control epidemiológico
@@ -68,6 +74,20 @@ El **Módulo de Bolsas** es el corazón del sistema CENATE. Gestiona todas las c
 - **Asignación:** Pacientes → Coordinadores
 - **Seguimiento:** Estado y progreso
 - **Reportes:** Analytics por tipo
+
+### 5. **SOLICITUDES** - Interfaz de Gestión (NUEVO v1.1.0)
+- **Propósito:** Visualizar, filtrar y descargar solicitudes de bolsas de pacientes
+- **Componente:** Solicitudes.jsx (`frontend/src/pages/bolsas/Solicitudes.jsx`)
+- **Características principales:**
+  - Dashboard con estadísticas (Total, Pendientes, Citados, Atendidos, Observados)
+  - Tabla profesional con 15 columnas de información completa
+  - Filtros avanzados: Búsqueda, Bolsas, Redes, Especialidades, Estados
+  - Selección múltiple con descarga CSV
+  - Indicadores visuales (semáforo: Verde/Rojo)
+  - Ancho completo (w-full) sin limitaciones
+  - **Design System CENATE v1.0.0:** Header #0D5BA9, h-16 filas, padding estándar, hover effects
+- **Datos Iniciales:** 8 pacientes mock para testing
+- **Status:** ✅ Producción v1.1.0
 
 ---
 

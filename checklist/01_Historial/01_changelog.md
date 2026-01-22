@@ -9,11 +9,14 @@
 
 ---
 
-## v1.31.0 (2026-01-22) - 🏥 Módulo de Bolsas: CRUD Tipos de Bolsas v1.0.0 + Design System CENATE
+## v1.31.0 (2026-01-22) - 🏥 Módulo de Bolsas: CRUD Tipos de Bolsas v1.0.0 + Solicitudes v1.1.0 + Design System CENATE v1.0.0
 
 ### 🎯 Descripción
 
-**Sistema completo de gestión del catálogo de tipos de bolsas**. Proporciona interfaz profesional para administrar clasificaciones de pacientes con CRUD completo, búsqueda avanzada y diseño según Design System CENATE (#0D5BA9).
+**Sistema completo de gestión de bolsas de pacientes**. Incluye:
+- ✅ **CRUD Tipos de Bolsas v1.0.0**: Interfaz profesional para administrar clasificaciones (7 tipos predefinidos)
+- ✅ **Solicitudes.jsx v1.1.0**: Dashboard con tabla profesional para visualizar y gestionar solicitudes (15 columnas)
+- ✅ **Design System CENATE v1.0.0**: 100% conforme en ambos componentes (header #0D5BA9, h-16 filas, padding estándar, hover effects)
 
 ### 🔧 Cambios Técnicos
 
@@ -47,19 +50,39 @@ dim_tipos_bolsas:
 7. BOLSA_GESTORES_TERRITORIAL - Gestión territorial
 
 #### **Frontend**:
-- ✅ **TiposBolsas.jsx**: Componente React con tabla, modales y búsqueda
+
+**Catálogo (TiposBolsas.jsx):**
+- ✅ **TiposBolsas.jsx**: Componente React con tabla, modales y búsqueda (Admin panel)
 - ✅ **tiposBolsasService.js**: API client con fallback offline
 - ✅ **Integración en TabsNavigation.jsx**: Nuevo tab en Admin
 - ✅ **Integración en UsersManagement.jsx**: Render del componente
-
-**Características:**
 - Tabla profesional con paginación (30 items/página)
 - Búsqueda avanzada: filtro código + descripción (debounce 300ms)
 - Modales: Crear, Editar, Ver Detalles, Confirmar Eliminar
 - Toggle de estado: Activo (A) ↔ Inactivo (I)
-- Diseño CENATE: Color primario #0D5BA9 en headers
 - Fallback offline: CRUD funciona sin backend (datos locales)
-- Auditoría: Timestamps automáticos (created_at, updated_at)
+
+**Solicitudes (Solicitudes.jsx v1.1.0) - NUEVO:**
+- ✅ **Solicitudes.jsx**: Dashboard profesional para gestionar solicitudes de bolsas
+- ✅ **Ubicación:** `frontend/src/pages/bolsas/Solicitudes.jsx`
+- ✅ **Design System CENATE v1.0.0**: 100% conforme
+  - Header azul #0D5BA9 con tipografía uppercase tracking-wider
+  - Filas h-16 con padding estándar px-6 py-4
+  - Hover effects y transiciones suaves
+  - Checkboxes profesionales (w-5 h-5)
+  - Botones de acción con hover backgrounds
+- Dashboard con estadísticas en tiempo real (Total, Pendientes, Citados, Atendidos, Observados)
+- Tabla profesional con 15 columnas: DNI, Nombre, Teléfono, Especialidad, Sexo, Red, IPRESS, Bolsa, Fecha Cita, Fecha Asignación, Estado, Diferimiento, Semáforo, Acciones, Usuarios
+- Filtros avanzados: Búsqueda, Bolsas, Redes, Especialidades, Estados
+- Selección múltiple con descarga CSV
+- Indicadores visuales (semáforo): Verde/Rojo
+- Cálculo dinámico de diferimiento (días)
+- Ancho completo (w-full) sin limitaciones
+- 8 pacientes mock para testing
+
+**Características Comunes:**
+- ✅ Diseño CENATE: Colores, tipografía, espaciado estándar
+- ✅ Auditoría: Timestamps automáticos (created_at, updated_at)
 
 #### **Endpoints REST** (7 total):
 ```

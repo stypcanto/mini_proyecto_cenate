@@ -2,9 +2,12 @@
 
 > Sistema de gestión de catálogo de tipos/categorías de bolsas de pacientes
 
-**Versión:** v1.0.0
-**Fecha:** 2026-01-22
-**Commit:** fff57d6 - "🏥 feat(tipos-bolsas): Implementación completa del módulo CRUD"
+**Versión:** v1.1.0
+**Fecha:** 2026-01-22 (Actualización)
+**Commits:**
+- fff57d6 - "🏥 feat(tipos-bolsas): Implementación completa del módulo CRUD" (v1.0.0)
+- 0f673e9 - "🎨 ui(solicitudes): Aplicar Design System estándar CENATE v1.0.0" (v1.1.0)
+- 39c5257 - "🎨 ui(solicitudes): Optimización de espacio - Expandir tabla a ventana completa" (v1.1.0)
 
 ---
 
@@ -51,7 +54,8 @@ Sistema que permite **gestionar un catálogo de tipos/categorías de bolsas** co
 | **Services** | 1 | TipoBolsaService (interface) + TipoBolsaServiceImpl |
 | **DTOs** | 1 | TipoBolsaResponse.java |
 | **Controllers** | 1 | GestionTiposBolsasController.java (7 endpoints) |
-| **Frontend** | 2 archivos | TiposBolsas.jsx + tiposBolsasService.js |
+| **Frontend - Catálogo** | 2 archivos | TiposBolsas.jsx + tiposBolsasService.js |
+| **Frontend - Solicitudes** | 1 archivo | Solicitudes.jsx (Gestión de solicitudes) |
 | **Tablas BD** | 1 | dim_tipos_bolsas (7 registros iniciales) |
 | **Migraciones** | 1 | V3_0_2__crear_tabla_tipos_bolsas.sql |
 
@@ -298,6 +302,7 @@ public class GestionTiposBolsasController {
 - Modales: Crear, Editar, Ver Detalles, Confirmar Eliminar
 - Toggle de estado: Activo (A) ↔ Inactivo (I)
 - Fallback offline: Carga 7 registros predefinidos si backend falla
+- **Design System CENATE v1.0.0:** Colores (#0D5BA9), tipografía, espaciado estándar
 
 **Funcionalidades Principales:**
 ```javascript
@@ -312,6 +317,48 @@ handleSubmit()          // Guardar (crear/editar) con fallback
 handleDelete()          // Eliminar con fallback
 handleToggleStatus()    // Cambiar estado con fallback
 ```
+
+### Componente: Solicitudes.jsx
+
+**Ubicación:** `frontend/src/pages/bolsas/Solicitudes.jsx`
+
+**Propósito:** Visualizar, gestionar y descargar solicitudes de bolsas de pacientes
+
+**Características:**
+- ✅ Dashboard con estadísticas (Total, Pendientes, Citados, Atendidos, Observados)
+- ✅ Tabla profesional con 15 columnas: DNI, Nombre, Teléfono, Especialidad, Sexo, Red, IPRESS, Bolsa, Fecha Cita, Fecha Asignación, Estado, Diferimiento, Semáforo, Acciones, Usuarios
+- ✅ **Design System CENATE v1.0.0 completo:**
+  - Header azul #0D5BA9 con tipografía uppercase tracking-wider
+  - Filas h-16 con padding estándar px-6 py-4
+  - Hover effects y transiciones suaves
+  - Checkboxes profesionales (w-5 h-5)
+  - Botones de acción con hover backgrounds
+- ✅ Filtros avanzados: Búsqueda, Bolsas, Redes, Especialidades, Estados
+- ✅ Selección múltiple con descarga CSV
+- ✅ Indicadores de tráfico (semáforo): Verde/Rojo
+- ✅ Cálculo dinámico de diferimiento (días)
+- ✅ Ancho completo (w-full) sin limitaciones
+
+**Estadísticas Disponibles:**
+```javascript
+{
+  total: 8,        // Total de pacientes
+  pendientes: 2,   // Estado pendiente
+  citados: 2,      // Estado citado
+  atendidos: 2,    // Estado atendido
+  observados: 1    // Estado observado
+}
+```
+
+**8 Pacientes Mock de Prueba:**
+- María Gonzales Flores (BOLSA 107)
+- Juan Pérez Rivera (BOLSAS ENFERMERIA)
+- Ana Martínez Soto (BOLSAS REPROGRAMACION)
+- Carlos Rodríguez Vega (BOLSA DENGUE)
+- Laura Sánchez Morales (BOLSAS EXPLOTADATOS)
+- Roberto Torres Gutierrez (BOLSAS IVR)
+- Sofía López Ramírez (BOLSA GESTORES TERRITORIAL)
+- Diego Fernández Castro (BOLSA 107)
 
 ### Servicio: tiposBolsasService.js
 
