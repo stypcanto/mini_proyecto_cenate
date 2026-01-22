@@ -987,15 +987,15 @@ export default function FormularioSolicitudTurnos() {
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse">
-              <thead className="bg-slate-50 text-xs text-slate-700">
+              <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
                 <tr>
-                  <th className="px-2 py-2 text-left">Año</th>
-                  <th className="px-2 py-2 text-left">Periodo</th>
-                  <th className="px-2 py-2 text-left">Solicitud</th>
-                  <th className="px-2 py-2 text-left">Inicio</th>
-                  <th className="px-2 py-2 text-left">Fin</th>
-                  <th className="px-2 py-2 text-left">Estado</th>
-                  <th className="px-2 py-2 text-right">Acción</th>
+                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Año</th>
+                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Periodo</th>
+                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Solicitud</th>
+                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Inicio</th>
+                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Fin</th>
+                  <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Estado</th>
+                  <th className="px-2 py-2.5 text-right text-xs font-bold text-white">Acción</th>
                 </tr>
               </thead>
 

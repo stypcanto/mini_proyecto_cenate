@@ -338,75 +338,75 @@ export default function ModalDetalleSolicitud({
           ) : (
             <>
               {/* Cards de Información Mejorados */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Card RESUMEN */}
-                <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-xl p-4 border border-blue-200 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-2 bg-blue-600 rounded-lg">
-                      <FileText className="w-5 h-5 text-white" />
+                <div className="bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 rounded-lg p-3 border border-blue-200 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 bg-blue-600 rounded-lg">
+                      <FileText className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Resumen</h3>
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Resumen</h3>
                   </div>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-blue-100">
-                      <div className="flex items-center gap-2">
-                        <Users className="w-4 h-4 text-blue-600" />
-                        <span className="text-sm text-gray-600">Total Especialidades</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-2 border border-blue-100">
+                      <div className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-blue-600" />
+                        <span className="text-xs text-gray-600">Total Especialidades</span>
                       </div>
-                      <span className="text-2xl font-bold text-blue-700">{solicitud.totalEspecialidades ?? detalles.length}</span>
+                      <span className="text-xl font-bold text-blue-700">{solicitud.totalEspecialidades ?? detalles.length}</span>
                     </div>
-                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-green-100">
-                      <div className="flex items-center gap-2">
-                        <Hash className="w-4 h-4 text-green-600" />
-                        <span className="text-sm text-gray-600">Total Turnos</span>
+                    <div className="flex items-center justify-between bg-white/60 backdrop-blur-sm rounded-lg p-2 border border-green-100">
+                      <div className="flex items-center gap-1.5">
+                        <Hash className="w-3.5 h-3.5 text-green-600" />
+                        <span className="text-xs text-gray-600">Total Turnos</span>
                       </div>
-                      <span className="text-2xl font-bold text-green-700">{solicitud.totalTurnosSolicitados ?? "—"}</span>
+                      <span className="text-xl font-bold text-green-700">{solicitud.totalTurnosSolicitados ?? "—"}</span>
                     </div>
-                    <div className="bg-white/60 backdrop-blur-sm rounded-lg p-3 border border-purple-100">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Calendar className="w-4 h-4 text-purple-600" />
-                        <span className="text-xs font-semibold text-gray-700">Periodo</span>
+                    <div className="bg-white/60 backdrop-blur-sm rounded-lg p-2 border border-purple-100">
+                      <div className="flex items-center gap-1.5 mb-1">
+                        <Calendar className="w-3.5 h-3.5 text-purple-600" />
+                        <span className="text-[10px] font-semibold text-gray-700">Periodo</span>
                       </div>
-                      <p className="text-sm font-bold text-gray-900">{solicitud.periodoDescripcion}</p>
-                      <p className="text-xs text-gray-600 mt-1">{solicitud.periodo} • ID: {solicitud.idPeriodo}</p>
+                      <p className="text-xs font-bold text-gray-900">{solicitud.periodoDescripcion}</p>
+                      <p className="text-[10px] text-gray-600 mt-0.5">{solicitud.periodo} • ID: {solicitud.idPeriodo}</p>
                     </div>
                   </div>
                 </div>
 
                 {/* Card FECHAS */}
-                <div className="bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 rounded-xl p-4 border border-gray-200 shadow-sm">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="p-2 bg-gray-700 rounded-lg">
-                      <Clock className="w-5 h-5 text-white" />
+                <div className="bg-gradient-to-br from-slate-50 via-gray-50 to-zinc-50 rounded-lg p-3 border border-gray-200 shadow-sm">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="p-1.5 bg-gray-700 rounded-lg">
+                      <Clock className="w-4 h-4 text-white" />
                     </div>
-                    <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wide">Fechas</h3>
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wide">Fechas</h3>
                   </div>
-                  <div className="space-y-2.5">
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-gray-100">
+                  <div className="space-y-2">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-2 border border-gray-100">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 font-medium mb-1">Creación</p>
-                          <p className="text-sm font-semibold text-gray-900">{fmtDateTime(solicitud.fechaCreacion ?? solicitud.createdAt)}</p>
+                          <p className="text-[10px] text-gray-500 font-medium mb-0.5">Creación</p>
+                          <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaCreacion ?? solicitud.createdAt)}</p>
                         </div>
-                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-1.5"></div>
+                        <div className="w-2 h-2 bg-blue-500 rounded-full mt-1"></div>
                       </div>
                     </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-gray-100">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-2 border border-gray-100">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 font-medium mb-1">Actualización</p>
-                          <p className="text-sm font-semibold text-gray-900">{fmtDateTime(solicitud.fechaActualizacion ?? solicitud.updatedAt)}</p>
+                          <p className="text-[10px] text-gray-500 font-medium mb-0.5">Actualización</p>
+                          <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaActualizacion ?? solicitud.updatedAt)}</p>
                         </div>
-                        <div className="w-2 h-2 bg-amber-500 rounded-full mt-1.5"></div>
+                        <div className="w-2 h-2 bg-amber-500 rounded-full mt-1"></div>
                       </div>
                     </div>
-                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-3 border border-gray-100">
+                    <div className="bg-white/80 backdrop-blur-sm rounded-lg p-2 border border-gray-100">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
-                          <p className="text-xs text-gray-500 font-medium mb-1">Envío</p>
-                          <p className="text-sm font-semibold text-gray-900">{fmtDateTime(solicitud.fechaEnvio)}</p>
+                          <p className="text-[10px] text-gray-500 font-medium mb-0.5">Envío</p>
+                          <p className="text-xs font-semibold text-gray-900">{fmtDateTime(solicitud.fechaEnvio)}</p>
                         </div>
-                        <div className="w-2 h-2 bg-green-500 rounded-full mt-1.5"></div>
+                        <div className="w-2 h-2 bg-green-500 rounded-full mt-1"></div>
                       </div>
                     </div>
                   </div>
@@ -585,9 +585,9 @@ export default function ModalDetalleSolicitud({
 
                 <div className="overflow-x-auto bg-white max-h-[400px] overflow-y-auto">
                   <table className="min-w-full text-xs">
-                    <thead className="bg-gray-50 text-gray-700 sticky top-0">
+                    <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] sticky top-0">
                       <tr>
-                        <th className="px-2 py-1.5 text-center font-semibold">
+                        <th className="px-2 py-2 text-center font-bold text-white">
                           {isEnviado && detallesFiltrados.some(d => !d.estado || d.estado === 'PENDIENTE') && (
                             <input
                               type="checkbox"
@@ -607,18 +607,18 @@ export default function ModalDetalleSolicitud({
                             />
                           )}
                         </th>
-                        <th className="px-2 py-1.5 text-left font-semibold">#</th>
-                        <th className="px-2 py-1.5 text-left font-semibold">Especialidad</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Estado</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Req</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">TM</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Mañana</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Tarde</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">TC</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">TL</th>
-                        <th className="px-2 py-1.5 text-center font-semibold">Fechas</th>
-                        <th className="px-2 py-1.5 text-left font-semibold">Observación</th>
-                        {isEnviado && <th className="px-2 py-1.5 text-center font-semibold">Acciones</th>}
+                        <th className="px-2 py-2 text-left font-bold text-white">#</th>
+                        <th className="px-2 py-2 text-left font-bold text-white">Especialidad</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Estado</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Req</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">TM</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Mañana</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Tarde</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">TC</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">TL</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">Fechas</th>
+                        <th className="px-2 py-2 text-left font-bold text-white">Observación</th>
+                        {isEnviado && <th className="px-2 py-2 text-center font-bold text-white">Acciones</th>}
                       </tr>
                     </thead>
 

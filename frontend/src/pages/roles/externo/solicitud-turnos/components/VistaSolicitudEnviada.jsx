@@ -172,19 +172,19 @@ export default function VistaSolicitudEnviada({ solicitud }) {
 
         <div className="overflow-x-auto max-h-[400px]">
           <table className="w-full text-xs">
-            <thead className="bg-gray-50 border-b-2 border-gray-200 sticky top-0">
+            <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] sticky top-0">
               <tr>
-                <th className="px-2 py-2 text-left font-bold text-gray-700 w-8">#</th>
-                <th className="px-2 py-2 text-left font-bold text-gray-700">Especialidad</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700">Estado</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700 bg-purple-50">TM</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700 bg-yellow-50">Mañana</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700 bg-orange-50">Tarde</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700 bg-blue-50">Total</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700">TC</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700">TL</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700">Fechas</th>
-                <th className="px-2 py-2 text-center font-bold text-gray-700">Obs.</th>
+                <th className="px-2 py-2.5 text-left font-bold text-white w-8">#</th>
+                <th className="px-2 py-2.5 text-left font-bold text-white">Especialidad</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Estado</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">TM</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Mañana</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Tarde</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Total</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">TC</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">TL</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Fechas</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Obs.</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">{especialidadesFiltradas.length === 0 ? (

@@ -94,15 +94,15 @@ export default function TabPeriodos({
   return (
     <div className="space-y-3">
       {/* Header con botón de crear */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 flex justify-between items-center">
+      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg shadow-sm p-4 flex justify-between items-center">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Historial de Periodos</h2>
-          <p className="text-xs text-gray-600 mt-0.5">Administre los periodos de solicitud de turnos</p>
+          <h2 className="text-xl font-bold text-white">Historial de Periodos</h2>
+          <p className="text-xs text-blue-100 mt-0.5">Administre los periodos de solicitud de turnos</p>
         </div>
 
         <button
           onClick={onCrearPeriodo}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-sm font-semibold rounded-lg hover:from-green-700 hover:to-emerald-700 transition-all shadow-sm hover:shadow-md"
+          className="flex items-center gap-2 px-4 py-2 bg-white text-[#0A5BA9] text-sm font-semibold rounded-lg hover:bg-blue-50 transition-all shadow-sm hover:shadow-md"
         >
           <Plus className="w-4 h-4" />
           Aperturar Nuevo Periodo
@@ -176,42 +176,42 @@ export default function TabPeriodos({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
                 <tr>
                   <th 
-                    className="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('idPeriodo')}
                   >
                     ID <SortIcon columnKey="idPeriodo" />
                   </th>
                   <th 
-                    className="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('descripcion')}
                   >
                     Descripción <SortIcon columnKey="descripcion" />
                   </th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                  <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
                     Total Solicitudes
                   </th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                  <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
                     Solicitudes Enviadas
                   </th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                  <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
                     Solicitudes Iniciadas
                   </th>
-                  {/* <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                  {/* <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
                     Ocupación
                   </th> */}
                   <th 
-                    className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('estado')}
                   >
                     Estado <SortIcon columnKey="estado" />
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-white">
                     Fechas
                   </th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                  <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
                     Acciones
                   </th>
                 </tr>

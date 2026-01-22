@@ -376,33 +376,33 @@ export default function TabSolicitudes({
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
                 <tr>
                   <th 
-                    className="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('idSolicitud')}
                   >
                     # <SortIcon columnKey="idSolicitud" />
                   </th>
                   <th 
-                    className="px-3 py-2 text-left text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    className="px-3 py-2.5 text-left text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('nombreIpress')}
                   >
                     IPRESS <SortIcon columnKey="nombreIpress" />
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-white">
                     Periodo
                   </th>
                   <th 
-                    className="px-3 py-2 text-center text-xs font-semibold text-gray-700 cursor-pointer hover:bg-gray-100"
+                    className="px-3 py-2.5 text-center text-xs font-bold text-white cursor-pointer hover:bg-blue-700/50"
                     onClick={() => handleSort('estado')}
                   >
                     Estado <SortIcon columnKey="estado" />
                   </th>
-                  <th className="px-3 py-2 text-left text-xs font-semibold text-gray-700">
+                  <th className="px-3 py-2.5 text-left text-xs font-bold text-white">
                     Fecha Envío
                   </th>
-                  <th className="px-3 py-2 text-center text-xs font-semibold text-gray-700">
+                  <th className="px-3 py-2.5 text-center text-xs font-bold text-white">
                     Acciones
                   </th>
                 </tr>

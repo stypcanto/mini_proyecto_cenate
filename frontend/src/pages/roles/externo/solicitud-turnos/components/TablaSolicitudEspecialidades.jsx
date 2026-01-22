@@ -302,30 +302,30 @@ export default function TablaSolicitudEspecialidades({
 
         <div className="overflow-x-auto">
           <table className="min-w-full">
-            <thead className="bg-slate-50">
+            <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB]">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-bold text-slate-700 uppercase">
+                <th className="px-4 py-3 text-left text-xs font-bold text-white uppercase">
                   Especialidad
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
+                <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase">
                   Turno<br />TM
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
+                <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase">
                   Turnos<br />Mañana
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
+                <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase">
                   Turnos<br />Tarde
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
+                <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase">
                   Teleconsultorio
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
+                <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase">
                   Teleconsulta
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
+                <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase">
                   Total<br />Turnos
                 </th>
-                <th className="px-4 py-3 text-center text-xs font-bold text-slate-700 uppercase">
+                <th className="px-4 py-3 text-center text-xs font-bold text-white uppercase">
                   <Calendar className="w-4 h-4 inline mr-1" />
                   Fecha
                 </th>
