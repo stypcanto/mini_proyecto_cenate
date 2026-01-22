@@ -665,6 +665,7 @@ export default function ModalEvaluacionECG({
         urgencia,
         contextoClinico,
         derivacionesSeleccionadas,
+        motivoNoDiagnostico: tipoEvaluacion === "NO_DIAGNOSTICO" ? motivoNoDiagnostico : null, // ✅ v9.2.0: 8️⃣ Enviar motivo
       });
       toast.success(`✅ Evaluación guardada correctamente como ${tipoEvaluacion}`, {
         duration: 3000,
