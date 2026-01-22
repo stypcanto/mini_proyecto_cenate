@@ -403,11 +403,18 @@ export default function ModalEvaluacionECG({
       interconsultaEspecialidad: value,
     });
 
-    // Filtrar especialidades mientras se escribe
-    if (value.trim().length > 0) {
-      const filtered = especialidades.filter((e) =>
-        e.descripcion.toLowerCase().includes(value.toLowerCase())
-      );
+    // Mostrar dropdown siempre que hay especialidades
+    if (especialidades.length > 0) {
+      let filtered;
+      if (value.trim().length > 0) {
+        // Si escribe algo, filtrar
+        filtered = especialidades.filter((e) =>
+          e.descripcion.toLowerCase().includes(value.toLowerCase())
+        );
+      } else {
+        // Si no escribe nada, mostrar TODAS las especialidades
+        filtered = especialidades;
+      }
       setFilteredEspecialidades(filtered);
       setShowEspecialidadesDropdown(true);
     } else {
@@ -1070,7 +1077,9 @@ export default function ModalEvaluacionECG({
                       value={planSeguimiento.interconsultaEspecialidad}
                       onChange={(e) => handleEspecialidadChange(e.target.value)}
                       onFocus={() => {
-                        if (planSeguimiento.interconsultaEspecialidad.trim().length > 0) {
+                        // Al hacer focus, mostrar TODAS las especialidades
+                        if (especialidades.length > 0) {
+                          setFilteredEspecialidades(especialidades);
                           setShowEspecialidadesDropdown(true);
                         }
                       }}
@@ -1078,7 +1087,7 @@ export default function ModalEvaluacionECG({
                         // Delay para permitir click en dropdown
                         setTimeout(() => setShowEspecialidadesDropdown(false), 200);
                       }}
-                      placeholder="Escribe para buscar especialidad..."
+                      placeholder="Haz click para ver todas las especialidades..."
                       className="w-full px-4 py-2 border-2 border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white"
                     />
 
