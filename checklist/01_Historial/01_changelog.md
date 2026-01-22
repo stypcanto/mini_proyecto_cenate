@@ -10,6 +10,92 @@
 
 ---
 
+## v1.27.0 (2026-01-21) - 🏥 Autocomplete de Especialidades: Interconsulta desde Base de Datos
+
+### 🎯 Descripción
+
+**Implementación de dropdown inteligente para la sección "Interconsulta con Especialidad"** en el Plan de Seguimiento:
+1. ✅ **Carga dinámica** de especialidades médicas desde `/api/especialidades/activas`
+2. ✅ **Autocomplete en tiempo real** mientras el médico escribe
+3. ✅ **Búsqueda case-insensitive** en el campo `descripcion` de especialidades
+4. ✅ **Dropdown filtrado** que muestra especialidades coincidentes
+5. ✅ **Permite escritura libre** si no encuentra la especialidad en lista
+6. ✅ **Código de referencia** (codServicio) mostrado en dropdown
+
+**Estado**: ✅ **COMPLETADO**
+
+### 🎨 Cambios de UI/UX
+
+**TAB 3: PLAN SEGUIMIENTO - Interconsulta con Especialidad**
+- Input ahora con autocomplete (antes: campo de texto simple)
+- Placeholder: "Escribe para buscar especialidad..."
+- Dropdown aparece mientras escribes con especialidades filtradas
+- Cada opción muestra:
+  - Nombre de especialidad (descripcion)
+  - Código referencia entre paréntesis (codServicio)
+- Mensaje amistoso si no encuentra coincidencias
+- Permite escritura libre como fallback
+
+### 📊 API Integración
+
+```javascript
+// Frontend: teleecgService.js
+obtenerEspecialidades: async () => {
+  const response = await apiClient.get("/especialidades/activas", true);
+  return response.data || [];
+}
+```
+
+```java
+// Backend: EspecialidadController.java (línea 38-42)
+@GetMapping("/activas")
+public ResponseEntity<List<EspecialidadDTO>> listarActivas() {
+  return ResponseEntity.ok(servicioEspecialidad.listar());
+}
+```
+
+### 📋 Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `ModalEvaluacionECG.jsx` | Agregó estado para especialidades + handlers autocomplete + UI dropdown |
+| `teleecgService.js` | Nuevo método `obtenerEspecialidades()` |
+| (fixes) | Correcciones de imports EKG/ECG inconsistentes |
+
+### 🔧 Implementación Técnica
+
+**State Management**:
+```javascript
+const [especialidades, setEspecialidades] = useState([]);
+const [filteredEspecialidades, setFilteredEspecialidades] = useState([]);
+const [showEspecialidadesDropdown, setShowEspecialidadesDropdown] = useState(false);
+```
+
+**Handlers**:
+- `cargarEspecialidades()`: Ejecuta al abrir modal, carga datos vía API
+- `handleEspecialidadChange()`: Filtra especialidades mientras se escribe
+- `handleSelectEspecialidad()`: Selecciona especialidad del dropdown
+
+**Búsqueda**:
+- Búsqueda en `descripcion` (field del DTO)
+- Case-insensitive
+- Actualiza mientras escribes en tiempo real
+
+### ✅ Testing
+
+- ✅ Frontend: BUILD SUCCESSFUL (0 errores)
+- ✅ Backend: Endpoint `/especialidades/activas` funcional
+- ✅ API: Retorna estructura correcta con `descripcion` y `codServicio`
+- ✅ Dropdown: Muestra opciones filtradas correctamente
+- ✅ Selección: Guardar especialidad seleccionada funciona
+- ✅ Fallback: Permite escritura libre si no encuentra en BD
+
+### 🐛 Fixes v1.27.1
+
+- ✅ Corrección: Cambiar `descServicio` → `descripcion` para coincidir con DTO
+
+---
+
 ## v1.26.0 (2026-01-21) - 🎯 Modal Triaje Clínico Rediseñado: Evaluación con Justificación + Plan Simplificado
 
 ### 🎯 Descripción
