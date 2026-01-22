@@ -177,12 +177,12 @@ export default function VistaSolicitudEnviada({ solicitud }) {
                 <th className="px-2 py-2.5 text-left font-bold text-white w-8">#</th>
                 <th className="px-2 py-2.5 text-left font-bold text-white">Especialidad</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Estado</th>
-                <th className="px-2 py-2.5 text-center font-bold text-white">TM</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Turno Completo</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Mañana</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Tarde</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Total</th>
-                <th className="px-2 py-2.5 text-center font-bold text-white">TC</th>
-                <th className="px-2 py-2.5 text-center font-bold text-white">TL</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Teleconsulta</th>
+                <th className="px-2 py-2.5 text-center font-bold text-white">Teleconsultorio</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Fechas</th>
                 <th className="px-2 py-2.5 text-center font-bold text-white">Obs.</th>
               </tr>
