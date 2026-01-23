@@ -73,25 +73,43 @@
   - Caso: TELEECG exclusivo para PADOMI
   - Procedimientos administrativos
 
-### 📦 Módulo de Bolsas (v1.32.1) - ✅ COMPLETADO
+### 📦 Módulo de Bolsas de Pacientes (v1.32.1) - ✅ COMPLETADO
 
-**📌 INICIO RÁPIDO:** Para entender el módulo de Bolsas completo, leer:
-- **`spec/01_Backend/06_resumen_modulo_bolsas_completo.md`** ⭐ (Recomendado - Visión general completa + Flujo Bolsas → Coordinador → Gestoras → Estados)
+**📌 INICIO RÁPIDO:** Para entender el módulo de Bolsas completo, leer (en orden):
 
-**¿Qué es el Módulo de Bolsas?**
-- **Almacenamiento centralizado** de pacientes que requieren atención telemédica
+1. **⭐ DOCUMENTO PRINCIPAL:** `spec/01_Backend/08_modulo_bolsas_pacientes_completo.md` (v1.32.1)
+   - Arquitectura completa + flujo Bolsas → Coordinador → Gestoras → Estados
+   - Roles, responsabilidades y funciones de cada usuario
+   - Modelo de datos (31 campos en dim_solicitud_bolsa)
+   - Flujos de negocio completos con ejemplos
+   - Endpoints REST documentados
+   - Integración sistémica con otros módulos
+
+2. **📊 Resumen Integral:** `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1)
+   - Visión general + componentes + catálogo de tipos
+   - Estructura de almacenamiento y datos
+   - Componentes reutilizables (PageHeader, StatCard, ListHeader)
+
+3. **📋 CRUD Tipos de Bolsas:** `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.1.0)
+   - Catálogo de 7 tipos de bolsas (BOLSA_107, BOLSA_DENGUE, etc.)
+   - CRUD de tipos disponibles
+   - Gestión de catálogo
+
+**¿Qué es el Módulo de Bolsas de Pacientes?**
+- **Almacenamiento centralizado** (dim_solicitud_bolsa) de pacientes que requieren atención
 - **6 fuentes de información:** Bolsa 107, Dengue, Enfermería, IVR, Reprogramaciones, Gestores Territorial
-- **Distribución:** El Coordinador de Gestión de Citas reparte pacientes a las Gestoras de Citas
-- **Gestión:** Las Gestoras captan, llaman, confirman citas y registran estados
-- **Seguimiento:** 10 estados de atención (CITADO, NO_CONTESTA, NO_DESEA, ATENDIDO_IPRESS, etc.)
-- **Notificaciones:** Recordatorios automáticos por WhatsApp/Email cuando CITADO
-- **Auditoría:** Registro completo de cada acción y cambio
+- **Rol 1 - Coordinador:** Visualiza todas las bolsas en http://localhost:3000/bolsas/solicitudes
+- **Rol 2 - Gestoras:** Captan, llaman, confirman citas en http://localhost:3000/citas/gestion-asegurado
+- **10 Estados de Gestión:** CITADO, NO_CONTESTA, NO_DESEA, ATENDIDO_IPRESS, HC_BLOQUEADA, NUM_NO_EXISTE, TEL_SIN_SERVICIO, REPROG_FALLIDA, SIN_VIGENCIA, APAGADO
+- **Notificaciones:** WhatsApp/Email automáticas cuando CITADO
+- **Auditoría Completa:** Registro de quién, cuándo, qué en cada acción
 
 **Documentación Técnica:**
-- **⭐ Resumen Módulo Bolsas:** `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0 - Arquitectura, componentes, integración sistémica)
-- **📋 CRUD Tipos de Bolsas:** `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.0.0 - Especificación técnica detallada)
-- **💾 Script SQL Migración:** `spec/04_BaseDatos/06_scripts/V3_0_2__crear_tabla_tipos_bolsas.sql` (DDL y 7 registros iniciales)
-- **📝 Changelog:** `checklist/01_Historial/01_changelog.md` (v1.31.0 - Registro de cambios)
+- **⭐ Módulo Bolsas Pacientes (PRINCIPAL):** `spec/01_Backend/08_modulo_bolsas_pacientes_completo.md` (v1.32.1 - Flujo completo + modelos + endpoints)
+- **📊 Resumen Integral:** `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1 - Arquitectura + componentes)
+- **📋 CRUD Tipos de Bolsas:** `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.1.0 - Catálogo de tipos)
+- **💾 Script SQL:** `spec/04_BaseDatos/06_scripts/V3_0_2__crear_tabla_tipos_bolsas.sql` (DDL)
+- **📝 Changelog:** `checklist/01_Historial/01_changelog.md` (v1.32.1 - Registro completo)
 
 **Versión Actual (v1.31.0) - Módulo de Bolsas CRUD:**
 - 🗄️ **Tabla Catálogo:** `dim_tipos_bolsas` con 7 registros iniciales
@@ -287,7 +305,7 @@ Password: @Cenate2025
 | **Personal Externo (Gestión Modalidad + Bienvenida)** | `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` | ✅ Implementado (v1.18.0) |
 | **🫀 Tele-ECG v2.0.0** | `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` ⭐ + `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` | ✅ **100% Completado** (v1.21.4 - 6 bugs resueltos) 🎉 |
 | **Tele-ECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
-| **📦 Módulo de Bolsas (v1.32.1) - ✅ COMPLETADO** | `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` ⭐ (Almacenamiento central + Distribución Coordinador + Gestión Gestoras + Estados) | ✅ **100% Completado** (v1.32.1 - 6 fuentes de pacientes + Coordinador distribuye + 10 estados de gestión) 🎉 |
+| **📦 Módulo de Bolsas de Pacientes (v1.32.1) - ✅ COMPLETADO** | **⭐ PRINCIPAL:** `spec/01_Backend/08_modulo_bolsas_pacientes_completo.md` (v1.32.1 - Flujo completo) + Resumen: `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` + Tipos: `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` | ✅ **100% Completado** (v1.32.1 - 6 fuentes → Coordinador distribuye → Gestoras gestionan → 10 estados de citas → Auditoría) 🎉 |
 | **📋 Estados Gestión Citas** | `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐ + Troubleshooting: `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md` | ✅ **100% Completado** (v1.33.0 - CRUD + Query SQL + 3 bugs resueltos) 🎉 |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
@@ -345,10 +363,14 @@ Password: @Cenate2025
 - Horarios Existentes → `spec/04_BaseDatos/07_horarios_sistema/01_modelo_horarios_existente.md`
 - Integración Horarios → `spec/04_BaseDatos/07_horarios_sistema/02_guia_integracion_horarios.md`
 - Firma Digital → `plan/05_Firma_Digital/01_plan_implementacion.md`
-- **📦 Módulo Bolsas (COMPLETO)** → `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1) ⭐
-  - Flujo: Bolsas → Coordinador distribuye → Gestoras gestionan → Estados de citas
-  - Frontend: http://localhost:3000/bolsas/solicitudes (Coordinador visualiza y distribuye)
-  - Tabla `dim_solicitud_bolsa` (pacientes en bolsas) con estados vinculados a `dim_estados_gestion_citas`
+- **📦 Módulo Bolsas Pacientes (COMPLETO)** → `spec/01_Backend/08_modulo_bolsas_pacientes_completo.md` (v1.32.1) ⭐⭐⭐ **DOCUMENTO PRINCIPAL**
+  - 6 fuentes → Almacenamiento (dim_solicitud_bolsa) → Coordinador distribuye → Gestoras gestionan → 10 estados de citas
+  - Frontend Coordinador: http://localhost:3000/bolsas/solicitudes
+  - Frontend Gestora: http://localhost:3000/citas/gestion-asegurado
+  - Tabla `dim_solicitud_bolsa` (31 campos) con FK a `dim_estados_gestion_citas`
+  - Documentación complementaria:
+    - Resumen integral: `spec/01_Backend/06_resumen_modulo_bolsas_completo.md`
+    - Catálogo de tipos: `spec/01_Backend/05_modulo_tipos_bolsas_crud.md`
 - **📋 Estados Gestión Citas** → `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐
   - 10 estados: CITADO, NO_CONTESTA, NO_DESEA, ATENDIDO_IPRESS, HC_BLOQUEADA, NUM_NO_EXISTE, TEL_SIN_SERVICIO, REPROG_FALLIDA, SIN_VIGENCIA, APAGADO
   - Tabla: `dim_estados_gestion_citas` (referenciada por `dim_solicitud_bolsa`)
