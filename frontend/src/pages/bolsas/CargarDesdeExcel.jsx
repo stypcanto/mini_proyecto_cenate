@@ -41,23 +41,31 @@ export default function CargarDesdeExcel() {
       }
     }
 
-    // Obtener bolsas disponibles
-    const obtenerBolsasDisponibles = async () => {
+    // Obtener tipos de bolsas disponibles
+    const obtenerTiposBolsasDisponibles = async () => {
       try {
-        const datos = await bolsasService.obtenerBolsas();
-        // Filtrar solo bolsas activas
-        const bolsasActivas = datos.filter(bolsa => bolsa.estado === 'ACTIVA' && bolsa.activo === true);
-        console.log('📋 Bolsas disponibles:', bolsasActivas);
-        setTiposBolsas(bolsasActivas || []);
+        const response = await fetch('http://localhost:8080/api/admin/tipos-bolsas/todos', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error al obtener tipos de bolsas: ${response.status}`);
+        }
+
+        const datos = await response.json();
+        console.log('📋 Tipos de bolsas disponibles:', datos);
+        setTiposBolsas(datos || []);
       } catch (error) {
-        console.error('❌ Error obteniendo bolsas disponibles:', error);
+        console.error('❌ Error obteniendo tipos de bolsas:', error);
         setTiposBolsas([]);
       } finally {
         setLoadingTipos(false);
       }
     };
 
-    obtenerBolsasDisponibles();
+    obtenerTiposBolsasDisponibles();
   }, []);
 
   const handleFileChange = (e) => {
@@ -207,29 +215,29 @@ export default function CargarDesdeExcel() {
             </div>
           )}
 
-          {/* Selección de Bolsa */}
+          {/* Selección de Tipo de Bolsa */}
           {file && (
             <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
               <label className="block text-sm font-semibold text-gray-700 mb-3">
-                📋 Selecciona la Bolsa de Pacientes:
+                📋 Selecciona el Tipo de Bolsa:
               </label>
               {loadingTipos ? (
-                <div className="text-gray-600">Cargando bolsas disponibles...</div>
+                <div className="text-gray-600">Cargando tipos de bolsas...</div>
               ) : tiposBolsas.length > 0 ? (
                 <select
                   value={tipoBolesaId || ''}
                   onChange={(e) => setTipoBolesaId(e.target.value ? parseInt(e.target.value) : null)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">-- Selecciona una bolsa --</option>
-                  {tiposBolsas.map((bolsa) => (
-                    <option key={bolsa.idBolsa} value={bolsa.idBolsa}>
-                      {bolsa.nombreBolsa} {bolsa.especialidadNombre ? `(${bolsa.especialidadNombre})` : ''}
+                  <option value="">-- Selecciona un tipo de bolsa --</option>
+                  {tiposBolsas.map((tipo) => (
+                    <option key={tipo.idTipoBolsa} value={tipo.idTipoBolsa}>
+                      {tipo.codTipoBolsa} - {tipo.descTipoBolsa}
                     </option>
                   ))}
                 </select>
               ) : (
-                <div className="text-red-600">No hay bolsas disponibles</div>
+                <div className="text-red-600">No hay tipos de bolsas disponibles</div>
               )}
             </div>
           )}
