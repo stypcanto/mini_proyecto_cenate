@@ -27,9 +27,11 @@ import com.styp.cenate.dto.solicitudturno.DetalleObservacionUpdateRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleObservacionUpdateResponse;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertRequest;
 import com.styp.cenate.dto.solicitudturno.DetalleSolicitudTurnoUpsertResponse;
+import com.styp.cenate.dto.solicitudturno.FormServicioRow;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoDetalleFullResponse;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressBorradorRequest;
 import com.styp.cenate.dto.solicitudturno.SolicitudTurnoIpressListadoRow;
+import com.styp.cenate.service.solicitudturno.FormServiciosService;
 import com.styp.cenate.service.solicitudturno.SolicitudTurnoIpressService;
 
 import jakarta.validation.Valid;
@@ -49,6 +51,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SolicitudTurnoIpressController {
 
 	private final SolicitudTurnoIpressService solicitudService;
+	private final FormServiciosService formConfiguracionService;
 
 	// ============================================================
 	// Datos del usuario actual (auto-detectados)
@@ -239,8 +242,8 @@ public class SolicitudTurnoIpressController {
 			@RequestParam(required = false, name = "ipressId") Long ipressId
 
 	) {
-		log.info("listar**********************************\n - idPeriodo:{} estado:{} macroId:{} redId:{} ipressId:{}", idPeriodo, estado, macroId, redId,
-				ipressId);
+		log.info("listar**********************************\n - idPeriodo:{} estado:{} macroId:{} redId:{} ipressId:{}",
+				idPeriodo, estado, macroId, redId, ipressId);
 		var listado = solicitudService.listar(idPeriodo, estado, macroId, redId, ipressId);
 		return ResponseEntity.ok(listado);
 	}
@@ -336,5 +339,14 @@ public class SolicitudTurnoIpressController {
 	}
 
 	/* FIN -ACEPTAR O APROBAR DETALLE DE SOLICITUDES */
+	/*
+	 * GET /api/solicitudes-turno/form-servicios?codIpress=937
+	 * GET /api/solicitudes-turno/form-servicios?codIpress=937&idSolicitud=15
+	 * */
+	@GetMapping("/form-servicios")
+	public List<FormServicioRow> cargar(@RequestParam("codIpress") String codIpress,
+			@RequestParam(required = false, name = "idSolicitud") Integer idSolicitud) {
+		return formConfiguracionService.cargarFormulario(codIpress, idSolicitud);
+	}
 
 }

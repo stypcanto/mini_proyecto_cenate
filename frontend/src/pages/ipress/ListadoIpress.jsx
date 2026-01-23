@@ -902,14 +902,14 @@ export default function ListadoIpress() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
               {/* Header del modal */ }
-              <div className="bg-gradient-to-r from-purple-600 to-purple-700 px-6 py-4 flex items-center justify-between">
+              <div className="bg-blue-600 px-6 py-4 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="bg-white/20 p-2 rounded-lg">
                     <Settings className="w-5 h-5 text-white" />
                   </div>
                   <div>
                     <h2 className="text-lg font-bold text-white">Configurar Especialidades</h2>
-                    <p className="text-purple-100 text-sm">
+                    <p className="text-blue-100 text-sm">
                       { modalConfigEspecialidades.ipress?.descIpress } ({ modalConfigEspecialidades.ipress?.codIpress })
                     </p>
                   </div>
