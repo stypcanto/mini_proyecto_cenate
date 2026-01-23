@@ -321,6 +321,9 @@ export default function TablaSolicitudEspecialidades({
                   Tarde
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  <Calendar className="w-3 h-3 inline" />
+                </th>
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   Teleconsulta
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
@@ -328,9 +331,6 @@ export default function TablaSolicitudEspecialidades({
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   Total
-                </th>
-                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
-                  <Calendar className="w-3 h-3 inline" />
                 </th>
               </tr>
             </thead>
@@ -395,6 +395,26 @@ export default function TablaSolicitudEspecialidades({
                       />
                     </td>
 
+                    {/* Fecha */}
+                    <td className="px-2 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEspecialidadSeleccionada(esp);
+                          setModalFechasOpen(true);
+                        }}
+                        className={`p-1 rounded border transition-all ${
+                          total > 0 && !soloLectura
+                            ? "border-blue-500 text-blue-500 hover:bg-blue-50 cursor-pointer"
+                            : "border-gray-300 text-gray-400 cursor-not-allowed"
+                        }`}
+                        disabled={soloLectura || total === 0}
+                        title={total === 0 ? "Configura turnos primero" : "Seleccionar fechas"}
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                      </button>
+                    </td>
+
                     {/* Teleconsulta */}
                     <td className="px-2 py-2 text-center">
                       <input
@@ -424,26 +444,6 @@ export default function TablaSolicitudEspecialidades({
                       <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-cyan-500 text-white font-bold text-sm">
                         {total}
                       </div>
-                    </td>
-
-                    {/* Fecha */}
-                    <td className="px-2 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEspecialidadSeleccionada(esp);
-                          setModalFechasOpen(true);
-                        }}
-                        className={`p-1 rounded border transition-all ${
-                          total > 0 && !soloLectura
-                            ? "border-blue-500 text-blue-500 hover:bg-blue-50 cursor-pointer"
-                            : "border-gray-300 text-gray-400 cursor-not-allowed"
-                        }`}
-                        disabled={soloLectura || total === 0}
-                        title={total === 0 ? "Configura turnos primero" : "Seleccionar fechas"}
-                      >
-                        <Calendar className="w-3.5 h-3.5" />
-                      </button>
                     </td>
                   </tr>
                 );
