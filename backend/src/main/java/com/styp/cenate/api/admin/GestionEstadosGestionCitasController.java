@@ -50,20 +50,6 @@ public class GestionEstadosGestionCitasController {
     }
 
     /**
-     * GET /api/admin/estados-gestion-citas/{id}
-     *
-     * Obtiene un estado específico por ID
-     *
-     * @param id ID del estado
-     * @return Estado encontrado o 404
-     */
-    @GetMapping("/{id}")
-    public ResponseEntity<EstadoGestionCitaResponse> obtenerEstadoPorId(@PathVariable Long id) {
-        log.info("🔍 GET /api/admin/estados-gestion-citas/{}", id);
-        return ResponseEntity.ok(estadoService.obtenerEstadoPorId(id));
-    }
-
-    /**
      * GET /api/admin/estados-gestion-citas/buscar
      *
      * Búsqueda paginada de estados con filtros
@@ -94,6 +80,20 @@ public class GestionEstadosGestionCitasController {
     public ResponseEntity<EstadisticasEstadosDTO> obtenerEstadisticas() {
         log.info("📊 GET /api/admin/estados-gestion-citas/estadisticas");
         return ResponseEntity.ok(estadoService.obtenerEstadisticas());
+    }
+
+    /**
+     * GET /api/admin/estados-gestion-citas/{id}
+     *
+     * Obtiene un estado específico por ID
+     *
+     * @param id ID del estado
+     * @return Estado encontrado o 404
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<EstadoGestionCitaResponse> obtenerEstadoPorId(@PathVariable Long id) {
+        log.info("🔍 GET /api/admin/estados-gestion-citas/{}", id);
+        return ResponseEntity.ok(estadoService.obtenerEstadoPorId(id));
     }
 
     /**

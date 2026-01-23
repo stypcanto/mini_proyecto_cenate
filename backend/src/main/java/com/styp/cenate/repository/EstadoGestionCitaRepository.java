@@ -6,6 +6,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -46,11 +47,15 @@ public interface EstadoGestionCitaRepository extends JpaRepository<EstadoGestion
      * @param pageable paginación (size, page, sort)
      * @return Página de estados
      */
-    @Query("SELECT e FROM EstadoGestionCita e WHERE " +
-           "(:busqueda IS NULL OR LOWER(e.codEstadoCita) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
-           "OR LOWER(e.descEstadoCita) LIKE LOWER(CONCAT('%', :busqueda, '%'))) AND " +
-           "(:estado IS NULL OR e.statEstadoCita = :estado) " +
-           "ORDER BY e.descEstadoCita ASC")
+    @Query(value = "SELECT * FROM public.dim_estados_gestion_citas e WHERE " +
+           "(:busqueda IS NULL OR LOWER(e.cod_estado_cita) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
+           "OR LOWER(e.desc_estado_cita) LIKE LOWER(CONCAT('%', :busqueda, '%'))) AND " +
+           "(:estado IS NULL OR e.stat_estado_cita = :estado) " +
+           "ORDER BY e.desc_estado_cita ASC",
+           nativeQuery = true, countQuery = "SELECT COUNT(*) FROM public.dim_estados_gestion_citas e WHERE " +
+           "(:busqueda IS NULL OR LOWER(e.cod_estado_cita) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
+           "OR LOWER(e.desc_estado_cita) LIKE LOWER(CONCAT('%', :busqueda, '%'))) AND " +
+           "(:estado IS NULL OR e.stat_estado_cita = :estado)")
     Page<EstadoGestionCita> buscarEstadosGestionCitas(
         @Param("busqueda") String busqueda,
         @Param("estado") String estado,
