@@ -179,7 +179,65 @@ export default function ModalSeleccionarFechas({
       }
     }
 
-    // Verificar límite de turnos
+    // Si es modo AMBOS, intentar agregar ambos turnos
+    if (tipoTurno === "AMBOS") {
+      const conteoManana = fechasSeleccionadas.filter((f) => f.turno === "MANANA").length;
+      const conteoTarde = fechasSeleccionadas.filter((f) => f.turno === "TARDE").length;
+      
+      const idManana = `${fechaStr}-MANANA`;
+      const idTarde = `${fechaStr}-TARDE`;
+      
+      const yaExisteManana = fechasSeleccionadas.some((f) => f.id === idManana);
+      const yaExisteTarde = fechasSeleccionadas.some((f) => f.id === idTarde);
+      const ambosExisten = yaExisteManana && yaExisteTarde;
+
+      // Si ambos ya existen, eliminarlos (toggle)
+      if (ambosExisten) {
+        setFechasSeleccionadas(fechasSeleccionadas.filter((f) => f.id !== idManana && f.id !== idTarde));
+        return;
+      }
+
+      // Validar límites
+      const puedeAgregarManana = !yaExisteManana && conteoManana < turnoManana;
+      const puedeAgregarTarde = !yaExisteTarde && conteoTarde < turnoTarde;
+
+      // Si no puede agregar ninguno porque alcanzó ambos límites
+      if (!puedeAgregarManana && !puedeAgregarTarde && !yaExisteManana && !yaExisteTarde) {
+        alert(`⚠️ Has alcanzado el límite de turnos tanto de Mañana (${turnoManana}) como de Tarde (${turnoTarde}). No puedes agregar más fechas.`);
+        return;
+      }
+
+      // Si puede agregar al menos uno, agregar los que sean posibles
+      const nuevasFechas = [...fechasSeleccionadas];
+      
+      if (puedeAgregarManana && !yaExisteManana) {
+        nuevasFechas.push({
+          fecha: fechaStr,
+          turno: "MANANA",
+          id: idManana,
+        });
+      }
+      
+      if (puedeAgregarTarde && !yaExisteTarde) {
+        nuevasFechas.push({
+          fecha: fechaStr,
+          turno: "TARDE",
+          id: idTarde,
+        });
+      }
+
+      // Si solo pudo agregar uno, mostrar advertencia
+      if ((puedeAgregarManana && !puedeAgregarTarde) || (!puedeAgregarManana && puedeAgregarTarde)) {
+        const turnoAgregado = puedeAgregarManana ? "Mañana" : "Tarde";
+        const turnoLimite = puedeAgregarManana ? "Tarde" : "Mañana";
+        alert(`⚠️ Solo se agregó el turno de ${turnoAgregado}. El turno de ${turnoLimite} alcanzó su límite.`);
+      }
+
+      setFechasSeleccionadas(nuevasFechas);
+      return;
+    }
+
+    // Modo normal (MANANA o TARDE)
     const conteoActual = fechasSeleccionadas.filter((f) => f.turno === tipoTurno).length;
     const limiteActual = tipoTurno === "MANANA" ? turnoManana : turnoTarde;
     
@@ -237,9 +295,11 @@ export default function ModalSeleccionarFechas({
   };
 
   // Verificar si se alcanzó el límite
-  const limiteAlcanzado = tipoTurno === "MANANA" 
-    ? fechasManana >= turnoManana 
-    : fechasTarde >= turnoTarde;
+  const limiteAlcanzado = tipoTurno === "AMBOS"
+    ? (fechasManana >= turnoManana || fechasTarde >= turnoTarde)
+    : tipoTurno === "MANANA" 
+      ? fechasManana >= turnoManana 
+      : fechasTarde >= turnoTarde;
 
   // Obtener nombre del mes del periodo
   const nombreMesPeriodo = useMemo(() => {
@@ -281,34 +341,47 @@ export default function ModalSeleccionarFechas({
           <div className="p-3 grid grid-cols-2 gap-4">
             {/* COLUMNA IZQUIERDA: Controles y Calendario */}
             <div className="space-y-2">
-              {/* Botones Mañana/Tarde */}
+              {/* Botones Mañana/Tarde/Ambos */}
               <div>
                 <h3 className="font-bold text-slate-800 text-xs mb-1.5">Selecciona el tipo de turno</h3>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-1.5">
                   <button
                     type="button"
                     onClick={() => setTipoTurno("MANANA")}
-                    className={`py-1.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 transition-all ${
+                    className={`py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 transition-all ${
                       tipoTurno === "MANANA"
                         ? "bg-orange-500 text-white shadow-lg"
-                        : "bg-orange-50 text-orange-600 border-2 border-orange-200"
+                        : "bg-orange-50 text-orange-600 border border-orange-200"
                     }`}
                   >
-                    <Sun className="w-3.5 h-3.5" />
+                    <Sun className="w-3 h-3" />
                     Mañana
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setTipoTurno("TARDE")}
-                    className={`py-1.5 rounded-lg font-semibold text-sm flex items-center justify-center gap-1.5 transition-all ${
+                    className={`py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 transition-all ${
                       tipoTurno === "TARDE"
                         ? "bg-purple-500 text-white shadow-lg"
-                        : "bg-purple-50 text-purple-600 border-2 border-purple-200"
+                        : "bg-purple-50 text-purple-600 border border-purple-200"
                     }`}
                   >
-                    <Moon className="w-3.5 h-3.5" />
+                    <Moon className="w-3 h-3" />
                     Tarde
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTipoTurno("AMBOS")}
+                    className={`py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 transition-all ${
+                      tipoTurno === "AMBOS"
+                        ? "bg-gradient-to-r from-orange-500 to-purple-500 text-white shadow-lg"
+                        : "bg-gradient-to-r from-orange-50 to-purple-50 text-slate-700 border border-slate-300"
+                    }`}
+                  >
+                    <Sun className="w-3 h-3" />
+                    <Moon className="w-3 h-3" />
                   </button>
                 </div>
               </div>
@@ -318,7 +391,10 @@ export default function ModalSeleccionarFechas({
                 <div className="bg-red-50 border border-red-300 rounded-lg p-1.5">
                   <p className="text-[10px] text-red-800 font-semibold flex items-center gap-1.5">
                     <span>⚠️</span>
-                    Límite alcanzado para turnos de {tipoTurno === "MANANA" ? "Mañana" : "Tarde"} ({tipoTurno === "MANANA" ? turnoManana : turnoTarde})
+                    {tipoTurno === "AMBOS" 
+                      ? "Límite alcanzado para uno o ambos turnos" 
+                      : `Límite alcanzado para turnos de ${tipoTurno === "MANANA" ? "Mañana" : "Tarde"} (${tipoTurno === "MANANA" ? turnoManana : turnoTarde})`
+                    }
                   </p>
                 </div>
               )}
@@ -357,12 +433,18 @@ export default function ModalSeleccionarFechas({
                       const ambosSeleccionados = seleccionadaManana && seleccionadaTarde;
                       const algunoSeleccionado = seleccionadaManana || seleccionadaTarde;
                       
+                      // Para modo AMBOS, verificar si puede agregar al menos uno
+                      const puedeAgregarEnModoAmbos = tipoTurno === "AMBOS" && (
+                        (!seleccionadaManana && fechasManana < turnoManana) || 
+                        (!seleccionadaTarde && fechasTarde < turnoTarde)
+                      );
+                      
                       let claseBoton = "w-full aspect-square rounded text-[10px] font-semibold transition-all ";
                       
                       if (fueraDeRango) {
-                        claseBoton += "bg-gray-100 text-gray-300 cursor-not-allowed";
+                        claseBoton += "bg-slate-100 text-slate-300 cursor-not-allowed";
                       } else if (ambosSeleccionados) {
-                        claseBoton += "bg-gradient-to-br from-orange-500 to-purple-500 text-white shadow-md border-2 border-white";
+                        claseBoton += "bg-gradient-to-r from-orange-500 to-purple-500 text-white shadow-md hover:shadow-lg";
                       } else if (seleccionadaManana) {
                         claseBoton += "bg-orange-500 text-white shadow-md hover:shadow-lg";
                       } else if (seleccionadaTarde) {
@@ -378,7 +460,7 @@ export default function ModalSeleccionarFechas({
                           key={index}
                           type="button"
                           onClick={() => !fueraDeRango && agregarFecha(fecha)}
-                          disabled={fueraDeRango || (limiteAlcanzado && !algunoSeleccionado)}
+                        disabled={fueraDeRango || (tipoTurno === "AMBOS" ? !puedeAgregarEnModoAmbos && !algunoSeleccionado : limiteAlcanzado && !algunoSeleccionado)}
                           className={claseBoton}
                         >
                           {fecha.getDate()}
