@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, AlertCircle, CheckCircle, FileText, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import bolsasService from '../../services/bolsasService';
 
 /**
  * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel
@@ -43,19 +44,10 @@ export default function CargarDesdeExcel() {
     // Obtener bolsas disponibles
     const obtenerBolsasDisponibles = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/bolsas', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error al obtener bolsas: ${response.status}`);
-        }
-
-        const datos = await response.json();
+        const datos = await bolsasService.obtenerBolsas();
         // Filtrar solo bolsas activas
-        const bolsasActivas = datos.filter(bolsa => bolsa.estado === 'ACTIVA' || bolsa.activo);
+        const bolsasActivas = datos.filter(bolsa => bolsa.estado === 'ACTIVA' && bolsa.activo === true);
+        console.log('📋 Bolsas disponibles:', bolsasActivas);
         setTiposBolsas(bolsasActivas || []);
       } catch (error) {
         console.error('❌ Error obteniendo bolsas disponibles:', error);
@@ -109,20 +101,8 @@ export default function CargarDesdeExcel() {
         tamaño: file.size
       });
 
-      const response = await fetch('http://localhost:8080/api/bolsas/importar/excel', {
-        method: 'POST',
-        body: formData,
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || `Error HTTP ${response.status}`);
-      }
-
-      const resultado = await response.json();
+      // Usar el servicio de bolsas para importar
+      const resultado = await bolsasService.importarDesdeExcel(formData);
 
       setImportStatus({
         type: 'success',
@@ -137,6 +117,7 @@ export default function CargarDesdeExcel() {
       // Limpiar archivo después de 2 segundos y redirigir
       setTimeout(() => {
         setFile(null);
+        setTipoBolesaId(null);
         navigate('/bolsas/solicitudes');
       }, 2000);
 
