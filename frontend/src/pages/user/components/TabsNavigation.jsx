@@ -1,6 +1,6 @@
 // src/pages/admin/users/components/TabsNavigation.jsx
 import React, { useRef, useState, useEffect, useMemo, useCallback } from 'react';
-import { Users, Building, Briefcase, GraduationCap, Stethoscope, Shield, UserCog, Target, Video, FileText, ChevronDown, MoreHorizontal, Package } from 'lucide-react';
+import { Users, Building, Briefcase, GraduationCap, Stethoscope, Shield, UserCog, Target, Video, FileText, ChevronDown, MoreHorizontal, Package, FileCheck2 } from 'lucide-react';
 import TabButton from './modals/TabButton';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -31,6 +31,7 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
     { id: 'cie10', icon: FileText, label: 'CIE10', visible: esSuperAdmin },
     { id: 'medicamentos', icon: FileText, label: 'Medicamentos', visible: esSuperAdmin },
     { id: 'tiposbolsas', icon: Package, label: 'Tipos de Bolsas', visible: esSuperAdmin },
+    { id: 'estadosgestioncitas', icon: FileCheck2, label: 'Estados Gestión Citas', visible: esSuperAdmin },
   ], [esSuperAdmin]);
 
   // Filtrar pestañas visibles
