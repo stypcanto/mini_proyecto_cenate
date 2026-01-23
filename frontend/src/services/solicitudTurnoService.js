@@ -237,6 +237,29 @@ class SolicitudTurnoService {
     }
   }
 
+  /**
+   * Obtiene la configuración de servicios del formulario para una IPRESS
+   * Incluye valores por defecto de teleconsulta/teleconsultorio
+   * @param {string|number} codIpress - Código de la IPRESS
+   * @param {number|null} idSolicitud - ID de la solicitud (opcional, para modo edición)
+   * @returns {Promise<Array>} Lista de servicios con configuración
+   * Formato: [{idServicio, descServicio, teleconsultaActivo, teleconsultorioActivo}]
+   */
+  async obtenerFormServicios(codIpress, idSolicitud = null) {
+    try {
+      let url = `/solicitudes-turno/form-servicios?codIpress=${codIpress}`;
+      if (idSolicitud) {
+        url += `&idSolicitud=${idSolicitud}`;
+      }
+      const data = await apiClient.get(url, true);
+      return Array.isArray(data) ? data : [];
+    } catch (error) {
+      console.error("Error al obtener configuración de servicios:", error);
+      // Retornar array vacío en caso de error para no bloquear el flujo
+      return [];
+    }
+  }
+
   // ============================================================
   // Helpers
   // ============================================================

@@ -110,6 +110,10 @@ export default function FormularioSolicitudTurnos() {
   // registro = {idServicio, turnoManana, turnoTarde, tc, tl, fecha, estado}
   const [registros, setRegistros] = useState([]);
 
+  // configuración de servicios (tc/tl por defecto desde IPRESS)
+  // Map: idServicio -> {tc, tl}
+  const [serviciosConfig, setServiciosConfig] = useState(new Map());
+
   // =====================================================================
   // Periodos: VIGENTES y ACTIVOS (según tu endpoint)
   // =====================================================================
@@ -253,6 +257,28 @@ export default function FormularioSolicitudTurnos() {
   }, [periodos, filtroAnio, filtroPeriodoId, filtroEstado, solicitudPorPeriodo]);
 
   // =====================================================================
+  // Obtener configuración de servicios (tc/tl por defecto)
+  // =====================================================================
+  const obtenerConfigServicios = async (codIpress, idSolicitud = null) => {
+    try {
+      const config = await solicitudTurnoService.obtenerFormServicios(codIpress, idSolicitud);
+      console.log("📋 Configuración de servicios obtenida:", config);
+      // Crear mapa para búsqueda rápida: idServicio -> {teleconsultaActivo, teleconsultorioActivo}
+      const configMap = new Map();
+      (config || []).forEach(srv => {
+        configMap.set(srv.idServicio, {
+          tl: srv.teleconsultaActivo ?? true,  // teleconsulta -> tl
+          tc: srv.teleconsultorioActivo ?? true // teleconsultorio -> tc
+        });
+      });
+      return configMap;
+    } catch (err) {
+      console.error("Error al obtener configuración de servicios:", err);
+      return new Map();
+    }
+  };
+
+  // =====================================================================
   // Abrir modal desde fila periodo (Iniciar/Editar/Ver)
   // =====================================================================
   const abrirSolicitudDesdeTabla = async (rowSolicitud) => {
@@ -286,16 +312,30 @@ export default function FormularioSolicitudTurnos() {
         return;
       }
 
+      // Obtener configuración de servicios (tc/tl por defecto) para EDITAR
+      const codIpress = miIpress?.codigo || miIpress?.codIpress;
+      let configMap = new Map();
+      if (codIpress) {
+        configMap = await obtenerConfigServicios(codIpress, rowSolicitud.idSolicitud);
+        setServiciosConfig(configMap);
+        console.log("📋 Config map para edición:", configMap);
+      } else {
+        setServiciosConfig(new Map());
+      }
+
       // EDITAR INICIADO: Cargar detalles de la solicitud
       if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
         // Agrupar detalles por idServicio para evitar duplicados
         // El backend devuelve múltiples registros (con diferentes idDetalle) para la misma especialidad
         // cuando hay múltiples fechas. Consolidamos todo en un solo registro por especialidad.
         const detallesAgrupados = new Map();
-        
+
         solicitud.detalles.forEach((det) => {
           const idServicio = det.idServicio;
-          
+
+          // Obtener valores por defecto de la configuración
+          const configDefaults = configMap.get(idServicio) || { tl: true, tc: true };
+
           // Si ya existe la especialidad, solo agregar las fechas nuevas
           if (detallesAgrupados.has(idServicio)) {
             const existente = detallesAgrupados.get(idServicio);
@@ -314,14 +354,15 @@ export default function FormularioSolicitudTurnos() {
             }
           } else {
             // Primera vez que vemos esta especialidad - crear registro
+            // Priorizar valores existentes del detalle, si no usar config por defecto
             detallesAgrupados.set(idServicio, {
               idDetalle: det.idDetalle || null, // Tomamos el idDetalle del primer registro
               idServicio: det.idServicio,
 
               turnoManana: det.turnoManana || 0,
               turnoTarde: det.turnoTarde || 0,
-              tc: det.tc !== undefined ? det.tc : true,
-              tl: det.tl !== undefined ? det.tl : true,
+              tc: det.tc !== undefined ? det.tc : configDefaults.tc,
+              tl: det.tl !== undefined ? det.tl : configDefaults.tl,
               estado: det.estado || "PENDIENTE",
               fechas: (det.fechasDetalle || []).map(f => ({
                 fecha: f.fecha,
@@ -331,7 +372,7 @@ export default function FormularioSolicitudTurnos() {
             });
           }
         });
-        
+
         // Convertir Map a Array
         const registrosExistentes = Array.from(detallesAgrupados.values());
         setRegistros(registrosExistentes);
@@ -364,7 +405,18 @@ export default function FormularioSolicitudTurnos() {
       return abrirSolicitudDesdeTabla(fila.solicitud);
     }
 
-    // no existe => iniciar
+    // no existe => iniciar nueva solicitud
+    // Obtener configuración de servicios (tc/tl por defecto) para NUEVA solicitud
+    const codIpress = miIpress?.codigo || miIpress?.codIpress;
+    if (codIpress) {
+      const configMap = await obtenerConfigServicios(codIpress);
+      setServiciosConfig(configMap);
+      console.log("📋 Config cargada para nueva solicitud:", configMap);
+    } else {
+      setServiciosConfig(new Map());
+      console.warn("⚠️ No se pudo obtener codIpress para cargar config de servicios");
+    }
+
     setModoModal("NUEVA");
     setSolicitudActual(null);
     setOpenFormModal(true);
@@ -1219,6 +1271,7 @@ export default function FormularioSolicitudTurnos() {
                     especialidades={especialidades}
                     periodo={periodoSeleccionado}
                     registros={registros}
+                    configDefaults={serviciosConfig}
                     onChange={(nuevosRegistros) => {
                       console.log("🔄 ========== CAMBIO EN TABLA ==========");
                       console.log("📋 Nuevos registros recibidos:", nuevosRegistros);

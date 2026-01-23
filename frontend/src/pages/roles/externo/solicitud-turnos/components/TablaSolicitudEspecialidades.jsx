@@ -55,6 +55,7 @@ const CustomSwitch = ({ checked, onChange, disabled = false, color = "green" }) 
  * @param {Array} props.especialidades - Lista de especialidades disponibles
  * @param {Object} props.periodo - Periodo seleccionado
  * @param {Array} props.registros - Registros actuales (formato: [{idServicio, turnoManana, turnoTarde, tc, tl, fecha, estado}])
+ * @param {Map} props.configDefaults - Configuración por defecto de tc/tl por servicio (Map: idServicio -> {tc, tl})
  * @param {Function} props.onChange - Callback cuando cambian los datos
  * @param {Function} props.onAutoGuardarFechas - Callback para auto-guardar cuando se confirman fechas
  * @param {Boolean} props.soloLectura - Si es solo lectura
@@ -64,6 +65,7 @@ export default function TablaSolicitudEspecialidades({
   especialidades = [],
   periodo = null,
   registros = [],
+  configDefaults = new Map(),
   onChange = () => {},
   onAutoGuardarFechas = null,
   soloLectura = false,
@@ -129,12 +131,16 @@ export default function TablaSolicitudEspecialidades({
       const nuevo = { ...prev };
 
       if (!nuevo[idServicio]) {
+        // Obtener valores por defecto de la configuración de IPRESS
+        const defaults = configDefaults?.get?.(idServicio) || { tc: false, tl: false };
+        console.log(`📋 Creando registro para idServicio ${idServicio} con defaults:`, defaults);
+
         nuevo[idServicio] = {
           idServicio,
           turnoManana: 0,
           turnoTarde: 0,
-          tc: false,
-          tl: false,
+          tc: defaults.tc,
+          tl: defaults.tl,
           fechas: [],
           estado: "PENDIENTE",
         };
