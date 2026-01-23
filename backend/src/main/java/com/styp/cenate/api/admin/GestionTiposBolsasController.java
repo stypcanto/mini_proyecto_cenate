@@ -18,7 +18,7 @@ import java.util.List;
  * Endpoints para CRUD y administración de tipos de bolsas
  */
 @RestController
-@RequestMapping("/tipos-bolsas")
+@RequestMapping("/api/admin/tipos-bolsas")
 @RequiredArgsConstructor
 @Slf4j
 public class GestionTiposBolsasController {

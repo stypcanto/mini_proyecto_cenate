@@ -1,367 +1,129 @@
 package com.styp.cenate.service.bolsas.impl;
 
-import com.styp.cenate.dto.bolsas.*;
-import com.styp.cenate.mapper.SolicitudBolsaMapper;
-import com.styp.cenate.model.SolicitudBolsa;
-import com.styp.cenate.repository.SolicitudBolsaRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsasService;
-import com.styp.cenate.service.email.EmailService;
-import com.styp.cenate.service.notificacion.NotificacionService;
-import lombok.RequiredArgsConstructor;
+import com.styp.cenate.dto.bolsas.*;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.io.ByteArrayOutputStream;
-import java.io.PrintWriter;
-import java.time.OffsetDateTime;
 import java.util.List;
 
 /**
- * 📋 Servicio de Solicitudes de Bolsas - Implementación
+ * Implementación LEGACY para compatibilidad
+ * ADVERTENCIA: Esta clase está deprecada. Usar SolicitudBolsaServiceImpl en su lugar
+ *
+ * @deprecated Usar SolicitudBolsaServiceImpl
+ * @version v1.6.0
+ * @since 2026-01-23
  */
-@Service
-@RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
+@Deprecated
+@Service
 public class SolicitudBolsasServiceImpl implements SolicitudBolsasService {
 
-    private final SolicitudBolsaRepository solicitudBolsaRepository;
-    private final EmailService emailService;
-    private final NotificacionService notificacionService;
-
-    // ========================================================================
-    // 🔍 CONSULTAS
-    // ========================================================================
+    private static final String DEPRECATED_MESSAGE = 
+        "SolicitudBolsasService está deprecado. Usar SolicitudBolsaService (v1.6.0) en su lugar";
 
     @Override
     public List<SolicitudBolsaDTO> obtenerTodasLasSolicitudes() {
-        log.info("📋 Obteniendo todas las solicitudes");
-        return SolicitudBolsaMapper.toDtoList(
-                solicitudBolsaRepository.findByActivoOrderByFechaSolicitudDesc(true)
-        );
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
-    public SolicitudBolsaDTO obtenerSolicitudPorId(Long idSolicitud) {
-        log.info("🔍 Obteniendo solicitud ID: {}", idSolicitud);
-        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
-        return SolicitudBolsaMapper.toDto(solicitud);
+    public SolicitudBolsaDTO obtenerSolicitudPorId(Long id) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
-    public SolicitudBolsaDTO obtenerSolicitudPorNumero(String numeroSolicitud) {
-        log.info("🔍 Obteniendo solicitud: {}", numeroSolicitud);
-        SolicitudBolsa solicitud = solicitudBolsaRepository.findByNumeroSolicitud(numeroSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada: " + numeroSolicitud));
-        return SolicitudBolsaMapper.toDto(solicitud);
+    public SolicitudBolsaDTO obtenerSolicitudPorNumero(String numero) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
     public List<SolicitudBolsaDTO> obtenerSolicitudesPorBolsa(Long idBolsa) {
-        log.info("📋 Obteniendo solicitudes de bolsa: {}", idBolsa);
-        return SolicitudBolsaMapper.toDtoList(
-                solicitudBolsaRepository.findByIdBolsaAndActivo(idBolsa, true)
-        );
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
     public List<SolicitudBolsaDTO> obtenerSolicitudesPorPaciente(String dni) {
-        log.info("📋 Obteniendo solicitudes de paciente: {}", dni);
-        return SolicitudBolsaMapper.toDtoList(
-                solicitudBolsaRepository.findByPacienteDniAndActivo(dni, true)
-        );
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
     public List<SolicitudBolsaDTO> obtenerSolicitudesPorEstado(String estado) {
-        log.info("📋 Obteniendo solicitudes por estado: {}", estado);
-        return SolicitudBolsaMapper.toDtoList(
-                solicitudBolsaRepository.findByEstadoAndActivo(estado, true)
-        );
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
     public List<SolicitudBolsaDTO> obtenerSolicitudesPendientes() {
-        log.info("📋 Obteniendo solicitudes pendientes");
-        return SolicitudBolsaMapper.toDtoList(
-                solicitudBolsaRepository.findByEstadoAndActivoOrderByFechaSolicitudAsc("PENDIENTE", true)
-        );
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
-    public Page<SolicitudBolsaDTO> buscarSolicitudes(
-            String nombrePaciente, String dni, String estado, String numeroSolicitud, Pageable pageable) {
-        log.info("🔎 Buscando solicitudes: paciente={}, dni={}, estado={}", nombrePaciente, dni, estado);
-        return solicitudBolsaRepository.buscarSolicitudes(nombrePaciente, dni, estado, numeroSolicitud, true, pageable)
-                .map(SolicitudBolsaMapper::toDto);
+    public Page<SolicitudBolsaDTO> buscarSolicitudes(String nombrePaciente, String dni, String estado, String numeroSolicitud, Pageable pageable) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
-    public EstadisticasSolicitudesDTO obtenerEstadisticas() {
-        log.info("📊 Calculando estadísticas de solicitudes");
-
-        long totalSolicitudes = solicitudBolsaRepository.countByActivo(true);
-        long solicitudesPendientes = solicitudBolsaRepository.countByEstadoAndActivo("PENDIENTE", true);
-        long solicitudesAprobadas = solicitudBolsaRepository.countByEstadoAndActivo("APROBADA", true);
-        long solicitudesRechazadas = solicitudBolsaRepository.countByEstadoAndActivo("RECHAZADA", true);
-
-        double porcentajeAprobadas = totalSolicitudes > 0
-                ? (double) solicitudesAprobadas / totalSolicitudes * 100
-                : 0.0;
-
-        // Solicitudes antiguas (más de 30 días pendientes)
-        OffsetDateTime hace30Dias = OffsetDateTime.now().minusDays(30);
-        long solicitudesAntiguas = solicitudBolsaRepository
-                .findSolicitudesPendientesAntiguasDias(30)
-                .size();
-
-        return new EstadisticasSolicitudesDTO(
-                totalSolicitudes,
-                solicitudesPendientes,
-                solicitudesAprobadas,
-                solicitudesRechazadas,
-                porcentajeAprobadas,
-                solicitudesAntiguas
-        );
+    public Object obtenerEstadisticas() {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
-    // ========================================================================
-    // ✏️ CREACIÓN Y ACTUALIZACIÓN
-    // ========================================================================
-
     @Override
-    @Transactional
     public SolicitudBolsaDTO crearSolicitud(SolicitudBolsaRequestDTO request) {
-        log.info("✏️ Creando nueva solicitud para paciente: {}", request.getPacienteDni());
-
-        SolicitudBolsa solicitud = SolicitudBolsaMapper.toEntity(request);
-        SolicitudBolsa solicitudGuardada = solicitudBolsaRepository.save(solicitud);
-
-
-        return SolicitudBolsaMapper.toDto(solicitudGuardada);
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
-    @Transactional
-    public SolicitudBolsaDTO actualizarSolicitud(Long idSolicitud, SolicitudBolsaRequestDTO request) {
-        log.info("✏️ Actualizando solicitud ID: {}", idSolicitud);
-
-        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
-
-        if (!solicitud.getEstado().equals("PENDIENTE")) {
-            throw new RuntimeException("Solo se pueden actualizar solicitudes pendientes");
-        }
-
-        SolicitudBolsaMapper.updateEntity(solicitud, request);
-        SolicitudBolsa solicitudActualizada = solicitudBolsaRepository.save(solicitud);
-
-
-        return SolicitudBolsaMapper.toDto(solicitudActualizada);
-    }
-
-    // ========================================================================
-    // ✅ APROBACIÓN Y RECHAZO
-    // ========================================================================
-
-    @Override
-    @Transactional
-    public SolicitudBolsaDTO aprobarSolicitud(Long idSolicitud, Long responsableId, String responsableNombre, String notas) {
-        log.info("✅ Aprobando solicitud ID: {}", idSolicitud);
-
-        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
-
-        if (!solicitud.getEstado().equals("PENDIENTE")) {
-            throw new RuntimeException("Solo se pueden aprobar solicitudes pendientes");
-        }
-
-        solicitud.setEstado("APROBADA");
-        solicitud.setResponsableAprobacionId(responsableId);
-        solicitud.setResponsableAprobacionNombre(responsableNombre);
-        solicitud.setNotasAprobacion(notas);
-        solicitud.setFechaAprobacion(java.time.OffsetDateTime.now());
-
-        SolicitudBolsa solicitudAprobada = solicitudBolsaRepository.save(solicitud);
-
-
-        return SolicitudBolsaMapper.toDto(solicitudAprobada);
+    public SolicitudBolsaDTO actualizarSolicitud(Long id, SolicitudBolsaRequestDTO request) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
     @Override
-    @Transactional
-    public SolicitudBolsaDTO rechazarSolicitud(Long idSolicitud, Long responsableId, String responsableNombre, String razon) {
-        log.info("❌ Rechazando solicitud ID: {}", idSolicitud);
-
-        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
-
-        if (!solicitud.getEstado().equals("PENDIENTE")) {
-            throw new RuntimeException("Solo se pueden rechazar solicitudes pendientes");
-        }
-
-        solicitud.setEstado("RECHAZADA");
-        solicitud.setResponsableAprobacionId(responsableId);
-        solicitud.setResponsableAprobacionNombre(responsableNombre);
-        solicitud.setRazonRechazo(razon);
-        solicitud.setFechaAprobacion(java.time.OffsetDateTime.now());
-
-        SolicitudBolsa solicitudRechazada = solicitudBolsaRepository.save(solicitud);
-
-
-        return SolicitudBolsaMapper.toDto(solicitudRechazada);
+    public SolicitudBolsaDTO aprobarSolicitud(Long id, Long responsableId, String responsableNombre, String notas) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
-
-    // ========================================================================
-    // 🗑️ ELIMINACIÓN
-    // ========================================================================
 
     @Override
-    @Transactional
-    public void eliminarSolicitud(Long idSolicitud) {
-        log.warn("🗑️ Eliminando solicitud ID: {}", idSolicitud);
-
-        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
-
-        if (!solicitud.getEstado().equals("PENDIENTE")) {
-            throw new RuntimeException("Solo se pueden eliminar solicitudes pendientes");
-        }
-
-        solicitud.setActivo(false);
-        solicitudBolsaRepository.save(solicitud);
+    public SolicitudBolsaDTO rechazarSolicitud(Long id, Long responsableId, String responsableNombre, String razon) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
-
-    // ========================================================================
-    // 👤 ASIGNACIÓN A GESTORA
-    // ========================================================================
 
     @Override
-    @Transactional
-    public SolicitudBolsaDTO asignarAGestora(Long idSolicitud, AsignarGestoraRequest request) {
-        log.info("👤 Asignando solicitud ID: {} a gestora: {}", idSolicitud, request.getGestoraNombre());
-
-        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
-
-        if (!solicitud.isAprobada()) {
-            throw new RuntimeException("Solo se pueden asignar solicitudes aprobadas");
-        }
-
-        solicitud.asignarAGestora(request.getGestoraId(), request.getGestoraNombre());
-        SolicitudBolsa solicitudActualizada = solicitudBolsaRepository.save(solicitud);
-
-        return SolicitudBolsaMapper.toDto(solicitudActualizada);
+    public void eliminarSolicitud(Long id) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
 
-    // ========================================================================
-    // 📄 EXPORTACIÓN
-    // ========================================================================
+    @Override
+    public SolicitudBolsaDTO asignarAGestora(Long id, AsignarGestoraRequest request) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
+    }
 
     @Override
     public byte[] exportarCSV(List<Long> ids) {
-        log.info("📄 Exportando {} solicitudes a CSV", ids.size());
-
-        List<SolicitudBolsa> solicitudes = solicitudBolsaRepository.findAllById(ids);
-
-        try (ByteArrayOutputStream output = new ByteArrayOutputStream();
-             PrintWriter writer = new PrintWriter(output)) {
-
-            // Encabezados CSV
-            writer.println("ID,Número,DNI,Paciente,Teléfono,Email,Bolsa,Estado,Gestora,Fecha Solicitud,Fecha Asignación");
-
-            // Filas de datos
-            for (SolicitudBolsa solicitud : solicitudes) {
-                writer.printf("%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
-                    solicitud.getIdSolicitud(),
-                    solicitud.getNumeroSolicitud(),
-                    solicitud.getPacienteDni(),
-                    solicitud.getPacienteNombre(),
-                    solicitud.getPacienteTelefono() != null ? solicitud.getPacienteTelefono() : "",
-                    solicitud.getPacienteEmail() != null ? solicitud.getPacienteEmail() : "",
-                    solicitud.getBolsa() != null ? solicitud.getBolsa().getNombreBolsa() : "",
-                    solicitud.getEstado(),
-                    solicitud.getResponsableGestoraNombre() != null ? solicitud.getResponsableGestoraNombre() : "",
-                    solicitud.getFechaSolicitud(),
-                    solicitud.getFechaAsignacion() != null ? solicitud.getFechaAsignacion() : ""
-                );
-            }
-
-            writer.flush();
-            return output.toByteArray();
-
-        } catch (Exception e) {
-            log.error("❌ Error al exportar CSV: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al exportar solicitudes a CSV: " + e.getMessage());
-        }
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
-
-    // ========================================================================
-    // 📧 RECORDATORIOS
-    // ========================================================================
 
     @Override
-    @Transactional
-    public SolicitudBolsaDTO enviarRecordatorio(Long idSolicitud, EnviarRecordatorioRequest request) {
-        log.info("📧 Enviando recordatorio {} para solicitud ID: {}", request.getTipo(), idSolicitud);
-
-        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
-                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
-
-        if (solicitud.getEstadoGestionCitasId() == null ||
-            !solicitud.getEstadoGestionCitasId().equals(1L)) { // CITADO
-            throw new RuntimeException("Solo se pueden enviar recordatorios para pacientes citados");
-        }
-
-        String tipoRecordatorio = request.getTipo().toUpperCase();
-
-        try {
-            if ("WHATSAPP".equals(tipoRecordatorio)) {
-                // Enviar WhatsApp
-                if (solicitud.getPacienteTelefono() != null && !solicitud.getPacienteTelefono().isEmpty()) {
-                    String mensaje = request.getMensaje() != null && !request.getMensaje().isEmpty()
-                        ? request.getMensaje()
-                        : String.format("Recordatorio de cita: Estimado(a) %s, le recordamos su cita. Por favor, confirme su asistencia.",
-                            solicitud.getPacienteNombre());
-
-                    // TODO: Integrar con servicio de WhatsApp cuando esté disponible
-                    log.info("📱 Recordatorio WhatsApp pendiente de envío a {}: {}",
-                        solicitud.getPacienteTelefono(), mensaje);
-                    log.warn("⚠️ WhatsApp service no implementado yet. Message queued for delivery.");
-                } else {
-                    throw new RuntimeException("El paciente no tiene número de WhatsApp registrado");
-                }
-            } else if ("EMAIL".equals(tipoRecordatorio)) {
-                // Enviar Email recordatorio
-                if (solicitud.getPacienteEmail() != null && !solicitud.getPacienteEmail().isEmpty()) {
-                    // TODO: Implementar método genérico en EmailService para enviar recordatorios
-                    // Por ahora, registramos el recordatorio para envío manual o integración futura
-                    log.info("📧 Recordatorio EMAIL pendiente de envío a {}", solicitud.getPacienteEmail());
-                    if (request.getMensaje() != null && !request.getMensaje().isEmpty()) {
-                        log.info("    Mensaje personalizado: {}", request.getMensaje());
-                    }
-                    log.warn("⚠️ Email service para recordatorios aún no está completamente integrado. " +
-                        "Revisar implementación de EmailService para agregar método público genérico.");
-                } else {
-                    throw new RuntimeException("El paciente no tiene correo electrónico registrado");
-                }
-            } else {
-                throw new RuntimeException("Tipo de recordatorio no válido: " + tipoRecordatorio);
-            }
-
-            solicitud.marcarRecordatorioEnviado();
-            SolicitudBolsa solicitudActualizada = solicitudBolsaRepository.save(solicitud);
-
-            return SolicitudBolsaMapper.toDto(solicitudActualizada);
-
-        } catch (Exception e) {
-            log.error("❌ Error al enviar recordatorio: {}", e.getMessage(), e);
-            throw new RuntimeException("Error al enviar recordatorio: " + e.getMessage());
-        }
+    public SolicitudBolsaDTO enviarRecordatorio(Long id, EnviarRecordatorioRequest request) {
+        log.warn(DEPRECATED_MESSAGE);
+        throw new UnsupportedOperationException(DEPRECATED_MESSAGE);
     }
-
 }

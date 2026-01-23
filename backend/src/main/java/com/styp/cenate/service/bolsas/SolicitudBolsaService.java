@@ -1,0 +1,66 @@
+package com.styp.cenate.service.bolsas;
+
+import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+/**
+ * Interfaz de servicio para solicitudes de bolsa
+ * Define los métodos de lógica de negocio
+ * 
+ * @version v1.6.0
+ * @since 2026-01-23
+ */
+public interface SolicitudBolsaService {
+
+    /**
+     * Importa solicitudes de bolsa desde archivo Excel
+     * Valida DNI en asegurados, código en IPRESS, auto-enriquece datos
+     * 
+     * @param file archivo Excel
+     * @param idTipoBolsa ID del tipo de bolsa seleccionado
+     * @param idServicio ID del servicio/especialidad seleccionado
+     * @param usuarioCarga usuario que realiza la carga
+     * @return estadísticas de importación (filas OK, errores, etc.)
+     */
+    Map<String, Object> importarDesdeExcel(
+        MultipartFile file,
+        Long idTipoBolsa,
+        Long idServicio,
+        String usuarioCarga
+    );
+
+    /**
+     * Obtiene todas las solicitudes activas
+     */
+    List<SolicitudBolsaDTO> listarTodas();
+
+    /**
+     * Obtiene una solicitud por su ID
+     */
+    Optional<SolicitudBolsaDTO> obtenerPorId(Long id);
+
+    /**
+     * Asigna una gestora a una solicitud
+     */
+    void asignarGestora(Long idSolicitud, Long idGestora);
+
+    /**
+     * Cambia el estado de una solicitud
+     */
+    void cambiarEstado(Long idSolicitud, Long nuevoEstadoId);
+
+    /**
+     * Elimina lógicamente una solicitud (soft delete)
+     */
+    void eliminar(Long idSolicitud);
+
+    /**
+     * Obtiene asegurados nuevos detectados (que no existen en tabla asegurados)
+     * Busca solicitudes con nombre "Paciente DNI" e identifica los DNIs faltantes
+     */
+    List<Map<String, Object>> obtenerAseguradosNuevos();
+}

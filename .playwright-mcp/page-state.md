@@ -1,0 +1,157 @@
+### Page state
+- Page URL: http://localhost:3000/bolsas/cargar-excel
+- Page Title: Intranet CENATE
+- Page Snapshot:
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e62]
+        - button "Colapsar menu" [ref=e10] [cursor=pointer]:
+          - img [ref=e11]
+      - navigation [ref=e13]:
+        - button "Administración" [ref=e64] [cursor=pointer]:
+          - generic [ref=e65]:
+            - img [ref=e66]
+            - generic [ref=e69]: Administración
+          - img [ref=e70]
+        - button "Asegurados" [ref=e73] [cursor=pointer]:
+          - generic [ref=e74]:
+            - img [ref=e75]
+            - generic [ref=e80]: Asegurados
+          - img [ref=e81]
+        - button "Bolsas de Pacientes" [ref=e84] [cursor=pointer]:
+          - generic [ref=e85]:
+            - img [ref=e86]
+            - generic [ref=e90]: Bolsas de Pacientes
+          - img [ref=e91]
+        - button "ChatBot Citas" [ref=e94] [cursor=pointer]:
+          - generic [ref=e95]:
+            - img [ref=e96]
+            - generic [ref=e99]: ChatBot Citas
+          - img [ref=e100]
+        - button "Coordinador de Gestión de Citas" [ref=e103] [cursor=pointer]:
+          - generic [ref=e104]:
+            - img [ref=e105]
+            - generic [ref=e110]: Coordinador de Gestión de Citas
+          - img [ref=e111]
+        - button "Enfermería" [ref=e114] [cursor=pointer]:
+          - generic [ref=e115]:
+            - img [ref=e116]
+            - generic [ref=e119]: Enfermería
+          - img [ref=e120]
+        - button "Gestión de Citas" [ref=e123] [cursor=pointer]:
+          - generic [ref=e124]:
+            - img [ref=e125]
+            - generic [ref=e128]: Gestión de Citas
+          - img [ref=e129]
+        - button "Gestión de Coordinador Médico" [ref=e132] [cursor=pointer]:
+          - generic [ref=e133]:
+            - img [ref=e134]
+            - generic [ref=e146]: Gestión de Coordinador Médico
+          - img [ref=e147]
+        - button "Gestión de Módulos" [ref=e150] [cursor=pointer]:
+          - generic [ref=e151]:
+            - img [ref=e152]
+            - generic [ref=e156]: Gestión de Módulos
+          - img [ref=e157]
+        - button "Gestión de Personal Externo" [ref=e160] [cursor=pointer]:
+          - generic [ref=e161]:
+            - img [ref=e162]
+            - generic [ref=e167]: Gestión de Personal Externo
+          - img [ref=e168]
+        - button "Gestión Territorial" [ref=e171] [cursor=pointer]:
+          - generic [ref=e172]:
+            - img [ref=e173]
+            - generic [ref=e175]: Gestión Territorial
+          - img [ref=e176]
+        - button "IPRESS" [ref=e179] [cursor=pointer]:
+          - generic [ref=e180]:
+            - img [ref=e181]
+            - generic [ref=e185]: IPRESS
+          - img [ref=e186]
+        - button "Panel Médico" [ref=e189] [cursor=pointer]:
+          - generic [ref=e190]:
+            - img [ref=e191]
+            - generic [ref=e195]: Panel Médico
+          - img [ref=e196]
+        - button "Programacion CENATE" [ref=e199] [cursor=pointer]:
+          - generic [ref=e200]:
+            - img [ref=e201]
+            - generic [ref=e203]: Programacion CENATE
+          - img [ref=e204]
+        - button "TeleECG" [ref=e207] [cursor=pointer]:
+          - generic [ref=e208]:
+            - img [ref=e209]
+            - generic [ref=e211]: TeleECG
+          - img [ref=e212]
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - img [ref=e18]
+          - generic [ref=e22]: Estado del Sistema
+        - generic [ref=e23]:
+          - generic [ref=e24]:
+            - generic [ref=e25]: Modulos activos
+            - generic [ref=e26]: "15"
+          - generic [ref=e27]:
+            - generic [ref=e28]: Sistema
+            - generic [ref=e29]:
+              - img [ref=e30]
+              - text: OK
+      - paragraph [ref=e34]: v1.18.0
+  - main "Contenido principal" [ref=e35]:
+    - generic [ref=e37]:
+      - heading [level=1]
+      - generic [ref=e38]:
+        - button "Notificaciones" [ref=e39] [cursor=pointer]:
+          - img [ref=e40]
+        - button "Menú de usuario" [ref=e44] [cursor=pointer]:
+          - generic [ref=e214]: SC
+          - generic [ref=e47]:
+            - generic "Styp Canto" [ref=e48]
+            - generic "Superadministrador" [ref=e49]
+            - generic "CENTRO NACIONAL DE TELEMEDICINA" [ref=e215]
+          - img [ref=e51]
+    - generic [ref=e54]:
+      - generic [ref=e217]:
+        - generic [ref=e218]:
+          - heading "📁 Cargar desde Excel" [level=1] [ref=e219]
+          - paragraph [ref=e220]: Importa bolsas de pacientes desde archivos Excel o CSV
+        - generic [ref=e221]:
+          - generic [ref=e222] [cursor=pointer]:
+            - img [ref=e223]
+            - heading "Arrastra tu archivo aquí" [level=3] [ref=e226]
+            - paragraph [ref=e227]: O haz clic para seleccionar
+            - generic [ref=e228]: Seleccionar Archivo
+          - generic [ref=e241]:
+            - img [ref=e242]
+            - generic [ref=e245]:
+              - paragraph [ref=e246]: BOLSA DE LA RED AREQUIPA DIC25.xlsx
+              - paragraph [ref=e247]: 168.47 KB
+          - generic [ref=e248]:
+            - generic [ref=e249]: "📋 Selecciona el Tipo de Bolsa:"
+            - combobox [ref=e250]:
+              - option "-- Selecciona un tipo de bolsa --"
+              - option "BOLSA_107 - Bolsa 107 - Importación de pacientes masiva"
+              - option "BOLSA_DENGUE - Bolsa Dengue - Control epidemiológico"
+              - option "BOLSA_GESTORES_TERRITORIAL - Bolsa Gestores Territorial - Gestión territorial"
+              - option "BOLSAS_ENFERMERIA - Bolsas Enfermería - Atenciones de enfermería"
+              - option "BOLSAS_EXPLOTADATOS - Bolsas Explotación de Datos - Análisis y reportes" [selected]
+              - option "BOLSAS_IVR - Bolsas IVR - Sistema interactivo de respuesta de voz"
+              - option "BOLSAS_REPROGRAMACION - Bolsas Reprogramación - Citas reprogramadas"
+          - generic [ref=e229]:
+            - button "Importar" [active] [ref=e230] [cursor=pointer]:
+              - img [ref=e231]
+              - text: Importar
+            - button "Cancelar" [ref=e234] [cursor=pointer]
+          - generic [ref=e235]:
+            - heading "📋 Formato esperado:" [level=4] [ref=e236]
+            - list [ref=e237]:
+              - listitem [ref=e238]: "• Primera fila: encabezados (DNI, Nombres, Apellidos, Fecha Nacimiento...)"
+              - listitem [ref=e239]: "• Soporta formatos: .xlsx, .xls, .csv"
+              - listitem [ref=e240]: • Máximo 10,000 registros por archivo
+      - generic [ref=e59]:
+        - paragraph [ref=e60]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e61]: "v1.18.0 - Personal Externo: Gestión Modalidad + Bienvenida"
+```

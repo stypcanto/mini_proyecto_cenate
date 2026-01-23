@@ -57,6 +57,11 @@ export default function AprobacionSolicitudes() {
   const [filtroIpress, setFiltroIpress] = useState(""); // Filtro por IPRESS
   const [filtroFechaDesde, setFiltroFechaDesde] = useState(""); // Filtro fecha desde
   const [filtroFechaHasta, setFiltroFechaHasta] = useState(""); // Filtro fecha hasta
+  const [filtroMacroregion, setFiltroMacroregion] = useState(""); // Filtro por Macrorregión
+  const [filtroRed, setFiltroRed] = useState(""); // Filtro por Red
+  const [macrorregiones, setMacrorregiones] = useState([]); // Lista de macrorregiones
+  const [redes, setRedes] = useState([]); // Lista de redes
+  const [cargandoOpciones, setCargandoOpciones] = useState(false);
 
   // Estados para selección múltiple
   const [seleccionados, setSeleccionados] = useState(new Set());
@@ -78,8 +83,26 @@ export default function AprobacionSolicitudes() {
   useEffect(() => {
     if (vistaActual === "pendientes-activacion") {
       cargarUsuariosPendientes();
+      cargarOpcionesFiltros();
     }
   }, [vistaActual]);
+
+  // Cargar macrorregiones y redes para los filtros
+  const cargarOpcionesFiltros = async () => {
+    try {
+      setCargandoOpciones(true);
+      const [macrosResp, redesResp] = await Promise.all([
+        apiClient.get("/api/macrorregiones", true),
+        apiClient.get("/api/redes", true)
+      ]);
+      setMacrorregiones(macrosResp || []);
+      setRedes(redesResp || []);
+    } catch (error) {
+      console.error("Error al cargar opciones de filtros:", error);
+    } finally {
+      setCargandoOpciones(false);
+    }
+  };
 
   // Verificar existencia de usuarios cuando carguen las solicitudes
   useEffect(() => {
@@ -178,6 +201,21 @@ export default function AprobacionSolicitudes() {
     } catch (error) {
       console.error("Error al cargar usuarios pendientes:", error);
       toast.error("Error al cargar usuarios pendientes de activación");
+    } finally {
+      setLoadingPendientes(false);
+    }
+  };
+
+  // Cargar usuarios filtrados por Red (desde backend)
+  const cargarUsuariosPorRed = async (idRed) => {
+    try {
+      setLoadingPendientes(true);
+      const data = await apiClient.get(`/admin/usuarios/pendientes-activacion/por-red/${idRed}`, true);
+      console.log("Usuarios filtrados por red:", data);
+      setUsuariosPendientes(data || []);
+    } catch (error) {
+      console.error("Error al cargar usuarios por red:", error);
+      toast.error("Error al cargar usuarios de la red");
     } finally {
       setLoadingPendientes(false);
     }
@@ -284,6 +322,9 @@ export default function AprobacionSolicitudes() {
       resultados = resultados.filter(u => u.ipress === filtroIpress);
     }
 
+    // NOTA: Los filtros por Red y Macrorregión ahora se hacen en el backend
+    // cuando se seleccionan en los selectores, por eso no se filtran aquí
+
     // Filtro por fecha desde
     if (filtroFechaDesde) {
       const fechaDesde = new Date(filtroFechaDesde);
@@ -308,7 +349,7 @@ export default function AprobacionSolicitudes() {
     }
 
     return resultados;
-  }, [usuariosPendientes, busquedaPendientes, filtroIpress, filtroFechaDesde, filtroFechaHasta]);
+  }, [usuariosPendientes, busquedaPendientes, filtroIpress, filtroFechaDesde, filtroFechaHasta, filtroMacroregion, filtroRed]);
 
   // Limpiar selección cuando cambia la búsqueda o los datos
   useEffect(() => {
@@ -320,11 +361,13 @@ export default function AprobacionSolicitudes() {
     setFiltroIpress("");
     setFiltroFechaDesde("");
     setFiltroFechaHasta("");
+    setFiltroMacroregion("");
+    setFiltroRed("");
     setBusquedaPendientes("");
   };
 
   // Verificar si hay filtros activos
-  const hayFiltrosActivos = filtroIpress || filtroFechaDesde || filtroFechaHasta;
+  const hayFiltrosActivos = filtroIpress || filtroFechaDesde || filtroFechaHasta || filtroMacroregion || filtroRed;
 
   // Funciones de selección
   const toggleSeleccion = (idUsuario) => {
@@ -865,7 +908,55 @@ export default function AprobacionSolicitudes() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+              {/* Filtro por Macrorregión */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-2">
+                  🗺️ Macrorregión
+                </label>
+                <select
+                  value={filtroMacroregion}
+                  onChange={(e) => setFiltroMacroregion(e.target.value)}
+                  disabled={cargandoOpciones}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all text-sm disabled:bg-slate-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">Todas</option>
+                  {macrorregiones.map((macro) => (
+                    <option key={macro.idMacro} value={macro.idMacro}>
+                      {macro.descMacro}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Filtro por Red */}
+              <div>
+                <label className="block text-xs font-medium text-slate-600 mb-2">
+                  🏥 Red
+                </label>
+                <select
+                  value={filtroRed}
+                  onChange={(e) => {
+                    const redValue = e.target.value;
+                    setFiltroRed(redValue);
+                    if (redValue) {
+                      cargarUsuariosPorRed(redValue);
+                    } else {
+                      cargarUsuariosPendientes();
+                    }
+                  }}
+                  disabled={cargandoOpciones}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all text-sm disabled:bg-slate-100 disabled:cursor-not-allowed"
+                >
+                  <option value="">Todas</option>
+                  {redes.map((red) => (
+                    <option key={red.idRed} value={red.idRed}>
+                      {red.descRed}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Filtro por IPRESS */}
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-2">
@@ -877,7 +968,7 @@ export default function AprobacionSolicitudes() {
                   onChange={(e) => setFiltroIpress(e.target.value)}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all text-sm"
                 >
-                  <option value="">Todas las IPRESS</option>
+                  <option value="">Todas</option>
                   {listaIpress.map((ipress) => (
                     <option key={ipress} value={ipress}>
                       {ipress}
@@ -890,7 +981,7 @@ export default function AprobacionSolicitudes() {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
-                  Fecha Desde
+                  Desde
                 </label>
                 <input
                   type="date"
@@ -904,7 +995,7 @@ export default function AprobacionSolicitudes() {
               <div>
                 <label className="block text-xs font-medium text-slate-600 mb-2">
                   <Calendar className="w-4 h-4 inline mr-1" />
-                  Fecha Hasta
+                  Hasta
                 </label>
                 <input
                   type="date"
@@ -920,6 +1011,8 @@ export default function AprobacionSolicitudes() {
               <div className="mt-4 pt-4 border-t border-slate-200">
                 <p className="text-sm text-slate-600">
                   Mostrando <span className="font-semibold text-orange-600">{usuariosFiltrados.length}</span> de <span className="font-semibold">{usuariosPendientes.length}</span> usuarios
+                  {filtroMacroregion && <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Macrorregión: {macrorregiones.find(m => m.idMacro == filtroMacroregion)?.descMacro}</span>}
+                  {filtroRed && <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Red: {redes.find(r => r.idRed == filtroRed)?.descRed}</span>}
                   {filtroIpress && <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">IPRESS: {filtroIpress}</span>}
                   {filtroFechaDesde && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Desde: {new Date(filtroFechaDesde).toLocaleDateString('es-PE')}</span>}
                   {filtroFechaHasta && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Hasta: {new Date(filtroFechaHasta).toLocaleDateString('es-PE')}</span>}

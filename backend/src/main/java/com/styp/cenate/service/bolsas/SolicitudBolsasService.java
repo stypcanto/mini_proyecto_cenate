@@ -7,137 +7,49 @@ import org.springframework.data.domain.Pageable;
 import java.util.List;
 
 /**
- * 📋 Servicio para gestión de Solicitudes de Bolsas
- * v1.0.0 - Interface de servicio
+ * Interfaz LEGACY para compatibilidad con BolsasController
+ * Esta clase actúa como alias/wrapper de SolicitudBolsaService
+ * Para código nuevo, usar SolicitudBolsaService
+ *
+ * @deprecated Usar SolicitudBolsaService en su lugar
+ * @version v1.6.0
+ * @since 2026-01-23
  */
+@Deprecated
 public interface SolicitudBolsasService {
 
-    // ========================================================================
-    // 🔍 CONSULTAS
-    // ========================================================================
-
-    /**
-     * Obtiene todas las solicitudes
-     */
+    // Métodos stub para compatibilidad con controlador antiguo
     List<SolicitudBolsaDTO> obtenerTodasLasSolicitudes();
 
-    /**
-     * Obtiene una solicitud por ID
-     */
-    SolicitudBolsaDTO obtenerSolicitudPorId(Long idSolicitud);
+    SolicitudBolsaDTO obtenerSolicitudPorId(Long id);
 
-    /**
-     * Obtiene solicitud por número
-     */
-    SolicitudBolsaDTO obtenerSolicitudPorNumero(String numeroSolicitud);
+    SolicitudBolsaDTO obtenerSolicitudPorNumero(String numero);
 
-    /**
-     * Obtiene solicitudes de una bolsa
-     */
     List<SolicitudBolsaDTO> obtenerSolicitudesPorBolsa(Long idBolsa);
 
-    /**
-     * Obtiene solicitudes de un paciente
-     */
     List<SolicitudBolsaDTO> obtenerSolicitudesPorPaciente(String dni);
 
-    /**
-     * Obtiene solicitudes por estado
-     */
     List<SolicitudBolsaDTO> obtenerSolicitudesPorEstado(String estado);
 
-    /**
-     * Obtiene solicitudes pendientes
-     */
     List<SolicitudBolsaDTO> obtenerSolicitudesPendientes();
 
-    /**
-     * Búsqueda paginada con filtros
-     */
     Page<SolicitudBolsaDTO> buscarSolicitudes(String nombrePaciente, String dni, String estado, String numeroSolicitud, Pageable pageable);
 
-    /**
-     * Obtiene estadísticas de solicitudes
-     */
-    EstadisticasSolicitudesDTO obtenerEstadisticas();
+    Object obtenerEstadisticas();
 
-    // ========================================================================
-    // ✏️ CREACIÓN Y ACTUALIZACIÓN
-    // ========================================================================
-
-    /**
-     * Crea una nueva solicitud
-     */
     SolicitudBolsaDTO crearSolicitud(SolicitudBolsaRequestDTO request);
 
-    /**
-     * Actualiza una solicitud
-     */
-    SolicitudBolsaDTO actualizarSolicitud(Long idSolicitud, SolicitudBolsaRequestDTO request);
+    SolicitudBolsaDTO actualizarSolicitud(Long id, SolicitudBolsaRequestDTO request);
 
-    // ========================================================================
-    // ✅ APROBACIÓN Y RECHAZO
-    // ========================================================================
+    SolicitudBolsaDTO aprobarSolicitud(Long id, Long responsableId, String responsableNombre, String notas);
 
-    /**
-     * Aprueba una solicitud
-     */
-    SolicitudBolsaDTO aprobarSolicitud(Long idSolicitud, Long responsableId, String responsableNombre, String notas);
+    SolicitudBolsaDTO rechazarSolicitud(Long id, Long responsableId, String responsableNombre, String razon);
 
-    /**
-     * Rechaza una solicitud
-     */
-    SolicitudBolsaDTO rechazarSolicitud(Long idSolicitud, Long responsableId, String responsableNombre, String razon);
+    void eliminarSolicitud(Long id);
 
-    // ========================================================================
-    // 🗑️ ELIMINACIÓN
-    // ========================================================================
+    SolicitudBolsaDTO asignarAGestora(Long id, AsignarGestoraRequest request);
 
-    /**
-     * Elimina una solicitud (solo si está pendiente)
-     */
-    void eliminarSolicitud(Long idSolicitud);
-
-    // ========================================================================
-    // 👤 ASIGNACIÓN A GESTORA
-    // ========================================================================
-
-    /**
-     * Asigna una solicitud a una gestora de citas
-     */
-    SolicitudBolsaDTO asignarAGestora(Long idSolicitud, AsignarGestoraRequest request);
-
-    // ========================================================================
-    // 📄 EXPORTACIÓN
-    // ========================================================================
-
-    /**
-     * Exporta solicitudes a CSV
-     */
     byte[] exportarCSV(List<Long> ids);
 
-    // ========================================================================
-    // 📧 RECORDATORIOS
-    // ========================================================================
-
-    /**
-     * Envía recordatorio de cita al paciente
-     */
-    SolicitudBolsaDTO enviarRecordatorio(Long idSolicitud, EnviarRecordatorioRequest request);
-
-    // ========================================================================
-    // 📊 DTO INTERNAS
-    // ========================================================================
-
-    /**
-     * DTO para estadísticas
-     */
-    record EstadisticasSolicitudesDTO(
-        Long totalSolicitudes,
-        Long solicitudesPendientes,
-        Long solicitudesAprobadas,
-        Long solicitudesRechazadas,
-        Double porcentajeAprobadas,
-        Long solicitudesAntiguas
-    ) {}
+    SolicitudBolsaDTO enviarRecordatorio(Long id, EnviarRecordatorioRequest request);
 }

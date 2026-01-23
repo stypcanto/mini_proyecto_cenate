@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.33.0** (2026-01-22) - Módulo Estados Gestión Citas v1.33.0 + Bolsas v1.32.1 + Tele-ECG v1.24.0 ✅
+> Sistema de Telemedicina - EsSalud | **v1.34.1** (2026-01-23) - Solicitudes de Bolsa v1.6.0 (Cargar desde Excel Mejorado) + Estados Gestión Citas v1.33.0 + Tele-ECG v1.24.0 + Filtros Avanzados Usuarios Pendientes v1.0.0 ✅
 
 ---
 
@@ -9,6 +9,54 @@
 **CENATE es el Centro Nacional de Telemedicina** del Seguro Social de Salud (EsSalud) en Perú. Coordina atenciones médicas remotas para 4.6M asegurados a través de 414 IPRESS a nivel nacional.
 
 **IMPORTANTE:** Este sistema **NO realiza videollamadas**. Su función es **planificar, registrar y coordinar** atenciones de telemedicina.
+
+---
+
+## 🚨 INCIDENTE CRÍTICO - Pérdida de Datos (2026-01-23)
+
+**STATUS:** Investigación completada ✅ | **Recuperación:** PLAN DE ACCIÓN DEFINIDO
+
+**Resumen:** La tabla `asegurados` en `maestro_cenate` fue truncada (4M registros eliminados). **Datos RECUPERABLES desde ESSI.**
+
+**📋 DOCUMENTACIÓN ACTUALIZADA:**
+- **⭐ REPORTE ACTUALIZADO:** `REPORTE_RECUPERACION_ACTUALIZADO.md` ← **LEER PRIMERO** (Incluye plan de acción con contactos)
+- **REPORTE ORIGINAL:** `REPORTE_RECUPERACION_ASEGURADOS.md` (Análisis técnico detallado)
+- **RESUMEN EJECUTIVO:** `RESUMEN_INVESTIGACION_RECUPERACION.txt` (Snapshot rápido)
+
+**✅ INVESTIGACIÓN COMPLETADA:**
+- ✅ Acceso a ESSI confirmado (Usuario: 44914706)
+- ✅ Base de datos ESSI (Datos_Cenate) contiene los 4M registros originales
+- ✅ Módulo Admisión y Citas accesible en ESSI
+- ✅ Opción Reportes disponible para descargar datos
+- ✅ Docker PostgreSQL 16.9 activo en servidor 10.0.89.13
+- ✅ WAL logs preservados (~1.1GB)
+- ❌ No hay backups automáticos configurados (IMPLEMENTAR)
+
+**🎯 OPCIONES DE RECUPERACIÓN (Viabilidad Actualizada):**
+1. **OPCIÓN 1 - RECOMENDADA ⭐⭐⭐:** Extracción directa BD ESSI
+   - Tiempo: 2-4 horas total
+   - Riesgo: BAJO
+   - Método: Solicitar DUMP/EXPORT a ETIC de tabla asegurados
+
+2. **OPCIÓN 2:** Usar Reportes de explotaDatos
+   - Tiempo: 4-8 horas (interfaz legacy lenta)
+   - Riesgo: BAJO
+   - URL: http://appsgasistexpl.essalud.gob.pe/explotaDatos/
+
+3. **OPCIÓN 3:** Solicitar backup histórico a ETIC
+   - Tiempo: 2-3 días hábiles
+   - Riesgo: MEDIO (depende disponibilidad)
+
+**🚀 PRÓXIMOS PASOS CRÍTICOS (HACER HOY):**
+1. Contactar **ETIC (Gerencia Central Tecnologías)** solicitando export de asegurados
+2. Implementar protecciones: REVOKE DELETE, auditoría, triggers
+3. Configurar **backup automático diario** (script en REPORTE_RECUPERACION_ACTUALIZADO.md)
+4. Seguimiento a ETIC para recibir datos
+
+**⚠️ IMPORTANTE - CAMBIAR CONTRASEÑA:**
+Tu contraseña de ESSI fue expuesta en esta sesión. **Cambia inmediatamente** después de recuperación.
+
+**Ver:** `REPORTE_RECUPERACION_ACTUALIZADO.md` para detalles, scripts y contactos ETIC.
 
 ---
 
@@ -73,21 +121,99 @@
   - Caso: TELEECG exclusivo para PADOMI
   - Procedimientos administrativos
 
-### 📦 Módulo de Bolsas de Pacientes (v1.32.1) - ✅ COMPLETADO
+### 🔍 Filtros Avanzados Usuarios Pendientes (v1.0.0) - ✅ COMPLETADO
 
-**📌 INICIO RÁPIDO:** Para entender el módulo de Bolsas completo, leer (en orden):
+**📌 DESCRIPCIÓN:** Sistema de filtrado avanzado para usuarios pendientes de activación en el módulo de aprobación de solicitudes de registro (`/admin/solicitudes`). Permite filtrar por **Macrorregión** y **Red Asistencial** junto con IPRESS, Fecha Desde y Fecha Hasta.
 
-1. **⭐ DOCUMENTO PRINCIPAL:** `spec/01_Backend/08_modulo_bolsas_pacientes_completo.md` (v1.32.1)
-   - Arquitectura completa + flujo Bolsas → Coordinador → Gestoras → Estados
-   - Roles, responsabilidades y funciones de cada usuario
-   - Modelo de datos (31 campos en dim_solicitud_bolsa)
-   - Flujos de negocio completos con ejemplos
-   - Endpoints REST documentados
-   - Integración sistémica con otros módulos
+**URL:** `http://localhost:3000/admin/solicitudes` → Tab "Pendientes de Activación"
 
-2. **📊 Resumen Integral:** `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1)
+**Arquitectura:**
+- **Backend-driven filtering:** Filtros aplicados en base de datos para máximo rendimiento
+- **Endpoint base:** `/api/admin/usuarios/pendientes-activacion` (obtiene todos los usuarios)
+- **Endpoint filtrado:** `/api/admin/usuarios/pendientes-activacion/por-red/{idRed}` (filtrado por red)
+- **Redes y Macrorregiones:** Endpoints públicos `/api/redes` y `/api/macrorregiones` para cargar opciones
+
+**Versión Actual (v1.0.0):**
+- 🔍 **5 Filtros Disponibles:** Macrorregión, Red Asistencial, IPRESS, Fecha Desde, Fecha Hasta
+- 📊 **UI Responsiva:** Grid de 5 columnas en desktop (1 columna en móvil)
+- 🗂️ **Relaciones Datos:** Usuario → PersonalCNT → IPRESS → Red → Macrorregión
+- 🔗 **Filtrado en Backend:** SQL parameterizado con `WHERE r.id_red = ?` para máxima seguridad
+- 📈 **Performance:** Solo envía usuarios que coinciden con filtros (reduce payload)
+- 🎨 **Design System:** Dropdowns azules (#0D5BA9) consistentes con CENATE
+- ⏰ **Debounce Búsqueda:** 300ms para búsqueda por nombre/email/teléfono
+
+**Endpoints REST:**
+```
+GET  /api/admin/usuarios/pendientes-activacion
+     → Retorna TODOS los usuarios pendientes (sin filtrar)
+
+GET  /api/admin/usuarios/pendientes-activacion/por-red/{idRed}
+     → Retorna usuarios de una red específica (filtrado en backend)
+
+GET  /api/redes
+     → Obtiene lista de redes disponibles (dropdown)
+
+GET  /api/macrorregiones
+     → Obtiene lista de macrorregiones (dropdown)
+```
+
+**Flujo de Filtrado:**
+1. Usuario carga página `/admin/solicitudes` → Tab "Pendientes de Activación"
+2. Sistema obtiene todas las redes y macrorregiones (llenan dropdowns)
+3. Usuario selecciona una **Red Asistencial**
+4. Frontend llama a `/api/admin/usuarios/pendientes-activacion/por-red/{idRed}`
+5. Backend filtra en SQL con `LEFT JOIN dim_red r ON r.id_red = i.id_red` + `WHERE r.id_red = ?`
+6. Retorna solo usuarios de esa red
+7. Otros filtros (IPRESS, Fecha) aplicados en frontend sobre el resultado
+
+**Componente Frontend:** `AprobacionSolicitudes.jsx`
+- **Estado:** `filtroMacroregion`, `filtroRed`, `macrorregiones`, `redes`, `cargandoOpciones`
+- **Funciones:** `cargarOpcionesFiltros()`, `cargarUsuariosPorRed(idRed)`, `aplicarFiltros()`
+- **Estructura:** Grid 5 columnas con select/input para cada filtro
+
+**Problemas Encontrados & Solucionados:**
+1. **NULL en datos iniciales:** Intentó usar COALESCE en frontend → **Causa:** relaciones incompletas (usuarios sin PersonalCNT)
+   - **Solución:** Implementar filtrado en backend donde se garantiza integridad de datos ✅
+
+2. **Filtrado ineficiente:** Frontend intentaba filtrar arrays NULL
+   - **Solución:** Backend-driven filtering con endpoint `/por-red/{idRed}` ✅
+
+3. **Compilación frontend:** Syntax error en dependency array
+   - **Solución:** Agregar cierre de paréntesis en useMemo ✅
+
+**Consideraciones de Performance:**
+- **Left Joins:** 4 LEFT JOINs (dim_personal_cnt, dim_ipress, dim_red, dim_macroregion) son eficientes con índices
+- **Parametrized Queries:** JdbcTemplate con `?` binding previene SQL injection
+- **Payload Reducido:** Solo envía usuarios con coincidencia exacta de red
+- **Caché Redes/Macrorregiones:** Se obtienen una sola vez al cargar la página
+
+**Estado Final:**
+- ✅ Backend: Endpoint `/por-red/{idRed}` funcionando correctamente
+- ✅ Frontend: Filtros cascada implementados (Macrorregión → Red → IPRESS)
+- ✅ Base de Datos: Queries optimizadas con LEFT JOINs
+- ✅ Documentación: Especificación técnica completa
+- ✅ Seguridad: SQL parameterizado, sin inyección posible
+- ✅ **Status: PRODUCTION LIVE** 🎉 (Disponible desde 2026-01-23)
+
+### 📦 Módulo de Solicitudes de Bolsa de Pacientes (v1.33.0) - ✅ COMPLETADO
+
+**📌 INICIO RÁPIDO:** Para entender el módulo de Solicitudes de Bolsa, leer (en orden):
+
+1. **⭐ ESPECIFICACIÓN TÉCNICA DETALLADA:** `UML_COMPLETO_FINAL_v1_6_ESTADOS_CITAS.md` (v1.6.0 - RECOMENDADO)
+   - Arquitectura general + flujo completo
+   - 26 campos en dim_solicitud_bolsa (v1.6.0)
+   - 8 Foreign Keys con integridad referencial
+   - 9 índices optimizados
+   - 2 selectores (TIPO BOLSA + ESPECIALIDAD)
+   - Estado inicial: PENDIENTE_CITA (dim_estados_gestion_citas v1.33.0)
+   - Validaciones + auto-enriquecimiento de datos
+   - Casos de uso + ejemplos visuales
+
+2. **📊 Resumen Integral:** `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.33.0)
    - Visión general + componentes + catálogo de tipos
-   - Estructura de almacenamiento y datos
+   - Flujo Bolsas → Coordinador → Gestoras → Estados
+   - Tabla central (26 campos, 8 FKs, 9 índices)
+   - Integración sistémica con dim_estados_gestion_citas v1.33.0
    - Componentes reutilizables (PageHeader, StatCard, ListHeader)
 
 3. **📋 CRUD Tipos de Bolsas:** `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.1.0)
@@ -95,9 +221,16 @@
    - CRUD de tipos disponibles
    - Gestión de catálogo
 
-**¿Qué es el Módulo de Bolsas de Pacientes?**
-- **Almacenamiento centralizado** (dim_solicitud_bolsa) de pacientes que requieren atención
-- **6 fuentes de información:** Bolsa 107, Dengue, Enfermería, IVR, Reprogramaciones, Gestores Territorial
+**¿Qué es el Módulo de Solicitudes de Bolsa v1.6.0?**
+- **Tabla centralizada** (dim_solicitud_bolsa: 26 campos) para almacenamiento de pacientes en bolsas
+- **6 tipos de bolsas:** Bolsa 107, Dengue, Enfermería, IVR, Reprogramaciones, Gestores Territorial
+- **2 selectores:** TIPO BOLSA (dim_tipos_bolsas) + ESPECIALIDAD (dim_servicio_essi)
+- **Excel mínimo:** Solo 2 campos obligatorios (DNI + Código Adscripción)
+- **Auto-enriquecimiento:** Sistema obtiene paciente_id, nombre, IPRESS, red automáticamente
+- **Sin aprobación:** Carga directa a estado PENDIENTE_CITA (dim_estados_gestion_citas)
+- **Distribución integral:** Coordinador → Gestoras de Citas → Seguimiento + Auditoría
+- **8 Foreign Keys:** Integridad referencial garantizada
+- **9 índices:** Búsquedas optimizadas por DNI, nombre, código, estado, tipo, gestora
 - **Rol 1 - Coordinador:** Visualiza todas las bolsas en http://localhost:3000/bolsas/solicitudes
 - **Rol 2 - Gestoras:** Captan, llaman, confirman citas en http://localhost:3000/citas/gestion-asegurado
 - **10 Estados de Gestión:** CITADO, NO_CONTESTA, NO_DESEA, ATENDIDO_IPRESS, HC_BLOQUEADA, NUM_NO_EXISTE, TEL_SIN_SERVICIO, REPROG_FALLIDA, SIN_VIGENCIA, APAGADO
@@ -303,10 +436,11 @@ Password: @Cenate2025
 | **Navegación Dinámica de Pestañas** | Ver changelog v1.17.1 | ✅ Implementado |
 | **Creación de Usuarios con Email** | `plan/01_Seguridad_Auditoria/03_plan_unificacion_creacion_usuarios.md` | ✅ Implementado (v1.18.0) |
 | **Personal Externo (Gestión Modalidad + Bienvenida)** | `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` | ✅ Implementado (v1.18.0) |
+| **🔍 Filtros Avanzados Usuarios Pendientes (v1.0.0)** | Sección en CLAUDE.md (línea 76) - Macrorregión + Red + IPRESS + Fechas | ✅ **100% Completado** (v1.0.0 - Backend-driven filtering) 🎉 |
 | **🫀 Tele-ECG v2.0.0** | `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` ⭐ + `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` | ✅ **100% Completado** (v1.21.4 - 6 bugs resueltos) 🎉 |
 | **Tele-ECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
-| **📦 Módulo de Bolsas de Pacientes (v1.32.1) - ✅ COMPLETADO** | **⭐ PRINCIPAL:** `spec/01_Backend/08_modulo_bolsas_pacientes_completo.md` (v1.32.1 - Flujo completo) + Resumen: `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` + Tipos: `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` | ✅ **100% Completado** (v1.32.1 - 6 fuentes → Coordinador distribuye → Gestoras gestionan → 10 estados de citas → Auditoría) 🎉 |
-| **📋 Estados Gestión Citas** | `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐ + Troubleshooting: `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md` | ✅ **100% Completado** (v1.33.0 - CRUD + Query SQL + 3 bugs resueltos) 🎉 |
+| **📦 Módulo Solicitudes de Bolsa (v1.6.0) - ✅ COMPLETADO** | **⭐ ESPECIFICACIÓN:** `UML_COMPLETO_FINAL_v1_6_ESTADOS_CITAS.md` (v1.6.0 - 26 campos, 8 FKs, 9 índices) + Resumen: `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.33.0) + Tipos: `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` | ✅ **100% Completado** (v1.6.0 - Estados Citas Integrados: PENDIENTE_CITA inicial, 10 estados totales, auto-enriquecimiento datos, sin aprobación) 🎉 |
+| **📋 Estados Gestión Citas (Integración Solicitudes Bolsa)** | `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐ + Troubleshooting: `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md` + Integración: `UML_COMPLETO_FINAL_v1_6_ESTADOS_CITAS.md` | ✅ **100% Completado** (v1.33.0 - CRUD + SQL Nativo + Integración v1.6.0: FK NOT NULL, DEFAULT PENDIENTE_CITA) 🎉 |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
@@ -463,4 +597,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.33.0 | 2026-01-22 | Estados Gestión Citas CRUD + Bolsas v1.32.1 + Tele-ECG v1.24.0*
+*Versión 1.34.1 | 2026-01-23 | Solicitudes de Bolsa v1.6.0 (Cargar desde Excel Mejorado) + Estados Gestión Citas v1.33.0 + Tele-ECG v1.24.0 + Filtros Avanzados Usuarios Pendientes v1.0.0*

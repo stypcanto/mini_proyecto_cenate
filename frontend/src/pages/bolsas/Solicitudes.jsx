@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
@@ -36,11 +36,22 @@ export default function Solicitudes() {
   const [modalCambiarTelefono, setModalCambiarTelefono] = useState(false);
   const [modalAsignarGestora, setModalAsignarGestora] = useState(false);
   const [modalEnviarRecordatorio, setModalEnviarRecordatorio] = useState(false);
+  const [modalImportar, setModalImportar] = useState(false);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [nuevoTelefono, setNuevoTelefono] = useState('');
   const [gestoraSeleccionada, setGestoraSeleccionada] = useState(null);
   const [tipoRecordatorio, setTipoRecordatorio] = useState('EMAIL');
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // Estado para importación de Excel
+  const [idTipoBolsaSeleccionado, setIdTipoBolsaSeleccionado] = useState('');
+  const [idServicioSeleccionado, setIdServicioSeleccionado] = useState('');
+  const [archivoExcel, setArchivoExcel] = useState(null);
+  const [isImporting, setIsImporting] = useState(false);
+
+  // Estado para asegurados nuevos
+  const [modalAseguradosNuevos, setModalAseguradosNuevos] = useState(false);
+  const [aseguradosNuevos, setAseguradosNuevos] = useState([]);
 
   useEffect(() => {
     // Cargar solicitudes y catálogos inicialmente
@@ -60,24 +71,44 @@ export default function Solicitudes() {
         bolsasService.obtenerRedes().catch(() => [])
       ]);
 
+      // Debug: Verificar estructura de API response
+      if (solicitudesData && solicitudesData.length > 0) {
+        console.log('📊 DEBUG - Primera solicitud del API:', JSON.stringify(solicitudesData[0], null, 2));
+        console.log('📊 DEBUG - Campos disponibles:', Object.keys(solicitudesData[0]));
+        console.log('📊 DEBUG - Total solicitudes:', solicitudesData.length);
+      }
+
       // Procesar solicitudes y enriquecer con nombres de catálogos
       const solicitudesEnriquecidas = (solicitudesData || []).map(solicitud => {
         return {
           ...solicitud,
-          paciente: solicitud.pacienteNombre || '',
-          telefono: solicitud.pacienteTelefono || '',
-          estado: mapearEstadoAPI(solicitud.estado),
-          semaforo: solicitud.recordatorioEnviado ? 'verde' : 'rojo',
-          diferimiento: calcularDiferimiento(solicitud.fechaSolicitud),
+          id: solicitud.id_solicitud,
+          dni: solicitud.paciente_dni || '',
+          paciente: solicitud.paciente_nombre || '',
+          telefono: solicitud.paciente_telefono || '',
+          correo: solicitud.paciente_email || solicitud.email_pers || '',
+          sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
+          edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
+          estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
+          estadoCodigo: solicitud.cod_estado_cita,
+          semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
+          diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
           especialidad: solicitud.especialidad || 'N/A',
-          sexo: 'N/A',
-          red: solicitud.responsableGestoraNombre || 'Sin asignar',
-          ipress: solicitud.idBolsa ? `Bolsa ${solicitud.idBolsa}` : 'N/A',
-          bolsa: solicitud.nombreBolsa || 'Sin clasificar'
+          red: solicitud.responsable_gestora_nombre || 'Sin asignar',
+          ipress: solicitud.id_bolsa ? `Bolsa ${solicitud.id_bolsa}` : 'N/A',
+          bolsa: solicitud.numero_solicitud || 'Sin clasificar',
+          fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
+          fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A'
         };
       });
 
       setSolicitudes(solicitudesEnriquecidas);
+
+      // Debug: Ver primera solicitud DESPUÉS del procesamiento
+      if (solicitudesEnriquecidas && solicitudesEnriquecidas.length > 0) {
+        console.log('✅ DEBUG ENRIQUECIDA - Primera solicitud después del mapeo:', JSON.stringify(solicitudesEnriquecidas[0], null, 2));
+        console.log('✅ DEBUG - Campos en objeto enriquecido:', Object.keys(solicitudesEnriquecidas[0]));
+      }
 
       // Crear cache de estados, IPRESS y Redes
       if (estadosData && Array.isArray(estadosData)) {
@@ -97,6 +128,10 @@ export default function Solicitudes() {
         redesData.forEach(r => { redesMap[r.id] = r; });
         setCacheRedes(redesMap);
       }
+
+      // Verificar si hay asegurados nuevos sin sincronizar
+      verificarAseguradosNuevos();
+
     } catch (error) {
       console.error('Error cargando datos:', error);
       setErrorMessage('Error al cargar las solicitudes. Intenta nuevamente.');
@@ -105,15 +140,56 @@ export default function Solicitudes() {
     }
   };
 
-  // Helper: Mapear estado API a estado UI
+  // Helper: Mapear estado API a estado UI (v1.6.0 - Estados Gestión Citas)
   const mapearEstadoAPI = (estado) => {
+    // Mapeo de códigos de estado v1.6.0 a estados UI para filtros y estadísticas
     const mapping = {
+      // Estado inicial
+      'PENDIENTE_CITA': 'pendiente',
+
+      // Estados de gestión (después de contacto)
+      'CITADO': 'citado',
+      'NO_CONTESTA': 'observado',
+      'NO_DESEA': 'observado',
+      'ATENDIDO_IPRESS': 'atendido',
+
+      // Estados de bloqueo/error
+      'HC_BLOQUEADA': 'observado',
+      'NUM_NO_EXISTE': 'observado',
+      'TEL_SIN_SERVICIO': 'observado',
+      'REPROG_FALLIDA': 'observado',
+      'SIN_VIGENCIA': 'observado',
+      'APAGADO': 'observado',
+
+      // Compatibilidad hacia atrás (por si API aún retorna valores antiguos)
       'PENDIENTE': 'pendiente',
       'APROBADA': 'citado',
       'RECHAZADA': 'observado',
       'ATENDIDA': 'atendido'
     };
-    return mapping[estado] || 'pendiente';
+
+    // Si es un string (cod_estado_cita), buscar en el mapping
+    if (typeof estado === 'string') {
+      return mapping[estado] || 'pendiente';
+    }
+
+    // Si es un número (estado_gestion_citas_id), mapear basado en ID
+    // IDs típicos: 1=PENDIENTE_CITA, 2=CITADO, 3=NO_CONTESTA, etc.
+    const idMapping = {
+      1: 'pendiente',   // PENDIENTE_CITA
+      2: 'citado',      // CITADO
+      3: 'observado',   // NO_CONTESTA
+      4: 'observado',   // NO_DESEA
+      5: 'atendido',    // ATENDIDO_IPRESS
+      6: 'observado',   // HC_BLOQUEADA
+      7: 'observado',   // NUM_NO_EXISTE
+      8: 'observado',   // TEL_SIN_SERVICIO
+      9: 'observado',   // REPROG_FALLIDA
+      10: 'observado',  // SIN_VIGENCIA
+      11: 'observado'   // APAGADO
+    };
+
+    return idMapping[estado] || 'pendiente';
   };
 
   // Helper: Calcular diferimiento en días desde la fecha de solicitud
@@ -123,6 +199,29 @@ export default function Solicitudes() {
     const hoy = new Date();
     const diferencia = Math.floor((hoy - fecha) / (1000 * 60 * 60 * 24));
     return Math.max(0, diferencia);
+  };
+
+  // Verificar si hay asegurados nuevos detectados (no sincronizados)
+  const verificarAseguradosNuevos = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/bolsas/solicitudes/asegurados-nuevos', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.total > 0) {
+          setAseguradosNuevos(data.asegurados);
+          setModalAseguradosNuevos(true);
+          console.log('⚠️ Se encontraron ' + data.total + ' asegurados nuevos sin sincronizar');
+        }
+      }
+    } catch (error) {
+      console.warn('No se pudo verificar asegurados nuevos:', error.message);
+    }
   };
 
   // Calcular estadísticas
@@ -148,6 +247,20 @@ export default function Solicitudes() {
 
     return matchBusqueda && matchBolsa && matchRed && matchEspecialidad && matchEstado;
   });
+
+  // Debug filtros
+  React.useEffect(() => {
+    if (solicitudes.length > 0 && solicitudesFiltradas.length === 0 && !errorMessage) {
+      console.log('⚠️ DEBUG FILTROS - Solicitudes cargadas pero NINGUNA pasa los filtros:');
+      console.log('  - Total solicitudes:', solicitudes.length);
+      console.log('  - Filtro búsqueda:', searchTerm);
+      console.log('  - Filtro bolsa:', filtroBolsa);
+      console.log('  - Filtro red:', filtroRed);
+      console.log('  - Filtro especialidad:', filtroEspecialidad);
+      console.log('  - Filtro estado:', filtroEstado);
+      console.log('  - Primera solicitud:', solicitudes[0]);
+    }
+  }, [solicitudes, solicitudesFiltradas, searchTerm, filtroBolsa, filtroRed, filtroEspecialidad, filtroEstado, errorMessage]);
 
   const getEstadoBadge = (estado) => {
     const estilos = {
@@ -342,6 +455,41 @@ export default function Solicitudes() {
     }
   };
 
+  // Procesar importación de Excel
+  const handleImportarExcel = async (e) => {
+    e.preventDefault();
+
+    if (!archivoExcel || !idTipoBolsaSeleccionado || !idServicioSeleccionado) {
+      alert('Por favor complete todos los campos: tipo de bolsa, especialidad y archivo Excel');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', archivoExcel);
+    formData.append('idTipoBolsa', idTipoBolsaSeleccionado);
+    formData.append('idServicio', idServicioSeleccionado);
+
+    setIsImporting(true);
+    try {
+      const result = await bolsasService.importarSolicitudesDesdeExcel(formData);
+      alert(`Importación exitosa: ${result.filas_ok} OK, ${result.filas_error} errores`);
+
+      // Limpiar formulario y cerrar modal
+      setModalImportar(false);
+      setIdTipoBolsaSeleccionado('');
+      setIdServicioSeleccionado('');
+      setArchivoExcel(null);
+
+      // Recargar tabla
+      cargarDatos();
+    } catch (error) {
+      console.error('Error al importar Excel:', error);
+      alert('Error al importar: ' + (error.message || 'Intenta nuevamente'));
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
 
   return (
     <div className="min-h-screen bg-slate-50 p-4">
@@ -355,8 +503,9 @@ export default function Solicitudes() {
           }}
           title="Solicitudes"
           primaryAction={{
-            label: "Agregar Paciente",
-            onClick: () => {}
+            label: "Importar desde Excel",
+            onClick: () => setModalImportar(true),
+            icon: Upload
           }}
         />
 
@@ -479,7 +628,7 @@ export default function Solicitudes() {
               <table className="w-full">
                 <thead className="bg-[#0D5BA9] text-white sticky top-0">
                   <tr className="border-b-2 border-blue-800">
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                       <input
                         type="checkbox"
                         checked={selectedRows.size === solicitudesFiltradas.length && solicitudesFiltradas.length > 0}
@@ -487,113 +636,85 @@ export default function Solicitudes() {
                         className="w-5 h-5 cursor-pointer"
                       />
                     </th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Nombre</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Red</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Bolsa</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Fecha Cita</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Fecha Asignación</th>
-                    <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Diferimiento</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Semáforo</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
-                    <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Usuarios</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo Bolsa</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Paciente</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Edad</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Correo</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red Asistencial</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado de Cita</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Solicitante</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestor Asignado</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
                   {solicitudesFiltradas.map((solicitud) => (
-                    <tr key={solicitud.id} className="h-16 border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
-                      <td className="px-6 py-4">
+                    <tr key={solicitud.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+                      <td className="px-4 py-3">
                         <input
                           type="checkbox"
                           checked={selectedRows.has(solicitud.id)}
                           onChange={() => toggleRowSelection(solicitud.id)}
-                          className="w-5 h-5 border-2 border-gray-300 rounded cursor-pointer"
+                          className="w-4 h-4 border-2 border-gray-300 rounded cursor-pointer"
                         />
                       </td>
-                      <td className="px-6 py-4 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 font-medium">{solicitud.paciente}</td>
-                      <td className="px-6 py-4 text-sm text-gray-700 flex items-center gap-2">
-                        <Phone size={18} className="text-blue-500 flex-shrink-0" />
-                        {solicitud.telefono}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.especialidad}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.sexo}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.red}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>{solicitud.ipress}</td>
-                      <td className="px-6 py-4">
-                        <span className={`px-3 py-1 rounded-md text-xs font-semibold ${getBolsaColor(solicitud.bolsa)}`}>
-                          {solicitud.bolsa}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.fechaCita}</td>
-                      <td className="px-6 py-4 text-sm text-gray-900">{solicitud.fechaAsignacion}</td>
-                      <td className="px-6 py-4">
-                        <select
-                          defaultValue={solicitud.estado}
-                          className={`px-3 py-1 rounded-md text-xs font-semibold border-0 cursor-pointer ${getEstadoBadge(solicitud.estado)}`}
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.cod_tipo_bolsa}</td>
+                      <td className="px-4 py-3 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{solicitud.paciente}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.edad || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefono || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.correo || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.nombre_ipress}>{solicitud.nombre_ipress}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.red_asistencial || 'Sin Red'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block ${getEstadoBadge(solicitud.estado)}`}
+                          title={solicitud.estadoCodigo || 'Código de estado'}
                         >
-                          <option value="pendiente">Pendiente</option>
-                          <option value="citado">Citado</option>
-                          <option value="atendido">Atendido</option>
-                          <option value="observado">Observado</option>
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <span className={`text-sm font-bold ${getDiferimiento(solicitud.diferimiento)}`}>
-                          {solicitud.diferimiento} días
+                          {solicitud.estadoCodigo || solicitud.estado}
                         </span>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <Circle size={20} className={`mx-auto ${getSemaforoColor(solicitud.semaforo)}`} fill="currentColor" />
-                      </td>
-                      <td className="px-6 py-4 text-center">
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.solicitante_nombre || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm">
                         <button
-                          onClick={() => handleAbrirCambiarTelefono(solicitud)}
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-md text-sm font-semibold transition-colors disabled:opacity-50"
-                          title="Cambiar celular"
+                          onClick={() => handleAbrirAsignarGestora(solicitud)}
+                          className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-md text-xs font-semibold transition-colors disabled:opacity-50"
                           disabled={isProcessing}
                         >
-                          <Phone size={18} />
-                          Cambiar
+                          {solicitud.red || '(sin asignar)'}
                         </button>
                       </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
+                      <td className="px-4 py-3 text-center">
+                        <div className="flex items-center justify-center gap-1">
                           <button
-                            onClick={() => console.log('Ver detalles:', solicitud)}
-                            className="p-2 hover:bg-gray-100 rounded-md transition-colors text-gray-700 disabled:opacity-50"
-                            title="Ver"
+                            onClick={() => handleAbrirCambiarTelefono(solicitud)}
+                            className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
+                            title="Cambiar teléfono"
                             disabled={isProcessing}
                           >
-                            <Eye size={18} />
-                          </button>
-                          <button
-                            onClick={() => handleAbrirAsignarGestora(solicitud)}
-                            className="p-2 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
-                            title="Asignar gestora"
-                            disabled={isProcessing}
-                          >
-                            <UserPlus size={18} />
+                            <Phone size={16} />
                           </button>
                           <button
                             onClick={() => handleAbrirEnviarRecordatorio(solicitud)}
-                            className="p-2 hover:bg-green-100 rounded-md transition-colors text-green-600 disabled:opacity-50"
+                            className="p-1.5 hover:bg-green-100 rounded-md transition-colors text-green-600 disabled:opacity-50"
                             title="Enviar recordatorio"
                             disabled={isProcessing}
                           >
-                            <Users size={18} />
+                            <Users size={16} />
                           </button>
                           <button
-                            className="p-2 hover:bg-red-100 rounded-md transition-colors text-red-600 disabled:opacity-50"
-                            title="Generar reporte"
+                            className="p-1.5 hover:bg-red-100 rounded-md transition-colors text-red-600 disabled:opacity-50"
+                            title="Más opciones"
                             disabled={isProcessing}
                           >
-                            <FileText size={18} />
+                            <FileText size={16} />
                           </button>
                         </div>
                       </td>
@@ -741,6 +862,211 @@ export default function Solicitudes() {
                 >
                   {isProcessing ? 'Enviando...' : 'Enviar'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL 4: IMPORTAR DESDE EXCEL ====== */}
+        {modalImportar && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-gray-200 sticky top-0 bg-white">
+                <h2 className="text-xl font-bold text-gray-900">Importar Solicitudes desde Excel</h2>
+                <p className="text-sm text-gray-500 mt-1">Cargue un archivo Excel con 2 columnas: DNI y Código Adscripción</p>
+              </div>
+
+              <form onSubmit={handleImportarExcel} className="p-6 space-y-6">
+                {/* PASO 1: Selector Tipo de Bolsa */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    PASO 1: Seleccionar Tipo de Bolsa *
+                  </label>
+                  <select
+                    value={idTipoBolsaSeleccionado}
+                    onChange={(e) => setIdTipoBolsaSeleccionado(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    required
+                  >
+                    <option value="">-- Seleccione un tipo de bolsa --</option>
+                    <option value="1">BOLSA_107 - Importación masiva</option>
+                    <option value="2">BOLSA_DENGUE - Control epidemiológico</option>
+                    <option value="3">BOLSAS_ENFERMERIA - Atenciones de enfermería</option>
+                    <option value="4">BOLSAS_EXPLOTADATOS - Análisis y reportes</option>
+                    <option value="5">BOLSAS_IVR - Sistema IVR</option>
+                    <option value="6">BOLSAS_REPROGRAMACION - Citas reprogramadas</option>
+                    <option value="7">BOLSA_GESTORES_TERRITORIAL - Gestión territorial</option>
+                  </select>
+                </div>
+
+                {/* PASO 2: Selector Especialidad */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    PASO 2: Seleccionar Especialidad *
+                  </label>
+                  <select
+                    value={idServicioSeleccionado}
+                    onChange={(e) => setIdServicioSeleccionado(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    required
+                  >
+                    <option value="">-- Seleccione una especialidad --</option>
+                    <option value="1">Cardiología</option>
+                    <option value="2">Neurología</option>
+                    <option value="3">Oncología</option>
+                    <option value="4">Dermatología</option>
+                    <option value="5">Pediatría</option>
+                    <option value="6">Psicología</option>
+                    <option value="7">Medicina Interna</option>
+                  </select>
+                </div>
+
+                {/* PASO 3: Carga de Archivo Excel */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    PASO 3: Cargar Archivo Excel *
+                  </label>
+                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-400 hover:bg-blue-50 transition">
+                    <Upload className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={(e) => setArchivoExcel(e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="fileInputExcel"
+                      required
+                    />
+                    <label htmlFor="fileInputExcel" className="cursor-pointer">
+                      <p className="text-blue-600 hover:text-blue-700 font-semibold">
+                        {archivoExcel ? archivoExcel.name : 'Haga clic para seleccionar archivo'}
+                      </p>
+                    </label>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Excel debe tener 2 columnas: Columna A = DNI, Columna B = Código Adscripción
+                    </p>
+                  </div>
+                </div>
+
+                {/* Botones */}
+                <div className="flex justify-end gap-3 pt-4 border-t border-gray-200">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setModalImportar(false);
+                      setIdTipoBolsaSeleccionado('');
+                      setIdServicioSeleccionado('');
+                      setArchivoExcel(null);
+                    }}
+                    disabled={isImporting}
+                    className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 font-semibold disabled:opacity-50 transition"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isImporting || !archivoExcel || !idTipoBolsaSeleccionado || !idServicioSeleccionado}
+                    className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold disabled:bg-gray-400 disabled:opacity-50 transition flex items-center gap-2"
+                  >
+                    {isImporting ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                        </svg>
+                        Importando...
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={18} />
+                        Importar
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL 5: ASEGURADOS NUEVOS ====== */}
+        {modalAseguradosNuevos && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-yellow-200 bg-yellow-50 sticky top-0">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">⚠️</div>
+                  <div>
+                    <h2 className="text-xl font-bold text-yellow-900">Asegurados Nuevos Detectados</h2>
+                    <p className="text-sm text-yellow-800 mt-1">Se encontraron {aseguradosNuevos.length} asegurados que no existen en la base de datos</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <p className="text-sm text-gray-700 mb-4">
+                  Los siguientes DNIs están siendo usados en solicitudes pero no están registrados en la base de datos de asegurados.
+                  <strong> Esto impide mostrar sus nombres completos.</strong>
+                </p>
+
+                {/* Tabla de asegurados nuevos */}
+                <div className="overflow-x-auto mb-6">
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="bg-yellow-100">
+                      <tr>
+                        <th className="border border-yellow-300 px-4 py-2 text-left font-semibold text-yellow-900">DNI</th>
+                        <th className="border border-yellow-300 px-4 py-2 text-left font-semibold text-yellow-900">Estado Actual</th>
+                        <th className="border border-yellow-300 px-4 py-2 text-center font-semibold text-yellow-900">Solicitudes</th>
+                        <th className="border border-yellow-300 px-4 py-2 text-left font-semibold text-yellow-900">Primera Solicitud</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aseguradosNuevos.map((aseg, idx) => (
+                        <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-yellow-50'}>
+                          <td className="border border-yellow-200 px-4 py-2 font-mono font-semibold text-blue-600">{aseg.dni}</td>
+                          <td className="border border-yellow-200 px-4 py-2">
+                            <span className="px-2 py-1 bg-orange-100 text-orange-800 rounded text-xs font-semibold">
+                              {aseg.estado_actual}
+                            </span>
+                          </td>
+                          <td className="border border-yellow-200 px-4 py-2 text-center">
+                            <span className="px-2 py-1 bg-blue-100 text-blue-800 rounded font-semibold text-xs">
+                              {aseg.solicitudes_con_este_dni}
+                            </span>
+                          </td>
+                          <td className="border border-yellow-200 px-4 py-2 text-xs text-gray-600">
+                            {new Date(aseg.fecha_primera_solicitud).toLocaleDateString('es-PE')}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-blue-900">
+                    <strong>¿Qué hacer?</strong> Estos asegurados deben ser añadidos a la base de datos de asegurados para mostrar sus nombres completos.
+                    Puede realizar una actualización de la BD desde el módulo de importación de asegurados o contactar al administrador del sistema.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setModalAseguradosNuevos(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModalAseguradosNuevos(false);
+                      // Aquí se podría navegar a un módulo de importación de asegurados
+                      console.log('Redirigir a módulo de importación de asegurados');
+                    }}
+                    className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold"
+                  >
+                    Ir a Importar Asegurados
+                  </button>
+                </div>
               </div>
             </div>
           </div>

@@ -2,11 +2,11 @@
 
 > Arquitectura, componentes y flujos del sistema completo de gestión de bolsas de pacientes
 
-**Versión:** v1.32.1 (Backend v1.31.0, Frontend v1.32.1 + Componentes Reutilizables)
-**Fecha:** 2026-01-22
-**Status:** ✅ PRODUCCIÓN LIVE + Estructura Estándar Implementada
+**Versión:** v1.33.0 (Backend v1.32.0, Frontend v1.33.0 + Solicitudes de Bolsa v1.6.0)
+**Fecha:** 2026-01-23
+**Status:** ✅ PRODUCCIÓN LIVE + Módulo Solicitudes de Bolsa Integrado
 **Design System:** CENATE v1.0.0 (100% conforme en todas las tablas)
-**Componentes Reutilizables:** PageHeader, StatCard, ListHeader (v1.0.0)
+**Módulo Solicitudes:** v1.6.0 - Estados de Citas Integrados (dim_estados_gestion_citas)
 
 ---
 
@@ -799,103 +799,183 @@ curl "http://localhost:8080/tipos-bolsas/buscar?busqueda=BOLSA&page=0&size=10"
 
 ---
 
-## 📊 Tabla de Pacientes en Bolsas (dim_solicitud_bolsa)
+## 📊 Tabla Central: dim_solicitud_bolsa v1.6.0
 
-### Estructura de Campos
+### Estructura de Campos (26 campos)
 
-Esta tabla es el corazón del almacenamiento de pacientes esperando gestión. Debe contener:
+Esta tabla es el **corazón del almacenamiento centralizado** de pacientes esperando gestión. Recibe pacientes de múltiples fuentes y los distribuye a través de Coordinadores y Gestoras de Citas.
 
-| Campo | Tipo | Descripción | Requerido |
-|-------|------|-------------|-----------|
-| **id_solicitud** | BIGINT | Clave primaria | ✅ |
-| **numero_solicitud** | VARCHAR(50) | Identificador único de solicitud | ✅ |
-| **paciente_id** | BIGINT | FK a tabla de asegurados | ✅ |
-| **paciente_dni** | VARCHAR(20) | DNI del paciente | ✅ |
-| **paciente_nombre** | VARCHAR(255) | Nombre completo | ✅ |
-| **paciente_telefono** | VARCHAR(20) | Teléfono de contacto | ✅ |
-| **paciente_sexo** | VARCHAR(20) | Masculino/Femenino | ✅ |
-| **especialidad** | VARCHAR(255) | Especialidad requerida | ✅ |
-| **red_id** | BIGINT | FK a tabla de redes | ✅ |
-| **red_nombre** | VARCHAR(255) | Nombre de la red | ✅ |
-| **ipress_id** | BIGINT | FK a tabla de IPRESS | ✅ |
-| **ipress_nombre** | VARCHAR(255) | Nombre de la institución | ✅ |
-| **id_bolsa** | BIGINT | FK a dim_bolsa | ✅ |
-| **estado** | VARCHAR(20) | PENDIENTE, APROBADA, RECHAZADA | ✅ |
-| **estado_gestion_citas_id** | BIGINT | FK a dim_estados_gestion_citas | ✅ |
-| **razon_rechazo** | TEXT | Si estado = RECHAZADA | ❌ |
-| **notas_aprobacion** | TEXT | Si estado = APROBADA | ❌ |
-| **solicitante_id** | BIGINT | Usuario que creó la solicitud | ✅ |
-| **solicitante_nombre** | VARCHAR(255) | Nombre del solicitante | ✅ |
-| **responsable_aprobacion_id** | BIGINT | Coordinador que aprobó | ❌ |
-| **responsable_aprobacion_nombre** | VARCHAR(255) | Nombre del coordinador | ❌ |
-| **responsable_gestora_id** | BIGINT | Gestora de citas asignada | ❌ |
-| **responsable_gestora_nombre** | VARCHAR(255) | Nombre de la gestora | ❌ |
-| **fecha_solicitud** | TIMESTAMP WITH TZ | Fecha de creación (AUTO) | ✅ |
-| **fecha_aprobacion** | TIMESTAMP WITH TZ | Fecha de aprobación | ❌ |
-| **fecha_asignacion** | TIMESTAMP WITH TZ | Fecha de asignación a gestora | ❌ |
-| **fecha_cita** | TIMESTAMP WITH TZ | Fecha programada de atención | ❌ |
-| **fecha_estado** | TIMESTAMP WITH TZ | Fecha del último cambio de estado | ❌ |
-| **diferimiento** | INTEGER | Días desde asignación (calculado) | ❌ |
-| **semaforo** | VARCHAR(20) | VERDE/ROJO (calculado) | ❌ |
-| **fecha_actualizacion** | TIMESTAMP WITH TZ | Fecha de última actualización (AUTO) | ✅ |
-| **activo** | BOOLEAN | Lógicamente activo/inactivo | ✅ |
+#### 🔑 Identificación (Auto-generada)
+| Campo | Tipo | Descripción | Requerido | Origen |
+|-------|------|-------------|-----------|--------|
+| **id_solicitud** | BIGSERIAL | Clave primaria | ✅ | Auto-generado |
+| **numero_solicitud** | VARCHAR(50), UNIQUE | Identificador único: BOLSA-YYYYMMDD-XXXXX | ✅ | Auto-generado |
 
-### Relaciones
+#### 📦 Tipo de Bolsa (Selector PASO 1)
+| Campo | Tipo | Descripción | Requerido | Origen |
+|-------|------|-------------|-----------|--------|
+| **id_tipo_bolsa** | BIGINT, FK | Referencia a dim_tipos_bolsas | ✅ | Usuario (selector) |
+| **cod_tipo_bolsa** | TEXT | Código (ej: BOLSA_107) | ✅ | Auto (FK) |
+| **desc_tipo_bolsa** | TEXT | Descripción (ej: Bolsa 107 - Importación...) | ✅ | Auto (FK) |
+
+#### 🏥 Especialidad (Selector PASO 2)
+| Campo | Tipo | Descripción | Requerido | Origen |
+|-------|------|-------------|-----------|--------|
+| **id_servicio** | BIGINT, FK | Referencia a dim_servicio_essi | ✅ | Usuario (selector) |
+| **especialidad** | VARCHAR(255) | Nombre especialidad (ej: Cardiología) | ✅ | Auto (FK) |
+| **cod_servicio** | VARCHAR(10) | Código especialidad (ej: 001) | ✅ | Auto (FK) |
+
+#### 👤 Datos Paciente (De Excel + Validación)
+| Campo | Tipo | Descripción | Requerido | Origen |
+|-------|------|-------------|-----------|--------|
+| **paciente_dni** | VARCHAR(20) | DNI del paciente | ✅ | Excel (usuario) |
+| **paciente_id** | BIGINT, FK | FK a asegurados.pk_asegurado | ✅ | Auto (validado) |
+| **paciente_nombre** | VARCHAR(255) | Nombre completo | ✅ | Auto (FK) |
+
+#### 🏥 Información IPRESS (De Excel + Validación)
+| Campo | Tipo | Descripción | Requerido | Origen |
+|-------|------|-------------|-----------|--------|
+| **codigo_adscripcion** | VARCHAR(20) | Código IPRESS de adscripción | ✅ | Excel (usuario) |
+| **id_ipress** | BIGINT, FK | FK a dim_ipress | ✅ | Auto (validado) |
+| **nombre_ipress** | VARCHAR(255) | Nombre institución (ej: H.II PUCALLPA) | ✅ | Auto (FK) |
+| **red_asistencial** | VARCHAR(255) | Nombre red (ej: RED ASISTENCIAL UCAYALI) | ✅ | Auto (FK vía dim_red) |
+
+#### 📊 Estado y Solicitante (Auto-asignados)
+| Campo | Tipo | Descripción | Requerido | Origen |
+|-------|------|-------------|-----------|--------|
+| **estado_gestion_citas_id** | BIGINT, FK | FK a dim_estados_gestion_citas | ✅ | Sistema (default=5 PENDIENTE_CITA) |
+| **cod_estado_cita** | TEXT | Código estado (ej: PENDIENTE_CITA) | ✅ | Auto (FK) |
+| **desc_estado_cita** | VARCHAR(255) | Descripción legible (ej: Pendiente de Cita) | ✅ | Auto (FK) |
+| **solicitante_id** | BIGINT, FK | FK a dim_usuarios (usuario que cargó) | ✅ | Sistema |
+| **solicitante_nombre** | VARCHAR(255) | Nombre del usuario | ✅ | Auto (FK) |
+
+#### 👤 Gestor de Citas (Se asigna posteriormente)
+| Campo | Tipo | Descripción | Requerido | Origen |
+|-------|------|-------------|-----------|--------|
+| **responsable_gestora_id** | BIGINT, FK | FK a dim_usuarios (gestora asignada) | ❌ | Coordinador (posterior) |
+| **fecha_asignacion** | TIMESTAMP TZ | Fecha de asignación a gestora | ❌ | Sistema (posterior) |
+
+#### ⏰ Auditoría (Auto-generadas)
+| Campo | Tipo | Descripción | Requerido | Origen |
+|-------|------|-------------|-----------|--------|
+| **fecha_solicitud** | TIMESTAMP TZ | Fecha de creación (CURRENT_TIMESTAMP) | ✅ | Auto |
+| **fecha_actualizacion** | TIMESTAMP TZ | Fecha última actualización (trigger) | ✅ | Auto (trigger) |
+| **activo** | BOOLEAN | Lógicamente activo/inactivo (soft delete) | ✅ | Defecto (true) |
+| **recordatorio_enviado** | BOOLEAN | Recordatorio enviado (WhatsApp/Email) | ✅ | Defecto (false) |
+
+### Relaciones de Integridad (8 Foreign Keys)
 
 ```
-dim_solicitud_bolsa
-├─ FK id_bolsa → dim_bolsa (Catálogo de bolsas)
-├─ FK estado_gestion_citas_id → dim_estados_gestion_citas (Estados de gestión)
-├─ FK paciente_id → pacientes_asegurados (Datos del paciente)
-├─ FK red_id → dim_red (Red de salud)
-├─ FK ipress_id → dim_ipress (Institución prestadora)
-├─ FK solicitante_id → usuarios (Quién creó)
-├─ FK responsable_aprobacion_id → usuarios (Coordinador que aprobó)
-└─ FK responsable_gestora_id → usuarios (Gestora asignada)
+dim_solicitud_bolsa (26 campos)
+├─ FK1: id_tipo_bolsa → dim_tipos_bolsas.id_tipo_bolsa (RESTRICT) ✅
+├─ FK2: id_servicio → dim_servicio_essi.id_servicio (RESTRICT) ✅
+├─ FK3: paciente_id → asegurados.pk_asegurado (RESTRICT) ✅
+├─ FK4: id_ipress → dim_ipress.id_ipress (SET NULL) ✅
+├─ FK5: estado_gestion_citas_id → dim_estados_gestion_citas.id_estado_cita (RESTRICT) ✅ ◄─ NUEVO
+├─ FK6: solicitante_id → dim_usuarios.id_user (SET NULL) ✅
+├─ FK7: responsable_gestora_id → dim_usuarios.id_user (SET NULL) ✅
+└─ Índices: 9 índices para optimización
 ```
 
-### Índices Recomendados
+### Índices Optimizados (9 índices)
 
 ```sql
 -- Búsqueda de pacientes
 CREATE INDEX idx_solicitud_bolsa_dni ON dim_solicitud_bolsa(paciente_dni);
 CREATE INDEX idx_solicitud_bolsa_nombre ON dim_solicitud_bolsa(paciente_nombre);
-CREATE INDEX idx_solicitud_bolsa_ipress ON dim_solicitud_bolsa(ipress_id);
+CREATE INDEX idx_solicitud_bolsa_codigo_adscripcion ON dim_solicitud_bolsa(codigo_adscripcion);
 
--- Filtros por estado y bolsa
-CREATE INDEX idx_solicitud_bolsa_estado ON dim_solicitud_bolsa(estado);
-CREATE INDEX idx_solicitud_bolsa_bolsa_id ON dim_solicitud_bolsa(id_bolsa);
+-- Filtros por estado y tipo
 CREATE INDEX idx_solicitud_bolsa_estado_gestion ON dim_solicitud_bolsa(estado_gestion_citas_id);
+CREATE INDEX idx_solicitud_bolsa_tipo ON dim_solicitud_bolsa(id_tipo_bolsa);
+CREATE INDEX idx_solicitud_bolsa_servicio ON dim_solicitud_bolsa(id_servicio);
 
 -- Asignación a gestoras
 CREATE INDEX idx_solicitud_bolsa_gestora ON dim_solicitud_bolsa(responsable_gestora_id);
 
 -- Rangos de fechas
+CREATE INDEX idx_solicitud_bolsa_fecha_solicitud ON dim_solicitud_bolsa(fecha_solicitud);
 CREATE INDEX idx_solicitud_bolsa_fecha_asignacion ON dim_solicitud_bolsa(fecha_asignacion);
-CREATE INDEX idx_solicitud_bolsa_fecha_cita ON dim_solicitud_bolsa(fecha_cita);
 
--- Full-text search
-CREATE INDEX idx_solicitud_bolsa_ft_nombre ON dim_solicitud_bolsa USING GIN(
-  to_tsvector('spanish', COALESCE(paciente_nombre, ''))
-);
+-- Compuesto para reportes
+CREATE INDEX idx_solicitud_bolsa_tipo_estado ON dim_solicitud_bolsa(id_tipo_bolsa, estado_gestion_citas_id);
 ```
 
 ---
 
-**Status Final:** ✅ **PRODUCCIÓN LIVE v1.32.1**
+---
 
-**Componentes:** Backend v1.31.0 + Frontend v1.32.1 + Reutilizables v1.0.0
+## ✅ Status Final: PRODUCCIÓN LIVE v1.33.0
 
-**Flujo Actualizado (2026-01-22):**
-- ✅ Múltiples fuentes de pacientes (6 tipos de bolsas)
-- ✅ Almacenamiento centralizado (dim_solicitud_bolsa)
-- ✅ Distribución por Coordinador de Gestión de Citas
-- ✅ Gestión integral por Gestoras de Citas
-- ✅ Registro de Estados de Gestión (10 estados en dim_estados_gestion_citas)
-- ✅ Notificaciones (WhatsApp/Email cuando CITADO)
-- ✅ Auditoría completa de cada acción
+### Módulo de Solicitudes de Bolsa v1.6.0 - COMPLETADO
 
-**Documento creado por:** Claude Code
-**Versión:** v1.32.1 + Actualización Integración v1.0.0
-**Última actualización:** 2026-01-22
-**Estado:** ACTIVO ✅ (Flujo Completo Bolsas → Coordinador → Gestoras → Estados)
+**Componentes Integrados:**
+- Backend v1.32.0: SolicitudBolsaController, SolicitudBolsaService, SolicitudBolsaRepository
+- Frontend v1.33.0: Módulo Solicitudes actualizado con nueva estructura
+- Base de Datos: dim_solicitud_bolsa (26 campos, 8 FKs, 9 índices)
+- Integración: dim_estados_gestion_citas v1.33.0
+
+**Flujo Completo Actualizado (2026-01-23):**
+
+```
+PASO 1: Usuario selecciona TIPO BOLSA
+        ↓ (dim_tipos_bolsas - 7 tipos disponibles)
+
+PASO 2: Usuario selecciona ESPECIALIDAD
+        ↓ (dim_servicio_essi - N especialidades)
+
+PASO 3: Usuario carga Excel (DNI + Código Adscripción obligatorios)
+        ↓
+
+VALIDACIONES:
+  • DNI existe en asegurados → obtiene paciente_id, paciente_nombre
+  • Código Adscripción existe en dim_ipress → obtiene id_ipress, nombre_ipress, red
+  • Sin duplicados → (id_tipo_bolsa, paciente_id, id_servicio) UNIQUE
+        ↓
+
+INSERCIÓN EN dim_solicitud_bolsa:
+  • 26 campos: IDs + Códigos + Nombres + Fechas + Estados
+  • 8 Foreign Keys: Integridad referencial garantizada
+  • Estado inicial: estado_gestion_citas_id = 5 (PENDIENTE_CITA)
+  • Auditoría: fecha_solicitud, fecha_actualizacion (trigger)
+        ↓
+
+VISUALIZACIÓN EN TABLA:
+  • Módulo Bolsas muestra todos los datos combinados
+  • Columna "Estado": PENDIENTE_CITA → CITADO → ASISTIO/CANCELADO/etc.
+  • Coordinador distribuye a Gestoras de Citas
+  • Gestoras registran seguimiento
+  • Auditoría completa de cada acción
+```
+
+**Características v1.6.0:**
+- ✅ 2 selectores simplificados (TIPO BOLSA + ESPECIALIDAD)
+- ✅ Sin aprobación: carga directa a estado PENDIENTE_CITA
+- ✅ Excel mínimo: solo 2 campos obligatorios (DNI + Código Adscripción)
+- ✅ Auto-enriquecimiento: Sistema obtiene todos los datos automáticamente
+- ✅ Estados centralizados: dim_estados_gestion_citas con 10 estados
+- ✅ Múltiples fuentes: 6 tipos de bolsas que alimentan tabla única
+- ✅ Distribución integral: Coordinador → Gestoras → Auditoría
+- ✅ Soft delete: Campo activo para control lógico
+- ✅ Índices optimizados: 9 índices para búsquedas rápidas
+
+**Tabla Final (dim_solicitud_bolsa):**
+- **26 campos**: Identificación + Tipos + Especialidades + Paciente + IPRESS + Estados + Auditoría
+- **8 Foreign Keys**: Integridad referencial + RESTRICT para críticos + SET NULL para opcionales
+- **9 Índices**: Búsqueda DNI, nombre, código adscripción + estado + tipo + servicio + gestora + fechas
+- **Validaciones**: En 3 capas - Frontend UX + Backend DTO + Base de Datos CHECK
+
+**Integración Sistémica:**
+- ✅ Bolsas 107 → dim_solicitud_bolsa
+- ✅ Bolsas Dengue → dim_solicitud_bolsa
+- ✅ Bolsas Enfermería → dim_solicitud_bolsa
+- ✅ Bolsas IVR → dim_solicitud_bolsa
+- ✅ Bolsas Reprogramación → dim_solicitud_bolsa
+- ✅ Bolsas Gestores Territorial → dim_solicitud_bolsa
+
+**Documento Actualizado:**
+- `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.33.0)
+- `UML_COMPLETO_FINAL_v1_6_ESTADOS_CITAS.md` (Especificación técnica detallada)
+
+**Versión:** v1.33.0 | **Fecha:** 2026-01-23 | **Status:** ✅ LISTO PARA IMPLEMENTACIÓN
+**Creado por:** Claude Code | **Módulo:** Solicitudes de Bolsa v1.6.0 | **Estado:** ACTIVO ✅

@@ -1,0 +1,66 @@
+### Page state
+- Page URL: http://localhost:3000/bolsas/cargar-excel
+- Page Title: Intranet CENATE
+- Page Snapshot:
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e10]
+        - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - navigation [ref=e14]:
+        - paragraph [ref=e63]: No tienes modulos asignados
+      - generic [ref=e17]:
+        - generic [ref=e18]:
+          - img [ref=e19]
+          - generic [ref=e23]: Estado del Sistema
+        - generic [ref=e24]:
+          - generic [ref=e25]:
+            - generic [ref=e26]: Modulos activos
+            - generic [ref=e27]: "0"
+          - generic [ref=e28]:
+            - generic [ref=e29]: Sistema
+            - generic [ref=e30]:
+              - img [ref=e31]
+              - text: OK
+      - paragraph [ref=e35]: v1.18.0
+  - main "Contenido principal" [ref=e36]:
+    - generic [ref=e38]:
+      - heading [level=1]
+      - generic [ref=e39]:
+        - button "Notificaciones" [ref=e40] [cursor=pointer]:
+          - img [ref=e41]
+        - button "Menú de usuario" [ref=e45] [cursor=pointer]:
+          - generic [ref=e47]: SC
+          - generic [ref=e48]:
+            - generic "Styp Canto" [ref=e49]
+            - generic "Superadministrador" [ref=e50]
+          - img [ref=e52]
+    - generic [ref=e55]:
+      - generic [ref=e65]:
+        - generic [ref=e66]:
+          - heading "📁 Cargar desde Excel" [level=1] [ref=e67]
+          - paragraph [ref=e68]: Importa bolsas de pacientes desde archivos Excel o CSV
+        - generic [ref=e69]:
+          - generic [ref=e70] [cursor=pointer]:
+            - img [ref=e71]
+            - heading "Arrastra tu archivo aquí" [level=3] [ref=e74]
+            - paragraph [ref=e75]: O haz clic para seleccionar
+            - generic [ref=e76]: Seleccionar Archivo
+          - generic [ref=e77]:
+            - button "Importar" [disabled] [ref=e78]:
+              - img [ref=e79]
+              - text: Importar
+            - button "Cancelar" [ref=e82] [cursor=pointer]
+          - generic [ref=e83]:
+            - heading "📋 Formato esperado:" [level=4] [ref=e84]
+            - list [ref=e85]:
+              - listitem [ref=e86]: "• Primera fila: encabezados (DNI, Nombres, Apellidos, Fecha Nacimiento...)"
+              - listitem [ref=e87]: "• Soporta formatos: .xlsx, .xls, .csv"
+              - listitem [ref=e88]: • Máximo 10,000 registros por archivo
+      - generic [ref=e60]:
+        - paragraph [ref=e61]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e62]: "v1.18.0 - Personal Externo: Gestión Modalidad + Bienvenida"
+```

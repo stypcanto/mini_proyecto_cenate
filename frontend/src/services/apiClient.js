@@ -194,16 +194,22 @@ const apiClient = {
   },
 
   // Método para subir archivos (multipart/form-data)
-  uploadFile: async (endpoint, file, requiresAuth = true) => {
+  uploadFile: async (endpoint, fileOrFormData, requiresAuth = true) => {
     const url = `${API_BASE_URL}${endpoint}`;
-    
+
     console.log(`📤 [UPLOAD] ${url}`);
-    
-    const formData = new FormData();
-    formData.append('file', file);
-    
+
+    // Si ya es FormData, usarla directamente; si es File, crear FormData
+    let formData;
+    if (fileOrFormData instanceof FormData) {
+      formData = fileOrFormData;
+    } else {
+      formData = new FormData();
+      formData.append('archivo', fileOrFormData);
+    }
+
     const headers = {};
-    
+
     // Agregar token si es requerido
     if (requiresAuth) {
       const token = getToken();
@@ -212,7 +218,7 @@ const apiClient = {
         console.log('🔐 Token añadido a la petición de upload');
       }
     }
-    
+
     try {
       const response = await fetch(url, {
         method: 'POST',
@@ -220,7 +226,7 @@ const apiClient = {
         body: formData,
         credentials: 'include',
       });
-      
+
       return await handleResponse(response);
     } catch (error) {
       console.error(`❌ [Upload Error] en ${url}:`, error.message);

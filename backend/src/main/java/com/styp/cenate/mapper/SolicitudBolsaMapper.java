@@ -1,37 +1,49 @@
 package com.styp.cenate.mapper;
 
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
-import com.styp.cenate.dto.bolsas.SolicitudBolsaRequestDTO;
-import com.styp.cenate.model.SolicitudBolsa;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * 📋 Mapper para conversión entre SolicitudBolsa y SolicitudBolsaDTO
+ * Mapper para conversión entre SolicitudBolsa (Entity) y SolicitudBolsaDTO
+ * Responsable de la generación del número de solicitud automático
+ * 
+ * @version v1.6.0
+ * @since 2026-01-23
  */
 public class SolicitudBolsaMapper {
 
-    private SolicitudBolsaMapper() {
-    }
+    private static final DateTimeFormatter FECHA_FORMATTER = DateTimeFormatter.ofPattern("yyyyMMdd");
 
-    // ============================================================
-    // ENTITY → DTO
-    // ============================================================
-    public static SolicitudBolsaDTO toDto(SolicitudBolsa entity) {
-        if (entity == null)
+    /**
+     * Convierte una entidad SolicitudBolsa a su DTO correspondiente
+     */
+    public static SolicitudBolsaDTO toDTO(SolicitudBolsa entity) {
+        if (entity == null) {
             return null;
+        }
 
         return SolicitudBolsaDTO.builder()
                 .idSolicitud(entity.getIdSolicitud())
                 .numeroSolicitud(entity.getNumeroSolicitud())
-                .aseguradoId(entity.getAseguradoId())
                 .pacienteDni(entity.getPacienteDni())
+                .pacienteId(entity.getPacienteId())
                 .pacienteNombre(entity.getPacienteNombre())
-                .pacienteTelefono(entity.getPacienteTelefono())
-                .pacienteEmail(entity.getPacienteEmail())
                 .especialidad(entity.getEspecialidad())
-                .idBolsa(entity.getBolsa() != null ? entity.getBolsa().getIdBolsa() : null)
-                .nombreBolsa(entity.getBolsa() != null ? entity.getBolsa().getNombreBolsa() : null)
+                .idBolsa(entity.getIdBolsa())
+                .codTipoBolsa(entity.getCodTipoBolsa())
+                .descTipoBolsa(entity.getDescTipoBolsa())
+                .nombreBolsa(entity.getDescTipoBolsa())
+                .idServicio(entity.getIdServicio())
+                .codServicio(entity.getCodServicio())
+                .codigoAdscripcion(entity.getCodigoAdscripcion())
+                .idIpress(entity.getIdIpress())
+                .nombreIpress(entity.getNombreIpress())
+                .redAsistencial(entity.getRedAsistencial())
                 .estado(entity.getEstado())
                 .razonRechazo(entity.getRazonRechazo())
                 .notasAprobacion(entity.getNotasAprobacion())
@@ -39,75 +51,55 @@ public class SolicitudBolsaMapper {
                 .solicitanteNombre(entity.getSolicitanteNombre())
                 .responsableAprobacionId(entity.getResponsableAprobacionId())
                 .responsableAprobacionNombre(entity.getResponsableAprobacionNombre())
-                .responsableGestoraId(entity.getResponsableGestoraId())
-                .responsableGestoraNombre(entity.getResponsableGestoraNombre())
-                .fechaAsignacion(entity.getFechaAsignacion())
-                .estadoGestionCitasId(entity.getEstadoGestionCitasId())
-                .recordatorioEnviado(entity.getRecordatorioEnviado())
                 .fechaSolicitud(entity.getFechaSolicitud())
                 .fechaAprobacion(entity.getFechaAprobacion())
                 .fechaActualizacion(entity.getFechaActualizacion())
+                .responsableGestoraId(entity.getResponsableGestoraId())
+                .fechaAsignacion(entity.getFechaAsignacion())
+                .estadoGestionCitasId(entity.getEstadoGestionCitasId())
+                .codEstadoCita(entity.getCodEstadoCita())
+                .descEstadoCita(entity.getDescEstadoCita())
                 .activo(entity.getActivo())
-                .diasDesdeCreacion(entity.getDiasDesdeCreacion())
+                .recordatorioEnviado(entity.getRecordatorioEnviado())
                 .build();
     }
 
-    // ============================================================
-    // DTO → ENTITY (para crear)
-    // ============================================================
-    public static SolicitudBolsa toEntity(SolicitudBolsaRequestDTO dto) {
-        if (dto == null)
-            return null;
-
-        // Generar número de solicitud único (BOLSA-YYYYMMDD-XXXXX)
-        String numeroSolicitud = generarNumeroSolicitud();
-
-        // Nota: La bolsa debe ser seteada después por el servicio
-        return SolicitudBolsa.builder()
-                .numeroSolicitud(numeroSolicitud)
-                .aseguradoId(dto.getAseguradoId())
-                .pacienteDni(dto.getPacienteDni())
-                .pacienteNombre(dto.getPacienteNombre())
-                .pacienteTelefono(dto.getPacienteTelefono())
-                .pacienteEmail(dto.getPacienteEmail())
-                .especialidad(dto.getEspecialidad())
-                .estado("PENDIENTE")
-                .solicitanteId(dto.getSolicitanteId())
-                .solicitanteNombre(dto.getSolicitanteNombre())
-                .activo(true)
-                .build();
+    /**
+     * Convierte una lista de entidades SolicitudBolsa a lista de DTOs
+     */
+    public static List<SolicitudBolsaDTO> toDTOList(List<SolicitudBolsa> entities) {
+        if (entities == null) {
+            return List.of();
+        }
+        return entities.stream()
+                .map(SolicitudBolsaMapper::toDTO)
+                .collect(Collectors.toList());
     }
 
-    // ============================================================
-    // ACTUALIZAR ENTITY DESDE DTO (sin perder auditoría)
-    // ============================================================
-    public static void updateEntity(SolicitudBolsa entity, SolicitudBolsaRequestDTO dto) {
-        entity.setAseguradoId(dto.getAseguradoId());
-        entity.setPacienteDni(dto.getPacienteDni());
-        entity.setPacienteNombre(dto.getPacienteNombre());
-        entity.setPacienteTelefono(dto.getPacienteTelefono());
-        entity.setPacienteEmail(dto.getPacienteEmail());
-        entity.setEspecialidad(dto.getEspecialidad());
-        // Nota: No actualizamos bolsa en el mapper (debe hacerse en el servicio)
-        entity.setSolicitanteId(dto.getSolicitanteId());
-        entity.setSolicitanteNombre(dto.getSolicitanteNombre());
-        // Auditoría NO se toca
+    /**
+     * Genera número de solicitud automático con formato: BOLSA-YYYYMMDD-XXXXX
+     * Ejemplo: BOLSA-20260123-00142
+     * 
+     * @return número de solicitud generado
+     */
+    public static String generarNumeroSolicitud() {
+        String fecha = LocalDate.now().format(FECHA_FORMATTER);
+        int aleatorio = (int) (Math.random() * 100000);
+        String numeroAleatorio = String.format("%05d", aleatorio);
+        return "BOLSA-" + fecha + "-" + numeroAleatorio;
     }
 
-    // ============================================================
-    // LISTA ENTITY → LISTA DTO
-    // ============================================================
-    public static List<SolicitudBolsaDTO> toDtoList(List<SolicitudBolsa> list) {
-        return list.stream().map(SolicitudBolsaMapper::toDto).toList();
-    }
-
-    // ============================================================
-    // HELPER
-    // ============================================================
-    private static String generarNumeroSolicitud() {
-        // Formato: BOLSA-YYYYMMDD-XXXXX (XXXXX es un número aleatorio)
-        String fecha = java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String aleatorio = String.valueOf((int) (Math.random() * 100000));
-        return "BOLSA-" + fecha + "-" + String.format("%05d", Integer.parseInt(aleatorio));
+    /**
+     * Verifica si un número de solicitud tiene el formato válido
+     * 
+     * @param numeroSolicitud número a validar
+     * @return true si tiene formato válido
+     */
+    public static boolean esNumeroSolicitudValido(String numeroSolicitud) {
+        if (numeroSolicitud == null || numeroSolicitud.isBlank()) {
+            return false;
+        }
+        // Formato: BOLSA-YYYYMMDD-XXXXX
+        return numeroSolicitud.matches("^BOLSA-\\d{8}-\\d{5}$");
     }
 }

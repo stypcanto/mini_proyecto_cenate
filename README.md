@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Version](https://img.shields.io/badge/version-1.31.0-blue)
+![Version](https://img.shields.io/badge/version-1.34.0-blue)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.5.6-brightgreen)
 ![Java](https://img.shields.io/badge/Java-17-orange)
 ![React](https://img.shields.io/badge/React-19-blue)

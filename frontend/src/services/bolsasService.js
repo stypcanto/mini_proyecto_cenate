@@ -123,6 +123,24 @@ export const obtenerHistorialImportaciones = async () => {
 // ========================================================================
 
 /**
+ * Importa solicitudes de bolsa desde un archivo Excel (v1.6.0)
+ * Requiere selectores de Tipo Bolsa y Especialidad
+ * Excel debe tener columnas: DNI, Código Adscripción
+ *
+ * @param {FormData} formData - Contiene: file, idTipoBolsa, idServicio
+ * @returns {Promise<Object>} - Resultado con filas_ok, filas_error, errores
+ */
+export const importarSolicitudesDesdeExcel = async (formData) => {
+  try {
+    const response = await apiClient.uploadFile(`${API_BASE_URL}/solicitudes/importar`, formData);
+    return response;
+  } catch (error) {
+    console.error('Error al importar solicitudes desde Excel:', error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene todas las solicitudes de bolsas
  * @returns {Promise<Array>} - Listado de solicitudes
  */
@@ -478,6 +496,7 @@ export default {
   obtenerHistorialImportaciones,
 
   // Solicitudes
+  importarSolicitudesDesdeExcel,
   obtenerSolicitudes,
   obtenerSolicitudPorId,
   crearSolicitud,

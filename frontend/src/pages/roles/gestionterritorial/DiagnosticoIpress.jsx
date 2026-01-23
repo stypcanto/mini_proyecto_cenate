@@ -79,17 +79,15 @@ export default function DiagnosticoIpress() {
   // FILTRADO
   // ================================================================
 
-  // Obtener solo las redes que tienen diagnósticos
+  // Mostrar todas las redes disponibles (no solo las que tienen diagnósticos)
   const redesConDiagnosticos = useMemo(() => {
-    const idsRedes = new Set(diagnosticos.map(d => d.idRed).filter(Boolean));
-    return redes.filter(red => idsRedes.has(red.idRed));
-  }, [redes, diagnosticos]);
+    return redes;
+  }, [redes]);
 
-  // Obtener solo las IPRESS que tienen diagnósticos
+  // Mostrar todas las IPRESS disponibles (no solo las que tienen diagnósticos)
   const ipressConDiagnosticos = useMemo(() => {
-    const idsIpress = new Set(diagnosticos.map(d => d.idIpress).filter(Boolean));
-    return ipress.filter(ipr => idsIpress.has(ipr.idIpress));
-  }, [ipress, diagnosticos]);
+    return ipress;
+  }, [ipress]);
 
   // Filtrar IPRESS por red seleccionada
   const ipressFiltradas = useMemo(() => {

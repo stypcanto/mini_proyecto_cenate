@@ -141,7 +141,18 @@ public interface BolsasService {
         Integer registrosExitosos,
         Integer registrosFallidos,
         String estado,
-        String mensaje
+        String mensaje,
+        java.util.List<AseguradoImportadoDTO> nuevosAsegurados
+    ) {}
+
+    /**
+     * DTO para asegurados nuevos importados
+     */
+    record AseguradoImportadoDTO(
+        String docPaciente,
+        String paciente,
+        String telCelular,
+        String correoElectronico
     ) {}
 
     /**

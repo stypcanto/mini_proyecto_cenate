@@ -12,8 +12,8 @@ plugins {
 }
 
 group = 'com.styp.cenate'
-version = '0.0.1-SNAPSHOT'
-description = 'CENATE API - Sistema de Gestión'
+version = '1.34.0'
+description = 'CENATE API - Sistema de Gestión v1.34.0 (Solicitudes de Bolsa v1.6.0 + Estados Gestión Citas v1.33.0 + Tele-ECG v1.24.0)'
 
 java {
     toolchain {

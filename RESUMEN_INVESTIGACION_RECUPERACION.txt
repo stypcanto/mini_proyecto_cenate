@@ -1,0 +1,108 @@
+╔══════════════════════════════════════════════════════════════════════════════╗
+║           INVESTIGACIÓN DE RECUPERACIÓN - TABLA ASEGURADOS                   ║
+║                     Servidor: 10.0.89.13 PostgreSQL                          ║
+║                          Fecha: 2026-01-23                                   ║
+╚══════════════════════════════════════════════════════════════════════════════╝
+
+📊 ESTADO ACTUAL
+═══════════════════════════════════════════════════════════════════════════════
+Tabla asegurados: VACÍA (0 de 4,000,000 registros)
+Estructura: INTACTA ✅
+WAL Logs: DISPONIBLES ✅ (~1.1GB)
+Backups automáticos: NO CONFIGURADOS ❌
+
+🔍 HALLAZGOS CLAVE
+═══════════════════════════════════════════════════════════════════════════════
+
+✅ INFRAESTRUCTURA IDENTIFICADA:
+   • Docker Container: postgres_cenate (PostgreSQL 16.9 - UP)
+   • Base de datos: maestro_cenate (2.8GB dump)
+   • Volumen: /home/cenate/bases_datos/postgres_cenate/data
+   • Base datos ESSI: Datos_Cenate (disponible)
+   • WAL Logs: 1.1GB con historial de transacciones
+
+❌ BACKUPS NO ENCONTRADOS EN:
+   • /home/cenate/bases_datos/
+   • /var/lib/postgresql/
+   • Cron jobs
+   • Docker volumes
+   • Sistema de archivos del servidor
+
+💾 ARCHIVOS GENERADOS:
+   • maestro_cenate_backup.sql (2.7GB) - Descargado localmente
+   • REPORTE_RECUPERACION_ASEGURADOS.md (Documentación completa)
+
+🎯 OPCIONES DE RECUPERACIÓN (Orden de Viabilidad)
+═══════════════════════════════════════════════════════════════════════════════
+
+OPCIÓN 1: Reimportar desde ESSI ⭐⭐⭐ RECOMENDADA
+────────────────────────────────
+   Viabilidad: 100% ✅
+   Descripción: Los 4M registros vinieron de ESSI, recargar desde fuente oficial
+   Tiempo estimado: 2-4 horas
+   Riesgo: BAJO
+   Resultado: Datos actualizados y validados
+
+   PASOS:
+   1. Contactar ESSI para export de asegurados
+   2. Procesar CSV/Excel
+   3. Cargar a maestro_cenate
+   4. Validar integridad referencial
+
+OPCIÓN 2: Point-In-Time Recovery (PITR)
+─────────────────────────────────────────
+   Viabilidad: BAJA ⚠️
+   Requiere: Backup base anterior (NO ENCONTRADO)
+   WAL logs: Disponibles (pero insuficientes sin backup)
+   Tiempo: 3-5 días (si se encuentra backup)
+   Riesgo: ALTO
+
+OPCIÓN 3: Búsqueda de backups en infraestructura
+──────────────────────────────────────────────────
+   Viabilidad: POSIBLE ⚠️
+   Requiere: Acceso de administrador
+   Ubicaciones: NFS, almacenamiento en nube, VM snapshots
+   Tiempo: 1-2 días de búsqueda
+
+🚨 ACCIONES INMEDIATAS
+═══════════════════════════════════════════════════════════════════════════════
+
+HOY:
+  1. ¿De dónde vinieron los 4M asegurados? (ESSI o carga local)
+  2. Contactar equipo infraestructura sobre backups
+  3. Revisar Docker logs por actividad DELETE
+  4. Iniciar proceso de reimportación desde ESSI
+
+ESTA SEMANA:
+  5. Implementar backups diarios automáticos
+  6. Configurar auditoría en tabla crítica asegurados
+  7. Revocar permisos DELETE en roles backend
+  8. Documentar procedimientos de recuperación
+
+🛡️ PROTECCIONES FUTURAS
+═══════════════════════════════════════════════════════════════════════════════
+
+BACKUP AUTOMÁTICO DIARIO:
+   0 2 * * * docker exec postgres_cenate pg_dump -U cenate maestro_cenate | \
+             gzip > /home/cenate/backups/maestro_cenate_$(date +%Y%m%d).sql.gz
+
+AUDITORÍA DE CAMBIOS:
+   CREATE TRIGGER audit_asegurados
+   BEFORE DELETE ON asegurados
+   FOR EACH ROW EXECUTE FUNCTION log_audit();
+
+PROTECCIÓN DE ROLES:
+   REVOKE DELETE ON asegurados FROM backend_user;
+   GRANT DELETE ON asegurados TO Admin_DBA;
+
+📁 ARCHIVOS DE REFERENCIA
+═══════════════════════════════════════════════════════════════════════════════
+Documento:  REPORTE_RECUPERACION_ASEGURADOS.md (Ruta del proyecto)
+Dump SQL:   /tmp/maestro_cenate_backup.sql (2.7GB)
+Servidor:   cenate@10.0.89.13 (ssh -o StrictHostKeyChecking=no)
+
+═══════════════════════════════════════════════════════════════════════════════
+Conclusión: RECUPERACIÓN VIABLE ✅
+Recomendación: Reimportar desde ESSI es la opción más segura y rápida
+Tiempo estimado: 2-5 días (depende de disponibilidad ESSI)
+═══════════════════════════════════════════════════════════════════════════════

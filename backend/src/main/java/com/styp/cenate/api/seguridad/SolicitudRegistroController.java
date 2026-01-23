@@ -165,6 +165,24 @@ public class SolicitudRegistroController {
     }
 
     /**
+     * Lista usuarios pendientes filtrados por Red ID
+     * GET /api/admin/usuarios/pendientes-activacion/por-red/{idRed}
+     */
+    @GetMapping("/admin/usuarios/pendientes-activacion/por-red/{idRed}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> listarUsuariosPendientesPorRed(@PathVariable Long idRed) {
+        try {
+            log.info("Listando usuarios pendientes de activación para Red ID: {}", idRed);
+            return ResponseEntity.ok(accountRequestService.listarUsuariosPendientesPorRed(idRed));
+        } catch (Exception e) {
+            log.error("Error al listar usuarios pendientes por red: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Error al obtener usuarios pendientes"
+            ));
+        }
+    }
+
+    /**
      * Reenvía el email de activación a un usuario específico
      */
     @PostMapping("/admin/usuarios/{idUsuario}/reenviar-activacion")

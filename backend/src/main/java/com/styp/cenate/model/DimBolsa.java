@@ -78,10 +78,6 @@ public class DimBolsa {
     // 🔗 Relaciones
     // ==========================================================
 
-    @Builder.Default
-    @OneToMany(mappedBy = "bolsa", fetch = FetchType.LAZY, cascade = CascadeType.ALL)
-    private Set<SolicitudBolsa> solicitudes = new HashSet<>();
-
     @Transient
     private Set<Long> pacientes = new HashSet<>();
 

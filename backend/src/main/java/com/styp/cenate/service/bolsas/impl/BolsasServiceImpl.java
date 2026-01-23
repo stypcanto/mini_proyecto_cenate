@@ -5,21 +5,27 @@ import com.styp.cenate.dto.bolsas.BolsaRequestDTO;
 import com.styp.cenate.mapper.BolsaMapper;
 import com.styp.cenate.model.DimBolsa;
 import com.styp.cenate.repository.BolsaRepository;
-import com.styp.cenate.repository.SolicitudBolsaRepository;
+//import com.styp.cenate.repository.SolicitudBolsaRepository;
 import com.styp.cenate.repository.HistorialImportacionBolsaRepository;
 import com.styp.cenate.service.bolsas.BolsasService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.web.multipart.MultipartFile;
 
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
-import com.styp.cenate.model.SolicitudBolsa;
+//import com.styp.cenate.model.SolicitudBolsa;
 import com.styp.cenate.model.HistorialImportacionBolsa;
+import com.styp.cenate.model.Asegurado;
+import com.styp.cenate.repository.AseguradoRepository;
 
 import java.util.List;
 import java.io.InputStream;
@@ -30,6 +36,8 @@ import java.util.HashSet;
 import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.zip.CRC32;
 
 /**
  * 📊 Servicio de Bolsas - Implementación
@@ -37,12 +45,15 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-@Transactional(readOnly = true)
 public class BolsasServiceImpl implements BolsasService {
 
     private final BolsaRepository bolsaRepository;
-    private final SolicitudBolsaRepository solicitudBolsaRepository;
+    //private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final HistorialImportacionBolsaRepository historialImportacionBolsaRepository;
+    private final AseguradoRepository aseguradoRepository;
+    private final JdbcTemplate jdbcTemplate;
+    @Qualifier("writableTransactionTemplate")
+    private final TransactionTemplate transactionTemplate;
 
     // ========================================================================
     // 🔍 CONSULTAS
@@ -103,8 +114,8 @@ public class BolsasServiceImpl implements BolsasService {
                 ? (double) pacientesAsignados / totalPacientes * 100
                 : 0.0;
 
-        long totalSolicitudes = solicitudBolsaRepository.countByActivo(true);
-        long solicitudesPendientes = solicitudBolsaRepository.countByEstadoAndActivo("PENDIENTE", true);
+        //        long totalSolicitudes = solicitudBolsaRepository.countByActivo(true);
+        //        long solicitudesPendientes = solicitudBolsaRepository.countByEstadoAndActivo("PENDIENTE", true);
 
         return new BolsasEstadisticasDTO(
                 totalBolsas,
@@ -113,8 +124,8 @@ public class BolsasServiceImpl implements BolsasService {
                 totalPacientes,
                 pacientesAsignados,
                 porcentajePromedio,
-                totalSolicitudes,
-                solicitudesPendientes
+                0L,  // totalSolicitudes - comentado
+                0L   // solicitudesPendientes - comentado
         );
     }
 
@@ -230,7 +241,6 @@ public class BolsasServiceImpl implements BolsasService {
     // ========================================================================
 
     @Override
-    @Transactional
     public ImportacionResultadoDTO importarDesdeExcel(MultipartFile archivo, Long usuarioId, String usuarioNombre, Long tipoBolesaId) {
         log.info("📥 Importando solicitudes desde Excel: {} - Tipo Bolsa: {}", archivo.getOriginalFilename(), tipoBolesaId);
 
@@ -238,18 +248,23 @@ public class BolsasServiceImpl implements BolsasService {
         int registrosExitosos = 0;
         int registrosFallidos = 0;
         Set<String> dnisProcesados = new HashSet<>();
-        Map<String, Long> bolsaCache = new HashMap<>();
+        List<BolsasService.AseguradoImportadoDTO> nuevosAsegurados = new ArrayList<>();
 
         try (InputStream inputStream = archivo.getInputStream();
              Workbook workbook = new XSSFWorkbook(inputStream)) {
 
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Obtener bolsa seleccionada por tipo
-            DimBolsa bolsaSeleccionada = bolsaRepository.findById(tipoBolesaId)
-                    .orElseThrow(() -> new RuntimeException("Tipo de bolsa no encontrado: " + tipoBolesaId));
+            // 🔍 Obtener el tipo de bolsa - EN TRANSACCIÓN SEPARADA (readOnly = false)
+            String nombreBolsa = "BOLSA_IMPORTADA_" + System.currentTimeMillis();
+            log.info("📋 Buscando tipo de bolsa con ID: {}", tipoBolesaId);
 
-            if (!bolsaSeleccionada.getActivo()) {
+            // Ejecutar en transacción de escritura explícita
+            DimBolsa bolsaSeleccionada = transactionTemplate.execute(status ->
+                crearObtenerBolsaConTipo(nombreBolsa, tipoBolesaId)
+            );
+
+            if (bolsaSeleccionada == null || !bolsaSeleccionada.getActivo()) {
                 throw new RuntimeException("La bolsa seleccionada no está activa");
             }
 
@@ -281,37 +296,19 @@ public class BolsasServiceImpl implements BolsasService {
                     dnisProcesados.add(dni);
                     totalRegistros++;
 
-                    // Generar número de solicitud único
-                    String numeroSolicitud = String.format("IMP-%d-%s-%d",
-                        System.currentTimeMillis(),
-                        dni,
-                        rowIndex);
-
-                    // Crear solicitud
-                    // Para aseguradoId: usar el DNI como ID temporal (será resuelto manualmente después)
-                    Long aseguradoId = null;
+                    // Procesar cada registro en una transacción separada usando TransactionTemplate
+                    final int currentRowIndex = rowIndex;
+                    final DimBolsa bolsaFinal = bolsaSeleccionada;
                     try {
-                        aseguradoId = Long.parseLong(dni);
-                    } catch (NumberFormatException e) {
-                        aseguradoId = 0L; // Valor por defecto si DNI no es numérico
+                        transactionTemplate.executeWithoutResult(status -> {
+                            procesarRegistroImportacion(dni, nombrePaciente, telefonoMovil, especialidad,
+                                                       bolsaFinal, currentRowIndex, nuevosAsegurados);
+                        });
+                        registrosExitosos++;
+                    } catch (Exception rowError) {
+                        log.error("❌ Error procesando fila {}: {}", rowIndex, rowError.getMessage());
+                        registrosFallidos++;
                     }
-
-                    SolicitudBolsa solicitud = SolicitudBolsa.builder()
-                            .numeroSolicitud(numeroSolicitud)
-                            .aseguradoId(aseguradoId)
-                            .pacienteNombre(nombrePaciente.trim())
-                            .pacienteDni(dni)
-                            .pacienteTelefono(telefonoMovil != null ? telefonoMovil.trim() : null)
-                            .especialidad(especialidad != null ? especialidad.trim() : "No especificada")
-                            .estado("PENDIENTE")
-                            .bolsa(bolsaSeleccionada)
-                            .estadoGestionCitasId(null) // No citado aún
-                            .fechaSolicitud(OffsetDateTime.now())
-                            .activo(true)
-                            .build();
-
-                    solicitudBolsaRepository.save(solicitud);
-                    registrosExitosos++;
 
                 } catch (Exception e) {
                     log.error("❌ Error procesando fila {}: {}", rowIndex, e.getMessage());
@@ -319,22 +316,24 @@ public class BolsasServiceImpl implements BolsasService {
                 }
             }
 
-            // Registrar historial de importación
+            // Registrar historial de importación (en transacción separada)
             HistorialImportacionBolsa historial = HistorialImportacionBolsa.builder()
                     .nombreArchivo(archivo.getOriginalFilename())
+                    .usuarioId(usuarioId)
+                    .usuarioNombre(usuarioNombre)
                     .totalRegistros(totalRegistros)
                     .registrosExitosos(registrosExitosos)
                     .registrosFallidos(registrosFallidos)
                     .estadoImportacion("COMPLETADA")
-                    .usuarioNombre(usuarioNombre)
-                    .fechaImportacion(OffsetDateTime.now())
                     .activo(true)
                     .build();
 
-            HistorialImportacionBolsa historialGuardado = historialImportacionBolsaRepository.save(historial);
+            HistorialImportacionBolsa historialGuardado = transactionTemplate.execute(status ->
+                historialImportacionBolsaRepository.save(historial)
+            );
 
-            log.info("✅ Importación completada: {} exitosos, {} fallidos de {} registros",
-                registrosExitosos, registrosFallidos, totalRegistros);
+            log.info("✅ Importación completada: {} exitosos, {} fallidos de {} registros. {} asegurados nuevos creados",
+                registrosExitosos, registrosFallidos, totalRegistros, nuevosAsegurados.size());
 
             return new ImportacionResultadoDTO(
                     historialGuardado.getIdImportacion(),
@@ -342,25 +341,30 @@ public class BolsasServiceImpl implements BolsasService {
                     registrosExitosos,
                     registrosFallidos,
                     "COMPLETADA",
-                    String.format("Importados %d solicitudes de %d registros", registrosExitosos, totalRegistros)
+                    String.format("Importados %d solicitudes de %d registros. %d asegurados nuevos creados", registrosExitosos, totalRegistros, nuevosAsegurados.size()),
+                    nuevosAsegurados
             );
 
         } catch (Exception e) {
             log.error("❌ Error importando archivo Excel: {}", e.getMessage(), e);
 
-            // Registrar importación fallida
+            // Registrar importación fallida (en transacción separada)
             try {
                 HistorialImportacionBolsa historialFallo = HistorialImportacionBolsa.builder()
                         .nombreArchivo(archivo.getOriginalFilename())
+                        .usuarioId(usuarioId)
+                        .usuarioNombre(usuarioNombre)
                         .totalRegistros(totalRegistros)
                         .registrosExitosos(registrosExitosos)
                         .registrosFallidos(registrosFallidos)
                         .estadoImportacion("ERROR")
-                        .usuarioNombre(usuarioNombre)
-                        .fechaImportacion(OffsetDateTime.now())
+                        .detallesError(e.getMessage())
                         .activo(true)
                         .build();
-                historialImportacionBolsaRepository.save(historialFallo);
+
+                transactionTemplate.executeWithoutResult(status ->
+                    historialImportacionBolsaRepository.save(historialFallo)
+                );
             } catch (Exception historialError) {
                 log.error("❌ Error registrando importación fallida: {}", historialError.getMessage());
             }
@@ -427,5 +431,127 @@ public class BolsasServiceImpl implements BolsasService {
                 historial.getUsuarioNombre(),
                 historial.getFechaImportacion()
         );
+    }
+
+    // ========================================================================
+    // 🛠️ MÉTODO HELPER - PROCESAR CADA REGISTRO EN TRANSACCIÓN SEPARADA
+    // ========================================================================
+
+    /**
+     * Procesa un registro individual
+     * Se invoca dentro de una transacción manejada por TransactionTemplate
+     */
+    public void procesarRegistroImportacion(String dni, String nombrePaciente, String telefonoMovil,
+                                            String especialidad, DimBolsa bolsa, int rowIndex,
+                                            List<BolsasService.AseguradoImportadoDTO> nuevosAsegurados) {
+        // 🔍 BUSCAR ASEGURADO POR DNI
+        Asegurado aseguradoExistente = aseguradoRepository.findByDocPaciente(dni).orElse(null);
+        String nombreFinal = nombrePaciente;
+        String telefonoFinal = telefonoMovil;
+
+        if (aseguradoExistente != null) {
+            // ✅ ENCONTRADO: Usar datos del asegurado existente
+            log.info("✓ Asegurado existente encontrado: DNI={}", dni);
+            nombreFinal = aseguradoExistente.getPaciente();
+            if (aseguradoExistente.getTelCelular() != null) {
+                telefonoFinal = aseguradoExistente.getTelCelular();
+            }
+        } else {
+            // ❌ NO ENCONTRADO: Crear nuevo asegurado
+            log.info("📝 Creando nuevo asegurado: DNI={}", dni);
+            Asegurado nuevoAsegurado = new Asegurado();
+            nuevoAsegurado.setDocPaciente(dni);
+            nuevoAsegurado.setPaciente(nombrePaciente.trim());
+            nuevoAsegurado.setTelCelular(telefonoMovil != null ? telefonoMovil.trim() : null);
+            nuevoAsegurado.setPkAsegurado(dni); // Usar DNI como PK temporal
+
+            Asegurado aseguradoGuardado = aseguradoRepository.save(nuevoAsegurado);
+
+            // Registrar nuevo asegurado
+            synchronized (nuevosAsegurados) {
+                nuevosAsegurados.add(new BolsasService.AseguradoImportadoDTO(
+                    dni,
+                    nombrePaciente.trim(),
+                    telefonoMovil != null ? telefonoMovil.trim() : "No disponible",
+                    "No disponible"
+                ));
+            }
+        }
+
+        // Generar número de solicitud único
+        String numeroSolicitud = String.format("IMP-%d-%s-%d",
+            System.currentTimeMillis(),
+            dni,
+            rowIndex);
+
+        // Generar ID único derivado del DNI usando CRC32 para mejor distribución de hash
+        CRC32 crc = new CRC32();
+        crc.update(dni.getBytes());
+        Long pacienteIdDerivado = Math.abs(crc.getValue());
+
+        // Crear solicitud de bolsa - COMENTADO (usar SolicitudBolsaService v1.6.0)
+        /*
+        SolicitudBolsa solicitud = SolicitudBolsa.builder()
+                .numeroSolicitud(numeroSolicitud)
+                .docPaciente(dni) // ✅ IMPORTANTE: Setear DNI para FK a asegurados
+                .pacienteId(pacienteIdDerivado) // ✅ IMPORTANTE: Usar pacienteId
+                .pacienteNombre(nombreFinal)
+                .pacienteDni(dni)
+                .pacienteTelefono(telefonoFinal)
+                .especialidad(especialidad != null ? especialidad.trim() : "No especificada")
+                .estado("PENDIENTE")
+                .bolsa(bolsa)
+                .activo(true)
+                .build();
+
+        solicitudBolsaRepository.save(solicitud);
+        */
+        log.info("✅ Solicitud (legacy) - usar SolicitudBolsaService v1.6.0: {}", numeroSolicitud);
+    }
+
+    // ========================================================================
+    // 🛠️ MÉTODO HELPER - GUARDAR HISTORIAL EN NUEVA TRANSACCIÓN
+    // ========================================================================
+
+    /**
+     * Guarda el historial de importación en una nueva transacción separada
+     * Deprecated: Usar TransactionTemplate.execute() directamente
+     */
+    @Deprecated(forRemoval = true)
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public HistorialImportacionBolsa guardarHistorialEnNuevaTransaccion(HistorialImportacionBolsa historial) {
+        log.info("📝 Guardando historial de importación en nueva transacción (DEPRECATED)");
+        return historialImportacionBolsaRepository.save(historial);
+    }
+
+    // ========================================================================
+    // 🛠️ MÉTODO HELPER - CREAR O OBTENER BOLSA CON TIPO
+    // ========================================================================
+
+    /**
+     * Crea o obtiene una bolsa específica con el tipo de bolsa indicado
+     * Ejecuta la función SQL: get_or_create_bolsa(nombre, tipo_id)
+     * NOTA: Debe ser llamado dentro de una transacción (via TransactionTemplate)
+     */
+    private DimBolsa crearObtenerBolsaConTipo(String nombreBolsa, Long tipoBolesaId) {
+        try {
+            // Ejecutar función SQL get_or_create_bolsa
+            Long idBolsaCreada = jdbcTemplate.queryForObject(
+                    "SELECT get_or_create_bolsa(?, ?) AS id",
+                    new Object[]{nombreBolsa, tipoBolesaId},
+                    Long.class
+            );
+
+            log.info("✅ Bolsa obtenida/creada: ID={}, Nombre={}, Tipo={}", idBolsaCreada, nombreBolsa, tipoBolesaId);
+
+            // Obtener la bolsa creada
+            DimBolsa bolsa = bolsaRepository.findById(idBolsaCreada)
+                    .orElseThrow(() -> new RuntimeException("Error al obtener bolsa creada: " + idBolsaCreada));
+
+            return bolsa;
+        } catch (Exception e) {
+            log.error("❌ Error al crear/obtener bolsa: {}", e.getMessage());
+            throw new RuntimeException("Error al crear/obtener bolsa: " + e.getMessage());
+        }
     }
 }

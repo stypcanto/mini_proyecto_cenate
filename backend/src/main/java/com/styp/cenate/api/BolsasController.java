@@ -159,9 +159,13 @@ public class BolsasController {
         return ResponseEntity.ok(bolsasService.obtenerDetallesImportacion(idImportacion));
     }
 
+    /*
     // ========================================================================
-    // 📋 SOLICITUDES - CONSULTAS
+    // 📋 SOLICITUDES - COMENTADAS (v1.6.0 en SolicitudBolsaController)
     // ========================================================================
+    // DEPRECADO: Los endpoints de solicitudes fueron movidos a SolicitudBolsaController
+    // para evitar conflictos de rutas con la nueva versión v1.6.0.
+    // USE: /api/bolsas/solicitudes endpoints en SolicitudBolsaController en su lugar.
 
     @GetMapping("/solicitudes")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR', 'MEDICO')")
@@ -231,16 +235,12 @@ public class BolsasController {
         return ResponseEntity.ok(solicitudBolsasService.obtenerEstadisticas());
     }
 
-    // ========================================================================
-    // 📋 SOLICITUDES - CRUD
-    // ========================================================================
-
     @PostMapping("/solicitudes")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR', 'MEDICO')")
     @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "crear")
     public ResponseEntity<SolicitudBolsaDTO> crearSolicitud(
         @Valid @RequestBody SolicitudBolsaRequestDTO request) {
-        log.info("✏️ Creando nueva solicitud para paciente: {}", request.getPacienteDni());
+        log.info("✏️ Creando nueva solicitud para paciente: {}", request.pacienteDni());
         SolicitudBolsaDTO nuevaSolicitud = solicitudBolsasService.crearSolicitud(request);
         return ResponseEntity.status(HttpStatus.CREATED).body(nuevaSolicitud);
     }
@@ -291,10 +291,6 @@ public class BolsasController {
         return ResponseEntity.noContent().build();
     }
 
-    // ========================================================================
-    // 👤 ASIGNACIÓN A GESTORA
-    // ========================================================================
-
     @PatchMapping("/solicitudes/{id}/asignar")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
     @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
@@ -306,17 +302,12 @@ public class BolsasController {
         return ResponseEntity.ok(solicitudAsignada);
     }
 
-    // ========================================================================
-    // 📄 EXPORTACIÓN
-    // ========================================================================
-
     @GetMapping("/solicitudes/exportar")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
     public ResponseEntity<byte[]> exportarCSV(
         @RequestParam(value = "ids", required = false) List<Long> ids) {
         log.info("📄 Exportando solicitudes a CSV");
 
-        // Si no se proporcionan IDs, exportar todas
         if (ids == null || ids.isEmpty()) {
             ids = solicitudBolsasService.obtenerTodasLasSolicitudes()
                 .stream()
@@ -332,10 +323,6 @@ public class BolsasController {
             .body(csvData);
     }
 
-    // ========================================================================
-    // 📧 RECORDATORIOS
-    // ========================================================================
-
     @PostMapping("/solicitudes/{id}/recordatorio")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
     @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
@@ -346,4 +333,5 @@ public class BolsasController {
         SolicitudBolsaDTO solicitudActualizada = solicitudBolsasService.enviarRecordatorio(id, request);
         return ResponseEntity.ok(solicitudActualizada);
     }
+    */
 }
