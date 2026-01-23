@@ -102,7 +102,7 @@ public interface BolsasService {
     /**
      * Importa bolsas desde archivo Excel
      */
-    ImportacionResultadoDTO importarDesdeExcel(MultipartFile archivo, Long usuarioId, String usuarioNombre);
+    ImportacionResultadoDTO importarDesdeExcel(MultipartFile archivo, Long usuarioId, String usuarioNombre, Long tipoBolesaId);
 
     /**
      * Obtiene historial de importaciones

@@ -231,8 +231,8 @@ public class BolsasServiceImpl implements BolsasService {
 
     @Override
     @Transactional
-    public ImportacionResultadoDTO importarDesdeExcel(MultipartFile archivo, Long usuarioId, String usuarioNombre) {
-        log.info("📥 Importando solicitudes desde Excel: {}", archivo.getOriginalFilename());
+    public ImportacionResultadoDTO importarDesdeExcel(MultipartFile archivo, Long usuarioId, String usuarioNombre, Long tipoBolesaId) {
+        log.info("📥 Importando solicitudes desde Excel: {} - Tipo Bolsa: {}", archivo.getOriginalFilename(), tipoBolesaId);
 
         int totalRegistros = 0;
         int registrosExitosos = 0;
@@ -245,12 +245,13 @@ public class BolsasServiceImpl implements BolsasService {
 
             Sheet sheet = workbook.getSheetAt(0);
 
-            // Obtener bolsa por defecto (primera bolsa activa)
-            List<DimBolsa> bolsasActivas = bolsaRepository.findByEstadoAndActivo("ACTIVA", true);
-            if (bolsasActivas.isEmpty()) {
-                throw new RuntimeException("No hay bolsas activas para importar solicitudes");
+            // Obtener bolsa seleccionada por tipo
+            DimBolsa bolsaSeleccionada = bolsaRepository.findById(tipoBolesaId)
+                    .orElseThrow(() -> new RuntimeException("Tipo de bolsa no encontrado: " + tipoBolesaId));
+
+            if (!bolsaSeleccionada.getActivo()) {
+                throw new RuntimeException("La bolsa seleccionada no está activa");
             }
-            DimBolsa bolsaDefecto = bolsasActivas.get(0);
 
             // Procesar filas (saltar encabezado)
             for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
@@ -303,7 +304,7 @@ public class BolsasServiceImpl implements BolsasService {
                             .pacienteTelefono(telefonoMovil != null ? telefonoMovil.trim() : null)
                             .especialidad(especialidad != null ? especialidad.trim() : "No especificada")
                             .estado("PENDIENTE")
-                            .bolsa(bolsaDefecto)
+                            .bolsa(bolsaSeleccionada)
                             .estadoGestionCitasId(null) // No citado aún
                             .fechaSolicitud(OffsetDateTime.now())
                             .activo(true)

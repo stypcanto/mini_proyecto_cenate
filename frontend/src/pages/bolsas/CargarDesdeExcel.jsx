@@ -19,12 +19,16 @@ export default function CargarDesdeExcel() {
   const [importStatus, setImportStatus] = useState(null);
   const [preview, setPreview] = useState([]);
   const [usuario, setUsuario] = useState(null);
+  const [tipoBolesaId, setTipoBolesaId] = useState(null);
+  const [tiposBolsas, setTiposBolsas] = useState([]);
+  const [loadingTipos, setLoadingTipos] = useState(true);
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
 
-  // Obtener datos del usuario en el montaje
+  // Obtener datos del usuario y tipos de bolsas en el montaje
   useEffect(() => {
+    // Obtener usuario
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
@@ -35,6 +39,33 @@ export default function CargarDesdeExcel() {
         setUsuario({ username: 'admin', id: 1 });
       }
     }
+
+    // Obtener bolsas disponibles
+    const obtenerBolsasDisponibles = async () => {
+      try {
+        const response = await fetch('http://localhost:8080/api/bolsas', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
+
+        if (!response.ok) {
+          throw new Error(`Error al obtener bolsas: ${response.status}`);
+        }
+
+        const datos = await response.json();
+        // Filtrar solo bolsas activas
+        const bolsasActivas = datos.filter(bolsa => bolsa.estado === 'ACTIVA' || bolsa.activo);
+        setTiposBolsas(bolsasActivas || []);
+      } catch (error) {
+        console.error('❌ Error obteniendo bolsas disponibles:', error);
+        setTiposBolsas([]);
+      } finally {
+        setLoadingTipos(false);
+      }
+    };
+
+    obtenerBolsasDisponibles();
   }, []);
 
   const handleFileChange = (e) => {
@@ -59,7 +90,7 @@ export default function CargarDesdeExcel() {
   };
 
   const handleImport = async () => {
-    if (!file || !usuario) return;
+    if (!file || !usuario || !tipoBolesaId) return;
 
     setIsLoading(true);
     try {
@@ -67,12 +98,14 @@ export default function CargarDesdeExcel() {
       formData.append('archivo', file);
       formData.append('usuarioId', usuario.id || 1);
       formData.append('usuarioNombre', usuario.username || 'admin');
+      formData.append('tipoBolesaId', tipoBolesaId);
 
       // Log para debugging
       console.log('📤 Enviando importación:', {
         archivo: file.name,
         usuarioId: usuario.id,
         usuarioNombre: usuario.username,
+        tipoBolesaId: tipoBolesaId,
         tamaño: file.size
       });
 
@@ -193,13 +226,40 @@ export default function CargarDesdeExcel() {
             </div>
           )}
 
+          {/* Selección de Bolsa */}
+          {file && (
+            <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <label className="block text-sm font-semibold text-gray-700 mb-3">
+                📋 Selecciona la Bolsa de Pacientes:
+              </label>
+              {loadingTipos ? (
+                <div className="text-gray-600">Cargando bolsas disponibles...</div>
+              ) : tiposBolsas.length > 0 ? (
+                <select
+                  value={tipoBolesaId || ''}
+                  onChange={(e) => setTipoBolesaId(e.target.value ? parseInt(e.target.value) : null)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">-- Selecciona una bolsa --</option>
+                  {tiposBolsas.map((bolsa) => (
+                    <option key={bolsa.idBolsa} value={bolsa.idBolsa}>
+                      {bolsa.nombreBolsa} {bolsa.especialidadNombre ? `(${bolsa.especialidadNombre})` : ''}
+                    </option>
+                  ))}
+                </select>
+              ) : (
+                <div className="text-red-600">No hay bolsas disponibles</div>
+              )}
+            </div>
+          )}
+
           {/* Botones de acción */}
           <div className="flex gap-4">
             <button
               onClick={handleImport}
-              disabled={!file || isLoading}
+              disabled={!file || !tipoBolesaId || isLoading}
               className={`flex-1 py-3 px-6 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors ${
-                file && !isLoading
+                file && tipoBolesaId && !isLoading
                   ? 'bg-blue-600 text-white hover:bg-blue-700'
                   : 'bg-gray-300 text-gray-500 cursor-not-allowed'
               }`}
@@ -219,6 +279,7 @@ export default function CargarDesdeExcel() {
             <button
               onClick={() => {
                 setFile(null);
+                setTipoBolesaId(null);
                 setImportStatus(null);
               }}
               className="py-3 px-6 rounded-lg font-semibold bg-gray-200 text-gray-800 hover:bg-gray-300 transition-colors"

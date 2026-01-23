@@ -138,9 +138,10 @@ public class BolsasController {
     public ResponseEntity<Object> importarDesdeExcel(
         @RequestParam("archivo") MultipartFile archivo,
         @RequestParam Long usuarioId,
-        @RequestParam String usuarioNombre) {
-        log.info("📥 Importando bolsas desde Excel: {}", archivo.getOriginalFilename());
-        Object resultado = bolsasService.importarDesdeExcel(archivo, usuarioId, usuarioNombre);
+        @RequestParam String usuarioNombre,
+        @RequestParam Long tipoBolesaId) {
+        log.info("📥 Importando bolsas desde Excel: {} - Tipo: {}", archivo.getOriginalFilename(), tipoBolesaId);
+        Object resultado = bolsasService.importarDesdeExcel(archivo, usuarioId, usuarioNombre, tipoBolesaId);
         return ResponseEntity.status(HttpStatus.CREATED).body(resultado);
     }
 
