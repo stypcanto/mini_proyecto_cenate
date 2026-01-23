@@ -1,10 +1,13 @@
 package com.styp.cenate.service.ipress;
 
+import java.util.List;
+
+import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
 import com.styp.cenate.dto.IpressRequest;
 import com.styp.cenate.dto.IpressResponse;
-import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
 import com.styp.cenate.dto.ModuloDisponibleDTO;
-import java.util.List;
+import com.styp.cenate.dto.ipress.ConfigurarServiciosRequest;
+import com.styp.cenate.dto.ipress.ServicioIpressCfgRow;
 
 /**
  * Servicio para gestionar las IPRESS (Instituciones Prestadoras de Servicios de Salud)
@@ -79,4 +82,11 @@ public interface IpressService {
      * @param id ID de la IPRESS a eliminar
      */
     void deleteIpress(Long id);
+    
+    
+    
+    List<ServicioIpressCfgRow> listarServiciosActivosConConfig(String idIpress);
+    void configurarPorCodIpress(String codIpress, ConfigurarServiciosRequest request);
+    
+    
 }

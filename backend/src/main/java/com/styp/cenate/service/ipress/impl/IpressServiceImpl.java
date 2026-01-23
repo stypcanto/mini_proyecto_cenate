@@ -1,37 +1,42 @@
 package com.styp.cenate.service.ipress.impl;
 
-import lombok.Data;
-import lombok.extern.slf4j.Slf4j;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
 import com.styp.cenate.dto.IpressRequest;
 import com.styp.cenate.dto.IpressResponse;
 import com.styp.cenate.dto.MacroregionResponse;
-import com.styp.cenate.dto.RedResponse;
-import com.styp.cenate.dto.ActualizarModalidadIpressRequest;
 import com.styp.cenate.dto.ModuloDisponibleDTO;
+import com.styp.cenate.dto.RedResponse;
+import com.styp.cenate.dto.ipress.ConfigurarServiciosRequest;
+import com.styp.cenate.dto.ipress.ServicioCfgRequest;
+import com.styp.cenate.dto.ipress.ServicioIpressCfgRow;
 import com.styp.cenate.model.Ipress;
+import com.styp.cenate.model.IpressModuloConfig;
 import com.styp.cenate.model.Macroregion;
 import com.styp.cenate.model.ModalidadAtencion;
+import com.styp.cenate.model.PersonalExterno;
 import com.styp.cenate.model.Red;
 import com.styp.cenate.model.Usuario;
-import com.styp.cenate.model.PersonalExterno;
-import com.styp.cenate.model.IpressModuloConfig;
+import com.styp.cenate.repository.IpressModuloConfigRepository;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.ModalidadAtencionRepository;
+import com.styp.cenate.repository.PersonalExternoRepository;
 import com.styp.cenate.repository.RedRepository;
 import com.styp.cenate.repository.UsuarioRepository;
-import com.styp.cenate.repository.PersonalExternoRepository;
-import com.styp.cenate.repository.IpressModuloConfigRepository;
-import com.styp.cenate.service.ipress.IpressService;
+import com.styp.cenate.repository.ipress.IpressServicioConfigWriteRepository;
 import com.styp.cenate.service.auditlog.AuditLogService;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.Authentication;
+import com.styp.cenate.service.ipress.IpressService;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 🏥 Servicio para gestionar IPRESS con información de Red y Macroregión
@@ -50,6 +55,8 @@ public class IpressServiceImpl implements IpressService {
     private final PersonalExternoRepository personalExternoRepository;
     private final IpressModuloConfigRepository ipressModuloConfigRepository;
     private final AuditLogService auditLogService;
+    
+    private final IpressServicioConfigWriteRepository repoConfigIpress;
 
     @Override
     public List<IpressResponse> getAllIpress() {
@@ -395,4 +402,52 @@ public class IpressServiceImpl implements IpressService {
                         .build())
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public List<ServicioIpressCfgRow> listarServiciosActivosConConfig(String idIpress) {
+    	  var rows = ipressRepository.listarServiciosActivosConConfig(idIpress);
+    	    System.out.println("FILAS EN SPRING (repo): " + rows.size());
+
+    	    return rows.stream()
+    	        .map(r -> new ServicioIpressCfgRow(
+    	            ((Number) r[0]).longValue(),
+    	            (String) r[1],
+    	            (Boolean) r[2],
+    	            (Boolean) r[3]
+    	        ))
+    	        .toList();
+    }
+    
+   
+    
+    @Transactional
+    @Override
+    public void configurarPorCodIpress(String codIpress, ConfigurarServiciosRequest request) {
+
+        Long idIpress = repoConfigIpress.obtenerIdIpressPorCodigo(codIpress);
+        if (idIpress == null) {
+            throw new IllegalArgumentException("No existe IPRESS activa para cod_ipress=" + codIpress);
+        }
+
+        Long idCfg = repoConfigIpress.obtenerOCrearCfg(idIpress);
+
+        for (ServicioCfgRequest s : request.servicios()) {
+            boolean tc  = Boolean.TRUE.equals(s.teleconsulta());
+            boolean tco = Boolean.TRUE.equals(s.teleconsultorio());
+
+            if (!tc && !tco) {
+            	repoConfigIpress.deleteDetalle(idCfg, s.idServicio());
+            } else {
+            	repoConfigIpress.upsertDetalle(idCfg, s);
+            }
+        }
+    }
+    
+    
+    
 }
+
+
+
+
+
