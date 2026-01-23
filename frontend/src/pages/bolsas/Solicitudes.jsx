@@ -3,6 +3,7 @@ import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Downloa
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
+import bolsasService from '../../services/bolsasService';
 
 /**
  * 📋 Solicitudes - Recepción de Bolsa
@@ -25,153 +26,93 @@ export default function Solicitudes() {
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [selectedRows, setSelectedRows] = useState(new Set());
 
+  // Cache de catálogos para evitar N+1 queries
+  const [cacheEstados, setCacheEstados] = useState({});
+  const [cacheIpress, setCacheIpress] = useState({});
+  const [cacheRedes, setCacheRedes] = useState({});
+  const [errorMessage, setErrorMessage] = useState('');
+
   useEffect(() => {
-    cargarSolicitudes();
+    // Cargar solicitudes y catálogos inicialmente
+    cargarDatos();
   }, []);
 
-  const cargarSolicitudes = async () => {
+  // Cargar solicitudes y catálogos en paralelo
+  const cargarDatos = async () => {
     setIsLoading(true);
+    setErrorMessage('');
     try {
-      // TODO: Llamar a API para obtener solicitudes
-      // const response = await bolsasService.obtenerSolicitudes();
-      // setSolicitudes(response.data);
-
-      // Mock data con estructura mejorada
-      setSolicitudes([
-        {
-          id: 1,
-          dni: '12345678',
-          paciente: 'María Gonzales Flores',
-          telefono: '+51 987654321',
-          especialidad: 'Nutrición',
-          sexo: 'Femenino',
-          red: 'Red Centro',
-          ipress: 'Essalud Lima',
-          bolsa: 'BOLSA 107',
-          estado: 'pendiente',
-          diferimiento: 19,
-          semaforo: 'rojo',
-          fechaCita: '2026-01-25',
-          fechaAsignacion: '2026-01-20'
-        },
-        {
-          id: 2,
-          dni: '23456789',
-          paciente: 'Juan Pérez Rivera',
-          telefono: '+51 912345678',
-          especialidad: 'Psicología',
-          sexo: 'Masculino',
-          red: 'Red Norte',
-          ipress: 'Essalud Arequipa',
-          bolsa: 'BOLSAS ENFERMERIA',
-          estado: 'citado',
-          diferimiento: 5,
-          semaforo: 'verde',
-          fechaCita: '2026-01-22',
-          fechaAsignacion: '2026-01-18'
-        },
-        {
-          id: 3,
-          dni: '34567890',
-          paciente: 'Ana Martínez Soto',
-          telefono: '+51 998765432',
-          especialidad: 'Medicina General',
-          sexo: 'Femenino',
-          red: 'Red Sur',
-          ipress: 'Essalud Trujillo',
-          bolsa: 'BOLSAS REPROGRAMACION',
-          estado: 'atendido',
-          diferimiento: 8,
-          semaforo: 'verde',
-          fechaCita: '2026-01-20',
-          fechaAsignacion: '2026-01-15'
-        },
-        {
-          id: 4,
-          dni: '45678901',
-          paciente: 'Carlos Rodríguez Vega',
-          telefono: '+51 956789012',
-          especialidad: 'Endocrinología',
-          sexo: 'Masculino',
-          red: 'Red Centro',
-          ipress: 'Essalud Lima',
-          bolsa: 'BOLSA DENGUE',
-          estado: 'observado',
-          diferimiento: 13,
-          semaforo: 'rojo',
-          fechaCita: '2026-01-23',
-          fechaAsignacion: '2026-01-19'
-        },
-        {
-          id: 5,
-          dni: '56789012',
-          paciente: 'Laura Sánchez Morales',
-          telefono: '+51 945123456',
-          especialidad: 'Cardiología',
-          sexo: 'Femenino',
-          red: 'Red Oriente',
-          ipress: 'Essalud Cusco',
-          bolsa: 'BOLSAS EXPLOTADATOS',
-          estado: 'pendiente',
-          diferimiento: 25,
-          semaforo: 'rojo',
-          fechaCita: '2026-01-26',
-          fechaAsignacion: '2026-01-21'
-        },
-        {
-          id: 6,
-          dni: '67890123',
-          paciente: 'Roberto Torres Gutierrez',
-          telefono: '+51 965432109',
-          especialidad: 'Nutrición',
-          sexo: 'Masculino',
-          red: 'Red Este',
-          ipress: 'Essalud Tacna',
-          bolsa: 'BOLSAS IVR',
-          estado: 'citado',
-          diferimiento: 3,
-          semaforo: 'verde',
-          fechaCita: '2026-01-24',
-          fechaAsignacion: '2026-01-19'
-        },
-        {
-          id: 7,
-          dni: '78901234',
-          paciente: 'Sofía López Ramírez',
-          telefono: '+51 987123456',
-          especialidad: 'Ginecología',
-          sexo: 'Femenino',
-          red: 'Red Metropolitana',
-          ipress: 'Essalud Puno',
-          bolsa: 'BOLSA GESTORES TERRITORIAL',
-          estado: 'atendido',
-          diferimiento: 2,
-          semaforo: 'verde',
-          fechaCita: '2026-01-19',
-          fechaAsignacion: '2026-01-14'
-        },
-        {
-          id: 8,
-          dni: '89012345',
-          paciente: 'Diego Fernández Castro',
-          telefono: '+51 976543210',
-          especialidad: 'Psiquiatría',
-          sexo: 'Masculino',
-          red: 'Red Centro',
-          ipress: 'Essalud Lima',
-          bolsa: 'BOLSA 107',
-          estado: 'citado',
-          diferimiento: 11,
-          semaforo: 'verde',
-          fechaCita: '2026-01-27',
-          fechaAsignacion: '2026-01-22'
-        },
+      // Cargar solicitudes y catálogos en paralelo
+      const [solicitudesData, estadosData, ipressData, redesData] = await Promise.all([
+        bolsasService.obtenerSolicitudes(),
+        bolsasService.obtenerEstadosGestion().catch(() => []),
+        bolsasService.obtenerIpress().catch(() => []),
+        bolsasService.obtenerRedes().catch(() => [])
       ]);
+
+      // Procesar solicitudes y enriquecer con nombres de catálogos
+      const solicitudesEnriquecidas = (solicitudesData || []).map(solicitud => {
+        return {
+          ...solicitud,
+          paciente: solicitud.pacienteNombre || '',
+          telefono: solicitud.pacienteTelefono || '',
+          estado: mapearEstadoAPI(solicitud.estado),
+          semaforo: solicitud.recordatorioEnviado ? 'verde' : 'rojo',
+          diferimiento: calcularDiferimiento(solicitud.fechaSolicitud),
+          especialidad: solicitud.especialidad || 'N/A',
+          sexo: 'N/A',
+          red: solicitud.responsableGestoraNombre || 'Sin asignar',
+          ipress: solicitud.idBolsa ? `Bolsa ${solicitud.idBolsa}` : 'N/A',
+          bolsa: solicitud.nombreBolsa || 'Sin clasificar'
+        };
+      });
+
+      setSolicitudes(solicitudesEnriquecidas);
+
+      // Crear cache de estados, IPRESS y Redes
+      if (estadosData && Array.isArray(estadosData)) {
+        const estadosMap = {};
+        estadosData.forEach(e => { estadosMap[e.id] = e; });
+        setCacheEstados(estadosMap);
+      }
+
+      if (ipressData && Array.isArray(ipressData)) {
+        const ipressMap = {};
+        ipressData.forEach(i => { ipressMap[i.id] = i; });
+        setCacheIpress(ipressMap);
+      }
+
+      if (redesData && Array.isArray(redesData)) {
+        const redesMap = {};
+        redesData.forEach(r => { redesMap[r.id] = r; });
+        setCacheRedes(redesMap);
+      }
     } catch (error) {
-      console.error('Error cargando solicitudes:', error);
+      console.error('Error cargando datos:', error);
+      setErrorMessage('Error al cargar las solicitudes. Intenta nuevamente.');
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Helper: Mapear estado API a estado UI
+  const mapearEstadoAPI = (estado) => {
+    const mapping = {
+      'PENDIENTE': 'pendiente',
+      'APROBADA': 'citado',
+      'RECHAZADA': 'observado',
+      'ATENDIDA': 'atendido'
+    };
+    return mapping[estado] || 'pendiente';
+  };
+
+  // Helper: Calcular diferimiento en días desde la fecha de solicitud
+  const calcularDiferimiento = (fechaSolicitud) => {
+    if (!fechaSolicitud) return 0;
+    const fecha = new Date(fechaSolicitud);
+    const hoy = new Date();
+    const diferencia = Math.floor((hoy - fecha) / (1000 * 60 * 60 * 24));
+    return Math.max(0, diferencia);
   };
 
   // Calcular estadísticas
@@ -275,42 +216,30 @@ export default function Solicitudes() {
   };
 
   // Descargar selección de bolsas
-  const descargarSeleccion = () => {
+  const descargarSeleccion = async () => {
     if (selectedRows.size === 0) {
       alert('Selecciona al menos una bolsa para descargar');
       return;
     }
 
-    const seleccionados = solicitudesFiltradas.filter(s => selectedRows.has(s.id));
+    try {
+      const idsSeleccionados = Array.from(selectedRows);
+      const csvBlob = await bolsasService.descargarCSV(idsSeleccionados);
 
-    // Crear CSV
-    const headers = ['DNI', 'Nombre', 'Teléfono', 'Especialidad', 'Sexo', 'Red', 'IPRESS', 'Bolsa', 'Fecha Cita', 'Fecha Asignación', 'Estado', 'Diferimiento'];
-    const csvContent = [
-      headers.join(','),
-      ...seleccionados.map(s => [
-        s.dni,
-        `"${s.paciente}"`,
-        s.telefono,
-        s.especialidad,
-        s.sexo,
-        s.red,
-        `"${s.ipress}"`,
-        s.bolsa,
-        s.fechaCita,
-        s.fechaAsignacion,
-        s.estado,
-        `${s.diferimiento} días`
-      ].join(','))
-    ].join('\n');
-
-    // Descargar archivo
-    const element = document.createElement('a');
-    element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent));
-    element.setAttribute('download', `bolsas_${new Date().toISOString().split('T')[0]}.csv`);
-    element.style.display = 'none';
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+      // Descargar archivo
+      const element = document.createElement('a');
+      const url = URL.createObjectURL(csvBlob);
+      element.setAttribute('href', url);
+      element.setAttribute('download', `bolsas_${new Date().toISOString().split('T')[0]}.csv`);
+      element.style.display = 'none';
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error descargando CSV:', error);
+      alert('Error al descargar el archivo. Intenta nuevamente.');
+    }
   };
 
 
@@ -433,6 +362,18 @@ export default function Solicitudes() {
             {isLoading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+              </div>
+            ) : errorMessage ? (
+              <div className="p-8 text-center">
+                <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                  <p className="text-red-700 font-semibold">{errorMessage}</p>
+                  <button
+                    onClick={() => cargarDatos()}
+                    className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors"
+                  >
+                    Reintentar
+                  </button>
+                </div>
               </div>
             ) : solicitudesFiltradas.length > 0 ? (
               <table className="w-full">
