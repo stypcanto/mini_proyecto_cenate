@@ -54,7 +54,8 @@ const CustomSwitch = ({ checked, onChange, disabled = false, color = "green" }) 
  * @param {Object} props
  * @param {Array} props.especialidades - Lista de especialidades disponibles
  * @param {Object} props.periodo - Periodo seleccionado
- * @param {Array} props.registros - Registros actuales (formato: [{idServicio, turnoTM, turnoM, turnoT, tc, tl, fecha, estado}])
+ * @param {Array} props.registros - Registros actuales (formato: [{idServicio, turnoManana, turnoTarde, tc, tl, fecha, estado}])
+ * @param {Map} props.configDefaults - Configuración por defecto de tc/tl por servicio (Map: idServicio -> {tc, tl})
  * @param {Function} props.onChange - Callback cuando cambian los datos
  * @param {Function} props.onAutoGuardarFechas - Callback para auto-guardar cuando se confirman fechas
  * @param {Boolean} props.soloLectura - Si es solo lectura
@@ -64,6 +65,7 @@ export default function TablaSolicitudEspecialidades({
   especialidades = [],
   periodo = null,
   registros = [],
+  configDefaults = new Map(),
   onChange = () => {},
   onAutoGuardarFechas = null,
   soloLectura = false,
@@ -78,7 +80,6 @@ export default function TablaSolicitudEspecialidades({
       inicial[r.idServicio] = {
         idServicio: r.idServicio,
         idDetalle: r.idDetalle || null,
-        turnoTM: r.turnoTM || 0,
         turnoManana: r.turnoManana || 0,
         turnoTarde: r.turnoTarde || 0,
         tc: r.tc !== undefined ? r.tc : false,
@@ -97,7 +98,6 @@ export default function TablaSolicitudEspecialidades({
       nuevo[r.idServicio] = {
         idServicio: r.idServicio,
         idDetalle: r.idDetalle || null,
-        turnoTM: r.turnoTM || 0,
         turnoManana: r.turnoManana || 0,
         turnoTarde: r.turnoTarde || 0,
         tc: r.tc !== undefined ? r.tc : false,
@@ -131,13 +131,16 @@ export default function TablaSolicitudEspecialidades({
       const nuevo = { ...prev };
 
       if (!nuevo[idServicio]) {
+        // Obtener valores por defecto de la configuración de IPRESS
+        const defaults = configDefaults?.get?.(idServicio) || { tc: false, tl: false };
+        console.log(`📋 Creando registro para idServicio ${idServicio} con defaults:`, defaults);
+
         nuevo[idServicio] = {
           idServicio,
-          turnoTM: 0,
           turnoManana: 0,
           turnoTarde: 0,
-          tc: false,
-          tl: false,
+          tc: defaults.tc,
+          tl: defaults.tl,
           fechas: [],
           estado: "PENDIENTE",
         };
@@ -158,7 +161,7 @@ export default function TablaSolicitudEspecialidades({
     const d = datos[idServicio];
     if (!d) return 0;
     return (
-      Number(d.turnoTM || 0) + Number(d.turnoManana || 0) + Number(d.turnoTarde || 0)
+      Number(d.turnoManana || 0) + Number(d.turnoTarde || 0)
     );
   };
 
@@ -318,13 +321,13 @@ export default function TablaSolicitudEspecialidades({
                   Especialidad
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
-                  Turno Completo
-                </th>
-                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   Mañana
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   Tarde
+                </th>
+                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
+                  <Calendar className="w-3 h-3 inline" />
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   Teleconsulta
@@ -334,9 +337,6 @@ export default function TablaSolicitudEspecialidades({
                 </th>
                 <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
                   Total
-                </th>
-                <th className="px-2 py-2 text-center text-[10px] font-bold text-white uppercase">
-                  <Calendar className="w-3 h-3 inline" />
                 </th>
               </tr>
             </thead>
@@ -365,26 +365,6 @@ export default function TablaSolicitudEspecialidades({
                       </div>
                     </td>
 
-                    {/* Turno TM */}
-                    <td className="px-2 py-2 text-center">
-                      <input
-                        type="number"
-                        min="0"
-                        value={d?.turnoTM || 0}
-                        onChange={(e) => {
-                          const valor = Math.max(0, parseInt(e.target.value) || 0);
-                          actualizarCampo(esp.idServicio, "turnoTM", valor);
-                          // Si hay TM, resetear Mañana y Tarde
-                          if (valor > 0) {
-                            actualizarCampo(esp.idServicio, "turnoManana", 0);
-                            actualizarCampo(esp.idServicio, "turnoTarde", 0);
-                          }
-                        }}
-                        disabled={soloLectura}
-                        className="w-12 px-2 py-1 text-center text-sm border border-purple-300 rounded font-bold text-purple-600 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100"
-                      />
-                    </td>
-
                     {/* Turnos Mañana */}
                     <td className="px-2 py-2 text-center">
                       <input
@@ -398,7 +378,7 @@ export default function TablaSolicitudEspecialidades({
                             Math.max(0, parseInt(e.target.value) || 0)
                           )
                         }
-                        disabled={soloLectura || (d?.turnoTM > 0)}
+                        disabled={soloLectura}
                         className="w-12 px-2 py-1 text-center text-sm border border-orange-300 rounded font-bold text-orange-600 focus:ring-1 focus:ring-orange-500 focus:border-orange-500 disabled:bg-gray-100 disabled:opacity-50"
                       />
                     </td>
@@ -416,9 +396,29 @@ export default function TablaSolicitudEspecialidades({
                             Math.max(0, parseInt(e.target.value) || 0)
                           )
                         }
-                        disabled={soloLectura || (d?.turnoTM > 0)}
+                        disabled={soloLectura}
                         className="w-12 px-2 py-1 text-center text-sm border border-purple-300 rounded font-bold text-purple-600 focus:ring-1 focus:ring-purple-500 focus:border-purple-500 disabled:bg-gray-100 disabled:opacity-50"
                       />
+                    </td>
+
+                    {/* Fecha */}
+                    <td className="px-2 py-2 text-center">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEspecialidadSeleccionada(esp);
+                          setModalFechasOpen(true);
+                        }}
+                        className={`p-1 rounded border transition-all ${
+                          total > 0 && !soloLectura
+                            ? "border-blue-500 text-blue-500 hover:bg-blue-50 cursor-pointer"
+                            : "border-gray-300 text-gray-400 cursor-not-allowed"
+                        }`}
+                        disabled={soloLectura || total === 0}
+                        title={total === 0 ? "Configura turnos primero" : "Seleccionar fechas"}
+                      >
+                        <Calendar className="w-3.5 h-3.5" />
+                      </button>
                     </td>
 
                     {/* Teleconsulta */}
@@ -450,26 +450,6 @@ export default function TablaSolicitudEspecialidades({
                       <div className="inline-flex items-center justify-center w-7 h-7 rounded-full bg-cyan-500 text-white font-bold text-sm">
                         {total}
                       </div>
-                    </td>
-
-                    {/* Fecha */}
-                    <td className="px-2 py-2 text-center">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setEspecialidadSeleccionada(esp);
-                          setModalFechasOpen(true);
-                        }}
-                        className={`p-1 rounded border transition-all ${
-                          total > 0 && !soloLectura
-                            ? "border-blue-500 text-blue-500 hover:bg-blue-50 cursor-pointer"
-                            : "border-gray-300 text-gray-400 cursor-not-allowed"
-                        }`}
-                        disabled={soloLectura || total === 0}
-                        title={total === 0 ? "Configura turnos primero" : "Seleccionar fechas"}
-                      >
-                        <Calendar className="w-3.5 h-3.5" />
-                      </button>
                     </td>
                   </tr>
                 );

@@ -4,7 +4,7 @@
 // Permite al usuario seleccionar fechas concretas para turnos de mañana/tarde
 // ========================================================================
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { Calendar, Sun, Moon, X, Loader2 } from "lucide-react";
 import { solicitudTurnoService } from "../../../../../services/solicitudTurnoService";
 
@@ -18,6 +18,16 @@ const formatFechaRango = (fecha) => {
   } catch {
     return fecha;
   }
+};
+
+// Días de la semana
+const DIAS_SEMANA = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+
+// Helper para obtener el nombre del mes
+const getNombreMes = (mes) => {
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+                 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  return meses[mes];
 };
 
 // Helper para calcular rango de fechas del periodo (basado en el código del periodo)
@@ -69,14 +79,60 @@ export default function ModalSeleccionarFechas({
   periodo = null,
 }) {
   const [tipoTurno, setTipoTurno] = useState("MANANA"); // MANANA | TARDE
-  const [fechaInput, setFechaInput] = useState("");
   const [fechasSeleccionadas, setFechasSeleccionadas] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  // Calcular días del mes para el calendario (basado en el periodo)
+  const diasDelMes = useMemo(() => {
+    if (!periodo?.periodo) return [];
+    
+    const periodoStr = String(periodo.periodo);
+    const anio = parseInt(periodoStr.substring(0, 4));
+    const mes = parseInt(periodoStr.substring(4, 6)) - 1; // 0-indexed
+    
+    // Primer y último día del mes
+    const primerDia = new Date(anio, mes, 1);
+    const ultimoDia = new Date(anio, mes + 1, 0);
+    
+    // Días a mostrar (incluyendo espacios en blanco al inicio)
+    const dias = [];
+    const primerDiaSemana = primerDia.getDay(); // 0 = Domingo
+    
+    // Espacios en blanco al inicio
+    for (let i = 0; i < primerDiaSemana; i++) {
+      dias.push(null);
+    }
+    
+    // Días del mes
+    for (let dia = 1; dia <= ultimoDia.getDate(); dia++) {
+      dias.push(new Date(anio, mes, dia));
+    }
+    
+    return dias;
+  }, [periodo]);
+
+  // Calcular rango válido del periodo
+  const rangoPeriodo = useMemo(() => {
+    if (!periodo?.periodo) return { min: null, max: null };
+    
+    try {
+      const periodoStr = String(periodo.periodo);
+      const anio = periodoStr.substring(0, 4);
+      const mes = periodoStr.substring(4, 6);
+      
+      const primerDia = new Date(parseInt(anio), parseInt(mes) - 1, 1);
+      const ultimoDia = new Date(parseInt(anio), parseInt(mes), 0);
+      
+      return { min: primerDia, max: ultimoDia };
+    } catch (error) {
+      console.error("Error al calcular rango del periodo:", error);
+      return { min: null, max: null };
+    }
+  }, [periodo]);
 
   useEffect(() => {
     if (open) {
       cargarFechas();
-      setFechaInput("");
       setTipoTurno("MANANA");
     }
   }, [open, idDetalle]);
@@ -110,33 +166,102 @@ export default function ModalSeleccionarFechas({
     }
   };
 
-  const agregarFecha = () => {
-    if (!fechaInput) return;
+  const agregarFecha = (fecha) => {
+    if (!fecha) return;
 
-    // Verificar límite de turnos
+    // Convertir fecha a string YYYY-MM-DD
+    const fechaStr = fecha.toISOString().split('T')[0];
+
+    // Verificar que la fecha esté en el rango del periodo
+    if (rangoPeriodo.min && rangoPeriodo.max) {
+      if (fecha < rangoPeriodo.min || fecha > rangoPeriodo.max) {
+        return; // Fecha fuera del rango
+      }
+    }
+
+    // Si es modo AMBOS, intentar agregar ambos turnos
+    if (tipoTurno === "AMBOS") {
+      const conteoManana = fechasSeleccionadas.filter((f) => f.turno === "MANANA").length;
+      const conteoTarde = fechasSeleccionadas.filter((f) => f.turno === "TARDE").length;
+      
+      const idManana = `${fechaStr}-MANANA`;
+      const idTarde = `${fechaStr}-TARDE`;
+      
+      const yaExisteManana = fechasSeleccionadas.some((f) => f.id === idManana);
+      const yaExisteTarde = fechasSeleccionadas.some((f) => f.id === idTarde);
+      const ambosExisten = yaExisteManana && yaExisteTarde;
+
+      // Si ambos ya existen, eliminarlos (toggle)
+      if (ambosExisten) {
+        setFechasSeleccionadas(fechasSeleccionadas.filter((f) => f.id !== idManana && f.id !== idTarde));
+        return;
+      }
+
+      // Validar límites
+      const puedeAgregarManana = !yaExisteManana && conteoManana < turnoManana;
+      const puedeAgregarTarde = !yaExisteTarde && conteoTarde < turnoTarde;
+
+      // Si no puede agregar ninguno porque alcanzó ambos límites
+      if (!puedeAgregarManana && !puedeAgregarTarde && !yaExisteManana && !yaExisteTarde) {
+        alert(`⚠️ Has alcanzado el límite de turnos tanto de Mañana (${turnoManana}) como de Tarde (${turnoTarde}). No puedes agregar más fechas.`);
+        return;
+      }
+
+      // Si puede agregar al menos uno, agregar los que sean posibles
+      const nuevasFechas = [...fechasSeleccionadas];
+      
+      if (puedeAgregarManana && !yaExisteManana) {
+        nuevasFechas.push({
+          fecha: fechaStr,
+          turno: "MANANA",
+          id: idManana,
+        });
+      }
+      
+      if (puedeAgregarTarde && !yaExisteTarde) {
+        nuevasFechas.push({
+          fecha: fechaStr,
+          turno: "TARDE",
+          id: idTarde,
+        });
+      }
+
+      // Si solo pudo agregar uno, mostrar advertencia
+      if ((puedeAgregarManana && !puedeAgregarTarde) || (!puedeAgregarManana && puedeAgregarTarde)) {
+        const turnoAgregado = puedeAgregarManana ? "Mañana" : "Tarde";
+        const turnoLimite = puedeAgregarManana ? "Tarde" : "Mañana";
+        alert(`⚠️ Solo se agregó el turno de ${turnoAgregado}. El turno de ${turnoLimite} alcanzó su límite.`);
+      }
+
+      setFechasSeleccionadas(nuevasFechas);
+      return;
+    }
+
+    // Modo normal (MANANA o TARDE)
     const conteoActual = fechasSeleccionadas.filter((f) => f.turno === tipoTurno).length;
     const limiteActual = tipoTurno === "MANANA" ? turnoManana : turnoTarde;
     
+    const idFecha = `${fechaStr}-${tipoTurno}`;
+    const yaExiste = fechasSeleccionadas.some((f) => f.id === idFecha);
+    
+    // Si ya existe, eliminarla (toggle)
+    if (yaExiste) {
+      setFechasSeleccionadas(fechasSeleccionadas.filter((f) => f.id !== idFecha));
+      return;
+    }
+    
+    // Si se alcanzó el límite, no agregar
     if (conteoActual >= limiteActual) {
-      const nombreTurno = tipoTurno === "MANANA" ? "Mañana" : "Tarde";
-      alert(`Has alcanzado el límite de turnos de ${nombreTurno} (${limiteActual}). No puedes agregar más fechas para este turno.`);
       return;
     }
 
     const nueva = {
-      fecha: fechaInput,
+      fecha: fechaStr,
       turno: tipoTurno,
-      id: `${fechaInput}-${tipoTurno}`,
+      id: idFecha,
     };
 
-    // Evitar duplicados
-    if (fechasSeleccionadas.some((f) => f.id === nueva.id)) {
-      alert("Esta fecha y turno ya fueron agregados");
-      return;
-    }
-
     setFechasSeleccionadas([...fechasSeleccionadas, nueva]);
-    setFechaInput("");
   };
 
   const eliminarFecha = (id) => {
@@ -156,8 +281,34 @@ export default function ModalSeleccionarFechas({
   const fechasManana = contarFechas("MANANA");
   const fechasTarde = contarFechas("TARDE");
   
-  // Calcular rango de fechas basado en el periodo
-  const rangoPeriodo = calcularRangoPeriodo(periodo);
+  // Verificar si una fecha está seleccionada
+  const estaSeleccionada = (fecha, turno) => {
+    if (!fecha) return false;
+    const fechaStr = fecha.toISOString().split('T')[0];
+    return fechasSeleccionadas.some(f => f.fecha === fechaStr && f.turno === turno);
+  };
+
+  // Verificar si una fecha está fuera del rango
+  const estaFueraDeRango = (fecha) => {
+    if (!fecha || !rangoPeriodo.min || !rangoPeriodo.max) return false;
+    return fecha < rangoPeriodo.min || fecha > rangoPeriodo.max;
+  };
+
+  // Verificar si se alcanzó el límite
+  const limiteAlcanzado = tipoTurno === "AMBOS"
+    ? (fechasManana >= turnoManana || fechasTarde >= turnoTarde)
+    : tipoTurno === "MANANA" 
+      ? fechasManana >= turnoManana 
+      : fechasTarde >= turnoTarde;
+
+  // Obtener nombre del mes del periodo
+  const nombreMesPeriodo = useMemo(() => {
+    if (!periodo?.periodo) return '';
+    const periodoStr = String(periodo.periodo);
+    const mes = parseInt(periodoStr.substring(4, 6)) - 1;
+    const anio = periodoStr.substring(0, 4);
+    return `${getNombreMes(mes)} ${anio}`;
+  }, [periodo]);
 
   if (!open) return null;
 
@@ -165,7 +316,7 @@ export default function ModalSeleccionarFechas({
     <div className="fixed inset-0 z-[60]">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} aria-hidden="true" />
       <div className="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
-        <div className="w-full max-w-2xl my-8 overflow-hidden rounded-xl bg-white shadow-2xl border border-slate-200">
+        <div className="w-full max-w-5xl my-8 overflow-hidden rounded-xl bg-white shadow-2xl border border-slate-200">
           {/* Header Azul */}
           <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] p-4 text-white">
             <div className="flex items-center justify-between">
@@ -187,245 +338,336 @@ export default function ModalSeleccionarFechas({
             </div>
           </div>
 
-          <div className="p-4 space-y-3">
-            {/* Loading state */}
-            {loading ? (
-              <div className="flex flex-col items-center justify-center py-12">
+          <div className="p-3 grid grid-cols-2 gap-4">
+            {/* COLUMNA IZQUIERDA: Controles y Calendario */}
+            <div className="space-y-2">
+              {/* Botones Mañana/Tarde/Ambos */}
+              <div>
+                <h3 className="font-bold text-slate-800 text-xs mb-1.5">Selecciona el tipo de turno</h3>
+                <div className="grid grid-cols-3 gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setTipoTurno("MANANA")}
+                    className={`py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 transition-all ${
+                      tipoTurno === "MANANA"
+                        ? "bg-orange-500 text-white shadow-lg"
+                        : "bg-orange-50 text-orange-600 border border-orange-200"
+                    }`}
+                  >
+                    <Sun className="w-3 h-3" />
+                    Mañana
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTipoTurno("TARDE")}
+                    className={`py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 transition-all ${
+                      tipoTurno === "TARDE"
+                        ? "bg-purple-500 text-white shadow-lg"
+                        : "bg-purple-50 text-purple-600 border border-purple-200"
+                    }`}
+                  >
+                    <Moon className="w-3 h-3" />
+                    Tarde
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTipoTurno("AMBOS")}
+                    className={`py-1.5 rounded-lg font-semibold text-xs flex items-center justify-center gap-1 transition-all ${
+                      tipoTurno === "AMBOS"
+                        ? "bg-gradient-to-r from-orange-500 to-purple-500 text-white shadow-lg"
+                        : "bg-gradient-to-r from-orange-50 to-purple-50 text-slate-700 border border-slate-300"
+                    }`}
+                  >
+                    <Sun className="w-3 h-3" />
+                    <Moon className="w-3 h-3" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Alerta de límite alcanzado */}
+              {limiteAlcanzado && (
+                <div className="bg-red-50 border border-red-300 rounded-lg p-1.5">
+                  <p className="text-[10px] text-red-800 font-semibold flex items-center gap-1.5">
+                    <span>⚠️</span>
+                    {tipoTurno === "AMBOS" 
+                      ? "Límite alcanzado para uno o ambos turnos" 
+                      : `Límite alcanzado para turnos de ${tipoTurno === "MANANA" ? "Mañana" : "Tarde"} (${tipoTurno === "MANANA" ? turnoManana : turnoTarde})`
+                    }
+                  </p>
+                </div>
+              )}
+
+              {/* Calendario */}
+              <div>
+                <h3 className="font-bold text-slate-800 text-xs mb-1.5">Calendario - {nombreMesPeriodo}</h3>
+                <div className="bg-gradient-to-br from-blue-50 to-slate-50 rounded-lg p-2 border border-blue-200">
+                  {/* Header del calendario */}
+                  <div className="text-center mb-1.5">
+                    <h4 className="font-bold text-slate-800 text-xs">
+                      {nombreMesPeriodo}
+                    </h4>
+                    <p className="text-[9px] text-slate-500">Periodo {periodo?.descripcion}</p>
+                  </div>
+
+                  {/* Días de la semana */}
+                  <div className="grid grid-cols-7 gap-0.5 mb-1">
+                    {DIAS_SEMANA.map((dia) => (
+                      <div key={dia} className="text-center text-[9px] font-bold text-slate-500 py-0.5">
+                        {dia}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Días del mes */}
+                  <div className="grid grid-cols-7 gap-0.5">
+                    {diasDelMes.map((fecha, index) => {
+                      if (!fecha) {
+                        return <div key={`empty-${index}`} className="aspect-square" />;
+                      }
+
+                      const fueraDeRango = estaFueraDeRango(fecha);
+                      const seleccionadaManana = estaSeleccionada(fecha, "MANANA");
+                      const seleccionadaTarde = estaSeleccionada(fecha, "TARDE");
+                      const ambosSeleccionados = seleccionadaManana && seleccionadaTarde;
+                      const algunoSeleccionado = seleccionadaManana || seleccionadaTarde;
+                      
+                      // Para modo AMBOS, verificar si puede agregar al menos uno
+                      const puedeAgregarEnModoAmbos = tipoTurno === "AMBOS" && (
+                        (!seleccionadaManana && fechasManana < turnoManana) || 
+                        (!seleccionadaTarde && fechasTarde < turnoTarde)
+                      );
+                      
+                      let claseBoton = "w-full aspect-square rounded text-[10px] font-semibold transition-all ";
+                      
+                      if (fueraDeRango) {
+                        claseBoton += "bg-slate-100 text-slate-300 cursor-not-allowed";
+                      } else if (ambosSeleccionados) {
+                        claseBoton += "bg-gradient-to-r from-orange-500 to-purple-500 text-white shadow-md hover:shadow-lg";
+                      } else if (seleccionadaManana) {
+                        claseBoton += "bg-orange-500 text-white shadow-md hover:shadow-lg";
+                      } else if (seleccionadaTarde) {
+                        claseBoton += "bg-purple-500 text-white shadow-md hover:shadow-lg";
+                      } else if (limiteAlcanzado) {
+                        claseBoton += "bg-white text-slate-400 cursor-not-allowed border border-slate-200";
+                      } else {
+                        claseBoton += "bg-white text-slate-700 hover:bg-blue-100 hover:border-blue-300 border border-slate-200 cursor-pointer";
+                      }
+
+                      return (
+                        <button
+                          key={index}
+                          type="button"
+                          onClick={() => !fueraDeRango && agregarFecha(fecha)}
+                        disabled={fueraDeRango || (tipoTurno === "AMBOS" ? !puedeAgregarEnModoAmbos && !algunoSeleccionado : limiteAlcanzado && !algunoSeleccionado)}
+                          className={claseBoton}
+                        >
+                          {fecha.getDate()}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* Leyenda */}
+                  <div className="mt-1.5 pt-1.5 border-t border-blue-200 flex flex-wrap gap-1.5 text-[9px]">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 rounded bg-orange-500"></div>
+                      <span className="text-slate-600">Mañana</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 rounded bg-purple-500"></div>
+                      <span className="text-slate-600">Tarde</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-2.5 h-2.5 rounded bg-gradient-to-br from-orange-500 to-purple-500"></div>
+                      <span className="text-slate-600">Ambos</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* COLUMNA DERECHA: Badges y Fechas Seleccionadas */}
+            <div className="space-y-2">
+              {/* Tarjetas de resumen EN UNA FILA */}
+              <div>
+                <h3 className="font-bold text-slate-800 text-xs mb-1.5">Resumen de turnos</h3>
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Turnos Mañana */}
+                  <div className={`rounded-lg p-2 border ${
+                    fechasManana >= turnoManana 
+                      ? 'bg-red-50 border-red-300' 
+                      : 'bg-orange-50 border-orange-200'
+                  }`}>
+                    <div className={`flex items-center gap-1 mb-1 ${
+                      fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                    }`}>
+                      <Sun className="w-3 h-3" />
+                      <span className="font-bold text-[10px]">TURNOS MAÑANA</span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-2xl font-bold ${
+                        fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                      }`}>{fechasManana}</span>
+                      <span className={`text-sm ${
+                        fechasManana >= turnoManana ? 'text-red-500' : 'text-orange-500'
+                      }`}>/ {turnoManana}</span>
+                    </div>
+                    <p className={`text-[9px] mt-0.5 font-semibold ${
+                      fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
+                    }`}>
+                      {fechasManana >= turnoManana ? '⚠️ Límite' : `${turnoManana - fechasManana} disp.`}
+                    </p>
+                  </div>
+
+                  {/* Turnos Tarde */}
+                  <div className={`rounded-lg p-2 border ${
+                    fechasTarde >= turnoTarde 
+                      ? 'bg-red-50 border-red-300' 
+                      : 'bg-purple-50 border-purple-200'
+                  }`}>
+                    <div className={`flex items-center gap-1 mb-1 ${
+                      fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                    }`}>
+                      <Moon className="w-3 h-3" />
+                      <span className="font-bold text-[10px]">TURNOS TARDE</span>
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                      <span className={`text-2xl font-bold ${
+                        fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                      }`}>{fechasTarde}</span>
+                      <span className={`text-sm ${
+                        fechasTarde >= turnoTarde ? 'text-red-500' : 'text-purple-500'
+                      }`}>/ {turnoTarde}</span>
+                    </div>
+                    <p className={`text-[9px] mt-0.5 font-semibold ${
+                      fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
+                    }`}>
+                      {fechasTarde >= turnoTarde ? '⚠️ Límite' : `${turnoTarde - fechasTarde} disp.`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fechas seleccionadas EN 2 COLUMNAS */}
+              {fechasSeleccionadas.length > 0 ? (() => {
+                const fechasMananaList = fechasSeleccionadas.filter(f => f.turno === "MANANA");
+                const fechasTardeList = fechasSeleccionadas.filter(f => f.turno === "TARDE");
+                
+                return (
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-slate-800 text-xs">Fechas Seleccionadas</h3>
+                      <span className="bg-[#0A5BA9] text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
+                        {fechasSeleccionadas.length}
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 max-h-72 overflow-y-auto">
+                      {/* Columna Izquierda: Turno Mañana */}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 bg-orange-100 px-2 py-1.5 rounded-lg sticky top-0 z-10">
+                          <Sun className="w-3.5 h-3.5 text-orange-600" />
+                          <span className="text-[10px] font-bold text-orange-700 uppercase">Turno Mañana</span>
+                          <span className="ml-auto bg-orange-600 text-white px-1.5 py-0.5 rounded-full text-[9px] font-bold">
+                            {fechasMananaList.length}
+                          </span>
+                        </div>
+                        {fechasMananaList.length > 0 ? (
+                          fechasMananaList.map((f) => (
+                            <div
+                              key={f.id}
+                              className="flex items-center justify-between p-1.5 rounded-lg bg-orange-50 border border-orange-200 hover:bg-orange-100 transition-all"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Sun className="w-3 h-3 text-orange-600" />
+                                <p className="text-[11px] font-semibold text-slate-800">
+                                  {new Date(f.fecha + "T00:00:00").toLocaleDateString("es-ES", {
+                                    weekday: "short",
+                                    day: "2-digit",
+                                    month: "short",
+                                  })}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => eliminarFecha(f.id)}
+                                className="p-0.5 text-red-500 hover:bg-red-50 rounded transition-all"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-[9px] text-slate-400 text-center py-4 italic">Sin fechas</p>
+                        )}
+                      </div>
+
+                      {/* Columna Derecha: Turno Tarde */}
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-1.5 bg-purple-100 px-2 py-1.5 rounded-lg sticky top-0 z-10">
+                          <Moon className="w-3.5 h-3.5 text-purple-600" />
+                          <span className="text-[10px] font-bold text-purple-700 uppercase">Turno Tarde</span>
+                          <span className="ml-auto bg-purple-600 text-white px-1.5 py-0.5 rounded-full text-[9px] font-bold">
+                            {fechasTardeList.length}
+                          </span>
+                        </div>
+                        {fechasTardeList.length > 0 ? (
+                          fechasTardeList.map((f) => (
+                            <div
+                              key={f.id}
+                              className="flex items-center justify-between p-1.5 rounded-lg bg-purple-50 border border-purple-200 hover:bg-purple-100 transition-all"
+                            >
+                              <div className="flex items-center gap-1.5">
+                                <Moon className="w-3 h-3 text-purple-600" />
+                                <p className="text-[11px] font-semibold text-slate-800">
+                                  {new Date(f.fecha + "T00:00:00").toLocaleDateString("es-ES", {
+                                    weekday: "short",
+                                    day: "2-digit",
+                                    month: "short",
+                                  })}
+                                </p>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => eliminarFecha(f.id)}
+                                className="p-0.5 text-red-500 hover:bg-red-50 rounded transition-all"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          ))
+                        ) : (
+                          <p className="text-[9px] text-slate-400 text-center py-4 italic">Sin fechas</p>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })() : (
+                <div className="text-center py-6 text-slate-400">
+                  <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs">No hay fechas seleccionadas</p>
+                  <p className="text-[10px]">Haz clic en el calendario</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Loading state superpuesto */}
+          {loading && (
+            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-20">
+              <div className="flex flex-col items-center">
                 <Loader2 className="w-10 h-10 animate-spin text-[#0A5BA9] mb-3" />
                 <p className="text-slate-600">Cargando fechas registradas...</p>
               </div>
-            ) : (
-              <>
-                {/* Tarjetas de resumen */}
-                <div className="grid grid-cols-2 gap-2">
-              {/* Turnos Mañana */}
-              <div className={`rounded-lg p-2 border ${
-                fechasManana >= turnoManana 
-                  ? 'bg-red-50 border-red-300' 
-                  : 'bg-orange-50 border-orange-200'
-              }`}>
-                <div className={`flex items-center gap-1 mb-1 ${
-                  fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
-                }`}>
-                  <Sun className="w-3 h-3" />
-                  <span className="font-bold text-[10px]">TURNOS MAÑANA</span>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-xl font-bold ${
-                    fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
-                  }`}>{fechasManana}</span>
-                  <span className={`text-sm ${
-                    fechasManana >= turnoManana ? 'text-red-500' : 'text-orange-500'
-                  }`}>/ {turnoManana}</span>
-                </div>
-                <p className={`text-[9px] mt-0.5 font-semibold ${
-                  fechasManana >= turnoManana ? 'text-red-600' : 'text-orange-600'
-                }`}>
-                  {fechasManana >= turnoManana ? '⚠️ Límite alcanzado' : `${turnoManana - fechasManana} disponible(s)`}
-                </p>
-              </div>
-
-              {/* Turnos Tarde */}
-              <div className={`rounded-lg p-2 border ${
-                fechasTarde >= turnoTarde 
-                  ? 'bg-red-50 border-red-300' 
-                  : 'bg-purple-50 border-purple-200'
-              }`}>
-                <div className={`flex items-center gap-1 mb-1 ${
-                  fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
-                }`}>
-                  <Moon className="w-3 h-3" />
-                  <span className="font-bold text-[10px]">TURNOS TARDE</span>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <span className={`text-xl font-bold ${
-                    fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
-                  }`}>{fechasTarde}</span>
-                  <span className={`text-sm ${
-                    fechasTarde >= turnoTarde ? 'text-red-500' : 'text-purple-500'
-                  }`}>/ {turnoTarde}</span>
-                </div>
-                <p className={`text-[9px] mt-0.5 font-semibold ${
-                  fechasTarde >= turnoTarde ? 'text-red-600' : 'text-purple-600'
-                }`}>
-                  {fechasTarde >= turnoTarde ? '⚠️ Límite alcanzado' : `${turnoTarde - fechasTarde} disponible(s)`}
-                </p>
-              </div>
             </div>
+          )}
 
-            {/* Agregar nueva fecha */}
-            <div className="space-y-2">
-              <h3 className="font-bold text-slate-800 text-sm">Agregar nueva fecha</h3>
-
-              {/* Botones Mañana/Tarde */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  onClick={() => setTipoTurno("MANANA")}
-                  className={`py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                    tipoTurno === "MANANA"
-                      ? "bg-orange-500 text-white shadow-lg"
-                      : "bg-orange-50 text-orange-600 border-2 border-orange-200"
-                  }`}
-                >
-                  <Sun className="w-5 h-5" />
-                  Mañana
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTipoTurno("TARDE")}
-                  className={`py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all ${
-                    tipoTurno === "TARDE"
-                      ? "bg-purple-500 text-white shadow-lg"
-                      : "bg-purple-50 text-purple-600 border-2 border-purple-200"
-                  }`}
-                >
-                  <Moon className="w-5 h-5" />
-                  Tarde
-                </button>
-              </div>
-
-              {/* Input fecha y botón agregar */}
-              <div className="flex gap-2">
-                <input
-                  type="date"
-                  value={fechaInput}
-                  onChange={(e) => setFechaInput(e.target.value)}
-                  min={rangoPeriodo.min}
-                  max={rangoPeriodo.max}
-                  className="flex-1 px-3 py-2 text-sm border-2 border-blue-200 rounded-lg focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
-                  placeholder="dd/mm/aaaa"
-                />
-                <button
-                  type="button"
-                  onClick={agregarFecha}
-                  disabled={!fechaInput || (tipoTurno === "MANANA" && fechasManana >= turnoManana) || (tipoTurno === "TARDE" && fechasTarde >= turnoTarde)}
-                  className="px-4 py-2 text-sm bg-[#0A5BA9] text-white font-bold rounded-lg hover:bg-[#2563EB] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  + Agregar
-                </button>
-              </div>
-              
-              {/* Alerta de límite alcanzado */}
-              {((tipoTurno === "MANANA" && fechasManana >= turnoManana) || (tipoTurno === "TARDE" && fechasTarde >= turnoTarde)) && (
-                <div className="bg-red-50 border-2 border-red-300 rounded-lg p-3">
-                  <p className="text-sm text-red-800 font-semibold flex items-center gap-2">
-                    <span>⚠️</span>
-                    Has alcanzado el límite de turnos de {tipoTurno === "MANANA" ? "Mañana" : "Tarde"} ({tipoTurno === "MANANA" ? turnoManana : turnoTarde}). No puedes agregar más fechas para este turno.
-                  </p>
-                </div>
-              )}
-              
-              {/* Información del rango de fechas permitido */}
-              {rangoPeriodo.min && rangoPeriodo.max && (
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs text-blue-800">
-                    <span className="font-bold">Periodo {periodo?.descripcion}:</span> {formatFechaRango(rangoPeriodo.min)} - {formatFechaRango(rangoPeriodo.max)}
-                  </p>
-                </div>
-              )}
-            </div>
-
-            {/* Fechas seleccionadas */}
-            {fechasSeleccionadas.length > 0 && (() => {
-              const fechasMananaList = fechasSeleccionadas.filter(f => f.turno === "MANANA");
-              const fechasTardeList = fechasSeleccionadas.filter(f => f.turno === "TARDE");
-              
-              return (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-bold text-slate-800 text-xs uppercase">Fechas Seleccionadas</h3>
-                    <span className="bg-[#0A5BA9] text-white px-2 py-0.5 rounded-full text-[10px] font-bold">
-                      {fechasSeleccionadas.length}
-                    </span>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto">
-                    {/* Columna Izquierda: Turno Mañana */}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 bg-orange-100 px-2 py-1 rounded-lg sticky top-0 z-10">
-                        <Sun className="w-3 h-3 text-orange-600" />
-                        <span className="text-[10px] font-bold text-orange-700 uppercase">Turno Mañana</span>
-                        <span className="ml-auto bg-orange-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold">
-                          {fechasMananaList.length}
-                        </span>
-                      </div>
-                      {fechasMananaList.length > 0 ? (
-                        fechasMananaList.map((f) => (
-                          <div
-                            key={f.id}
-                            className="flex items-center justify-between p-2 rounded-lg bg-orange-50 border border-orange-200"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Sun className="w-3 h-3 text-orange-600" />
-                              <p className="text-xs font-semibold text-slate-800">
-                                {new Date(f.fecha + "T00:00:00").toLocaleDateString("es-ES", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => eliminarFecha(f.id)}
-                              className="p-1 text-red-500 hover:bg-red-50 rounded transition-all"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-[10px] text-slate-400 text-center py-2">Sin fechas</p>
-                      )}
-                    </div>
-
-                    {/* Columna Derecha: Turno Tarde */}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1.5 bg-purple-100 px-2 py-1 rounded-lg sticky top-0 z-10">
-                        <Moon className="w-3 h-3 text-purple-600" />
-                        <span className="text-[10px] font-bold text-purple-700 uppercase">Turno Tarde</span>
-                        <span className="ml-auto bg-purple-600 text-white px-1.5 py-0.5 rounded text-[9px] font-bold">
-                          {fechasTardeList.length}
-                        </span>
-                      </div>
-                      {fechasTardeList.length > 0 ? (
-                        fechasTardeList.map((f) => (
-                          <div
-                            key={f.id}
-                            className="flex items-center justify-between p-2 rounded-lg bg-purple-50 border border-purple-200"
-                          >
-                            <div className="flex items-center gap-2">
-                              <Moon className="w-3 h-3 text-purple-600" />
-                              <p className="text-xs font-semibold text-slate-800">
-                                {new Date(f.fecha + "T00:00:00").toLocaleDateString("es-ES", {
-                                  day: "2-digit",
-                                  month: "short",
-                                })}
-                              </p>
-                            </div>
-                            <button
-                              type="button"
-                              onClick={() => eliminarFecha(f.id)}
-                              className="p-1 text-red-500 hover:bg-red-50 rounded transition-all"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        ))
-                      ) : (
-                        <p className="text-[10px] text-slate-400 text-center py-2">Sin fechas</p>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })()}
-              </>
-            )}
-
-            {/* Botones Cancelar y Guardar */}
-            <div className="flex gap-3">
+          {/* Botones Cancelar y Guardar */}
+          <div className="p-2.5 border-t border-slate-200 bg-slate-50">
+            <div className="flex gap-2">
               <button
                 type="button"
                 onClick={onClose}

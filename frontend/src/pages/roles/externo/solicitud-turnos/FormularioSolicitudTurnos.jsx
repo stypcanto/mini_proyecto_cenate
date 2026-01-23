@@ -9,7 +9,7 @@
 //    (inicio/fin/creación/actualización/envío/estado/periodo).
 // 4) Registro de turnos - INTERFAZ DE TABLA INTERACTIVA (v2.0):
 //    - Tabla con todas las especialidades disponibles
-//    - Columnas: Especialidad, Turno TM, Turnos Mañana, Turnos Tarde,
+//    - Columnas: Especialidad, Turnos Mañana, Turnos Tarde,
 //      Teleconsultorio, Teleconsulta, Total Turnos, Fecha, Estado
 //    - Inputs numéricos editables para configurar turnos por especialidad
 //    - Toggles para activar/desactivar Teleconsultorio y Teleconsulta
@@ -107,8 +107,12 @@ export default function FormularioSolicitudTurnos() {
   const [solicitudActual, setSolicitudActual] = useState(null);
 
   // registros de turnos por especialidad
-  // registro = {idServicio, turnoTM, turnoManana, turnoTarde, tc, tl, fecha, estado}
+  // registro = {idServicio, turnoManana, turnoTarde, tc, tl, fecha, estado}
   const [registros, setRegistros] = useState([]);
+
+  // configuración de servicios (tc/tl por defecto desde IPRESS)
+  // Map: idServicio -> {tc, tl}
+  const [serviciosConfig, setServiciosConfig] = useState(new Map());
 
   // =====================================================================
   // Periodos: VIGENTES y ACTIVOS (según tu endpoint)
@@ -253,6 +257,28 @@ export default function FormularioSolicitudTurnos() {
   }, [periodos, filtroAnio, filtroPeriodoId, filtroEstado, solicitudPorPeriodo]);
 
   // =====================================================================
+  // Obtener configuración de servicios (tc/tl por defecto)
+  // =====================================================================
+  const obtenerConfigServicios = async (codIpress, idSolicitud = null) => {
+    try {
+      const config = await solicitudTurnoService.obtenerFormServicios(codIpress, idSolicitud);
+      console.log("📋 Configuración de servicios obtenida:", config);
+      // Crear mapa para búsqueda rápida: idServicio -> {teleconsultaActivo, teleconsultorioActivo}
+      const configMap = new Map();
+      (config || []).forEach(srv => {
+        configMap.set(srv.idServicio, {
+          tl: srv.teleconsultaActivo ?? true,  // teleconsulta -> tl
+          tc: srv.teleconsultorioActivo ?? true // teleconsultorio -> tc
+        });
+      });
+      return configMap;
+    } catch (err) {
+      console.error("Error al obtener configuración de servicios:", err);
+      return new Map();
+    }
+  };
+
+  // =====================================================================
   // Abrir modal desde fila periodo (Iniciar/Editar/Ver)
   // =====================================================================
   const abrirSolicitudDesdeTabla = async (rowSolicitud) => {
@@ -286,16 +312,30 @@ export default function FormularioSolicitudTurnos() {
         return;
       }
 
+      // Obtener configuración de servicios (tc/tl por defecto) para EDITAR
+      const codIpress = miIpress?.codigo || miIpress?.codIpress;
+      let configMap = new Map();
+      if (codIpress) {
+        configMap = await obtenerConfigServicios(codIpress, rowSolicitud.idSolicitud);
+        setServiciosConfig(configMap);
+        console.log("📋 Config map para edición:", configMap);
+      } else {
+        setServiciosConfig(new Map());
+      }
+
       // EDITAR INICIADO: Cargar detalles de la solicitud
       if (solicitud.detalles && Array.isArray(solicitud.detalles)) {
         // Agrupar detalles por idServicio para evitar duplicados
         // El backend devuelve múltiples registros (con diferentes idDetalle) para la misma especialidad
         // cuando hay múltiples fechas. Consolidamos todo en un solo registro por especialidad.
         const detallesAgrupados = new Map();
-        
+
         solicitud.detalles.forEach((det) => {
           const idServicio = det.idServicio;
-          
+
+          // Obtener valores por defecto de la configuración
+          const configDefaults = configMap.get(idServicio) || { tl: true, tc: true };
+
           // Si ya existe la especialidad, solo agregar las fechas nuevas
           if (detallesAgrupados.has(idServicio)) {
             const existente = detallesAgrupados.get(idServicio);
@@ -314,14 +354,15 @@ export default function FormularioSolicitudTurnos() {
             }
           } else {
             // Primera vez que vemos esta especialidad - crear registro
+            // Priorizar valores existentes del detalle, si no usar config por defecto
             detallesAgrupados.set(idServicio, {
               idDetalle: det.idDetalle || null, // Tomamos el idDetalle del primer registro
               idServicio: det.idServicio,
-              turnoTM: det.turnoTM || 0,
+
               turnoManana: det.turnoManana || 0,
               turnoTarde: det.turnoTarde || 0,
-              tc: det.tc !== undefined ? det.tc : true,
-              tl: det.tl !== undefined ? det.tl : true,
+              tc: det.tc !== undefined ? det.tc : configDefaults.tc,
+              tl: det.tl !== undefined ? det.tl : configDefaults.tl,
               estado: det.estado || "PENDIENTE",
               fechas: (det.fechasDetalle || []).map(f => ({
                 fecha: f.fecha,
@@ -331,7 +372,7 @@ export default function FormularioSolicitudTurnos() {
             });
           }
         });
-        
+
         // Convertir Map a Array
         const registrosExistentes = Array.from(detallesAgrupados.values());
         setRegistros(registrosExistentes);
@@ -364,7 +405,18 @@ export default function FormularioSolicitudTurnos() {
       return abrirSolicitudDesdeTabla(fila.solicitud);
     }
 
-    // no existe => iniciar
+    // no existe => iniciar nueva solicitud
+    // Obtener configuración de servicios (tc/tl por defecto) para NUEVA solicitud
+    const codIpress = miIpress?.codigo || miIpress?.codIpress;
+    if (codIpress) {
+      const configMap = await obtenerConfigServicios(codIpress);
+      setServiciosConfig(configMap);
+      console.log("📋 Config cargada para nueva solicitud:", configMap);
+    } else {
+      setServiciosConfig(new Map());
+      console.warn("⚠️ No se pudo obtener codIpress para cargar config de servicios");
+    }
+
     setModoModal("NUEVA");
     setSolicitudActual(null);
     setOpenFormModal(true);
@@ -413,15 +465,14 @@ export default function FormularioSolicitudTurnos() {
     const todosLosDetalles = (registros || []).map((r) => {
       const turnoManana = Number(r.turnoManana || 0);
       const turnoTarde = Number(r.turnoTarde || 0);
-      const turnoTM = Number(r.turnoTM || 0);
-      const totalTurnos = turnoTM + turnoManana + turnoTarde;
+      const totalTurnos = turnoManana + turnoTarde;
 
       return {
         idServicio: r.idServicio,           // FK a servicio_essi (especialidad)
         idDetalle: r.idDetalle || null,     // si es edición, incluir el id_detalle existente
         requiere: totalTurnos > 0,          // false si el usuario ya no desea esta especialidad
         turnos: totalTurnos,
-        turnoTM: turnoTM,
+        turnoTM: 0,                         // Siempre 0 por defecto
         turnoManana: turnoManana,           // Cantidad de turnos mañana (a nivel detalle)
         turnoTarde: turnoTarde,             // Cantidad de turnos tarde (a nivel detalle)
         tc: r.tc !== undefined ? r.tc : false,
@@ -434,8 +485,8 @@ export default function FormularioSolicitudTurnos() {
     console.log("🔍 ========== DEBUG PAYLOAD ==========");
     console.log("📋 TODOS los registros (estado actual):");
     registros.forEach(r => {
-      const total = Number(r.turnoTM || 0) + Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
-      console.log(`  - idServicio: ${r.idServicio}, idDetalle: ${r.idDetalle}, TM: ${r.turnoTM}, Mañana: ${r.turnoManana}, Tarde: ${r.turnoTarde}, TOTAL: ${total}`);
+      const total = Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
+      console.log(`  - idServicio: ${r.idServicio}, idDetalle: ${r.idDetalle}, Mañana: ${r.turnoManana}, Tarde: ${r.turnoTarde}, TOTAL: ${total}`);
     });
 
     // Separar especialidades según estado de turnos
@@ -496,7 +547,7 @@ export default function FormularioSolicitudTurnos() {
 
     // Validación adicional: verificar que haya registros con turnos
     const registrosConTurnos = registros.filter(r => {
-      const total = Number(r.turnoTM || 0) + Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
+      const total = Number(r.turnoManana || 0) + Number(r.turnoTarde || 0);
       return total > 0;
     });
 
@@ -613,14 +664,13 @@ export default function FormularioSolicitudTurnos() {
     // Validar que tenga turnos configurados
     const turnoManana = Number(detalleEspecialidad.turnoManana || 0);
     const turnoTarde = Number(detalleEspecialidad.turnoTarde || 0);
-    const turnoTM = Number(detalleEspecialidad.turnoTM || 0);
-    const totalTurnos = turnoTM + turnoManana + turnoTarde;
+    const totalTurnos = turnoManana + turnoTarde;
     
-    console.log("🔢 Turnos configurados:", { turnoTM, turnoManana, turnoTarde, totalTurnos });
+    console.log("🔢 Turnos configurados:", { turnoManana, turnoTarde, totalTurnos });
 
     if (totalTurnos === 0) {
       console.error("❌ ERROR: No hay turnos configurados");
-      setError("Primero debes configurar los turnos (TM, Mañana o Tarde) antes de agregar fechas.");
+      setError("Primero debes configurar los turnos (Mañana o Tarde) antes de agregar fechas.");
       setTimeout(() => setError(null), 5000);
       return;
     }
@@ -693,8 +743,8 @@ export default function FormularioSolicitudTurnos() {
         idPeriodo: periodoSeleccionado.idPeriodo,
         idServicio: detalleEspecialidad.idServicio,
         requiere: true,
-        turnos: turnoTM + turnoManana + turnoTarde,
-        turnoTM: turnoTM,
+        turnos: turnoManana + turnoTarde,
+        turnoTM: 0,  // Siempre 0 por defecto
         turnoManana: turnoManana,
         turnoTarde: turnoTarde,
         tc: detalleEspecialidad.tc !== undefined ? detalleEspecialidad.tc : true,
@@ -1221,6 +1271,7 @@ export default function FormularioSolicitudTurnos() {
                     especialidades={especialidades}
                     periodo={periodoSeleccionado}
                     registros={registros}
+                    configDefaults={serviciosConfig}
                     onChange={(nuevosRegistros) => {
                       console.log("🔄 ========== CAMBIO EN TABLA ==========");
                       console.log("📋 Nuevos registros recibidos:", nuevosRegistros);

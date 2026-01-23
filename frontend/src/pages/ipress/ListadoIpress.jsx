@@ -9,7 +9,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Building2, Search, Download, FileText, FileSpreadsheet,
   ChevronLeft, ChevronRight, Filter, ArrowUpDown, Loader,
-  Home, TrendingUp, MapPin, Network, Activity, Plus, Edit2, Trash2, Eye
+  Home, TrendingUp, MapPin, Network, Activity, Plus, Edit2, Trash2, Eye,
+  Settings, X, Stethoscope
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -47,6 +48,13 @@ export default function ListadoIpress() {
   const [modalCrearEditar, setModalCrearEditar] = useState({ open: false, ipress: null });
   const [modalEliminar, setModalEliminar] = useState({ open: false, ipress: null });
   const [modalVer, setModalVer] = useState({ open: false, ipress: null });
+
+  // Estado para modal de configurar especialidades
+  const [modalConfigEspecialidades, setModalConfigEspecialidades] = useState({ open: false, ipress: null });
+  const [especialidadesDisponibles, setEspecialidadesDisponibles] = useState([]); // Todas las especialidades CENATE
+  const [especialidadesConfiguradas, setEspecialidadesConfiguradas] = useState([]); // Configuración actual de la IPRESS
+  const [loadingEspecialidades, setLoadingEspecialidades] = useState(false);
+  const [savingEspecialidades, setSavingEspecialidades] = useState(false);
 
   // Verificar permisos de usuario
   const esAdminOSuperadmin = user?.roles?.includes('ADMIN') || user?.roles?.includes('SUPERADMIN');
@@ -220,6 +228,159 @@ export default function ListadoIpress() {
     toast.success(`IPRESS ${modalCrearEditar.ipress ? 'actualizada' : 'creada'} exitosamente`);
     setModalCrearEditar({ open: false, ipress: null });
     cargarDatos(); // Recargar datos
+  };
+
+  // ================================================================
+  // ⚙️ CONFIGURAR ESPECIALIDADES
+  // ================================================================
+  const handleConfigEspecialidades = async (ipressItem) => {
+    setModalConfigEspecialidades({ open: true, ipress: ipressItem });
+    setLoadingEspecialidades(true);
+    try {
+      // 1. Primero cargar TODAS las especialidades disponibles de CENATE
+      const disponibles = await apiClient.get('/servicio-essi/activos-cenate');
+      setEspecialidadesDisponibles(disponibles || []);
+
+      if (!disponibles || disponibles.length === 0) {
+        toast.error("No se encontraron especialidades disponibles en CENATE");
+        setEspecialidadesConfiguradas([]);
+        return;
+      }
+
+      // 2. Luego cargar la configuración actual de esta IPRESS (puede estar vacía)
+      let configuradas = [];
+      try {
+        configuradas = await apiClient.get(`/ipress/servicio-essi/${ipressItem.codIpress}`);
+      } catch (configError) {
+        // Si falla, significa que no hay configuración previa (es normal)
+        console.log("No hay configuración previa para esta IPRESS:", configError);
+        configuradas = [];
+      }
+
+      // 3. Crear mapa de configuraciones existentes para acceso rápido
+      const configMap = new Map();
+      (configuradas || []).forEach(cfg => {
+        configMap.set(cfg.idServicio, cfg);
+      });
+
+      // 4. Combinar: TODAS las 31 especialidades con su configuración (si existe)
+      const combinadas = disponibles.map(esp => {
+        const config = configMap.get(esp.idServicio);
+        return {
+          idServicio: esp.idServicio,
+          codServicio: esp.codServicio,
+          descServicio: esp.descServicio,
+          teleconsulta: config?.teleconsulta ?? false,
+          teleconsultorio: config?.teleconsultorio ?? false,
+          fechaCreacion: config?.fechaCreacion || null,
+          fechaActualizacion: config?.fechaActualizacion || null,
+          usuarioRegistro: config?.usuarioRegistro || null,
+          usuarioModifico: config?.usuarioModifico || null,
+          tieneConfiguracion: !!config
+        };
+      });
+
+      setEspecialidadesConfiguradas(combinadas);
+      toast.success(`${disponibles.length} especialidades cargadas`);
+    } catch (error) {
+      console.error("Error al cargar especialidades:", error);
+      toast.error("Error al cargar las especialidades de CENATE");
+      setEspecialidadesDisponibles([]);
+      setEspecialidadesConfiguradas([]);
+    } finally {
+      setLoadingEspecialidades(false);
+    }
+  };
+
+  const handleCheckboxChange = (idServicio, campo) => {
+    setEspecialidadesConfiguradas(prev =>
+      prev.map(esp =>
+        esp.idServicio === idServicio
+          ? { ...esp, [campo]: !esp[campo] }
+          : esp
+      )
+    );
+  };
+
+  const handleMarcarTodo = (campo) => {
+    // Si todos están marcados, desmarcar todos. Si no, marcar todos.
+    const todosSeleccionados = especialidadesConfiguradas.every(esp => esp[campo]);
+    setEspecialidadesConfiguradas(prev =>
+      prev.map(esp => ({ ...esp, [campo]: !todosSeleccionados }))
+    );
+  };
+
+  // Calcular si todos/algunos/ninguno están marcados para cada columna
+  const todosTeleconsulta = especialidadesConfiguradas.length > 0 &&
+    especialidadesConfiguradas.every(esp => esp.teleconsulta);
+  const algunosTeleconsulta = especialidadesConfiguradas.some(esp => esp.teleconsulta) && !todosTeleconsulta;
+
+  const todosTeleconsultorio = especialidadesConfiguradas.length > 0 &&
+    especialidadesConfiguradas.every(esp => esp.teleconsultorio);
+  const algunosTeleconsultorio = especialidadesConfiguradas.some(esp => esp.teleconsultorio) && !todosTeleconsultorio;
+
+  const handleGuardarEspecialidades = async () => {
+    const ipressCode = modalConfigEspecialidades.ipress?.codIpress;
+    if (!ipressCode) return;
+
+    setSavingEspecialidades(true);
+    try {
+      // Enviar TODAS las 31 especialidades con su estado actual
+      const servicios = especialidadesConfiguradas.map(esp => ({
+        idServicio: esp.idServicio,
+        teleconsulta: esp.teleconsulta,
+        teleconsultorio: esp.teleconsultorio
+      }));
+
+      // El backend espera ConfigurarServiciosRequest { servicios: [...] }
+      await apiClient.put(`/ipress/servicio-essi/configurar/${ipressCode}`, { servicios: servicios });
+      toast.success(`Configuración de ${servicios.length} especialidades guardada exitosamente`);
+
+      // Recargar los datos después de guardar exitosamente
+      await recargarConfiguracionEspecialidades(ipressCode);
+    } catch (error) {
+      console.error("Error al guardar configuración:", error);
+      toast.error("Error al guardar la configuración de especialidades");
+    } finally {
+      setSavingEspecialidades(false);
+    }
+  };
+
+  const recargarConfiguracionEspecialidades = async (codIpress) => {
+    try {
+      const configuradas = await apiClient.get(`/ipress/servicio-essi/${codIpress}`);
+
+      // Crear mapa de configuraciones
+      const configMap = new Map();
+      (configuradas || []).forEach(cfg => {
+        configMap.set(cfg.idServicio, cfg);
+      });
+
+      // Actualizar el estado con los datos recargados
+      setEspecialidadesConfiguradas(prev =>
+        prev.map(esp => {
+          const config = configMap.get(esp.idServicio);
+          return {
+            ...esp,
+            teleconsulta: config?.teleconsulta ?? false,
+            teleconsultorio: config?.teleconsultorio ?? false,
+            fechaCreacion: config?.fechaCreacion || null,
+            fechaActualizacion: config?.fechaActualizacion || null,
+            usuarioRegistro: config?.usuarioRegistro || null,
+            usuarioModifico: config?.usuarioModifico || null,
+            tieneConfiguracion: !!config
+          };
+        })
+      );
+    } catch (error) {
+      console.error("Error al recargar configuración:", error);
+    }
+  };
+
+  const cerrarModalEspecialidades = () => {
+    setModalConfigEspecialidades({ open: false, ipress: null });
+    setEspecialidadesDisponibles([]);
+    setEspecialidadesConfiguradas([]);
   };
 
   // ================================================================
@@ -586,6 +747,17 @@ export default function ListadoIpress() {
                             <Eye className="w-4 h-4" />
                           </button>
 
+                          {/* Botón Configurar Especialidades - Solo para ADMIN y SUPERADMIN */ }
+                          { esAdminOSuperadmin && (
+                            <button
+                              onClick={ () => handleConfigEspecialidades(item) }
+                              className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"
+                              title="Configurar Especialidades"
+                            >
+                              <Settings className="w-4 h-4" />
+                            </button>
+                          ) }
+
                           {/* Botones Editar y Eliminar - Solo para ADMIN y SUPERADMIN */ }
                           { esAdminOSuperadmin && (
                             <>
@@ -723,6 +895,169 @@ export default function ListadoIpress() {
             ipress={ modalVer.ipress }
             onClose={ () => setModalVer({ open: false, ipress: null }) }
           />
+        ) }
+
+        {/* Modal Configurar Especialidades */ }
+        { modalConfigEspecialidades.open && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] overflow-hidden">
+              {/* Header del modal */ }
+              <div className="bg-blue-600 px-6 py-4 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="bg-white/20 p-2 rounded-lg">
+                    <Settings className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white">Configurar Especialidades</h2>
+                    <p className="text-blue-100 text-sm">
+                      { modalConfigEspecialidades.ipress?.descIpress } ({ modalConfigEspecialidades.ipress?.codIpress })
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={ cerrarModalEspecialidades }
+                  className="p-2 hover:bg-white/20 rounded-lg transition-colors"
+                  disabled={ savingEspecialidades }
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+
+              {/* Contenido del modal */ }
+              <div className="p-4 overflow-y-auto max-h-[60vh]">
+                { loadingEspecialidades ? (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <Loader className="w-10 h-10 text-purple-600 animate-spin mb-4" />
+                    <p className="text-slate-600">Cargando especialidades...</p>
+                  </div>
+                ) : especialidadesConfiguradas.length > 0 ? (
+                  <div>
+                    <div className="flex items-center gap-2 mb-3 pb-2 border-b border-slate-200">
+                      <Stethoscope className="w-4 h-4 text-purple-600" />
+                      <span className="font-semibold text-slate-700 text-sm">
+                        Especialidades disponibles ({ especialidadesConfiguradas.length })
+                      </span>
+                    </div>
+
+                    {/* Tabla compacta */ }
+                    <div className="overflow-x-auto border border-slate-200 rounded-lg">
+                      <table className="w-full text-xs">
+                        <thead className="bg-slate-100">
+                          <tr>
+                            <th className="px-2 py-2 text-left font-semibold text-slate-700">Código</th>
+                            <th className="px-2 py-2 text-left font-semibold text-slate-700">Especialidad</th>
+                            <th className="px-2 py-2 text-center font-semibold text-slate-700">
+                              <div className="flex flex-col items-center gap-1">
+                                <span>Teleconsulta</span>
+                                <label className="flex items-center gap-1 text-xs font-normal text-slate-500 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={ todosTeleconsulta }
+                                    ref={ el => { if (el) el.indeterminate = algunosTeleconsulta; } }
+                                    onChange={ () => handleMarcarTodo('teleconsulta') }
+                                    className="w-3 h-3 text-purple-600 border-slate-300 rounded
+                                               focus:ring-purple-500 cursor-pointer"
+                                  />
+                                  Todos
+                                </label>
+                              </div>
+                            </th>
+                            <th className="px-2 py-2 text-center font-semibold text-slate-700">
+                              <div className="flex flex-col items-center gap-1">
+                                <span>Teleconsultorio</span>
+                                <label className="flex items-center gap-1 text-xs font-normal text-slate-500 cursor-pointer">
+                                  <input
+                                    type="checkbox"
+                                    checked={ todosTeleconsultorio }
+                                    ref={ el => { if (el) el.indeterminate = algunosTeleconsultorio; } }
+                                    onChange={ () => handleMarcarTodo('teleconsultorio') }
+                                    className="w-3 h-3 text-purple-600 border-slate-300 rounded
+                                               focus:ring-purple-500 cursor-pointer"
+                                  />
+                                  Todos
+                                </label>
+                              </div>
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          { especialidadesConfiguradas.map((esp) => (
+                            <tr
+                              key={ esp.idServicio }
+                              className={ `hover:bg-purple-50/50 transition-colors ${
+                                esp.tieneConfiguracion ? 'bg-white' : 'bg-slate-50/50'
+                              }` }
+                            >
+                              <td className="px-2 py-1.5 font-mono text-slate-600">{ esp.codServicio }</td>
+                              <td className="px-2 py-1.5 font-medium text-slate-900">{ esp.descServicio }</td>
+                              <td className="px-2 py-1.5 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={ esp.teleconsulta }
+                                  onChange={ () => handleCheckboxChange(esp.idServicio, 'teleconsulta') }
+                                  className="w-4 h-4 text-purple-600 border-slate-300 rounded
+                                             focus:ring-purple-500 cursor-pointer"
+                                />
+                              </td>
+                              <td className="px-2 py-1.5 text-center">
+                                <input
+                                  type="checkbox"
+                                  checked={ esp.teleconsultorio }
+                                  onChange={ () => handleCheckboxChange(esp.idServicio, 'teleconsultorio') }
+                                  className="w-4 h-4 text-purple-600 border-slate-300 rounded
+                                             focus:ring-purple-500 cursor-pointer"
+                                />
+                              </td>
+                           
+                            </tr>
+                          )) }
+                        </tbody>
+                      </table>
+                    </div>
+
+                    {/* Leyenda */ }
+                    <div className="mt-3 flex items-center gap-4 text-xs text-slate-500">
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-white border border-slate-200 rounded"></div>
+                        <span>Configurado</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <div className="w-3 h-3 bg-slate-50 border border-slate-200 rounded"></div>
+                        <span>Sin configurar</span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center justify-center py-12 text-slate-500">
+                    <Stethoscope className="w-16 h-16 text-slate-300 mb-4" />
+                    <p className="text-lg font-medium">No hay especialidades disponibles</p>
+                    <p className="text-sm">No se encontraron especialidades activas en CENATE</p>
+                  </div>
+                ) }
+              </div>
+
+              {/* Footer del modal */ }
+              <div className="bg-slate-50 px-6 py-4 border-t border-slate-200 flex justify-end gap-3">
+                <button
+                  onClick={ cerrarModalEspecialidades }
+                  disabled={ savingEspecialidades }
+                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600
+                             transition-colors font-medium disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={ handleGuardarEspecialidades }
+                  disabled={ savingEspecialidades || loadingEspecialidades }
+                  className="px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700
+                             transition-colors font-medium disabled:opacity-50 flex items-center gap-2"
+                >
+                  { savingEspecialidades && <Loader className="w-4 h-4 animate-spin" /> }
+                  { savingEspecialidades ? 'Guardando...' : 'Guardar' }
+                </button>
+              </div>
+            </div>
+          </div>
         ) }
       </div>
     </div>
