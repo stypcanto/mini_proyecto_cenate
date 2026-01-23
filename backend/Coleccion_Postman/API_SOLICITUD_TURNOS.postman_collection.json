@@ -123,7 +123,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/4",
+          "raw": "http://localhost:8080/api/solicitudes-turno/99",
           "protocol": "http",
           "host": [
             "localhost"
@@ -132,7 +132,7 @@
           "path": [
             "api",
             "solicitudes-turno",
-            "4"
+            "99"
           ]
         }
       },
@@ -361,7 +361,7 @@
         "method": "GET",
         "header": [],
         "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/56",
+          "raw": "http://localhost:8080/api/solicitudes-turno/99",
           "protocol": "http",
           "host": [
             "localhost"
@@ -370,7 +370,7 @@
           "path": [
             "api",
             "solicitudes-turno",
-            "56"
+            "99"
           ]
         }
       },
@@ -512,6 +512,89 @@
           "path": [
             "api",
             "ipress"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ESPECIALIDADES ACTIVAS CENATE",
+      "request": {
+        "auth": {
+          "type": "noauth"
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/servicio-essi/activos-cenate",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "servicio-essi",
+            "activos-cenate"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ESPECIALIDES CONFIGURADAS POR IPRESS",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/ipress/servicio-essi/002",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "ipress",
+            "servicio-essi",
+            "002"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "OBTENER CHECKBOX DE TC-TL POR IPRESS Y/O SOLICITUD",
+      "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{token}}",
+              "type": "string"
+            }
+          ]
+        },
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "http://localhost:8080/api/solicitudes-turno/form-servicios?codIpress=739",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8080",
+          "path": [
+            "api",
+            "solicitudes-turno",
+            "form-servicios"
+          ],
+          "query": [
+            {
+              "key": "codIpress",
+              "value": "739"
+            }
           ]
         }
       },
