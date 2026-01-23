@@ -1,6 +1,6 @@
 # CLAUDE.md - Proyecto CENATE
 
-> Sistema de Telemedicina - EsSalud | **v1.31.0** (2026-01-22) - Módulo de Bolsas CRUD v1.0.0 + Tele-ECG v1.24.0 ✅
+> Sistema de Telemedicina - EsSalud | **v1.33.0** (2026-01-22) - Módulo Estados Gestión Citas v1.33.0 + Bolsas v1.32.1 + Tele-ECG v1.24.0 ✅
 
 ---
 
@@ -101,6 +101,41 @@
 - ✅ Documentación: 2 especificaciones técnicas completas
 - ✅ Build: Compilado sin errores
 - ✅ **Status: PRODUCTION READY** 🎉 (Disponible desde 2026-01-22)
+
+### 📋 Módulo Estados Gestión Citas (v1.33.0) - ✅ COMPLETADO
+
+**📌 INICIO RÁPIDO:** Para entender el módulo Estados Gestión Citas, leer:
+- **`spec/01_Backend/07_modulo_estados_gestion_citas_crud.md`** ⭐ (Recomendado - Especificación técnica)
+- **`spec/06_Troubleshooting/02_guia_estados_gestion_citas.md`** (Errores encontrados + soluciones)
+
+**Documentación Técnica:**
+- **⭐ Especificación Completa:** `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0 - Arquitectura, endpoints, errores resueltos)
+- **🐛 Troubleshooting & Correcciones:** `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md` (3 problemas resueltos: rutas, queries, endpoints)
+- **💾 Script SQL Migración:** `spec/04_BaseDatos/06_scripts/V3_0_3__crear_tabla_estados_gestion_citas.sql` (DDL y 10 registros iniciales)
+- **📝 Changelog:** `checklist/01_Historial/01_changelog.md` (v1.33.0 - Registro de cambios)
+
+**Versión Actual (v1.33.0) - Gestión Centralizada de Estados de Citas:**
+- 🗄️ **Tabla Catálogo:** `dim_estados_gestion_citas` con 10 estados iniciales (CITADO, NO_CONTESTA, etc.)
+- 🔌 **8 Endpoints REST:** GET (todo/búsqueda/id), POST (crear), PUT (actualizar), PATCH (cambiar estado), DELETE
+- 📊 **API Estadísticas:** Conteo de registros activos/inactivos en tiempo real
+- 🎨 **UI React:** Componente EstadosGestionCitas.jsx con búsqueda avanzada, modales CRUD, paginación (30/página)
+- 🔍 **Búsqueda:** Debounce 300ms, query SQL nativa (PostgreSQL), filtros por código y descripción
+- 💾 **Almacenamiento:** PostgreSQL con índices GIN para full-text search en descripción
+- 🔐 **Seguridad:** Endpoint público `/api/admin/estados-gestion-citas/**` con validación MBAC
+- 🎨 **Design System:** Colores azul (#0D5BA9) consistentes con CENATE, tarjetas estadísticas
+
+**Problemas Encontrados & Resueltos:**
+1. **Rutas 404:** apiClient agrega `/api/` automáticamente → Uniformizar a `/api/admin/estados-gestion-citas/**` ✅
+2. **Query JPQL con lower(bytea):** Hibernate interpretaba mal tipos → Cambiar a query SQL nativa con `nativeQuery=true` ✅
+3. **Orden de endpoints:** `/buscar` después de `/{id}` causaba conflicto → Reordenar: `/todos` → `/buscar` → `/estadisticas` → `/{id}` ✅
+
+**Estado Final:**
+- ✅ Backend: CRUD completo (8 endpoints REST)
+- ✅ Frontend: Interfaz React con 4 modales (crear, ver, editar, eliminar)
+- ✅ Base de Datos: Tabla, índices, triggers, 10 registros iniciales
+- ✅ Documentación: Especificación técnica + guía troubleshooting
+- ✅ Build: Compilado sin errores (3 commits de correcciones)
+- ✅ **Status: PRODUCTION LIVE** 🎉 (Disponible desde 2026-01-22)
 
 ### 💾 Base de Datos
 - **Modelo Usuarios:** `spec/04_BaseDatos/01_modelo_usuarios/01_modelo_usuarios.md`
@@ -244,6 +279,7 @@ Password: @Cenate2025
 | **🫀 Tele-ECG v2.0.0** | `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` ⭐ + `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` | ✅ **100% Completado** (v1.21.4 - 6 bugs resueltos) 🎉 |
 | **Tele-ECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
 | **📦 Módulo de Bolsas** | `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1) ⭐ + Estructura Excel + Componentes Reutilizables | ✅ **100% Completado** (v1.32.1 - CRUD + Excel + Componentes) 🎉 |
+| **📋 Estados Gestión Citas** | `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐ + Troubleshooting: `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md` | ✅ **100% Completado** (v1.33.0 - CRUD + Query SQL + 3 bugs resueltos) 🎉 |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
 ---
@@ -289,6 +325,7 @@ Password: @Cenate2025
 - Integración Horarios → `spec/04_BaseDatos/07_horarios_sistema/02_guia_integracion_horarios.md`
 - Firma Digital → `plan/05_Firma_Digital/01_plan_implementacion.md`
 - Módulo Bolsas → `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1) ⭐
+- **Estados Gestión Citas → `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐ + Troubleshooting: `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md`**
 - Excel Pacientes → `spec/03_Frontend/02_estructura_excel_pacientes.md` (14 columnas, 6 obligatorios)
 - Componentes Reutilizables → `frontend/src/components/README.md` (PageHeader, StatCard, ListHeader)
 - Estructura Mínima Páginas → `spec/03_Frontend/01_estructura_minima_paginas.md` (Patrón arquitectónico)
@@ -377,4 +414,4 @@ public ResponseEntity<?> crearUsuario(...) {
 ---
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
-*Versión 1.32.1 | 2026-01-22 | Estructura Estándar + Excel + Componentes Reutilizables*
+*Versión 1.33.0 | 2026-01-22 | Estados Gestión Citas CRUD + Bolsas v1.32.1 + Tele-ECG v1.24.0*
