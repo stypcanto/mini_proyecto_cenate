@@ -287,9 +287,17 @@ public class BolsasServiceImpl implements BolsasService {
                         rowIndex);
 
                     // Crear solicitud
+                    // Para aseguradoId: usar el DNI como ID temporal (será resuelto manualmente después)
+                    Long aseguradoId = null;
+                    try {
+                        aseguradoId = Long.parseLong(dni);
+                    } catch (NumberFormatException e) {
+                        aseguradoId = 0L; // Valor por defecto si DNI no es numérico
+                    }
+
                     SolicitudBolsa solicitud = SolicitudBolsa.builder()
                             .numeroSolicitud(numeroSolicitud)
-                            .aseguradoId(Long.parseLong(dni)) // Usar DNI como asegurado_id temporal
+                            .aseguradoId(aseguradoId)
                             .pacienteNombre(nombrePaciente.trim())
                             .pacienteDni(dni)
                             .pacienteTelefono(telefonoMovil != null ? telefonoMovil.trim() : null)
