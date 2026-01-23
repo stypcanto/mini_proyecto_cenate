@@ -16,7 +16,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.apache.poi.ss.usermodel.*;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import com.styp.cenate.model.SolicitudBolsa;
+import com.styp.cenate.model.HistorialImportacionBolsa;
+
 import java.util.List;
+import java.io.InputStream;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 📊 Servicio de Bolsas - Implementación
@@ -219,19 +232,153 @@ public class BolsasServiceImpl implements BolsasService {
     @Override
     @Transactional
     public ImportacionResultadoDTO importarDesdeExcel(MultipartFile archivo, Long usuarioId, String usuarioNombre) {
-        log.info("📥 Importando bolsas desde Excel: {}", archivo.getOriginalFilename());
+        log.info("📥 Importando solicitudes desde Excel: {}", archivo.getOriginalFilename());
 
-        // TODO: Implementar lógica de importación desde Excel
-        // Por ahora retornamos un DTO vacío para que compile
+        int totalRegistros = 0;
+        int registrosExitosos = 0;
+        int registrosFallidos = 0;
+        Set<String> dnisProcesados = new HashSet<>();
+        Map<String, Long> bolsaCache = new HashMap<>();
 
-        return new ImportacionResultadoDTO(
-                null,
-                0,
-                0,
-                0,
-                "PENDIENTE",
-                "Importación no implementada aún"
-        );
+        try (InputStream inputStream = archivo.getInputStream();
+             Workbook workbook = new XSSFWorkbook(inputStream)) {
+
+            Sheet sheet = workbook.getSheetAt(0);
+
+            // Obtener bolsa por defecto (primera bolsa activa)
+            List<DimBolsa> bolsasActivas = bolsaRepository.findByEstadoAndActivo("ACTIVA", true);
+            if (bolsasActivas.isEmpty()) {
+                throw new RuntimeException("No hay bolsas activas para importar solicitudes");
+            }
+            DimBolsa bolsaDefecto = bolsasActivas.get(0);
+
+            // Procesar filas (saltar encabezado)
+            for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+                try {
+                    Row row = sheet.getRow(rowIndex);
+                    if (row == null) continue;
+
+                    // Mapeo de columnas del Excel
+                    String dni = getCellStringValue(row, 6); // DOC_PACIENTE (columna G)
+                    String nombrePaciente = getCellStringValue(row, 7); // PACIENTE (columna H)
+                    String telefonoMovil = getCellStringValue(row, 4); // TEL_MOVIL (columna E)
+                    String especialidad = getCellStringValue(row, 13); // ESPECIALIDAD (columna N)
+
+                    // Validar datos mínimos
+                    if (dni == null || dni.trim().isEmpty() || nombrePaciente == null || nombrePaciente.trim().isEmpty()) {
+                        registrosFallidos++;
+                        continue;
+                    }
+
+                    // Evitar duplicados dentro del mismo archivo
+                    if (dnisProcesados.contains(dni)) {
+                        log.warn("⚠️ DNI duplicado en importación: {}", dni);
+                        registrosFallidos++;
+                        continue;
+                    }
+
+                    dnisProcesados.add(dni);
+                    totalRegistros++;
+
+                    // Generar número de solicitud único
+                    String numeroSolicitud = String.format("IMP-%d-%s-%d",
+                        System.currentTimeMillis(),
+                        dni,
+                        rowIndex);
+
+                    // Crear solicitud
+                    SolicitudBolsa solicitud = SolicitudBolsa.builder()
+                            .numeroSolicitud(numeroSolicitud)
+                            .aseguradoId(Long.parseLong(dni)) // Usar DNI como asegurado_id temporal
+                            .pacienteNombre(nombrePaciente.trim())
+                            .pacienteDni(dni)
+                            .pacienteTelefono(telefonoMovil != null ? telefonoMovil.trim() : null)
+                            .especialidad(especialidad != null ? especialidad.trim() : "No especificada")
+                            .estado("PENDIENTE")
+                            .bolsa(bolsaDefecto)
+                            .estadoGestionCitasId(null) // No citado aún
+                            .fechaSolicitud(OffsetDateTime.now())
+                            .activo(true)
+                            .build();
+
+                    solicitudBolsaRepository.save(solicitud);
+                    registrosExitosos++;
+
+                } catch (Exception e) {
+                    log.error("❌ Error procesando fila {}: {}", rowIndex, e.getMessage());
+                    registrosFallidos++;
+                }
+            }
+
+            // Registrar historial de importación
+            HistorialImportacionBolsa historial = HistorialImportacionBolsa.builder()
+                    .nombreArchivo(archivo.getOriginalFilename())
+                    .totalRegistros(totalRegistros)
+                    .registrosExitosos(registrosExitosos)
+                    .registrosFallidos(registrosFallidos)
+                    .estadoImportacion("COMPLETADA")
+                    .usuarioNombre(usuarioNombre)
+                    .fechaImportacion(OffsetDateTime.now())
+                    .activo(true)
+                    .build();
+
+            HistorialImportacionBolsa historialGuardado = historialImportacionBolsaRepository.save(historial);
+
+            log.info("✅ Importación completada: {} exitosos, {} fallidos de {} registros",
+                registrosExitosos, registrosFallidos, totalRegistros);
+
+            return new ImportacionResultadoDTO(
+                    historialGuardado.getIdImportacion(),
+                    totalRegistros,
+                    registrosExitosos,
+                    registrosFallidos,
+                    "COMPLETADA",
+                    String.format("Importados %d solicitudes de %d registros", registrosExitosos, totalRegistros)
+            );
+
+        } catch (Exception e) {
+            log.error("❌ Error importando archivo Excel: {}", e.getMessage(), e);
+
+            // Registrar importación fallida
+            try {
+                HistorialImportacionBolsa historialFallo = HistorialImportacionBolsa.builder()
+                        .nombreArchivo(archivo.getOriginalFilename())
+                        .totalRegistros(totalRegistros)
+                        .registrosExitosos(registrosExitosos)
+                        .registrosFallidos(registrosFallidos)
+                        .estadoImportacion("ERROR")
+                        .usuarioNombre(usuarioNombre)
+                        .fechaImportacion(OffsetDateTime.now())
+                        .activo(true)
+                        .build();
+                historialImportacionBolsaRepository.save(historialFallo);
+            } catch (Exception historialError) {
+                log.error("❌ Error registrando importación fallida: {}", historialError.getMessage());
+            }
+
+            throw new RuntimeException("Error al importar archivo: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Helper para obtener valor de celda como String
+     */
+    private String getCellStringValue(Row row, int columnIndex) {
+        Cell cell = row.getCell(columnIndex);
+        if (cell == null) return null;
+
+        return switch (cell.getCellType()) {
+            case STRING -> cell.getStringCellValue();
+            case NUMERIC -> {
+                if (DateUtil.isCellDateFormatted(cell)) {
+                    yield cell.getLocalDateTimeCellValue().toString();
+                } else {
+                    yield String.valueOf((long) cell.getNumericCellValue());
+                }
+            }
+            case BOOLEAN -> String.valueOf(cell.getBooleanCellValue());
+            default -> null;
+        };
     }
 
     @Override

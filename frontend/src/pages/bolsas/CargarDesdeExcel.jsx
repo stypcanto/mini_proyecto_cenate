@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Upload, AlertCircle, CheckCircle, FileText, Loader } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { AuthContext } from '../../context/AuthContext';
 
 /**
  * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel
@@ -12,38 +14,88 @@ import { Upload, AlertCircle, CheckCircle, FileText, Loader } from 'lucide-react
  * - Historial de importaciones
  */
 export default function CargarDesdeExcel() {
+  const navigate = useNavigate();
+  const { usuario } = useContext(AuthContext);
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
   const [preview, setPreview] = useState([]);
 
+  // Obtener token del localStorage
+  const token = localStorage.getItem('token');
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
     if (selectedFile) {
+      // Validar que sea archivo válido
+      const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                         'application/vnd.ms-excel',
+                         'text/csv'];
+
+      if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv')) {
+        setImportStatus({
+          type: 'error',
+          message: 'Formato de archivo no válido. Use .xlsx, .xls o .csv'
+        });
+        return;
+      }
+
       setFile(selectedFile);
       setImportStatus(null);
-      // Aquí iría la lógica para previsualizar el archivo
     }
   };
 
   const handleImport = async () => {
-    if (!file) return;
+    if (!file || !usuario) return;
 
     setIsLoading(true);
     try {
-      // TODO: Implementar llamada a API de importación
       const formData = new FormData();
-      formData.append('file', file);
+      formData.append('archivo', file);
+      formData.append('usuarioId', usuario.id || 1);
+      formData.append('usuarioNombre', usuario.username || 'admin');
 
-      // const response = await bolsasService.importarDesdeExcel(formData);
+      // Log para debugging
+      console.log('📤 Enviando importación:', {
+        archivo: file.name,
+        usuarioId: usuario.id,
+        usuarioNombre: usuario.username,
+        tamaño: file.size
+      });
+
+      const response = await fetch('http://localhost:8080/api/bolsas/importar/excel', {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || `Error HTTP ${response.status}`);
+      }
+
+      const resultado = await response.json();
 
       setImportStatus({
         type: 'success',
-        message: 'Archivo importado correctamente',
-        rowsProcessed: 150
+        message: resultado.mensaje || 'Archivo importado correctamente',
+        rowsProcessed: resultado.registrosExitosos,
+        totalRows: resultado.totalRegistros,
+        failedRows: resultado.registrosFallidos
       });
-      setFile(null);
+
+      console.log('✅ Importación exitosa:', resultado);
+
+      // Limpiar archivo después de 2 segundos y redirigir
+      setTimeout(() => {
+        setFile(null);
+        navigate('/bolsas/solicitudes');
+      }, 2000);
+
     } catch (error) {
+      console.error('❌ Error en importación:', error);
       setImportStatus({
         type: 'error',
         message: error.message || 'Error al importar archivo'
@@ -116,9 +168,13 @@ export default function CargarDesdeExcel() {
                   {importStatus.message}
                 </p>
                 {importStatus.rowsProcessed && (
-                  <p className="text-sm text-green-700">
-                    {importStatus.rowsProcessed} filas procesadas
-                  </p>
+                  <div className="text-sm text-green-700 space-y-1 mt-2">
+                    <p>✅ Exitosos: {importStatus.rowsProcessed}</p>
+                    <p>📊 Total procesados: {importStatus.totalRows}</p>
+                    {importStatus.failedRows > 0 && (
+                      <p>❌ Fallidos: {importStatus.failedRows}</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

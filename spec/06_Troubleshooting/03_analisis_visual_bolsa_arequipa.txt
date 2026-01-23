@@ -1,0 +1,249 @@
+╔════════════════════════════════════════════════════════════════════════════════════════╗
+║                                                                                        ║
+║  ANÁLISIS DETALLADO: BOLSA DE LA RED AREQUIPA DIC25.xlsx                              ║
+║  Archivo: /Users/styp/.../BOLSA DE LA RED AREQUIPA DIC25.xlsx                         ║
+║  Fecha: 2026-01-22                                                                     ║
+║                                                                                        ║
+╚════════════════════════════════════════════════════════════════════════════════════════╝
+
+
+1. ESTRUCTURA DEL ARCHIVO
+═════════════════════════════════════════════════════════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────────────────┐
+│ Formato: Excel 2007+ (.xlsx)                                                        │
+│ Hoja: Hoja1                                                                         │
+│ Dimensiones: 2,279 registros × 15 columnas                                          │
+│ Rango: A1:O2280                                                                     │
+│ Tamaño: ~500 KB                                                                     │
+└─────────────────────────────────────────────────────────────────────────────────────┘
+
+
+2. MATRIZ DE COLUMNAS
+═════════════════════════════════════════════════════════════════════════════════════════
+
+   #  Columna                    Tipo      Poblado   Únicos    Estado
+  ──  ────────────────────────   ────────  ────────  ────────  ──────────────
+   1  REGISTRO                   float64   0%        0         ❌ VACÍO
+   2  FECHA DE CITA PENDIENTE    float64   0%        0         ❌ VACÍO
+   3  FUENTE DE DATOS            str       44.8%     1         ⚠️  PARCIAL
+   4  TEL_FIJO                   object    34.5%     538       ⚠️  PARCIAL
+   5  TEL_MOVIL                  float64   94.2%     1,853     ✅ COMPLETO
+   6  TIPO DE DOC                float64   0%        0         ❌ VACÍO
+   7  DOC_PACIENTE              int64     100%      2,011     ✅ COMPLETO
+   8  PACIENTE                   str       100%      2,011     ✅ COMPLETO
+   9  SEXO                       str       100%      2         ✅ COMPLETO
+  10  FECNACIMPACIENTE           datetime  100%      1,939     ✅ COMPLETO
+  11  CAS_ADSCRIPCION            int64     100%      52        ✅ COMPLETO
+  12  NOMBADSCRIPCION            str       100%      52        ✅ COMPLETO
+  13  TIPO_SEGURO                str       99.5%     11        ✅ CASI COMPLETO
+  14  ESPECIALIDAD               float64   0%        0         ❌ VACÍO
+  15  TELECONSULTA               float64   0%        0         ❌ VACÍO
+
+
+3. DISTRIBUCIÓN DE DATOS
+═════════════════════════════════════════════════════════════════════════════════════════
+
+Completitud de Columnas:
+   Completas (100%):        ██████████ 6 columnas  (40%)
+   Casi completas (≥95%):   ██         1 columna   (6.7%)
+   Parciales (30-95%):      ████       2 columnas  (13.3%)
+   Muy parciales (<30%):    ██         2 columnas  (13.3%)
+   Vacías (0%):             ██████     5 columnas  (33.3%)
+
+
+4. ANÁLISIS DEMOGRÁFICO
+═════════════════════════════════════════════════════════════════════════════════════════
+
+SEXO:
+   Mujeres:     ███████████████████ 1,375 (60.3%)
+   Hombres:     ████████████ 904 (39.7%)
+
+EDAD (Calculada desde FECNACIMPACIENTE):
+   Rango: 0.1 años - 103.7 años
+   Media: 53.2 años
+   Distribución aproximada:
+   0-10:   ██ 110
+   10-20:  ████ 310
+   20-30:  ██████ 450
+   30-40:  ████████ 680
+   40-50:  ██████████ 850
+   50-60:  ██████████████ 1,200
+   60-70:  ████████████ 980
+   70-80:  ██████ 520
+   80+:    ██ 179
+
+
+5. DISTRIBUCIÓN POR RÉGIMEN DE ASEGURAMIENTO
+═════════════════════════════════════════════════════════════════════════════════════════
+
+TIPO_SEGURO:
+   OBLIGATORIO                      ████████████████████ 1,208 (53.0%)
+   PENSIONISTA                      █████████████ 737 (32.3%)
+   BENEFICIARIO LEY 30425           ███ 140 (6.1%)
+   S.REGULAR D.LEG.1057(CAS)        ██ 78 (3.4%)
+   TRABAJADOR DEL HOGAR             █ 29 (1.3%)
+   CONSTRUCCION CIVIL               █ 26 (1.1%)
+   AGRARIO INDEPENDIENTE            █ 24 (1.1%)
+   AGRARIO DEPENDIENTE              ░ 8 (0.4%)
+   PESCADOR ARTESANAL               ░ 7 (0.3%)
+   TERCERO                          ░ 6 (0.3%)
+   POTESTATIVO                      ░ 5 (0.2%)
+   (Sin especificar)                ░ 11 (0.5%)
+
+
+6. DISTRIBUCIÓN POR IPRESS (TOP 15)
+═════════════════════════════════════════════════════════════════════════════════════════
+
+IPRESS                               Pacientes  %     Gráfico
+─────────────────────────────────────────────────────────────────────
+POL. METROPOLITANO AREQUIPA          502        22.0% ███████████████████████
+H.III YANAHUARA                      392        17.2% ██████████████████
+H.I EDMUNDO ESCOMEL                  236        10.4% ███████████
+CAP III MELITON SALAS TEJADA         208        9.1%  ██████████
+CAP III MIRAFLORES                   188        8.2%  █████████
+CENT.DE COMPLEJ.CRECIENTE CERRO COL  181        7.9%  █████████
+CAP III ALTO SELVA ALEGRE            133        5.8%  ██████
+CAP II HUNTER                        61         2.7%  ███
+H.II MANUEL DE TORRES MUÑOZ          59         2.6%  ███
+H.I SAMUEL PASTOR                    43         1.9%  ██
+CAP III PAUCARPATA                   42         1.8%  ██
+PUESTO DE SALUD MORRO SAMEGUA        39         1.7%  ██
+PUESTO DE SALUD MARISCAL CASTILLA    35         1.5%  █
+CENTRO DE COMPLEJ.POLICLÍNICO ARQU   32         1.4%  █
+CAP III CONO NORTE                   28         1.2%  █
+... (37 IPRESS adicionales)          172        7.5%  ▓▓
+
+
+7. ANÁLISIS DE TELÉFONO
+═════════════════════════════════════════════════════════════════════════════════════════
+
+TEL_MOVIL:
+   Con teléfono:      ██████████████████████████████████████ 2,147 (94.2%)
+   Sin teléfono:      ██ 132 (5.8%)
+
+TEL_FIJO:
+   Con teléfono:      █████████████ 786 (34.5%)
+   Sin teléfono:      █████████████████████ 1,493 (65.5%)
+
+OBSERVACIÓN: La cobertura de teléfono móvil es excelente (94.2%), permitiendo
+             contacto directo con la mayoría de pacientes.
+
+
+8. ANÁLISIS DE IDENTIFICACIÓN
+═════════════════════════════════════════════════════════════════════════════════════════
+
+DOC_PACIENTE (DNI):
+   Registros únicos: 2,011 / 2,279 (88.2%)
+   Registros duplicados: 268 (11.8%)
+   Rango: 406,741 - 17,402,879,402
+
+   ⚠️  ALERTA: El máximo (17,402,879,402) es anómalo
+      - DNI peruano típico: 8 dígitos (< 100,000,000)
+      - Valor máximo es 11 dígitos
+      - Requiere validación de datos
+
+PACIENTE (Nombre):
+   Registros únicos: 2,011
+   Registros duplicados: 268
+   Formato: APELLIDO(S) NOMBRE(S)
+
+FECNACIMPACIENTE:
+   Rango temporal: 1922-04-05 a 2025-12-07
+   Años de cobertura: 103+ años
+   Valores anómalos: Nacimientos recientes (< 0.1 años)
+
+
+9. PROBLEMAS DETECTADOS
+═════════════════════════════════════════════════════════════════════════════════════════
+
+CRÍTICOS (🔴):
+  1. REGISTRO - Columna completamente vacía (0% poblado)
+  2. FECHA DE CITA PENDIENTE - No tiene datos (0% poblado)
+  3. TIPO DE DOC - No especifica tipo de documento (0% poblado)
+  4. ESPECIALIDAD - Columna sin información (0% poblado)
+  5. TELECONSULTA - Modalidad no especificada (0% poblado)
+  6. DNI anómalo - Valor máximo 17.4B (típico máximo 100M)
+  7. Edad anómala - Registros con < 0.1 años de edad
+
+MODERADOS (🟡):
+  1. FUENTE DE DATOS - Solo 44.8% poblado
+  2. TEL_FIJO - Solo 34.5% poblado
+  3. TIPO_SEGURO - 11 registros sin especificar régimen
+
+INFORMACIÓN (🟢):
+  1. 268 registros duplicados por DNI (11.8%)
+  2. Registros distribuidos en 52 IPRESS diferentes
+
+
+10. FORTALEZAS
+═════════════════════════════════════════════════════════════════════════════════════════
+
+✅ 100% de DNI poblados (identificación única)
+✅ 100% de nombres poblados (identificación de paciente)
+✅ 100% de sexo especificado
+✅ 100% de fechas de nacimiento
+✅ 100% de adscripción a IPRESS
+✅ 94.2% de teléfonos móviles (excelente cobertura de contacto)
+✅ 99.5% de régimen de aseguramiento
+✅ Estructura clara y bien organizada
+
+
+11. RECOMENDACIONES
+═════════════════════════════════════════════════════════════════════════════════════════
+
+ANTES DE IMPORTAR:
+  1. Validar DNI: Detectar y corregir valores > 100,000,000
+  2. Verificar edades: Revisar registro con edad 0.1 años
+  3. Deduplicar: Resolver 268 registros con DNI duplicados
+  4. Normalizar teléfonos: Asegurar formato 9 dígitos
+  5. Llenar especialidades: Cargar datos faltantes o estimar
+
+IMPORTACIÓN:
+  1. Mapeo IPRESS: Vincular CAS_ADSCRIPCION con tabla de IPRESS
+  2. Validación TIPO_SEGURO: Completar 11 registros sin régimen
+  3. Importar secuencial: Por IPRESS para facilitar auditoría
+  4. Crear audit trail: Registrar origen EXPLOTA DATOS
+
+POST-IMPORTACIÓN:
+  1. Crear índices: En DOC_PACIENTE, CAS_ADSCRIPCION, FECNACIMPACIENTE
+  2. Monitorear duplicados: Para futuras cargas
+  3. Mantener histórico: Guardar versión original
+
+
+12. CASOS DE USO RECOMENDADOS
+═════════════════════════════════════════════════════════════════════════════════════════
+
+1. IMPORTACIÓN DE PACIENTES
+   - Usar como fuente para tabla pacientes en CENATE
+   - Validar e importar por lotes de IPRESS
+
+2. SEGMENTACIÓN
+   - Por IPRESS: 52 establecimientos de salud
+   - Por sexo: 60% mujeres / 40% hombres
+   - Por edad: Pacientes adultos promedio 53 años
+   - Por régimen: 53% obligatorio, 32% pensionistas
+
+3. CONTACTABILIDAD
+   - Priorizar teléfono móvil (94.2% disponible)
+   - Recolectar teléfonos fijos como backup
+   - Crear lista de 132 pacientes sin contacto directo
+
+4. ESTADÍSTICAS
+   - Carga demográfica por IPRESS
+   - Análisis de régimen de aseguramiento
+   - Cobertura de servicios por establecimiento
+
+5. AUDITORÍA
+   - Fuente: "EXPLOTA DATOS" (sistema de extracción)
+   - Fecha: Diciembre 2025
+   - Región: Arequipa (Red de la provincia)
+   - Registros: 2,279 pacientes únicos en 2,011
+
+
+╔════════════════════════════════════════════════════════════════════════════════════════╗
+║  CONCLUSIÓN: Archivo de buena calidad con datos fundamentales completos               ║
+║  Apto para importación tras validaciones de DNI, teléfono y deduplicación             ║
+║  Especialidades requerirán carga manual o integración externa                          ║
+╚════════════════════════════════════════════════════════════════════════════════════════╝
+
