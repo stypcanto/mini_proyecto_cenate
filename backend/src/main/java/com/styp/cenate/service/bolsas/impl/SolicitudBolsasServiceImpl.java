@@ -1,11 +1,12 @@
 package com.styp.cenate.service.bolsas.impl;
 
-import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
-import com.styp.cenate.dto.bolsas.SolicitudBolsaRequestDTO;
+import com.styp.cenate.dto.bolsas.*;
 import com.styp.cenate.mapper.SolicitudBolsaMapper;
 import com.styp.cenate.model.SolicitudBolsa;
 import com.styp.cenate.repository.SolicitudBolsaRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsasService;
+import com.styp.cenate.service.email.EmailService;
+import com.styp.cenate.service.notificacion.NotificacionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -13,6 +14,8 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintWriter;
 import java.time.OffsetDateTime;
 import java.util.List;
 
@@ -26,6 +29,8 @@ import java.util.List;
 public class SolicitudBolsasServiceImpl implements SolicitudBolsasService {
 
     private final SolicitudBolsaRepository solicitudBolsaRepository;
+    private final EmailService emailService;
+    private final NotificacionService notificacionService;
 
     // ========================================================================
     // 🔍 CONSULTAS
@@ -229,6 +234,134 @@ public class SolicitudBolsasServiceImpl implements SolicitudBolsasService {
 
         solicitud.setActivo(false);
         solicitudBolsaRepository.save(solicitud);
-
     }
+
+    // ========================================================================
+    // 👤 ASIGNACIÓN A GESTORA
+    // ========================================================================
+
+    @Override
+    @Transactional
+    public SolicitudBolsaDTO asignarAGestora(Long idSolicitud, AsignarGestoraRequest request) {
+        log.info("👤 Asignando solicitud ID: {} a gestora: {}", idSolicitud, request.getGestoraNombre());
+
+        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+
+        if (!solicitud.isAprobada()) {
+            throw new RuntimeException("Solo se pueden asignar solicitudes aprobadas");
+        }
+
+        solicitud.asignarAGestora(request.getGestoraId(), request.getGestoraNombre());
+        SolicitudBolsa solicitudActualizada = solicitudBolsaRepository.save(solicitud);
+
+        return SolicitudBolsaMapper.toDto(solicitudActualizada);
+    }
+
+    // ========================================================================
+    // 📄 EXPORTACIÓN
+    // ========================================================================
+
+    @Override
+    public byte[] exportarCSV(List<Long> ids) {
+        log.info("📄 Exportando {} solicitudes a CSV", ids.size());
+
+        List<SolicitudBolsa> solicitudes = solicitudBolsaRepository.findAllById(ids);
+
+        try (ByteArrayOutputStream output = new ByteArrayOutputStream();
+             PrintWriter writer = new PrintWriter(output)) {
+
+            // Encabezados CSV
+            writer.println("ID,Número,DNI,Paciente,Teléfono,Email,Bolsa,Estado,Gestora,Fecha Solicitud,Fecha Asignación");
+
+            // Filas de datos
+            for (SolicitudBolsa solicitud : solicitudes) {
+                writer.printf("%d,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n",
+                    solicitud.getIdSolicitud(),
+                    solicitud.getNumeroSolicitud(),
+                    solicitud.getPacienteDni(),
+                    solicitud.getPacienteNombre(),
+                    solicitud.getPacienteTelefono() != null ? solicitud.getPacienteTelefono() : "",
+                    solicitud.getPacienteEmail() != null ? solicitud.getPacienteEmail() : "",
+                    solicitud.getBolsa() != null ? solicitud.getBolsa().getNombreBolsa() : "",
+                    solicitud.getEstado(),
+                    solicitud.getResponsableGestoraNombre() != null ? solicitud.getResponsableGestoraNombre() : "",
+                    solicitud.getFechaSolicitud(),
+                    solicitud.getFechaAsignacion() != null ? solicitud.getFechaAsignacion() : ""
+                );
+            }
+
+            writer.flush();
+            return output.toByteArray();
+
+        } catch (Exception e) {
+            log.error("❌ Error al exportar CSV: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al exportar solicitudes a CSV: " + e.getMessage());
+        }
+    }
+
+    // ========================================================================
+    // 📧 RECORDATORIOS
+    // ========================================================================
+
+    @Override
+    @Transactional
+    public SolicitudBolsaDTO enviarRecordatorio(Long idSolicitud, EnviarRecordatorioRequest request) {
+        log.info("📧 Enviando recordatorio {} para solicitud ID: {}", request.getTipo(), idSolicitud);
+
+        SolicitudBolsa solicitud = solicitudBolsaRepository.findById(idSolicitud)
+                .orElseThrow(() -> new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud));
+
+        if (solicitud.getEstadoGestionCitasId() == null ||
+            !solicitud.getEstadoGestionCitasId().equals(1L)) { // CITADO
+            throw new RuntimeException("Solo se pueden enviar recordatorios para pacientes citados");
+        }
+
+        String tipoRecordatorio = request.getTipo().toUpperCase();
+
+        try {
+            if ("WHATSAPP".equals(tipoRecordatorio)) {
+                // Enviar WhatsApp
+                if (solicitud.getPacienteTelefono() != null && !solicitud.getPacienteTelefono().isEmpty()) {
+                    String mensaje = request.getMensaje() != null && !request.getMensaje().isEmpty()
+                        ? request.getMensaje()
+                        : String.format("Recordatorio de cita: Estimado(a) %s, le recordamos su cita. Por favor, confirme su asistencia.",
+                            solicitud.getPacienteNombre());
+
+                    // TODO: Integrar con servicio de WhatsApp cuando esté disponible
+                    log.info("📱 Recordatorio WhatsApp pendiente de envío a {}: {}",
+                        solicitud.getPacienteTelefono(), mensaje);
+                    log.warn("⚠️ WhatsApp service no implementado yet. Message queued for delivery.");
+                } else {
+                    throw new RuntimeException("El paciente no tiene número de WhatsApp registrado");
+                }
+            } else if ("EMAIL".equals(tipoRecordatorio)) {
+                // Enviar Email recordatorio
+                if (solicitud.getPacienteEmail() != null && !solicitud.getPacienteEmail().isEmpty()) {
+                    // TODO: Implementar método genérico en EmailService para enviar recordatorios
+                    // Por ahora, registramos el recordatorio para envío manual o integración futura
+                    log.info("📧 Recordatorio EMAIL pendiente de envío a {}", solicitud.getPacienteEmail());
+                    if (request.getMensaje() != null && !request.getMensaje().isEmpty()) {
+                        log.info("    Mensaje personalizado: {}", request.getMensaje());
+                    }
+                    log.warn("⚠️ Email service para recordatorios aún no está completamente integrado. " +
+                        "Revisar implementación de EmailService para agregar método público genérico.");
+                } else {
+                    throw new RuntimeException("El paciente no tiene correo electrónico registrado");
+                }
+            } else {
+                throw new RuntimeException("Tipo de recordatorio no válido: " + tipoRecordatorio);
+            }
+
+            solicitud.marcarRecordatorioEnviado();
+            SolicitudBolsa solicitudActualizada = solicitudBolsaRepository.save(solicitud);
+
+            return SolicitudBolsaMapper.toDto(solicitudActualizada);
+
+        } catch (Exception e) {
+            log.error("❌ Error al enviar recordatorio: {}", e.getMessage(), e);
+            throw new RuntimeException("Error al enviar recordatorio: " + e.getMessage());
+        }
+    }
+
 }

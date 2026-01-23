@@ -16,14 +16,18 @@ import jakarta.validation.constraints.NotNull;
 @ToString
 public class SolicitudBolsaRequestDTO {
 
-    @NotNull(message = "El ID del paciente es obligatorio")
-    private Long pacienteId;
+    @NotNull(message = "El ID del asegurado es obligatorio")
+    private Long aseguradoId;
 
     @NotBlank(message = "El nombre del paciente es obligatorio")
     private String pacienteNombre;
 
     @NotBlank(message = "El DNI del paciente es obligatorio")
     private String pacienteDni;
+
+    private String pacienteTelefono;
+
+    private String pacienteEmail;
 
     private String especialidad;
 

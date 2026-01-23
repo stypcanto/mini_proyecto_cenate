@@ -33,14 +33,21 @@ public class SolicitudBolsa {
     @Column(name = "numero_solicitud", unique = true, nullable = false, length = 50)
     private String numeroSolicitud;
 
-    @Column(name = "paciente_id", nullable = false)
-    private Long pacienteId;
+    // =========== Asegurado (reemplaza paciente_id) ===========
+    @Column(name = "asegurado_id", nullable = false)
+    private Long aseguradoId;
 
     @Column(name = "paciente_nombre", nullable = false, length = 255)
     private String pacienteNombre;
 
     @Column(name = "paciente_dni", nullable = false, length = 20)
     private String pacienteDni;
+
+    @Column(name = "paciente_telefono", length = 20)
+    private String pacienteTelefono;
+
+    @Column(name = "paciente_email", length = 255)
+    private String pacienteEmail;
 
     @Column(name = "especialidad", length = 255)
     private String especialidad;
@@ -70,6 +77,25 @@ public class SolicitudBolsa {
 
     @Column(name = "responsable_aprobacion_nombre", length = 255)
     private String responsableAprobacionNombre;
+
+    // =========== Asignación a Gestora ===========
+    @Column(name = "responsable_gestora_id")
+    private Long responsableGestoraId;
+
+    @Column(name = "responsable_gestora_nombre", length = 255)
+    private String responsableGestoraNombre;
+
+    @Column(name = "fecha_asignacion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private OffsetDateTime fechaAsignacion;
+
+    // =========== Estado de Gestión de Citas ===========
+    @Column(name = "estado_gestion_citas_id")
+    private Long estadoGestionCitasId;
+
+    // =========== Recordatorio ===========
+    @Column(name = "recordatorio_enviado")
+    @Builder.Default
+    private Boolean recordatorioEnviado = false;
 
     @CreationTimestamp
     @Column(name = "fecha_solicitud", nullable = false, updatable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE")
@@ -123,5 +149,21 @@ public class SolicitudBolsa {
     public Integer getDiasDesdeCreacion() {
         if (fechaSolicitud == null) return 0;
         return (int) java.time.temporal.ChronoUnit.DAYS.between(fechaSolicitud, OffsetDateTime.now());
+    }
+
+    public void asignarAGestora(Long gestoraId, String gestoraNombre) {
+        this.responsableGestoraId = gestoraId;
+        this.responsableGestoraNombre = gestoraNombre;
+        this.fechaAsignacion = OffsetDateTime.now();
+        log.info("👤 Solicitud {} asignada a gestora {}", this.numeroSolicitud, gestoraNombre);
+    }
+
+    public void marcarRecordatorioEnviado() {
+        this.recordatorioEnviado = true;
+        log.info("📧 Recordatorio enviado para solicitud {}", this.numeroSolicitud);
+    }
+
+    public boolean tieneGestoraAsignada() {
+        return this.responsableGestoraId != null;
     }
 }

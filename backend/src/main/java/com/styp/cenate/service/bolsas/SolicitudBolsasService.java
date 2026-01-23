@@ -1,8 +1,6 @@
 package com.styp.cenate.service.bolsas;
 
-import com.styp.cenate.dto.bolsas.AprobacionSolicitudDTO;
-import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
-import com.styp.cenate.dto.bolsas.SolicitudBolsaRequestDTO;
+import com.styp.cenate.dto.bolsas.*;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -99,6 +97,33 @@ public interface SolicitudBolsasService {
      * Elimina una solicitud (solo si está pendiente)
      */
     void eliminarSolicitud(Long idSolicitud);
+
+    // ========================================================================
+    // 👤 ASIGNACIÓN A GESTORA
+    // ========================================================================
+
+    /**
+     * Asigna una solicitud a una gestora de citas
+     */
+    SolicitudBolsaDTO asignarAGestora(Long idSolicitud, AsignarGestoraRequest request);
+
+    // ========================================================================
+    // 📄 EXPORTACIÓN
+    // ========================================================================
+
+    /**
+     * Exporta solicitudes a CSV
+     */
+    byte[] exportarCSV(List<Long> ids);
+
+    // ========================================================================
+    // 📧 RECORDATORIOS
+    // ========================================================================
+
+    /**
+     * Envía recordatorio de cita al paciente
+     */
+    SolicitudBolsaDTO enviarRecordatorio(Long idSolicitud, EnviarRecordatorioRequest request);
 
     // ========================================================================
     // 📊 DTO INTERNAS

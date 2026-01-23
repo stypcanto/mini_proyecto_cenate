@@ -289,4 +289,60 @@ public class BolsasController {
         solicitudBolsasService.eliminarSolicitud(id);
         return ResponseEntity.noContent().build();
     }
+
+    // ========================================================================
+    // 👤 ASIGNACIÓN A GESTORA
+    // ========================================================================
+
+    @PatchMapping("/solicitudes/{id}/asignar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
+    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
+    public ResponseEntity<SolicitudBolsaDTO> asignarAGestora(
+        @PathVariable Long id,
+        @Valid @RequestBody AsignarGestoraRequest request) {
+        log.info("👤 Asignando solicitud ID: {} a gestora: {}", id, request.getGestoraNombre());
+        SolicitudBolsaDTO solicitudAsignada = solicitudBolsasService.asignarAGestora(id, request);
+        return ResponseEntity.ok(solicitudAsignada);
+    }
+
+    // ========================================================================
+    // 📄 EXPORTACIÓN
+    // ========================================================================
+
+    @GetMapping("/solicitudes/exportar")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
+    public ResponseEntity<byte[]> exportarCSV(
+        @RequestParam(value = "ids", required = false) List<Long> ids) {
+        log.info("📄 Exportando solicitudes a CSV");
+
+        // Si no se proporcionan IDs, exportar todas
+        if (ids == null || ids.isEmpty()) {
+            ids = solicitudBolsasService.obtenerTodasLasSolicitudes()
+                .stream()
+                .map(SolicitudBolsaDTO::getIdSolicitud)
+                .toList();
+        }
+
+        byte[] csvData = solicitudBolsasService.exportarCSV(ids);
+
+        return ResponseEntity.ok()
+            .header("Content-Type", "text/csv; charset=UTF-8")
+            .header("Content-Disposition", "attachment; filename=\"solicitudes_bolsas.csv\"")
+            .body(csvData);
+    }
+
+    // ========================================================================
+    // 📧 RECORDATORIOS
+    // ========================================================================
+
+    @PostMapping("/solicitudes/{id}/recordatorio")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
+    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
+    public ResponseEntity<SolicitudBolsaDTO> enviarRecordatorio(
+        @PathVariable Long id,
+        @Valid @RequestBody EnviarRecordatorioRequest request) {
+        log.info("📧 Enviando recordatorio {} para solicitud ID: {}", request.getTipo(), id);
+        SolicitudBolsaDTO solicitudActualizada = solicitudBolsasService.enviarRecordatorio(id, request);
+        return ResponseEntity.ok(solicitudActualizada);
+    }
 }

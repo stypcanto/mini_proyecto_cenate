@@ -19,11 +19,15 @@ public class SolicitudBolsaDTO {
 
     private String numeroSolicitud;
 
-    private Long pacienteId;
+    private Long aseguradoId;
 
     private String pacienteNombre;
 
     private String pacienteDni;
+
+    private String pacienteTelefono;
+
+    private String pacienteEmail;
 
     private String especialidad;
 
@@ -44,6 +48,16 @@ public class SolicitudBolsaDTO {
     private Long responsableAprobacionId;
 
     private String responsableAprobacionNombre;
+
+    private Long responsableGestoraId;
+
+    private String responsableGestoraNombre;
+
+    private OffsetDateTime fechaAsignacion;
+
+    private Long estadoGestionCitasId;
+
+    private Boolean recordatorioEnviado;
 
     private OffsetDateTime fechaSolicitud;
 

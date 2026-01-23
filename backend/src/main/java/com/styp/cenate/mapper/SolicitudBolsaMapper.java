@@ -24,11 +24,14 @@ public class SolicitudBolsaMapper {
         return SolicitudBolsaDTO.builder()
                 .idSolicitud(entity.getIdSolicitud())
                 .numeroSolicitud(entity.getNumeroSolicitud())
-                .pacienteId(entity.getPacienteId())
+                .aseguradoId(entity.getAseguradoId())
                 .pacienteDni(entity.getPacienteDni())
                 .pacienteNombre(entity.getPacienteNombre())
+                .pacienteTelefono(entity.getPacienteTelefono())
+                .pacienteEmail(entity.getPacienteEmail())
                 .especialidad(entity.getEspecialidad())
                 .idBolsa(entity.getBolsa() != null ? entity.getBolsa().getIdBolsa() : null)
+                .nombreBolsa(entity.getBolsa() != null ? entity.getBolsa().getNombreBolsa() : null)
                 .estado(entity.getEstado())
                 .razonRechazo(entity.getRazonRechazo())
                 .notasAprobacion(entity.getNotasAprobacion())
@@ -36,10 +39,16 @@ public class SolicitudBolsaMapper {
                 .solicitanteNombre(entity.getSolicitanteNombre())
                 .responsableAprobacionId(entity.getResponsableAprobacionId())
                 .responsableAprobacionNombre(entity.getResponsableAprobacionNombre())
+                .responsableGestoraId(entity.getResponsableGestoraId())
+                .responsableGestoraNombre(entity.getResponsableGestoraNombre())
+                .fechaAsignacion(entity.getFechaAsignacion())
+                .estadoGestionCitasId(entity.getEstadoGestionCitasId())
+                .recordatorioEnviado(entity.getRecordatorioEnviado())
                 .fechaSolicitud(entity.getFechaSolicitud())
                 .fechaAprobacion(entity.getFechaAprobacion())
                 .fechaActualizacion(entity.getFechaActualizacion())
                 .activo(entity.getActivo())
+                .diasDesdeCreacion(entity.getDiasDesdeCreacion())
                 .build();
     }
 
@@ -56,9 +65,11 @@ public class SolicitudBolsaMapper {
         // Nota: La bolsa debe ser seteada después por el servicio
         return SolicitudBolsa.builder()
                 .numeroSolicitud(numeroSolicitud)
-                .pacienteId(dto.getPacienteId())
+                .aseguradoId(dto.getAseguradoId())
                 .pacienteDni(dto.getPacienteDni())
                 .pacienteNombre(dto.getPacienteNombre())
+                .pacienteTelefono(dto.getPacienteTelefono())
+                .pacienteEmail(dto.getPacienteEmail())
                 .especialidad(dto.getEspecialidad())
                 .estado("PENDIENTE")
                 .solicitanteId(dto.getSolicitanteId())
@@ -71,9 +82,11 @@ public class SolicitudBolsaMapper {
     // ACTUALIZAR ENTITY DESDE DTO (sin perder auditoría)
     // ============================================================
     public static void updateEntity(SolicitudBolsa entity, SolicitudBolsaRequestDTO dto) {
-        entity.setPacienteId(dto.getPacienteId());
+        entity.setAseguradoId(dto.getAseguradoId());
         entity.setPacienteDni(dto.getPacienteDni());
         entity.setPacienteNombre(dto.getPacienteNombre());
+        entity.setPacienteTelefono(dto.getPacienteTelefono());
+        entity.setPacienteEmail(dto.getPacienteEmail());
         entity.setEspecialidad(dto.getEspecialidad());
         // Nota: No actualizamos bolsa en el mapper (debe hacerse en el servicio)
         entity.setSolicitanteId(dto.getSolicitanteId());
