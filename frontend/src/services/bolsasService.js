@@ -1,11 +1,11 @@
-import axiosInstance from './axiosInstance';
+import apiClient from './apiClient';
 
 /**
  * 📊 Servicio de API - Módulo Bolsas
  * v1.0.0 - Gestión de bolsas de pacientes, importación y solicitudes
  */
 
-const API_BASE_URL = '/api/bolsas';
+const API_BASE_URL = '/bolsas';
 
 // ========================================================================
 // 🔄 BOLSAS - Gestión de Bolsas de Pacientes
@@ -17,8 +17,8 @@ const API_BASE_URL = '/api/bolsas';
  */
 export const obtenerBolsas = async () => {
   try {
-    const response = await axiosInstance.get(`${API_BASE_URL}`);
-    return response.data;
+    const response = await apiClient.get(`${API_BASE_URL}`);
+    return response;
   } catch (error) {
     console.error('Error al obtener bolsas:', error);
     throw error;
@@ -32,8 +32,8 @@ export const obtenerBolsas = async () => {
  */
 export const obtenerBolsaPorId = async (id) => {
   try {
-    const response = await axiosInstance.get(`${API_BASE_URL}/${id}`);
-    return response.data;
+    const response = await apiClient.get(`${API_BASE_URL}/${id}`);
+    return response;
   } catch (error) {
     console.error(`Error al obtener bolsa ${id}:`, error);
     throw error;
@@ -47,8 +47,8 @@ export const obtenerBolsaPorId = async (id) => {
  */
 export const crearBolsa = async (dataBolsa) => {
   try {
-    const response = await axiosInstance.post(`${API_BASE_URL}`, dataBolsa);
-    return response.data;
+    const response = await apiClient.post(`${API_BASE_URL}`, dataBolsa);
+    return response;
   } catch (error) {
     console.error('Error al crear bolsa:', error);
     throw error;
@@ -63,8 +63,8 @@ export const crearBolsa = async (dataBolsa) => {
  */
 export const actualizarBolsa = async (id, dataBolsa) => {
   try {
-    const response = await axiosInstance.put(`${API_BASE_URL}/${id}`, dataBolsa);
-    return response.data;
+    const response = await apiClient.put(`${API_BASE_URL}/${id}`, dataBolsa);
+    return response;
   } catch (error) {
     console.error(`Error al actualizar bolsa ${id}:`, error);
     throw error;
@@ -78,7 +78,7 @@ export const actualizarBolsa = async (id, dataBolsa) => {
  */
 export const eliminarBolsa = async (id) => {
   try {
-    await axiosInstance.delete(`${API_BASE_URL}/${id}`);
+    await apiClient.delete(`${API_BASE_URL}/${id}`);
   } catch (error) {
     console.error(`Error al eliminar bolsa ${id}:`, error);
     throw error;
@@ -96,12 +96,8 @@ export const eliminarBolsa = async (id) => {
  */
 export const importarDesdeExcel = async (formData) => {
   try {
-    const response = await axiosInstance.post(`${API_BASE_URL}/importar/excel`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    });
-    return response.data;
+    const response = await apiClient.uploadFile(`${API_BASE_URL}/importar/excel`, formData);
+    return response;
   } catch (error) {
     console.error('Error al importar desde Excel:', error);
     throw error;
@@ -114,8 +110,8 @@ export const importarDesdeExcel = async (formData) => {
  */
 export const obtenerHistorialImportaciones = async () => {
   try {
-    const response = await axiosInstance.get(`${API_BASE_URL}/importaciones/historial`);
-    return response.data;
+    const response = await apiClient.get(`${API_BASE_URL}/importaciones/historial`);
+    return response;
   } catch (error) {
     console.error('Error al obtener historial de importaciones:', error);
     throw error;
@@ -132,8 +128,8 @@ export const obtenerHistorialImportaciones = async () => {
  */
 export const obtenerSolicitudes = async () => {
   try {
-    const response = await axiosInstance.get(`${API_BASE_URL}/solicitudes`);
-    return response.data;
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes`);
+    return response;
   } catch (error) {
     console.error('Error al obtener solicitudes:', error);
     throw error;
@@ -147,8 +143,8 @@ export const obtenerSolicitudes = async () => {
  */
 export const obtenerSolicitudPorId = async (id) => {
   try {
-    const response = await axiosInstance.get(`${API_BASE_URL}/solicitudes/${id}`);
-    return response.data;
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/${id}`);
+    return response;
   } catch (error) {
     console.error(`Error al obtener solicitud ${id}:`, error);
     throw error;
@@ -162,8 +158,8 @@ export const obtenerSolicitudPorId = async (id) => {
  */
 export const crearSolicitud = async (dataSolicitud) => {
   try {
-    const response = await axiosInstance.post(`${API_BASE_URL}/solicitudes`, dataSolicitud);
-    return response.data;
+    const response = await apiClient.post(`${API_BASE_URL}/solicitudes`, dataSolicitud);
+    return response;
   } catch (error) {
     console.error('Error al crear solicitud:', error);
     throw error;
@@ -178,8 +174,8 @@ export const crearSolicitud = async (dataSolicitud) => {
  */
 export const actualizarSolicitud = async (id, dataSolicitud) => {
   try {
-    const response = await axiosInstance.put(`${API_BASE_URL}/solicitudes/${id}`, dataSolicitud);
-    return response.data;
+    const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}`, dataSolicitud);
+    return response;
   } catch (error) {
     console.error(`Error al actualizar solicitud ${id}:`, error);
     throw error;
@@ -189,13 +185,21 @@ export const actualizarSolicitud = async (id, dataSolicitud) => {
 /**
  * Aprueba una solicitud
  * @param {number} id - ID de la solicitud
- * @param {Object} notas - Notas opcionales
+ * @param {number} responsableId - ID del responsable
+ * @param {string} responsableNombre - Nombre del responsable
+ * @param {Object} params - Parámetros adicionales
  * @returns {Promise<Object>} - Solicitud aprobada
  */
-export const aprobarSolicitud = async (id, notas = '') => {
+export const aprobarSolicitud = async (id, responsableId, responsableNombre, params = {}) => {
   try {
-    const response = await axiosInstance.put(`${API_BASE_URL}/solicitudes/${id}/aprobar`, { notas });
-    return response.data;
+    const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}/aprobar`, {}, {
+      params: {
+        responsableId,
+        responsableNombre,
+        ...params
+      }
+    });
+    return response;
   } catch (error) {
     console.error(`Error al aprobar solicitud ${id}:`, error);
     throw error;
@@ -205,13 +209,21 @@ export const aprobarSolicitud = async (id, notas = '') => {
 /**
  * Rechaza una solicitud
  * @param {number} id - ID de la solicitud
+ * @param {number} responsableId - ID del responsable
+ * @param {string} responsableNombre - Nombre del responsable
  * @param {string} razon - Razón del rechazo
  * @returns {Promise<Object>} - Solicitud rechazada
  */
-export const rechazarSolicitud = async (id, razon = '') => {
+export const rechazarSolicitud = async (id, responsableId, responsableNombre, razon = '') => {
   try {
-    const response = await axiosInstance.put(`${API_BASE_URL}/solicitudes/${id}/rechazar`, { razon });
-    return response.data;
+    const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}/rechazar`, {}, {
+      params: {
+        responsableId,
+        responsableNombre,
+        razon
+      }
+    });
+    return response;
   } catch (error) {
     console.error(`Error al rechazar solicitud ${id}:`, error);
     throw error;
@@ -225,7 +237,7 @@ export const rechazarSolicitud = async (id, razon = '') => {
  */
 export const eliminarSolicitud = async (id) => {
   try {
-    await axiosInstance.delete(`${API_BASE_URL}/solicitudes/${id}`);
+    await apiClient.delete(`${API_BASE_URL}/solicitudes/${id}`);
   } catch (error) {
     console.error(`Error al eliminar solicitud ${id}:`, error);
     throw error;
@@ -242,8 +254,8 @@ export const eliminarSolicitud = async (id) => {
  */
 export const obtenerEstadisticas = async () => {
   try {
-    const response = await axiosInstance.get(`${API_BASE_URL}/estadisticas`);
-    return response.data;
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas`);
+    return response;
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
     throw error;
@@ -252,16 +264,13 @@ export const obtenerEstadisticas = async () => {
 
 /**
  * Exporta listado de bolsas a Excel
- * @param {Object} filtros - Filtros opcionalesción
+ * @param {Object} filtros - Filtros opcionales
  * @returns {Promise<Blob>} - Archivo Excel
  */
 export const exportarBolsas = async (filtros = {}) => {
   try {
-    const response = await axiosInstance.get(`${API_BASE_URL}/exportar/excel`, {
-      params: filtros,
-      responseType: 'blob'
-    });
-    return response.data;
+    const response = await apiClient.get(`${API_BASE_URL}/exportar/excel`, { params: filtros });
+    return response;
   } catch (error) {
     console.error('Error al exportar bolsas:', error);
     throw error;
@@ -281,11 +290,11 @@ export const exportarBolsas = async (filtros = {}) => {
  */
 export const asignarAGestora = async (id, gestoraId, gestoraNombre) => {
   try {
-    const response = await axiosInstance.patch(`${API_BASE_URL}/solicitudes/${id}/asignar`, {
+    const response = await apiClient.patch(`${API_BASE_URL}/solicitudes/${id}/asignar`, {
       gestoraId,
       gestoraNombre
     });
-    return response.data;
+    return response;
   } catch (error) {
     console.error(`Error al asignar solicitud ${id}:`, error);
     throw error;
@@ -300,10 +309,10 @@ export const asignarAGestora = async (id, gestoraId, gestoraNombre) => {
  */
 export const cambiarTelefono = async (id, nuevoTelefono) => {
   try {
-    const response = await axiosInstance.put(`${API_BASE_URL}/solicitudes/${id}`, {
+    const response = await apiClient.put(`${API_BASE_URL}/solicitudes/${id}`, {
       pacienteTelefono: nuevoTelefono
     });
-    return response.data;
+    return response;
   } catch (error) {
     console.error(`Error al cambiar teléfono solicitud ${id}:`, error);
     throw error;
@@ -317,14 +326,9 @@ export const cambiarTelefono = async (id, nuevoTelefono) => {
  */
 export const descargarCSV = async (ids = []) => {
   try {
-    let url = `${API_BASE_URL}/solicitudes/exportar`;
-    if (ids && ids.length > 0) {
-      url += `?ids=${ids.join(',')}`;
-    }
-    const response = await axiosInstance.get(url, {
-      responseType: 'blob'
-    });
-    return response.data;
+    const params = ids && ids.length > 0 ? { ids } : {};
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/exportar`, { params });
+    return response;
   } catch (error) {
     console.error('Error al descargar CSV:', error);
     throw error;
@@ -340,11 +344,11 @@ export const descargarCSV = async (ids = []) => {
  */
 export const enviarRecordatorio = async (id, tipo, mensaje = '') => {
   try {
-    const response = await axiosInstance.post(`${API_BASE_URL}/solicitudes/${id}/recordatorio`, {
+    const response = await apiClient.post(`${API_BASE_URL}/solicitudes/${id}/recordatorio`, {
       tipo,
       mensaje
     });
-    return response.data;
+    return response;
   } catch (error) {
     console.error(`Error al enviar recordatorio solicitud ${id}:`, error);
     throw error;
@@ -361,8 +365,8 @@ export const enviarRecordatorio = async (id, tipo, mensaje = '') => {
  */
 export const obtenerEstadosGestion = async () => {
   try {
-    const response = await axiosInstance.get('/api/admin/estados-gestion-citas/todos');
-    return response.data;
+    const response = await apiClient.get('/admin/estados-gestion-citas/todos');
+    return response;
   } catch (error) {
     console.error('Error al obtener estados de gestión:', error);
     throw error;
@@ -375,8 +379,8 @@ export const obtenerEstadosGestion = async () => {
  */
 export const obtenerIpress = async () => {
   try {
-    const response = await axiosInstance.get('/api/ipress');
-    return response.data;
+    const response = await apiClient.get('/ipress');
+    return response;
   } catch (error) {
     console.error('Error al obtener IPRESS:', error);
     throw error;
@@ -390,8 +394,8 @@ export const obtenerIpress = async () => {
  */
 export const obtenerIpressPorId = async (id) => {
   try {
-    const response = await axiosInstance.get(`/api/ipress/${id}`);
-    return response.data;
+    const response = await apiClient.get(`/ipress/${id}`);
+    return response;
   } catch (error) {
     console.error(`Error al obtener IPRESS ${id}:`, error);
     throw error;
@@ -404,8 +408,8 @@ export const obtenerIpressPorId = async (id) => {
  */
 export const obtenerRedes = async () => {
   try {
-    const response = await axiosInstance.get('/api/redes');
-    return response.data;
+    const response = await apiClient.get('/redes');
+    return response;
   } catch (error) {
     console.error('Error al obtener redes:', error);
     throw error;
@@ -419,8 +423,8 @@ export const obtenerRedes = async () => {
  */
 export const obtenerRedPorId = async (id) => {
   try {
-    const response = await axiosInstance.get(`/api/redes/${id}`);
-    return response.data;
+    const response = await apiClient.get(`/redes/${id}`);
+    return response;
   } catch (error) {
     console.error(`Error al obtener red ${id}:`, error);
     throw error;
@@ -434,11 +438,11 @@ export const obtenerRedPorId = async (id) => {
  */
 export const obtenerAseguradoPorDni = async (dni) => {
   try {
-    const response = await axiosInstance.get(`/api/gestion-pacientes/asegurado/${dni}`);
-    return response.data;
+    const response = await apiClient.get(`/gestion-pacientes/asegurado/${dni}`);
+    return response;
   } catch (error) {
     // 404 es esperado si no existe
-    if (error.response?.status === 404) {
+    if (error.message && error.message.includes('404')) {
       return null;
     }
     console.error(`Error al obtener asegurado ${dni}:`, error);
@@ -453,8 +457,8 @@ export const obtenerAseguradoPorDni = async (dni) => {
  */
 export const crearAsegurado = async (datosAsegurado) => {
   try {
-    const response = await axiosInstance.post('/api/gestion-pacientes', datosAsegurado);
-    return response.data;
+    const response = await apiClient.post('/gestion-pacientes', datosAsegurado);
+    return response;
   } catch (error) {
     console.error('Error al crear asegurado:', error);
     throw error;
