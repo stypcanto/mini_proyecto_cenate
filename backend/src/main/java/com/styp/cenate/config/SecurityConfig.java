@@ -90,7 +90,7 @@ public class SecurityConfig {
                                                                 "/swagger-ui.html",
                                                                 "/api/sesion/**",
                                                                 "/tipos-bolsas/**", // Catálogo público de tipos de bolsas
-                                                                "/estados-gestion-citas/**") // Catálogo público de estados gestión citas
+                                                                "/api/admin/estados-gestion-citas/**") // Catálogo público de estados gestión citas
                                                 .permitAll()
 
                                                 // SEC-006: Otros endpoints de actuator requieren SUPERADMIN

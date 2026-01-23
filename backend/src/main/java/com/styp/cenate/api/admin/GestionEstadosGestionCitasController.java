@@ -28,7 +28,7 @@ import java.util.List;
  * - DELETE /api/admin/estados-gestion-citas/{id}           → Eliminar
  */
 @RestController
-@RequestMapping("/estados-gestion-citas")
+@RequestMapping("/api/admin/estados-gestion-citas")
 @RequiredArgsConstructor
 @Slf4j
 public class GestionEstadosGestionCitasController {

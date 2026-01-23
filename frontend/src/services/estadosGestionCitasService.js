@@ -16,7 +16,7 @@
 
 import { apiClient } from '../lib/apiClient';
 
-const BASE_URL = '/estados-gestion-citas';
+const BASE_URL = '/api/admin/estados-gestion-citas';
 
 /**
  * Clase de servicio para gestión de estados de citas
