@@ -610,12 +610,12 @@ export default function ModalDetalleSolicitud({
                         <th className="px-2 py-2 text-left font-bold text-white">#</th>
                         <th className="px-2 py-2 text-left font-bold text-white">Especialidad</th>
                         <th className="px-2 py-2 text-center font-bold text-white">Estado</th>
-                        <th className="px-2 py-2 text-center font-bold text-white">Req</th>
-                        <th className="px-2 py-2 text-center font-bold text-white">TM</th>
+                        {/* <th className="px-2 py-2 text-center font-bold text-white">Req</th> */}
+                        {/* <th className="px-2 py-2 text-center font-bold text-white">TM</th> */}
                         <th className="px-2 py-2 text-center font-bold text-white">Mañana</th>
                         <th className="px-2 py-2 text-center font-bold text-white">Tarde</th>
-                        <th className="px-2 py-2 text-center font-bold text-white">TC</th>
-                        <th className="px-2 py-2 text-center font-bold text-white">TL</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">TELECONSULTA</th>
+                        <th className="px-2 py-2 text-center font-bold text-white">TELECONSULTORIO</th>
                         <th className="px-2 py-2 text-center font-bold text-white">Fechas</th>
                         <th className="px-2 py-2 text-left font-bold text-white">Observación</th>
                         {isEnviado && <th className="px-2 py-2 text-center font-bold text-white">Acciones</th>}
@@ -685,13 +685,7 @@ export default function ModalDetalleSolicitud({
                             </span>
                           </td>
 
-                          <td className="px-2 py-1.5 text-center">{yesNoPill(!!d.requiere)}</td>
 
-                          <td className="px-2 py-1.5 text-center">
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-purple-100 text-purple-700 border border-purple-200">
-                              {d.turnoTM ?? 0}
-                            </span>
-                          </td>
 
                           <td className="px-2 py-1.5 text-center">
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold bg-blue-100 text-blue-700 border border-blue-200">
