@@ -268,6 +268,199 @@ export const exportarBolsas = async (filtros = {}) => {
   }
 };
 
+// ========================================================================
+// 👤 ASIGNACIÓN A GESTORA - NUEVOS ENDPOINTS FASE 1
+// ========================================================================
+
+/**
+ * Asigna una solicitud a una gestora de citas
+ * @param {number} id - ID de la solicitud
+ * @param {number} gestoraId - ID de la gestora
+ * @param {string} gestoraNombre - Nombre de la gestora
+ * @returns {Promise<Object>} - Solicitud actualizada
+ */
+export const asignarAGestora = async (id, gestoraId, gestoraNombre) => {
+  try {
+    const response = await axiosInstance.patch(`${API_BASE_URL}/solicitudes/${id}/asignar`, {
+      gestoraId,
+      gestoraNombre
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error al asignar solicitud ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Cambia el teléfono de un paciente en una solicitud
+ * @param {number} id - ID de la solicitud
+ * @param {string} nuevoTelefono - Nuevo teléfono
+ * @returns {Promise<Object>} - Solicitud actualizada
+ */
+export const cambiarTelefono = async (id, nuevoTelefono) => {
+  try {
+    const response = await axiosInstance.put(`${API_BASE_URL}/solicitudes/${id}`, {
+      pacienteTelefono: nuevoTelefono
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error al cambiar teléfono solicitud ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Exporta solicitudes a CSV
+ * @param {Array<number>} ids - IDs de solicitudes a exportar
+ * @returns {Promise<Blob>} - Archivo CSV
+ */
+export const descargarCSV = async (ids = []) => {
+  try {
+    let url = `${API_BASE_URL}/solicitudes/exportar`;
+    if (ids && ids.length > 0) {
+      url += `?ids=${ids.join(',')}`;
+    }
+    const response = await axiosInstance.get(url, {
+      responseType: 'blob'
+    });
+    return response.data;
+  } catch (error) {
+    console.error('Error al descargar CSV:', error);
+    throw error;
+  }
+};
+
+/**
+ * Envía recordatorio de cita al paciente
+ * @param {number} id - ID de la solicitud
+ * @param {string} tipo - Tipo: 'WHATSAPP' o 'EMAIL'
+ * @param {string} mensaje - Mensaje personalizado (opcional)
+ * @returns {Promise<Object>} - Solicitud actualizada
+ */
+export const enviarRecordatorio = async (id, tipo, mensaje = '') => {
+  try {
+    const response = await axiosInstance.post(`${API_BASE_URL}/solicitudes/${id}/recordatorio`, {
+      tipo,
+      mensaje
+    });
+    return response.data;
+  } catch (error) {
+    console.error(`Error al enviar recordatorio solicitud ${id}:`, error);
+    throw error;
+  }
+};
+
+// ========================================================================
+// 🔍 CATÁLOGOS - Estados, IPRESS, Redes (endpoints existentes)
+// ========================================================================
+
+/**
+ * Obtiene todos los estados de gestión de citas
+ * @returns {Promise<Array>} - Listado de estados
+ */
+export const obtenerEstadosGestion = async () => {
+  try {
+    const response = await axiosInstance.get('/api/admin/estados-gestion-citas/todos');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener estados de gestión:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene todos los IPRESS
+ * @returns {Promise<Array>} - Listado de IPRESS
+ */
+export const obtenerIpress = async () => {
+  try {
+    const response = await axiosInstance.get('/api/ipress');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener IPRESS:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene un IPRESS por ID
+ * @param {number} id - ID del IPRESS
+ * @returns {Promise<Object>} - Detalles del IPRESS
+ */
+export const obtenerIpressPorId = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/api/ipress/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error al obtener IPRESS ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene todas las Redes
+ * @returns {Promise<Array>} - Listado de Redes
+ */
+export const obtenerRedes = async () => {
+  try {
+    const response = await axiosInstance.get('/api/redes');
+    return response.data;
+  } catch (error) {
+    console.error('Error al obtener redes:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene una Red por ID
+ * @param {number} id - ID de la Red
+ * @returns {Promise<Object>} - Detalles de la Red
+ */
+export const obtenerRedPorId = async (id) => {
+  try {
+    const response = await axiosInstance.get(`/api/redes/${id}`);
+    return response.data;
+  } catch (error) {
+    console.error(`Error al obtener red ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene datos de un asegurado por DNI
+ * @param {string} dni - DNI del asegurado
+ * @returns {Promise<Object>} - Detalles del asegurado o null
+ */
+export const obtenerAseguradoPorDni = async (dni) => {
+  try {
+    const response = await axiosInstance.get(`/api/gestion-pacientes/asegurado/${dni}`);
+    return response.data;
+  } catch (error) {
+    // 404 es esperado si no existe
+    if (error.response?.status === 404) {
+      return null;
+    }
+    console.error(`Error al obtener asegurado ${dni}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Crea un nuevo asegurado
+ * @param {Object} datosAsegurado - Datos del asegurado
+ * @returns {Promise<Object>} - Asegurado creado
+ */
+export const crearAsegurado = async (datosAsegurado) => {
+  try {
+    const response = await axiosInstance.post('/api/gestion-pacientes', datosAsegurado);
+    return response.data;
+  } catch (error) {
+    console.error('Error al crear asegurado:', error);
+    throw error;
+  }
+};
+
 export default {
   // Bolsas
   obtenerBolsas,
@@ -292,4 +485,17 @@ export default {
   // Estadísticas
   obtenerEstadisticas,
   exportarBolsas,
+
+  // NUEVOS - Fase 1
+  asignarAGestora,
+  cambiarTelefono,
+  descargarCSV,
+  enviarRecordatorio,
+  obtenerEstadosGestion,
+  obtenerIpress,
+  obtenerIpressPorId,
+  obtenerRedes,
+  obtenerRedPorId,
+  obtenerAseguradoPorDni,
+  crearAsegurado,
 };
