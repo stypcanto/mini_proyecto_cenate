@@ -1,7 +1,6 @@
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Upload, AlertCircle, CheckCircle, FileText, Loader } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext';
 
 /**
  * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel
@@ -15,14 +14,28 @@ import { AuthContext } from '../../context/AuthContext';
  */
 export default function CargarDesdeExcel() {
   const navigate = useNavigate();
-  const { usuario } = useContext(AuthContext);
   const [file, setFile] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
   const [preview, setPreview] = useState([]);
+  const [usuario, setUsuario] = useState(null);
 
-  // Obtener token del localStorage
+  // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
+
+  // Obtener datos del usuario en el montaje
+  useEffect(() => {
+    const userStr = localStorage.getItem('user');
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr);
+        setUsuario(user);
+      } catch (e) {
+        console.error('Error al parsear usuario:', e);
+        setUsuario({ username: 'admin', id: 1 });
+      }
+    }
+  }, []);
 
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
