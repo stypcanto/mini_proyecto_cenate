@@ -32,6 +32,16 @@ export default function Solicitudes() {
   const [cacheRedes, setCacheRedes] = useState({});
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Modales y estado para acciones
+  const [modalCambiarTelefono, setModalCambiarTelefono] = useState(false);
+  const [modalAsignarGestora, setModalAsignarGestora] = useState(false);
+  const [modalEnviarRecordatorio, setModalEnviarRecordatorio] = useState(false);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+  const [nuevoTelefono, setNuevoTelefono] = useState('');
+  const [gestoraSeleccionada, setGestoraSeleccionada] = useState(null);
+  const [tipoRecordatorio, setTipoRecordatorio] = useState('EMAIL');
+  const [isProcessing, setIsProcessing] = useState(false);
+
   useEffect(() => {
     // Cargar solicitudes y catálogos inicialmente
     cargarDatos();
@@ -239,6 +249,96 @@ export default function Solicitudes() {
     } catch (error) {
       console.error('Error descargando CSV:', error);
       alert('Error al descargar el archivo. Intenta nuevamente.');
+    }
+  };
+
+  // ========================================================================
+  // 📋 HANDLERS DE ACCIONES
+  // ========================================================================
+
+  // Abrir modal para cambiar teléfono
+  const handleAbrirCambiarTelefono = (solicitud) => {
+    setSolicitudSeleccionada(solicitud);
+    setNuevoTelefono(solicitud.telefono || '');
+    setModalCambiarTelefono(true);
+  };
+
+  // Procesar cambio de teléfono
+  const handleGuardarCambiarTelefono = async () => {
+    if (!nuevoTelefono.trim()) {
+      alert('Por favor ingresa un teléfono válido');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await bolsasService.cambiarTelefono(solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id, nuevoTelefono);
+      alert('Teléfono actualizado correctamente');
+      setModalCambiarTelefono(false);
+      cargarDatos(); // Recargar datos
+    } catch (error) {
+      console.error('Error cambiar teléfono:', error);
+      alert('Error al cambiar el teléfono. Intenta nuevamente.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Abrir modal para asignar gestora
+  const handleAbrirAsignarGestora = (solicitud) => {
+    setSolicitudSeleccionada(solicitud);
+    setGestoraSeleccionada(null);
+    setModalAsignarGestora(true);
+  };
+
+  // Procesar asignación a gestora
+  const handleGuardarAsignarGestora = async () => {
+    if (!gestoraSeleccionada) {
+      alert('Por favor selecciona una gestora');
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      await bolsasService.asignarAGestora(
+        solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id,
+        1, // TODO: Usar ID real de gestora cuando esté disponible
+        gestoraSeleccionada
+      );
+      alert('Solicitud asignada correctamente');
+      setModalAsignarGestora(false);
+      cargarDatos(); // Recargar datos
+    } catch (error) {
+      console.error('Error asignando gestora:', error);
+      alert('Error al asignar la gestora. Intenta nuevamente.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Abrir modal para enviar recordatorio
+  const handleAbrirEnviarRecordatorio = (solicitud) => {
+    setSolicitudSeleccionada(solicitud);
+    setTipoRecordatorio('EMAIL');
+    setModalEnviarRecordatorio(true);
+  };
+
+  // Procesar envío de recordatorio
+  const handleGuardarEnviarRecordatorio = async () => {
+    setIsProcessing(true);
+    try {
+      await bolsasService.enviarRecordatorio(
+        solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id,
+        tipoRecordatorio
+      );
+      alert(`Recordatorio enviado por ${tipoRecordatorio}`);
+      setModalEnviarRecordatorio(false);
+      cargarDatos(); // Recargar datos
+    } catch (error) {
+      console.error('Error enviar recordatorio:', error);
+      alert('Error al enviar el recordatorio. Intenta nuevamente.');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -453,8 +553,10 @@ export default function Solicitudes() {
                       </td>
                       <td className="px-6 py-4 text-center">
                         <button
-                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-md text-sm font-semibold transition-colors"
+                          onClick={() => handleAbrirCambiarTelefono(solicitud)}
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-100 hover:bg-blue-200 text-blue-600 hover:text-blue-700 rounded-md text-sm font-semibold transition-colors disabled:opacity-50"
                           title="Cambiar celular"
+                          disabled={isProcessing}
                         >
                           <Phone size={18} />
                           Cambiar
@@ -463,26 +565,33 @@ export default function Solicitudes() {
                       <td className="px-6 py-4 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
-                            className="p-2 hover:bg-gray-100 rounded-md transition-colors text-gray-700"
+                            onClick={() => console.log('Ver detalles:', solicitud)}
+                            className="p-2 hover:bg-gray-100 rounded-md transition-colors text-gray-700 disabled:opacity-50"
                             title="Ver"
+                            disabled={isProcessing}
                           >
                             <Eye size={18} />
                           </button>
                           <button
-                            className="p-2 hover:bg-gray-100 rounded-md transition-colors text-gray-700"
-                            title="Agregar usuario"
+                            onClick={() => handleAbrirAsignarGestora(solicitud)}
+                            className="p-2 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
+                            title="Asignar gestora"
+                            disabled={isProcessing}
                           >
                             <UserPlus size={18} />
                           </button>
                           <button
-                            className="p-2 hover:bg-gray-100 rounded-md transition-colors text-gray-700"
-                            title="Usuarios"
+                            onClick={() => handleAbrirEnviarRecordatorio(solicitud)}
+                            className="p-2 hover:bg-green-100 rounded-md transition-colors text-green-600 disabled:opacity-50"
+                            title="Enviar recordatorio"
+                            disabled={isProcessing}
                           >
                             <Users size={18} />
                           </button>
                           <button
-                            className="p-2 hover:bg-red-100 rounded-md transition-colors text-red-600"
-                            title="Compartir"
+                            className="p-2 hover:bg-red-100 rounded-md transition-colors text-red-600 disabled:opacity-50"
+                            title="Generar reporte"
+                            disabled={isProcessing}
                           >
                             <FileText size={18} />
                           </button>
@@ -499,6 +608,143 @@ export default function Solicitudes() {
             )}
           </div>
         </div>
+
+        {/* ====== MODAL 1: CAMBIAR TELÉFONO ====== */}
+        {modalCambiarTelefono && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">Cambiar Teléfono</h2>
+              {solicitudSeleccionada && (
+                <p className="text-sm text-gray-600 mb-4">
+                  Paciente: <strong>{solicitudSeleccionada.paciente}</strong>
+                </p>
+              )}
+              <input
+                type="tel"
+                value={nuevoTelefono}
+                onChange={(e) => setNuevoTelefono(e.target.value)}
+                placeholder="Ingresa el nuevo teléfono"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setModalCambiarTelefono(false)}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGuardarCambiarTelefono}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold disabled:opacity-50"
+                >
+                  {isProcessing ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL 2: ASIGNAR GESTORA ====== */}
+        {modalAsignarGestora && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">Asignar a Gestora</h2>
+              {solicitudSeleccionada && (
+                <p className="text-sm text-gray-600 mb-4">
+                  Paciente: <strong>{solicitudSeleccionada.paciente}</strong>
+                </p>
+              )}
+              <select
+                value={gestoraSeleccionada || ''}
+                onChange={(e) => setGestoraSeleccionada(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-2 focus:ring-blue-600"
+              >
+                <option value="">Selecciona una gestora</option>
+                <option value="María García">María García</option>
+                <option value="Juan Pérez">Juan Pérez</option>
+                <option value="Ana López">Ana López</option>
+                <option value="Carlos Ruiz">Carlos Ruiz</option>
+              </select>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setModalAsignarGestora(false)}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGuardarAsignarGestora}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold disabled:opacity-50"
+                >
+                  {isProcessing ? 'Asignando...' : 'Asignar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL 3: ENVIAR RECORDATORIO ====== */}
+        {modalEnviarRecordatorio && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">Enviar Recordatorio</h2>
+              {solicitudSeleccionada && (
+                <p className="text-sm text-gray-600 mb-4">
+                  Paciente: <strong>{solicitudSeleccionada.paciente}</strong>
+                </p>
+              )}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-3">
+                  Tipo de Recordatorio
+                </label>
+                <div className="flex gap-4">
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="tipo"
+                      value="WHATSAPP"
+                      checked={tipoRecordatorio === 'WHATSAPP'}
+                      onChange={(e) => setTipoRecordatorio(e.target.value)}
+                      className="w-4 h-4 mr-2"
+                    />
+                    <span className="text-sm text-gray-700">WhatsApp</span>
+                  </label>
+                  <label className="flex items-center">
+                    <input
+                      type="radio"
+                      name="tipo"
+                      value="EMAIL"
+                      checked={tipoRecordatorio === 'EMAIL'}
+                      onChange={(e) => setTipoRecordatorio(e.target.value)}
+                      className="w-4 h-4 mr-2"
+                    />
+                    <span className="text-sm text-gray-700">Email</span>
+                  </label>
+                </div>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setModalEnviarRecordatorio(false)}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGuardarEnviarRecordatorio}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-semibold disabled:opacity-50"
+                >
+                  {isProcessing ? 'Enviando...' : 'Enviar'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
