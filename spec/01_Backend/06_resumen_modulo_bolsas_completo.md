@@ -27,17 +27,20 @@
 
 ### ¿Qué es el Módulo de Bolsas?
 
-El **Módulo de Bolsas** es el corazón del sistema CENATE. Gestiona todas las clasificaciones, categorías y flujos de pacientes organizados en "bolsas" (conjuntos de pacientes con características comunes).
+El **Módulo de Bolsas** es el corazón del sistema CENATE. Almacena y gestiona pacientes que requieren atención de telemedicina, provenientes de múltiples fuentes de información (Bolsa 107, Dengue, Enfermería, IVR, Reprogramaciones, Gestión Territorial).
+
+El **Coordinador de Gestión de Citas** distribuye estas bolsas a las **Gestoras de Citas**, quienes captan al paciente, lo llaman, confirman la cita y le envían recordatorios por WhatsApp/Email. Cada paciente en bolsa transita por diferentes **Estados de Gestión de Citas** (CITADO, NO_CONTESTA, NO_DESEA, ATENDIDO_IPRESS, etc.).
 
 ### Características Principales
 
 | Característica | Descripción |
 |---|---|
-| **Clasificación de Pacientes** | Organiza pacientes en tipos/categorías específicas |
-| **Importación Masiva** | Carga millones de registros desde Excel (Bolsa 107) |
-| **Gestión de Catálogos** | CRUD de tipos de bolsas disponibles |
-| **Trazabilidad Completa** | Auditoría de cada bolsa, paciente y acción |
-| **Escalabilidad** | Soporta múltiples fuentes de datos y integraciones |
+| **Almacenamiento Centralizado** | Recibe pacientes de múltiples fuentes de información |
+| **Distribución a Gestoras** | Coordinador asigna bolsas a Gestoras de Citas |
+| **Seguimiento de Estados** | Registro de atención mediante Estados Gestión Citas (CITADO, NO_CONTESTA, etc.) |
+| **Gestión Integral** | Llamadas, confirmación de citas, envío de recordatorios (WA/Email) |
+| **Trazabilidad Completa** | Auditoría de cada bolsa, paciente, estado y acción |
+| **Escalabilidad** | Soporta múltiples fuentes de datos y múltiples Gestoras simultáneamente |
 | **Validación Multicapa** | Validaciones en BD, backend, frontend |
 
 ---
@@ -227,7 +230,106 @@ Turnos y Atenciones
 5. Resultado: intersección de ambos
 ```
 
-### Flujo 4: Desactivación de Tipo de Bolsa
+### Flujo 4: Distribución de Bolsas por Coordinador de Gestión de Citas
+
+```
+1. Coordinador de Gestión de Citas accede a:
+   http://localhost:3000/bolsas/solicitudes
+
+2. Ve dashboard con estadísticas:
+   ├─ Total Pacientes: 150
+   ├─ Pendientes: 80
+   ├─ Citados: 45
+   ├─ Atendidos: 20
+   └─ Observados: 5
+
+3. Tabla lista pacientes de múltiples bolsas:
+   ├─ Bolsa 107 (importación masiva)
+   ├─ Bolsa Dengue (control epidemiológico)
+   ├─ Bolsas Enfermería (atenciones)
+   ├─ Bolsas IVR (sistema de voz)
+   ├─ Bolsas Reprogramación (citas reagendadas)
+   └─ Bolsa Gestores Territorial (gestión territorial)
+
+4. Filtros disponibles:
+   ├─ Búsqueda: por DNI, nombre, teléfono, IPRESS, red
+   ├─ Por Bolsa: selecciona tipo específico
+   ├─ Por Red: filtra por región
+   ├─ Por Especialidad: filtra por área médica
+   └─ Por Estado: Pendiente, Citado, Atendido, Observado
+
+5. Acciones del Coordinador:
+   ├─ Selecciona múltiples pacientes ✓
+   ├─ Descarga CSV con su información
+   ├─ Asigna pacientes a Gestoras de Citas
+   ├─ Cambia celular si es necesario
+   └─ Ver, agregar usuarios, compartir información
+
+6. Cada paciente muestra:
+   ├─ DNI + Nombre
+   ├─ Teléfono (con opción de cambio)
+   ├─ Especialidad requerida
+   ├─ Sexo
+   ├─ Red y IPRESS asignada
+   ├─ Bolsa de origen
+   ├─ Fecha de cita programada
+   ├─ Fecha de asignación
+   ├─ Estado actual (CITADO, NO_CONTESTA, NO_DESEA, etc.)
+   ├─ Diferimiento (días desde asignación)
+   └─ Semáforo (Verde=OK, Rojo=Urgente)
+
+7. Sistema registra:
+   ├─ Quién distribuyó (Coordinador ID)
+   ├─ A quién se asignó (Gestora ID)
+   ├─ Cuándo se distribuyó (timestamp)
+   └─ Auditoría completa de cada acción
+```
+
+### Flujo 5: Gestión de Pacientes por Gestoras de Citas
+
+```
+1. Gestora de Citas recibe pacientes asignados desde Coordinador
+
+2. Accede a Módulo de Gestión de Citas (complementario):
+   http://localhost:3000/citas/gestion-asegurado
+
+3. Ve "Gestión del Asegurado":
+   ├─ Datos del paciente (nombre, DNI, edad, IPRESS)
+   ├─ Origen: de tabla dim_solicitud_bolsa/bolsa_pacientes
+   └─ Estado actual inicial: PENDIENTE
+
+4. Gestora realiza acciones:
+   ├─ Captar paciente (localizar)
+   ├─ Llamar por teléfono
+   ├─ Confirmar cita
+   └─ Registrar resultado (estado)
+
+5. Estados posibles de Gestión (tabla dim_estados_gestion_citas):
+   ├─ CITADO: Paciente agendado para atención
+   ├─ NO_CONTESTA: No responde a llamadas
+   ├─ NO_DESEA: Rechaza la atención
+   ├─ ATENDIDO_IPRESS: Atendido en institución
+   ├─ HC_BLOQUEADA: Historia clínica bloqueada
+   ├─ NUM_NO_EXISTE: Teléfono no existe
+   ├─ TEL_SIN_SERVICIO: Línea sin servicio
+   ├─ REPROG_FALLIDA: No se pudo reprogramar
+   ├─ SIN_VIGENCIA: Seguro no vigente
+   └─ APAGADO: Teléfono apagado
+
+6. Después de estado CITADO:
+   ├─ Sistema envía recordatorio por WhatsApp
+   ├─ Sistema envía recordatorio por Email
+   └─ Registra timestamp de envío (auditoría)
+
+7. Seguimiento en tabla dim_solicitud_bolsa:
+   ├─ Actualiza: estado_gestion_citas_id → nuevo estado
+   ├─ Registra: responsable_gestora_id (quién lo gestiona)
+   ├─ Calcula: diferimiento (días desde asignación)
+   ├─ Actualiza: semaforo (Verde/Rojo según criterios)
+   └─ Auditoría: quién, cuándo, qué cambió
+```
+
+### Flujo 6: Desactivación de Tipo de Bolsa
 
 ```
 1. Administrador ve tipo "BOLSAS_IVR" en tabla
@@ -306,11 +408,115 @@ BOLSA_ONCOLOGIA      → Casos oncológicos
 
 ## Integración Sistémica
 
-### Con otros Módulos
+### Flujo Completo: Bolsas → Coordinador → Gestoras → Estados
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ MÚLTIPLES FUENTES DE PACIENTES                                           │
+├─────────────────────────────────────────────────────────────────────────┤
+│ ✓ Bolsa 107 (importación masiva ESSI)                                   │
+│ ✓ Bolsa Dengue (control epidemiológico)                                 │
+│ ✓ Bolsas Enfermería (atenciones de enfermería)                          │
+│ ✓ Bolsas IVR (sistema de respuesta de voz)                              │
+│ ✓ Bolsas Reprogramación (citas reagendadas)                             │
+│ ✓ Bolsa Gestores Territorial (gestión territorial)                      │
+└─────────────────────────────────────────────────────────────────────────┘
+        ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ TABLA: dim_solicitud_bolsa (ALMACENAMIENTO CENTRAL)                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Almacena TODOS los pacientes esperando gestión:                          │
+│ • id_solicitud (PK)                                                      │
+│ • paciente_id, paciente_nombre, paciente_dni                             │
+│ • id_bolsa (FK → dim_bolsa)                                              │
+│ • estado (PENDIENTE, APROBADA, RECHAZADA) [Control de solicitud]         │
+│ • especialidad, red_id, ipress_id                                        │
+│ • responsable_gestora_id (Gestora asignada)                              │
+│ • fechas (solicitud, aprobación, asignación)                             │
+│ • auditoría (quién, cuándo, qué cambió)                                  │
+└─────────────────────────────────────────────────────────────────────────┘
+        ↓
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ROL: COORDINADOR DE GESTIÓN DE CITAS                                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Accede a: http://localhost:3000/bolsas/solicitudes                       │
+│ Funciones:                                                                │
+│ ✓ Ver todas las bolsas de pacientes pendientes                           │
+│ ✓ Filtrar por: Bolsa, Red, Especialidad, Estado                         │
+│ ✓ Buscar pacientes específicos (DNI, nombre, teléfono)                   │
+│ ✓ Descargar CSV para distribución                                        │
+│ ✓ Asignar pacientes a Gestoras de Citas                                  │
+│ ✓ Ver estadísticas (Total, Pendientes, Citados, Atendidos, Observados)  │
+│ ✓ Cambiar teléfono de contacto si es necesario                           │
+│ ✓ Registrar auditoría de distribuciones                                  │
+└─────────────────────────────────────────────────────────────────────────┘
+        ↓ DISTRIBUCIÓN
+┌─────────────────────────────────────────────────────────────────────────┐
+│ ROL: GESTORA DE CITAS (pueden ser múltiples usuarios)                    │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Reciben pacientes asignados por el Coordinador                           │
+│ Acceden a: http://localhost:3000/citas/gestion-asegurado                 │
+│ Funciones:                                                                │
+│ ✓ Ver pacientes asignados a su usuario                                   │
+│ ✓ Captar/localizar al paciente                                           │
+│ ✓ Llamar por teléfono                                                    │
+│ ✓ Confirmar disponibilidad para atención                                 │
+│ ✓ Registrar resultado de gestión (estado)                                │
+│ ✓ Ver datos del paciente (nombre, DNI, edad, IPRESS, especialidad)       │
+│ ✓ Cambiar celular si no responde                                         │
+│ ✓ Registra quién gestionó, cuándo, qué estado                            │
+└─────────────────────────────────────────────────────────────────────────┘
+        ↓ REGISTRO DE ESTADO
+┌─────────────────────────────────────────────────────────────────────────┐
+│ TABLA: dim_estados_gestion_citas (CATÁLOGO DE 10 ESTADOS)                │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Cada paciente en bolsa transita por estos estados:                        │
+│ ✓ CITADO: Paciente agendado para atención (→ recordatorio WA/Email)      │
+│ ✓ NO_CONTESTA: No responde a llamadas del Coordinador                    │
+│ ✓ NO_DESEA: Rechaza la atención                                          │
+│ ✓ ATENDIDO_IPRESS: Paciente recibió atención en institución              │
+│ ✓ HC_BLOQUEADA: Historia clínica del paciente bloqueada en sistema       │
+│ ✓ NUM_NO_EXISTE: Número telefónico no existe/no es válido                │
+│ ✓ TEL_SIN_SERVICIO: Línea telefónica sin servicio                         │
+│ ✓ REPROG_FALLIDA: No fue posible reprogramar la cita                      │
+│ ✓ SIN_VIGENCIA: Seguro/cobertura del paciente no vigente                 │
+│ ✓ APAGADO: Teléfono del paciente apagado                                 │
+└─────────────────────────────────────────────────────────────────────────┘
+        ↓ ACTUALIZACIÓN EN BOLSA
+┌─────────────────────────────────────────────────────────────────────────┐
+│ TABLA: dim_solicitud_bolsa (ACTUALIZACIÓN DE ESTADO)                     │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Cada cambio de estado genera:                                             │
+│ ✓ estado_gestion_citas_id (FK → dim_estados_gestion_citas)               │
+│ ✓ responsable_gestora_id (quién lo gestionó)                             │
+│ ✓ fecha_estado (timestamp del cambio)                                    │
+│ ✓ diferimiento = DAYS(hoy - fecha_asignacion)                            │
+│ ✓ semaforo = si diferimiento >= 20 entonces ROJO sino VERDE              │
+│ ✓ auditoría completa (quién cambió, cuándo, de qué a qué)                │
+└─────────────────────────────────────────────────────────────────────────┘
+        ↓ SALIDA
+┌─────────────────────────────────────────────────────────────────────────┐
+│ RESULTADO FINAL                                                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│ Cada paciente en bolsa:                                                   │
+│ • Fue distribuido por un Coordinador                                     │
+│ • Fue gestionado por una Gestora de Citas                                │
+│ • Pasó por uno o más Estados de Gestión                                  │
+│ • Tiene trazabilidad completa (auditoría)                                │
+│ • Recibió recordatorios (WhatsApp/Email)                                 │
+│ • Estado final: CITADO, ATENDIDO, o alguna razón de falla                │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+### Integración con Otros Módulos
 
 ```
 Módulo de Bolsas
     ↓
+    ├─→ [Módulo de Gestión de Citas]
+    │   Complementario - Gestoras capturan, llaman, confirman
+    │   Estados: CITADO, NO_CONTESTA, NO_DESEA, etc.
+    │
     ├─→ [Disponibilidad Médica]
     │   Determina qué médicos pueden atender qué tipos
     │
@@ -326,39 +532,14 @@ Módulo de Bolsas
     ├─→ [Auditoría]
     │   Registra toda acción sobre bolsas
     │
-    ├─→ [Reportes]
-    │   Analytics por tipo de bolsa
+    ├─→ [Notificaciones]
+    │   WhatsApp/Email cuando estado = CITADO
     │
-    └─→ [Permisos/RBAC]
+    ├─→ [Reportes]
+    │   Analytics por tipo de bolsa y estado
+    │
+    └─→ [Permisos/MBAC]
         Control de acceso por bolsa y rol
-```
-
-### Flujo de Datos Transversal
-
-```
-ESSI (Sistema Externo)
-    │ Excel
-    ↓
-Bolsa 107 (Importación)
-    │ Datos validados
-    ↓
-Clasificación (Tipos de Bolsas)
-    │ BOLSA_107, BOLSA_DENGUE, etc.
-    ↓
-Disponibilidad Médica
-    │ Asignación a especialistas
-    ↓
-Solicitud de Turnos
-    │ Creación de citas
-    ↓
-Atenciones
-    │ Registro de consultas
-    ↓
-Auditoría
-    │ Trazabilidad completa
-    ↓
-Reportes
-    │ Analytics y estadísticas
 ```
 
 ---
@@ -616,11 +797,105 @@ curl "http://localhost:8080/tipos-bolsas/buscar?busqueda=BOLSA&page=0&size=10"
 
 ---
 
+---
+
+## 📊 Tabla de Pacientes en Bolsas (dim_solicitud_bolsa)
+
+### Estructura de Campos
+
+Esta tabla es el corazón del almacenamiento de pacientes esperando gestión. Debe contener:
+
+| Campo | Tipo | Descripción | Requerido |
+|-------|------|-------------|-----------|
+| **id_solicitud** | BIGINT | Clave primaria | ✅ |
+| **numero_solicitud** | VARCHAR(50) | Identificador único de solicitud | ✅ |
+| **paciente_id** | BIGINT | FK a tabla de asegurados | ✅ |
+| **paciente_dni** | VARCHAR(20) | DNI del paciente | ✅ |
+| **paciente_nombre** | VARCHAR(255) | Nombre completo | ✅ |
+| **paciente_telefono** | VARCHAR(20) | Teléfono de contacto | ✅ |
+| **paciente_sexo** | VARCHAR(20) | Masculino/Femenino | ✅ |
+| **especialidad** | VARCHAR(255) | Especialidad requerida | ✅ |
+| **red_id** | BIGINT | FK a tabla de redes | ✅ |
+| **red_nombre** | VARCHAR(255) | Nombre de la red | ✅ |
+| **ipress_id** | BIGINT | FK a tabla de IPRESS | ✅ |
+| **ipress_nombre** | VARCHAR(255) | Nombre de la institución | ✅ |
+| **id_bolsa** | BIGINT | FK a dim_bolsa | ✅ |
+| **estado** | VARCHAR(20) | PENDIENTE, APROBADA, RECHAZADA | ✅ |
+| **estado_gestion_citas_id** | BIGINT | FK a dim_estados_gestion_citas | ✅ |
+| **razon_rechazo** | TEXT | Si estado = RECHAZADA | ❌ |
+| **notas_aprobacion** | TEXT | Si estado = APROBADA | ❌ |
+| **solicitante_id** | BIGINT | Usuario que creó la solicitud | ✅ |
+| **solicitante_nombre** | VARCHAR(255) | Nombre del solicitante | ✅ |
+| **responsable_aprobacion_id** | BIGINT | Coordinador que aprobó | ❌ |
+| **responsable_aprobacion_nombre** | VARCHAR(255) | Nombre del coordinador | ❌ |
+| **responsable_gestora_id** | BIGINT | Gestora de citas asignada | ❌ |
+| **responsable_gestora_nombre** | VARCHAR(255) | Nombre de la gestora | ❌ |
+| **fecha_solicitud** | TIMESTAMP WITH TZ | Fecha de creación (AUTO) | ✅ |
+| **fecha_aprobacion** | TIMESTAMP WITH TZ | Fecha de aprobación | ❌ |
+| **fecha_asignacion** | TIMESTAMP WITH TZ | Fecha de asignación a gestora | ❌ |
+| **fecha_cita** | TIMESTAMP WITH TZ | Fecha programada de atención | ❌ |
+| **fecha_estado** | TIMESTAMP WITH TZ | Fecha del último cambio de estado | ❌ |
+| **diferimiento** | INTEGER | Días desde asignación (calculado) | ❌ |
+| **semaforo** | VARCHAR(20) | VERDE/ROJO (calculado) | ❌ |
+| **fecha_actualizacion** | TIMESTAMP WITH TZ | Fecha de última actualización (AUTO) | ✅ |
+| **activo** | BOOLEAN | Lógicamente activo/inactivo | ✅ |
+
+### Relaciones
+
+```
+dim_solicitud_bolsa
+├─ FK id_bolsa → dim_bolsa (Catálogo de bolsas)
+├─ FK estado_gestion_citas_id → dim_estados_gestion_citas (Estados de gestión)
+├─ FK paciente_id → pacientes_asegurados (Datos del paciente)
+├─ FK red_id → dim_red (Red de salud)
+├─ FK ipress_id → dim_ipress (Institución prestadora)
+├─ FK solicitante_id → usuarios (Quién creó)
+├─ FK responsable_aprobacion_id → usuarios (Coordinador que aprobó)
+└─ FK responsable_gestora_id → usuarios (Gestora asignada)
+```
+
+### Índices Recomendados
+
+```sql
+-- Búsqueda de pacientes
+CREATE INDEX idx_solicitud_bolsa_dni ON dim_solicitud_bolsa(paciente_dni);
+CREATE INDEX idx_solicitud_bolsa_nombre ON dim_solicitud_bolsa(paciente_nombre);
+CREATE INDEX idx_solicitud_bolsa_ipress ON dim_solicitud_bolsa(ipress_id);
+
+-- Filtros por estado y bolsa
+CREATE INDEX idx_solicitud_bolsa_estado ON dim_solicitud_bolsa(estado);
+CREATE INDEX idx_solicitud_bolsa_bolsa_id ON dim_solicitud_bolsa(id_bolsa);
+CREATE INDEX idx_solicitud_bolsa_estado_gestion ON dim_solicitud_bolsa(estado_gestion_citas_id);
+
+-- Asignación a gestoras
+CREATE INDEX idx_solicitud_bolsa_gestora ON dim_solicitud_bolsa(responsable_gestora_id);
+
+-- Rangos de fechas
+CREATE INDEX idx_solicitud_bolsa_fecha_asignacion ON dim_solicitud_bolsa(fecha_asignacion);
+CREATE INDEX idx_solicitud_bolsa_fecha_cita ON dim_solicitud_bolsa(fecha_cita);
+
+-- Full-text search
+CREATE INDEX idx_solicitud_bolsa_ft_nombre ON dim_solicitud_bolsa USING GIN(
+  to_tsvector('spanish', COALESCE(paciente_nombre, ''))
+);
+```
+
+---
+
 **Status Final:** ✅ **PRODUCCIÓN LIVE v1.32.1**
 
 **Componentes:** Backend v1.31.0 + Frontend v1.32.1 + Reutilizables v1.0.0
 
+**Flujo Actualizado (2026-01-22):**
+- ✅ Múltiples fuentes de pacientes (6 tipos de bolsas)
+- ✅ Almacenamiento centralizado (dim_solicitud_bolsa)
+- ✅ Distribución por Coordinador de Gestión de Citas
+- ✅ Gestión integral por Gestoras de Citas
+- ✅ Registro de Estados de Gestión (10 estados en dim_estados_gestion_citas)
+- ✅ Notificaciones (WhatsApp/Email cuando CITADO)
+- ✅ Auditoría completa de cada acción
+
 **Documento creado por:** Claude Code
-**Versión:** v1.32.1
+**Versión:** v1.32.1 + Actualización Integración v1.0.0
 **Última actualización:** 2026-01-22
-**Estado:** ACTIVO ✅ (Estructura Estándar Implementada)
+**Estado:** ACTIVO ✅ (Flujo Completo Bolsas → Coordinador → Gestoras → Estados)

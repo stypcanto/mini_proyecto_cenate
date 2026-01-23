@@ -73,10 +73,19 @@
   - Caso: TELEECG exclusivo para PADOMI
   - Procedimientos administrativos
 
-### 📦 Módulo de Bolsas (v1.31.0) - ✅ COMPLETADO
+### 📦 Módulo de Bolsas (v1.32.1) - ✅ COMPLETADO
 
 **📌 INICIO RÁPIDO:** Para entender el módulo de Bolsas completo, leer:
-- **`spec/01_Backend/06_resumen_modulo_bolsas_completo.md`** ⭐ (Recomendado - Visión general completa)
+- **`spec/01_Backend/06_resumen_modulo_bolsas_completo.md`** ⭐ (Recomendado - Visión general completa + Flujo Bolsas → Coordinador → Gestoras → Estados)
+
+**¿Qué es el Módulo de Bolsas?**
+- **Almacenamiento centralizado** de pacientes que requieren atención telemédica
+- **6 fuentes de información:** Bolsa 107, Dengue, Enfermería, IVR, Reprogramaciones, Gestores Territorial
+- **Distribución:** El Coordinador de Gestión de Citas reparte pacientes a las Gestoras de Citas
+- **Gestión:** Las Gestoras captan, llaman, confirman citas y registran estados
+- **Seguimiento:** 10 estados de atención (CITADO, NO_CONTESTA, NO_DESEA, ATENDIDO_IPRESS, etc.)
+- **Notificaciones:** Recordatorios automáticos por WhatsApp/Email cuando CITADO
+- **Auditoría:** Registro completo de cada acción y cambio
 
 **Documentación Técnica:**
 - **⭐ Resumen Módulo Bolsas:** `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0 - Arquitectura, componentes, integración sistémica)
@@ -278,7 +287,7 @@ Password: @Cenate2025
 | **Personal Externo (Gestión Modalidad + Bienvenida)** | `spec/02_Modulos_Usuarios/01_modulo_personal_externo.md` | ✅ Implementado (v1.18.0) |
 | **🫀 Tele-ECG v2.0.0** | `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` ⭐ + `checklist/02_Reportes_Pruebas/03_reporte_bugs_teleecg_v2.0.0.md` | ✅ **100% Completado** (v1.21.4 - 6 bugs resueltos) 🎉 |
 | **Tele-ECG Exclusivo PADOMI** | `spec/02_Modulos_Usuarios/02_configuracion_modulos_ipress.md` + `spec/04_BaseDatos/06_scripts/034_teleecg_exclusivo_padomi.sql` | ✅ Implementado (v1.20.1) |
-| **📦 Módulo de Bolsas** | `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1) ⭐ + Estructura Excel + Componentes Reutilizables | ✅ **100% Completado** (v1.32.1 - CRUD + Excel + Componentes) 🎉 |
+| **📦 Módulo de Bolsas (v1.32.1) - ✅ COMPLETADO** | `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` ⭐ (Almacenamiento central + Distribución Coordinador + Gestión Gestoras + Estados) | ✅ **100% Completado** (v1.32.1 - 6 fuentes de pacientes + Coordinador distribuye + 10 estados de gestión) 🎉 |
 | **📋 Estados Gestión Citas** | `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐ + Troubleshooting: `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md` | ✅ **100% Completado** (v1.33.0 - CRUD + Query SQL + 3 bugs resueltos) 🎉 |
 | **Módulo Red** | `plan/03_Infraestructura/01_plan_modulo_red.md` | 📋 Pendiente |
 
@@ -292,7 +301,19 @@ Password: @Cenate2025
 | **IPRESS** | Institución Prestadora de Servicios de Salud |
 | **ESSI** | Sistema de información de EsSalud |
 | **MBAC** | Module-Based Access Control |
-| **Bolsa 107** | Módulo de importación masiva de pacientes |
+| **Bolsa** | Conjunto de pacientes agrupados por criterio (tipo, origen, especialidad) esperando gestión |
+| **Bolsa 107** | Módulo de importación masiva de pacientes desde ESSI |
+| **Bolsa Dengue** | Pacientes en control epidemiológico de dengue |
+| **Bolsas Enfermería** | Pacientes requieren atenciones de enfermería especializada |
+| **Bolsas IVR** | Pacientes asignados a sistema interactivo de respuesta de voz |
+| **Bolsas Reprogramación** | Pacientes con citas reagendadas o reprogramadas |
+| **Bolsa Gestores Territorial** | Pacientes bajo gestión territorial |
+| **Coordinador de Gestión de Citas** | Rol responsable de distribuir bolsas de pacientes a Gestoras |
+| **Gestora de Citas** | Rol responsable de captar, llamar, confirmar cita y registrar estado |
+| **dim_solicitud_bolsa** | Tabla principal que almacena pacientes en bolsas (estado de solicitud) |
+| **dim_estados_gestion_citas** | Catálogo de 10 estados que registran la atención al paciente |
+| **Diferimiento** | Días transcurridos desde asignación del paciente hasta hoy |
+| **Semáforo** | Indicador Verde (OK) o Rojo (Urgente) basado en diferimiento |
 | **Régimen 728/CAS** | Personal nombrado/CAS: M=4h, T=4h, MT=8h + 2h sanitarias/día (telemonitoreo 1h + administrativa 1h) |
 | **Locador** | Locación de servicios: M=6h, T=6h, MT=12h (sin horas sanitarias) |
 | **Horas Sanitarias** | 2h adicionales por día trabajado solo para 728/CAS (1h telemonitoreo + 1h administrativa) |
@@ -324,8 +345,14 @@ Password: @Cenate2025
 - Horarios Existentes → `spec/04_BaseDatos/07_horarios_sistema/01_modelo_horarios_existente.md`
 - Integración Horarios → `spec/04_BaseDatos/07_horarios_sistema/02_guia_integracion_horarios.md`
 - Firma Digital → `plan/05_Firma_Digital/01_plan_implementacion.md`
-- Módulo Bolsas → `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1) ⭐
-- **Estados Gestión Citas → `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐ + Troubleshooting: `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md`**
+- **📦 Módulo Bolsas (COMPLETO)** → `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.32.1) ⭐
+  - Flujo: Bolsas → Coordinador distribuye → Gestoras gestionan → Estados de citas
+  - Frontend: http://localhost:3000/bolsas/solicitudes (Coordinador visualiza y distribuye)
+  - Tabla `dim_solicitud_bolsa` (pacientes en bolsas) con estados vinculados a `dim_estados_gestion_citas`
+- **📋 Estados Gestión Citas** → `spec/01_Backend/07_modulo_estados_gestion_citas_crud.md` (v1.33.0) ⭐
+  - 10 estados: CITADO, NO_CONTESTA, NO_DESEA, ATENDIDO_IPRESS, HC_BLOQUEADA, NUM_NO_EXISTE, TEL_SIN_SERVICIO, REPROG_FALLIDA, SIN_VIGENCIA, APAGADO
+  - Tabla: `dim_estados_gestion_citas` (referenciada por `dim_solicitud_bolsa`)
+  - Troubleshooting: `spec/06_Troubleshooting/02_guia_estados_gestion_citas.md`
 - Excel Pacientes → `spec/03_Frontend/02_estructura_excel_pacientes.md` (14 columnas, 6 obligatorios)
 - Componentes Reutilizables → `frontend/src/components/README.md` (PageHeader, StatCard, ListHeader)
 - Estructura Mínima Páginas → `spec/03_Frontend/01_estructura_minima_paginas.md` (Patrón arquitectónico)
