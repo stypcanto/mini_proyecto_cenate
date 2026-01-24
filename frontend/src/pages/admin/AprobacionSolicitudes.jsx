@@ -959,8 +959,8 @@ export default function AprobacionSolicitudes() {
                 >
                   <option value="">Todas</option>
                   {macrorregiones.map((macro) => (
-                    <option key={macro.idMacro} value={macro.idMacro}>
-                      {macro.descMacro}
+                    <option key={macro.id || macro.idMacro} value={macro.id || macro.idMacro}>
+                      {macro.descripcion || macro.descMacro}
                     </option>
                   ))}
                 </select>
@@ -992,8 +992,8 @@ export default function AprobacionSolicitudes() {
                 >
                   <option value="">Todas</option>
                   {redes.map((red) => (
-                    <option key={red.idRed} value={red.idRed}>
-                      {red.descRed}
+                    <option key={red.id || red.idRed} value={red.id || red.idRed}>
+                      {red.descripcion || red.descRed}
                     </option>
                   ))}
                 </select>
@@ -1053,8 +1053,8 @@ export default function AprobacionSolicitudes() {
               <div className="mt-4 pt-4 border-t border-slate-200">
                 <p className="text-sm text-slate-600">
                   Mostrando <span className="font-semibold text-orange-600">{usuariosFiltrados.length}</span> de <span className="font-semibold">{usuariosPendientes.length}</span> usuarios
-                  {filtroMacroregion && <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Macrorregión: {macrorregiones.find(m => m.idMacro == filtroMacroregion)?.descMacro}</span>}
-                  {filtroRed && <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Red: {redes.find(r => r.idRed == filtroRed)?.descRed}</span>}
+                  {filtroMacroregion && <span className="ml-2 text-xs bg-purple-100 text-purple-700 px-2 py-1 rounded">Macrorregión: {macrorregiones.find(m => (m.id || m.idMacro) == filtroMacroregion)?.descripcion || macrorregiones.find(m => (m.id || m.idMacro) == filtroMacroregion)?.descMacro}</span>}
+                  {filtroRed && <span className="ml-2 text-xs bg-green-100 text-green-700 px-2 py-1 rounded">Red: {redes.find(r => (r.id || r.idRed) == filtroRed)?.descripcion || redes.find(r => (r.id || r.idRed) == filtroRed)?.descRed}</span>}
                   {filtroIpress && <span className="ml-2 text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded">IPRESS: {filtroIpress}</span>}
                   {filtroFechaDesde && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Desde: {new Date(filtroFechaDesde).toLocaleDateString('es-PE')}</span>}
                   {filtroFechaHasta && <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">Hasta: {new Date(filtroFechaHasta).toLocaleDateString('es-PE')}</span>}
