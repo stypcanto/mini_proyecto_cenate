@@ -640,6 +640,77 @@ public class AccountRequestService {
     }
 
     /**
+     * Lista usuarios pendientes de activación filtrados por Macrorregión
+     * @param idMacroregion ID de la macrorregión
+     * @return Lista de usuarios pendientes que pertenecen a esa macrorregión
+     */
+    public List<Map<String, Object>> listarUsuariosPendientesPorMacroregion(Long idMacroregion) {
+        log.info("Consultando usuarios pendientes de activación para Macrorregión ID: {}", idMacroregion);
+
+        String sql = """
+            SELECT
+                u.id_user,
+                u.name_user,
+                u.stat_user,
+                u.created_at,
+                p.id_pers,
+                p.nom_pers,
+                p.ape_pater_pers,
+                p.ape_mater_pers,
+                p.email_pers,
+                p.email_corp_pers,
+                p.movil_pers,
+                i.desc_ipress,
+                i.id_ipress,
+                r.id_red,
+                r.desc_red,
+                m.id_macro,
+                m.desc_macro
+            FROM dim_usuarios u
+            LEFT JOIN dim_personal_cnt p ON p.id_usuario = u.id_user
+            LEFT JOIN dim_ipress i ON i.id_ipress = p.id_ipress
+            LEFT JOIN dim_red r ON r.id_red = i.id_red
+            LEFT JOIN dim_macroregion m ON m.id_macro = r.id_macro
+            WHERE u.requiere_cambio_password = true
+            AND m.id_macro = ?
+            ORDER BY u.created_at DESC
+        """;
+
+        List<Map<String, Object>> resultados = jdbcTemplate.queryForList(sql, idMacroregion);
+        log.info("📊 Usuarios encontrados para Macrorregión {}: {}", idMacroregion, resultados.size());
+
+        return resultados.stream().map(row -> {
+            Map<String, Object> usuario = new java.util.HashMap<>();
+            usuario.put("idUsuario", row.get("id_user"));
+            usuario.put("username", row.get("name_user"));
+            usuario.put("estado", row.get("stat_user"));
+            usuario.put("fechaCreacion", row.get("created_at"));
+            usuario.put("idPersonal", row.get("id_pers"));
+            usuario.put("nombres", row.get("nom_pers"));
+            usuario.put("apellidoPaterno", row.get("ape_pater_pers"));
+            usuario.put("apellidoMaterno", row.get("ape_mater_pers"));
+            usuario.put("correoPersonal", row.get("email_pers"));
+            usuario.put("correoInstitucional", row.get("email_corp_pers"));
+            usuario.put("telefono", row.get("movil_pers"));
+            usuario.put("ipress", row.get("desc_ipress"));
+            usuario.put("idIpress", row.get("id_ipress"));
+            usuario.put("idRed", row.get("id_red"));
+            usuario.put("red", row.get("desc_red"));
+            usuario.put("idMacroregion", row.get("id_macro"));
+            usuario.put("macroregion", row.get("desc_macro"));
+
+            String nombreCompleto = String.format("%s %s %s",
+                    row.get("nom_pers") != null ? row.get("nom_pers") : "",
+                    row.get("ape_pater_pers") != null ? row.get("ape_pater_pers") : "",
+                    row.get("ape_mater_pers") != null ? row.get("ape_mater_pers") : ""
+            ).trim();
+            usuario.put("nombreCompleto", nombreCompleto);
+
+            return usuario;
+        }).collect(Collectors.toList());
+    }
+
+    /**
      * Reenvía el email de activación a un usuario específico
      * @param idUsuario ID del usuario
      * @param tipoCorreo Tipo de correo a usar: "PERSONAL", "CORPORATIVO", o null (usa personal prioritariamente)

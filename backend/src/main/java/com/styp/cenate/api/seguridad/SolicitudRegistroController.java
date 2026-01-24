@@ -183,6 +183,24 @@ public class SolicitudRegistroController {
     }
 
     /**
+     * Lista usuarios pendientes filtrados por Macrorregión ID
+     * GET /api/admin/usuarios/pendientes-activacion/por-macroregion/{idMacroregion}
+     */
+    @GetMapping("/admin/usuarios/pendientes-activacion/por-macroregion/{idMacroregion}")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<?> listarUsuariosPendientesPorMacroregion(@PathVariable Long idMacroregion) {
+        try {
+            log.info("Listando usuarios pendientes de activación para Macrorregión ID: {}", idMacroregion);
+            return ResponseEntity.ok(accountRequestService.listarUsuariosPendientesPorMacroregion(idMacroregion));
+        } catch (Exception e) {
+            log.error("Error al listar usuarios pendientes por macrorregión: {}", e.getMessage());
+            return ResponseEntity.internalServerError().body(Map.of(
+                    "error", "Error al obtener usuarios pendientes"
+            ));
+        }
+    }
+
+    /**
      * Reenvía el email de activación a un usuario específico
      */
     @PostMapping("/admin/usuarios/{idUsuario}/reenviar-activacion")

@@ -221,6 +221,21 @@ export default function AprobacionSolicitudes() {
     }
   };
 
+  // Cargar usuarios filtrados por Macrorregión (desde backend)
+  const cargarUsuariosPorMacroregion = async (idMacroregion) => {
+    try {
+      setLoadingPendientes(true);
+      const data = await apiClient.get(`/admin/usuarios/pendientes-activacion/por-macroregion/${idMacroregion}`, true);
+      console.log("Usuarios filtrados por macrorregión:", data);
+      setUsuariosPendientes(data || []);
+    } catch (error) {
+      console.error("Error al cargar usuarios por macrorregión:", error);
+      toast.error("Error al cargar usuarios de la macrorregión");
+    } finally {
+      setLoadingPendientes(false);
+    }
+  };
+
   // Abrir modal de selección de tipo de correo
   const abrirModalTipoCorreo = (usuario) => {
     setModalTipoCorreo({
@@ -916,7 +931,15 @@ export default function AprobacionSolicitudes() {
                 </label>
                 <select
                   value={filtroMacroregion}
-                  onChange={(e) => setFiltroMacroregion(e.target.value)}
+                  onChange={(e) => {
+                    const macroValue = e.target.value;
+                    setFiltroMacroregion(macroValue);
+                    if (macroValue) {
+                      cargarUsuariosPorMacroregion(macroValue);
+                    } else {
+                      cargarUsuariosPendientes();
+                    }
+                  }}
                   disabled={cargandoOpciones}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all text-sm disabled:bg-slate-100 disabled:cursor-not-allowed"
                 >
