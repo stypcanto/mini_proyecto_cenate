@@ -91,14 +91,25 @@ export default function AprobacionSolicitudes() {
   const cargarOpcionesFiltros = async () => {
     try {
       setCargandoOpciones(true);
-      const [macrosResp, redesResp] = await Promise.all([
-        apiClient.get("/api/macrorregiones", true),
-        apiClient.get("/api/redes", true)
-      ]);
+      const macrosResp = await apiClient.get("/api/filtros/macroregiones", true);
       setMacrorregiones(macrosResp || []);
-      setRedes(redesResp || []);
+      setRedes([]); // Limpiar redes hasta que se seleccione una macro
     } catch (error) {
       console.error("Error al cargar opciones de filtros:", error);
+    } finally {
+      setCargandoOpciones(false);
+    }
+  };
+
+  // Cargar redes cuando se selecciona una macrorregión
+  const cargarRedesPorMacro = async (idMacro) => {
+    try {
+      setCargandoOpciones(true);
+      const redesResp = await apiClient.get(`/api/filtros/redes?macroId=${idMacro}`, true);
+      setRedes(redesResp || []);
+    } catch (error) {
+      console.error("Error al cargar redes por macrorregión:", error);
+      setRedes([]);
     } finally {
       setCargandoOpciones(false);
     }
@@ -934,10 +945,13 @@ export default function AprobacionSolicitudes() {
                   onChange={(e) => {
                     const macroValue = e.target.value;
                     setFiltroMacroregion(macroValue);
+                    setFiltroRed(""); // Limpiar red cuando cambia macro
                     if (macroValue) {
-                      cargarUsuariosPorMacroregion(macroValue);
+                      cargarRedesPorMacro(macroValue); // Cargar redes de la macro seleccionada
+                      cargarUsuariosPorMacroregion(macroValue); // Cargar usuarios
                     } else {
-                      cargarUsuariosPendientes();
+                      setRedes([]);
+                      cargarUsuariosPendientes(); // Cargar todos los usuarios
                     }
                   }}
                   disabled={cargandoOpciones}
@@ -965,10 +979,15 @@ export default function AprobacionSolicitudes() {
                     if (redValue) {
                       cargarUsuariosPorRed(redValue);
                     } else {
-                      cargarUsuariosPendientes();
+                      // Si se limpia la red, volver a cargar usuarios de la macro (si está seleccionada)
+                      if (filtroMacroregion) {
+                        cargarUsuariosPorMacroregion(filtroMacroregion);
+                      } else {
+                        cargarUsuariosPendientes();
+                      }
                     }
                   }}
-                  disabled={cargandoOpciones}
+                  disabled={cargandoOpciones || redes.length === 0}
                   className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:border-orange-500 focus:ring-2 focus:ring-orange-500/30 outline-none transition-all text-sm disabled:bg-slate-100 disabled:cursor-not-allowed"
                 >
                   <option value="">Todas</option>
@@ -1030,7 +1049,7 @@ export default function AprobacionSolicitudes() {
             </div>
 
             {/* Indicador de resultados filtrados */}
-            {hayFiltrosActivos && (
+            {(filtroMacroregion || filtroRed || filtroIpress || filtroFechaDesde || filtroFechaHasta) && (
               <div className="mt-4 pt-4 border-t border-slate-200">
                 <p className="text-sm text-slate-600">
                   Mostrando <span className="font-semibold text-orange-600">{usuariosFiltrados.length}</span> de <span className="font-semibold">{usuariosPendientes.length}</span> usuarios
