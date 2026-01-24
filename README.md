@@ -604,6 +604,7 @@ component: lazy(() => import('../pages/Admin'))
 | **📖 Explorar/probar endpoints interactivamente** | [Swagger UI](http://localhost:8080/swagger-ui.html) ⭐ |
 | **Levantar el proyecto en 5 minutos** | [CLAUDE.md - Quick Start](CLAUDE.md#-quick-start---levantar-el-proyecto) |
 | **Entender qué es CENATE** | [CLAUDE.md - ¿Qué es CENATE?](CLAUDE.md#qué-es-cenate) |
+| **🛡️ Entender el plan de backup y protecciones** | [**spec/04_BaseDatos/08_plan_backup_protecciones_completo.md**](spec/04_BaseDatos/08_plan_backup_protecciones_completo.md) ⭐ NUEVO |
 | **Ver glosario de términos** | [CLAUDE.md - Glosario](CLAUDE.md#glosario-de-términos) |
 | **Consultar API** | [spec/01_Backend/01_api_endpoints.md](spec/01_Backend/01_api_endpoints.md) |
 | **Ver últimos cambios** | [checklist/01_Historial/01_changelog.md](checklist/01_Historial/01_changelog.md) |
@@ -635,6 +636,7 @@ component: lazy(() => import('../pages/Admin'))
 - [**05_plan_limpieza/**](spec/04_BaseDatos/05_plan_limpieza/) ⭐ - Plan para reducir BD de 5.4 GB a 3.9 GB (-28%)
 - [**06_scripts/**](spec/04_BaseDatos/06_scripts/) - 16 scripts SQL de migración
 - [**07_sql/**](spec/04_BaseDatos/07_sql/) - Configuraciones SQL
+- [**🛡️ 08_plan_backup_protecciones_completo.md**](spec/04_BaseDatos/08_plan_backup_protecciones_completo.md) ⭐ **NUEVO** - Plan integral de backup (5 niveles) + Protecciones contra DELETE + Monitoreo automático. **NIVELES IMPLEMENTADOS:** 1 (Backup 2x diarios), 3 (Auditoría + Permisos), 5 (Monitoreo diario). 5,165,000 registros protegidos. RTO 15 min, RPO 7 horas.
 
 #### Troubleshooting
 - [**01_guia_problemas_comunes.md**](spec/05_Troubleshooting/01_guia_problemas_comunes.md) - Solución a problemas frecuentes

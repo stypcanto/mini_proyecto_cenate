@@ -303,6 +303,14 @@ GET  /api/macrorregiones
 - **Plan Limpieza:** `spec/04_BaseDatos/05_plan_limpieza/`
 - **Scripts SQL (17+):** `spec/04_BaseDatos/06_scripts/`
 - **⭐ Sistema Horarios:** `spec/04_BaseDatos/07_horarios_sistema/` (Modelo existente + Guía integración)
+- **🛡️ ⭐ PLAN BACKUP Y PROTECCIONES (NUEVO):** `spec/04_BaseDatos/08_plan_backup_protecciones_completo.md`
+  - **NIVELES IMPLEMENTADOS:** 1 (Backup diario 2x), 3 (Auditoría + Permisos), 5 (Monitoreo diario)
+  - **Backup automático:** 2 AM + 2 PM (30 días retención, 952MB)
+  - **Auditoría DELETE:** Tabla audit_asegurados_deletes + Trigger BEFORE DELETE
+  - **Protecciones:** REVOKE/GRANT restrictivos + Usuario read-only
+  - **Monitoreo:** Script diario 10 AM (5 checks automáticos)
+  - **Registros protegidos:** 5,165,000 asegurados
+  - **RTO:** 15 minutos | **RPO:** 7 horas
 
 ### 🔧 Backend y APIs
 - **Endpoints REST:** `spec/01_Backend/01_api_endpoints.md`
