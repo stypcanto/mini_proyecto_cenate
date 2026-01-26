@@ -7,7 +7,7 @@
 ## 📚 Documentos Disponibles
 
 ### 1. **Mejoras Bienvenida v2.0.0** ⭐ PRINCIPAL
-📄 **Ruta:** `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md`
+📄 **Ruta:** `spec/frontend/07_ui_ux/05_mejoras_ui_ux_bienvenida_v2.md`
 
 **Contenido:**
 - Rediseño completo página `/admin/bienvenida`

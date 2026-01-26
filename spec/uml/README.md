@@ -185,7 +185,7 @@ Dark:        #0f172a (slate-900)
 ## 📚 Documentación Relacionada
 
 - **Especificación Técnica:** `spec/backend/`
-- **Cambios UI/UX:** `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md`
+- **Cambios UI/UX:** `spec/frontend/07_ui_ux/05_mejoras_ui_ux_bienvenida_v2.md`
 - **Changelog:** `checklist/01_Historial/01_changelog.md`
 
 ---
