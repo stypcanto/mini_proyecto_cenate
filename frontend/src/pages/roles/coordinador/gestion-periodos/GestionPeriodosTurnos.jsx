@@ -356,7 +356,7 @@ export default function GestionPeriodosTurnos() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         <div className="mb-4 bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-lg p-6 shadow-lg">
           <div className="flex items-center gap-3">
             <FileText className="w-8 h-8 text-white" />

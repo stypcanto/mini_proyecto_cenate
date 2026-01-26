@@ -907,7 +907,7 @@ export default function FormularioSolicitudTurnos() {
 
   return (
     <>
-      <div className="space-y-6 p-6 max-w-6xl mx-auto">
+      <div className="space-y-6 p-6 w-full">
       {/* Header */}
       <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-2xl p-6 text-white shadow-lg">
         <div className="flex items-center gap-3 mb-2">

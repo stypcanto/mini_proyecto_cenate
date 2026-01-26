@@ -120,7 +120,7 @@ export default function BienvenidaEnfermeria() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-teal-50 p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full">
         {/* Header de Bienvenida */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">

@@ -125,7 +125,7 @@ export default function BienvenidaExterno() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-6 md:p-8">
-      <div className="max-w-6xl mx-auto">
+      <div className="w-full">
         {/* 🎯 Header Principal */}
         <div className="mb-10">
           <div className="flex items-center gap-3 mb-4">

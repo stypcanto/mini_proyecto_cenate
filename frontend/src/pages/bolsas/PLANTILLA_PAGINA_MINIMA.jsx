@@ -105,7 +105,7 @@ export default function PaginaMinima() {
   // ================== RENDER ==================
   return (
     <div className="min-h-screen bg-slate-50 p-4">
-      <div className="w-full max-w-7xl mx-auto">
+      <div className="w-full w-full">
 
         {/* ========== 1. HEADER ========== */}
         <PageHeader

@@ -398,7 +398,7 @@ export default function UserDetail() {
   if (error && !userData) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           <div className="bg-red-50 border border-red-200 rounded-lg p-6 text-center">
             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-4" />
             <h2 className="text-lg font-semibold text-red-900 mb-2">
@@ -419,7 +419,7 @@ export default function UserDetail() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="w-full space-y-6">
         {/* 🎯 Header con breadcrumb */}
         <div className="flex items-center justify-between">
           <div>
