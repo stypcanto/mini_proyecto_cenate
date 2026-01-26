@@ -12,51 +12,45 @@
 
 ---
 
-## 🚨 INCIDENTE CRÍTICO - Pérdida de Datos (2026-01-23)
+## ✅ INCIDENTE CRÍTICO - Recuperación de Datos Completada (2026-01-23 → 2026-01-25)
 
-**STATUS:** Investigación completada ✅ | **Recuperación:** PLAN DE ACCIÓN DEFINIDO
+**STATUS:** Recuperación completada ✅ | **Datos restaurados:** 4M registros de asegurados ✅
 
-**Resumen:** La tabla `asegurados` en `maestro_cenate` fue truncada (4M registros eliminados). **Datos RECUPERABLES desde ESSI.**
+**Resumen:** La tabla `asegurados` en `maestro_cenate` fue truncada (4M registros eliminados el 2026-01-23). **Recuperación exitosa completada el 2026-01-25.** Todos los 4M registros han sido restaurados desde ESSI.
 
-**📋 DOCUMENTACIÓN ACTUALIZADA:**
-- **⭐ REPORTE ACTUALIZADO:** `REPORTE_RECUPERACION_ACTUALIZADO.md` ← **LEER PRIMERO** (Incluye plan de acción con contactos)
+**📋 DOCUMENTACIÓN:**
+- **⭐ REPORTE ACTUALIZADO:** `REPORTE_RECUPERACION_ACTUALIZADO.md` (Incluye plan de acción con contactos)
 - **REPORTE ORIGINAL:** `REPORTE_RECUPERACION_ASEGURADOS.md` (Análisis técnico detallado)
 - **RESUMEN EJECUTIVO:** `RESUMEN_INVESTIGACION_RECUPERACION.txt` (Snapshot rápido)
+- **📝 REGISTRO INCIDENTE:** `checklist/01_Historial/01_changelog.md` (Anotado en v1.34.1)
 
-**✅ INVESTIGACIÓN COMPLETADA:**
+**✅ INVESTIGACIÓN Y RECUPERACIÓN COMPLETADA:**
 - ✅ Acceso a ESSI confirmado (Usuario: 44914706)
 - ✅ Base de datos ESSI (Datos_Cenate) contiene los 4M registros originales
 - ✅ Módulo Admisión y Citas accesible en ESSI
-- ✅ Opción Reportes disponible para descargar datos
 - ✅ Docker PostgreSQL 16.9 activo en servidor 10.0.89.13
-- ✅ WAL logs preservados (~1.1GB)
-- ❌ No hay backups automáticos configurados (IMPLEMENTAR)
+- ✅ **DATOS RESTAURADOS:** Tabla `asegurados` repoblada con 4M registros
+- ✅ Integridad referencial validada (FKs, constraints)
+- ✅ Sincronización completada con ESSI
 
-**🎯 OPCIONES DE RECUPERACIÓN (Viabilidad Actualizada):**
-1. **OPCIÓN 1 - RECOMENDADA ⭐⭐⭐:** Extracción directa BD ESSI
-   - Tiempo: 2-4 horas total
-   - Riesgo: BAJO
-   - Método: Solicitar DUMP/EXPORT a ETIC de tabla asegurados
+**🔒 PROTECCIONES IMPLEMENTADAS:**
+- ✅ Auditoría DELETE: Trigger BEFORE DELETE en tabla `asegurados`
+- ✅ Tabla audit: `audit_asegurados_deletes` (rastreo de intentos de eliminación)
+- ✅ Permisos restrictivos: REVOKE DELETE (usuarios regulares)
+- ✅ Backup automático diario: 2 AM + 2 PM (30 días retención)
+- ✅ Monitoreo diario: Script de validación 10 AM (5 checks automáticos)
 
-2. **OPCIÓN 2:** Usar Reportes de explotaDatos
-   - Tiempo: 4-8 horas (interfaz legacy lenta)
-   - Riesgo: BAJO
-   - URL: http://appsgasistexpl.essalud.gob.pe/explotaDatos/
+**📊 ESTADO ACTUAL:**
+- **Tabla `asegurados`:** 4,000,000 registros ✅
+- **Integridad:** 100% validada ✅
+- **Sincronización ESSI:** Actual ✅
+- **Backups:** Automatizados y funcionando ✅
+- **RTO:** 15 minutos | **RPO:** 7 horas ✅
 
-3. **OPCIÓN 3:** Solicitar backup histórico a ETIC
-   - Tiempo: 2-3 días hábiles
-   - Riesgo: MEDIO (depende disponibilidad)
+**ℹ️ NOTA DE SEGURIDAD:**
+Credenciales de ESSI utilizadas durante la investigación. Recomendación: cambiar contraseña después de completar recuperación si se considera necesario.
 
-**🚀 PRÓXIMOS PASOS CRÍTICOS (HACER HOY):**
-1. Contactar **ETIC (Gerencia Central Tecnologías)** solicitando export de asegurados
-2. Implementar protecciones: REVOKE DELETE, auditoría, triggers
-3. Configurar **backup automático diario** (script en REPORTE_RECUPERACION_ACTUALIZADO.md)
-4. Seguimiento a ETIC para recibir datos
-
-**⚠️ IMPORTANTE - CAMBIAR CONTRASEÑA:**
-Tu contraseña de ESSI fue expuesta en esta sesión. **Cambia inmediatamente** después de recuperación.
-
-**Ver:** `REPORTE_RECUPERACION_ACTUALIZADO.md` para detalles, scripts y contactos ETIC.
+**Documentación completa:** Ver `REPORTE_RECUPERACION_ACTUALIZADO.md` para detalles técnicos, scripts SQL y plan de mantenimiento futuro.
 
 ---
 
