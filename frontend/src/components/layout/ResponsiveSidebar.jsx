@@ -63,9 +63,9 @@ export default function ResponsiveSidebar() {
         <button
           onClick={() => setIsOpen(true)}
           className="lg:hidden fixed top-4 left-4 z-50 w-12 h-12 rounded-2xl
-                     bg-gradient-to-br from-emerald-600 to-emerald-700
+                     bg-gradient-to-br from-cenate-600 to-cenate-700
                      text-white shadow-xl hover:shadow-2xl hover:scale-105 active:scale-95
-                     transition-all duration-200 flex items-center justify-center"
+                     transition-all duration-200 flex items-center justify-center focus:ring-2 focus:ring-cenate-600 focus:ring-offset-2"
           aria-label="Abrir menú lateral"
         >
           <Menu className="w-6 h-6" />

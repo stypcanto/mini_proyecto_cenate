@@ -49,7 +49,7 @@ export default function Bienvenida() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cenate-600"></div>
       </div>
     );
   }
@@ -64,13 +64,13 @@ export default function Bienvenida() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 p-8">
+    <div className="min-h-screen bg-gradient-to-br from-cenate-50 via-white to-cenate-100 p-8 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="max-w-5xl mx-auto">
         {/* Header de Bienvenida */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <Sparkles className="w-8 h-8 text-indigo-600" />
-            <h1 className="text-4xl font-bold text-gray-800">
+            <Sparkles className="w-8 h-8 text-cenate-600 dark:text-cenate-400" />
+            <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
               {obtenerSaludo()}
             </h1>
           </div>
@@ -80,12 +80,12 @@ export default function Bienvenida() {
         </div>
 
         {/* Card Principal - Información del Usuario */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden mb-6">
-          <div className="bg-gradient-to-r from-indigo-600 to-purple-600 p-6">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden mb-6">
+          <div className="bg-gradient-to-r from-cenate-600 to-cenate-700 p-6">
             <div className="flex items-center gap-6">
               {/* Avatar */}
-              <div className="w-24 h-24 rounded-full bg-white flex items-center justify-center shadow-lg">
-                <User className="w-12 h-12 text-indigo-600" />
+              <div className="w-24 h-24 rounded-full bg-gradient-to-br from-cenate-600 to-cenate-700 flex items-center justify-center shadow-lg">
+                <User className="w-12 h-12 text-white" />
               </div>
 
               {/* Información Principal */}
@@ -93,7 +93,7 @@ export default function Bienvenida() {
                 <h2 className="text-3xl font-bold mb-2">
                   {user?.nombreCompleto || "Usuario"}
                 </h2>
-                <div className="flex items-center gap-2 text-indigo-100">
+                <div className="flex items-center gap-2 text-cenate-100">
                   <Mail className="w-4 h-4" />
                   <span>{user?.username || "—"}</span>
                 </div>
@@ -110,15 +110,15 @@ export default function Bienvenida() {
           </div>
 
           {/* Detalles de la Cuenta */}
-          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6 dark:text-white">
             {/* DNI */}
             <div className="flex items-start gap-4">
-              <div className="p-3 bg-blue-100 rounded-lg">
-                <FileText className="w-6 h-6 text-blue-600" />
+              <div className="p-3 bg-cenate-100 dark:bg-cenate-900 rounded-lg">
+                <FileText className="w-6 h-6 text-cenate-600 dark:text-cenate-400" />
               </div>
               <div className="flex-1">
-                <p className="text-sm text-gray-500 font-medium">DNI</p>
-                <p className="text-lg font-semibold text-gray-800">
+                <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">DNI</p>
+                <p className="text-lg font-semibold text-gray-800 dark:text-white">
                   {user?.username || "—"}
                 </p>
               </div>
@@ -127,12 +127,12 @@ export default function Bienvenida() {
             {/* Correo Personal adicional si existe */}
             {user?.email && (
               <div className="flex items-start gap-4">
-                <div className="p-3 bg-purple-100 rounded-lg">
-                  <Mail className="w-6 h-6 text-purple-600" />
+                <div className="p-3 bg-cenate-100 dark:bg-cenate-900 rounded-lg">
+                  <Mail className="w-6 h-6 text-cenate-600 dark:text-cenate-400" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-500 font-medium">Correo</p>
-                  <p className="text-lg font-semibold text-gray-800">
+                  <p className="text-sm text-gray-500 dark:text-gray-400 font-medium">Correo</p>
+                  <p className="text-lg font-semibold text-gray-800 dark:text-white">
                     {user.email}
                   </p>
                 </div>
@@ -142,10 +142,10 @@ export default function Bienvenida() {
         </div>
 
         {/* Card de Roles y Funciones */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
           <div className="flex items-center gap-3 mb-6">
-            <Shield className="w-7 h-7 text-indigo-600" />
-            <h3 className="text-2xl font-bold text-gray-800">
+            <Shield className="w-7 h-7 text-cenate-600 dark:text-cenate-400" />
+            <h3 className="text-2xl font-bold text-gray-800 dark:text-white">
               Roles y Funciones Asignadas
             </h3>
           </div>
@@ -156,27 +156,27 @@ export default function Bienvenida() {
               user.roles.map((rol, index) => (
                 <div
                   key={index}
-                  className="flex items-center justify-between p-4 bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl border border-indigo-200"
+                  className="flex items-center justify-between p-4 bg-gradient-to-r from-cenate-50 to-cenate-100 dark:from-cenate-900/30 dark:to-cenate-800/30 rounded-xl border border-cenate-200 dark:border-cenate-700 focus:ring-2 focus:ring-cenate-600 focus:ring-offset-2 dark:focus:ring-offset-slate-800"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-indigo-600 rounded-full flex items-center justify-center">
+                    <div className="w-12 h-12 bg-cenate-600 rounded-full flex items-center justify-center">
                       <Shield className="w-6 h-6 text-white" />
                     </div>
                     <div>
-                      <p className="font-bold text-lg text-gray-800">{rol}</p>
-                      <p className="text-sm text-gray-600">
+                      <p className="font-bold text-lg text-gray-800 dark:text-white">{rol}</p>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
                         {obtenerDescripcionRol(rol)}
                       </p>
                     </div>
                   </div>
-                  <div className="px-4 py-2 bg-white rounded-lg shadow-sm">
-                    <span className="text-xs font-semibold text-indigo-600">ACTIVO</span>
+                  <div className="px-4 py-2 bg-white dark:bg-slate-700 rounded-lg shadow-sm">
+                    <span className="text-xs font-semibold text-cenate-600 dark:text-cenate-400">ACTIVO</span>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Info className="w-12 h-12 mx-auto mb-3 text-gray-400" />
+              <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                <Info className="w-12 h-12 mx-auto mb-3 text-gray-400 dark:text-gray-600" />
                 <p>No se encontraron roles asignados</p>
               </div>
             )}
@@ -185,10 +185,10 @@ export default function Bienvenida() {
 
         {/* Footer con información adicional */}
         <div className="mt-6 text-center">
-          <p className="text-sm text-gray-500">
-            Sistema de Telemedicina CENATE – EsSalud 2025
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            Sistema de Telemedicina CENATE – EsSalud {new Date().getFullYear()}
           </p>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             v1.15.18 | Para soporte técnico: cenate.analista@essalud.gob.pe
           </p>
         </div>
