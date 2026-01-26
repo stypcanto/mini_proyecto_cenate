@@ -253,7 +253,7 @@ export default function CargarDesdeExcel() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
-      <div className="max-w-5xl mx-auto">
+      <div className="w-full">
         {/* Header Mejorado */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">

@@ -174,7 +174,7 @@ export default function GestionBolsasPacientes() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       {/* Header CENATE */}
       <div className="bg-gradient-to-r from-[#0D5BA9] via-[#0a4a96] to-[#073d7a] text-white shadow-xl border-b-4 border-[#22C55E] backdrop-blur-sm">
-        <div className="max-w-7xl mx-auto px-8 py-8">
+        <div className="w-full px-8 py-8">
           <div className="flex items-center justify-between animate-slideInLeft">
             <div>
               <div className="flex items-center gap-3 mb-2">
@@ -198,7 +198,7 @@ export default function GestionBolsasPacientes() {
 
       {/* Navigation Tabs */}
       <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-md shadow-md border-b border-gray-200 dark:border-gray-700 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto flex overflow-x-auto scrollbar-hide">
+        <div className="w-full flex overflow-x-auto scrollbar-hide">
           <TabButton tab="resumen" label="📊 Resumen Ejecutivo" />
           <TabButton tab="analisis" label="🔍 Análisis Especialidades" />
           <TabButton tab="produccion" label="🏥 Producción IPRESS" />
@@ -206,7 +206,7 @@ export default function GestionBolsasPacientes() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-8">
+      <div className="w-full p-8">
         {/* TAB: RESUMEN EJECUTIVO */}
         {activeTab === 'resumen' && (
           <div className="space-y-8">

@@ -71,7 +71,7 @@ export default function UserDashboard() {
   // Loading state
   if (loading) {
     return (
-      <div className="max-w-7xl mx-auto flex items-center justify-center min-h-screen">
+      <div className="w-full flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0A5BA9] mx-auto"></div>
           <p className="mt-4 text-[var(--text-secondary)]">Cargando datos del usuario...</p>
@@ -81,7 +81,7 @@ export default function UserDashboard() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="w-full">
       {/* ======================================================= */}
       {/* 🧩 Encabezado Ejecutivo */}
       {/* ======================================================= */}

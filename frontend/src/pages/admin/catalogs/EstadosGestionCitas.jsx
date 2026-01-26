@@ -705,7 +705,7 @@ const EstadosGestionCitas = () => {
 
   return (
     <div className="p-6 bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto">
+      <div className="w-full">
         {renderHeader()}
         {renderEstadisticas()}
         {renderFiltros()}

@@ -7,6 +7,72 @@
 > - ⭐ **Módulo Bolsas**: `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0 - NUEVO)
 > - ⭐ **CRUD Tipos Bolsas**: `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.0.0 - NUEVO)
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
+> - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
+> - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.35.1 (2026-01-26) - 🎯 Mejoras UI/UX Módulo Asegurados: Tabla Expandida + Tipo de Documento
+
+### 🎨 Descripción
+
+**Optimización de interfaces del módulo de asegurados** para mejor visualización de datos y UX mejorada. Cambios:
+
+#### **1. BuscarAsegurado.jsx (v1.2.0)**
+- ✅ **Tabla Expandida**: Aprovecha 100% del ancho de pantalla
+  - Cambio: `tableLayout: 'fixed'` → `tableLayout: 'auto'`
+  - Cambio: `max-w-7xl` → `w-full` (sin límite)
+  - Reducción de padding: `px-2 py-4` → `px-1 py-3`
+- ✅ **Nueva Columna "Tipo de Documento"** (adelante de DNI)
+  - Ancho: 90px
+  - Muestra: DNI, C.E./PAS, PASAPORT
+  - Mapeo: `idTipDoc === 1|2|3`
+- ✅ **Tipografía Normalizada**
+  - Documento: `text-sm text-slate-900` (sin bold)
+  - Teléfono: `text-sm text-slate-900` (mismo estilo)
+  - Tipo Doc: `text-sm text-slate-900` (consistente)
+- ✅ **Anchos Dinámicos**
+  - N°: 50px (fijo)
+  - Tipo Doc: 90px (fijo)
+  - Documento: 110px (fijo)
+  - Nombre: flexible (crece)
+  - Teléfono: 140px (fijo)
+  - IPRESS: flexible (crece)
+  - ACC: 100px (fijo)
+- ✅ **Botones de Acción Comprimidos**
+  - Padding: `p-1.5` → `p-1`
+  - Gap: `gap-1.5` → `gap-0.5`
+  - Border: `border-2` → `border`
+
+#### **2. RevisarDuplicados.jsx (v1.1.0)**
+- ✅ **Modal Agrandado**: `max-w-2xl` → `max-w-5xl`
+- ✅ **Tabla Comparativa**: Muestra registros 7 vs 8 caracteres
+- ✅ **Distribución Optimizada**: Mejor aprovechamiento de espacio
+- ✅ **Header/Footer Sticky**: Navegación siempre visible
+- ✅ **Botón X para Cerrar**: En esquina superior derecha
+- ✅ **URL ESSI Integrada**: `http://10.56.1.158/sgss/servlet/hmain`
+
+### 🔧 Cambios Técnicos
+
+**Archivos Modificados:**
+- `frontend/src/pages/asegurados/BuscarAsegurado.jsx` ✅
+- `frontend/src/pages/asegurados/RevisarDuplicados.jsx` ✅
+- `spec/UI-UX/01_design_system_tablas.md` (documentación) ✅
+- `spec/database/13_sistema_auditoria_duplicados.md` (documentación) ✅
+
+### 📊 Mejoras Visuales
+
+**Antes:**
+- Tabla compacta, datos recortados
+- Sin columna de tipo de documento
+- Tipografía inconsistente
+- Modal pequeño con contenido apretado
+
+**Después:**
+- Tabla expandida, todos los datos visibles ✅
+- Columna "Tipo de Documento" clara ✅
+- Tipografía uniforme ✅
+- Modal grande con mejor distribución ✅
 
 ---
 

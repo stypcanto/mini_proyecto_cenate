@@ -554,19 +554,31 @@ public class AseguradoController {
     @PostMapping
     public ResponseEntity<?> crearAsegurado(@RequestBody AseguradoDTO aseguradoDTO) {
         try {
-            log.info("✍️ Creando nuevo asegurado: DNI={}, Nombre={}", 
+            log.info("✍️ Creando nuevo asegurado: DNI={}, Nombre={}",
                     aseguradoDTO.getDocPaciente(), aseguradoDTO.getPaciente());
-            
-            // Validar que no exista un asegurado con el mismo DNI y período
-            String checkSql = "SELECT COUNT(*) FROM asegurados WHERE doc_paciente = ? AND periodo = ?";
-            Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, 
+
+            // 🔒 Validar 1: Que no exista DNI ACTIVO (vigencia = true)
+            String checkActivoSql = "SELECT COUNT(*) FROM asegurados WHERE doc_paciente = ? AND vigencia = true";
+            Integer countActivo = jdbcTemplate.queryForObject(checkActivoSql, Integer.class,
+                    aseguradoDTO.getDocPaciente());
+
+            if (countActivo != null && countActivo > 0) {
+                log.warn("🚫 BLOQUEADO: Ya existe asegurado ACTIVO con DNI {}", aseguradoDTO.getDocPaciente());
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "❌ Este DNI ya está registrado en el sistema como asegurado ACTIVO. " +
+                            "Contacte con administración si necesita reactivarlo."));
+            }
+
+            // 🔒 Validar 2: Que no exista en el mismo período (permitir reactivación en otros períodos)
+            String checkPeriodoSql = "SELECT COUNT(*) FROM asegurados WHERE doc_paciente = ? AND periodo = ?";
+            Integer countPeriodo = jdbcTemplate.queryForObject(checkPeriodoSql, Integer.class,
                     aseguradoDTO.getDocPaciente(), aseguradoDTO.getPeriodo());
-            
-            if (count != null && count > 0) {
-                log.warn("⚠️ Ya existe un asegurado con DNI {} en el período {}", 
+
+            if (countPeriodo != null && countPeriodo > 0) {
+                log.warn("⚠️ Ya existe asegurado con DNI {} en período {}",
                         aseguradoDTO.getDocPaciente(), aseguradoDTO.getPeriodo());
                 return ResponseEntity.badRequest()
-                    .body(Map.of("error", "Ya existe un asegurado con este DNI en el período " + aseguradoDTO.getPeriodo()));
+                    .body(Map.of("error", "Ya existe registro con este DNI en el período " + aseguradoDTO.getPeriodo()));
             }
             
             // Generar PK: doc_paciente-periodo
@@ -1082,6 +1094,132 @@ public class AseguradoController {
             log.error("❌ Error al obtener información de duplicado: {}", docPaciente, e);
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Error al obtener información de duplicado: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * ✅ VALIDAR si un DNI ya existe y está ACTIVO
+     * Ejemplo: GET /api/asegurados/validar-dni/12345678
+     * Respuesta: { "disponible": false, "mensaje": "Este DNI ya está registrado" }
+     */
+    @GetMapping("/validar-dni/{docPaciente}")
+    public ResponseEntity<?> validarDni(@PathVariable String docPaciente) {
+        try {
+            // Validar formato: 8 dígitos o carné extranjería
+            if (docPaciente == null || docPaciente.trim().isEmpty()) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "disponible", false,
+                        "mensaje", "DNI/Carné no puede estar vacío"
+                    ));
+            }
+
+            // Verificar que tenga al menos 8 caracteres
+            if (docPaciente.length() < 8) {
+                return ResponseEntity.badRequest()
+                    .body(Map.of(
+                        "disponible", false,
+                        "mensaje", "DNI/Carné debe tener al menos 8 caracteres"
+                    ));
+            }
+
+            // Buscar si existe un registro ACTIVO con este DNI
+            String checkSql = "SELECT COUNT(*) FROM asegurados WHERE doc_paciente = ? AND vigencia = true";
+            Integer count = jdbcTemplate.queryForObject(checkSql, Integer.class, docPaciente);
+
+            boolean disponible = (count == null || count == 0);
+
+            log.info("🔍 Validación DNI: {} - Disponible: {}", docPaciente, disponible);
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("disponible", disponible);
+            response.put("docPaciente", docPaciente);
+
+            if (disponible) {
+                response.put("mensaje", "✅ Este DNI/Carné está disponible");
+            } else {
+                response.put("mensaje", "❌ Este DNI/Carné ya está registrado en el sistema");
+                response.put("accion", "Contacte con administración");
+            }
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ Error al validar DNI: {}", docPaciente, e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Error al validar DNI: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 📋 Obtener tipos de documentos disponibles
+     * Ejemplo: GET /api/asegurados/tipos-documento
+     * Respuesta: [{ "id_tip_doc": 1, "desc_tip_doc": "DNI" }, ...]
+     */
+    @GetMapping("/tipos-documento")
+    public ResponseEntity<?> obtenerTiposDocumento() {
+        try {
+            String sql = "SELECT id_tip_doc, desc_tip_doc FROM dim_tipo_documento WHERE stat_tip_doc = 'A' ORDER BY id_tip_doc";
+            List<Map<String, Object>> tiposDoc = jdbcTemplate.queryForList(sql);
+
+            log.info("📋 Tipos de documento obtenidos: {}", tiposDoc.size());
+            return ResponseEntity.ok(tiposDoc);
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener tipos de documento: {}", e.getMessage(), e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Error al obtener tipos de documento: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * Resolver un duplicado potencial - desactivar el registro incorrecto
+     * Ejemplo: POST /api/asegurados/duplicados/resolver
+     * Body: { "pkAseguradoDesactivar": "xxx", "docPaciente": "12345678", "decision": "desactivar_7_digitos" }
+     */
+    @PostMapping("/duplicados/resolver")
+    public ResponseEntity<?> resolverDuplicado(@RequestBody Map<String, String> request) {
+        try {
+            String pkAseguradoDesactivar = request.get("pkAseguradoDesactivar");
+            String docPaciente = request.get("docPaciente");
+            String decision = request.get("decision"); // "desactivar_7_digitos" o "desactivar_8_digitos"
+
+            log.info("🔧 Resolviendo duplicado - PK a desactivar: {}, Decisión: {}", pkAseguradoDesactivar, decision);
+
+            // 1. Desactivar el registro (marcar vigencia como false)
+            String updateAseguradoSql = "UPDATE asegurados SET vigencia = false WHERE pk_asegurado = ?";
+            int rowsAffected = jdbcTemplate.update(updateAseguradoSql, pkAseguradoDesactivar);
+
+            if (rowsAffected == 0) {
+                log.error("❌ No se encontró asegurado para desactivar: {}", pkAseguradoDesactivar);
+                return ResponseEntity.badRequest()
+                    .body(Map.of("error", "No se encontró el registro a desactivar"));
+            }
+
+            // 2. Marcar todos los asegurados con este DNI como no duplicados
+            String resolveDuplicadoSql = "UPDATE asegurados SET duplicado_potencial = false WHERE doc_paciente = ?";
+            int updateCount = jdbcTemplate.update(resolveDuplicadoSql, docPaciente);
+            log.info("✅ Marcados {} registros como NO duplicados", updateCount);
+
+            // 3. Actualizar tabla de auditoría para marcar como resuelto
+            String updateAuditSql = "UPDATE audit_duplicados_asegurados SET estado = 'RESUELTO' WHERE doc_paciente = ?";
+            int auditCount = jdbcTemplate.update(updateAuditSql, docPaciente);
+            log.info("✅ Auditoría actualizada para {} registros", auditCount);
+
+            log.info("✅ Duplicado resuelto correctamente - Desactivado: {}", pkAseguradoDesactivar);
+
+            return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "Duplicado resuelto correctamente - Registro desactivado",
+                "registroDesactivado", pkAseguradoDesactivar,
+                "decision", decision,
+                "registrosActualizados", updateCount
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error al resolver duplicado", e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Error al resolver duplicado: " + e.getMessage()));
         }
     }
 }

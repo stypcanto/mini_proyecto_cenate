@@ -1846,7 +1846,7 @@ export default function FormularioDiagnostico() {
                 />
             </div>
 
-            <div className="relative z-10 max-w-5xl mx-auto px-4 py-6">
+            <div className="relative z-10 w-full px-4 py-6">
                 {/* Header con gradiente institucional */}
                 <div className="bg-gradient-to-r from-[#0A5BA9] to-[#094580] rounded-2xl shadow-2xl p-8 mb-8 relative overflow-hidden">
                     <div className="flex items-center justify-between relative">
@@ -2071,7 +2071,7 @@ export default function FormularioDiagnostico() {
         <div className="min-h-screen bg-gray-50">
             {/* Header de tabs */}
             <div className="bg-white border-b border-gray-200 shadow-sm">
-                <div className="max-w-7xl mx-auto">
+                <div className="w-full">
                     <div className="flex overflow-x-auto scrollbar-hide">
                         {TABS_CONFIG.filter(tab => !tab.isPreview || vistaPreviaHabilitada).map((tab, index) => {
                             const Icon = tab.icon;
@@ -2112,7 +2112,7 @@ export default function FormularioDiagnostico() {
             </div>
 
             {/* Contenido del formulario */}
-            <div className="max-w-6xl mx-auto px-4 py-6">
+            <div className="w-full px-4 py-6">
                 {/* Tab: Datos Generales */}
                 {activeTab === "datos-generales" && (
                     <div className="space-y-6">

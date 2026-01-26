@@ -107,7 +107,7 @@ export default function DashboardEnfermeria() {
   if (!esSuperAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           {/* Header */}
           <div className="mb-6">
             <button
@@ -188,7 +188,7 @@ export default function DashboardEnfermeria() {
   if (!estadisticas && esSuperAdmin) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
-        <div className="max-w-7xl mx-auto">
+        <div className="w-full">
           <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
             <AlertCircle className="w-16 h-16 text-gray-400 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-900 mb-2">
@@ -212,7 +212,7 @@ export default function DashboardEnfermeria() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-6">
       {/* Header */}
-      <div className="max-w-7xl mx-auto mb-6">
+      <div className="w-full mb-6">
         <button
           onClick={() => navigate("/dashboard")}
           className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4 transition-colors"
@@ -237,7 +237,7 @@ export default function DashboardEnfermeria() {
       </div>
 
       {/* Tarjetas de Estadísticas Principales */}
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+      <div className="w-full grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
         {/* Total Enfermeras */}
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
           <div className="flex items-center justify-between mb-4">
@@ -299,7 +299,7 @@ export default function DashboardEnfermeria() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Distribución por IPRESS */}
         <div className="bg-white rounded-xl shadow-md p-6 border border-gray-100">
           <div className="flex items-center gap-3 mb-6">

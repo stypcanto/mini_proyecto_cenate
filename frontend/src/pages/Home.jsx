@@ -124,7 +124,7 @@ export default function Home() {
         {/* ============================================================ */}
         {/* 📘 Sección informativa institucional */}
         {/* ============================================================ */}
-        <section className="px-6 py-16 max-w-6xl mx-auto text-justify">
+        <section className="px-6 py-16 w-full text-justify">
           {/* Introducción */}
           <div className="bg-white rounded-2xl shadow-lg p-8 mb-12">
             <h2 className="text-3xl font-bold text-[#0a5ba9] mb-4">

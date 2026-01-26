@@ -5,7 +5,8 @@
 import React, { useState, useEffect } from "react";
 import {
   ArrowLeft, AlertTriangle, Eye, Check, X,
-  ChevronLeft, ChevronRight, Search, Download
+  ChevronLeft, ChevronRight, Search, Download,
+  Activity, TrendingDown, TrendingUp, BarChart3
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
@@ -23,6 +24,7 @@ export default function RevisarDuplicados() {
   const [busqueda, setBusqueda] = useState("");
   const [selectedItem, setSelectedItem] = useState(null);
   const [showDetalle, setShowDetalle] = useState(false);
+  const [resolving, setResolving] = useState(false);
 
   // Cargar duplicados al montar o cambiar paginación
   useEffect(() => {
@@ -96,17 +98,105 @@ export default function RevisarDuplicados() {
     toast.success("CSV exportado correctamente");
   };
 
+  const resolverDuplicado = async (pkAseguradoDesactivar, decision) => {
+    try {
+      setResolving(true);
+      const response = await fetch("/api/asegurados/duplicados/resolver", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pkAseguradoDesactivar,
+          docPaciente: selectedItem.docPaciente,
+          decision
+        })
+      });
+
+      if (!response.ok) throw new Error("Error al resolver");
+
+      const data = await response.json();
+      toast.success(data.message || "Duplicado resuelto correctamente ✅");
+
+      setShowDetalle(false);
+      setSelectedItem(null);
+      // Recargar duplicados
+      cargarDuplicados();
+    } catch (error) {
+      console.error("Error:", error);
+      toast.error("Error al resolver duplicado");
+    } finally {
+      setResolving(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 lg:p-6">
+      {/* Botón Volver */}
+      <button
+        onClick={() => navigate("/asegurados/dashboard")}
+        className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-6"
+      >
+        <ArrowLeft size={20} /> Volver al módulo
+      </button>
+
+      {/* Cards de Estadísticas Rápidas */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {/* Total de Duplicados */}
+        <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg shadow-md p-5 border-l-4 border-blue-500">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-blue-600">Total de Duplicados</p>
+              <p className="text-3xl font-bold text-blue-700 mt-2">{totalElementos}</p>
+              <p className="text-xs text-blue-600 mt-2">Registros con conflictos detectados</p>
+            </div>
+            <BarChart3 className="text-blue-400 opacity-70" size={32} />
+          </div>
+        </div>
+
+        {/* Activos */}
+        <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg shadow-md p-5 border-l-4 border-green-500">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-green-600">Duplicados Activos</p>
+              <p className="text-3xl font-bold text-green-700 mt-2">
+                {duplicados.filter(d => d.vigencia).length}
+              </p>
+              <p className="text-xs text-green-600 mt-2">Con vigencia actual</p>
+            </div>
+            <TrendingUp className="text-green-400 opacity-70" size={32} />
+          </div>
+        </div>
+
+        {/* Inactivos */}
+        <div className="bg-gradient-to-br from-red-50 to-red-100 rounded-lg shadow-md p-5 border-l-4 border-red-500">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-red-600">Duplicados Inactivos</p>
+              <p className="text-3xl font-bold text-red-700 mt-2">
+                {duplicados.filter(d => !d.vigencia).length}
+              </p>
+              <p className="text-xs text-red-600 mt-2">Sin vigencia válida</p>
+            </div>
+            <TrendingDown className="text-red-400 opacity-70" size={32} />
+          </div>
+        </div>
+
+        {/* Porcentaje Vigencia */}
+        <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-lg shadow-md p-5 border-l-4 border-amber-500">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="text-sm font-medium text-amber-600">% Vigencia</p>
+              <p className="text-3xl font-bold text-amber-700 mt-2">
+                {totalElementos > 0 ? Math.round((duplicados.filter(d => d.vigencia).length / totalElementos) * 100) : 0}%
+              </p>
+              <p className="text-xs text-amber-600 mt-2">Tasa de registros activos</p>
+            </div>
+            <Activity className="text-amber-400 opacity-70" size={32} />
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <div className="mb-6">
-        <button
-          onClick={() => navigate("/asegurados/dashboard")}
-          className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-4"
-        >
-          <ArrowLeft size={20} /> Volver al módulo
-        </button>
-
         <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-amber-500">
           <div className="flex items-start gap-3">
             <AlertTriangle className="text-amber-500 flex-shrink-0 mt-1" size={24} />
@@ -253,80 +343,135 @@ export default function RevisarDuplicados() {
       {/* Modal de detalles */}
       {showDetalle && selectedItem && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full max-h-96 overflow-auto">
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
-              <h2 className="text-2xl font-bold">Detalles del Duplicado</h2>
-              <p className="text-blue-100 mt-1">DNI: {selectedItem.docPaciente}</p>
+          <div className="bg-white rounded-lg shadow-2xl max-w-5xl w-full max-h-[90vh] overflow-y-auto flex flex-col">
+            <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 sticky top-0 z-10">
+              <div className="flex justify-between items-start">
+                <div>
+                  <h2 className="text-2xl font-bold">Detalles del Duplicado</h2>
+                  <p className="text-blue-100 mt-1">DNI: {selectedItem.docPaciente}</p>
+                </div>
+                <button
+                  onClick={() => setShowDetalle(false)}
+                  className="text-white hover:bg-blue-800 rounded-full p-2 transition"
+                >
+                  <X size={24} />
+                </button>
+              </div>
             </div>
 
-            <div className="p-6">
-              <div className="grid grid-cols-2 gap-6 mb-6">
-                {/* Registro de 7 caracteres */}
-                <div className="border border-amber-200 rounded-lg p-4 bg-amber-50">
-                  <h3 className="font-bold text-amber-900 mb-3">📋 Registro de 7 caracteres (MARCADO)</h3>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      <strong>PK:</strong> <span className="font-mono">{selectedItem.pkAsegurado7}</span>
-                    </p>
-                    <p>
-                      <strong>Nombre:</strong> {selectedItem.paciente7}
-                    </p>
-                    <p className="text-xs text-amber-700 mt-2 p-2 bg-white rounded">
-                      ⚠️ Este es el registro que fue marcado como duplicado potencial
-                    </p>
-                  </div>
-                </div>
-
-                {/* Registro de 8 caracteres */}
-                <div className="border border-green-200 rounded-lg p-4 bg-green-50">
-                  <h3 className="font-bold text-green-900 mb-3">✓ Registro de 8 caracteres (PRIORITARIO)</h3>
-                  <div className="space-y-2 text-sm">
-                    <p>
-                      <strong>PK:</strong> <span className="font-mono">{selectedItem.pkAsegurado8}</span>
-                    </p>
-                    <p>
-                      <strong>Nombre:</strong> {selectedItem.paciente8}
-                    </p>
-                    <p className="text-xs text-green-700 mt-2 p-2 bg-white rounded">
-                      ✓ Este es el registro considerado prioritario (DNI estándar)
-                    </p>
-                  </div>
-                </div>
+            <div className="p-4 flex-1 overflow-y-auto">
+              {/* Tabla comparativa */}
+              <div className="mb-5 bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-gray-100 border-b border-gray-200">
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 w-1/3">Tipo de Registro</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700 w-1/3">PK</th>
+                      <th className="px-4 py-3 text-left font-semibold text-gray-700">Nombre</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr className="border-b border-amber-100 bg-amber-50 hover:bg-amber-100">
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-amber-900">📋 7 caracteres</span>
+                        <span className="block text-xs text-amber-700 mt-0.5">MARCADO</span>
+                      </td>
+                      <td className="px-4 py-3 font-mono font-bold text-gray-800">{selectedItem.pkAsegurado7}</td>
+                      <td className="px-4 py-3 text-gray-800">{selectedItem.paciente7}</td>
+                    </tr>
+                    <tr className="bg-green-50 hover:bg-green-100">
+                      <td className="px-4 py-3">
+                        <span className="font-semibold text-green-900">✓ 8 caracteres</span>
+                        <span className="block text-xs text-green-700 mt-0.5">PRIORITARIO</span>
+                      </td>
+                      <td className="px-4 py-3 font-mono font-bold text-gray-800">{selectedItem.pkAsegurado8}</td>
+                      <td className="px-4 py-3 text-gray-800">{selectedItem.paciente8}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
 
-              {/* Estado y fecha */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-6">
-                <p className="text-sm">
-                  <strong>Estado:</strong>{" "}
-                  <span className="inline-block px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-medium">
+              {/* Información adicional compacta */}
+              <div className="grid grid-cols-3 gap-4 mb-5">
+                {/* Estado */}
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">Estado</p>
+                  <span className="inline-block px-2 py-1 bg-yellow-100 text-yellow-800 rounded text-xs font-medium">
                     {selectedItem.estado}
                   </span>
-                </p>
-                <p className="text-sm text-gray-600 mt-2">
-                  <strong>Marcado:</strong> {new Date(selectedItem.marcadoAt).toLocaleString("es-PE")}
-                </p>
+                </div>
+
+                {/* Fecha */}
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">Marcado</p>
+                  <p className="text-xs text-gray-700">{new Date(selectedItem.marcadoAt).toLocaleDateString("es-PE")}</p>
+                </div>
+
+                {/* DNI */}
+                <div className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                  <p className="text-xs font-semibold text-gray-600 mb-2">DNI</p>
+                  <p className="font-mono font-bold text-gray-800">{selectedItem.docPaciente}</p>
+                </div>
               </div>
 
-              {/* Instrucciones */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <h4 className="font-bold text-blue-900 mb-2">📌 Próximos pasos:</h4>
-                <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
-                  <li>Verificar en ESSI cuál es el registro correcto</li>
-                  <li>Comparar nombres y datos personales</li>
-                  <li>Determinar si se debe desactivar uno de los registros</li>
-                  <li>Documentar la decisión en auditoría</li>
-                </ol>
+              {/* Instrucciones y recomendación en una fila */}
+              <div className="grid grid-cols-2 gap-4 mb-5">
+                {/* Instrucciones */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <h4 className="font-bold text-blue-900 mb-2 text-xs">📌 Próximos pasos:</h4>
+                  <ol className="text-xs text-blue-800 space-y-0.5 list-decimal list-inside">
+                    <li>Verificar en ESSI cuál es correcto</li>
+                    <li>Comparar datos personales</li>
+                    <li>Seleccionar "Desactivar" incorrecto</li>
+                    <li>Quedaría en auditoría</li>
+                  </ol>
+                </div>
+
+                {/* Recomendación */}
+                <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                  <p className="text-xs font-semibold text-green-900 mb-1">💡 Recomendación:</p>
+                  <p className="text-xs text-green-800">Mantener registro de 8 dígitos (estándar). Desactivar de 7 dígitos.</p>
+                </div>
+              </div>
+
+              {/* Opciones de Resolución */}
+              <div className="bg-gradient-to-r from-green-50 to-green-100 border-2 border-green-300 rounded-lg p-4">
+                <h4 className="font-bold text-green-900 mb-3 text-sm">✅ Resolver Duplicado</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    onClick={() => resolverDuplicado(selectedItem.pkAsegurado7, "desactivar_7_digitos")}
+                    disabled={resolving}
+                    className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition disabled:opacity-50 text-sm font-medium"
+                  >
+                    {resolving ? "Procesando..." : "❌ Desactivar 7 dígitos"}
+                  </button>
+                  <button
+                    onClick={() => resolverDuplicado(selectedItem.pkAsegurado8, "desactivar_8_digitos")}
+                    disabled={resolving}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 text-sm font-medium"
+                  >
+                    {resolving ? "Procesando..." : "❌ Desactivar 8 dígitos"}
+                  </button>
+                </div>
               </div>
             </div>
 
-            {/* Footer */}
-            <div className="bg-gray-100 px-6 py-4 border-t border-gray-200 flex justify-end">
+            {/* Footer sticky */}
+            <div className="bg-gray-100 px-6 py-4 border-t border-gray-200 flex justify-between sticky bottom-0">
               <button
                 onClick={() => setShowDetalle(false)}
-                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition"
+                className="px-6 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition font-medium"
               >
                 Cerrar
               </button>
+              <a
+                href="http://10.56.1.158/sgss/servlet/hmain"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                🔗 Abrir ESSI
+              </a>
             </div>
           </div>
         </div>
