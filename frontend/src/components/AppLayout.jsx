@@ -18,8 +18,8 @@ export default function AppLayout({ children, title = "" }) {
 
   // Ajustar márgenes laterales basado en si el sidebar está colapsado
   const horizontalPadding = collapsed
-    ? "px-28 md:px-40" // Más espacio cuando está colapsado
-    : "px-24 md:px-32"; // Márgenes normales
+    ? "px-6 md:px-12" // MENOS padding cuando está colapsado = MÁS espacio para contenido
+    : "px-24 md:px-32"; // MÁS padding cuando está expandido = MENOS espacio (sidebar ocupa más)
 
   return (
     <div
