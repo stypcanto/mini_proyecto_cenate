@@ -29,11 +29,11 @@ public interface TipoBolsaRepository extends JpaRepository<TipoBolsa, Long> {
     List<TipoBolsa> findByStatTipoBolsaOrderByDescTipoBolsaAsc(@Param("stat") String stat);
 
     /**
-     * Búsqueda paginada con filtros (case-insensitive con ILIKE)
+     * Búsqueda paginada con filtros (case-insensitive con ILIKE y type casting)
      */
     @Query("SELECT t FROM TipoBolsa t WHERE " +
-           "(:busqueda IS NULL OR t.codTipoBolsa ILIKE CONCAT('%', :busqueda, '%') " +
-           "OR t.descTipoBolsa ILIKE CONCAT('%', :busqueda, '%')) AND " +
+           "(:busqueda IS NULL OR CAST(t.codTipoBolsa AS text) ILIKE CONCAT('%', CAST(:busqueda AS text), '%') " +
+           "OR CAST(t.descTipoBolsa AS text) ILIKE CONCAT('%', CAST(:busqueda AS text), '%')) AND " +
            "(:estado IS NULL OR t.statTipoBolsa = :estado) " +
            "ORDER BY t.descTipoBolsa ASC")
     Page<TipoBolsa> buscarTiposBolsas(
