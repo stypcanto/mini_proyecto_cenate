@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, AlertCircle, CheckCircle, FileText, Loader, Download, Info, Eye } from 'lucide-react';
+import { Upload, AlertCircle, CheckCircle, FileText, Loader, Download, Info, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import bolsasService from '../../services/bolsasService';
 import * as XLSX from 'xlsx';
@@ -33,6 +33,8 @@ export default function CargarDesdeExcel() {
   const [loadingTipos, setLoadingTipos] = useState(true);
   const [loadingServicios, setLoadingServicios] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [expandedObligatorios, setExpandedObligatorios] = useState(false);
+  const [expandedAutoCalculados, setExpandedAutoCalculados] = useState(false);
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
@@ -301,12 +303,25 @@ export default function CargarDesdeExcel() {
           {/* Columna Izquierda: Información */}
           <div className="lg:col-span-2">
             {/* Card: Campos Obligatorios */}
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-blue-600">
-              <div className="flex items-center gap-2 mb-4">
-                <Info size={24} className="text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios (10 campos)</h2>
-              </div>
-              <div className="space-y-3">
+            <div className="bg-white rounded-xl shadow-lg mb-6 border-l-4 border-blue-600">
+              <button
+                onClick={() => setExpandedObligatorios(!expandedObligatorios)}
+                className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Info size={24} className="text-blue-600" />
+                  <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios (10 campos)</h2>
+                </div>
+                {expandedObligatorios ? (
+                  <ChevronUp size={24} className="text-blue-600" />
+                ) : (
+                  <ChevronDown size={24} className="text-blue-600" />
+                )}
+              </button>
+
+              {expandedObligatorios && (
+              <div className="px-6 pb-6">
+                <div className="space-y-3">
                 <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
                   <div className="text-2xl">📅</div>
                   <div className="flex-1">
@@ -388,14 +403,29 @@ export default function CargarDesdeExcel() {
                   </div>
                 </div>
               </div>
+              </div>
+              )}
             </div>
 
             {/* Card: Auto-Cálculos */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-amber-500">
-              <div className="flex items-center gap-2 mb-4">
-                <Eye size={24} className="text-amber-600" />
-                <h2 className="text-xl font-bold text-gray-800">Campos Auto-Calculados</h2>
-              </div>
+            <div className="bg-white rounded-xl shadow-lg border-l-4 border-amber-500">
+              <button
+                onClick={() => setExpandedAutoCalculados(!expandedAutoCalculados)}
+                className="w-full p-6 flex items-center justify-between hover:bg-amber-50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <Eye size={24} className="text-amber-600" />
+                  <h2 className="text-xl font-bold text-gray-800">Campos Auto-Calculados</h2>
+                </div>
+                {expandedAutoCalculados ? (
+                  <ChevronUp size={24} className="text-amber-600" />
+                ) : (
+                  <ChevronDown size={24} className="text-amber-600" />
+                )}
+              </button>
+
+              {expandedAutoCalculados && (
+              <div className="px-6 pb-6">
               <p className="text-sm text-gray-600 mb-4">El sistema calcula automáticamente los siguientes campos:</p>
               <div className="space-y-3">
                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
@@ -410,6 +440,8 @@ export default function CargarDesdeExcel() {
                   <span className="font-semibold">✅ Ventaja:</span> No necesitas incluir la columna EDAD en tu Excel. El sistema la calcula automáticamente desde la fecha de nacimiento.
                 </p>
               </div>
+              </div>
+              )}
             </div>
           </div>
 
