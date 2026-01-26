@@ -5,12 +5,13 @@ import bolsasService from '../../services/bolsasService';
 import * as XLSX from 'xlsx';
 
 /**
- * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.6.0 (PLANTILLA MÍNIMA)
- * Permitir carga masiva de bolsas desde archivos Excel/CSV con estructura mínima
+ * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.8.0 (PLANTILLA COMPLETA)
+ * Permitir carga masiva de bolsas desde archivos Excel/CSV con estructura completa
  *
  * Características:
- * - Plantilla MÍNIMA: Solo 2 campos obligatorios (DNI, Código Adscripción)
- * - Enriquecimiento automático: Obtiene nombres y datos de asegurados
+ * - Plantilla COMPLETA: 10 campos requeridos (DNI, Tipo Documento, Asegurado, Sexo, Tipo Cita, etc.)
+ * - Auto-cálculo: EDAD se calcula automáticamente desde FECHA DE NACIMIENTO
+ * - Tipo Cita: Recita, Interconsulta, Voluntaria
  * - Carga de archivos Excel (.xlsx, .xls, .csv)
  * - Validación de formato y estructura
  * - Descarga de plantilla Excel de ejemplo
@@ -166,36 +167,88 @@ export default function CargarDesdeExcel() {
     }
   };
 
-  // Función para descargar plantilla Excel (MÍNIMA)
+  // Función para descargar plantilla Excel (COMPLETA)
   const descargarPlantilla = () => {
     const datosPlantilla = [
       {
+        'FECHA PREFERIDA QUE NO FUE ATENDIDA': '2025-12-15',
+        'TIPO DOCUMENTO': 'DNI',
         'DNI': '12345678',
-        'Código Adscripción': '349',
-        'Nombres y Apellidos': 'Juan Pérez García'
+        'ASEGURADO': 'Juan Pérez García',
+        'SEXO': 'M',
+        'FECHA DE NACIMIENTO': '1980-05-20',
+        'TELÉFONO': '987654321',
+        'CORREO': 'juan.perez@email.com',
+        'COD. IPRESS ADSCRIPCIÓN': '349',
+        'TIPO CITA': 'Recita'
       },
       {
+        'FECHA PREFERIDA QUE NO FUE ATENDIDA': '2025-12-10',
+        'TIPO DOCUMENTO': 'DNI',
         'DNI': '87654321',
-        'Código Adscripción': '350',
-        'Nombres y Apellidos': 'María López Rodríguez'
+        'ASEGURADO': 'María López Rodríguez',
+        'SEXO': 'F',
+        'FECHA DE NACIMIENTO': '1985-08-15',
+        'TELÉFONO': '987654322',
+        'CORREO': 'maria.lopez@email.com',
+        'COD. IPRESS ADSCRIPCIÓN': '350',
+        'TIPO CITA': 'Interconsulta'
       },
       {
+        'FECHA PREFERIDA QUE NO FUE ATENDIDA': '2025-12-12',
+        'TIPO DOCUMENTO': 'DNI',
         'DNI': '11223344',
-        'Código Adscripción': '351',
-        'Nombres y Apellidos': 'Carlos Gómez Ruiz'
+        'ASEGURADO': 'Carlos Gómez Ruiz',
+        'SEXO': 'M',
+        'FECHA DE NACIMIENTO': '1990-03-10',
+        'TELÉFONO': '987654323',
+        'CORREO': 'carlos.gomez@email.com',
+        'COD. IPRESS ADSCRIPCIÓN': '351',
+        'TIPO CITA': 'Voluntaria'
+      },
+      {
+        'FECHA PREFERIDA QUE NO FUE ATENDIDA': '2025-12-08',
+        'TIPO DOCUMENTO': 'DNI',
+        'DNI': '44556677',
+        'ASEGURADO': 'Patricia Sánchez Ruiz',
+        'SEXO': 'F',
+        'FECHA DE NACIMIENTO': '1975-11-30',
+        'TELÉFONO': '987654324',
+        'CORREO': 'patricia.sanchez@email.com',
+        'COD. IPRESS ADSCRIPCIÓN': '349',
+        'TIPO CITA': 'Recita'
+      },
+      {
+        'FECHA PREFERIDA QUE NO FUE ATENDIDA': '2025-12-20',
+        'TIPO DOCUMENTO': 'DNI',
+        'DNI': '88990011',
+        'ASEGURADO': 'Roberto Morales Torres',
+        'SEXO': 'M',
+        'FECHA DE NACIMIENTO': '1995-07-05',
+        'TELÉFONO': '987654325',
+        'CORREO': 'roberto.morales@email.com',
+        'COD. IPRESS ADSCRIPCIÓN': '350',
+        'TIPO CITA': 'Interconsulta'
       }
     ];
 
     const ws = XLSX.utils.json_to_sheet(datosPlantilla);
     ws['!cols'] = [
-      { wch: 15 },   // DNI
-      { wch: 20 },   // Código Adscripción
-      { wch: 35 }    // Nombres y Apellidos
+      { wch: 28 },   // FECHA PREFERIDA QUE NO FUE ATENDIDA
+      { wch: 15 },   // TIPO DOCUMENTO
+      { wch: 12 },   // DNI
+      { wch: 30 },   // ASEGURADO
+      { wch: 8 },    // SEXO
+      { wch: 20 },   // FECHA DE NACIMIENTO
+      { wch: 15 },   // TELÉFONO
+      { wch: 25 },   // CORREO
+      { wch: 20 },   // COD. IPRESS ADSCRIPCIÓN
+      { wch: 18 }    // TIPO CITA
     ];
 
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Plantilla');
-    XLSX.writeFile(wb, 'PLANTILLA_SOLICITUD_BOLSA_MINIMA_v1.6.0.xlsx');
+    XLSX.writeFile(wb, 'PLANTILLA_SOLICITUD_BOLSA_COMPLETA_v1.8.0.xlsx');
   };
 
   return (
@@ -222,46 +275,110 @@ export default function CargarDesdeExcel() {
             <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-blue-600">
               <div className="flex items-center gap-2 mb-4">
                 <Info size={24} className="text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios</h2>
+                <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios (10 campos)</h2>
               </div>
-              <div className="space-y-4">
+              <div className="space-y-3">
                 <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
-                  <div className="text-2xl">📋</div>
-                  <div>
-                    <p className="font-semibold text-gray-800">DNI (Documento Nacional de Identidad)</p>
-                    <p className="text-sm text-gray-600">Número único del paciente (8 dígitos)</p>
-                    <p className="text-xs text-blue-600 mt-1">Ej: 12345678</p>
+                  <div className="text-2xl">📅</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">1. FECHA PREFERIDA QUE NO FUE ATENDIDA</p>
+                    <p className="text-sm text-gray-600">Fecha en que debería haber sido atendido</p>
+                    <p className="text-xs text-blue-600 mt-1">Formato: YYYY-MM-DD | Ej: 2025-12-15</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">📄</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">2. TIPO DOCUMENTO</p>
+                    <p className="text-sm text-gray-600">Tipo de documento de identidad</p>
+                    <p className="text-xs text-blue-600 mt-1">Ej: DNI, RUC, PASAPORTE</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">🆔</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">3. DNI</p>
+                    <p className="text-sm text-gray-600">Número único del paciente</p>
+                    <p className="text-xs text-blue-600 mt-1">Ej: 12345678 (8 dígitos exactos)</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">👤</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">4. ASEGURADO</p>
+                    <p className="text-sm text-gray-600">Nombres completos del paciente</p>
+                    <p className="text-xs text-blue-600 mt-1">Ej: Juan Pérez García</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">⚧</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">5. SEXO</p>
+                    <p className="text-sm text-gray-600">Género del paciente</p>
+                    <p className="text-xs text-blue-600 mt-1">Ej: M (Masculino) | F (Femenino)</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">🎂</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">6. FECHA DE NACIMIENTO</p>
+                    <p className="text-sm text-gray-600">Fecha de nacimiento (la edad se calcula automáticamente)</p>
+                    <p className="text-xs text-blue-600 mt-1">Formato: YYYY-MM-DD | Ej: 1980-05-20</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">📱</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">7. TELÉFONO</p>
+                    <p className="text-sm text-gray-600">Número de teléfono de contacto</p>
+                    <p className="text-xs text-blue-600 mt-1">Ej: 987654321</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">📧</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">8. CORREO</p>
+                    <p className="text-sm text-gray-600">Dirección de correo electrónico</p>
+                    <p className="text-xs text-blue-600 mt-1">Ej: juan.perez@email.com</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                  <div className="text-2xl">🏥</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">9. COD. IPRESS ADSCRIPCIÓN</p>
+                    <p className="text-sm text-gray-600">Código de la IPRESS donde está adscrito el paciente</p>
+                    <p className="text-xs text-blue-600 mt-1">Ej: 349 (H.II PUCALLPA), 350, 351...</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-3 bg-green-50 rounded-lg">
-                  <div className="text-2xl">🏥</div>
-                  <div>
-                    <p className="font-semibold text-gray-800">Código Adscripción</p>
-                    <p className="text-sm text-gray-600">Código de la IPRESS donde está adscrito el paciente</p>
-                    <p className="text-xs text-green-600 mt-1">Ej: 349 (H.II PUCALLPA), 350, 351...</p>
+                  <div className="text-2xl">🔖</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">10. TIPO CITA</p>
+                    <p className="text-sm text-gray-600">Clasificación del tipo de atención solicitada</p>
+                    <p className="text-xs text-green-600 mt-1">Valores válidos: Recita | Interconsulta | Voluntaria</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Card: Campos Opcionales */}
+            {/* Card: Auto-Cálculos */}
             <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-amber-500">
               <div className="flex items-center gap-2 mb-4">
                 <Eye size={24} className="text-amber-600" />
-                <h2 className="text-xl font-bold text-gray-800">Campos Opcionales</h2>
+                <h2 className="text-xl font-bold text-gray-800">Campos Auto-Calculados</h2>
               </div>
-              <p className="text-sm text-gray-600 mb-4">Si estos campos no están presentes, se recuperarán automáticamente de la base de datos:</p>
+              <p className="text-sm text-gray-600 mb-4">El sistema calcula automáticamente los siguientes campos:</p>
               <div className="space-y-3">
                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                  <div className="text-2xl mb-2">👤</div>
-                  <p className="font-semibold text-gray-800">Nombres y Apellidos</p>
-                  <p className="text-xs text-gray-600 mt-1">Se obtiene de la tabla de asegurados si no está presente</p>
-                  <p className="text-xs text-amber-600 mt-1">Ej: Juan Pérez García</p>
+                  <div className="text-2xl mb-2">📊</div>
+                  <p className="font-semibold text-gray-800">EDAD</p>
+                  <p className="text-xs text-gray-600 mt-1">Se calcula automáticamente a partir de FECHA DE NACIMIENTO</p>
+                  <p className="text-xs text-amber-600 mt-1">Ej: Si nació el 1980-05-20, la edad será 44 años (en 2025)</p>
                 </div>
               </div>
               <div className="mt-4 p-3 bg-green-50 rounded-lg border border-green-200">
                 <p className="text-sm text-green-800">
-                  <span className="font-semibold">✅ Ventaja:</span> Envía solo DNI y Código Adscripción. El sistema obtiene el nombre y demás datos automáticamente.
+                  <span className="font-semibold">✅ Ventaja:</span> No necesitas incluir la columna EDAD en tu Excel. El sistema la calcula automáticamente desde la fecha de nacimiento.
                 </p>
               </div>
             </div>
@@ -303,11 +420,15 @@ export default function CargarDesdeExcel() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
+                  <span className="text-gray-700">10 campos obligatorios completados</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <span className="text-blue-600 font-bold">✓</span>
                   <span className="text-gray-700">DNI: 8 dígitos exactos</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">Código Adscripción: válido en IPRESS</span>
+                  <span className="text-gray-700">TIPO CITA: Recita, Interconsulta o Voluntaria</span>
                 </li>
               </ul>
             </div>
@@ -516,8 +637,20 @@ export default function CargarDesdeExcel() {
           <h3 className="font-bold text-gray-800 mb-4 text-lg">❓ Preguntas Frecuentes</h3>
           <div className="space-y-4 text-sm">
             <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Necesito la columna "Nombres y Apellidos"?</p>
-              <p className="text-gray-600 mt-1">No es obligatoria. Si la omites, el sistema obtiene automáticamente el nombre de la tabla de asegurados usando el DNI.</p>
+              <p className="font-semibold text-gray-800">¿Necesito incluir la columna EDAD?</p>
+              <p className="text-gray-600 mt-1">No. La EDAD se calcula automáticamente a partir de FECHA DE NACIMIENTO. No incluyas esta columna en tu Excel.</p>
+            </div>
+            <div className="border-b pb-4">
+              <p className="font-semibold text-gray-800">¿Cuál es el formato correcto para las fechas?</p>
+              <p className="text-gray-600 mt-1">Usa formato ISO: YYYY-MM-DD (Ej: 2025-12-15 para 15 de diciembre de 2025). Excel convertirá automáticamente fechas a este formato.</p>
+            </div>
+            <div className="border-b pb-4">
+              <p className="font-semibold text-gray-800">¿Qué valores son válidos para SEXO?</p>
+              <p className="text-gray-600 mt-1">Usa: <strong>M</strong> para Masculino o <strong>F</strong> para Femenino. El sistema es sensible a mayúsculas.</p>
+            </div>
+            <div className="border-b pb-4">
+              <p className="font-semibold text-gray-800">¿Qué valores son válidos para TIPO CITA?</p>
+              <p className="text-gray-600 mt-1">Usa uno de estos tres valores: <strong>Recita</strong>, <strong>Interconsulta</strong> o <strong>Voluntaria</strong>. El sistema es sensible a mayúsculas.</p>
             </div>
             <div className="border-b pb-4">
               <p className="font-semibold text-gray-800">¿Qué pasa si el DNI o Código Adscripción no existen?</p>
@@ -528,8 +661,8 @@ export default function CargarDesdeExcel() {
               <p className="text-gray-600 mt-1">No. El sistema valida y rechaza duplicados por la combinación única: (DNI + Tipo de Bolsa).</p>
             </div>
             <div>
-              <p className="font-semibold text-gray-800">¿Cuál es la estructura mínima requerida?</p>
-              <p className="text-gray-600 mt-1">Solo necesitas 2 columnas: <strong>DNI</strong> y <strong>Código Adscripción</strong>. ¡Eso es todo!</p>
+              <p className="font-semibold text-gray-800">¿Debo llenar todos los 10 campos?</p>
+              <p className="text-gray-600 mt-1">Sí. Todos los 10 campos son obligatorios. Descarga la plantilla para ver la estructura exacta que espera el sistema.</p>
             </div>
           </div>
         </div>

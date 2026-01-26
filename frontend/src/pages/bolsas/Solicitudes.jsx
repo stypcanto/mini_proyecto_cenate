@@ -98,7 +98,15 @@ export default function Solicitudes() {
           ipress: solicitud.id_bolsa ? `Bolsa ${solicitud.id_bolsa}` : 'N/A',
           bolsa: solicitud.numero_solicitud || 'Sin clasificar',
           fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
-          fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A'
+          fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
+          // ============================================================================
+          // 📋 LOS 10 CAMPOS DEL EXCEL v1.8.0
+          // ============================================================================
+          fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ? new Date(solicitud.fecha_preferida_no_atendida).toLocaleDateString('es-PE') : 'N/A',
+          tipoDocumento: solicitud.tipo_documento || 'N/A',
+          fechaNacimiento: solicitud.fecha_nacimiento ? new Date(solicitud.fecha_nacimiento).toLocaleDateString('es-PE') : 'N/A',
+          tipoCita: solicitud.tipo_cita || 'N/A',
+          codigoIpress: solicitud.codigo_ipress || 'N/A'
         };
       });
 
@@ -636,19 +644,27 @@ export default function Solicitudes() {
                         className="w-5 h-5 cursor-pointer"
                       />
                     </th>
+                    {/* Columnas existentes */}
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo Bolsa</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo Doc</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Paciente</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nac.</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Edad</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Correo</th>
+                    {/* Nuevos campos v1.8.0 */}
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Cod. IPRESS</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo Cita</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Pref.</th>
+                    {/* Columnas de gestión */}
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red Asistencial</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado de Cita</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Solicitante</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestor Asignado</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
@@ -663,14 +679,31 @@ export default function Solicitudes() {
                           className="w-4 h-4 border-2 border-gray-300 rounded cursor-pointer"
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.cod_tipo_bolsa}</td>
+                      {/* Columnas de datos personales */}
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.cod_tipo_bolsa || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.tipoDocumento}</td>
                       <td className="px-4 py-3 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">{solicitud.paciente}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.edad || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefono || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.correo || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.nombre_ipress}>{solicitud.nombre_ipress}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaNacimiento}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.edad}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefono}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.correo}>{solicitud.correo}</td>
+                      {/* Nuevos campos v1.8.0 */}
+                      <td className="px-4 py-3 text-sm text-gray-900 font-semibold" title="Código IPRESS">{solicitud.codigoIpress}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">
+                        <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap inline-block ${
+                          solicitud.tipoCita === 'Recita' ? 'bg-blue-100 text-blue-700' :
+                          solicitud.tipoCita === 'Interconsulta' ? 'bg-purple-100 text-purple-700' :
+                          solicitud.tipoCita === 'Voluntaria' ? 'bg-green-100 text-green-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {solicitud.tipoCita}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
+                      {/* Columnas de gestión */}
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.nombre_ipress}>{solicitud.nombre_ipress || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.red_asistencial || 'Sin Red'}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
                       <td className="px-4 py-3">
