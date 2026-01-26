@@ -33,7 +33,7 @@ export default function UserMenu() {
         title="Menú de usuario"
       >
         {/* Avatar circular con foto */}
-        <div className="w-10 h-10 rounded-full bg-white/20 overflow-hidden flex items-center justify-center border border-white/30">
+        <div className="w-14 h-14 rounded-full bg-white/20 overflow-hidden flex items-center justify-center border border-white/30">
           {user?.foto ? (
             <img
               src={user.foto}
@@ -41,7 +41,7 @@ export default function UserMenu() {
               className="w-full h-full object-cover"
             />
           ) : (
-            <span className="text-white font-bold text-sm">
+            <span className="text-white font-bold text-base">
               {user?.nombreCompleto?.charAt(0)?.toUpperCase()}
             </span>
           )}

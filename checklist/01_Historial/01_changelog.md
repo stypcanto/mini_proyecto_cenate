@@ -6,6 +6,152 @@
 > - ⭐ Módulo Tele-ECG: `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (v1.24.0 + UI optimizado)
 > - ⭐ **Módulo Bolsas**: `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0 - NUEVO)
 > - ⭐ **CRUD Tipos Bolsas**: `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.0.0 - NUEVO)
+> - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
+
+---
+
+## v1.35.0 (2026-01-26) - 🎨 Mejoras UI/UX Bienvenida v2.0.0 + Header Expandido + Componentes Rediseñados
+
+### 🎯 Descripción
+
+**Rediseño completo de la página `/admin/bienvenida` y componentes globales del header**. Duración: 2+ horas. Cambios:
+- ✅ **Bienvenida.jsx v2.0.0**: Rediseño con banner gradiente, tarjetas interactivas, actividades administrativas
+- ✅ **Header Expandido**: Altura aumentada (64px → 96px) para mejor visualización de foto usuario
+- ✅ **Avatar Mayor**: 40px → 56px para mejor visibilidad cuando se cargue foto real
+- ✅ **Nombre Usuario**: Mostrar primer nombre en lugar de DNI (Styp vs 44914706)
+- ✅ **Navegación Selectiva**: Desactivar navegación tarjetas 0-1, mantener visual normal
+- ✅ **Spacing Global**: Compensación correcta de header en AppLayout
+
+### 🔧 Cambios Técnicos
+
+#### **Frontend - Componentes Modificados:**
+
+**1. `src/pages/common/Bienvenida.jsx` (REDISEÑO COMPLETO)**
+- ✅ Banner principal con gradiente azul-verde (cenate-600 → emerald-600)
+- ✅ Avatar circular grande (w-28 h-28) con número "4" o foto
+- ✅ Mostrar nombre personalizado: `{user?.nombreCompleto?.split(' ')[0]}`
+- ✅ Rol actual con icono Shield
+- ✅ 3 Tarjetas de Acción (Mi Perfil, Mi Información, Seguridad)
+  - Tarjeta 0-1: Deshabilitadas (SIN navegación)
+  - Tarjeta 2: Navegable a `/user/security`
+- ✅ 6 Actividades Administrativas con navegación a:
+  - `/admin/usuarios-permisos` (Gestión Usuarios, Personal)
+  - `/admin/permisos` (Control Permisos)
+  - `/admin/logs` (Auditoría)
+  - `/admin/modulos` (Configuración)
+  - `/user/security` (Seguridad)
+- ✅ Footer con branding CENATE
+- ✅ Loading spinner animado (300ms)
+- ✅ Dark mode completo
+
+**2. `src/components/layout/HeaderCenate.jsx` (DIMENSIONES AUMENTADAS)**
+- ✅ Altura: h-16 (64px) → h-24 (96px) [+50%]
+- ✅ Botón Notificaciones: p-2.5 → p-3, w-5 h-5 → w-6 h-6
+- ✅ Estructura: Logo | Espacio | Notificaciones + Avatar
+- ✅ Notificaciones: Badge dinámico con contador
+- ✅ Integración UserMenu para mostrar avatar expandido
+
+**3. `src/components/layout/UserMenu.jsx` (AVATAR EXPANDIDO)**
+- ✅ Avatar en header: w-10 h-10 (40px) → w-14 h-14 (56px) [+40%]
+- ✅ Letra inicial: text-sm → text-base
+- ✅ Foto usuario: `object-cover` para proporción correcta
+- ✅ Dropdown expandible con información completa
+- ✅ Opciones: Mi Cuenta, Cerrar Sesión
+
+**4. `src/components/AppLayout.jsx` (COMPENSACIÓN LAYOUT)**
+- ✅ Main element: mt-16 → mt-24 (compensación header)
+- ✅ Section content: pt-20 → pt-24 (nuevo padding)
+- ✅ Comentario actualizado: "64px h-16" → "96px h-24"
+
+**5. `src/config/componentRegistry.js` (CORRECCIÓN RUTA)**
+- ✅ Línea 30: Cambio import de UserDashboard → Bienvenida
+- ✅ `/admin/bienvenida` apunta correctamente a Bienvenida.jsx
+
+#### **Responsivo Design**:
+- ✅ Mobile (<768px): Grid 1 columna, header comprimido, menú hamburguesa
+- ✅ Tablet (768-1024px): Grid 2-3 columnas, nombre usuario oculto
+- ✅ Desktop (>1024px): Grid 3 columnas, nombre + rol visibles, sidebar expandido
+
+#### **Dark Mode**:
+- ✅ Tarjetas: `bg-white dark:bg-slate-800`
+- ✅ Textos: `text-gray-800 dark:text-white`
+- ✅ Actividades: `hover:bg-gray-50 dark:hover:bg-slate-700/50`
+- ✅ Toggle persistente con localStorage
+
+#### **Accesibilidad**:
+- ✅ Aria labels en botones
+- ✅ Semantic HTML: `<header>`, `<main>`, `<section>`, `<footer>`
+- ✅ Keyboard navigation: Tab, Enter
+- ✅ Focus rings visibles
+
+### 📐 Cambios de Dimensiones
+
+| Elemento | Antes | Después | Cambio |
+|----------|-------|---------|--------|
+| Header alto | h-16 (64px) | h-24 (96px) | +50% |
+| Avatar usuario | w-10 h-10 (40px) | w-14 h-14 (56px) | +40% |
+| Main margin-top | mt-16 | mt-24 | +50% |
+| Content padding-top | pt-20 | pt-24 | +20% |
+| Icono campana | w-5 h-5 | w-6 h-6 | +20% |
+
+### 🎨 Paleta de Colores
+
+**Banner**: Gradiente from-cenate-600 (azul) to-emerald-600 (verde)
+**Tarjetas**:
+- Fondo: bg-white dark:bg-slate-800
+- Hover: hover:shadow-2xl hover:scale-105
+- Colores icono: azul (#0084D1), verde (#10B981), púrpura (#9333EA)
+
+**Actividades**:
+- Fondo icono: bg-cenate-100 dark:bg-cenate-900/30
+- Hover: hover:bg-gray-50 dark:hover:bg-slate-700/50
+- Texto: text-cenate-600 dark:text-cenate-400
+
+### 🔄 Flujo de Navegación
+
+```
+/admin/bienvenida (Bienvenida.jsx v2.0.0)
+├── Banner Bienvenida
+│   └── Rol: SUPERADMIN
+├── Tarjetas Acción
+│   ├── [0] Mi Perfil → ❌ SIN NAVEGAR
+│   ├── [1] Mi Información → ❌ SIN NAVEGAR
+│   └── [2] Seguridad y Contraseña → ✅ /user/security
+└── Actividades Administrativas
+    ├── [0] Gestión Usuarios → /admin/usuarios-permisos
+    ├── [1] Control Permisos → /admin/permisos
+    ├── [2] Auditoría Sistema → /admin/logs
+    ├── [3] Configuración Sistema → /admin/modulos
+    ├── [4] Gestión Personal → /admin/usuarios-permisos
+    └── [5] Seguridad → /user/security
+```
+
+### ✅ Testing Completado
+
+- [x] Banner muestra nombre correcto (Styp Canto Rondón → Styp)
+- [x] Tarjeta 0 (Mi Perfil) no navega
+- [x] Tarjeta 1 (Mi Información) no navega
+- [x] Tarjeta 2 (Seguridad) navega a `/user/security`
+- [x] Actividades tienen navegación correcta
+- [x] Header altura 96px (visible en DevTools)
+- [x] Avatar es 56x56px
+- [x] Responsive funciona: mobile, tablet, desktop
+- [x] Dark mode funciona (toggle localStorage)
+- [x] Efectos hover suave (transition-all 300ms)
+- [x] Loading spinner animado
+
+### 📚 Documentación
+
+- ⭐ **Completa**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (Análisis completo)
+- 📋 **Rápida**: `frontend/CAMBIOS_UI_UX_BIENVENIDA.md` (Referencia en proyecto)
+
+### 🚀 Próximos Pasos
+
+1. Cargar foto real del usuario desde endpoint `/usuarios/me` (campo `foto`)
+2. Agregar skeleton screens mientras carga contenido
+3. Integrar badge notificaciones en header
+4. Agregar animaciones fade-in al cargar página
+5. Personalizar colores banner según rol del usuario
 
 ---
 

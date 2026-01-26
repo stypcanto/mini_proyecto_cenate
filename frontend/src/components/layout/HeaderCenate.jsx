@@ -73,30 +73,13 @@ export default function HeaderCenate() {
   return (
     <>
     <header
-      className="w-full h-16 flex items-center justify-between px-6 fixed top-0 left-0 right-0 z-40
+      className="w-full h-24 flex items-center justify-between px-6 fixed top-0 left-0 right-0 z-30
                  bg-gradient-to-r from-[#0a5ba9] via-[#0d4e90] to-[#073b6c]
                  dark:from-slate-900 dark:to-slate-800
                  shadow-lg backdrop-blur-md border-b border-white/10 transition-all duration-300"
     >
-      {/* 🏥 Logo e identidad */}
-      <div
-        className="flex items-center gap-3 cursor-pointer select-none"
-        onClick={() => navigate("/dashboard")}
-      >
-        <img
-          src="/images/Logo CENATE Blanco.png"
-          alt="Logo CENATE"
-          className="w-10 h-10 object-contain drop-shadow-md"
-        />
-        <div className="flex flex-col">
-          <h1 className="text-base sm:text-lg font-bold text-white leading-tight">
-            Plataforma CENATE
-          </h1>
-          <span className="text-xs text-white/80 font-medium tracking-wide">
-            Centro Nacional de Telemedicina
-          </span>
-        </div>
-      </div>
+      {/* Espacio vacío (se puede usar para futuro contenido) */}
+      <div className="flex-1"></div>
 
       {/* 🔔 Controles de usuario */}
       <div className="flex items-center gap-4 sm:gap-5">
@@ -104,9 +87,9 @@ export default function HeaderCenate() {
         <button
           onClick={handleNotificacionClick}
           aria-label="Notificaciones"
-          className="relative p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all"
+          className="relative p-3 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 transition-all"
         >
-          <Bell className="w-5 h-5" />
+          <Bell className="w-6 h-6" />
           {cantidadNotificaciones > 0 && (
             <>
               <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white animate-pulse"></span>
