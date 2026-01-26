@@ -19,6 +19,7 @@ import {
   FileText
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
+import Breadcrumbs from "../../components/Breadcrumbs";
 
 export default function Bienvenida() {
   const { user } = useAuth();
@@ -66,6 +67,14 @@ export default function Bienvenida() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-cenate-50 via-white to-cenate-100 p-8 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <div className="max-w-5xl mx-auto">
+        {/* Breadcrumbs de navegación */}
+        <Breadcrumbs
+          items={[
+            { label: "Administración", path: null },
+            { label: "Mi Cuenta", path: null }
+          ]}
+        />
+
         {/* Header de Bienvenida */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
