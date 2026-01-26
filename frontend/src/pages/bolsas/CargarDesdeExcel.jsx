@@ -35,6 +35,7 @@ export default function CargarDesdeExcel() {
   const [isDragging, setIsDragging] = useState(false);
   const [expandedObligatorios, setExpandedObligatorios] = useState(false);
   const [expandedAutoCalculados, setExpandedAutoCalculados] = useState(false);
+  const [expandedRequisitos, setExpandedRequisitos] = useState(false);
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
@@ -443,29 +444,26 @@ export default function CargarDesdeExcel() {
               </div>
               )}
             </div>
-          </div>
-
-          {/* Columna Derecha: Acciones */}
-          <div>
-            {/* Card: Descarga Plantilla */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border-2 border-green-400 mb-6">
-              <div className="text-center">
-                <Download size={40} className="text-green-600 mx-auto mb-3" />
-                <h3 className="font-bold text-gray-800 mb-2">Obtén la Plantilla</h3>
-                <p className="text-sm text-gray-700 mb-4">Descarga un archivo Excel de ejemplo con la estructura correcta</p>
-                <button
-                  onClick={descargarPlantilla}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download size={18} />
-                  Descargar Plantilla
-                </button>
-              </div>
-            </div>
 
             {/* Card: Requisitos */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="font-bold text-gray-800 mb-4">📋 Requisitos</h3>
+            <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+              <button
+                onClick={() => setExpandedRequisitos(!expandedRequisitos)}
+                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="text-2xl">📋</span>
+                  <h2 className="text-xl font-bold text-gray-800">Requisitos</h2>
+                </div>
+                {expandedRequisitos ? (
+                  <ChevronUp size={24} className="text-gray-600" />
+                ) : (
+                  <ChevronDown size={24} className="text-gray-600" />
+                )}
+              </button>
+
+              {expandedRequisitos && (
+              <div className="px-6 pb-6">
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
@@ -492,6 +490,27 @@ export default function CargarDesdeExcel() {
                   <span className="text-gray-700">TIPO CITA: Recita, Interconsulta o Voluntaria</span>
                 </li>
               </ul>
+              </div>
+              )}
+            </div>
+          </div>
+
+          {/* Columna Derecha: Acciones */}
+          <div>
+            {/* Card: Descarga Plantilla */}
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border-2 border-green-400 mb-6">
+              <div className="text-center">
+                <Download size={40} className="text-green-600 mx-auto mb-3" />
+                <h3 className="font-bold text-gray-800 mb-2">Obtén la Plantilla</h3>
+                <p className="text-sm text-gray-700 mb-4">Descarga un archivo Excel de ejemplo con la estructura correcta</p>
+                <button
+                  onClick={descargarPlantilla}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download size={18} />
+                  Descargar Plantilla
+                </button>
+              </div>
             </div>
           </div>
         </div>
