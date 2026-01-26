@@ -10,22 +10,11 @@
 import React, { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import DynamicSidebar from "../DynamicSidebar";
+import { useSidebar } from "../../context/SidebarContext";
 
 export default function ResponsiveSidebar() {
   const [isOpen, setIsOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
-
-  // Guardar estado de colapsado en localStorage
-  useEffect(() => {
-    const savedCollapsed = localStorage.getItem('sidebarCollapsed');
-    if (savedCollapsed !== null) {
-      setCollapsed(savedCollapsed === 'true');
-    }
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem('sidebarCollapsed', collapsed.toString());
-  }, [collapsed]);
+  const { collapsed, setCollapsed } = useSidebar();
 
   // 🧠 Bloquea scroll al abrir el sidebar en móvil
   useEffect(() => {

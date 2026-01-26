@@ -10,9 +10,17 @@
 import React from "react";
 import ResponsiveSidebar from "./layout/ResponsiveSidebar";
 import HeaderCenate from "./layout/HeaderCenate"; // ✅ Header institucional CENATE
+import { useSidebar } from "../context/SidebarContext";
 import { VERSION, APP_INFO } from "../config/version";
 
 export default function AppLayout({ children, title = "" }) {
+  const { collapsed } = useSidebar();
+
+  // Ajustar márgenes laterales basado en si el sidebar está colapsado
+  const horizontalPadding = collapsed
+    ? "px-28 md:px-40" // Más espacio cuando está colapsado
+    : "px-24 md:px-32"; // Márgenes normales
+
   return (
     <div
       className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950 transition-colors duration-300"
@@ -35,7 +43,7 @@ export default function AppLayout({ children, title = "" }) {
 
         {/* 🌈 Contenido dinámico con scroll suave (compensado para header fijo de 96px h-24) */}
         <section
-          className="flex-1 overflow-y-auto px-24 md:px-32 pt-8 md:pt-12 pb-6 md:pb-8 transition-colors duration-300"
+          className={`flex-1 overflow-y-auto ${horizontalPadding} pt-8 md:pt-12 pb-6 md:pb-8 transition-all duration-300`}
           style={{
             backgroundColor: "var(--bg-main, #f9fafb)",
             color: "var(--text-primary, #1f2937)",
