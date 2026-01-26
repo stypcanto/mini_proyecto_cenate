@@ -9,37 +9,39 @@
 
 import React from "react";
 import ResponsiveSidebar from "./layout/ResponsiveSidebar";
-import HeaderTemplate from "./Header/Header_template"; // ✅ Header Apple-like
+import HeaderCenate from "./layout/HeaderCenate"; // ✅ Header institucional CENATE
 import { VERSION, APP_INFO } from "../config/version";
 
 export default function AppLayout({ children, title = "" }) {
   return (
     <div
-      className="flex h-screen overflow-hidden transition-colors duration-300"
+      className="flex h-screen overflow-hidden bg-gray-50 dark:bg-gray-950 transition-colors duration-300"
       style={{
-        backgroundColor: "var(--bg-main)",
-        color: "var(--text-primary)",
+        backgroundColor: "var(--bg-main, #f9fafb)",
+        color: "var(--text-primary, #1f2937)",
       }}
     >
       {/* ✅ Sidebar único (responsive) */}
       <ResponsiveSidebar />
 
-      {/* 🧱 Contenido principal */}
+      {/* 🧱 Contenido principal con header fijo */}
       <main
-        className="flex-1 flex flex-col overflow-hidden"
+        className="flex-1 flex flex-col w-full h-screen overflow-hidden"
         role="main"
         aria-label={title || "Contenido principal"}
       >
-        {/* 💚 Header superior (estilo Apple/iOS) */}
-        <HeaderTemplate title={title} />
+        {/* 💚 Header superior FIJO (estilo producción - Image #7) */}
+        <HeaderCenate />
 
-        {/* 🌈 Contenido dinámico con scroll suave */}
+        {/* 🌈 Contenido dinámico con scroll suave (compensado para header fijo de 64px) */}
         <section
           className="flex-1 overflow-y-auto p-6 md:p-8 transition-colors duration-300"
           style={{
-            backgroundColor: "var(--bg-main)",
-            color: "var(--text-primary)",
+            backgroundColor: "var(--bg-main, #f9fafb)",
+            color: "var(--text-primary, #1f2937)",
             scrollBehavior: "smooth",
+            marginTop: "0px",
+            paddingTop: "1rem",
           }}
         >
           {children}

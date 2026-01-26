@@ -1,5 +1,5 @@
 // ========================================================================
-// 🔷 HeaderCenate.jsx – Encabezado institucional CENATE 2025
+// 🔷 HeaderCenate.jsx – Encabezado institucional CENATE 2025 (VERSIÓN PÚBLICA)
 // ------------------------------------------------------------------------
 // Incluye el logo de EsSalud (blanco), nombre institucional y fondo azul.
 // Diseño responsivo, elegante y compatible con modo oscuro.
@@ -22,7 +22,6 @@ export default function HeaderCenate() {
           className="h-10 sm:h-12 object-contain drop-shadow-md"
         />
         <div className="hidden sm:block w-px h-8 bg-white/40 mx-2" />
-
       </div>
 
       {/* 🔗 Botón de inicio de sesión */}

@@ -8,10 +8,11 @@
 // ========================================================================
 
 import React, { useEffect, useState } from "react";
-import { Sun, Moon, Bell, UserCircle2, LogOut } from "lucide-react";
+import { Sun, Moon, Bell } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import NotificacionesPanel from "../NotificacionesPanel";
+import UserMenu from "./UserMenu";
 import apiClient from "../../services/apiClient";
 
 export default function HeaderCenate() {
@@ -65,18 +66,14 @@ export default function HeaderCenate() {
 
   const toggleTheme = () => setDarkMode((prev) => !prev);
 
-  const handleLogout = () => {
-    if (logout) logout();
-    navigate("/"); // 🚪 Regresa al inicio público
-  };
-
   const handleNotificacionClick = () => {
     setShowNotificaciones(!showNotificaciones);
   };
 
   return (
+    <>
     <header
-      className="w-full h-16 flex items-center justify-between px-6 fixed top-0 left-0 right-0 z-50
+      className="w-full h-16 flex items-center justify-between px-6 fixed top-0 left-0 right-0 z-40
                  bg-gradient-to-r from-[#0a5ba9] via-[#0d4e90] to-[#073b6c]
                  dark:from-slate-900 dark:to-slate-800
                  shadow-lg backdrop-blur-md border-b border-white/10 transition-all duration-300"
@@ -133,40 +130,21 @@ export default function HeaderCenate() {
           )}
         </button>
 
-        {/* Perfil de usuario */}
-        <div className="hidden sm:flex flex-col items-end">
-          <span className="text-sm text-white font-semibold leading-tight drop-shadow-sm">
-            {user?.nombreCompleto || user?.username || "Invitado"}
-          </span>
-          <span className="text-xs text-white/70 font-medium">
-            {user?.roles?.[0]?.toUpperCase() || "Usuario"}
-          </span>
-        </div>
-
-        {/* Avatar */}
-        <div
-          className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30 hover:scale-105 transition-transform"
-          title="Perfil"
-        >
-          <UserCircle2 className="w-6 h-6 text-white" />
-        </div>
-
-        {/* Logout */}
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-1 bg-white/15 hover:bg-red-500/80 text-white font-medium px-3 py-1.5 rounded-lg text-sm transition-all shadow-sm"
-          title="Cerrar sesión"
-        >
-          <LogOut className="w-4 h-4" />
-          <span className="hidden sm:block">Salir</span>
-        </button>
+        {/* Menú de usuario (avatar + dropdown) */}
+        <UserMenu />
       </div>
 
-      {/* Panel de Notificaciones */}
-      <NotificacionesPanel
-        isOpen={showNotificaciones}
-        onClose={() => setShowNotificaciones(false)}
-      />
     </header>
+
+    {/* Panel de Notificaciones - FUERA del header para z-index correcto */}
+    {showNotificaciones && (
+      <div className="fixed z-50 top-16 right-6">
+        <NotificacionesPanel
+          isOpen={showNotificaciones}
+          onClose={() => setShowNotificaciones(false)}
+        />
+      </div>
+    )}
+    </>
   );
 }
