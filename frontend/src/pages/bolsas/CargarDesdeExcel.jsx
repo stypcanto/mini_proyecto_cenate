@@ -77,7 +77,7 @@ export default function CargarDesdeExcel() {
     // Obtener servicios/especialidades disponibles
     const obtenerServicios = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/dim/servicios-essi');
+        const response = await fetch('http://localhost:8080/api/servicio-essi/activos-cenate');
         if (!response.ok) throw new Error(`Error: ${response.status}`);
         const datos = await response.json();
         console.log('📋 Servicios disponibles:', datos);
