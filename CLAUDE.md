@@ -317,6 +317,13 @@ GET  /api/macrorregiones
   - ✅ 5/5 checks de monitoreo pasados
   - ✅ Último backup: 2026-01-25 14:02 EXITOSO
   - ✅ 5,165,000 registros respaldados correctamente
+- **✅ CONTENIDO COMPLETO BACKUPS (v2.0):** `spec/04_BaseDatos/10_contenido_backups_completo.md` ⭐ **NUEVO**
+  - ✅ **Backup completo BD:** 4 formatos (custom dump + SQL text + SQL table + CSV table)
+  - ✅ **Cobertura total:** 174 tablas en 3 esquemas (public, segu, staging)
+  - ✅ **Datos incluidos:** 5,165,000 asegurados + auditoría + índices + funciones + triggers
+  - ✅ **Velocidad:** 4 formatos generados en ~6 minutos
+  - ✅ **Última ejecución:** 2026-01-25 23:34 (5.3GB total, 174 tablas respaldadas)
+  - ✅ **Restauración:** Múltiples opciones (pg_restore, psql SQL, CSV import)
 
 ### 🔧 Backend y APIs
 - **Endpoints REST:** `spec/01_Backend/01_api_endpoints.md`
