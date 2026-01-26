@@ -50,10 +50,25 @@ public class FormDiagServiceImpl implements FormDiagService {
         Ipress ipress = ipressRepo.findById(request.getIdIpress())
                 .orElseThrow(() -> new EntityNotFoundException("IPRESS no encontrada: " + request.getIdIpress()));
 
+        int anio = request.getAnio() != null ? request.getAnio() : Year.now().getValue();
+
+        // 🔍 VALIDACIÓN: Verificar si ya existe un formulario EN_PROCESO para esta IPRESS+año
+        var formularioExistente = formularioRepo.findEnProcesoPorIpressAndAnio(request.getIdIpress(), anio);
+
+        if (formularioExistente.isPresent()) {
+            // ⚠️  Existe un formulario en proceso - NO crear duplicado
+            log.warn("⚠️  Intento de crear formulario duplicado para IPRESS: {} año: {} - Existe uno EN_PROCESO",
+                     request.getIdIpress(), anio);
+            throw new IllegalStateException(
+                "Ya existe un formulario en proceso para esta IPRESS en el año " + anio +
+                ". Complete o envíe el existente antes de crear uno nuevo."
+            );
+        }
+
         // Crear formulario principal
         FormDiagFormulario formulario = FormDiagFormulario.builder()
                 .ipress(ipress)
-                .anio(request.getAnio() != null ? request.getAnio() : Year.now().getValue())
+                .anio(anio)
                 .estado("EN_PROCESO")
                 .usuarioRegistro(username)
                 .observaciones(request.getObservaciones())
