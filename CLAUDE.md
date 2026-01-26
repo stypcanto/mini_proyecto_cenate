@@ -59,6 +59,32 @@ Credenciales de ESSI utilizadas durante la investigación. Recomendación: cambi
 
 ---
 
+## 📊 AUDITORÍA DE CALIDAD DE DATOS - TABLA ASEGURADOS (2026-01-25)
+
+**STATUS:** ✅ Auditoría completada | **Correcciones:** 329,004 DNIs corregidos | **Duplicados detectados:** 443,228
+
+### Hallazgos:
+- ✅ **Sin duplicados (doc_paciente):** Restricción UNIQUE funcionando correctamente
+- ✅ **Sin valores NULL:** 100% cobertura
+- ⚠️ **DNIs incompletos (7 caracteres):** 772,232 registros (14.95%)
+  - Corregibles sin colisión: **329,004 ✅ CORREGIDOS** (agregando leading zeros)
+  - Duplicados potenciales: 443,228 ⚠️ (requiere investigación ESSI)
+- ❌ **DNIs fake/legacy (< 7 caracteres):** 41,285 (0.80%)
+- ❌ **Otros formatos (9+ caracteres):** 97,284 (1.88%)
+
+### Calidad de Datos:
+- **ANTES:** 82.37% válidos
+- **DESPUÉS:** 88.76% válidos (+6.39%)
+
+### Documentación:
+- **⭐ Auditoría completa:** `spec/04_BaseDatos/11_auditoria_calidad_datos_asegurados.md`
+- **📋 Reporte ejecución:** `spec/04_BaseDatos/12_reporte_correccion_dni_ejecutado.md`
+- **🔧 Script corrección:** `spec/04_BaseDatos/06_scripts/043_corregir_dni_incompletos.sql`
+
+**Próximos pasos:** Investigar 443,228 duplicados en ESSI, validar DNIs fake/legacy, analizar otros formatos
+
+---
+
 ## 📚 Índice de Documentación
 
 ### 🎯 Inicio Rápido
