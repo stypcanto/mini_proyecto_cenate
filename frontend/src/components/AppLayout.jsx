@@ -26,22 +26,21 @@ export default function AppLayout({ children, title = "" }) {
 
       {/* 🧱 Contenido principal con header fijo */}
       <main
-        className="flex-1 flex flex-col w-full h-screen overflow-hidden"
+        className="flex-1 flex flex-col w-full h-screen overflow-hidden mt-16"
         role="main"
         aria-label={title || "Contenido principal"}
       >
         {/* 💚 Header superior FIJO (estilo producción - Image #7) */}
         <HeaderCenate />
 
-        {/* 🌈 Contenido dinámico con scroll suave (compensado para header fijo de 64px) */}
+        {/* 🌈 Contenido dinámico con scroll suave (compensado para header fijo de 64px h-16) */}
         <section
-          className="flex-1 overflow-y-auto p-6 md:p-8 transition-colors duration-300"
+          className="flex-1 overflow-y-auto p-6 md:p-8 pt-20 transition-colors duration-300"
           style={{
             backgroundColor: "var(--bg-main, #f9fafb)",
             color: "var(--text-primary, #1f2937)",
             scrollBehavior: "smooth",
             marginTop: "0px",
-            paddingTop: "0px",
           }}
         >
           {children}
