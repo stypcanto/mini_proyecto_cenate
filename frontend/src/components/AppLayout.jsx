@@ -35,7 +35,7 @@ export default function AppLayout({ children, title = "" }) {
 
         {/* 🌈 Contenido dinámico con scroll suave (compensado para header fijo de 96px h-24) */}
         <section
-          className="flex-1 overflow-y-auto p-6 md:p-8 pt-24 transition-colors duration-300"
+          className="flex-1 overflow-y-auto px-24 md:px-32 pt-8 md:pt-12 pb-6 md:pb-8 transition-colors duration-300"
           style={{
             backgroundColor: "var(--bg-main, #f9fafb)",
             color: "var(--text-primary, #1f2937)",

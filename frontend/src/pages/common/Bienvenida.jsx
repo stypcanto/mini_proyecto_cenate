@@ -97,10 +97,10 @@ export default function Bienvenida() {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* Banner Principal de Bienvenida */}
-      <div className="bg-gradient-to-r from-cenate-600 via-cenate-600 to-emerald-600 rounded-3xl p-8 shadow-2xl overflow-hidden">
-        <div className="flex items-center gap-8">
+      <div className="bg-gradient-to-r from-cenate-600 via-cenate-600 to-emerald-600 rounded-3xl p-6 shadow-2xl overflow-hidden">
+        <div className="flex items-center gap-6">
           {/* Avatar Circular Grande */}
           <div className="w-28 h-28 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center flex-shrink-0 border-2 border-white/30 shadow-lg">
             <span className="text-5xl font-bold text-white">4</span>
@@ -111,7 +111,7 @@ export default function Bienvenida() {
             <h1 className="text-3xl font-bold mb-2">
               Bienvenido(a), {user?.nombreCompleto?.split(' ')[0] || user?.username || "Usuario"}
             </h1>
-            <p className="text-white/90 text-base leading-relaxed mb-4">
+            <p className="text-white/90 text-base leading-relaxed mb-3">
               Este es tu Centro Personal CENATE, un espacio diseñado para que gestiones tu información, revises tus accesos y mantengas actualizados tus datos institucionales dentro de la Intranet.
             </p>
             <div className="flex items-center gap-2">
@@ -125,7 +125,7 @@ export default function Bienvenida() {
       </div>
 
       {/* Tarjetas de Acción */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {tarjetasAccion.map((tarjeta, idx) => (
           <button
             key={idx}
@@ -133,12 +133,12 @@ export default function Bienvenida() {
               // Solo navegar si NO es tarjeta 0 o 1
               if (idx === 2) navigate('/user/security');
             }}
-            className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg transition-all text-left group hover:shadow-2xl hover:scale-105 cursor-pointer"
+            className="bg-white dark:bg-slate-800 rounded-2xl p-5 shadow-lg transition-all text-left group hover:shadow-2xl hover:scale-105 cursor-pointer"
           >
-            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-4 group-hover:scale-110 transition-transform" style={{ backgroundColor: tarjeta.icoBg.includes('blue') ? 'rgba(191, 219, 254, 0.5)' : tarjeta.icoBg.includes('green') ? 'rgba(187, 247, 208, 0.5)' : 'rgba(218, 165, 255, 0.5)' }}>
+            <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-3 group-hover:scale-110 transition-transform" style={{ backgroundColor: tarjeta.icoBg.includes('blue') ? 'rgba(191, 219, 254, 0.5)' : tarjeta.icoBg.includes('green') ? 'rgba(187, 247, 208, 0.5)' : 'rgba(218, 165, 255, 0.5)' }}>
               <tarjeta.icon className={`w-6 h-6 ${tarjeta.icoColor}`} />
             </div>
-            <h3 className="text-lg font-bold mb-2 transition-colors text-gray-800 dark:text-white group-hover:text-cenate-600 dark:group-hover:text-cenate-400">
+            <h3 className="text-lg font-bold mb-1 transition-colors text-gray-800 dark:text-white group-hover:text-cenate-600 dark:group-hover:text-cenate-400">
               {tarjeta.titulo}
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400">
@@ -149,8 +149,8 @@ export default function Bienvenida() {
       </div>
 
       {/* Sección Actividades Administrativas */}
-      <div className="bg-white dark:bg-slate-800 rounded-2xl p-8 shadow-lg">
-        <div className="flex items-center gap-3 mb-6">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl p-6 shadow-lg">
+        <div className="flex items-center gap-3 mb-4">
           <Settings2 className="w-6 h-6 text-cenate-600 dark:text-cenate-400" />
           <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
             Actividades Administrativas
@@ -158,7 +158,7 @@ export default function Bienvenida() {
         </div>
 
         {/* Grid de Actividades */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           {actividades.map((actividad, idx) => (
             <button
               key={idx}
@@ -173,7 +173,7 @@ export default function Bienvenida() {
                 ];
                 if (rutas[idx]) navigate(rutas[idx]);
               }}
-              className="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group text-left w-full"
+              className="flex items-start gap-4 p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors cursor-pointer group text-left w-full"
             >
               <div className="p-2 rounded-lg bg-cenate-100 dark:bg-cenate-900/30 flex-shrink-0 group-hover:bg-cenate-200 dark:group-hover:bg-cenate-800/50 transition-colors">
                 <actividad.icon className="w-5 h-5 text-cenate-600 dark:text-cenate-400" />
@@ -193,7 +193,7 @@ export default function Bienvenida() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between py-6 border-t border-gray-200 dark:border-slate-700 mt-8 text-sm text-gray-600 dark:text-gray-400">
+      <div className="flex items-center justify-between py-6 border-t border-gray-200 dark:border-slate-700 mt-6 text-sm text-gray-600 dark:text-gray-400">
         <p>
           CENATE – Centro Nacional de Telemedicina | Plataforma MBAC 2025 © EsSalud
         </p>
