@@ -16,57 +16,105 @@
 
 ---
 
-## 📚 DOCUMENTACIÓN - COMIENZA AQUÍ
+## 📚 DOCUMENTACIÓN - NAVEGACIÓN COMPLETA
 
-**👉 Lee primero:** [`spec/INDEX.md`](spec/INDEX.md) - Índice maestro con navegación completa
+**👉 Lee primero:** [`spec/INDEX.md`](spec/INDEX.md) - Índice maestro
 
-### Estructura de Documentación (9 Carpetas)
+### 📦 SPEC/ - Documentación Técnica (9 Carpetas)
 
-| Carpeta | Contenido | README |
-|---------|----------|--------|
-| **backend** | APIs, Servicios, Módulos | `spec/backend/README.md` |
-| **frontend** | Componentes, Páginas | `spec/frontend/README.md` |
-| **architecture** | Diagramas, Flujos | `spec/architecture/README.md` |
-| **UI-UX** | Design System | `spec/UI-UX/README.md` |
-| **database** | Esquemas, Auditoría, Backups | `spec/database/README.md` |
-| **troubleshooting** | Problemas, Soluciones | `spec/troubleshooting/README.md` |
-| **uml** | Diagramas UML | `spec/uml/README.md` |
-| **test** | Test Cases | `spec/test/README.md` |
-| **sh** | Scripts SQL/Shell | `spec/sh/README.md` |
+| Carpeta | README | Documentos |
+|---------|--------|-----------|
+| **backend** | [`spec/backend/README.md`](spec/backend/README.md) | APIs, Servicios, Módulos, Endpoints |
+| **frontend** | [`spec/frontend/README.md`](spec/frontend/README.md) | Componentes, Páginas, UI |
+| **database** | [`spec/database/README.md`](spec/database/README.md) | Esquemas, Auditoría, Backups, Scripts SQL |
+| **architecture** | [`spec/architecture/README.md`](spec/architecture/README.md) | Diagramas, Flujos, Modelos |
+| **UI-UX** | [`spec/UI-UX/README.md`](spec/UI-UX/README.md) | Design System, Guidelines |
+| **troubleshooting** | [`spec/troubleshooting/README.md`](spec/troubleshooting/README.md) | Problemas, Soluciones |
+| **uml** | [`spec/uml/README.md`](spec/uml/README.md) | Diagramas UML |
+| **test** | [`spec/test/README.md`](spec/test/README.md) | Test Cases |
+| **sh** | [`spec/sh/README.md`](spec/sh/README.md) | Scripts SQL/Shell/Deployment |
+
+### 📋 PLAN/ - Planificación de Módulos (8 Carpetas)
+
+| Carpeta | Propósito |
+|---------|-----------|
+| **plan/01_Seguridad_Auditoria/** | Auditoría, permisos MBAC, JWT |
+| **plan/02_Modulos_Medicos/** | Disponibilidad, Tele-ECG, turnos médicos |
+| **plan/03_Infraestructura/** | Infraestructura, módulo red |
+| **plan/04_Integraciones/** | Integraciones externas |
+| **plan/05_Firma_Digital/** | Firma digital |
+| **plan/06_Integracion_Spring_AI/** | 🤖 Spring AI - Chatbot, IA, Claude |
+| **plan/06_Mejoras_UI_UX/** | UI/UX improvements |
+| **plan/07_Documentacion_OpenAPI/** | Documentación API |
+
+### 📅 CHECKLIST/ - Historial y Reportes
+
+- **01_Historial/** - Changelog v1.0.0 → v1.35.0
+- **02_Reportes_Pruebas/** - Reportes de testing
+- **03_Checklists/** - Tracking de implementación
+- **04_Analisis/** - Análisis técnicos
 
 ### Entrada Rápida por Rol
 
-- **👨‍💻 Backend Dev** → `spec/backend/README.md`
-- **👩‍💻 Frontend Dev** → `spec/frontend/README.md`
-- **🏗️ Arquitecto** → `spec/architecture/README.md`
-- **💾 Admin BD** → `spec/database/README.md`
-- **🔧 DevOps** → `spec/sh/README.md`
-- **🔍 QA/Support** → `spec/troubleshooting/README.md`
+- **👨‍💻 Backend Dev** → [`spec/backend/README.md`](spec/backend/README.md) + [`plan/02_Modulos_Medicos/`](plan/02_Modulos_Medicos/)
+- **👩‍💻 Frontend Dev** → [`spec/frontend/README.md`](spec/frontend/README.md) + [`plan/06_Mejoras_UI_UX/`](plan/06_Mejoras_UI_UX/)
+- **🏗️ Arquitecto** → [`spec/architecture/README.md`](spec/architecture/README.md)
+- **💾 Admin BD** → [`spec/database/README.md`](spec/database/README.md)
+- **🔧 DevOps** → [`spec/sh/README.md`](spec/sh/README.md) + [`plan/03_Infraestructura/`](plan/03_Infraestructura/)
+- **🔍 QA/Support** → [`spec/troubleshooting/README.md`](spec/troubleshooting/README.md)
+- **🔐 Security** → [`plan/01_Seguridad_Auditoria/`](plan/01_Seguridad_Auditoria/)
+- **🤖 AI/Spring AI** → [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
+
+---
+
+## 📚 DOCUMENTOS CLAVE POR ÁREA
+
+### Backend
+- 📍 [`spec/backend/01_api_endpoints.md`](spec/backend/01_api_endpoints.md) - Todos los endpoints REST
+- 📍 [`spec/backend/08_modulo_bolsas_pacientes_completo.md`](spec/backend/08_modulo_bolsas_pacientes_completo.md) - Solicitudes de Bolsa v1.6.0
+- 📍 [`spec/backend/07_modulo_estados_gestion_citas_crud.md`](spec/backend/07_modulo_estados_gestion_citas_crud.md) - Estados de citas v1.33.0
+- 📍 [`spec/backend/09_teleecg_v3.0.0_guia_rapida.md`](spec/backend/09_teleecg_v3.0.0_guia_rapida.md) - Tele-ECG v1.24.0
+
+### Frontend
+- 📍 [`spec/frontend/02_pages/01_estructura_minima_paginas.md`](spec/frontend/02_pages/01_estructura_minima_paginas.md) - Patrón arquitectónico
+- 📍 [`spec/frontend/01_gestion_usuarios_permisos.md`](spec/frontend/01_gestion_usuarios_permisos.md) - Permisos MBAC
+
+### Database
+- 📍 [`spec/database/01_models/01_modelo_usuarios.md`](spec/database/01_models/01_modelo_usuarios.md) - Modelo BD
+- 📍 [`spec/database/08_plan_backup_protecciones_completo.md`](spec/database/08_plan_backup_protecciones_completo.md) - Backups y seguridad
+- 📍 [`spec/database/02_audit/02_guia_auditoria.md`](spec/database/02_audit/02_guia_auditoria.md) - Auditoría
+
+### Planificación
+- 📍 [`plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md`](plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md) - Disponibilidad v2.0.0
+- 📍 [`plan/06_Integracion_Spring_AI/01_plan_implementacion_spring_ai.md`](plan/06_Integracion_Spring_AI/01_plan_implementacion_spring_ai.md) - Spring AI (7 fases)
+- 📍 [`plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md`](plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md) - Seguridad
+
+### Troubleshooting
+- 📍 [`spec/troubleshooting/01_guia_problemas_comunes.md`](spec/troubleshooting/01_guia_problemas_comunes.md) - Problemas comunes
+- 📍 [`spec/troubleshooting/02_guia_estados_gestion_citas.md`](spec/troubleshooting/02_guia_estados_gestion_citas.md) - Errores Estados Citas
 
 ---
 
 ## 📊 STATUS ACTUAL (v1.35.0)
 
-### ✅ Completado Recientemente
+### ✅ Completado Recientemente (últimas 24h)
 
-| Feature | Versión | Link |
-|---------|---------|------|
-| **Excel v1.8.0** | 10 campos + auto-calc edad | `spec/backend/` |
-| **Solicitudes Bolsa** | v1.6.0 - Estados integrados | `spec/backend/08_modulo_bolsas_pacientes_completo.md` |
-| **Estados Gestión Citas** | v1.33.0 - CRUD completo | `spec/backend/07_modulo_estados_gestion_citas_crud.md` |
-| **Tele-ECG** | v1.24.0 - UI optimizada | `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` |
-| **Filtros Usuarios** | v1.0.0 - Backend-driven | línea 231-303 anterior |
-| **Documentación** | Reorganizada en 9 carpetas | `spec/INDEX.md` |
-| **Limpieza Proyecto** | 233 archivos temp eliminados | `.gitignore` actualizado |
-| **Spring AI** | Arquitectura completa diseñada | `plan/06_Integracion_Spring_AI/01_plan_implementacion_spring_ai.md` |
+| Feature | Versión |
+|---------|---------|
+| Excel v1.8.0 | 10 campos + auto-calc EDAD ✅ |
+| Solicitudes Bolsa | v1.6.0 - Estados integrados ✅ |
+| Estados Gestión Citas | v1.33.0 - CRUD completo ✅ |
+| Tele-ECG | v1.24.0 - UI optimizada ✅ |
+| Filtros Usuarios Pendientes | v1.0.0 - Backend-driven ✅ |
+| **Documentación** | **Reorganizada en 9 carpetas** ✅ |
+| **Limpieza Proyecto** | **233 temp files eliminados** ✅ |
+| **Spring AI** | **Arquitectura completa diseñada** ✅ |
 
-### 📋 Módulos en Desarrollo
+### 🚀 En Desarrollo
 
-- **Spring AI Chatbot** (7 fases, 12 semanas)
-- **Análisis Tele-ECG con IA**
-- **Generador Reportes Médicos**
-
-**Más detalles:** [`spec/INDEX.md`](spec/INDEX.md)
+- Spring AI Chatbot (7 fases, 12 semanas) - [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
+- Análisis Tele-ECG con IA
+- Generador Reportes Médicos
 
 ---
 
