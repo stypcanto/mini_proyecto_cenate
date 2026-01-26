@@ -191,25 +191,47 @@ ALTER TABLE asegurados ADD CONSTRAINT fk_asegurados_tip_doc
 
 ---
 
-## 📋 PLAN DE CORRECCIÓN
+## 🚨 HALLAZGO CRÍTICO: DUPLICADOS AL CORREGIR
 
-### PASO 1: Corregir DNIs Incompletos (7 caracteres) ✅ RECOMENDADO
+**Problema Encontrado:** Al intentar corregir DNIs de 7 caracteres (agregar leading zero), se descubrió que **443,228 de ellos (57%) son duplicados** de DNIs existentes de 8 caracteres.
 
-**Impacto:** 772,226 registros (14.95%)
-**Riesgo:** BAJO (solo agregar leading zeros)
-**Tiempo:** ~30 segundos
+```
+DNIs de 7 caracteres: 772,226
+├─ Sin colisión (seguros): 329,998 (42%) ✅
+└─ Con colisión (duplicados): 443,228 (57%) ⚠️
+```
+
+### Ejemplo de Duplicado:
+```
+DNI de 7 caracteres: 06710348 → ALVAREZ LOPEZ LERDRY JOSUE
+DNI de 8 caracteres: 06710348 → MORALES SAAVEDRA DENIS TEODOLFO
+
+Mismo DNI, DIFERENTES PACIENTES = ERROR EN ESSI
+```
+
+---
+
+## 📋 PLAN DE CORRECCIÓN REVISADO
+
+### PASO 1: Corregir DNIs Incompletos SEGUROS (329,998 registros) ✅ RECOMENDADO
+
+**Impacto:** 329,998 registros (6.39% del total)
+**Riesgo:** BAJO (no tienen colisiones)
+**Tiempo:** ~20 segundos
 
 ```sql
--- Script de corrección
+-- Script de corrección SEGURA (sin colisiones)
 UPDATE asegurados
 SET doc_paciente = LPAD(doc_paciente, 8, '0')
 WHERE doc_paciente IS NOT NULL
   AND LENGTH(doc_paciente) = 7
-  AND doc_paciente ~ '^\d{7}$';
+  AND LPAD(doc_paciente, 8, '0') NOT IN (
+    SELECT doc_paciente FROM asegurados WHERE LENGTH(doc_paciente) = 8
+  );
 
 -- Verificación
 SELECT COUNT(*) FROM asegurados
-WHERE LENGTH(doc_paciente) = 7;  -- Debería retornar 0
+WHERE LENGTH(doc_paciente) = 7;  -- Debería retornar ~443,228 (solo duplicados)
 ```
 
 **Antes:**
