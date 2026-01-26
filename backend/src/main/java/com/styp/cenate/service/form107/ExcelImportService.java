@@ -63,7 +63,7 @@ public class ExcelImportService {
 
 	
 	@Transactional
-	  public Map<String, Object> importarYProcesar(MultipartFile file, String usuarioCarga) {
+	  public Map<String, Object> importarYProcesar(MultipartFile file, String usuarioCarga, Long idTipoBolsa, Long idServicio) {
 
 	    // 1) Validar .xlsx
 	    validateOnlyXlsx(file);
@@ -101,8 +101,8 @@ public class ExcelImportService {
 	    carga.setEstadoCarga("STAGING_CARGADO");
 	    cargaRepo.save(carga);
 
-	    // 5) Ejecutar SP (el SP vuelve a calcular conteos finales y deja PROCESADO/ERROR)
-	    ejecutarSpProcesar(idCarga);
+	    // 5) Ejecutar SP (el SP enriquece, valida e inserta en dim_solicitud_bolsa)
+	    ejecutarSpProcesar(idCarga, idTipoBolsa, idServicio);
 
 	    // 6) Leer cabecera actualizada y devolver respuesta
 	    Bolsa107Carga finalCarga = cargaRepo.findById(idCarga)
@@ -123,12 +123,14 @@ public class ExcelImportService {
 	// =============================
 	  // EJECUTAR PROCEDIMIENTO
 	  // =============================
-	  private void ejecutarSpProcesar(long idCarga) {
+	  private void ejecutarSpProcesar(long idCarga, Long idTipoBolsa, Long idServicio) {
 	    try {
-	      // CALL public.sp_bolsa_107_procesar(<id_carga>);
-	      jdbc.update("CALL public.sp_bolsa_107_procesar(?)", idCarga);
+	      // CALL public.sp_bolsa_107_procesar(id_carga, id_bolsa, id_servicio);
+	      log.info("🗄️ Ejecutando SP: sp_bolsa_107_procesar({}, {}, {})", idCarga, idTipoBolsa, idServicio);
+	      jdbc.update("CALL public.sp_bolsa_107_procesar(?, ?, ?)", idCarga, idTipoBolsa, idServicio);
+	      log.info("✅ SP ejecutado correctamente");
 	    } catch (Exception e) {
-	      // El SP en su EXCEPTION ya setea estado_carga='ERROR' y re-lanza :contentReference[oaicite:1]{index=1}
+	      log.error("❌ Error al ejecutar SP: {}", e.getMessage());
 	      throw new ExcelValidationException("Falló el procesamiento en BD: " + e.getMessage());
 	    }
 	  }
