@@ -1652,98 +1652,98 @@ const UsersManagement = () => {
 
         {/* Tab de Áreas */ }
         { activeTab === 'areas' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <AreasCRUD />
           </div>
         ) }
 
         {/* Tab de Regímenes */ }
         { activeTab === 'regimenes' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <RegimenesCRUD />
           </div>
         ) }
 
         {/* Tab de Profesiones */ }
         { activeTab === 'profesion' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <ProfesionesCRUD />
           </div>
         ) }
 
         {/* Tab de Especialidades */ }
         { activeTab === 'especialidad' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <EspecialidadesCRUD />
           </div>
         ) }
 
         {/* Tab de Roles */ }
         { activeTab === 'roles' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <RolesCRUD />
           </div>
         ) }
 
         {/* Tab de Tipo de Profesional */ }
         { activeTab === 'tipoprofesional' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <TipoProfesionalCRUD />
           </div>
         ) }
 
         {/* Tab de Estrategias Institucionales */ }
         { activeTab === 'estrategias' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <EstrategiasInstitucionales />
           </div>
         ) }
 
         {/* Tab de Tipos de Atención Telemedicina */ }
         { activeTab === 'tiposatencion' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <TiposAtencionTelemedicina />
           </div>
         ) }
 
         {/* Tab de Procedimientos */ }
         { activeTab === 'procedimientos' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <Procedimientos />
           </div>
         ) }
 
         {/* Tab de CIE10 */ }
         { activeTab === 'cie10' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <CIE10 />
           </div>
         ) }
 
         {/* Tab de Medicamentos */ }
         { activeTab === 'medicamentos' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <Medicamentos />
           </div>
         ) }
 
         {/* Tab de Tipos de Bolsas */ }
         { activeTab === 'tiposbolsas' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <TiposBolsas />
           </div>
         ) }
 
         {/* Tab de Estados Gestión Citas */ }
         { activeTab === 'estadosgestioncitas' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-6">
             <EstadosGestionCitas />
           </div>
         ) }
 
         {/* Placeholder para otras tabs futuras */ }
         { activeTab !== 'usuarios' && activeTab !== 'areas' && activeTab !== 'regimenes' && activeTab !== 'profesion' && activeTab !== 'especialidad' && activeTab !== 'roles' && activeTab !== 'tipoprofesional' && activeTab !== 'estrategias' && activeTab !== 'tiposatencion' && activeTab !== 'procedimientos' && activeTab !== 'cie10' && activeTab !== 'medicamentos' && activeTab !== 'tiposbolsas' && activeTab !== 'estadosgestioncitas' && (
-          <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="w-full px-4 sm:px-6 lg:px-8 py-12">
             <div className="text-center py-20 bg-white rounded-2xl shadow-sm border border-gray-200">
               <div className="w-16 h-16 bg-gray-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
                 <Building className="w-8 h-8 text-gray-400" />

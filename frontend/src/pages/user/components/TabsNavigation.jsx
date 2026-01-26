@@ -129,7 +129,7 @@ const TabsNavigation = ({ activeTab, setActiveTab }) => {
 
   return (
     <div className="relative bg-gradient-to-b from-white to-gray-50/30 border-b border-gray-200 shadow-sm">
-      <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div className="w-full px-4 sm:px-6 lg:px-8 py-3">
         <div ref={containerRef} className="flex items-center gap-2 flex-nowrap">
           {/* Pestañas visibles según espacio disponible */}
           {tabsToShow.map((tab) => {

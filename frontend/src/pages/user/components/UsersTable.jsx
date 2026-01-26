@@ -147,7 +147,7 @@ const UsersTable = ({ users, loading = false, isSearching = false, onViewDetail,
   };
 
   return (
-  <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 mb-10">
+  <div className="w-full px-4 sm:px-6 lg:px-8 mb-10">
     <div className="relative overflow-hidden bg-white border border-gray-200 shadow-sm rounded-lg">
       <div className="overflow-x-auto relative">
         {/* Overlay de carga - Solo sobre el tbody */}
