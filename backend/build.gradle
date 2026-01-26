@@ -21,6 +21,15 @@ java {
     }
 }
 
+// 🤖 Excluir módulo Spring AI (diseño sin dependencias aún)
+sourceSets {
+    main {
+        java {
+            exclude 'com/styp/cenate/ai/**'
+        }
+    }
+}
+
 repositories {
     mavenCentral()
 }
