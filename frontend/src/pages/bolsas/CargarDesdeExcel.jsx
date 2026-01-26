@@ -155,19 +155,17 @@ export default function CargarDesdeExcel() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('idTipoBolsa', tipoBolesaId);
-      formData.append('idServicio', idServicio); // Usar el servicio seleccionado
+      formData.append('idServicio', idServicio);
       formData.append('usuarioCarga', usuario.username || 'admin');
 
-      // Log para debugging
       console.log('📤 Enviando importación:', {
         archivo: file.name,
         idTipoBolsa: tipoBolesaId,
-        idServicio: 1,
+        idServicio: idServicio,
         usuarioCarga: usuario.username,
         tamaño: file.size
       });
 
-      // Usar el servicio correcto para importar solicitudes desde Excel
       const resultado = await bolsasService.importarSolicitudesDesdeExcel(formData);
 
       console.log('✅ Respuesta del servidor:', resultado);
@@ -177,23 +175,25 @@ export default function CargarDesdeExcel() {
         message: resultado.mensaje || 'Archivo importado correctamente',
         rowsProcessed: resultado.filasOk,
         totalRows: resultado.filasOk + resultado.filasError,
-        failedRows: resultado.filasError
+        failedRows: resultado.filasError,
+        showModal: true  // Mostrar modal
       });
 
       console.log('✅ Importación exitosa:', resultado);
 
-      // Limpiar archivo después de 2 segundos y redirigir
+      // Esperar 5 segundos antes de redirigir (dar tiempo al usuario para ver el resultado)
       setTimeout(() => {
         setFile(null);
         setTipoBolesaId(null);
         navigate('/bolsas/solicitudes');
-      }, 2000);
+      }, 5000);
 
     } catch (error) {
       console.error('❌ Error en importación:', error);
       setImportStatus({
         type: 'error',
-        message: error.message || 'Error al importar archivo'
+        message: error.message || 'Error al importar archivo',
+        showModal: true  // Mostrar modal de error
       });
     } finally {
       setIsLoading(false);
@@ -284,8 +284,102 @@ export default function CargarDesdeExcel() {
     XLSX.writeFile(wb, 'PLANTILLA_SOLICITUD_BOLSA_COMPLETA_v1.8.0.xlsx');
   };
 
+  // Modal de resultado
+  const ResultModal = () => {
+    if (!importStatus || !importStatus.showModal) return null;
+
+    const isSuccess = importStatus.type === 'success';
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className={`bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all ${
+          isSuccess ? 'border-4 border-green-500' : 'border-4 border-red-500'
+        }`}>
+          {/* Icono animado */}
+          <div className={`text-6xl mb-4 text-center ${
+            isSuccess ? 'animate-bounce' : 'animate-pulse'
+          }`}>
+            {isSuccess ? '✅' : '❌'}
+          </div>
+
+          {/* Título */}
+          <h2 className={`text-2xl font-bold text-center mb-4 ${
+            isSuccess ? 'text-green-700' : 'text-red-700'
+          }`}>
+            {isSuccess ? '¡Importación Exitosa!' : 'Error en Importación'}
+          </h2>
+
+          {/* Mensaje */}
+          <p className="text-center text-gray-700 mb-4 text-lg">
+            {importStatus.message}
+          </p>
+
+          {/* Estadísticas (si es éxito) */}
+          {isSuccess && importStatus.rowsProcessed && (
+            <div className="bg-green-50 rounded-lg p-4 mb-6 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-semibold">✅ Éxitosos:</span>
+                <span className="text-green-700 text-xl font-bold">{importStatus.rowsProcessed}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-semibold">📊 Total:</span>
+                <span className="text-gray-700 text-xl font-bold">{importStatus.totalRows}</span>
+              </div>
+              {importStatus.failedRows > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 font-semibold">⚠️ Fallidos:</span>
+                  <span className="text-red-600 text-xl font-bold">{importStatus.failedRows}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Información adicional */}
+          <p className={`text-sm text-center mb-6 ${
+            isSuccess ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {isSuccess
+              ? '⏱️ Redirigiendo en 5 segundos...'
+              : 'Por favor, revisa los datos y vuelve a intentar'
+            }
+          </p>
+
+          {/* Barra de progreso (solo en éxito) */}
+          {isSuccess && (
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div className="bg-green-500 h-full animate-progress" style={{
+                animation: 'progress 5s ease-in-out forwards'
+              }}></div>
+            </div>
+          )}
+
+          {/* Botón de cierre */}
+          {!isSuccess && (
+            <button
+              onClick={() => setImportStatus(null)}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors"
+            >
+              Cerrar
+            </button>
+          )}
+        </div>
+
+        {/* Estilos para la animación de barra */}
+        <style>{`
+          @keyframes progress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+          }
+        `}</style>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+      {/* Modal de resultado */}
+      <ResultModal />
+
       <div className="w-full">
         {/* Header Mejorado */}
         <div className="mb-8">
@@ -356,20 +450,20 @@ export default function CargarDesdeExcel() {
                     <p className="text-xs text-blue-600 mt-1">Ej: Juan Pérez García</p>
                   </div>
                 </div>
-                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">⚧</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">5. SEXO</p>
+                    <p className="font-semibold text-gray-800">5. SEXO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
                     <p className="text-sm text-gray-600">Género del paciente</p>
-                    <p className="text-xs text-blue-600 mt-1">Ej: M (Masculino) | F (Femenino)</p>
+                    <p className="text-xs text-amber-600 mt-1">Ej: M (Masculino) | F (Femenino) - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
-                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">🎂</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">6. FECHA DE NACIMIENTO</p>
+                    <p className="font-semibold text-gray-800">6. FECHA DE NACIMIENTO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
                     <p className="text-sm text-gray-600">Fecha de nacimiento (la edad se calcula automáticamente)</p>
-                    <p className="text-xs text-blue-600 mt-1">Formato: YYYY-MM-DD | Ej: 1980-05-20</p>
+                    <p className="text-xs text-amber-600 mt-1">Formato: YYYY-MM-DD | Ej: 1980-05-20 - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
@@ -380,12 +474,12 @@ export default function CargarDesdeExcel() {
                     <p className="text-xs text-blue-600 mt-1">Ej: 987654321</p>
                   </div>
                 </div>
-                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">📧</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">8. CORREO</p>
+                    <p className="font-semibold text-gray-800">8. CORREO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
                     <p className="text-sm text-gray-600">Dirección de correo electrónico</p>
-                    <p className="text-xs text-blue-600 mt-1">Ej: juan.perez@email.com</p>
+                    <p className="text-xs text-amber-600 mt-1">Ej: juan.perez@email.com - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
@@ -741,6 +835,10 @@ export default function CargarDesdeExcel() {
           {expandedFAQ && (
           <div className="px-6 pb-6">
             <div className="space-y-4 text-sm">
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Puedo dejar campos vacíos (SEXO, FECHA NACIMIENTO, CORREO)?</p>
+                <p className="text-gray-600 mt-1">Sí. Si estos campos están vacíos en el Excel, el sistema completará automáticamente la información usando el DNI del paciente con los datos de la tabla de asegurados. Solo son OBLIGATORIOS: DNI, TIPO DOCUMENTO, ASEGURADO, COD. IPRESS y TIPO CITA.</p>
+              </div>
               <div className="border-b pb-4">
                 <p className="font-semibold text-gray-800">¿Necesito incluir la columna EDAD?</p>
                 <p className="text-gray-600 mt-1">No. La EDAD se calcula automáticamente a partir de FECHA DE NACIMIENTO. No incluyas esta columna en tu Excel.</p>

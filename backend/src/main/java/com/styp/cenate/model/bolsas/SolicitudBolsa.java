@@ -11,15 +11,16 @@ import java.time.OffsetDateTime;
 
 /**
  * Entidad JPA para solicitudes de bolsas de pacientes
- * Tabla: dim_solicitud_bolsa (32 columnas - v1.6.0 completo)
+ * Tabla: dim_solicitud_bolsa (43 columnas - v1.9.0 completo)
  *
  * Datos denormalizados para escalabilidad y performance:
  * - Códigos y descripciones de tipos de bolsa, servicio, estado
  * - Información de IPRESS y Red (desde dim_ipress + dim_red)
  * - Auditoría y trazabilidad completa
+ * - Fechas de cita y atención (v1.9.0 NEW)
  *
- * @version v1.6.0 (Estados Citas Integrados)
- * @since 2026-01-23
+ * @version v1.9.0 (Nuevas columnas: fecha_cita, fecha_atencion)
+ * @since 2026-01-26
  */
 @Entity
 @Table(
@@ -164,6 +165,13 @@ public class SolicitudBolsa {
 
     @Column(name = "fecha_asignacion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime fechaAsignacion;
+
+    // 🗓️ FECHAS DE CITA Y ATENCIÓN (v1.9.0 NEW)
+    @Column(name = "fecha_cita", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private OffsetDateTime fechaCita;
+
+    @Column(name = "fecha_atencion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private OffsetDateTime fechaAtencion;
 
     // 📊 ESTADO DE GESTIÓN DE CITAS
     @Column(name = "estado_gestion_citas_id")

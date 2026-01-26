@@ -26,10 +26,11 @@ Una **solicitud de bolsa** es un registro de un paciente que requiere atención 
 | **Schema** | `public` |
 | **Tipo** | Tabla de Hechos (Dimensión) |
 | **Motor** | PostgreSQL 14+ |
-| **Total Columnas** | 32+ |
+| **Total Columnas** | **43 (verificado)** ✅ |
 | **Clave Primaria** | `id_solicitud` (BIGINT, AUTO-INCREMENT) |
-| **Clave Única** | (`id_bolsa`, `paciente_id`) |
-| **Índices** | 15+ (búsqueda optimizada) |
+| **Clave Única** | `numero_solicitud` (VARCHAR) |
+| **Índices** | 13 (búsqueda optimizada) |
+| **Estado** | 0 registros (tabla vacía) |
 
 ---
 
@@ -142,8 +143,20 @@ Una **solicitud de bolsa** es un registro de un paciente que requiere atención 
 | Columna | Tipo | Nullable | Descripción |
 |---------|------|----------|-------------|
 | `estado_gestion_citas_id` | BIGINT | ✅ | FK - `dim_estados_gestion_citas(id_estado)` |
-| `cod_estado_cita` | VARCHAR(50) | ✅ | **DENORMALIZADO** - Código estado |
+| `cod_estado_cita` | TEXT | ✅ | **DENORMALIZADO** - Código estado |
 | `desc_estado_cita` | VARCHAR(255) | ✅ | **DENORMALIZADO** - Descripción estado |
+
+---
+
+### 🗓️ Fechas de Cita y Atención (3 columnas) ⭐ **NUEVO**
+
+| Columna | Tipo | Nullable | Descripción |
+|---------|------|----------|-------------|
+| `fecha_cita` | TIMESTAMP WITH TIME ZONE | ✅ | Fecha programada de la cita médica |
+| `fecha_atencion` | TIMESTAMP WITH TIME ZONE | ✅ | Fecha/hora en que se realizó la atención |
+| `recordatorio_enviado` | BOOLEAN | ✅ | Flag - ¿Se envió recordatorio al paciente? |
+
+**Nota:** Estas 3 columnas estaban en BD pero NO en el modelo Java (bug v1.8.0). ✅ Será corregido ahora.
 
 ---
 
@@ -221,6 +234,9 @@ dim_solicitud_bolsa
   "estadoGestionCitasId": null,
   "codEstadoCita": null,
   "descEstadoCita": null,
+  "fechaCita": null,
+  "fechaAtencion": null,
+  "recordatorioEnviado": false,
   "activo": true
 }
 ```
@@ -462,7 +478,9 @@ WHERE UPPER(paciente_nombre) LIKE 'JUAN%';
 | v1.0.0 | 2026-01-01 | Creación inicial (16 columnas) |
 | v1.5.0 | 2026-01-15 | Agregar estados de gestión de citas (20 columnas) |
 | v1.6.0 | 2026-01-23 | Integración con Estados de Gestión (28 columnas) |
-| v1.8.0 | 2026-01-26 | **ACTUAL** - Excel completo (32+ columnas, auto-cálculos) |
+| v1.8.0 | 2026-01-26 | Excel completo (32+ columnas, auto-cálculos) |
+| v1.9.0 | 2026-01-26 | **ACTUAL** - Verificación BD real: 43 columnas confirmadas ✅ |
+| ↳ Cambio | ↳ Hoy | ↳ Agregar: `fecha_cita`, `fecha_atencion`, `recordatorio_enviado` al modelo Java |
 
 ---
 

@@ -58,9 +58,8 @@ public class ExcelImportService {
 
 	);
 
-	// obligatorios para filas_ok
-	private static final List<String> REQUIRED = List.of("TIPO DE DOCUMENTO", "DNI", "APELLIDOS Y NOMBRES", "SEXO",
-			"FechaNacimiento", "DERIVACION INTERNA");
+	// obligatorios para filas_ok (SEXO y FechaNacimiento ahora opcionales - se enriquecen desde BD por DNI)
+	private static final List<String> REQUIRED = List.of("TIPO DE DOCUMENTO", "DNI", "APELLIDOS Y NOMBRES", "DERIVACION INTERNA");
 
 	
 	@Transactional
@@ -197,9 +196,9 @@ public class ExcelImportService {
 				if (isBlank(apellidos))
 					faltantes.add("APELLIDOS Y NOMBRES");
 				if (isBlank(sexo))
-					faltantes.add("SEXO");
+					// SEXO es opcional - se enriquece desde BD
 				if (isBlank(fechaNac))
-					faltantes.add("FechaNacimiento");
+					// FechaNacimiento es opcional - se enriquece desde BD
 				if (isBlank(deriv))
 					faltantes.add("DERIVACION INTERNA");
 				if (isBlank(tipoDocumento))
@@ -211,8 +210,25 @@ public class ExcelImportService {
 				else
 					filasError++;
 
-				// observación
-				String observacion = ok ? null : ("Faltan: " + String.join(", ", faltantes));
+				// observación: campos faltantes obligatorios O campos a enriquecer desde BD
+			List<String> enriquecerDesdeBD = new ArrayList<>();
+			if (isBlank(sexo) && !faltantes.contains("SEXO"))
+				enriquecerDesdeBD.add("SEXO");
+			if (isBlank(fechaNac) && !faltantes.contains("FechaNacimiento"))
+				enriquecerDesdeBD.add("FechaNacimiento");
+			
+			String observacion;
+			if (!ok) {
+				if (enriquecerDesdeBD.isEmpty()) {
+					observacion = "Faltan obligatorios: " + String.join(", ", faltantes);
+				} else {
+					observacion = "Faltan obligatorios: " + String.join(", ", faltantes) + " (Se enriquecerá desde BD: " + String.join(", ", enriquecerDesdeBD) + ")";
+				}
+			} else if (!enriquecerDesdeBD.isEmpty()) {
+				observacion = "Se enriquecerá desde BD: " + String.join(", ", enriquecerDesdeBD);
+			} else {
+				observacion = null;
+			}
 
 				// raw_json (guardo todo lo que leí)
 				Map<String, Object> rawMap = new LinkedHashMap<>();
