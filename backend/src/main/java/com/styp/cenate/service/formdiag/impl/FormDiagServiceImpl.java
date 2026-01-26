@@ -101,9 +101,22 @@ public class FormDiagServiceImpl implements FormDiagService {
     @Override
     public FormDiagResponse guardarBorrador(FormDiagRequest request, String username) {
         if (request.getIdFormulario() != null) {
+            // Caso 1: El cliente tiene un ID - actualizar ese formulario
             return actualizar(request.getIdFormulario(), request, username);
         } else {
-            return crear(request, username);
+            // Caso 2: El cliente no tiene ID - verificar si ya existe uno en proceso
+            int anioActual = Year.now().getValue();
+            var formularioExistente = formularioRepo.findEnProcesoPorIpressAndAnio(request.getIdIpress(), anioActual);
+
+            if (formularioExistente.isPresent()) {
+                // ✅ Existe un formulario en proceso - actualizar ese en lugar de crear uno nuevo
+                log.info("Formulario en proceso encontrado para IPRESS: {} - Actualizando en lugar de duplicar",
+                         request.getIdIpress());
+                return actualizar(formularioExistente.get().getIdFormulario(), request, username);
+            } else {
+                // ✅ No existe - crear uno nuevo
+                return crear(request, username);
+            }
         }
     }
 

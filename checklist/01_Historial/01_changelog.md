@@ -12,11 +12,13 @@
 
 ---
 
-## v1.35.1 (2026-01-26) - 🎯 Mejoras UI/UX Módulo Asegurados: Tabla Expandida + Tipo de Documento
+## v1.35.1 (2026-01-26) - 🎯 Mejoras UI/UX Asegurados + 🔧 FIX Duplicación Formularios Diagnóstico
 
 ### 🎨 Descripción
 
-**Optimización de interfaces del módulo de asegurados** para mejor visualización de datos y UX mejorada. Cambios:
+**Dos principales mejoras:**
+1. **Optimización de interfaces del módulo de asegurados** para mejor visualización de datos y UX mejorada
+2. **FIX crítico:** Eliminación de duplicación en formularios de diagnóstico situacional
 
 #### **1. BuscarAsegurado.jsx (v1.2.0)**
 - ✅ **Tabla Expandida**: Aprovecha 100% del ancho de pantalla
@@ -52,13 +54,39 @@
 - ✅ **Botón X para Cerrar**: En esquina superior derecha
 - ✅ **URL ESSI Integrada**: `http://10.56.1.158/sgss/servlet/hmain`
 
+---
+
+#### **3. 🔧 FIX: Duplicación de Formularios de Diagnóstico Situacional**
+
+**Problema:** Los formularios de diagnóstico de IPRESS se duplicaban cuando se guardaban múltiples veces.
+
+**Causa Raíz:**
+- Backend NO validaba si ya existía un formulario EN_PROCESO para una IPRESS
+- Cada petición sin `idFormulario` creaba un nuevo registro
+- Múltiples clics en "Guardar" generaban duplicados
+
+**Solución Implementada:**
+- ✅ **Backend (FormDiagServiceImpl.java):** Método `guardarBorrador()` ahora verifica si existe un formulario EN_PROCESO
+  - Si existe → ACTUALIZA ese formulario en lugar de crear uno nuevo
+  - Si NO existe → CREA uno nuevo como antes
+  - Protección en 2 capas: Frontend deshabilita botón + Backend valida duplicados
+- ✅ **Compilación:** BUILD SUCCESSFUL en 26 segundos
+
+**Cambios:**
+- `backend/src/main/java/com/styp/cenate/service/formdiag/impl/FormDiagServiceImpl.java` (líneas 102-121)
+- Documentación: `spec/troubleshooting/03_fix_duplicacion_formularios_diagnostico.md` ✅
+
+**Resultado:** Imposible crear formularios duplicados aunque el usuario haga clic múltiples veces.
+
 ### 🔧 Cambios Técnicos
 
 **Archivos Modificados:**
 - `frontend/src/pages/asegurados/BuscarAsegurado.jsx` ✅
 - `frontend/src/pages/asegurados/RevisarDuplicados.jsx` ✅
+- `backend/src/main/java/com/styp/cenate/service/formdiag/impl/FormDiagServiceImpl.java` ✅
 - `spec/UI-UX/01_design_system_tablas.md` (documentación) ✅
 - `spec/database/13_sistema_auditoria_duplicados.md` (documentación) ✅
+- `spec/troubleshooting/03_fix_duplicacion_formularios_diagnostico.md` (documentación) ✅ NUEVO
 
 ### 📊 Mejoras Visuales
 
