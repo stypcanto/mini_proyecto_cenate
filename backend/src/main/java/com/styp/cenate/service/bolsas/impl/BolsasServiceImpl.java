@@ -138,8 +138,8 @@ public class BolsasServiceImpl implements BolsasService {
     public BolsaDTO crearBolsa(BolsaRequestDTO request) {
         log.info("✏️ Creando nueva bolsa: {}", request.getNombreBolsa());
 
-        // Verificar si ya existe una bolsa con el mismo nombre
-        if (bolsaRepository.findByNombreBolsaIgnoreCase(request.getNombreBolsa()).isPresent()) {
+        // Verificar si ya existe una bolsa con el mismo nombre de paciente
+        if (bolsaRepository.findByPacienteNombreIgnoreCase(request.getNombreBolsa()).isPresent()) {
             throw new RuntimeException("Ya existe una bolsa con el nombre: " + request.getNombreBolsa());
         }
 
