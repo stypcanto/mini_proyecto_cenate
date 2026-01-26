@@ -27,7 +27,7 @@ export const componentRegistry = {
   // 🧭 PANEL ADMINISTRATIVO
   // ========================================================================
   '/admin/bienvenida': {
-    component: lazy(() => import('../pages/user/UserDashboard')),
+    component: lazy(() => import('../pages/common/Bienvenida')),
     requiredAction: 'ver',
   },
 

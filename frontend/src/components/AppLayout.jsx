@@ -41,7 +41,7 @@ export default function AppLayout({ children, title = "" }) {
             color: "var(--text-primary, #1f2937)",
             scrollBehavior: "smooth",
             marginTop: "0px",
-            paddingTop: "1rem",
+            paddingTop: "0px",
           }}
         >
           {children}

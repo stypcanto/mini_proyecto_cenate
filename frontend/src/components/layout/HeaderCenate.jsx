@@ -100,19 +100,6 @@ export default function HeaderCenate() {
 
       {/* 🔔 Controles de usuario */}
       <div className="flex items-center gap-4 sm:gap-5">
-        {/* Modo oscuro / claro */}
-        <button
-          onClick={toggleTheme}
-          aria-label="Cambiar tema"
-          className="p-2.5 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-all border border-white/20 shadow-inner"
-        >
-          {darkMode ? (
-            <Sun className="w-5 h-5 animate-pulse" />
-          ) : (
-            <Moon className="w-5 h-5 animate-pulse" />
-          )}
-        </button>
-
         {/* Notificaciones */}
         <button
           onClick={handleNotificacionClick}

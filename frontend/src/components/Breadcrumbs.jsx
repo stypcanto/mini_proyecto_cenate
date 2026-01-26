@@ -24,10 +24,10 @@ export default function Breadcrumbs({ items = [], separator = "/" }) {
 
   return (
     <nav
-      className="mb-6 px-1 py-2"
+      className="sticky top-16 z-40 px-6 py-3 bg-white/95 dark:bg-slate-800/95 backdrop-blur-md border-b border-cenate-200 dark:border-cenate-700 shadow-lg"
       aria-label="Breadcrumb navigation"
     >
-      <ol className="flex items-center gap-1 flex-wrap">
+      <ol className="flex items-center gap-1 flex-wrap max-w-5xl">
         {/* Home link */}
         <li>
           <button
@@ -41,7 +41,7 @@ export default function Breadcrumbs({ items = [], separator = "/" }) {
         </li>
 
         {/* Separator */}
-        <li className="text-gray-400 dark:text-gray-600 mx-0.5">
+        <li className="text-cenate-400 dark:text-cenate-600 mx-0.5">
           <ChevronRight className="w-4 h-4" />
         </li>
 
@@ -54,7 +54,7 @@ export default function Breadcrumbs({ items = [], separator = "/" }) {
               {isLast ? (
                 // Último item: no clickeable, solo texto
                 <span
-                  className="text-gray-700 dark:text-gray-300 font-medium text-sm px-2 py-1 rounded"
+                  className="text-cenate-600 dark:text-cenate-400 font-semibold text-sm px-2 py-1 rounded"
                   aria-current="page"
                 >
                   {item.label}
@@ -64,7 +64,7 @@ export default function Breadcrumbs({ items = [], separator = "/" }) {
                 <>
                   <button
                     onClick={() => handleNavigate(item.path)}
-                    className="text-cenate-600 dark:text-cenate-400 hover:text-cenate-700 dark:hover:text-cenate-300 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-cenate-600 focus:ring-offset-2 dark:focus:ring-offset-slate-900 rounded px-2 py-1"
+                    className="text-cenate-600 dark:text-cenate-400 hover:text-cenate-700 dark:hover:text-cenate-300 font-semibold text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-cenate-600 focus:ring-offset-2 dark:focus:ring-offset-slate-900 rounded px-2 py-1"
                     aria-label={`Ir a ${item.label}`}
                   >
                     {item.label}
@@ -72,7 +72,7 @@ export default function Breadcrumbs({ items = [], separator = "/" }) {
 
                   {/* Separator */}
                   {index < items.length - 1 && (
-                    <span className="text-gray-400 dark:text-gray-600 mx-0.5">
+                    <span className="text-cenate-400 dark:text-cenate-600 mx-0.5">
                       <ChevronRight className="w-4 h-4" />
                     </span>
                   )}

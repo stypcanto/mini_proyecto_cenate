@@ -19,7 +19,6 @@ import {
   FileText
 } from "lucide-react";
 import { useAuth } from "../../context/AuthContext";
-import Breadcrumbs from "../../components/Breadcrumbs";
 
 export default function Bienvenida() {
   const { user } = useAuth();
@@ -65,31 +64,22 @@ export default function Bienvenida() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cenate-50 via-white to-cenate-100 p-8 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="max-w-5xl mx-auto">
-        {/* Breadcrumbs de navegación */}
-        <Breadcrumbs
-          items={[
-            { label: "Administración", path: null },
-            { label: "Mi Cuenta", path: null }
-          ]}
-        />
-
-        {/* Header de Bienvenida */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-2">
-            <Sparkles className="w-8 h-8 text-cenate-600 dark:text-cenate-400" />
-            <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
-              {obtenerSaludo()}
-            </h1>
-          </div>
-          <p className="text-gray-600 text-lg ml-11">
-            {formatearFecha(new Date())}
-          </p>
+    <div className="space-y-6">
+      {/* Header de Bienvenida */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-2">
+          <Sparkles className="w-8 h-8 text-cenate-600 dark:text-cenate-400" />
+          <h1 className="text-4xl font-bold text-gray-800 dark:text-white">
+            {obtenerSaludo()}
+          </h1>
         </div>
+        <p className="text-gray-600 text-lg ml-11">
+          {formatearFecha(new Date())}
+        </p>
+      </div>
 
-        {/* Card Principal - Información del Usuario */}
-        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden mb-6">
+      {/* Card Principal - Información del Usuario */}
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl overflow-hidden mb-6">
           <div className="bg-gradient-to-r from-cenate-600 to-cenate-700 p-6">
             <div className="flex items-center gap-6">
               {/* Avatar */}
@@ -200,7 +190,6 @@ export default function Bienvenida() {
           <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">
             v1.15.18 | Para soporte técnico: cenate.analista@essalud.gob.pe
           </p>
-        </div>
       </div>
     </div>
   );
