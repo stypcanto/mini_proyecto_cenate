@@ -52,14 +52,26 @@ public class ExcelImportService {
 		this.jdbc = jdbc;
 	}
 
-	private static final List<String> EXPECTED_COLUMNS = List.of("REGISTRO", "OPCIONES DE INGRESO DE LLAMADA",
-			"TELEFONO", "TIPO DE DOCUMENTO", "DNI", "APELLIDOS Y NOMBRES", "SEXO", "FechaNacimiento", "DEPARTAMENTO",
-			"PROVINCIA", "DISTRITO", "MOTIVO DE LA LLAMADA", "AFILIACION", "DERIVACION INTERNA"
-
+	// Columnas esperadas del Excel (v1.8.0)
+	private static final List<String> EXPECTED_COLUMNS = List.of(
+		"FECHA PREFERIDA QUE NO FUE ATENDIDA",
+		"TIPO DOCUMENTO",
+		"DNI",
+		"ASEGURADO",
+		"SEXO",
+		"FECHA DE NACIMIENTO",
+		"TELÉFONO",
+		"CORREO",
+		"COD. IPRESS ADSCRIPCIÓN",
+		"TIPO CITA"
 	);
 
-	// obligatorios para filas_ok (SEXO y FechaNacimiento ahora opcionales - se enriquecen desde BD por DNI)
-	private static final List<String> REQUIRED = List.of("TIPO DE DOCUMENTO", "DNI", "APELLIDOS Y NOMBRES", "DERIVACION INTERNA");
+	// Campos obligatorios (SEXO, FECHA DE NACIMIENTO, CORREO son opcionales - se enriquecen desde dim_asegurados por DNI)
+	private static final List<String> REQUIRED = List.of(
+		"TIPO DOCUMENTO",
+		"DNI",
+		"ASEGURADO"
+	);
 
 	
 	@Transactional
@@ -125,12 +137,23 @@ public class ExcelImportService {
 	  // =============================
 	  private void ejecutarSpProcesar(long idCarga, Long idTipoBolsa, Long idServicio) {
 	    try {
-	      // CALL public.sp_bolsa_107_procesar(id_carga, id_bolsa, id_servicio);
 	      log.info("🗄️ Ejecutando SP: sp_bolsa_107_procesar({}, {}, {})", idCarga, idTipoBolsa, idServicio);
-	      jdbc.update("CALL public.sp_bolsa_107_procesar(?, ?, ?)", idCarga, idTipoBolsa, idServicio);
+
+	      // Ejecutar SP con el formato correcto para PostgreSQL
+	      jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<Boolean>) con -> {
+	        try (var stmt = con.prepareCall("{ CALL sp_bolsa_107_procesar(?, ?, ?) }")) {
+	          stmt.setLong(1, idCarga);
+	          stmt.setLong(2, idTipoBolsa);
+	          stmt.setLong(3, idServicio);
+	          stmt.execute();
+	        }
+	        return true;
+	      });
+
 	      log.info("✅ SP ejecutado correctamente");
+
 	    } catch (Exception e) {
-	      log.error("❌ Error al ejecutar SP: {}", e.getMessage());
+	      log.error("❌ Error al ejecutar SP: {}", e.getMessage(), e);
 	      throw new ExcelValidationException("Falló el procesamiento en BD: " + e.getMessage());
 	    }
 	  }
@@ -171,40 +194,36 @@ public class ExcelImportService {
 
 				filasTotal++;
 
-				// Leer valores
-				String registro = cellStr(row, idx.get(n("REGISTRO")));
-				String opcionIngreso = cellStr(row, idx.get(n("OPCIONES DE INGRESO DE LLAMADA")));
-				String telefono = cellStr(row, idx.get(n("TELEFONO")));
+				// Mapear columnas del Excel v1.8.0 a campos de staging
+				String fechaPreferida = cellStr(row, idx.getOrDefault(n("FECHA PREFERIDA QUE NO FUE ATENDIDA"), -1));
+				String tipoDocumento = cellStr(row, idx.getOrDefault(n("TIPO DOCUMENTO"), -1));
+				String numeroDocumento = cellStr(row, idx.getOrDefault(n("DNI"), -1));
+				String apellidos = cellStr(row, idx.getOrDefault(n("ASEGURADO"), -1));
+				String sexo = cellStr(row, idx.getOrDefault(n("SEXO"), -1));
+				String fechaNac = cellDateStr(row, idx.getOrDefault(n("FECHA DE NACIMIENTO"), -1));
+				String telefono = cellStr(row, idx.getOrDefault(n("TELÉFONO"), -1));
+				String correo = cellStr(row, idx.getOrDefault(n("CORREO"), -1));
+				String codigoIpress = cellStr(row, idx.getOrDefault(n("COD. IPRESS ADSCRIPCIÓN"), -1));
+				String tipoCita = cellStr(row, idx.getOrDefault(n("TIPO CITA"), -1));
 
-				String tipoDocumento = cellStr(row, idx.get(n("TIPO DE DOCUMENTO")));
-				String numeroDocumento = cellStr(row, idx.get(n("DNI"))); // tu tabla raw lo llama numero_documento
+				// Campos no disponibles en v1.8.0 (se dejan vacíos)
+				String registro = "";
+				String opcionIngreso = "";
+				String dep = "";
+				String prov = "";
+				String dist = "";
+				String motivo = "";
+				String afiliacion = "";
+				String deriv = tipoCita; // Usar TIPO CITA como derivacion (no está en el archivo)
 
-				String apellidos = cellStr(row, idx.get(n("APELLIDOS Y NOMBRES")));
-				String sexo = cellStr(row, idx.get(n("SEXO")));
-				String fechaNac = cellDateStr(row, idx.get(n("FechaNacimiento")));
-
-				String dep = cellStr(row, idx.get(n("DEPARTAMENTO")));
-				String prov = cellStr(row, idx.get(n("PROVINCIA")));
-				String dist = cellStr(row, idx.get(n("DISTRITO")));
-
-				String motivo = cellStr(row, idx.get(n("MOTIVO DE LA LLAMADA")));
-				String afiliacion = cellStr(row, idx.get(n("AFILIACION")));
-				String deriv = cellStr(row, idx.get(n("DERIVACION INTERNA")));
-
-				// Validar obligatorios
+				// Validar campos obligatorios (v1.8.0 - solo 3 campos son requeridos)
 				List<String> faltantes = new ArrayList<>();
+				if (isBlank(tipoDocumento))
+					faltantes.add("TIPO DOCUMENTO");
 				if (isBlank(numeroDocumento))
 					faltantes.add("DNI");
 				if (isBlank(apellidos))
-					faltantes.add("APELLIDOS Y NOMBRES");
-				if (isBlank(sexo))
-					// SEXO es opcional - se enriquece desde BD
-				if (isBlank(fechaNac))
-					// FechaNacimiento es opcional - se enriquece desde BD
-				if (isBlank(deriv))
-					faltantes.add("DERIVACION INTERNA");
-				if (isBlank(tipoDocumento))
-					faltantes.add("TIPO DE DOCUMENTO");
+					faltantes.add("ASEGURADO");
 
 				boolean ok = faltantes.isEmpty();
 				if (ok)
@@ -212,12 +231,14 @@ public class ExcelImportService {
 				else
 					filasError++;
 
-				// observación: campos faltantes obligatorios O campos a enriquecer desde BD
-			List<String> enriquecerDesdeBD = new ArrayList<>();
-			if (isBlank(sexo) && !faltantes.contains("SEXO"))
-				enriquecerDesdeBD.add("SEXO");
-			if (isBlank(fechaNac) && !faltantes.contains("FechaNacimiento"))
-				enriquecerDesdeBD.add("FechaNacimiento");
+				// Campos opcionales que se enriquecerán desde dim_asegurados (por DNI)
+				List<String> enriquecerDesdeBD = new ArrayList<>();
+				if (isBlank(sexo))
+					enriquecerDesdeBD.add("SEXO");
+				if (isBlank(fechaNac))
+					enriquecerDesdeBD.add("FECHA DE NACIMIENTO");
+				if (isBlank(correo))
+					enriquecerDesdeBD.add("CORREO");
 			
 			String observacion;
 			if (!ok) {
@@ -320,55 +341,36 @@ public class ExcelImportService {
 	private void validateHeaderStrict(List<String> actualColumns) {
 		log.info("📋 Validando cabeceras: {} columnas encontradas", actualColumns.size());
 
-		// Normalizar TODAS las columnas del archivo
-		List<String> normalized = ExcelHeaderNormalizer.normalizeAll(actualColumns);
+		// Validación relajada para v1.8.0: solo verificar que existan columnas clave
+		// Las columnas pueden estar en cualquier posición y pueden tener variaciones de nombres
+		log.info("   Columnas encontradas: {}", actualColumns);
 
-		// Definir columnas OBLIGATORIAS (pueden estar en cualquier posición)
-		List<String> required = List.of(
-			"DNI",                    // Puede ser DNI o NUMERO DE DOCUMENTO
-			"APELLIDOS Y NOMBRES",    // Puede ser APELLIDOS Y NOMBRES o PACIENTE
-			"SEXO",
-			"FechaNacimiento",
-			"DERIVACION INTERNA"
-		);
+		// Verificar que al menos exista DNI (la columna más crítica)
+		boolean hasDNI = actualColumns.stream()
+			.anyMatch(col -> col != null && col.trim().equalsIgnoreCase("DNI"));
 
-		// Verificar que las columnas obligatorias existan (buscar en cualquier posición)
+		boolean hasNombreOAsegurado = actualColumns.stream()
+			.anyMatch(col -> col != null && (
+				col.trim().equalsIgnoreCase("ASEGURADO") ||
+				col.trim().equalsIgnoreCase("APELLIDOS Y NOMBRES") ||
+				col.trim().contains("NOMBRE")
+			));
+
+		// Validar mínimo requerido
 		List<String> missing = new ArrayList<>();
-		for (String req : required) {
-			boolean found = false;
-			for (String norm : normalized) {
-				if (req.equals(norm)) {
-					found = true;
-					break;
-				}
-			}
-			if (!found) {
-				missing.add(req);
-			}
-		}
+		if (!hasDNI) missing.add("DNI");
+		if (!hasNombreOAsegurado) missing.add("NOMBRE/ASEGURADO");
 
 		if (!missing.isEmpty()) {
 			log.error("❌ Faltan columnas obligatorias: {}", missing);
 			throw new ExcelValidationException(
-				Map.of("message", "Faltan columnas obligatorias: " + String.join(", ", missing),
-					"requiredColumns", required,
-					"missingColumns", missing,
-					"actualColumns", actualColumns));
+				"Faltan columnas obligatorias: " + String.join(", ", missing));
 		}
 
-		// Log de normalización exitosa
-		Map<String, Object> report = ExcelHeaderNormalizer.generateReport(actualColumns, normalized);
+		// Log de validación exitosa
 		log.info("✅ Cabeceras validadas correctamente:");
 		log.info("   📊 Total columnas: {}", actualColumns.size());
-		log.info("   📝 Normalizadas: {}", report.get("normalized"));
-		log.info("   ✓ Sin cambios: {}", report.get("unchanged"));
-
-		// Mostrar mapeo de columnas normalizadas
-		for (int i = 0; i < actualColumns.size(); i++) {
-			if (!actualColumns.get(i).equals(normalized.get(i))) {
-				log.info("   🔄 '{}' → '{}'", actualColumns.get(i), normalized.get(i));
-			}
-		}
+		log.info("   📋 Columnas: {}", actualColumns);
 	}
 
 	private List<String> readHeader(Row headerRow) {
@@ -384,15 +386,17 @@ public class ExcelImportService {
 	}
 
 	private Map<String, Integer> buildColumnIndex(List<String> cols) {
-		// 🆕 v1.15.13: Normalizar TODAS las columnas del archivo (flexible)
-		List<String> normalized = ExcelHeaderNormalizer.normalizeAll(cols);
-
+		// 🆕 v1.8.0: Mapeo directo sin normalización excesiva
+		// Para v1.8.0, los nombres de columnas son exactos
 		Map<String, Integer> map = new HashMap<>();
-		for (int i = 0; i < normalized.size(); i++) {
-			String normalizedName = normalized.get(i);
-			if (normalizedName != null && !normalizedName.isBlank()) {
-				map.put(n(normalizedName), i);
-				log.debug("   📍 Columna '{}' → índice {}", normalizedName, i);
+
+		for (int i = 0; i < cols.size(); i++) {
+			String colName = cols.get(i);
+			if (colName != null && !colName.isBlank()) {
+				// Almacenar con normalización simple (solo trim y lowercase)
+				String key = colName.trim().toLowerCase(Locale.ROOT);
+				map.put(key, i);
+				log.debug("   📍 Columna '{}' → índice {}", colName, i);
 			}
 		}
 

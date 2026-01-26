@@ -226,8 +226,7 @@ BEGIN
         total_filas = v_fila_count,
         filas_ok = v_total_exitosos,
         filas_error = (v_fila_count - v_total_exitosos),
-        estado_carga = 'PROCESADO',
-        fecha_procesamiento = NOW()
+        estado_carga = 'PROCESADO'
     WHERE id_carga = p_id_carga;
 
     -- RESUMEN FINAL
@@ -246,8 +245,7 @@ EXCEPTION WHEN OTHERS THEN
     RAISE NOTICE '❌ ERROR EN PROCESAMIENTO: %', SQLERRM;
     UPDATE bolsa_107_carga
     SET
-        estado_carga = 'ERROR',
-        fecha_procesamiento = NOW()
+        estado_carga = 'ERROR'
     WHERE id_carga = p_id_carga;
     RAISE;
 
