@@ -195,6 +195,17 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
     if (!loading && modulosPermitidos && modulosPermitidos.length > 0 && !collapsed) {
       const sectionsToOpen = {};
 
+      // Para SUPERADMIN: expandir "Administración"
+      if (isSuperAdmin) {
+        const moduloAdmin = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase() === "administración" ||
+          m.nombreModulo?.toLowerCase() === "administracion"
+        );
+        if (moduloAdmin) {
+          sectionsToOpen[moduloAdmin.nombreModulo] = true;
+        }
+      }
+
       // Para usuarios EXTERNO: expandir "Gestión de Personal Externo"
       if (isExterno) {
         const moduloExterno = modulosPermitidos.find(m =>
@@ -244,7 +255,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isExterno, isCoordinadorRed, isGestorCitas, isEnfermeria]);
+  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isEnfermeria]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD

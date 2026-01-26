@@ -74,13 +74,13 @@ export default function ResponsiveSidebar() {
 
       {/* 🧱 Sidebar principal */}
       <aside
-        className={`fixed top-0 left-0 h-full z-40 overflow-y-auto
+        className={`fixed top-0 left-0 h-full z-50 overflow-y-auto
                     bg-gradient-to-b from-[#0f172a] to-[#1e293b]
                     border-r border-slate-800 shadow-2xl
                     transform transition-all duration-300 ease-in-out
                     ${isOpen ? "translate-x-0" : "-translate-x-full"}
                     ${collapsed ? "w-20" : "w-4/5 max-w-xs lg:w-[340px]"}
-                    lg:translate-x-0 lg:static lg:shadow-none`}
+                    lg:translate-x-0 lg:shadow-none`}
         style={{ overflow: 'auto' }}
       >
         {/* 🔒 Botón cerrar (solo móvil) - MÁS PROMINENTE */}
