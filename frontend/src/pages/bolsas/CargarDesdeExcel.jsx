@@ -36,6 +36,7 @@ export default function CargarDesdeExcel() {
   const [expandedObligatorios, setExpandedObligatorios] = useState(false);
   const [expandedAutoCalculados, setExpandedAutoCalculados] = useState(false);
   const [expandedRequisitos, setExpandedRequisitos] = useState(false);
+  const [expandedFAQ, setExpandedFAQ] = useState(false);
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
@@ -304,10 +305,10 @@ export default function CargarDesdeExcel() {
           {/* Columna Izquierda: Información */}
           <div className="lg:col-span-2">
             {/* Card: Campos Obligatorios */}
-            <div className="bg-white rounded-xl shadow-lg mb-6 border-l-4 border-blue-600">
+            <div className="bg-white rounded-xl shadow-lg mb-6 border-l-4 border-blue-500">
               <button
                 onClick={() => setExpandedObligatorios(!expandedObligatorios)}
-                className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors"
+                className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors rounded-t-xl"
               >
                 <div className="flex items-center gap-2">
                   <Info size={24} className="text-blue-600" />
@@ -409,26 +410,25 @@ export default function CargarDesdeExcel() {
             </div>
 
             {/* Card: Auto-Cálculos */}
-            <div className="bg-white rounded-xl shadow-lg border-l-4 border-amber-500">
+            <div className="bg-white rounded-xl shadow-lg mb-6 border-l-4 border-blue-500">
               <button
                 onClick={() => setExpandedAutoCalculados(!expandedAutoCalculados)}
-                className="w-full p-6 flex items-center justify-between hover:bg-amber-50 transition-colors"
+                className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors rounded-t-xl"
               >
                 <div className="flex items-center gap-2">
-                  <Eye size={24} className="text-amber-600" />
+                  <Eye size={24} className="text-blue-600" />
                   <h2 className="text-xl font-bold text-gray-800">Campos Auto-Calculados</h2>
                 </div>
                 {expandedAutoCalculados ? (
-                  <ChevronUp size={24} className="text-amber-600" />
+                  <ChevronUp size={24} className="text-blue-600" />
                 ) : (
-                  <ChevronDown size={24} className="text-amber-600" />
+                  <ChevronDown size={24} className="text-blue-600" />
                 )}
               </button>
 
               {expandedAutoCalculados && (
-              <div className="px-6 pb-6">
-              <p className="text-sm text-gray-600 mb-4">El sistema calcula automáticamente los siguientes campos:</p>
-              <div className="space-y-3">
+              <div className="px-6 pb-6 pt-0">
+              <div className="space-y-4">
                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
                   <div className="text-2xl mb-2">📊</div>
                   <p className="font-semibold text-gray-800">EDAD</p>
@@ -446,19 +446,19 @@ export default function CargarDesdeExcel() {
             </div>
 
             {/* Card: Requisitos */}
-            <div className="bg-white rounded-xl shadow-lg border border-gray-200">
+            <div className="bg-white rounded-xl shadow-lg mb-6 border-l-4 border-blue-500">
               <button
                 onClick={() => setExpandedRequisitos(!expandedRequisitos)}
-                className="w-full p-6 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors rounded-t-xl"
               >
                 <div className="flex items-center gap-2">
-                  <span className="text-2xl">📋</span>
+                  <FileText size={24} className="text-blue-600" />
                   <h2 className="text-xl font-bold text-gray-800">Requisitos</h2>
                 </div>
                 {expandedRequisitos ? (
-                  <ChevronUp size={24} className="text-gray-600" />
+                  <ChevronUp size={24} className="text-blue-600" />
                 ) : (
-                  <ChevronDown size={24} className="text-gray-600" />
+                  <ChevronDown size={24} className="text-blue-600" />
                 )}
               </button>
 
@@ -721,39 +721,57 @@ export default function CargarDesdeExcel() {
           </div>
         </div>
 
-        {/* FAQ */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="font-bold text-gray-800 mb-4 text-lg">❓ Preguntas Frecuentes</h3>
-          <div className="space-y-4 text-sm">
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Necesito incluir la columna EDAD?</p>
-              <p className="text-gray-600 mt-1">No. La EDAD se calcula automáticamente a partir de FECHA DE NACIMIENTO. No incluyas esta columna en tu Excel.</p>
+        {/* Card: FAQ */}
+        <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500">
+          <button
+            onClick={() => setExpandedFAQ(!expandedFAQ)}
+            className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors rounded-t-xl"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">❓</span>
+              <h3 className="font-bold text-gray-800 text-lg">Preguntas Frecuentes</h3>
             </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Cuál es el formato correcto para las fechas?</p>
-              <p className="text-gray-600 mt-1">Usa formato ISO: YYYY-MM-DD (Ej: 2025-12-15 para 15 de diciembre de 2025). Excel convertirá automáticamente fechas a este formato.</p>
-            </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Qué valores son válidos para SEXO?</p>
-              <p className="text-gray-600 mt-1">Usa: <strong>M</strong> para Masculino o <strong>F</strong> para Femenino. El sistema es sensible a mayúsculas.</p>
-            </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Qué valores son válidos para TIPO CITA?</p>
-              <p className="text-gray-600 mt-1">Usa uno de estos tres valores: <strong>Recita</strong>, <strong>Interconsulta</strong> o <strong>Voluntaria</strong>. El sistema es sensible a mayúsculas.</p>
-            </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Qué pasa si el DNI o Código Adscripción no existen?</p>
-              <p className="text-gray-600 mt-1">El registro será rechazado con un mensaje de error indicando el problema específico para que puedas corregirlo.</p>
-            </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Se pueden importar registros duplicados?</p>
-              <p className="text-gray-600 mt-1">No. El sistema valida y rechaza duplicados por la combinación única: (DNI + Tipo de Bolsa).</p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-800">¿Debo llenar todos los 10 campos?</p>
-              <p className="text-gray-600 mt-1">Sí. Todos los 10 campos son obligatorios. Descarga la plantilla para ver la estructura exacta que espera el sistema.</p>
+            {expandedFAQ ? (
+              <ChevronUp size={24} className="text-blue-600" />
+            ) : (
+              <ChevronDown size={24} className="text-blue-600" />
+            )}
+          </button>
+
+          {expandedFAQ && (
+          <div className="px-6 pb-6">
+            <div className="space-y-4 text-sm">
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Necesito incluir la columna EDAD?</p>
+                <p className="text-gray-600 mt-1">No. La EDAD se calcula automáticamente a partir de FECHA DE NACIMIENTO. No incluyas esta columna en tu Excel.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Cuál es el formato correcto para las fechas?</p>
+                <p className="text-gray-600 mt-1">Usa formato ISO: YYYY-MM-DD (Ej: 2025-12-15 para 15 de diciembre de 2025). Excel convertirá automáticamente fechas a este formato.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Qué valores son válidos para SEXO?</p>
+                <p className="text-gray-600 mt-1">Usa: <strong>M</strong> para Masculino o <strong>F</strong> para Femenino. El sistema es sensible a mayúsculas.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Qué valores son válidos para TIPO CITA?</p>
+                <p className="text-gray-600 mt-1">Usa uno de estos tres valores: <strong>Recita</strong>, <strong>Interconsulta</strong> o <strong>Voluntaria</strong>. El sistema es sensible a mayúsculas.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Qué pasa si el DNI o Código Adscripción no existen?</p>
+                <p className="text-gray-600 mt-1">El registro será rechazado con un mensaje de error indicando el problema específico para que puedas corregirlo.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Se pueden importar registros duplicados?</p>
+                <p className="text-gray-600 mt-1">No. El sistema valida y rechaza duplicados por la combinación única: (DNI + Tipo de Bolsa).</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">¿Debo llenar todos los 10 campos?</p>
+                <p className="text-gray-600 mt-1">Sí. Todos los 10 campos son obligatorios. Descarga la plantilla para ver la estructura exacta que espera el sistema.</p>
+              </div>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>
