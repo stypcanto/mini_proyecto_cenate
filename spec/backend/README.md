@@ -35,6 +35,17 @@
 - Auto-normalización de Excel
 - Resumen integral del módulo
 
+#### 📋 Módulo de Tipos de Bolsas (Catálogo)
+**[11_modulo_tipos_bolsas_completo.md](./11_modulo_tipos_bolsas_completo.md)** ⭐ **NUEVO v1.37.0**
+- ✅ 8 Endpoints REST (CRUD + búsqueda + estadísticas)
+- ✅ Arquitectura Clean (Controller → Service → Repository)
+- ✅ Búsqueda case-insensitive con PostgreSQL ILIKE
+- ✅ Paginación y filtros
+- ✅ Validación de duplicados
+- ✅ Frontend React integrado (TiposBolsas.jsx)
+- ✅ Toast notifications
+- ✅ Problemas resueltos (3 fixes SQL)
+
 #### 🔧 Otros Módulos
 **[10_modules_other/](./10_modules_other/)**
 - Firma Digital
@@ -50,13 +61,14 @@
 
 ## 📊 Archivos Principales
 
-| Archivo | Propósito | Carpeta |
+| Archivo | Propósito | Versión |
 |---------|-----------|---------|
-| **01_api_endpoints.md** | Referencia de endpoints | 11_reference |
-| **08_modulo_bolsas_pacientes_completo.md** | Módulo de bolsas completo | 09_modules_bolsas |
-| **07_modulo_estados_gestion_citas_crud.md** | Estados de gestión | 09_modules_bolsas |
-| **00_Procedimiento_NuevoModulo_Pagina.md** | Crear nuevos módulos | 11_reference |
-| **002_changelog.md** | Histórico de cambios | (raíz) |
+| **01_api_endpoints.md** | Referencia de endpoints | - |
+| **08_modulo_bolsas_pacientes_completo.md** | Módulo de bolsas (solicitudes) | v1.6.0 |
+| **07_modulo_estados_gestion_citas_crud.md** | Estados de gestión de citas | v1.33.0 |
+| **11_modulo_tipos_bolsas_completo.md** | **NUEVO:** Tipos de Bolsas (catálogo) | v1.37.0 ⭐ |
+| **09_teleecg_v3.0.0_guia_rapida.md** | Tele-ECG - Guía rápida | v1.24.0 |
+| **00_Procedimiento_NuevoModulo_Pagina.md** | Crear nuevos módulos | - |
 
 ## 🛠️ Stack
 
