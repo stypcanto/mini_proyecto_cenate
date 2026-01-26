@@ -936,4 +936,152 @@ public class AseguradoController {
                 .body(Map.of("error", "Error al eliminar asegurado: " + e.getMessage()));
         }
     }
+
+    /**
+     * Obtener asegurados marcados como duplicados potenciales
+     * Ejemplo: GET /api/asegurados/duplicados/potenciales?page=0&size=25&ordenar=nombre
+     */
+    @GetMapping("/duplicados/potenciales")
+    public ResponseEntity<?> obtenerDuplicadosPotenciales(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "25") int size,
+            @RequestParam(defaultValue = "doc_paciente") String ordenar) {
+
+        try {
+            log.info("🔍 Obteniendo asegurados duplicados potenciales (página: {}, tamaño: {}, orden: {})", page, size, ordenar);
+
+            // Validar campo de ordenamiento
+            String orderField = switch(ordenar) {
+                case "nombre" -> "a.paciente";
+                case "dni" -> "a.doc_paciente";
+                case "fecha" -> "a.fecnacimpaciente";
+                default -> "a.doc_paciente";
+            };
+
+            // Contar total de duplicados
+            String countSql = "SELECT COUNT(*) FROM asegurados WHERE duplicado_potencial = true";
+            Integer totalElements = jdbcTemplate.queryForObject(countSql, Integer.class);
+            if (totalElements == null) {
+                totalElements = 0;
+            }
+
+            // Calcular offset
+            int offset = page * size;
+
+            // Consulta paginada de duplicados
+            String sql = """
+                SELECT
+                    a.pk_asegurado,
+                    a.doc_paciente,
+                    a.paciente,
+                    a.fecnacimpaciente,
+                    a.sexo,
+                    a.tel_celular,
+                    a.tipo_seguro,
+                    a.vigencia,
+                    a.duplicado_potencial,
+                    di.desc_ipress as nombre_ipress,
+                    a.periodo
+                FROM asegurados a
+                LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
+                WHERE a.duplicado_potencial = true
+                ORDER BY """ + orderField + """ DESC
+                LIMIT ? OFFSET ?
+            """;
+
+            List<Map<String, Object>> duplicados = jdbcTemplate.queryForList(sql, size, offset);
+
+            // Procesar resultados
+            duplicados.forEach(dup -> {
+                dup.put("pkAsegurado", dup.remove("pk_asegurado"));
+                dup.put("docPaciente", dup.remove("doc_paciente"));
+                dup.put("telCelular", dup.remove("tel_celular"));
+                dup.put("tipoSeguro", dup.remove("tipo_seguro"));
+                dup.put("nombreIpress", dup.remove("nombre_ipress"));
+                dup.put("duplicadoPotencial", dup.remove("duplicado_potencial"));
+                dup.put("edad", calcularEdad(dup.get("fecnacimpaciente")));
+            });
+
+            // Calcular el número total de páginas
+            int totalPages = (int) Math.ceil((double) totalElements / size);
+
+            // Construir respuesta
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", duplicados);
+            response.put("totalElements", totalElements);
+            response.put("totalPages", totalPages);
+            response.put("size", size);
+            response.put("number", page);
+            response.put("numberOfElements", duplicados.size());
+            response.put("first", page == 0);
+            response.put("last", page >= totalPages - 1);
+            response.put("empty", duplicados.isEmpty());
+
+            log.info("✅ Devolviendo {} duplicados potenciales de un total de {}", duplicados.size(), totalElements);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener duplicados potenciales", e);
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("content", List.of());
+            errorResponse.put("totalElements", 0);
+            errorResponse.put("totalPages", 0);
+            errorResponse.put("size", size);
+            errorResponse.put("number", page);
+            return ResponseEntity.ok(errorResponse);
+        }
+    }
+
+    /**
+     * Obtener información de duplicado específico (compara 7 vs 8 caracteres)
+     * Ejemplo: GET /api/asegurados/duplicado/01234567
+     */
+    @GetMapping("/duplicado/{docPaciente}")
+    public ResponseEntity<?> obtenerInfoDuplicado(@PathVariable String docPaciente) {
+        try {
+            log.info("🔍 Obteniendo información de duplicado para DNI: {}", docPaciente);
+
+            String sql = """
+                SELECT
+                    pk_asegurado_7,
+                    doc_paciente,
+                    paciente_7,
+                    pk_asegurado_8,
+                    paciente_8,
+                    estado,
+                    marcado_at
+                FROM audit_duplicados_asegurados
+                WHERE doc_paciente = ?
+            """;
+
+            List<Map<String, Object>> result = jdbcTemplate.queryForList(sql, docPaciente);
+
+            if (result.isEmpty()) {
+                log.warn("⚠️ No se encontró información de duplicado para DNI: {}", docPaciente);
+                return ResponseEntity.notFound().build();
+            }
+
+            Map<String, Object> duplicado = result.get(0);
+
+            // Formatear respuesta
+            Map<String, Object> response = new HashMap<>();
+            response.put("docPaciente", duplicado.get("doc_paciente"));
+            response.put("pkAsegurado7", duplicado.get("pk_asegurado_7"));
+            response.put("paciente7", duplicado.get("paciente_7"));
+            response.put("pkAsegurado8", duplicado.get("pk_asegurado_8"));
+            response.put("paciente8", duplicado.get("paciente_8"));
+            response.put("estado", duplicado.get("estado"));
+            response.put("marcadoAt", duplicado.get("marcado_at"));
+
+            log.info("✅ Información de duplicado obtenida para DNI: {}", docPaciente);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener información de duplicado: {}", docPaciente, e);
+            return ResponseEntity.internalServerError()
+                .body(Map.of("error", "Error al obtener información de duplicado: " + e.getMessage()));
+        }
+    }
 }
