@@ -77,67 +77,6 @@ const TiposBolsas = () => {
         return () => clearTimeout(timerDescripcion);
     }, [filtroDescripcion]);
 
-    // ============================================================
-    // DATOS INICIALES PRECARGADOS DESDE BD
-    // ============================================================
-    const TIPOS_BOLSAS_INICIALES = [
-        {
-            idTipoBolsa: 1,
-            codTipoBolsa: 'BOLSA_107',
-            descTipoBolsa: 'Bolsa 107 - Importación de pacientes masiva',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 2,
-            codTipoBolsa: 'BOLSA_DENGUE',
-            descTipoBolsa: 'Bolsa Dengue - Control epidemiológico',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 3,
-            codTipoBolsa: 'BOLSAS_ENFERMERIA',
-            descTipoBolsa: 'Bolsas Enfermería - Atenciones de enfermería',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 4,
-            codTipoBolsa: 'BOLSAS_EXPLOTADATOS',
-            descTipoBolsa: 'Bolsas Explotación de Datos - Análisis y reportes',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 5,
-            codTipoBolsa: 'BOLSAS_IVR',
-            descTipoBolsa: 'Bolsas IVR - Sistema interactivo de respuesta de voz',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 6,
-            codTipoBolsa: 'BOLSAS_REPROGRAMACION',
-            descTipoBolsa: 'Bolsas Reprogramación - Citas reprogramadas',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 7,
-            codTipoBolsa: 'BOLSA_GESTORES_TERRITORIAL',
-            descTipoBolsa: 'Bolsa Gestores Territorial - Gestión territorial',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        }
-    ];
 
     // ============================================================
     // CARGAR DATOS CON BÚSQUEDA EN BACKEND
@@ -177,12 +116,11 @@ const TiposBolsas = () => {
             }
         } catch (err) {
             console.error('❌ [TiposBolsas] Error al cargar del backend:', err);
-            // Cargar datos iniciales como fallback
-            console.log('📦 Cargando datos iniciales desde BD como fallback...');
-            setTiposBolsas(TIPOS_BOLSAS_INICIALES);
-            setTotalElements(TIPOS_BOLSAS_INICIALES.length);
-            setTotalPages(1);
-            setError(null); // No mostrar error si cargamos datos iniciales
+            // Mostrar error real en lugar de ocultar con fallback
+            setTiposBolsas([]);
+            setTotalElements(0);
+            setTotalPages(0);
+            setError('❌ Error al cargar tipos de bolsas: ' + (err.message || 'Error desconocido'))
         } finally {
             setLoading(false);
         }
