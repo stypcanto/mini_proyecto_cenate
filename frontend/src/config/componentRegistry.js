@@ -208,7 +208,7 @@ export const componentRegistry = {
   },
 
   '/roles/coordinador/periodo-disponibilidad-medica': {
-    component: lazy(() => import('../pages/roles/coordinador/PeriodoDisponibilidadMedica')),
+    component: lazy(() => import('../pages/roles/coordinador/gestion-periodos-disponibilidad/GestionPeriodosDisponibilidad')),
     requiredAction: 'ver',
   },
 
