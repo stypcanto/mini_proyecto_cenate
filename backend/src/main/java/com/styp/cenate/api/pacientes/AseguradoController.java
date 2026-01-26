@@ -985,9 +985,9 @@ public class AseguradoController {
                 FROM asegurados a
                 LEFT JOIN dim_ipress di ON a.cas_adscripcion = di.cod_ipress
                 WHERE a.duplicado_potencial = true
-                ORDER BY """ + orderField + """ DESC
+                ORDER BY %s DESC
                 LIMIT ? OFFSET ?
-            """;
+            """.formatted(orderField);
 
             List<Map<String, Object>> duplicados = jdbcTemplate.queryForList(sql, size, offset);
 
