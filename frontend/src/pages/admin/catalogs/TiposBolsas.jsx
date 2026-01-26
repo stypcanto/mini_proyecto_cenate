@@ -51,6 +51,9 @@ const TiposBolsas = () => {
     const [modalMode, setModalMode] = useState('create'); // 'create' | 'edit'
     const [selectedItem, setSelectedItem] = useState(null);
 
+    // Notificaciones
+    const [notification, setNotification] = useState(null);
+
     // Formulario
     const [formData, setFormData] = useState({
         codTipoBolsa: '',
@@ -190,6 +193,16 @@ const TiposBolsas = () => {
         setCurrentPage(0);
     }, [debouncedCodigo, debouncedDescripcion]);
 
+    // Auto-dismiss notification after 4 seconds
+    useEffect(() => {
+        if (notification) {
+            const timer = setTimeout(() => {
+                setNotification(null);
+            }, 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [notification]);
+
     // Cargar datos cuando cambian los parámetros
     useEffect(() => {
         loadData();
@@ -240,29 +253,46 @@ const TiposBolsas = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
         try {
             if (modalMode === 'create') {
                 // 📝 Crear: llamar API y recargar si es exitoso
-                await tiposBolsasService.crear(formData);
-                console.log('✅ Tipo de bolsa creado en backend');
+                const resultado = await tiposBolsasService.crear(formData);
+                console.log('✅ Tipo de bolsa creado en backend:', resultado);
+
+                // 🎉 Mostrar notificación de éxito
+                setNotification({
+                    type: 'success',
+                    title: '✅ Tipo de Bolsa Creado',
+                    message: `"${formData.codTipoBolsa}" ha sido creado exitosamente`
+                });
 
                 // Limpiar formulario y cerrar modal
                 setShowModal(false);
                 setFormData({ codTipoBolsa: '', descTipoBolsa: '' });
 
                 // 🔄 Recargar datos desde el backend
+                await new Promise(resolve => setTimeout(resolve, 500)); // Pequeño delay
                 await loadData();
                 console.log('🔄 Datos recargados después de crear');
             } else {
                 // 📝 Actualizar: llamar API y recargar si es exitoso
-                await tiposBolsasService.actualizar(selectedItem.idTipoBolsa, formData);
-                console.log('✅ Tipo de bolsa actualizado en backend');
+                const resultado = await tiposBolsasService.actualizar(selectedItem.idTipoBolsa, formData);
+                console.log('✅ Tipo de bolsa actualizado en backend:', resultado);
+
+                // 🎉 Mostrar notificación de éxito
+                setNotification({
+                    type: 'success',
+                    title: '✅ Tipo de Bolsa Actualizado',
+                    message: `"${formData.codTipoBolsa}" ha sido actualizado exitosamente`
+                });
 
                 // Limpiar formulario y cerrar modal
                 setShowModal(false);
                 setFormData({ codTipoBolsa: '', descTipoBolsa: '' });
 
                 // 🔄 Recargar datos desde el backend
+                await new Promise(resolve => setTimeout(resolve, 500)); // Pequeño delay
                 await loadData();
                 console.log('🔄 Datos recargados después de actualizar');
             }
@@ -271,6 +301,11 @@ const TiposBolsas = () => {
             console.error('❌ Error al guardar:', err);
             const errorMsg = err.response?.data?.message || err.message || 'Error al guardar el tipo de bolsa';
             setError(errorMsg);
+            setNotification({
+                type: 'error',
+                title: '❌ Error al Guardar',
+                message: errorMsg
+            });
         } finally {
             setLoading(false);
         }
@@ -487,6 +522,41 @@ const TiposBolsas = () => {
                     <button onClick={() => setError(null)} className="ml-auto">
                         <X className="w-4 h-4" />
                     </button>
+                </div>
+            )}
+
+            {/* Toast Notification */}
+            {notification && (
+                <div
+                    className={`fixed top-6 right-6 z-[9999] p-6 rounded-xl shadow-2xl border-2 max-w-sm animate-in fade-in slide-in-from-top-5 ${
+                        notification.type === 'success'
+                            ? 'bg-emerald-50 border-emerald-300'
+                            : 'bg-red-50 border-red-300'
+                    }`}
+                >
+                    <div className="flex items-start gap-4">
+                        <div className={`flex-shrink-0 text-2xl ${notification.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {notification.type === 'success' ? '✅' : '❌'}
+                        </div>
+                        <div className="flex-1">
+                            <h4 className={`font-bold text-sm mb-1 ${notification.type === 'success' ? 'text-emerald-900' : 'text-red-900'}`}>
+                                {notification.title}
+                            </h4>
+                            <p className={`text-xs ${notification.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
+                                {notification.message}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setNotification(null)}
+                            className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${
+                                notification.type === 'success'
+                                    ? 'hover:bg-emerald-100 text-emerald-600'
+                                    : 'hover:bg-red-100 text-red-600'
+                            }`}
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             )}
 

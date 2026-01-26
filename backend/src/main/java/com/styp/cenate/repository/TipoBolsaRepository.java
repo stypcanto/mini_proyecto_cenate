@@ -32,8 +32,8 @@ public interface TipoBolsaRepository extends JpaRepository<TipoBolsa, Long> {
      * Búsqueda paginada con filtros
      */
     @Query("SELECT t FROM TipoBolsa t WHERE " +
-           "(:busqueda IS NULL OR LOWER(t.codTipoBolsa) LIKE LOWER(CONCAT('%', :busqueda, '%')) " +
-           "OR LOWER(t.descTipoBolsa) LIKE LOWER(CONCAT('%', :busqueda, '%'))) AND " +
+           "(:busqueda IS NULL OR UPPER(t.codTipoBolsa) LIKE UPPER(CONCAT('%', :busqueda, '%')) " +
+           "OR UPPER(t.descTipoBolsa) LIKE UPPER(CONCAT('%', :busqueda, '%'))) AND " +
            "(:estado IS NULL OR t.statTipoBolsa = :estado) " +
            "ORDER BY t.descTipoBolsa ASC")
     Page<TipoBolsa> buscarTiposBolsas(
