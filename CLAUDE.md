@@ -40,12 +40,17 @@
 - ✅ Backup automático diario: 2 AM + 2 PM (30 días retención)
 - ✅ Monitoreo diario: Script de validación 10 AM (5 checks automáticos)
 
-**📊 ESTADO ACTUAL:**
-- **Tabla `asegurados`:** 4,000,000 registros ✅
+**📊 ESTADO ACTUAL (VALIDADO 2026-01-25):**
+- **Tabla `asegurados`:** 5,165,000 registros ✅ (Recuperados completamente)
 - **Integridad:** 100% validada ✅
 - **Sincronización ESSI:** Actual ✅
-- **Backups:** Automatizados y funcionando ✅
+- **Backups:** ✅ **FUNCIONANDO CORRECTAMENTE** (4 backups en 1.5 días, 3.8GB)
+  - 2 AM: EJECUTÁNDOSE exitosamente
+  - 2 PM: EJECUTÁNDOSE exitosamente
+  - 10 AM: Monitoreo 5/5 checks pasados ✅
+- **Almacenamiento:** 3.8GB (42GB disponibles - Nota: Implementar NIVEL 2 para expandir)
 - **RTO:** 15 minutos | **RPO:** 7 horas ✅
+- **Último backup:** 2026-01-25 14:02 EXITOSO (634M dump + 161M sql.gz + 158M csv.gz)
 
 **ℹ️ NOTA DE SEGURIDAD:**
 Credenciales de ESSI utilizadas durante la investigación. Recomendación: cambiar contraseña después de completar recuperación si se considera necesario.
@@ -297,7 +302,7 @@ GET  /api/macrorregiones
 - **Plan Limpieza:** `spec/04_BaseDatos/05_plan_limpieza/`
 - **Scripts SQL (17+):** `spec/04_BaseDatos/06_scripts/`
 - **⭐ Sistema Horarios:** `spec/04_BaseDatos/07_horarios_sistema/` (Modelo existente + Guía integración)
-- **🛡️ ⭐ PLAN BACKUP Y PROTECCIONES (NUEVO):** `spec/04_BaseDatos/08_plan_backup_protecciones_completo.md`
+- **🛡️ ⭐ PLAN BACKUP Y PROTECCIONES:** `spec/04_BaseDatos/08_plan_backup_protecciones_completo.md`
   - **NIVELES IMPLEMENTADOS:** 1 (Backup diario 2x), 3 (Auditoría + Permisos), 5 (Monitoreo diario)
   - **Backup automático:** 2 AM + 2 PM (30 días retención, 952MB)
   - **Auditoría DELETE:** Tabla audit_asegurados_deletes + Trigger BEFORE DELETE
@@ -305,6 +310,13 @@ GET  /api/macrorregiones
   - **Monitoreo:** Script diario 10 AM (5 checks automáticos)
   - **Registros protegidos:** 5,165,000 asegurados
   - **RTO:** 15 minutos | **RPO:** 7 horas
+- **✅ VALIDACIÓN BACKUPS (2026-01-25):** `spec/04_BaseDatos/09_validacion_backups_2026_01_25.md` ⭐ **NUEVO**
+  - ✅ Scripts instalados y ejecutables (backup-maestro-cenate.sh + monitor-backup-salud.sh)
+  - ✅ CRONTAB configurado (2 AM, 2 PM, 10 AM)
+  - ✅ 4 backups exitosos (1.5 días): 3.8GB totales
+  - ✅ 5/5 checks de monitoreo pasados
+  - ✅ Último backup: 2026-01-25 14:02 EXITOSO
+  - ✅ 5,165,000 registros respaldados correctamente
 
 ### 🔧 Backend y APIs
 - **Endpoints REST:** `spec/01_Backend/01_api_endpoints.md`
