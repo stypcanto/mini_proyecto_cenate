@@ -32,6 +32,7 @@ export default function CargarDesdeExcel() {
   const [servicios, setServicios] = useState([]);
   const [loadingTipos, setLoadingTipos] = useState(true);
   const [loadingServicios, setLoadingServicios] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
@@ -93,23 +94,51 @@ export default function CargarDesdeExcel() {
     obtenerServicios();
   }, []);
 
+  const validateFile = (selectedFile) => {
+    // Validar que sea archivo válido
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                       'application/vnd.ms-excel',
+                       'text/csv'];
+
+    if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv') && !selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
+      setImportStatus({
+        type: 'error',
+        message: 'Formato de archivo no válido. Use .xlsx, .xls o .csv'
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      // Validar que sea archivo válido
-      const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                         'application/vnd.ms-excel',
-                         'text/csv'];
-
-      if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv')) {
-        setImportStatus({
-          type: 'error',
-          message: 'Formato de archivo no válido. Use .xlsx, .xls o .csv'
-        });
-        return;
-      }
-
+    if (selectedFile && validateFile(selectedFile)) {
       setFile(selectedFile);
+      setImportStatus(null);
+    }
+  };
+
+  // Manejadores de Drag and Drop
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && validateFile(droppedFile)) {
+      setFile(droppedFile);
       setImportStatus(null);
     }
   };
@@ -438,10 +467,19 @@ export default function CargarDesdeExcel() {
         {/* Zona de Carga Principal */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           {/* Zona de drop */}
-          <div className="border-3 border-dashed border-blue-300 rounded-2xl p-12 text-center bg-gradient-to-br from-blue-50 to-indigo-50 mb-8 cursor-pointer hover:bg-blue-100 hover:border-blue-400 transition-all">
-            <Upload size={56} className="mx-auto text-blue-500 mb-4" />
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-3 border-dashed rounded-2xl p-12 text-center mb-8 cursor-pointer transition-all ${
+              isDragging
+                ? 'border-green-500 bg-green-50 shadow-lg scale-105'
+                : 'border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 hover:bg-blue-100 hover:border-blue-400'
+            }`}
+          >
+            <Upload size={56} className={`mx-auto mb-4 ${isDragging ? 'text-green-500' : 'text-blue-500'}`} />
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              Arrastra tu archivo aquí
+              {isDragging ? '✅ Suelta el archivo aquí' : 'Arrastra tu archivo aquí'}
             </h3>
             <p className="text-gray-600 mb-6">O haz clic para seleccionar un archivo</p>
             <input
