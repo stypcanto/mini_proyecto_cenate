@@ -141,17 +141,43 @@ Credenciales de ESSI utilizadas durante la investigación. Recomendación: cambi
 
 ---
 
-## 📚 Índice de Documentación
+## 📚 Documentación - NUEVA ESTRUCTURA (v1.34.1)
 
-### 🎯 Inicio Rápido
-- **⭐ Changelog Completo:** `checklist/01_Historial/01_changelog.md`
-- **Versiones:** `checklist/01_Historial/02_historial_versiones.md`
-- **Troubleshooting:** `spec/05_Troubleshooting/01_guia_problemas_comunes.md`
+### 🎯 Comienza Aquí
+**→ `spec/INDEX.md`** - **Índice maestro con navegación completa**
+
+### 📂 Estructura de Documentación (9 Carpetas)
+
+```
+spec/
+├── 📚 INDEX.md              ← NAVEGA DESDE AQUÍ
+├── 📖 README.md
+├── 📦 backend/              → APIs, Servicios, Módulos
+├── 📱 frontend/             → Componentes, Páginas, UI
+├── 🏗️  architecture/        → Diagramas, Flujos, Modelos
+├── 🎨 UI-UX/               → Design System, Guidelines
+├── 💾 database/             → Esquemas, Auditoría, Backups
+├── 🔧 troubleshooting/      → Problemas, Soluciones
+├── 📊 uml/                 → Diagramas UML
+├── ✅ test/                → Tests (próximamente)
+└── 🔧 sh/                  → Scripts SQL, Shell
+```
+
+### 🚀 Inicio Rápido por Rol
+
+**👨‍💻 DESARROLLADOR BACKEND** → `spec/backend/README.md`
+**👩‍💻 DESARROLLADOR FRONTEND** → `spec/frontend/README.md`
+**🏗️ ARQUITECTO** → `spec/architecture/README.md`
+**💾 ADMINISTRADOR DB** → `spec/database/README.md`
+**🔧 DEVOPS** → `spec/sh/README.md`
+**🔍 SOPORTE/QA** → `spec/troubleshooting/README.md`
+
+### 📖 Documentación Principal por Módulo
 
 ### 🔐 Seguridad y Auditoría
-- **⭐ Guía Auditoría:** `spec/04_BaseDatos/02_guia_auditoria/02_guia_auditoria.md`
-- **Plan Seguridad:** `plan/01_Seguridad_Auditoria/02_plan_seguridad_auth.md`
-- **Acceso Sensible:** `spec/04_BaseDatos/03_guia_auditoria_acceso_sensible/`
+- **⭐ Guía Auditoría:** `spec/database/02_audit/02_guia_auditoria.md`
+- **⭐ Plan Backups:** `spec/database/08_plan_backup_protecciones_completo.md`
+- **Auditoría Acceso Sensible:** `spec/database/03_guia_auditoria_acceso_sensible/`
 
 ### 👨‍⚕️ Módulos Médicos
 - **⭐ Resumen Optimización:** `plan/02_Modulos_Medicos/00_resumen_optimizacion_planes.md` (Decisión arquitectónica)
@@ -701,3 +727,103 @@ public ResponseEntity<?> crearUsuario(...) {
 
 *EsSalud Perú - CENATE | Desarrollado por Ing. Styp Canto Rondón*
 *Versión 1.34.1 | 2026-01-23 | Solicitudes de Bolsa v1.6.0 (Cargar desde Excel Mejorado) + Estados Gestión Citas v1.33.0 + Tele-ECG v1.24.0 + Filtros Avanzados Usuarios Pendientes v1.0.0*
+
+### 💾 Base de Datos
+- **Modelo Usuarios:** `spec/database/01_models/01_modelo_usuarios.md`
+- **Análisis Estructura:** `spec/database/04_analisis_estructura/`
+- **Plan Limpieza:** `spec/database/05_plan_limpieza/`
+- **Scripts SQL:** `spec/database/06_scripts/` (17+ migraciones)
+- **Sistema Horarios:** `spec/database/07_horarios/`
+- **Plan Backup:** `spec/database/08_plan_backup_protecciones_completo.md`
+- **Validación Backups:** `spec/database/09_validacion_backups_2026_01_25.md`
+
+### 🔧 Backend y APIs
+- **Endpoints REST:** `spec/backend/01_api_endpoints.md`
+- **Importación Bolsa:** `spec/backend/04_auto_normalizacion_excel_107.md`
+
+### 🎨 UI-UX
+- **Design System:** `spec/UI-UX/01_design_system/01_design_system_tablas.md`
+
+### 🏗️ Arquitectura
+- **Visión General:** `spec/architecture/004_arquitectura.md`
+- **Análisis Chatbot:** `spec/architecture/006_chatbot_citas_ANALYSIS.md`
+
+---
+
+## 🤖 Instrucciones para Claude
+
+### 📖 Al Investigar o Responder Preguntas
+
+**IMPORTANTE:** Toda la información detallada está en `spec/`. **NO repitas información**, enlaza a los archivos correspondientes.
+
+**Flujo de consulta:**
+1. Consulta primero `spec/INDEX.md` (navegación maestra)
+2. Luego va a la carpeta según el tema
+3. Lee el README de esa carpeta
+4. Accede a documentos específicos
+
+**Referencias rápidas:**
+- Auditoría → `spec/database/02_audit/02_guia_auditoria.md`
+- Backend APIs → `spec/backend/01_api_endpoints.md`
+- Frontend Componentes → `spec/frontend/01_components/README.md`
+- Troubleshooting → `spec/troubleshooting/01_guia_problemas_comunes.md`
+- Módulo Bolsas → `spec/backend/08_modulo_bolsas_pacientes_completo.md`
+- Tele-ECG → `spec/backend/09_teleecg_v3.0.0_guia_rapida.md`
+
+### 💻 Al Implementar Nuevas Funcionalidades
+
+**Análisis previo:**
+1. Leer documentación en `spec/`
+2. Evaluar impacto en backend, frontend, BD
+3. Consultar patrones similares en el código
+
+**Patrones arquitectónicos:**
+- Controller → Service → Repository
+- Usar DTOs, nunca exponer entidades
+- Integrar `AuditLogService` para auditoría
+- Agregar permisos MBAC si aplica
+
+**Validación en 3 capas:**
+- Frontend (validación UX)
+- Backend DTO (validación de negocio)
+- Base de datos (CHECK constraints)
+
+**Documentación obligatoria:**
+- Actualizar `spec/backend/002_changelog.md`
+- Crear/actualizar especificación en `spec/`
+- Agregar scripts SQL a `spec/database/06_scripts/`
+
+### 🔐 Seguridad y Buenas Prácticas
+
+1. NUNCA exponer credenciales en código
+2. SIEMPRE usar variables de entorno
+3. Prevenir: SQL injection, XSS, CSRF
+4. Auditar: Todas las acciones críticas
+5. Validar: Permisos MBAC en endpoints sensibles
+
+---
+
+## 📂 Estructura Final (v1.34.1)
+
+```
+mini_proyecto_cenate/
+├── README.md                 ← ⭐ Navegación general
+├── CLAUDE.md                 ← Instrucciones para Claude
+├── backend/                  ← Spring Boot 3.5.6
+├── frontend/                 ← React 19
+└── spec/                     ← DOCUMENTACIÓN (9 carpetas)
+    ├── INDEX.md              ← ⭐ Índice maestro
+    ├── backend/              (15 docs)
+    ├── frontend/             (8 docs)
+    ├── architecture/         (3 docs)
+    ├── UI-UX/               (2 docs)
+    ├── database/            (15 docs)
+    ├── troubleshooting/     (8 docs)
+    ├── uml/                 (1 doc)
+    ├── test/                (vacío - próximamente)
+    └── sh/                  (scripts)
+```
+
+---
+
+*EsSalud Perú - CENATE | v1.34.1 (2026-01-26) | Documentación Reorganizada ✅*
