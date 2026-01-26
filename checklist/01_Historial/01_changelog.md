@@ -78,6 +78,44 @@
 
 **Resultado:** Imposible crear formularios duplicados aunque el usuario haga clic múltiples veces.
 
+---
+
+#### **4. 🔒 UNIQUE Index a Nivel de BD: Protección Garantizada**
+
+**Implementación Completada:**
+- ✅ **Limpieza de Duplicados:** 5 registros duplicados EN_PROCESO eliminados (se mantuvieron los más recientes)
+  - IPRESS 55 año 2026: Había 5 duplicados → Quedó 1
+  - IPRESS 391 año 2026: Había 2 duplicados → Quedó 1
+
+- ✅ **Creación de UNIQUE Index Parcial:**
+  ```sql
+  CREATE UNIQUE INDEX idx_uq_formulario_en_proceso_por_ipress_anio
+  ON form_diag_formulario (id_ipress, anio)
+  WHERE estado = 'EN_PROCESO';
+  ```
+
+- ✅ **Testing:** Index probado exitosamente - rechaza duplicados con error:
+  ```
+  ERROR: duplicate key value violates unique constraint
+  Key (id_ipress, anio)=(55, 2026) already exists
+  ```
+
+**Ventajas de esta Implementación:**
+1. **Protección triple:**
+   - 🎨 Frontend: Botón deshabilitado mientras guarda
+   - 🔒 Backend: Validación de duplicados en FormDiagServiceImpl
+   - 🛡️ BD: UNIQUE Index previene duplicados a nivel de almacenamiento
+
+2. **Imposible burlar:** Aunque haya bugs en código o ataques a API, BD lo previene
+
+3. **Eficiente:** Partial index solo almacena filas EN_PROCESO (no las demás)
+
+4. **Reversible:** Script de rollback disponible si es necesario
+
+**Archivos Creados:**
+- `spec/database/06_scripts/049_clean_duplicated_formularios_diagnostico.sql` - Limpieza
+- `spec/database/06_scripts/050_add_unique_constraint_formulario_diagnostico.sql` - UNIQUE Index
+
 ### 🔧 Cambios Técnicos
 
 **Archivos Modificados:**
@@ -87,6 +125,8 @@
 - `spec/UI-UX/01_design_system_tablas.md` (documentación) ✅
 - `spec/database/13_sistema_auditoria_duplicados.md` (documentación) ✅
 - `spec/troubleshooting/03_fix_duplicacion_formularios_diagnostico.md` (documentación) ✅ NUEVO
+- `spec/database/06_scripts/049_clean_duplicated_formularios_diagnostico.sql` ✅ NUEVO
+- `spec/database/06_scripts/050_add_unique_constraint_formulario_diagnostico.sql` ✅ NUEVO
 
 ### 📊 Mejoras Visuales
 
