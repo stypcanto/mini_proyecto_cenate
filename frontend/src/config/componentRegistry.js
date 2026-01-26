@@ -345,6 +345,11 @@ export const componentRegistry = {
     requiredAction: null, // Sin protección MBAC
   },
 
+  '/asegurados/duplicados': {
+    component: lazy(() => import('../pages/asegurados/RevisarDuplicados')),
+    requiredAction: null, // Sin protección MBAC
+  },
+
   // ========================================================================
   // 🤖 MÓDULO CHATBOT DE CITAS
   // ========================================================================

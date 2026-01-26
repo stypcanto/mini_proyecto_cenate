@@ -151,12 +151,12 @@ public class DimBolsa {
 
     public void incrementarPacientes(int cantidad) {
         this.totalPacientes = (this.totalPacientes != null ? this.totalPacientes : 0) + cantidad;
-        log.info("📊 Bolsa {} incrementada en {} pacientes. Total: {}", this.nombreBolsa, cantidad, this.totalPacientes);
+        log.info("📊 Bolsa incrementada en {} pacientes. Total: {}", cantidad, this.totalPacientes);
     }
 
     public void asignarPacientes(int cantidad) {
         this.pacientesAsignados = (this.pacientesAsignados != null ? this.pacientesAsignados : 0) + cantidad;
-        log.info("✅ Bolsa {} asignados {} pacientes. Asignados: {}/{}",
-                 this.nombreBolsa, cantidad, this.pacientesAsignados, this.totalPacientes);
+        log.info("✅ Bolsa: {} pacientes asignados. Asignados: {}/{}",
+                 cantidad, this.pacientesAsignados, this.totalPacientes);
     }
 }

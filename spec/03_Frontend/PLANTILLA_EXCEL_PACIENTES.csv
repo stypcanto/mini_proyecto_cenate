@@ -1,9 +1,0 @@
-REGISTRO,OPCIONES DE INGRESO DE LLAMADA,TELEFONO,TIPO DE DOCUMENTO,DNI,APELLIDOS Y NOMBRES,SEXO,FechaNacimiento,DEPARTAMENTO,PROVINCIA,DISTRITO,MOTIVO DE LA LLAMADA,AFILIACION,DERIVACION INTERNA
-1,Derivación,+51 987654321,DNI,12345678,Gonzales Flores María,Femenino,15/06/1990,Lima,Lima,San Isidro,Control de hipertensión,Afiliado,Cardiología
-2,Consulta Externa,956789012,DNI,23456789,Pérez Rivera Juan,Masculino,22/03/1985,Arequipa,Arequipa,Arequipa,Consulta por diabetes,Afiliado,Endocrinología
-3,Emergencia,912345678,DNI,34567890,Martínez Soto Ana,Femenino,08/11/1992,Cusco,Cusco,Cusco,Seguimiento post-operatorio,Beneficiario,Medicina General
-4,,945123456,DNI,45678901,Sánchez Morales Laura,Femenino,30/07/1988,Trujillo,Trujillo,Trujillo,Renovación de prescripción,Afiliado,Nutrición
-5,Consulta Externa,965432109,PASAPORTE,00123456,Torres Gutierrez Roberto,Masculino,12/05/1980,Puno,Puno,Puno,Control post-cirugía,Jubilado,Psicología
-6,Derivación,901234567,DNI,56789012,López Ramírez Sofía,Femenino,27/09/1995,Tacna,Tacna,Tacna,Atención post-natal,Afiliado,Ginecología
-7,,976543210,DNI,67890123,Fernández Castro Diego,Masculino,11/02/1987,Ica,Ica,Ica,Consulta psiquiátrica,Beneficiario,Psiquiatría
-8,Consulta Externa,934567890,DNI,78901234,Huaman Rojas Carlos,Masculino,05/12/1993,Junín,Junín,Junín,Fisioterapia,Afiliado,Medicina Física

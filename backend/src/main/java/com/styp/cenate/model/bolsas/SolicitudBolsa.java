@@ -60,7 +60,41 @@ public class SolicitudBolsa {
     @Column(name = "especialidad", length = 255)
     private String especialidad;
 
+    // ============================================================================
+    // 📋 LOS 10 CAMPOS DE EXCEL CARGADOS (v1.8.0) - NUEVO
+    // ============================================================================
+
+    @Column(name = "fecha_preferida_no_atendida")
+    private java.time.LocalDate fechaPreferidaNoAtendida;
+
+    @Column(name = "tipo_documento", length = 50)
+    private String tipoDocumento;
+
+    @Column(name = "fecha_nacimiento")
+    private java.time.LocalDate fechaNacimiento;
+
+    @Column(name = "paciente_sexo", length = 10)
+    private String pacienteSexo;
+
+    @Column(name = "paciente_telefono", length = 20)
+    private String pacienteTelefono;
+
+    @Column(name = "paciente_email", length = 255)
+    private String pacienteEmail;
+
+    @Column(name = "paciente_edad")
+    private Integer pacienteEdad;
+
+    @Column(name = "codigo_ipress", length = 20)
+    private String codigoIpressAdscripcion;
+
+    @Column(name = "tipo_cita", length = 50)
+    private String tipoCita;
+
+    // ============================================================================
     // 📦 REFERENCIA A TIPO DE BOLSA
+    // ============================================================================
+
     @Column(name = "id_bolsa", nullable = false)
     private Long idBolsa;
 

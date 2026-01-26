@@ -7,7 +7,7 @@ import React, { useState, useEffect, useMemo } from "react";
 import {
   Users, Building2, TrendingUp, Activity, ArrowLeft,
   Network, PieChart as PieChartIcon,
-  BarChart3, Shield, Calendar, MapPin, Target, Filter, ChevronDown, Loader
+  BarChart3, Shield, Calendar, MapPin, Target, Filter, ChevronDown, Loader, AlertTriangle
 } from "lucide-react";
 import {
   PieChart, Pie, Cell, BarChart, Bar,
@@ -177,7 +177,7 @@ export default function DashboardAsegurados() {
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50 p-6">
       <div className="max-w-7xl mx-auto space-y-6">
 
-        <header className="flex items-center justify-between">
+        <header className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
             <button onClick={() => navigate("/asegurados/buscar")} className="p-2 bg-white border-2 border-emerald-600 text-emerald-600 rounded-lg hover:bg-emerald-600 hover:text-white transition-all" title="Volver">
               <ArrowLeft className="w-5 h-5" />
@@ -190,9 +190,19 @@ export default function DashboardAsegurados() {
               <p className="text-sm text-slate-600">Panel ejecutivo con métricas del sistema CENATE</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-slate-600">
-            <Calendar className="w-4 h-4" />
-            <span>Actualizado: {FECHA_ACTUAL.toLocaleDateString("es-PE")}</span>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => navigate("/asegurados/duplicados")}
+              className="flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-lg transition-colors font-medium"
+              title="Revisar duplicados"
+            >
+              <AlertTriangle className="w-4 h-4" />
+              <span className="text-sm">Revisar Duplicados</span>
+            </button>
+            <div className="flex items-center gap-2 text-xs text-slate-600">
+              <Calendar className="w-4 h-4" />
+              <span>Actualizado: {FECHA_ACTUAL.toLocaleDateString("es-PE")}</span>
+            </div>
           </div>
         </header>
 

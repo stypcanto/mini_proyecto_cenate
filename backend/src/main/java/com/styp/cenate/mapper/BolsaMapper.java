@@ -22,9 +22,7 @@ public class BolsaMapper {
             return null;
 
         return BolsaDTO.builder()
-                .idBolsa(entity.getIdBolsa())
-                .nombreBolsa(entity.getNombreBolsa())
-                .descripcion(entity.getDescripcion())
+                .idBolsa(entity.getIdSolicitud())
                 .especialidadId(entity.getEspecialidadId())
                 .especialidadNombre(entity.getEspecialidadNombre())
                 .responsableId(entity.getResponsableId())
@@ -47,8 +45,6 @@ public class BolsaMapper {
             return null;
 
         return DimBolsa.builder()
-                .nombreBolsa(dto.getNombreBolsa())
-                .descripcion(dto.getDescripcion())
                 .especialidadId(dto.getEspecialidadId())
                 .especialidadNombre(dto.getEspecialidadNombre())
                 .responsableId(dto.getResponsableId())
@@ -64,8 +60,6 @@ public class BolsaMapper {
     // ACTUALIZAR ENTITY DESDE DTO (sin perder auditoría)
     // ============================================================
     public static void updateEntity(DimBolsa entity, BolsaRequestDTO dto) {
-        entity.setNombreBolsa(dto.getNombreBolsa());
-        entity.setDescripcion(dto.getDescripcion());
         entity.setEspecialidadId(dto.getEspecialidadId());
         entity.setEspecialidadNombre(dto.getEspecialidadNombre());
         entity.setResponsableId(dto.getResponsableId());

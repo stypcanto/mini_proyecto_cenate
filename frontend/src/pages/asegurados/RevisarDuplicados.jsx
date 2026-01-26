@@ -101,7 +101,7 @@ export default function RevisarDuplicados() {
       {/* Header */}
       <div className="mb-6">
         <button
-          onClick={() => navigate("/admin/asegurados")}
+          onClick={() => navigate("/asegurados/dashboard")}
           className="flex items-center gap-2 text-blue-600 hover:text-blue-700 font-medium mb-4"
         >
           <ArrowLeft size={20} /> Volver al módulo

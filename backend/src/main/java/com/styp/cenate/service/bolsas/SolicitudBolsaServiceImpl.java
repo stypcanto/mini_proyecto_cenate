@@ -84,31 +84,44 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 if (row == null) continue;
 
                 try {
-                    // Extraer valores del Excel con todos los campos nuevos
-                    String dni = obtenerValorCelda(row.getCell(0));
-                    String codigoAdscripcion = obtenerValorCelda(row.getCell(1));
-                    String nombreCompleto = obtenerValorCelda(row.getCell(2));
-                    String fechaNacimiento = obtenerValorCelda(row.getCell(3));
-                    String genero = obtenerValorCelda(row.getCell(4));
-                    String telefonoFijo = obtenerValorCelda(row.getCell(5));
-                    String telefonoCelular = obtenerValorCelda(row.getCell(6));
-                    String correoElectronico = obtenerValorCelda(row.getCell(7));
+                    // ============================================================================
+                    // 📋 EXTRAR LOS 10 CAMPOS DE EXCEL v1.8.0
+                    // ============================================================================
+                    String fechaPreferidaNoAtendida = obtenerValorCelda(row.getCell(0));  // Col 1
+                    String tipoDocumento = obtenerValorCelda(row.getCell(1));             // Col 2
+                    String dni = obtenerValorCelda(row.getCell(2));                       // Col 3
+                    String nombreCompleto = obtenerValorCelda(row.getCell(3));            // Col 4
+                    String sexo = obtenerValorCelda(row.getCell(4));                      // Col 5
+                    String fechaNacimiento = obtenerValorCelda(row.getCell(5));           // Col 6
+                    String telefono = obtenerValorCelda(row.getCell(6));                  // Col 7
+                    String correo = obtenerValorCelda(row.getCell(7));                    // Col 8
+                    String codigoIpress = obtenerValorCelda(row.getCell(8));              // Col 9
+                    String tipoCita = obtenerValorCelda(row.getCell(9));                  // Col 10
 
-                    if (dni.isBlank() || codigoAdscripcion.isBlank()) {
+                    // Validar campos obligatorios
+                    if (dni.isBlank() || codigoIpress.isBlank()) {
                         errores.add(Map.of(
                             "fila", filaNumero,
-                            "error", "DNI o código de adscripción vacío"
+                            "error", "DNI o COD. IPRESS ADSCRIPCIÓN vacío"
                         ));
                         filasError++;
                         filaNumero++;
                         continue;
                     }
 
-                    // Crear DTO para procesar fila con todos los datos
+                    // Crear DTO para procesar fila con TODOS los 10 campos
                     SolicitudBolsaExcelRowDTO rowDTO = new SolicitudBolsaExcelRowDTO(
-                        filaNumero, dni, codigoAdscripcion,
-                        nombreCompleto, fechaNacimiento, genero,
-                        telefonoFijo, telefonoCelular, correoElectronico
+                        filaNumero,
+                        fechaPreferidaNoAtendida,
+                        tipoDocumento,
+                        dni,
+                        nombreCompleto,
+                        sexo,
+                        fechaNacimiento,
+                        telefono,
+                        correo,
+                        codigoIpress,
+                        tipoCita
                     );
 
                     // Procesar y validar fila
@@ -244,7 +257,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     /**
      * Procesa una fila del Excel: valida y auto-enriquece datos
-     * En la implementación real, realizaría lookups en BD
+     * Almacena los 10 campos de Excel v1.8.0
+     *
+     * @since v1.8.0
      */
     private SolicitudBolsa procesarFilaExcel(
             SolicitudBolsaExcelRowDTO row,
@@ -262,6 +277,35 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         String nombreIpress = "N/A";
         String redAsistencial = "N/A";
 
+        // ============================================================================
+        // 📋 PROCESAR LOS 10 CAMPOS DE EXCEL v1.8.0
+        // ============================================================================
+
+        // Parsear fechas
+        java.time.LocalDate fechaPreferida = null;
+        java.time.LocalDate fechaNacimiento = null;
+        Integer edadCalculada = null;
+
+        try {
+            if (row.fechaPreferidaNoAtendida() != null && !row.fechaPreferidaNoAtendida().isBlank()) {
+                fechaPreferida = java.time.LocalDate.parse(row.fechaPreferidaNoAtendida());
+                log.info("✅ Fecha preferida parseada: {}", fechaPreferida);
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo parsear fecha preferida: {}", e.getMessage());
+        }
+
+        try {
+            if (row.fechaNacimiento() != null && !row.fechaNacimiento().isBlank()) {
+                fechaNacimiento = java.time.LocalDate.parse(row.fechaNacimiento());
+                // Calcular edad
+                edadCalculada = java.time.LocalDate.now().getYear() - fechaNacimiento.getYear();
+                log.info("✅ Fecha nacimiento parseada: {} | Edad calculada: {}", fechaNacimiento, edadCalculada);
+            }
+        } catch (Exception e) {
+            log.warn("⚠️ No se pudo parsear fecha nacimiento: {}", e.getMessage());
+        }
+
         // 0. Obtener nombre real del paciente desde dim_asegurados o sincronizar si es nuevo
         try {
             log.info("🔍 PASO 0: Buscando asegurado DNI {}", row.dni());
@@ -278,11 +322,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 // Asegurado NO existe
                 log.info("⚠️  Asegurado NO existe en BD para DNI {}", row.dni());
                 log.info("   - nombreCompleto: {}", row.nombreCompleto());
+                log.info("   - sexo: {}", row.sexo());
                 log.info("   - fechaNacimiento: {}", row.fechaNacimiento());
-                log.info("   - genero: {}", row.genero());
-                log.info("   - telefonoFijo: {}", row.telefonoFijo());
-                log.info("   - telefonoCelular: {}", row.telefonoCelular());
-                log.info("   - correoElectronico: {}", row.correoElectronico());
+                log.info("   - telefono: {}", row.telefono());
+                log.info("   - correo: {}", row.correo());
 
                 if (row.nombreCompleto() != null && !row.nombreCompleto().isBlank()) {
                     // CREAR NUEVO ASEGURADO
@@ -293,20 +336,13 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     nuevoAsegurado.setPkAsegurado(row.dni());
                     nuevoAsegurado.setDocPaciente(row.dni());
                     nuevoAsegurado.setPaciente(row.nombreCompleto());
-                    nuevoAsegurado.setTelFijo(row.telefonoFijo());
-                    nuevoAsegurado.setTelCelular(row.telefonoCelular());
-                    nuevoAsegurado.setCorreoElectronico(row.correoElectronico());
-                    nuevoAsegurado.setSexo(row.genero());
+                    nuevoAsegurado.setTelCelular(row.telefono());
+                    nuevoAsegurado.setCorreoElectronico(row.correo());
+                    nuevoAsegurado.setSexo(row.sexo());
 
-                    // Parsear fecha de nacimiento si viene en formato YYYY-MM-DD
-                    if (row.fechaNacimiento() != null && !row.fechaNacimiento().isBlank()) {
-                        try {
-                            java.time.LocalDate fecha = java.time.LocalDate.parse(row.fechaNacimiento());
-                            nuevoAsegurado.setFecnacimpaciente(fecha);
-                            log.info("   ✅ Fecha de nacimiento parseada: {}", fecha);
-                        } catch (Exception e) {
-                            log.warn("   ❌ No se pudo parsear fecha de nacimiento: {}", e.getMessage());
-                        }
+                    if (fechaNacimiento != null) {
+                        nuevoAsegurado.setFecnacimpaciente(fechaNacimiento);
+                        log.info("   ✅ Fecha de nacimiento asignada: {}", fechaNacimiento);
                     }
 
                     log.info("   💾 Guardando en BD...");
@@ -345,9 +381,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.warn("No se pudo obtener tipo de bolsa para ID {}: {}", idTipoBolsa, e.getMessage());
         }
 
-        // 3. Obtener IPRESS desde código de adscripción
+        // 3. Obtener IPRESS desde código de adscripción (COD. IPRESS ADSCRIPCIÓN de Excel)
         try {
-            Ipress ipress = ipressRepository.findByCodIpress(row.codigoAdscripcion()).orElse(null);
+            Ipress ipress = ipressRepository.findByCodIpress(row.codigoIpress()).orElse(null);
             if (ipress != null) {
                 idIpress = ipress.getIdIpress();
                 nombreIpress = ipress.getDescIpress() != null ? ipress.getDescIpress() : "N/A";
@@ -358,7 +394,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 }
             }
         } catch (Exception e) {
-            log.warn("No se pudo obtener IPRESS para código {}: {}", row.codigoAdscripcion(), e.getMessage());
+            log.warn("No se pudo obtener IPRESS para código {}: {}", row.codigoIpress(), e.getMessage());
         }
 
         return SolicitudBolsa.builder()
@@ -372,7 +408,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .descTipoBolsa(descTipoBolsa)
             .idServicio(idServicio)
             .codServicio(codServicio)
-            .codigoAdscripcion(row.codigoAdscripcion())
+            .codigoAdscripcion(row.codigoIpress())
             .idIpress(idIpress)
             .nombreIpress(nombreIpress)
             .redAsistencial(redAsistencial)
@@ -384,6 +420,18 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .descEstadoCita("Pendiente de Cita")
             .activo(true)
             .recordatorioEnviado(false)
+            // ============================================================================
+            // 📋 LOS 10 CAMPOS DE EXCEL v1.8.0 - ASIGNADOS AL BUILDER
+            // ============================================================================
+            .fechaPreferidaNoAtendida(fechaPreferida)
+            .tipoDocumento(row.tipoDocumento())
+            .fechaNacimiento(fechaNacimiento)
+            .pacienteSexo(row.sexo())
+            .pacienteTelefono(row.telefono())
+            .pacienteEmail(row.correo())
+            .codigoIpressAdscripcion(row.codigoIpress())
+            .tipoCita(row.tipoCita())
+            .pacienteEdad(edadCalculada)
             .build();
     }
 
