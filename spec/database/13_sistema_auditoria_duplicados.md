@@ -343,9 +343,16 @@ DROP TABLE audit_duplicados_asegurados;
 - [x] Búsqueda en tiempo real
 - [x] Paginación cliente-servidor
 - [x] Ordenamiento
-- [x] Modal de detalles
+- [x] Modal de detalles mejorado (v1.1.0)
+  - Modal agrandado (max-w-5xl)
+  - Tabla comparativa de registros duplicados
+  - Distribución optimizada del contenido
+  - Header y footer sticky para mejor UX
+  - Botón X para cerrar modal
+  - Link a ESSI integrado (http://10.56.1.158/sgss/servlet/hmain)
 - [x] Exportación CSV
 - [x] UI responsiva
+- [x] Estadísticas en tarjetas
 
 ### ⏳ Falta
 - [ ] Agregar ruta en router de la aplicación

@@ -29,7 +29,9 @@ import {
   Save,
   Trash2,
   FileText,
-  Activity
+  Activity,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { apiClient } from "../../lib/apiClient";
 import toast from "react-hot-toast";
@@ -52,6 +54,9 @@ export default function BuscarAsegurado() {
   const [selectedIpress, setSelectedIpress] = useState("");
   const [loadingFiltros, setLoadingFiltros] = useState(false);
 
+  // 📋 Estados para tipos de documento
+  const [tiposDocumento, setTiposDocumento] = useState([]);
+
   // Paginación desde el backend
   const [currentPage, setCurrentPage] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
@@ -69,6 +74,7 @@ export default function BuscarAsegurado() {
   const [modoFormulario, setModoFormulario] = useState('crear');
   const [formularioData, setFormularioData] = useState({
     docPaciente: '',
+    idTipDoc: '1', // 📋 Por defecto DNI
     paciente: '',
     fecnacimpaciente: '',
     sexo: 'M',
@@ -82,11 +88,27 @@ export default function BuscarAsegurado() {
   });
   const [loadingForm, setLoadingForm] = useState(false);
 
-  // ✅ Cargar filtros al iniciar
+  // 🔍 Estados para validación de DNI en tiempo real
+  const [dniStatus, setDniStatus] = useState(null); // null, "validando", "disponible", "duplicado"
+  const [dniMessage, setDniMessage] = useState("");
+
+  // ✅ Cargar filtros y tipos de documento al iniciar
   useEffect(() => {
     cargarRedes();
     cargarIpress();
+    cargarTiposDocumento();
   }, []);
+
+  const cargarTiposDocumento = async () => {
+    try {
+      const response = await apiClient.get('/asegurados/tipos-documento', true);
+      setTiposDocumento(response || []);
+    } catch (error) {
+      console.error('Error al cargar tipos de documento:', error);
+      // Si falla, usar por defecto
+      setTiposDocumento([{ id_tip_doc: 1, desc_tip_doc: 'DNI' }]);
+    }
+  };
 
   // ✅ Cargar IPRESS cuando cambia la Red seleccionada
   useEffect(() => {
@@ -122,6 +144,73 @@ export default function BuscarAsegurado() {
   useEffect(() => {
     cargarAsegurados();
   }, [currentPage, debouncedSearchValue, selectedRed, selectedIpress]);
+
+  // 🔍 Validar DNI en tiempo real cuando tiene 8 dígitos (solo cuando está creando)
+  useEffect(() => {
+    if (modoFormulario !== 'crear') {
+      setDniStatus(null);
+      setDniMessage("");
+      return;
+    }
+
+    const dni = formularioData.docPaciente?.trim();
+
+    // Si está vacío o tiene menos de 8 dígitos, limpiar estado
+    if (!dni || dni.length < 8) {
+      setDniStatus(null);
+      setDniMessage("");
+      return;
+    }
+
+    // Solo validar si tiene exactamente 8 dígitos y son todos numéricos
+    if (dni.length !== 8 || !/^\d+$/.test(dni)) {
+      return;
+    }
+
+    const abortController = new AbortController();
+    let isMounted = true;
+
+    const validarDniEnTiempoReal = async () => {
+      try {
+        setDniStatus("validando");
+        const response = await fetch(`/api/asegurados/validar-dni/${dni}`, {
+          signal: abortController.signal
+        });
+        const data = await response.json();
+
+        // Solo actualizar si este componente sigue montado y el DNI no ha cambiado
+        if (!isMounted || formularioData.docPaciente?.trim() !== dni) {
+          return;
+        }
+
+        console.log("🔍 Respuesta validación DNI:", data);
+
+        if (data.disponible) {
+          setDniStatus("disponible");
+          setDniMessage(data.mensaje || "✅ Este DNI está disponible");
+        } else {
+          setDniStatus("duplicado");
+          setDniMessage(data.mensaje || "❌ Este DNI ya está registrado");
+        }
+      } catch (error) {
+        if (error.name === 'AbortError') {
+          console.log("⏹️ Validación cancelada para DNI:", dni);
+          return;
+        }
+        console.error("❌ Error validando DNI:", error);
+        setDniStatus(null);
+        setDniMessage("");
+      }
+    };
+
+    const timeout = setTimeout(validarDniEnTiempoReal, 500);
+
+    return () => {
+      isMounted = false;
+      clearTimeout(timeout);
+      abortController.abort();
+    };
+  }, [formularioData.docPaciente, modoFormulario]);
 
   const cargarAsegurados = async () => {
     try {
@@ -235,6 +324,7 @@ export default function BuscarAsegurado() {
     setModoFormulario('crear');
     setFormularioData({
       docPaciente: '',
+      idTipDoc: '1', // 📋 Por defecto DNI
       paciente: '',
       fecnacimpaciente: '',
       sexo: 'M',
@@ -246,6 +336,8 @@ export default function BuscarAsegurado() {
       casAdscripcion: '',
       periodo: new Date().getFullYear().toString()
     });
+    setDniStatus(null);
+    setDniMessage("");
     if (todasIpress.length === 0) {
       cargarIpress();
     }
@@ -274,6 +366,7 @@ export default function BuscarAsegurado() {
       setFormularioData({
         pkAsegurado: response.asegurado.pkAsegurado,
         docPaciente: response.asegurado.docPaciente || '',
+        idTipDoc: response.asegurado.idTipDoc?.toString() || '1', // 📋 Tipo de documento
         paciente: response.asegurado.paciente || '',
         fecnacimpaciente: fechaFormateada,
         sexo: response.asegurado.sexo || 'M',
@@ -298,6 +391,7 @@ export default function BuscarAsegurado() {
     setShowFormModal(false);
     setFormularioData({
       docPaciente: '',
+      idTipDoc: '1', // 📋 Por defecto DNI
       paciente: '',
       fecnacimpaciente: '',
       sexo: 'M',
@@ -309,6 +403,8 @@ export default function BuscarAsegurado() {
       casAdscripcion: '',
       periodo: new Date().getFullYear().toString()
     });
+    setDniStatus(null);
+    setDniMessage("");
   };
 
   const handleInputChange = (e) => {
@@ -319,6 +415,12 @@ export default function BuscarAsegurado() {
       ...prev,
       [name]: finalValue
     }));
+
+    // 🔍 Si cambiamos el DNI, limpiar validación anterior inmediatamente
+    if (name === 'docPaciente') {
+      setDniStatus(null);
+      setDniMessage("");
+    }
   };
 
   const guardarAsegurado = async (e) => {
@@ -329,6 +431,20 @@ export default function BuscarAsegurado() {
       !formularioData.casAdscripcion || !formularioData.periodo) {
       toast.error('Por favor completa todos los campos obligatorios (marcados con *)');
       return;
+    }
+
+    // 🔒 Validar que DNI no esté duplicado (solo en modo crear)
+    if (modoFormulario === 'crear') {
+      if (dniStatus === "duplicado") {
+        toast.error("❌ Este DNI ya está registrado en el sistema. No se puede crear un duplicado.");
+        return;
+      }
+
+      // 🔒 Esperar validación del DNI
+      if (dniStatus === "validando") {
+        toast.error("⏳ Aguarde a que se valide el DNI...");
+        return;
+      }
     }
 
     try {
@@ -379,10 +495,10 @@ export default function BuscarAsegurado() {
   const endIndex = Math.min((currentPage + 1) * pageSize, totalElements);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50 p-6">
-      <div className="max-w-7xl mx-auto space-y-6">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-emerald-50/30 to-slate-50 px-1 py-3">
+      <div className="w-full space-y-3">
         {/* Header */ }
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between px-3">
           <div className="flex items-center gap-3">
             <div className="bg-emerald-600 p-2 rounded-lg">
               <Users className="w-5 h-5 text-white" />
@@ -397,7 +513,7 @@ export default function BuscarAsegurado() {
             </div>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-shrink-0">
             <button
               onClick={ abrirFormularioCrear }
               className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg 
@@ -584,30 +700,29 @@ export default function BuscarAsegurado() {
             {/* Tabla */ }
             <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
               <div className="overflow-x-auto">
-                <table className="w-full">
+                <table className="w-full" style={{ tableLayout: 'auto' }}>
                   <thead>
-                    <tr className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white">
-                      <th className="px-4 py-3 text-left text-xs font-semibold w-12">
+                    <tr className="bg-gradient-to-r from-emerald-600 to-emerald-700 text-white border-b-2 border-emerald-800">
+                      <th className="px-2.5 py-3 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ width: '50px' }}>
                         N°
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold w-32">
-                        <IdCard className="w-3.5 h-3.5 inline mr-1" />
-                        DNI
+                      <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ width: '90px' }}>
+                        Tipo Doc
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold w-64">
-                        <User className="w-3.5 h-3.5 inline mr-1" />
-                        Nombre Completo
+                      <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ width: '110px' }}>
+                        Documento
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold w-32">
-                        <Phone className="w-3.5 h-3.5 inline mr-1" />
+                      <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">
+                        Nombre
+                      </th>
+                      <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ width: '140px' }}>
                         Teléfono
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold w-64">
-                        <Building2 className="w-3.5 h-3.5 inline mr-1" />
+                      <th className="px-3 py-3 text-left text-xs font-bold uppercase tracking-wider whitespace-nowrap">
                         IPRESS
                       </th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold w-36">
-                        ACCIONES
+                      <th className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wider whitespace-nowrap" style={{ width: '100px' }}>
+                        ACC
                       </th>
                     </tr>
                   </thead>
@@ -619,81 +734,76 @@ export default function BuscarAsegurado() {
                           key={ asegurado.pkAsegurado || index }
                           className="hover:bg-emerald-50 transition-colors"
                         >
-                          <td className="px-4 py-3 text-sm text-slate-600">
+                          <td className="px-2.5 py-3 text-xs text-slate-600 text-center font-medium" style={{ width: '50px' }}>
                             { globalIndex }
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="bg-emerald-100 p-1.5 rounded-lg">
-                                <IdCard className="w-3.5 h-3.5 text-emerald-700" />
-                              </div>
-                              <span className="font-medium text-sm text-slate-900">
-                                { asegurado.docPaciente || "No registrado" }
-                              </span>
-                            </div>
+                          <td className="px-3 py-3 text-sm text-slate-900" style={{ width: '90px' }}>
+                            { asegurado.idTipDoc === 1 ? 'DNI' : asegurado.idTipDoc === 2 ? 'C.E./PAS' : asegurado.idTipDoc === 3 ? 'PASAPORT' : 'DNI' }
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="font-medium text-sm text-slate-900 truncate" title={ asegurado.paciente }>
-                              { asegurado.paciente || "No especificado" }
+                          <td className="px-3 py-3 text-sm text-slate-900" style={{ width: '110px' }}>
+                            { asegurado.docPaciente || "-" }
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="text-sm text-slate-900 font-medium" title={ asegurado.paciente }>
+                              { asegurado.paciente || "-" }
                             </div>
-                            <div className="text-xs text-slate-500 mt-0.5 flex items-center gap-1.5">
-                              { asegurado.sexo === 'M' ? '👨' :
-                                asegurado.sexo === 'F' ? '👩' : '' }
+                            <div className="text-xs text-slate-500 mt-1">
+                              { asegurado.sexo === 'M' ? '👨 M' :
+                                asegurado.sexo === 'F' ? '👩 F' : '?' }
                               { asegurado.tipoPaciente && (
-                                <span className="bg-slate-100 px-1.5 py-0.5 rounded text-xs">
-                                  { asegurado.tipoPaciente }
+                                <span className="ml-2 bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded text-xs font-medium">
+                                  { asegurado.tipoPaciente.substring(0, 3) }
                                 </span>
                               ) }
                             </div>
                           </td>
-                          <td className="px-4 py-3 text-sm text-slate-600">
-                            { asegurado.telFijo || "No registrado" }
+                          <td className="px-3 py-3 text-sm text-slate-900" style={{ width: '140px' }}>
+                            { asegurado.telFijo || "-" }
                           </td>
-                          <td className="px-4 py-3">
+                          <td className="px-3 py-3">
                             <div className="text-sm">
-                              <div className="font-medium text-sm text-slate-900 truncate" title={ asegurado.nombreIpress }>
-                                { asegurado.nombreIpress || "No registrado" }
+                              <div className="font-medium text-slate-900" title={ asegurado.nombreIpress }>
+                                { asegurado.nombreIpress || "-" }
                               </div>
-                              <div className="text-xs text-slate-500 mt-0.5">
-                                Código: { asegurado.casAdscripcion || "N/A" }
+                              <div className="text-xs text-slate-500 mt-1">
+                                Cód: <span className="font-mono">{ asegurado.casAdscripcion || "N/A" }</span>
                               </div>
                             </div>
                           </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center justify-center gap-1.5">
+                          <td className="px-2.5 py-3" style={{ width: '100px' }}>
+                            <div className="flex items-center justify-center gap-0.5">
                               {/* Botón Ver */ }
                               <button
                                 onClick={ () => obtenerDetalles(asegurado.pkAsegurado) }
                                 disabled={ loadingDetalle }
-                                className="group relative p-2 bg-white border-2 border-emerald-600 text-emerald-600 
-                                         rounded-lg hover:bg-emerald-600 hover:text-white transition-all duration-200 
-                                         disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
-                                title="Ver detalles"
+                                className="p-1 bg-white border border-emerald-600 text-emerald-600
+                                         rounded hover:bg-emerald-600 hover:text-white transition-all duration-200
+                                         disabled:opacity-50 disabled:cursor-not-allowed"
+                                title="Ver"
                               >
-                                <Eye className="w-4 h-4" />
+                                <Eye className="w-3.5 h-3.5" />
                               </button>
 
                               {/* Botón Editar */ }
                               <button
                                 onClick={ () => abrirFormularioEditar(asegurado.pkAsegurado) }
                                 disabled={ loadingDetalle }
-                                className="group relative p-2 bg-white border-2 border-blue-600 text-blue-600 
-                                         rounded-lg hover:bg-blue-600 hover:text-white transition-all duration-200 
-                                         disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                                className="p-1 bg-white border border-blue-600 text-blue-600
+                                         rounded hover:bg-blue-600 hover:text-white transition-all duration-200
+                                         disabled:opacity-50 disabled:cursor-not-allowed"
                                 title="Editar"
                               >
-                                <Edit className="w-4 h-4" />
+                                <Edit className="w-3.5 h-3.5" />
                               </button>
 
                               {/* Botón Eliminar */ }
                               <button
                                 onClick={ () => eliminarAsegurado(asegurado.pkAsegurado, asegurado.paciente) }
-                                className="group relative p-2 bg-white border-2 border-red-600 text-red-600 
-                                         rounded-lg hover:bg-red-600 hover:text-white transition-all duration-200 
-                                         shadow-sm hover:shadow-md"
+                                className="p-1 bg-white border border-red-600 text-red-600
+                                         rounded hover:bg-red-600 hover:text-white transition-all duration-200"
                                 title="Eliminar"
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="w-3.5 h-3.5" />
                               </button>
                             </div>
                           </td>
@@ -827,7 +937,13 @@ export default function BuscarAsegurado() {
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-slate-600">DNI</label>
+                      <label className="text-sm font-medium text-slate-600">📋 Tipo de Documento</label>
+                      <p className="text-lg font-semibold text-slate-900 mt-1">
+                        {tiposDocumento.find(t => t.id_tip_doc === parseInt(detalleAsegurado.asegurado.idTipDoc || '1'))?.desc_tip_doc || 'DNI'}
+                      </p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-slate-600">Documento</label>
                       <p className="text-lg font-semibold text-slate-900 mt-1">
                         { detalleAsegurado.asegurado.docPaciente || "No registrado" }
                       </p>
@@ -1025,23 +1141,89 @@ export default function BuscarAsegurado() {
 
             <form onSubmit={ guardarAsegurado } className="p-6 space-y-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* 📋 Tipo de Documento PRIMERO */}
+                <div>
+                  <label className="block text-sm font-semibold text-slate-700 mb-2">
+                    📋 Tipo de Documento <span className="text-red-600">*</span>
+                  </label>
+                  <select
+                    name="idTipDoc"
+                    value={ formularioData.idTipDoc }
+                    onChange={ handleInputChange }
+                    required
+                    disabled={ modoFormulario === 'editar' }
+                    className={`w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
+                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
+                             transition-all ${modoFormulario === 'editar' ? 'bg-slate-100 cursor-not-allowed' : ''}`}
+                  >
+                    <option value="">-- Selecciona tipo --</option>
+                    {tiposDocumento && Array.isArray(tiposDocumento) && tiposDocumento.length > 0 ? (
+                      tiposDocumento.map((tipo) => (
+                        <option key={ tipo.id_tip_doc } value={ tipo.id_tip_doc }>
+                          { tipo.desc_tip_doc }
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="1">DNI</option>
+                        <option value="2">C.E./PAS</option>
+                        <option value="3">PASAPORT</option>
+                      </>
+                    )}
+                  </select>
+                  <p className="text-xs text-slate-500 mt-1">
+                    { modoFormulario === 'editar'
+                      ? 'No se puede cambiar el tipo de documento después de crear'
+                      : 'Selecciona el tipo de documento' }
+                  </p>
+                </div>
+
+                {/* DNI / Documento */}
                 <div>
                   <label className="block text-sm font-semibold text-slate-700 mb-2">
                     <IdCard className="w-4 h-4 inline mr-1" />
-                    DNI <span className="text-red-600">*</span>
+                    Documento <span className="text-red-600">*</span>
                   </label>
-                  <input
-                    type="text"
-                    name="docPaciente"
-                    value={ formularioData.docPaciente }
-                    onChange={ handleInputChange }
-                    required
-                    maxLength="8"
-                    className="w-full px-4 py-2.5 border-2 border-slate-200 rounded-lg text-slate-900
-                             focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100
-                             transition-all"
-                    placeholder="12345678"
-                  />
+                  <div className="relative">
+                    <input
+                      type="text"
+                      name="docPaciente"
+                      value={ formularioData.docPaciente }
+                      onChange={ handleInputChange }
+                      required
+                      maxLength="20"
+                      disabled={ loadingForm || modoFormulario === 'editar' }
+                      className={`w-full px-4 py-2.5 border-2 rounded-lg text-slate-900 transition-all ${
+                        modoFormulario === 'editar'
+                          ? 'border-slate-200 bg-slate-100 cursor-not-allowed'
+                          : dniStatus === "disponible"
+                          ? "border-green-300 focus:border-green-500 focus:ring-2 focus:ring-green-100 focus:outline-none"
+                          : dniStatus === "duplicado"
+                          ? "border-red-300 focus:border-red-500 focus:ring-2 focus:ring-red-100 focus:outline-none"
+                          : dniStatus === "validando"
+                          ? "border-yellow-300 focus:border-yellow-500 focus:ring-2 focus:ring-yellow-100 focus:outline-none"
+                          : "border-slate-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 focus:outline-none"
+                      }`}
+                      placeholder="12345678"
+                    />
+                    {/* Indicador de estado */}
+                    { modoFormulario === 'crear' && dniStatus === "disponible" && (
+                      <CheckCircle className="absolute right-3 top-2.5 w-5 h-5 text-green-600" />
+                    ) }
+                    { modoFormulario === 'crear' && dniStatus === "duplicado" && (
+                      <XCircle className="absolute right-3 top-2.5 w-5 h-5 text-red-600" />
+                    ) }
+                    { modoFormulario === 'crear' && dniStatus === "validando" && (
+                      <Loader className="absolute right-3 top-2.5 w-5 h-5 text-yellow-600 animate-spin" />
+                    ) }
+                  </div>
+
+                  {/* Mensaje de validación */}
+                  { modoFormulario === 'crear' && dniMessage && (
+                    <p className={`text-sm mt-1 ${ dniStatus === "disponible" ? "text-green-600" : "text-red-600" }`}>
+                      { dniMessage }
+                    </p>
+                  ) }
                 </div>
 
                 <div>
@@ -1250,10 +1432,11 @@ export default function BuscarAsegurado() {
                 </button>
                 <button
                   type="submit"
-                  disabled={ loadingForm }
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg 
+                  disabled={ loadingForm || (modoFormulario === 'crear' && (dniStatus === "duplicado" || dniStatus === "validando")) }
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg
                            font-medium transition-all shadow-md hover:shadow-lg flex items-center gap-2
                            disabled:opacity-50 disabled:cursor-not-allowed"
+                  title={ modoFormulario === 'crear' && dniStatus === "duplicado" ? "❌ Este DNI ya está registrado" : "" }
                 >
                   { loadingForm ? (
                     <>

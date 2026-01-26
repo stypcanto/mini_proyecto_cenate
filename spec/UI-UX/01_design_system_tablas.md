@@ -552,7 +552,81 @@ colors: {
 
 ---
 
+## 🎯 Caso de Uso: Tabla de Asegurados (BuscarAsegurado.jsx)
+
+### Mejoras Implementadas (v1.2.0 - 2026-01-26)
+
+#### Problema identificado:
+- Tabla muy compacta con espacios perdidos en laterales
+- Columnas recortadas (especialmente DNI e IPRESS)
+- Tipografía inconsistente
+- Padding insuficiente
+
+#### Soluciones aplicadas:
+
+**1. Optimización de espacios:**
+```jsx
+// Antes
+<div className="max-w-7xl mx-auto">
+  <table className="w-full" style={{ tableLayout: 'fixed' }}>
+
+// Después
+<div className="w-full">
+  <table className="w-full" style={{ tableLayout: 'auto' }}>
+```
+
+**2. Ancho dinámico con columnas flexibles:**
+```jsx
+// Columnas con ancho fijo + flexibles
+<th style={{ width: '50px' }}>N°</th>           {/* Compacta */}
+<th style={{ width: '90px' }}>Tipo Doc</th>    {/* Nueva columna */}
+<th style={{ width: '110px' }}>Documento</th>  {/* Expandida */}
+<th>Nombre</th>                                {/* Flexible */}
+<th style={{ width: '140px' }}>Teléfono</th>  {/* Fijo */}
+<th>IPRESS</th>                                {/* Flexible */}
+<th style={{ width: '100px' }}>ACC</th>        {/* Botones */}
+```
+
+**3. Tipografía normalizada:**
+```jsx
+// Documento: text-sm text-slate-900 (sin bold)
+// Teléfono: text-sm text-slate-900 (mismo estilo)
+// Tipo Doc: text-sm text-slate-900 (consistente)
+```
+
+**4. Nueva columna "Tipo de Documento":**
+```jsx
+// Antes: Solo mostraba documento
+// Ahora: DNI | Documento | Nombre | ...
+
+// Mapeo de valores:
+idTipDoc === 1 → 'DNI'
+idTipDoc === 2 → 'C.E./PAS'
+idTipDoc === 3 → 'PASAPORT'
+```
+
+**5. Compresión de padding en botones de acción:**
+```jsx
+// Antes: p-1.5 gap-1.5 border-2
+// Después: p-1 gap-0.5 border
+
+// Resultado: más botones caben en menos espacio
+```
+
+### Resultado:
+✅ Tabla expandida aprovecha 100% del ancho
+✅ Todos los datos visibles sin truncamiento
+✅ UI más limpia y profesional
+✅ Tipografía consistente
+
+### Aplicable a:
+- `frontend/src/pages/asegurados/BuscarAsegurado.jsx` (Aplicado)
+- `frontend/src/pages/asegurados/RevisarDuplicados.jsx` (Modal mejorado)
+- Otros módulos con tablas de datos
+
+---
+
 **Documento creado por**: Claude Code
-**Versión**: 1.0.0
-**Última actualización**: 2026-01-22
+**Versión**: 1.2.0
+**Última actualización**: 2026-01-26
 **Estado**: ACTIVO ✅
