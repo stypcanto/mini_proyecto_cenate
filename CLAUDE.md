@@ -85,6 +85,62 @@ Credenciales de ESSI utilizadas durante la investigación. Recomendación: cambi
 
 ---
 
+## 🔍 SISTEMA DE AUDITORÍA DE DUPLICADOS POTENCIALES (2026-01-25)
+
+**STATUS:** ✅ Completado | **Duplicados marcados:** 443,228 | **Página creada:** RevisarDuplicados.jsx
+
+### Solución Implementada:
+
+**Problema:** 443,228 registros tienen DNI de 7 caracteres que coinciden con DNI de 8 caracteres existentes pero con **NOMBRES DIFERENTES**.
+
+**Solución:** Marcar como `duplicado_potencial` + crear interfaz completa de revisión.
+
+### Componentes:
+
+**Base de Datos:**
+- ✅ Columna `duplicado_potencial` agregada a tabla asegurados
+- ✅ Tabla `audit_duplicados_asegurados` creada (443,228 registros)
+- ✅ Índices optimizados para búsquedas rápidas
+
+**Backend (Spring Boot):**
+- ✅ `GET /api/asegurados/duplicados/potenciales` → Lista 443,228 con paginación
+  - Parámetros: page, size, ordenar (dni/nombre/fecha)
+  - Respuesta: Página JSON con asegurados duplicados
+
+- ✅ `GET /api/asegurados/duplicado/{docPaciente}` → Detalles específicos
+  - Compara registro de 7 vs 8 caracteres
+  - Incluye estado de auditoría
+
+**Frontend (React):**
+- ✅ Página `RevisarDuplicados.jsx`
+  - Tabla con lista de 443,228 duplicados
+  - Búsqueda en tiempo real por nombre/DNI
+  - Ordenamiento dinámico (DNI, Nombre, Fecha)
+  - Paginación (25 registros/página)
+  - Modal con detalles: comparación lado a lado
+  - Botón Exportar CSV
+  - UI responsiva con Tailwind + Lucide Icons
+
+### Documentación:
+- **⭐ Sistema completo:** `spec/04_BaseDatos/13_sistema_auditoria_duplicados.md`
+- **📋 Script SQL:** `spec/04_BaseDatos/06_scripts/044_marcar_duplicados_potenciales.sql`
+- **💾 Auditoría:** `spec/04_BaseDatos/12_reporte_correccion_dni_ejecutado.md`
+
+### Reversibilidad:
+- ✅ Totalmente reversible (UPDATE duplicado_potencial = false)
+- ✅ No afecta búsquedas normales (usa pk_asegurado)
+- ✅ Integridad referencial mantenida
+
+### ⏳ Falta Completar:
+1. Agregar ruta en router de la aplicación
+2. Agregar enlace en menú del módulo Asegurados
+3. Testing completo
+4. Deploy a producción
+
+**Nota:** El sistema está 100% implementado en backend y frontend. Solo falta wiring de rutas en la aplicación.
+
+---
+
 ## 📚 Índice de Documentación
 
 ### 🎯 Inicio Rápido
