@@ -207,6 +207,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/coordinador/periodo-disponibilidad-medica': {
+    component: lazy(() => import('../pages/roles/coordinador/PeriodoDisponibilidadMedica')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 🌐 MÓDULO EXTERNO
   // ========================================================================
