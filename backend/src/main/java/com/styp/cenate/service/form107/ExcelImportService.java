@@ -12,6 +12,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellValue;
@@ -118,6 +119,10 @@ public class ExcelImportService {
 		// 1) Validar .xlsx
 		validateOnlyXlsx(file);
 
+		// 1B) 🆕 v1.13.5: Obtener nombre real del usuario autenticado
+		String usuarioRealNombre = obtenerNombreUsuarioAutenticado();
+		log.info("👤 Usuario autenticado: {} ({} desde parámetro)", usuarioRealNombre, usuarioCarga);
+
 		// 2) Hash
 		String hash = sha256Hex(file);
 		LocalDate hoy = LocalDate.now();
@@ -126,7 +131,7 @@ public class ExcelImportService {
 		Bolsa107Carga carga = Bolsa107Carga.builder()
 			.nombreArchivo(Optional.ofNullable(file.getOriginalFilename()).orElse("archivo.xlsx"))
 			.hashArchivo(hash)
-			.usuarioCarga(usuarioCarga)
+			.usuarioCarga(usuarioRealNombre)
 			.estadoCarga("RECIBIDO")
 			.fechaReporte(hoy)
 			.build();
@@ -741,5 +746,26 @@ public class ExcelImportService {
 
 	private String n(String s) {
 		return s == null ? "" : s.trim().replaceAll("\\s+", " ").toLowerCase(Locale.ROOT);
+	}
+
+	// =============================
+	// 🆕 v1.13.5: OBTENER USUARIO AUTENTICADO
+	// =============================
+	/**
+	 * Obtiene el nombre del usuario autenticado desde SecurityContextHolder
+	 * Fallback: Si no está disponible, retorna "SISTEMA"
+	 */
+	private String obtenerNombreUsuarioAutenticado() {
+		try {
+			var authentication = SecurityContextHolder.getContext().getAuthentication();
+			if (authentication != null && authentication.isAuthenticated()) {
+				String username = authentication.getName();
+				log.debug("✓ Usuario autenticado obtenido: {}", username);
+				return username;
+			}
+		} catch (Exception e) {
+			log.warn("⚠️ No se pudo obtener usuario autenticado: {}", e.getMessage());
+		}
+		return "SISTEMA"; // Fallback
 	}
 }
