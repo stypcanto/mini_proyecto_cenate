@@ -284,6 +284,22 @@ public class ExcelImportService {
 					// Enriquecimiento desde dim_asegurados por DNI
 					Optional<Asegurado> asegurado = aseguradoRepository.findByDocPaciente(numeroDocumento);
 
+				// 🆕 v1.13.8: Crear asegurado automáticamente si no existe
+				if (asegurado.isEmpty()) {
+					log.info("👤 Creando nuevo asegurado desde Excel: {} - {}", numeroDocumento, apellidos);
+					Asegurado nuevoAsegurado = new Asegurado();
+					nuevoAsegurado.setPkAsegurado(numeroDocumento); // Usar DNI como PK
+					nuevoAsegurado.setDocPaciente(numeroDocumento);
+					nuevoAsegurado.setPaciente(apellidos);
+					nuevoAsegurado.setFecnacimpaciente(parseLocalDate(fechaNac));
+					nuevoAsegurado.setSexo(sexo);
+					nuevoAsegurado.setTelCelular(telefono);
+					nuevoAsegurado.setCorreoElectronico(correo);
+					nuevoAsegurado.setTipoPaciente("EXTERNO"); // Tipo por defecto para datos desde Excel
+
+					asegurado = Optional.of(aseguradoRepository.save(nuevoAsegurado));
+					log.info("✅ Asegurado creado: {} con pk_asegurado={}", numeroDocumento, numeroDocumento);
+				}
 
 				// 🆕 v1.13.7: Actualizar datos de asegurado si el Excel tiene datos más limpios
 				if (asegurado.isPresent()) {
