@@ -7,6 +7,7 @@ import com.styp.cenate.model.DimBolsa;
 import com.styp.cenate.repository.BolsaRepository;
 //import com.styp.cenate.repository.SolicitudBolsaRepository;
 import com.styp.cenate.repository.HistorialImportacionBolsaRepository;
+import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
 import com.styp.cenate.service.bolsas.BolsasService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -50,6 +51,7 @@ public class BolsasServiceImpl implements BolsasService {
     private final BolsaRepository bolsaRepository;
     //private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final HistorialImportacionBolsaRepository historialImportacionBolsaRepository;
+    private final HistorialCargaBolsasRepository historialCargaBolsasRepository;
     private final AseguradoRepository aseguradoRepository;
     private final JdbcTemplate jdbcTemplate;
     @Qualifier("writableTransactionTemplate")
@@ -396,40 +398,42 @@ public class BolsasServiceImpl implements BolsasService {
 
     @Override
     public List<ImportacionHistorialDTO> obtenerHistorialImportaciones() {
-        log.info("📋 Obteniendo historial de importaciones");
+        log.info("📋 Obteniendo historial de importaciones (v1.13.5 - desde dim_historial_carga_bolsas)");
 
-        return historialImportacionBolsaRepository
-                .findByActivoOrderByFechaImportacionDesc(true)
+        // 🆕 v1.13.5: Consultar tabla independiente del módulo Bolsas
+        return historialCargaBolsasRepository
+                .findAllByOrderByFechaReporteDesc()
                 .stream()
                 .map(h -> new ImportacionHistorialDTO(
-                        h.getIdImportacion(),
+                        h.getIdCarga(),
                         h.getNombreArchivo(),
-                        h.getTotalRegistros(),
-                        h.getRegistrosExitosos(),
-                        h.getRegistrosFallidos(),
-                        h.getEstadoImportacion(),
-                        h.getUsuarioNombre(),
-                        h.getFechaImportacion()
+                        h.getTotalFilas() != null ? h.getTotalFilas() : 0,
+                        h.getFilasOk() != null ? h.getFilasOk() : 0,
+                        h.getFilasError() != null ? h.getFilasError() : 0,
+                        h.getEstadoCarga(),
+                        h.getUsuarioCarga(),
+                        h.getFechaReporte().atStartOfDay(java.time.ZoneId.systemDefault()).toOffsetDateTime()
                 ))
                 .toList();
     }
 
     @Override
     public ImportacionHistorialDTO obtenerDetallesImportacion(Long idImportacion) {
-        log.info("🔍 Consultando detalles de importación: {}", idImportacion);
+        log.info("🔍 Consultando detalles de importación: {} (v1.13.5 - desde dim_historial_carga_bolsas)", idImportacion);
 
-        var historial = historialImportacionBolsaRepository.findById(idImportacion)
-                .orElseThrow(() -> new RuntimeException("Importación no encontrada"));
+        // 🆕 v1.13.5: Consultar tabla independiente del módulo Bolsas
+        var historial = historialCargaBolsasRepository.findById(idImportacion)
+                .orElseThrow(() -> new RuntimeException("Carga no encontrada: " + idImportacion));
 
         return new ImportacionHistorialDTO(
-                historial.getIdImportacion(),
+                historial.getIdCarga(),
                 historial.getNombreArchivo(),
-                historial.getTotalRegistros(),
-                historial.getRegistrosExitosos(),
-                historial.getRegistrosFallidos(),
-                historial.getEstadoImportacion(),
-                historial.getUsuarioNombre(),
-                historial.getFechaImportacion()
+                historial.getTotalFilas() != null ? historial.getTotalFilas() : 0,
+                historial.getFilasOk() != null ? historial.getFilasOk() : 0,
+                historial.getFilasError() != null ? historial.getFilasError() : 0,
+                historial.getEstadoCarga(),
+                historial.getUsuarioCarga(),
+                historial.getFechaReporte().atStartOfDay(java.time.ZoneId.systemDefault()).toOffsetDateTime()
         );
     }
 

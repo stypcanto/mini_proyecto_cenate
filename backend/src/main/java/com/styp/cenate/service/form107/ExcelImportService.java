@@ -37,8 +37,10 @@ import com.styp.cenate.model.TipoBolsa;
 import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.EstadoGestionCita;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
+import com.styp.cenate.model.bolsas.HistorialCargaBolsas;
 import com.styp.cenate.repository.form107.Bolsa107CargaRepository;
 import com.styp.cenate.repository.form107.Bolsa107RawDao;
+import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.TipoBolsaRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
@@ -58,6 +60,7 @@ public class ExcelImportService {
 	private final Bolsa107RawDao rawDao;
 	private final JdbcTemplate jdbc;
 	private final SolicitudBolsaRepository solicitudRepository;
+	private final HistorialCargaBolsasRepository historialCargaBolsasRepository;
 	private final TipoBolsaRepository tipoBolsaRepository;
 	private final DimServicioEssiRepository servicioRepository;
 	private final AseguradoRepository aseguradoRepository;
@@ -69,6 +72,7 @@ public class ExcelImportService {
 		Bolsa107RawDao rawDao,
 		JdbcTemplate jdbc,
 		SolicitudBolsaRepository solicitudRepository,
+		HistorialCargaBolsasRepository historialCargaBolsasRepository,
 		TipoBolsaRepository tipoBolsaRepository,
 		DimServicioEssiRepository servicioRepository,
 		AseguradoRepository aseguradoRepository,
@@ -78,6 +82,7 @@ public class ExcelImportService {
 		this.rawDao = rawDao;
 		this.jdbc = jdbc;
 		this.solicitudRepository = solicitudRepository;
+		this.historialCargaBolsasRepository = historialCargaBolsasRepository;
 		this.tipoBolsaRepository = tipoBolsaRepository;
 		this.servicioRepository = servicioRepository;
 		this.aseguradoRepository = aseguradoRepository;
@@ -151,6 +156,20 @@ public class ExcelImportService {
 		carga.setFilasError(0);
 		carga.setEstadoCarga("PROCESADO");
 		cargaRepo.save(carga);
+
+		// 6B) 🆕 v1.13.5: Guardar también en dim_historial_carga_bolsas (módulo Bolsas)
+		HistorialCargaBolsas historialBolsas = HistorialCargaBolsas.builder()
+			.nombreArchivo(carga.getNombreArchivo())
+			.hashArchivo(carga.getHashArchivo())
+			.usuarioCarga(carga.getUsuarioCarga())
+			.estadoCarga(carga.getEstadoCarga())
+			.fechaReporte(carga.getFechaReporte())
+			.totalFilas(insertados)
+			.filasOk(insertados)
+			.filasError(0)
+			.build();
+		historialCargaBolsasRepository.save(historialBolsas);
+		log.info("✅ Carga registrada también en dim_historial_carga_bolsas (módulo Bolsas)");
 
 		// 7) Leer cabecera actualizada y devolver respuesta
 		Bolsa107Carga finalCarga = cargaRepo.findById(idCarga)
