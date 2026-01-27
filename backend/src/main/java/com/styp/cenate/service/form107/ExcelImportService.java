@@ -277,6 +277,9 @@ public class ExcelImportService {
 				String fechaPreferida = cellDateStr(row, 0);      // Columna 0: Fecha Preferida
 				String tipoDocumento = cellStr(row, 1);          // Columna 1: Tipo Documento
 				String numeroDocumento = cellStr(row, 2);        // Columna 2: DNI
+
+			// 🆕 v1.13.9: Normalizar DNI a 8 dígitos con ceros a la izquierda
+			numeroDocumento = normalizeDni(numeroDocumento);
 				String apellidos = cellStr(row, 3);              // Columna 3: Nombre Asegurado
 				String sexo = cellStr(row, 4);                   // Columna 4: Sexo
 				String fechaNac = cellDateStr(row, 5);           // Columna 5: Fecha Nacimiento
@@ -510,6 +513,9 @@ public class ExcelImportService {
 				String fechaPreferida = cellDateStr(row, 0);      // Columna 0
 				String tipoDocumento = cellStr(row, 1);          // Columna 1
 				String numeroDocumento = cellStr(row, 2);        // Columna 2
+
+			// 🆕 v1.13.9: Normalizar DNI en lectura raw
+			numeroDocumento = normalizeDni(numeroDocumento);
 				String apellidos = cellStr(row, 3);              // Columna 3
 				String sexo = cellStr(row, 4);                   // Columna 4
 				String fechaNac = cellDateStr(row, 5);           // Columna 5
@@ -904,5 +910,45 @@ public class ExcelImportService {
 			log.warn("⚠️ Error obteniendo usuario autenticado: {}", e.getMessage());
 		}
 		return "SISTEMA"; // Fallback
+	}
+
+	// =============================
+	// 🆕 v1.13.9: NORMALIZACIÓN DE DNI
+	// =============================
+	/**
+	 * Normaliza DNI a 8 dígitos con ceros a la izquierda (formato estándar peruano)
+	 *
+	 * - Extrae solo dígitos del valor
+	 * - Valida que tenga mínimo 8 dígitos
+	 * - Si tiene más de 8, toma los últimos 8
+	 * - Rellena con ceros a la izquierda si es necesario
+	 *
+	 * @param dni Valor original del DNI (puede tener espacios, guiones, etc)
+	 * @return DNI normalizado a 8 dígitos, o null si no es válido
+	 */
+	private String normalizeDni(String dni) {
+		if (isBlank(dni)) {
+			return null;
+		}
+
+		// Remover espacios y caracteres especiales
+		String digitsOnly = dni.replaceAll("[^0-9]", "");
+
+		// Validar que tenga al menos 8 dígitos
+		if (digitsOnly.length() < 8) {
+			log.warn("⚠️ DNI inválido (menos de 8 dígitos): {}", dni);
+			return null;
+		}
+
+		// Si tiene más de 8 dígitos, tomar los últimos 8
+		if (digitsOnly.length() > 8) {
+			digitsOnly = digitsOnly.substring(digitsOnly.length() - 8);
+		}
+
+		// Rellenar con ceros a la izquierda
+		digitsOnly = String.format("%08d", Long.parseLong(digitsOnly));
+
+		log.debug("✅ DNI normalizado: {} → {}", dni, digitsOnly);
+		return digitsOnly;
 	}
 }
