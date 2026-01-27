@@ -96,7 +96,8 @@ export default function Solicitudes() {
           especialidad: solicitud.especialidad || 'N/A',
           red: solicitud.responsable_gestora_nombre || 'Sin asignar',
           ipress: solicitud.id_bolsa ? `Bolsa ${solicitud.id_bolsa}` : 'N/A',
-          bolsa: solicitud.numero_solicitud || 'Sin clasificar',
+          bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
+          nombreBolsa: solicitud.desc_tipo_bolsa || 'Sin descripción',
           fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
           fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
           // ============================================================================

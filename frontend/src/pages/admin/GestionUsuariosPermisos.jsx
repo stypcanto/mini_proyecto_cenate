@@ -434,7 +434,7 @@ const GestionUsuariosPermisos = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
-        <div className="max-w-[1600px] mx-auto px-6 py-5">
+        <div className="w-full px-6 py-5">
           <div className="mb-6">
             <h1 className="text-2xl font-semibold text-gray-900 mb-1">Administración del Sistema</h1>
             <p className="text-sm text-gray-500">Gestión de usuarios, roles, áreas y regímenes laborales</p>
@@ -463,7 +463,7 @@ const GestionUsuariosPermisos = () => {
         </div>
       </div>
 
-      <div className="max-w-[1600px] mx-auto px-6 py-6">
+      <div className="w-full px-6 py-6">
         {/* Contenido según tab activo */}
         {activeTab === 'usuarios' && (
           <>

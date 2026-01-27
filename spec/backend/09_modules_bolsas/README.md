@@ -1,11 +1,30 @@
 # Módulo de Solicitudes de Bolsa
 
-**Versión:** v1.6.0 | **Status:** ✅ Completado (v1.24.0 - Optimización UI)
+**Versión:** v1.9.0 | **Status:** ✅ Production Ready - Enriquecimiento IPRESS/RED v1.9.0
 
 ## 📚 Documentación Principal
 
-### Inicio Rápido
-**⭐ COMIENZA AQUÍ:** [`08_modulo_bolsas_pacientes_completo.md`](./08_modulo_bolsas_pacientes_completo.md)
+### 🚀 v1.9.0 - NUEVO (2026-01-26)
+**⭐ COMIENZA AQUÍ (v1.9.0):** [`09_modulo_solicitudes_bolsa_import_v1.9.0.md`](./09_modulo_solicitudes_bolsa_import_v1.9.0.md)
+- Excel import con enriquecimiento automático
+- 43 campos en dim_solicitud_bolsa (completo)
+- Enriquecimiento: dim_asegurados + dim_ipress + dim_red
+- DTO y Mapper con todos los campos
+- API completo + Ejemplos
+
+**⚡ Quick Reference:** [`10_quick_reference_solicitudes_bolsa.md`](./10_quick_reference_solicitudes_bolsa.md)
+- Guía rápida de uso
+- Estructura Excel
+- API endpoints
+- Troubleshooting
+
+**🔧 Cambios Técnicos:** [`11_cambios_tecnicos_v1.9.0.md`](./11_cambios_tecnicos_v1.9.0.md)
+- Detalle de cambios de código
+- Antes/Después
+- Matriz de impacto
+
+### Inicio Rápido (v1.6.0)
+**Documentación anterior:** [`08_modulo_bolsas_pacientes_completo.md`](./08_modulo_bolsas_pacientes_completo.md)
 - Arquitectura general + flujo completo
 - 26 campos en dim_solicitud_bolsa (v1.6.0)
 - 8 Foreign Keys con integridad referencial
@@ -14,12 +33,14 @@
 
 ### Especificaciones Técnicas
 
-**Tabla Central (31 campos, v1.6.0):**
-- **[08_modulo_bolsas_pacientes_completo.md](./08_modulo_bolsas_pacientes_completo.md)** ⭐
-  - Almacenamiento completo: dim_solicitud_bolsa
-  - 6 tipos de bolsas
-  - Distribución: Coordinador → Gestoras de Citas
-  - Estados: 10 estados de gestión
+**Tabla Central (43 campos, v1.9.0 - ACTUALIZADO):**
+- **[09_modulo_solicitudes_bolsa_import_v1.9.0.md](./09_modulo_solicitudes_bolsa_import_v1.9.0.md)** ⭐
+  - Almacenamiento completo: dim_solicitud_bolsa (43 campos)
+  - 10 campos de Excel v1.8.0
+  - Enriquecimiento: 5 campos desde dim_asegurados
+  - Enriquecimiento: IPRESS + RED desde dim_ipress
+  - Validación + Inserts batch
+  - DTO y Mapper completos
 
 **Catálogo de Tipos:**
 - **[05_modulo_tipos_bolsas_crud.md](./05_modulo_tipos_bolsas_crud.md)** (v1.1.0)
@@ -68,10 +89,16 @@
 
 ## 📊 Modelos
 
-- **dim_solicitud_bolsa** (31 campos, 8 FKs, 9 índices)
+- **dim_solicitud_bolsa** (43 campos v1.9.0, 8 FKs, 9 índices)
+  - 10 campos de Excel (v1.8.0)
+  - 5 campos enriquecidos (Asegurados)
+  - 3 campos IPRESS/RED (Enriquecimiento v1.9.0)
+  - 25 campos de auditoría y control
 - **dim_tipos_bolsas** (7 registros)
 - **dim_estados_gestion_citas** (10 estados)
 - **audit_solicitud_bolsa** (trazabilidad)
+- **bolsa_107_carga** (auditoría de importaciones)
+- **staging.bolsa_107_raw** (antiguo - deprecated)
 
 ## 🔗 Referencias
 
@@ -82,4 +109,28 @@
 
 ---
 
-**Última actualización:** 2026-01-26
+## 📝 Historial de Versiones
+
+### v1.9.0 (2026-01-26) - ✅ ACTUAL
+- ✅ Enriquecimiento automático IPRESS + RED
+- ✅ DTO con 43 campos completos
+- ✅ Mapper con todos los mapeos
+- ✅ API devolviendo datos enriquecidos
+- ✅ Frontend mostrando IPRESS y RED
+
+### v1.8.0 (2026-01-25)
+- ✅ Excel import directo (sin staging)
+- ✅ 10 campos de Excel v1.8.0
+- ✅ Enriquecimiento dim_asegurados
+- ✅ Validación de campos obligatorios
+
+### v1.6.0 (anterior)
+- ✅ CRUD solicitudes
+- ✅ Estados gestión citas
+- ✅ Distribución coordinador → gestoras
+
+---
+
+**Última actualización:** 2026-01-26 (v1.9.0)
+**Status:** ✅ Production Ready
+**Próximo:** v2.0.0 - Reportes y exportación

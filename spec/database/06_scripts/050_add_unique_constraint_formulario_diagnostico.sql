@@ -1,0 +1,82 @@
+-- ============================================================================
+-- 📋 SCRIPT: Agregar UNIQUE Constraint a Tabla form_diag_formulario
+-- ============================================================================
+--
+-- Fecha:       2026-01-26
+-- Versión:     v1.36.0
+-- Propósito:   Prevenir duplicación de formularios EN_PROCESO por IPRESS y año
+-- Base Datos:  maestro_cenate
+-- Tabla:       form_diag_formulario
+--
+-- ============================================================================
+
+-- 🔒 Crear UNIQUE index parcial a nivel de base de datos
+-- Garantiza que NO pueden existir 2 formularios EN_PROCESO para la misma IPRESS
+-- en el mismo año (solo aplica a registros con estado = 'EN_PROCESO')
+
+CREATE UNIQUE INDEX idx_uq_formulario_en_proceso_por_ipress_anio
+ON form_diag_formulario (id_ipress, anio)
+WHERE estado = 'EN_PROCESO';
+
+-- ============================================================================
+-- 📝 EXPLICACIÓN DEL CONSTRAINT
+-- ============================================================================
+--
+-- ¿QUÉ HACE?
+-- -----------
+-- Crea una restricción ÚNICA que aplica SOLO a registros con estado = 'EN_PROCESO'
+--
+-- Imposible crear:
+--   ❌ Dos formularios EN_PROCESO para IPRESS=068 año=2026
+--   ❌ Dos formularios EN_PROCESO para IPRESS=071 año=2026
+--   ❌ etc.
+--
+-- PERO permite:
+--   ✅ Múltiples formularios ENVIADO, APROBADO, RECHAZADO (otros estados)
+--   ✅ Múltiples formularios EN_PROCESO para años diferentes
+--   ✅ Múltiples formularios EN_PROCESO para IPRESS diferentes
+--
+-- ¿POR QUÉ ESTA SINTAXIS?
+-- ----------------------
+-- CREATE UNIQUE INDEX con cláusula WHERE crea un "Partial Unique Index"
+-- En PostgreSQL, esto es más eficiente que CONSTRAINT para casos específicos:
+--   - Solo restringe las filas donde estado = 'EN_PROCESO'
+--   - Las demás filas (otros estados) NO están sujetas a esta restricción
+--   - Ocupan menos espacio en índice (solo almacena filas EN_PROCESO)
+--
+-- ¿POR QUÉ IMPLEMENTARLO?
+-- -----------------------
+-- 1. Protección a nivel de BD (no depende del código Java)
+-- 2. Imposible burlar aunque haya bugs en el backend
+-- 3. Race conditions imposibles incluso con servers paralelos
+-- 4. Complementa la validación de FormDiagServiceImpl.guardarBorrador()
+--
+-- ============================================================================
+-- 🧪 TESTING
+-- ============================================================================
+--
+-- Para verificar que funciona:
+--
+-- 1. Crear primer formulario:
+--    INSERT INTO form_diag_formulario (id_ipress, anio, estado, ...)
+--    VALUES (68, 2026, 'EN_PROCESO', ...)
+--    ✅ Resultado: OK (se inserta)
+--
+-- 2. Intentar crear duplicado:
+--    INSERT INTO form_diag_formulario (id_ipress, anio, estado, ...)
+--    VALUES (68, 2026, 'EN_PROCESO', ...)
+--    ❌ Resultado: ERROR - duplicate key value violates unique index
+--           "idx_uq_formulario_en_proceso_por_ipress_anio"
+--
+-- 3. Crear con estado diferente (OK):
+--    INSERT INTO form_diag_formulario (id_ipress, anio, estado, ...)
+--    VALUES (68, 2026, 'ENVIADO', ...)
+--    ✅ Resultado: OK (allowed - estado ≠ EN_PROCESO)
+--
+-- ============================================================================
+-- ✅ ROLLBACK (si es necesario deshacer)
+-- ============================================================================
+--
+-- DROP INDEX IF EXISTS idx_uq_formulario_en_proceso_por_ipress_anio;
+--
+-- ============================================================================

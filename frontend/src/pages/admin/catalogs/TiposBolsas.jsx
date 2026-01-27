@@ -51,6 +51,9 @@ const TiposBolsas = () => {
     const [modalMode, setModalMode] = useState('create'); // 'create' | 'edit'
     const [selectedItem, setSelectedItem] = useState(null);
 
+    // Notificaciones
+    const [notification, setNotification] = useState(null);
+
     // Formulario
     const [formData, setFormData] = useState({
         codTipoBolsa: '',
@@ -74,67 +77,6 @@ const TiposBolsas = () => {
         return () => clearTimeout(timerDescripcion);
     }, [filtroDescripcion]);
 
-    // ============================================================
-    // DATOS INICIALES PRECARGADOS DESDE BD
-    // ============================================================
-    const TIPOS_BOLSAS_INICIALES = [
-        {
-            idTipoBolsa: 1,
-            codTipoBolsa: 'BOLSA_107',
-            descTipoBolsa: 'Bolsa 107 - Importación de pacientes masiva',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 2,
-            codTipoBolsa: 'BOLSA_DENGUE',
-            descTipoBolsa: 'Bolsa Dengue - Control epidemiológico',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 3,
-            codTipoBolsa: 'BOLSAS_ENFERMERIA',
-            descTipoBolsa: 'Bolsas Enfermería - Atenciones de enfermería',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 4,
-            codTipoBolsa: 'BOLSAS_EXPLOTADATOS',
-            descTipoBolsa: 'Bolsas Explotación de Datos - Análisis y reportes',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 5,
-            codTipoBolsa: 'BOLSAS_IVR',
-            descTipoBolsa: 'Bolsas IVR - Sistema interactivo de respuesta de voz',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 6,
-            codTipoBolsa: 'BOLSAS_REPROGRAMACION',
-            descTipoBolsa: 'Bolsas Reprogramación - Citas reprogramadas',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        },
-        {
-            idTipoBolsa: 7,
-            codTipoBolsa: 'BOLSA_GESTORES_TERRITORIAL',
-            descTipoBolsa: 'Bolsa Gestores Territorial - Gestión territorial',
-            statTipoBolsa: 'A',
-            createdAt: '2026-01-22T15:40:46.552396-05:00',
-            updatedAt: '2026-01-22T15:40:46.552396-05:00'
-        }
-    ];
 
     // ============================================================
     // CARGAR DATOS CON BÚSQUEDA EN BACKEND
@@ -174,12 +116,11 @@ const TiposBolsas = () => {
             }
         } catch (err) {
             console.error('❌ [TiposBolsas] Error al cargar del backend:', err);
-            // Cargar datos iniciales como fallback
-            console.log('📦 Cargando datos iniciales desde BD como fallback...');
-            setTiposBolsas(TIPOS_BOLSAS_INICIALES);
-            setTotalElements(TIPOS_BOLSAS_INICIALES.length);
-            setTotalPages(1);
-            setError(null); // No mostrar error si cargamos datos iniciales
+            // Mostrar error real en lugar de ocultar con fallback
+            setTiposBolsas([]);
+            setTotalElements(0);
+            setTotalPages(0);
+            setError('❌ Error al cargar tipos de bolsas: ' + (err.message || 'Error desconocido'))
         } finally {
             setLoading(false);
         }
@@ -189,6 +130,16 @@ const TiposBolsas = () => {
     useEffect(() => {
         setCurrentPage(0);
     }, [debouncedCodigo, debouncedDescripcion]);
+
+    // Auto-dismiss notification after 4 seconds
+    useEffect(() => {
+        if (notification) {
+            const timer = setTimeout(() => {
+                setNotification(null);
+            }, 4000);
+            return () => clearTimeout(timer);
+        }
+    }, [notification]);
 
     // Cargar datos cuando cambian los parámetros
     useEffect(() => {
@@ -240,50 +191,59 @@ const TiposBolsas = () => {
     const handleSubmit = async (e) => {
         e.preventDefault();
         setLoading(true);
+        setError(null);
         try {
             if (modalMode === 'create') {
-                try {
-                    await tiposBolsasService.crear(formData);
-                    console.log('✅ Tipo de bolsa creado en backend');
-                } catch (err) {
-                    console.log('📦 Backend no disponible, creando en cliente...');
-                    // Crear localmente con nuevo ID
-                    const newId = Math.max(...tiposBolsas.map(t => t.idTipoBolsa), 0) + 1;
-                    const newItem = {
-                        ...formData,
-                        idTipoBolsa: newId,
-                        statTipoBolsa: 'A',
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    };
-                    setTiposBolsas([...tiposBolsas, newItem]);
-                    setTotalElements(tiposBolsas.length + 1);
-                    console.log('✅ Tipo de bolsa creado en cliente');
-                }
+                // 📝 Crear: llamar API y recargar si es exitoso
+                const resultado = await tiposBolsasService.crear(formData);
+                console.log('✅ Tipo de bolsa creado en backend:', resultado);
+
+                // 🎉 Mostrar notificación de éxito
+                setNotification({
+                    type: 'success',
+                    title: '✅ Tipo de Bolsa Creado',
+                    message: `"${formData.codTipoBolsa}" ha sido creado exitosamente`
+                });
+
+                // Limpiar formulario y cerrar modal
+                setShowModal(false);
+                setFormData({ codTipoBolsa: '', descTipoBolsa: '' });
+
+                // 🔄 Recargar datos desde el backend
+                await new Promise(resolve => setTimeout(resolve, 500)); // Pequeño delay
+                await loadData();
+                console.log('🔄 Datos recargados después de crear');
             } else {
-                try {
-                    await tiposBolsasService.actualizar(selectedItem.idTipoBolsa, formData);
-                    console.log('✅ Tipo de bolsa actualizado en backend');
-                } catch (err) {
-                    console.log('📦 Backend no disponible, actualizando en cliente...');
-                    // Actualizar localmente
-                    setTiposBolsas(tiposBolsas.map(t =>
-                        t.idTipoBolsa === selectedItem.idTipoBolsa
-                            ? {
-                                ...t,
-                                ...formData,
-                                updatedAt: new Date().toISOString()
-                            }
-                            : t
-                    ));
-                    console.log('✅ Tipo de bolsa actualizado en cliente');
-                }
+                // 📝 Actualizar: llamar API y recargar si es exitoso
+                const resultado = await tiposBolsasService.actualizar(selectedItem.idTipoBolsa, formData);
+                console.log('✅ Tipo de bolsa actualizado en backend:', resultado);
+
+                // 🎉 Mostrar notificación de éxito
+                setNotification({
+                    type: 'success',
+                    title: '✅ Tipo de Bolsa Actualizado',
+                    message: `"${formData.codTipoBolsa}" ha sido actualizado exitosamente`
+                });
+
+                // Limpiar formulario y cerrar modal
+                setShowModal(false);
+                setFormData({ codTipoBolsa: '', descTipoBolsa: '' });
+
+                // 🔄 Recargar datos desde el backend
+                await new Promise(resolve => setTimeout(resolve, 500)); // Pequeño delay
+                await loadData();
+                console.log('🔄 Datos recargados después de actualizar');
             }
-            setShowModal(false);
-            setFormData({ codTipoBolsa: '', descTipoBolsa: '' });
         } catch (err) {
-            console.error('Error al guardar:', err);
-            setError('Error al guardar el tipo de bolsa.');
+            // ❌ Error: mostrar mensaje sin fallback local
+            console.error('❌ Error al guardar:', err);
+            const errorMsg = err.response?.data?.message || err.message || 'Error al guardar el tipo de bolsa';
+            setError(errorMsg);
+            setNotification({
+                type: 'error',
+                title: '❌ Error al Guardar',
+                message: errorMsg
+            });
         } finally {
             setLoading(false);
         }
@@ -292,20 +252,20 @@ const TiposBolsas = () => {
     const handleDelete = async () => {
         setLoading(true);
         try {
-            try {
-                await tiposBolsasService.eliminar(selectedItem.idTipoBolsa);
-                console.log('✅ Tipo de bolsa eliminado en backend');
-            } catch (err) {
-                console.log('📦 Backend no disponible, eliminando en cliente...');
-                // Eliminar localmente
-                setTiposBolsas(tiposBolsas.filter(t => t.idTipoBolsa !== selectedItem.idTipoBolsa));
-                setTotalElements(tiposBolsas.length - 1);
-                console.log('✅ Tipo de bolsa eliminado en cliente');
-            }
+            // Eliminar: llamar API y recargar si es exitoso
+            await tiposBolsasService.eliminar(selectedItem.idTipoBolsa);
+            console.log('✅ Tipo de bolsa eliminado en backend');
+
+            // Cerrar modal de confirmación
             setShowDeleteModal(false);
+
+            // 🔄 Recargar datos desde el backend
+            await loadData();
+            console.log('🔄 Datos recargados después de eliminar');
         } catch (err) {
-            console.error('Error al eliminar:', err);
-            setError('No se puede eliminar. El tipo de bolsa está siendo utilizado.');
+            console.error('❌ Error al eliminar:', err);
+            const errorMsg = err.response?.data?.message || err.message || 'No se puede eliminar. El tipo de bolsa está siendo utilizado.';
+            setError(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -314,22 +274,17 @@ const TiposBolsas = () => {
     const handleToggleStatus = async (item) => {
         const nuevoEstado = item.statTipoBolsa === 'A' ? 'I' : 'A';
         try {
-            try {
-                await tiposBolsasService.cambiarEstado(item.idTipoBolsa, nuevoEstado);
-                console.log('✅ Estado cambiado en backend');
-            } catch (err) {
-                console.log('📦 Backend no disponible, cambiando estado en cliente...');
-                // Cambiar estado localmente
-                setTiposBolsas(tiposBolsas.map(t =>
-                    t.idTipoBolsa === item.idTipoBolsa
-                        ? { ...t, statTipoBolsa: nuevoEstado, updatedAt: new Date().toISOString() }
-                        : t
-                ));
-                console.log('✅ Estado cambiado en cliente');
-            }
+            // Cambiar estado: llamar API y recargar si es exitoso
+            await tiposBolsasService.cambiarEstado(item.idTipoBolsa, nuevoEstado);
+            console.log('✅ Estado cambiado en backend');
+
+            // 🔄 Recargar datos desde el backend
+            await loadData();
+            console.log('🔄 Datos recargados después de cambiar estado');
         } catch (err) {
-            console.error('Error al cambiar estado:', err);
-            setError('Error al cambiar el estado del tipo de bolsa.');
+            console.error('❌ Error al cambiar estado:', err);
+            const errorMsg = err.response?.data?.message || err.message || 'Error al cambiar el estado del tipo de bolsa.';
+            setError(errorMsg);
         }
     };
 
@@ -505,6 +460,41 @@ const TiposBolsas = () => {
                     <button onClick={() => setError(null)} className="ml-auto">
                         <X className="w-4 h-4" />
                     </button>
+                </div>
+            )}
+
+            {/* Toast Notification */}
+            {notification && (
+                <div
+                    className={`fixed top-6 right-6 z-[9999] p-6 rounded-xl shadow-2xl border-2 max-w-sm animate-in fade-in slide-in-from-top-5 ${
+                        notification.type === 'success'
+                            ? 'bg-emerald-50 border-emerald-300'
+                            : 'bg-red-50 border-red-300'
+                    }`}
+                >
+                    <div className="flex items-start gap-4">
+                        <div className={`flex-shrink-0 text-2xl ${notification.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+                            {notification.type === 'success' ? '✅' : '❌'}
+                        </div>
+                        <div className="flex-1">
+                            <h4 className={`font-bold text-sm mb-1 ${notification.type === 'success' ? 'text-emerald-900' : 'text-red-900'}`}>
+                                {notification.title}
+                            </h4>
+                            <p className={`text-xs ${notification.type === 'success' ? 'text-emerald-700' : 'text-red-700'}`}>
+                                {notification.message}
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => setNotification(null)}
+                            className={`flex-shrink-0 p-1.5 rounded-lg transition-colors ${
+                                notification.type === 'success'
+                                    ? 'hover:bg-emerald-100 text-emerald-600'
+                                    : 'hover:bg-red-100 text-red-600'
+                            }`}
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    </div>
                 </div>
             )}
 

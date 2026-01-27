@@ -459,6 +459,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     /**
      * Extrae valor de celda de forma segura
+     * Maneja correctamente fechas en formato Excel
      */
     private String obtenerValorCelda(Cell cell) {
         if (cell == null) {
@@ -467,7 +468,24 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
         return switch (cell.getCellType()) {
             case STRING -> cell.getStringCellValue().trim();
-            case NUMERIC -> String.valueOf((long) cell.getNumericCellValue());
+            case NUMERIC -> {
+                // ✅ Verificar si la celda contiene una fecha
+                if (org.apache.poi.ss.usermodel.DateUtil.isCellDateFormatted(cell)) {
+                    try {
+                        java.time.LocalDate date = cell.getDateCellValue()
+                            .toInstant()
+                            .atZone(java.time.ZoneId.systemDefault())
+                            .toLocalDate();
+                        yield date.toString(); // Devuelve en formato YYYY-MM-DD
+                    } catch (Exception e) {
+                        log.warn("Error al convertir fecha en celda: {}", e.getMessage());
+                        yield "";
+                    }
+                } else {
+                    // No es una fecha, convertir como número
+                    yield String.valueOf((long) cell.getNumericCellValue());
+                }
+            }
             default -> "";
         };
     }

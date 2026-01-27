@@ -2,6 +2,7 @@ package com.styp.cenate.api.bolsas;
 
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.service.bolsas.SolicitudBolsaService;
+import com.styp.cenate.service.form107.ExcelImportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -15,7 +16,7 @@ import java.util.Map;
 /**
  * Controller REST para gestión de solicitudes de bolsa
  * Endpoints para importación Excel, listado, búsqueda y actualización
- * 
+ *
  * @version v1.6.0
  * @since 2026-01-23
  */
@@ -26,41 +27,46 @@ import java.util.Map;
 public class SolicitudBolsaController {
 
     private final SolicitudBolsaService solicitudBolsaService;
+    private final ExcelImportService excelImportService;
 
     /**
      * Importa solicitudes desde archivo Excel
      * POST /api/bolsas/solicitudes/importar
-     * 
+     *
      * @param file archivo Excel con columnas: DNI, Código Adscripción
      * @param idTipoBolsa ID del tipo de bolsa seleccionado (PASO 1)
      * @param idServicio ID del servicio/especialidad (PASO 2)
+     * @param usuarioCarga Usuario que realiza la carga (desde frontend)
      * @return estadísticas de importación
      */
     @PostMapping(value = "/importar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importarDesdeExcel(
             @RequestParam("file") MultipartFile file,
             @RequestParam("idTipoBolsa") Long idTipoBolsa,
-            @RequestParam("idServicio") Long idServicio) {
+            @RequestParam("idServicio") Long idServicio,
+            @RequestParam(value = "usuarioCarga", defaultValue = "admin") String usuarioCarga) {
 
         try {
-            log.info("Iniciando importación de Excel - Tipo: {}, Servicio: {}",
-                idTipoBolsa, idServicio);
+            log.info("📤 Iniciando importación de Excel - Bolsa: {}, Servicio: {}, Usuario: {}",
+                idTipoBolsa, idServicio, usuarioCarga);
 
-            Map<String, Object> resultado = solicitudBolsaService.importarDesdeExcel(
+            // Usar ExcelImportService que incluye SP v2.0.0 con enriquecimiento e INSERT
+            Map<String, Object> resultado = excelImportService.importarYProcesar(
                 file,
+                usuarioCarga,
                 idTipoBolsa,
-                idServicio,
-                "usuario_actual" // En producción: obtener del contexto de seguridad
+                idServicio
             );
 
-            log.info("Importación completada: {} OK, {} errores",
-                resultado.get("filas_ok"),
-                resultado.get("filas_error"));
+            log.info("✅ Importación completada - Total: {}, OK: {}, Errores: {}",
+                resultado.get("totalFilas"),
+                resultado.get("filasOk"),
+                resultado.get("filasError"));
 
             return ResponseEntity.ok(resultado);
 
         } catch (Exception e) {
-            log.error("Error en importación de Excel: ", e);
+            log.error("❌ Error en importación de Excel: ", e);
             return ResponseEntity.badRequest().body(
                 Map.of("error", "Error en importación: " + e.getMessage())
             );

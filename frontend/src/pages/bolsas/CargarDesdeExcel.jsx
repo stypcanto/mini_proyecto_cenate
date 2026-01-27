@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Upload, AlertCircle, CheckCircle, FileText, Loader, Download, Info, Eye } from 'lucide-react';
+import { Upload, AlertCircle, CheckCircle, FileText, Loader, Download, Info, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import bolsasService from '../../services/bolsasService';
 import * as XLSX from 'xlsx';
@@ -32,6 +32,11 @@ export default function CargarDesdeExcel() {
   const [servicios, setServicios] = useState([]);
   const [loadingTipos, setLoadingTipos] = useState(true);
   const [loadingServicios, setLoadingServicios] = useState(true);
+  const [isDragging, setIsDragging] = useState(false);
+  const [expandedObligatorios, setExpandedObligatorios] = useState(false);
+  const [expandedAutoCalculados, setExpandedAutoCalculados] = useState(false);
+  const [expandedRequisitos, setExpandedRequisitos] = useState(false);
+  const [expandedFAQ, setExpandedFAQ] = useState(false);
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
@@ -72,7 +77,7 @@ export default function CargarDesdeExcel() {
     // Obtener servicios/especialidades disponibles
     const obtenerServicios = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/dim/servicios-essi');
+        const response = await fetch('http://localhost:8080/api/servicio-essi/activos-cenate');
         if (!response.ok) throw new Error(`Error: ${response.status}`);
         const datos = await response.json();
         console.log('📋 Servicios disponibles:', datos);
@@ -93,23 +98,51 @@ export default function CargarDesdeExcel() {
     obtenerServicios();
   }, []);
 
+  const validateFile = (selectedFile) => {
+    // Validar que sea archivo válido
+    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+                       'application/vnd.ms-excel',
+                       'text/csv'];
+
+    if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv') && !selectedFile.name.endsWith('.xlsx') && !selectedFile.name.endsWith('.xls')) {
+      setImportStatus({
+        type: 'error',
+        message: 'Formato de archivo no válido. Use .xlsx, .xls o .csv'
+      });
+      return false;
+    }
+    return true;
+  };
+
   const handleFileChange = (e) => {
     const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      // Validar que sea archivo válido
-      const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-                         'application/vnd.ms-excel',
-                         'text/csv'];
-
-      if (!validTypes.includes(selectedFile.type) && !selectedFile.name.endsWith('.csv')) {
-        setImportStatus({
-          type: 'error',
-          message: 'Formato de archivo no válido. Use .xlsx, .xls o .csv'
-        });
-        return;
-      }
-
+    if (selectedFile && validateFile(selectedFile)) {
       setFile(selectedFile);
+      setImportStatus(null);
+    }
+  };
+
+  // Manejadores de Drag and Drop
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+
+    const droppedFile = e.dataTransfer.files[0];
+    if (droppedFile && validateFile(droppedFile)) {
+      setFile(droppedFile);
       setImportStatus(null);
     }
   };
@@ -122,19 +155,17 @@ export default function CargarDesdeExcel() {
       const formData = new FormData();
       formData.append('file', file);
       formData.append('idTipoBolsa', tipoBolesaId);
-      formData.append('idServicio', idServicio); // Usar el servicio seleccionado
+      formData.append('idServicio', idServicio);
       formData.append('usuarioCarga', usuario.username || 'admin');
 
-      // Log para debugging
       console.log('📤 Enviando importación:', {
         archivo: file.name,
         idTipoBolsa: tipoBolesaId,
-        idServicio: 1,
+        idServicio: idServicio,
         usuarioCarga: usuario.username,
         tamaño: file.size
       });
 
-      // Usar el servicio correcto para importar solicitudes desde Excel
       const resultado = await bolsasService.importarSolicitudesDesdeExcel(formData);
 
       console.log('✅ Respuesta del servidor:', resultado);
@@ -144,23 +175,25 @@ export default function CargarDesdeExcel() {
         message: resultado.mensaje || 'Archivo importado correctamente',
         rowsProcessed: resultado.filasOk,
         totalRows: resultado.filasOk + resultado.filasError,
-        failedRows: resultado.filasError
+        failedRows: resultado.filasError,
+        showModal: true  // Mostrar modal
       });
 
       console.log('✅ Importación exitosa:', resultado);
 
-      // Limpiar archivo después de 2 segundos y redirigir
+      // Esperar 5 segundos antes de redirigir (dar tiempo al usuario para ver el resultado)
       setTimeout(() => {
         setFile(null);
         setTipoBolesaId(null);
         navigate('/bolsas/solicitudes');
-      }, 2000);
+      }, 5000);
 
     } catch (error) {
       console.error('❌ Error en importación:', error);
       setImportStatus({
         type: 'error',
-        message: error.message || 'Error al importar archivo'
+        message: error.message || 'Error al importar archivo',
+        showModal: true  // Mostrar modal de error
       });
     } finally {
       setIsLoading(false);
@@ -251,8 +284,102 @@ export default function CargarDesdeExcel() {
     XLSX.writeFile(wb, 'PLANTILLA_SOLICITUD_BOLSA_COMPLETA_v1.8.0.xlsx');
   };
 
+  // Modal de resultado
+  const ResultModal = () => {
+    if (!importStatus || !importStatus.showModal) return null;
+
+    const isSuccess = importStatus.type === 'success';
+
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className={`bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 transform transition-all ${
+          isSuccess ? 'border-4 border-green-500' : 'border-4 border-red-500'
+        }`}>
+          {/* Icono animado */}
+          <div className={`text-6xl mb-4 text-center ${
+            isSuccess ? 'animate-bounce' : 'animate-pulse'
+          }`}>
+            {isSuccess ? '✅' : '❌'}
+          </div>
+
+          {/* Título */}
+          <h2 className={`text-2xl font-bold text-center mb-4 ${
+            isSuccess ? 'text-green-700' : 'text-red-700'
+          }`}>
+            {isSuccess ? '¡Importación Exitosa!' : 'Error en Importación'}
+          </h2>
+
+          {/* Mensaje */}
+          <p className="text-center text-gray-700 mb-4 text-lg">
+            {importStatus.message}
+          </p>
+
+          {/* Estadísticas (si es éxito) */}
+          {isSuccess && importStatus.rowsProcessed && (
+            <div className="bg-green-50 rounded-lg p-4 mb-6 space-y-2">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-semibold">✅ Éxitosos:</span>
+                <span className="text-green-700 text-xl font-bold">{importStatus.rowsProcessed}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-700 font-semibold">📊 Total:</span>
+                <span className="text-gray-700 text-xl font-bold">{importStatus.totalRows}</span>
+              </div>
+              {importStatus.failedRows > 0 && (
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-700 font-semibold">⚠️ Fallidos:</span>
+                  <span className="text-red-600 text-xl font-bold">{importStatus.failedRows}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Información adicional */}
+          <p className={`text-sm text-center mb-6 ${
+            isSuccess ? 'text-green-600' : 'text-red-600'
+          }`}>
+            {isSuccess
+              ? '⏱️ Redirigiendo en 5 segundos...'
+              : 'Por favor, revisa los datos y vuelve a intentar'
+            }
+          </p>
+
+          {/* Barra de progreso (solo en éxito) */}
+          {isSuccess && (
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div className="bg-green-500 h-full animate-progress" style={{
+                animation: 'progress 5s ease-in-out forwards'
+              }}></div>
+            </div>
+          )}
+
+          {/* Botón de cierre */}
+          {!isSuccess && (
+            <button
+              onClick={() => setImportStatus(null)}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 rounded-lg transition-colors"
+            >
+              Cerrar
+            </button>
+          )}
+        </div>
+
+        {/* Estilos para la animación de barra */}
+        <style>{`
+          @keyframes progress {
+            0% { width: 0%; }
+            100% { width: 100%; }
+          }
+        `}</style>
+      </div>
+    );
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-slate-100 p-6">
+      {/* Modal de resultado */}
+      <ResultModal />
+
       <div className="w-full">
         {/* Header Mejorado */}
         <div className="mb-8">
@@ -272,12 +399,25 @@ export default function CargarDesdeExcel() {
           {/* Columna Izquierda: Información */}
           <div className="lg:col-span-2">
             {/* Card: Campos Obligatorios */}
-            <div className="bg-white rounded-xl shadow-lg p-6 mb-6 border-l-4 border-blue-600">
-              <div className="flex items-center gap-2 mb-4">
-                <Info size={24} className="text-blue-600" />
-                <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios (10 campos)</h2>
-              </div>
-              <div className="space-y-3">
+            <div className="bg-white rounded-xl shadow-lg mb-6 border-l-4 border-blue-500">
+              <button
+                onClick={() => setExpandedObligatorios(!expandedObligatorios)}
+                className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors rounded-t-xl"
+              >
+                <div className="flex items-center gap-2">
+                  <Info size={24} className="text-blue-600" />
+                  <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios (10 campos)</h2>
+                </div>
+                {expandedObligatorios ? (
+                  <ChevronUp size={24} className="text-blue-600" />
+                ) : (
+                  <ChevronDown size={24} className="text-blue-600" />
+                )}
+              </button>
+
+              {expandedObligatorios && (
+              <div className="px-6 pb-6">
+                <div className="space-y-3">
                 <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
                   <div className="text-2xl">📅</div>
                   <div className="flex-1">
@@ -310,20 +450,20 @@ export default function CargarDesdeExcel() {
                     <p className="text-xs text-blue-600 mt-1">Ej: Juan Pérez García</p>
                   </div>
                 </div>
-                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">⚧</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">5. SEXO</p>
+                    <p className="font-semibold text-gray-800">5. SEXO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
                     <p className="text-sm text-gray-600">Género del paciente</p>
-                    <p className="text-xs text-blue-600 mt-1">Ej: M (Masculino) | F (Femenino)</p>
+                    <p className="text-xs text-amber-600 mt-1">Ej: M (Masculino) | F (Femenino) - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
-                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">🎂</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">6. FECHA DE NACIMIENTO</p>
+                    <p className="font-semibold text-gray-800">6. FECHA DE NACIMIENTO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
                     <p className="text-sm text-gray-600">Fecha de nacimiento (la edad se calcula automáticamente)</p>
-                    <p className="text-xs text-blue-600 mt-1">Formato: YYYY-MM-DD | Ej: 1980-05-20</p>
+                    <p className="text-xs text-amber-600 mt-1">Formato: YYYY-MM-DD | Ej: 1980-05-20 - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
@@ -334,12 +474,12 @@ export default function CargarDesdeExcel() {
                     <p className="text-xs text-blue-600 mt-1">Ej: 987654321</p>
                   </div>
                 </div>
-                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">📧</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">8. CORREO</p>
+                    <p className="font-semibold text-gray-800">8. CORREO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
                     <p className="text-sm text-gray-600">Dirección de correo electrónico</p>
-                    <p className="text-xs text-blue-600 mt-1">Ej: juan.perez@email.com</p>
+                    <p className="text-xs text-amber-600 mt-1">Ej: juan.perez@email.com - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
@@ -359,16 +499,30 @@ export default function CargarDesdeExcel() {
                   </div>
                 </div>
               </div>
+              </div>
+              )}
             </div>
 
             {/* Card: Auto-Cálculos */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border-l-4 border-amber-500">
-              <div className="flex items-center gap-2 mb-4">
-                <Eye size={24} className="text-amber-600" />
-                <h2 className="text-xl font-bold text-gray-800">Campos Auto-Calculados</h2>
-              </div>
-              <p className="text-sm text-gray-600 mb-4">El sistema calcula automáticamente los siguientes campos:</p>
-              <div className="space-y-3">
+            <div className="bg-white rounded-xl shadow-lg mb-6 border-l-4 border-blue-500">
+              <button
+                onClick={() => setExpandedAutoCalculados(!expandedAutoCalculados)}
+                className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors rounded-t-xl"
+              >
+                <div className="flex items-center gap-2">
+                  <Eye size={24} className="text-blue-600" />
+                  <h2 className="text-xl font-bold text-gray-800">Campos Auto-Calculados</h2>
+                </div>
+                {expandedAutoCalculados ? (
+                  <ChevronUp size={24} className="text-blue-600" />
+                ) : (
+                  <ChevronDown size={24} className="text-blue-600" />
+                )}
+              </button>
+
+              {expandedAutoCalculados && (
+              <div className="px-6 pb-6 pt-0">
+              <div className="space-y-4">
                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
                   <div className="text-2xl mb-2">📊</div>
                   <p className="font-semibold text-gray-800">EDAD</p>
@@ -381,30 +535,29 @@ export default function CargarDesdeExcel() {
                   <span className="font-semibold">✅ Ventaja:</span> No necesitas incluir la columna EDAD en tu Excel. El sistema la calcula automáticamente desde la fecha de nacimiento.
                 </p>
               </div>
-            </div>
-          </div>
-
-          {/* Columna Derecha: Acciones */}
-          <div>
-            {/* Card: Descarga Plantilla */}
-            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border-2 border-green-400 mb-6">
-              <div className="text-center">
-                <Download size={40} className="text-green-600 mx-auto mb-3" />
-                <h3 className="font-bold text-gray-800 mb-2">Obtén la Plantilla</h3>
-                <p className="text-sm text-gray-700 mb-4">Descarga un archivo Excel de ejemplo con la estructura correcta</p>
-                <button
-                  onClick={descargarPlantilla}
-                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
-                >
-                  <Download size={18} />
-                  Descargar Plantilla
-                </button>
               </div>
+              )}
             </div>
 
             {/* Card: Requisitos */}
-            <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-200">
-              <h3 className="font-bold text-gray-800 mb-4">📋 Requisitos</h3>
+            <div className="bg-white rounded-xl shadow-lg mb-6 border-l-4 border-blue-500">
+              <button
+                onClick={() => setExpandedRequisitos(!expandedRequisitos)}
+                className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors rounded-t-xl"
+              >
+                <div className="flex items-center gap-2">
+                  <FileText size={24} className="text-blue-600" />
+                  <h2 className="text-xl font-bold text-gray-800">Requisitos</h2>
+                </div>
+                {expandedRequisitos ? (
+                  <ChevronUp size={24} className="text-blue-600" />
+                ) : (
+                  <ChevronDown size={24} className="text-blue-600" />
+                )}
+              </button>
+
+              {expandedRequisitos && (
+              <div className="px-6 pb-6">
               <ul className="space-y-3 text-sm">
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
@@ -431,6 +584,27 @@ export default function CargarDesdeExcel() {
                   <span className="text-gray-700">TIPO CITA: Recita, Interconsulta o Voluntaria</span>
                 </li>
               </ul>
+              </div>
+              )}
+            </div>
+          </div>
+
+          {/* Columna Derecha: Acciones */}
+          <div>
+            {/* Card: Descarga Plantilla */}
+            <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl shadow-lg p-6 border-2 border-green-400 mb-6">
+              <div className="text-center">
+                <Download size={40} className="text-green-600 mx-auto mb-3" />
+                <h3 className="font-bold text-gray-800 mb-2">Obtén la Plantilla</h3>
+                <p className="text-sm text-gray-700 mb-4">Descarga un archivo Excel de ejemplo con la estructura correcta</p>
+                <button
+                  onClick={descargarPlantilla}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-3 rounded-lg transition-colors flex items-center justify-center gap-2"
+                >
+                  <Download size={18} />
+                  Descargar Plantilla
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -438,10 +612,19 @@ export default function CargarDesdeExcel() {
         {/* Zona de Carga Principal */}
         <div className="bg-white rounded-2xl shadow-xl p-8 mb-6">
           {/* Zona de drop */}
-          <div className="border-3 border-dashed border-blue-300 rounded-2xl p-12 text-center bg-gradient-to-br from-blue-50 to-indigo-50 mb-8 cursor-pointer hover:bg-blue-100 hover:border-blue-400 transition-all">
-            <Upload size={56} className="mx-auto text-blue-500 mb-4" />
+          <div
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+            className={`border-3 border-dashed rounded-2xl p-12 text-center mb-8 cursor-pointer transition-all ${
+              isDragging
+                ? 'border-green-500 bg-green-50 shadow-lg scale-105'
+                : 'border-blue-300 bg-gradient-to-br from-blue-50 to-indigo-50 hover:bg-blue-100 hover:border-blue-400'
+            }`}
+          >
+            <Upload size={56} className={`mx-auto mb-4 ${isDragging ? 'text-green-500' : 'text-blue-500'}`} />
             <h3 className="text-2xl font-bold text-gray-800 mb-2">
-              Arrastra tu archivo aquí
+              {isDragging ? '✅ Suelta el archivo aquí' : 'Arrastra tu archivo aquí'}
             </h3>
             <p className="text-gray-600 mb-6">O haz clic para seleccionar un archivo</p>
             <input
@@ -632,39 +815,61 @@ export default function CargarDesdeExcel() {
           </div>
         </div>
 
-        {/* FAQ */}
-        <div className="bg-white rounded-xl shadow-lg p-6">
-          <h3 className="font-bold text-gray-800 mb-4 text-lg">❓ Preguntas Frecuentes</h3>
-          <div className="space-y-4 text-sm">
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Necesito incluir la columna EDAD?</p>
-              <p className="text-gray-600 mt-1">No. La EDAD se calcula automáticamente a partir de FECHA DE NACIMIENTO. No incluyas esta columna en tu Excel.</p>
+        {/* Card: FAQ */}
+        <div className="bg-white rounded-xl shadow-lg border-l-4 border-blue-500">
+          <button
+            onClick={() => setExpandedFAQ(!expandedFAQ)}
+            className="w-full p-6 flex items-center justify-between hover:bg-blue-50 transition-colors rounded-t-xl"
+          >
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">❓</span>
+              <h3 className="font-bold text-gray-800 text-lg">Preguntas Frecuentes</h3>
             </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Cuál es el formato correcto para las fechas?</p>
-              <p className="text-gray-600 mt-1">Usa formato ISO: YYYY-MM-DD (Ej: 2025-12-15 para 15 de diciembre de 2025). Excel convertirá automáticamente fechas a este formato.</p>
-            </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Qué valores son válidos para SEXO?</p>
-              <p className="text-gray-600 mt-1">Usa: <strong>M</strong> para Masculino o <strong>F</strong> para Femenino. El sistema es sensible a mayúsculas.</p>
-            </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Qué valores son válidos para TIPO CITA?</p>
-              <p className="text-gray-600 mt-1">Usa uno de estos tres valores: <strong>Recita</strong>, <strong>Interconsulta</strong> o <strong>Voluntaria</strong>. El sistema es sensible a mayúsculas.</p>
-            </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Qué pasa si el DNI o Código Adscripción no existen?</p>
-              <p className="text-gray-600 mt-1">El registro será rechazado con un mensaje de error indicando el problema específico para que puedas corregirlo.</p>
-            </div>
-            <div className="border-b pb-4">
-              <p className="font-semibold text-gray-800">¿Se pueden importar registros duplicados?</p>
-              <p className="text-gray-600 mt-1">No. El sistema valida y rechaza duplicados por la combinación única: (DNI + Tipo de Bolsa).</p>
-            </div>
-            <div>
-              <p className="font-semibold text-gray-800">¿Debo llenar todos los 10 campos?</p>
-              <p className="text-gray-600 mt-1">Sí. Todos los 10 campos son obligatorios. Descarga la plantilla para ver la estructura exacta que espera el sistema.</p>
+            {expandedFAQ ? (
+              <ChevronUp size={24} className="text-blue-600" />
+            ) : (
+              <ChevronDown size={24} className="text-blue-600" />
+            )}
+          </button>
+
+          {expandedFAQ && (
+          <div className="px-6 pb-6">
+            <div className="space-y-4 text-sm">
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Puedo dejar campos vacíos (SEXO, FECHA NACIMIENTO, CORREO)?</p>
+                <p className="text-gray-600 mt-1">Sí. Si estos campos están vacíos en el Excel, el sistema completará automáticamente la información usando el DNI del paciente con los datos de la tabla de asegurados. Solo son OBLIGATORIOS: DNI, TIPO DOCUMENTO, ASEGURADO, COD. IPRESS y TIPO CITA.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Necesito incluir la columna EDAD?</p>
+                <p className="text-gray-600 mt-1">No. La EDAD se calcula automáticamente a partir de FECHA DE NACIMIENTO. No incluyas esta columna en tu Excel.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Cuál es el formato correcto para las fechas?</p>
+                <p className="text-gray-600 mt-1">Usa formato ISO: YYYY-MM-DD (Ej: 2025-12-15 para 15 de diciembre de 2025). Excel convertirá automáticamente fechas a este formato.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Qué valores son válidos para SEXO?</p>
+                <p className="text-gray-600 mt-1">Usa: <strong>M</strong> para Masculino o <strong>F</strong> para Femenino. El sistema es sensible a mayúsculas.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Qué valores son válidos para TIPO CITA?</p>
+                <p className="text-gray-600 mt-1">Usa uno de estos tres valores: <strong>Recita</strong>, <strong>Interconsulta</strong> o <strong>Voluntaria</strong>. El sistema es sensible a mayúsculas.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Qué pasa si el DNI o Código Adscripción no existen?</p>
+                <p className="text-gray-600 mt-1">El registro será rechazado con un mensaje de error indicando el problema específico para que puedas corregirlo.</p>
+              </div>
+              <div className="border-b pb-4">
+                <p className="font-semibold text-gray-800">¿Se pueden importar registros duplicados?</p>
+                <p className="text-gray-600 mt-1">No. El sistema valida y rechaza duplicados por la combinación única: (DNI + Tipo de Bolsa).</p>
+              </div>
+              <div>
+                <p className="font-semibold text-gray-800">¿Debo llenar todos los 10 campos?</p>
+                <p className="text-gray-600 mt-1">Sí. Todos los 10 campos son obligatorios. Descarga la plantilla para ver la estructura exacta que espera el sistema.</p>
+              </div>
             </div>
           </div>
+          )}
         </div>
       </div>
     </div>

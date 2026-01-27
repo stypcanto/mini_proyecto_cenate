@@ -10,11 +10,13 @@ import java.time.OffsetDateTime;
 
 /**
  * DTO para respuestas de solicitudes de bolsa
- * Mapea los 22 campos de la tabla dim_solicitud_bolsa
- * + campos enriquecidos desde otras tablas (IPRESS, Red, TipoBolsa, Asegurados)
+ * Mapea todos los 43 campos de la tabla dim_solicitud_bolsa incluyendo:
+ * - 10 campos de Excel v1.8.0 (tipo_documento, sexo, telefono, etc.)
+ * - 2 campos v1.9.0 (fecha_cita, fecha_atencion)
+ * - Campos enriquecidos desde otras tablas (IPRESS, Red, TipoBolsa)
  *
- * @version v1.6.0
- * @since 2026-01-23
+ * @version v1.8.0 (Completo con campos Excel v1.8.0 + v1.9.0)
+ * @since 2026-01-26
  */
 @Data
 @Builder
@@ -43,6 +45,43 @@ public class SolicitudBolsaDTO {
     // 📋 ESPECIALIDAD (de BD)
     @JsonProperty("especialidad")
     private String especialidad;
+
+    // ============ CAMPOS DE EXCEL v1.8.0 (NUEVO) ============
+
+    @JsonProperty("fecha_preferida_no_atendida")
+    private java.time.LocalDate fechaPreferidaNoAtendida;
+
+    @JsonProperty("tipo_documento")
+    private String tipoDocumento;
+
+    @JsonProperty("fecha_nacimiento")
+    private java.time.LocalDate fechaNacimiento;
+
+    @JsonProperty("paciente_sexo")
+    private String pacienteSexo;
+
+    @JsonProperty("paciente_telefono")
+    private String pacienteTelefono;
+
+    @JsonProperty("paciente_email")
+    private String pacienteEmail;
+
+    @JsonProperty("paciente_edad")
+    private Integer pacienteEdad;
+
+    @JsonProperty("codigo_ipress_adscripcion")
+    private String codigoIpressAdscripcion;
+
+    @JsonProperty("tipo_cita")
+    private String tipoCita;
+
+    // ============ CAMPOS v1.9.0 (NUEVO) ============
+
+    @JsonProperty("fecha_cita")
+    private OffsetDateTime fechaCita;
+
+    @JsonProperty("fecha_atencion")
+    private OffsetDateTime fechaAtencion;
 
     // 📦 REFERENCIA A BOLSA
     @JsonProperty("id_bolsa")

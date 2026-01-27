@@ -28,6 +28,7 @@ spec/
 **Comienza en:** `/backend/README.md`
 - API Endpoints: `backend/01_api/003_api_endpoints.md`
 - Módulo Bolsas: `backend/08_modulo_bolsas_pacientes_completo.md`
+- **NUEVO Tipos de Bolsas:** `backend/11_modulo_tipos_bolsas_completo.md` (v1.37.0 ⭐)
 - Estados Citas: `backend/07_modulo_estados_gestion_citas_crud.md`
 
 ### Para Desarrolladores Frontend
@@ -64,12 +65,13 @@ spec/
 
 ## 📋 Documentos Principales por Tipo
 
-### 📦 Backend (5 docs principales)
+### 📦 Backend (6 docs principales)
 1. `backend/01_api/003_api_endpoints.md` - Endpoints REST v1.34.1
 2. `backend/08_modulo_bolsas_pacientes_completo.md` - Módulo bolsas v1.32.1
-3. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
-4. `backend/07_modulo_estados_gestion_citas_crud.md` - Estados citas v1.33.0
-5. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0
+3. `backend/07_modulo_estados_gestion_citas_crud.md` - Estados citas v1.33.0
+4. **`backend/11_modulo_tipos_bolsas_completo.md` - Tipos bolsas v1.37.0 ⭐ NUEVO**
+5. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
+6. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0 (anterior)
 
 ### 📱 Frontend (4 docs principales)
 1. `frontend/02_pages/01_estructura_minima_paginas.md` - Patrón arquitectónico

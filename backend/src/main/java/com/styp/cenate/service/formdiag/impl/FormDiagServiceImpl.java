@@ -50,10 +50,25 @@ public class FormDiagServiceImpl implements FormDiagService {
         Ipress ipress = ipressRepo.findById(request.getIdIpress())
                 .orElseThrow(() -> new EntityNotFoundException("IPRESS no encontrada: " + request.getIdIpress()));
 
+        int anio = request.getAnio() != null ? request.getAnio() : Year.now().getValue();
+
+        // 🔍 VALIDACIÓN: Verificar si ya existe un formulario EN_PROCESO para esta IPRESS+año
+        var formularioExistente = formularioRepo.findEnProcesoPorIpressAndAnio(request.getIdIpress(), anio);
+
+        if (formularioExistente.isPresent()) {
+            // ⚠️  Existe un formulario en proceso - NO crear duplicado
+            log.warn("⚠️  Intento de crear formulario duplicado para IPRESS: {} año: {} - Existe uno EN_PROCESO",
+                     request.getIdIpress(), anio);
+            throw new IllegalStateException(
+                "Ya existe un formulario en proceso para esta IPRESS en el año " + anio +
+                ". Complete o envíe el existente antes de crear uno nuevo."
+            );
+        }
+
         // Crear formulario principal
         FormDiagFormulario formulario = FormDiagFormulario.builder()
                 .ipress(ipress)
-                .anio(request.getAnio() != null ? request.getAnio() : Year.now().getValue())
+                .anio(anio)
                 .estado("EN_PROCESO")
                 .usuarioRegistro(username)
                 .observaciones(request.getObservaciones())
@@ -101,9 +116,22 @@ public class FormDiagServiceImpl implements FormDiagService {
     @Override
     public FormDiagResponse guardarBorrador(FormDiagRequest request, String username) {
         if (request.getIdFormulario() != null) {
+            // Caso 1: El cliente tiene un ID - actualizar ese formulario
             return actualizar(request.getIdFormulario(), request, username);
         } else {
-            return crear(request, username);
+            // Caso 2: El cliente no tiene ID - verificar si ya existe uno en proceso
+            int anioActual = Year.now().getValue();
+            var formularioExistente = formularioRepo.findEnProcesoPorIpressAndAnio(request.getIdIpress(), anioActual);
+
+            if (formularioExistente.isPresent()) {
+                // ✅ Existe un formulario en proceso - actualizar ese en lugar de crear uno nuevo
+                log.info("Formulario en proceso encontrado para IPRESS: {} - Actualizando en lugar de duplicar",
+                         request.getIdIpress());
+                return actualizar(formularioExistente.get().getIdFormulario(), request, username);
+            } else {
+                // ✅ No existe - crear uno nuevo
+                return crear(request, username);
+            }
         }
     }
 

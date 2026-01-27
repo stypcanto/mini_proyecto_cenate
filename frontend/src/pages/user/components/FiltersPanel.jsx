@@ -73,7 +73,7 @@ const FiltersPanel = ({ filters, setFilters, searchTerm, setSearchTerm, onNewUse
   };
 
   return (
-    <div className="max-w-[1800px] mx-auto px-3 sm:px-4 lg:px-6">
+    <div className="w-full px-3 sm:px-4 lg:px-6">
       {/* Toolbar estilo Apple - Minimalista y elegante */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-5 py-2">
         {/* Botones de acción - Estilo Apple */}

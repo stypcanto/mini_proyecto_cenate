@@ -4,7 +4,7 @@ import { Users, Building, MapPin, Shield, CheckCircle, XCircle } from 'lucide-re
 import StatCard from './modals/StatCard';
 
 const StatsPanel = ({ stats }) => (
-  <div className="max-w-[1800px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+  <div className="w-full px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
     {/* Primera fila: Total, Internos, Externos, Con Acceso Admin */}
     <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 sm:gap-4 mb-3">
       <StatCard 

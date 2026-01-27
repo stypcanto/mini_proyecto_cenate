@@ -13,7 +13,7 @@
 
 import { apiClient } from '../lib/apiClient';
 
-const BASE_URL = '/tipos-bolsas';
+const BASE_URL = '/admin/tipos-bolsas';
 
 class TiposBolsasService {
     /**
