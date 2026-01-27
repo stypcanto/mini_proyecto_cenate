@@ -189,7 +189,6 @@ public class ExcelImportService {
 			List<String> actualColumns = readHeader(headerRow);
 			validateHeaderStrict(actualColumns);
 
-			Map<String, Integer> idx = buildColumnIndex(actualColumns);
 
 			// DEBUG: Log para ver columnas
 			log.info("=== EXCEL COLUMNS DEBUG ===");
@@ -220,34 +219,25 @@ public class ExcelImportService {
 					continue;
 
 				try {
-					// Leer campos del Excel v1.8.0
-					Integer idxFechaPreferida = idx.getOrDefault(n("FECHA PREFERIDA QUE NO FUE ATENDIDA"), -1);
-					Integer idxTipoDoc = idx.getOrDefault(n("TIPO DOCUMENTO"), -1);
-					Integer idxDNI = idx.getOrDefault(n("DNI"), -1);
-					Integer idxAsegurado = idx.getOrDefault(n("ASEGURADO"), -1);
-					Integer idxSexo = idx.getOrDefault(n("SEXO"), -1);
-					Integer idxFechaNac = idx.getOrDefault(n("FECHA DE NACIMIENTO"), -1);
-					Integer idxTelefono = idx.getOrDefault(n("TELÉFONO"), -1);
-					Integer idxCorreo = idx.getOrDefault(n("CORREO"), -1);
-					Integer idxCodigoIpress = idx.getOrDefault(n("COD. IPRESS ADSCRIPCIÓN"), -1);
-					Integer idxTipoCita = idx.getOrDefault(n("TIPO CITA"), -1);
+				// Leer campos del Excel v1.8.0 - POSICIONES FIJAS (v1.13.1)
+				// NO usar idx.getOrDefault que busca por nombres - usar POSICIONES DIRECTAS
+				String fechaPreferida = cellDateStr(row, 0);      // Columna 0: Fecha Preferida
+				String tipoDocumento = cellStr(row, 1);          // Columna 1: Tipo Documento
+				String numeroDocumento = cellStr(row, 2);        // Columna 2: DNI
+				String apellidos = cellStr(row, 3);              // Columna 3: Nombre Asegurado
+				String sexo = cellStr(row, 4);                   // Columna 4: Sexo
+				String fechaNac = cellDateStr(row, 5);           // Columna 5: Fecha Nacimiento
+				String telefono = cellStr(row, 6);               // Columna 6: Teléfono
+				String correo = cellStr(row, 7);                 // Columna 7: Correo
+				String codigoIpress = cellStr(row, 8);           // Columna 8: Código IPRESS
+				String tipoCita = cellStr(row, 9);               // Columna 9: Tipo Cita
 
-					// DEBUG primera fila
-					if (r == headerIndex + 1) {
-						log.info("ROW 1 INDICES: fecha={}, tipoDoc={}, dni={}, asegurado={}, sexo={}, fechaNac={}, telefono={}, correo={}, ipress={}, tipoCita={}",
-							idxFechaPreferida, idxTipoDoc, idxDNI, idxAsegurado, idxSexo, idxFechaNac, idxTelefono, idxCorreo, idxCodigoIpress, idxTipoCita);
-					}
+				// DEBUG primera fila
+				if (r == headerIndex + 1) {
+					log.info("ROW 1 DATA (Posiciones Fijas): tipoDoc='{}', dni='{}', asegurado='{}', sexo='{}', fechaNac='{}', telefono='{}', correo='{}', ipress='{}', tipoCita='{}'",
+						tipoDocumento, numeroDocumento, apellidos, sexo, fechaNac, telefono, correo, codigoIpress, tipoCita);
+				}
 
-					String fechaPreferida = cellDateStr(row, idxFechaPreferida);
-					String tipoDocumento = cellStr(row, idxTipoDoc);
-					String numeroDocumento = cellStr(row, idxDNI);
-					String apellidos = cellStr(row, idxAsegurado);
-					String sexo = cellStr(row, idxSexo);
-					String fechaNac = cellDateStr(row, idxFechaNac);
-					String telefono = cellStr(row, idxTelefono);
-					String correo = cellStr(row, idxCorreo);
-					String codigoIpress = cellStr(row, idxCodigoIpress);
-					String tipoCita = cellStr(row, idxTipoCita);
 
 					// DEBUG primera fila
 					if (r == headerIndex + 1) {
