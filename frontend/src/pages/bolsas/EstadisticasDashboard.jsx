@@ -393,118 +393,66 @@ export default function EstadisticasDashboard() {
     if (!porTipoBolsa.length) return <div className="text-center text-gray-500 p-4">Sin datos</div>;
 
     const total = porTipoBolsa.reduce((sum, item) => sum + item.total, 0);
-
-    // Función para crear segmentos de pie (SVG path)
-    const crearSegmentoPie = (dataPoints, centerX = 100, centerY = 100, radius = 80) => {
-      const paths = [];
-      let currentAngle = -90; // Comenzar desde arriba (-90 grados)
-
-      dataPoints.forEach((item, index) => {
-        const percentage = item.total / total;
-        const sliceAngle = percentage * 360;
-        const startAngle = currentAngle;
-        const endAngle = currentAngle + sliceAngle;
-
-        // Convertir ángulos a radianes
-        const startRad = (startAngle * Math.PI) / 180;
-        const endRad = (endAngle * Math.PI) / 180;
-
-        // Calcular puntos del arco
-        const x1 = centerX + radius * Math.cos(startRad);
-        const y1 = centerY + radius * Math.sin(startRad);
-        const x2 = centerX + radius * Math.cos(endRad);
-        const y2 = centerY + radius * Math.sin(endRad);
-
-        // Flag para arcos mayores a 180 grados
-        const largeArcFlag = sliceAngle > 180 ? 1 : 0;
-
-        // Crear path (M=move, L=line, A=arc, Z=close)
-        const pathData = `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
-
-        // Calcular posición del texto (en el medio del segmento, a 60% del radio)
-        const middleAngle = (startAngle + endAngle) / 2;
-        const middleRad = (middleAngle * Math.PI) / 180;
-        const textRadius = radius * 0.6;
-        const textX = centerX + textRadius * Math.cos(middleRad);
-        const textY = centerY + textRadius * Math.sin(middleRad);
-        const percentageText = item.porcentaje.toFixed(1);
-
-        paths.push({
-          path: pathData,
-          color: item.color || '#999999',
-          index: index,
-          item: item,
-          textX: textX,
-          textY: textY,
-          percentage: percentageText,
-          angle: middleAngle
-        });
-
-        currentAngle = endAngle;
-      });
-
-      return paths;
-    };
-
-    const segmentos = crearSegmentoPie(porTipoBolsa);
+    const maxValue = Math.max(...porTipoBolsa.map(item => item.total));
 
     return (
       <div className="espacio-central p-6">
         <h3 className="font-bold text-lg mb-6">📦 Distribución por Tipo de Bolsa</h3>
 
-        {/* Gráfico Pie - Centrado */}
-        <div className="flex justify-center items-center mb-8">
-          <div className="w-80 h-80 relative">
-            <svg viewBox="0 0 200 200" className="w-full h-full">
-              {/* Fondo blanco */}
-              <circle cx="100" cy="100" r="100" fill="white" />
+        {/* Gráfico de Barras Horizontal */}
+        <div className="space-y-4">
+          {porTipoBolsa.map((item, idx) => {
+            const barWidth = (item.total / maxValue) * 100;
+            return (
+              <div key={idx} className="flex items-center gap-4">
+                {/* Etiqueta */}
+                <div className="w-40 flex-shrink-0">
+                  <p className="font-bold text-sm text-gray-800">{item.icono} {item.tipoBolsa}</p>
+                  <p className="text-xs text-gray-500">{item.total} solicitudes</p>
+                </div>
 
-              {/* Segmentos del pie */}
-              {segmentos.map((seg) => (
-                <g key={seg.index}>
-                  <path
-                    d={seg.path}
-                    fill={seg.color}
-                    stroke="white"
-                    strokeWidth="2"
-                    opacity="0.9"
-                    style={{ transition: 'opacity 0.3s ease', cursor: 'pointer' }}
-                    onMouseEnter={(e) => (e.target.style.opacity = '1')}
-                    onMouseLeave={(e) => (e.target.style.opacity = '0.9')}
-                  />
-                  {/* Porcentaje dentro del segmento */}
-                  <text
-                    x={seg.textX}
-                    y={seg.textY}
-                    textAnchor="middle"
-                    dominantBaseline="middle"
-                    fontSize="11"
-                    fontWeight="bold"
-                    fill="white"
-                    pointerEvents="none"
-                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
-                  >
-                    {seg.percentage}%
-                  </text>
-                </g>
-              ))}
-            </svg>
-          </div>
+                {/* Barra de progreso con color */}
+                <div className="flex-1">
+                  <div className="relative h-10 bg-gray-100 rounded-lg overflow-hidden">
+                    <div
+                      className="h-full flex items-center justify-center transition-all duration-300 hover:shadow-lg"
+                      style={{
+                        width: `${barWidth}%`,
+                        backgroundColor: item.color || '#999999',
+                        opacity: 0.85
+                      }}
+                    >
+                      <span className="text-white font-bold text-sm px-2">
+                        {item.porcentaje}%
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Métricas a la derecha */}
+                <div className="w-32 flex-shrink-0 text-right">
+                  <p className="text-xs text-green-600 font-semibold">
+                    ✓ {item.tasaCompletacion}% completadas
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {item.atendidos} de {item.total}
+                  </p>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-        {/* Leyenda con detalles - Grid */}
-        <div className="grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4">
+        {/* Resumen estadístico */}
+        <div className="mt-8 grid grid-cols-4 gap-4">
           {porTipoBolsa.map((item, idx) => (
-            <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-              <div className="flex items-center mb-2">
-                <div className="w-5 h-5 rounded-full flex-shrink-0 mr-3" style={{ backgroundColor: item.color || '#999999' }}></div>
-                <p className="font-bold text-gray-800 text-sm">{item.icono} {item.tipoBolsa}</p>
+            <div key={idx} className="p-4 rounded-lg text-center border-2" style={{ borderColor: item.color || '#999999', backgroundColor: item.color + '10' }}>
+              <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2" style={{ backgroundColor: item.color || '#999999' }}>
+                <span className="text-white text-lg font-bold">{item.icono}</span>
               </div>
-              <p className="text-sm text-gray-600 ml-8"><strong>{item.total}</strong> solicitudes</p>
-              <p className="text-xs text-gray-500 ml-8 font-semibold">{item.porcentaje}%</p>
-              <p className="text-xs text-green-600 font-semibold mt-1 ml-8">
-                ✓ {item.tasaCompletacion}% completadas
-              </p>
+              <p className="font-bold text-sm text-gray-800">{item.tipoBolsa}</p>
+              <p className="text-2xl font-bold mt-2" style={{ color: item.color || '#999999' }}>{item.total}</p>
+              <p className="text-xs text-gray-600 mt-1">{item.porcentaje}% del total</p>
             </div>
           ))}
         </div>
