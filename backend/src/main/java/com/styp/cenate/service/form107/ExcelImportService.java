@@ -108,7 +108,7 @@ public class ExcelImportService {
 
 
 	@Transactional
-	public Map<String, Object> importarYProcesar(MultipartFile file, String usuarioCarga, Long idTipoBolsa, Long idServicio) {
+	public Map<String, Object> importarYProcesar(MultipartFile file, String usuarioCarga, Long idBolsa, Long idServicio) {
 
 		// 1) Validar .xlsx
 		validateOnlyXlsx(file);
@@ -136,7 +136,7 @@ public class ExcelImportService {
 		long idCarga = carga.getIdCarga();
 
 		// 4) ✨ NUEVA ESTRATEGIA: Lectura e inserción directa en dim_solicitud_bolsa
-		List<SolicitudBolsa> solicitudes = leerExcelYProcesarDirecto(file, idCarga, idTipoBolsa, idServicio);
+		List<SolicitudBolsa> solicitudes = leerExcelYProcesarDirecto(file, idCarga, idBolsa, idServicio);
 
 		// 5) Insertar todas las solicitudes en una transacción
 		int insertados = solicitudes.size();
@@ -176,7 +176,7 @@ public class ExcelImportService {
 	 * Lee el Excel y procesa directamente sin staging
 	 * Enriquece datos desde dim_asegurados por DNI
 	 */
-	private List<SolicitudBolsa> leerExcelYProcesarDirecto(MultipartFile file, long idCarga, Long idTipoBolsa, Long idServicio) {
+	private List<SolicitudBolsa> leerExcelYProcesarDirecto(MultipartFile file, long idCarga, Long idBolsa, Long idServicio) {
 		try (InputStream is = file.getInputStream(); Workbook wb = new XSSFWorkbook(is)) {
 
 			Sheet sheet = wb.getSheetAt(0);
@@ -199,8 +199,8 @@ public class ExcelImportService {
 			log.info("=== END COLUMNS ===");
 
 			// Cargar datos de referencia para enriquecimiento
-			TipoBolsa tipoBolsa = tipoBolsaRepository.findById(idTipoBolsa)
-				.orElseThrow(() -> new ExcelValidationException("Tipo de bolsa no encontrado: " + idTipoBolsa));
+			TipoBolsa tipoBolsa = tipoBolsaRepository.findById(idBolsa)
+				.orElseThrow(() -> new ExcelValidationException("Tipo de bolsa no encontrado: " + idBolsa));
 
 			DimServicioEssi servicio = servicioRepository.findById(idServicio)
 				.orElseThrow(() -> new ExcelValidationException("Servicio no encontrado: " + idServicio));
@@ -314,7 +314,7 @@ public class ExcelImportService {
 						.idIpress(idIpress)
 
 						// Información de bolsa y servicio
-						.idTipoBolsa(idTipoBolsa)
+						.idBolsa(idBolsa)
 						.idServicio(idServicio)
 
 						// Datos por defecto
@@ -356,15 +356,15 @@ public class ExcelImportService {
 	// =============================
 	  // EJECUTAR PROCEDIMIENTO
 	  // =============================
-	  private void ejecutarSpProcesar(long idCarga, Long idTipoBolsa, Long idServicio) {
+	  private void ejecutarSpProcesar(long idCarga, Long idBolsa, Long idServicio) {
 	    try {
-	      log.info("🗄️ Ejecutando SP: sp_bolsa_107_procesar({}, {}, {})", idCarga, idTipoBolsa, idServicio);
+	      log.info("🗄️ Ejecutando SP: sp_bolsa_107_procesar({}, {}, {})", idCarga, idBolsa, idServicio);
 
 	      // Ejecutar SP con el formato correcto para PostgreSQL
 	      jdbc.execute((org.springframework.jdbc.core.ConnectionCallback<Boolean>) con -> {
 	        try (var stmt = con.prepareCall("{ CALL sp_bolsa_107_procesar(?, ?, ?) }")) {
 	          stmt.setLong(1, idCarga);
-	          stmt.setLong(2, idTipoBolsa);
+	          stmt.setLong(2, idBolsa);
 	          stmt.setLong(3, idServicio);
 	          stmt.execute();
 	        }

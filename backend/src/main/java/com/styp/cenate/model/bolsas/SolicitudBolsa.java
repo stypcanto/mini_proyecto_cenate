@@ -95,8 +95,8 @@ public class SolicitudBolsa {
     // 📦 REFERENCIA A TIPO DE BOLSA
     // ============================================================================
 
-    @Column(name = "id_tipo_bolsa", nullable = false)
-    private Long idTipoBolsa;
+    @Column(name = "id_bolsa", nullable = false)
+    private Long idBolsa;
 
     // 📋 REFERENCIA A SERVICIO
     @Column(name = "id_servicio", nullable = false)

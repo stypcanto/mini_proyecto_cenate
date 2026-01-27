@@ -118,6 +118,91 @@ public class ExcelHeaderNormalizer {
         COLUMN_MAPPINGS.put("derivacion", "DERIVACION INTERNA");
         COLUMN_MAPPINGS.put("derivación", "DERIVACION INTERNA");
         COLUMN_MAPPINGS.put("deriva", "DERIVACION INTERNA");
+
+        // ============================================================================
+        // 📦 CAMPOS v1.8.0 - IMPORTACIÓN DE BOLSAS DE PACIENTES (NUEVO)
+        // ============================================================================
+
+        // FECHA PREFERIDA QUE NO FUE ATENDIDA (variaciones)
+        COLUMN_MAPPINGS.put("fecha preferida que no fue atendida", "FECHA PREFERIDA QUE NO FUE ATENDIDA");
+        COLUMN_MAPPINGS.put("fecha preferida no atendida", "FECHA PREFERIDA QUE NO FUE ATENDIDA");
+        COLUMN_MAPPINGS.put("fecha preferida", "FECHA PREFERIDA QUE NO FUE ATENDIDA");
+        COLUMN_MAPPINGS.put("fecha no atendida", "FECHA PREFERIDA QUE NO FUE ATENDIDA");
+        COLUMN_MAPPINGS.put("fecha cita no atendida", "FECHA PREFERIDA QUE NO FUE ATENDIDA");
+
+        // CORREO (variaciones)
+        COLUMN_MAPPINGS.put("correo", "CORREO");
+        COLUMN_MAPPINGS.put("email", "CORREO");
+        COLUMN_MAPPINGS.put("correo electronico", "CORREO");
+        COLUMN_MAPPINGS.put("correo electrónico", "CORREO");
+        COLUMN_MAPPINGS.put("mail", "CORREO");
+
+        // COD. IPRESS ADSCRIPCIÓN (variaciones críticas)
+        COLUMN_MAPPINGS.put("cod. ipress adscripcion", "COD. IPRESS ADSCRIPCIÓN");
+        COLUMN_MAPPINGS.put("cod. ipress adscripción", "COD. IPRESS ADSCRIPCIÓN");
+        COLUMN_MAPPINGS.put("codigo ipress adscripcion", "COD. IPRESS ADSCRIPCIÓN");
+        COLUMN_MAPPINGS.put("código ipress adscripción", "COD. IPRESS ADSCRIPCIÓN");
+        COLUMN_MAPPINGS.put("cod ipress", "COD. IPRESS ADSCRIPCIÓN");
+        COLUMN_MAPPINGS.put("codigo ipress", "COD. IPRESS ADSCRIPCIÓN");
+        COLUMN_MAPPINGS.put("ipress adscripcion", "COD. IPRESS ADSCRIPCIÓN");
+        COLUMN_MAPPINGS.put("ipress adscripción", "COD. IPRESS ADSCRIPCIÓN");
+        COLUMN_MAPPINGS.put("ipress", "COD. IPRESS ADSCRIPCIÓN");
+
+        // TIPO CITA (variaciones)
+        COLUMN_MAPPINGS.put("tipo cita", "TIPO CITA");
+        COLUMN_MAPPINGS.put("tipo de cita", "TIPO CITA");
+        COLUMN_MAPPINGS.put("cita", "TIPO CITA");
+        COLUMN_MAPPINGS.put("tipo atencion", "TIPO CITA");
+        COLUMN_MAPPINGS.put("tipo atención", "TIPO CITA");
+        COLUMN_MAPPINGS.put("tipo consulta", "TIPO CITA");
+        COLUMN_MAPPINGS.put("tipo consulta medica", "TIPO CITA");
+        COLUMN_MAPPINGS.put("tipo consulta médica", "TIPO CITA");
+
+        // ASEGURADO (variaciones adicionales)
+        COLUMN_MAPPINGS.put("asegurado", "ASEGURADO");
+        COLUMN_MAPPINGS.put("nombre del asegurado", "ASEGURADO");
+        COLUMN_MAPPINGS.put("nombre asegurado", "ASEGURADO");
+        COLUMN_MAPPINGS.put("paciente nombre", "ASEGURADO");
+
+        // TIPO DE DOCUMENTO (variaciones adicionales para bolsas)
+        COLUMN_MAPPINGS.put("tipo de documento", "TIPO DOCUMENTO");
+        COLUMN_MAPPINGS.put("tipo documento", "TIPO DOCUMENTO");
+        COLUMN_MAPPINGS.put("tipo_documento", "TIPO DOCUMENTO");
+        COLUMN_MAPPINGS.put("tipodocumento", "TIPO DOCUMENTO");
+        COLUMN_MAPPINGS.put("tipo doc", "TIPO DOCUMENTO");
+        COLUMN_MAPPINGS.put("tipo_doc", "TIPO DOCUMENTO");
+
+        // TELÉFONO (más variaciones para bolsas)
+        COLUMN_MAPPINGS.put("teléfono", "TELÉFONO");
+        COLUMN_MAPPINGS.put("telefono", "TELÉFONO");
+        COLUMN_MAPPINGS.put("tel", "TELÉFONO");
+        COLUMN_MAPPINGS.put("celular", "TELÉFONO");
+        COLUMN_MAPPINGS.put("movil", "TELÉFONO");
+        COLUMN_MAPPINGS.put("móvil", "TELÉFONO");
+
+        // FECHA DE NACIMIENTO (más variaciones)
+        COLUMN_MAPPINGS.put("fecha de nacimiento", "FECHA DE NACIMIENTO");
+        COLUMN_MAPPINGS.put("fecha nacimiento", "FECHA DE NACIMIENTO");
+        COLUMN_MAPPINGS.put("fechanacimiento", "FECHA DE NACIMIENTO");
+        COLUMN_MAPPINGS.put("fecha_nacimiento", "FECHA DE NACIMIENTO");
+        COLUMN_MAPPINGS.put("fec nacimiento", "FECHA DE NACIMIENTO");
+        COLUMN_MAPPINGS.put("fec nac", "FECHA DE NACIMIENTO");
+
+        // SEXO (más variaciones)
+        COLUMN_MAPPINGS.put("sexo", "SEXO");
+        COLUMN_MAPPINGS.put("genero", "SEXO");
+        COLUMN_MAPPINGS.put("género", "SEXO");
+        COLUMN_MAPPINGS.put("gender", "SEXO");
+        COLUMN_MAPPINGS.put("sex", "SEXO");
+
+        // DNI (más variaciones)
+        COLUMN_MAPPINGS.put("dni", "DNI");
+        COLUMN_MAPPINGS.put("numero de documento", "DNI");
+        COLUMN_MAPPINGS.put("numero documento", "DNI");
+        COLUMN_MAPPINGS.put("nro documento", "DNI");
+        COLUMN_MAPPINGS.put("nro doc", "DNI");
+        COLUMN_MAPPINGS.put("documento", "DNI");
+        COLUMN_MAPPINGS.put("numero identificacion", "DNI");
     }
 
     /**

@@ -19,16 +19,16 @@ public interface SolicitudBolsaService {
     /**
      * Importa solicitudes de bolsa desde archivo Excel
      * Valida DNI en asegurados, código en IPRESS, auto-enriquece datos
-     * 
+     *
      * @param file archivo Excel
-     * @param idTipoBolsa ID del tipo de bolsa seleccionado
+     * @param idBolsa ID del tipo de bolsa seleccionado
      * @param idServicio ID del servicio/especialidad seleccionado
      * @param usuarioCarga usuario que realiza la carga
      * @return estadísticas de importación (filas OK, errores, etc.)
      */
     Map<String, Object> importarDesdeExcel(
         MultipartFile file,
-        Long idTipoBolsa,
+        Long idBolsa,
         Long idServicio,
         String usuarioCarga
     );

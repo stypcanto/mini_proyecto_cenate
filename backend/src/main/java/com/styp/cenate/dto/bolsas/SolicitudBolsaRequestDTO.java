@@ -12,7 +12,7 @@ import jakarta.validation.constraints.NotNull;
  */
 public record SolicitudBolsaRequestDTO(
     @NotNull(message = "El ID del tipo de bolsa es obligatorio")
-    Long idTipoBolsa,
+    Long idBolsa,
     @NotNull(message = "El ID del servicio/especialidad es obligatorio")
     Long idServicio,
     @NotBlank(message = "El DNI del paciente es obligatorio")

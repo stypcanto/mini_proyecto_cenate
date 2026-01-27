@@ -53,7 +53,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     @Transactional
     public Map<String, Object> importarDesdeExcel(
             MultipartFile file,
-            Long idTipoBolsa,
+            Long idBolsa,
             Long idServicio,
             String usuarioCarga) {
 
@@ -127,7 +127,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     // Procesar y validar fila
                     // En producción, aquí se realizarían las validaciones contra BD
                     SolicitudBolsa solicitud = procesarFilaExcel(
-                        rowDTO, idTipoBolsa, idServicio, usuarioCarga
+                        rowDTO, idBolsa, idServicio, usuarioCarga
                     );
 
                     // Guardar solicitud
@@ -169,12 +169,145 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     @Override
     public List<SolicitudBolsaDTO> listarTodas() {
-        log.info("📊 [SolicitudBolsaServiceImpl] Obteniendo solicitudes (v2.1.0 - BD limpia)");
-        // Obtiene solicitudes y mapea a DTOs
-        // Los datos denormalizados no se almacenan en BD (v2.1.0)
-        // Se pueden recuperar en el frontend desde las tablas de referencia si es necesario
-        List<SolicitudBolsa> solicitudes = solicitudRepository.findByActivoTrueOrderByFechaSolicitudDesc();
-        return SolicitudBolsaMapper.toDTOList(solicitudes);
+        log.info("📊 [SolicitudBolsaServiceImpl] Obteniendo solicitudes con enriquecimiento (v2.1.0 - BD limpia)");
+        // Obtiene solicitudes con JOIN a dim_tipos_bolsas
+        List<Object[]> resultados = solicitudRepository.findAllWithBolsaDescription();
+        log.info("📊 Total de resultados: {}", resultados.size());
+        if (!resultados.isEmpty()) {
+            Object[] primera = resultados.get(0);
+            log.info("📊 Longitud del array: {}, Valor índice 24 (desc_ipress): {}, Valor índice 25 (desc_red): {}",
+                primera.length, primera.length > 24 ? primera[24] : "N/A",
+                primera.length > 25 ? primera[25] : "N/A");
+        }
+        return resultados.stream()
+            .map(this::mapFromResultSet)
+            .collect(java.util.stream.Collectors.toList());
+    }
+
+    /**
+     * Mapea un Object[] de la consulta SQL nativa a SolicitudBolsaDTO
+     * Orden de campos: id_solicitud, numero_solicitud, paciente_id, paciente_nombre, paciente_dni,
+     *                  especialidad, fecha_preferida_no_atendida, tipo_documento, fecha_nacimiento,
+     *                  paciente_sexo, paciente_telefono, paciente_email, codigo_ipress, tipo_cita,
+     *                  id_bolsa, desc_tipo_bolsa, id_servicio, codigo_adscripcion, id_ipress,
+     *                  estado, fecha_solicitud, fecha_actualizacion, estado_gestion_citas_id, activo,
+     *                  desc_ipress, desc_red
+     */
+    private SolicitudBolsaDTO mapFromResultSet(Object[] row) {
+        try {
+            // Convertir fechas SQL a LocalDate/OffsetDateTime
+            java.time.LocalDate fechaPreferida = convertToLocalDate(row[6]); // fecha_preferida_no_atendida
+            java.time.LocalDate fechaNacimiento = convertToLocalDate(row[8]); // fecha_nacimiento
+            Integer edad = calcularEdad(fechaNacimiento);
+
+            java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[20]); // fecha_solicitud
+            java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[21]); // fecha_actualizacion
+
+            return SolicitudBolsaDTO.builder()
+                    .idSolicitud(toLongSafe("id_solicitud", row[0]))
+                    .numeroSolicitud((String) row[1])
+                    .pacienteId(toLongSafe("paciente_id", row[2]))
+                    .pacienteNombre((String) row[3])
+                    .pacienteDni((String) row[4])
+                    .especialidad((String) row[5])
+                    .fechaPreferidaNoAtendida(fechaPreferida)
+                    .tipoDocumento((String) row[7])
+                    .fechaNacimiento(fechaNacimiento)
+                    .pacienteSexo((String) row[9])
+                    .pacienteTelefono((String) row[10])
+                    .pacienteEmail((String) row[11])
+                    .pacienteEdad(edad)
+                    .codigoIpressAdscripcion((String) row[12])
+                    .tipoCita((String) row[13])
+                    .idBolsa(toLongSafe("id_bolsa", row[14]))
+                    .descTipoBolsa((String) row[15])
+                    .idServicio(toLongSafe("id_servicio", row[16]))
+                    .codigoAdscripcion((String) row[17])
+                    .idIpress(row[18] != null ? toLongSafe("id_ipress", row[18]) : null)
+                    .estado((String) row[19])
+                    .fechaSolicitud(fechaSolicitud)
+                    .fechaActualizacion(fechaActualizacion)
+                    .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[22]))
+                    .activo((Boolean) row[23])
+                    .descIpress((String) row[24])  // desc_ipress desde JOIN
+                    .descRed((String) row[25])      // desc_red desde JOIN
+                    .build();
+        } catch (Exception e) {
+            log.error("❌ Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
+            throw new RuntimeException("Error procesando fila de solicitud: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Convierte java.sql.Date o java.time.LocalDate a LocalDate
+     */
+    private java.time.LocalDate convertToLocalDate(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof java.time.LocalDate) {
+            return (java.time.LocalDate) value;
+        }
+        if (value instanceof java.sql.Date) {
+            return ((java.sql.Date) value).toLocalDate();
+        }
+        throw new ClassCastException("No se puede convertir " + value.getClass().getName() + " a LocalDate");
+    }
+
+    /**
+     * Convierte timestamps SQL a OffsetDateTime
+     */
+    private java.time.OffsetDateTime convertToOffsetDateTime(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof java.time.OffsetDateTime) {
+            return (java.time.OffsetDateTime) value;
+        }
+        if (value instanceof java.sql.Timestamp) {
+            return ((java.sql.Timestamp) value).toInstant().atOffset(java.time.ZoneOffset.UTC);
+        }
+        if (value instanceof java.time.Instant) {
+            return ((java.time.Instant) value).atOffset(java.time.ZoneOffset.UTC);
+        }
+        throw new ClassCastException("No se puede convertir " + value.getClass().getName() + " a OffsetDateTime. Tipo: " + value.getClass().getSimpleName());
+    }
+
+    /**
+     * Convierte un valor Object a Long de forma segura
+     * Maneja tanto Number como String con logs detallados
+     */
+    private Long toLongSafe(String fieldName, Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            if (value instanceof Number) {
+                return ((Number) value).longValue();
+            }
+            if (value instanceof String) {
+                String strValue = (String) value;
+                if (strValue.isBlank()) {
+                    return null;
+                }
+                return Long.parseLong(strValue);
+            }
+            log.error("❌ Campo '{}': tipo inesperado {} = {}", fieldName, value.getClass().getSimpleName(), value);
+            throw new ClassCastException("Campo '" + fieldName + "': no se puede convertir " + value.getClass().getName() + " a Long. Valor: " + value);
+        } catch (Exception e) {
+            log.error("❌ Error convirtiendo campo '{}' a Long. Tipo: {}, Valor: {}, Error: {}", fieldName, value.getClass().getSimpleName(), value, e.getMessage());
+            throw new RuntimeException("Error en campo " + fieldName + ": " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Calcula la edad a partir de fecha de nacimiento
+     */
+    private Integer calcularEdad(java.time.LocalDate fechaNacimiento) {
+        if (fechaNacimiento == null) {
+            return null;
+        }
+        return java.time.LocalDate.now().getYear() - fechaNacimiento.getYear();
     }
 
     @Override
@@ -263,7 +396,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
      */
     private SolicitudBolsa procesarFilaExcel(
             SolicitudBolsaExcelRowDTO row,
-            Long idTipoBolsa,
+            Long idBolsa,
             Long idServicio,
             String usuarioCarga) {
 
@@ -408,13 +541,13 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
         // 2. Obtener datos del tipo de bolsa
         try {
-            TipoBolsa tipoBolsa = tipoBolsaRepository.findById(idTipoBolsa).orElse(null);
+            TipoBolsa tipoBolsa = tipoBolsaRepository.findById(idBolsa).orElse(null);
             if (tipoBolsa != null) {
                 codTipoBolsa = tipoBolsa.getCodTipoBolsa();
                 descTipoBolsa = tipoBolsa.getDescTipoBolsa();
             }
         } catch (Exception e) {
-            log.warn("No se pudo obtener tipo de bolsa para ID {}: {}", idTipoBolsa, e.getMessage());
+            log.warn("No se pudo obtener tipo de bolsa para ID {}: {}", idBolsa, e.getMessage());
         }
 
         // 3. Obtener IPRESS desde código de adscripción (COD. IPRESS ADSCRIPCIÓN de Excel)
@@ -438,7 +571,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteDni(row.dni())
             .pacienteId(pacienteIdGenerado)
             .pacienteNombre(pacienteNombre)
-            .idTipoBolsa(idTipoBolsa)
+            .idBolsa(idBolsa)
             .idServicio(idServicio)
             .codigoAdscripcion(row.codigoIpress())
             .idIpress(idIpress)

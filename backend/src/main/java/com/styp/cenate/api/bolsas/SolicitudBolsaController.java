@@ -34,7 +34,7 @@ public class SolicitudBolsaController {
      * POST /api/bolsas/solicitudes/importar
      *
      * @param file archivo Excel con columnas: DNI, Código Adscripción
-     * @param idTipoBolsa ID del tipo de bolsa seleccionado (PASO 1)
+     * @param idBolsa ID del tipo de bolsa seleccionado (PASO 1)
      * @param idServicio ID del servicio/especialidad (PASO 2)
      * @param usuarioCarga Usuario que realiza la carga (desde frontend)
      * @return estadísticas de importación
@@ -42,19 +42,19 @@ public class SolicitudBolsaController {
     @PostMapping(value = "/importar", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> importarDesdeExcel(
             @RequestParam("file") MultipartFile file,
-            @RequestParam("idTipoBolsa") Long idTipoBolsa,
+            @RequestParam("idBolsa") Long idBolsa,
             @RequestParam("idServicio") Long idServicio,
             @RequestParam(value = "usuarioCarga", defaultValue = "admin") String usuarioCarga) {
 
         try {
             log.info("📤 Iniciando importación de Excel - Bolsa: {}, Servicio: {}, Usuario: {}",
-                idTipoBolsa, idServicio, usuarioCarga);
+                idBolsa, idServicio, usuarioCarga);
 
             // Usar ExcelImportService que incluye SP v2.0.0 con enriquecimiento e INSERT
             Map<String, Object> resultado = excelImportService.importarYProcesar(
                 file,
                 usuarioCarga,
-                idTipoBolsa,
+                idBolsa,
                 idServicio
             );
 

@@ -80,8 +80,11 @@ public class SolicitudBolsaDTO {
     private String tipoCita;
 
     // 📦 REFERENCIA A BOLSA
-    @JsonProperty("id_tipo_bolsa")
-    private Long idTipoBolsa;
+    @JsonProperty("id_bolsa")
+    private Long idBolsa;
+
+    @JsonProperty("desc_tipo_bolsa")
+    private String descTipoBolsa;
 
     // 📋 REFERENCIA A SERVICIO
     @JsonProperty("id_servicio")
@@ -114,6 +117,13 @@ public class SolicitudBolsaDTO {
 
     @JsonProperty("desc_estado_cita")
     private String descEstadoCita;
+
+    // 🏥 DESCRIPCIÓN IPRESS Y RED (enriquecidas via JOIN)
+    @JsonProperty("desc_ipress")
+    private String descIpress;
+
+    @JsonProperty("desc_red")
+    private String descRed;
 
     // 🔔 AUDITORÍA
     @JsonProperty("activo")

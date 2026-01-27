@@ -34,22 +34,22 @@ public class ImportExcelController {
 	 * Importar archivo Excel con pacientes
 	 * Parámetros desde FormData:
 	 *   - file: MultipartFile (Excel)
-	 *   - idTipoBolsa: Long (ej: 4 para BOLSAS_EXPLOTADATOS)
+	 *   - idBolsa: Long (ej: 4 para BOLSAS_EXPLOTADATOS)
 	 *   - idServicio: Long (ej: 89 para NEUMOLOGIA)
 	 *   - usuarioCarga: String (usuario que carga)
 	 */
 	@PostMapping(value = "/pacientes", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
 	public ResponseEntity<?> importarPacientes(
 		@RequestParam("file") MultipartFile file,
-		@RequestParam(value = "idTipoBolsa", required = false, defaultValue = "1") Long idTipoBolsa,
+		@RequestParam(value = "idBolsa", required = false, defaultValue = "1") Long idBolsa,
 		@RequestParam(value = "idServicio", required = false, defaultValue = "1") Long idServicio,
 		@RequestParam(value = "usuarioCarga", required = false, defaultValue = "admin") String usuarioCarga
 	) {
 		log.info("📤 Iniciando importación de archivo Excel: {}", file.getOriginalFilename());
-		log.info("   Bolsa: {}, Servicio: {}, Usuario: {}", idTipoBolsa, idServicio, usuarioCarga);
+		log.info("   Bolsa: {}, Servicio: {}, Usuario: {}", idBolsa, idServicio, usuarioCarga);
 
 		try {
-			Map<String, Object> result = service.importarYProcesar(file, usuarioCarga, idTipoBolsa, idServicio);
+			Map<String, Object> result = service.importarYProcesar(file, usuarioCarga, idBolsa, idServicio);
 			log.info("✅ Importación exitosa - Total: {}, OK: {}, Errores: {}",
 				result.get("totalFilas"), result.get("filasOk"), result.get("filasError"));
 			return ResponseEntity.ok(result);

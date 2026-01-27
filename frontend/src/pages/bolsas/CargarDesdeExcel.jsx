@@ -5,10 +5,15 @@ import bolsasService from '../../services/bolsasService';
 import * as XLSX from 'xlsx';
 
 /**
- * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.8.0 (PLANTILLA COMPLETA)
- * Permitir carga masiva de bolsas desde archivos Excel/CSV con estructura completa
+ * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.9.0 (PLANTILLA INTELIGENTE)
+ * Permitir carga masiva de bolsas desde archivos Excel/CSV con estructura completa y detección inteligente
  *
  * Características:
+ * - 🧠 INTELIGENCIA: Detección automática de columnas aunque los headers varíen
+ *   - Busca patrones en el texto del header (case-insensitive)
+ *   - Auto-mapea columnas por posición si es necesario
+ * - 🧠 INTELIGENCIA: Auto-selecciona tipo de bolsa por nombre de archivo
+ *   - Ej: "BOLSA OTORRINO 26012026.xlsx" → auto-selecciona "Otorrinolaringología"
  * - Plantilla COMPLETA: 10 campos requeridos (DNI, Tipo Documento, Asegurado, Sexo, Tipo Cita, etc.)
  * - Auto-cálculo: EDAD se calcula automáticamente desde FECHA DE NACIMIENTO
  * - Tipo Cita: Recita, Interconsulta, Voluntaria
@@ -40,6 +45,64 @@ export default function CargarDesdeExcel() {
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
+
+  // ============================================================================
+  // 🧠 FUNCIÓN: Inteligencia - Detectar columnas automáticamente
+  // ============================================================================
+  const detectarColumnasInteligentemente = (headers) => {
+    /**
+     * Detecta índices de columnas incluso si los headers varían.
+     * Estrategia: Buscar patterns en el texto del header (case-insensitive)
+     */
+    const headerMap = headers.map(h => h.toString().toUpperCase().trim());
+
+    const columnIndices = {
+      fechaPreferida: headerMap.findIndex(h => h.includes('FECHA') && h.includes('PREFERIDA')),
+      tipoDocumento: headerMap.findIndex(h => h.includes('TIPO') && h.includes('DOCUMENTO')),
+      dni: headerMap.findIndex(h => h === 'DNI' || h === 'DOCUMENTO'),
+      asegurado: headerMap.findIndex(h => h.includes('ASEGURADO') || h.includes('PACIENTE') || h.includes('NOMBRE')),
+      sexo: headerMap.findIndex(h => h.includes('SEXO') || h === 'GÉNERO'),
+      fechaNacimiento: headerMap.findIndex(h => h.includes('NACIMIENTO') || h.includes('FECHA')),
+      telefono: headerMap.findIndex(h => h.includes('TELÉFONO') || h.includes('TELEFONO') || h.includes('CELULAR')),
+      correo: headerMap.findIndex(h => h.includes('CORREO') || h.includes('EMAIL') || h.includes('MAIL')),
+      codigoIpress: headerMap.findIndex(h => h.includes('IPRESS') || h.includes('CÓDIGO') || h.includes('COD.')),
+      tipoCita: headerMap.findIndex(h => h.includes('TIPO') && h.includes('CITA'))
+    };
+
+    console.log('🧠 Índices detectados:', columnIndices);
+    return columnIndices;
+  };
+
+  // ============================================================================
+  // 🧠 FUNCIÓN: Extraer tipo de bolsa del nombre de archivo
+  // ============================================================================
+  const extraerTipoBolsaDelNombre = (nombreArchivo) => {
+    /**
+     * Extrae el tipo de bolsa del nombre del archivo.
+     * Ej: "BOLSA OTORRINO 26012026.xlsx" → busca tipo de bolsa que contenga "OTORRINO"
+     */
+    const palabraClave = nombreArchivo
+      .toUpperCase()
+      .replace(/BOLSA\s+/i, '')  // Quitar "BOLSA"
+      .replace(/[0-9]{8}\./g, '') // Quitar fecha
+      .replace(/\.xlsx?$/i, '')    // Quitar extensión
+      .trim();
+
+    console.log('🧠 Palabra clave del archivo:', palabraClave);
+    return palabraClave;
+  };
+
+  // ============================================================================
+  // 🧠 FUNCIÓN: Auto-seleccionar bolsa por nombre
+  // ============================================================================
+  const autoSeleccionarBolsa = (bolsas, nombreArchivo) => {
+    const palabraClave = extraerTipoBolsaDelNombre(nombreArchivo);
+    const bolsaCoincidencia = bolsas.find(b =>
+      b.descTipoBolsa.toUpperCase().includes(palabraClave) ||
+      b.codTipoBolsa.toUpperCase().includes(palabraClave)
+    );
+    return bolsaCoincidencia?.idTipoBolsa || null;
+  };
 
   // Obtener datos del usuario y tipos de bolsas en el montaje
   useEffect(() => {
@@ -119,6 +182,35 @@ export default function CargarDesdeExcel() {
     if (selectedFile && validateFile(selectedFile)) {
       setFile(selectedFile);
       setImportStatus(null);
+
+      // 🧠 INTELIGENCIA 1: Leer archivo para detectar columnas automáticamente
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        try {
+          const workbook = XLSX.read(event.target.result);
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const data = XLSX.utils.sheet_to_json(firstSheet);
+
+          if (data.length > 0) {
+            const headers = Object.keys(data[0]);
+            const columnIndices = detectarColumnasInteligentemente(headers);
+            console.log('✅ Columnas detectadas:', headers);
+            console.log('✅ Índices mapeados:', columnIndices);
+          }
+        } catch (error) {
+          console.warn('⚠️ No se pudieron detectar columnas:', error.message);
+        }
+      };
+      reader.readAsArrayBuffer(selectedFile);
+
+      // 🧠 INTELIGENCIA 2: Auto-seleccionar tipo de bolsa por nombre de archivo
+      if (tiposBolsas.length > 0) {
+        const bolsaId = autoSeleccionarBolsa(tiposBolsas, selectedFile.name);
+        if (bolsaId) {
+          setTipoBolesaId(bolsaId);
+          console.log('✅ Bolsa auto-seleccionada:', bolsaId);
+        }
+      }
     }
   };
 

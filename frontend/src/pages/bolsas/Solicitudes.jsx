@@ -16,6 +16,30 @@ import bolsasService from '../../services/bolsasService';
  * - Indicadores de tráfico (semáforo) por paciente
  * - Acciones: Cambiar celular
  */
+/**
+ * Genera un alias corto para nombres de bolsas
+ * Ejemplos:
+ * "Bolsas Explotación de Datos - Análisis y reportes" → "Bolsa Explotación Datos"
+ * "Bolsas Interconsulta - Especialista" → "Bolsa Interconsulta"
+ */
+function generarAliasBolsa(nombreBolsa) {
+  if (!nombreBolsa) return 'Sin clasificar';
+
+  // Eliminar las palabras genéricas y el guion
+  let alias = nombreBolsa
+    .replace(/^Bolsas?\s+/, '') // Quita "Bolsa" o "Bolsas" al inicio
+    .replace(/\s*-\s*.*$/, '') // Quita todo después del guion
+    .trim();
+
+  // Si el resultado es muy largo, acortarlo a palabras principales
+  if (alias.length > 30) {
+    const palabras = alias.split(' ');
+    alias = palabras.slice(0, 3).join(' '); // Tomar primeras 3 palabras
+  }
+
+  return `Bolsa ${alias}`;
+}
+
 export default function Solicitudes() {
   const REGISTROS_POR_PAGINA = 25;
 
@@ -33,6 +57,7 @@ export default function Solicitudes() {
   const [cacheEstados, setCacheEstados] = useState({});
   const [cacheIpress, setCacheIpress] = useState({});
   const [cacheRedes, setCacheRedes] = useState({});
+  const [catalogosCargados, setCatalogosCargados] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
   // Modales y estado para acciones
@@ -60,23 +85,71 @@ export default function Solicitudes() {
   const [modalAseguradosSincronizados, setModalAseguradosSincronizados] = useState(false);
   const [aseguradosSincronizados, setAseguradosSincronizados] = useState([]);
 
+  // ============================================================================
+  // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
+  // ============================================================================
   useEffect(() => {
-    // Cargar solicitudes y catálogos inicialmente
-    cargarDatos();
+    cargarCatalogos();
   }, []);
 
-  // Cargar solicitudes y catálogos en paralelo
-  const cargarDatos = async () => {
-    setIsLoading(true);
-    setErrorMessage('');
+  // ============================================================================
+  // 📦 EFFECT 2: Cargar SOLICITUDES después de que los catálogos estén listos
+  // ============================================================================
+  useEffect(() => {
+    if (catalogosCargados) {
+      cargarSolicitudes();
+    }
+  }, [catalogosCargados]);
+
+  // ============================================================================
+  // 🔄 FUNCIÓN 1: Cargar CATÁLOGOS (se ejecuta UNA sola vez)
+  // ============================================================================
+  const cargarCatalogos = async () => {
+    console.log('📦 Cargando catálogos (ejecutarse solo UNA vez)...');
     try {
-      // Cargar solicitudes y catálogos en paralelo
-      const [solicitudesData, estadosData, ipressData, redesData] = await Promise.all([
-        bolsasService.obtenerSolicitudes(),
+      const [estadosData, ipressData, redesData] = await Promise.all([
         bolsasService.obtenerEstadosGestion().catch(() => []),
         bolsasService.obtenerIpress().catch(() => []),
         bolsasService.obtenerRedes().catch(() => [])
       ]);
+
+      // Crear cache de estados, IPRESS y Redes
+      if (estadosData && Array.isArray(estadosData)) {
+        const estadosMap = {};
+        estadosData.forEach(e => { estadosMap[e.id] = e; });
+        setCacheEstados(estadosMap);
+      }
+
+      if (ipressData && Array.isArray(ipressData)) {
+        const ipressMap = {};
+        ipressData.forEach(i => { ipressMap[i.id] = i; });
+        setCacheIpress(ipressMap);
+      }
+
+      if (redesData && Array.isArray(redesData)) {
+        const redesMap = {};
+        redesData.forEach(r => { redesMap[r.id] = r; });
+        setCacheRedes(redesMap);
+      }
+
+      console.log('✅ Catálogos cargados correctamente');
+      setCatalogosCargados(true);
+    } catch (error) {
+      console.error('❌ Error cargando catálogos:', error);
+      setErrorMessage('Error al cargar catálogos. Intenta nuevamente.');
+      setCatalogosCargados(true); // Igualmente marcar como cargado para permitir cargar solicitudes
+    }
+  };
+
+  // ============================================================================
+  // 🔄 FUNCIÓN 2: Cargar SOLICITUDES (se puede ejecutar múltiples veces)
+  // ============================================================================
+  const cargarSolicitudes = async () => {
+    console.log('⚡ Cargando solicitudes...');
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      const solicitudesData = await bolsasService.obtenerSolicitudes();
 
       // Debug: Verificar estructura de API response
       if (solicitudesData && solicitudesData.length > 0) {
@@ -102,10 +175,10 @@ export default function Solicitudes() {
           semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
           diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
           especialidad: solicitud.especialidad || 'N/A',
-          red: solicitud.responsable_gestora_nombre || 'Sin asignar',
-          ipress: solicitud.id_bolsa ? `Bolsa ${solicitud.id_bolsa}` : 'N/A',
+          red: solicitud.desc_red || 'Sin asignar',
+          ipress: solicitud.desc_ipress || 'N/A',
           bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
-          nombreBolsa: solicitud.desc_tipo_bolsa || 'Sin descripción',
+          nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
           fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
           fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
           // ============================================================================
@@ -135,30 +208,11 @@ export default function Solicitudes() {
         console.log('✅ DEBUG - Campos en objeto enriquecido:', Object.keys(solicitudesEnriquecidas[0]));
       }
 
-      // Crear cache de estados, IPRESS y Redes
-      if (estadosData && Array.isArray(estadosData)) {
-        const estadosMap = {};
-        estadosData.forEach(e => { estadosMap[e.id] = e; });
-        setCacheEstados(estadosMap);
-      }
-
-      if (ipressData && Array.isArray(ipressData)) {
-        const ipressMap = {};
-        ipressData.forEach(i => { ipressMap[i.id] = i; });
-        setCacheIpress(ipressMap);
-      }
-
-      if (redesData && Array.isArray(redesData)) {
-        const redesMap = {};
-        redesData.forEach(r => { redesMap[r.id] = r; });
-        setCacheRedes(redesMap);
-      }
-
       // Verificar si hay asegurados nuevos sin sincronizar
       verificarAseguradosNuevos();
 
     } catch (error) {
-      console.error('Error cargando datos:', error);
+      console.error('❌ Error cargando solicitudes:', error);
       setErrorMessage('Error al cargar las solicitudes. Intenta nuevamente.');
     } finally {
       setIsLoading(false);
@@ -434,7 +488,7 @@ export default function Solicitudes() {
       await bolsasService.cambiarTelefono(solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id, nuevoTelefono);
       alert('Teléfono actualizado correctamente');
       setModalCambiarTelefono(false);
-      cargarDatos(); // Recargar datos
+      cargarSolicitudes(); // Recargar solicitudes (más rápido)
     } catch (error) {
       console.error('Error cambiar teléfono:', error);
       alert('Error al cambiar el teléfono. Intenta nuevamente.');
@@ -466,7 +520,7 @@ export default function Solicitudes() {
       );
       alert('Solicitud asignada correctamente');
       setModalAsignarGestora(false);
-      cargarDatos(); // Recargar datos
+      cargarSolicitudes(); // Recargar solicitudes (más rápido)
     } catch (error) {
       console.error('Error asignando gestora:', error);
       alert('Error al asignar la gestora. Intenta nuevamente.');
@@ -492,7 +546,7 @@ export default function Solicitudes() {
       );
       alert(`Recordatorio enviado por ${tipoRecordatorio}`);
       setModalEnviarRecordatorio(false);
-      cargarDatos(); // Recargar datos
+      cargarSolicitudes(); // Recargar solicitudes (más rápido)
     } catch (error) {
       console.error('Error enviar recordatorio:', error);
       alert('Error al enviar el recordatorio. Intenta nuevamente.');
@@ -527,7 +581,7 @@ export default function Solicitudes() {
       setArchivoExcel(null);
 
       // Recargar tabla
-      cargarDatos();
+      cargarSolicitudes();
 
       // 📍 Verificar asegurados sincronizados recientemente
       await verificarAseguradosSincronizados();
@@ -689,7 +743,7 @@ export default function Solicitudes() {
                 <div className="bg-red-50 border border-red-200 rounded-lg p-4">
                   <p className="text-red-700 font-semibold">{errorMessage}</p>
                   <button
-                    onClick={() => cargarDatos()}
+                    onClick={() => cargarSolicitudes()}
                     className="mt-4 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold transition-colors"
                   >
                     Reintentar
@@ -742,7 +796,7 @@ export default function Solicitudes() {
                         />
                       </td>
                       {/* Columnas - Orden optimizado v2.1.0 */}
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.bolsa || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.nombreBolsa || 'Sin clasificar'}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.tipoDocumento}</td>
                       <td className="px-4 py-3 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
@@ -764,8 +818,8 @@ export default function Solicitudes() {
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 font-semibold" title="Código IPRESS">{solicitud.codigoIpress}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.nombre_ipress}>{solicitud.nombre_ipress || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.red_asistencial || 'Sin Red'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>{solicitud.ipress || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block ${getEstadoBadge(solicitud.estado)}`}
@@ -1282,7 +1336,7 @@ export default function Solicitudes() {
                   <button
                     onClick={() => {
                       setModalAseguradosSincronizados(false);
-                      cargarDatos(); // Recargar tabla con datos actualizados
+                      cargarSolicitudes(); // Recargar tabla con datos actualizados
                     }}
                     className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold"
                   >

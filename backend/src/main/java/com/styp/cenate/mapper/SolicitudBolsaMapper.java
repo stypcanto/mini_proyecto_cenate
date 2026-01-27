@@ -35,7 +35,7 @@ public class SolicitudBolsaMapper {
                 .pacienteDni(entity.getPacienteDni())
                 .pacienteId(entity.getPacienteId())
                 .pacienteNombre(entity.getPacienteNombre())
-                .idTipoBolsa(entity.getIdTipoBolsa())
+                .idBolsa(entity.getIdBolsa())
                 .idServicio(entity.getIdServicio())
                 .codigoAdscripcion(entity.getCodigoAdscripcion())
                 .estadoGestionCitasId(entity.getEstadoGestionCitasId())
