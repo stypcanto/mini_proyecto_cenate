@@ -363,21 +363,40 @@ export default function CargarDesdeExcel() {
 
   // Obtener datos del usuario y tipos de bolsas en el montaje
   useEffect(() => {
-    // Obtener usuario desde localStorage
-    const userStr = localStorage.getItem('user');
-    if (userStr) {
+    // 🆕 v1.13.8: Obtener usuario desde auth.user (nuevo formato)
+    let usuario = null;
+
+    // Intentar obtener desde auth.user (nuevo formato)
+    const authUserStr = localStorage.getItem('auth.user');
+    if (authUserStr) {
       try {
-        const user = JSON.parse(userStr);
-        console.log('👤 Usuario de localStorage:', user);
-        setUsuario(user);
+        usuario = JSON.parse(authUserStr);
+        console.log('👤 Usuario desde auth.user:', usuario);
       } catch (e) {
-        console.error('Error al parsear usuario:', e);
-        setUsuario({ username: 'admin', id: 1 });
+        console.error('Error al parsear auth.user:', e);
       }
-    } else {
-      console.warn('⚠️ No se encontró usuario autenticado');
-      setUsuario({ username: 'admin', id: 1 });
     }
+
+    // Si no está, intentar obtener desde 'user' (formato antiguo)
+    if (!usuario) {
+      const userStr = localStorage.getItem('user');
+      if (userStr) {
+        try {
+          usuario = JSON.parse(userStr);
+          console.log('👤 Usuario desde localStorage:', usuario);
+        } catch (e) {
+          console.error('Error al parsear usuario:', e);
+        }
+      }
+    }
+
+    // Fallback a admin si no se encuentra nada
+    if (!usuario) {
+      console.warn('⚠️ No se encontró usuario autenticado');
+      usuario = { username: 'admin', id: 1 };
+    }
+
+    setUsuario(usuario);
 
     // Obtener tipos de bolsas disponibles
     const obtenerTiposBolsasDisponibles = async () => {
@@ -554,7 +573,7 @@ export default function CargarDesdeExcel() {
       formData.append('idBolsa', tipoBolesaId);
       formData.append('idServicio', idServicio);
 
-      // Obtener el nombre del usuario - intentar múltiples propiedades
+      // 🆕 v1.13.8: Obtener el nombre del usuario - intentar múltiples propiedades
       let nombreUsuario = usuario.username ||
                          usuario.nombre ||
                          usuario.nombreCompleto ||
@@ -562,9 +581,29 @@ export default function CargarDesdeExcel() {
                          usuario.name ||
                          usuario.displayName;
 
-      // Si aún no tenemos nombre, intentar desde el JWT token
+      // Si aún no tenemos nombre o es 'admin', intentar desde el JWT token
       if (!nombreUsuario || nombreUsuario === 'admin') {
-        const token = localStorage.getItem('token');
+        // Buscar token en localStorage con la nueva key
+        let token = null;
+
+        // Intentar encontrar el token en las keys hasheadas
+        for (let key in localStorage) {
+          const value = localStorage.getItem(key);
+          if (value && value.startsWith('{"') && value.includes('eyJ')) {
+            // Parece ser un JWT
+            try {
+              const parsed = JSON.parse(value);
+              if (parsed.jwt || parsed.token) {
+                token = parsed.jwt || parsed.token;
+                break;
+              }
+            } catch (e) {
+              // Ignorar
+            }
+          }
+        }
+
+        // Si encontró token, decodificar
         if (token) {
           try {
             const parts = token.split('.');
@@ -574,6 +613,7 @@ export default function CargarDesdeExcel() {
                             decoded.nombreCompleto ||
                             decoded.full_name ||
                             decoded.sub ||
+                            decoded.name ||
                             nombreUsuario;
               console.log('🔐 Nombre extraído del JWT:', nombreUsuario);
             }
@@ -583,9 +623,11 @@ export default function CargarDesdeExcel() {
         }
       }
 
-      // Último recurso: usar 'admin'
-      if (!nombreUsuario) {
-        nombreUsuario = 'admin';
+      // Si es un número (como el username del sistema), usar como fallback
+      // pero intentar obtener el nombre real del usuario autenticado
+      if (!nombreUsuario || /^\d+$/.test(nombreUsuario)) {
+        // Último recurso: usar el username aunque sea un número
+        nombreUsuario = usuario.username || 'SISTEMA';
       }
 
       formData.append('usuarioCarga', nombreUsuario);
