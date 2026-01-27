@@ -27,13 +27,19 @@
 - Plan de solicitud de turnos
 - Plan de disponibilidad médica
 
-#### 📦 Módulo de Solicitudes de Bolsa
+#### 📦 Módulo de Bolsas (Solicitudes y Estadísticas)
 **[09_modules_bolsas/](./09_modules_bolsas/)** ⭐ **RECOMENDADO**
-- **Inicio rápido:** [`08_modulo_bolsas_pacientes_completo.md`](./09_modules_bolsas/08_modulo_bolsas_pacientes_completo.md)
-- CRUD de tipos de bolsas
-- Estados de gestión de citas
-- Auto-normalización de Excel
-- Resumen integral del módulo
+- **Solicitudes:** [`12_modulo_solicitudes_bolsa_v1.12.0.md`](./09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md)
+  - Importación inteligente de Excel con 10 campos
+  - Auto-detección de tipos de bolsa y servicios
+  - Soft delete en lote con auditoría
+
+- **Estadísticas Dashboard:** [`13_estadisticas_dashboard_v2.0.0.md`](./09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md) ✨ **NUEVO**
+  - 8 Endpoints REST de estadísticas en tiempo real
+  - Dashboard completo con 6 tipos de visualizaciones
+  - Datos 100% reales desde dim_solicitud_bolsa
+  - Gráficos: Pie charts, barras horizontales, línea temporal
+  - KPIs detallados con indicadores de salud
 
 #### 📋 Módulo de Tipos de Bolsas (Catálogo)
 **[11_modulo_tipos_bolsas_completo.md](./11_modulo_tipos_bolsas_completo.md)** ⭐ **NUEVO v1.37.0**
@@ -64,9 +70,10 @@
 | Archivo | Propósito | Versión |
 |---------|-----------|---------|
 | **01_api_endpoints.md** | Referencia de endpoints | - |
-| **08_modulo_bolsas_pacientes_completo.md** | Módulo de bolsas (solicitudes) | v1.6.0 |
+| **09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md** | Módulo de bolsas (solicitudes) | v1.12.0 |
+| **09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md** | **NUEVO:** Dashboard estadísticas | v2.0.0 ⭐ |
 | **07_modulo_estados_gestion_citas_crud.md** | Estados de gestión de citas | v1.33.0 |
-| **11_modulo_tipos_bolsas_completo.md** | **NUEVO:** Tipos de Bolsas (catálogo) | v1.37.0 ⭐ |
+| **11_modulo_tipos_bolsas_completo.md** | Tipos de Bolsas (catálogo) | v1.37.0 |
 | **09_teleecg_v3.0.0_guia_rapida.md** | Tele-ECG - Guía rápida | v1.24.0 |
 | **00_Procedimiento_NuevoModulo_Pagina.md** | Crear nuevos módulos | - |
 
@@ -86,7 +93,8 @@
 
 ## 📚 Lectura Recomendada
 
-1. **Entender el sistema:** 👉 [`09_modules_bolsas/08_modulo_bolsas_pacientes_completo.md`](./09_modules_bolsas/08_modulo_bolsas_pacientes_completo.md)
-2. **Implementar endpoint:** 👉 [`11_reference/00_Procedimiento_NuevoModulo_Pagina.md`](./11_reference/00_Procedimiento_NuevoModulo_Pagina.md)
-3. **Referencia técnica:** 👉 [`11_reference/01_api_endpoints.md`](./11_reference/01_api_endpoints.md)
+1. **Módulo de Bolsas (Solicitudes):** 👉 [`09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md`](./09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md)
+2. **Dashboard Estadísticas:** 👉 [`09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md`](./09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md) ⭐ **NUEVO**
+3. **Implementar nuevo endpoint:** 👉 [`11_reference/00_Procedimiento_NuevoModulo_Pagina.md`](./11_reference/00_Procedimiento_NuevoModulo_Pagina.md)
+4. **Referencia técnica:** 👉 [`11_reference/01_api_endpoints.md`](./11_reference/01_api_endpoints.md)
 
