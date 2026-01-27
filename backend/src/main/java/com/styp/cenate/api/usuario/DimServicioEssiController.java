@@ -15,51 +15,79 @@ import org.springframework.web.bind.annotation.RestController;
 import com.styp.cenate.dto.DimServicioEssiDTO;
 import com.styp.cenate.service.personal.DimServicioEssiService;
 
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
+@Tag(
+	    name = "Servicios CENATE",
+	    description = "Operaciones relacionadas con los servicios de CENATE (Especialidades)"
+	)
 @RestController
 @RequestMapping("/api/servicio-essi")
 public class DimServicioEssiController {
 
-    private final DimServicioEssiService servicio;
+	private final DimServicioEssiService servicio;
 
-    public DimServicioEssiController(DimServicioEssiService servicio) {
-        this.servicio = servicio;
-    }
+	public DimServicioEssiController(DimServicioEssiService servicio) {
+		this.servicio = servicio;
+	}
 
-    @GetMapping
-    public ResponseEntity<List<DimServicioEssiDTO>> listarTodos() {
-        return ResponseEntity.ok(servicio.listarTodos());
-    }
+	@GetMapping
+	public ResponseEntity<List<DimServicioEssiDTO>> listarTodos() {
+		return ResponseEntity.ok(servicio.listarTodos());
+	}
 
-    @GetMapping("/activos")
-    public ResponseEntity<List<DimServicioEssiDTO>> listarActivos() {
-        return ResponseEntity.ok(servicio.listarActivos());
-    }
-    
-    @GetMapping("/activos-cenate")
-    public ResponseEntity<List<DimServicioEssiDTO>> listarActivosCenate() {
-        return ResponseEntity.ok(servicio.listarActivosCenate());
-    }
-    
+	@GetMapping("/activos")
+	public ResponseEntity<List<DimServicioEssiDTO>> listarActivos() {
+		return ResponseEntity.ok(servicio.listarActivos());
+	}
 
-    @GetMapping("/{id}")
-    public ResponseEntity<DimServicioEssiDTO> obtener(@PathVariable("id") Long id) {
-        return ResponseEntity.ok(servicio.buscarPorId(id));
-    }
+	@GetMapping("/activos-cenate")
+	public ResponseEntity<List<DimServicioEssiDTO>> listarActivosCenate() {
+		return ResponseEntity.ok(servicio.listarActivosCenate());
+	}
 
-    @PostMapping
-    public ResponseEntity<DimServicioEssiDTO> crear(@RequestBody DimServicioEssiDTO dto) {
-        return ResponseEntity.ok(servicio.crear(dto));
-    }
+	@GetMapping("/{id}")
+	public ResponseEntity<DimServicioEssiDTO> obtener(@PathVariable("id") Long id) {
+		return ResponseEntity.ok(servicio.buscarPorId(id));
+	}
 
-    @PutMapping("/{id}")
-    public ResponseEntity<DimServicioEssiDTO> actualizar(@PathVariable("id") Long id,
-                                                         @RequestBody DimServicioEssiDTO dto) {
-        return ResponseEntity.ok(servicio.actualizar(id, dto));
-    }
+	@PostMapping
+	public ResponseEntity<DimServicioEssiDTO> crear(@RequestBody DimServicioEssiDTO dto) {
+		return ResponseEntity.ok(servicio.crear(dto));
+	}
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> eliminar(@PathVariable("id")  Long id) {
-        servicio.eliminar(id);
-        return ResponseEntity.noContent().build();
-    }
+	@PutMapping("/{id}")
+	public ResponseEntity<DimServicioEssiDTO> actualizar(@PathVariable("id") Long id,
+			@RequestBody DimServicioEssiDTO dto) {
+		return ResponseEntity.ok(servicio.actualizar(id, dto));
+	}
+
+	@DeleteMapping("/{id}")
+	public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
+		servicio.eliminar(id);
+		return ResponseEntity.noContent().build();
+	}
+
+	@Operation(
+			summary = "Listar servicios activos CENATE para Solicitud de Ipress", 
+			description = "Obtiene el listado de servicios activos marcados como CENATE y solicitud Ipress en el sistema."
+			)
+	@ApiResponses(value = {
+			@ApiResponse(
+					responseCode = "200",
+					description = "Listado de servicios CENATE obtenido correctamente", 
+					content = @Content(mediaType = "application/json", schema = @Schema(implementation = DimServicioEssiDTO.class))) })
+	@GetMapping("/activos-cenate-ipress")
+	public ResponseEntity<List<DimServicioEssiDTO>> listarActivosCenateIpress() {
+		return ResponseEntity.ok(servicio.listarActivosCenateAndSolicitudIpress());
+	}
 }
+
+
+
+

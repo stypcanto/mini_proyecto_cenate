@@ -229,7 +229,7 @@ class SolicitudTurnoService {
    */
   async obtenerEspecialidadesCenate() {
     try {
-      const data = await apiClient.get("/servicio-essi/activos-cenate", true);
+      const data = await apiClient.get("/servicio-essi/activos-cenate-ipress", true);
       return Array.isArray(data) ? data : [];
     } catch (error) {
       console.error("Error al obtener especialidades CENATE:", error);
