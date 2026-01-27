@@ -467,7 +467,7 @@ export const componentRegistry = {
   },
 
   '/bolsas/estadisticas': {
-    component: lazy(() => import('../pages/bolsas/GestionBolsasPacientes')),
+    component: lazy(() => import('../pages/bolsas/EstadisticasDashboard')),
     requiredAction: 'ver',
   },
 
