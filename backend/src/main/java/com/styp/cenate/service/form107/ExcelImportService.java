@@ -212,11 +212,21 @@ public class ExcelImportService {
 			List<SolicitudBolsa> solicitudes = new ArrayList<>();
 			int lastRow = sheet.getLastRowNum();
 			int numeroSolicitudSeq = 1;
+			int rowsProcessed = 0;
+			int rowsSkipped = 0;
+			int rowsRejected = 0;
+
 
 			for (int r = headerIndex + 1; r <= lastRow; r++) {
 				Row row = sheet.getRow(r);
-				if (row == null || isRowCompletelyEmpty(row))
+				if (row == null) {
+					rowsSkipped++;
 					continue;
+				}
+				if (isRowCompletelyEmpty(row)) {
+					rowsSkipped++;
+					continue;
+				}
 
 				try {
 				// Leer campos del Excel v1.8.0 - POSICIONES FIJAS (v1.13.1)
@@ -232,24 +242,20 @@ public class ExcelImportService {
 				String codigoIpress = cellStr(row, 8);           // Columna 8: Código IPRESS
 				String tipoCita = cellStr(row, 9);               // Columna 9: Tipo Cita
 
-				// DEBUG primera fila
-				if (r == headerIndex + 1) {
-					log.info("ROW 1 DATA (Posiciones Fijas): tipoDoc='{}', dni='{}', asegurado='{}', sexo='{}', fechaNac='{}', telefono='{}', correo='{}', ipress='{}', tipoCita='{}'",
-						tipoDocumento, numeroDocumento, apellidos, sexo, fechaNac, telefono, correo, codigoIpress, tipoCita);
+				// DEBUG primeras filas
+				if (rowsProcessed < 5) {
+					log.info("DEBUG ROW {} (Excel line {}): tipoDoc='{}', dni='{}', nombre='{}', ipress='{}', tipoCita='{}'",
+						rowsProcessed + 1, r + 1, tipoDocumento, numeroDocumento, apellidos, codigoIpress, tipoCita);
 				}
+				rowsProcessed++;
 
-
-					// DEBUG primera fila
-					if (r == headerIndex + 1) {
-						log.info("ROW 1 DATA: tipoDoc='{}', dni='{}', asegurado='{}', sexo='{}', fechaNac='{}', telefono='{}', correo='{}', ipress='{}', tipoCita='{}'",
-							tipoDocumento, numeroDocumento, apellidos, sexo, fechaNac, telefono, correo, codigoIpress, tipoCita);
-					}
-
-					// Validar campos obligatorios
-					if (isBlank(tipoDocumento) || isBlank(numeroDocumento) || isBlank(apellidos)) {
-						log.warn("⚠️ Fila {} omitida: campos obligatorios faltantes", r + 1);
-						continue;
-					}
+				// Validar campos obligatorios
+				if (isBlank(tipoDocumento) || isBlank(numeroDocumento) || isBlank(apellidos)) {
+					log.warn("⚠️ Fila {} rechazada: campos obligatorios faltantes (tipoDoc='{}', dni='{}', nombre='{}')",
+						r + 1, tipoDocumento, numeroDocumento, apellidos);
+					rowsRejected++;
+					continue;
+				}
 
 					// Enriquecimiento desde dim_asegurados por DNI
 					Optional<Asegurado> asegurado = aseguradoRepository.findByDocPaciente(numeroDocumento);
@@ -322,7 +328,11 @@ public class ExcelImportService {
 				}
 			}
 
-			log.info("📊 {} solicitudes procesadas del Excel", solicitudes.size());
+			log.info("📊 RESULTADO FINAL:");
+			log.info("   ✓ Procesadas: {} filas", rowsProcessed);
+			log.info("   ✗ Rechazadas: {} filas (campos obligatorios faltantes)", rowsRejected);
+			log.info("   ⊘ Saltadas: {} filas (completamente vacías)", rowsSkipped);
+			log.info("   ✅ INSERTADAS: {} solicitudes en dim_solicitud_bolsa", solicitudes.size());
 			return solicitudes;
 
 		} catch (ExcelValidationException e) {
@@ -609,22 +619,24 @@ public class ExcelImportService {
 	}
 
 	private boolean isRowCompletelyEmpty(Row row) {
-		if (row == null)
-			return true;
-		short first = row.getFirstCellNum();
-		short last = row.getLastCellNum();
-		if (first < 0 || last < 0)
-			return true;
+			if (row == null)
+				return true;
 
-		for (int c = first; c < last; c++) {
-			Cell cell = row.getCell(c, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
-			if (cell == null)
-				continue;
-			String v = cellToString(cell).trim();
-			if (!v.isEmpty())
-				return false;
-		}
-		return true;
+			// 🆕 v1.13.1: Check ONLY the 10 fixed columns (0-9)
+			// Don't check the entire row, because Excel's getLastCellNum() might miss columns
+			// We only care if columns 0-9 have ANY data
+			for (int c = 0; c < 10; c++) {
+				Cell cell = row.getCell(c, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
+				if (cell == null)
+					continue;
+				String v = cellToString(cell).trim();
+				if (!v.isEmpty()) {
+					log.debug("✓ Row {} has data in column {}", row.getRowNum(), c);
+					return false; // Row has at least some data
+				}
+			}
+			log.debug("⚠️ Row {} is completely empty (all 10 columns blank)", row.getRowNum());
+			return true; // All 10 columns are empty
 	}
 
 	private String cellStr(Row row, Integer idx) {

@@ -42,6 +42,12 @@ export default function GestionBolsas() {
     setErrorMessage('');
     try {
       const data = await bolsasService.obtenerListaCargas();
+      console.log('📊 Datos crudos del backend:', data);
+      console.log('📊 Primer registro:', data[0] || 'Sin datos');
+      if (data && data.length > 0) {
+        console.log('🔍 Propiedades del primer registro:', Object.keys(data[0]));
+        console.log('📋 Valores:', data[0]);
+      }
       setCargas(data);
     } catch (error) {
       console.error('Error cargando cargas:', error);
@@ -73,7 +79,7 @@ export default function GestionBolsas() {
   const abrirDetalles = async (carga) => {
     setCargaSeleccionada(carga);
     setModalDetalles(true);
-    await cargarDetalles(carga.id_carga);
+    await cargarDetalles(carga.idImportacion);
   };
 
   /**
@@ -94,21 +100,21 @@ export default function GestionBolsas() {
   };
 
   /**
-   * Elimina una solicitud de bolsa (soft delete)
+   * Elimina un historial de importación (soft delete)
    */
   const eliminarCarga = async () => {
     if (!cargaAEliminar) return;
 
     setIsDeleting(true);
     try {
-      await bolsasService.eliminarCarga(cargaAEliminar.idSolicitud);
-      alert('Solicitud eliminada correctamente');
+      await bolsasService.eliminarCarga(cargaAEliminar.idImportacion);
+      alert('Carga eliminada correctamente');
       setModalEliminar(false);
       setCargaAEliminar(null);
       cargarCargas(); // Recargar listado
     } catch (error) {
-      console.error('Error eliminando solicitud:', error);
-      alert('Error al eliminar la solicitud. Intenta nuevamente.');
+      console.error('Error eliminando carga:', error);
+      alert('Error al eliminar la carga. Intenta nuevamente.');
     } finally {
       setIsDeleting(false);
     }
@@ -128,26 +134,24 @@ export default function GestionBolsas() {
   };
 
   /**
-   * Filtra las bolsas según el estado seleccionado
+   * Filtra las importaciones según el estado seleccionado
    */
   const cargasFiltradas = filtroEstado === 'todos'
     ? cargas
     : cargas.filter(c => c.estado === filtroEstado);
 
   /**
-   * Obtiene el color del badge según el estado de la solicitud
+   * Obtiene el color del badge según el estado de la importación
    */
   const getEstadoBadge = (estado) => {
     switch (estado) {
-      case 'PENDIENTE_CITA':
-        return 'bg-yellow-100 text-yellow-700';
-      case 'CITADO':
-        return 'bg-blue-100 text-blue-700';
-      case 'ATENDIDO':
+      case 'COMPLETADA':
         return 'bg-green-100 text-green-700';
-      case 'NO_CONTACTADO':
-        return 'bg-orange-100 text-orange-700';
-      case 'REPROGRAMACIONFALLIDA':
+      case 'EN_PROCESO':
+        return 'bg-blue-100 text-blue-700';
+      case 'PENDIENTE':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'ERROR':
         return 'bg-red-100 text-red-700';
       default:
         return 'bg-gray-100 text-gray-700';
@@ -169,9 +173,10 @@ export default function GestionBolsas() {
             className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="todos">Todos los estados</option>
-            <option value="PENDIENTE_CITA">Pendiente</option>
-            <option value="CITADO">Citado</option>
-            <option value="ATENDIDO">Atendido</option>
+            <option value="COMPLETADA">Completada</option>
+            <option value="EN_PROCESO">En Proceso</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="ERROR">Error</option>
           </select>
 
           <button
@@ -203,29 +208,27 @@ export default function GestionBolsas() {
           <table className="w-full border-collapse">
             <thead className="bg-blue-700 text-white sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-bold"># Solicitud</th>
-                <th className="px-4 py-3 text-left text-sm font-bold">Paciente (DNI)</th>
-                <th className="px-4 py-3 text-left text-sm font-bold">Especialidad</th>
-                <th className="px-4 py-3 text-left text-sm font-bold">IPRESS</th>
+                <th className="px-4 py-3 text-left text-sm font-bold">Archivo</th>
+                <th className="px-4 py-3 text-left text-sm font-bold">Usuario</th>
+                <th className="px-4 py-3 text-center text-sm font-bold">Registros</th>
                 <th className="px-4 py-3 text-center text-sm font-bold">Estado</th>
-                <th className="px-4 py-3 text-left text-sm font-bold">Fecha Solicitud</th>
+                <th className="px-4 py-3 text-left text-sm font-bold">Fecha Carga</th>
                 <th className="px-4 py-3 text-center text-sm font-bold">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {cargasFiltradas.map((carga) => (
-                <tr key={carga.idSolicitud} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-900 font-semibold">{carga.numeroSolicitud}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{carga.pacienteNombre} ({carga.pacienteDni})</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{carga.descTipoBolsa || 'N/A'}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{carga.descIpress || 'N/A'}</td>
+                <tr key={carga.idImportacion} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-gray-900 font-semibold">{carga.nombreArchivo}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{carga.usuarioNombre || 'N/A'}</td>
+                  <td className="px-4 py-3 text-center text-sm font-semibold text-blue-600">{carga.totalRegistros}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${getEstadoBadge(carga.estado)}`}>
-                      {carga.estado}
+                      {carga.estado || 'DESCONOCIDO'}
                     </span>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
-                    {carga.fechaSolicitud ? new Date(carga.fechaSolicitud).toLocaleDateString('es-PE') : 'N/A'}
+                    {carga.fechaImportacion ? new Date(carga.fechaImportacion).toLocaleDateString('es-PE') : 'N/A'}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex justify-center gap-2">
@@ -273,12 +276,15 @@ export default function GestionBolsas() {
             <div className="p-4">
               {cargaSeleccionada && (
                 <div className="mb-4 p-3 bg-gray-100 rounded">
-                  <p><strong>Archivo:</strong> {cargaSeleccionada.nombre_archivo}</p>
-                  <p><strong>Usuario:</strong> {cargaSeleccionada.usuario_carga}</p>
-                  <p><strong>Fecha:</strong> {new Date(cargaSeleccionada.fecha_reporte).toLocaleDateString('es-PE')}</p>
-                  <p><strong>Estado:</strong> <span className={`px-2 py-1 rounded text-xs font-semibold ${getEstadoBadge(cargaSeleccionada.estado_carga)}`}>
-                    {cargaSeleccionada.estado_carga}
+                  <p><strong>Archivo:</strong> {cargaSeleccionada.nombreArchivo}</p>
+                  <p><strong>Usuario:</strong> {cargaSeleccionada.usuarioNombre || 'N/A'}</p>
+                  <p><strong>Fecha Carga:</strong> {new Date(cargaSeleccionada.fechaImportacion).toLocaleDateString('es-PE')}</p>
+                  <p><strong>Estado:</strong> <span className={`px-2 py-1 rounded text-xs font-semibold ${getEstadoBadge(cargaSeleccionada.estado)}`}>
+                    {cargaSeleccionada.estado}
                   </span></p>
+                  <p><strong>Total Registros:</strong> {cargaSeleccionada.totalRegistros}</p>
+                  <p><strong>Exitosos:</strong> <span className="text-green-600 font-semibold">{cargaSeleccionada.registrosExitosos}</span></p>
+                  <p><strong>Fallidos:</strong> <span className="text-red-600 font-semibold">{cargaSeleccionada.registrosFallidos}</span></p>
                 </div>
               )}
 

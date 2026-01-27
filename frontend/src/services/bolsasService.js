@@ -323,10 +323,11 @@ export const exportarBolsas = async (filtros = {}) => {
  */
 export const obtenerListaCargas = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/cargas`);
+    const response = await apiClient.get(`${API_BASE_URL}/importaciones/historial`);
+    console.log('📋 Historial importaciones cargadas:', response);
     return response;
   } catch (error) {
-    console.error('Error al obtener lista de bolsas:', error);
+    console.error('Error al obtener historial de importaciones:', error);
     throw error;
   }
 };
