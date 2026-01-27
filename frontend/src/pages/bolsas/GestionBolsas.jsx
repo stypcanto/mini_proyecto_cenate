@@ -217,11 +217,13 @@ export default function GestionBolsas() {
               </tr>
             </thead>
             <tbody>
-              {cargasFiltradas.map((carga) => (
+              {cargasFiltradas.map((carga, idx) => {
+                console.log(`📍 Fila ${idx}:`, carga);
+                return (
                 <tr key={carga.idImportacion} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-900 font-semibold">{carga.nombreArchivo}</td>
+                  <td className="px-4 py-3 text-sm text-gray-900 font-semibold">{carga.nombreArchivo || 'N/A'}</td>
                   <td className="px-4 py-3 text-sm text-gray-700">{carga.usuarioNombre || 'N/A'}</td>
-                  <td className="px-4 py-3 text-center text-sm font-semibold text-blue-600">{carga.totalRegistros}</td>
+                  <td className="px-4 py-3 text-center text-sm font-semibold text-blue-600">{carga.totalRegistros || 'N/A'}</td>
                   <td className="px-4 py-3 text-center">
                     <span className={`px-2 py-1 rounded text-xs font-semibold ${getEstadoBadge(carga.estado)}`}>
                       {carga.estado || 'DESCONOCIDO'}
@@ -249,7 +251,8 @@ export default function GestionBolsas() {
                     </div>
                   </td>
                 </tr>
-              ))}
+              );
+              })}
             </tbody>
           </table>
         </div>

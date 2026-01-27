@@ -312,6 +312,7 @@ public class ExcelImportService {
 						// Información de bolsa y servicio
 						.idBolsa(idBolsa)
 						.idServicio(idServicio)
+								.idCarga(idCarga)
 
 						// Datos por defecto
 						.estado("PENDIENTE")

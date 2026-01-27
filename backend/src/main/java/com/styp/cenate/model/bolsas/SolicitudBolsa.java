@@ -109,6 +109,10 @@ public class SolicitudBolsa {
     @Column(name = "id_ipress")
     private Long idIpress;
 
+    // 📥 REFERENCIA A CARGA EXCEL
+    @Column(name = "id_carga")
+    private Long idCarga;
+
     // 📊 ESTADO (Aprobación)
     @Column(name = "estado", length = 20, nullable = false)
     private String estado;

@@ -550,13 +550,38 @@ export default function CargarDesdeExcel() {
       formData.append('idServicio', idServicio);
 
       // Obtener el nombre del usuario - intentar múltiples propiedades
-      const nombreUsuario = usuario.username ||
-                           usuario.nombre ||
-                           usuario.nombreCompleto ||
-                           usuario.nombreUsuario ||
-                           usuario.name ||
-                           usuario.displayName ||
-                           'admin';
+      let nombreUsuario = usuario.username ||
+                         usuario.nombre ||
+                         usuario.nombreCompleto ||
+                         usuario.nombreUsuario ||
+                         usuario.name ||
+                         usuario.displayName;
+
+      // Si aún no tenemos nombre, intentar desde el JWT token
+      if (!nombreUsuario || nombreUsuario === 'admin') {
+        const token = localStorage.getItem('token');
+        if (token) {
+          try {
+            const parts = token.split('.');
+            if (parts.length === 3) {
+              const decoded = JSON.parse(atob(parts[1]));
+              nombreUsuario = decoded.nombre ||
+                            decoded.nombreCompleto ||
+                            decoded.full_name ||
+                            decoded.sub ||
+                            nombreUsuario;
+              console.log('🔐 Nombre extraído del JWT:', nombreUsuario);
+            }
+          } catch (e) {
+            console.warn('No se pudo decodificar token:', e);
+          }
+        }
+      }
+
+      // Último recurso: usar 'admin'
+      if (!nombreUsuario) {
+        nombreUsuario = 'admin';
+      }
 
       formData.append('usuarioCarga', nombreUsuario);
 
