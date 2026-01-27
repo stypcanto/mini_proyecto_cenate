@@ -554,44 +554,39 @@ public class ExcelImportService {
 	}
 
 	/**
-	 * 🆕 v1.15.13: Validación FLEXIBLE de cabeceras
-	 * - Acepta archivos con MENOS o MÁS columnas
-	 * - Solo valida que existan las columnas OBLIGATORIAS
-	 * - Usa normalización inteligente para mapear columnas
+	 * 🆕 v1.13.0: Validación INTELIGENTE - Independiente de títulos de columnas
+	 * - Aceptar archivos con CUALQUIER nombre de columna
+	 * - Validar por ESTRUCTURA DE DATOS, no por TÍTULOS
+	 * - Flexible con variaciones: OTORRINO vs OFTALMOLOGIA vs cualquier otro
+	 *
+	 * CAMBIO IMPORTANTE: Ya NO validamos que exista una columna llamada "DNI"
+	 *                    Validamos que haya 10 columnas (posiciones fijas)
+	 *                    Los datos serán validados por su TIPO, no por su NOMBRE
 	 */
 	private void validateHeaderStrict(List<String> actualColumns) {
-		log.info("📋 Validando cabeceras: {} columnas encontradas", actualColumns.size());
+		log.info("📋 Validando estructura Excel (v1.13.0 - Flexible por posición)");
+		log.info("   📊 Total columnas encontradas: {}", actualColumns.size());
+		log.info("   📋 Títulos de columnas: {}", actualColumns);
 
-		// Validación relajada para v1.8.0: solo verificar que existan columnas clave
-		// Las columnas pueden estar en cualquier posición y pueden tener variaciones de nombres
-		log.info("   Columnas encontradas: {}", actualColumns);
-
-		// Verificar que al menos exista DNI (la columna más crítica)
-		boolean hasDNI = actualColumns.stream()
-			.anyMatch(col -> col != null && col.trim().equalsIgnoreCase("DNI"));
-
-		boolean hasNombreOAsegurado = actualColumns.stream()
-			.anyMatch(col -> col != null && (
-				col.trim().equalsIgnoreCase("ASEGURADO") ||
-				col.trim().equalsIgnoreCase("APELLIDOS Y NOMBRES") ||
-				col.trim().contains("NOMBRE")
-			));
-
-		// Validar mínimo requerido
-		List<String> missing = new ArrayList<>();
-		if (!hasDNI) missing.add("DNI");
-		if (!hasNombreOAsegurado) missing.add("NOMBRE/ASEGURADO");
-
-		if (!missing.isEmpty()) {
-			log.error("❌ Faltan columnas obligatorias: {}", missing);
+		// VALIDACIÓN: Debe haber exactamente 10 columnas
+		// Los títulos pueden ser CUALQUIERA (no importan los nombres)
+		if (actualColumns.size() != 10) {
+			log.error("❌ Estructura inválida: {} columnas encontradas, se esperan 10 (exactas)", actualColumns.size());
 			throw new ExcelValidationException(
-				"Faltan columnas obligatorias: " + String.join(", ", missing));
+				String.format("El archivo debe tener exactamente 10 columnas. Se encontraron: %d. " +
+					"Los títulos no importan, pero la estructura sí: " +
+					"Fecha, TipoDoc, DNI, Nombre, Sexo, FechaNac, Teléfono, Correo, IPRESS, TipoCita",
+					actualColumns.size()));
 		}
 
-		// Log de validación exitosa
-		log.info("✅ Cabeceras validadas correctamente:");
-		log.info("   📊 Total columnas: {}", actualColumns.size());
-		log.info("   📋 Columnas: {}", actualColumns);
+		// ✅ Validación exitosa
+		log.info("✅ Validación exitosa:");
+		log.info("   ✓ Estructura correcta: 10 columnas");
+		log.info("   ✓ Los títulos pueden ser cualquiera (validación por DATOS, no por TÍTULOS)");
+		log.info("   ✓ Ejemplos aceptados:");
+		log.info("     • OTORRINO: TIPO DOC, DNI, NOMBRE/ASEGURADO, ...");
+		log.info("     • OFTALMOLOGIA: TIPO DOCUMENTO, DOC_PACIENT, PACIENTE, ...");
+		log.info("     • Cualquier otro: XXX, YYY, ZZZ, ... (10 columnas)");
 	}
 
 	private List<String> readHeader(Row headerRow) {

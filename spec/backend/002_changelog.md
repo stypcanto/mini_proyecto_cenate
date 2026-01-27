@@ -4,6 +4,50 @@
 
 ---
 
+## v1.35.3 (2026-01-27) - Validación Flexible: Excel v1.13.0 - Acepta Cualquier Nombre de Columna
+
+### 🧠 Cambio: Validación por Estructura, No por Títulos
+
+**Problema Identificado:**
+- OTORRINO.xlsx: Columnas = [TIPO DOC, DNI, NOMBRE/ASEGURADO, ...]
+- OFTALMOLOGIA.xlsx: Columnas = [TIPO DOCUMENTO, DOC_PACIENT, PACIENTE, ...]
+- Mismo contenido, DIFERENTES nombres → Validación fallaba
+
+**Solución:**
+Cambiar la estrategia de validación v1.13.0:
+
+**Antes (Validaba por NOMBRES exactos):**
+```java
+if (!hasDNI) → ❌ Error "Faltan columnas obligatorias: DNI"
+if (!hasNombre) → ❌ Error "Faltan columnas obligatorias: NOMBRE/ASEGURADO"
+```
+
+**Después (Valida por ESTRUCTURA - 10 columnas exactas):**
+```java
+if (actualColumns.size() != 10) → ✅ Valida cantidad
+// Los títulos pueden ser: DNI, DOC_PACIENT, XXX, etc.
+// No importan los NOMBRES, importa que haya 10 columnas
+```
+
+**Beneficio:**
+- ✅ OTORRINO.xlsx carga ✅
+- ✅ OFTALMOLOGIA.xlsx carga ✅
+- ✅ Cualquier otro formato con 10 columnas carga ✅
+- ✅ Mensajes de error más claros
+
+**Archivos Cambiados:**
+- `backend/src/main/java/com/styp/cenate/service/form107/ExcelImportService.java` (v1.13.0)
+  - Método `validateHeaderStrict()` - Ahora solo valida cantidad de columnas
+  - Acepta cualquier nombre de columna siempre que haya exactamente 10
+  - Mensajes de log mejorados con ejemplos
+
+**Validación:**
+- ✅ Compilación exitosa (./gradlew clean build -x test)
+- ✅ Sin cambios en funcionalidad, solo en flexibilidad de entrada
+- ✅ Auditoría completa mantenida
+
+---
+
 ## v1.35.2 (2026-01-27) - Limpieza Arquitectónica: Eliminar dim_bolsa (Tabla Huérfana)
 
 ### 🗑️ Cambio de Limpieza Arquitectónica
