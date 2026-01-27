@@ -17,6 +17,8 @@ import bolsasService from '../../services/bolsasService';
  * - Acciones: Cambiar celular
  */
 export default function Solicitudes() {
+  const REGISTROS_POR_PAGINA = 25;
+
   const [solicitudes, setSolicitudes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +27,7 @@ export default function Solicitudes() {
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('todas');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [selectedRows, setSelectedRows] = useState(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Cache de catálogos para evitar N+1 queries
   const [cacheEstados, setCacheEstados] = useState({});
@@ -278,6 +281,18 @@ export default function Solicitudes() {
 
     return matchBusqueda && matchBolsa && matchRed && matchEspecialidad && matchEstado;
   });
+
+  // Resetear a página 1 cuando cambian los filtros
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filtroBolsa, filtroRed, filtroEspecialidad, filtroEstado]);
+
+  // Calcular paginación
+  const totalRegistros = solicitudesFiltradas.length;
+  const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);
+  const indiceInicio = (currentPage - 1) * REGISTROS_POR_PAGINA;
+  const indiceFin = indiceInicio + REGISTROS_POR_PAGINA;
+  const solicitudesPaginadas = solicitudesFiltradas.slice(indiceInicio, indiceFin);
 
   // Debug filtros
   React.useEffect(() => {
@@ -682,6 +697,7 @@ export default function Solicitudes() {
                 </div>
               </div>
             ) : solicitudesFiltradas.length > 0 ? (
+              <>
               <table className="w-full">
                 <thead className="bg-[#0D5BA9] text-white sticky top-0">
                   <tr className="border-b-2 border-blue-800">
@@ -693,31 +709,29 @@ export default function Solicitudes() {
                         className="w-5 h-5 cursor-pointer"
                       />
                     </th>
-                    {/* Columnas - Nombres de BD */}
+                    {/* Columnas - Orden optimizado v2.1.0 */}
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Origen de la Bolsa</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Preferida</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo de Documento</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Número de documento</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nombre del Asegurado</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha de Nacimiento</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Edad</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Correo</th>
-                    {/* Campos Excel v1.8.0 */}
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Cod. IPRESS</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo de Cita</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Preferida</th>
-                    {/* Columnas de gestión */}
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Cod. IPRESS</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {solicitudesFiltradas.map((solicitud) => (
+                  {solicitudesPaginadas.map((solicitud) => (
                     <tr key={solicitud.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
                       <td className="px-4 py-3">
                         <input
@@ -727,18 +741,17 @@ export default function Solicitudes() {
                           className="w-4 h-4 border-2 border-gray-300 rounded cursor-pointer"
                         />
                       </td>
-                      {/* Columnas de datos personales */}
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.cod_tipo_bolsa || 'N/A'}</td>
+                      {/* Columnas - Orden optimizado v2.1.0 */}
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.bolsa || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.tipoDocumento}</td>
                       <td className="px-4 py-3 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 font-medium">{solicitud.paciente}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaNacimiento}</td>
+                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.edad}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefono}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.correo}>{solicitud.correo}</td>
-                      {/* Nuevos campos v1.8.0 */}
-                      <td className="px-4 py-3 text-sm text-gray-900 font-semibold" title="Código IPRESS">{solicitud.codigoIpress}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap inline-block ${
                           solicitud.tipoCita === 'Recita' ? 'bg-blue-100 text-blue-700' :
@@ -749,11 +762,10 @@ export default function Solicitudes() {
                           {solicitud.tipoCita}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
-                      {/* Columnas de gestión */}
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900 font-semibold" title="Código IPRESS">{solicitud.codigoIpress}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.nombre_ipress}>{solicitud.nombre_ipress || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.red_asistencial || 'Sin Red'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block ${getEstadoBadge(solicitud.estado)}`}
@@ -802,6 +814,38 @@ export default function Solicitudes() {
                   ))}
                 </tbody>
               </table>
+
+              {/* 📄 PAGINACIÓN v2.1.0 */}
+              {solicitudesFiltradas.length > 0 && (
+                <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
+                  <div className="text-sm text-gray-600 font-medium">
+                    Mostrando <span className="font-bold text-gray-900">{indiceInicio + 1}</span> - <span className="font-bold text-gray-900">{Math.min(indiceFin, totalRegistros)}</span> de <span className="font-bold text-gray-900">{totalRegistros}</span> registros
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      ← Anterior
+                    </button>
+
+                    <span className="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-md">
+                      Página <span className="font-bold">{currentPage}</span> de <span className="font-bold">{totalPaginas}</span>
+                    </span>
+
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPaginas, currentPage + 1))}
+                      disabled={currentPage === totalPaginas}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    >
+                      Siguiente →
+                    </button>
+                  </div>
+                </div>
+              )}
+              </>
             ) : (
               <div className="p-12 text-center">
                 <p className="text-gray-600 font-semibold text-lg">No hay solicitudes para mostrar</p>

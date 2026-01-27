@@ -169,9 +169,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     @Override
     public List<SolicitudBolsaDTO> listarTodas() {
-        return SolicitudBolsaMapper.toDTOList(
-            solicitudRepository.findByActivoTrueOrderByFechaSolicitudDesc()
-        );
+        log.info("📊 [SolicitudBolsaServiceImpl] Obteniendo solicitudes enriquecidas con JOINs (v2.1.0)");
+        // Retorna DTOs enriquecidos directamente del repositorio con JOINs
+        // Incluye datos denormalizados desde: dim_tipos_bolsas, dim_servicio_essi, dim_ipress, dim_red, dim_estados_gestion_citas
+        return solicitudRepository.obtenerSolicitudesEnriquecidas();
     }
 
     @Override
