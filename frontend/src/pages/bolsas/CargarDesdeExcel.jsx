@@ -5,23 +5,49 @@ import bolsasService from '../../services/bolsasService';
 import * as XLSX from 'xlsx';
 
 /**
- * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.9.0 (PLANTILLA INTELIGENTE)
- * Permitir carga masiva de bolsas desde archivos Excel/CSV con estructura completa y detección inteligente
+ * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.10.0 (VALIDACIÓN INTELIGENTE)
+ * Permitir carga masiva de bolsas desde archivos Excel/CSV con estructura completa y validación inteligente
  *
- * Características:
- * - 🧠 INTELIGENCIA: Detección automática de columnas aunque los headers varíen
- *   - Busca patrones en el texto del header (case-insensitive)
- *   - Auto-mapea columnas por posición si es necesario
- * - 🧠 INTELIGENCIA: Auto-selecciona tipo de bolsa por nombre de archivo
- *   - Ej: "BOLSA OTORRINO 26012026.xlsx" → auto-selecciona "Otorrinolaringología"
- * - Plantilla COMPLETA: 10 campos requeridos (DNI, Tipo Documento, Asegurado, Sexo, Tipo Cita, etc.)
- * - Auto-cálculo: EDAD se calcula automáticamente desde FECHA DE NACIMIENTO
- * - Tipo Cita: Recita, Interconsulta, Voluntaria
- * - Carga de archivos Excel (.xlsx, .xls, .csv)
- * - Validación de formato y estructura
+ * 🧠 INTELIGENCIA COMPLETA:
+ *
+ * 1️⃣ VALIDACIÓN SIN HEADERS
+ *    - Detecta si el Excel tiene headers o no
+ *    - Analiza la estructura por POSICIÓN de columnas (orden fijo)
+ *    - Valida incluso si faltan los títulos (solo analiza los datos)
+ *    - Si hay headers genéricos/vacíos, los ignora y valida por posición
+ *
+ * 2️⃣ ANÁLISIS DE VIABILIDAD
+ *    - Verifica cada columna por su tipo de dato esperado:
+ *      • Fechas (YYYY-MM-DD)
+ *      • Documentos (DNI, RUC, etc.)
+ *      • Números de identificación (8+ dígitos)
+ *      • Correos (formato válido)
+ *      • IPRESS (código numérico)
+ *      • Tipos cita (Recita, Interconsulta, Voluntaria)
+ *    - Calcula porcentaje de viabilidad (≥70% = viable)
+ *    - Muestra feedback detallado al usuario
+ *
+ * 3️⃣ AUTO-SELECCIÓN
+ *    - Auto-selecciona tipo de bolsa por nombre de archivo
+ *    - Ej: "BOLSA OTORRINO 26012026.xlsx" → auto-selecciona "Otorrinolaringología"
+ *
+ * 4️⃣ ESTRUCTURA
+ *    - 10 campos en ORDEN FIJO (posiciones no cambian)
+ *    - Columna 0: FECHA PREFERIDA (YYYY-MM-DD)
+ *    - Columna 1: TIPO DOCUMENTO (DNI, RUC, etc.)
+ *    - Columna 2: DNI (8 dígitos)
+ *    - Columna 3: ASEGURADO (nombre)
+ *    - Columna 4: SEXO (M/F)
+ *    - Columna 5: FECHA NACIMIENTO (YYYY-MM-DD)
+ *    - Columna 6: TELÉFONO (números)
+ *    - Columna 7: CORREO (email)
+ *    - Columna 8: COD. IPRESS (números)
+ *    - Columna 9: TIPO CITA (Recita, Interconsulta, Voluntaria)
+ *
+ * Características adicionales:
  * - Descarga de plantilla Excel de ejemplo
- * - Información clara de campos requeridos
- * - Validaciones en tiempo real
+ * - Auto-cálculo: EDAD desde FECHA DE NACIMIENTO
+ * - Validaciones en tiempo real (antes de enviar al servidor)
  * - Integración con dim_estados_gestion_citas (PENDIENTE_CITA inicial)
  */
 export default function CargarDesdeExcel() {
@@ -42,9 +68,130 @@ export default function CargarDesdeExcel() {
   const [expandedAutoCalculados, setExpandedAutoCalculados] = useState(false);
   const [expandedRequisitos, setExpandedRequisitos] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState(false);
+  const [archivoAutomatico, setArchivoAutomatico] = useState(null);
+  const [buscandoArchivo, setBuscandoArchivo] = useState(false);
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
+
+  // ============================================================================
+  // 🧠 FUNCIÓN: Validar estructura del Excel (incluso sin headers)
+  // ============================================================================
+  const validarEstructuraExcel = (listaData) => {
+    /**
+     * Valida si un archivo Excel tiene la estructura correcta para bolsas.
+     * Analiza el contenido de las columnas para detectar tipos de datos.
+     *
+     * Estructura esperada v1.8.0: 10 columnas en este orden:
+     * 0: FECHA PREFERIDA (YYYY-MM-DD)
+     * 1: TIPO DOCUMENTO (DNI, RUC, etc.)
+     * 2: DNI (8 dígitos)
+     * 3: ASEGURADO (texto)
+     * 4: SEXO (M/F)
+     * 5: FECHA NACIMIENTO (YYYY-MM-DD)
+     * 6: TELÉFONO (números)
+     * 7: CORREO (email)
+     * 8: COD. IPRESS (números)
+     * 9: TIPO CITA (Recita, Interconsulta, Voluntaria)
+     */
+
+    if (!listaData || listaData.length === 0) {
+      return { valido: false, error: 'El archivo está vacío' };
+    }
+
+    const primeraFila = listaData[0];
+    if (!primeraFila) {
+      return { valido: false, error: 'No hay datos en el archivo' };
+    }
+
+    const valores = Object.values(primeraFila);
+    console.log('📊 Primera fila del Excel:', primeraFila);
+    console.log('📊 Valores:', valores);
+
+    // Análisis de estructura (buscar patrones en los datos)
+    let analisis = {
+      tieneEnlaces: false,      // Detecta si parece ser header (palabras como FECHA, DNI)
+      tieneDatos: false,        // Detecta si tiene valores reales
+      columnasConDatos: 0,
+      columnasDetectadas: []
+    };
+
+    // Revisar cada columna para detectar patrones
+    valores.forEach((valor, idx) => {
+      if (!valor || valor === '') return;
+
+      const strValor = valor.toString().toUpperCase().trim();
+
+      // Detectar si es un header (contiene palabras clave)
+      if (strValor.includes('FECHA') || strValor.includes('TIPO') || strValor.includes('DNI') ||
+          strValor.includes('ASEGURADO') || strValor.includes('SEXO') || strValor.includes('IPRESS') ||
+          strValor.includes('CORREO') || strValor.includes('CITA')) {
+        analisis.tieneEnlaces = true;
+      }
+
+      // Detectar datos reales
+      if (strValor.length > 0 && !strValor.includes('PREFERIDA')) {
+        analisis.tieneDatos = true;
+        analisis.columnasConDatos++;
+      }
+    });
+
+    // Si la primera fila parece ser un header, analizar la segunda fila
+    let filaAnalisis = primeraFila;
+    if (analisis.tieneEnlaces && listaData.length > 1) {
+      console.log('ℹ️ Detectada fila de headers, analizando segunda fila para validar datos...');
+      filaAnalisis = listaData[1];
+    }
+
+    const valoresAnalisis = Object.values(filaAnalisis);
+
+    // Validar estructura esperada (10 columnas mínimo)
+    if (valoresAnalisis.length < 10) {
+      return {
+        valido: false,
+        error: `Se detectaron solo ${valoresAnalisis.length} columnas, se esperan al menos 10`
+      };
+    }
+
+    // Validaciones por columna esperada
+    const validaciones = {
+      col0_fecha: /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}/.test(valoresAnalisis[0]?.toString() || ''),
+      col1_tipoDoc: /^[A-Za-z]+/.test(valoresAnalisis[1]?.toString() || ''),
+      col2_dni: /^\d{6,10}/.test(valoresAnalisis[2]?.toString() || ''),
+      col3_nombre: valoresAnalisis[3]?.toString().length > 3,
+      col4_sexo: /^[MF]$/i.test(valoresAnalisis[4]?.toString() || ''),
+      col5_fechaNac: /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}/.test(valoresAnalisis[5]?.toString() || ''),
+      col6_telefono: /^\d{6,15}/.test(valoresAnalisis[6]?.toString() || ''),
+      col7_correo: /^[^\s@]+@[^\s@]+\.[^\s@]+/.test(valoresAnalisis[7]?.toString() || '') || valoresAnalisis[7]?.toString() === '',
+      col8_ipress: /^\d{2,4}/.test(valoresAnalisis[8]?.toString() || ''),
+      col9_tipoCita: /^(Recita|Interconsulta|Voluntaria)/i.test(valoresAnalisis[9]?.toString() || '')
+    };
+
+    console.log('✅ Validaciones por columna:', validaciones);
+
+    // Contar validaciones exitosas
+    const validacionesExitosas = Object.values(validaciones).filter(v => v).length;
+    const porcentajeValido = (validacionesExitosas / 10) * 100;
+
+    // Decisión: viable si al menos 7 de 10 columnas son válidas
+    const esViable = porcentajeValido >= 70;
+
+    return {
+      valido: esViable,
+      porcentaje: Math.round(porcentajeValido),
+      validaciones,
+      analisis,
+      detalles: {
+        columnasValidas: validacionesExitosas,
+        columnasEsperadas: 10,
+        tieneHeaders: analisis.tieneEnlaces,
+        tieneData: analisis.tieneDatos
+      },
+      recomendacion: esViable
+        ? `✅ Estructura válida (${Math.round(porcentajeValido)}% de coincidencia)`
+        : `❌ Estructura inválida (${Math.round(porcentajeValido)}% de coincidencia). Se esperan 10 columnas en el orden: Fecha, Tipo Doc, DNI, Asegurado, Sexo, Fecha Nac, Teléfono, Correo, Código IPRESS, Tipo Cita`
+    };
+  };
 
   // ============================================================================
   // 🧠 FUNCIÓN: Inteligencia - Detectar columnas automáticamente
@@ -183,34 +330,63 @@ export default function CargarDesdeExcel() {
       setFile(selectedFile);
       setImportStatus(null);
 
-      // 🧠 INTELIGENCIA 1: Leer archivo para detectar columnas automáticamente
+      // 🧠 INTELIGENCIA TOTAL: Analizar Excel de forma completa
       const reader = new FileReader();
       reader.onload = (event) => {
         try {
           const workbook = XLSX.read(event.target.result);
           const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-          const data = XLSX.utils.sheet_to_json(firstSheet);
 
-          if (data.length > 0) {
-            const headers = Object.keys(data[0]);
-            const columnIndices = detectarColumnasInteligentemente(headers);
-            console.log('✅ Columnas detectadas:', headers);
-            console.log('✅ Índices mapeados:', columnIndices);
+          // Leer todos los datos SIN interpretar como JSON (para soportar excel sin headers)
+          const dataRaw = XLSX.utils.sheet_to_json(firstSheet, { header: 1 }); // Devuelve arrays
+
+          // Convertir a formato de objeto con claves numéricas
+          const dataJson = dataRaw.map(row => {
+            const obj = {};
+            row.forEach((val, idx) => {
+              obj[idx] = val;
+            });
+            return obj;
+          });
+
+          console.log('📊 Datos crudos del Excel:', dataJson);
+
+          // 🧠 VALIDACIÓN INTELIGENTE: Analizar estructura
+          const validacion = validarEstructuraExcel(dataJson);
+          console.log('🧠 Resultado validación:', validacion);
+
+          // Mostrar resultado al usuario
+          if (validacion.valido) {
+            setImportStatus({
+              type: 'success',
+              message: `✅ ${validacion.recomendacion}. El archivo es viable para cargar.`,
+              detalles: validacion.detalles
+            });
+          } else {
+            setImportStatus({
+              type: 'warning',
+              message: validacion.recomendacion,
+              detalles: validacion.detalles
+            });
+          }
+
+          // 🧠 INTELIGENCIA: Auto-seleccionar tipo de bolsa por nombre de archivo
+          if (tiposBolsas.length > 0) {
+            const bolsaId = autoSeleccionarBolsa(tiposBolsas, selectedFile.name);
+            if (bolsaId) {
+              setTipoBolesaId(bolsaId);
+              console.log('✅ Bolsa auto-seleccionada:', bolsaId);
+            }
           }
         } catch (error) {
-          console.warn('⚠️ No se pudieron detectar columnas:', error.message);
+          console.error('❌ Error analizando archivo:', error);
+          setImportStatus({
+            type: 'error',
+            message: '❌ Error al analizar el archivo. Verifica que sea un Excel válido.'
+          });
         }
       };
       reader.readAsArrayBuffer(selectedFile);
-
-      // 🧠 INTELIGENCIA 2: Auto-seleccionar tipo de bolsa por nombre de archivo
-      if (tiposBolsas.length > 0) {
-        const bolsaId = autoSeleccionarBolsa(tiposBolsas, selectedFile.name);
-        if (bolsaId) {
-          setTipoBolesaId(bolsaId);
-          console.log('✅ Bolsa auto-seleccionada:', bolsaId);
-        }
-      }
     }
   };
 
@@ -755,25 +931,43 @@ export default function CargarDesdeExcel() {
             </div>
           )}
 
-          {/* Estado de la importación */}
+          {/* Estado de la importación y validación */}
           {importStatus && (
             <div className={`rounded-xl p-6 mb-6 border-2 ${
               importStatus.type === 'success'
                 ? 'bg-green-50 border-green-400'
+                : importStatus.type === 'warning'
+                ? 'bg-amber-50 border-amber-400'
                 : 'bg-red-50 border-red-400'
             }`}>
               <div className="flex items-start gap-4">
                 {importStatus.type === 'success' ? (
                   <CheckCircle className="text-green-600 flex-shrink-0" size={40} />
+                ) : importStatus.type === 'warning' ? (
+                  <AlertCircle className="text-amber-600 flex-shrink-0" size={40} />
                 ) : (
                   <AlertCircle className="text-red-600 flex-shrink-0" size={40} />
                 )}
                 <div className="flex-1">
                   <p className={`text-lg font-bold ${
-                    importStatus.type === 'success' ? 'text-green-800' : 'text-red-800'
+                    importStatus.type === 'success' ? 'text-green-800' : importStatus.type === 'warning' ? 'text-amber-800' : 'text-red-800'
                   }`}>
                     {importStatus.message}
                   </p>
+
+                  {/* Detalles de validación de estructura */}
+                  {importStatus.detalles && (
+                    <div className="mt-3 space-y-2 text-sm">
+                      <p className="text-gray-700">📊 <strong>Análisis de estructura:</strong></p>
+                      <ul className="ml-4 space-y-1 text-gray-700">
+                        <li>✓ Columnas válidas: {importStatus.detalles.columnasValidas}/{importStatus.detalles.columnasEsperadas}</li>
+                        <li>✓ Tiene headers: {importStatus.detalles.tieneHeaders ? '✅ Sí' : '❌ No (detectando por posición)'}</li>
+                        <li>✓ Tiene datos: {importStatus.detalles.tieneData ? '✅ Sí' : '❌ No'}</li>
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Resultado de importación */}
                   {importStatus.rowsProcessed && (
                     <div className="mt-3 space-y-1 text-sm">
                       <p className="text-green-700 font-semibold">✅ Registros Exitosos: {importStatus.rowsProcessed}</p>
@@ -885,6 +1079,38 @@ export default function CargarDesdeExcel() {
               </button>
             </div>
           )}
+        </div>
+
+        {/* 🧠 INFORMACIÓN: Sistema Inteligente */}
+        <div className="bg-purple-50 rounded-xl shadow-lg p-6 border-l-4 border-purple-600 mb-6">
+          <h3 className="font-bold text-purple-900 mb-3 flex items-center gap-2">
+            <span className="text-2xl">🧠</span>
+            Carga Inteligente - Sin Necesidad de Headers
+          </h3>
+          <div className="bg-white p-4 rounded-lg border border-purple-200 mb-4">
+            <p className="text-gray-700 mb-3">
+              <strong>El sistema es inteligente y puede cargar tu Excel incluso si:</strong>
+            </p>
+            <ul className="space-y-2 text-sm text-gray-700 ml-4">
+              <li>✅ Faltan los títulos (headers) en la primera fila</li>
+              <li>✅ Los headers están vacíos o con nombres genéricos</li>
+              <li>✅ Los nombres de las columnas varían</li>
+              <li>✅ Solo tienes datos sin headers</li>
+            </ul>
+          </div>
+          <div className="bg-purple-100 p-4 rounded-lg border border-purple-300">
+            <p className="font-semibold text-purple-900 mb-2">📌 Lo importante:</p>
+            <p className="text-sm text-purple-800">
+              El orden de las columnas debe ser SIEMPRE el mismo:
+              <br />
+              <code className="text-xs bg-white px-2 py-1 rounded mt-2 block">
+                Fecha | Tipo Doc | DNI | Nombre | Sexo | Fecha Nac | Teléfono | Correo | IPRESS | Tipo Cita
+              </code>
+            </p>
+            <p className="text-xs text-purple-700 mt-2">
+              Cuando cargues un archivo, el sistema analizará automáticamente si es viable y te indicará si puede procesar los datos.
+            </p>
+          </div>
         </div>
 
         {/* Información de Estado Inicial */}
