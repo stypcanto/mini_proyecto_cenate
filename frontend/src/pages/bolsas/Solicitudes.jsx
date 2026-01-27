@@ -324,24 +324,8 @@ export default function Solicitudes() {
     try {
       console.log('🗑️ Borrando solicitudes:', idsSeleccionados);
 
-      // Llamar al endpoint de borrado
-      const response = await fetch('http://localhost:8080/api/bolsas/solicitudes/borrar', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          ids: idsSeleccionados
-        })
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.mensaje || `Error ${response.status}: No se pudieron borrar las solicitudes`);
-      }
-
-      const resultado = await response.json();
+      // Llamar al servicio para borrar múltiples solicitudes
+      const resultado = await bolsasService.eliminarMultiplesSolicitudes(idsSeleccionados);
       console.log('✅ Resultado del borrado:', resultado);
 
       // Mostrar éxito

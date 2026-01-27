@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -226,12 +227,34 @@ public class SolicitudBolsaController {
     @PostMapping("/borrar")
     public ResponseEntity<?> borrarMultiples(@RequestBody Map<String, Object> payload) {
         try {
-            @SuppressWarnings("unchecked")
-            List<Long> ids = (List<Long>) payload.get("ids");
-
-            if (ids == null || ids.isEmpty()) {
+            Object idsObj = payload.get("ids");
+            if (idsObj == null) {
+                log.warn("⚠️ Intento de borrado sin field 'ids'");
                 return ResponseEntity.badRequest().body(
-                    Map.of("error", "No se proporcionaron IDs para borrar")
+                    Map.of("error", "No se proporcionó el campo 'ids'")
+                );
+            }
+
+            // Convertir ids a List<Long> de forma segura
+            List<Long> ids = new ArrayList<>();
+            if (idsObj instanceof List<?>) {
+                for (Object obj : (List<?>) idsObj) {
+                    if (obj instanceof Number) {
+                        ids.add(((Number) obj).longValue());
+                    } else if (obj instanceof String) {
+                        try {
+                            ids.add(Long.parseLong((String) obj));
+                        } catch (NumberFormatException e) {
+                            log.warn("⚠️ No se pudo parsear ID: {}", obj);
+                        }
+                    }
+                }
+            }
+
+            if (ids.isEmpty()) {
+                log.warn("⚠️ Intento de borrado sin IDs válidos");
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "No se proporcionaron IDs válidos para borrar")
                 );
             }
 
@@ -246,10 +269,15 @@ public class SolicitudBolsaController {
                 "ids", ids
             ));
 
-        } catch (Exception e) {
-            log.error("❌ Error al eliminar solicitudes: ", e);
+        } catch (IllegalArgumentException e) {
+            log.error("❌ Argumento inválido: ", e);
             return ResponseEntity.badRequest().body(
                 Map.of("error", "Error: " + e.getMessage())
+            );
+        } catch (Exception e) {
+            log.error("❌ Error al eliminar solicitudes: ", e);
+            return ResponseEntity.status(500).body(
+                Map.of("error", "Error interno del servidor: " + e.getMessage())
             );
         }
     }

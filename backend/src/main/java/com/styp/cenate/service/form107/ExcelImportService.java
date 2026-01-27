@@ -238,7 +238,7 @@ public class ExcelImportService {
 							idxFechaPreferida, idxTipoDoc, idxDNI, idxAsegurado, idxSexo, idxFechaNac, idxTelefono, idxCorreo, idxCodigoIpress, idxTipoCita);
 					}
 
-					String fechaPreferida = cellStr(row, idxFechaPreferida);
+					String fechaPreferida = cellDateStr(row, idxFechaPreferida);
 					String tipoDocumento = cellStr(row, idxTipoDoc);
 					String numeroDocumento = cellStr(row, idxDNI);
 					String apellidos = cellStr(row, idxAsegurado);
@@ -416,7 +416,7 @@ public class ExcelImportService {
 				filasTotal++;
 
 				// Mapear columnas del Excel v1.8.0 a campos de staging
-				String fechaPreferida = cellStr(row, idx.getOrDefault(n("FECHA PREFERIDA QUE NO FUE ATENDIDA"), -1));
+				String fechaPreferida = cellDateStr(row, idx.getOrDefault(n("FECHA PREFERIDA QUE NO FUE ATENDIDA"), -1));
 				String tipoDocumento = cellStr(row, idx.getOrDefault(n("TIPO DOCUMENTO"), -1));
 				String numeroDocumento = cellStr(row, idx.getOrDefault(n("DNI"), -1));
 				String apellidos = cellStr(row, idx.getOrDefault(n("ASEGURADO"), -1));

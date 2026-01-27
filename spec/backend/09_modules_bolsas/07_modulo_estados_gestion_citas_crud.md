@@ -1,9 +1,10 @@
 # Módulo CRUD Estados Gestión Citas v1.33.0
 
 > Especificación técnica completa del módulo de gestión centralizada de estados de citas de pacientes
+> **Integrado con v1.12.0** - Usado por el módulo de Solicitudes de Bolsa
 
 **Versión:** v1.33.0
-**Fecha:** 2026-01-22
+**Última Actualización:** 2026-01-27
 **Autor:** Ing. Styp Canto Rondón
 **Status:** ✅ PRODUCTION LIVE
 

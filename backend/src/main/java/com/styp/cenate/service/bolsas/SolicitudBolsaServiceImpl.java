@@ -355,31 +355,53 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     @Transactional
     public int eliminarMultiples(List<Long> ids) {
         if (ids == null || ids.isEmpty()) {
-            log.warn("Lista vacía de IDs para eliminar");
+            log.warn("⚠️ Lista vacía de IDs para eliminar");
             return 0;
         }
 
-        log.info("🗑️ Eliminando {} solicitudes", ids.size());
+        log.info("🗑️ Iniciando eliminación de {} solicitudes", ids.size());
 
         int totalBorrados = 0;
+        List<String> erroresDetallados = new ArrayList<>();
+
         for (Long id : ids) {
             try {
+                log.debug("   Procesando solicitud ID: {}", id);
                 Optional<SolicitudBolsa> solicitud = solicitudRepository.findById(id);
+
                 if (solicitud.isPresent()) {
                     SolicitudBolsa sol = solicitud.get();
+                    log.debug("   Solicitud encontrada: numero={}, paciente={}", sol.getNumeroSolicitud(), sol.getPacienteNombre());
+
+                    // Realizar el soft delete
                     sol.setActivo(false);
                     solicitudRepository.save(sol);
+
                     totalBorrados++;
-                    log.debug("✓ Solicitud {} eliminada", id);
+                    log.debug("   ✓ Solicitud {} marcada como inactiva (soft delete)", id);
                 } else {
-                    log.warn("⚠️ Solicitud {} no encontrada", id);
+                    String msg = "Solicitud " + id + " no encontrada";
+                    log.warn("   ⚠️ {}", msg);
+                    erroresDetallados.add(msg);
                 }
             } catch (Exception e) {
-                log.error("❌ Error eliminando solicitud {}: {}", id, e.getMessage());
+                String msg = "Error eliminando solicitud " + id + ": " + e.getMessage();
+                log.error("   ❌ {}", msg, e);
+                erroresDetallados.add(msg);
+                // Continuar con las siguientes incluso si esta falla
             }
         }
 
-        log.info("✅ {} solicitudes eliminadas exitosamente", totalBorrados);
+        log.info("✅ Eliminación completada: {} de {} solicitudes eliminadas exitosamente",
+            totalBorrados, ids.size());
+
+        if (!erroresDetallados.isEmpty()) {
+            log.warn("⚠️ Se encontraron {} errores durante la eliminación:", erroresDetallados.size());
+            for (String error : erroresDetallados) {
+                log.warn("   - {}", error);
+            }
+        }
+
         return totalBorrados;
     }
 

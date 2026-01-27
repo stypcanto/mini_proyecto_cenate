@@ -262,6 +262,23 @@ export const eliminarSolicitud = async (id) => {
   }
 };
 
+/**
+ * Elimina múltiples solicitudes (soft delete en lote)
+ * @param {Array<number>} ids - IDs de solicitudes a eliminar
+ * @returns {Promise<Object>} - Estadísticas de borrado
+ */
+export const eliminarMultiplesSolicitudes = async (ids) => {
+  try {
+    const response = await apiClient.post(`${API_BASE_URL}/solicitudes/borrar`, {
+      ids: ids
+    });
+    return response;
+  } catch (error) {
+    console.error('Error al eliminar múltiples solicitudes:', error);
+    throw error;
+  }
+};
+
 // ========================================================================
 // 📊 ESTADÍSTICAS - Métricas del módulo Bolsas
 // ========================================================================
@@ -291,6 +308,104 @@ export const exportarBolsas = async (filtros = {}) => {
     return response;
   } catch (error) {
     console.error('Error al exportar bolsas:', error);
+    throw error;
+  }
+};
+
+// ========================================================================
+// 📂 HISTORIAL DE CARGAS - Gestión de cargas históricas
+// ========================================================================
+
+/**
+ * Obtiene el listado de bolsas (historial completo)
+ * GET /api/bolsas/cargas - Endpoint semántico para Historial de Bolsas v1.11.0
+ * @returns {Promise<Array>} - Listado de bolsas
+ */
+export const obtenerListaCargas = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/cargas`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener lista de bolsas:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene los datos detallados de una bolsa específica
+ * GET /api/bolsas/cargas/{id}
+ * @param {number} idCarga - ID de la bolsa
+ * @returns {Promise<Object>} - Datos completos de la bolsa
+ */
+export const obtenerDatosCarga = async (idCarga) => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/cargas/${idCarga}`);
+    return response;
+  } catch (error) {
+    console.error(`Error al obtener datos de bolsa ${idCarga}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Crea una nueva bolsa
+ * POST /api/bolsas/cargas
+ * @param {Object} dataBolsa - Datos de la bolsa a crear
+ * @returns {Promise<Object>} - Bolsa creada
+ */
+export const crearCargaBolsa = async (dataBolsa) => {
+  try {
+    const response = await apiClient.post(`${API_BASE_URL}/cargas`, dataBolsa);
+    return response;
+  } catch (error) {
+    console.error('Error al crear bolsa:', error);
+    throw error;
+  }
+};
+
+/**
+ * Actualiza una bolsa existente
+ * PUT /api/bolsas/cargas/{id}
+ * @param {number} idCarga - ID de la bolsa
+ * @param {Object} dataBolsa - Datos a actualizar
+ * @returns {Promise<Object>} - Bolsa actualizada
+ */
+export const actualizarCargaBolsa = async (idCarga, dataBolsa) => {
+  try {
+    const response = await apiClient.put(`${API_BASE_URL}/cargas/${idCarga}`, dataBolsa);
+    return response;
+  } catch (error) {
+    console.error(`Error al actualizar bolsa ${idCarga}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Exporta una bolsa a Excel
+ * @param {number} idCarga - ID de la bolsa a exportar
+ * @returns {Promise<Blob>} - Archivo Excel con los datos de la bolsa
+ */
+export const exportarCargaExcel = async (idCarga) => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/cargas/${idCarga}/exportar`);
+    return response;
+  } catch (error) {
+    console.error(`Error al exportar bolsa ${idCarga}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Elimina una bolsa (soft delete)
+ * DELETE /api/bolsas/cargas/{id}
+ * @param {number} idCarga - ID de la bolsa a eliminar
+ * @returns {Promise<void>}
+ */
+export const eliminarCarga = async (idCarga) => {
+  try {
+    await apiClient.delete(`${API_BASE_URL}/cargas/${idCarga}`);
+  } catch (error) {
+    console.error(`Error al eliminar bolsa ${idCarga}:`, error);
     throw error;
   }
 };
@@ -504,10 +619,19 @@ export default {
   aprobarSolicitud,
   rechazarSolicitud,
   eliminarSolicitud,
+  eliminarMultiplesSolicitudes,
 
   // Estadísticas
   obtenerEstadisticas,
   exportarBolsas,
+
+  // Historial de Cargas / Bolsas (v1.11.0 - renamed for semantic alignment)
+  obtenerListaCargas,
+  obtenerDatosCarga,
+  crearCargaBolsa,
+  actualizarCargaBolsa,
+  exportarCargaExcel,
+  eliminarCarga,
 
   // NUEVOS - Fase 1
   asignarAGestora,

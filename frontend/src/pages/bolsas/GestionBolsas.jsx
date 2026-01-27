@@ -1,5 +1,5 @@
 /**
- * GestionBolsas.jsx - Gestión e historial de cargas de bolsas
+ * GestionBolsas.jsx - Historial de cargas de bolsas
  *
  * Características:
  * - Tabla de historial de cargas (nombre, usuario, estado, fecha, cantidad)
@@ -94,21 +94,21 @@ export default function GestionBolsas() {
   };
 
   /**
-   * Elimina una carga
+   * Elimina una solicitud de bolsa (soft delete)
    */
   const eliminarCarga = async () => {
     if (!cargaAEliminar) return;
 
     setIsDeleting(true);
     try {
-      await bolsasService.eliminarCarga(cargaAEliminar.id_carga);
-      alert('Carga eliminada correctamente');
+      await bolsasService.eliminarCarga(cargaAEliminar.idSolicitud);
+      alert('Solicitud eliminada correctamente');
       setModalEliminar(false);
       setCargaAEliminar(null);
       cargarCargas(); // Recargar listado
     } catch (error) {
-      console.error('Error eliminando carga:', error);
-      alert('Error al eliminar la carga. Intenta nuevamente.');
+      console.error('Error eliminando solicitud:', error);
+      alert('Error al eliminar la solicitud. Intenta nuevamente.');
     } finally {
       setIsDeleting(false);
     }
@@ -128,22 +128,26 @@ export default function GestionBolsas() {
   };
 
   /**
-   * Filtra las cargas según el estado seleccionado
+   * Filtra las bolsas según el estado seleccionado
    */
   const cargasFiltradas = filtroEstado === 'todos'
     ? cargas
-    : cargas.filter(c => c.estado_carga === filtroEstado);
+    : cargas.filter(c => c.estado === filtroEstado);
 
   /**
-   * Obtiene el color del badge según el estado
+   * Obtiene el color del badge según el estado de la solicitud
    */
   const getEstadoBadge = (estado) => {
     switch (estado) {
-      case 'RECIBIDO':
+      case 'PENDIENTE_CITA':
+        return 'bg-yellow-100 text-yellow-700';
+      case 'CITADO':
         return 'bg-blue-100 text-blue-700';
-      case 'PROCESADO':
+      case 'ATENDIDO':
         return 'bg-green-100 text-green-700';
-      case 'ERROR':
+      case 'NO_CONTACTADO':
+        return 'bg-orange-100 text-orange-700';
+      case 'REPROGRAMACIONFALLIDA':
         return 'bg-red-100 text-red-700';
       default:
         return 'bg-gray-100 text-gray-700';
@@ -154,7 +158,7 @@ export default function GestionBolsas() {
     <div className="p-6 bg-white rounded-lg shadow">
       {/* Encabezado */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">📋 Gestión de Bolsas</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mb-4">📂 Historial de Bolsas</h2>
 
         {/* Filtro por estado */}
         <div className="flex items-center gap-4 mb-4">
@@ -165,9 +169,9 @@ export default function GestionBolsas() {
             className="px-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="todos">Todos los estados</option>
-            <option value="RECIBIDO">Recibido</option>
-            <option value="PROCESADO">Procesado</option>
-            <option value="ERROR">Error</option>
+            <option value="PENDIENTE_CITA">Pendiente</option>
+            <option value="CITADO">Citado</option>
+            <option value="ATENDIDO">Atendido</option>
           </select>
 
           <button
@@ -199,37 +203,29 @@ export default function GestionBolsas() {
           <table className="w-full border-collapse">
             <thead className="bg-blue-700 text-white sticky top-0">
               <tr>
-                <th className="px-4 py-3 text-left text-sm font-bold">Archivo</th>
-                <th className="px-4 py-3 text-left text-sm font-bold">Usuario</th>
+                <th className="px-4 py-3 text-left text-sm font-bold"># Solicitud</th>
+                <th className="px-4 py-3 text-left text-sm font-bold">Paciente (DNI)</th>
+                <th className="px-4 py-3 text-left text-sm font-bold">Especialidad</th>
+                <th className="px-4 py-3 text-left text-sm font-bold">IPRESS</th>
                 <th className="px-4 py-3 text-center text-sm font-bold">Estado</th>
-                <th className="px-4 py-3 text-center text-sm font-bold">Total</th>
-                <th className="px-4 py-3 text-center text-sm font-bold">OK</th>
-                <th className="px-4 py-3 text-center text-sm font-bold">Errores</th>
-                <th className="px-4 py-3 text-left text-sm font-bold">Fecha</th>
+                <th className="px-4 py-3 text-left text-sm font-bold">Fecha Solicitud</th>
                 <th className="px-4 py-3 text-center text-sm font-bold">Acciones</th>
               </tr>
             </thead>
             <tbody>
               {cargasFiltradas.map((carga) => (
-                <tr key={carga.id_carga} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
-                  <td className="px-4 py-3 text-sm text-gray-900">{carga.nombre_archivo}</td>
-                  <td className="px-4 py-3 text-sm text-gray-700">{carga.usuario_carga}</td>
+                <tr key={carga.idSolicitud} className="border-b border-gray-200 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3 text-sm text-gray-900 font-semibold">{carga.numeroSolicitud}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{carga.pacienteNombre} ({carga.pacienteDni})</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{carga.descTipoBolsa || 'N/A'}</td>
+                  <td className="px-4 py-3 text-sm text-gray-700">{carga.descIpress || 'N/A'}</td>
                   <td className="px-4 py-3 text-center">
-                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getEstadoBadge(carga.estado_carga)}`}>
-                      {carga.estado_carga}
+                    <span className={`px-2 py-1 rounded text-xs font-semibold ${getEstadoBadge(carga.estado)}`}>
+                      {carga.estado}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-center text-sm font-semibold text-gray-900">
-                    {carga.total_filas || 0}
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm text-green-600 font-semibold">
-                    {carga.filas_ok || 0}
-                  </td>
-                  <td className="px-4 py-3 text-center text-sm text-red-600 font-semibold">
-                    {carga.filas_error || 0}
-                  </td>
                   <td className="px-4 py-3 text-sm text-gray-700">
-                    {new Date(carga.fecha_reporte).toLocaleDateString('es-PE')}
+                    {carga.fechaSolicitud ? new Date(carga.fechaSolicitud).toLocaleDateString('es-PE') : 'N/A'}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <div className="flex justify-center gap-2">
@@ -241,16 +237,9 @@ export default function GestionBolsas() {
                         👁️
                       </button>
                       <button
-                        onClick={() => exportarCarga(carga.id_carga)}
-                        className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white text-xs rounded font-semibold transition-colors"
-                        title="Exportar a Excel"
-                      >
-                        📥
-                      </button>
-                      <button
                         onClick={() => confirmarEliminar(carga)}
                         className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded font-semibold transition-colors"
-                        title="Eliminar carga"
+                        title="Eliminar solicitud"
                       >
                         🗑️
                       </button>
@@ -263,7 +252,7 @@ export default function GestionBolsas() {
         </div>
       ) : (
         <div className="text-center py-12">
-          <p className="text-gray-500 text-lg">No hay cargas registradas</p>
+          <p className="text-gray-500 text-lg">No hay bolsas registradas</p>
         </div>
       )}
 

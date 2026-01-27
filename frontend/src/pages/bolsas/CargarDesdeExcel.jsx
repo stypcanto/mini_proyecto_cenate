@@ -5,7 +5,7 @@ import bolsasService from '../../services/bolsasService';
 import * as XLSX from 'xlsx';
 
 /**
- * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.10.0 (VALIDACIÓN INTELIGENTE)
+ * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.11.0 (AUTO-DETECCIÓN INTELIGENTE)
  * Permitir carga masiva de bolsas desde archivos Excel/CSV con estructura completa y validación inteligente
  *
  * 🧠 INTELIGENCIA COMPLETA:
@@ -27,9 +27,14 @@ import * as XLSX from 'xlsx';
  *    - Calcula porcentaje de viabilidad (≥70% = viable)
  *    - Muestra feedback detallado al usuario
  *
- * 3️⃣ AUTO-SELECCIÓN
+ * 3️⃣ AUTO-SELECCIÓN INTELIGENTE (v1.11.0)
  *    - Auto-selecciona tipo de bolsa por nombre de archivo
- *    - Ej: "BOLSA OTORRINO 26012026.xlsx" → auto-selecciona "Otorrinolaringología"
+ *    - Auto-selecciona especialidad/servicio matching con bolsa
+ *    - Ej: "BOLSA OTORRINO 26012026.xlsx" → auto-selecciona:
+ *         • Tipo de bolsa: "BOLSAS_OTORRINO" (coincidencia exacta)
+ *         • Especialidad: "Otorrinolaringología" (coincidencia fuzzy)
+ *    - Usa similitud fuzzy para encontrar mejores coincidencias
+ *    - Umbral de similitud: 40% para aceptar coincidencia
  *
  * 4️⃣ ESTRUCTURA
  *    - 10 campos en ORDEN FIJO (posiciones no cambian)
@@ -49,6 +54,7 @@ import * as XLSX from 'xlsx';
  * - Auto-cálculo: EDAD desde FECHA DE NACIMIENTO
  * - Validaciones en tiempo real (antes de enviar al servidor)
  * - Integración con dim_estados_gestion_citas (PENDIENTE_CITA inicial)
+ * - Inteligencia fuzzy matching para auto-detección mejorada
  */
 export default function CargarDesdeExcel() {
   const navigate = useNavigate();
@@ -221,34 +227,133 @@ export default function CargarDesdeExcel() {
   };
 
   // ============================================================================
-  // 🧠 FUNCIÓN: Extraer tipo de bolsa del nombre de archivo
+  // 🧠 FUNCIÓN: Extraer palabras clave del nombre de archivo
   // ============================================================================
   const extraerTipoBolsaDelNombre = (nombreArchivo) => {
     /**
-     * Extrae el tipo de bolsa del nombre del archivo.
-     * Ej: "BOLSA OTORRINO 26012026.xlsx" → busca tipo de bolsa que contenga "OTORRINO"
+     * Extrae palabras clave del nombre del archivo.
+     * Ej: "BOLSA OTORRINO EXPLOTADOS 26012026.xlsx" → retorna {primera: "OTORRINO", palabras: ["OTORRINO", "EXPLOTADOS"]}
+     * Cada palabra se puede usar para matchear bolsas y servicios diferentes
      */
-    const palabraClave = nombreArchivo
+    let texto = nombreArchivo
       .toUpperCase()
       .replace(/BOLSA\s+/i, '')  // Quitar "BOLSA"
-      .replace(/[0-9]{8}\./g, '') // Quitar fecha
+      .replace(/[0-9]{8}\./g, '') // Quitar fecha (ej: 26012026.)
       .replace(/\.xlsx?$/i, '')    // Quitar extensión
       .trim();
 
-    console.log('🧠 Palabra clave del archivo:', palabraClave);
-    return palabraClave;
+    // Dividir en palabras individuales
+    const palabras = texto.split(/[\s\-_]+/).filter(p => p.length > 2);
+
+    console.log('🧠 Palabras clave extraídas:', palabras);
+
+    // Retornar la primera palabra para bolsa, y todas las palabras disponibles
+    return {
+      primera: palabras[0] || '',
+      palabras: palabras,
+      todas: texto
+    };
   };
 
   // ============================================================================
   // 🧠 FUNCIÓN: Auto-seleccionar bolsa por nombre
   // ============================================================================
   const autoSeleccionarBolsa = (bolsas, nombreArchivo) => {
-    const palabraClave = extraerTipoBolsaDelNombre(nombreArchivo);
-    const bolsaCoincidencia = bolsas.find(b =>
-      b.descTipoBolsa.toUpperCase().includes(palabraClave) ||
-      b.codTipoBolsa.toUpperCase().includes(palabraClave)
-    );
+    const keywordData = extraerTipoBolsaDelNombre(nombreArchivo);
+    const palabraClave = keywordData.primera;
+
+    // Buscar por palabra clave principal (usualmente la primera palabra)
+    const bolsaCoincidencia = bolsas.find(b => {
+      const descUpper = b.descTipoBolsa.toUpperCase();
+      const codUpper = b.codTipoBolsa?.toUpperCase() || '';
+
+      // Buscar coincidencia exacta en descripción o código
+      return descUpper.includes(palabraClave) || codUpper.includes(palabraClave);
+    });
+
+    console.log('🧠 Bolsa seleccionada:', bolsaCoincidencia?.descTipoBolsa);
     return bolsaCoincidencia?.idTipoBolsa || null;
+  };
+
+  // ============================================================================
+  // 🧠 FUNCIÓN: Calcula similitud entre dos strings (distancia de Levenshtein simplificada)
+  // ============================================================================
+  const calcularSimilitud = (str1, str2) => {
+    /**
+     * Calcula porcentaje de similitud entre dos strings
+     * Retorna número entre 0 y 1 (0 = no similar, 1 = idéntico)
+     */
+    const s1 = str1.toUpperCase();
+    const s2 = str2.toUpperCase();
+
+    if (s1 === s2) return 1;
+    if (!s1 || !s2) return 0;
+
+    // Contar palabras en común
+    const palabras1 = s1.split(/[\s\-_]+/).filter(p => p.length > 2);
+    const palabras2 = s2.split(/[\s\-_]+/).filter(p => p.length > 2);
+
+    if (palabras1.length === 0 || palabras2.length === 0) return 0;
+
+    const palabrasComunes = palabras1.filter(p1 =>
+      palabras2.some(p2 => p2.includes(p1) || p1.includes(p2))
+    ).length;
+
+    return palabrasComunes / Math.max(palabras1.length, palabras2.length);
+  };
+
+  // ============================================================================
+  // 🧠 FUNCIÓN: Auto-seleccionar servicio/especialidad por nombre
+  // ============================================================================
+  const autoSeleccionarServicio = (servicios, nombreArchivo) => {
+    /**
+     * Busca el servicio que mejor coincida con palabras clave del nombre del archivo
+     * Ej: archivo "BOLSA OTORRINO EXPLOTADOS" → busca palabras como "EXPLOTADOS"
+     * Intenta cada palabra extraída hasta encontrar una coincidencia
+     */
+    if (!servicios || servicios.length === 0 || !nombreArchivo) {
+      return null;
+    }
+
+    const keywordData = extraerTipoBolsaDelNombre(nombreArchivo);
+    const palabras = keywordData.palabras;
+
+    // Intentar buscar cada palabra extraída
+    for (let palabraClave of palabras) {
+      // Primero intenta coincidencia exacta
+      const coincidenciaExacta = servicios.find(s => {
+        const descUpper = s.descServicio?.toUpperCase() || '';
+        const codUpper = s.codServicio?.toUpperCase() || '';
+
+        return descUpper.includes(palabraClave) || codUpper.includes(palabraClave);
+      });
+
+      if (coincidenciaExacta) {
+        console.log(`✅ Servicio encontrado por palabra clave "${palabraClave}": ${coincidenciaExacta.descServicio}`);
+        return coincidenciaExacta.idServicio;
+      }
+
+      // Si no hay coincidencia exacta, usa similitud fuzzy
+      let mejorCoincidencia = null;
+      let mejorSimilitud = 0;
+
+      servicios.forEach(servicio => {
+        const similitud = calcularSimilitud(palabraClave, servicio.descServicio);
+        if (similitud > mejorSimilitud) {
+          mejorSimilitud = similitud;
+          mejorCoincidencia = servicio;
+        }
+      });
+
+      // Si la similitud es al menos 0.4 (40%), usar este servicio
+      if (mejorSimilitud >= 0.4) {
+        console.log(`✅ Servicio encontrado por similitud (${(mejorSimilitud * 100).toFixed(0)}%) con palabra "${palabraClave}": ${mejorCoincidencia?.descServicio}`);
+        return mejorCoincidencia?.idServicio;
+      }
+    }
+
+    console.log('⚠️ No se encontró servicio que coincida con:', palabras);
+    return null;
   };
 
   // Obtener datos del usuario y tipos de bolsas en el montaje
@@ -292,10 +397,7 @@ export default function CargarDesdeExcel() {
         const datos = await response.json();
         console.log('📋 Servicios disponibles:', datos);
         setServicios(datos || []);
-        // Seleccionar el primer servicio por defecto
-        if (datos && datos.length > 0) {
-          setIdServicio(datos[0].idServicio);
-        }
+        // NO seleccionar default aquí - dejar que el usuario elija o que se auto-detecte
       } catch (error) {
         console.error('Error servicios:', error);
         setServicios([]);
@@ -370,13 +472,34 @@ export default function CargarDesdeExcel() {
             });
           }
 
-          // 🧠 INTELIGENCIA: Auto-seleccionar tipo de bolsa por nombre de archivo
-          if (tiposBolsas.length > 0) {
+          // 🧠 INTELIGENCIA: Auto-seleccionar tipo de bolsa y especialidad por nombre de archivo
+          console.log(`🧠 Intentando auto-selección... tiposBolsas: ${tiposBolsas.length}, servicios: ${servicios.length}`);
+
+          if (tiposBolsas && tiposBolsas.length > 0) {
+            console.log('📋 Tipos de bolsas disponibles:', tiposBolsas.map(b => b.descTipoBolsa));
             const bolsaId = autoSeleccionarBolsa(tiposBolsas, selectedFile.name);
             if (bolsaId) {
               setTipoBolesaId(bolsaId);
-              console.log('✅ Bolsa auto-seleccionada:', bolsaId);
+              console.log('✅ Bolsa auto-seleccionada ID:', bolsaId);
+            } else {
+              console.log('⚠️ No se encontró bolsa que coincida con el nombre del archivo');
             }
+          } else {
+            console.warn('⚠️ Catálogo de tipos de bolsas no cargado aún');
+          }
+
+          // 🧠 INTELIGENCIA EXTENDIDA: Auto-seleccionar servicio basado en el nombre del archivo
+          if (servicios && servicios.length > 0) {
+            console.log('📋 Servicios disponibles:', servicios.map(s => s.descServicio));
+            const servicioId = autoSeleccionarServicio(servicios, selectedFile.name);
+            if (servicioId) {
+              setIdServicio(servicioId);
+              console.log('✅ Servicio/Especialidad auto-seleccionado ID:', servicioId);
+            } else {
+              console.log('⚠️ No se encontró servicio que coincida con palabras clave del archivo');
+            }
+          } else {
+            console.warn('⚠️ Catálogo de servicios no cargado aún');
           }
         } catch (error) {
           console.error('❌ Error analizando archivo:', error);
@@ -422,13 +545,13 @@ export default function CargarDesdeExcel() {
     try {
       const formData = new FormData();
       formData.append('file', file);
-      formData.append('idTipoBolsa', tipoBolesaId);
+      formData.append('idBolsa', tipoBolesaId);
       formData.append('idServicio', idServicio);
       formData.append('usuarioCarga', usuario.username || 'admin');
 
       console.log('📤 Enviando importación:', {
         archivo: file.name,
-        idTipoBolsa: tipoBolesaId,
+        idBolsa: tipoBolesaId,
         idServicio: idServicio,
         usuarioCarga: usuario.username,
         tamaño: file.size
@@ -458,9 +581,23 @@ export default function CargarDesdeExcel() {
 
     } catch (error) {
       console.error('❌ Error en importación:', error);
+
+      // Mapear errores técnicos a mensajes amigables
+      let mensajeAmigable = error.message || 'Error al importar archivo';
+
+      if (error.message?.includes('mismo hash') || error.message?.includes('Ya se cargó')) {
+        mensajeAmigable = '⚠️ Esta bolsa ya fue cargada anteriormente. Si deseas cargar una nueva versión, modifica el archivo o cambia su nombre.';
+      } else if (error.message?.includes('400') || error.message?.includes('validación')) {
+        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga los 10 campos obligatorios.';
+      } else if (error.message?.includes('500')) {
+        mensajeAmigable = '❌ Error interno del servidor. Por favor, intenta nuevamente.';
+      } else if (error.message?.includes('token') || error.message?.includes('401')) {
+        mensajeAmigable = '❌ Tu sesión ha expirado. Por favor, inicia sesión nuevamente.';
+      }
+
       setImportStatus({
         type: 'error',
-        message: error.message || 'Error al importar archivo',
+        message: mensajeAmigable,
         showModal: true  // Mostrar modal de error
       });
     } finally {

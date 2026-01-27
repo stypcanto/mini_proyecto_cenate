@@ -93,7 +93,7 @@ public class BolsasController {
 
     @PostMapping
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
-    @CheckMBACPermission(pagina = "/bolsas/gestion-pacientes", accion = "crear")
+    @CheckMBACPermission(pagina = "/bolsas/estadisticas", accion = "crear")
     public ResponseEntity<BolsaDTO> crearBolsa(@Valid @RequestBody BolsaRequestDTO request) {
         log.info("✏️ Creando nueva bolsa: {}", request.getNombreBolsa());
         BolsaDTO nuevaBolsa = bolsasService.crearBolsa(request);
@@ -102,7 +102,7 @@ public class BolsasController {
 
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
-    @CheckMBACPermission(pagina = "/bolsas/gestion-pacientes", accion = "editar")
+    @CheckMBACPermission(pagina = "/bolsas/estadisticas", accion = "editar")
     public ResponseEntity<BolsaDTO> actualizarBolsa(
         @PathVariable Long id,
         @Valid @RequestBody BolsaRequestDTO request) {
@@ -113,7 +113,7 @@ public class BolsasController {
 
     @PutMapping("/{id}/estado")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
-    @CheckMBACPermission(pagina = "/bolsas/gestion-pacientes", accion = "editar")
+    @CheckMBACPermission(pagina = "/bolsas/estadisticas", accion = "editar")
     public ResponseEntity<BolsaDTO> cambiarEstadoBolsa(
         @PathVariable Long id,
         @RequestParam String nuevoEstado) {
@@ -124,7 +124,7 @@ public class BolsasController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
-    @CheckMBACPermission(pagina = "/bolsas/gestion-pacientes", accion = "eliminar")
+    @CheckMBACPermission(pagina = "/bolsas/estadisticas", accion = "eliminar")
     public ResponseEntity<Void> eliminarBolsa(@PathVariable Long id) {
         log.warn("🗑️ Eliminando bolsa ID: {}", id);
         bolsasService.eliminarBolsa(id);
@@ -160,6 +160,59 @@ public class BolsasController {
     public ResponseEntity<Object> obtenerDetallesImportacion(@PathVariable Long idImportacion) {
         log.info("🔍 Consultando detalles de importación: {}", idImportacion);
         return ResponseEntity.ok(bolsasService.obtenerDetallesImportacion(idImportacion));
+    }
+
+    // ========================================================================
+    // 📂 HISTORIAL DE BOLSAS - Solicitudes de bolsa (renamed semantically v1.11.0)
+    // ========================================================================
+
+    @GetMapping("/cargas")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
+    public ResponseEntity<?> obtenerListaCargas() {
+        log.info("📂 Consultando historial/listado de solicitudes de bolsa...");
+        return ResponseEntity.ok(solicitudBolsaService.listarTodas());
+    }
+
+    @GetMapping("/cargas/{idCarga}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
+    public ResponseEntity<?> obtenerDatosCarga(@PathVariable Long idCarga) {
+        log.info("🔍 Consultando datos de solicitud de bolsa: {}", idCarga);
+        return solicitudBolsaService.obtenerPorId(idCarga)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/cargas/{idCarga}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
+    @CheckMBACPermission(pagina = "/bolsas/historial", accion = "eliminar")
+    public ResponseEntity<?> eliminarCarga(@PathVariable Long idCarga) {
+        log.warn("🗑️ Eliminando solicitud de bolsa: {}", idCarga);
+        solicitudBolsaService.eliminar(idCarga);
+        return ResponseEntity.ok(Map.of("mensaje", "Solicitud de bolsa eliminada correctamente", "idSolicitud", idCarga));
+    }
+
+    @PutMapping("/cargas/{idCarga}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
+    @CheckMBACPermission(pagina = "/bolsas/historial", accion = "editar")
+    public ResponseEntity<?> actualizarCarga(
+        @PathVariable Long idCarga,
+        @RequestParam(required = false) Long idGestora) {
+        log.info("✏️ Actualizando solicitud de bolsa: {}", idCarga);
+        if (idGestora != null) {
+            solicitudBolsaService.asignarGestora(idCarga, idGestora);
+        }
+        return solicitudBolsaService.obtenerPorId(idCarga)
+            .map(ResponseEntity::ok)
+            .orElseGet(() -> ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/cargas")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
+    @CheckMBACPermission(pagina = "/bolsas/historial", accion = "crear")
+    public ResponseEntity<?> crearCarga(@Valid @RequestBody Map<String, Object> request) {
+        log.info("✏️ Creando nueva solicitud de bolsa");
+        // TODO: Implementar creación manual de solicitudes de bolsa
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("mensaje", "Creación de solicitudes debe ser a través de importación Excel"));
     }
 
     /*

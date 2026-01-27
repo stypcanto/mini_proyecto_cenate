@@ -449,7 +449,9 @@ function getPageIcon(nombreModulo, nombrePagina) {
       return Upload;
     } else if (nombrePagina.toLowerCase().includes('solicitud')) {
       return ListChecks;
-    } else if (nombrePagina.toLowerCase().includes('gestión')) {
+    } else if (nombrePagina.toLowerCase().includes('estadísticas')) {
+      return BarChart3;
+    } else if (nombrePagina.toLowerCase().includes('historial')) {
       return FolderOpen;
     }
   }

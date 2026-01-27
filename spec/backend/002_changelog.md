@@ -4,6 +4,159 @@
 
 ---
 
+## v1.35.1 (2026-01-27) - Módulo Solicitudes de Bolsa v1.12.0 - Auto-Detección y Soft Delete
+
+### 🎯 Resumen de Cambios
+
+**Auto-detección inteligente de bolsas y servicios**
+**Soft delete de solicitudes en lote**
+**Corrección de fechas en importación Excel**
+**Mensajes de error amigables al usuario**
+**Logging y debugging mejorados**
+
+### ✨ Nuevas Características
+
+#### 1. Auto-Detección Inteligente (Frontend)
+Extrae palabras clave del nombre del archivo Excel para seleccionar automáticamente:
+- **Tipo de Bolsa:** Por coincidencia exacta con la PRIMERA palabra
+- **Servicio/Especialidad:** Por coincidencia con CUALQUIER palabra (con fuzzy matching)
+
+**Ejemplo:**
+- Archivo: `BOLSA OTORRINO EXPLOTADOS 26012026.xlsx`
+- Palabras extraídas: `["OTORRINO", "EXPLOTADOS"]`
+- Bolsa auto-seleccionada: Que contenga "OTORRINO" ✅
+- Servicio auto-seleccionado: Que contenga "EXPLOTADOS" o similar ✅
+
+**Archivos Modificados:**
+- `frontend/src/pages/bolsas/CargarDesdeExcel.jsx` (v1.12.0)
+  - Nueva función `extraerTipoBolsaDelNombre()` - Extrae palabras clave
+  - Mejorada `autoSeleccionarBolsa()` - Busca por palabra principal
+  - Mejorada `autoSeleccionarServicio()` - Busca en todas las palabras
+  - Mejorada `calcularSimilitud()` - Fuzzy matching
+
+#### 2. Soft Delete en Lote
+Borrado lógico de múltiples solicitudes manteniendo auditoría completa.
+
+**Características:**
+- Seleccionar y borrar solicitudes individuales
+- Opción "Borrar TODAS" para lote completo
+- Modal de confirmación con advertencia
+- Transaccional y resiliente (continúa si una falla)
+- Soft delete (no borra físicamente, solo marca inactivo)
+
+**Archivos Modificados:**
+- `frontend/src/pages/bolsas/Solicitudes.jsx` (v2.3.0)
+  - Nueva función `borrarSolicitudesSeleccionadas()`
+  - Nuevo state `seleccionarTodas` para "Select All"
+
+- `backend/src/main/java/com/styp/cenate/api/bolsas/SolicitudBolsaController.java` (v1.8.0)
+  - Nuevo endpoint `@PostMapping("/borrar")`
+  - Conversión segura de tipos (Integer → Long)
+
+- `backend/src/main/java/com/styp/cenate/service/bolsas/SolicitudBolsaServiceImpl.java` (v1.8.0)
+  - Nueva método `eliminarMultiples(List<Long> ids)`
+  - Logging detallado por cada solicitud
+
+- `frontend/src/services/bolsasService.js` (v1.0.1)
+  - Nueva función `eliminarMultiplesSolicitudes(ids)`
+
+#### 3. Corrección de Fechas en Excel
+Problema: "FECHA PREFERIDA QUE NO FUE ATENDIDA" mostraba "N/A" en BD
+
+Solución: Cambiar de `cellStr()` a `cellDateStr()` para detectar fechas Excel numéricos
+
+**Archivos Modificados:**
+- `backend/src/main/java/com/styp/cenate/service/form107/ExcelImportService.java` (v1.9.1)
+  - Línea 241: `cellDateStr()` en método principal
+  - Línea 419: `cellDateStr()` en método staging
+
+#### 4. Mensajes de Error Amigables
+Reemplazar mensajes técnicos por mensajes claros al usuario.
+
+**Mapeo de Errores:**
+
+| Error Técnico | Mensaje Amigable |
+|---|---|
+| "Ya se cargó este archivo hoy (mismo hash)" | "⚠️ Esta bolsa ya fue cargada anteriormente. Si deseas cargar una nueva versión, modifica el archivo o cambia su nombre." |
+| Error 400 validación | "❌ El archivo no cumple con la estructura requerida. Verifica que tenga los 10 campos obligatorios." |
+| Error 500 | "❌ Error interno del servidor. Por favor, intenta nuevamente." |
+| Error 401 | "❌ Tu sesión ha expirado. Por favor, inicia sesión nuevamente." |
+
+**Archivos Modificados:**
+- `frontend/src/pages/bolsas/CargarDesdeExcel.jsx` (v1.12.0)
+  - Mejorado bloque catch en `handleImport()`
+
+#### 5. Logging y Debugging Mejorados
+Logs detallados en consola y backend para facilitar diagnóstico.
+
+**Ejemplo de logs frontend:**
+```
+🧠 Intentando auto-selección... tiposBolsas: 5, servicios: 12
+📋 Tipos de bolsas disponibles: [BOLSAS_OTORRINO, BOLSAS_CARDIOLOGIA, ...]
+✅ Bolsa auto-seleccionada ID: 2
+📋 Servicios disponibles: [B01 - PEDIATRIA, B91 - OTORRINOLARINGOLOGIA, ...]
+✅ Servicio/Especialidad auto-seleccionado ID: 12
+```
+
+### 🔧 Stack Técnico
+
+**Frontend Changes:**
+- React Hooks: `useState`, `useEffect`
+- String manipulation para extracción de palabras clave
+- Fuzzy matching algoritmo (distancia Levenshtein simplificada)
+
+**Backend Changes:**
+- JPA `@Transactional` para soft delete robusto
+- Apache POI `cellDateStr()` para manejo de fechas Excel
+- Logging con Slf4j para auditoría
+- Conversión segura de tipos numéricos
+
+### 📊 Validación
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| Auto-detección de bolsa | Manual | Automático ✅ |
+| Auto-detección de servicio | ENFERMERIA default ❌ | Inteligente ✅ |
+| Fechas en FECHA PREFERIDA | N/A | Correctas ✅ |
+| Mensajes de error | Técnicos confusos | Amigables ✅ |
+| Borrado de solicitudes | Una a una | En lote ✅ |
+
+### 📝 Documentación
+
+Creado documento completo: `spec/backend/09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md`
+
+Incluye:
+- Arquitectura completa
+- Flujos de importación y borrado
+- Especificación de APIs
+- Ejemplos de uso
+- Mapeo de errores
+- Tablas relacionadas
+
+### ✅ Testing
+
+Validado en entorno de desarrollo:
+- ✅ Importación de 39 solicitudes desde Excel
+- ✅ Auto-detección de OTORRINO y OTORRINOLARINGOLOGIA
+- ✅ Borrado selectivo de solicitudes
+- ✅ Borrado de todas las solicitudes
+- ✅ Soft delete sin pérdida de datos
+
+### 🚀 Deployment
+
+1. Reconstruir backend: `./gradlew clean bootRun`
+2. Reconstruir frontend: `npm start`
+3. No se requieren cambios en BD (usa campos existentes)
+4. Base de datos limpia automáticamente al reiniciar
+
+### 📚 Referencias
+
+- Documentación: `spec/backend/09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md`
+- Código: `backend/src/main/java/com/styp/cenate/service/form107/ExcelImportService.java`
+- Frontend: `frontend/src/pages/bolsas/CargarDesdeExcel.jsx`
+
+---
+
 ## v1.9.2 (2025-12-23) - Tokens de Recuperacion Persistentes
 
 ### Problema Resuelto

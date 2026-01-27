@@ -466,6 +466,17 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/bolsas/estadisticas': {
+    component: lazy(() => import('../pages/bolsas/GestionBolsasPacientes')),
+    requiredAction: 'ver',
+  },
+
+  '/bolsas/historial': {
+    component: lazy(() => import('../pages/bolsas/GestionBolsas')),
+    requiredAction: 'ver',
+  },
+
+  // ⚠️ DEPRECATED: Rutas antiguas mantenidas para compatibilidad backward
   '/bolsas/gestion-pacientes': {
     component: lazy(() => import('../pages/bolsas/GestionBolsasPacientes')),
     requiredAction: 'ver',

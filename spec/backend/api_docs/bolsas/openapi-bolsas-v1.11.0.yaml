@@ -1,0 +1,1213 @@
+openapi: 3.0.3
+info:
+  title: CENATE - Módulo Bolsas de Pacientes API
+  version: 1.11.0
+  description: |
+    API REST para gestión del módulo de Bolsas de Pacientes del sistema CENATE (Centro Nacional de Telemedicina - EsSalud Perú).
+
+    **Features principales:**
+    - ✨ Auto-detección inteligente de tipo de bolsa y especialidad desde nombre de archivo Excel
+    - 📤 Importación masiva de solicitudes desde archivos Excel (.xlsx)
+    - 📋 Gestión completa de solicitudes (CRUD, asignación a gestoras, cambio de estados)
+    - 📊 Estadísticas y métricas en tiempo real
+    - 📂 Historial de cargas con trazabilidad completa
+    - 🔐 Seguridad con JWT y MBAC (Module-Based Access Control)
+    - 🔄 Enriquecimiento automático de datos desde BD (IPRESS, RED, edad calculada)
+
+    **Versión actual:** v1.11.0 (2026-01-27)
+    - Rutas semánticas: `/bolsas/estadisticas` y `/bolsas/historial`
+    - Auto-detección inteligente desde nombre de archivo
+    - Fuzzy matching para especialidades
+    - Validación inteligente de estructura Excel (con o sin headers)
+
+  contact:
+    name: Ing. Styp Canto Rondón
+    email: stypcanto@essalud.gob.pe
+  license:
+    name: Proprietary - EsSalud Perú
+
+servers:
+  - url: http://localhost:8080/api
+    description: Desarrollo local
+  - url: http://10.0.89.13:8080/api
+    description: Servidor interno EsSalud (staging)
+  - url: https://telemedicina.essalud.gob.pe/api
+    description: Producción
+
+tags:
+  - name: Solicitudes
+    description: Gestión de solicitudes de bolsa (importación, listado, CRUD)
+  - name: Estadísticas
+    description: Métricas y dashboard del módulo
+  - name: Historial
+    description: Historial de cargas realizadas
+  - name: Bolsas (Legacy)
+    description: Endpoints legacy de gestión de bolsas (deprecado en favor de Solicitudes)
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ========================================================================
+  # SOLICITUDES - Endpoints principales (v1.6.0+)
+  # ========================================================================
+
+  /bolsas/solicitudes/importar:
+    post:
+      tags:
+        - Solicitudes
+      summary: Importar solicitudes desde Excel
+      description: |
+        Importa solicitudes de bolsa desde archivo Excel (.xlsx) con auto-detección inteligente.
+
+        **Features v1.11.0:**
+        - ✨ Auto-detección de tipo de bolsa desde nombre archivo (ej: "BOLSA OTORRINO 26012026.xlsx")
+        - ✨ Auto-selección de especialidad con fuzzy matching
+        - ✨ Validación inteligente de estructura (con o sin headers)
+        - ✅ Enriquecimiento automático desde `dim_asegurados` (sexo, fecha nacimiento, correo)
+        - ✅ Enriquecimiento automático desde `dim_ipress` (descripción IPRESS, RED)
+        - ✅ Cálculo automático de edad desde fecha de nacimiento
+
+        **Estructura Excel v1.8.0 (10 campos):**
+        1. FECHA PREFERIDA QUE NO FUE ATENDIDA (opcional)
+        2. TIPO DOCUMENTO (obligatorio)
+        3. DNI (obligatorio)
+        4. ASEGURADO (obligatorio)
+        5. SEXO (opcional - se enriquece desde BD)
+        6. FECHA DE NACIMIENTO (opcional - se enriquece desde BD)
+        7. TELÉFONO (opcional)
+        8. CORREO (opcional - se enriquece desde BD)
+        9. COD. IPRESS ADSCRIPCIÓN (obligatorio)
+        10. TIPO CITA (opcional)
+
+        **Validación inteligente:**
+        - ✅ Detecta si el Excel tiene headers o no
+        - ✅ Valida por POSICIÓN de columnas (no por nombre)
+        - ✅ Calcula porcentaje de viabilidad (≥70% = viable)
+        - ✅ Previene duplicados por hash de archivo
+
+        **Permisos MBAC:**
+        - Página: `/bolsas/cargar-excel`
+        - Acción: `crear`
+
+      operationId: importarSolicitudesExcel
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - idBolsa
+                - idServicio
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: |
+                    Archivo Excel (.xlsx) con solicitudes.
+                    Nombre inteligente: "BOLSA OTORRINO 26012026.xlsx" → detecta tipo automáticamente
+                idBolsa:
+                  type: integer
+                  format: int64
+                  example: 1
+                  description: ID del tipo de bolsa (dim_tipos_bolsas)
+                idServicio:
+                  type: integer
+                  format: int64
+                  example: 23
+                  description: ID del servicio/especialidad (dim_servicios_essi)
+                usuarioCarga:
+                  type: string
+                  default: admin
+                  example: jperez
+                  description: Usuario que realiza la importación
+      responses:
+        '200':
+          description: Importación exitosa con estadísticas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImportacionExcelResponse'
+              examples:
+                success:
+                  summary: Importación exitosa
+                  value:
+                    status: 200
+                    data:
+                      idCarga: 142
+                      estadoCarga: PROCESADO
+                      totalFilas: 250
+                      filasOk: 248
+                      filasError: 2
+                      hashArchivo: 3f8a9c2d1b5e7f4a6c8d9e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1
+                      nombreArchivo: BOLSA OTORRINO 26012026.xlsx
+                      mensaje: Importados 248 registros exitosamente
+                      autoDeteccion:
+                        tipoBolsaDetectado: Otorrinolaringología
+                        especialidadDetectada: OTORRINOLARINGOLOGIA
+                        fuzzyMatchScore: 0.95
+                    message: Solicitudes importadas exitosamente
+                    timestamp: 2026-01-27T10:30:00Z
+        '400':
+          description: Error en validación de archivo o datos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidFile:
+                  summary: Archivo inválido
+                  value:
+                    status: 400
+                    error: INVALID_FILE_FORMAT
+                    message: Formato no permitido. Solo se acepta .xlsx
+                    timestamp: 2026-01-27T10:30:00Z
+                duplicateFile:
+                  summary: Archivo duplicado
+                  value:
+                    status: 400
+                    error: DUPLICATE_FILE
+                    message: Ya se cargó este archivo hoy (mismo hash).
+                    timestamp: 2026-01-27T10:30:00Z
+                invalidStructure:
+                  summary: Estructura inválida
+                  value:
+                    status: 400
+                    error: INVALID_EXCEL_STRUCTURE
+                    message: Faltan columnas obligatorias DNI, NOMBRE/ASEGURADO
+                    validationErrors:
+                      viabilidad: 45
+                      columnasFaltantes: [DNI, ASEGURADO]
+                      columnasEncontradas: 8
+                    timestamp: 2026-01-27T10:30:00Z
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /bolsas/solicitudes:
+    get:
+      tags:
+        - Solicitudes
+      summary: Listar todas las solicitudes
+      description: |
+        Obtiene listado completo de solicitudes de bolsa activas con datos enriquecidos.
+
+        **Datos enriquecidos automáticamente:**
+        - 📋 `descTipoBolsa` - Descripción del tipo de bolsa (JOIN con dim_tipos_bolsas)
+        - 🏥 `descIpress` - Descripción IPRESS (JOIN con dim_ipress)
+        - 🌐 `descRed` - Descripción RED (JOIN con dim_red via dim_ipress)
+        - 🎂 `pacienteEdad` - Edad calculada desde fecha de nacimiento
+        - 📊 `descEstadoCita` - Descripción estado gestión citas
+
+        **Filtros disponibles (query params):**
+        - `estado` - Filtrar por estado (PENDIENTE, ASIGNADA, ATENDIDA)
+        - `idBolsa` - Filtrar por tipo de bolsa
+        - `idServicio` - Filtrar por servicio/especialidad
+        - `dni` - Buscar por DNI del paciente
+
+        **Permisos MBAC:**
+        - Página: `/bolsas/solicitudes`
+        - Acción: `ver`
+
+      operationId: listarSolicitudes
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [PENDIENTE, ASIGNADA, ATENDIDA, CANCELADA]
+          description: Filtrar por estado de solicitud
+        - name: idBolsa
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: Filtrar por tipo de bolsa
+        - name: idServicio
+          in: query
+          schema:
+            type: integer
+            format: int64
+          description: Filtrar por servicio/especialidad
+        - name: dni
+          in: query
+          schema:
+            type: string
+            pattern: '^\d{8}$'
+          description: Buscar por DNI del paciente
+      responses:
+        '200':
+          description: Lista de solicitudes obtenida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SolicitudBolsaDTO'
+                  message:
+                    type: string
+                    example: Solicitudes obtenidas exitosamente
+                  timestamp:
+                    type: string
+                    format: date-time
+              examples:
+                success:
+                  summary: Listado exitoso
+                  value:
+                    status: 200
+                    data:
+                      - id_solicitud: 1523
+                        numero_solicitud: SOL-2026-456789-001
+                        paciente_dni: "12345678"
+                        paciente_nombre: GARCIA LOPEZ, MARIA ELENA
+                        paciente_edad: 45
+                        paciente_sexo: F
+                        paciente_telefono: "987654321"
+                        paciente_email: maria.garcia@gmail.com
+                        especialidad: OTORRINOLARINGOLOGIA
+                        id_bolsa: 1
+                        desc_tipo_bolsa: Bolsa Otorrinolaringología 2026
+                        codigo_ipress: "0001234"
+                        desc_ipress: HOSPITAL NACIONAL GUILLERMO ALMENARA IRIGOYEN
+                        desc_red: RED ASISTENCIAL ALMENARA
+                        estado: PENDIENTE
+                        estado_gestion_citas_id: 5
+                        cod_estado_cita: PENDIENTE_CITA
+                        desc_estado_cita: Pendiente de cita
+                        fecha_solicitud: 2026-01-27T10:30:00Z
+                        activo: true
+                      - id_solicitud: 1524
+                        numero_solicitud: SOL-2026-456790-002
+                        paciente_dni: "87654321"
+                        paciente_nombre: RODRIGUEZ FERNANDEZ, JUAN CARLOS
+                        paciente_edad: 52
+                        especialidad: CARDIOLOGIA
+                        id_bolsa: 2
+                        desc_tipo_bolsa: Bolsa Cardiología Enero 2026
+                        estado: ASIGNADA
+                        fecha_solicitud: 2026-01-27T11:00:00Z
+                        activo: true
+                    message: 2 solicitudes encontradas
+                    timestamp: 2026-01-27T12:00:00Z
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /bolsas/solicitudes/{id}:
+    get:
+      tags:
+        - Solicitudes
+      summary: Obtener solicitud por ID
+      description: Obtiene detalles completos de una solicitud específica con todos los datos enriquecidos
+      operationId: obtenerSolicitudPorId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID de la solicitud
+      responses:
+        '200':
+          description: Solicitud encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/SolicitudBolsaDTO'
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Solicitudes
+      summary: Eliminar solicitud (soft delete)
+      description: |
+        Elimina lógicamente una solicitud (activo = false).
+        No elimina físicamente el registro.
+
+        **Permisos MBAC:**
+        - Página: `/bolsas/solicitudes`
+        - Acción: `eliminar`
+      operationId: eliminarSolicitud
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Solicitud eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      mensaje:
+                        type: string
+                        example: Solicitud eliminada exitosamente
+                      idSolicitud:
+                        type: integer
+                        example: 1523
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /bolsas/solicitudes/borrar:
+    post:
+      tags:
+        - Solicitudes
+      summary: Eliminar múltiples solicitudes (batch)
+      description: |
+        Elimina lógicamente múltiples solicitudes en una sola operación.
+        Útil para limpieza masiva o corrección de errores.
+      operationId: borrarMultiplesSolicitudes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                  example: [1523, 1524, 1525]
+                  description: Array de IDs a eliminar
+            example:
+              ids: [1523, 1524, 1525]
+      responses:
+        '200':
+          description: Solicitudes eliminadas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      mensaje:
+                        type: string
+                        example: 3 solicitud(es) eliminada(s) exitosamente
+                      totalBorrados:
+                        type: integer
+                        example: 3
+                      ids:
+                        type: array
+                        items:
+                          type: integer
+                        example: [1523, 1524, 1525]
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: Request inválido (sin IDs o IDs inválidos)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                error: INVALID_REQUEST
+                message: No se proporcionaron IDs válidos para borrar
+                timestamp: 2026-01-27T12:00:00Z
+
+  /bolsas/solicitudes/{id}/asignar:
+    patch:
+      tags:
+        - Solicitudes
+      summary: Asignar gestora a solicitud
+      description: |
+        Asigna una gestora de citas a una solicitud específica.
+        Actualiza el campo `gestora_id` en la base de datos.
+
+        **Permisos MBAC:**
+        - Página: `/bolsas/solicitudes`
+        - Acción: `editar`
+      operationId: asignarGestora
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: idGestora
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID de la gestora a asignar
+      responses:
+        '200':
+          description: Gestora asignada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      mensaje:
+                        type: string
+                        example: Gestora asignada exitosamente
+                      idSolicitud:
+                        type: integer
+                        example: 1523
+                      idGestora:
+                        type: integer
+                        example: 45
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /bolsas/solicitudes/{id}/estado:
+    patch:
+      tags:
+        - Solicitudes
+      summary: Cambiar estado de gestión de citas
+      description: |
+        Cambia el estado de gestión de citas de una solicitud.
+
+        **Estados disponibles (dim_estados_gestion_citas):**
+        - 5: PENDIENTE_CITA - Pendiente de cita
+        - 6: LLAMADA_REALIZADA - Llamada realizada
+        - 7: CITA_ASIGNADA - Cita asignada
+        - 8: PACIENTE_ATENDIDO - Paciente atendido
+        - 9: PACIENTE_NO_ATENDIDO - Paciente no atendido
+        - 10: NO_CONTESTA - No contesta
+        - 11: NUMERO_EQUIVOCADO - Número equivocado
+
+        **Permisos MBAC:**
+        - Página: `/bolsas/solicitudes`
+        - Acción: `editar`
+      operationId: cambiarEstadoSolicitud
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+        - name: nuevoEstadoId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID del nuevo estado (tabla dim_estados_gestion_citas)
+          example: 7
+      responses:
+        '200':
+          description: Estado actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      mensaje:
+                        type: string
+                        example: Estado actualizado exitosamente
+                      idSolicitud:
+                        type: integer
+                        example: 1523
+                      nuevoEstadoId:
+                        type: integer
+                        example: 7
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  /bolsas/solicitudes/asegurados-nuevos:
+    get:
+      tags:
+        - Solicitudes
+      summary: Obtener asegurados nuevos detectados
+      description: |
+        Retorna lista de DNIs en solicitudes que no tienen correspondencia en tabla `asegurados`.
+        Útil para sincronización de datos o detección de asegurados no registrados.
+      operationId: obtenerAseguradosNuevos
+      responses:
+        '200':
+          description: Asegurados nuevos obtenidos exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 12
+                      asegurados:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            dni:
+                              type: string
+                              example: "12345678"
+                            nombre:
+                              type: string
+                              example: GARCIA LOPEZ, MARIA ELENA
+                            telefono:
+                              type: string
+                              example: "987654321"
+                      mensaje:
+                        type: string
+                        example: Se encontraron 12 asegurados nuevos
+                  timestamp:
+                    type: string
+                    format: date-time
+
+  # ========================================================================
+  # ESTADÍSTICAS - Dashboard y métricas
+  # ========================================================================
+
+  /bolsas/estadisticas:
+    get:
+      tags:
+        - Estadísticas
+      summary: Obtener estadísticas del módulo
+      description: |
+        Dashboard con métricas y gráficos del módulo de bolsas.
+
+        **Métricas incluidas:**
+        - Total solicitudes por estado
+        - Total por tipo de bolsa
+        - Total por especialidad
+        - Tendencias por fecha
+        - Top 10 IPRESS con más solicitudes
+        - Distribución por RED asistencial
+
+        **Permisos MBAC:**
+        - Página: `/bolsas/estadisticas`
+        - Acción: `crear`, `editar`, `eliminar`
+      operationId: obtenerEstadisticas
+      responses:
+        '200':
+          description: Estadísticas obtenidas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      totalSolicitudes:
+                        type: integer
+                        example: 1250
+                      porEstado:
+                        type: object
+                        properties:
+                          PENDIENTE:
+                            type: integer
+                            example: 450
+                          ASIGNADA:
+                            type: integer
+                            example: 600
+                          ATENDIDA:
+                            type: integer
+                            example: 180
+                          CANCELADA:
+                            type: integer
+                            example: 20
+                      porTipoBolsa:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            idBolsa:
+                              type: integer
+                              example: 1
+                            descTipoBolsa:
+                              type: string
+                              example: Bolsa Otorrinolaringología 2026
+                            total:
+                              type: integer
+                              example: 340
+                      porEspecialidad:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            especialidad:
+                              type: string
+                              example: OTORRINOLARINGOLOGIA
+                            total:
+                              type: integer
+                              example: 340
+                      tendenciaPorFecha:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            fecha:
+                              type: string
+                              format: date
+                              example: 2026-01-27
+                            total:
+                              type: integer
+                              example: 85
+                      topIpress:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            codigoIpress:
+                              type: string
+                              example: "0001234"
+                            descIpress:
+                              type: string
+                              example: HOSPITAL NACIONAL GUILLERMO ALMENARA IRIGOYEN
+                            total:
+                              type: integer
+                              example: 125
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  # ========================================================================
+  # HISTORIAL - Cargas realizadas
+  # ========================================================================
+
+  /bolsas/cargas:
+    get:
+      tags:
+        - Historial
+      summary: Obtener historial de cargas
+      description: |
+        Lista todas las cargas de archivos Excel realizadas (tabla `bolsa_107_carga`).
+
+        **Información incluida:**
+        - ID de carga
+        - Nombre del archivo
+        - Hash SHA-256 del archivo
+        - Usuario que realizó la carga
+        - Fecha y hora de carga
+        - Estadísticas: total filas, filas OK, filas error
+        - Estado de la carga: RECIBIDO, PROCESADO, ERROR
+
+        **Ruta semántica v1.11.0:**
+        - Anteriormente: `/bolsas/importaciones/historial`
+        - Ahora: `/bolsas/cargas` (backward compatible)
+      operationId: obtenerHistorialCargas
+      responses:
+        '200':
+          description: Historial obtenido exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        idCarga:
+                          type: integer
+                          example: 142
+                        nombreArchivo:
+                          type: string
+                          example: BOLSA OTORRINO 26012026.xlsx
+                        hashArchivo:
+                          type: string
+                          example: 3f8a9c2d1b5e7f4a6c8d9e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1
+                        usuarioCarga:
+                          type: string
+                          example: jperez
+                        fechaReporte:
+                          type: string
+                          format: date
+                          example: 2026-01-27
+                        estadoCarga:
+                          type: string
+                          enum: [RECIBIDO, PROCESADO, ERROR]
+                          example: PROCESADO
+                        totalFilas:
+                          type: integer
+                          example: 250
+                        filasOk:
+                          type: integer
+                          example: 248
+                        filasError:
+                          type: integer
+                          example: 2
+                        fechaCarga:
+                          type: string
+                          format: date-time
+                          example: 2026-01-27T10:30:00Z
+                  message:
+                    type: string
+                    example: 15 cargas encontradas
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /bolsas/cargas/{idCarga}:
+    get:
+      tags:
+        - Historial
+      summary: Obtener detalles de una carga
+      description: |
+        Obtiene información detallada de una carga específica, incluyendo:
+        - Cabecera de la carga
+        - Items procesados
+        - Errores detectados
+      operationId: obtenerDetallesCarga
+      parameters:
+        - name: idCarga
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID de la carga
+      responses:
+        '200':
+          description: Detalles de carga obtenidos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      carga:
+                        type: object
+                        properties:
+                          idCarga:
+                            type: integer
+                            example: 142
+                          nombreArchivo:
+                            type: string
+                            example: BOLSA OTORRINO 26012026.xlsx
+                          totalFilas:
+                            type: integer
+                            example: 250
+                          filasOk:
+                            type: integer
+                            example: 248
+                          filasError:
+                            type: integer
+                            example: 2
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SolicitudBolsaDTO'
+                      errores:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            fila:
+                              type: integer
+                              example: 125
+                            error:
+                              type: string
+                              example: DNI no existe en tabla asegurados
+                            dni:
+                              type: string
+                              example: "12345678"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Historial
+      summary: Eliminar carga (soft delete)
+      description: |
+        Elimina lógicamente una carga del historial.
+        No elimina físicamente las solicitudes generadas.
+
+        **Permisos MBAC:**
+        - Página: `/bolsas/historial`
+        - Acción: `eliminar`
+      operationId: eliminarCarga
+      parameters:
+        - name: idCarga
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: Carga eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      mensaje:
+                        type: string
+                        example: Carga eliminada correctamente
+                      idCarga:
+                        type: integer
+                        example: 142
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+# ========================================================================
+# COMPONENTS - Schemas, Responses, SecuritySchemes
+# ========================================================================
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtenido desde el endpoint `/auth/login`.
+
+        **Header format:**
+        ```
+        Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        ```
+
+  schemas:
+    SolicitudBolsaDTO:
+      type: object
+      description: |
+        DTO completo de una solicitud de bolsa con datos enriquecidos.
+        Incluye información del paciente, bolsa, IPRESS, RED y estado.
+      properties:
+        id_solicitud:
+          type: integer
+          format: int64
+          example: 1523
+        numero_solicitud:
+          type: string
+          example: SOL-2026-456789-001
+          description: Número único de solicitud generado automáticamente
+        paciente_id:
+          type: integer
+          format: int64
+          nullable: true
+          example: 12345
+        paciente_dni:
+          type: string
+          pattern: '^\d{8}$'
+          example: "12345678"
+        paciente_nombre:
+          type: string
+          example: GARCIA LOPEZ, MARIA ELENA
+        paciente_edad:
+          type: integer
+          nullable: true
+          example: 45
+          description: Calculado automáticamente desde fecha_nacimiento
+        paciente_sexo:
+          type: string
+          enum: [M, F]
+          nullable: true
+          example: F
+          description: Enriquecido desde dim_asegurados si no viene en Excel
+        paciente_telefono:
+          type: string
+          nullable: true
+          example: "987654321"
+        paciente_email:
+          type: string
+          format: email
+          nullable: true
+          example: maria.garcia@gmail.com
+          description: Enriquecido desde dim_asegurados si no viene en Excel
+        especialidad:
+          type: string
+          example: OTORRINOLARINGOLOGIA
+        id_bolsa:
+          type: integer
+          format: int64
+          example: 1
+        desc_tipo_bolsa:
+          type: string
+          example: Bolsa Otorrinolaringología 2026
+          description: Enriquecido via LEFT JOIN con dim_tipos_bolsas
+        id_servicio:
+          type: integer
+          format: int64
+          example: 23
+        codigo_ipress:
+          type: string
+          example: "0001234"
+        desc_ipress:
+          type: string
+          example: HOSPITAL NACIONAL GUILLERMO ALMENARA IRIGOYEN
+          description: Enriquecido via LEFT JOIN con dim_ipress
+        desc_red:
+          type: string
+          example: RED ASISTENCIAL ALMENARA
+          description: Enriquecido via LEFT JOIN con dim_red
+        fecha_preferida_no_atendida:
+          type: string
+          format: date
+          nullable: true
+          example: 2026-01-15
+        tipo_documento:
+          type: string
+          example: DNI
+        fecha_nacimiento:
+          type: string
+          format: date
+          nullable: true
+          example: 1981-03-12
+          description: Enriquecido desde dim_asegurados si no viene en Excel
+        tipo_cita:
+          type: string
+          nullable: true
+          example: PRESENCIAL
+        estado:
+          type: string
+          enum: [PENDIENTE, ASIGNADA, ATENDIDA, CANCELADA]
+          example: PENDIENTE
+        estado_gestion_citas_id:
+          type: integer
+          format: int64
+          example: 5
+          description: FK a dim_estados_gestion_citas
+        cod_estado_cita:
+          type: string
+          example: PENDIENTE_CITA
+        desc_estado_cita:
+          type: string
+          example: Pendiente de cita
+          description: Enriquecido via LEFT JOIN con dim_estados_gestion_citas
+        fecha_solicitud:
+          type: string
+          format: date-time
+          example: 2026-01-27T10:30:00Z
+        fecha_actualizacion:
+          type: string
+          format: date-time
+          nullable: true
+          example: 2026-01-27T14:15:00Z
+        activo:
+          type: boolean
+          example: true
+          description: Soft delete flag
+
+    ImportacionExcelResponse:
+      type: object
+      properties:
+        idCarga:
+          type: integer
+          format: int64
+          example: 142
+        estadoCarga:
+          type: string
+          enum: [RECIBIDO, PROCESADO, ERROR]
+          example: PROCESADO
+        totalFilas:
+          type: integer
+          example: 250
+        filasOk:
+          type: integer
+          example: 248
+        filasError:
+          type: integer
+          example: 2
+        hashArchivo:
+          type: string
+          example: 3f8a9c2d1b5e7f4a6c8d9e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1
+        nombreArchivo:
+          type: string
+          example: BOLSA OTORRINO 26012026.xlsx
+        mensaje:
+          type: string
+          example: Importados 248 registros exitosamente
+        autoDeteccion:
+          type: object
+          nullable: true
+          description: Información de auto-detección inteligente (v1.11.0)
+          properties:
+            tipoBolsaDetectado:
+              type: string
+              example: Otorrinolaringología
+            especialidadDetectada:
+              type: string
+              example: OTORRINOLARINGOLOGIA
+            fuzzyMatchScore:
+              type: number
+              format: float
+              example: 0.95
+              description: Puntuación de similitud fuzzy (0.0 - 1.0)
+
+    ErrorResponse:
+      type: object
+      properties:
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: INVALID_REQUEST
+        message:
+          type: string
+          example: Error en validación de datos
+        validationErrors:
+          type: object
+          nullable: true
+          additionalProperties:
+            type: string
+          example:
+            dni: DNI debe tener 8 dígitos
+            telefono: Teléfono inválido
+        timestamp:
+          type: string
+          format: date-time
+          example: 2026-01-27T10:30:00Z
+
+  responses:
+    UnauthorizedError:
+      description: No autenticado - Token JWT faltante o inválido
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 401
+            error: UNAUTHORIZED
+            message: Token JWT inválido o expirado
+            timestamp: 2026-01-27T10:30:00Z
+
+    ForbiddenError:
+      description: Sin permisos - MBAC denegado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 403
+            error: FORBIDDEN
+            message: No tiene permisos para realizar esta acción
+            validationErrors:
+              pagina: /bolsas/estadisticas
+              accion: eliminar
+              permisoRequerido: ADMIN o SUPERADMIN
+            timestamp: 2026-01-27T10:30:00Z
+
+    NotFoundError:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 404
+            error: NOT_FOUND
+            message: Solicitud no encontrada
+            timestamp: 2026-01-27T10:30:00Z
+
+    InternalServerError:
+      description: Error interno del servidor
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 500
+            error: INTERNAL_SERVER_ERROR
+            message: Error inesperado procesando solicitud
+            errorId: ERR-abc123xyz
+            timestamp: 2026-01-27T10:30:00Z

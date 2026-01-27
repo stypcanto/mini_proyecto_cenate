@@ -182,7 +182,7 @@ export default function GestionBolsasPacientes() {
                   <Activity size={28} className="text-white" />
                 </div>
                 <div>
-                  <h1 className="text-4xl font-black tracking-tight">Gestión de Bolsas de Pacientes</h1>
+                  <h1 className="text-4xl font-black tracking-tight">Estadísticas de Bolsas de Pacientes</h1>
                   <p className="text-blue-100 text-xs font-semibold tracking-wider">Dashboard Ejecutivo</p>
                 </div>
               </div>

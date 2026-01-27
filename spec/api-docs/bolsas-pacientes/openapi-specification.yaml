@@ -1,0 +1,2173 @@
+openapi: 3.0.3
+info:
+  title: CENATE - Módulo Bolsas de Pacientes API
+  description: |
+    API REST para la gestión del módulo Bolsas de Pacientes del Sistema de Telemedicina CENATE (EsSalud Perú).
+
+    ## ¿Qué son las Bolsas de Pacientes?
+
+    Una **Bolsa** es un conjunto de pacientes agrupados por criterios específicos (diagnóstico, especialidad, urgencia)
+    que requieren atención coordinada a través de CENATE. Coordina atenciones médicas remotas para **4.6M asegurados**
+    a través de **414 IPRESS**.
+
+    ## Características principales
+
+    - ✅ Importación masiva desde Excel (v1.11.0 con auto-detección inteligente)
+    - ✅ Gestión completa CRUD de solicitudes
+    - ✅ Auto-enriquecimiento de datos desde BD (IPRESS, RED, Estados)
+    - ✅ Soft delete con auditoría completa
+    - ✅ Estados de gestión de citas integrados
+    - ✅ Asignación de admisionistas y gestores
+    - ✅ Filtrado y búsqueda avanzada
+
+    ## Seguridad
+
+    Todos los endpoints requieren autenticación JWT Bearer token.
+    Algunos endpoints adicionales requieren permisos MBAC (Module-Based Access Control).
+
+    ## Base de Datos
+
+    - **Host:** 10.0.89.13:5432
+    - **Database:** maestro_cenate
+    - **Principales tablas:** dim_solicitud_bolsa, dim_tipos_bolsas, bolsa_107_item, dim_ipress, dim_red
+
+  version: 1.11.0
+  contact:
+    name: Ing. Styp Canto Rondón
+    email: stypcanto@essalud.gob.pe
+  license:
+    name: EsSalud Perú - Uso Interno
+
+servers:
+  - url: http://localhost:8080
+    description: Desarrollo Local
+  - url: https://cenate-api-dev.essalud.gob.pe
+    description: Ambiente de Desarrollo
+  - url: https://cenate-api.essalud.gob.pe
+    description: Producción
+
+tags:
+  - name: Solicitudes de Bolsa
+    description: Gestión de solicitudes de bolsas de pacientes
+  - name: Bolsa 107
+    description: Gestión de pacientes de la Bolsa 107 (importación masiva)
+  - name: Importación Excel
+    description: Importación de pacientes desde archivos Excel
+  - name: Tipos de Bolsas
+    description: Catálogo de tipos/categorías de bolsas (CRUD Admin)
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ========================================
+  # SOLICITUDES DE BOLSA
+  # ========================================
+  /api/bolsas/solicitudes/importar:
+    post:
+      tags:
+        - Solicitudes de Bolsa
+      summary: Importar solicitudes desde Excel
+      description: |
+        Importa solicitudes de bolsa desde un archivo Excel con validación y enriquecimiento automático.
+
+        **Features v1.11.0:**
+        - ✅ Auto-detección inteligente de tipo de bolsa desde nombre de archivo
+        - ✅ Auto-selección de especialidad/servicio con fuzzy matching
+        - ✅ Validación de estructura Excel sin headers
+        - ✅ Enriquecimiento automático de datos desde BD (LEFT JOINs)
+        - ✅ Cálculo automático de edad
+
+        **Columnas requeridas del Excel:**
+        1. DNI (8 dígitos)
+        2. Código Adscripción (IPRESS)
+        3. Fecha preferida no atendida (opcional, formato: DD/MM/YYYY)
+        4. Tipo documento (opcional: DNI, CE, etc.)
+        5. Fecha nacimiento (opcional: DD/MM/YYYY)
+        6. Sexo (opcional: M/F)
+        7. Teléfono (opcional)
+        8. Email (opcional)
+        9. Tipo cita (opcional)
+        10. Especialidad (opcional)
+
+        **Proceso:**
+        1. Validación estructura archivo
+        2. Lectura fila por fila (sin header)
+        3. Enriquecimiento: busca paciente, IPRESS, RED en BD
+        4. Cálculo edad si hay fecha nacimiento
+        5. Inserción en dim_solicitud_bolsa vía SP
+        6. Retorna estadísticas (total, OK, errores)
+
+      operationId: importarSolicitudesDesdeExcel
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - idBolsa
+                - idServicio
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Archivo Excel (.xls, .xlsx) con 10 columnas de datos
+                idBolsa:
+                  type: integer
+                  format: int64
+                  description: ID del tipo de bolsa (PASO 1 - de dim_tipos_bolsas)
+                  example: 4
+                idServicio:
+                  type: integer
+                  format: int64
+                  description: ID del servicio/especialidad (PASO 2 - de tabla servicios)
+                  example: 89
+                usuarioCarga:
+                  type: string
+                  description: Usuario que realiza la carga
+                  default: admin
+                  example: admin
+      responses:
+        '200':
+          description: Importación completada (puede tener errores parciales)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  totalFilas:
+                    type: integer
+                    example: 150
+                    description: Total de filas procesadas del Excel
+                  filasOk:
+                    type: integer
+                    example: 145
+                    description: Filas importadas exitosamente
+                  filasError:
+                    type: integer
+                    example: 5
+                    description: Filas con errores
+                  errores:
+                    type: array
+                    description: Detalle de errores por fila
+                    items:
+                      type: object
+                      properties:
+                        fila:
+                          type: integer
+                          example: 23
+                        error:
+                          type: string
+                          example: "DNI inválido: debe tener 8 dígitos"
+                  message:
+                    type: string
+                    example: "Importación completada: 145 registros insertados, 5 errores"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2026-01-27T10:30:00Z"
+              examples:
+                success:
+                  value:
+                    status: 200
+                    totalFilas: 150
+                    filasOk: 150
+                    filasError: 0
+                    errores: []
+                    message: "Importación completada exitosamente"
+                    timestamp: "2026-01-27T10:30:00Z"
+                partial:
+                  value:
+                    status: 200
+                    totalFilas: 150
+                    filasOk: 145
+                    filasError: 5
+                    errores:
+                      - fila: 12
+                        error: "DNI inválido: debe tener 8 dígitos"
+                      - fila: 35
+                        error: "Código IPRESS no encontrado en BD"
+                    message: "Importación parcial: 145 OK, 5 errores"
+                    timestamp: "2026-01-27T10:30:00Z"
+        '400':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidFile:
+                  value:
+                    status: 400
+                    error: "INVALID_FILE"
+                    message: "El archivo debe ser formato Excel (.xls o .xlsx)"
+                    timestamp: "2026-01-27T10:30:00Z"
+                missingColumns:
+                  value:
+                    status: 400
+                    error: "INVALID_STRUCTURE"
+                    message: "El Excel debe tener exactamente 10 columnas"
+                    timestamp: "2026-01-27T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsas/solicitudes:
+    get:
+      tags:
+        - Solicitudes de Bolsa
+      summary: Listar todas las solicitudes activas
+      description: |
+        Obtiene todas las solicitudes de bolsa activas (no eliminadas lógicamente).
+
+        **Datos retornados incluyen:**
+        - Información del paciente (DNI, nombre, edad calculada, sexo, teléfono, email)
+        - Tipo de bolsa (código y descripción)
+        - IPRESS y RED enriquecidos desde BD
+        - Estado de gestión de citas actual
+        - Fechas de solicitud y actualización
+      operationId: listarSolicitudes
+      responses:
+        '200':
+          description: Lista de solicitudes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SolicitudBolsaDTO'
+                  message:
+                    type: string
+                    example: "Solicitudes obtenidas exitosamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsas/solicitudes/{id}:
+    get:
+      tags:
+        - Solicitudes de Bolsa
+      summary: Obtener una solicitud por ID
+      operationId: obtenerSolicitudPorId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID de la solicitud
+          example: 1523
+      responses:
+        '200':
+          description: Solicitud encontrada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/SolicitudBolsaDTO'
+                  message:
+                    type: string
+                    example: "Solicitud obtenida exitosamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          description: Solicitud no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+        - Solicitudes de Bolsa
+      summary: Eliminar una solicitud (soft delete)
+      description: |
+        Elimina lógicamente una solicitud (establece activo = false).
+        La solicitud no se borra físicamente de la BD.
+      operationId: eliminarSolicitud
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1523
+      responses:
+        '200':
+          description: Solicitud eliminada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  mensaje:
+                    type: string
+                    example: "Solicitud eliminada exitosamente"
+                  idSolicitud:
+                    type: integer
+                    format: int64
+                    example: 1523
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsas/solicitudes/borrar:
+    post:
+      tags:
+        - Solicitudes de Bolsa
+      summary: Eliminar múltiples solicitudes (soft delete en lote)
+      description: |
+        Elimina lógicamente múltiples solicitudes en una sola operación.
+        Útil para limpiezas masivas desde la interfaz de administración.
+      operationId: eliminarSolicitudesMultiples
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                  description: Lista de IDs de solicitudes a eliminar
+                  example: [1523, 1524, 1525, 1526]
+                  minItems: 1
+      responses:
+        '200':
+          description: Solicitudes eliminadas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  mensaje:
+                    type: string
+                    example: "4 solicitud(es) eliminada(s) exitosamente"
+                  totalBorrados:
+                    type: integer
+                    example: 4
+                  ids:
+                    type: array
+                    items:
+                      type: integer
+                      format: int64
+                    example: [1523, 1524, 1525, 1526]
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          description: Error de validación
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 400
+                error: "INVALID_REQUEST"
+                message: "No se proporcionaron IDs para borrar"
+                timestamp: "2026-01-27T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsas/solicitudes/{id}/asignar:
+    patch:
+      tags:
+        - Solicitudes de Bolsa
+      summary: Asignar una gestora a una solicitud
+      description: Asigna un usuario con rol de gestora a una solicitud específica
+      operationId: asignarGestora
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1523
+        - name: idGestora
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID de la usuaria gestora (de tabla usuarios)
+          example: 45
+      responses:
+        '200':
+          description: Gestora asignada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  mensaje:
+                    type: string
+                    example: "Gestora asignada exitosamente"
+                  idSolicitud:
+                    type: integer
+                    format: int64
+                    example: 1523
+                  idGestora:
+                    type: integer
+                    format: int64
+                    example: 45
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsas/solicitudes/{id}/estado:
+    patch:
+      tags:
+        - Solicitudes de Bolsa
+      summary: Cambiar el estado de una solicitud
+      description: |
+        Actualiza el estado de gestión de citas de una solicitud.
+        Estados disponibles están en tabla dim_estados_gestion_citas.
+      operationId: cambiarEstadoSolicitud
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1523
+        - name: nuevoEstadoId
+          in: query
+          required: true
+          schema:
+            type: integer
+            format: int64
+          description: ID del nuevo estado (de dim_estados_gestion_citas)
+          example: 2
+      responses:
+        '200':
+          description: Estado actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  mensaje:
+                    type: string
+                    example: "Estado actualizado exitosamente"
+                  idSolicitud:
+                    type: integer
+                    format: int64
+                    example: 1523
+                  nuevoEstadoId:
+                    type: integer
+                    format: int64
+                    example: 2
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsas/solicitudes/asegurados-nuevos:
+    get:
+      tags:
+        - Solicitudes de Bolsa
+      summary: Obtener asegurados nuevos detectados
+      description: |
+        Retorna lista de DNIs en solicitudes que no tienen correspondencia en tabla asegurados.
+        Útil para detectar pacientes que necesitan ser registrados en el sistema principal.
+      operationId: obtenerAseguradosNuevos
+      responses:
+        '200':
+          description: Lista de asegurados nuevos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  total:
+                    type: integer
+                    example: 15
+                  asegurados:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        paciente_dni:
+                          type: string
+                          example: "12345678"
+                        paciente_nombre:
+                          type: string
+                          example: "JUAN PEREZ GARCIA"
+                        fecha_deteccion:
+                          type: string
+                          format: date-time
+                  mensaje:
+                    type: string
+                    example: "Se encontraron 15 asegurados nuevos"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ========================================
+  # BOLSA 107
+  # ========================================
+  /api/bolsa107/pacientes:
+    get:
+      tags:
+        - Bolsa 107
+      summary: Listar todos los pacientes de la Bolsa 107
+      description: |
+        Obtiene todos los pacientes importados de la Bolsa 107 con información completa de IPRESS.
+        Incluye JOIN con dim_ipress para enriquecer datos.
+      operationId: listarPacientesBolsa107
+      responses:
+        '200':
+          description: Lista de pacientes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Bolsa107ItemDTO'
+                  message:
+                    type: string
+                    example: "Pacientes obtenidos exitosamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/pacientes/por-derivacion:
+    get:
+      tags:
+        - Bolsa 107
+      summary: Listar pacientes filtrados por derivación interna
+      description: Filtra pacientes por tipo de derivación (PSICOLOGIA CENATE, MEDICINA CENATE, etc.)
+      operationId: listarPacientesPorDerivacion
+      parameters:
+        - name: derivacion
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Derivación interna a filtrar
+          example: "PSICOLOGIA CENATE"
+      responses:
+        '200':
+          description: Lista de pacientes filtrados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Bolsa107ItemDTO'
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/estadisticas:
+    get:
+      tags:
+        - Bolsa 107
+      summary: Obtener estadísticas de la Bolsa 107
+      description: |
+        Retorna estadísticas generales:
+        - Total de pacientes
+        - Por derivación (Psicología, Medicina)
+        - Por ubicación (Lima, Provincia)
+      operationId: obtenerEstadisticasBolsa107
+      responses:
+        '200':
+          description: Estadísticas calculadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                        example: 350
+                      psicologia:
+                        type: integer
+                        example: 180
+                      medicina:
+                        type: integer
+                        example: 150
+                      lima:
+                        type: integer
+                        example: 220
+                      provincia:
+                        type: integer
+                        example: 130
+                  message:
+                    type: string
+                    example: "Estadísticas calculadas exitosamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/asignar-admisionista:
+    post:
+      tags:
+        - Bolsa 107
+      summary: Asignar un paciente a un admisionista
+      description: Asigna un paciente de Bolsa 107 a un usuario con rol admisionista
+      operationId: asignarAdmisionista
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_item
+                - id_admisionista
+              properties:
+                id_item:
+                  type: integer
+                  format: int64
+                  description: ID del paciente en bolsa_107_item
+                  example: 45
+                id_admisionista:
+                  type: integer
+                  format: int64
+                  description: ID del usuario admisionista
+                  example: 12
+      responses:
+        '200':
+          description: Asignación exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Paciente asignado correctamente"
+                  paciente:
+                    type: string
+                    example: "JUAN PEREZ GARCIA"
+                  admisionista:
+                    type: string
+                    example: "Maria Lopez"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/asignar-gestor:
+    post:
+      tags:
+        - Bolsa 107
+      summary: Asignar un paciente a un gestor de citas
+      operationId: asignarGestor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_item
+                - id_gestor
+              properties:
+                id_item:
+                  type: integer
+                  format: int64
+                  example: 45
+                id_gestor:
+                  type: integer
+                  format: int64
+                  example: 23
+      responses:
+        '200':
+          description: Asignación exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Paciente asignado correctamente al gestor de citas"
+                  paciente:
+                    type: string
+                  gestor:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/desasignar-gestor:
+    post:
+      tags:
+        - Bolsa 107
+      summary: Desasignar gestor de citas de un paciente
+      operationId: desasignarGestor
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id_item
+              properties:
+                id_item:
+                  type: integer
+                  format: int64
+                  example: 45
+      responses:
+        '200':
+          description: Desasignación exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Asignación eliminada correctamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/mis-asignaciones:
+    get:
+      tags:
+        - Bolsa 107
+      summary: Obtener pacientes asignados al admisionista logueado
+      description: Retorna solo los pacientes asignados al usuario actual (rol ADMISIONISTA)
+      operationId: obtenerMisAsignaciones
+      responses:
+        '200':
+          description: Lista de pacientes asignados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Bolsa107ItemDTO'
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/mis-pacientes-gestor:
+    get:
+      tags:
+        - Bolsa 107
+      summary: Obtener pacientes asignados al gestor logueado
+      description: |
+        Retorna pacientes asignados al gestor de citas actual.
+        Si el usuario es SUPERADMIN, retorna TODOS los pacientes del sistema.
+      operationId: obtenerMisPacientesGestor
+      responses:
+        '200':
+          description: Lista de pacientes asignados al gestor
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Bolsa107ItemDTO'
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/estadisticas-gestor:
+    get:
+      tags:
+        - Bolsa 107
+      summary: Obtener estadísticas del dashboard para gestor de citas
+      description: |
+        Retorna estadísticas resumidas de pacientes asignados al gestor logueado.
+        SUPERADMIN ve estadísticas de TODOS los pacientes del sistema.
+      operationId: obtenerEstadisticasGestor
+      responses:
+        '200':
+          description: Estadísticas del dashboard
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      totalPacientes:
+                        type: integer
+                        example: 85
+                      porDerivacion:
+                        type: object
+                        properties:
+                          psicologia:
+                            type: integer
+                            example: 45
+                          medicina:
+                            type: integer
+                            example: 30
+                          nutricion:
+                            type: integer
+                            example: 10
+                      porUbicacion:
+                        type: object
+                        properties:
+                          lima:
+                            type: integer
+                            example: 60
+                          provincia:
+                            type: integer
+                            example: 25
+                      porEstado:
+                        type: object
+                        properties:
+                          pendiente:
+                            type: integer
+                            example: 85
+                          citado:
+                            type: integer
+                            example: 0
+                          atendido:
+                            type: integer
+                            example: 0
+                          noContactado:
+                            type: integer
+                            example: 0
+                          reprogramacionFallida:
+                            type: integer
+                            example: 0
+                      pacientesRecientes:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            numero_documento:
+                              type: string
+                            paciente:
+                              type: string
+                            derivacion_interna:
+                              type: string
+                            fecha_asignacion_gestor:
+                              type: string
+                              format: date-time
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/profesionales-salud:
+    get:
+      tags:
+        - Bolsa 107
+      summary: Obtener lista de profesionales de salud del área asistencial
+      description: Retorna lista de profesionales activos para asignaciones
+      operationId: obtenerProfesionalesSalud
+      responses:
+        '200':
+          description: Lista de profesionales
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_user:
+                          type: integer
+                        name_user:
+                          type: string
+                        dni:
+                          type: string
+                        especialidad:
+                          type: string
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/paciente/{idItem}:
+    put:
+      tags:
+        - Bolsa 107
+      summary: Actualizar datos del paciente
+      description: |
+        Actualiza campos permitidos del paciente:
+        - Teléfono
+        - Teléfono celular
+        - Correo electrónico
+        - Código IPRESS
+        - Observaciones de gestión
+        - Tipo de apoyo
+        - Fecha de programación
+        - Turno
+        - Profesional asignado
+        - DNI profesional
+        - Especialidad
+      operationId: actualizarPaciente
+      parameters:
+        - name: idItem
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 45
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                telefono:
+                  type: string
+                  example: "987654321"
+                telCelular:
+                  type: string
+                  example: "912345678"
+                correoElectronico:
+                  type: string
+                  format: email
+                  example: "paciente@example.com"
+                codIpress:
+                  type: string
+                  example: "00012345"
+                observaciones:
+                  type: string
+                  example: "Paciente requiere atención prioritaria"
+                tipoApoyo:
+                  type: string
+                  enum: [MEDICINA, PSICOLOGIA, NUTRICION, OTROS]
+                  example: "MEDICINA"
+                fecha_programacion:
+                  type: string
+                  format: date
+                  example: "2026-02-15"
+                turno:
+                  type: string
+                  enum: [MAÑANA, TARDE]
+                  example: "MAÑANA"
+                profesional:
+                  type: string
+                  example: "Dr. Juan Pérez"
+                dni_profesional:
+                  type: string
+                  example: "12345678"
+                especialidad:
+                  type: string
+                  example: "CARDIOLOGIA"
+      responses:
+        '200':
+          description: Paciente actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/Bolsa107ItemDTO'
+                  message:
+                    type: string
+                    example: "Paciente actualizado correctamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/bolsa107/pacientes:
+    delete:
+      tags:
+        - Bolsa 107
+      summary: Eliminar múltiples pacientes de la Bolsa 107
+      description: Elimina físicamente (hard delete) múltiples pacientes en una sola operación
+      operationId: eliminarPacientesBolsa107
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - ids
+              properties:
+                ids:
+                  type: array
+                  items:
+                    type: integer
+                    format: int64
+                  description: Lista de IDs de pacientes a eliminar
+                  example: [45, 46, 47]
+                  minItems: 1
+      responses:
+        '200':
+          description: Pacientes eliminados exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Se eliminaron 3 paciente(s) correctamente"
+                  deletedCount:
+                    type: integer
+                    example: 3
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ========================================
+  # IMPORTACIÓN EXCEL (General)
+  # ========================================
+  /api/import-excel/pacientes:
+    post:
+      tags:
+        - Importación Excel
+      summary: Importar archivo Excel con pacientes
+      description: |
+        Endpoint genérico para importar pacientes desde Excel.
+        Soporta auto-detección de tipo de bolsa y especialidad.
+      operationId: importarPacientesExcel
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+              properties:
+                file:
+                  type: string
+                  format: binary
+                idBolsa:
+                  type: integer
+                  format: int64
+                  default: 1
+                idServicio:
+                  type: integer
+                  format: int64
+                  default: 1
+                usuarioCarga:
+                  type: string
+                  default: admin
+      responses:
+        '200':
+          description: Importación completada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  totalFilas:
+                    type: integer
+                  filasOk:
+                    type: integer
+                  filasError:
+                    type: integer
+                  errores:
+                    type: array
+                    items:
+                      type: object
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/import-excel/cargas:
+    get:
+      tags:
+        - Importación Excel
+      summary: Obtener lista de todas las cargas importadas
+      description: Retorna historial de todas las importaciones realizadas
+      operationId: obtenerListaCargas
+      responses:
+        '200':
+          description: Lista de cargas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id_carga:
+                          type: integer
+                          format: int64
+                        nombre_archivo:
+                          type: string
+                        fecha_carga:
+                          type: string
+                          format: date-time
+                        usuario_carga:
+                          type: string
+                        total_filas:
+                          type: integer
+                        filas_ok:
+                          type: integer
+                        filas_error:
+                          type: integer
+                        id_bolsa:
+                          type: integer
+                        id_servicio:
+                          type: integer
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/import-excel/pacientes/{idCarga}/datos:
+    get:
+      tags:
+        - Importación Excel
+      summary: Obtener datos completos de una carga específica
+      description: Retorna items + errores de una carga particular
+      operationId: obtenerDatosCarga
+      parameters:
+        - name: idCarga
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 15
+      responses:
+        '200':
+          description: Datos de la carga
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      carga:
+                        type: object
+                        properties:
+                          id_carga:
+                            type: integer
+                          nombre_archivo:
+                            type: string
+                          fecha_carga:
+                            type: string
+                            format: date-time
+                      items:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/Bolsa107ItemDTO'
+                      errores:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            fila:
+                              type: integer
+                            error:
+                              type: string
+                      total_items:
+                        type: integer
+                      total_errores:
+                        type: integer
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/import-excel/cargas/{idCarga}:
+    delete:
+      tags:
+        - Importación Excel
+      summary: Eliminar una carga
+      description: Elimina físicamente o lógicamente una carga de importación
+      operationId: eliminarCarga
+      parameters:
+        - name: idCarga
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 15
+      responses:
+        '200':
+          description: Carga eliminada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  message:
+                    type: string
+                    example: "Carga eliminada correctamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/import-excel/cargas/{idCarga}/exportar:
+    get:
+      tags:
+        - Importación Excel
+      summary: Exportar carga a archivo Excel
+      description: Genera un archivo Excel con los datos de una carga específica
+      operationId: exportarCarga
+      parameters:
+        - name: idCarga
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 15
+      responses:
+        '200':
+          description: Archivo Excel generado
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+          headers:
+            Content-Disposition:
+              schema:
+                type: string
+              description: attachment; filename="bolsa_107_carga_15.xlsx"
+            Content-Length:
+              schema:
+                type: integer
+              description: Tamaño del archivo en bytes
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  # ========================================
+  # TIPOS DE BOLSAS (Admin)
+  # ========================================
+  /api/admin/tipos-bolsas/todos:
+    get:
+      tags:
+        - Tipos de Bolsas
+      summary: Obtener todos los tipos de bolsas activos
+      description: Lista simple sin paginación de todos los tipos activos (stat = 'A')
+      operationId: obtenerTodosTiposBolsas
+      responses:
+        '200':
+          description: Lista de tipos de bolsas activos
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TipoBolsaDTO'
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/admin/tipos-bolsas/buscar:
+    get:
+      tags:
+        - Tipos de Bolsas
+      summary: Búsqueda paginada de tipos de bolsas
+      description: |
+        Búsqueda case-insensitive con filtros y paginación.
+        Busca en código O descripción.
+      operationId: buscarTiposBolsas
+      parameters:
+        - name: busqueda
+          in: query
+          required: false
+          schema:
+            type: string
+          description: Búsqueda en código o descripción (case-insensitive)
+          example: "PADOMI"
+        - name: estado
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [A, I]
+          description: Filtro por estado (A=Activo, I=Inactivo)
+          example: "A"
+        - name: page
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 0
+          description: Número de página (0-indexed)
+          example: 0
+        - name: size
+          in: query
+          required: false
+          schema:
+            type: integer
+            default: 30
+          description: Registros por página
+          example: 30
+      responses:
+        '200':
+          description: Resultados paginados
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      content:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/TipoBolsaDTO'
+                      totalElements:
+                        type: integer
+                        example: 8
+                      totalPages:
+                        type: integer
+                        example: 1
+                      size:
+                        type: integer
+                        example: 30
+                      number:
+                        type: integer
+                        example: 0
+                      first:
+                        type: boolean
+                        example: true
+                      last:
+                        type: boolean
+                        example: true
+                      empty:
+                        type: boolean
+                        example: false
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/admin/tipos-bolsas/{id}:
+    get:
+      tags:
+        - Tipos de Bolsas
+      summary: Obtener un tipo de bolsa por ID
+      operationId: obtenerTipoBolsaPorId
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '200':
+          description: Tipo de bolsa encontrado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/TipoBolsaDTO'
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    put:
+      tags:
+        - Tipos de Bolsas
+      summary: Actualizar un tipo de bolsa existente
+      operationId: actualizarTipoBolsa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoBolsaRequest'
+      responses:
+        '200':
+          description: Tipo de bolsa actualizado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/TipoBolsaDTO'
+                  message:
+                    type: string
+                    example: "Tipo de bolsa actualizado exitosamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    delete:
+      tags:
+        - Tipos de Bolsas
+      summary: Eliminar (inactivar) un tipo de bolsa
+      description: Soft delete - cambia estado a 'I' (Inactivo)
+      operationId: eliminarTipoBolsa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+      responses:
+        '204':
+          description: Tipo de bolsa inactivado exitosamente
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/admin/tipos-bolsas:
+    post:
+      tags:
+        - Tipos de Bolsas
+      summary: Crear un nuevo tipo de bolsa
+      operationId: crearTipoBolsa
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TipoBolsaRequest'
+      responses:
+        '200':
+          description: Tipo de bolsa creado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/TipoBolsaDTO'
+                  message:
+                    type: string
+                    example: "Tipo de bolsa creado exitosamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '409':
+          description: Conflicto - código duplicado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              example:
+                status: 409
+                error: "CONFLICT"
+                message: "Ya existe un tipo de bolsa con el código: BOLSA_PADOMI"
+                timestamp: "2026-01-27T10:30:00Z"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/admin/tipos-bolsas/{id}/estado:
+    patch:
+      tags:
+        - Tipos de Bolsas
+      summary: Cambiar el estado de un tipo de bolsa
+      description: Alterna entre Activo (A) e Inactivo (I)
+      operationId: cambiarEstadoTipoBolsa
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+            format: int64
+          example: 1
+        - name: nuevoEstado
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [A, I]
+          description: Nuevo estado ('A' = Activo, 'I' = Inactivo)
+          example: "I"
+      responses:
+        '200':
+          description: Estado actualizado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    $ref: '#/components/schemas/TipoBolsaDTO'
+                  message:
+                    type: string
+                    example: "Estado actualizado exitosamente"
+                  timestamp:
+                    type: string
+                    format: date-time
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /api/admin/tipos-bolsas/estadisticas:
+    get:
+      tags:
+        - Tipos de Bolsas
+      summary: Obtener estadísticas de tipos de bolsas
+      operationId: obtenerEstadisticasTiposBolsas
+      responses:
+        '200':
+          description: Estadísticas calculadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: integer
+                    example: 200
+                  data:
+                    type: object
+                    properties:
+                      totalTipos:
+                        type: integer
+                        example: 8
+                      tiposActivos:
+                        type: integer
+                        example: 7
+                      tiposInactivos:
+                        type: integer
+                        example: 1
+                  message:
+                    type: string
+                  timestamp:
+                    type: string
+                    format: date-time
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+# ========================================
+# COMPONENTS
+# ========================================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtenido del endpoint de autenticación.
+        Formato: "Bearer {token}"
+
+        El token debe incluirse en el header Authorization:
+        ```
+        Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        ```
+
+  schemas:
+    # ========================================
+    # DTOs PRINCIPALES
+    # ========================================
+    SolicitudBolsaDTO:
+      type: object
+      description: Solicitud de bolsa con datos enriquecidos desde BD
+      properties:
+        id_solicitud:
+          type: integer
+          format: int64
+          example: 1523
+        numero_solicitud:
+          type: string
+          example: "SOL-2026-001523"
+        paciente_id:
+          type: integer
+          format: int64
+          example: 456789
+        paciente_nombre:
+          type: string
+          example: "JUAN PEREZ GARCIA"
+        paciente_dni:
+          type: string
+          example: "12345678"
+        especialidad:
+          type: string
+          example: "CARDIOLOGIA"
+        fecha_preferida_no_atendida:
+          type: string
+          format: date
+          example: "2026-01-15"
+          nullable: true
+        tipo_documento:
+          type: string
+          example: "DNI"
+          nullable: true
+        fecha_nacimiento:
+          type: string
+          format: date
+          example: "1980-05-20"
+          nullable: true
+        paciente_sexo:
+          type: string
+          enum: [M, F]
+          example: "M"
+          nullable: true
+        paciente_telefono:
+          type: string
+          example: "987654321"
+          nullable: true
+        paciente_email:
+          type: string
+          format: email
+          example: "juan.perez@example.com"
+          nullable: true
+        paciente_edad:
+          type: integer
+          example: 45
+          description: Calculado automáticamente desde fecha_nacimiento
+          nullable: true
+        codigo_ipress:
+          type: string
+          example: "00012345"
+          nullable: true
+        tipo_cita:
+          type: string
+          example: "PRIMERA VEZ"
+          nullable: true
+        id_bolsa:
+          type: integer
+          format: int64
+          example: 4
+        desc_tipo_bolsa:
+          type: string
+          example: "BOLSAS_EXPLOTADATOS"
+          description: Enriquecido desde dim_tipos_bolsas
+        id_servicio:
+          type: integer
+          format: int64
+          example: 89
+        codigo_adscripcion:
+          type: string
+          example: "00012345"
+          nullable: true
+        id_ipress:
+          type: integer
+          format: int64
+          example: 123
+          nullable: true
+        estado:
+          type: string
+          example: "PENDIENTE"
+        fecha_solicitud:
+          type: string
+          format: date-time
+          example: "2026-01-27T10:30:00-05:00"
+        fecha_actualizacion:
+          type: string
+          format: date-time
+          example: "2026-01-27T14:20:00-05:00"
+        estado_gestion_citas_id:
+          type: integer
+          format: int64
+          example: 1
+          nullable: true
+        cod_estado_cita:
+          type: string
+          example: "PENDIENTE"
+          nullable: true
+        desc_estado_cita:
+          type: string
+          example: "Pendiente de programación"
+          nullable: true
+        desc_ipress:
+          type: string
+          example: "HOSPITAL NACIONAL REBAGLIATI"
+          description: Enriquecido desde dim_ipress
+          nullable: true
+        desc_red:
+          type: string
+          example: "RED ASISTENCIAL REBAGLIATI"
+          description: Enriquecido desde dim_red
+          nullable: true
+        activo:
+          type: boolean
+          example: true
+          description: Soft delete flag
+
+    Bolsa107ItemDTO:
+      type: object
+      description: Item de paciente de la Bolsa 107
+      properties:
+        id_item:
+          type: integer
+          format: int64
+          example: 45
+        registro:
+          type: integer
+          example: 1
+        numero_documento:
+          type: string
+          example: "12345678"
+        paciente:
+          type: string
+          example: "JUAN PEREZ GARCIA"
+        sexo:
+          type: string
+          enum: [M, F]
+          example: "M"
+        telefono:
+          type: string
+          example: "987654321"
+        fecha_nacimiento:
+          type: string
+          format: date
+          example: "1980-05-20"
+          nullable: true
+        departamento:
+          type: string
+          example: "LIMA"
+        provincia:
+          type: string
+          example: "LIMA"
+        distrito:
+          type: string
+          example: "SAN ISIDRO"
+        afiliacion:
+          type: string
+          example: "TITULAR"
+        derivacion_interna:
+          type: string
+          example: "PSICOLOGIA CENATE"
+        motivo_llamada:
+          type: string
+          example: "Consulta psicológica"
+        id_carga:
+          type: integer
+          format: int64
+          example: 15
+        tipo_apoyo:
+          type: string
+          enum: [MEDICINA, PSICOLOGIA, NUTRICION, OTROS]
+          example: "PSICOLOGIA"
+        fecha_programacion:
+          type: string
+          format: date
+          example: "2026-02-15"
+          nullable: true
+        turno:
+          type: string
+          enum: [MAÑANA, TARDE]
+          example: "MAÑANA"
+          nullable: true
+        profesional:
+          type: string
+          example: "Dra. Maria Lopez"
+          nullable: true
+        dni_profesional:
+          type: string
+          example: "87654321"
+          nullable: true
+        especialidad:
+          type: string
+          example: "PSICOLOGIA"
+          nullable: true
+        cod_ipress:
+          type: string
+          example: "00012345"
+          nullable: true
+        desc_ipress:
+          type: string
+          example: "HOSPITAL REBAGLIATI"
+          description: Enriquecido desde dim_ipress
+          nullable: true
+        id_admisionista_asignado:
+          type: integer
+          format: int64
+          nullable: true
+        fecha_asignacion_admisionista:
+          type: string
+          format: date-time
+          nullable: true
+        id_gestor_asignado:
+          type: integer
+          format: int64
+          nullable: true
+        fecha_asignacion_gestor:
+          type: string
+          format: date-time
+          nullable: true
+        observacion_gestion:
+          type: string
+          nullable: true
+
+    TipoBolsaDTO:
+      type: object
+      description: Tipo/categoría de bolsa
+      properties:
+        idTipoBolsa:
+          type: integer
+          format: int64
+          example: 1
+        codTipoBolsa:
+          type: string
+          example: "BOLSA_107"
+        descTipoBolsa:
+          type: string
+          example: "Bolsa 107 - Importación de pacientes masiva"
+        statTipoBolsa:
+          type: string
+          enum: [A, I]
+          example: "A"
+          description: A=Activo, I=Inactivo
+        createdAt:
+          type: string
+          format: date-time
+          example: "2026-01-22T15:40:46-05:00"
+        updatedAt:
+          type: string
+          format: date-time
+          example: "2026-01-22T15:40:46-05:00"
+
+    TipoBolsaRequest:
+      type: object
+      description: Request para crear/actualizar tipo de bolsa
+      required:
+        - codTipoBolsa
+        - descTipoBolsa
+      properties:
+        codTipoBolsa:
+          type: string
+          example: "BOLSA_PADOMI"
+          minLength: 3
+          maxLength: 50
+        descTipoBolsa:
+          type: string
+          example: "Pacientes derivados de PADOMI"
+          minLength: 10
+          maxLength: 255
+
+    # ========================================
+    # ERROR RESPONSES
+    # ========================================
+    ErrorResponse:
+      type: object
+      description: Estructura estándar de respuesta de error CENATE
+      properties:
+        status:
+          type: integer
+          example: 400
+        error:
+          type: string
+          example: "INVALID_REQUEST"
+          description: Código de error identificable
+        message:
+          type: string
+          example: "El campo 'idBolsa' es obligatorio"
+          description: Mensaje descriptivo del error
+        validationErrors:
+          type: object
+          additionalProperties:
+            type: string
+          example:
+            idBolsa: "El campo no puede estar vacío"
+            idServicio: "Debe ser un número positivo"
+          description: Errores de validación por campo (opcional)
+        timestamp:
+          type: string
+          format: date-time
+          example: "2026-01-27T10:30:00Z"
+
+  # ========================================
+  # RESPONSES REUTILIZABLES
+  # ========================================
+  responses:
+    UnauthorizedError:
+      description: Token JWT inválido, expirado o no proporcionado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 401
+            error: "UNAUTHORIZED"
+            message: "Token JWT inválido o expirado"
+            timestamp: "2026-01-27T10:30:00Z"
+
+    NotFoundError:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 404
+            error: "NOT_FOUND"
+            message: "Solicitud con ID 1523 no encontrada"
+            timestamp: "2026-01-27T10:30:00Z"
+
+    BadRequestError:
+      description: Request inválido o parámetros incorrectos
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: 400
+            error: "BAD_REQUEST"
+            message: "Parámetros inválidos en la solicitud"
+            timestamp: "2026-01-27T10:30:00Z"
+
+# ========================================
+# EJEMPLOS DE ERROR CODES
+# ========================================
+# 200 - OK: Operación exitosa
+# 201 - Created: Recurso creado exitosamente
+# 204 - No Content: Operación exitosa sin contenido de respuesta
+# 400 - Bad Request: Request inválido o parámetros incorrectos
+# 401 - Unauthorized: Sin autenticación o token inválido
+# 403 - Forbidden: Sin permisos MBAC para la operación
+# 404 - Not Found: Recurso no encontrado
+# 409 - Conflict: Conflicto de datos (ej: código duplicado)
+# 422 - Unprocessable Entity: Validación de negocio fallida
+# 500 - Internal Server Error: Error inesperado del servidor

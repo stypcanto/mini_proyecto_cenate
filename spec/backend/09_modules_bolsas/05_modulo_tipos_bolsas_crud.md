@@ -1,13 +1,11 @@
 # Módulo CRUD Tipos de Bolsas - Documentación Técnica
 
 > Sistema de gestión de catálogo de tipos/categorías de bolsas de pacientes
+> **Integrado con v1.12.0** - Soporta auto-detección inteligente de bolsas
 
 **Versión:** v1.1.0
-**Fecha:** 2026-01-22 (Actualización)
-**Commits:**
-- fff57d6 - "🏥 feat(tipos-bolsas): Implementación completa del módulo CRUD" (v1.0.0)
-- 0f673e9 - "🎨 ui(solicitudes): Aplicar Design System estándar CENATE v1.0.0" (v1.1.0)
-- 39c5257 - "🎨 ui(solicitudes): Optimización de espacio - Expandir tabla a ventana completa" (v1.1.0)
+**Última Actualización:** 2026-01-27 (integración con v1.12.0)
+**Status:** ✅ Production Ready
 
 ---
 
