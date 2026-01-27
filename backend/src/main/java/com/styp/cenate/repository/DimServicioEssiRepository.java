@@ -2,9 +2,8 @@ package com.styp.cenate.repository;
 
 import java.util.List;
 import java.util.Optional;
-
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
-
 import com.styp.cenate.model.DimServicioEssi;
 
 public interface DimServicioEssiRepository extends JpaRepository<DimServicioEssi, Long> {
@@ -23,7 +22,7 @@ public interface DimServicioEssiRepository extends JpaRepository<DimServicioEssi
 	Optional<DimServicioEssi> findByCodServicio(String codigoServicio);
 	
 	
-	
+	List<DimServicioEssi> findByEstadoAndEsCenateAndEsRequerimientoIpress(String estado, Boolean esCenate, Boolean esServicioIpress, Sort sort);
 	
 	
 	

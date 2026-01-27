@@ -54,10 +54,13 @@ public class DimServicioEssi {
 
 	@Column(name = "updated_at", columnDefinition = "timestamptz")
 	private OffsetDateTime updatedAt;
-	
+
 	@Column(name = "es_apertura_nuevos", nullable = false)
 	@Builder.Default
-	private Boolean esAperturaNuevos=false;
+	private Boolean esAperturaNuevos = false;
+
+	@Column(name = "es_requerimiento_ipress", nullable = false)
+	private Boolean esRequerimientoIpress;
 
 	@PrePersist
 	protected void onCreate() {
@@ -69,12 +72,9 @@ public class DimServicioEssi {
 	protected void onUpdate() {
 		this.updatedAt = OffsetDateTime.now();
 	}
-	
+
 	@OneToMany(mappedBy = "servicioEssi", fetch = FetchType.LAZY)
 	@Builder.Default
 	private Set<PersonalCnt> personal = new HashSet<>();
-	
-	
-	
 
 }
