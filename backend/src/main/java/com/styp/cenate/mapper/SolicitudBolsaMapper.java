@@ -10,10 +10,10 @@ import java.util.stream.Collectors;
 
 /**
  * Mapper para conversión entre SolicitudBolsa (Entity) y SolicitudBolsaDTO
- * Responsable de la generación del número de solicitud automático
- * 
- * @version v1.6.0
- * @since 2026-01-23
+ * Mapea todos los campos incluyendo los 10 campos de Excel v1.8.0
+ *
+ * @version v1.8.0 (Soporta campos Excel + v1.9.0 fechas cita/atención)
+ * @since 2026-01-26
  */
 public class SolicitudBolsaMapper {
 
@@ -34,6 +34,17 @@ public class SolicitudBolsaMapper {
                 .pacienteId(entity.getPacienteId())
                 .pacienteNombre(entity.getPacienteNombre())
                 .especialidad(entity.getEspecialidad())
+                // ===== CAMPOS EXCEL v1.8.0 =====
+                .fechaPreferidaNoAtendida(entity.getFechaPreferidaNoAtendida())
+                .tipoDocumento(entity.getTipoDocumento())
+                .fechaNacimiento(entity.getFechaNacimiento())
+                .pacienteSexo(entity.getPacienteSexo())
+                .pacienteTelefono(entity.getPacienteTelefono())
+                .pacienteEmail(entity.getPacienteEmail())
+                .pacienteEdad(entity.getPacienteEdad())
+                .codigoIpressAdscripcion(entity.getCodigoIpressAdscripcion())
+                .tipoCita(entity.getTipoCita())
+                // ===== BOLSA Y SERVICIO =====
                 .idBolsa(entity.getIdBolsa())
                 .codTipoBolsa(entity.getCodTipoBolsa())
                 .descTipoBolsa(entity.getDescTipoBolsa())
@@ -44,6 +55,7 @@ public class SolicitudBolsaMapper {
                 .idIpress(entity.getIdIpress())
                 .nombreIpress(entity.getNombreIpress())
                 .redAsistencial(entity.getRedAsistencial())
+                // ===== ESTADO =====
                 .estado(entity.getEstado())
                 .razonRechazo(entity.getRazonRechazo())
                 .notasAprobacion(entity.getNotasAprobacion())
@@ -51,14 +63,20 @@ public class SolicitudBolsaMapper {
                 .solicitanteNombre(entity.getSolicitanteNombre())
                 .responsableAprobacionId(entity.getResponsableAprobacionId())
                 .responsableAprobacionNombre(entity.getResponsableAprobacionNombre())
+                // ===== FECHAS =====
                 .fechaSolicitud(entity.getFechaSolicitud())
                 .fechaAprobacion(entity.getFechaAprobacion())
                 .fechaActualizacion(entity.getFechaActualizacion())
                 .responsableGestoraId(entity.getResponsableGestoraId())
                 .fechaAsignacion(entity.getFechaAsignacion())
+                // ===== FECHAS v1.9.0 =====
+                .fechaCita(entity.getFechaCita())
+                .fechaAtencion(entity.getFechaAtencion())
+                // ===== ESTADO CITAS =====
                 .estadoGestionCitasId(entity.getEstadoGestionCitasId())
                 .codEstadoCita(entity.getCodEstadoCita())
                 .descEstadoCita(entity.getDescEstadoCita())
+                // ===== AUDITORÍA =====
                 .activo(entity.getActivo())
                 .recordatorioEnviado(entity.getRecordatorioEnviado())
                 .build();
