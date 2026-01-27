@@ -1,604 +1,635 @@
 {
-  "info": {
-    "_postman_id": "95f610b7-17d9-4b91-aebf-9074ab7b1b42",
-    "name": "API_SOLICITUD_TURNOS",
-    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "_exporter_id": "21759398"
-  },
-  "item": [
-    {
-      "name": "CREAR_PERIODO",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n  \"periodo\": \"202601\",\r\n  \"descripcion\": \"Periodo Enero 2026\",\r\n  \"fechaInicio\": \"2026-01-01\",\r\n  \"fechaFin\": \"2026-01-31\",\r\n  \"instrucciones\": \"se activa enero\"\r\n}\r\n",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://localhost:8080/api/periodos-solicitud",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "periodos-solicitud"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "PERIODO_VIGENTES",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/periodos-solicitud/vigentes",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "periodos-solicitud",
-            "vigentes"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "MIS-SOLICITUDES-PERSONAL-EXTERNO",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/mis-solicitudes",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "mis-solicitudes"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "CONSULTAR SOLICITUD POR CODIGO SOLICITUD",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/99",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "99"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "CONSULTAR SOLICITUDES POR FILTRO",
-      "protocolProfileBehavior": {
-        "disableBodyPruning": true
-      },
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n  \"username\": \"70073164\",\r\n  \"password\": \"@Erick12345678\"\r\n}"
-        },
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/consultar",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "consultar"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "APROBAR",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/4/aprobar",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "4",
-            "aprobar"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "http://localhost:8080/api/solicitudes-turno/periodo/6/existe",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/periodo/6/existe",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "periodo",
-            "6",
-            "existe"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "PERIODO_ACTIVOS",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/periodos-solicitud/activos",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "periodos-solicitud",
-            "activos"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "CREAR_FECHAS_X_SOLICITUD_AND_ESPECIALIDAD",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "POST",
-        "header": [],
-        "body": {
-          "mode": "raw",
-          "raw": "{\r\n  \"idServicio\": 61,\r\n  \"requiere\": true,\r\n  \"turnos\": 6,\r\n  \"turnoTM\": 1,\r\n  \"turnoManana\": 2,\r\n  \"turnoTarde\": 3,\r\n  \"tc\": true,\r\n  \"tl\": true,\r\n  \"observacion\": \"Prueba desde Postman\",\r\n  \"estado\": \"PENDIENTE\",\r\n  \"fechasDetalle\": [\r\n    { \"fecha\": \"2026-01-21\", \"bloque\": \"MANANA\" },\r\n    { \"fecha\": \"2026-01-22\", \"bloque\": \"MANANA\" },\r\n    { \"fecha\": \"2026-01-21\", \"bloque\": \"TARDE\" },\r\n    { \"fecha\": \"2026-01-23\", \"bloque\": \"TARDE\" }\r\n  ]\r\n}\r\n",
-          "options": {
-            "raw": {
-              "language": "json"
-            }
-          }
-        },
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/22/detalle",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "22",
-            "detalle"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "OBTENER_FECHAS_X_DETALLE_SOLICITUD",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/detalle/177/fechas",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "detalle",
-            "177",
-            "fechas"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "CONSULTAR SOLICITUD POR CODIGO",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/99",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "99"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "ELIMINAR PERIODO",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "DELETE",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/periodos-solicitud/6",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "periodos-solicitud",
-            "6"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "PERIODO FILTRO",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/periodos-solicitud/filtros?estado=TODOS&anio=2026&page=0&size=10\n",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "periodos-solicitud",
-            "filtros"
-          ],
-          "query": [
-            {
-              "key": "estado",
-              "value": "TODOS"
-            },
-            {
-              "key": "anio",
-              "value": "2026"
-            },
-            {
-              "key": "page",
-              "value": "0"
-            },
-            {
-              "key": "size",
-              "value": "10\n"
-            }
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "http://localhost:8080/api/periodos-solicitud/anios",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/periodos-solicitud/anios",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "periodos-solicitud",
-            "anios"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "http://localhost:8080/api/ipress",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/ipress",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "ipress"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "ESPECIALIDADES ACTIVAS CENATE",
-      "request": {
-        "auth": {
-          "type": "noauth"
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/servicio-essi/activos-cenate",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "servicio-essi",
-            "activos-cenate"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "ESPECIALIDES CONFIGURADAS POR IPRESS",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/ipress/servicio-essi/002",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "ipress",
-            "servicio-essi",
-            "002"
-          ]
-        }
-      },
-      "response": []
-    },
-    {
-      "name": "OBTENER CHECKBOX DE TC-TL POR IPRESS Y/O SOLICITUD",
-      "request": {
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{token}}",
-              "type": "string"
-            }
-          ]
-        },
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "http://localhost:8080/api/solicitudes-turno/form-servicios?codIpress=739",
-          "protocol": "http",
-          "host": [
-            "localhost"
-          ],
-          "port": "8080",
-          "path": [
-            "api",
-            "solicitudes-turno",
-            "form-servicios"
-          ],
-          "query": [
-            {
-              "key": "codIpress",
-              "value": "739"
-            }
-          ]
-        }
-      },
-      "response": []
-    }
-  ]
+	"info": {
+		"_postman_id": "95f610b7-17d9-4b91-aebf-9074ab7b1b42",
+		"name": "API_SOLICITUD_TURNOS",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "21759398"
+	},
+	"item": [
+		{
+			"name": "CREAR_PERIODO",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"periodo\": \"202601\",\r\n  \"descripcion\": \"Periodo Enero 2026\",\r\n  \"fechaInicio\": \"2026-01-01\",\r\n  \"fechaFin\": \"2026-01-31\",\r\n  \"instrucciones\": \"se activa enero\"\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/periodos-solicitud",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"periodos-solicitud"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PERIODO_VIGENTES",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/periodos-solicitud/vigentes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"periodos-solicitud",
+						"vigentes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "MIS-SOLICITUDES-PERSONAL-EXTERNO",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/mis-solicitudes",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"mis-solicitudes"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CONSULTAR SOLICITUD POR CODIGO SOLICITUD",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/99",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"99"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CONSULTAR SOLICITUDES POR FILTRO",
+			"protocolProfileBehavior": {
+				"disableBodyPruning": true
+			},
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"username\": \"70073164\",\r\n  \"password\": \"@Erick12345678\"\r\n}"
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/consultar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"consultar"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "APROBAR",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/4/aprobar",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"4",
+						"aprobar"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8080/api/solicitudes-turno/periodo/6/existe",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/periodo/6/existe",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"periodo",
+						"6",
+						"existe"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PERIODO_ACTIVOS",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/periodos-solicitud/activos",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"periodos-solicitud",
+						"activos"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CREAR_FECHAS_X_SOLICITUD_AND_ESPECIALIDAD",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"idServicio\": 61,\r\n  \"requiere\": true,\r\n  \"turnos\": 6,\r\n  \"turnoTM\": 1,\r\n  \"turnoManana\": 2,\r\n  \"turnoTarde\": 3,\r\n  \"tc\": true,\r\n  \"tl\": true,\r\n  \"observacion\": \"Prueba desde Postman\",\r\n  \"estado\": \"PENDIENTE\",\r\n  \"fechasDetalle\": [\r\n    { \"fecha\": \"2026-01-21\", \"bloque\": \"MANANA\" },\r\n    { \"fecha\": \"2026-01-22\", \"bloque\": \"MANANA\" },\r\n    { \"fecha\": \"2026-01-21\", \"bloque\": \"TARDE\" },\r\n    { \"fecha\": \"2026-01-23\", \"bloque\": \"TARDE\" }\r\n  ]\r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/22/detalle",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"22",
+						"detalle"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "OBTENER_FECHAS_X_DETALLE_SOLICITUD",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/detalle/177/fechas",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"detalle",
+						"177",
+						"fechas"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "CONSULTAR SOLICITUD POR CODIGO",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/99",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"99"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ELIMINAR PERIODO",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/periodos-solicitud/6",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"periodos-solicitud",
+						"6"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "PERIODO FILTRO",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/periodos-solicitud/filtros?estado=TODOS&anio=2026&page=0&size=10\n",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"periodos-solicitud",
+						"filtros"
+					],
+					"query": [
+						{
+							"key": "estado",
+							"value": "TODOS"
+						},
+						{
+							"key": "anio",
+							"value": "2026"
+						},
+						{
+							"key": "page",
+							"value": "0"
+						},
+						{
+							"key": "size",
+							"value": "10\n"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8080/api/periodos-solicitud/anios",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/periodos-solicitud/anios",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"periodos-solicitud",
+						"anios"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "http://localhost:8080/api/ipress",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/ipress",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"ipress"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ESPECIALIDADES ACTIVAS CENATE",
+			"request": {
+				"auth": {
+					"type": "noauth"
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/servicio-essi/activos-cenate",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"servicio-essi",
+						"activos-cenate"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "ESPECIALIDES CONFIGURADAS POR IPRESS",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/ipress/servicio-essi/002",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"ipress",
+						"servicio-essi",
+						"002"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "OBTENER CHECKBOX DE TC-TL POR IPRESS Y/O SOLICITUD",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/solicitudes-turno/form-servicios?codIpress=739",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"solicitudes-turno",
+						"form-servicios"
+					],
+					"query": [
+						{
+							"key": "codIpress",
+							"value": "739"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "OBTENCION DE SERVICIOS CENATE",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/servicio-essi/activos-cenate-ipress",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"servicio-essi",
+						"activos-cenate-ipress"
+					]
+				}
+			},
+			"response": []
+		}
+	]
 }
