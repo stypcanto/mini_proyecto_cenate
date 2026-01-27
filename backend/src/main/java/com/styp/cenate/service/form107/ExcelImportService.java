@@ -397,8 +397,6 @@ public class ExcelImportService {
 			List<String> actualColumns = readHeader(headerRow);
 			validateHeaderStrict(actualColumns);
 
-			Map<String, Integer> idx = buildColumnIndex(actualColumns);
-
 			int filasTotal = 0;
 			int filasOk = 0;
 			int filasError = 0;
@@ -416,16 +414,16 @@ public class ExcelImportService {
 				filasTotal++;
 
 				// Mapear columnas del Excel v1.8.0 a campos de staging
-				String fechaPreferida = cellDateStr(row, idx.getOrDefault(n("FECHA PREFERIDA QUE NO FUE ATENDIDA"), -1));
-				String tipoDocumento = cellStr(row, idx.getOrDefault(n("TIPO DOCUMENTO"), -1));
-				String numeroDocumento = cellStr(row, idx.getOrDefault(n("DNI"), -1));
-				String apellidos = cellStr(row, idx.getOrDefault(n("ASEGURADO"), -1));
-				String sexo = cellStr(row, idx.getOrDefault(n("SEXO"), -1));
-				String fechaNac = cellDateStr(row, idx.getOrDefault(n("FECHA DE NACIMIENTO"), -1));
-				String telefono = cellStr(row, idx.getOrDefault(n("TELÉFONO"), -1));
-				String correo = cellStr(row, idx.getOrDefault(n("CORREO"), -1));
-				String codigoIpress = cellStr(row, idx.getOrDefault(n("COD. IPRESS ADSCRIPCIÓN"), -1));
-				String tipoCita = cellStr(row, idx.getOrDefault(n("TIPO CITA"), -1));
+				String fechaPreferida = cellDateStr(row, 0);      // Columna 0
+				String tipoDocumento = cellStr(row, 1);          // Columna 1
+				String numeroDocumento = cellStr(row, 2);        // Columna 2
+				String apellidos = cellStr(row, 3);              // Columna 3
+				String sexo = cellStr(row, 4);                   // Columna 4
+				String fechaNac = cellDateStr(row, 5);           // Columna 5
+				String telefono = cellStr(row, 6);               // Columna 6
+				String correo = cellStr(row, 7);                 // Columna 7
+				String codigoIpress = cellStr(row, 8);           // Columna 8
+				String tipoCita = cellStr(row, 9);               // Columna 9
 
 				// Campos no disponibles en v1.8.0 (se dejan vacíos)
 				String registro = "";
