@@ -5,7 +5,7 @@ import bolsasService from '../../services/bolsasService';
 import * as XLSX from 'xlsx';
 
 /**
- * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.11.0 (AUTO-DETECCIÓN INTELIGENTE)
+ * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.13.8 (AUTO-DETECCIÓN INTELIGENTE + AUTO-CREACIÓN ASEGURADOS)
  * Permitir carga masiva de bolsas desde archivos Excel/CSV con estructura completa y validación inteligente
  *
  * 🧠 INTELIGENCIA COMPLETA:
@@ -38,16 +38,18 @@ import * as XLSX from 'xlsx';
  *
  * 4️⃣ ESTRUCTURA
  *    - 10 campos en ORDEN FIJO (posiciones no cambian)
- *    - Columna 0: FECHA PREFERIDA (YYYY-MM-DD)
- *    - Columna 1: TIPO DOCUMENTO (DNI, RUC, etc.)
- *    - Columna 2: DNI (8 dígitos)
- *    - Columna 3: ASEGURADO (nombre)
- *    - Columna 4: SEXO (M/F)
- *    - Columna 5: FECHA NACIMIENTO (YYYY-MM-DD)
- *    - Columna 6: TELÉFONO (números)
- *    - Columna 7: CORREO (email)
- *    - Columna 8: COD. IPRESS (números)
- *    - Columna 9: TIPO CITA (Recita, Interconsulta, Voluntaria)
+ *    - Columna 0: FECHA PREFERIDA (YYYY-MM-DD) [OBLIGATORIO]
+ *    - Columna 1: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
+ *    - Columna 2: DNI (8 dígitos) [OBLIGATORIO]
+ *    - Columna 3: ASEGURADO (nombre) [OBLIGATORIO]
+ *    - Columna 4: SEXO (M/F) [OPCIONAL - se llena desde BD si falta]
+ *    - Columna 5: FECHA NACIMIENTO (YYYY-MM-DD) [OPCIONAL - se llena desde BD si falta]
+ *    - Columna 6: TELÉFONO (números) [OPCIONAL - se llena desde BD si falta]
+ *    - Columna 7: CORREO (email) [OPCIONAL - se llena desde BD si falta]
+ *    - Columna 8: COD. IPRESS (números) [OBLIGATORIO]
+ *    - Columna 9: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
+ *
+ *    💡 IMPORTANTE: Si el Asegurado (DNI) no existe en el sistema, será creado automáticamente (v1.13.8)
  *
  * Características adicionales:
  * - Descarga de plantilla Excel de ejemplo
@@ -55,6 +57,9 @@ import * as XLSX from 'xlsx';
  * - Validaciones en tiempo real (antes de enviar al servidor)
  * - Integración con dim_estados_gestion_citas (PENDIENTE_CITA inicial)
  * - Inteligencia fuzzy matching para auto-detección mejorada
+ * - AUTO-CREACIÓN de Asegurados (v1.13.8) si no existen en el sistema
+ * - Enriquecimiento automático desde dim_asegurados (teléfono, correo, sexo)
+ * - Datos opcionales se completan desde BD si faltan en Excel
  */
 export default function CargarDesdeExcel() {
   const navigate = useNavigate();
@@ -88,17 +93,17 @@ export default function CargarDesdeExcel() {
      * Valida si un archivo Excel tiene la estructura correcta para bolsas.
      * Analiza el contenido de las columnas para detectar tipos de datos.
      *
-     * Estructura esperada v1.8.0: 10 columnas en este orden:
-     * 0: FECHA PREFERIDA (YYYY-MM-DD)
-     * 1: TIPO DOCUMENTO (DNI, RUC, etc.)
-     * 2: DNI (8 dígitos)
-     * 3: ASEGURADO (texto)
-     * 4: SEXO (M/F)
-     * 5: FECHA NACIMIENTO (YYYY-MM-DD)
-     * 6: TELÉFONO (números)
-     * 7: CORREO (email)
-     * 8: COD. IPRESS (números)
-     * 9: TIPO CITA (Recita, Interconsulta, Voluntaria)
+     * Estructura esperada v1.13.8: 10 columnas en este orden:
+     * 0: FECHA PREFERIDA (YYYY-MM-DD) [OBLIGATORIO]
+     * 1: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
+     * 2: DNI (8 dígitos) [OBLIGATORIO]
+     * 3: ASEGURADO (texto) [OBLIGATORIO]
+     * 4: SEXO (M/F) [OPCIONAL]
+     * 5: FECHA NACIMIENTO (YYYY-MM-DD) [OPCIONAL]
+     * 6: TELÉFONO (números) [OPCIONAL]
+     * 7: CORREO (email) [OPCIONAL]
+     * 8: COD. IPRESS (números) [OBLIGATORIO]
+     * 9: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
      */
 
     if (!listaData || listaData.length === 0) {
@@ -908,12 +913,12 @@ export default function CargarDesdeExcel() {
                     <p className="text-xs text-amber-600 mt-1">Formato: YYYY-MM-DD | Ej: 1980-05-20 - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
-                <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
+                <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">📱</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">7. TELÉFONO</p>
+                    <p className="font-semibold text-gray-800">7. TELÉFONO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
                     <p className="text-sm text-gray-600">Número de teléfono de contacto</p>
-                    <p className="text-xs text-blue-600 mt-1">Ej: 987654321</p>
+                    <p className="text-xs text-amber-600 mt-1">Ej: 987654321 - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
@@ -1007,23 +1012,23 @@ export default function CargarDesdeExcel() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">Máximo 10,000 registros</span>
+                  <span className="text-gray-700">Máximo 10,000 registros por archivo</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">Primera fila = encabezados</span>
+                  <span className="text-gray-700">10 columnas en el ORDEN correcto (headers opcionales)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">10 campos obligatorios completados</span>
+                  <span className="text-gray-700">Campos OBLIGATORIOS: Tipo Doc, DNI, Nombre, IPRESS, Tipo Cita</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">DNI: 8 dígitos exactos</span>
+                  <span className="text-gray-700">Campos OPCIONALES: Sexo, Fecha Nac, Teléfono, Correo (se rellenan desde BD)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">TIPO CITA: Recita, Interconsulta o Voluntaria</span>
+                  <span className="text-gray-700">Asegurados no existentes: se crean automáticamente ✨</span>
                 </li>
               </ul>
               </div>
@@ -1291,13 +1296,18 @@ export default function CargarDesdeExcel() {
         <div className="bg-indigo-50 rounded-xl shadow-lg p-6 border-l-4 border-indigo-600 mb-6">
           <h3 className="font-bold text-indigo-900 mb-3 flex items-center gap-2">
             <Info size={20} />
-            Estado Inicial de la Solicitud
+            Estado Inicial de Solicitud y Asegurados Creados
           </h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
             <div className="bg-white p-4 rounded-lg border border-indigo-200">
               <p className="font-semibold text-gray-800">Estado de Cita:</p>
               <p className="text-indigo-700 font-bold text-lg">PENDIENTE_CITA</p>
               <p className="text-xs text-gray-600 mt-1">Solicitud pendiente de asignación a gestor</p>
+            </div>
+            <div className="bg-white p-4 rounded-lg border border-indigo-200">
+              <p className="font-semibold text-gray-800">Asegurados Creados:</p>
+              <p className="text-indigo-700 font-bold text-lg">EXTERNO</p>
+              <p className="text-xs text-gray-600 mt-1">Tipo de paciente = EXTERNO (origen: Excel)</p>
             </div>
             <div className="bg-white p-4 rounded-lg border border-indigo-200">
               <p className="font-semibold text-gray-800">Próximo Paso:</p>
@@ -1348,8 +1358,8 @@ export default function CargarDesdeExcel() {
                 <p className="text-gray-600 mt-1">Usa uno de estos tres valores: <strong>Recita</strong>, <strong>Interconsulta</strong> o <strong>Voluntaria</strong>. El sistema es sensible a mayúsculas.</p>
               </div>
               <div className="border-b pb-4">
-                <p className="font-semibold text-gray-800">¿Qué pasa si el DNI o Código Adscripción no existen?</p>
-                <p className="text-gray-600 mt-1">El registro será rechazado con un mensaje de error indicando el problema específico para que puedas corregirlo.</p>
+                <p className="font-semibold text-gray-800">¿Qué pasa si el Asegurado (DNI) no existe en el sistema?</p>
+                <p className="text-gray-600 mt-1">✅ <strong>Buena noticia:</strong> El asegurado será creado automáticamente con los datos del Excel (DNI, nombre, sexo, fecha nacimiento, teléfono, correo). No necesitas crear la persona manualmente en el sistema.</p>
               </div>
               <div className="border-b pb-4">
                 <p className="font-semibold text-gray-800">¿Se pueden importar registros duplicados?</p>
@@ -1357,7 +1367,7 @@ export default function CargarDesdeExcel() {
               </div>
               <div>
                 <p className="font-semibold text-gray-800">¿Debo llenar todos los 10 campos?</p>
-                <p className="text-gray-600 mt-1">Sí. Todos los 10 campos son obligatorios. Descarga la plantilla para ver la estructura exacta que espera el sistema.</p>
+                <p className="text-gray-600 mt-1">NO. Solo los campos OBLIGATORIOS: Tipo Documento, DNI, Nombre, Código IPRESS, Tipo Cita. Los demás (Sexo, Fecha Nac, Teléfono, Correo) son OPCIONALES. Si faltan datos opcionales, el sistema los completa automáticamente usando los datos del DNI en la base de datos.</p>
               </div>
             </div>
           </div>
