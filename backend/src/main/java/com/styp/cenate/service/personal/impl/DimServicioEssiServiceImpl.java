@@ -2,6 +2,7 @@ package com.styp.cenate.service.personal.impl;
 
 import java.util.List;
 
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,7 +77,6 @@ public class DimServicioEssiServiceImpl implements DimServicioEssiService {
 	// ============================================================
 	// BUSQUEDA POR COD SERVICIO
 	// ============================================================
-
 	@Override
 	@Transactional(readOnly = true)
 	public DimServicioEssiDTO findByCodServicio(String codigoServicio) {
@@ -85,11 +85,9 @@ public class DimServicioEssiServiceImpl implements DimServicioEssiService {
 
 		return DimServicioEssiMapper.toDto(entity);
 	}
-
 	// ============================================================
 	// CRUD BÁSICO
 	// ============================================================
-
 	@Override
 	@Transactional(readOnly = true)
 	public DimServicioEssiDTO buscarPorId(Long id) {
@@ -129,5 +127,15 @@ public class DimServicioEssiServiceImpl implements DimServicioEssiService {
 			throw new ResourceNotFoundException("Servicio ESSI no encontrado");
 		}
 		repositorio.deleteById(id);
+	}
+
+	@Override
+	public List<DimServicioEssiDTO> listarActivosCenateAndSolicitudIpress() {
+		var orden = Sort.by(Sort.Direction.ASC, "descServicio");
+		
+		var listado =repositorio.findByEstadoAndEsCenateAndEsRequerimientoIpress("A", true, true, orden)
+				.stream().map(DimServicioEssiMapper::toDto).toList();
+		
+		return listado;
 	}
 }

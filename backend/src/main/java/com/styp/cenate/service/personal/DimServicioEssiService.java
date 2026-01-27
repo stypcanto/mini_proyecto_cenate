@@ -21,8 +21,7 @@ public interface DimServicioEssiService {
     DimServicioEssiDTO actualizar(Long id, DimServicioEssiDTO dto);
     void eliminar(Long id);
     
-    
-    
+    List<DimServicioEssiDTO> listarActivosCenateAndSolicitudIpress();
 	
 
 }

@@ -238,7 +238,7 @@ export default function ListadoIpress() {
     setLoadingEspecialidades(true);
     try {
       // 1. Primero cargar TODAS las especialidades disponibles de CENATE
-      const disponibles = await apiClient.get('/servicio-essi/activos-cenate');
+      const disponibles = await apiClient.get('/servicio-essi/activos-cenate-ipress');
       setEspecialidadesDisponibles(disponibles || []);
 
       if (!disponibles || disponibles.length === 0) {
