@@ -85,6 +85,10 @@ export default function Solicitudes() {
   const [modalAseguradosSincronizados, setModalAseguradosSincronizados] = useState(false);
   const [aseguradosSincronizados, setAseguradosSincronizados] = useState([]);
 
+  // Estado para modal de confirmación de borrado
+  const [modalConfirmarBorrado, setModalConfirmarBorrado] = useState(false);
+  const [cantidadABorrar, setCantidadABorrar] = useState(0);
+
   // ============================================================================
   // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
   // ============================================================================
@@ -287,6 +291,72 @@ export default function Solicitudes() {
     const hoy = new Date();
     const diferencia = Math.floor((hoy - fecha) / (1000 * 60 * 60 * 24));
     return Math.max(0, diferencia);
+  };
+
+  // ============================================================================
+  // 🗑️ FUNCIÓN: Borrar solicitudes seleccionadas
+  // ============================================================================
+  const borrarSolicitudesSeleccionadas = async () => {
+    const idsSeleccionados = Array.from(selectedRows);
+
+    if (idsSeleccionados.length === 0) {
+      setErrorMessage('No hay solicitudes seleccionadas para borrar');
+      return;
+    }
+
+    setModalConfirmarBorrado(false);
+    setIsLoading(true);
+    setErrorMessage('');
+
+    try {
+      console.log('🗑️ Borrando solicitudes:', idsSeleccionados);
+
+      // Llamar al endpoint de borrado
+      const response = await fetch('http://localhost:8080/api/bolsas/solicitudes/borrar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          ids: idsSeleccionados
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.mensaje || `Error ${response.status}: No se pudieron borrar las solicitudes`);
+      }
+
+      const resultado = await response.json();
+      console.log('✅ Resultado del borrado:', resultado);
+
+      // Mostrar éxito
+      setImportStatus({
+        type: 'success',
+        message: `✅ Se borraron ${idsSeleccionados.length} solicitud(es) correctamente`,
+        showModal: true
+      });
+
+      // Limpiar selección
+      setSelectedRows(new Set());
+
+      // Recargar solicitudes (sin catálogos, más rápido)
+      setTimeout(() => {
+        cargarSolicitudes();
+      }, 1500);
+
+    } catch (error) {
+      console.error('❌ Error borrando solicitudes:', error);
+      setErrorMessage(`❌ Error al borrar: ${error.message}`);
+      setImportStatus({
+        type: 'error',
+        message: `❌ Error al borrar solicitudes: ${error.message}`,
+        showModal: true
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Verificar si hay asegurados nuevos detectados (no sincronizados)
@@ -719,15 +789,26 @@ export default function Solicitudes() {
             ]}
           />
 
-          {/* Botón para descargar selección */}
+          {/* Botones para descargar y borrar selección */}
           {selectedRows.size > 0 && (
-            <div className="mb-4 flex justify-end">
+            <div className="mb-4 flex justify-end gap-3">
               <button
                 onClick={descargarSeleccion}
                 className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
               >
                 <Download size={22} className="font-bold" />
                 Descargar Selección ({selectedRows.size})
+              </button>
+
+              <button
+                onClick={() => {
+                  setCantidadABorrar(selectedRows.size);
+                  setModalConfirmarBorrado(true);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
+              >
+                <AlertCircle size={22} className="font-bold" />
+                Borrar Selección ({selectedRows.size})
               </button>
             </div>
           )}
@@ -1343,6 +1424,60 @@ export default function Solicitudes() {
                     Actualizar Tabla
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 🗑️ MODAL: Confirmación de Borrado */}
+        {modalConfirmarBorrado && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border-4 border-red-500">
+              {/* Icono */}
+              <div className="text-6xl mb-4 text-center text-red-500">⚠️</div>
+
+              {/* Título */}
+              <h2 className="text-2xl font-bold text-center mb-4 text-red-700">
+                Confirmar Borrado
+              </h2>
+
+              {/* Mensaje */}
+              <p className="text-center text-gray-700 mb-6 text-lg">
+                ¿Está seguro de que desea borrar <strong>{cantidadABorrar}</strong> solicitud(es)?
+              </p>
+
+              {/* Advertencia */}
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-sm text-red-800">
+                  <strong>⚠️ Atención:</strong> Esta acción no se puede deshacer. Los datos serán eliminados permanentemente de la base de datos.
+                </p>
+              </div>
+
+              {/* Botones */}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setModalConfirmarBorrado(false)}
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg text-gray-700 font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={borrarSolicitudesSeleccionadas}
+                  disabled={isLoading}
+                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {isLoading ? (
+                    <>
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      Borrando...
+                    </>
+                  ) : (
+                    <>
+                      🗑️ Sí, Borrar
+                    </>
+                  )}
+                </button>
               </div>
             </div>
           </div>

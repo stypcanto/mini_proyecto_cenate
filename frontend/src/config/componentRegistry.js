@@ -470,6 +470,11 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/bolsas/GestionBolsasPacientes')),
     requiredAction: 'ver',
   },
+
+  '/bolsas/gestion': {
+    component: lazy(() => import('../pages/bolsas/GestionBolsas')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================

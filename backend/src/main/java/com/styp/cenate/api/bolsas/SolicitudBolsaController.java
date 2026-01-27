@@ -215,4 +215,42 @@ public class SolicitudBolsaController {
             );
         }
     }
+
+    /**
+     * Elimina múltiples solicitudes (soft delete en lote)
+     * POST /api/bolsas/solicitudes/borrar
+     *
+     * @param payload Map con lista de IDs: {"ids": [1, 2, 3]}
+     * @return estadísticas de borrado
+     */
+    @PostMapping("/borrar")
+    public ResponseEntity<?> borrarMultiples(@RequestBody Map<String, Object> payload) {
+        try {
+            @SuppressWarnings("unchecked")
+            List<Long> ids = (List<Long>) payload.get("ids");
+
+            if (ids == null || ids.isEmpty()) {
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "No se proporcionaron IDs para borrar")
+                );
+            }
+
+            log.info("🗑️ Eliminando {} solicitudes: {}", ids.size(), ids);
+            int totalBorrados = solicitudBolsaService.eliminarMultiples(ids);
+
+            log.info("✅ {} solicitudes eliminadas exitosamente", totalBorrados);
+
+            return ResponseEntity.ok(Map.of(
+                "mensaje", totalBorrados + " solicitud(es) eliminada(s) exitosamente",
+                "totalBorrados", totalBorrados,
+                "ids", ids
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error al eliminar solicitudes: ", e);
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "Error: " + e.getMessage())
+            );
+        }
+    }
 }

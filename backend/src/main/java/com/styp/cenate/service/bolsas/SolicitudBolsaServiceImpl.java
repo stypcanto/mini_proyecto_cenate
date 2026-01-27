@@ -352,6 +352,38 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     @Override
+    @Transactional
+    public int eliminarMultiples(List<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            log.warn("Lista vacía de IDs para eliminar");
+            return 0;
+        }
+
+        log.info("🗑️ Eliminando {} solicitudes", ids.size());
+
+        int totalBorrados = 0;
+        for (Long id : ids) {
+            try {
+                Optional<SolicitudBolsa> solicitud = solicitudRepository.findById(id);
+                if (solicitud.isPresent()) {
+                    SolicitudBolsa sol = solicitud.get();
+                    sol.setActivo(false);
+                    solicitudRepository.save(sol);
+                    totalBorrados++;
+                    log.debug("✓ Solicitud {} eliminada", id);
+                } else {
+                    log.warn("⚠️ Solicitud {} no encontrada", id);
+                }
+            } catch (Exception e) {
+                log.error("❌ Error eliminando solicitud {}: {}", id, e.getMessage());
+            }
+        }
+
+        log.info("✅ {} solicitudes eliminadas exitosamente", totalBorrados);
+        return totalBorrados;
+    }
+
+    @Override
     public List<Map<String, Object>> obtenerAseguradosNuevos() {
         log.info("Buscando asegurados nuevos detectados...");
 

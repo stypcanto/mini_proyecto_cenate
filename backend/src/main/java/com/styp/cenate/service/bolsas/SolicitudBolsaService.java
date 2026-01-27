@@ -59,6 +59,13 @@ public interface SolicitudBolsaService {
     void eliminar(Long idSolicitud);
 
     /**
+     * Elimina lógicamente múltiples solicitudes (soft delete en lote)
+     * @param ids lista de IDs de solicitudes a eliminar
+     * @return cantidad de solicitudes eliminadas
+     */
+    int eliminarMultiples(List<Long> ids);
+
+    /**
      * Obtiene asegurados nuevos detectados (que no existen en tabla asegurados)
      * Busca solicitudes con nombre "Paciente DNI" e identifica los DNIs faltantes
      */
