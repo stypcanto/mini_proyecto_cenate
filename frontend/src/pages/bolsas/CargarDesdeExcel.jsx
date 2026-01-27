@@ -358,18 +358,19 @@ export default function CargarDesdeExcel() {
 
   // Obtener datos del usuario y tipos de bolsas en el montaje
   useEffect(() => {
-    // Obtener usuario
+    // Obtener usuario desde localStorage
     const userStr = localStorage.getItem('user');
     if (userStr) {
       try {
         const user = JSON.parse(userStr);
+        console.log('👤 Usuario de localStorage:', user);
         setUsuario(user);
       } catch (e) {
         console.error('Error al parsear usuario:', e);
         setUsuario({ username: 'admin', id: 1 });
       }
     } else {
-      // Si no hay usuario en localStorage, usar usuario por defecto
+      console.warn('⚠️ No se encontró usuario autenticado');
       setUsuario({ username: 'admin', id: 1 });
     }
 
@@ -547,13 +548,24 @@ export default function CargarDesdeExcel() {
       formData.append('file', file);
       formData.append('idBolsa', tipoBolesaId);
       formData.append('idServicio', idServicio);
-      formData.append('usuarioCarga', usuario.username || 'admin');
+
+      // Obtener el nombre del usuario - intentar múltiples propiedades
+      const nombreUsuario = usuario.username ||
+                           usuario.nombre ||
+                           usuario.nombreCompleto ||
+                           usuario.nombreUsuario ||
+                           usuario.name ||
+                           usuario.displayName ||
+                           'admin';
+
+      formData.append('usuarioCarga', nombreUsuario);
 
       console.log('📤 Enviando importación:', {
         archivo: file.name,
         idBolsa: tipoBolesaId,
         idServicio: idServicio,
-        usuarioCarga: usuario.username,
+        usuarioCarga: nombreUsuario,
+        usuarioObj: usuario,
         tamaño: file.size
       });
 
