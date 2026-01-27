@@ -609,6 +609,7 @@ export default function CargarDesdeExcel() {
         rowsProcessed: resultado.filasOk,
         totalRows: resultado.filasOk + resultado.filasError,
         failedRows: resultado.filasError,
+        aseguradosCreados: resultado.aseguradosCreados || [], // 🆕 v1.13.8: Lista de asegurados auto-creados
         showModal: true  // Mostrar modal
       });
 
@@ -778,6 +779,24 @@ export default function CargarDesdeExcel() {
                   <span className="text-red-600 text-xl font-bold">{importStatus.failedRows}</span>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Asegurados Creados (v1.13.8) */}
+          {isSuccess && importStatus.aseguradosCreados && importStatus.aseguradosCreados.length > 0 && (
+            <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200 max-h-48 overflow-y-auto">
+              <h3 className="font-bold text-blue-900 mb-3 flex items-center gap-2">
+                <span>👤</span>
+                Pacientes Creados ({importStatus.aseguradosCreados.length})
+              </h3>
+              <ul className="space-y-2 text-sm">
+                {importStatus.aseguradosCreados.map((asegurado, idx) => (
+                  <li key={idx} className="bg-white p-2 rounded border-l-4 border-blue-400">
+                    <div className="font-semibold text-gray-800">{asegurado.nombre}</div>
+                    <div className="text-xs text-gray-600">DNI: {asegurado.dni}</div>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
