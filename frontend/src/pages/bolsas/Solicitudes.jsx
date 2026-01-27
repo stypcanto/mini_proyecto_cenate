@@ -89,6 +89,7 @@ export default function Solicitudes() {
   // Estado para modal de confirmación de borrado
   const [modalConfirmarBorrado, setModalConfirmarBorrado] = useState(false);
   const [cantidadABorrar, setCantidadABorrar] = useState(0);
+  const [seleccionarTodas, setSeleccionarTodas] = useState(false);
 
   // ============================================================================
   // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
@@ -295,10 +296,21 @@ export default function Solicitudes() {
   };
 
   // ============================================================================
-  // 🗑️ FUNCIÓN: Borrar solicitudes seleccionadas
+  // 🗑️ FUNCIÓN: Borrar solicitudes seleccionadas O TODAS
   // ============================================================================
   const borrarSolicitudesSeleccionadas = async () => {
-    const idsSeleccionados = Array.from(selectedRows);
+    // Determinar qué IDs borrar: todos o solo seleccionados
+    let idsSeleccionados = [];
+
+    if (seleccionarTodas) {
+      // Borrar TODAS las solicitudes filtradas (todas las páginas)
+      idsSeleccionados = solicitudesFiltradas.map(s => s.id);
+      console.log(`🗑️ Borrado MASIVO: Todas ${idsSeleccionados.length} solicitudes`);
+    } else {
+      // Borrar solo los seleccionados en los checkboxes
+      idsSeleccionados = Array.from(selectedRows);
+      console.log(`🗑️ Borrado selectivo: ${idsSeleccionados.length} solicitudes seleccionadas`);
+    }
 
     if (idsSeleccionados.length === 0) {
       setErrorMessage('No hay solicitudes seleccionadas para borrar');
@@ -341,6 +353,7 @@ export default function Solicitudes() {
 
       // Limpiar selección
       setSelectedRows(new Set());
+      setSeleccionarTodas(false);
 
       // Recargar solicitudes (sin catálogos, más rápido)
       setTimeout(() => {
@@ -790,27 +803,76 @@ export default function Solicitudes() {
             ]}
           />
 
-          {/* Botones para descargar y borrar selección */}
-          {selectedRows.size > 0 && (
-            <div className="mb-4 flex justify-end gap-3">
-              <button
-                onClick={descargarSeleccion}
-                className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
-              >
-                <Download size={22} className="font-bold" />
-                Descargar Selección ({selectedRows.size})
-              </button>
+          {/* Botones para descargar y borrar selección O TODAS */}
+          {(selectedRows.size > 0 || solicitudesFiltradas.length > 0) && (
+            <div className="mb-4">
+              {/* Botón para seleccionar TODAS */}
+              {!seleccionarTodas && solicitudesFiltradas.length > selectedRows.size && (
+                <div className="mb-3 p-3 bg-blue-50 border border-blue-300 rounded-lg flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-blue-900 font-semibold">
+                      📌 Tienes {solicitudesFiltradas.length} solicitudes totales (aplicando filtros)
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Actualmente seleccionadas: {selectedRows.size}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => {
+                      setSeleccionarTodas(true);
+                      setCantidadABorrar(solicitudesFiltradas.length);
+                    }}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
+                  >
+                    Seleccionar TODAS
+                  </button>
+                </div>
+              )}
 
-              <button
-                onClick={() => {
-                  setCantidadABorrar(selectedRows.size);
-                  setModalConfirmarBorrado(true);
-                }}
-                className="flex items-center gap-2 px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
-              >
-                <AlertCircle size={22} className="font-bold" />
-                Borrar Selección ({selectedRows.size})
-              </button>
+              {/* Botones de acción: descargar y borrar */}
+              <div className="flex justify-end gap-3">
+                {selectedRows.size > 0 && !seleccionarTodas && (
+                  <button
+                    onClick={descargarSeleccion}
+                    className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
+                  >
+                    <Download size={22} className="font-bold" />
+                    Descargar Selección ({selectedRows.size})
+                  </button>
+                )}
+
+                {(selectedRows.size > 0 || seleccionarTodas) && (
+                  <>
+                    {seleccionarTodas && (
+                      <button
+                        onClick={() => {
+                          setSeleccionarTodas(false);
+                          setSelectedRows(new Set());
+                        }}
+                        className="px-4 py-3 border-2 border-gray-400 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                      >
+                        ❌ Deseleccionar TODAS
+                      </button>
+                    )}
+
+                    <button
+                      onClick={() => {
+                        const cantidad = seleccionarTodas ? solicitudesFiltradas.length : selectedRows.size;
+                        setCantidadABorrar(cantidad);
+                        setModalConfirmarBorrado(true);
+                      }}
+                      className={`flex items-center gap-2 px-6 py-3 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl ${
+                        seleccionarTodas
+                          ? 'bg-red-700 hover:bg-red-800'
+                          : 'bg-red-600 hover:bg-red-700'
+                      }`}
+                    >
+                      <AlertCircle size={22} className="font-bold" />
+                      Borrar {seleccionarTodas ? `TODAS (${solicitudesFiltradas.length})` : `Selección (${selectedRows.size})`}
+                    </button>
+                  </>
+                )}
+              </div>
             </div>
           )}
 
@@ -1433,25 +1495,42 @@ export default function Solicitudes() {
         {/* 🗑️ MODAL: Confirmación de Borrado */}
         {modalConfirmarBorrado && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border-4 border-red-500">
+            <div className={`bg-white rounded-2xl shadow-2xl max-w-md w-full p-8 border-4 ${seleccionarTodas ? 'border-red-700' : 'border-red-500'}`}>
               {/* Icono */}
               <div className="text-6xl mb-4 text-center text-red-500">⚠️</div>
 
               {/* Título */}
               <h2 className="text-2xl font-bold text-center mb-4 text-red-700">
-                Confirmar Borrado
+                {seleccionarTodas ? '🔴 BORRADO MASIVO' : 'Confirmar Borrado'}
               </h2>
 
               {/* Mensaje */}
               <p className="text-center text-gray-700 mb-6 text-lg">
-                ¿Está seguro de que desea borrar <strong>{cantidadABorrar}</strong> solicitud(es)?
+                {seleccionarTodas ? (
+                  <>
+                    ¿Está <strong>MUY SEGURO</strong> de que desea borrar <strong className="text-red-700 text-xl">{cantidadABorrar}</strong> solicitud(es)?
+                    <br />
+                    <span className="text-sm text-red-600">(TODAS las solicitudes)</span>
+                  </>
+                ) : (
+                  <>¿Está seguro de que desea borrar <strong>{cantidadABorrar}</strong> solicitud(es)?</>
+                )}
               </p>
 
               {/* Advertencia */}
-              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                <p className="text-sm text-red-800">
-                  <strong>⚠️ Atención:</strong> Esta acción no se puede deshacer. Los datos serán eliminados permanentemente de la base de datos.
+              <div className={`border rounded-lg p-4 mb-6 ${
+                seleccionarTodas
+                  ? 'bg-red-100 border-red-400'
+                  : 'bg-red-50 border-red-200'
+              }`}>
+                <p className={`text-sm ${seleccionarTodas ? 'text-red-900' : 'text-red-800'}`}>
+                  <strong>⚠️ Atención:</strong> Esta acción <strong>NO se puede deshacer</strong>. Los datos serán eliminados permanentemente de la base de datos.
                 </p>
+                {seleccionarTodas && (
+                  <p className="text-sm text-red-900 mt-2">
+                    <strong>🔴 BORRADO MASIVO:</strong> Está a punto de eliminar TODAS las {cantidadABorrar} solicitudes que coinciden con los filtros actuales.
+                  </p>
+                )}
               </div>
 
               {/* Botones */}
@@ -1466,7 +1545,11 @@ export default function Solicitudes() {
                 <button
                   onClick={borrarSolicitudesSeleccionadas}
                   disabled={isLoading}
-                  className="flex-1 px-4 py-3 bg-red-600 hover:bg-red-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                  className={`flex-1 px-4 py-3 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 flex items-center justify-center gap-2 ${
+                    seleccionarTodas
+                      ? 'bg-red-700 hover:bg-red-800'
+                      : 'bg-red-600 hover:bg-red-700'
+                  }`}
                 >
                   {isLoading ? (
                     <>
@@ -1475,7 +1558,7 @@ export default function Solicitudes() {
                     </>
                   ) : (
                     <>
-                      🗑️ Sí, Borrar
+                      🗑️ Sí, {seleccionarTodas ? 'BORRAR TODAS' : 'Borrar'}
                     </>
                   )}
                 </button>
