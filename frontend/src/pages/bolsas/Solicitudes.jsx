@@ -53,6 +53,10 @@ export default function Solicitudes() {
   const [modalAseguradosNuevos, setModalAseguradosNuevos] = useState(false);
   const [aseguradosNuevos, setAseguradosNuevos] = useState([]);
 
+  // Estado para asegurados sincronizados recientemente
+  const [modalAseguradosSincronizados, setModalAseguradosSincronizados] = useState(false);
+  const [aseguradosSincronizados, setAseguradosSincronizados] = useState([]);
+
   useEffect(() => {
     // Cargar solicitudes y catálogos inicialmente
     cargarDatos();
@@ -90,6 +94,7 @@ export default function Solicitudes() {
           sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
           edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
           estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
+          estadoDisplay: getEstadoDisplay(mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id)),
           estadoCodigo: solicitud.cod_estado_cita,
           semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
           diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
@@ -103,9 +108,17 @@ export default function Solicitudes() {
           // ============================================================================
           // 📋 LOS 10 CAMPOS DEL EXCEL v1.8.0
           // ============================================================================
-          fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ? new Date(solicitud.fecha_preferida_no_atendida).toLocaleDateString('es-PE') : 'N/A',
+          fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ?
+            (() => {
+              const [y, m, d] = solicitud.fecha_preferida_no_atendida.split('-');
+              return `${d}/${m}/${y}`;
+            })() : 'N/A',
           tipoDocumento: solicitud.tipo_documento || 'N/A',
-          fechaNacimiento: solicitud.fecha_nacimiento ? new Date(solicitud.fecha_nacimiento).toLocaleDateString('es-PE') : 'N/A',
+          fechaNacimiento: solicitud.fecha_nacimiento ?
+            (() => {
+              const [y, m, d] = solicitud.fecha_nacimiento.split('-');
+              return `${d}/${m}/${y}`;
+            })() : 'N/A',
           tipoCita: solicitud.tipo_cita || 'N/A',
           codigoIpress: solicitud.codigo_ipress || 'N/A'
         };
@@ -149,6 +162,17 @@ export default function Solicitudes() {
     }
   };
 
+  // Helper: Obtener nombre descriptivo del estado para mostrar en tabla
+  const getEstadoDisplay = (estadoCodigo) => {
+    const displayMap = {
+      'pendiente': 'Pendiente Citar',
+      'citado': 'Citado',
+      'atendido': 'Asistió',
+      'observado': 'Observado'
+    };
+    return displayMap[estadoCodigo] || 'Pendiente';
+  };
+
   // Helper: Mapear estado API a estado UI (v1.6.0 - Estados Gestión Citas)
   const mapearEstadoAPI = (estado) => {
     // Mapeo de códigos de estado v1.6.0 a estados UI para filtros y estadísticas
@@ -159,16 +183,13 @@ export default function Solicitudes() {
       // Estados de gestión (después de contacto)
       'CITADO': 'citado',
       'NO_CONTESTA': 'observado',
-      'NO_DESEA': 'observado',
-      'ATENDIDO_IPRESS': 'atendido',
-
-      // Estados de bloqueo/error
-      'HC_BLOQUEADA': 'observado',
-      'NUM_NO_EXISTE': 'observado',
-      'TEL_SIN_SERVICIO': 'observado',
-      'REPROG_FALLIDA': 'observado',
-      'SIN_VIGENCIA': 'observado',
-      'APAGADO': 'observado',
+      'CANCELADO': 'observado',
+      'ASISTIO': 'atendido',
+      'REPROGRAMADO': 'observado',
+      'INASISTENCIA': 'observado',
+      'VENCIDO': 'observado',
+      'EN_SEGUIMIENTO': 'observado',
+      'DERIVADO': 'observado',
 
       // Compatibilidad hacia atrás (por si API aún retorna valores antiguos)
       'PENDIENTE': 'pendiente',
@@ -183,19 +204,20 @@ export default function Solicitudes() {
     }
 
     // Si es un número (estado_gestion_citas_id), mapear basado en ID
-    // IDs típicos: 1=PENDIENTE_CITA, 2=CITADO, 3=NO_CONTESTA, etc.
+    // IDs de dim_estados_gestion_citas (v1.33.0):
+    // 1=CITADO, 2=NO_CONTESTA, 3=CANCELADO, 4=ASISTIO, 5=PENDIENTE_CITA (INICIAL)
+    // 6=REPROGRAMADO, 7=INASISTENCIA, 8=VENCIDO, 9=EN_SEGUIMIENTO, 10=DERIVADO
     const idMapping = {
-      1: 'pendiente',   // PENDIENTE_CITA
-      2: 'citado',      // CITADO
-      3: 'observado',   // NO_CONTESTA
-      4: 'observado',   // NO_DESEA
-      5: 'atendido',    // ATENDIDO_IPRESS
-      6: 'observado',   // HC_BLOQUEADA
-      7: 'observado',   // NUM_NO_EXISTE
-      8: 'observado',   // TEL_SIN_SERVICIO
-      9: 'observado',   // REPROG_FALLIDA
-      10: 'observado',  // SIN_VIGENCIA
-      11: 'observado'   // APAGADO
+      1: 'citado',      // CITADO (visitó, asistió)
+      2: 'observado',   // NO_CONTESTA (no responde)
+      3: 'observado',   // CANCELADO (cita cancelada)
+      4: 'atendido',    // ASISTIO (asistió a la cita)
+      5: 'pendiente',   // PENDIENTE_CITA ◄─── INICIAL (Paciente nuevo que ingresó a la bolsa)
+      6: 'observado',   // REPROGRAMADO (reprogramada)
+      7: 'observado',   // INASISTENCIA (no asistió)
+      8: 'observado',   // VENCIDO (plazo vencido)
+      9: 'observado',   // EN_SEGUIMIENTO (seguimiento)
+      10: 'observado'   // DERIVADO (derivada a otro)
     };
 
     return idMapping[estado] || 'pendiente';
@@ -491,11 +513,37 @@ export default function Solicitudes() {
 
       // Recargar tabla
       cargarDatos();
+
+      // 📍 Verificar asegurados sincronizados recientemente
+      await verificarAseguradosSincronizados();
     } catch (error) {
       console.error('Error al importar Excel:', error);
       alert('Error al importar: ' + (error.message || 'Intenta nuevamente'));
     } finally {
       setIsImporting(false);
+    }
+  };
+
+  // Función para verificar asegurados sincronizados recientemente
+  const verificarAseguradosSincronizados = async () => {
+    try {
+      const response = await fetch('http://localhost:8080/api/bolsas/asegurados-sincronizados-reciente', {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.total > 0) {
+          setAseguradosSincronizados(data.asegurados);
+          setModalAseguradosSincronizados(true);
+          console.log('✅ Se encontraron ' + data.total + ' asegurados sincronizados recientemente');
+        }
+      }
+    } catch (error) {
+      console.warn('No se pudo verificar asegurados sincronizados:', error.message);
     }
   };
 
@@ -528,7 +576,7 @@ export default function Solicitudes() {
             icon="👥"
           />
           <StatCard
-            label="Pendientes"
+            label="Pendiente Citar"
             value={estadisticas.pendientes}
             borderColor="border-orange-500"
             textColor="text-orange-600"
@@ -542,7 +590,7 @@ export default function Solicitudes() {
             icon="📞"
           />
           <StatCard
-            label="Atendidos"
+            label="Asistió"
             value={estadisticas.atendidos}
             borderColor="border-green-500"
             textColor="text-green-600"
@@ -645,27 +693,27 @@ export default function Solicitudes() {
                         className="w-5 h-5 cursor-pointer"
                       />
                     </th>
-                    {/* Columnas existentes */}
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo Bolsa</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo Doc</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Paciente</th>
+                    {/* Columnas - Nombres de BD */}
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Origen de la Bolsa</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo de Documento</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Número de documento</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nombre del Asegurado</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Nac.</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha de Nacimiento</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Edad</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Correo</th>
-                    {/* Nuevos campos v1.8.0 */}
+                    {/* Campos Excel v1.8.0 */}
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Cod. IPRESS</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo Cita</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Pref.</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo de Cita</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Preferida</th>
                     {/* Columnas de gestión */}
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Solicitante</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
@@ -712,7 +760,7 @@ export default function Solicitudes() {
                           className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block ${getEstadoBadge(solicitud.estado)}`}
                           title={solicitud.estadoCodigo || 'Código de estado'}
                         >
-                          {solicitud.estadoCodigo || solicitud.estado}
+                          {solicitud.estadoDisplay}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.solicitante_nombre || 'N/A'}</td>
@@ -1099,6 +1147,104 @@ export default function Solicitudes() {
                     className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-semibold"
                   >
                     Ir a Importar Asegurados
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL 6: ASEGURADOS SINCRONIZADOS RECIENTEMENTE ====== */}
+        {modalAseguradosSincronizados && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-3xl mx-4 max-h-[90vh] overflow-y-auto">
+              <div className="p-6 border-b border-green-200 bg-green-50 sticky top-0">
+                <div className="flex items-center gap-3">
+                  <div className="text-3xl">✅</div>
+                  <div>
+                    <h2 className="text-xl font-bold text-green-900">Pacientes Registrados en la Base de Datos</h2>
+                    <p className="text-sm text-green-800 mt-1">
+                      {aseguradosSincronizados.length} asegurados han sido registrados/actualizados exitosamente
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="p-6">
+                <p className="text-sm text-gray-700 mb-4">
+                  Los siguientes pacientes han sido sincronizados en la base de datos de asegurados con sus datos de contacto actualizados:
+                </p>
+
+                {/* Tabla de asegurados sincronizados */}
+                <div className="overflow-x-auto mb-6">
+                  <table className="w-full text-sm border-collapse">
+                    <thead className="bg-green-100">
+                      <tr>
+                        <th className="border border-green-300 px-4 py-2 text-left font-semibold text-green-900">DNI</th>
+                        <th className="border border-green-300 px-4 py-2 text-left font-semibold text-green-900">Nombre</th>
+                        <th className="border border-green-300 px-4 py-2 text-left font-semibold text-green-900">Teléfono</th>
+                        <th className="border border-green-300 px-4 py-2 text-left font-semibold text-green-900">Correo</th>
+                        <th className="border border-green-300 px-4 py-2 text-left font-semibold text-green-900">Sexo</th>
+                        <th className="border border-green-300 px-4 py-2 text-left font-semibold text-green-900">F. Nacimiento</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aseguradosSincronizados.map((aseg, idx) => (
+                        <tr key={idx} className={idx % 2 === 0 ? 'bg-white' : 'bg-green-50'}>
+                          <td className="border border-green-200 px-4 py-2 font-mono font-semibold text-blue-600">{aseg.dni}</td>
+                          <td className="border border-green-200 px-4 py-2 font-medium text-gray-800">{aseg.nombre}</td>
+                          <td className="border border-green-200 px-4 py-2">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              aseg.telefono !== 'N/A' ? 'bg-blue-100 text-blue-800' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {aseg.telefono}
+                            </span>
+                          </td>
+                          <td className="border border-green-200 px-4 py-2 truncate max-w-xs" title={aseg.correo}>
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              aseg.correo !== 'N/A' ? 'bg-purple-100 text-purple-800' : 'bg-gray-100 text-gray-600'
+                            }`}>
+                              {aseg.correo}
+                            </span>
+                          </td>
+                          <td className="border border-green-200 px-4 py-2">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              aseg.sexo === 'Femenino' || aseg.sexo === 'F' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {aseg.sexo}
+                            </span>
+                          </td>
+                          <td className="border border-green-200 px-4 py-2 text-xs text-gray-600">
+                            {aseg.fecha_nacimiento !== 'N/A' ? new Date(aseg.fecha_nacimiento).toLocaleDateString('es-PE') : 'N/A'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                  <p className="text-sm text-green-900">
+                    <strong>✅ Sincronización Exitosa:</strong> Los pacientes han sido registrados y sus datos de teléfono y correo han sido actualizados en la base de datos de asegurados.
+                    Todos los datos están disponibles para consultas futuras.
+                  </p>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setModalAseguradosSincronizados(false)}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50"
+                  >
+                    Cerrar
+                  </button>
+                  <button
+                    onClick={() => {
+                      setModalAseguradosSincronizados(false);
+                      cargarDatos(); // Recargar tabla con datos actualizados
+                    }}
+                    className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold"
+                  >
+                    Actualizar Tabla
                   </button>
                 </div>
               </div>
