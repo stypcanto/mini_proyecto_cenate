@@ -25,6 +25,7 @@ import java.time.OffsetDateTime;
 @Data
 @Builder
 @NoArgsConstructor
+@AllArgsConstructor
 public class SolicitudBolsaDTO {
     // ============ CAMPOS DE BD ============
 
@@ -82,21 +83,9 @@ public class SolicitudBolsaDTO {
     @JsonProperty("id_tipo_bolsa")
     private Long idTipoBolsa;
 
-    @JsonProperty("cod_tipo_bolsa")
-    private String codTipoBolsa;
-
-    @JsonProperty("desc_tipo_bolsa")
-    private String descTipoBolsa;
-
     // 📋 REFERENCIA A SERVICIO
     @JsonProperty("id_servicio")
     private Long idServicio;
-
-    @JsonProperty("cod_servicio")
-    private String codServicio;
-
-    @JsonProperty("desc_servicio")
-    private String descServicio;
 
     // 🏥 IPRESS Y RED
     @JsonProperty("codigo_adscripcion")
@@ -104,21 +93,6 @@ public class SolicitudBolsaDTO {
 
     @JsonProperty("id_ipress")
     private Long idIpress;
-
-    @JsonProperty("cod_ipress")
-    private String codIpress;
-
-    @JsonProperty("desc_ipress")
-    private String descIpress;
-
-    @JsonProperty("nombre_ipress")
-    private String nombreIpress;
-
-    @JsonProperty("red_asistencial")
-    private String redAsistencial;
-
-    @JsonProperty("cod_red")
-    private String codRed;
 
     // 📊 ESTADO
     @JsonProperty("estado")
@@ -144,82 +118,4 @@ public class SolicitudBolsaDTO {
     // 🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;
-
-    /**
-     * Constructor para proyección JPQL con JOINs (v2.1.0)
-     * Orden: debe coincidir exactamente con la query SELECT en SolicitudBolsaRepository.obtenerSolicitudesEnriquecidas()
-     */
-    public SolicitudBolsaDTO(
-            Long idSolicitud,
-            String numeroSolicitud,
-            Long pacienteId,
-            String pacienteNombre,
-            String pacienteDni,
-            String especialidad,
-            java.time.LocalDate fechaPreferidaNoAtendida,
-            String tipoDocumento,
-            java.time.LocalDate fechaNacimiento,
-            String pacienteSexo,
-            String pacienteTelefono,
-            String pacienteEmail,
-            Integer pacienteEdad,
-            String codigoIpressAdscripcion,
-            String tipoCita,
-            Long idTipoBolsa,
-            String codTipoBolsa,
-            String descTipoBolsa,
-            Long idServicio,
-            String codServicio,
-            String descServicio,
-            String codigoAdscripcion,
-            Long idIpress,
-            String codIpress,
-            String descIpress,
-            String nombreIpress,
-            String redAsistencial,
-            String codRed,
-            String estado,
-            OffsetDateTime fechaSolicitud,
-            OffsetDateTime fechaActualizacion,
-            Long estadoGestionCitasId,
-            String codEstadoCita,
-            String descEstadoCita,
-            Boolean activo
-    ) {
-        this.idSolicitud = idSolicitud;
-        this.numeroSolicitud = numeroSolicitud;
-        this.pacienteId = pacienteId;
-        this.pacienteNombre = pacienteNombre;
-        this.pacienteDni = pacienteDni;
-        this.especialidad = especialidad;
-        this.fechaPreferidaNoAtendida = fechaPreferidaNoAtendida;
-        this.tipoDocumento = tipoDocumento;
-        this.fechaNacimiento = fechaNacimiento;
-        this.pacienteSexo = pacienteSexo;
-        this.pacienteTelefono = pacienteTelefono;
-        this.pacienteEmail = pacienteEmail;
-        this.pacienteEdad = pacienteEdad;
-        this.codigoIpressAdscripcion = codigoIpressAdscripcion;
-        this.tipoCita = tipoCita;
-        this.idTipoBolsa = idTipoBolsa;
-        this.codTipoBolsa = codTipoBolsa;
-        this.descTipoBolsa = descTipoBolsa;
-        this.idServicio = idServicio;
-        this.codServicio = codServicio;
-        this.descServicio = descServicio;
-        this.codigoAdscripcion = codigoAdscripcion;
-        this.idIpress = idIpress;
-        this.codIpress = codIpress;
-        this.descIpress = descIpress;
-        this.nombreIpress = nombreIpress;
-        this.redAsistencial = redAsistencial;
-        this.codRed = codRed;
-        this.estado = estado;
-        this.fechaSolicitud = fechaSolicitud;
-        this.fechaActualizacion = fechaActualizacion;
-        this.estadoGestionCitasId = estadoGestionCitasId;
-        this.codEstadoCita = codEstadoCita;
-        this.descEstadoCita = descEstadoCita;
-        this.activo = activo;
-    }
 }

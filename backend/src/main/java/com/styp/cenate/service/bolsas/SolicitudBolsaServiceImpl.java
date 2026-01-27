@@ -169,10 +169,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     @Override
     public List<SolicitudBolsaDTO> listarTodas() {
-        log.info("📊 [SolicitudBolsaServiceImpl] Obteniendo solicitudes enriquecidas con JOINs (v2.1.0)");
-        // Retorna DTOs enriquecidos directamente del repositorio con JOINs
-        // Incluye datos denormalizados desde: dim_tipos_bolsas, dim_servicio_essi, dim_ipress, dim_red, dim_estados_gestion_citas
-        return solicitudRepository.obtenerSolicitudesEnriquecidas();
+        log.info("📊 [SolicitudBolsaServiceImpl] Obteniendo solicitudes (v2.1.0 - BD limpia)");
+        // Obtiene solicitudes y mapea a DTOs
+        // Los datos denormalizados no se almacenan en BD (v2.1.0)
+        // Se pueden recuperar en el frontend desde las tablas de referencia si es necesario
+        List<SolicitudBolsa> solicitudes = solicitudRepository.findByActivoTrueOrderByFechaSolicitudDesc();
+        return SolicitudBolsaMapper.toDTOList(solicitudes);
     }
 
     @Override
