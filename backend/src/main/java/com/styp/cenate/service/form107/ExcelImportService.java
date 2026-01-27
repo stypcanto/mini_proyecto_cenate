@@ -820,9 +820,33 @@ public class ExcelImportService {
 		try {
 			var authentication = SecurityContextHolder.getContext().getAuthentication();
 			if (authentication != null && authentication.isAuthenticated()) {
+				// Intentar obtener del principal (puede ser UserDetails)
+				var principal = authentication.getPrincipal();
+
+				// Si es una String (username)
+				if (principal instanceof String) {
+					String username = (String) principal;
+					log.info("👤 Usuario (String): {}", username);
+
+					// No retornar "admin" como está - si es admin, intenta obtener nombre completo
+					if (username.equals("admin") || username.equals("anonymousUser")) {
+						log.warn("⚠️ Usuario 'admin' o anónimo detectado, intentando obtener nombre completo");
+						return "SISTEMA";
+					}
+					return username;
+				}
+
+				// Si es UserDetails, intentar obtener nombre o username
+				if (principal.getClass().getSimpleName().contains("UserDetails")) {
+					String username = authentication.getName();
+					log.info("👤 Usuario (UserDetails): {}", username);
+					return username;
+				}
+
+				// Por defecto, usar getName()
 				String username = authentication.getName();
-				log.debug("✓ Usuario autenticado obtenido: {}", username);
-				return username;
+				log.info("👤 Usuario (getName): {}", username);
+				return !username.equals("anonymousUser") && !username.isEmpty() ? username : "SISTEMA";
 			}
 		} catch (Exception e) {
 			log.warn("⚠️ No se pudo obtener usuario autenticado: {}", e.getMessage());
