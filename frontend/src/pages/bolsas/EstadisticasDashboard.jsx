@@ -395,34 +395,57 @@ export default function EstadisticasDashboard() {
     const total = porTipoBolsa.reduce((sum, item) => sum + item.total, 0);
     const maxValue = Math.max(...porTipoBolsa.map(item => item.total));
 
+    // Map de colores explícitos si no vienen del backend
+    const colorMap = {
+      'ORDINARIA': '#3498DB',        // Azul
+      'EXTRAORDINARIA': '#E74C3C',   // Rojo
+      'ESPECIAL': '#F39C12',         // Naranja
+      'URGENTE': '#FF6B6B',          // Rojo fuerte
+      'EMERGENCIA': '#C0392B',       // Rojo oscuro
+      'RESERVA': '#27AE60'           // Verde
+    };
+
+    const getColor = (item) => {
+      // Usar color del backend si existe, si no usar map local
+      return item.color || colorMap[item.tipoBolsa] || '#95A5A6';
+    };
+
     return (
       <div className="espacio-central p-6">
         <h3 className="font-bold text-lg mb-6">📦 Distribución por Tipo de Bolsa</h3>
 
         {/* Gráfico de Barras Horizontal */}
-        <div className="space-y-4">
+        <div className="space-y-5 mb-8">
           {porTipoBolsa.map((item, idx) => {
             const barWidth = (item.total / maxValue) * 100;
+            const barColor = getColor(item);
+
             return (
               <div key={idx} className="flex items-center gap-4">
-                {/* Etiqueta */}
-                <div className="w-40 flex-shrink-0">
-                  <p className="font-bold text-sm text-gray-800">{item.icono} {item.tipoBolsa}</p>
+                {/* Etiqueta con color */}
+                <div className="w-48 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div
+                      className="w-4 h-4 rounded"
+                      style={{ backgroundColor: barColor }}
+                    ></div>
+                    <p className="font-bold text-sm text-gray-800">{item.icono} {item.tipoBolsa}</p>
+                  </div>
                   <p className="text-xs text-gray-500">{item.total} solicitudes</p>
                 </div>
 
-                {/* Barra de progreso con color */}
+                {/* Barra de progreso con color fuerte */}
                 <div className="flex-1">
-                  <div className="relative h-10 bg-gray-100 rounded-lg overflow-hidden">
+                  <div className="relative h-12 bg-gray-100 rounded-lg overflow-hidden shadow-sm">
                     <div
-                      className="h-full flex items-center justify-center transition-all duration-300 hover:shadow-lg"
+                      className="h-full flex items-center justify-end pr-4 transition-all duration-300 hover:shadow-md"
                       style={{
                         width: `${barWidth}%`,
-                        backgroundColor: item.color || '#999999',
-                        opacity: 0.85
+                        backgroundColor: barColor,
+                        minWidth: '50px'
                       }}
                     >
-                      <span className="text-white font-bold text-sm px-2">
+                      <span className="text-white font-bold text-sm">
                         {item.porcentaje}%
                       </span>
                     </div>
@@ -430,7 +453,7 @@ export default function EstadisticasDashboard() {
                 </div>
 
                 {/* Métricas a la derecha */}
-                <div className="w-32 flex-shrink-0 text-right">
+                <div className="w-40 flex-shrink-0 text-right">
                   <p className="text-xs text-green-600 font-semibold">
                     ✓ {item.tasaCompletacion}% completadas
                   </p>
@@ -443,18 +466,27 @@ export default function EstadisticasDashboard() {
           })}
         </div>
 
-        {/* Resumen estadístico */}
-        <div className="mt-8 grid grid-cols-4 gap-4">
-          {porTipoBolsa.map((item, idx) => (
-            <div key={idx} className="p-4 rounded-lg text-center border-2" style={{ borderColor: item.color || '#999999', backgroundColor: item.color + '10' }}>
-              <div className="w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-2" style={{ backgroundColor: item.color || '#999999' }}>
-                <span className="text-white text-lg font-bold">{item.icono}</span>
-              </div>
-              <p className="font-bold text-sm text-gray-800">{item.tipoBolsa}</p>
-              <p className="text-2xl font-bold mt-2" style={{ color: item.color || '#999999' }}>{item.total}</p>
-              <p className="text-xs text-gray-600 mt-1">{item.porcentaje}% del total</p>
-            </div>
-          ))}
+        {/* Resumen en tarjetas con colores */}
+        <div className="border-t pt-6">
+          <h4 className="font-semibold text-sm text-gray-700 mb-4">Resumen por Tipo</h4>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {porTipoBolsa.map((item, idx) => {
+              const cardColor = getColor(item);
+              return (
+                <div key={idx} className="p-4 rounded-lg text-center border-2" style={{ borderColor: cardColor }}>
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center mx-auto mb-2"
+                    style={{ backgroundColor: cardColor }}
+                  >
+                    <span className="text-white text-lg">{item.icono}</span>
+                  </div>
+                  <p className="font-bold text-xs text-gray-800">{item.tipoBolsa}</p>
+                  <p className="text-xl font-bold mt-2" style={{ color: cardColor }}>{item.total}</p>
+                  <p className="text-xs text-gray-500 mt-1">{item.porcentaje}%</p>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
