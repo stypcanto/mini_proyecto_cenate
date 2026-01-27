@@ -284,6 +284,33 @@ public class ExcelImportService {
 					// Enriquecimiento desde dim_asegurados por DNI
 					Optional<Asegurado> asegurado = aseguradoRepository.findByDocPaciente(numeroDocumento);
 
+
+				// 🆕 v1.13.7: Actualizar datos de asegurado si el Excel tiene datos más limpios
+				if (asegurado.isPresent()) {
+					Asegurado aseg = asegurado.get();
+					boolean necesitaActualizar = false;
+
+					// Actualizar correo si hay dato nuevo en Excel y es diferente
+					if (!isBlank(correo) && !correo.equals(aseg.getCorreoElectronico())) {
+						log.info("✏️ Actualizando correo del asegurado {}: {} → {}", numeroDocumento, aseg.getCorreoElectronico(), correo);
+						aseg.setCorreoElectronico(correo);
+						necesitaActualizar = true;
+					}
+
+					// Actualizar teléfono si hay dato nuevo en Excel y es diferente
+					if (!isBlank(telefono) && !telefono.equals(aseg.getTelCelular())) {
+						log.info("✏️ Actualizando teléfono del asegurado {}: {} → {}", numeroDocumento, aseg.getTelCelular(), telefono);
+						aseg.setTelCelular(telefono);
+						necesitaActualizar = true;
+					}
+
+					// Guardar cambios si hay actualizaciones
+					if (necesitaActualizar) {
+						aseguradoRepository.save(aseg);
+						log.info("✅ Asegurado {} actualizado desde Excel (data limpia)", numeroDocumento);
+					}
+				}
+
 					// Enriquecimiento desde dim_ipress por código IPRESS
 					String nombreIpress = null;
 					String redAsistencial = null;
