@@ -11,16 +11,18 @@ import java.time.OffsetDateTime;
 
 /**
  * Entidad JPA para solicitudes de bolsas de pacientes
- * Tabla: dim_solicitud_bolsa (43 columnas - v1.9.0 completo)
+ * Tabla: dim_solicitud_bolsa (27 columnas - v2.1.0 LIMPIO)
  *
- * Datos denormalizados para escalabilidad y performance:
- * - Códigos y descripciones de tipos de bolsa, servicio, estado
- * - Información de IPRESS y Red (desde dim_ipress + dim_red)
- * - Auditoría y trazabilidad completa
- * - Fechas de cita y atención (v1.9.0 NEW)
+ * Estructura optimizada sin denormalizaciones innecesarias:
+ * - Core operativo: identificación + paciente + referencias
+ * - Datos Excel v1.8.0: 10 campos de importación
+ * - Auditoría: timestamps + soft-delete
+ * - FKs: solo a tablas críticas (asegurados, bolsas, servicios, IPRESS, citas)
  *
- * @version v1.9.0 (Nuevas columnas: fecha_cita, fecha_atencion)
- * @since 2026-01-26
+ * Los datos denormalizados se recuperan vía JOINs en queries del backend.
+ *
+ * @version v2.1.0 (Limpieza agresiva: eliminó 17 campos no utilizados)
+ * @since 2026-01-27
  */
 @Entity
 @Table(
@@ -83,9 +85,6 @@ public class SolicitudBolsa {
     @Column(name = "paciente_email", length = 255)
     private String pacienteEmail;
 
-    @Column(name = "paciente_edad")
-    private Integer pacienteEdad;
-
     @Column(name = "codigo_ipress", length = 20)
     private String codigoIpressAdscripcion;
 
@@ -96,99 +95,38 @@ public class SolicitudBolsa {
     // 📦 REFERENCIA A TIPO DE BOLSA
     // ============================================================================
 
-    @Column(name = "id_bolsa", nullable = false)
-    private Long idBolsa;
-
-    @Column(name = "cod_tipo_bolsa")
-    private String codTipoBolsa;
-
-    @Column(name = "desc_tipo_bolsa")
-    private String descTipoBolsa;
+    @Column(name = "id_tipo_bolsa", nullable = false)
+    private Long idTipoBolsa;
 
     // 📋 REFERENCIA A SERVICIO
-    @Column(name = "id_servicio")
+    @Column(name = "id_servicio", nullable = false)
     private Long idServicio;
 
-    @Column(name = "cod_servicio", length = 10)
-    private String codServicio;
-
     // 🏥 IPRESS Y RED
-    @Column(name = "codigo_adscripcion", length = 20)
+    @Column(name = "codigo_adscripcion", length = 20, nullable = false)
     private String codigoAdscripcion;
 
     @Column(name = "id_ipress")
     private Long idIpress;
 
-    @Column(name = "nombre_ipress", length = 255)
-    private String nombreIpress;
-
-    @Column(name = "red_asistencial", length = 255)
-    private String redAsistencial;
-
     // 📊 ESTADO (Aprobación)
     @Column(name = "estado", length = 20, nullable = false)
     private String estado;
-
-    @Column(name = "razon_rechazo", columnDefinition = "TEXT")
-    private String razonRechazo;
-
-    @Column(name = "notas_aprobacion", columnDefinition = "TEXT")
-    private String notasAprobacion;
-
-    // 👤 SOLICITANTE
-    @Column(name = "solicitante_id")
-    private Long solicitanteId;
-
-    @Column(name = "solicitante_nombre", length = 255)
-    private String solicitanteNombre;
-
-    // ✅ RESPONSABLE DE APROBACIÓN
-    @Column(name = "responsable_aprobacion_id")
-    private Long responsableAprobacionId;
-
-    @Column(name = "responsable_aprobacion_nombre", length = 255)
-    private String responsableAprobacionNombre;
 
     // ⏰ FECHAS
     @Column(name = "fecha_solicitud", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime fechaSolicitud;
 
-    @Column(name = "fecha_aprobacion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime fechaAprobacion;
-
     @Column(name = "fecha_actualizacion", nullable = false, columnDefinition = "TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP")
     private OffsetDateTime fechaActualizacion;
 
-    // 👤 GESTOR DE CITAS
-    @Column(name = "responsable_gestora_id")
-    private Long responsableGestoraId;
-
-    @Column(name = "fecha_asignacion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime fechaAsignacion;
-
-    // 🗓️ FECHAS DE CITA Y ATENCIÓN (v1.9.0 NEW)
-    @Column(name = "fecha_cita", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime fechaCita;
-
-    @Column(name = "fecha_atencion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
-    private OffsetDateTime fechaAtencion;
-
     // 📊 ESTADO DE GESTIÓN DE CITAS
-    @Column(name = "estado_gestion_citas_id")
+    @Column(name = "estado_gestion_citas_id", nullable = false)
     private Long estadoGestionCitasId;
-
-    @Column(name = "cod_estado_cita")
-    private String codEstadoCita;
-
-    @Column(name = "desc_estado_cita", length = 255)
-    private String descEstadoCita;
 
     // 🔔 AUDITORÍA
     @Column(name = "activo", nullable = false)
     private Boolean activo;
-
-    @Column(name = "recordatorio_enviado")
-    private Boolean recordatorioEnviado;
 
     @PrePersist
     void prePersist() {
@@ -200,9 +138,6 @@ public class SolicitudBolsa {
         }
         if (activo == null) {
             activo = true;
-        }
-        if (recordatorioEnviado == null) {
-            recordatorioEnviado = false;
         }
         if (estado == null) {
             estado = "PENDIENTE";

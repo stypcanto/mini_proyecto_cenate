@@ -310,23 +310,17 @@ public class ExcelImportService {
 						.codigoIpressAdscripcion(codigoIpress)
 						.tipoCita(tipoCita)
 
-						// Información de IPRESS enriquecida
+						// Información de IPRESS
 						.idIpress(idIpress)
-						.nombreIpress(nombreIpress)
-						.redAsistencial(redAsistencial)
 
 						// Información de bolsa y servicio
-						.idBolsa(idTipoBolsa)
-						.codTipoBolsa(tipoBolsa.getCodTipoBolsa())
-						.descTipoBolsa(tipoBolsa.getDescTipoBolsa())
+						.idTipoBolsa(idTipoBolsa)
 						.idServicio(idServicio)
-						.codServicio(servicio.getCodServicio())
 
 						// Datos por defecto
 						.estado("PENDIENTE")
 						.estadoGestionCitasId(estadoGestionCitasId)
 						.activo(true)
-						.recordatorioEnviado(false)
 						.build();
 
 					solicitudes.add(solicitud);

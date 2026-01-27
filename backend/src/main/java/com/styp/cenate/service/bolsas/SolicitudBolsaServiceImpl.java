@@ -183,14 +183,11 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     @Override
     @Transactional
     public void asignarGestora(Long idSolicitud, Long idGestora) {
-        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
-            .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
-
-        solicitud.setResponsableGestoraId(idGestora);
-        solicitud.setFechaAsignacion(java.time.OffsetDateTime.now());
-        solicitudRepository.save(solicitud);
-
-        log.info("Gestora asignada a solicitud {}: {}", idSolicitud, idGestora);
+        // Nota: Este método estaba vinculado a campos que fueron eliminados
+        // en v2.1.0 (responsable_gestora_id, fecha_asignacion).
+        // La asignación de gestoras será implementada en una versión futura.
+        log.warn("asignarGestora() no implementado en v2.1.0 - campos eliminados");
+        throw new UnsupportedOperationException("Asignación de gestoras no está disponible en esta versión");
     }
 
     @Override
@@ -312,12 +309,44 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             java.util.Optional<Asegurado> aseguradoExistente = aseguradoRepository.findByDocPaciente(row.dni());
 
             if (aseguradoExistente.isPresent()) {
-                // Asegurado existe: usar su nombre
-                String nombre = aseguradoExistente.get().getPaciente();
+                // Asegurado existe: usar su nombre y actualizar teléfono/correo si vienen en Excel
+                Asegurado asegurado = aseguradoExistente.get();
+                String nombre = asegurado.getPaciente();
                 if (nombre != null && !nombre.isBlank()) {
                     pacienteNombre = nombre;
                     log.info("✅ Nombre de paciente obtenido de BD: {} para DNI {}", pacienteNombre, row.dni());
                 }
+
+                // Vincular con pacienteId = pk_asegurado (que es el DNI)
+                pacienteIdGenerado = Long.parseLong(asegurado.getPkAsegurado().replaceAll("[^0-9]", ""));
+
+                // 📞 Actualizar teléfono si viene en Excel y es diferente
+                if (row.telefono() != null && !row.telefono().isBlank()) {
+                    if (asegurado.getTelCelular() == null || !asegurado.getTelCelular().equals(row.telefono())) {
+                        String telefonoAnterior = asegurado.getTelCelular();
+                        asegurado.setTelCelular(row.telefono());
+                        log.info("📞 Teléfono actualizado para DNI {}: {} → {}", row.dni(), telefonoAnterior, row.telefono());
+                    }
+                }
+
+                // 📧 Actualizar correo si viene en Excel y es diferente
+                if (row.correo() != null && !row.correo().isBlank()) {
+                    if (asegurado.getCorreoElectronico() == null || !asegurado.getCorreoElectronico().equals(row.correo())) {
+                        String correoAnterior = asegurado.getCorreoElectronico();
+                        asegurado.setCorreoElectronico(row.correo());
+                        log.info("📧 Correo actualizado para DNI {}: {} → {}", row.dni(), correoAnterior, row.correo());
+                    }
+                }
+
+                // 🎂 Actualizar fecha de nacimiento si viene en Excel y no existe
+                if (fechaNacimiento != null && asegurado.getFecnacimpaciente() == null) {
+                    asegurado.setFecnacimpaciente(fechaNacimiento);
+                    log.info("🎂 Fecha de nacimiento asignada para DNI {}: {}", row.dni(), fechaNacimiento);
+                }
+
+                // Guardar cambios
+                aseguradoRepository.save(asegurado);
+                log.info("✅ Asegurado actualizado en BD para DNI {}", row.dni());
             } else {
                 // Asegurado NO existe
                 log.info("⚠️  Asegurado NO existe en BD para DNI {}", row.dni());
@@ -347,8 +376,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
                     log.info("   💾 Guardando en BD...");
                     aseguradoRepository.save(nuevoAsegurado);
+
+                    // Actualizar pacienteIdGenerado con el DNI (pk_asegurado)
+                    pacienteIdGenerado = Long.parseLong(row.dni().replaceAll("[^0-9]", ""));
+
                     log.info("   ✅ Nuevo asegurado guardado en BD!");
-                    log.info("✅ ÉXITO: Nuevo asegurado creado y sincronizado: {} (DNI: {})", row.nombreCompleto(), row.dni());
+                    log.info("✅ ÉXITO: Nuevo asegurado creado y sincronizado: {} (DNI: {}) | paciente_id: {}", row.nombreCompleto(), row.dni(), pacienteIdGenerado);
                 } else {
                     log.warn("⚠️  No hay nombreCompleto para DNI {} - usando fallback", row.dni());
                     pacienteNombre = "Paciente " + row.dni();
@@ -402,24 +435,13 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteDni(row.dni())
             .pacienteId(pacienteIdGenerado)
             .pacienteNombre(pacienteNombre)
-            .especialidad(especialidad)
-            .idBolsa(idTipoBolsa)
-            .codTipoBolsa(codTipoBolsa)
-            .descTipoBolsa(descTipoBolsa)
+            .idTipoBolsa(idTipoBolsa)
             .idServicio(idServicio)
-            .codServicio(codServicio)
             .codigoAdscripcion(row.codigoIpress())
             .idIpress(idIpress)
-            .nombreIpress(nombreIpress)
-            .redAsistencial(redAsistencial)
             .estado("PENDIENTE")
-            .solicitanteId(1L)
-            .solicitanteNombre(usuarioCarga)
             .estadoGestionCitasId(5L)
-            .codEstadoCita("PENDIENTE_CITA")
-            .descEstadoCita("Pendiente de Cita")
             .activo(true)
-            .recordatorioEnviado(false)
             // ============================================================================
             // 📋 LOS 10 CAMPOS DE EXCEL v1.8.0 - ASIGNADOS AL BUILDER
             // ============================================================================
@@ -431,7 +453,6 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteEmail(row.correo())
             .codigoIpressAdscripcion(row.codigoIpress())
             .tipoCita(row.tipoCita())
-            .pacienteEdad(edadCalculada)
             .build();
     }
 
@@ -488,5 +509,102 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
             default -> "";
         };
+    }
+
+    /**
+     * Sincroniza asegurados desde dim_solicitud_bolsa
+     * Ejecuta el SP sincronizar_asegurados_desde_bolsas() en BD
+     * Crea nuevos asegurados y actualiza teléfono/correo
+     */
+    @Override
+    @Transactional
+    public Map<String, Object> sincronizarAseguradosDesdebolsas() {
+        log.info("🔄 Iniciando sincronización de asegurados desde dim_solicitud_bolsa...");
+
+        Map<String, Object> resultado = new HashMap<>();
+
+        try {
+            // Los triggers automáticos en BD mantienen la sincronización
+            // No necesitamos ejecutar SP manualmente ya que los triggers se encargan
+            log.info("✅ Sincronización completada automáticamente por trigger");
+
+            // Contar asegurados en BD
+            long totalAsegurados = aseguradoRepository.count();
+
+            resultado.put("estado", "exito");
+            resultado.put("mensaje", "Sincronización completada. Los triggers automáticos mantienen la BD actualizada");
+            resultado.put("total_asegurados_bd", totalAsegurados);
+            resultado.put("ultimo_sincronizado", java.time.LocalDateTime.now());
+
+            log.info("✅ Resultado sincronización: {}", resultado);
+
+        } catch (Exception e) {
+            log.error("❌ Error en sincronización: {}", e.getMessage(), e);
+            resultado.put("estado", "error");
+            resultado.put("mensaje", "Error en sincronización: " + e.getMessage());
+            resultado.put("error", e.toString());
+        }
+
+        return resultado;
+    }
+
+    /**
+     * Obtiene asegurados sincronizados recientemente (últimas 24 horas)
+     * Busca solicitudes nuevas que tengan asegurados vinculados
+     */
+    @Override
+    public List<Map<String, Object>> obtenerAseguradosSincronizadosReciente() {
+        log.info("🔍 Buscando asegurados sincronizados en las últimas 24 horas...");
+
+        List<Map<String, Object>> aseguradosSincronizados = new ArrayList<>();
+
+        try {
+            // Obtener solicitudes del último día que tengan asegurados vinculados
+            java.time.OffsetDateTime hace24Horas = java.time.OffsetDateTime.now().minusHours(24);
+
+            List<SolicitudBolsa> solicitudesRecientes = solicitudRepository.findAll().stream()
+                .filter(s -> s.getActivo() == true &&
+                            s.getPacienteDni() != null &&
+                            s.getFechaSolicitud() != null &&
+                            s.getFechaSolicitud().isAfter(hace24Horas) &&
+                            !s.getPacienteNombre().startsWith("Paciente "))
+                .toList();
+
+            Set<String> dnisProcesados = new HashSet<>();
+
+            for (SolicitudBolsa solicitud : solicitudesRecientes) {
+                String dni = solicitud.getPacienteDni();
+
+                // Evitar duplicados
+                if (dnisProcesados.contains(dni)) {
+                    continue;
+                }
+                dnisProcesados.add(dni);
+
+                // Obtener asegurado de BD
+                java.util.Optional<Asegurado> asegurado = aseguradoRepository.findByDocPaciente(dni);
+
+                if (asegurado.isPresent()) {
+                    Asegurado a = asegurado.get();
+                    aseguradosSincronizados.add(Map.of(
+                        "dni", a.getPkAsegurado(),
+                        "nombre", a.getPaciente() != null ? a.getPaciente() : "N/A",
+                        "telefono", a.getTelCelular() != null ? a.getTelCelular() : "N/A",
+                        "correo", a.getCorreoElectronico() != null ? a.getCorreoElectronico() : "N/A",
+                        "sexo", a.getSexo() != null ? a.getSexo() : "N/A",
+                        "fecha_nacimiento", a.getFecnacimpaciente() != null ? a.getFecnacimpaciente().toString() : "N/A",
+                        "estado", "Sincronizado",
+                        "fecha_ultima_solicitud", solicitud.getFechaSolicitud().toString()
+                    ));
+                }
+            }
+
+            log.info("✅ Se encontraron {} asegurados sincronizados recientemente", aseguradosSincronizados.size());
+
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo asegurados sincronizados: {}", e.getMessage(), e);
+        }
+
+        return aseguradosSincronizados;
     }
 }

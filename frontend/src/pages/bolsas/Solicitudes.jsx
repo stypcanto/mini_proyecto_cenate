@@ -712,7 +712,6 @@ export default function Solicitudes() {
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Solicitante</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
                   </tr>
@@ -763,7 +762,6 @@ export default function Solicitudes() {
                           {solicitud.estadoDisplay}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.solicitante_nombre || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm">
                         <button
                           onClick={() => handleAbrirAsignarGestora(solicitud)}

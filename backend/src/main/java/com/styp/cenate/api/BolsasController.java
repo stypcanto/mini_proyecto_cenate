@@ -3,6 +3,7 @@ package com.styp.cenate.api;
 import com.styp.cenate.dto.bolsas.*;
 import com.styp.cenate.service.bolsas.BolsasService;
 import com.styp.cenate.service.bolsas.SolicitudBolsasService;
+import com.styp.cenate.service.bolsas.SolicitudBolsaService;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import jakarta.validation.Valid;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 🌐 Controlador REST para gestión de Bolsas de Pacientes
@@ -34,6 +36,7 @@ public class BolsasController {
 
     private final BolsasService bolsasService;
     private final SolicitudBolsasService solicitudBolsasService;
+    private final SolicitudBolsaService solicitudBolsaService;
 
     // ========================================================================
     // 📊 BOLSAS - CONSULTAS
@@ -334,4 +337,28 @@ public class BolsasController {
         return ResponseEntity.ok(solicitudActualizada);
     }
     */
+
+    // ========================================================================
+    // 🔄 SINCRONIZACIÓN DE ASEGURADOS
+    // ========================================================================
+
+    @PostMapping("/sincronizar-asegurados")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
+    public ResponseEntity<?> sincronizarAsegurados() {
+        log.info("🔄 Ejecutando sincronización de asegurados desde dim_solicitud_bolsa...");
+        var resultado = solicitudBolsaService.sincronizarAseguradosDesdebolsas();
+        return ResponseEntity.ok(resultado);
+    }
+
+    @GetMapping("/asegurados-sincronizados-reciente")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
+    public ResponseEntity<?> obtenerAseguradosSincronizadosReciente() {
+        log.info("🔍 Consultando asegurados sincronizados en las últimas 24 horas...");
+        var asegurados = solicitudBolsaService.obtenerAseguradosSincronizadosReciente();
+        return ResponseEntity.ok(Map.of(
+            "total", asegurados.size(),
+            "asegurados", asegurados,
+            "mensaje", asegurados.isEmpty() ? "No hay asegurados sincronizados recientemente" : "Se encontraron " + asegurados.size() + " asegurados sincronizados"
+        ));
+    }
 }

@@ -63,4 +63,17 @@ public interface SolicitudBolsaService {
      * Busca solicitudes con nombre "Paciente DNI" e identifica los DNIs faltantes
      */
     List<Map<String, Object>> obtenerAseguradosNuevos();
+
+    /**
+     * Sincroniza automáticamente asegurados desde dim_solicitud_bolsa
+     * Crea asegurados nuevos y actualiza teléfono/correo de existentes
+     * @return reporte de sincronización (nuevos creados, actualizados)
+     */
+    Map<String, Object> sincronizarAseguradosDesdebolsas();
+
+    /**
+     * Obtiene asegurados sincronizados recientemente (últimas 24 horas)
+     * Para mostrar popup al admin de qué pacientes fueron registrados/actualizados
+     */
+    List<Map<String, Object>> obtenerAseguradosSincronizadosReciente();
 }
