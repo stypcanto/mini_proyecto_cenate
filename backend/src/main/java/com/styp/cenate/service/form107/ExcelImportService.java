@@ -112,9 +112,14 @@ public class ExcelImportService {
 		"ASEGURADO"
 	);
 
+	// 🆕 v1.13.8: Rastrear asegurados creados durante importación (para reportar al frontend)
+	private List<Map<String, String>> aseguradosCreados = new ArrayList<>();
 
 	@Transactional
 	public Map<String, Object> importarYProcesar(MultipartFile file, String usuarioCarga, Long idBolsa, Long idServicio) {
+
+		// 🆕 v1.13.8: Limpiar lista de asegurados creados de la importación anterior
+		this.aseguradosCreados = new ArrayList<>();
 
 		// 1) Validar .xlsx
 		validateOnlyXlsx(file);
@@ -189,6 +194,13 @@ public class ExcelImportService {
 		resp.put("hashArchivo", finalCarga.getHashArchivo());
 		resp.put("nombreArchivo", finalCarga.getNombreArchivo());
 		resp.put("mensaje", "Importados " + insertados + " registros exitosamente");
+
+		// 🆕 v1.13.8: Agregar lista de asegurados creados (para mostrar al usuario)
+		if (!this.aseguradosCreados.isEmpty()) {
+			resp.put("aseguradosCreados", this.aseguradosCreados);
+			resp.put("totalAseguradosCreados", this.aseguradosCreados.size());
+			log.info("📝 Asegurados creados durante importación: {}", this.aseguradosCreados.size());
+		}
 
 		return resp;
 	}
@@ -299,6 +311,12 @@ public class ExcelImportService {
 
 					asegurado = Optional.of(aseguradoRepository.save(nuevoAsegurado));
 					log.info("✅ Asegurado creado: {} con pk_asegurado={}", numeroDocumento, numeroDocumento);
+
+				// 🆕 v1.13.8: Registrar en lista de asegurados creados para reportar al frontend
+				Map<String, String> asegInfo = new HashMap<>();
+				asegInfo.put("dni", numeroDocumento);
+				asegInfo.put("nombre", apellidos);
+				this.aseguradosCreados.add(asegInfo);
 				}
 
 				// 🆕 v1.13.7: Actualizar datos de asegurado si el Excel tiene datos más limpios
