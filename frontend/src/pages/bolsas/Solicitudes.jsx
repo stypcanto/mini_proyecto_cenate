@@ -50,6 +50,7 @@ export default function Solicitudes() {
   const [filtroRed, setFiltroRed] = useState('todas');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('todas');
   const [filtroEstado, setFiltroEstado] = useState('todos');
+  const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -201,7 +202,7 @@ export default function Solicitudes() {
               const [y, m, d] = solicitud.fecha_nacimiento.split('-');
               return `${d}/${m}/${y}`;
             })() : 'N/A',
-          tipoCita: solicitud.tipo_cita || 'N/A',
+          tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
           codigoIpress: solicitud.codigo_ipress || 'N/A'
         };
       });
@@ -396,18 +397,19 @@ export default function Solicitudes() {
                          sol.ipress.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          sol.red.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          sol.especialidad.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchBolsa = filtroBolsa === 'todas' || sol.bolsa === filtroBolsa;
+    const matchBolsa = filtroBolsa === 'todas' || sol.nombreBolsa === filtroBolsa;
     const matchRed = filtroRed === 'todas' || sol.red === filtroRed;
     const matchEspecialidad = filtroEspecialidad === 'todas' || sol.especialidad === filtroEspecialidad;
     const matchEstado = filtroEstado === 'todos' || sol.estado === filtroEstado;
+    const matchTipoCita = filtroTipoCita === 'todas' || (sol.tipoCita?.toUpperCase?.() || '') === filtroTipoCita;
 
-    return matchBusqueda && matchBolsa && matchRed && matchEspecialidad && matchEstado;
+    return matchBusqueda && matchBolsa && matchRed && matchEspecialidad && matchEstado && matchTipoCita;
   });
 
   // Resetear a página 1 cuando cambian los filtros
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filtroBolsa, filtroRed, filtroEspecialidad, filtroEstado]);
+  }, [searchTerm, filtroBolsa, filtroRed, filtroEspecialidad, filtroEstado, filtroTipoCita]);
 
   // Calcular paginación
   const totalRegistros = solicitudesFiltradas.length;
@@ -426,9 +428,10 @@ export default function Solicitudes() {
       console.log('  - Filtro red:', filtroRed);
       console.log('  - Filtro especialidad:', filtroEspecialidad);
       console.log('  - Filtro estado:', filtroEstado);
+      console.log('  - Filtro tipo de cita:', filtroTipoCita);
       console.log('  - Primera solicitud:', solicitudes[0]);
     }
-  }, [solicitudes, solicitudesFiltradas, searchTerm, filtroBolsa, filtroRed, filtroEspecialidad, filtroEstado, errorMessage]);
+  }, [solicitudes, solicitudesFiltradas, searchTerm, filtroBolsa, filtroRed, filtroEspecialidad, filtroEstado, filtroTipoCita, errorMessage]);
 
   const getEstadoBadge = (estado) => {
     const estilos = {
@@ -468,8 +471,18 @@ export default function Solicitudes() {
   };
 
   // Obtener valores únicos para filtros dinámicos
+  const bolsasUnicas = [...new Set(solicitudes.map(s => s.nombreBolsa))].filter(b => b && b !== 'Sin clasificar').sort();
   const redesUnicas = [...new Set(solicitudes.map(s => s.red))].sort();
   const especialidadesUnicas = [...new Set(solicitudes.map(s => s.especialidad))].sort();
+  // Whitelist de tipos de cita válidos
+  const TIPOS_CITA_VALIDOS = ['VOLUNTARIA', 'INTERCONSULTA', 'RECITA', 'REFERENCIA'];
+  const tiposCitaUnicos = [
+    ...new Set(
+      solicitudes
+        .map(s => s.tipoCita?.toUpperCase?.() || '')
+        .filter(tipo => TIPOS_CITA_VALIDOS.includes(tipo))
+    )
+  ].sort();
 
   // Manejar selección de filas
   const toggleRowSelection = (id) => {
@@ -757,13 +770,7 @@ export default function Solicitudes() {
                 onChange: (e) => setFiltroBolsa(e.target.value),
                 options: [
                   { label: "Todas las bolsas", value: "todas" },
-                  { label: "BOLSA 107", value: "BOLSA 107" },
-                  { label: "BOLSA DENGUE", value: "BOLSA DENGUE" },
-                  { label: "BOLSAS ENFERMERIA", value: "BOLSAS ENFERMERIA" },
-                  { label: "BOLSAS EXPLOTADATOS", value: "BOLSAS EXPLOTADATOS" },
-                  { label: "BOLSAS IVR", value: "BOLSAS IVR" },
-                  { label: "BOLSAS REPROGRAMACION", value: "BOLSAS REPROGRAMACION" },
-                  { label: "BOLSA GESTORES TERRITORIAL", value: "BOLSA GESTORES TERRITORIAL" }
+                  ...bolsasUnicas.map(bolsa => ({ label: bolsa, value: bolsa }))
                 ]
               },
               {
@@ -782,6 +789,15 @@ export default function Solicitudes() {
                 options: [
                   { label: "Todas las especialidades", value: "todas" },
                   ...especialidadesUnicas.map(esp => ({ label: esp, value: esp }))
+                ]
+              },
+              {
+                name: "Tipo de Cita",
+                value: filtroTipoCita,
+                onChange: (e) => setFiltroTipoCita(e.target.value),
+                options: [
+                  { label: "Todas las citas", value: "todas" },
+                  ...tiposCitaUnicos.map(tipo => ({ label: tipo, value: tipo }))
                 ]
               }
             ]}
@@ -936,9 +952,9 @@ export default function Solicitudes() {
                       <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.correo}>{solicitud.correo}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap inline-block ${
-                          solicitud.tipoCita === 'Recita' ? 'bg-blue-100 text-blue-700' :
-                          solicitud.tipoCita === 'Interconsulta' ? 'bg-purple-100 text-purple-700' :
-                          solicitud.tipoCita === 'Voluntaria' ? 'bg-green-100 text-green-700' :
+                          solicitud.tipoCita === 'RECITA' ? 'bg-blue-100 text-blue-700' :
+                          solicitud.tipoCita === 'INTERCONSULTA' ? 'bg-purple-100 text-purple-700' :
+                          solicitud.tipoCita === 'VOLUNTARIA' ? 'bg-green-100 text-green-700' :
                           'bg-gray-100 text-gray-700'
                         }`}>
                           {solicitud.tipoCita}

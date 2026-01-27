@@ -215,8 +215,9 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
     }
 
     private EstadisticasPorTipoCitaDTO mapearATipoCitaDTO(Map<String, Object> row) {
+        String tipoCita = (String) row.get("tipo_cita");
         return EstadisticasPorTipoCitaDTO.builder()
-                .tipoCita((String) row.get("tipo_cita"))
+                .tipoCita(tipoCita)
                 .total(((Number) row.get("total")).longValue())
                 .atendidos(((Number) row.getOrDefault("atendidos", 0L)).longValue())
                 .pendientes(((Number) row.getOrDefault("pendientes", 0L)).longValue())
@@ -225,18 +226,36 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
                 .tasaCompletacion((BigDecimal) row.get("tasa_completacion"))
                 .tasaCancelacion(BigDecimal.ZERO)  // Calcular si es necesario
                 .horasPromedio(((Number) row.getOrDefault("horas_promedio", 0)).intValue())
-                .icono(getIconoPorTipoCita((String) row.get("tipo_cita")))
+                .icono(getIconoPorTipoCita(tipoCita))
+                .color(getColorPorTipoCita(tipoCita))
                 .build();
     }
 
     private String getIconoPorTipoCita(String tipoCita) {
         if (tipoCita == null) return "❓";
         return switch (tipoCita.toUpperCase()) {
+            case "VOLUNTARIA" -> "🆓";
+            case "INTERCONSULTA" -> "🔄";
+            case "RECITA" -> "🔁";
             case "PRESENCIAL" -> "🏥";
             case "TELECONSULTA" -> "📞";
             case "VIDEOCONFERENCIA" -> "📹";
             case "ONLINE" -> "💻";
             default -> "❓";
+        };
+    }
+
+    private String getColorPorTipoCita(String tipoCita) {
+        if (tipoCita == null) return "#999999";
+        return switch (tipoCita.toUpperCase()) {
+            case "VOLUNTARIA" -> "#4ECDC4";       // Turquesa - libre/voluntaria
+            case "INTERCONSULTA" -> "#FFE66D";    // Amarillo - interconsulta
+            case "RECITA" -> "#FF6B6B";           // Rojo - recita/repetida
+            case "PRESENCIAL" -> "#95E1D3";       // Verde menta - presencial
+            case "TELECONSULTA" -> "#6C5CE7";     // Púrpura - teleconsulta
+            case "VIDEOCONFERENCIA" -> "#00B894"; // Verde - videoconferencia
+            case "ONLINE" -> "#0984E3";           // Azul - online
+            default -> "#999999";                  // Gris - desconocido
         };
     }
 
@@ -251,18 +270,29 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
         List<Map<String, Object>> resultados = solicitudRepository.evolucionTemporal();
 
         return resultados.stream()
-                .map(row -> EvolutionTemporalDTO.builder()
-                        .fecha((java.time.LocalDate) row.get("fecha"))
-                        .nuevasSolicitudes(((Number) row.getOrDefault("nuevas_solicitudes", 0L)).longValue())
-                        .completadas(((Number) row.getOrDefault("completadas", 0L)).longValue())
-                        .pendientes(((Number) row.getOrDefault("pendientes", 0L)).longValue())
-                        .cumulativoTotal(((Number) row.getOrDefault("cumulativo_total", 0L)).longValue())
-                        .cumulativoCompletado(0L)  // Opcional si queremos agregarlo
-                        .tasaDiaCompletacion(
-                            BigDecimal.ZERO  // Calcular si es necesario
-                        )
-                        .tendencia("=")  // Calcular si es necesario
-                        .build())
+                .map(row -> {
+                    // Convertir java.sql.Date a java.time.LocalDate correctamente
+                    Object fechaObj = row.get("fecha");
+                    java.time.LocalDate fecha = null;
+                    if (fechaObj instanceof java.sql.Date) {
+                        fecha = ((java.sql.Date) fechaObj).toLocalDate();
+                    } else if (fechaObj instanceof java.time.LocalDate) {
+                        fecha = (java.time.LocalDate) fechaObj;
+                    }
+
+                    return EvolutionTemporalDTO.builder()
+                            .fecha(fecha)
+                            .nuevasSolicitudes(((Number) row.getOrDefault("nuevas_solicitudes", 0L)).longValue())
+                            .completadas(((Number) row.getOrDefault("completadas", 0L)).longValue())
+                            .pendientes(((Number) row.getOrDefault("pendientes", 0L)).longValue())
+                            .cumulativoTotal(((Number) row.getOrDefault("cumulativo_total", 0L)).longValue())
+                            .cumulativoCompletado(0L)  // Opcional si queremos agregarlo
+                            .tasaDiaCompletacion(
+                                BigDecimal.ZERO  // Calcular si es necesario
+                            )
+                            .tendencia("=")  // Calcular si es necesario
+                            .build();
+                })
                 .collect(Collectors.toList());
     }
 

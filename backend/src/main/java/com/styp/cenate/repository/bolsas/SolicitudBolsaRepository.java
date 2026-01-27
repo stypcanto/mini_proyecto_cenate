@@ -161,7 +161,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * 4️⃣ Estadísticas por tipo de cita
-     * PRESENCIAL, TELECONSULTA, VIDEOCONFERENCIA
+     * Solo 3 tipos válidos: VOLUNTARIA, INTERCONSULTA, RECITA
      */
     @Query(value = """
         SELECT
@@ -172,7 +172,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
             ROUND(
                 COUNT(sb.id_solicitud) * 100.0 /
-                (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true), 2
+                (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true
+                 AND tipo_cita IN ('VOLUNTARIA', 'INTERCONSULTA', 'RECITA')), 2
             ) as porcentaje,
             ROUND(
                 COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
@@ -180,9 +181,15 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             ) as tasa_completacion
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
-        WHERE sb.activo = true AND sb.tipo_cita IS NOT NULL
+        WHERE sb.activo = true
+          AND sb.tipo_cita IN ('VOLUNTARIA', 'INTERCONSULTA', 'RECITA')
         GROUP BY sb.tipo_cita
-        ORDER BY total DESC
+        ORDER BY CASE
+                   WHEN sb.tipo_cita = 'VOLUNTARIA' THEN 1
+                   WHEN sb.tipo_cita = 'INTERCONSULTA' THEN 2
+                   WHEN sb.tipo_cita = 'RECITA' THEN 3
+                   ELSE 4
+                 END
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorTipoCita();
 

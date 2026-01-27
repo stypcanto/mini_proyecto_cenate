@@ -27,4 +27,5 @@ public class EstadisticasPorTipoCitaDTO {
 
     private Integer horasPromedio;        // Horas promedio atención
     private String icono;                 // 🏥, 💻, 📹, etc.
+    private String color;                 // Color para gráficos (#FF6B6B, #4ECDC4, etc)
 }

@@ -266,18 +266,118 @@ export default function EstadisticasDashboard() {
   const GraficoTipoCita = () => {
     if (!porTipoCita.length) return <div className="text-center text-gray-500 p-4">Sin datos</div>;
 
+    const total = porTipoCita.reduce((sum, item) => sum + item.total, 0);
+
+    // Función para crear segmentos de pie (SVG path)
+    const crearSegmentoPie = (dataPoints, centerX = 100, centerY = 100, radius = 80) => {
+      const paths = [];
+      let currentAngle = -90; // Comenzar desde arriba (-90 grados)
+
+      dataPoints.forEach((item, index) => {
+        const percentage = item.total / total;
+        const sliceAngle = percentage * 360;
+        const startAngle = currentAngle;
+        const endAngle = currentAngle + sliceAngle;
+
+        // Convertir ángulos a radianes
+        const startRad = (startAngle * Math.PI) / 180;
+        const endRad = (endAngle * Math.PI) / 180;
+
+        // Calcular puntos del arco
+        const x1 = centerX + radius * Math.cos(startRad);
+        const y1 = centerY + radius * Math.sin(startRad);
+        const x2 = centerX + radius * Math.cos(endRad);
+        const y2 = centerY + radius * Math.sin(endRad);
+
+        // Flag para arcos mayores a 180 grados
+        const largeArcFlag = sliceAngle > 180 ? 1 : 0;
+
+        // Crear path (M=move, L=line, A=arc, Z=close)
+        const pathData = `M ${centerX} ${centerY} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`;
+
+        // Calcular posición del texto (en el medio del segmento, a 60% del radio)
+        const middleAngle = (startAngle + endAngle) / 2;
+        const middleRad = (middleAngle * Math.PI) / 180;
+        const textRadius = radius * 0.6;
+        const textX = centerX + textRadius * Math.cos(middleRad);
+        const textY = centerY + textRadius * Math.sin(middleRad);
+        const percentageText = item.porcentaje.toFixed(1);
+
+        paths.push({
+          path: pathData,
+          color: item.color || '#999999',
+          index: index,
+          item: item,
+          textX: textX,
+          textY: textY,
+          percentage: percentageText,
+          angle: middleAngle
+        });
+
+        currentAngle = endAngle;
+      });
+
+      return paths;
+    };
+
+    const segmentos = crearSegmentoPie(porTipoCita);
+
     return (
-      <div className="espacio-central p-4">
-        <h3 className="font-bold text-lg mb-4">📞 Distribución por Tipo de Cita</h3>
-        <div className="grid grid-cols-2 gap-4">
+      <div className="espacio-central p-6">
+        <h3 className="font-bold text-lg mb-6">📞 Distribución por Tipo de Cita</h3>
+
+        {/* Gráfico Pie - Centrado */}
+        <div className="flex justify-center items-center mb-8">
+          <div className="w-80 h-80 relative">
+            <svg viewBox="0 0 200 200" className="w-full h-full">
+              {/* Fondo blanco */}
+              <circle cx="100" cy="100" r="100" fill="white" />
+
+              {/* Segmentos del pie */}
+              {segmentos.map((seg) => (
+                <g key={seg.index}>
+                  <path
+                    d={seg.path}
+                    fill={seg.color}
+                    stroke="white"
+                    strokeWidth="2"
+                    opacity="0.9"
+                    style={{ transition: 'opacity 0.3s ease', cursor: 'pointer' }}
+                    onMouseEnter={(e) => (e.target.style.opacity = '1')}
+                    onMouseLeave={(e) => (e.target.style.opacity = '0.9')}
+                  />
+                  {/* Porcentaje dentro del segmento */}
+                  <text
+                    x={seg.textX}
+                    y={seg.textY}
+                    textAnchor="middle"
+                    dominantBaseline="middle"
+                    fontSize="11"
+                    fontWeight="bold"
+                    fill="white"
+                    pointerEvents="none"
+                    style={{ textShadow: '0 1px 3px rgba(0,0,0,0.3)' }}
+                  >
+                    {seg.percentage}%
+                  </text>
+                </g>
+              ))}
+            </svg>
+          </div>
+        </div>
+
+        {/* Leyenda con detalles - Grid de 3 columnas */}
+        <div className="grid grid-cols-3 gap-4">
           {porTipoCita.map((item, idx) => (
-            <div key={idx} className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg p-4">
-              <p className="text-2xl mb-2">{item.icono}</p>
-              <p className="font-bold text-gray-800">{item.tipoCita || 'Sin especificar'}</p>
-              <p className="text-2xl font-bold text-blue-600">{item.total}</p>
-              <p className="text-xs text-gray-600 mt-1">{item.porcentaje}% del total</p>
-              <p className="text-xs text-green-600 font-bold mt-1">
-                Completación: {item.tasaCompletacion}%
+            <div key={idx} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+              <div className="flex items-center mb-2">
+                <div className="w-5 h-5 rounded-full flex-shrink-0 mr-3" style={{ backgroundColor: item.color || '#999999' }}></div>
+                <p className="font-bold text-gray-800">{item.icono} {item.tipoCita}</p>
+              </div>
+              <p className="text-sm text-gray-600 ml-8"><strong>{item.total}</strong> solicitudes</p>
+              <p className="text-xs text-gray-500 ml-8 font-semibold">{item.porcentaje}% del total</p>
+              <p className="text-xs text-green-600 font-semibold mt-2 ml-8">
+                ✓ Completación: {item.tasaCompletacion}%
               </p>
             </div>
           ))}
@@ -385,14 +485,9 @@ export default function EstadisticasDashboard() {
           </div>
         )}
 
-        {/* Gráficos */}
-        <div className="grid grid-cols-2 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md">
-            <GraficoEstados />
-          </div>
-          <div className="bg-white rounded-lg shadow-md">
-            <GraficoTipoCita />
-          </div>
+        {/* Gráfico Distribución por Tipo de Cita */}
+        <div className="bg-white rounded-lg shadow-md mb-8">
+          <GraficoTipoCita />
         </div>
 
         {/* Evolución Temporal */}
