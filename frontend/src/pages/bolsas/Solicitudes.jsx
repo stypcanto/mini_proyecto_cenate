@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
@@ -70,6 +70,7 @@ export default function Solicitudes() {
   const [gestoraSeleccionada, setGestoraSeleccionada] = useState(null);
   const [tipoRecordatorio, setTipoRecordatorio] = useState('EMAIL');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [importStatus, setImportStatus] = useState(null);
 
   // Estado para importación de Excel
   const [idTipoBolsaSeleccionado, setIdTipoBolsaSeleccionado] = useState('');

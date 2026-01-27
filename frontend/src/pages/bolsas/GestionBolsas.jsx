@@ -9,7 +9,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { bolsasService } from '../../services/bolsasService';
+import bolsasService from '../../services/bolsasService';
 import './GestionBolsas.css';
 
 export default function GestionBolsas() {
