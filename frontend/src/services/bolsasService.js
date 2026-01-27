@@ -367,6 +367,19 @@ export const obtenerEstadisticasPorTipoCita = async () => {
 };
 
 /**
+ * Obtiene estadísticas por tipo de bolsa
+ */
+export const obtenerEstadisticasPorTipoBolsa = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-tipo-bolsa`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas por tipo de bolsa:', error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene evolución temporal (últimos 30 días)
  */
 export const obtenerEvolutionTemporal = async () => {
@@ -737,6 +750,7 @@ export default {
   obtenerEstadisticasPorEspecialidad,
   obtenerEstadisticasPorIpress,
   obtenerEstadisticasPorTipoCita,
+  obtenerEstadisticasPorTipoBolsa,
   obtenerEvolutionTemporal,
   obtenerKpis,
   obtenerDashboardCompleto,

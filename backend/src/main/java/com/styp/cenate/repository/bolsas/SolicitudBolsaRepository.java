@@ -194,6 +194,42 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<Map<String, Object>> estadisticasPorTipoCita();
 
     /**
+     * 4️⃣ bis Estadísticas por tipo de bolsa
+     * Agrupa solicitudes por tipo de bolsa con métricas
+     */
+    @Query(value = """
+        SELECT
+            tb.desc_tipo_bolsa as tipo_bolsa,
+            COUNT(sb.id_solicitud) as total,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
+            ROUND(
+                COUNT(sb.id_solicitud) * 100.0 /
+                (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true), 2
+            ) as porcentaje,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_completacion,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_cancelacion,
+            CAST(ROUND(
+                AVG(EXTRACT(EPOCH FROM (sb.fecha_actualizacion - sb.fecha_solicitud)) / 3600),
+                2
+            ) AS INTEGER) as horas_promedio
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE sb.activo = true AND sb.id_bolsa IS NOT NULL
+        GROUP BY tb.desc_tipo_bolsa, tb.id_tipo_bolsa
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorTipoBolsa();
+
+    /**
      * 5️⃣ Evolución temporal (últimos 30 días)
      * Para gráficos de línea
      */

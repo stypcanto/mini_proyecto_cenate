@@ -60,6 +60,14 @@ public interface SolicitudBolsaEstadisticasService {
     List<EstadisticasPorTipoCitaDTO> obtenerEstadisticasPorTipoCita();
 
     /**
+     * Obtiene estadísticas agrupadas por tipo de bolsa
+     * Tipos: ORDINARIA, EXTRAORDINARIA, ESPECIAL, URGENTE, etc.
+     *
+     * @return Lista de EstadisticasPorTipoBolsaDTO ordenada por cantidad
+     */
+    List<EstadisticasPorTipoBolsaDTO> obtenerEstadisticasPorTipoBolsa();
+
+    /**
      * Obtiene evolución temporal de solicitudes
      * Últimos 30 días con nuevas, completadas, pendientes y acumulativo
      *

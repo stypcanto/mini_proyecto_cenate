@@ -176,6 +176,31 @@ public class SolicitudBolsaEstadisticasController {
     }
 
     // ========================================================================
+    // 📦 POR TIPO DE BOLSA
+    // ========================================================================
+
+    /**
+     * Estadísticas por tipo de bolsa
+     * GET /api/bolsas/estadisticas/por-tipo-bolsa
+     */
+    @GetMapping("/por-tipo-bolsa")
+    @Operation(
+        summary = "Estadísticas por tipo de bolsa",
+        description = "Tipos: ORDINARIA, EXTRAORDINARIA, ESPECIAL, URGENTE, EMERGENCIA, RESERVA",
+        tags = {"Por Tipo Bolsa"}
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "OK - Lista de tipos de bolsa con métricas",
+        content = @Content(schema = @Schema(implementation = EstadisticasPorTipoBolsaDTO.class))
+    )
+    public ResponseEntity<List<EstadisticasPorTipoBolsaDTO>> obtenerEstadisticasPorTipoBolsa() {
+        log.info("GET /api/bolsas/estadisticas/por-tipo-bolsa");
+        List<EstadisticasPorTipoBolsaDTO> datos = estadisticasService.obtenerEstadisticasPorTipoBolsa();
+        return ResponseEntity.ok(datos);
+    }
+
+    // ========================================================================
     // 📅 EVOLUCIÓN TEMPORAL
     // ========================================================================
 

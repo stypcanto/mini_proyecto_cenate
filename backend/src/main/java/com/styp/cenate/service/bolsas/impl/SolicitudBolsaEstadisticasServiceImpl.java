@@ -260,6 +260,65 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
     }
 
     // ========================================================================
+    // 📦 ESTADÍSTICAS POR TIPO DE BOLSA
+    // ========================================================================
+
+    @Override
+    public List<EstadisticasPorTipoBolsaDTO> obtenerEstadisticasPorTipoBolsa() {
+        log.info("📊 Obteniendo estadísticas por tipo de bolsa...");
+
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorTipoBolsa();
+
+        return resultados.stream()
+                .map(this::mapearATipoBolsaDTO)
+                .sorted(Comparator.comparingLong(EstadisticasPorTipoBolsaDTO::getTotal).reversed())
+                .collect(Collectors.toList());
+    }
+
+    private EstadisticasPorTipoBolsaDTO mapearATipoBolsaDTO(Map<String, Object> row) {
+        String tipoBolsa = (String) row.get("tipo_bolsa");
+        return EstadisticasPorTipoBolsaDTO.builder()
+                .tipoBolsa(tipoBolsa)
+                .total(((Number) row.get("total")).longValue())
+                .atendidos(((Number) row.getOrDefault("atendidos", 0L)).longValue())
+                .pendientes(((Number) row.getOrDefault("pendientes", 0L)).longValue())
+                .cancelados(((Number) row.getOrDefault("cancelados", 0L)).longValue())
+                .porcentaje((BigDecimal) row.get("porcentaje"))
+                .tasaCompletacion((BigDecimal) row.get("tasa_completacion"))
+                .tasaCancelacion((BigDecimal) row.get("tasa_cancelacion"))
+                .horasPromedio(((Number) row.getOrDefault("horas_promedio", 0)).intValue())
+                .icono(getIconoPorTipoBolsa(tipoBolsa))
+                .color(getColorPorTipoBolsa(tipoBolsa))
+                .build();
+    }
+
+    private String getIconoPorTipoBolsa(String tipoBolsa) {
+        if (tipoBolsa == null) return "📋";
+        return switch (tipoBolsa.toUpperCase()) {
+            case "ORDINARIA" -> "📋";              // Ordinaria - documento
+            case "EXTRAORDINARIA" -> "⚠️";         // Extraordinaria - alerta
+            case "ESPECIAL" -> "⭐";               // Especial - estrella
+            case "URGENTE" -> "🚨";                // Urgente - siren
+            case "EMERGENCIA" -> "🆘";             // Emergencia - SOS
+            case "RESERVA" -> "💾";                // Reserva - guardar
+            default -> "📋";                       // Default - documento
+        };
+    }
+
+    private String getColorPorTipoBolsa(String tipoBolsa) {
+        if (tipoBolsa == null) return "#999999";
+        return switch (tipoBolsa.toUpperCase()) {
+            case "ORDINARIA" -> "#3498DB";        // Azul - ordinaria
+            case "EXTRAORDINARIA" -> "#E74C3C";   // Rojo - extraordinaria
+            case "ESPECIAL" -> "#F39C12";         // Naranja - especial
+            case "URGENTE" -> "#FF6B6B";          // Rojo fuerte - urgente
+            case "EMERGENCIA" -> "#C0392B";       // Rojo oscuro - emergencia
+            case "RESERVA" -> "#27AE60";          // Verde - reserva
+            default -> "#95A5A6";                  // Gris - desconocido
+        };
+    }
+
+    // ========================================================================
     // 📅 EVOLUCIÓN TEMPORAL
     // ========================================================================
 
@@ -382,6 +441,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
         dashboard.put("por_especialidad", obtenerEstadisticasPorEspecialidad());
         dashboard.put("por_ipress", obtenerEstadisticasPorIpress());
         dashboard.put("por_tipo_cita", obtenerEstadisticasPorTipoCita());
+        dashboard.put("por_tipo_bolsa", obtenerEstadisticasPorTipoBolsa());
         dashboard.put("evolucion_temporal", obtenerEvolutionTemporal());
         dashboard.put("kpis", obtenerKpis());
         dashboard.put("del_dia", obtenerEstadisticasDelDia());
