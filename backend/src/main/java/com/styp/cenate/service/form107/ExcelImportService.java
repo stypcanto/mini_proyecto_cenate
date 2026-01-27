@@ -286,6 +286,11 @@ public class ExcelImportService {
 				String telefono = cellStr(row, 6);               // Columna 6: Teléfono
 				String correo = cellStr(row, 7);                 // Columna 7: Correo
 				String codigoIpress = cellStr(row, 8);           // Columna 8: Código IPRESS
+
+			// 🆕 v1.13.9: Normalizar código IPRESS a 3 dígitos
+			codigoIpress = normalizeIpress(codigoIpress);
+		// 🆕 v1.15.0: Normalizar código IPRESS a 3 dígitos con padding
+		codigoIpress = normalizeIpress(codigoIpress);
 				String tipoCita = cellStr(row, 9);               // Columna 9: Tipo Cita
 
 				// DEBUG primeras filas
@@ -522,6 +527,11 @@ public class ExcelImportService {
 				String telefono = cellStr(row, 6);               // Columna 6
 				String correo = cellStr(row, 7);                 // Columna 7
 				String codigoIpress = cellStr(row, 8);           // Columna 8
+
+			// 🆕 v1.13.9: Normalizar código IPRESS a 3 dígitos
+			codigoIpress = normalizeIpress(codigoIpress);
+			// 🆕 v1.15.0: Normalizar código IPRESS a 3 dígitos con padding
+			codigoIpress = normalizeIpress(codigoIpress);
 				String tipoCita = cellStr(row, 9);               // Columna 9
 
 				// Campos no disponibles en v1.8.0 (se dejan vacíos)
@@ -949,6 +959,37 @@ public class ExcelImportService {
 		digitsOnly = String.format("%08d", Long.parseLong(digitsOnly));
 
 		log.debug("✅ DNI normalizado: {} → {}", dni, digitsOnly);
+		return digitsOnly;
+	}
+
+	// 🆕 v1.15.0: Normalizar código IPRESS a 3 dígitos con ceros a la izquierda
+	/**
+	 * Normaliza el código IPRESS a exactamente 3 dígitos con padding de ceros a la izquierda
+	 * Ejemplo: "21" → "021", "421" → "421", "0421" → "421"
+	 */
+	private String normalizeIpress(String ipress) {
+		if (isBlank(ipress)) {
+			return null;
+		}
+
+		// Remover espacios y caracteres especiales
+		String digitsOnly = ipress.replaceAll("[^0-9]", "");
+
+		// Si está vacío después de remover caracteres
+		if (digitsOnly.isEmpty()) {
+			log.warn("⚠️ Código IPRESS inválido (sin dígitos): {}", ipress);
+			return null;
+		}
+
+		// Si tiene más de 3 dígitos, tomar los últimos 3
+		if (digitsOnly.length() > 3) {
+			digitsOnly = digitsOnly.substring(digitsOnly.length() - 3);
+		}
+
+		// Rellenar con ceros a la izquierda a 3 dígitos
+		digitsOnly = String.format("%03d", Long.parseLong(digitsOnly));
+
+		log.debug("✅ Código IPRESS normalizado: {} → {}", ipress, digitsOnly);
 		return digitsOnly;
 	}
 }
