@@ -79,6 +79,10 @@
 - 📍 [`spec/frontend/02_pages/01_estructura_minima_paginas.md`](spec/frontend/02_pages/01_estructura_minima_paginas.md) - Patrón arquitectónico
 - 📍 [`spec/frontend/01_gestion_usuarios_permisos.md`](spec/frontend/01_gestion_usuarios_permisos.md) - Permisos MBAC
 
+### UI/UX - Design System
+- 🎨 **RÁPIDA:** [`spec/UI-UX/00_estilos_tabla_rapido.md`](spec/UI-UX/00_estilos_tabla_rapido.md) - Referencia rápida de estilos (⭐ **EMPEZAR AQUÍ**)
+- 🎨 **COMPLETA:** [`spec/UI-UX/01_design_system_tablas.md`](spec/UI-UX/01_design_system_tablas.md) - Design System: Tablas profesionales CENATE
+
 ### Database
 - 📍 [`spec/database/01_models/01_modelo_usuarios.md`](spec/database/01_models/01_modelo_usuarios.md) - Modelo BD
 - 📍 [`spec/database/08_plan_backup_protecciones_completo.md`](spec/database/08_plan_backup_protecciones_completo.md) - Backups y seguridad

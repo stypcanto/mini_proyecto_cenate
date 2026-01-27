@@ -363,15 +363,18 @@ export default function CargarDesdeExcel() {
 
   // Obtener datos del usuario y tipos de bolsas en el montaje
   useEffect(() => {
-    // 🆕 v1.13.8: Obtener usuario desde auth.user (nuevo formato)
+    // 🆕 v1.14.0: Obtener usuario desde múltiples fuentes
     let usuario = null;
+
+    console.log('🔍 Buscando usuario en localStorage...');
+    console.log('📌 localStorage keys:', Object.keys(localStorage));
 
     // Intentar obtener desde auth.user (nuevo formato)
     const authUserStr = localStorage.getItem('auth.user');
     if (authUserStr) {
       try {
         usuario = JSON.parse(authUserStr);
-        console.log('👤 Usuario desde auth.user:', usuario);
+        console.log('✅ Usuario desde auth.user:', usuario);
       } catch (e) {
         console.error('Error al parsear auth.user:', e);
       }
@@ -383,17 +386,40 @@ export default function CargarDesdeExcel() {
       if (userStr) {
         try {
           usuario = JSON.parse(userStr);
-          console.log('👤 Usuario desde localStorage:', usuario);
+          console.log('✅ Usuario desde localStorage user:', usuario);
         } catch (e) {
           console.error('Error al parsear usuario:', e);
         }
       }
     }
 
+    // Si aún no hay usuario, buscar en otras keys posibles
+    if (!usuario) {
+      const posibleKeys = ['currentUser', 'auth', 'usuario', 'usuarioActual', 'userData'];
+      for (let key of posibleKeys) {
+        const value = localStorage.getItem(key);
+        if (value) {
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed && typeof parsed === 'object' && (parsed.username || parsed.nombre || parsed.id)) {
+              usuario = parsed;
+              console.log(`✅ Usuario encontrado en key "${key}":`, usuario);
+              break;
+            }
+          } catch (e) {
+            // Ignorar
+          }
+        }
+      }
+    }
+
     // Fallback a admin si no se encuentra nada
     if (!usuario) {
-      console.warn('⚠️ No se encontró usuario autenticado');
+      console.warn('⚠️ No se encontró usuario autenticado, usando fallback');
       usuario = { username: 'admin', id: 1 };
+    } else {
+      console.log('📋 Propiedades disponibles del usuario:', Object.keys(usuario));
+      console.log('📋 Valores:', usuario);
     }
 
     setUsuario(usuario);
@@ -573,32 +599,58 @@ export default function CargarDesdeExcel() {
       formData.append('idBolsa', tipoBolesaId);
       formData.append('idServicio', idServicio);
 
-      // 🆕 v1.13.8: Obtener el nombre del usuario - intentar múltiples propiedades
+      // 🆕 v1.14.0: Obtener el nombre del usuario - intentar múltiples propiedades
       let nombreUsuario = usuario.username ||
                          usuario.nombre ||
                          usuario.nombreCompleto ||
                          usuario.nombreUsuario ||
                          usuario.name ||
-                         usuario.displayName;
+                         usuario.displayName ||
+                         usuario.nombreUsuarioActual ||
+                         usuario.nombreReal ||
+                         usuario.full_name;
+
+      console.log('🔵 Intento 1 - Propiedades del usuario:', { nombreUsuario, props: Object.keys(usuario) });
 
       // Si aún no tenemos nombre o es 'admin', intentar desde el JWT token
       if (!nombreUsuario || nombreUsuario === 'admin') {
-        // Buscar token en localStorage con la nueva key
-        let token = null;
+        console.log('🟡 Intento 2 - Nombre es "admin" o vacío, buscando en JWT...');
 
-        // Intentar encontrar el token en las keys hasheadas
-        for (let key in localStorage) {
+        // Buscar token en localStorage - intentar múltiples locations
+        let token = null;
+        const tokenKeys = ['auth_token', 'authToken', 'jwt', 'jwtToken', 'token', 'access_token'];
+
+        // Primero, buscar en keys específicas
+        for (let key of tokenKeys) {
           const value = localStorage.getItem(key);
-          if (value && value.startsWith('{"') && value.includes('eyJ')) {
-            // Parece ser un JWT
-            try {
-              const parsed = JSON.parse(value);
-              if (parsed.jwt || parsed.token) {
-                token = parsed.jwt || parsed.token;
-                break;
+          if (value && value.startsWith('eyJ')) {
+            token = value;
+            console.log(`✅ Token encontrado en "${key}"`);
+            break;
+          }
+        }
+
+        // Si no encontró, buscar en cualquier key que contenga un JWT
+        if (!token) {
+          for (let key in localStorage) {
+            const value = localStorage.getItem(key);
+            if (value && value.startsWith('eyJ')) {
+              token = value;
+              console.log(`✅ Token encontrado en key desconocida: "${key}"`);
+              break;
+            }
+            // También intentar si está dentro de un JSON
+            if (value && value.includes('eyJ')) {
+              try {
+                const parsed = JSON.parse(value);
+                if (parsed.jwt || parsed.token) {
+                  token = parsed.jwt || parsed.token;
+                  console.log(`✅ Token encontrado en JSON dentro de "${key}"`);
+                  break;
+                }
+              } catch (e) {
+                // Ignorar
               }
-            } catch (e) {
-              // Ignorar
             }
           }
         }
@@ -609,25 +661,52 @@ export default function CargarDesdeExcel() {
             const parts = token.split('.');
             if (parts.length === 3) {
               const decoded = JSON.parse(atob(parts[1]));
+              console.log('🔐 Token decodificado:', Object.keys(decoded));
+              console.log('🔐 Contenido completo:', decoded);
+
+              // Intentar extraer el nombre de muchas propiedades posibles
               nombreUsuario = decoded.nombre ||
                             decoded.nombreCompleto ||
                             decoded.full_name ||
+                            decoded.nombre_completo ||
+                            decoded.nombreUsuario ||
+                            decoded.usuario ||
                             decoded.sub ||
                             decoded.name ||
+                            decoded.preferred_username ||
                             nombreUsuario;
-              console.log('🔐 Nombre extraído del JWT:', nombreUsuario);
+
+              if (nombreUsuario) {
+                console.log('✅ Nombre extraído del JWT:', nombreUsuario);
+              }
             }
           } catch (e) {
-            console.warn('No se pudo decodificar token:', e);
+            console.warn('⚠️ Error decodificando token:', e);
+          }
+        } else {
+          console.warn('⚠️ No se encontró token JWT en localStorage');
+        }
+      }
+
+      // Si es un número (como ID de usuario del sistema), intentar otra cosa
+      if (!nombreUsuario || /^\d+$/.test(nombreUsuario)) {
+        console.log('🟠 Intento 3 - nombreUsuario es número o vacío, usando fallback');
+        // Buscar en la información completa del usuario cualquier campo que se vea como nombre
+        for (let prop in usuario) {
+          const val = usuario[prop];
+          if (typeof val === 'string' && val.length > 2 && val.length < 100 &&
+              !val.includes('@') && !/^\d+$/.test(val) && val !== 'admin') {
+            nombreUsuario = val;
+            console.log(`✅ Nombre fallback encontrado en propiedad "${prop}": ${nombreUsuario}`);
+            break;
           }
         }
       }
 
-      // Si es un número (como el username del sistema), usar como fallback
-      // pero intentar obtener el nombre real del usuario autenticado
-      if (!nombreUsuario || /^\d+$/.test(nombreUsuario)) {
-        // Último recurso: usar el username aunque sea un número
+      // Último recurso: usar el username aunque sea "admin"
+      if (!nombreUsuario) {
         nombreUsuario = usuario.username || 'SISTEMA';
+        console.log('🔴 Usando nombre final:', nombreUsuario);
       }
 
       formData.append('usuarioCarga', nombreUsuario);
@@ -637,7 +716,7 @@ export default function CargarDesdeExcel() {
         idBolsa: tipoBolesaId,
         idServicio: idServicio,
         usuarioCarga: nombreUsuario,
-        usuarioObj: usuario,
+        usuarioCompleto: usuario,
         tamaño: file.size
       });
 

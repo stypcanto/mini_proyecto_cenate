@@ -284,15 +284,123 @@ export const eliminarMultiplesSolicitudes = async (ids) => {
 // ========================================================================
 
 /**
- * Obtiene estadísticas generales del módulo
+ * 🆕 v2.0.0: Obtiene estadísticas generales del módulo
  * @returns {Promise<Object>} - Estadísticas
  */
 export const obtenerEstadisticas = async () => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/estadisticas`);
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/resumen`);
     return response;
   } catch (error) {
     console.error('Error al obtener estadísticas:', error);
+    throw error;
+  }
+};
+
+// ========================================================================
+// 🆕 v2.0.0: NUEVOS ENDPOINTS DE ESTADÍSTICAS
+// ========================================================================
+
+/**
+ * Obtiene estadísticas del día actual
+ */
+export const obtenerEstadisticasDelDia = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/del-dia`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas del día:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene estadísticas por estado de cita
+ */
+export const obtenerEstadisticasPorEstado = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-estado`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas por estado:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene estadísticas por especialidad
+ */
+export const obtenerEstadisticasPorEspecialidad = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-especialidad`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas por especialidad:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene estadísticas por IPRESS
+ */
+export const obtenerEstadisticasPorIpress = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-ipress`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas por IPRESS:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene estadísticas por tipo de cita
+ */
+export const obtenerEstadisticasPorTipoCita = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/por-tipo-cita`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas por tipo de cita:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene evolución temporal (últimos 30 días)
+ */
+export const obtenerEvolutionTemporal = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/evolucion-temporal`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener evolución temporal:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene KPIs detallados
+ */
+export const obtenerKpis = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/kpis`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener KPIs:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene dashboard completo con todas las estadísticas
+ */
+export const obtenerDashboardCompleto = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/dashboard-completo`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener dashboard completo:', error);
     throw error;
   }
 };
@@ -624,6 +732,14 @@ export default {
 
   // Estadísticas
   obtenerEstadisticas,
+  obtenerEstadisticasDelDia,
+  obtenerEstadisticasPorEstado,
+  obtenerEstadisticasPorEspecialidad,
+  obtenerEstadisticasPorIpress,
+  obtenerEstadisticasPorTipoCita,
+  obtenerEvolutionTemporal,
+  obtenerKpis,
+  obtenerDashboardCompleto,
   exportarBolsas,
 
   // Historial de Cargas / Bolsas (v1.11.0 - renamed for semantic alignment)

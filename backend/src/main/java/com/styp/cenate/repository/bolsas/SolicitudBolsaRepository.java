@@ -78,4 +78,180 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      */
     List<SolicitudBolsa> findByPacienteDniAndActivoTrue(String pacienteDni);
 
+    // ========================================================================
+    // 🆕 v2.0.0: ESTADÍSTICAS - Métodos para dashboard y reportes
+    // ========================================================================
+
+    /**
+     * 1️⃣ Estadísticas por estado de gestión de citas
+     * Agrupa solicitudes activas por estado
+     */
+    @Query(value = """
+        SELECT
+            COALESCE(dgc.desc_estado_cita, 'SIN ESTADO') as estado,
+            COUNT(sb.id_solicitud) as cantidad,
+            ROUND(COUNT(sb.id_solicitud) * 100.0 /
+                (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true), 2) as porcentaje
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE sb.activo = true
+        GROUP BY dgc.desc_estado_cita, dgc.id_estado_cita
+        ORDER BY cantidad DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorEstado();
+
+    /**
+     * 2️⃣ Estadísticas por especialidad
+     * Incluye tasas de completación y tiempo promedio
+     */
+    @Query(value = """
+        SELECT
+            sb.especialidad,
+            COUNT(sb.id_solicitud) as total,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_completacion,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_cancelacion,
+            CAST(ROUND(
+                AVG(EXTRACT(EPOCH FROM (sb.fecha_actualizacion - sb.fecha_solicitud)) / 3600),
+                2
+            ) AS INTEGER) as horas_promedio
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE sb.activo = true AND sb.especialidad IS NOT NULL
+        GROUP BY sb.especialidad
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorEspecialidad();
+
+    /**
+     * 3️⃣ Estadísticas por IPRESS
+     * Incluye ranking por volumen
+     */
+    @Query(value = """
+        SELECT
+            sb.codigo_ipress,
+            di.desc_ipress as nombre_ipress,
+            dr.desc_red as red_asistencial,
+            COUNT(sb.id_solicitud) as total,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_completacion,
+            ROW_NUMBER() OVER (ORDER BY COUNT(sb.id_solicitud) DESC) as ranking
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_ipress di ON sb.codigo_ipress = di.cod_ipress
+        LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE sb.activo = true AND sb.codigo_ipress IS NOT NULL
+        GROUP BY sb.codigo_ipress, di.desc_ipress, dr.desc_red
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorIpress();
+
+    /**
+     * 4️⃣ Estadísticas por tipo de cita
+     * PRESENCIAL, TELECONSULTA, VIDEOCONFERENCIA
+     */
+    @Query(value = """
+        SELECT
+            sb.tipo_cita,
+            COUNT(sb.id_solicitud) as total,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
+            ROUND(
+                COUNT(sb.id_solicitud) * 100.0 /
+                (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true), 2
+            ) as porcentaje,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_completacion
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE sb.activo = true AND sb.tipo_cita IS NOT NULL
+        GROUP BY sb.tipo_cita
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorTipoCita();
+
+    /**
+     * 5️⃣ Evolución temporal (últimos 30 días)
+     * Para gráficos de línea
+     */
+    @Query(value = """
+        SELECT
+            DATE(sb.fecha_solicitud AT TIME ZONE 'America/Lima') as fecha,
+            COUNT(sb.id_solicitud) as nuevas_solicitudes,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as completadas,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            SUM(COUNT(sb.id_solicitud)) OVER (
+                ORDER BY DATE(sb.fecha_solicitud AT TIME ZONE 'America/Lima')
+            ) as cumulativo_total
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE sb.activo = true
+            AND sb.fecha_solicitud >= NOW() AT TIME ZONE 'America/Lima' - INTERVAL '30 days'
+        GROUP BY DATE(sb.fecha_solicitud AT TIME ZONE 'America/Lima')
+        ORDER BY fecha DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> evolucionTemporal();
+
+    /**
+     * 6️⃣ KPIs generales - métricas clave de rendimiento
+     */
+    @Query(value = """
+        SELECT
+            COUNT(sb.id_solicitud) as total_solicitudes,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as total_atendidas,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as total_pendientes,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as total_canceladas,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'DERIVADO' THEN 1 END) as total_derivadas,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_completacion,
+            ROUND(
+                COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(sb.id_solicitud), 0), 2
+            ) as tasa_abandono,
+            CAST(ROUND(
+                AVG(EXTRACT(EPOCH FROM (sb.fecha_actualizacion - sb.fecha_solicitud)) / 3600),
+                2
+            ) AS INTEGER) as horas_promedio_general,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE'
+                AND sb.fecha_solicitud < NOW() AT TIME ZONE 'America/Lima' - INTERVAL '7 days'
+                THEN 1 END) as pendientes_vencidas
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE sb.activo = true
+        """, nativeQuery = true)
+    Map<String, Object> obtenerKpis();
+
+    /**
+     * 7️⃣ Estadísticas del día actual (últimas 24 horas)
+     */
+    @Query(value = """
+        SELECT
+            COUNT(sb.id_solicitud) as solicitudes_hoy,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) as atendidas_hoy,
+            COUNT(CASE WHEN dgc.desc_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes_hoy
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
+        WHERE sb.activo = true
+            AND sb.fecha_solicitud >= NOW() AT TIME ZONE 'America/Lima' - INTERVAL '24 hours'
+        """, nativeQuery = true)
+    Map<String, Object> estadisticasDelDia();
+
 }
