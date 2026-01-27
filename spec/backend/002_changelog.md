@@ -4,6 +4,49 @@
 
 ---
 
+## v1.35.2 (2026-01-27) - Limpieza Arquitectónica: Eliminar dim_bolsa (Tabla Huérfana)
+
+### 🗑️ Cambio de Limpieza Arquitectónica
+
+**Problema Identificado:**
+- Tabla `dim_bolsa` creada en v1.0.0 pero **NUNCA usada** en código
+- No hay Entity Java, Service, Controller, ni referencia en Frontend
+- `dim_solicitud_bolsa` usa `dim_tipos_bolsas`, NO `dim_bolsa`
+- Tabla intermedia innecesaria causa confusión arquitectónica
+
+**Solución:**
+Eliminar tabla `dim_bolsa` y simplificar arquitectura:
+
+**Antes (Innecesariamente complejo):**
+```
+dim_tipos_bolsas (CATÁLOGO)
+     ↓
+dim_bolsa (TABLA INTERMEDIA HUÉRFANA - nunca usada)
+     ↓
+dim_solicitud_bolsa (SOLICITUDES)
+```
+
+**Después (Simplificado v1.12.0):**
+```
+dim_tipos_bolsas (CATÁLOGO)
+     ↓ (FK: id_bolsa)
+dim_solicitud_bolsa (SOLICITUDES)
+```
+
+**Impacto:**
+- ✅ Base de datos más limpia: -1 tabla, -5 índices, -12 columnas
+- ✅ Arquitectura más clara y mantenible
+- ✅ Sin impacto en funcionalidad (tabla nunca se usó)
+- ✅ Auditoría completa mantenida via `dim_solicitud_bolsa` y `dim_historial_importacion_bolsa`
+
+**Archivos Cambiados:**
+- `backend/src/main/resources/db/migration/V3_0_6__cleanup_remove_unused_dim_bolsa.sql` (Nueva migración)
+- `backend/src/main/java/com/styp/cenate/db/scripts/sql/051_crear_modulo_bolsas.sql` (Actualizado - notas de deprecación)
+- `spec/backend/09_modules_bolsas/README.md` (Documentación actualizada)
+- `spec/backend/002_changelog.md` (Este documento)
+
+---
+
 ## v1.35.1 (2026-01-27) - Módulo Solicitudes de Bolsa v1.12.0 - Auto-Detección y Soft Delete
 
 ### 🎯 Resumen de Cambios

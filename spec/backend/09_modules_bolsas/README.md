@@ -116,12 +116,20 @@ CRUD de estados para seguimiento de citas:
 
 | Tabla | Propósito | Versión |
 |-------|----------|---------|
-| **dim_tipos_bolsas** | Catálogo de tipos de bolsa | v1.1.0 |
+| **dim_tipos_bolsas** | Catálogo de tipos de bolsa (BOLSA_107, BOLSA_DENGUE, etc.) | v1.1.0 |
 | **dim_estados_gestion_citas** | 10 estados de citas | v1.33.0 |
 | **dim_asegurados** | Enriquecimiento de sexo, fecha nac, correo | v1.0.0 |
 | **dim_ipress** | Enriquecimiento IPRESS + RED | v1.0.0 |
 | **dim_red** | Redes asistenciales | v1.0.0 |
-| **bolsa_107_carga** | Histórico de importaciones | v1.0.0 |
+| **dim_historial_importacion_bolsa** | Histórico de importaciones desde Excel | v1.0.0 |
+
+### ⚠️ Tablas Eliminadas en v1.12.0
+
+| Tabla | Razón | Migración |
+|-------|-------|-----------|
+| **dim_bolsa** ❌ | Tabla intermedia no utilizada - Arquitectura simplificada | V3_0_6 |
+
+**Nota:** `dim_bolsa` fue diseñada en v1.0.0 como tabla intermedia entre `dim_tipos_bolsas` y `dim_solicitud_bolsa`, pero nunca se implementó en código. La arquitectura actual usa `dim_tipos_bolsas` → `dim_solicitud_bolsa` directamente. Tabla eliminada por: Limpieza de arquitectura (v1.12.0).
 
 ---
 
