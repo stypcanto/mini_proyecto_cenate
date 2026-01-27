@@ -13,6 +13,13 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import jakarta.servlet.http.HttpServletRequest;
+import java.util.Base64;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.CellValue;
@@ -818,9 +825,55 @@ public class ExcelImportService {
 	 */
 	private String obtenerNombreUsuarioAutenticado() {
 		try {
+			// 🆕 v1.13.8: Intentar obtener nombre desde JWT token primero
+			try {
+				ServletRequestAttributes attrs = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+				if (attrs != null) {
+					HttpServletRequest request = attrs.getRequest();
+					String authHeader = request.getHeader("Authorization");
+
+					if (authHeader != null && authHeader.startsWith("Bearer ")) {
+						String token = authHeader.substring(7);
+						String[] parts = token.split("\\.");
+
+						if (parts.length == 3) {
+							// Decodificar payload
+							String payload = new String(Base64.getDecoder().decode(parts[1]));
+							Map<String, Object> claims = new ObjectMapper().readValue(payload, Map.class);
+
+							// Buscar nombre completo en el payload
+							String fullName = (String) claims.getOrDefault("nombre", null);
+							if (fullName == null) {
+								fullName = (String) claims.getOrDefault("nombreCompleto", null);
+							}
+							if (fullName == null) {
+								fullName = (String) claims.getOrDefault("full_name", null);
+							}
+							if (fullName == null) {
+								fullName = (String) claims.getOrDefault("name", null);
+							}
+
+							if (fullName != null && !fullName.isEmpty()) {
+								log.info("👤 Nombre desde JWT token: {}", fullName);
+								return fullName;
+							}
+
+							// Si no hay nombre completo, usar username del token
+							String username = (String) claims.getOrDefault("sub", null);
+							if (username != null && !username.isEmpty()) {
+								log.info("👤 Username desde JWT token (sub): {}", username);
+								return username;
+							}
+						}
+					}
+				}
+			} catch (Exception tokenEx) {
+				log.debug("⚠️ No se pudo extraer nombre del JWT token: {}", tokenEx.getMessage());
+			}
+
+			// Fallback: obtener del SecurityContext
 			var authentication = SecurityContextHolder.getContext().getAuthentication();
 			if (authentication != null && authentication.isAuthenticated()) {
-				// Intentar obtener del principal (puede ser UserDetails)
 				var principal = authentication.getPrincipal();
 
 				// Si es una String (username)
@@ -828,15 +881,14 @@ public class ExcelImportService {
 					String username = (String) principal;
 					log.info("👤 Usuario (String): {}", username);
 
-					// No retornar "admin" como está - si es admin, intenta obtener nombre completo
 					if (username.equals("admin") || username.equals("anonymousUser")) {
-						log.warn("⚠️ Usuario 'admin' o anónimo detectado, intentando obtener nombre completo");
+						log.warn("⚠️ Usuario 'admin' o anónimo detectado");
 						return "SISTEMA";
 					}
 					return username;
 				}
 
-				// Si es UserDetails, intentar obtener nombre o username
+				// Si es UserDetails, obtener username
 				if (principal.getClass().getSimpleName().contains("UserDetails")) {
 					String username = authentication.getName();
 					log.info("👤 Usuario (UserDetails): {}", username);
@@ -849,7 +901,7 @@ public class ExcelImportService {
 				return !username.equals("anonymousUser") && !username.isEmpty() ? username : "SISTEMA";
 			}
 		} catch (Exception e) {
-			log.warn("⚠️ No se pudo obtener usuario autenticado: {}", e.getMessage());
+			log.warn("⚠️ Error obteniendo usuario autenticado: {}", e.getMessage());
 		}
 		return "SISTEMA"; // Fallback
 	}
