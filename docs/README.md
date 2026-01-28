@@ -7,9 +7,12 @@ Este directorio contiene la documentación técnica del proyecto, organizada por
 ```
 docs/
 ├── README.md                                    # Este archivo
-└── gestion-periodos-disponibilidad/
-    ├── backend.md                               # Documentación del backend
-    └── frontend.md                              # Documentación del frontend
+├── gestion-periodos-disponibilidad/
+│   ├── backend.md                               # Documentación del backend
+│   └── frontend.md                              # Documentación del frontend
+└── solicitud-turnos/
+    ├── codigo-personal.md                       # Cómo se obtiene el código del personal
+    └── obtenerPersonalActual.md                 # Detalles del método obtenerPersonalActual
 ```
 
 ## 📋 Módulos Documentados
@@ -22,6 +25,15 @@ docs/
 **Documentación:**
 - [Backend](./gestion-periodos-disponibilidad/backend.md)
 - [Frontend](./gestion-periodos-disponibilidad/frontend.md)
+
+### Solicitud de Turnos (Rol Externo)
+- **Ruta Frontend:** `/roles/externo/solicitud-turnos`
+- **Controller Backend:** `SolicitudTurnoIpressController`
+- **Base URL API:** `/api/solicitudes-turno`
+
+**Documentación:**
+- [Obtención del Código del Personal](./solicitud-turnos/codigo-personal.md) - Flujo completo de cómo se obtiene el código del personal
+- [Método obtenerPersonalActual()](./solicitud-turnos/obtenerPersonalActual.md) - Detalles del método y valores que retorna
 
 ---
 
@@ -121,6 +133,7 @@ Para documentar un nuevo módulo:
 
 ### Por Funcionalidad
 - **Gestión de Períodos:** `gestion-periodos-disponibilidad/`
+- **Solicitud de Turnos:** `solicitud-turnos/`
 - (Agregar más módulos aquí)
 
 ### Por Tipo de Documentación

@@ -239,8 +239,9 @@ export default function GestionPeriodosDisponibilidad() {
     console.log("Periodo recibido:", periodo);
     console.log("Estado del periodo:", periodo?.estado);
     
-    if (periodo.estado !== "ACTIVO") {
-      window.alert("Solo se pueden editar periodos en estado ACTIVO");
+    // Permitir editar si está en ACTIVO o BORRADOR
+    if (periodo.estado !== "ACTIVO" && periodo.estado !== "BORRADOR") {
+      window.alert("Solo se pueden editar periodos en estado ACTIVO o BORRADOR");
       return;
     }
     
