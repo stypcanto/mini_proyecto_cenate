@@ -37,17 +37,18 @@ import * as XLSX from 'xlsx';
  *    - Umbral de similitud: 40% para aceptar coincidencia
  *
  * 4️⃣ ESTRUCTURA
- *    - 10 campos en ORDEN FIJO (posiciones no cambian)
+ *    - 11 campos en ORDEN FIJO (posiciones no cambian)
  *    - Columna 0: FECHA PREFERIDA (YYYY-MM-DD) [OBLIGATORIO]
  *    - Columna 1: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
  *    - Columna 2: DNI (8 dígitos) [OBLIGATORIO]
  *    - Columna 3: ASEGURADO (nombre) [OBLIGATORIO]
  *    - Columna 4: SEXO (M/F) [OPCIONAL - se llena desde BD si falta]
  *    - Columna 5: FECHA NACIMIENTO (YYYY-MM-DD) [OPCIONAL - se llena desde BD si falta]
- *    - Columna 6: TELÉFONO (números) [OPCIONAL - se llena desde BD si falta]
- *    - Columna 7: CORREO (email) [OPCIONAL - se llena desde BD si falta]
- *    - Columna 8: COD. IPRESS (números) [OBLIGATORIO]
- *    - Columna 9: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
+ *    - Columna 6: TELÉFONO PRINCIPAL (números) [OPCIONAL - se llena desde BD si falta]
+ *    - Columna 7: TELÉFONO ALTERNO (números) [OPCIONAL - se llena desde BD si falta]
+ *    - Columna 8: CORREO (email) [OPCIONAL - se llena desde BD si falta]
+ *    - Columna 9: COD. IPRESS (números) [OBLIGATORIO]
+ *    - Columna 10: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
  *
  *    💡 IMPORTANTE: Si el Asegurado (DNI) no existe en el sistema, será creado automáticamente (v1.13.8)
  *
@@ -93,17 +94,18 @@ export default function CargarDesdeExcel() {
      * Valida si un archivo Excel tiene la estructura correcta para bolsas.
      * Analiza el contenido de las columnas para detectar tipos de datos.
      *
-     * Estructura esperada v1.13.8: 10 columnas en este orden:
+     * Estructura esperada v1.14.0: 11 columnas en este orden:
      * 0: FECHA PREFERIDA (YYYY-MM-DD) [OBLIGATORIO]
      * 1: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
      * 2: DNI (8 dígitos) [OBLIGATORIO]
      * 3: ASEGURADO (texto) [OBLIGATORIO]
      * 4: SEXO (M/F) [OPCIONAL]
      * 5: FECHA NACIMIENTO (YYYY-MM-DD) [OPCIONAL]
-     * 6: TELÉFONO (números) [OPCIONAL]
-     * 7: CORREO (email) [OPCIONAL]
-     * 8: COD. IPRESS (números) [OBLIGATORIO]
-     * 9: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
+     * 6: TELÉFONO PRINCIPAL (números) [OPCIONAL]
+     * 7: TELÉFONO ALTERNO (números) [OPCIONAL]
+     * 8: CORREO (email) [OPCIONAL]
+     * 9: COD. IPRESS (números) [OBLIGATORIO]
+     * 10: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
      */
 
     if (!listaData || listaData.length === 0) {
@@ -156,11 +158,11 @@ export default function CargarDesdeExcel() {
 
     const valoresAnalisis = Object.values(filaAnalisis);
 
-    // Validar estructura esperada (10 columnas mínimo)
-    if (valoresAnalisis.length < 10) {
+    // Validar estructura esperada (11 columnas mínimo)
+    if (valoresAnalisis.length < 11) {
       return {
         valido: false,
-        error: `Se detectaron solo ${valoresAnalisis.length} columnas, se esperan al menos 10`
+        error: `Se detectaron solo ${valoresAnalisis.length} columnas, se esperan al menos 11`
       };
     }
 
@@ -172,19 +174,20 @@ export default function CargarDesdeExcel() {
       col3_nombre: valoresAnalisis[3]?.toString().length > 3,
       col4_sexo: /^[MF]$/i.test(valoresAnalisis[4]?.toString() || ''),
       col5_fechaNac: /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}/.test(valoresAnalisis[5]?.toString() || ''),
-      col6_telefono: /^\d{6,15}/.test(valoresAnalisis[6]?.toString() || ''),
-      col7_correo: /^[^\s@]+@[^\s@]+\.[^\s@]+/.test(valoresAnalisis[7]?.toString() || '') || valoresAnalisis[7]?.toString() === '',
-      col8_ipress: /^\d{2,4}/.test(valoresAnalisis[8]?.toString() || ''),
-      col9_tipoCita: /^(Recita|Interconsulta|Voluntaria)/i.test(valoresAnalisis[9]?.toString() || '')
+      col6_telefonoPrincipal: /^\d{6,15}/.test(valoresAnalisis[6]?.toString() || ''),
+      col7_telefonoAlterno: /^\d{6,15}/.test(valoresAnalisis[7]?.toString() || '') || valoresAnalisis[7]?.toString() === '',
+      col8_correo: /^[^\s@]+@[^\s@]+\.[^\s@]+/.test(valoresAnalisis[8]?.toString() || '') || valoresAnalisis[8]?.toString() === '',
+      col9_ipress: /^\d{2,4}/.test(valoresAnalisis[9]?.toString() || ''),
+      col10_tipoCita: /^(Recita|Interconsulta|Voluntaria)/i.test(valoresAnalisis[10]?.toString() || '')
     };
 
     console.log('✅ Validaciones por columna:', validaciones);
 
     // Contar validaciones exitosas
     const validacionesExitosas = Object.values(validaciones).filter(v => v).length;
-    const porcentajeValido = (validacionesExitosas / 10) * 100;
+    const porcentajeValido = (validacionesExitosas / 11) * 100;
 
-    // Decisión: viable si al menos 7 de 10 columnas son válidas
+    // Decisión: viable si al menos 8 de 11 columnas son válidas
     const esViable = porcentajeValido >= 70;
 
     return {
@@ -194,13 +197,13 @@ export default function CargarDesdeExcel() {
       analisis,
       detalles: {
         columnasValidas: validacionesExitosas,
-        columnasEsperadas: 10,
+        columnasEsperadas: 11,
         tieneHeaders: analisis.tieneEnlaces,
         tieneData: analisis.tieneDatos
       },
       recomendacion: esViable
         ? `✅ Estructura válida (${Math.round(porcentajeValido)}% de coincidencia)`
-        : `❌ Estructura inválida (${Math.round(porcentajeValido)}% de coincidencia). Se esperan 10 columnas en el orden: Fecha, Tipo Doc, DNI, Asegurado, Sexo, Fecha Nac, Teléfono, Correo, Código IPRESS, Tipo Cita`
+        : `❌ Estructura inválida (${Math.round(porcentajeValido)}% de coincidencia). Se esperan 11 columnas en el orden: Fecha, Tipo Doc, DNI, Asegurado, Sexo, Fecha Nac, Teléfono Principal, Teléfono Alterno, Correo, Código IPRESS, Tipo Cita`
     };
   };
 
@@ -752,7 +755,7 @@ export default function CargarDesdeExcel() {
       if (error.message?.includes('mismo hash') || error.message?.includes('Ya se cargó')) {
         mensajeAmigable = '⚠️ Esta bolsa ya fue cargada anteriormente. Si deseas cargar una nueva versión, modifica el archivo o cambia su nombre.';
       } else if (error.message?.includes('400') || error.message?.includes('validación')) {
-        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga los 10 campos obligatorios.';
+        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga los 11 campos obligatorios.';
       } else if (error.message?.includes('500')) {
         mensajeAmigable = '❌ Error interno del servidor. Por favor, intenta nuevamente.';
       } else if (error.message?.includes('token') || error.message?.includes('401')) {
@@ -779,7 +782,8 @@ export default function CargarDesdeExcel() {
         'ASEGURADO': 'Juan Pérez García',
         'SEXO': 'M',
         'FECHA DE NACIMIENTO': '1980-05-20',
-        'TELÉFONO': '987654321',
+        'TELÉFONO PRINCIPAL': '987654321',
+        'TELÉFONO ALTERNO': '998765432',
         'CORREO': 'juan.perez@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '349',
         'TIPO CITA': 'Recita'
@@ -791,7 +795,8 @@ export default function CargarDesdeExcel() {
         'ASEGURADO': 'María López Rodríguez',
         'SEXO': 'F',
         'FECHA DE NACIMIENTO': '1985-08-15',
-        'TELÉFONO': '987654322',
+        'TELÉFONO PRINCIPAL': '987654322',
+        'TELÉFONO ALTERNO': '998765433',
         'CORREO': 'maria.lopez@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '350',
         'TIPO CITA': 'Interconsulta'
@@ -803,7 +808,8 @@ export default function CargarDesdeExcel() {
         'ASEGURADO': 'Carlos Gómez Ruiz',
         'SEXO': 'M',
         'FECHA DE NACIMIENTO': '1990-03-10',
-        'TELÉFONO': '987654323',
+        'TELÉFONO PRINCIPAL': '987654323',
+        'TELÉFONO ALTERNO': '998765434',
         'CORREO': 'carlos.gomez@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '351',
         'TIPO CITA': 'Voluntaria'
@@ -815,7 +821,8 @@ export default function CargarDesdeExcel() {
         'ASEGURADO': 'Patricia Sánchez Ruiz',
         'SEXO': 'F',
         'FECHA DE NACIMIENTO': '1975-11-30',
-        'TELÉFONO': '987654324',
+        'TELÉFONO PRINCIPAL': '987654324',
+        'TELÉFONO ALTERNO': '998765435',
         'CORREO': 'patricia.sanchez@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '349',
         'TIPO CITA': 'Recita'
@@ -827,7 +834,8 @@ export default function CargarDesdeExcel() {
         'ASEGURADO': 'Roberto Morales Torres',
         'SEXO': 'M',
         'FECHA DE NACIMIENTO': '1995-07-05',
-        'TELÉFONO': '987654325',
+        'TELÉFONO PRINCIPAL': '987654325',
+        'TELÉFONO ALTERNO': '998765436',
         'CORREO': 'roberto.morales@email.com',
         'COD. IPRESS ADSCRIPCIÓN': '350',
         'TIPO CITA': 'Interconsulta'
@@ -842,7 +850,8 @@ export default function CargarDesdeExcel() {
       { wch: 30 },   // ASEGURADO
       { wch: 8 },    // SEXO
       { wch: 20 },   // FECHA DE NACIMIENTO
-      { wch: 15 },   // TELÉFONO
+      { wch: 15 },   // TELÉFONO PRINCIPAL
+      { wch: 15 },   // TELÉFONO ALTERNO
       { wch: 25 },   // CORREO
       { wch: 20 },   // COD. IPRESS ADSCRIPCIÓN
       { wch: 18 }    // TIPO CITA
@@ -993,7 +1002,7 @@ export default function CargarDesdeExcel() {
               >
                 <div className="flex items-center gap-2">
                   <Info size={24} className="text-blue-600" />
-                  <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios (10 campos)</h2>
+                  <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios (11 campos)</h2>
                 </div>
                 {expandedObligatorios ? (
                   <ChevronUp size={24} className="text-blue-600" />
@@ -1056,15 +1065,23 @@ export default function CargarDesdeExcel() {
                 <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">📱</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">7. TELÉFONO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
-                    <p className="text-sm text-gray-600">Número de teléfono de contacto</p>
+                    <p className="font-semibold text-gray-800">7. TELÉFONO PRINCIPAL <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
+                    <p className="text-sm text-gray-600">Número de teléfono de contacto principal</p>
                     <p className="text-xs text-amber-600 mt-1">Ej: 987654321 - Si está vacío, se completará desde BD usando DNI</p>
+                  </div>
+                </div>
+                <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
+                  <div className="text-2xl">📲</div>
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-800">8. TELÉFONO ALTERNO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
+                    <p className="text-sm text-gray-600">Número de teléfono de contacto alterno</p>
+                    <p className="text-xs text-amber-600 mt-1">Ej: 912345678 - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
                 </div>
                 <div className="flex gap-4 p-3 bg-amber-50 rounded-lg border-l-4 border-amber-300">
                   <div className="text-2xl">📧</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">8. CORREO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
+                    <p className="font-semibold text-gray-800">9. CORREO <span className="text-amber-600 text-xs">(OPCIONAL)</span></p>
                     <p className="text-sm text-gray-600">Dirección de correo electrónico</p>
                     <p className="text-xs text-amber-600 mt-1">Ej: juan.perez@email.com - Si está vacío, se completará desde BD usando DNI</p>
                   </div>
@@ -1072,7 +1089,7 @@ export default function CargarDesdeExcel() {
                 <div className="flex gap-4 p-3 bg-blue-50 rounded-lg">
                   <div className="text-2xl">🏥</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">9. COD. IPRESS ADSCRIPCIÓN</p>
+                    <p className="font-semibold text-gray-800">10. COD. IPRESS ADSCRIPCIÓN</p>
                     <p className="text-sm text-gray-600">Código de la IPRESS donde está adscrito el paciente</p>
                     <p className="text-xs text-blue-600 mt-1">Ej: 349 (H.II PUCALLPA), 350, 351...</p>
                   </div>
@@ -1080,7 +1097,7 @@ export default function CargarDesdeExcel() {
                 <div className="flex gap-4 p-3 bg-green-50 rounded-lg">
                   <div className="text-2xl">🔖</div>
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-800">10. TIPO CITA</p>
+                    <p className="font-semibold text-gray-800">11. TIPO CITA</p>
                     <p className="text-sm text-gray-600">Clasificación del tipo de atención solicitada</p>
                     <p className="text-xs text-green-600 mt-1">Valores válidos: Recita | Interconsulta | Voluntaria</p>
                   </div>
@@ -1156,7 +1173,7 @@ export default function CargarDesdeExcel() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">10 columnas en el ORDEN correcto (headers opcionales)</span>
+                  <span className="text-gray-700">11 columnas en el ORDEN correcto (headers opcionales)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
@@ -1164,7 +1181,7 @@ export default function CargarDesdeExcel() {
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
-                  <span className="text-gray-700">Campos OPCIONALES: Sexo, Fecha Nac, Teléfono, Correo (se rellenan desde BD)</span>
+                  <span className="text-gray-700">Campos OPCIONALES: Sexo, Fecha Nac, Teléfono Principal, Teléfono Alterno, Correo (se rellenan desde BD)</span>
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="text-blue-600 font-bold">✓</span>
@@ -1423,7 +1440,7 @@ export default function CargarDesdeExcel() {
               El orden de las columnas debe ser SIEMPRE el mismo:
               <br />
               <code className="text-xs bg-white px-2 py-1 rounded mt-2 block">
-                Fecha | Tipo Doc | DNI | Nombre | Sexo | Fecha Nac | Teléfono | Correo | IPRESS | Tipo Cita
+                Fecha | Tipo Doc | DNI | Nombre | Sexo | Fecha Nac | Teléfono Principal | Teléfono Alterno | Correo | IPRESS | Tipo Cita
               </code>
             </p>
             <p className="text-xs text-purple-700 mt-2">
@@ -1506,8 +1523,8 @@ export default function CargarDesdeExcel() {
                 <p className="text-gray-600 mt-1">No. El sistema valida y rechaza duplicados por la combinación única: (DNI + Tipo de Bolsa).</p>
               </div>
               <div>
-                <p className="font-semibold text-gray-800">¿Debo llenar todos los 10 campos?</p>
-                <p className="text-gray-600 mt-1">NO. Solo los campos OBLIGATORIOS: Tipo Documento, DNI, Nombre, Código IPRESS, Tipo Cita. Los demás (Sexo, Fecha Nac, Teléfono, Correo) son OPCIONALES. Si faltan datos opcionales, el sistema los completa automáticamente usando los datos del DNI en la base de datos.</p>
+                <p className="font-semibold text-gray-800">¿Debo llenar todos los 11 campos?</p>
+                <p className="text-gray-600 mt-1">NO. Solo los campos OBLIGATORIOS: Tipo Documento, DNI, Nombre, Código IPRESS, Tipo Cita. Los demás (Sexo, Fecha Nac, Teléfono Principal, Teléfono Alterno, Correo) son OPCIONALES. Si faltan datos opcionales, el sistema los completa automáticamente usando los datos del DNI en la base de datos.</p>
               </div>
             </div>
           </div>

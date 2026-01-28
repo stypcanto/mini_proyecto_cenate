@@ -3,17 +3,17 @@ package com.styp.cenate.dto.bolsas;
 /**
  * DTO para representar una fila procesada del archivo Excel
  * Utilizado durante el procesamiento de importación de solicitudes de bolsa
- * Incluye los 10 campos de la plantilla v1.8.0
+ * Incluye los 11 campos de la plantilla v1.14.0
  *
- * @version v1.8.0 - 10 CAMPOS COMPLETOS
- * @since 2026-01-25
+ * @version v1.14.0 - 11 CAMPOS COMPLETOS (Agregado Teléfono Alterno)
+ * @since 2026-01-28
  */
 public record SolicitudBolsaExcelRowDTO(
     // Metadata
     int filaExcel,
 
     // ============================================================================
-    // 📋 LOS 10 CAMPOS DE EXCEL v1.8.0
+    // 📋 LOS 11 CAMPOS DE EXCEL v1.14.0
     // ============================================================================
 
     // 1. FECHA PREFERIDA QUE NO FUE ATENDIDA
@@ -34,20 +34,24 @@ public record SolicitudBolsaExcelRowDTO(
     // 6. FECHA DE NACIMIENTO (YYYY-MM-DD)
     String fechaNacimiento,
 
-    // 7. TELÉFONO
-    String telefono,
+    // 7. TELÉFONO PRINCIPAL
+    String telefonoPrincipal,
 
-    // 8. CORREO
+    // 8. TELÉFONO ALTERNO (NEW)
+    String telefonoAlterno,
+
+    // 9. CORREO
     String correo,
 
-    // 9. COD. IPRESS ADSCRIPCIÓN
+    // 10. COD. IPRESS ADSCRIPCIÓN
     String codigoIpress,
 
-    // 10. TIPO CITA (Recita, Interconsulta, Voluntaria)
+    // 11. TIPO CITA (Recita, Interconsulta, Voluntaria)
     String tipoCita
 ) {
     /**
      * Constructor compacto con validación de campos obligatorios
+     * Campos opcionales: telefonoPrincipal, telefonoAlterno, correo (se llenan desde BD si faltan)
      */
     public SolicitudBolsaExcelRowDTO {
         if (filaExcel <= 0) {
@@ -71,12 +75,11 @@ public record SolicitudBolsaExcelRowDTO(
         if (fechaNacimiento == null || fechaNacimiento.isBlank()) {
             throw new IllegalArgumentException("Fila " + filaExcel + ": FECHA DE NACIMIENTO no puede estar vacía");
         }
-        if (telefono == null || telefono.isBlank()) {
-            throw new IllegalArgumentException("Fila " + filaExcel + ": TELÉFONO no puede estar vacío");
-        }
-        if (correo == null || correo.isBlank()) {
-            throw new IllegalArgumentException("Fila " + filaExcel + ": CORREO no puede estar vacío");
-        }
+        // CAMPOS OPCIONALES: Se llenan desde BD si faltan
+        // - telefonoPrincipal
+        // - telefonoAlterno (NEW)
+        // - correo
+
         if (codigoIpress == null || codigoIpress.isBlank()) {
             throw new IllegalArgumentException("Fila " + filaExcel + ": COD. IPRESS ADSCRIPCIÓN no puede estar vacío");
         }

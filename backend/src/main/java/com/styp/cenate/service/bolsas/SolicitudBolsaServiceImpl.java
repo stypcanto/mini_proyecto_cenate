@@ -85,7 +85,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
                 try {
                     // ============================================================================
-                    // 📋 EXTRAR LOS 10 CAMPOS DE EXCEL v1.8.0
+                    // 📋 EXTRAR LOS 11 CAMPOS DE EXCEL v1.14.0 (Agregado Teléfono Alterno)
                     // ============================================================================
                     String fechaPreferidaNoAtendida = obtenerValorCelda(row.getCell(0));  // Col 1
                     String tipoDocumento = obtenerValorCelda(row.getCell(1));             // Col 2
@@ -93,10 +93,11 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     String nombreCompleto = obtenerValorCelda(row.getCell(3));            // Col 4
                     String sexo = obtenerValorCelda(row.getCell(4));                      // Col 5
                     String fechaNacimiento = obtenerValorCelda(row.getCell(5));           // Col 6
-                    String telefono = obtenerValorCelda(row.getCell(6));                  // Col 7
-                    String correo = obtenerValorCelda(row.getCell(7));                    // Col 8
-                    String codigoIpress = obtenerValorCelda(row.getCell(8));              // Col 9
-                    String tipoCita = obtenerValorCelda(row.getCell(9));                  // Col 10
+                    String telefonoPrincipal = obtenerValorCelda(row.getCell(6));         // Col 7 - RENOMBRADO
+                    String telefonoAlterno = obtenerValorCelda(row.getCell(7));           // Col 8 - NEW
+                    String correo = obtenerValorCelda(row.getCell(8));                    // Col 9 - DESPLAZADO
+                    String codigoIpress = obtenerValorCelda(row.getCell(9));              // Col 10 - DESPLAZADO
+                    String tipoCita = obtenerValorCelda(row.getCell(10));                 // Col 11 - DESPLAZADO
 
                     // Validar campos obligatorios
                     if (dni.isBlank() || codigoIpress.isBlank()) {
@@ -109,7 +110,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         continue;
                     }
 
-                    // Crear DTO para procesar fila con TODOS los 10 campos
+                    // Crear DTO para procesar fila con TODOS los 11 campos
                     SolicitudBolsaExcelRowDTO rowDTO = new SolicitudBolsaExcelRowDTO(
                         filaNumero,
                         fechaPreferidaNoAtendida,
@@ -118,7 +119,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         nombreCompleto,
                         sexo,
                         fechaNacimiento,
-                        telefono,
+                        telefonoPrincipal,
+                        telefonoAlterno,
                         correo,
                         codigoIpress,
                         tipoCita
@@ -500,7 +502,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             java.util.Optional<Asegurado> aseguradoExistente = aseguradoRepository.findByDocPaciente(row.dni());
 
             if (aseguradoExistente.isPresent()) {
-                // Asegurado existe: usar su nombre y actualizar teléfono/correo si vienen en Excel
+                // ============================================================================
+                // ASEGURADO EXISTE: DUAL MAPPING INTELIGENTE v1.14.0
+                // ============================================================================
                 Asegurado asegurado = aseguradoExistente.get();
                 String nombre = asegurado.getPaciente();
                 if (nombre != null && !nombre.isBlank()) {
@@ -511,12 +515,26 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 // Vincular con pacienteId = pk_asegurado (que es el DNI)
                 pacienteIdGenerado = Long.parseLong(asegurado.getPkAsegurado().replaceAll("[^0-9]", ""));
 
-                // 📞 Actualizar teléfono si viene en Excel y es diferente
-                if (row.telefono() != null && !row.telefono().isBlank()) {
-                    if (asegurado.getTelCelular() == null || !asegurado.getTelCelular().equals(row.telefono())) {
-                        String telefonoAnterior = asegurado.getTelCelular();
-                        asegurado.setTelCelular(row.telefono());
-                        log.info("📞 Teléfono actualizado para DNI {}: {} → {}", row.dni(), telefonoAnterior, row.telefono());
+                // ============================================================================
+                // 📞 DUAL MAPPING INTELIGENTE - Teléfonos
+                // ============================================================================
+                // Teléfono Principal (Excel col 7) → asegurados.tel_fijo
+                if (row.telefonoPrincipal() != null && !row.telefonoPrincipal().isBlank()) {
+                    String telFijoAnterior = asegurado.getTelFijo();
+                    if (!row.telefonoPrincipal().equals(telFijoAnterior)) {
+                        asegurado.setTelFijo(row.telefonoPrincipal());
+                        log.info("📱 [TEL_FIJO] Actualizado para DNI {}: '{}' → '{}'",
+                            row.dni(), telFijoAnterior, row.telefonoPrincipal());
+                    }
+                }
+
+                // Teléfono Alterno (Excel col 8) → asegurados.tel_celular
+                if (row.telefonoAlterno() != null && !row.telefonoAlterno().isBlank()) {
+                    String telCelularAnterior = asegurado.getTelCelular();
+                    if (!row.telefonoAlterno().equals(telCelularAnterior)) {
+                        asegurado.setTelCelular(row.telefonoAlterno());
+                        log.info("📱 [TEL_CELULAR] Actualizado para DNI {}: '{}' → '{}'",
+                            row.dni(), telCelularAnterior, row.telefonoAlterno());
                     }
                 }
 
@@ -525,38 +543,59 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     if (asegurado.getCorreoElectronico() == null || !asegurado.getCorreoElectronico().equals(row.correo())) {
                         String correoAnterior = asegurado.getCorreoElectronico();
                         asegurado.setCorreoElectronico(row.correo());
-                        log.info("📧 Correo actualizado para DNI {}: {} → {}", row.dni(), correoAnterior, row.correo());
+                        log.info("📧 [CORREO] Actualizado para DNI {}: '{}' → '{}'", row.dni(), correoAnterior, row.correo());
                     }
                 }
 
                 // 🎂 Actualizar fecha de nacimiento si viene en Excel y no existe
                 if (fechaNacimiento != null && asegurado.getFecnacimpaciente() == null) {
                     asegurado.setFecnacimpaciente(fechaNacimiento);
-                    log.info("🎂 Fecha de nacimiento asignada para DNI {}: {}", row.dni(), fechaNacimiento);
+                    log.info("🎂 [FECHA_NAC] Asignada para DNI {}: {}", row.dni(), fechaNacimiento);
                 }
 
-                // Guardar cambios
+                // 💾 Guardar cambios en BD
                 aseguradoRepository.save(asegurado);
-                log.info("✅ Asegurado actualizado en BD para DNI {}", row.dni());
+                log.info("✅ [ASEGURADO ACTUALIZADO] DNI {} - Tel Fijo: {} | Tel Celular: {} | Correo: {}",
+                    row.dni(), asegurado.getTelFijo(), asegurado.getTelCelular(), asegurado.getCorreoElectronico());
             } else {
-                // Asegurado NO existe
+                // ============================================================================
+                // ASEGURADO NO EXISTE: CREAR NUEVO CON DUAL MAPPING v1.14.0
+                // ============================================================================
                 log.info("⚠️  Asegurado NO existe en BD para DNI {}", row.dni());
+                log.info("📝 Preparando datos para crear nuevo asegurado:");
                 log.info("   - nombreCompleto: {}", row.nombreCompleto());
                 log.info("   - sexo: {}", row.sexo());
                 log.info("   - fechaNacimiento: {}", row.fechaNacimiento());
-                log.info("   - telefono: {}", row.telefono());
+                log.info("   - telefonoPrincipal: {}", row.telefonoPrincipal());
+                log.info("   - telefonoAlterno: {}", row.telefonoAlterno());
                 log.info("   - correo: {}", row.correo());
 
                 if (row.nombreCompleto() != null && !row.nombreCompleto().isBlank()) {
                     // CREAR NUEVO ASEGURADO
                     pacienteNombre = row.nombreCompleto();
-                    log.info("📝 CREANDO nuevo Asegurado para DNI {}: {}", row.dni(), row.nombreCompleto());
+                    log.info("✏️  CREANDO nuevo Asegurado para DNI {}: {}", row.dni(), row.nombreCompleto());
 
                     Asegurado nuevoAsegurado = new Asegurado();
                     nuevoAsegurado.setPkAsegurado(row.dni());
                     nuevoAsegurado.setDocPaciente(row.dni());
                     nuevoAsegurado.setPaciente(row.nombreCompleto());
-                    nuevoAsegurado.setTelCelular(row.telefono());
+
+                    // ============================================================================
+                    // DUAL MAPPING: Teléfono Principal y Alterno
+                    // ============================================================================
+                    // Teléfono Principal (Excel col 7) → tel_fijo
+                    if (row.telefonoPrincipal() != null && !row.telefonoPrincipal().isBlank()) {
+                        nuevoAsegurado.setTelFijo(row.telefonoPrincipal());
+                        log.info("   ✅ Tel Fijo asignado: {}", row.telefonoPrincipal());
+                    }
+
+                    // Teléfono Alterno (Excel col 8) → tel_celular
+                    if (row.telefonoAlterno() != null && !row.telefonoAlterno().isBlank()) {
+                        nuevoAsegurado.setTelCelular(row.telefonoAlterno());
+                        log.info("   ✅ Tel Celular asignado: {}", row.telefonoAlterno());
+                    }
+
+                    // Correo y otros datos
                     nuevoAsegurado.setCorreoElectronico(row.correo());
                     nuevoAsegurado.setSexo(row.sexo());
 
@@ -565,14 +604,15 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         log.info("   ✅ Fecha de nacimiento asignada: {}", fechaNacimiento);
                     }
 
-                    log.info("   💾 Guardando en BD...");
+                    log.info("   💾 Guardando nuevo asegurado en BD...");
                     aseguradoRepository.save(nuevoAsegurado);
 
                     // Actualizar pacienteIdGenerado con el DNI (pk_asegurado)
                     pacienteIdGenerado = Long.parseLong(row.dni().replaceAll("[^0-9]", ""));
 
                     log.info("   ✅ Nuevo asegurado guardado en BD!");
-                    log.info("✅ ÉXITO: Nuevo asegurado creado y sincronizado: {} (DNI: {}) | paciente_id: {}", row.nombreCompleto(), row.dni(), pacienteIdGenerado);
+                    log.info("✅ ÉXITO: Nuevo asegurado creado - {} (DNI: {}) | Tel Fijo: {} | Tel Celular: {}",
+                        row.nombreCompleto(), row.dni(), nuevoAsegurado.getTelFijo(), nuevoAsegurado.getTelCelular());
                 } else {
                     log.warn("⚠️  No hay nombreCompleto para DNI {} - usando fallback", row.dni());
                     pacienteNombre = "Paciente " + row.dni();
@@ -634,13 +674,14 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .estadoGestionCitasId(5L)
             .activo(true)
             // ============================================================================
-            // 📋 LOS 10 CAMPOS DE EXCEL v1.8.0 - ASIGNADOS AL BUILDER
+            // 📋 LOS 11 CAMPOS DE EXCEL v1.14.0 - ASIGNADOS AL BUILDER
             // ============================================================================
             .fechaPreferidaNoAtendida(fechaPreferida)
             .tipoDocumento(row.tipoDocumento())
             .fechaNacimiento(fechaNacimiento)
             .pacienteSexo(row.sexo())
-            .pacienteTelefono(row.telefono())
+            .pacienteTelefono(row.telefonoPrincipal())
+            .pacienteTelefonoAlterno(row.telefonoAlterno())
             .pacienteEmail(row.correo())
             .codigoIpressAdscripcion(row.codigoIpress())
             .tipoCita(row.tipoCita())
