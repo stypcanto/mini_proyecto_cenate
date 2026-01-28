@@ -22,12 +22,24 @@ export const listarTodos = () => {
  * Lista solo los períodos activos
  * @returns {Promise} Lista de períodos activos
  */
+/**
+ * Lista solo los períodos activos (requiere permisos ADMIN)
+ * @returns {Promise} Lista de períodos activos
+ */
 export const listarActivos = () => {
   return apiClient.get(`${BASE_URL}/activos`);
 };
 
 /**
- * Lista solo los períodos vigentes
+ * Lista solo los períodos disponibles para el médico (alias de activos con permisos MEDICO)
+ * @returns {Promise} Lista de períodos disponibles
+ */
+export const listarDisponibles = () => {
+  return apiClient.get(`${BASE_URL}/disponibles`);
+};
+
+/**
+ * Lista solo los períodos vigentes (requiere permisos ADMIN)
  * @returns {Promise} Lista de períodos vigentes
  */
 export const listarVigentes = () => {
@@ -35,11 +47,31 @@ export const listarVigentes = () => {
 };
 
 /**
- * Lista los años disponibles de períodos
+ * Lista solo los períodos vigentes disponibles para médico (con permisos MEDICO)
+ * @returns {Promise} Lista de períodos vigentes
+ */
+export const listarVigentesDisponibles = () => {
+  return apiClient.get(`${BASE_URL}/vigentes-disponibles`);
+};
+
+/**
+ * Lista los años disponibles de períodos (requiere permisos ADMIN)
  * @returns {Promise} Lista de años (números)
  */
-export const listarAnios = () => {
-  return apiClient.get(`${BASE_URL}/anios`);
+export const listarAnios = async () => {
+  const response = await apiClient.get(`${BASE_URL}/anios`);
+  console.log('Response de /anios:', response);
+  return response;
+};
+
+/**
+ * Lista los años disponibles de períodos para médico (con permisos MEDICO)
+ * @returns {Promise} Lista de años (números)
+ */
+export const listarAniosDisponibles = async () => {
+  const response = await apiClient.get(`${BASE_URL}/anios-disponibles`);
+  console.log('Response de /anios-disponibles:', response);
+  return response;
 };
 
 /**
@@ -103,8 +135,11 @@ export const eliminar = (id) => {
 const periodoMedicoDisponibilidadService = {
   listarTodos,
   listarActivos,
+  listarDisponibles,
   listarVigentes,
+  listarVigentesDisponibles,
   listarAnios,
+  listarAniosDisponibles,
   obtenerPorId,
   crear,
   actualizar,

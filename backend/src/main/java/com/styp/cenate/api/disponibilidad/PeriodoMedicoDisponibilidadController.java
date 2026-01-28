@@ -2,6 +2,7 @@ package com.styp.cenate.api.disponibilidad;
 
 import com.styp.cenate.dto.disponibilidad.PeriodoMedicoDisponibilidadRequest;
 import com.styp.cenate.dto.disponibilidad.PeriodoMedicoDisponibilidadResponse;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.service.disponibilidad.PeriodoMedicoDisponibilidadService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -73,6 +74,36 @@ public class PeriodoMedicoDisponibilidadController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
     public ResponseEntity<List<Integer>> listarAnios() {
         log.info("Listando años disponibles de periodos médicos de disponibilidad");
+        return ResponseEntity.ok(service.listarAnios());
+    }
+
+    /**
+     * Endpoint para que los MEDICO accedan a periodos disponibles (todos los estados)
+     */
+    @GetMapping("/disponibles")
+    @CheckMBACPermission(pagina = "/medico/disponibilidad", accion = "ver")
+    public ResponseEntity<List<PeriodoMedicoDisponibilidadResponse>> listarDisponibles() {
+        log.info("Listando todos los periodos médicos de disponibilidad para médico");
+        return ResponseEntity.ok(service.listarTodos());
+    }
+
+    /**
+     * Endpoint para que los MEDICO accedan a periodos vigentes
+     */
+    @GetMapping("/vigentes-disponibles")
+    @CheckMBACPermission(pagina = "/medico/disponibilidad", accion = "ver")
+    public ResponseEntity<List<PeriodoMedicoDisponibilidadResponse>> listarVigentesDisponibles() {
+        log.info("Listando periodos vigentes para médico");
+        return ResponseEntity.ok(service.listarVigentes());
+    }
+
+    /**
+     * Endpoint para que los MEDICO accedan a años disponibles
+     */
+    @GetMapping("/anios-disponibles")
+    @CheckMBACPermission(pagina = "/medico/disponibilidad", accion = "ver")
+    public ResponseEntity<List<Integer>> listarAniosDisponibles() {
+        log.info("Listando años disponibles para médico");
         return ResponseEntity.ok(service.listarAnios());
     }
 

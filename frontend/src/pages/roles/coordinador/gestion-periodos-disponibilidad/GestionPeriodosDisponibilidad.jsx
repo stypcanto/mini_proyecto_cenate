@@ -133,11 +133,21 @@ export default function GestionPeriodosDisponibilidad() {
     try {
       // Usar el endpoint específico para obtener años
       const response = await periodoMedicoDisponibilidadService.listarAnios();
-      const anios = Array.isArray(response) ? response : (response?.data || []);
+      
+      // Extraer correctamente los datos del response
+      let anios = [];
+      if (Array.isArray(response)) {
+        anios = response;
+      } else if (response?.data) {
+        anios = Array.isArray(response.data) ? response.data : [];
+      }
+      
+      console.log('Años recibidos del backend:', anios);
       
       if (anios.length > 0) {
         setAniosDisponibles(anios.sort((a, b) => b - a));
       } else {
+        // Si no hay años, usar el año actual
         setAniosDisponibles([new Date().getFullYear()]);
       }
     } catch (err) {

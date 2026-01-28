@@ -1,288 +1,584 @@
 // ========================================================================
 // FormularioDisponibilidad.jsx (Rol Médico)
-// ------------------------------------------------------------------------
-// Basado en: roles/externo/solicitud-turnos/FormularioSolicitudTurnos.jsx
-//
-// ✅ Alcance en esta iteración (según tu indicación):
-// - Reutiliza la UX/estructura de filtros + tabla por periodo
-// - Carga periodos VIGENTES/ACTIVOS desde PeriodoMedicoDisponibilidadController
-//   vía periodoMedicoDisponibilidadService:
-//     GET /api/periodos-medicos-disponibilidad/vigentes
-//     GET /api/periodos-medicos-disponibilidad/activos
 // ========================================================================
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Calendar, FileText, Loader2, RefreshCw } from "lucide-react";
+import { Calendar, RefreshCw, Edit, Eye, Plus, Filter, Check, X, Clock, LoaderCircle } from "lucide-react";
+import { 
+  Table, Select, Button, Tag, message, Card, Badge, Tooltip, Alert, Input, 
+  Modal as AntModal, Popconfirm, Space, Empty, Spin, Divider
+} from "antd";
+import { format, parseISO, isWeekend, isBefore, isAfter } from 'date-fns';
+import { es } from 'date-fns/locale';
 
+import { solicitudDisponibilidadService } from "../../../../services/solicitudDisponibilidadService";
 import periodoMedicoDisponibilidadService from "../../../../services/periodoMedicoDisponibilidadService";
-import { formatFecha, getYearFromPeriodo, estadoBadgeClass } from "./utils/helpers";
-
-const BUTTON_WHITE_HOVER_CLASS =
-  "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-700 text-sm font-semibold hover:bg-gradient-to-r hover:from-blue-500 hover:to-blue-600 hover:text-white hover:border-blue-600 transition-all duration-200 hover:shadow-md";
+import { formatFecha, getYearFromPeriodo, estadoBadgeClass, formatSoloFecha } from "./utils/helpers";
+import ModalSolicitudDisponibilidad from "./components/ModalSolicitudDisponibilidad";
 
 export default function FormularioDisponibilidad() {
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  // ============== ESTADOS ==============
+  const [loading, setLoading] = useState(false);
+  const [solicitudes, setSolicitudes] = useState([]);
+  const [periodos, setPeriodos] = useState([]);  const [todosPeriodos, setTodosPeriodos] = useState([]);
+  const [periodoSeleccionado, setPeriodoSeleccionadoFiltro] = useState(null);  const [anios, setAnios] = useState([]);
+  const [filtroAnio, setFiltroAnio] = useState(new Date().getFullYear());
+  const [filtroEstadoSolicitud, setFiltroEstadoSolicitud] = useState('TODOS'); // PENDIENTE, APROBADA, RECHAZADA, TODOS
+  const [filtroEstado, setFiltroEstado] = useState(null);
+  const [busqueda, setBusqueda] = useState("");
 
-  // periodos
-  const [tipoPeriodos, setTipoPeriodos] = useState("VIGENTES"); // VIGENTES | ACTIVOS
-  const [periodos, setPeriodos] = useState([]);
-  const [loadingPeriodos, setLoadingPeriodos] = useState(false);
+  // Estados para modal
+  const [showModal, setShowModal] = useState(false);
+  const [modalMode, setModalMode] = useState("crear");
+  const [periodSeleccionado, setPeriodSeleccionado] = useState(null);
+  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
 
-  // filtros tabla
-  const [filtroAnio, setFiltroAnio] = useState(String(new Date().getFullYear()));
-  const [filtroPeriodoId, setFiltroPeriodoId] = useState("");
-  const [aniosDisponibles, setAniosDisponibles] = useState([new Date().getFullYear()]);
-
-  const mapPeriodoBackendToUi = (p) => ({
-    // Normalizamos nombres para reusar helpers/UI
-    idPeriodo: p.idPeriodoRegDisp,
-    periodo: p.periodo,
-    descripcion: p.descripcion,
-    fechaInicio: p.fechaInicio,
-    fechaFin: p.fechaFin,
-    estado: p.estado,
-    anio: p.anio,
-    // mantener original por si se necesita luego
-    raw: p,
-  });
-
-  const cargarAniosDisponibles = useCallback(async () => {
-    try {
-      const anios = await periodoMedicoDisponibilidadService.listarAnios();
-      const lista = Array.isArray(anios) ? anios : [];
-      setAniosDisponibles(lista.length > 0 ? lista.sort((a, b) => b - a) : [new Date().getFullYear()]);
-    } catch (e) {
-      console.error(e);
-      setAniosDisponibles([new Date().getFullYear()]);
-    }
+  // ============== EFECTOS ==============
+  useEffect(() => {
+    cargarDatos();
   }, []);
 
-  const cargarPeriodos = useCallback(async () => {
-    setLoadingPeriodos(true);
-    setError(null);
+  // ============== FUNCIONES ==============
+  
+  const cargarDatos = useCallback(async () => {
     try {
-      let data = [];
-      if (tipoPeriodos === "VIGENTES") {
-        data = await periodoMedicoDisponibilidadService.listarVigentes();
-      } else {
-        data = await periodoMedicoDisponibilidadService.listarActivos();
+      setLoading(true);
+      console.log('🚀 Iniciando carga de datos...');
+      
+      const [respSolicitudes, respAnios, respTodosPeriodos] = await Promise.all([
+        solicitudDisponibilidadService.listarMisSolicitudes(),
+        periodoMedicoDisponibilidadService.listarAniosDisponibles(),
+        periodoMedicoDisponibilidadService.listarDisponibles()
+      ]);
+      
+      console.log('📋 Solicitudes recibidas:', respSolicitudes);
+      console.log('📅 Años disponibles:', respAnios);
+      console.log('📊 Todos los periodos:', respTodosPeriodos);
+      
+      setSolicitudes(respSolicitudes || []);
+      setTodosPeriodos(respTodosPeriodos || []);
+      
+      // Cargar años y actualizar filtroAnio si es necesario
+      const anosDisponibles = respAnios || [];
+      setAnios(anosDisponibles);
+      
+      // Si el año actual no está en la lista, seleccionar el primer año disponible
+      const anoActual = new Date().getFullYear();
+      const anoSeleccionado = anosDisponibles.length > 0 && !anosDisponibles.includes(anoActual) ? anosDisponibles[0] : anoActual;
+      
+      console.log('📆 Año seleccionado:', anoSeleccionado);
+      
+      if (anosDisponibles.length > 0 && !anosDisponibles.includes(anoActual)) {
+        setFiltroAnio(anosDisponibles[0]);
       }
-
-      const arr = Array.isArray(data) ? data.map(mapPeriodoBackendToUi) : [];
-      setPeriodos(arr);
-      return arr;
-    } catch (e) {
-      console.error(e);
-      setPeriodos([]);
-      setError(e?.message || "No se pudieron cargar los periodos.");
-      return [];
-    } finally {
-      setLoadingPeriodos(false);
-    }
-  }, [tipoPeriodos]);
-
-  const inicializar = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      await Promise.all([cargarAniosDisponibles(), cargarPeriodos()]);
-    } catch (e) {
-      console.error(e);
-      setError("No se pudieron cargar los datos. Intenta nuevamente.");
+      
+      // Cargar periodos después de tener el año
+      await cargarPeriodos(anoSeleccionado);
+    } catch (error) {
+      console.error("❌ Error cargando datos:", error);
+      message.error("Error al cargar los datos: " + (error.message || 'Error desconocido'));
     } finally {
       setLoading(false);
     }
-  }, [cargarAniosDisponibles, cargarPeriodos]);
-
-  useEffect(() => {
-    inicializar();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const cargarPeriodos = useCallback(async (anio) => {
+    try {
+      console.log('🔍 Cargando periodos:', { anio });
+      let respPeriodos;
+      
+      // Obtener todos los periodos disponibles
+      respPeriodos = await periodoMedicoDisponibilidadService.listarDisponibles();
+      console.log('📦 Periodos recibidos del backend:', respPeriodos);
+      
+      // Filtrar por año si se proporciona
+      if (anio) {
+        const periodosFiltrados = (respPeriodos || []).filter(p => {
+          const yearPeriodo = getYearFromPeriodo(p);
+          console.log('🔍 Comparando año:', { periodo: p.descripcion, yearPeriodo, anio, fechaInicio: p.fechaInicio });
+          return yearPeriodo === anio;
+        });
+        
+        console.log('✅ Periodos filtrados finales:', periodosFiltrados);
+        console.log('📊 Total periodos a mostrar:', periodosFiltrados.length);
+        setPeriodos(periodosFiltrados);
+      } else {
+        setPeriodos(respPeriodos || []);
+      }
+    } catch (error) {
+      console.error("❌ Error cargando periodos:", error);
+      console.error("❌ Detalles del error:", error.response?.data || error.message);
+      message.error("Error al cargar los periodos: " + (error.response?.data?.message || error.message));
+    }
+  }, []);
+
+  // Recargar periodos cuando cambia el filtro de año o estado del periodo
   useEffect(() => {
-    cargarPeriodos();
-  }, [tipoPeriodos, cargarPeriodos]);
+    if (filtroAnio) {
+      cargarPeriodos(filtroAnio);
+    }
+  }, [filtroAnio, cargarPeriodos]);
 
-  const periodosPorAnio = useMemo(() => {
-    const arr = Array.isArray(periodos) ? periodos : [];
-    if (!filtroAnio) return arr;
-    return arr.filter((p) => getYearFromPeriodo(p) === String(filtroAnio));
-  }, [periodos, filtroAnio]);
+  // Periodos disponibles para el combo (filtrados por año)
+  const periodosDisponiblesCombo = useMemo(() => {
+    let resultado = [...todosPeriodos];
+    
+    // Filtrar por año
+    if (filtroAnio) {
+      resultado = resultado.filter(p => getYearFromPeriodo(p) === filtroAnio);
+    }
+    
+    console.log('📋 Periodos disponibles para combo:', resultado);
+    return resultado;
+  }, [todosPeriodos, filtroAnio]);
 
-  const filasPorPeriodo = useMemo(() => {
-    let base = Array.isArray(periodos) ? [...periodos] : [];
-    if (filtroAnio) base = base.filter((p) => getYearFromPeriodo(p) === String(filtroAnio));
-    if (filtroPeriodoId) base = base.filter((p) => String(p.idPeriodo) === String(filtroPeriodoId));
+  const handleAbrirCrear = useCallback((periodo) => {
+    setPeriodSeleccionado(periodo);
+    setModalMode("crear");
+    setSolicitudSeleccionada(null);
+    setShowModal(true);
+  }, []);
 
-    // orden por fechaInicio desc
-    base.sort((a, b) => {
-      const da = a.fechaInicio ? new Date(a.fechaInicio).getTime() : 0;
-      const db = b.fechaInicio ? new Date(b.fechaInicio).getTime() : 0;
-      return db - da;
+  const handleAbrirEditar = useCallback((solicitud) => {
+    setSolicitudSeleccionada(solicitud);
+    setPeriodSeleccionado(solicitud.periodo);
+    setModalMode("editar");
+    setShowModal(true);
+  }, []);
+
+  const handleGuardar = useCallback(async (datos) => {
+    try {
+      setLoading(true);
+      
+      if (modalMode === "crear") {
+        await solicitudDisponibilidadService.guardarBorrador({
+          idPeriodo: periodSeleccionado.id,
+          ...datos
+        });
+        message.success("Disponibilidad guardada");
+      } else {
+        await solicitudDisponibilidadService.actualizar(solicitudSeleccionada.id, datos);
+        message.success("Disponibilidad actualizada");
+      }
+      
+      setShowModal(false);
+      cargarDatos();
+    } catch (error) {
+      console.error("Error guardando:", error);
+      message.error(error.response?.data?.message || "Error al guardar");
+    } finally {
+      setLoading(false);
+    }
+  }, [modalMode, periodSeleccionado, solicitudSeleccionada, cargarDatos]);
+
+  const handleEnviar = useCallback(async (id) => {
+    try {
+      setLoading(true);
+      await solicitudDisponibilidadService.enviar(id);
+      message.success("Disponibilidad enviada para revisión");
+      cargarDatos();
+    } catch (error) {
+      console.error("Error enviando:", error);
+      message.error(error.response?.data?.message || "Error al enviar");
+    } finally {
+      setLoading(false);
+    }
+  }, [cargarDatos]);
+
+  const handleEliminar = useCallback(async (id) => {
+    try {
+      setLoading(true);
+      await solicitudDisponibilidadService.eliminar(id);
+      message.success("Disponibilidad eliminada");
+      cargarDatos();
+    } catch (error) {
+      console.error("Error eliminando:", error);
+      message.error(error.response?.data?.message || "Error al eliminar");
+    } finally {
+      setLoading(false);
+    }
+  }, [cargarDatos]);
+
+  // ============== FILTROS ==============
+  
+  const periodosFiltrados = useMemo(() => {
+    console.log('🔍 Filtrando periodos por búsqueda y periodo seleccionado...');
+    console.log('   - Periodos originales:', periodos);
+    console.log('   - Búsqueda:', busqueda);
+    console.log('   - Periodo seleccionado del combo:', periodoSeleccionado);
+    
+    let resultado = [...periodos];
+    
+    // Si hay un periodo seleccionado del combo, mostrar solo ese
+    if (periodoSeleccionado) {
+      resultado = resultado.filter(p => {
+        const match = (p.idPeriodoRegDisp === periodoSeleccionado);
+        console.log(`   Comparando periodo ${p.descripcion}: idPeriodoRegDisp=${p.idPeriodoRegDisp}, seleccionado=${periodoSeleccionado}, match=${match}`);
+        return match;
+      });
+      console.log('   - Filtrado por periodo seleccionado:', resultado);
+    }
+    
+    // Filtrar por búsqueda
+    if (busqueda) {
+      resultado = resultado.filter(p => 
+        p.descripcion?.toLowerCase().includes(busqueda.toLowerCase()) ||
+        p.periodo?.toLowerCase().includes(busqueda.toLowerCase())
+      );
+      console.log('   - Después de búsqueda:', resultado);
+    }
+    
+    // Ordenar por fecha de inicio (más reciente primero)
+    resultado = resultado.sort((a, b) => new Date(b.fechaInicio) - new Date(a.fechaInicio));
+    console.log('✅ Periodos filtrados finales:', resultado);
+    return resultado;
+  }, [periodos, busqueda, periodoSeleccionado]);
+
+  // Preparar datos de la tabla: periodos con sus solicitudes
+  const datosTablaPeriodos = useMemo(() => {
+    console.log('📊 Calculando datosTablaPeriodos...');
+    console.log('   - Periodos filtrados:', periodosFiltrados);
+    console.log('   - Solicitudes:', solicitudes);
+    console.log('   - Filtro estado solicitud:', filtroEstadoSolicitud);
+    
+    let resultado = periodosFiltrados.map(periodo => {
+      const solicitud = solicitudes.find(s => {
+        console.log(`   Comparando solicitud ${s.idSolicitud} (periodo ${s.idPeriodo}) con periodo ${periodo.idPeriodoRegDisp}`);
+        return s.idPeriodo === periodo.idPeriodoRegDisp;
+      });
+      
+      const fila = {
+        ...periodo,
+        solicitud: solicitud || null,
+        tieneSolicitud: !!solicitud
+      };
+      
+      console.log(`   - Periodo ${periodo.descripcion}: tiene solicitud =`, !!solicitud);
+      return fila;
     });
+    
+    // Filtrar por estado de solicitud
+    if (filtroEstadoSolicitud && filtroEstadoSolicitud !== 'TODOS') {
+      resultado = resultado.filter(fila => {
+        if (filtroEstadoSolicitud === 'SIN_SOLICITUD') {
+          return !fila.tieneSolicitud;
+        }
+        return fila.solicitud && fila.solicitud.estado === filtroEstadoSolicitud;
+      });
+      console.log('   - Después de filtrar por estado solicitud:', resultado);
+    }
+    
+    console.log('✅ Datos tabla final:', resultado);
+    return resultado;
+  }, [periodosFiltrados, solicitudes, filtroEstadoSolicitud]);
 
-    return base;
-  }, [periodos, filtroAnio, filtroPeriodoId]);
+  // ============== COLUMNAS DE TABLA ==============
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <Loader2 className="w-10 h-10 animate-spin text-[#0A5BA9]" />
-        <p className="ml-3 text-slate-600">Cargando...</p>
-      </div>
-    );
-  }
+  const columnasTabla = [
+    {
+      title: "Período",
+      dataIndex: "descripcion",
+      key: "descripcion",
+      width: 150,
+      render: (descripcion, record) => (
+        <div>
+          <div className="font-medium text-gray-700">{descripcion}</div>
+          <div className="text-xs text-gray-500">{record.periodo || ''}</div>
+        </div>
+      )
+    },
+    {
+      title: "Fechas",
+      key: "fechas",
+      width: 150,
+      render: (_, record) => (
+        <div className="text-sm text-gray-600">
+          <div>{format(parseISO(record.fechaInicio), "dd MMM yyyy", { locale: es })}</div>
+          <div>{format(parseISO(record.fechaFin), "dd MMM yyyy", { locale: es })}</div>
+        </div>
+      )
+    },
+    {
+      title: "Estado Periodo",
+      dataIndex: "estado",
+      key: "estadoPeriodo",
+      width: 100,
+      render: (estado) => (
+        <Tag color={estado === 'ACTIVO' ? 'green' : estado === 'VIGENTE' ? 'blue' : 'default'}>
+          {estado}
+        </Tag>
+      )
+    },
+    {
+      title: "ID Solicitud",
+      key: "idSolicitud",
+      width: 100,
+      render: (_, record) => (
+        record.solicitud ? (
+          <span className="font-mono text-sm text-blue-600">#{record.solicitud.idSolicitud || record.solicitud.id}</span>
+        ) : (
+          <span className="text-gray-400 text-xs">-</span>
+        )
+      )
+    },
+    {
+      title: "Estado Solicitud",
+      key: "estadoSolicitud",
+      width: 120,
+      render: (_, record) => {
+        if (!record.solicitud) return <span className="text-gray-400 text-xs">Sin solicitud</span>;
+        const estado = record.solicitud.estado;
+        return (
+          <Badge 
+            color={estadoBadgeClass(estado)?.split(" ")[1]?.replace("bg-", "")}
+            text={estado}
+          />
+        );
+      }
+    },
+    {
+      title: "Días Registrados",
+      key: "diasDisponibles",
+      width: 100,
+      render: (_, record) => (
+        record.solicitud ? (
+          <span className="text-gray-700">{record.solicitud.detalles?.length || 0}</span>
+        ) : (
+          <span className="text-gray-400">-</span>
+        )
+      )
+    },
+    {
+      title: "Acciones",
+      key: "acciones",
+      width: 200,
+      fixed: 'right',
+      render: (_, record) => {
+        if (!record.tieneSolicitud) {
+          // No tiene solicitud - mostrar botón Iniciar Solicitud
+          return (
+            <Button
+              type="primary"
+              icon={<Plus size={16} />}
+              size="small"
+              onClick={() => handleAbrirCrear(record)}
+            >
+              Iniciar Solicitud
+            </Button>
+          );
+        }
+        
+        // Tiene solicitud - mostrar botones según estado
+        const solicitud = record.solicitud;
+        const puedeEditar = solicitud.estado === "BORRADOR";
+        const puedeEnviar = solicitud.estado === "BORRADOR";
+        
+        return (
+          <Space size="small">
+            {puedeEditar && (
+              <Tooltip title="Editar">
+                <Button
+                  type="text"
+                  icon={<Edit size={16} />}
+                  size="small"
+                  onClick={() => handleAbrirEditar(solicitud)}
+                />
+              </Tooltip>
+            )}
+            
+            {puedeEnviar && (
+              <Tooltip title="Enviar para revisión">
+                <Button
+                  type="text"
+                  icon={<Check size={16} />}
+                  size="small"
+                  onClick={() => handleEnviar(solicitud.idSolicitud || solicitud.id)}
+                />
+              </Tooltip>
+            )}
+
+            <Tooltip title="Ver detalles">
+              <Button
+                type="text"
+                icon={<Eye size={16} />}
+                size="small"
+                onClick={() => handleAbrirEditar(solicitud)}
+              />
+            </Tooltip>
+
+            {puedeEditar && (
+              <Popconfirm
+                title="Eliminar solicitud"
+                description="¿Estás seguro de que deseas eliminar esta solicitud?"
+                onConfirm={() => handleEliminar(solicitud.idSolicitud || solicitud.id)}
+                okText="Sí"
+                cancelText="No"
+              >
+                <Button
+                  type="text"
+                  danger
+                  icon={<X size={16} />}
+                  size="small"
+                />
+              </Popconfirm>
+            )}
+          </Space>
+        );
+      }
+    }
+  ];
+
+
+
+  // ============== RENDER ==============
 
   return (
-    <div className="space-y-6 p-6 w-full">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] rounded-2xl p-6 text-white shadow-lg">
-        <div className="flex items-center gap-3 mb-2">
-          <Calendar className="w-8 h-8" />
-          <h1 className="text-2xl font-bold">Disponibilidad Médica</h1>
+    <div className="p-6 bg-white rounded-lg">
+      {/* Encabezado */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+              <Calendar size={28} className="text-blue-600" />
+              Mi Disponibilidad
+            </h1>
+            <p className="text-gray-600 text-sm mt-1">
+              Gestiona tu disponibilidad para atender pacientes
+            </p>
+          </div>
+          <Button
+            type="primary"
+            icon={<RefreshCw size={16} />}
+            onClick={cargarDatos}
+            loading={loading}
+          >
+            Actualizar
+          </Button>
         </div>
-        <p className="text-blue-100">
-          Selecciona un período <strong>Vigente</strong> o <strong>Activo</strong> para registrar tu disponibilidad.
-        </p>
-      </div>
 
-      {error && (
-        <div className="bg-red-100 border border-red-200 text-red-800 px-4 py-3 rounded-xl flex items-center gap-2">
-          <FileText className="w-5 h-5" />
-          {error}
-        </div>
-      )}
-
-      {/* Tabla por Periodo + Filtros */}
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
-        <div className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] px-4 py-3">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+        {/* Controles de filtro */}
+        <Card size="small" className="mb-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             <div>
-              <h2 className="text-base font-bold text-white flex items-center gap-2">
-                <FileText className="w-4 h-4" />
-                Períodos de Disponibilidad
-              </h2>
-              <p className="text-xs text-blue-100 mt-0.5">Fuente: `PeriodoMedicoDisponibilidadController`</p>
-            </div>
-
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={inicializar}
-                className={BUTTON_WHITE_HOVER_CLASS}
-                disabled={loadingPeriodos}
-              >
-                {loadingPeriodos ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
-                Actualizar
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4">
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 mb-4">
-            {/* Tipo periodos */}
-            <div className="md:col-span-4">
-              <label className="text-xs font-semibold text-slate-700">Tipo de periodos</label>
-              <select
-                className="mt-1 w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
-                value={tipoPeriodos}
-                onChange={(e) => {
-                  setTipoPeriodos(e.target.value);
-                  setFiltroPeriodoId("");
-                }}
-                disabled={loadingPeriodos}
-              >
-                <option value="VIGENTES">Vigentes</option>
-                <option value="ACTIVOS">Activos</option>
-              </select>
-            </div>
-
-            {/* Año */}
-            <div className="md:col-span-3">
-              <label className="text-xs font-semibold text-slate-700">Año</label>
-              <select
-                className="mt-1 w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Año
+              </label>
+              <Select
                 value={filtroAnio}
-                onChange={(e) => {
-                  setFiltroAnio(e.target.value);
-                  setFiltroPeriodoId("");
+                onChange={(value) => {
+                  console.log('📅 Año seleccionado:', value);
+                  setFiltroAnio(value);
+                  setPeriodoSeleccionadoFiltro(null); // Limpiar periodo seleccionado al cambiar año
                 }}
-              >
-                {aniosDisponibles.map((y) => (
-                  <option key={y} value={y}>
-                    {y}
-                  </option>
-                ))}
-              </select>
+                options={anios.length > 0 ? anios.map(a => ({ label: a, value: a })) : [{ label: new Date().getFullYear(), value: new Date().getFullYear() }]}
+                className="w-full"
+              />
             </div>
 
-            {/* Periodo */}
-            <div className="md:col-span-5">
-              <label className="text-xs font-semibold text-slate-700">Periodo</label>
-              <select
-                className="mt-1 w-full px-2 py-1.5 text-sm border border-slate-200 rounded-lg bg-white text-slate-900 focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9]"
-                value={filtroPeriodoId}
-                onChange={(e) => setFiltroPeriodoId(e.target.value)}
-                disabled={loadingPeriodos}
-              >
-                <option value="">Todos los periodos</option>
-                {periodosPorAnio.map((p) => (
-                  <option key={p.idPeriodo} value={p.idPeriodo}>
-                    {p.descripcion} ({p.periodo})
-                  </option>
-                ))}
-              </select>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Periodo
+              </label>
+              <Select
+                value={periodoSeleccionado}
+                onChange={(value) => {
+                  console.log('🎯 Periodo seleccionado del combo:', value);
+                  setPeriodoSeleccionadoFiltro(value);
+                }}
+                placeholder="Seleccione un periodo"
+                showSearch
+                optionFilterProp="children"
+                className="w-full"
+                options={[
+                  { label: "Todos", value: null },
+                  ...periodosDisponiblesCombo.map(p => ({
+                    label: p.descripcion,
+                    value: p.idPeriodoRegDisp
+                  }))
+                ]}
+                notFoundContent="No hay periodos disponibles con los filtros seleccionados"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Estado de Solicitud
+              </label>
+              <Select
+                value={filtroEstadoSolicitud}
+                onChange={(value) => {
+                  console.log('🏷️ Estado de solicitud seleccionado:', value);
+                  setFiltroEstadoSolicitud(value);
+                }}
+                options={[
+                  { label: "Todos", value: "TODOS" },
+                  { label: "Sin Solicitud", value: "SIN_SOLICITUD" },
+                  { label: "Pendiente", value: "PENDIENTE" },
+                  { label: "Aprobada", value: "APROBADA" },
+                  { label: "Rechazada", value: "RECHAZADA" }
+                ]}
+                className="w-full"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Buscar
+              </label>
+              <Input
+                placeholder="Buscar por período..."
+                value={busqueda}
+                onChange={(e) => setBusqueda(e.target.value)}
+                allowClear
+              />
             </div>
           </div>
+        </Card>
+      </div>
 
-          {filasPorPeriodo.length === 0 ? (
-            <div className="text-center py-6 text-slate-500 text-sm">No hay periodos para los filtros seleccionados.</div>
-          ) : (
-            <div className="overflow-x-auto max-h-[420px] overflow-y-auto">
-              <table className="min-w-full border-collapse">
-                <thead className="bg-gradient-to-r from-[#0A5BA9] to-[#2563EB] sticky top-0 z-10">
-                  <tr>
-                    <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Año</th>
-                    <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Periodo</th>
-                    <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Apertura</th>
-                    <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Cierre</th>
-                    <th className="px-2 py-2.5 text-left text-xs font-bold text-white">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-200">
-                  {filasPorPeriodo.map((p) => (
-                    <tr key={p.idPeriodo} className="hover:bg-slate-50 transition-colors">
-                      <td className="px-2 py-2 text-xs text-slate-700 font-semibold">{getYearFromPeriodo(p) || "—"}</td>
-                      <td className="px-2 py-2 text-xs text-slate-700">
-                        <div className="font-semibold">{p.descripcion || `Periodo ${p.periodo}`}</div>
-                        <div className="text-[10px] text-slate-500">Cód: {p.periodo} · ID: {p.idPeriodo}</div>
-                      </td>
-                      <td className="px-2 py-2 text-xs text-slate-600">{formatFecha(p.fechaInicio)}</td>
-                      <td className="px-2 py-2 text-xs text-slate-600">{formatFecha(p.fechaFin)}</td>
-                      <td className="px-2 py-2">
-                        <span
-                          className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold border ${estadoBadgeClass(
-                            p.estado
-                          )}`}
-                        >
-                          {p.estado || "—"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+      {/* Tabla de períodos con sus solicitudes */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-lg font-semibold text-gray-800">
+            Períodos de Disponibilidad - Año {filtroAnio}
+          </h2>
+          <div className="text-sm text-gray-600">
+            Total: {datosTablaPeriodos.length} periodos | 
+            Con solicitud: {datosTablaPeriodos.filter(p => p.tieneSolicitud).length} | 
+            Pendientes: {datosTablaPeriodos.filter(p => !p.tieneSolicitud).length}
+          </div>
         </div>
+
+        <Table
+          columns={columnasTabla}
+          dataSource={datosTablaPeriodos}
+          rowKey="id"
+          loading={loading}
+          pagination={{ pageSize: 10, showSizeChanger: true, showTotal: (total) => `Total ${total} periodos` }}
+          size="small"
+          scroll={{ x: 1200 }}
+          locale={{
+            emptyText: (
+              <Empty
+                description="No hay periodos disponibles para este año"
+                image={Empty.PRESENTED_IMAGE_SIMPLE}
+              />
+            )
+          }}
+        />
       </div>
 
-      <div className="text-xs text-slate-500">
-        Nota: en esta primera iteración se dejó operativa solo la <strong>carga de periodos</strong> desde el controller de
-        disponibilidad. La siguiente parte será integrar el registro de disponibilidad del médico en base a estos periodos.
-      </div>
+      {/* Modal para crear/editar */}
+      {showModal && (
+        <ModalSolicitudDisponibilidad
+          open={showModal}
+          onClose={() => setShowModal(false)}
+          periodo={periodSeleccionado}
+          mode={modalMode}
+          solicitudExistente={solicitudSeleccionada}
+          onGuardar={handleGuardar}
+        />
+      )}
     </div>
   );
 }

@@ -45,13 +45,20 @@ public interface PeriodoMedicoDisponibilidadRepository extends JpaRepository<Per
     }
 
     /**
-     * Lista los años disponibles registrados en la tabla.
+     * Lista los años disponibles registrados en la tabla (solo períodos activos).
      */
     @Query("""
             SELECT DISTINCT p.anio
             FROM PeriodoMedicoDisponibilidad p
+            WHERE p.estado = 'ACTIVO'
             ORDER BY p.anio DESC
             """)
     List<Integer> listarAniosDisponibles();
+
+    /**
+     * Busca períodos que contengan una cadena específica en el campo periodo.
+     */
+    @Query("SELECT p FROM PeriodoMedicoDisponibilidad p WHERE p.periodo LIKE CONCAT('%', :periodo, '%')")
+    List<PeriodoMedicoDisponibilidad> findByPeriodoContaining(@Param("periodo") String periodo);
 }
 
