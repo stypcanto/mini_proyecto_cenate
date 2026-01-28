@@ -17,6 +17,7 @@ import {
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import apiClient from "../../services/apiClient";
+import { PerformanceMonitorCard } from "../../components/monitoring";
 
 export default function UserDashboard() {
   const { user } = useAuth();
@@ -164,6 +165,13 @@ export default function UserDashboard() {
           color="#7C3AED"
           onClick={() => navigate("/user/security")}  // ✅ ahora lleva a UserSecurity.jsx
         />
+      </div>
+
+      {/* ======================================================= */}
+      {/* 📊 Monitor de Performance en Tiempo Real */}
+      {/* ======================================================= */}
+      <div className="mb-10">
+        <PerformanceMonitorCard />
       </div>
 
       {/* ======================================================= */}
