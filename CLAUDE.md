@@ -1,8 +1,9 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.35.0 (2026-01-26)
+> **Versión:** v1.36.0 (2026-01-27)
 > **Status:** ✅ Production Ready
+> **Módulo Bolsas:** v2.0.0 ⭐ NUEVO - Estadísticas Dashboard con 8 endpoints
 
 ---
 
@@ -70,9 +71,16 @@
 ## 📚 DOCUMENTOS CLAVE POR ÁREA
 
 ### Backend
+
+#### 📦 **Módulo de Bolsas** (⭐ RECOMENDADO)
+- 📍 [`spec/backend/09_modules_bolsas/00_INDICE_MAESTRO_MODULO_BOLSAS.md`](spec/backend/09_modules_bolsas/00_INDICE_MAESTRO_MODULO_BOLSAS.md) - ⭐ Índice Maestro - Solicitudes + Estadísticas + Tipos + Estados
+- 📍 [`spec/backend/09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md`](spec/backend/09_modules_bolsas/12_modulo_solicitudes_bolsa_v1.12.0.md) - Solicitudes de Bolsa v1.12.0 (Excel + CRUD)
+- 📍 [`spec/backend/09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md`](spec/backend/09_modules_bolsas/13_estadisticas_dashboard_v2.0.0.md) - 🆕 Dashboard Estadísticas v2.0.0 (8 endpoints + 7 gráficos)
+- 📍 [`spec/backend/09_modules_bolsas/05_modulo_tipos_bolsas_crud.md`](spec/backend/09_modules_bolsas/05_modulo_tipos_bolsas_crud.md) - Tipos de Bolsas v1.1.0 (Catálogo)
+- 📍 [`spec/backend/09_modules_bolsas/07_modulo_estados_gestion_citas_crud.md`](spec/backend/09_modules_bolsas/07_modulo_estados_gestion_citas_crud.md) - Estados de Citas v1.33.0 (10 estados)
+
+#### Otros Módulos
 - 📍 [`spec/backend/01_api_endpoints.md`](spec/backend/01_api_endpoints.md) - Todos los endpoints REST
-- 📍 [`spec/backend/08_modulo_bolsas_pacientes_completo.md`](spec/backend/08_modulo_bolsas_pacientes_completo.md) - Solicitudes de Bolsa v1.6.0
-- 📍 [`spec/backend/07_modulo_estados_gestion_citas_crud.md`](spec/backend/07_modulo_estados_gestion_citas_crud.md) - Estados de citas v1.33.0
 - 📍 [`spec/backend/09_teleecg_v3.0.0_guia_rapida.md`](spec/backend/09_teleecg_v3.0.0_guia_rapida.md) - Tele-ECG v1.24.0
 
 ### Frontend
@@ -99,20 +107,151 @@
 
 ---
 
-## 📊 STATUS ACTUAL (v1.35.0)
+## 📊 STATUS ACTUAL (v1.36.0)
 
-### ✅ Completado Recientemente (últimas 24h)
+### ✅ Completado Recientemente (últimas 48h)
 
 | Feature | Versión |
 |---------|---------|
-| Excel v1.8.0 | 10 campos + auto-calc EDAD ✅ |
-| Solicitudes Bolsa | v1.6.0 - Estados integrados ✅ |
+| **Módulo Bolsas - Estadísticas Dashboard** | **v2.0.0 ⭐ NUEVO** |
+| Solicitudes Bolsa | v1.12.0 - Auto-detección IPRESS/RED + enriquecimiento ✅ |
 | Estados Gestión Citas | v1.33.0 - CRUD completo ✅ |
+| Tipos de Bolsas | v1.1.0 - Catálogo completo ✅ |
+| Excel v1.8.0 | 10 campos + auto-calc EDAD ✅ |
 | Tele-ECG | v1.24.0 - UI optimizada ✅ |
-| Filtros Usuarios Pendientes | v1.0.0 - Backend-driven ✅ |
-| **Documentación** | **Reorganizada en 9 carpetas** ✅ |
-| **Limpieza Proyecto** | **233 temp files eliminados** ✅ |
+| **Documentación Bolsas v2.0.0** | **Índice Maestro + 5 módulos** ✅ |
 | **Spring AI** | **Arquitectura completa diseñada** ✅ |
+
+---
+
+## 🎯 MÓDULO DE BOLSAS v2.0.0 - Detalles de Implementación
+
+### ✨ Estadísticas Dashboard v2.0.0 (NUEVO)
+
+**8 Endpoints REST implementados:**
+```
+GET /api/bolsas/estadisticas/resumen                    → Resumen 5 KPIs
+GET /api/bolsas/estadisticas/del-dia                    → Solicitudes del día
+GET /api/bolsas/estadisticas/por-estado                 → Distribución PENDIENTE/ATENDIDO/CANCELADO
+GET /api/bolsas/estadisticas/por-especialidad           → Ranking especialidades
+GET /api/bolsas/estadisticas/por-ipress                 → Carga por IPRESS
+GET /api/bolsas/estadisticas/por-tipo-cita              → 3 tipos: VOLUNTARIA (66.26%), INTERCONSULTA, RECITA
+GET /api/bolsas/estadisticas/por-tipo-bolsa             → 6 tipos: ORDINARIA, EXTRAORDINARIA, ESPECIAL, URGENTE, EMERGENCIA, RESERVA
+GET /api/bolsas/estadisticas/evolucion-temporal         → 30 días con tendencias
+GET /api/bolsas/estadisticas/kpis                       → KPIs detallados con indicadores de salud
+GET /api/bolsas/estadisticas/dashboard-completo         → Todo integrado
+```
+
+**7 Componentes React implementados:**
+- `GraficoResumen` - 5 KPIs principales (cards)
+- `GraficoEstado` - Pie chart 3 estados
+- `GraficoEspecialidad` - Barras horizontales top 10
+- `GraficoIPRESS` - Barras horizontales carga
+- `GraficoTipoCita` - SVG pie chart 3 segmentos con colores + percentajes
+- `GraficoTipoBolsa` - Barras horizontales 6 tipos
+- `GraficoTemporal` - Línea 30 días
+
+**Base de Datos:** 329 registros activos en `dim_solicitud_bolsa`
+- Datos 100% reales de BD
+- No hay datos ficticios
+- Soft delete con campo `activo = true`
+
+**Colores asignados por tipo:**
+- VOLUNTARIA: #4ECDC4 (turquesa) 🎯
+- INTERCONSULTA: #FFE66D (amarillo) 📋
+- RECITA: #FF6B6B (rojo) ⚠️
+- ORDINARIA: #3498DB (azul)
+- EXTRAORDINARIA: #E74C3C (rojo oscuro)
+- ESPECIAL: #F39C12 (naranja)
+- URGENTE: #FF6B6B (rojo)
+- EMERGENCIA: #C0392B (rojo intenso)
+- RESERVA: #27AE60 (verde)
+
+### 💾 Backend - Cambios Implementados
+
+**Controlador:** `SolicitudBolsaEstadisticasController.java`
+- 10 endpoints @GetMapping
+- Respuestas con DTOs estructurados
+- Filtrados a 3 tipos de cita válidos
+
+**Servicio:** `SolicitudBolsaEstadisticasServiceImpl.java`
+- Métodos de estadísticas por categoría
+- Mapeo de colores por tipo
+- Manejo de conversiones java.sql.Date → java.time.LocalDate
+- Cálculos de porcentajes y tasas de completación
+
+**Repositorio:** `SolicitudBolsaRepository.java`
+- Queries nativas con LEFT JOINs
+- Filtrado WHERE activo = true AND tipo_cita IN (3 tipos válidos)
+- Agregaciones con GROUP BY y ORDER BY
+
+**DTOs:** Estructurados para cada estadística
+- `EstadisticasPorEstadoDTO` - estado, total, porcentaje, color
+- `EstadisticasPorTipoCitaDTO` - tipo, total, porcentaje, color
+- `EstadisticasPorTipoBolsaDTO` - tipo, total, tasas, color, icono
+- `EstadisticasTemporalesDTO` - fecha, solicitudes, promedio
+
+**Seguridad:** SecurityConfig.java
+- Endpoint `/api/bolsas/estadisticas/**` permitAll (sin autenticación requerida)
+
+### 🎨 Frontend - Cambios Implementados
+
+**Archivo:** `EstadisticasDashboard.jsx`
+- 7 componentes gráficos
+- SVG pie chart con cálculo de paths (arcos)
+- Percentajes dentro de segmentos SVG
+- Colores distintivos por categoría
+- Responsivo con TailwindCSS
+
+**Servicio:** `bolsasService.js`
+- `obtenerEstadisticasPorTipoBolsa()` + 7 métodos más
+- Promise.all() para carga paralela
+- Manejo de errores con try/catch
+
+**Patrones utilizados:**
+- React Hooks (useState, useEffect)
+- Async/await para APIs
+- SVG para gráficos personalizados
+- Props destructuring
+
+### 📊 Datos Actuales (2026-01-27)
+
+```
+Total Solicitudes:    329
+Atendidas:           218 (66.26%)
+Pendientes:           76 (23.10%)
+Canceladas:           35 (10.64%)
+
+Por Tipo de Cita:
+VOLUNTARIA:          218 (66.26%)
+RECITA:               76 (23.10%)
+INTERCONSULTA:        35 (10.64%)
+```
+
+### ✅ Bugs Corregidos
+
+1. **ClassCastException en evolucion-temporal**
+   - Causa: java.sql.Date → java.time.LocalDate casting
+   - Fix: Agregado type checking con instanceof
+
+2. **404 endpoints no encontrados**
+   - Causa: Backend sin reiniciar después de compilación
+   - Fix: Restart con `./gradlew bootRun`
+
+3. **403 Forbidden en estadísticas**
+   - Causa: Spring Security bloqueando endpoints
+   - Fix: Agregado permitAll en SecurityConfig
+
+4. **SQL retornando todos los tipo_cita**
+   - Causa: Query sin filtro WHERE
+   - Fix: Agregado filtro a 3 tipos válidos: VOLUNTARIA, INTERCONSULTA, RECITA
+
+5. **Pie chart como círculos superpuestos**
+   - Causa: SVG strokeDasharray approach
+   - Fix: Reescrito con path elements y arc calculations
+   - Resultado: 3 segmentos distintos con colores
+
+---
 
 ### 🚀 En Desarrollo
 
@@ -251,6 +390,9 @@ mini_proyecto_cenate/
 
 ## 🚀 Próximos Pasos
 
+**MÓDULO BOLSAS:** ✅ Completado v2.0.0 (Solicitudes + Estadísticas)
+- Consulta: [`spec/backend/09_modules_bolsas/00_INDICE_MAESTRO_MODULO_BOLSAS.md`](spec/backend/09_modules_bolsas/00_INDICE_MAESTRO_MODULO_BOLSAS.md)
+
 **FASE ACTUAL:** Spring AI Chatbot (planificación → desarrollo)
 
 1. **Revisar plan:** `plan/06_Integracion_Spring_AI/01_plan_implementacion_spring_ai.md`
@@ -262,7 +404,8 @@ mini_proyecto_cenate/
 ## 📞 Contacto
 
 **Desarrollado por:** Ing. Styp Canto Rondón
-**Versión:** v1.35.0 (2026-01-26)
+**Versión:** v1.36.0 (2026-01-27)
+**Sistema:** CENATE Telemedicina + Módulo Bolsas v2.0.0
 **Email:** stypcanto@essalud.gob.pe
 
 ---
