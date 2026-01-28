@@ -1,9 +1,9 @@
-# 📚 ÍNDICE MAESTRO - Módulo de Bolsas v2.0.0
+# 📚 ÍNDICE MAESTRO - Módulo de Bolsas v2.2.0
 
 > **Documentación unificada del módulo completo de Bolsas de Pacientes**
-> **Fecha:** 2026-01-27
-> **Versión:** v2.0.0
-> **Status:** ✅ Production Ready
+> **Fecha:** 2026-01-28
+> **Versión:** v2.2.0 (Deduplicación Automática + KEEP_FIRST + Modal Confirmación)
+> **Status:** ✅ Production Ready + RBAC + Deduplicación Inteligente ⭐
 
 ---
 
@@ -55,6 +55,12 @@ El **Módulo de Bolsas** es un sistema integral para la gestión de solicitudes 
 │  ├─ Datos 100% reales (329 registros)                      │
 │  └─ KPIs con indicadores de salud                          │
 │                                                              │
+│  ✅ v2.2.0 - Deduplicación Automática ⭐⭐ MÁS NUEVO   │
+│  ├─ Estrategia KEEP_FIRST automática                       │
+│  ├─ Pre-procesamiento de duplicados                        │
+│  ├─ Modal de confirmación elegante                         │
+│  └─ Reporte detallado de consolidación                     │
+│                                                              │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -97,25 +103,33 @@ dim_solicitud_bolsa (329 registros activos)
 ### Nivel 3: Frontend React
 
 **4 Páginas principales:**
-- `CargarDesdeExcel.jsx` - Importación inteligente
-- `Solicitudes.jsx` - Listado y gestión
+- `CargarDesdeExcel.jsx` (v1.14.0+) - Importación inteligente
+- `Solicitudes.jsx` (v2.4.0+) - Listado y gestión con RBAC
 - `TiposBolsas.jsx` - Administración de tipos
 - `EstadisticasDashboard.jsx` - Dashboard analítico ⭐
+
+**Componentes reutilizables:**
+- `ListHeader.jsx` (v2.0.0) - Filtros con diseño mejorado
+- `PermisosContext.jsx` - Control de acceso basado en roles (MBAC)
 
 ---
 
 ## Componentes Principales
 
-### 1️⃣ SOLICITUDES DE BOLSA (v1.12.0)
+### 1️⃣ SOLICITUDES DE BOLSA (v2.4.0)
 
 **Propósito:** Importación, validación y gestión de solicitudes de atención
 
 **Características clave:**
 - ✅ Auto-detección de tipo bolsa + servicio por nombre archivo
-- ✅ Validación de 10 campos Excel
-- ✅ Enriquecimiento automático desde tablas auxiliares
+- ✅ Validación de 10 campos Excel + teléfono alterno
+- ✅ Enriquecimiento automático desde tablas auxiliares (IPRESS, RED, MACRORREGIÓN)
 - ✅ Soft delete con auditoría
-- ✅ Mensajes de error amigables
+- ✅ Mensajes de error amigables en español
+- ✅ **NUEVO v2.1.0:** Control de acceso - Botón "Borrar" solo para SUPERADMIN
+- ✅ **NUEVO v2.1.0:** Filtros dinámicos con contadores interactivos
+- ✅ **NUEVO v2.1.0:** Normalización de códigos IPRESS (3 dígitos)
+- ✅ **NUEVO v2.1.0:** Auto-creación de asegurados faltantes
 
 **Archivos:**
 - Backend: `SolicitudBolsaController`, `ExcelImportService`, `SolicitudBolsaServiceImpl`
@@ -229,6 +243,67 @@ GET /api/bolsas/estadisticas/dashboard-completo   - Todos los datos (1 llamada)
 
 ---
 
+### 5️⃣ DEDUPLICACIÓN AUTOMÁTICA (v2.2.0) ⭐⭐ NUEVO
+
+**Propósito:** Automatizar detección y consolidación de DNI duplicados en importación Excel
+
+**Características clave:**
+- ✅ Pre-procesamiento PRE-SAVE de duplicados
+- ✅ Estrategia KEEP_FIRST automática (mantiene primer registro, descarta duplicados)
+- ✅ Modal de confirmación elegante e interactivo
+- ✅ Reporte detallado con estadísticas de consolidación
+- ✅ Validación 100% en Backend + notificación Frontend
+- ✅ Zero intervención manual del usuario
+- ✅ Carga 100% exitosa sin errores
+
+**Flujo:**
+```
+Excel (449 filas, 49 DNI duplicados)
+         ↓
+Backend analizarDuplicadosEnExcel()
+  ├─ Detecta 49 duplicados
+  ├─ Aplica KEEP_FIRST
+  └─ Retorna reporte detallado
+         ↓
+Frontend: ModalDeduplicacionAutomatica
+  ├─ Muestra resumen (449 total, 400 OK, 49 consolidadas)
+  ├─ Detalle expandible de cada duplicado
+  ├─ Botones: Confirmar/Cancelar
+         ↓
+Usuario confirma
+         ↓
+✅ Resultado: 400 registros en BD, CERO errores
+
+```
+
+**Backend (v2.2.0+):**
+- ✅ Nuevo DTO: `ReporteDuplicadosDTO`
+- ✅ Nuevo método: `analizarDuplicadosEnExcel()`
+- ✅ Estrategia: KEEP_FIRST en `importarDesdeExcel()`
+- ✅ Compilación: BUILD SUCCESS
+
+**Frontend (v2.2.0+):**
+- ✅ Nuevo Modal: `ModalDeduplicacionAutomatica.jsx`
+- ✅ Nuevos estilos: `ModalDeduplicacionAutomatica.css`
+- ✅ Integración: `CargarDesdeExcel.jsx`
+- ✅ Handlers: `handleConfirmarDeduplicacion()`, `handleCancelarDeduplicacion()`
+- ✅ Compilación: BUILD SUCCESS
+
+**Archivos:**
+- Backend: `ReporteDuplicadosDTO.java`, `SolicitudBolsaServiceImpl.java` (+80 líneas)
+- Frontend: `ModalDeduplicacionAutomatica.jsx` (+111), `ModalDeduplicacionAutomatica.css` (+371), `CargarDesdeExcel.jsx` (+50)
+- Documentación: `IMPLEMENTACION_COMPLETADA_v2.2.0.md`, `IMPLEMENTACION_MODAL_DEDUPLICACION_V2.2.0.md`
+
+**Endpoint afectado:**
+```
+POST /api/bolsas/solicitudes/importar
+  Respuesta incluye:
+  ├─ reporte_deduplicacion (estadísticas)
+  └─ reporte_analisis_duplicados (detalles)
+```
+
+---
+
 ## Flujo Integrado
 
 ### Caso de Uso Completo: Del Excel al Dashboard
@@ -301,21 +376,31 @@ GET /api/bolsas/estadisticas/dashboard-completo   - Todos los datos (1 llamada)
 
 ## Matrix de Funcionalidades
 
-| Funcionalidad | v1.12.0 | v1.1.0 | v1.33.0 | v2.0.0 | Status |
-|---|---|---|---|---|---|
-| **CRUD Solicitudes** | ✅ | - | - | - | ✅ Activo |
-| **Auto-detección Excel** | ✅ | - | - | - | ✅ Activo |
-| **Soft Delete lote** | ✅ | - | - | - | ✅ Activo |
-| **CRUD Tipos Bolsa** | - | ✅ | - | - | ✅ Activo |
-| **Búsqueda avanzada** | - | ✅ | - | - | ✅ Activo |
-| **CRUD Estados** | - | - | ✅ | - | ✅ Activo |
-| **10 Estados predefinidos** | - | - | ✅ | - | ✅ Activo |
-| **Dashboard Analytics** | - | - | - | ✅ | ✅ NUEVO |
-| **8 Endpoints stats** | - | - | - | ✅ | ✅ NUEVO |
-| **6 Visualizaciones** | - | - | - | ✅ | ✅ NUEVO |
-| **KPIs Detallados** | - | - | - | ✅ | ✅ NUEVO |
-| **Pie Charts** | - | - | - | ✅ | ✅ NUEVO |
-| **Barras H. Tipo Bolsa** | - | - | - | ✅ | ✅ NUEVO |
+| Funcionalidad | v1.12.0 | v1.1.0 | v1.33.0 | v2.0.0 | v2.1.0 | Status |
+|---|---|---|---|---|---|---|
+| **CRUD Solicitudes** | ✅ | - | - | - | ✅ | ✅ Activo |
+| **Auto-detección Excel** | ✅ | - | - | - | ✅ | ✅ Activo |
+| **Soft Delete lote** | ✅ | - | - | - | ✅ | ✅ Activo |
+| **CRUD Tipos Bolsa** | - | ✅ | - | - | ✅ | ✅ Activo |
+| **Búsqueda avanzada** | - | ✅ | - | - | ✅ | ✅ Activo |
+| **CRUD Estados** | - | - | ✅ | - | ✅ | ✅ Activo |
+| **10 Estados predefinidos** | - | - | ✅ | - | ✅ | ✅ Activo |
+| **Dashboard Analytics** | - | - | - | ✅ | ✅ | ✅ Activo |
+| **8 Endpoints stats** | - | - | - | ✅ | ✅ | ✅ Activo |
+| **6 Visualizaciones** | - | - | - | ✅ | ✅ | ✅ Activo |
+| **KPIs Detallados** | - | - | - | ✅ | ✅ | ✅ Activo |
+| **Pie Charts** | - | - | - | ✅ | ✅ | ✅ Activo |
+| **Barras H. Tipo Bolsa** | - | - | - | ✅ | ✅ | ✅ Activo |
+| **Control Acceso RBAC** | - | - | - | - | ✅ | ✅ NUEVO |
+| **Botón Borrar SUPERADMIN** | - | - | - | - | ✅ | ✅ NUEVO |
+| **Filtros dinámicos c/contadores** | - | - | - | - | ✅ | ✅ NUEVO |
+| **Teléfono alterno** | - | - | - | - | ✅ | ✅ NUEVO |
+| **Auto-creación asegurados** | - | - | - | - | ✅ | ✅ NUEVO |
+| **Normalización IPRESS 3 dígitos** | - | - | - | - | ✅ | ✅ NUEVO |
+| **Enriquecimiento RED/MACRORREGIÓN** | - | - | - | - | ✅ | ✅ NUEVO |
+| **Deduplicación automática KEEP_FIRST** | - | - | - | - | - | ✅ NUEVO |
+| **Modal confirmación consolidación** | - | - | - | - | - | ✅ NUEVO |
+| **Reporte deduplicación detallado** | - | - | - | - | - | ✅ NUEVO |
 
 ---
 
@@ -339,11 +424,33 @@ GET /api/bolsas/estadisticas/dashboard-completo   - Todos los datos (1 llamada)
   ├─ v1.37.0: Tipos bolsa v1.1.0 reorganizado
   └─ v2.0.0: ESTADÍSTICAS DASHBOARD ✨ (2026-01-27)
 
-2026-02 - Futuro: v2.1.0+
-  ├─ v2.1.0: Reportes PDF
-  ├─ v2.2.0: Exportación Excel
-  ├─ v2.3.0: Predicción con IA
-  └─ v2.4.0: Mobile app
+2026-01-28: v2.1.0
+  ├─ Control de acceso RBAC para botón Borrar
+  ├─ Filtros dinámicos con contadores
+  ├─ Teléfono alterno mapping
+  ├─ Auto-creación asegurados faltantes
+  ├─ Normalización IPRESS 3 dígitos
+  ├─ Enriquecimiento RED + MACRORREGIÓN
+  ├─ Mejora UI ListHeader
+  └─ Actualización documentación completa ✨
+
+2026-01-28: v2.2.0 ⭐ NUEVO
+  ├─ Deduplicación automática KEEP_FIRST
+  ├─ Pre-procesamiento de duplicados PRE-SAVE
+  ├─ Modal de confirmación elegante
+  ├─ Reporte detallado consolidación
+  ├─ ReporteDuplicadosDTO + analizarDuplicadosEnExcel()
+  ├─ ModalDeduplicacionAutomatica.jsx/css
+  ├─ Integración CargarDesdeExcel.jsx
+  ├─ Backend BUILD SUCCESS
+  ├─ Frontend BUILD SUCCESS
+  └─ Documentación completada ✨
+
+2026-02 - Futuro: v2.3.0+
+  ├─ v2.3.0: Reportes PDF generados
+  ├─ v2.4.0: Alertas inteligentes por vencimiento
+  ├─ v2.5.0: Predicción con IA (Spring AI)
+  └─ v2.6.0: Mobile app React Native
 ```
 
 ---
@@ -359,8 +466,16 @@ GET /api/bolsas/estadisticas/dashboard-completo   - Todos los datos (1 llamada)
 | [`07_modulo_estados_gestion_citas_crud.md`](./07_modulo_estados_gestion_citas_crud.md) | v1.33.0 | 500 | Estados citas |
 | [`12_modulo_solicitudes_bolsa_v1.12.0.md`](./12_modulo_solicitudes_bolsa_v1.12.0.md) | v1.12.0 | 800 | Solicitudes |
 | [`13_estadisticas_dashboard_v2.0.0.md`](./13_estadisticas_dashboard_v2.0.0.md) | v2.0.0 | 900 | Estadísticas ⭐ |
-| [`00_INDICE_MAESTRO_MODULO_BOLSAS.md`](./00_INDICE_MAESTRO_MODULO_BOLSAS.md) | v2.0.0 | 500 | Índice maestro |
+| [`14_CHANGELOG_v2.1.0.md`](./14_CHANGELOG_v2.1.0.md) | v2.1.0 | 400 | Cambios RBAC + Filtros |
+| [`15_ERRORES_IMPORTACION_v2.1.0.md`](./15_ERRORES_IMPORTACION_v2.1.0.md) | v2.1.0 | 300 | Guía errores |
+| [`00_INDICE_MAESTRO_MODULO_BOLSAS.md`](./00_INDICE_MAESTRO_MODULO_BOLSAS.md) | v2.2.0 | 700 | Índice maestro (actualizado) |
 | [`README.md`](./README.md) | v2.0.0 | 350 | Vista general |
+
+### 📄 Documentación Externa (root/)
+| Documento | Tema |
+|-----------|------|
+| [`IMPLEMENTACION_COMPLETADA_v2.2.0.md`](../../IMPLEMENTACION_COMPLETADA_v2.2.0.md) | Implementación final v2.2.0 |
+| [`IMPLEMENTACION_MODAL_DEDUPLICACION_V2.2.0.md`](../../IMPLEMENTACION_MODAL_DEDUPLICACION_V2.2.0.md) | Detalles técnicos modal |
 
 ---
 
@@ -390,67 +505,207 @@ R: Soft delete (no destruye datos) en `Solicitudes.jsx` → "Eliminar selecciona
 **P: ¿Qué hay de nuevo en v2.0.0?**
 R: Dashboard completo con 8 endpoints, 6 visualizaciones, y nuevo gráfico tipo bolsa ⭐
 
+**P: ¿Qué hay de nuevo en v2.2.0?**
+R: Deduplicación automática KEEP_FIRST con modal de confirmación. Si Excel tiene DNI duplicados, el sistema automáticamente mantiene el primer registro y descarta duplicados. Modal muestra cuáles se consolidaron. ✨
+
+**P: ¿Qué pasa si importo Excel con DNI duplicados?**
+R: Sistema automáticamente aplica KEEP_FIRST (mantiene primer registro, descarta duplicados). Muestra modal con estadísticas de consolidación. Usuario confirma en 1 click. Carga 100% exitosa, 0 errores.
+
+**P: ¿Tengo que limpiar datos manualmente?**
+R: No. v2.2.0 automatiza deduplicación. Software detecta y consolida automáticamente. Tú solo confirmas en modal. Sin intervención manual.
+
 ---
 
 ## Roadmap Futuro
 
-### v2.1.0 (Q2 2026) - Reportes
+### ✅ v2.2.0 (2026-01-28) - Deduplicación Automática ⭐ COMPLETADO
 
-- ✅ Reportes PDF generados
-- ✅ Reportes Excel descargables
-- ✅ Gráficos en reportes
-- ✅ Programación de reportes automáticos
+- ✅ Deduplicación KEEP_FIRST automática
+- ✅ Modal de confirmación elegante
+- ✅ Reporte detallado consolidación
+- ✅ Pre-procesamiento PRE-SAVE
+- ✅ Backend + Frontend BUILD SUCCESS
 
-### v2.2.0 (Q3 2026) - Alertas Inteligentes
+### v2.3.0 (Q2 2026) - Reportes PDF
 
-- ✅ Alertas por solicitudes vencidas
-- ✅ Notificaciones por email
-- ✅ Umbrales personalizables
-- ✅ Dashboard de alertas
+- Reportes PDF generados
+- Reportes Excel descargables
+- Gráficos en reportes
+- Programación de reportes automáticos
 
-### v2.3.0 (Q4 2026) - IA/Predicción
+### v2.4.0 (Q3 2026) - Alertas Inteligentes
 
-- ✅ Predicción de completación
-- ✅ Clustering de solicitudes
-- ✅ Recomendaciones de acción
-- ✅ Análisis de patrones
+- Alertas por solicitudes vencidas
+- Notificaciones por email
+- Umbrales personalizables
+- Dashboard de alertas
 
-### v2.4.0 (2027) - Mobile
+### v2.5.0 (Q4 2026) - IA/Predicción
 
-- ✅ App móvil React Native
-- ✅ Sincronización offline
-- ✅ Push notifications
-- ✅ Consulta solicitudes
+- Predicción de completación
+- Clustering de solicitudes
+- Recomendaciones de acción
+- Análisis de patrones
+
+### v2.6.0 (2027) - Mobile
+
+- App móvil React Native
+- Sincronización offline
+- Push notifications
+- Consulta solicitudes
 
 ---
 
 ## Referencias Rápidas
 
-**Números clave (2026-01-27):**
+**Números clave (2026-01-28):**
 - 329 solicitudes activas
 - 218 atendidas (66.26%)
 - 76 pendientes (23.10%)
 - 35 canceladas (10.64%)
 - 8 endpoints estadísticas
 - 6 visualizaciones
-- 4 componentes
+- 5 componentes (+ Modal deduplicación ⭐)
+- 1 DTO nuevo (ReporteDuplicadosDTO)
+- 652 líneas nuevas (Backend + Frontend)
 
 **URLs importantes:**
 - Dashboard: `http://localhost:3000/bolsas/estadisticas`
 - API Base: `http://localhost:8080/api/bolsas`
 - DB: PostgreSQL 14
 
-**Commits clave v2.0.0:**
+**Commits clave:**
 ```
-28ef1f2 - docs: Resumen completo cambios Módulo Bolsas v2.0.0
-e536561 - docs(bolsas-estadisticas): Documentación v2.0.0
-1816237 - refactor(bolsas-estadisticas): Mejorar colores
-a453e90 - refactor(bolsas-estadisticas): Cambiar a barras
-62dc337 - feat(bolsas-estadisticas): Agregar tipo bolsa
+v2.2.0 (2026-01-28):
+  - feat(bolsas-deduplicacion): Implementación v2.2.0 KEEP_FIRST + Modal
+  - Backend: ReporteDuplicadosDTO + analizarDuplicadosEnExcel() method
+  - Frontend: ModalDeduplicacionAutomatica.jsx/css + integración CargarDesdeExcel
+  - Compilación: BUILD SUCCESS ✅
+
+v2.0.0 (2026-01-27):
+  - docs: Resumen completo cambios Módulo Bolsas v2.0.0
+  - docs(bolsas-estadisticas): Documentación v2.0.0
+  - feat(bolsas-estadisticas): 8 endpoints + 6 visualizaciones
 ```
 
 ---
 
-**Última actualización:** 2026-01-27
+---
+
+## 🎯 Cambios Recientes v2.1.0 (2026-01-28)
+
+### Control de Acceso y Seguridad
+✅ **Botón "Borrar Selección" restringido a SUPERADMIN**
+- Import: `usePermisos` desde `PermisosContext`
+- Check: `esSuperAdmin` boolean
+- Behavior: Botón solo visible para SUPERADMIN
+- Fallback: Otros usuarios ven deseleccionar pero NO pueden eliminar
+
+### Mejoras Frontend
+✅ **Filtros dinámicos con contadores interactivos**
+- Dropdowns muestran cantidad de registros
+- Opciones con 0 matches se ocultan automáticamente
+- Filtros se actualizan en tiempo real
+
+✅ **Diseño mejorado ListHeader.jsx**
+- Fila 1: Bolsas + Botón Limpiar
+- Fila 2: Macrorregión | Redes | IPRESS (siempre juntas)
+- Fila 3: Especialidades | Tipo de Cita
+- Bordes 2px, colores consistentes, focus rings
+
+✅ **Teléfono alterno y auto-creación**
+- Mapeo: Excel col 8 → `asegurados.tel_celular`
+- Auto-creación: Asegurados nuevos generados automáticamente
+- Errores: Mensajes amigables en español
+
+### Mejoras Backend
+✅ **Normalización IPRESS**
+- Códigos padded a 3 dígitos: 21 → 021
+- Lookups correctos en dim_ipress
+
+✅ **Enriquecimiento cascada**
+- dim_solicitud_bolsa → dim_ipress → dim_red → dim_macroregion
+- Datos completos: desc_ipress, desc_red, desc_macro
+
+---
+
+## 🎯 Cambios Recientes v2.2.0 (2026-01-28) ⭐⭐ NUEVO
+
+### Deduplicación Automática KEEP_FIRST
+
+✅ **Pre-procesamiento PRE-SAVE**
+- Analiza Excel ANTES de guardar
+- Detecta DNI duplicados automáticamente
+- Aplica estrategia KEEP_FIRST sin intervención
+
+✅ **Backend (SolicitudBolsaServiceImpl)**
+- Nuevo DTO: `ReporteDuplicadosDTO` con estadísticas
+- Nuevo método: `analizarDuplicadosEnExcel()`
+  - Realiza pre-análisis antes de guardar
+  - Retorna reporte con duplicados detectados
+  - Trackea DNI procesados durante import
+- Respuesta enriquecida: `reporte_deduplicacion` + `reporte_analisis_duplicados`
+- Build: SUCCESS ✅
+
+✅ **Frontend (CargarDesdeExcel.jsx)**
+- Nuevo Modal: `ModalDeduplicacionAutomatica.jsx`
+  - Muestra resumen: Total, Cargadas, Consolidadas
+  - Detalle expandible por DNI
+  - Botones: Confirmar/Cancelar
+- Nuevos estados:
+  - `mostrarModalDeduplicacion`
+  - `reporteDeduplicacion`
+- Handlers:
+  - `handleConfirmarDeduplicacion()` → Muestra éxito, redirige
+  - `handleCancelarDeduplicacion()` → Reinicia formulario
+
+✅ **Estilos (ModalDeduplicacionAutomatica.css)**
+- Stats cards con colores intuitivos (Total/Cargadas/Consolidadas)
+- Animaciones: fadeIn overlay + slideUp modal
+- Lista expandible con detalles por duplicado
+- Responsive mobile (4 breakpoints)
+- Botones con efectos hover/active
+
+✅ **Flujo Completo**
+```
+Excel (449 filas, 49 DNI duplicados)
+         ↓
+Backend: analizarDuplicadosEnExcel()
+  ├─ Detecta 49 DNI duplicados
+  ├─ Aplica KEEP_FIRST automático
+  └─ Retorna reporte
+         ↓
+Frontend: ModalDeduplicacionAutomatica
+  ├─ Muestra: "449 total, 400 OK, 49 consolidadas"
+  ├─ Expandible: Cada DNI con detalles
+  └─ Botones: Confirmar/Cancelar
+         ↓
+Usuario confirma (1 click)
+         ↓
+✅ Resultado: 400 en BD, CERO errores
+```
+
+✅ **Archivos modificados:**
+| Archivo | Cambio | Líneas |
+|---------|--------|--------|
+| `ReporteDuplicadosDTO.java` | Nuevo DTO | +40 |
+| `SolicitudBolsaServiceImpl.java` | +analizarDuplicadosEnExcel() + KEEP_FIRST | +80 |
+| `ModalDeduplicacionAutomatica.jsx` | Nuevo componente | +111 |
+| `ModalDeduplicacionAutomatica.css` | Nuevos estilos | +371 |
+| `CargarDesdeExcel.jsx` | Integración modal | +50 |
+| **Total** | **Compilación SUCCESS** | **+652** |
+
+✅ **Ventajas v2.2.0:**
+- Automatización completa (sin intervención manual)
+- Transparencia total (modal muestra qué se consolidó)
+- Carga 100% exitosa (0 errores por duplicados)
+- Reporte detallado (detalles expandibles)
+- UX profesional (modal elegante con animaciones)
+- Backend + Frontend sincronizados
+
+---
+
+**Última actualización:** 2026-01-28
+**Versión:** v2.2.0 (Deduplicación Automática ⭐)
 **Desarrollador:** Ing. Styp Canto Rondón
 **Email:** stypcanto@essalud.gob.pe
