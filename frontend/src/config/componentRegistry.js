@@ -466,6 +466,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/bolsas/errores-importacion': {
+    component: lazy(() => import('../pages/bolsas/ErroresImportacion')),
+    requiredAction: 'ver',
+  },
+
   '/bolsas/estadisticas': {
     component: lazy(() => import('../pages/bolsas/EstadisticasDashboard')),
     requiredAction: 'ver',
