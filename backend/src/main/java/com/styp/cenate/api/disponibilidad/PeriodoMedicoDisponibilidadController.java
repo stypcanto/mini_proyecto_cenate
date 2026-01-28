@@ -82,7 +82,7 @@ public class PeriodoMedicoDisponibilidadController {
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
-    public ResponseEntity<PeriodoMedicoDisponibilidadResponse> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<PeriodoMedicoDisponibilidadResponse> obtenerPorId(@PathVariable("id") Long id) {
         log.info("Obteniendo periodo médico de disponibilidad con ID: {}", id);
         return ResponseEntity.ok(service.obtenerPorId(id));
     }
@@ -102,7 +102,7 @@ public class PeriodoMedicoDisponibilidadController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
     public ResponseEntity<PeriodoMedicoDisponibilidadResponse> actualizar(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody PeriodoMedicoDisponibilidadRequest request,
             Authentication authentication
     ) {
@@ -114,7 +114,7 @@ public class PeriodoMedicoDisponibilidadController {
     @PutMapping("/{id}/estado")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
     public ResponseEntity<PeriodoMedicoDisponibilidadResponse> cambiarEstado(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody Map<String, String> body,
             Authentication authentication
     ) {
@@ -126,7 +126,7 @@ public class PeriodoMedicoDisponibilidadController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
         log.info("Eliminando periodo médico de disponibilidad con ID: {}", id);
         service.eliminar(id);
         return ResponseEntity.noContent().build();
