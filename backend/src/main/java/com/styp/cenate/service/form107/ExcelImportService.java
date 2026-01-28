@@ -157,20 +157,19 @@ public class ExcelImportService {
 
 		long idCarga = carga.getIdCarga();
 
-		// 4) ✨ NUEVA ESTRATEGIA: Lectura e inserción directa en dim_solicitud_bolsa
-		List<SolicitudBolsa> solicitudes = leerExcelYProcesarDirecto(file, idCarga, idBolsa, idServicio);
+	// 4) Procesar Excel e insertar en staging.bolsa_107_raw (Opción A: desacoplado de dim_solicitud_bolsa)
+	ExcelImportResult resultado = procesarEInsertarStaging(file, idCarga);
 
-		// 5) Insertar todas las solicitudes en una transacción
-		int insertados = solicitudes.size();
-		if (insertados > 0) {
-			solicitudRepository.saveAll(solicitudes);
-			log.info("✅ {} solicitudes insertadas en dim_solicitud_bolsa", insertados);
-		}
+	int insertados = resultado.filas_total;
+	int filasOk = resultado.filas_ok;
+	int filasError = resultado.filas_error;
 
-		// 6) Actualizar cabecera con estadísticas
+	log.info("📥 Excel procesado: {} filas totales, {} OK, {} errores", insertados, filasOk, filasError);
+
+	// 5) Actualizar cabecera con estadísticas
 		carga.setTotalFilas(insertados);
-		carga.setFilasOk(insertados);
-		carga.setFilasError(0);
+		carga.setFilasOk(filasOk);
+		carga.setFilasError(filasError);
 		carga.setEstadoCarga("PROCESADO");
 		cargaRepo.save(carga);
 
@@ -182,8 +181,8 @@ public class ExcelImportService {
 			.estadoCarga(carga.getEstadoCarga())
 			.fechaReporte(carga.getFechaReporte())
 			.totalFilas(insertados)
-			.filasOk(insertados)
-			.filasError(0)
+			.filasOk(filasOk)
+			.filasError(filasError)
 			.build();
 		historialCargaBolsasRepository.save(historialBolsas);
 		log.info("✅ Carga registrada también en dim_historial_carga_bolsas (módulo Bolsas)");
@@ -213,234 +212,17 @@ public class ExcelImportService {
 	}
 
 	// =============================
-	// LECTURA DIRECTA Y PROCESAMIENTO (v1.9.0)
+	// MÉTODO REMOVIDO (v3.1.3)
 	// =============================
-	/**
-	 * Lee el Excel y procesa directamente sin staging
-	 * Enriquece datos desde dim_asegurados por DNI
-	 */
-	private List<SolicitudBolsa> leerExcelYProcesarDirecto(MultipartFile file, long idCarga, Long idBolsa, Long idServicio) {
-		try (InputStream is = file.getInputStream(); Workbook wb = new XSSFWorkbook(is)) {
-
-			Sheet sheet = wb.getSheetAt(0);
-
-			int headerIndex = sheet.getFirstRowNum();
-			Row headerRow = sheet.getRow(headerIndex);
-			if (headerRow == null)
-				throw new ExcelValidationException("No se encontró el encabezado (fila 1).");
-
-			List<String> actualColumns = readHeader(headerRow);
-			validateHeaderStrict(actualColumns);
-
-
-			// DEBUG: Log para ver columnas
-			log.info("=== EXCEL COLUMNS DEBUG ===");
-			for (int i = 0; i < actualColumns.size(); i++) {
-				log.info("[{}] '{}'", i, actualColumns.get(i));
-			}
-			log.info("=== END COLUMNS ===");
-
-			// Cargar datos de referencia para enriquecimiento
-			TipoBolsa tipoBolsa = tipoBolsaRepository.findById(idBolsa)
-				.orElseThrow(() -> new ExcelValidationException("Tipo de bolsa no encontrado: " + idBolsa));
-
-			DimServicioEssi servicio = servicioRepository.findById(idServicio)
-				.orElseThrow(() -> new ExcelValidationException("Servicio no encontrado: " + idServicio));
-
-			// Estado de gestión de citas: PENDIENTE_CITA (id=5)
-			EstadoGestionCita estadoPendiente = estadoCitaRepository.findById(5L)
-				.orElse(null);
-			Long estadoGestionCitasId = estadoPendiente != null ? estadoPendiente.getIdEstadoCita() : 5L;
-
-			List<SolicitudBolsa> solicitudes = new ArrayList<>();
-			int lastRow = sheet.getLastRowNum();
-			int numeroSolicitudSeq = 1;
-			int rowsProcessed = 0;
-			int rowsSkipped = 0;
-			int rowsRejected = 0;
-
-
-			for (int r = headerIndex + 1; r <= lastRow; r++) {
-				Row row = sheet.getRow(r);
-				if (row == null) {
-					rowsSkipped++;
-					continue;
-				}
-				if (isRowCompletelyEmpty(row)) {
-					rowsSkipped++;
-					continue;
-				}
-
-				try {
-				// Leer campos del Excel v1.8.0 - POSICIONES FIJAS (v1.13.1)
-				// NO usar idx.getOrDefault que busca por nombres - usar POSICIONES DIRECTAS
-				String fechaPreferida = cellDateStr(row, 0);      // Columna 0: Fecha Preferida
-				String tipoDocumento = cellStr(row, 1);          // Columna 1: Tipo Documento
-				String numeroDocumento = cellStr(row, 2);        // Columna 2: DNI
-
-			// 🆕 v1.13.9: Normalizar DNI a 8 dígitos con ceros a la izquierda
-			numeroDocumento = normalizeDni(numeroDocumento);
-				String apellidos = cellStr(row, 3);              // Columna 3: Nombre Asegurado
-				String sexo = cellStr(row, 4);                   // Columna 4: Sexo
-				String fechaNac = cellDateStr(row, 5);           // Columna 5: Fecha Nacimiento
-				String telefono = cellStr(row, 6);               // Columna 6: Teléfono
-				String correo = cellStr(row, 7);                 // Columna 7: Correo
-				String codigoIpress = cellStr(row, 8);           // Columna 8: Código IPRESS
-
-			// 🆕 v1.13.9: Normalizar código IPRESS a 3 dígitos
-			codigoIpress = normalizeIpress(codigoIpress);
-		// 🆕 v1.15.0: Normalizar código IPRESS a 3 dígitos con padding
-		codigoIpress = normalizeIpress(codigoIpress);
-				String tipoCita = cellStr(row, 9);               // Columna 9: Tipo Cita
-
-				// DEBUG primeras filas
-				if (rowsProcessed < 5) {
-					log.info("DEBUG ROW {} (Excel line {}): tipoDoc='{}', dni='{}', nombre='{}', ipress='{}', tipoCita='{}'",
-						rowsProcessed + 1, r + 1, tipoDocumento, numeroDocumento, apellidos, codigoIpress, tipoCita);
-				}
-				rowsProcessed++;
-
-				// Validar campos obligatorios
-				if (isBlank(tipoDocumento) || isBlank(numeroDocumento) || isBlank(apellidos)) {
-					log.warn("⚠️ Fila {} rechazada: campos obligatorios faltantes (tipoDoc='{}', dni='{}', nombre='{}')",
-						r + 1, tipoDocumento, numeroDocumento, apellidos);
-					rowsRejected++;
-					continue;
-				}
-
-					// Enriquecimiento desde dim_asegurados por DNI
-					Optional<Asegurado> asegurado = aseguradoRepository.findByDocPaciente(numeroDocumento);
-
-				// 🆕 v1.13.8: Crear asegurado automáticamente si no existe
-				if (asegurado.isEmpty()) {
-					log.info("👤 Creando nuevo asegurado desde Excel: {} - {}", numeroDocumento, apellidos);
-					Asegurado nuevoAsegurado = new Asegurado();
-					nuevoAsegurado.setPkAsegurado(numeroDocumento); // Usar DNI como PK
-					nuevoAsegurado.setDocPaciente(numeroDocumento);
-					nuevoAsegurado.setPaciente(apellidos);
-					nuevoAsegurado.setFecnacimpaciente(parseLocalDate(fechaNac));
-					nuevoAsegurado.setSexo(sexo);
-					nuevoAsegurado.setTelCelular(telefono);
-					nuevoAsegurado.setCorreoElectronico(correo);
-					nuevoAsegurado.setTipoPaciente("EXTERNO"); // Tipo por defecto para datos desde Excel
-
-					asegurado = Optional.of(aseguradoRepository.save(nuevoAsegurado));
-					log.info("✅ Asegurado creado: {} con pk_asegurado={}", numeroDocumento, numeroDocumento);
-
-				// 🆕 v1.13.8: Registrar en lista de asegurados creados para reportar al frontend
-				Map<String, String> asegInfo = new HashMap<>();
-				asegInfo.put("dni", numeroDocumento);
-				asegInfo.put("nombre", apellidos);
-				this.aseguradosCreados.add(asegInfo);
-				}
-
-				// 🆕 v1.13.7: Actualizar datos de asegurado si el Excel tiene datos más limpios
-				if (asegurado.isPresent()) {
-					Asegurado aseg = asegurado.get();
-					boolean necesitaActualizar = false;
-
-					// Actualizar correo si hay dato nuevo en Excel y es diferente
-					if (!isBlank(correo) && !correo.equals(aseg.getCorreoElectronico())) {
-						log.info("✏️ Actualizando correo del asegurado {}: {} → {}", numeroDocumento, aseg.getCorreoElectronico(), correo);
-						aseg.setCorreoElectronico(correo);
-						necesitaActualizar = true;
-					}
-
-					// Actualizar teléfono si hay dato nuevo en Excel y es diferente
-					if (!isBlank(telefono) && !telefono.equals(aseg.getTelCelular())) {
-						log.info("✏️ Actualizando teléfono del asegurado {}: {} → {}", numeroDocumento, aseg.getTelCelular(), telefono);
-						aseg.setTelCelular(telefono);
-						necesitaActualizar = true;
-					}
-
-					// Guardar cambios si hay actualizaciones
-					if (necesitaActualizar) {
-						aseguradoRepository.save(aseg);
-						log.info("✅ Asegurado {} actualizado desde Excel (data limpia)", numeroDocumento);
-					}
-				}
-
-					// Enriquecimiento desde dim_ipress por código IPRESS
-					String nombreIpress = null;
-					String redAsistencial = null;
-					Long idIpress = null;
-					if (!isBlank(codigoIpress)) {
-						Optional<Ipress> ipressOpt = ipressRepository.findByCodIpress(codigoIpress);
-						if (ipressOpt.isPresent()) {
-							Ipress ipress = ipressOpt.get();
-							nombreIpress = ipress.getDescIpress();
-							idIpress = ipress.getIdIpress();
-							if (ipress.getRed() != null) {
-								redAsistencial = ipress.getRed().getDescripcion();
-							}
-							log.debug("✓ IPRESS enriquecida: {} -> {}", codigoIpress, nombreIpress);
-						}
-					}
-
-					// Crear número de solicitud único
-					long timestamp = System.currentTimeMillis() % 1000000;
-					String numeroSolicitud = String.format("SOL-%d-%d-%03d",
-						LocalDate.now().getYear(), timestamp, numeroSolicitudSeq++);
-
-					// Construir entidad SolicitudBolsa
-					SolicitudBolsa solicitud = SolicitudBolsa.builder()
-						.numeroSolicitud(numeroSolicitud)
-						.pacienteDni(numeroDocumento)
-						.pacienteNombre(apellidos)
-						.pacienteId(null) // Se puede enriquecer desde asegurado si tiene pk
-						.especialidad(servicio.getDescServicio())
-
-						// Campos del Excel v1.8.0
-						.fechaPreferidaNoAtendida(parseLocalDate(fechaPreferida))
-						.tipoDocumento(tipoDocumento)
-						.fechaNacimiento(asegurado.isPresent() && isBlank(fechaNac)
-							? asegurado.get().getFecnacimpaciente()
-							: parseLocalDate(fechaNac))
-						.pacienteSexo(asegurado.isPresent() && isBlank(sexo)
-							? asegurado.get().getSexo()
-							: sexo)
-						.pacienteTelefono(telefono)
-						.pacienteEmail(asegurado.isPresent() && isBlank(correo)
-							? asegurado.get().getCorreoElectronico()
-							: correo)
-						.codigoIpressAdscripcion(codigoIpress)
-						.tipoCita(tipoCita)
-
-						// Información de IPRESS
-						.idIpress(idIpress)
-
-						// Información de bolsa y servicio
-						.idBolsa(idBolsa)
-						.idServicio(idServicio)
-								// Datos por defecto
-						.estado("PENDIENTE")
-						.estadoGestionCitasId(estadoGestionCitasId)
-						.activo(true)
-						.build();
-
-					solicitudes.add(solicitud);
-
-					log.debug("✓ Fila {} procesada: {}", r + 1, numeroSolicitud);
-
-				} catch (Exception e) {
-					log.warn("⚠️ Error procesando fila {}: {}", r + 1, e.getMessage());
-				}
-			}
-
-			log.info("📊 RESULTADO FINAL:");
-			log.info("   ✓ Procesadas: {} filas", rowsProcessed);
-			log.info("   ✗ Rechazadas: {} filas (campos obligatorios faltantes)", rowsRejected);
-			log.info("   ⊘ Saltadas: {} filas (completamente vacías)", rowsSkipped);
-			log.info("   ✅ INSERTADAS: {} solicitudes en dim_solicitud_bolsa", solicitudes.size());
-			return solicitudes;
-
-		} catch (ExcelValidationException e) {
-			throw e;
-		} catch (Exception e) {
-			log.error("❌ Error leyendo Excel: {}", e.getMessage(), e);
-			throw new ExcelValidationException("Error al procesar Excel: " + e.getMessage());
-		}
-	}
+	// El método "leerExcelYProcesarDirecto" fue ELIMINADO en Opción A.
+	// Razón: Formulario 107 ahora es COMPLETAMENTE INDEPENDIENTE de dim_solicitud_bolsa.
+	//
+	// Responsabilidad de Formulario 107:
+	// - Guardar en: bolsa_107_carga (cabecera) + staging.bolsa_107_raw (detalle)
+	// - NUNCA insertar en: dim_solicitud_bolsa (es del módulo Bolsas)
+	//
+	// Método reemplazado por: procesarEInsertarStaging() (línea 481+)
+	// =============================
 
 	private LocalDate parseLocalDate(String dateStr) {
 		if (isBlank(dateStr))

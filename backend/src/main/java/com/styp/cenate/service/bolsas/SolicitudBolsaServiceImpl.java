@@ -188,10 +188,10 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
      * Mapea un Object[] de la consulta SQL nativa a SolicitudBolsaDTO
      * Orden de campos: id_solicitud, numero_solicitud, paciente_id, paciente_nombre, paciente_dni,
      *                  especialidad, fecha_preferida_no_atendida, tipo_documento, fecha_nacimiento,
-     *                  paciente_sexo, paciente_telefono, paciente_email, codigo_ipress, tipo_cita,
-     *                  id_bolsa, desc_tipo_bolsa, id_servicio, codigo_adscripcion, id_ipress,
-     *                  estado, fecha_solicitud, fecha_actualizacion, estado_gestion_citas_id, activo,
-     *                  desc_ipress, desc_red
+     *                  paciente_sexo, paciente_telefono, paciente_telefono_alterno, paciente_email,
+     *                  codigo_ipress, tipo_cita, id_bolsa, desc_tipo_bolsa, id_servicio,
+     *                  codigo_adscripcion, id_ipress, estado, fecha_solicitud, fecha_actualizacion,
+     *                  estado_gestion_citas_id, activo, desc_ipress, desc_red
      */
     private SolicitudBolsaDTO mapFromResultSet(Object[] row) {
         try {
@@ -200,8 +200,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             java.time.LocalDate fechaNacimiento = convertToLocalDate(row[8]); // fecha_nacimiento
             Integer edad = calcularEdad(fechaNacimiento);
 
-            java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[20]); // fecha_solicitud
-            java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[21]); // fecha_actualizacion
+            java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[21]); // fecha_solicitud
+            java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[22]); // fecha_actualizacion
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -215,22 +215,23 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .fechaNacimiento(fechaNacimiento)
                     .pacienteSexo((String) row[9])
                     .pacienteTelefono((String) row[10])
-                    .pacienteEmail((String) row[11])
+                    .pacienteTelefonoAlterno((String) row[11])
+                    .pacienteEmail((String) row[12])
                     .pacienteEdad(edad)
-                    .codigoIpressAdscripcion((String) row[12])
-                    .tipoCita((String) row[13])
-                    .idBolsa(toLongSafe("id_bolsa", row[14]))
-                    .descTipoBolsa((String) row[15])
-                    .idServicio(toLongSafe("id_servicio", row[16]))
-                    .codigoAdscripcion((String) row[17])
-                    .idIpress(row[18] != null ? toLongSafe("id_ipress", row[18]) : null)
-                    .estado((String) row[19])
+                    .codigoIpressAdscripcion((String) row[13])
+                    .tipoCita((String) row[14])
+                    .idBolsa(toLongSafe("id_bolsa", row[15]))
+                    .descTipoBolsa((String) row[16])
+                    .idServicio(toLongSafe("id_servicio", row[17]))
+                    .codigoAdscripcion((String) row[18])
+                    .idIpress(row[19] != null ? toLongSafe("id_ipress", row[19]) : null)
+                    .estado((String) row[20])
                     .fechaSolicitud(fechaSolicitud)
                     .fechaActualizacion(fechaActualizacion)
-                    .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[22]))
-                    .activo((Boolean) row[23])
-                    .descIpress((String) row[24])  // desc_ipress desde JOIN
-                    .descRed((String) row[25])      // desc_red desde JOIN
+                    .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[23]))
+                    .activo((Boolean) row[24])
+                    .descIpress((String) row[25])  // desc_ipress desde JOIN
+                    .descRed((String) row[26])      // desc_red desde JOIN
                     .build();
         } catch (Exception e) {
             log.error("❌ Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);

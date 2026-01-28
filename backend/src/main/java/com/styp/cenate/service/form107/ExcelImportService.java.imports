@@ -1,0 +1,2 @@
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
