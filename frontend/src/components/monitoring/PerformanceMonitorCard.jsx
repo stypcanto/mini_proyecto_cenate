@@ -137,6 +137,59 @@ export default function PerformanceMonitorCard() {
     );
   };
 
+  // =============== COMPONENTE DE CONEXIONES ACTIVAS (VISUAL) ===============
+  const ConexionesActivasCard = ({ activas, max }) => {
+    const percentage = (activas / max) * 100;
+    let status, color, bgColor;
+
+    if (percentage >= 80) {
+      status = 'ALTO';
+      color = '#EF4444';
+      bgColor = 'from-red-50 to-red-100';
+    } else if (percentage >= 50) {
+      status = 'MEDIO';
+      color = '#F59E0B';
+      bgColor = 'from-yellow-50 to-yellow-100';
+    } else {
+      status = 'BAJO';
+      color = '#10B981';
+      bgColor = 'from-green-50 to-green-100';
+    }
+
+    return (
+      <div className={`bg-gradient-to-br ${bgColor} rounded-lg p-6 mb-4 border-2 border-gray-200`}>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm text-gray-700 font-medium">👥 Conexiones Simultáneas Ahora</p>
+            <p className="text-4xl font-bold text-gray-900 mt-1">{Math.round(activas)}</p>
+            <p className="text-xs text-gray-600 mt-1">de {max} capacidad máxima</p>
+          </div>
+          <div className="text-right">
+            <div className="text-5xl font-bold" style={{ color }}>
+              {Math.round(percentage)}%
+            </div>
+            <p className="text-sm font-semibold mt-1" style={{ color }}>
+              {status}
+            </p>
+          </div>
+        </div>
+
+        {/* Progress bar circular */}
+        <div className="mt-4">
+          <div className="w-full h-3 bg-gray-300 rounded-full overflow-hidden">
+            <div
+              className="h-full transition-all duration-300"
+              style={{
+                width: `${Math.min(percentage, 100)}%`,
+                backgroundColor: color
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // =============== RENDER PRINCIPAL ===============
   if (error) {
     return (
@@ -195,6 +248,9 @@ export default function PerformanceMonitorCard() {
           </div>
         ) : metrics ? (
           <>
+            {/* TARJETA PRINCIPAL - Conexiones Activas */}
+            <ConexionesActivasCard activas={metrics.dbPool} max={metrics.dbPoolMax} />
+
             {/* DB Connection Pool */}
             <MetricRow
               icon={Database}
