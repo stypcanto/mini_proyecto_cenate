@@ -11,18 +11,24 @@ import java.time.OffsetDateTime;
 
 /**
  * Entidad JPA para solicitudes de bolsas de pacientes
- * Tabla: dim_solicitud_bolsa (27 columnas - v2.1.0 LIMPIO)
+ * Tabla: dim_solicitud_bolsa (27 columnas - v2.3.0)
  *
  * Estructura optimizada sin denormalizaciones innecesarias:
  * - Core operativo: identificación + paciente + referencias
  * - Datos Excel v1.8.0: 10 campos de importación
+ * - Teléfonos: principal (paciente_telefono) + alterno (paciente_telefono_alterno)
  * - Auditoría: timestamps + soft-delete
  * - FKs: solo a tablas críticas (asegurados, bolsas, servicios, IPRESS, citas)
  *
+ * IMPORTANTE: Completamente desacoplada de Formulario 107
+ * - El formulario 107 tiene sus propias tablas (bolsa_107_carga, staging.bolsa_107_raw)
+ * - NO hay vinculación con dim_solicitud_bolsa (módulo Solicitudes de Bolsa)
+ * - Cada módulo maneja sus datos de forma independiente
+ *
  * Los datos denormalizados se recuperan vía JOINs en queries del backend.
  *
- * @version v2.1.0 (Limpieza agresiva: eliminó 17 campos no utilizados)
- * @since 2026-01-27
+ * @version v2.3.0 (Eliminar vinculación con Formulario 107 - v1.0.0)
+ * @since 2026-01-28
  */
 @Entity
 @Table(
@@ -82,6 +88,9 @@ public class SolicitudBolsa {
     @Column(name = "paciente_telefono", length = 20)
     private String pacienteTelefono;
 
+    @Column(name = "paciente_telefono_alterno", length = 20)
+    private String pacienteTelefonoAlterno;
+
     @Column(name = "paciente_email", length = 255)
     private String pacienteEmail;
 
@@ -108,10 +117,6 @@ public class SolicitudBolsa {
 
     @Column(name = "id_ipress")
     private Long idIpress;
-
-    // 📥 REFERENCIA A CARGA EXCEL
-    @Column(name = "id_carga")
-    private Long idCarga;
 
     // 📊 ESTADO (Aprobación)
     @Column(name = "estado", length = 20, nullable = false)

@@ -173,6 +173,7 @@ export default function Solicitudes() {
           dni: solicitud.paciente_dni || '',
           paciente: solicitud.paciente_nombre || '',
           telefono: solicitud.paciente_telefono || '',
+          telefonoAlterno: solicitud.paciente_telefono_alterno || '',
           correo: solicitud.paciente_email || solicitud.email_pers || '',
           sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
           edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
@@ -188,6 +189,7 @@ export default function Solicitudes() {
           nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
           fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
           fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
+          gestoraAsignada: solicitud.gestora_asignada || solicitud.gestoraAsignada || null,
           // ============================================================================
           // 📋 LOS 10 CAMPOS DEL EXCEL v1.8.0
           // ============================================================================
@@ -917,6 +919,7 @@ export default function Solicitudes() {
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Sexo</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Edad</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Teléfono Alterno</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Correo</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Tipo de Cita</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Especialidad</th>
@@ -949,6 +952,7 @@ export default function Solicitudes() {
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.edad}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefono}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefonoAlterno || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.correo}>{solicitud.correo}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap inline-block ${
@@ -975,10 +979,14 @@ export default function Solicitudes() {
                       <td className="px-4 py-3 text-sm">
                         <button
                           onClick={() => handleAbrirAsignarGestora(solicitud)}
-                          className="px-3 py-1 bg-blue-100 hover:bg-blue-200 text-blue-600 rounded-md text-xs font-semibold transition-colors disabled:opacity-50"
+                          className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
+                            solicitud.gestoraAsignada
+                              ? 'bg-green-100 hover:bg-green-200 text-green-700'
+                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
+                          }`}
                           disabled={isProcessing}
                         >
-                          {solicitud.red || '(sin asignar)'}
+                          {solicitud.gestoraAsignada || 'Sin asignar'}
                         </button>
                       </td>
                       <td className="px-4 py-3 text-center">

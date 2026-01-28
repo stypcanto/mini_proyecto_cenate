@@ -10,16 +10,17 @@ import java.time.OffsetDateTime;
 
 /**
  * DTO para respuestas de solicitudes de bolsa
- * Mapea 27 campos de la tabla dim_solicitud_bolsa (v2.1.0 LIMPIO):
+ * Mapea 28 campos de la tabla dim_solicitud_bolsa (v2.2.0):
  * - Core operativo (9 campos): identificación + paciente + referencias
  * - 10 campos de Excel v1.8.0 (tipo_documento, sexo, telefono, etc.)
+ * - Teléfonos (2 campos): paciente_telefono + paciente_telefono_alterno - NEW
  * - Auditoría (4 campos): timestamps + soft-delete
  * - FKs mínimas: solo a tablas críticas
  *
  * Los datos denormalizados (códigos, descripciones, names) se recuperan
  * vía JOINs en el backend para evitar redundancia en BD.
  *
- * @version v2.1.0 (Limpieza agresiva: 27 campos necesarios)
+ * @version v2.2.0 (Agregar teléfono alterno desde asegurados.tel_celular)
  * @since 2026-01-27
  */
 @Data
@@ -66,6 +67,9 @@ public class SolicitudBolsaDTO {
 
     @JsonProperty("paciente_telefono")
     private String pacienteTelefono;
+
+    @JsonProperty("paciente_telefono_alterno")
+    private String pacienteTelefonoAlterno;
 
     @JsonProperty("paciente_email")
     private String pacienteEmail;
