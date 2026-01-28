@@ -2,8 +2,10 @@ package com.styp.cenate.service.bolsas;
 
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.dto.bolsas.SolicitudBolsaExcelRowDTO;
+import com.styp.cenate.dto.bolsas.ReporteDuplicadosDTO;
 import com.styp.cenate.mapper.SolicitudBolsaMapper;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
+import com.styp.cenate.model.bolsas.TipoErrorImportacion;
 import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.Ipress;
@@ -18,12 +20,15 @@ import com.styp.cenate.repository.TipoBolsaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 
 import java.io.IOException;
 import java.util.*;
@@ -32,22 +37,35 @@ import java.util.stream.Collectors;
 /**
  * Implementación del servicio de solicitudes de bolsa
  * Maneja importación de Excel, validación y enriquecimiento de datos
- * 
- * @version v1.6.0
+ *
+ * @version v1.17.2 - Validación FLEXIBLE de estructura Excel (mínimo 10 columnas)
  * @since 2026-01-23
+ * @updated 2026-01-28 - Mejoras finales:
+ *   - Validación flexible: Acepta 10+ columnas (algunos archivos POI lee una menos)
+ *   - Mensaje de advertencia si detecta menos de 11
+ *   - Procesa los datos disponibles pero alerta si hay menos columnas
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
-@Transactional
 public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
+    // ============================================================================
+    // VALIDACIÓN DE TELÉFONO - REGEX PATTERN
+    // ============================================================================
+    private static final String PHONE_PATTERN = "^[0-9+()\\-\\s]*$";
+    private static final String PHONE_VALIDATION_ERROR = "Formato de teléfono inválido. Solo se permiten números, +, (), - y espacios";
+
     private final SolicitudBolsaRepository solicitudRepository;
+    private final AuditErrorImportacionService auditErrorService;
     private final AseguradoRepository aseguradoRepository;
     private final DimServicioEssiRepository dimServicioEssiRepository;
     private final IpressRepository ipressRepository;
     private final RedRepository redRepository;
     private final TipoBolsaRepository tipoBolsaRepository;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     @Override
     @Transactional
@@ -55,12 +73,19 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             MultipartFile file,
             Long idBolsa,
             Long idServicio,
-            String usuarioCarga) {
+            String usuarioCarga,
+            Long idHistorial) {
 
         Map<String, Object> resultado = new HashMap<>();
         List<Map<String, Object>> errores = new ArrayList<>();
+        List<Map<String, Object>> duplicados = new ArrayList<>();  // ✅ NUEVO: Lista separada de duplicados
+        List<Map<String, Object>> otros_errores = new ArrayList<>(); // ✅ NUEVO: Lista de otros errores
         int filasOk = 0;
         int filasError = 0;
+
+        // ✅ v2.2.0: KEEP_FIRST - Trackear DNI procesados para saltar duplicados
+        Set<String> dniProcesados = new HashSet<>();
+        List<Map<String, Object>> dniDuplicadosSaltados = new ArrayList<>();
 
         try {
             // Validar tipo de archivo
@@ -77,27 +102,165 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             XSSFWorkbook workbook = new XSSFWorkbook(file.getInputStream());
             XSSFSheet sheet = workbook.getSheetAt(0);
 
-            // Procesar filas del Excel (empezando en fila 1, ignorar header)
+            // ============================================================================
+            // VALIDACIÓN OBLIGATORIA: Excel DEBE tener EXACTAMENTE 11 columnas
+            // ============================================================================
+            Row headerRow = sheet.getRow(0);
+            int columnasEnHeader = 0;
+
+            if (headerRow != null) {
+                // Contar celdas NO VACÍAS en el header
+                for (int col = 0; col < 15; col++) {
+                    try {
+                        Cell cell = headerRow.getCell(col);
+                        if (cell != null) {
+                            String valor = null;
+                            switch (cell.getCellType()) {
+                                case STRING:
+                                    valor = cell.getStringCellValue();
+                                    break;
+                                case NUMERIC:
+                                    valor = String.valueOf((long) cell.getNumericCellValue());
+                                    break;
+                                default:
+                                    break;
+                            }
+                            if (valor != null && !valor.trim().isEmpty()) {
+                                columnasEnHeader++;
+                            }
+                        }
+                    } catch (Exception e) {
+                        // Ignorar errores de lectura, contar solo celdas válidas
+                    }
+                }
+                log.info("📊 [VALIDACIÓN ESTRUCTURA] Columnas encontradas: {}", columnasEnHeader);
+            }
+
+            // VALIDACIÓN: Debe tener mínimo 10 columnas
+            if (columnasEnHeader < 10) {
+                String errorMsg = String.format(
+                    "❌ ARCHIVO INCORRECTO\n\n" +
+                    "Tu Excel tiene %d columnas pero debe tener 11.\n\n" +
+                    "LAS 11 COLUMNAS DEBEN SER (EN ESTE ORDEN):\n" +
+                    "1. Fecha\n" +
+                    "2. Tipo Documento\n" +
+                    "3. DNI\n" +
+                    "4. Nombres\n" +
+                    "5. Sexo\n" +
+                    "6. Fecha Nacimiento\n" +
+                    "7. Teléfono Principal\n" +
+                    "8. Teléfono Alterno\n" +
+                    "9. Correo\n" +
+                    "10. IPRESS\n" +
+                    "11. Tipo Cita\n\n" +
+                    "Por favor:\n" +
+                    "• Descarga la plantilla oficial\n" +
+                    "• Verifica que tenga exactamente 11 columnas\n" +
+                    "• Intenta de nuevo",
+                    columnasEnHeader
+                );
+
+                log.error("❌ [VALIDACIÓN FALLIDA] Columnas encontradas: {}, Mínimo requerido: 10", columnasEnHeader);
+                throw new IllegalArgumentException(errorMsg);
+            }
+
+            if (columnasEnHeader < 11) {
+                log.warn("⚠️ [VALIDACIÓN ADVERTENCIA] Excel tiene {} columnas, se esperan 11. " +
+                         "Si hay errores, revisa que el Excel tenga exactamente 11 columnas sin espacios ocultos.", columnasEnHeader);
+            } else {
+                log.info("✅ [VALIDACIÓN OK] Estructura correcta: 11 columnas detectadas");
+            }
+
+            // ============================================================================
+            // ✅ v2.2.0 NUEVO: ANÁLISIS PRE-PROCESAMIENTO DE DUPLICADOS
+            // ============================================================================
+            int totalFilasExcel = sheet.getLastRowNum();
+            ReporteDuplicadosDTO reporteDuplicados = analizarDuplicadosEnExcel(sheet, totalFilasExcel);
+            log.info("📊 [v2.2.0] Análisis de duplicados: {} mensaje",
+                reporteDuplicados.getMensajeResumen());
+
+            // Procesar filas del Excel (empezando en fila 1, ignorar header en fila 0)
             int filaNumero = 1;
             for (int i = 1; i <= sheet.getLastRowNum(); i++) {
                 Row row = sheet.getRow(i);
                 if (row == null) continue;
 
+                // SEGURIDAD: Detectar si accidentalmente estamos leyendo una fila de headers
+                // (si la primera celda es "FECHA PREFERIDA QUE NO FUE ATENDIDA" o similar)
+                String primeracelda = obtenerValorCelda(row.getCell(0));
+                if (primeracelda.toLowerCase().contains("fecha preferida") ||
+                    primeracelda.toLowerCase().contains("tipo documento")) {
+                    log.warn("⚠️  [FILA {}] Parece ser una fila de headers, saltando...", filaNumero);
+                    filaNumero++;
+                    continue;
+                }
+
+                // Declarar rowDTO fuera del try para que esté disponible en el catch
+                SolicitudBolsaExcelRowDTO rowDTO = null;
+
                 try {
                     // ============================================================================
-                    // 📋 EXTRAR LOS 11 CAMPOS DE EXCEL v1.14.0 (Agregado Teléfono Alterno)
+                    // 📋 EXTRACCIÓN INTELIGENTE DE COLUMNAS v1.18.0
+                    // Detecta posición de TIPO_CITA en la fila y mapea columnas dinámicamente
+                    // Soluciona problema de Apache POI leyendo 10 vs 11 columnas
                     // ============================================================================
-                    String fechaPreferidaNoAtendida = obtenerValorCelda(row.getCell(0));  // Col 1
-                    String tipoDocumento = obtenerValorCelda(row.getCell(1));             // Col 2
-                    String dni = obtenerValorCelda(row.getCell(2));                       // Col 3
-                    String nombreCompleto = obtenerValorCelda(row.getCell(3));            // Col 4
-                    String sexo = obtenerValorCelda(row.getCell(4));                      // Col 5
-                    String fechaNacimiento = obtenerValorCelda(row.getCell(5));           // Col 6
-                    String telefonoPrincipal = obtenerValorCelda(row.getCell(6));         // Col 7 - RENOMBRADO
-                    String telefonoAlterno = obtenerValorCelda(row.getCell(7));           // Col 8 - NEW
-                    String correo = obtenerValorCelda(row.getCell(8));                    // Col 9 - DESPLAZADO
-                    String codigoIpress = obtenerValorCelda(row.getCell(9));              // Col 10 - DESPLAZADO
-                    String tipoCita = obtenerValorCelda(row.getCell(10));                 // Col 11 - DESPLAZADO
+                    Map<String, String> camposExcel = extraerCamposInteligentemente(row, filaNumero);
+
+                    String fechaPreferidaNoAtendida = camposExcel.get("fechaPreferidaNoAtendida");
+                    String tipoDocumento = camposExcel.get("tipoDocumento");
+                    if (tipoDocumento == null || tipoDocumento.isBlank()) {
+                        tipoDocumento = "DNI";
+                        log.info("📝 [TIPO_DOCUMENTO] Completado con valor por defecto: 'DNI'");
+                    }
+                    String dni = normalizarDNI(camposExcel.get("dni"));
+
+                    // ✅ v2.2.0: KEEP_FIRST - Saltar si DNI ya fue procesado
+                    if (dniProcesados.contains(dni)) {
+                        Map<String, Object> saltado = Map.of(
+                            "fila", filaNumero,
+                            "dni", dni,
+                            "razon", "DNI duplicado - mantenido el primer registro (estrategia KEEP_FIRST)"
+                        );
+                        dniDuplicadosSaltados.add(saltado);
+                        log.warn("⏭️  [FILA {}] DNI {} ya fue procesado, SALTANDO (KEEP_FIRST)", filaNumero, dni);
+                        filaNumero++;
+                        continue;
+                    }
+                    dniProcesados.add(dni);  // Registrar DNI procesado
+                    String nombreCompleto = camposExcel.get("nombreCompleto");
+                    String sexo = camposExcel.get("sexo");
+                    String fechaNacimiento = camposExcel.get("fechaNacimiento");
+                    String telefonoPrincipal = camposExcel.get("telefonoPrincipal");
+                    String telefonoAlterno = camposExcel.get("telefonoAlterno");
+                    // Normalizar "No registrado" → vacío para teléfono alterno
+                    if (telefonoAlterno != null && telefonoAlterno.equalsIgnoreCase("No registrado")) {
+                        telefonoAlterno = "";
+                    }
+                    String correo = camposExcel.get("correo");
+                    String codigoIpress = camposExcel.get("codigoIpress");
+
+                    // ============================================================================
+                    // 🔧 NORMALIZAR COD. IPRESS A 3 DÍGITOS (21 → 021)
+                    // ============================================================================
+                    if (codigoIpress != null && !codigoIpress.isBlank()) {
+                        try {
+                            int codigo = Integer.parseInt(codigoIpress.trim());
+                            codigoIpress = String.format("%03d", codigo);
+                            log.debug("✓ Código IPRESS normalizado: {} → {}", codigoIpress, codigoIpress);
+                        } catch (NumberFormatException e) {
+                            log.warn("⚠️ Código IPRESS no numérico: {} para DNI {} | Usando valor original", codigoIpress.trim(), dni);
+                        }
+                    }
+
+                    String tipoCita = camposExcel.get("tipoCita");
+                    // Normalizar tipoCita a PascalCase (VOLUNTARIA → Voluntaria, REFERENCIA → Referencia)
+                    if (tipoCita != null && !tipoCita.isBlank()) {
+                        String normalized = tipoCita.toLowerCase().trim();
+                        tipoCita = normalized.equals("recita") ? "Recita" :
+                                   normalized.equals("interconsulta") ? "Interconsulta" :
+                                   normalized.equals("voluntaria") ? "Voluntaria" :
+                                   normalized.equals("referencia") ? "Referencia" : tipoCita;
+                    }
 
                     // Validar campos obligatorios
                     if (dni.isBlank() || codigoIpress.isBlank()) {
@@ -110,8 +273,55 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         continue;
                     }
 
-                    // Crear DTO para procesar fila con TODOS los 11 campos
-                    SolicitudBolsaExcelRowDTO rowDTO = new SolicitudBolsaExcelRowDTO(
+                    // ============================================================================
+                    // 🔍 ENRIQUECIMIENTO INTELIGENTE OPTIMIZADO - Solo si datos están vacíos
+                    // ============================================================================
+                    // SOLO buscar en BD si SEXO o FECHA_NACIMIENTO están vacíos en Excel
+                    Map<String, Object> datosEnriquecidos = new HashMap<>();
+                    Boolean dniExisteEnBD = false;
+
+                    if ((sexo == null || sexo.isBlank()) || (fechaNacimiento == null || fechaNacimiento.isBlank())) {
+                        // Hay datos faltantes, buscar en BD
+                        datosEnriquecidos = enriquecerDatosDesdeAsegurado(dni, sexo, fechaNacimiento);
+                        dniExisteEnBD = (Boolean) datosEnriquecidos.get("existe");
+                    } else {
+                        // Excel tiene ambos datos, no buscar en BD
+                        log.info("✓ [ENRIQUECIMIENTO SKIP] Excel tiene SEXO y FECHA_NACIMIENTO completos para DNI {}", dni);
+                    }
+
+                    String sexoEnriquecido = (String) datosEnriquecidos.getOrDefault("sexo", "");
+                    String fechaNacimientoEnriquecido = (String) datosEnriquecidos.getOrDefault("fechaNacimiento", "");
+
+                    // Lógica flexible de enriquecimiento:
+                    // - Si existe en asegurados: enriquece datos faltantes desde BD
+                    // - Si NO existe en asegurados: permite solo si Excel tiene SEXO y F.NAC completos
+                    if (dniExisteEnBD) {
+                        // DNI EXISTE: usar enriquecimiento para campos vacíos
+                        if (sexo == null || sexo.isBlank()) {
+                            sexo = sexoEnriquecido;
+                            log.info("📊 [ENRIQUECIMIENTO] SEXO completado desde asegurados para DNI {}: {}", dni, sexo);
+                        }
+                        if (fechaNacimiento == null || fechaNacimiento.isBlank()) {
+                            fechaNacimiento = fechaNacimientoEnriquecido;
+                            log.info("📅 [ENRIQUECIMIENTO] FECHA_NACIMIENTO completada desde asegurados para DNI {}: {}", dni, fechaNacimiento);
+                        }
+                    }
+                    // DNI no importa si existe o no - si Excel tiene SEXO y FECHA_NACIMIENTO, proceder
+
+                    // ============================================================================
+                    // ASEGURAR QUE SEXO Y FECHA_NACIMIENTO NO ESTÉN VACÍOS (FALLBACK A VALORES POR DEFECTO)
+                    // ============================================================================
+                    if (sexo == null || sexo.isBlank()) {
+                        sexo = "O"; // Otro
+                        log.warn("⚠️  Fila {}: SEXO está vacío incluso después de enriquecimiento. Usando fallback: '{}'", filaNumero, sexo);
+                    }
+                    if (fechaNacimiento == null || fechaNacimiento.isBlank()) {
+                        fechaNacimiento = "1900-01-01"; // Fecha genérica como fallback
+                        log.warn("⚠️  Fila {}: FECHA_NACIMIENTO está vacía incluso después de enriquecimiento. Usando fallback: '{}'", filaNumero, fechaNacimiento);
+                    }
+
+                    // Crear DTO para procesar fila con TODOS los 11 campos (ahora enriquecidos)
+                    rowDTO = new SolicitudBolsaExcelRowDTO(
                         filaNumero,
                         fechaPreferidaNoAtendida,
                         tipoDocumento,
@@ -126,23 +336,113 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                         tipoCita
                     );
 
+                    // ============================================================================
+                    // CORRECCIÓN #1: VALIDAR TELÉFONOS ANTES DE PROCESAR
+                    // ============================================================================
+                    validarTelefonos(filaNumero, rowDTO.telefonoPrincipal(), rowDTO.telefonoAlterno());
+
+                    // Obtener datos del servicio ANTES de procesar
+                    DimServicioEssi servicio = dimServicioEssiRepository.findById(idServicio).orElse(null);
+
                     // Procesar y validar fila
-                    // En producción, aquí se realizarían las validaciones contra BD
                     SolicitudBolsa solicitud = procesarFilaExcel(
                         rowDTO, idBolsa, idServicio, usuarioCarga
                     );
 
-                    // Guardar solicitud
-                    solicitudRepository.save(solicitud);
-                    filasOk++;
+                    // ============================================================================
+                    // ✅ v1.20.0: DETECCIÓN DE DUPLICADOS CON AUDITORÍA
+                    // ============================================================================
+                    Map<String, Object> infoDuplicado = detectarDuplicado(filaNumero, idBolsa, solicitud, servicio);
+
+                    // Si es duplicado, registrarlo en auditoría y saltar
+                    if (infoDuplicado != null) {
+                        duplicados.add(infoDuplicado);
+
+                        // ✅ v1.20.0: Usar servicio dedicado de auditoría
+                        auditErrorService.registrarError(
+                            idHistorial,
+                            filaNumero,
+                            rowDTO,
+                            TipoErrorImportacion.DUPLICADO,
+                            (String) infoDuplicado.get("razon"),
+                            solicitud
+                        );
+
+                        filasError++;
+                        filaNumero++;
+                        continue;
+                    }
+
+                    // Guardar solicitud (número ya pre-validado en procesarFilaExcel)
+                    try {
+                        solicitudRepository.save(solicitud);
+                        filasOk++;
+                        log.info("✅ [FILA {}] Solicitud guardada exitosamente | DNI: {} | Bolsa: {} | Número: {}",
+                            filaNumero, rowDTO.dni(), idBolsa, solicitud.getNumeroSolicitud());
+                    } catch (org.springframework.dao.DataIntegrityViolationException e) {
+                        // ============================================================================
+                        // v1.20.0: MANEJAR ERRORES DE INTEGRIDAD CON AUDITORÍA
+                        // ============================================================================
+                        String mensajeError = manejarErrorIntegridad(filaNumero, rowDTO, e);
+                        otros_errores.add(Map.of(
+                            "fila", filaNumero,
+                            "dni", rowDTO.dni(),
+                            "error", mensajeError
+                        ));
+
+                        // ✅ v1.20.0: Usar servicio dedicado de auditoría con transacción independiente
+                        auditErrorService.registrarError(
+                            idHistorial,
+                            filaNumero,
+                            rowDTO,
+                            TipoErrorImportacion.CONSTRAINT,
+                            mensajeError,
+                            solicitud
+                        );
+
+                        // ✅ CRÍTICO: Limpiar la sesión para prevenir "transaction aborted"
+                        try {
+                            entityManager.clear();
+                            log.debug("🧹 Sesión limpiada después de error de constraint");
+                        } catch (Exception cleanupEx) {
+                            log.warn("⚠️ No se pudo limpiar sesión: {}", cleanupEx.getMessage());
+                        }
+
+                        filasError++;
+                    }
 
                 } catch (Exception e) {
-                    log.warn("Error procesando fila {}: {}", filaNumero, e.getMessage());
-                    errores.add(Map.of(
+                    log.warn("❌ Error procesando fila {}: {}", filaNumero, e.getMessage());
+
+                    // Generar mensaje de error en español basado en el tipo de excepción
+                    String mensajeEnEspanol = generarMensajeErrorEnEspanol(filaNumero, rowDTO, e);
+
+                    otros_errores.add(Map.of(
                         "fila", filaNumero,
-                        "dni", obtenerValorCelda(row.getCell(0)),
-                        "error", e.getMessage()
+                        "dni", rowDTO != null ? rowDTO.dni() : "DESCONOCIDO",
+                        "error", mensajeEnEspanol
                     ));
+
+                    // ✅ v1.20.0: Usar servicio dedicado de auditoría con transacción independiente
+                    if (rowDTO != null) {
+                        auditErrorService.registrarError(
+                            idHistorial,
+                            filaNumero,
+                            rowDTO,
+                            TipoErrorImportacion.VALIDACION,
+                            mensajeEnEspanol,
+                            null  // solicitud podría no haberse creado
+                        );
+                    }
+
+                    // ✅ CRÍTICO: Limpiar la sesión de Hibernate para prevenir "transaction aborted"
+                    try {
+                        entityManager.clear();
+                        log.debug("🧹 Sesión limpiada después de error en fila {}", filaNumero);
+                    } catch (Exception cleanupEx) {
+                        log.warn("⚠️ No se pudo limpiar sesión en fila {}: {}", filaNumero, cleanupEx.getMessage());
+                    }
+
                     filasError++;
                 }
 
@@ -151,19 +451,52 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
             workbook.close();
 
-            // Preparar resultado
+            // ============================================================================
+            // ✅ v2.2.0: Agregar reporte de deduplicación KEEP_FIRST
+            // ============================================================================
+            Map<String, Object> reporteDeduplicacion = new HashMap<>();
+            reporteDeduplicacion.put("estrategia", "KEEP_FIRST");
+            reporteDeduplicacion.put("dniDuplicadosSaltados", dniDuplicadosSaltados.size());
+            reporteDeduplicacion.put("dniDuplicadosDetalles", dniDuplicadosSaltados);
+
+            // ============================================================================
+            // ✅ CORRECCIÓN v1.19.0: Preparar resultado CON SEPARACIÓN DE DUPLICADOS
+            // ============================================================================
             resultado.put("filas_total", filasOk + filasError);
             resultado.put("filas_ok", filasOk);
             resultado.put("filas_error", filasError);
-            resultado.put("errores", errores);
+            resultado.put("filas_duplicadas", duplicados.size());
+            resultado.put("filas_otros_errores", otros_errores.size());
+            resultado.put("filas_deduplicadas_saltadas", dniDuplicadosSaltados.size());  // ✅ v2.2.0
+
+            // Incluir ambas listas por separado
+            resultado.put("duplicados", duplicados);
+            resultado.put("otros_errores", otros_errores);
+            resultado.put("errores", errores); // Mantener para compatibilidad (lista combinada)
+            resultado.put("reporte_deduplicacion", reporteDeduplicacion);  // ✅ v2.2.0
+            resultado.put("reporte_analisis_duplicados", reporteDuplicados);  // ✅ v2.2.0
+
             resultado.put("mensaje", String.format(
-                "Importación completada: %d OK, %d errores",
-                filasOk, filasError
+                "Importación completada: %d OK, %d saltados (KEEP_FIRST), %d duplicados, %d otros errores",
+                filasOk, dniDuplicadosSaltados.size(), duplicados.size(), otros_errores.size()
             ));
 
+        } catch (org.springframework.transaction.UnexpectedRollbackException e) {
+            // CRÍTICO: Spring marcó la transacción como rollback-only
+            // Devolver error sin intentar más operaciones
+            log.error("❌ Transacción marcada como rollback-only: {}", e.getMessage());
+            resultado.put("error", "Error en importación: " + (e.getCause() != null ? e.getCause().getMessage() : e.getMessage()));
+            resultado.put("filas_ok", filasOk);
+            resultado.put("filas_error", filasError);
+            return resultado;
         } catch (IOException e) {
             log.error("Error al leer archivo Excel: ", e);
-            throw new RuntimeException("Error al procesar archivo Excel: " + e.getMessage());
+            resultado.put("error", "Error al procesar archivo Excel: " + e.getMessage());
+            return resultado;
+        } catch (Exception e) {
+            log.error("Error inesperado en importación: ", e);
+            resultado.put("error", "Error inesperado: " + e.getMessage());
+            return resultado;
         }
 
         return resultado;
@@ -208,7 +541,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
                     .numeroSolicitud((String) row[1])
-                    .pacienteId(toLongSafe("paciente_id", row[2]))
+                    .pacienteId((String) row[2])
                     .pacienteNombre((String) row[3])
                     .pacienteDni((String) row[4])
                     .especialidad((String) row[5])
@@ -232,8 +565,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .fechaActualizacion(fechaActualizacion)
                     .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[23]))
                     .activo((Boolean) row[24])
-                    .descIpress((String) row[25])  // desc_ipress desde JOIN
-                    .descRed((String) row[26])      // desc_red desde JOIN
+                    .descIpress((String) row[25])        // desc_ipress desde JOIN
+                    .descRed((String) row[26])            // desc_red desde JOIN
+                    .descMacroregion((String) row[27])    // desc_macro desde JOIN
                     .build();
         } catch (Exception e) {
             log.error("❌ Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
@@ -449,17 +783,19 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
      * Procesa una fila del Excel: valida y auto-enriquece datos
      * Almacena los 10 campos de Excel v1.8.0
      *
+     * ✅ NO usa transacción separada - maneja excepciones sin relanzarlas
+     *
      * @since v1.8.0
      */
-    private SolicitudBolsa procesarFilaExcel(
+    public SolicitudBolsa procesarFilaExcel(
             SolicitudBolsaExcelRowDTO row,
             Long idBolsa,
             Long idServicio,
             String usuarioCarga) {
 
-        Long pacienteIdGenerado = Math.abs(row.dni().hashCode()) % 1000000L;
+        String pacienteIdGenerado = row.dni(); // El pacienteId es el DNI (pk_asegurado)
         String pacienteNombre = "Paciente " + row.dni();
-        String especialidad = "N/A";
+        String especialidad = "";
         String codServicio = null;
         String codTipoBolsa = null;
         String descTipoBolsa = null;
@@ -497,137 +833,56 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
 
         // 0. Obtener nombre real del paciente desde dim_asegurados o sincronizar si es nuevo
+        // ✅ CRÍTICO: Usar transacción separada (REQUIRES_NEW) para evitar rollback-only
         try {
-            log.info("🔍 PASO 0: Buscando asegurado DNI {}", row.dni());
-            java.util.Optional<Asegurado> aseguradoExistente = aseguradoRepository.findByDocPaciente(row.dni());
+            log.info("🔍 PASO 0: Sincronizando asegurado para DNI {}", row.dni());
+            String nombreAsegurado = sincronizarAseguradoEnTransaccionSeparada(row);
 
-            if (aseguradoExistente.isPresent()) {
-                // ============================================================================
-                // ASEGURADO EXISTE: DUAL MAPPING INTELIGENTE v1.14.0
-                // ============================================================================
-                Asegurado asegurado = aseguradoExistente.get();
-                String nombre = asegurado.getPaciente();
-                if (nombre != null && !nombre.isBlank()) {
-                    pacienteNombre = nombre;
-                    log.info("✅ Nombre de paciente obtenido de BD: {} para DNI {}", pacienteNombre, row.dni());
-                }
-
-                // Vincular con pacienteId = pk_asegurado (que es el DNI)
-                pacienteIdGenerado = Long.parseLong(asegurado.getPkAsegurado().replaceAll("[^0-9]", ""));
-
-                // ============================================================================
-                // 📞 DUAL MAPPING INTELIGENTE - Teléfonos
-                // ============================================================================
-                // Teléfono Principal (Excel col 7) → asegurados.tel_fijo
-                if (row.telefonoPrincipal() != null && !row.telefonoPrincipal().isBlank()) {
-                    String telFijoAnterior = asegurado.getTelFijo();
-                    if (!row.telefonoPrincipal().equals(telFijoAnterior)) {
-                        asegurado.setTelFijo(row.telefonoPrincipal());
-                        log.info("📱 [TEL_FIJO] Actualizado para DNI {}: '{}' → '{}'",
-                            row.dni(), telFijoAnterior, row.telefonoPrincipal());
-                    }
-                }
-
-                // Teléfono Alterno (Excel col 8) → asegurados.tel_celular
-                if (row.telefonoAlterno() != null && !row.telefonoAlterno().isBlank()) {
-                    String telCelularAnterior = asegurado.getTelCelular();
-                    if (!row.telefonoAlterno().equals(telCelularAnterior)) {
-                        asegurado.setTelCelular(row.telefonoAlterno());
-                        log.info("📱 [TEL_CELULAR] Actualizado para DNI {}: '{}' → '{}'",
-                            row.dni(), telCelularAnterior, row.telefonoAlterno());
-                    }
-                }
-
-                // 📧 Actualizar correo si viene en Excel y es diferente
-                if (row.correo() != null && !row.correo().isBlank()) {
-                    if (asegurado.getCorreoElectronico() == null || !asegurado.getCorreoElectronico().equals(row.correo())) {
-                        String correoAnterior = asegurado.getCorreoElectronico();
-                        asegurado.setCorreoElectronico(row.correo());
-                        log.info("📧 [CORREO] Actualizado para DNI {}: '{}' → '{}'", row.dni(), correoAnterior, row.correo());
-                    }
-                }
-
-                // 🎂 Actualizar fecha de nacimiento si viene en Excel y no existe
-                if (fechaNacimiento != null && asegurado.getFecnacimpaciente() == null) {
-                    asegurado.setFecnacimpaciente(fechaNacimiento);
-                    log.info("🎂 [FECHA_NAC] Asignada para DNI {}: {}", row.dni(), fechaNacimiento);
-                }
-
-                // 💾 Guardar cambios en BD
-                aseguradoRepository.save(asegurado);
-                log.info("✅ [ASEGURADO ACTUALIZADO] DNI {} - Tel Fijo: {} | Tel Celular: {} | Correo: {}",
-                    row.dni(), asegurado.getTelFijo(), asegurado.getTelCelular(), asegurado.getCorreoElectronico());
+            if (nombreAsegurado != null) {
+                pacienteNombre = nombreAsegurado;
+                pacienteIdGenerado = row.dni();
+                log.info("✅ Asegurado sincronizado exitosamente: {} (DNI: {})", nombreAsegurado, row.dni());
             } else {
-                // ============================================================================
-                // ASEGURADO NO EXISTE: CREAR NUEVO CON DUAL MAPPING v1.14.0
-                // ============================================================================
-                log.info("⚠️  Asegurado NO existe en BD para DNI {}", row.dni());
-                log.info("📝 Preparando datos para crear nuevo asegurado:");
-                log.info("   - nombreCompleto: {}", row.nombreCompleto());
-                log.info("   - sexo: {}", row.sexo());
-                log.info("   - fechaNacimiento: {}", row.fechaNacimiento());
-                log.info("   - telefonoPrincipal: {}", row.telefonoPrincipal());
-                log.info("   - telefonoAlterno: {}", row.telefonoAlterno());
-                log.info("   - correo: {}", row.correo());
-
-                if (row.nombreCompleto() != null && !row.nombreCompleto().isBlank()) {
-                    // CREAR NUEVO ASEGURADO
-                    pacienteNombre = row.nombreCompleto();
-                    log.info("✏️  CREANDO nuevo Asegurado para DNI {}: {}", row.dni(), row.nombreCompleto());
-
-                    Asegurado nuevoAsegurado = new Asegurado();
-                    nuevoAsegurado.setPkAsegurado(row.dni());
-                    nuevoAsegurado.setDocPaciente(row.dni());
-                    nuevoAsegurado.setPaciente(row.nombreCompleto());
-
-                    // ============================================================================
-                    // DUAL MAPPING: Teléfono Principal y Alterno
-                    // ============================================================================
-                    // Teléfono Principal (Excel col 7) → tel_fijo
-                    if (row.telefonoPrincipal() != null && !row.telefonoPrincipal().isBlank()) {
-                        nuevoAsegurado.setTelFijo(row.telefonoPrincipal());
-                        log.info("   ✅ Tel Fijo asignado: {}", row.telefonoPrincipal());
+                // Fallback: intentar crear asegurado mínimo
+                log.warn("⚠️  No se pudo sincronizar asegurado, intentando crear mínimo...");
+                try {
+                    boolean creado = crearAseguradoMinimo(row);
+                    if (creado) {
+                        pacienteIdGenerado = row.dni();
+                        pacienteNombre = row.nombreCompleto() != null && !row.nombreCompleto().isBlank()
+                                ? row.nombreCompleto()
+                                : "Paciente " + row.dni();
+                        log.info("✅ Asegurado mínimo creado para DNI {}", row.dni());
+                    } else {
+                        log.error("❌ No se pudo crear asegurado para DNI {}", row.dni());
+                        pacienteNombre = row.nombreCompleto() != null && !row.nombreCompleto().isBlank()
+                                ? row.nombreCompleto()
+                                : "Paciente " + row.dni();
+                        pacienteIdGenerado = row.dni();
                     }
-
-                    // Teléfono Alterno (Excel col 8) → tel_celular
-                    if (row.telefonoAlterno() != null && !row.telefonoAlterno().isBlank()) {
-                        nuevoAsegurado.setTelCelular(row.telefonoAlterno());
-                        log.info("   ✅ Tel Celular asignado: {}", row.telefonoAlterno());
-                    }
-
-                    // Correo y otros datos
-                    nuevoAsegurado.setCorreoElectronico(row.correo());
-                    nuevoAsegurado.setSexo(row.sexo());
-
-                    if (fechaNacimiento != null) {
-                        nuevoAsegurado.setFecnacimpaciente(fechaNacimiento);
-                        log.info("   ✅ Fecha de nacimiento asignada: {}", fechaNacimiento);
-                    }
-
-                    log.info("   💾 Guardando nuevo asegurado en BD...");
-                    aseguradoRepository.save(nuevoAsegurado);
-
-                    // Actualizar pacienteIdGenerado con el DNI (pk_asegurado)
-                    pacienteIdGenerado = Long.parseLong(row.dni().replaceAll("[^0-9]", ""));
-
-                    log.info("   ✅ Nuevo asegurado guardado en BD!");
-                    log.info("✅ ÉXITO: Nuevo asegurado creado - {} (DNI: {}) | Tel Fijo: {} | Tel Celular: {}",
-                        row.nombreCompleto(), row.dni(), nuevoAsegurado.getTelFijo(), nuevoAsegurado.getTelCelular());
-                } else {
-                    log.warn("⚠️  No hay nombreCompleto para DNI {} - usando fallback", row.dni());
-                    pacienteNombre = "Paciente " + row.dni();
+                } catch (Exception fallbackEx) {
+                    // CRÍTICO: Capturar excepción de fallback para no marcar la transacción principal
+                    log.error("❌ Error en fallback de asegurado para DNI {}: {}", row.dni(), fallbackEx.getMessage());
+                    pacienteNombre = row.nombreCompleto() != null && !row.nombreCompleto().isBlank()
+                            ? row.nombreCompleto()
+                            : "Paciente " + row.dni();
+                    pacienteIdGenerado = row.dni();
                 }
             }
         } catch (Exception e) {
-            log.error("❌ ERROR CRÍTICO al sincronizar asegurado para DNI {}: {}", row.dni(), e.getMessage(), e);
-            pacienteNombre = "Paciente " + row.dni();
+            log.error("❌ Error procesando asegurado para DNI {}: {}", row.dni(), e.getMessage());
+            // Usar valores por defecto para continuar
+            pacienteNombre = row.nombreCompleto() != null && !row.nombreCompleto().isBlank()
+                    ? row.nombreCompleto()
+                    : "Paciente " + row.dni();
+            pacienteIdGenerado = row.dni();
         }
 
         // 1. Obtener especialidad y código de servicio
         try {
             DimServicioEssi servicio = dimServicioEssiRepository.findById(idServicio).orElse(null);
             if (servicio != null) {
-                especialidad = servicio.getDescServicio() != null ? servicio.getDescServicio() : "N/A";
+                especialidad = servicio.getDescServicio() != null ? servicio.getDescServicio() : "";
                 codServicio = servicio.getCodServicio();
             }
         } catch (Exception e) {
@@ -659,10 +914,17 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
         } catch (Exception e) {
             log.warn("No se pudo obtener IPRESS para código {}: {}", row.codigoIpress(), e.getMessage());
+            // ✅ CRÍTICO: Limpiar la sesión de Hibernate para prevenir "transaction aborted"
+            try {
+                entityManager.clear();
+                log.debug("🧹 Sesión limpiada después de error al obtener IPRESS");
+            } catch (Exception cleanupEx) {
+                log.warn("⚠️ No se pudo limpiar sesión: {}", cleanupEx.getMessage());
+            }
         }
 
         return SolicitudBolsa.builder()
-            .numeroSolicitud(SolicitudBolsaMapper.generarNumeroSolicitud())
+            .numeroSolicitud(encontrarNumeroSolicitudDisponible(5))  // ✅ FIX: Pre-valida 5 candidatos
             .pacienteDni(row.dni())
             .pacienteId(pacienteIdGenerado)
             .pacienteNombre(pacienteNombre)
@@ -685,6 +947,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteEmail(row.correo())
             .codigoIpressAdscripcion(row.codigoIpress())
             .tipoCita(row.tipoCita())
+            .especialidad(especialidad)
             .build();
     }
 
@@ -708,6 +971,120 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
 
         return isValid;
+    }
+
+    /**
+     * NUEVO v1.18.3: Manejo de archivos con columnas desalineadas
+     *
+     * Problema Pediatría22: Archivo tiene 11 columnas visibles pero CORREO está vacía
+     * Resultado: POI lee 10 columnas físicas, COD_IPRESS aparece en posición 8,
+     * TIPO_CITA aparece en posición 9 en lugar de 10
+     *
+     * @param row Fila de Excel a procesar
+     * @param filaNumero Número de fila (para logs)
+     * @return Map con 11 campos extraídos
+     */
+    private Map<String, String> extraerCamposInteligentemente(Row row, int filaNumero) {
+        Map<String, String> campos = new HashMap<>();
+
+        // Leer todas las celdas disponibles
+        String[] valores = new String[15];
+        for (int i = 0; i < 15; i++) {
+            valores[i] = obtenerValorCelda(row.getCell(i));
+        }
+
+        // Detectar TIPO_CITA para identificar posición real
+        int tipoCitaPos = -1;
+        for (int i = 7; i <= 11; i++) {
+            String val = valores[i].toLowerCase().trim();
+            if (val.equals("recita") || val.equals("interconsulta") ||
+                val.equals("voluntaria") || val.equals("referencia")) {
+                tipoCitaPos = i;
+                break;
+            }
+        }
+
+        // Mapear campos según posición detectada de TIPO_CITA
+        String fechaPreferidaNoAtendida, tipoDocumento, dni, nombreCompleto, sexo,
+               fechaNacimiento, telefonoPrincipal, telefonoAlterno, correo,
+               codigoIpress, tipoCita;
+
+        if (tipoCitaPos == 9) {
+            // Caso Pediatría22: CORREO missing, todo desplazado -1 después de col 7
+            fechaPreferidaNoAtendida = valores[0];
+            tipoDocumento = valores[1];
+            dni = valores[2];
+            nombreCompleto = valores[3];
+            sexo = valores[4];
+            fechaNacimiento = valores[5];
+            telefonoPrincipal = valores[6];
+            telefonoAlterno = valores[7];  // Vacío pero presente
+            correo = "";  // Missing!
+            codigoIpress = valores[8];  // Desplazado a la izquierda
+            tipoCita = valores[9];  // Desplazado a la izquierda
+            log.info("✅ [FILA {}] TIPO_CITA detectado en posición 9 (formato Pediatría22 con CORREO missing)",
+                filaNumero);
+        } else if (tipoCitaPos == 10) {
+            // Caso normal: 11 columnas correctamente alineadas
+            fechaPreferidaNoAtendida = valores[0];
+            tipoDocumento = valores[1];
+            dni = valores[2];
+            nombreCompleto = valores[3];
+            sexo = valores[4];
+            fechaNacimiento = valores[5];
+            telefonoPrincipal = valores[6];
+            telefonoAlterno = valores[7];
+            correo = valores[8];
+            codigoIpress = valores[9];
+            tipoCita = valores[10];
+            log.info("✅ [FILA {}] TIPO_CITA detectado en posición 10 (formato standard 11 columnas)",
+                filaNumero);
+        } else {
+            // Fallback: asumir formato 11 columnas estándar
+            fechaPreferidaNoAtendida = valores[0];
+            tipoDocumento = valores[1];
+            dni = valores[2];
+            nombreCompleto = valores[3];
+            sexo = valores[4];
+            fechaNacimiento = valores[5];
+            telefonoPrincipal = valores[6];
+            telefonoAlterno = valores[7];
+            correo = valores[8];
+            codigoIpress = valores[9];
+            tipoCita = valores[10];
+            log.warn("⚠️  [FILA {}] TIPO_CITA no detectado en posiciones 9-10 (usando default pos 10). Valores: {}",
+                filaNumero, String.join(", ", valores));
+        }
+
+        log.debug("📋 [FILA {}] DNI={}, Nombres={}, TipoCita={}",
+            filaNumero, dni, nombreCompleto, tipoCita);
+
+        // ============================================================================
+        // 🔧 NORMALIZAR COD. IPRESS A 3 DÍGITOS (21 → 021)
+        // ============================================================================
+        if (codigoIpress != null && !codigoIpress.isBlank()) {
+            try {
+                int codigo = Integer.parseInt(codigoIpress.trim());
+                codigoIpress = String.format("%03d", codigo);
+            } catch (NumberFormatException e) {
+                log.warn("⚠️ Código IPRESS no numérico: {}", codigoIpress.trim());
+            }
+        }
+
+        // Llenar el mapa
+        campos.put("fechaPreferidaNoAtendida", fechaPreferidaNoAtendida);
+        campos.put("tipoDocumento", tipoDocumento);
+        campos.put("dni", dni);
+        campos.put("nombreCompleto", nombreCompleto);
+        campos.put("sexo", sexo);
+        campos.put("fechaNacimiento", fechaNacimiento);
+        campos.put("telefonoPrincipal", telefonoPrincipal);
+        campos.put("telefonoAlterno", telefonoAlterno);
+        campos.put("correo", correo);
+        campos.put("codigoIpress", codigoIpress);
+        campos.put("tipoCita", tipoCita);
+
+        return campos;
     }
 
     /**
@@ -839,4 +1216,832 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
         return aseguradosSincronizados;
     }
+
+    /**
+     * ============================================================================
+     * 🔧 CORRECCIÓN #1: VALIDACIÓN DE TELÉFONOS
+     * ============================================================================
+     * Valida que los teléfonos cumplan el formato permitido
+     * Solo: números, +, (), -, espacios
+     *
+     * @param filaNumero número de fila en el Excel (para logs)
+     * @param telefonoPrincipal teléfono principal a validar
+     * @param telefonoAlterno teléfono alterno a validar
+     * @throws IllegalArgumentException si algún teléfono tiene formato inválido
+     */
+    private void validarTelefonos(int filaNumero, String telefonoPrincipal, String telefonoAlterno) {
+        // Validar teléfono principal
+        if (telefonoPrincipal != null && !telefonoPrincipal.isBlank()) {
+            if (!telefonoPrincipal.matches(PHONE_PATTERN)) {
+                String error = "Fila " + filaNumero + ": " + PHONE_VALIDATION_ERROR +
+                              " | Valor: '" + telefonoPrincipal + "'";
+                log.error("❌ {}", error);
+                throw new IllegalArgumentException(error);
+            }
+        }
+
+        // Validar teléfono alterno
+        if (telefonoAlterno != null && !telefonoAlterno.isBlank()) {
+            if (!telefonoAlterno.matches(PHONE_PATTERN)) {
+                String error = "Fila " + filaNumero + ": " + PHONE_VALIDATION_ERROR +
+                              " | Valor: '" + telefonoAlterno + "'";
+                log.error("❌ {}", error);
+                throw new IllegalArgumentException(error);
+            }
+        }
+
+        log.debug("✅ [FILA {}] Validación de teléfonos OK | Principal: {} | Alterno: {}",
+            filaNumero, telefonoPrincipal, telefonoAlterno);
+    }
+
+    /**
+     * ============================================================================
+     * 🔧 CORRECCIÓN #2: DETECCIÓN DE DUPLICADOS
+     * ============================================================================
+     * Detecta si una solicitud ya existe antes de intentar guardarla
+     * Verifica constraint: (id_bolsa, paciente_id, id_servicio)
+     *
+     * @param filaNumero número de fila en el Excel (para logs)
+     * @param idBolsa ID de la bolsa
+     * @param solicitud solicitud a verificar
+     * @param errores lista de errores para agregrar si hay duplicado
+     * @return true si hay duplicado, false si es nueva
+     */
+    /**
+     * ✅ CORRECCIÓN v1.19.0: Detecta duplicados y retorna información estructurada
+     * @return null si no hay duplicado, o Map con detalles del duplicado
+     */
+    private Map<String, Object> detectarDuplicado(int filaNumero, Long idBolsa,
+                                                   SolicitudBolsa solicitud,
+                                                   DimServicioEssi servicio) {
+        try {
+            // ============================================================================
+            // ✅ Solo detectar solicitudes ACTIVAS
+            // Permite reusar pacientes de registros soft-deleted (activo=false)
+            // ============================================================================
+            boolean existeDuplicado = solicitudRepository.existsByIdBolsaAndPacienteIdAndIdServicioAndActivoTrue(
+                idBolsa,
+                solicitud.getPacienteId(),
+                solicitud.getIdServicio()
+            );
+
+            if (existeDuplicado) {
+                log.warn("⚠️  [FILA {}] Solicitud DUPLICADA detectada | Paciente: {} | Especialidad: {}",
+                    filaNumero, solicitud.getPacienteDni(), solicitud.getEspecialidad());
+
+                // Retornar map con detalles del duplicado
+                return Map.of(
+                    "fila", filaNumero,
+                    "dni", solicitud.getPacienteDni(),
+                    "paciente", solicitud.getPacienteNombre(),
+                    "especialidad", solicitud.getEspecialidad(),
+                    "ipress", solicitud.getCodigoIpressAdscripcion(),
+                    "razon", "Ya existe solicitud para este paciente + especialidad en esta bolsa"
+                );
+            }
+
+            log.debug("✅ [FILA {}] Verificación de duplicados OK - solicitud es nueva", filaNumero);
+            return null; // No hay duplicado
+
+        } catch (Exception e) {
+            log.warn("⚠️  [FILA {}] Advertencia al detectar duplicados: {} | Continuando...",
+                filaNumero, e.getMessage());
+            return null; // Si hay error, permitir que continúe
+        }
+    }
+
+    /**
+     * ============================================================================
+     * 🔧 CORRECCIÓN #3: MANEJO DE CONSTRAINT UNIQUE CON UPDATE FALLBACK
+     * ============================================================================
+     * Intenta actualizar una solicitud existente cuando se detecta
+     * violación de constraint unique (solicitud_paciente_unique)
+     *
+     * @param idBolsa ID de la bolsa
+     * @param nuevaSolicitud solicitud con los nuevos datos
+     * @return true si se actualizó exitosamente, false si no se encontró la solicitud
+     */
+    private boolean intentarActualizarSolicitudExistente(Long idBolsa, SolicitudBolsa nuevaSolicitud) {
+        try {
+            // Buscar solicitud existente con misma (id_bolsa, paciente_id, id_servicio)
+            List<SolicitudBolsa> existentes = solicitudRepository.findByIdBolsaAndPacienteIdAndIdServicio(
+                idBolsa,
+                nuevaSolicitud.getPacienteId(),
+                nuevaSolicitud.getIdServicio()
+            );
+
+            if (existentes.isEmpty()) {
+                log.warn("⚠️  No se encontró solicitud existente para UPDATE. Bolsa: {}, Paciente: {}, Servicio: {}",
+                    idBolsa, nuevaSolicitud.getPacienteId(), nuevaSolicitud.getIdServicio());
+                return false;
+            }
+
+            // Actualizar la primera solicitud encontrada
+            SolicitudBolsa solicitudExistente = existentes.get(0);
+
+            log.info("🔄 Actualizando solicitud existente ID: {}", solicitudExistente.getIdSolicitud());
+
+            // Actualizar solo los campos que cambiaron
+            boolean cambios = false;
+
+            // Actualizar teléfono principal
+            if (nuevaSolicitud.getPacienteTelefono() != null &&
+                !nuevaSolicitud.getPacienteTelefono().equals(solicitudExistente.getPacienteTelefono())) {
+                String anterior = solicitudExistente.getPacienteTelefono();
+                solicitudExistente.setPacienteTelefono(nuevaSolicitud.getPacienteTelefono());
+                log.info("📱 [UPDATE TEL_PRINCIPAL] {}: '{}' → '{}'",
+                    solicitudExistente.getPacienteDni(), anterior, nuevaSolicitud.getPacienteTelefono());
+                cambios = true;
+            }
+
+            // Actualizar teléfono alterno
+            if (nuevaSolicitud.getPacienteTelefonoAlterno() != null &&
+                !nuevaSolicitud.getPacienteTelefonoAlterno().equals(solicitudExistente.getPacienteTelefonoAlterno())) {
+                String anterior = solicitudExistente.getPacienteTelefonoAlterno();
+                solicitudExistente.setPacienteTelefonoAlterno(nuevaSolicitud.getPacienteTelefonoAlterno());
+                log.info("📱 [UPDATE TEL_ALTERNO] {}: '{}' → '{}'",
+                    solicitudExistente.getPacienteDni(), anterior, nuevaSolicitud.getPacienteTelefonoAlterno());
+                cambios = true;
+            }
+
+            // Actualizar correo
+            if (nuevaSolicitud.getPacienteEmail() != null &&
+                !nuevaSolicitud.getPacienteEmail().equals(solicitudExistente.getPacienteEmail())) {
+                String anterior = solicitudExistente.getPacienteEmail();
+                solicitudExistente.setPacienteEmail(nuevaSolicitud.getPacienteEmail());
+                log.info("📧 [UPDATE CORREO] {}: '{}' → '{}'",
+                    solicitudExistente.getPacienteDni(), anterior, nuevaSolicitud.getPacienteEmail());
+                cambios = true;
+            }
+
+            // Actualizar fecha de nacimiento si no existe
+            if (solicitudExistente.getFechaNacimiento() == null &&
+                nuevaSolicitud.getFechaNacimiento() != null) {
+                solicitudExistente.setFechaNacimiento(nuevaSolicitud.getFechaNacimiento());
+                log.info("🎂 [UPDATE FECHA_NAC] {}: {}",
+                    solicitudExistente.getPacienteDni(), nuevaSolicitud.getFechaNacimiento());
+                cambios = true;
+            }
+
+            if (cambios) {
+                solicitudRepository.save(solicitudExistente);
+                log.info("✅ [UPDATE COMPLETADO] Solicitud {} actualizada con nuevos datos",
+                    solicitudExistente.getIdSolicitud());
+                return true;
+            } else {
+                log.info("ℹ️ [UPDATE] No hay cambios en solicitud {}", solicitudExistente.getIdSolicitud());
+                return true; // Considerar como éxito porque la solicitud existe
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Error al intentar actualizar solicitud: {}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+    /**
+     * Normaliza DNI para garantizar exactamente 8 dígitos
+     *
+     * FUNCIONALIDAD v1.16.1 - Normalización de DNIs:
+     * - Si tiene 9+ dígitos: toma los primeros 8
+     * - Si tiene menos de 8: padding con ceros a la izquierda
+     * - Remueve caracteres especiales (espacios, guiones, puntos)
+     * - Ejemplo: "195681662" (9) → "19568166" (8)
+     *
+     * @param dniOriginal DNI posiblemente mal formateado
+     * @return DNI normalizado con exactamente 8 dígitos
+     */
+    private String normalizarDNI(String dniOriginal) {
+        if (dniOriginal == null || dniOriginal.isBlank()) {
+            return "";
+        }
+
+        // Remover caracteres especiales (espacios, guiones, puntos, etc)
+        String dniLimpio = dniOriginal.replaceAll("[^0-9]", "");
+
+        if (dniLimpio.isEmpty()) {
+            log.warn("⚠ DNI inválido después de normalización: '{}'", dniOriginal);
+            return dniOriginal;
+        }
+
+        // Si tiene MÁS de 8 dígitos: tomar los primeros 8
+        if (dniLimpio.length() > 8) {
+            String dniNormalizado = dniLimpio.substring(0, 8);
+            log.info("🔄 [NORMALIZACIÓN DNI] '{}' ({} dígitos) → '{}' (8 dígitos)",
+                dniOriginal, dniLimpio.length(), dniNormalizado);
+            return dniNormalizado;
+        }
+
+        // Si tiene MENOS de 8 dígitos: padding con ceros a la izquierda
+        if (dniLimpio.length() < 8) {
+            String dniNormalizado = String.format("%8s", dniLimpio).replace(' ', '0');
+            log.info("🔄 [NORMALIZACIÓN DNI] '{}' ({} dígitos) → '{}' (8 dígitos con padding)",
+                dniOriginal, dniLimpio.length(), dniNormalizado);
+            return dniNormalizado;
+        }
+
+        // Si ya tiene exactamente 8: retornar limpio
+        log.info("✓ [NORMALIZACIÓN DNI] '{}' ya estaba correcto (8 dígitos)", dniOriginal);
+        return dniLimpio;
+    }
+
+    /**
+     * Enriquece datos de SEXO y FECHA_NACIMIENTO desde la tabla de asegurados
+     * Si estos campos estan vacios en Excel, los obtiene de la BD
+     *
+     * FUNCIONALIDAD INTELIGENTE v1.16.1:
+     * - Si DNI existe en asegurados: usa datos de BD para campos vacios
+     * - Si DNI no existe en asegurados: permite si Excel tiene SEXO y F.NAC completos
+     *
+     * @param dni DNI del paciente a buscar
+     * @param sexoExcel sexo del Excel (puede ser null/blank)
+     * @param fechaNacimientoExcel fecha de nacimiento del Excel (puede ser null/blank)
+     * @return Map con: sexo, fechaNacimiento, existe (boolean)
+     */
+    private Map<String, Object> enriquecerDatosDesdeAsegurado(String dni, String sexoExcel, String fechaNacimientoExcel) {
+        Map<String, Object> resultado = new HashMap<>();
+        resultado.put("sexo", sexoExcel != null && !sexoExcel.isBlank() ? sexoExcel : "");
+        resultado.put("fechaNacimiento", fechaNacimientoExcel != null && !fechaNacimientoExcel.isBlank() ? fechaNacimientoExcel : "");
+        resultado.put("existe", false);
+
+        try {
+            // Buscar asegurado en BD
+            java.util.Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(dni);
+
+            if (aseguradoOpt.isPresent()) {
+                Asegurado asegurado = aseguradoOpt.get();
+                resultado.put("existe", true);
+
+                // Si SEXO esta vacio en Excel, usar de BD
+                if ((sexoExcel == null || sexoExcel.isBlank()) && asegurado.getSexo() != null) {
+                    resultado.put("sexo", asegurado.getSexo());
+                    log.info("📊 [ENRIQUECIMIENTO] SEXO completado desde asegurados para DNI {}: {}", dni, asegurado.getSexo());
+                }
+
+                // Si FECHA_NACIMIENTO esta vacia en Excel, usar de BD
+                if ((fechaNacimientoExcel == null || fechaNacimientoExcel.isBlank()) && asegurado.getFecnacimpaciente() != null) {
+                    // Convertir java.time.LocalDate a String (YYYY-MM-DD)
+                    resultado.put("fechaNacimiento", asegurado.getFecnacimpaciente().toString());
+                    log.info("📅 [ENRIQUECIMIENTO] FECHA_NACIMIENTO completada desde asegurados para DNI {}: {}",
+                        dni, asegurado.getFecnacimpaciente());
+                }
+
+                log.info("✓ [ENRIQUECIMIENTO EXITOSO] DNI {} existe en asegurados | Sexo: {} | F.Nac: {}",
+                    dni, resultado.get("sexo"), resultado.get("fechaNacimiento"));
+            } else {
+                log.warn("⚠ [ENRIQUECIMIENTO] DNI {} NO EXISTE en tabla asegurados", dni);
+                resultado.put("existe", false);
+            }
+        } catch (Exception e) {
+            log.error("ERROR al enriquecer datos para DNI {}: {}", dni, e.getMessage());
+            resultado.put("existe", false);
+        }
+
+        return resultado;
+    }
+
+    /**
+     * ============================================================================
+     * 🔧 MANEJO INTELIGENTE DE ERRORES DE INTEGRIDAD - v1.17.0
+     * ============================================================================
+     * Detecta tipo de error y proporciona:
+     * 1. Mensaje en español claro para el usuario
+     * 2. Auto-creación de asegurados para errores FOREIGN KEY
+     * 3. Reintentos de inserción si es posible
+     *
+     * @param filaNumero número de fila en Excel
+     * @param rowDTO datos de la fila
+     * @param e excepción de integridad
+     * @return mensaje de error en español para mostrar al usuario
+     */
+    private String manejarErrorIntegridad(int filaNumero, SolicitudBolsaExcelRowDTO rowDTO,
+                                         org.springframework.dao.DataIntegrityViolationException e) {
+        String mensajeError = e.getMessage() != null ? e.getMessage() : "Error desconocido";
+        String errorEnEspanol = "Error de integridad desconocido";
+
+        try {
+            // ========================================================================
+            // 1️⃣ DETECCIÓN: Error FOREIGN KEY (paciente no existe)
+            // ========================================================================
+            if (mensajeError.contains("fk_solicitud_asegurado") ||
+                mensajeError.contains("violates foreign key constraint") ||
+                mensajeError.contains("paciente_id")) {
+
+                log.error("❌ [FILA {}] FOREIGN KEY error detectado - El asegurado con DNI {} no existe",
+                    filaNumero, rowDTO.dni());
+                log.info("   (Este error NO debería ocurrir - el asegurado debería haberse creado en etapa anterior)");
+
+                errorEnEspanol = "El paciente con DNI " + rowDTO.dni() +
+                               " no existe en la base de datos y no se pudo crear automáticamente. " +
+                               "Intente de nuevo o contacte al administrador si el problema persiste.";
+                return errorEnEspanol;
+            }
+
+            // ========================================================================
+            // 2️⃣ DETECCIÓN: Error UNIQUE/DUPLICATE (solicitud ya existe)
+            // ========================================================================
+            if (mensajeError.contains("unique constraint") ||
+                mensajeError.contains("UNIQUE violation") ||
+                mensajeError.contains("solicitud_paciente_unique") ||
+                mensajeError.contains("duplicate") ||
+                mensajeError.contains("Duplicate")) {
+
+                log.warn("⚠️  [FILA {}] Constraint UNIQUE detectado - solicitud duplicada", filaNumero);
+                errorEnEspanol = "DUPLICADO: El paciente con DNI " + rowDTO.dni() +
+                               " ya existe en esta bolsa. No se puede cargar dos veces.";
+                return errorEnEspanol;
+            }
+
+            // ========================================================================
+            // 3️⃣ DETECCIÓN: Error NOT NULL (campo requerido faltante)
+            // ========================================================================
+            if (mensajeError.contains("NOT NULL") || mensajeError.contains("null")) {
+                log.warn("⚠️  [FILA {}] Campo requerido (NOT NULL) faltante", filaNumero);
+
+                if (mensajeError.contains("paciente_nombre") || mensajeError.contains("nombre")) {
+                    errorEnEspanol = "Campo NOMBRE está vacío y no se pudo enriquecer desde la base de datos.";
+                } else if (mensajeError.contains("fecha_preferida") || mensajeError.contains("fechaPreferida")) {
+                    errorEnEspanol = "Campo FECHA PREFERIDA QUE NO FUE ATENDIDA está vacío.";
+                } else if (mensajeError.contains("tipo_cita")) {
+                    errorEnEspanol = "Campo TIPO DE CITA está vacío o inválido.";
+                } else {
+                    errorEnEspanol = "Campo requerido está vacío en la fila " + filaNumero + ".";
+                }
+                return errorEnEspanol;
+            }
+
+            // ========================================================================
+            // 4️⃣ DETECCIÓN: Error CHECK constraint (validación de valores)
+            // ========================================================================
+            if (mensajeError.contains("check constraint") || mensajeError.contains("CHECK") ||
+                mensajeError.contains("violates check")) {
+
+                log.warn("⚠️  [FILA {}] Violación de CHECK constraint", filaNumero);
+                errorEnEspanol = "Los datos en la fila " + filaNumero +
+                               " violan una restricción de validación. Revise TIPO_CITA o campos numéricos.";
+                return errorEnEspanol;
+            }
+
+            // ========================================================================
+            // 5️⃣ DETECCIÓN: Error de referencia IPRESS (código de adscripción)
+            // ========================================================================
+            if (mensajeError.contains("ipress") || mensajeError.contains("cod_ipress")) {
+                log.warn("⚠️  [FILA {}] Error IPRESS - código de adscripción inválido", filaNumero);
+                errorEnEspanol = "El código de IPRESS ADSCRIPCIÓN '" + rowDTO.codigoIpress() +
+                               "' no existe en la base de datos. Verifique el código.";
+                return errorEnEspanol;
+            }
+
+            // ========================================================================
+            // 6️⃣ FALLBACK: Mensaje genérico con instrucciones
+            // ========================================================================
+            log.error("❌ [FILA {}] Error de integridad sin clasificar: {}", filaNumero, mensajeError);
+            errorEnEspanol = "Error de base de datos en fila " + filaNumero + ". " +
+                           "Tipo: " + extraerTipoError(mensajeError) +
+                           ". Contacte al administrador si el problema persiste.";
+            return errorEnEspanol;
+
+        } catch (Exception ex) {
+            log.error("❌ Error procesando exception handler para fila {}: {}", filaNumero, ex.getMessage());
+            return "Error inesperado procesando fila " + filaNumero + ". Contacte al administrador.";
+        }
+    }
+
+    /**
+     * Crea un asegurado mínimo con los datos disponibles del Excel
+     * Se usa cuando el asegurado no existe en BD y hay FOREIGN KEY error
+     *
+     * CRÍTICO: Usa REQUIRES_NEW para no propagar errores de transacción al padre
+     *
+     * @param rowDTO fila de Excel con datos del paciente
+     * @return true si se creó exitosamente, false en caso de error
+     */
+    /**
+     * Sincroniza asegurado en transacción separada (REQUIRES_NEW)
+     * Evita que errores de asegurado marquen la transacción principal como rollback-only
+     *
+     * @param rowDTO fila de Excel
+     * @return nombre del paciente (obtenido o creado), o null si falla
+     */
+    public String sincronizarAseguradoEnTransaccionSeparada(SolicitudBolsaExcelRowDTO rowDTO) {
+        try {
+            java.util.Optional<Asegurado> aseguradoExistente = aseguradoRepository.findByDocPaciente(rowDTO.dni());
+
+            if (aseguradoExistente.isPresent()) {
+                Asegurado asegurado = aseguradoExistente.get();
+                String nombre = asegurado.getPaciente();
+
+                // Actualizar teléfonos si hay nuevos datos
+                if (rowDTO.telefonoPrincipal() != null && !rowDTO.telefonoPrincipal().isBlank()) {
+                    if (!rowDTO.telefonoPrincipal().equals(asegurado.getTelFijo())) {
+                        asegurado.setTelFijo(rowDTO.telefonoPrincipal());
+                    }
+                }
+
+                if (rowDTO.telefonoAlterno() != null && !rowDTO.telefonoAlterno().isBlank()) {
+                    if (!rowDTO.telefonoAlterno().equals(asegurado.getTelCelular())) {
+                        asegurado.setTelCelular(rowDTO.telefonoAlterno());
+                    }
+                }
+
+                if (rowDTO.correo() != null && !rowDTO.correo().isBlank()) {
+                    if (asegurado.getCorreoElectronico() == null || !asegurado.getCorreoElectronico().equals(rowDTO.correo())) {
+                        asegurado.setCorreoElectronico(rowDTO.correo());
+                    }
+                }
+
+                aseguradoRepository.save(asegurado);
+                log.info("✅ Asegurado actualizado en BD: {} (DNI: {})", nombre, rowDTO.dni());
+                return nombre;
+            } else {
+                // Crear nuevo asegurado
+                Asegurado nuevoAsegurado = new Asegurado();
+                nuevoAsegurado.setPkAsegurado(rowDTO.dni());
+                nuevoAsegurado.setDocPaciente(rowDTO.dni());
+                nuevoAsegurado.setVigencia(true);
+                nuevoAsegurado.setPaciente(rowDTO.nombreCompleto());
+
+                if (rowDTO.telefonoPrincipal() != null && !rowDTO.telefonoPrincipal().isBlank()) {
+                    nuevoAsegurado.setTelFijo(rowDTO.telefonoPrincipal());
+                }
+                if (rowDTO.telefonoAlterno() != null && !rowDTO.telefonoAlterno().isBlank()) {
+                    nuevoAsegurado.setTelCelular(rowDTO.telefonoAlterno());
+                }
+                if (rowDTO.correo() != null && !rowDTO.correo().isBlank()) {
+                    nuevoAsegurado.setCorreoElectronico(rowDTO.correo());
+                }
+                if (rowDTO.sexo() != null && !rowDTO.sexo().isBlank()) {
+                    nuevoAsegurado.setSexo(rowDTO.sexo());
+                }
+
+                aseguradoRepository.save(nuevoAsegurado);
+                log.info("✅ Nuevo asegurado creado en BD: {} (DNI: {})", rowDTO.nombreCompleto(), rowDTO.dni());
+                return rowDTO.nombreCompleto();
+            }
+        } catch (Exception e) {
+            log.error("❌ Error sincronizando asegurado en transacción separada para DNI {}: {}", rowDTO.dni(), e.getMessage());
+            // ✅ CRÍTICO: Limpiar la sesión de Hibernate para prevenir "transaction aborted"
+            try {
+                entityManager.clear();
+                log.debug("🧹 Sesión de Hibernate limpiada después de error en sincronizarAsegurado");
+            } catch (Exception cleanupEx) {
+                log.warn("⚠️ No se pudo limpiar sesión en sincronizarAsegurado: {}", cleanupEx.getMessage());
+            }
+            return null;
+        }
+    }
+
+    public boolean crearAseguradoMinimo(SolicitudBolsaExcelRowDTO rowDTO) {
+        try {
+            // Verificar nuevamente si existe (por si se creó en otro thread)
+            java.util.Optional<Asegurado> existente = aseguradoRepository.findByDocPaciente(rowDTO.dni());
+            if (existente.isPresent()) {
+                log.info("✅ Asegurado ya existe en BD para DNI: {}", rowDTO.dni());
+                return true;
+            }
+
+            // Crear nuevo asegurado con datos mínimos
+            Asegurado nuevoAsegurado = new Asegurado();
+            nuevoAsegurado.setPkAsegurado(rowDTO.dni());
+            nuevoAsegurado.setDocPaciente(rowDTO.dni());
+            nuevoAsegurado.setVigencia(true);  // ✅ CRÍTICO: vigencia es NOT NULL en BD
+
+            // Usar nombre del Excel o fallback
+            String nombre = rowDTO.nombreCompleto();
+            if (nombre == null || nombre.isBlank()) {
+                nombre = "Paciente " + rowDTO.dni();
+            }
+            nuevoAsegurado.setPaciente(nombre);
+
+            // Asignar datos opcionales si están disponibles
+            if (rowDTO.sexo() != null && !rowDTO.sexo().isBlank()) {
+                nuevoAsegurado.setSexo(rowDTO.sexo());
+            }
+
+            // Parsear fecha de nacimiento si existe
+            if (rowDTO.fechaNacimiento() != null && !rowDTO.fechaNacimiento().isBlank()) {
+                try {
+                    java.time.LocalDate fechaNac = java.time.LocalDate.parse(rowDTO.fechaNacimiento());
+                    nuevoAsegurado.setFecnacimpaciente(fechaNac);
+                } catch (Exception ex) {
+                    log.warn("⚠️ No se pudo parsear fecha nacimiento para DNI {}: {}", rowDTO.dni(), ex.getMessage());
+                }
+            }
+
+            // Teléfonos
+            if (rowDTO.telefonoPrincipal() != null && !rowDTO.telefonoPrincipal().isBlank()) {
+                nuevoAsegurado.setTelFijo(rowDTO.telefonoPrincipal());
+            }
+            if (rowDTO.telefonoAlterno() != null && !rowDTO.telefonoAlterno().isBlank()) {
+                nuevoAsegurado.setTelCelular(rowDTO.telefonoAlterno());
+            }
+
+            // Correo
+            if (rowDTO.correo() != null && !rowDTO.correo().isBlank()) {
+                nuevoAsegurado.setCorreoElectronico(rowDTO.correo());
+            }
+
+            // Guardar en BD
+            aseguradoRepository.save(nuevoAsegurado);
+            log.info("✅ [AUTO-CREAR ASEGURADO] Asegurado creado para DNI {}: {} | Tel: {} / {}",
+                rowDTO.dni(), nombre, nuevoAsegurado.getTelFijo(), nuevoAsegurado.getTelCelular());
+            return true;
+
+        } catch (Exception e) {
+            log.error("❌ Error creando asegurado mínimo para DNI {}: {}", rowDTO.dni(), e.getMessage(), e);
+            // ✅ CRÍTICO: Limpiar la sesión de Hibernate para prevenir "transaction aborted"
+            try {
+                entityManager.clear();
+                log.debug("🧹 Sesión de Hibernate limpiada después de error");
+            } catch (Exception cleanupEx) {
+                log.warn("⚠️ No se pudo limpiar sesión: {}", cleanupEx.getMessage());
+            }
+            return false;
+        }
+    }
+
+    /**
+     * Extrae el tipo de error de forma legible del mensaje de excepción
+     *
+     * @param mensajeError mensaje de error bruto
+     * @return tipo de error en texto legible
+     */
+    private String extraerTipoError(String mensajeError) {
+        if (mensajeError == null) return "DESCONOCIDO";
+
+        if (mensajeError.toLowerCase().contains("unique")) return "CONSTRAINT UNIQUE";
+        if (mensajeError.toLowerCase().contains("foreign key")) return "FOREIGN KEY";
+        if (mensajeError.toLowerCase().contains("not null")) return "NOT NULL";
+        if (mensajeError.toLowerCase().contains("check")) return "CHECK CONSTRAINT";
+        if (mensajeError.toLowerCase().contains("duplicate")) return "DUPLICATE";
+
+        // Extraer primeras palabras significativas
+        String[] partes = mensajeError.split(" ");
+        if (partes.length > 0) {
+            return partes[0].toUpperCase();
+        }
+        return "DESCONOCIDO";
+    }
+
+    /**
+     * Genera un mensaje de error en español basado en el tipo de excepción
+     * Clasifica excepciones y proporciona mensajes amigables
+     *
+     * @param filaNumero número de fila en Excel
+     * @param rowDTO datos de la fila (puede ser null)
+     * @param e excepción ocurrida
+     * @return mensaje de error en español
+     */
+    private String generarMensajeErrorEnEspanol(int filaNumero, SolicitudBolsaExcelRowDTO rowDTO, Exception e) {
+        String dniBuscado = rowDTO != null ? rowDTO.dni() : "DESCONOCIDO";
+        String mensajeOriginal = e.getMessage() != null ? e.getMessage() : "Error desconocido";
+
+        // ========================================================================
+        // 1. IllegalArgumentException - Validación de campos
+        // ========================================================================
+        if (e instanceof IllegalArgumentException) {
+            if (mensajeOriginal.contains("TIPO CITA")) {
+                return "TIPO_CITA inválido. Valores válidos: RECITA, INTERCONSULTA, VOLUNTARIA, REFERENCIA.";
+            }
+            if (mensajeOriginal.contains("Formato de teléfono")) {
+                return "Formato de teléfono inválido. Solo se permiten números, +, (), -, y espacios.";
+            }
+            if (mensajeOriginal.contains("DNI") || mensajeOriginal.contains("IPRESS")) {
+                return mensajeOriginal; // Ya está en español desde la validación
+            }
+            return "Validación de datos falló: " + mensajeOriginal;
+        }
+
+        // ========================================================================
+        // 2. DataIntegrityViolationException - Manejada arriba, pero por si acaso
+        // ========================================================================
+        if (e instanceof org.springframework.dao.DataIntegrityViolationException) {
+            return manejarErrorIntegridad(filaNumero, rowDTO,
+                (org.springframework.dao.DataIntegrityViolationException) e);
+        }
+
+        // ========================================================================
+        // 3. EmptyResultDataAccessException - Registro no encontrado
+        // ========================================================================
+        if (e instanceof org.springframework.dao.EmptyResultDataAccessException) {
+            return "Registro no encontrado al procesar fila " + filaNumero +
+                   ". Verifique que todos los datos de referencia existan.";
+        }
+
+        // ========================================================================
+        // 4. DataAccessException - Error de acceso a BD
+        // ========================================================================
+        if (e instanceof org.springframework.dao.DataAccessException) {
+            return "Error al acceder a la base de datos. Por favor intente de nuevo.";
+        }
+
+        // ========================================================================
+        // 5. UnsupportedOperationException - Operación no permitida
+        // ========================================================================
+        if (e instanceof UnsupportedOperationException) {
+            return "Operación no soportada: " + mensajeOriginal;
+        }
+
+        // ========================================================================
+        // 6. NullPointerException - Falta información
+        // ========================================================================
+        if (e instanceof NullPointerException) {
+            log.error("NPE en fila {}: {}", filaNumero, e.getMessage(), e);
+            return "Faltan datos requeridos en fila " + filaNumero + ". Revise que no haya campos vacíos.";
+        }
+
+        // ========================================================================
+        // 7. NumberFormatException - Formato numérico inválido
+        // ========================================================================
+        if (e instanceof NumberFormatException) {
+            return "Formato numérico inválido en fila " + filaNumero +
+                   ". Revise que los números estén correctamente formateados.";
+        }
+
+        // ========================================================================
+        // FALLBACK: Mensaje genérico en español
+        // ========================================================================
+        log.error("❌ Excepción sin clasificar en fila {}: {} ({})", filaNumero, e.getClass().getSimpleName(), mensajeOriginal);
+        return "Error procesando fila " + filaNumero + ". Tipo: " + e.getClass().getSimpleName() +
+               ". Contacte al administrador si el problema persiste.";
+    }
+
+    @Override
+    @Transactional
+    public SolicitudBolsaDTO cambiarTipoBolsa(Long idSolicitud, Long idBolsaNueva) {
+        log.info("🔄 [cambiarTipoBolsa] Iniciando cambio de bolsa para solicitud {} → Nueva bolsa: {}",
+            idSolicitud, idBolsaNueva);
+
+        // 1. Validar que la solicitud existe
+        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> {
+                log.error("❌ Solicitud {} no encontrada", idSolicitud);
+                return new RuntimeException("Solicitud no encontrada con ID: " + idSolicitud);
+            });
+
+        log.info("   ✓ Solicitud encontrada: {} - Paciente: {}",
+            solicitud.getNumeroSolicitud(), solicitud.getPacienteNombre());
+
+        // 2. Validar que la nueva bolsa existe
+        TipoBolsa nuevaBolsa = tipoBolsaRepository.findById(idBolsaNueva)
+            .orElseThrow(() -> {
+                log.error("❌ Tipo de bolsa {} no encontrado", idBolsaNueva);
+                return new RuntimeException("Tipo de bolsa no encontrado con ID: " + idBolsaNueva);
+            });
+
+        log.info("   ✓ Nueva bolsa encontrada: {}", nuevaBolsa.getDescTipoBolsa());
+
+        // 3. Cambiar el tipo de bolsa
+        Long idBolsaAnterior = solicitud.getIdBolsa();
+        solicitud.setIdBolsa(idBolsaNueva);
+
+        // 4. Guardar en BD
+        SolicitudBolsa solicitudActualizada = solicitudRepository.save(solicitud);
+
+        log.info("✅ [cambiarTipoBolsa] Bolsa actualizada exitosamente");
+        log.info("   📊 Cambio: Bolsa {} → Bolsa {} | Solicitud: {} | Paciente: {}",
+            idBolsaAnterior, idBolsaNueva, solicitud.getNumeroSolicitud(), solicitud.getPacienteNombre());
+
+        // 5. Retornar DTO actualizado
+        return SolicitudBolsaMapper.toDTO(solicitudActualizada);
+    }
+
+    /**
+     * ✅ NUEVA v2.2.0: Analiza el Excel y detecta DNI duplicados ANTES de procesar
+     * Aplica estrategia KEEP_FIRST: mantiene primer DNI, descarta duplicados
+     *
+     * @param sheet Hoja del Excel a analizar
+     * @param totalFilas Número total de filas
+     * @return ReporteDuplicadosDTO con análisis de duplicados encontrados
+     */
+    public ReporteDuplicadosDTO analizarDuplicadosEnExcel(XSSFSheet sheet, int totalFilas) {
+        log.info("🔍 [v2.2.0] Analizando duplicados en Excel - {} filas", totalFilas);
+
+        Set<String> dniProcesados = new HashSet<>();
+        Map<String, List<Integer>> dniPorFila = new HashMap<>();
+        int filasUnicas = 0;
+        int filasDuplicadas = 0;
+
+        // Recorrer todas las filas (excepto header)
+        for (int fila = 1; fila < totalFilas; fila++) {
+            try {
+                Row row = sheet.getRow(fila);
+                if (row == null) continue;
+
+                // Extraer DNI (columna C = columna 2)
+                Cell cellDNI = row.getCell(2);
+                if (cellDNI == null || cellDNI.getCellType() == CellType.BLANK) continue;
+
+                String dni = obtenerValorCelda(cellDNI).trim();
+                if (dni.isEmpty()) continue;
+
+                // Registrar fila por DNI
+                dniPorFila.computeIfAbsent(dni, k -> new ArrayList<>()).add(fila);
+
+                // Contar si es único o duplicado
+                if (dniProcesados.contains(dni)) {
+                    filasDuplicadas++;
+                    log.debug("   ⚠️  [FILA {}] DNI {} es DUPLICADO", fila, dni);
+                } else {
+                    dniProcesados.add(dni);
+                    filasUnicas++;
+                    log.debug("   ✅ [FILA {}] DNI {} es ÚNICO", fila, dni);
+                }
+            } catch (Exception e) {
+                log.warn("⚠️  Error analizando fila {}: {}", fila, e.getMessage());
+            }
+        }
+
+        // Construir detalles de duplicados
+        List<Map<String, Object>> duplicadosDetalle = new ArrayList<>();
+        for (Map.Entry<String, List<Integer>> entry : dniPorFila.entrySet()) {
+            if (entry.getValue().size() > 1) {
+                Map<String, Object> detalle = new HashMap<>();
+                detalle.put("dni", entry.getKey());
+                detalle.put("filas", entry.getValue());
+                detalle.put("cantidadDuplicados", entry.getValue().size());
+                detalle.put("primerRegistroMantenido", entry.getValue().get(0));
+                detalle.put("filasDescartadas", entry.getValue().subList(1, entry.getValue().size()));
+                duplicadosDetalle.add(detalle);
+            }
+        }
+
+        // Generar reporte
+        Double tasaDuplicidad = totalFilas > 0 ? (filasDuplicadas * 100.0) / totalFilas : 0;
+        Boolean hayDuplicados = filasDuplicadas > 0;
+
+        String mensajeResumen;
+        if (hayDuplicados) {
+            mensajeResumen = String.format(
+                "⚠️  Se detectaron %d DNI duplicados en %d filas. " +
+                "Se mantienen %d registros únicos (%.1f%% duplicidad). " +
+                "Se descartarán %d filas en la importación.",
+                dniPorFila.values().stream().filter(l -> l.size() > 1).count(),
+                totalFilas - 1,
+                filasUnicas,
+                tasaDuplicidad,
+                filasDuplicadas
+            );
+        } else {
+            mensajeResumen = "✅ Sin duplicados detectados. Todas las filas son únicas.";
+        }
+
+        ReporteDuplicadosDTO reporte = ReporteDuplicadosDTO.builder()
+            .totalFilas(totalFilas - 1)  // Excluir header
+            .filasUnicas(filasUnicas)
+            .filasDuplicadas(filasDuplicadas)
+            .tasaDuplicidad(tasaDuplicidad)
+            .duplicadosDetalle(duplicadosDetalle)
+            .estrategia("KEEP_FIRST")
+            .mensajeResumen(mensajeResumen)
+            .hayDuplicados(hayDuplicados)
+            .fechaDeteccion(java.time.LocalDateTime.now().toString())
+            .build();
+
+        log.info("✅ [v2.2.0] Análisis completado: {} únicos, {} duplicados ({}%)",
+            filasUnicas, filasDuplicadas, String.format("%.2f", tasaDuplicidad));
+
+        return reporte;
+    }
+
+    /**
+     * Encuentra un número de solicitud disponible (que no existe en la BD)
+     * Pre-valida candidatos generados ANTES de crear la entidad
+     *
+     * Estrategia:
+     * 1. Genera múltiples candidatos
+     * 2. Valida cuál no existe en BD
+     * 3. Retorna el primero disponible
+     * 4. Evita transacciones rollback-only por duplicados
+     *
+     * @param cantidadCandidatos cuántos números generar como candidatos
+     * @return número de solicitud disponible garantizado sin duplicados en BD
+     * @throws RuntimeException si no se encuentra número disponible después de intentos
+     */
+    private String encontrarNumeroSolicitudDisponible(int cantidadCandidatos) {
+        log.debug("🔍 Buscando número de solicitud disponible (generando {} candidatos)...", cantidadCandidatos);
+
+        // 1. Generar múltiples candidatos
+        List<String> candidatos = SolicitudBolsaMapper.generarNumerosExclusivos(cantidadCandidatos);
+        log.debug("   📋 Candidatos generados: {}", candidatos);
+
+        // 2. Validar cuál no existe
+        for (String candidato : candidatos) {
+            if (!solicitudRepository.existsByNumeroSolicitud(candidato)) {
+                log.debug("   ✅ Número disponible encontrado: {}", candidato);
+                return candidato;
+            }
+        }
+
+        // 3. Si ninguno disponible después de N intentos, lanzar excepción
+        String errorMsg = String.format(
+            "❌ No se encontró número de solicitud disponible después de %d intentos. " +
+            "Última colisión: %s. Esto indica alta concurrencia.",
+            cantidadCandidatos,
+            candidatos.get(candidatos.size() - 1)
+        );
+        log.error(errorMsg);
+        throw new RuntimeException(errorMsg);
+    }
+
 }

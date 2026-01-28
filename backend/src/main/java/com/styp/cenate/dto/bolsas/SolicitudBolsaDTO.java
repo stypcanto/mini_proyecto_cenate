@@ -39,7 +39,7 @@ public class SolicitudBolsaDTO {
 
     // 👤 DATOS PACIENTE (de BD)
     @JsonProperty("paciente_id")
-    private Long pacienteId;
+    private String pacienteId;
 
     @JsonProperty("paciente_nombre")
     private String pacienteNombre;
@@ -122,12 +122,15 @@ public class SolicitudBolsaDTO {
     @JsonProperty("desc_estado_cita")
     private String descEstadoCita;
 
-    // 🏥 DESCRIPCIÓN IPRESS Y RED (enriquecidas via JOIN)
+    // 🏥 DESCRIPCIÓN IPRESS, RED Y MACRORREGIÓN (enriquecidas via JOIN)
     @JsonProperty("desc_ipress")
     private String descIpress;
 
     @JsonProperty("desc_red")
     private String descRed;
+
+    @JsonProperty("desc_macro")
+    private String descMacroregion;
 
     // 🔔 AUDITORÍA
     @JsonProperty("activo")

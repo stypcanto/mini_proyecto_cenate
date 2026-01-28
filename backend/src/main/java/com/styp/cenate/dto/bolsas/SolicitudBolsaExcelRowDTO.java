@@ -46,39 +46,50 @@ public record SolicitudBolsaExcelRowDTO(
     // 10. COD. IPRESS ADSCRIPCIÓN
     String codigoIpress,
 
-    // 11. TIPO CITA (Recita, Interconsulta, Voluntaria)
+    // 11. TIPO CITA (Recita, Interconsulta, Voluntaria, Referencia)
     String tipoCita
 ) {
     /**
      * Constructor compacto con validación de campos obligatorios
-     * Campos opcionales: telefonoPrincipal, telefonoAlterno, correo (se llenan desde BD si faltan)
+     *
+     * Campos OBLIGATORIOS:
+     * - dni: DNI del asegurado
+     * - nombreCompleto: Nombres del asegurado
+     * - codigoIpress: Código de IPRESS de adscripción
+     * - tipoCita: RECITA, INTERCONSULTA, VOLUNTARIA, REFERENCIA
+     *
+     * Campos OPCIONALES (se completan desde BD o con fallbacks):
+     * - fechaPreferidaNoAtendida: Fecha preferida (v1.18.0: ahora optional - algunos archivos no la tienen)
+     * - tipoDocumento: Se completa con "DNI" si falta
+     * - sexo: Se completa desde asegurados si está vacío
+     * - fechaNacimiento: Se completa desde asegurados si está vacío
+     * - telefonoPrincipal: Se completa desde asegurados si está vacío
+     * - telefonoAlterno: Se completa desde asegurados si está vacío
+     * - correo: Se completa desde asegurados si está vacío
      */
     public SolicitudBolsaExcelRowDTO {
         if (filaExcel <= 0) {
             throw new IllegalArgumentException("Número de fila debe ser positivo");
         }
+
+        // FECHA PREFERIDA: Ahora OPCIONAL - algunos Excel no tienen esta columna
+        // v1.18.0: Pediatría22 no tiene esta columna, cambiar a fallback si está vacía
         if (fechaPreferidaNoAtendida == null || fechaPreferidaNoAtendida.isBlank()) {
-            throw new IllegalArgumentException("Fila " + filaExcel + ": FECHA PREFERIDA QUE NO FUE ATENDIDA no puede estar vacía");
+            // No lanzar excepción - usar fallback como None / vacío
+            // log.info("ℹ️  Fila {}: FECHA PREFERIDA vacía - usando valor por defecto", filaExcel);
         }
-        if (tipoDocumento == null || tipoDocumento.isBlank()) {
-            throw new IllegalArgumentException("Fila " + filaExcel + ": TIPO DOCUMENTO no puede estar vacío");
-        }
+
+        // TIPO DOCUMENTO ahora es opcional - se completa con "DNI" como fallback en el servicio
+        // if (tipoDocumento == null || tipoDocumento.isBlank()) {
+        //     throw new IllegalArgumentException("Fila " + filaExcel + ": TIPO DOCUMENTO no puede estar vacío");
+        // }
+
         if (dni == null || dni.isBlank()) {
             throw new IllegalArgumentException("Fila " + filaExcel + ": DNI no puede estar vacío");
         }
         if (nombreCompleto == null || nombreCompleto.isBlank()) {
             throw new IllegalArgumentException("Fila " + filaExcel + ": ASEGURADO no puede estar vacío");
         }
-        if (sexo == null || sexo.isBlank()) {
-            throw new IllegalArgumentException("Fila " + filaExcel + ": SEXO no puede estar vacío");
-        }
-        if (fechaNacimiento == null || fechaNacimiento.isBlank()) {
-            throw new IllegalArgumentException("Fila " + filaExcel + ": FECHA DE NACIMIENTO no puede estar vacía");
-        }
-        // CAMPOS OPCIONALES: Se llenan desde BD si faltan
-        // - telefonoPrincipal
-        // - telefonoAlterno (NEW)
-        // - correo
 
         if (codigoIpress == null || codigoIpress.isBlank()) {
             throw new IllegalArgumentException("Fila " + filaExcel + ": COD. IPRESS ADSCRIPCIÓN no puede estar vacío");
@@ -87,9 +98,11 @@ public record SolicitudBolsaExcelRowDTO(
             throw new IllegalArgumentException("Fila " + filaExcel + ": TIPO CITA no puede estar vacío");
         }
 
-        // Validar que TIPO CITA sea uno de los 3 valores válidos
-        if (!tipoCita.equals("Recita") && !tipoCita.equals("Interconsulta") && !tipoCita.equals("Voluntaria")) {
-            throw new IllegalArgumentException("Fila " + filaExcel + ": TIPO CITA debe ser uno de: Recita, Interconsulta, Voluntaria (recibido: " + tipoCita + ")");
+        // Validar que TIPO CITA sea uno de los 4 valores válidos (case-insensitive) - OBLIGATORIO
+        String tipoCitaNormalizado = tipoCita.toLowerCase().trim();
+        if (!tipoCitaNormalizado.equals("recita") && !tipoCitaNormalizado.equals("interconsulta") &&
+            !tipoCitaNormalizado.equals("voluntaria") && !tipoCitaNormalizado.equals("referencia")) {
+            throw new IllegalArgumentException("Fila " + filaExcel + ": TIPO CITA debe ser uno de: Recita, Interconsulta, Voluntaria, Referencia (recibido: " + tipoCita + ")");
         }
     }
 }

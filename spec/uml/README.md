@@ -1,12 +1,35 @@
 # 📊 Diagramas UML - CENATE
 
 **Índice de diagramas visuales del proyecto**
+**Última actualización:** 2026-01-28
 
 ---
 
 ## 📂 Archivos Disponibles
 
-### 1. **Diagrama Completo Solicitudes de Bolsa v1.6.0** ⭐ PRINCIPAL
+### 🆕 1. **Diagrama Módulo Bolsas v2.1.0** ⭐ NUEVO y ACTUALIZADO
+📄 **Archivo:** `03_diagrama_modulo_bolsas_v2.1.0.md`
+
+**Contenido (NUEVO v2.1.0):**
+- ✅ Arquitectura integrada completa (Frontend + Backend + DB)
+- ✅ Flujo de Control de Acceso RBAC (Botón Borrar SUPERADMIN)
+- ✅ Flujo de Filtros Dinámicos con contadores en tiempo real
+- ✅ Flujo de Importación Excel mejorada (v2.1.0)
+- ✅ Teléfono alterno + Auto-creación asegurados
+- ✅ Normalización IPRESS + Enriquecimiento cascada
+- ✅ Tabla central dim_solicitud_bolsa (28 campos)
+- ✅ 8 Foreign Keys + Relaciones cascada
+- ✅ UI ListHeader.jsx (3 filas lógicas)
+- ✅ 10 endpoints estadísticas
+- ✅ 10 Estados de gestión citas
+- ✅ Validaciones 3 capas
+- ✅ Roadmap v2.1.0 → v2.4.0
+
+**Status:** ✅ v2.1.0 Production Ready + RBAC
+
+---
+
+### 2. **Diagrama Completo Solicitudes de Bolsa v1.6.0** (Histórico)
 📄 **Archivo:** `UML_COMPLETO_FINAL_v1_6_ESTADOS_CITAS.md`
 
 **Contenido:**
@@ -34,7 +57,7 @@ dim_solicitud_bolsa
 
 ---
 
-### 2. **Diagrama Bienvenida v2.0.0** ⭐ NUEVO
+### 3. **Diagrama Bienvenida v2.0.0**
 📄 **Archivo:** `02_diagrama_bienvenida_v2.0.0.md`
 
 **Contenido:**
@@ -77,15 +100,27 @@ Actividades:
 
 ---
 
-## 🎯 Guía de Lectura
+## 🎯 Guía de Lectura (2026-01-28)
 
-### Para Entender Solicitudes de Bolsa:
-1. Lee `UML_COMPLETO_FINAL_v1_6_ESTADOS_CITAS.md`
+### ⭐ Para Entender Módulo Bolsas v2.1.0 (RECOMENDADO):
+1. Lee `03_diagrama_modulo_bolsas_v2.1.0.md` ← **EMPIEZA AQUÍ**
 2. Enfócate en:
-   - Tabla principal (26 campos)
+   - Arquitectura integrada (Frontend + Backend + DB)
+   - Control de Acceso RBAC (v2.1.0)
+   - Filtros Dinámicos (v2.1.0)
+   - Tabla central (28 campos)
+   - 8 Foreign Keys + Enriquecimiento cascada
+   - Flujo de Importación Excel mejorado
+   - UI ListHeader.jsx (3 filas)
+   - 10 Estados de gestión
+
+### Para Histórico - Solicitudes de Bolsa v1.6.0:
+1. Lee `UML_COMPLETO_FINAL_v1_6_ESTADOS_CITAS.md` (anterior)
+2. Contenido:
+   - Tabla principal (26 campos) - ahora 28 en v2.1.0
    - 8 Foreign Keys
    - 10 Estados de gestión
-   - Flujo: Coordinador → Gestoras
+   - Flujo original (antes de v2.1.0)
 
 ### Para Entender Bienvenida:
 1. Lee `02_diagrama_bienvenida_v2.0.0.md`
@@ -97,7 +132,23 @@ Actividades:
 
 ---
 
-## 📊 Diagramas Disponibles
+## 📊 Diagramas Disponibles (v2.1.0)
+
+### En `03_diagrama_modulo_bolsas_v2.1.0.md`: ⭐ NUEVO
+
+| Diagrama | Descripción |
+|----------|-------------|
+| **Arquitectura Integrada** | Frontend + Backend + Database |
+| **Control de Acceso RBAC** | Flujo de verificación esSuperAdmin |
+| **Filtros Dinámicos** | Contadores en tiempo real + hidden 0 |
+| **Importación Excel** | Flujo completo de carga (v2.1.0) |
+| **Tabla Central** | dim_solicitud_bolsa (28 campos) |
+| **Foreign Keys** | 8 FKs + Enriquecimiento cascada |
+| **ListHeader UI** | Layout 3 filas lógicas |
+| **Estadísticas** | 10 endpoints REST |
+| **Estados de Citas** | 10 estados predefinidos |
+| **Validaciones 3 Capas** | Frontend + DTO + Database |
+| **Roadmap** | v2.1.0 → v2.4.0 |
 
 ### En `02_diagrama_bienvenida_v2.0.0.md`:
 
@@ -116,13 +167,25 @@ Actividades:
 
 ---
 
-## 🔗 Relaciones Entre Diagramas
+## 🔗 Relaciones Entre Diagramas (2026-01-28)
 
 ```
-UML Completo v1.6
-(Solicitudes de Bolsa)
+Módulo Bolsas v2.1.0 ← PRINCIPAL (ACTUAL)
+(Solicitudes + Estadísticas + RBAC)
     │
-    ├─ dim_solicitud_bolsa (26 campos)
+    ├─ Arquitectura integrada (Frontend + Backend + DB)
+    ├─ Control de Acceso RBAC (Botón Borrar SUPERADMIN)
+    ├─ Filtros dinámicos (Contadores)
+    ├─ dim_solicitud_bolsa (28 campos, 329 registros)
+    ├─ dim_estados_gestion_citas (10 estados)
+    ├─ Enriquecimiento cascada (IPRESS→RED→MACRO)
+    └─ 10 endpoints REST estadísticas
+
+
+UML Completo v1.6 ← HISTÓRICO
+(Solicitudes de Bolsa original)
+    │
+    ├─ dim_solicitud_bolsa (26 campos - versión anterior)
     ├─ dim_estados_gestion_citas (10 estados)
     └─ Flujo: Coordinador → Gestoras
 
@@ -162,32 +225,39 @@ Dark:        #0f172a (slate-900)
 
 ---
 
-## ✅ Checklist de Diagramas
+## ✅ Checklist de Diagramas (2026-01-28)
 
-- [x] UML Completo Solicitudes de Bolsa v1.6.0
+- [x] UML Completo Solicitudes de Bolsa v1.6.0 (histórico)
+- [x] Diagrama Módulo Bolsas v2.1.0 ⭐ NUEVO (RBAC + Filtros + Enriquecimiento)
 - [x] Diagrama Bienvenida v2.0.0
-- [x] README índice
-- [ ] Diagrama de flujo de permisos (próximamente)
+- [x] README índice actualizado
+- [ ] Diagrama de flujo de permisos MBAC (próximamente)
 - [ ] Diagrama de auditoría (próximamente)
 - [ ] Diagrama de notificaciones (próximamente)
+- [ ] Diagrama de Spring AI (próximamente)
 
 ---
 
 ## 🚀 Próximos Diagramas
 
-1. **Flujo de Permisos MBAC**: Cómo se evalúan permisos por módulo
+1. **Flujo de Permisos MBAC v2.1.0**: Cómo se evalúan permisos por módulo (incluir RBAC)
 2. **Auditoría del Sistema**: Cómo se registran eventos
 3. **Notificaciones**: Flujo de generación y distribución
 4. **Autenticación**: Flujo de login y JWT
+5. **Spring AI Chatbot**: Arquitectura IA integrada
+6. **Disponibilidad Médica**: Turnos y disponibilidad
 
 ---
 
 ## 📚 Documentación Relacionada
 
 - **Especificación Técnica:** `spec/backend/`
-- **Cambios UI/UX:** `spec/frontend/07_ui_ux/05_mejoras_ui_ux_bienvenida_v2.md`
-- **Changelog:** `checklist/01_Historial/01_changelog.md`
+- **Módulo Bolsas v2.1.0:** `spec/backend/09_modules_bolsas/`
+- **CHANGELOG v2.1.0:** `spec/backend/09_modules_bolsas/14_CHANGELOG_v2.1.0.md`
+- **Cambios UI/UX:** `spec/frontend/`
+- **Changelog Principal:** `CLAUDE.md`
 
 ---
 
-*Diagramas UML - CENATE | Versión: v1.35.0 | Actualización: 2026-01-26*
+*Diagramas UML - CENATE | Versión: v2.1.0 | Actualización: 2026-01-28*
+*Especializado en: Módulo de Bolsas con RBAC + Filtros Dinámicos + Enriquecimiento Cascada*

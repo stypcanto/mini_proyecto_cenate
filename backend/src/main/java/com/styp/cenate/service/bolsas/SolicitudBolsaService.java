@@ -19,18 +19,21 @@ public interface SolicitudBolsaService {
     /**
      * Importa solicitudes de bolsa desde archivo Excel
      * Valida DNI en asegurados, código en IPRESS, auto-enriquece datos
+     * v1.20.0: Integración con auditoría de errores en tabla audit_errores_importacion_bolsa
      *
      * @param file archivo Excel
      * @param idBolsa ID del tipo de bolsa seleccionado
      * @param idServicio ID del servicio/especialidad seleccionado
      * @param usuarioCarga usuario que realiza la carga
+     * @param idHistorial ID del historial de carga (para auditoría de errores)
      * @return estadísticas de importación (filas OK, errores, etc.)
      */
     Map<String, Object> importarDesdeExcel(
         MultipartFile file,
         Long idBolsa,
         Long idServicio,
-        String usuarioCarga
+        String usuarioCarga,
+        Long idHistorial
     );
 
     /**
@@ -83,4 +86,14 @@ public interface SolicitudBolsaService {
      * Para mostrar popup al admin de qué pacientes fueron registrados/actualizados
      */
     List<Map<String, Object>> obtenerAseguradosSincronizadosReciente();
+
+    /**
+     * Cambia el tipo de bolsa de una solicitud
+     * SOLO SUPERADMIN puede ejecutar esta operación
+     *
+     * @param idSolicitud ID de la solicitud a actualizar
+     * @param idBolsaNueva ID de la nueva bolsa
+     * @return la solicitud actualizada
+     */
+    SolicitudBolsaDTO cambiarTipoBolsa(Long idSolicitud, Long idBolsaNueva);
 }

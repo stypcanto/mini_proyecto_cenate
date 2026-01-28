@@ -1,5 +1,5 @@
 import React from 'react';
-import { Search, ChevronDown } from 'lucide-react';
+import { Search, ChevronDown, RotateCcw } from 'lucide-react';
 
 /**
  * 🔍 Componente Reutilizable: ListHeader
@@ -12,6 +12,7 @@ import { Search, ChevronDown } from 'lucide-react';
  * - searchValue: string - Valor actual del búsqueda
  * - onSearchChange: function - Callback cuando cambia la búsqueda
  * - filters: array - Array de objetos filtro {name, value, onChange, options: [{label, value}]}
+ * - onClearFilters: function - Callback para limpiar todos los filtros
  *
  * Ejemplo:
  * <ListHeader
@@ -19,14 +20,8 @@ import { Search, ChevronDown } from 'lucide-react';
  *   searchPlaceholder="Buscar paciente, DNI o IPRESS..."
  *   searchValue={search}
  *   onSearchChange={(e) => setSearch(e.target.value)}
- *   filters={[
- *     {
- *       name: "Todas las bolsas",
- *       value: filtroBolsa,
- *       onChange: (e) => setFiltroBolsa(e.target.value),
- *       options: [{label: "Todas las bolsas", value: "todas"}, ...]
- *     }
- *   ]}
+ *   filters={[...]}
+ *   onClearFilters={() => {...}}
  * />
  */
 export default function ListHeader({
@@ -34,43 +29,108 @@ export default function ListHeader({
   searchPlaceholder = "Buscar...",
   searchValue = "",
   onSearchChange = () => {},
-  filters = []
+  filters = [],
+  onClearFilters = () => {}
 }) {
   return (
-    <div className="p-4 border-b border-gray-200">
-      <h2 className="text-lg font-bold text-gray-800 mb-3">{title}</h2>
+    <div className="p-6 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+      </div>
 
-      {/* Búsqueda y Filtros */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-        {/* Búsqueda */}
-        <div className="relative md:col-span-2">
-          <Search size={18} className="absolute left-4 top-3 text-gray-400" />
+      {/* Búsqueda */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search size={20} className="absolute left-4 top-3.5 text-gray-400" />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={onSearchChange}
-            className="w-full pl-12 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm"
+            className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium transition-all"
           />
         </div>
+      </div>
 
-        {/* Filtros Dinámicos */}
-        {filters.map((filter, index) => (
-          <div key={index} className="relative">
-            <select
-              value={filter.value}
-              onChange={filter.onChange}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#0D5BA9] text-sm appearance-none cursor-pointer bg-white"
-            >
-              {filter.options?.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown size={18} className="absolute right-3 top-2.5 text-gray-400 pointer-events-none" />
+      {/* Filtros */}
+      <div className="space-y-3">
+        {/* Primera fila: Bolsas + Botón Limpiar */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+          <div className="md:col-span-3 relative">
+            <label className="block text-xs font-semibold text-gray-600 mb-1.5">{filters[0]?.name}</label>
+            <div className="relative">
+              <select
+                value={filters[0]?.value}
+                onChange={filters[0]?.onChange}
+                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
+              >
+                {filters[0]?.options?.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown size={18} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+            </div>
           </div>
-        ))}
+
+          {/* Botón Limpiar Filtros */}
+          <div className="flex items-end">
+            <button
+              onClick={onClearFilters}
+              className="w-full px-4 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+            >
+              <RotateCcw size={18} />
+              Limpiar
+            </button>
+          </div>
+        </div>
+
+        {/* Segunda fila: Macrorregión | Redes | IPRESS (siempre juntas) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {filters.slice(1, 4).map((filter, index) => (
+            <div key={index + 1} className="relative">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">{filter.name}</label>
+              <div className="relative">
+                <select
+                  value={filter.value}
+                  onChange={filter.onChange}
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
+                >
+                  {filter.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={18} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Tercera fila: Especialidades | Tipo de Cita */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {filters.slice(4).map((filter, index) => (
+            <div key={index + 4} className="relative">
+              <label className="block text-xs font-semibold text-gray-600 mb-1.5">{filter.name}</label>
+              <div className="relative">
+                <select
+                  value={filter.value}
+                  onChange={filter.onChange}
+                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
+                >
+                  {filter.options?.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown size={18} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

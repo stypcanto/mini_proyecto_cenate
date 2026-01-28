@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
 import bolsasService from '../../services/bolsasService';
+import { usePermisos } from '../../context/PermisosContext';
+import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
 
 /**
  * 📋 Solicitudes - Recepción de Bolsa
@@ -42,12 +44,15 @@ function generarAliasBolsa(nombreBolsa) {
 
 export default function Solicitudes() {
   const REGISTROS_POR_PAGINA = 25;
+  const { esSuperAdmin } = usePermisos();
 
   const [solicitudes, setSolicitudes] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroBolsa, setFiltroBolsa] = useState('todas');
   const [filtroRed, setFiltroRed] = useState('todas');
+  const [filtroIpress, setFiltroIpress] = useState('todas');
+  const [filtroMacrorregion, setFiltroMacrorregion] = useState('todas');
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('todas');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
@@ -87,10 +92,22 @@ export default function Solicitudes() {
   const [modalAseguradosSincronizados, setModalAseguradosSincronizados] = useState(false);
   const [aseguradosSincronizados, setAseguradosSincronizados] = useState([]);
 
+  // ✅ Estado para modal de resultados de importación (v1.19.0)
+  const [modalResultadosImportacion, setModalResultadosImportacion] = useState(false);
+  const [resultadosImportacion, setResultadosImportacion] = useState(null);
+
   // Estado para modal de confirmación de borrado
   const [modalConfirmarBorrado, setModalConfirmarBorrado] = useState(false);
   const [cantidadABorrar, setCantidadABorrar] = useState(0);
   const [seleccionarTodas, setSeleccionarTodas] = useState(false);
+
+  // Estado para collapse/expand de secciones
+  const [expandFiltros, setExpandFiltros] = useState(false);
+
+  // Estado para modal de cambiar bolsa
+  const [modalCambiarBolsa, setModalCambiarBolsa] = useState(false);
+  const [bolsaNuevaSeleccionada, setBolsaNuevaSeleccionada] = useState(null);
+  const [bolsasDisponibles, setBolsasDisponibles] = useState([]);
 
   // ============================================================================
   // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
@@ -182,9 +199,10 @@ export default function Solicitudes() {
           estadoCodigo: solicitud.cod_estado_cita,
           semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
           diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
-          especialidad: solicitud.especialidad || 'N/A',
+          especialidad: solicitud.especialidad || '',
           red: solicitud.desc_red || 'Sin asignar',
           ipress: solicitud.desc_ipress || 'N/A',
+          macroregion: solicitud.desc_macro || 'Sin asignar',
           bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
           nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
           fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
@@ -205,7 +223,7 @@ export default function Solicitudes() {
               return `${d}/${m}/${y}`;
             })() : 'N/A',
           tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
-          codigoIpress: solicitud.codigo_ipress || 'N/A'
+          codigoIpress: solicitud.codigo_adscripcion || 'N/A'
         };
       });
 
@@ -401,17 +419,19 @@ export default function Solicitudes() {
                          sol.especialidad.toLowerCase().includes(searchTerm.toLowerCase());
     const matchBolsa = filtroBolsa === 'todas' || sol.nombreBolsa === filtroBolsa;
     const matchRed = filtroRed === 'todas' || sol.red === filtroRed;
+    const matchIpress = filtroIpress === 'todas' || sol.ipress === filtroIpress;
+    const matchMacrorregion = filtroMacrorregion === 'todas' || sol.macroregion === filtroMacrorregion;
     const matchEspecialidad = filtroEspecialidad === 'todas' || sol.especialidad === filtroEspecialidad;
     const matchEstado = filtroEstado === 'todos' || sol.estado === filtroEstado;
     const matchTipoCita = filtroTipoCita === 'todas' || (sol.tipoCita?.toUpperCase?.() || '') === filtroTipoCita;
 
-    return matchBusqueda && matchBolsa && matchRed && matchEspecialidad && matchEstado && matchTipoCita;
+    return matchBusqueda && matchBolsa && matchRed && matchIpress && matchMacrorregion && matchEspecialidad && matchEstado && matchTipoCita;
   });
 
   // Resetear a página 1 cuando cambian los filtros
   React.useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filtroBolsa, filtroRed, filtroEspecialidad, filtroEstado, filtroTipoCita]);
+  }, [searchTerm, filtroBolsa, filtroRed, filtroIpress, filtroMacrorregion, filtroEspecialidad, filtroEstado, filtroTipoCita]);
 
   // Calcular paginación
   const totalRegistros = solicitudesFiltradas.length;
@@ -428,12 +448,14 @@ export default function Solicitudes() {
       console.log('  - Filtro búsqueda:', searchTerm);
       console.log('  - Filtro bolsa:', filtroBolsa);
       console.log('  - Filtro red:', filtroRed);
+      console.log('  - Filtro IPRESS:', filtroIpress);
+      console.log('  - Filtro macrorregión:', filtroMacrorregion);
       console.log('  - Filtro especialidad:', filtroEspecialidad);
       console.log('  - Filtro estado:', filtroEstado);
       console.log('  - Filtro tipo de cita:', filtroTipoCita);
       console.log('  - Primera solicitud:', solicitudes[0]);
     }
-  }, [solicitudes, solicitudesFiltradas, searchTerm, filtroBolsa, filtroRed, filtroEspecialidad, filtroEstado, filtroTipoCita, errorMessage]);
+  }, [solicitudes, solicitudesFiltradas, searchTerm, filtroBolsa, filtroRed, filtroIpress, filtroMacrorregion, filtroEspecialidad, filtroEstado, filtroTipoCita, errorMessage]);
 
   const getEstadoBadge = (estado) => {
     const estilos = {
@@ -472,9 +494,34 @@ export default function Solicitudes() {
     return 'bg-cyan-100 text-cyan-700 border border-cyan-300';
   };
 
+  // ============================================================================
+  // 🎯 FUNCIONES PARA CALCULAR CONTADORES DINÁMICOS
+  // ============================================================================
+  const countWithFilters = (filterKey, filterValue) => {
+    return solicitudes.filter(sol => {
+      const matchSearch = sol.paciente.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         sol.dni.includes(searchTerm) ||
+                         sol.ipress.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         sol.red.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         sol.especialidad.toLowerCase().includes(searchTerm.toLowerCase());
+
+      // Si estamos contando esta opción, usa filterValue; si no, usa el filtro activo
+      const matchBolsa = filterKey === 'bolsa' ? sol.nombreBolsa === filterValue : (filtroBolsa === 'todas' ? true : sol.nombreBolsa === filtroBolsa);
+      const matchMacrorregion = filterKey === 'macro' ? sol.macroregion === filterValue : (filtroMacrorregion === 'todas' ? true : sol.macroregion === filtroMacrorregion);
+      const matchRed = filterKey === 'red' ? sol.red === filterValue : (filtroRed === 'todas' ? true : sol.red === filtroRed);
+      const matchIpress = filterKey === 'ipress' ? sol.ipress === filterValue : (filtroIpress === 'todas' ? true : sol.ipress === filtroIpress);
+      const matchEspecialidad = filterKey === 'especialidad' ? sol.especialidad === filterValue : (filtroEspecialidad === 'todas' ? true : sol.especialidad === filtroEspecialidad);
+      const matchTipoCita = filterKey === 'cita' ? (sol.tipoCita?.toUpperCase?.() || '') === filterValue : (filtroTipoCita === 'todas' ? true : (sol.tipoCita?.toUpperCase?.() || '') === filtroTipoCita);
+
+      return matchSearch && matchBolsa && matchMacrorregion && matchRed && matchIpress && matchEspecialidad && matchTipoCita;
+    }).length;
+  };
+
   // Obtener valores únicos para filtros dinámicos
   const bolsasUnicas = [...new Set(solicitudes.map(s => s.nombreBolsa))].filter(b => b && b !== 'Sin clasificar').sort();
   const redesUnicas = [...new Set(solicitudes.map(s => s.red))].sort();
+  const ipressUnicas = [...new Set(solicitudes.map(s => s.ipress))].filter(i => i && i !== 'N/A').sort();
+  const macrorregionesUnicas = [...new Set(solicitudes.map(s => s.macroregion))].filter(m => m && m !== 'N/A').sort();
   const especialidadesUnicas = [...new Set(solicitudes.map(s => s.especialidad))].sort();
   // Whitelist de tipos de cita válidos
   const TIPOS_CITA_VALIDOS = ['VOLUNTARIA', 'INTERCONSULTA', 'RECITA', 'REFERENCIA'];
@@ -638,6 +685,82 @@ export default function Solicitudes() {
     }
   };
 
+  // Abrir modal para cambiar tipo de bolsa en múltiples seleccionadas (SOLO SUPERADMIN)
+  const handleAbrirCambiarBolsaMasivo = () => {
+    // Validar permisos SUPERADMIN
+    if (!esSuperAdmin) {
+      alert('❌ Solo SUPERADMIN puede cambiar el tipo de bolsa');
+      return;
+    }
+
+    if (selectedRows.size === 0) {
+      alert('Por favor selecciona al menos una solicitud');
+      return;
+    }
+
+    setBolsaNuevaSeleccionada(null);
+
+    // Cargar bolsas disponibles - Deduplicar por ID
+    const bolsasMap = new Map();
+    solicitudes.forEach(s => {
+      const id = s.idBolsa || s.id_bolsa;
+      const nombre = s.nombreBolsa;
+      if (nombre && nombre !== 'Sin clasificar' && id) {
+        bolsasMap.set(id, nombre);
+      }
+    });
+
+    const bolsasDispUnicas = Array.from(bolsasMap).map(([id, nombre]) => ({
+      id: parseInt(id),
+      nombre
+    })).sort((a, b) => a.nombre.localeCompare(b.nombre));
+
+    setBolsasDisponibles(bolsasDispUnicas);
+    setModalCambiarBolsa(true);
+  };
+
+  // Guardar cambio de tipo de bolsa en múltiples seleccionadas
+  const handleGuardarCambiarBolsaMasivo = async () => {
+    if (!bolsaNuevaSeleccionada) {
+      alert('Por favor selecciona un nuevo tipo de bolsa');
+      return;
+    }
+
+    const idsSeleccionados = Array.from(selectedRows);
+
+    if (idsSeleccionados.length === 0) {
+      alert('Por favor selecciona al menos una solicitud');
+      return;
+    }
+
+    setIsProcessing(true);
+    let exitosos = 0;
+    let errores = 0;
+
+    try {
+      // Procesar cada solicitud seleccionada
+      for (const id of idsSeleccionados) {
+        try {
+          await bolsasService.cambiarTipoBolsa(id, bolsaNuevaSeleccionada);
+          exitosos++;
+        } catch (error) {
+          console.error(`Error en solicitud ${id}:`, error);
+          errores++;
+        }
+      }
+
+      alert(`✅ Tipo de bolsa actualizado: ${exitosos} exitosas, ${errores} con error`);
+      setModalCambiarBolsa(false);
+      setSelectedRows(new Set()); // Limpiar selección
+      cargarSolicitudes(); // Recargar solicitudes
+    } catch (error) {
+      console.error('Error cambiando tipo de bolsa masivo:', error);
+      alert('❌ Error al cambiar el tipo de bolsa. Intenta nuevamente.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
   // Procesar importación de Excel
   const handleImportarExcel = async (e) => {
     e.preventDefault();
@@ -655,9 +778,12 @@ export default function Solicitudes() {
     setIsImporting(true);
     try {
       const result = await bolsasService.importarSolicitudesDesdeExcel(formData);
-      alert(`Importación exitosa: ${result.filas_ok} OK, ${result.filas_error} errores`);
 
-      // Limpiar formulario y cerrar modal
+      // ✅ NUEVO v1.19.0: Mostrar modal con resultados detallados
+      setResultadosImportacion(result);
+      setModalResultadosImportacion(true);
+
+      // Limpiar formulario y cerrar modal de importación
       setModalImportar(false);
       setIdTipoBolsaSeleccionado('');
       setIdServicioSeleccionado('');
@@ -718,50 +844,102 @@ export default function Solicitudes() {
           }}
         />
 
-        {/* Tarjetas de Estadísticas */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-8">
-          <StatCard
-            label="Total Pacientes"
-            value={estadisticas.total}
-            borderColor="border-blue-500"
-            textColor="text-blue-600"
-            icon="👥"
-          />
-          <StatCard
-            label="Pendiente Citar"
-            value={estadisticas.pendientes}
-            borderColor="border-orange-500"
-            textColor="text-orange-600"
-            icon="⏳"
-          />
-          <StatCard
-            label="Citados"
-            value={estadisticas.citados}
-            borderColor="border-purple-500"
-            textColor="text-purple-600"
-            icon="📞"
-          />
-          <StatCard
-            label="Asistió"
-            value={estadisticas.atendidos}
-            borderColor="border-green-500"
-            textColor="text-green-600"
-            icon="✓"
-          />
-          <StatCard
-            label="Observados"
-            value={estadisticas.observados}
-            borderColor="border-red-500"
-            textColor="text-red-600"
-            icon="⚠️"
-          />
+        {/* Tarjetas de Estadísticas - Siempre Visible */}
+        <div className="mb-8">
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Solicitudes</h3>
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
+            {/* Total Pacientes - Azul */}
+            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-blue-100">Total Pacientes</span>
+                <span className="text-3xl">👥</span>
+              </div>
+              <div className="text-4xl font-bold">{estadisticas.total}</div>
+            </div>
+
+            {/* Pendiente Citar - Naranja */}
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-orange-100">Pendiente Citar</span>
+                <span className="text-3xl">⏳</span>
+              </div>
+              <div className="text-4xl font-bold">{estadisticas.pendientes}</div>
+            </div>
+
+            {/* Citados - Púrpura */}
+            <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-purple-100">Citados</span>
+                <span className="text-3xl">📞</span>
+              </div>
+              <div className="text-4xl font-bold">{estadisticas.citados}</div>
+            </div>
+
+            {/* Asistió - Verde */}
+            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-green-100">Asistió</span>
+                <span className="text-3xl">✓</span>
+              </div>
+              <div className="text-4xl font-bold">{estadisticas.atendidos}</div>
+            </div>
+
+            {/* Observados - Rojo */}
+            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <span className="text-red-100">Observados</span>
+                <span className="text-3xl">⚠️</span>
+              </div>
+              <div className="text-4xl font-bold">{estadisticas.observados}</div>
+            </div>
+          </div>
         </div>
+
+        <style>{`
+          @keyframes fadeIn {
+            from {
+              opacity: 0;
+              transform: translateY(10px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          .animate-fade-in {
+            animation: fadeIn 0.6s ease-out;
+          }
+        `}</style>
 
         {/* Sección de Lista de Pacientes */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden">
-          {/* ListHeader Reutilizable */}
+          {/* Header con título y botón toggle */}
+          <div className="px-6 py-4 bg-gradient-to-r from-blue-50 to-white border-b border-gray-200 flex items-center justify-between">
+            <h2 className="text-xl font-bold text-gray-900">Lista de Pacientes</h2>
+            <button
+              onClick={() => setExpandFiltros(!expandFiltros)}
+              className="px-4 py-2 hover:bg-blue-100 rounded-lg transition-colors flex items-center gap-2"
+              title={expandFiltros ? 'Ocultar filtros' : 'Mostrar filtros'}
+            >
+              <span className="text-sm font-semibold text-gray-700">
+                {expandFiltros ? 'Ocultar' : 'Mostrar'} filtros
+              </span>
+              <ChevronDown
+                size={20}
+                className={`text-gray-600 transition-transform duration-300 ${
+                  expandFiltros ? 'rotate-180' : ''
+                }`}
+              />
+            </button>
+          </div>
+
+          {/* Filtros - Collapse/Expand con animación suave */}
+          <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
+            expandFiltros ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+          }`}>
           <ListHeader
-            title="Lista de Pacientes"
+            title=""
+            showTitle={false}
             searchPlaceholder="Buscar paciente, DNI o IPRESS..."
             searchValue={searchTerm}
             onSearchChange={(e) => setSearchTerm(e.target.value)}
@@ -771,8 +949,27 @@ export default function Solicitudes() {
                 value: filtroBolsa,
                 onChange: (e) => setFiltroBolsa(e.target.value),
                 options: [
-                  { label: "Todas las bolsas", value: "todas" },
-                  ...bolsasUnicas.map(bolsa => ({ label: bolsa, value: bolsa }))
+                  { label: `Todas las bolsas (${solicitudes.length})`, value: "todas" },
+                  ...bolsasUnicas
+                    .filter(bolsa => countWithFilters('bolsa', bolsa) > 0)
+                    .map(bolsa => ({
+                      label: `${bolsa} (${countWithFilters('bolsa', bolsa)})`,
+                      value: bolsa
+                    }))
+                ]
+              },
+              {
+                name: "Macrorregión",
+                value: filtroMacrorregion,
+                onChange: (e) => setFiltroMacrorregion(e.target.value),
+                options: [
+                  { label: `Todas las macrorregiones (${solicitudes.length})`, value: "todas" },
+                  ...macrorregionesUnicas
+                    .filter(macro => countWithFilters('macro', macro) > 0)
+                    .map(macro => ({
+                      label: `${macro} (${countWithFilters('macro', macro)})`,
+                      value: macro
+                    }))
                 ]
               },
               {
@@ -780,8 +977,27 @@ export default function Solicitudes() {
                 value: filtroRed,
                 onChange: (e) => setFiltroRed(e.target.value),
                 options: [
-                  { label: "Todas las redes", value: "todas" },
-                  ...redesUnicas.map(red => ({ label: red, value: red }))
+                  { label: `Todas las redes (${solicitudes.length})`, value: "todas" },
+                  ...redesUnicas
+                    .filter(red => countWithFilters('red', red) > 0)
+                    .map(red => ({
+                      label: `${red} (${countWithFilters('red', red)})`,
+                      value: red
+                    }))
+                ]
+              },
+              {
+                name: "IPRESS",
+                value: filtroIpress,
+                onChange: (e) => setFiltroIpress(e.target.value),
+                options: [
+                  { label: `Todas las IPRESS (${solicitudes.length})`, value: "todas" },
+                  ...ipressUnicas
+                    .filter(ipress => countWithFilters('ipress', ipress) > 0)
+                    .map(ipress => ({
+                      label: `${ipress} (${countWithFilters('ipress', ipress)})`,
+                      value: ipress
+                    }))
                 ]
               },
               {
@@ -789,8 +1005,13 @@ export default function Solicitudes() {
                 value: filtroEspecialidad,
                 onChange: (e) => setFiltroEspecialidad(e.target.value),
                 options: [
-                  { label: "Todas las especialidades", value: "todas" },
-                  ...especialidadesUnicas.map(esp => ({ label: esp, value: esp }))
+                  { label: `Todas las especialidades (${solicitudes.length})`, value: "todas" },
+                  ...especialidadesUnicas
+                    .filter(esp => countWithFilters('especialidad', esp) > 0)
+                    .map(esp => ({
+                      label: `${esp} (${countWithFilters('especialidad', esp)})`,
+                      value: esp
+                    }))
                 ]
               },
               {
@@ -798,12 +1019,27 @@ export default function Solicitudes() {
                 value: filtroTipoCita,
                 onChange: (e) => setFiltroTipoCita(e.target.value),
                 options: [
-                  { label: "Todas las citas", value: "todas" },
-                  ...tiposCitaUnicos.map(tipo => ({ label: tipo, value: tipo }))
+                  { label: `Todas las citas (${solicitudes.length})`, value: "todas" },
+                  ...tiposCitaUnicos
+                    .filter(tipo => countWithFilters('cita', tipo) > 0)
+                    .map(tipo => ({
+                      label: `${tipo} (${countWithFilters('cita', tipo)})`,
+                      value: tipo
+                    }))
                 ]
               }
             ]}
+            onClearFilters={() => {
+              setFiltroBolsa('todas');
+              setFiltroMacrorregion('todas');
+              setFiltroRed('todas');
+              setFiltroIpress('todas');
+              setFiltroEspecialidad('todas');
+              setFiltroTipoCita('todas');
+              setSearchTerm('');
+            }}
           />
+          </div>
 
           {/* Botones para descargar y borrar selección O TODAS */}
           {(selectedRows.size > 0 || solicitudesFiltradas.length > 0) && (
@@ -831,8 +1067,8 @@ export default function Solicitudes() {
                 </div>
               )}
 
-              {/* Botones de acción: descargar y borrar */}
-              <div className="flex justify-end gap-3">
+              {/* Botones de acción: descargar, cambiar bolsa, limpiar y borrar */}
+              <div className="flex justify-end gap-3 flex-wrap">
                 {selectedRows.size > 0 && !seleccionarTodas && (
                   <button
                     onClick={descargarSeleccion}
@@ -840,6 +1076,20 @@ export default function Solicitudes() {
                   >
                     <Download size={22} className="font-bold" />
                     Descargar Selección ({selectedRows.size})
+                  </button>
+                )}
+
+                {selectedRows.size > 0 && (
+                  <button
+                    onClick={() => {
+                      setSelectedRows(new Set());
+                      setSeleccionarTodas(false);
+                    }}
+                    className="flex items-center gap-2 px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
+                    title="Solo desselecciona sin eliminar"
+                  >
+                    <X size={22} className="font-bold" />
+                    Limpiar Selección
                   </button>
                 )}
 
@@ -851,27 +1101,41 @@ export default function Solicitudes() {
                           setSeleccionarTodas(false);
                           setSelectedRows(new Set());
                         }}
-                        className="px-4 py-3 border-2 border-gray-400 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition-colors"
+                        className="flex items-center gap-2 px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
                       >
-                        ❌ Deseleccionar TODAS
+                        <X size={22} className="font-bold" />
+                        Limpiar Selección
                       </button>
                     )}
 
-                    <button
-                      onClick={() => {
-                        const cantidad = seleccionarTodas ? solicitudesFiltradas.length : selectedRows.size;
-                        setCantidadABorrar(cantidad);
-                        setModalConfirmarBorrado(true);
-                      }}
-                      className={`flex items-center gap-2 px-6 py-3 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl ${
-                        seleccionarTodas
-                          ? 'bg-red-700 hover:bg-red-800'
-                          : 'bg-red-600 hover:bg-red-700'
-                      }`}
-                    >
-                      <AlertCircle size={22} className="font-bold" />
-                      Borrar {seleccionarTodas ? `TODAS (${solicitudesFiltradas.length})` : `Selección (${selectedRows.size})`}
-                    </button>
+                    {esSuperAdmin && (
+                      <>
+                        <button
+                          onClick={handleAbrirCambiarBolsaMasivo}
+                          className="flex items-center gap-2 px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl"
+                          title="Cambiar tipo de bolsa para las seleccionadas"
+                        >
+                          <Edit size={22} className="font-bold" />
+                          Cambiar Bolsa ({selectedRows.size})
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const cantidad = seleccionarTodas ? solicitudesFiltradas.length : selectedRows.size;
+                            setCantidadABorrar(cantidad);
+                            setModalConfirmarBorrado(true);
+                          }}
+                          className={`flex items-center gap-2 px-6 py-3 text-white rounded-lg font-semibold transition-colors shadow-lg hover:shadow-xl ${
+                            seleccionarTodas
+                              ? 'bg-red-700 hover:bg-red-800'
+                              : 'bg-red-600 hover:bg-red-700'
+                          }`}
+                        >
+                          <AlertCircle size={22} className="font-bold" />
+                          Borrar {seleccionarTodas ? `TODAS (${solicitudesFiltradas.length})` : `Selección (${selectedRows.size})`}
+                        </button>
+                      </>
+                    )}
                   </>
                 )}
               </div>
@@ -952,7 +1216,7 @@ export default function Solicitudes() {
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">{solicitud.edad}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefono}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefonoAlterno || 'N/A'}</td>
+                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefonoAlterno}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.correo}>{solicitud.correo}</td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap inline-block ${
@@ -1197,7 +1461,57 @@ export default function Solicitudes() {
           </div>
         )}
 
-        {/* ====== MODAL 4: IMPORTAR DESDE EXCEL ====== */}
+        {/* ====== MODAL 4: CAMBIAR TIPO DE BOLSA (SUPERADMIN) ====== */}
+        {modalCambiarBolsa && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
+              <h2 className="text-xl font-bold mb-4 text-gray-900">⚠️ Cambiar Tipo de Bolsa (Masivo)</h2>
+              <p className="text-sm text-gray-600 mb-6">
+                <strong>Solicitudes seleccionadas:</strong> {selectedRows.size}
+              </p>
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Seleccionar Nueva Bolsa
+                </label>
+                <select
+                  value={bolsaNuevaSeleccionada || ''}
+                  onChange={(e) => setBolsaNuevaSeleccionada(parseInt(e.target.value))}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-600"
+                >
+                  <option value="">-- Seleccione una bolsa --</option>
+                  {bolsasDisponibles.map((bolsa) => (
+                    <option key={bolsa.id} value={bolsa.id}>
+                      {bolsa.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="bg-yellow-50 border border-yellow-300 rounded-md p-3 mb-6">
+                <p className="text-xs text-yellow-800">
+                  <strong>⚠️ Atención:</strong> Se cambiarán el tipo de bolsa para las <strong>{selectedRows.size}</strong> solicitudes seleccionadas. Este cambio se reflejará inmediatamente en la base de datos.
+                </p>
+              </div>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setModalCambiarBolsa(false)}
+                  disabled={isProcessing}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGuardarCambiarBolsaMasivo}
+                  disabled={isProcessing || !bolsaNuevaSeleccionada}
+                  className="flex-1 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-md font-semibold disabled:opacity-50"
+                >
+                  {isProcessing ? `Actualizando (${selectedRows.size})...` : `Actualizar (${selectedRows.size})`}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ====== MODAL 5: IMPORTAR DESDE EXCEL ====== */}
         {modalImportar && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
@@ -1574,6 +1888,13 @@ export default function Solicitudes() {
             </div>
           </div>
         )}
+
+        {/* ✅ NUEVO v1.19.0: MODAL: Resultados Detallados de Importación */}
+        <ModalResultadosImportacion
+          isOpen={modalResultadosImportacion}
+          onClose={() => setModalResultadosImportacion(false)}
+          resultados={resultadosImportacion}
+        />
       </div>
     </div>
   );

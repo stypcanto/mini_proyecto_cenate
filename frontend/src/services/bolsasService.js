@@ -575,6 +575,27 @@ export const cambiarTelefono = async (id, nuevoTelefono) => {
 };
 
 /**
+ * Cambia el tipo de bolsa de una solicitud
+ * ⚠️ SOLO SUPERADMIN
+ * @param {number} id - ID de la solicitud
+ * @param {number} idBolsaNueva - ID de la nueva bolsa
+ * @returns {Promise<Object>} - Solicitud actualizada
+ */
+export const cambiarTipoBolsa = async (id, idBolsaNueva) => {
+  try {
+    const response = await apiClient.patch(`${API_BASE_URL}/solicitudes/${id}/cambiar-bolsa`, {}, {
+      params: {
+        idBolsaNueva
+      }
+    });
+    return response;
+  } catch (error) {
+    console.error(`Error al cambiar tipo de bolsa solicitud ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Exporta solicitudes a CSV
  * @param {Array<number>} ids - IDs de solicitudes a exportar
  * @returns {Promise<Blob>} - Archivo CSV
@@ -720,6 +741,47 @@ export const crearAsegurado = async (datosAsegurado) => {
   }
 };
 
+// ========================================================================
+// 🔴 ERRORES DE IMPORTACIÓN (v2.1.0) - Auditoría de errores
+// ========================================================================
+
+/**
+ * Obtiene todos los errores de importación registrados
+ * GET /api/bolsas/errores-importacion
+ * @returns {Promise<Array>} - Lista de errores de importación
+ */
+export const obtenerErroresImportacion = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/errores-importacion`);
+    return Array.isArray(response) ? response : response.data || [];
+  } catch (error) {
+    console.error('Error al obtener errores de importación:', error);
+    throw error;
+  }
+};
+
+/**
+ * Exporta los errores de importación en formato CSV
+ * GET /api/bolsas/errores-importacion/exportar
+ * @returns {Promise<Blob>} - Archivo CSV descargable
+ */
+export const exportarErroresImportacion = async () => {
+  try {
+    const response = await fetch('/api/bolsas/errores-importacion/exportar', {
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
+      }
+    });
+
+    if (!response.ok) throw new Error('Error descargando reporte');
+
+    return await response.blob();
+  } catch (error) {
+    console.error('Error al exportar errores de importación:', error);
+    throw error;
+  }
+};
+
 export default {
   // Bolsas
   obtenerBolsas,
@@ -767,6 +829,7 @@ export default {
   // NUEVOS - Fase 1
   asignarAGestora,
   cambiarTelefono,
+  cambiarTipoBolsa,
   descargarCSV,
   enviarRecordatorio,
   obtenerEstadosGestion,
@@ -776,4 +839,8 @@ export default {
   obtenerRedPorId,
   obtenerAseguradoPorDni,
   crearAsegurado,
+
+  // ERRORES DE IMPORTACIÓN (v2.1.0)
+  obtenerErroresImportacion,
+  exportarErroresImportacion,
 };

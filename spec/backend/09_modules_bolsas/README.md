@@ -1,9 +1,10 @@
-# 📦 Módulo de Bolsas - Índice Maestro v2.0.0
+# 📦 Módulo de Bolsas - Índice Maestro v2.1.0
 
-> **Sistema completo de importación, gestión, análisis y estadísticas de solicitudes de bolsas de pacientes**
-> **Versión:** v2.0.0 | **Status:** ✅ Production Ready
-> **Última actualización:** 2026-01-27
+> **Sistema completo de importación, gestión, análisis, estadísticas y control de acceso RBAC**
+> **Versión:** v2.1.0 | **Status:** ✅ Production Ready + RBAC
+> **Última actualización:** 2026-01-28
 > **Datos en BD:** 329 registros activos
+> **✨ NUEVO v2.1.0:** Control de Acceso RBAC + Filtros Dinámicos + Teléfono Alterno
 
 ---
 
@@ -20,6 +21,22 @@
 - Relaciones entre módulos
 - Timeline de desarrollo
 - Roadmap futuro
+- **✨ v2.1.0 NEW:** Control de Acceso RBAC + Filtros Dinámicos
+
+---
+
+### 🆕 CHANGELOG v2.1.0 - Novedades Recientes
+
+**[`14_CHANGELOG_v2.1.0.md`](./14_CHANGELOG_v2.1.0.md)** ← **VER CAMBIOS v2.1.0**
+
+Changelog detallado con:
+- 8 características nuevas
+- RBAC (Botón Borrar → SUPERADMIN)
+- Filtros dinámicos + contadores
+- Teléfono alterno + auto-creación asegurados
+- Normalización IPRESS + enriquecimiento cascada
+- Matriz de cambios + testing realizado
+- Impacto y beneficios
 
 ---
 
@@ -38,11 +55,11 @@ Guía paso a paso para:
 
 ## 📚 Documentación por Componente
 
-### 1️⃣ SOLICITUDES - Importación y Gestión (v1.12.0)
+### 1️⃣ SOLICITUDES - Importación y Gestión (v2.4.0)
 
 **[`12_modulo_solicitudes_bolsa_v1.12.0.md`](./12_modulo_solicitudes_bolsa_v1.12.0.md)**
 
-✨ **Características:**
+✨ **Características Base:**
 - Auto-detección inteligente de bolsa + servicio
 - Soft delete de solicitudes en lote
 - Corrección de fechas Excel
@@ -50,7 +67,16 @@ Guía paso a paso para:
 - 8 endpoints REST CRUD
 - Enriquecimiento automático de datos
 
-📊 **Estado:** ✅ v1.12.0 Production Ready
+✨ **NUEVO v2.1.0:**
+- 🔒 Control de Acceso RBAC (Botón Borrar → SUPERADMIN)
+- 📊 Filtros dinámicos con contadores en tiempo real
+- 📱 Teléfono alterno (Excel col 8 → asegurados.tel_celular)
+- 👤 Auto-creación de asegurados faltantes
+- 🔢 Normalización IPRESS a 3 dígitos (21 → 021)
+- 🗺️ Enriquecimiento cascada (IPRESS→RED→MACRORREGIÓN)
+- 🎨 UI mejorada con ListHeader.jsx v2.0.0
+
+📊 **Estado:** ✅ v2.4.0 Production Ready + RBAC
 
 ---
 
@@ -235,17 +261,18 @@ Guía paso a paso para:
 
 ---
 
-## 📁 Estructura de Carpetas v2.0.0
+## 📁 Estructura de Carpetas v2.1.0
 
 ```
 spec/backend/09_modules_bolsas/
-├── 00_INDICE_MAESTRO_MODULO_BOLSAS.md           ⭐ ÍNDICE (NEW v2.0.0)
-├── 01_GUIA_RAPIDA_SETUP.md                      🚀 GUÍA RÁPIDA (NEW v2.0.0)
+├── 00_INDICE_MAESTRO_MODULO_BOLSAS.md           ⭐ ÍNDICE (v2.1.0)
+├── 01_GUIA_RAPIDA_SETUP.md                      🚀 GUÍA RÁPIDA (v2.0.0)
 ├── 05_modulo_tipos_bolsas_crud.md               📚 Tipos (v1.1.0)
 ├── 07_modulo_estados_gestion_citas_crud.md      📚 Estados (v1.33.0)
-├── 12_modulo_solicitudes_bolsa_v1.12.0.md       📚 Solicitudes (v1.12.0)
-├── 13_estadisticas_dashboard_v2.0.0.md          📊 Estadísticas (v2.0.0) ⭐
-└── README.md                                     📄 Este archivo (v2.0.0)
+├── 12_modulo_solicitudes_bolsa_v1.12.0.md       📚 Solicitudes (v2.4.0) + RBAC
+├── 13_estadisticas_dashboard_v2.0.0.md          📊 Estadísticas (v2.0.0)
+├── 14_CHANGELOG_v2.1.0.md                       📝 CHANGELOG (NEW v2.1.0) ✨
+└── README.md                                     📄 Este archivo (v2.1.0)
 ```
 
 ---
@@ -264,27 +291,32 @@ spec/backend/09_modules_bolsas/
 
 ---
 
-## ✅ Estado Módulo v2.0.0
+## ✅ Estado Módulo v2.1.0
 
 | Componente | Versión | Status | Documentado |
 |-----------|---------|--------|-------------|
-| Solicitudes | v1.12.0 | ✅ Production | ✅ Completo |
-| Estadísticas | v2.0.0 | ✅ Production | ✅ Completo ⭐ |
+| Solicitudes | v2.4.0 | ✅ Production + RBAC | ✅ Completo |
+| Estadísticas | v2.0.0 | ✅ Production | ✅ Completo |
 | Tipos Bolsa | v1.1.0 | ✅ Production | ✅ Completo |
 | Estados Citas | v1.33.0 | ✅ Production | ✅ Completo |
-| **Documentación** | **v2.0.0** | **✅ Actualizada** | **✅ Completa** |
+| Acceso RBAC | v2.1.0 | ✅ Production | ✅ Completo ✨ |
+| Filtros Dinámicos | v2.1.0 | ✅ Production | ✅ Completo ✨ |
+| **Documentación** | **v2.1.0** | **✅ Actualizada** | **✅ Completa** |
 
-**Todos los componentes listos para producción.** 🚀
+**Todos los componentes listos para producción con RBAC.** 🚀
 
 ---
 
 ## 📚 Archivos de Referencia Externa
 
-**Resumen de cambios v2.0.0:**
-→ `/CAMBIOS_MODULO_BOLSAS_v2.0.0.md` (397 líneas)
+**Resumen CLAUDE.md (proyecto completo):**
+→ `CLAUDE.md` (versión v1.37.2)
 
 **Backend README actualizado:**
 → `/spec/backend/README.md`
+
+**Changelog completo v2.1.0:**
+→ `14_CHANGELOG_v2.1.0.md` (este directorio)
 
 ---
 
@@ -292,5 +324,6 @@ spec/backend/09_modules_bolsas/
 
 **Desarrollador:** Ing. Styp Canto Rondón
 **Email:** stypcanto@essalud.gob.pe
-**Última actualización:** 2026-01-27
-**Versión Sistema:** v2.0.0
+**Última actualización:** 2026-01-28
+**Versión Sistema:** v2.1.0
+**Status:** ✅ Production Ready + RBAC + Dynamic Filters

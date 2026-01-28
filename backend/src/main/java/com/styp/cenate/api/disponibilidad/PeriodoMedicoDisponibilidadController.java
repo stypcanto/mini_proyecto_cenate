@@ -2,6 +2,7 @@ package com.styp.cenate.api.disponibilidad;
 
 import com.styp.cenate.dto.disponibilidad.PeriodoMedicoDisponibilidadRequest;
 import com.styp.cenate.dto.disponibilidad.PeriodoMedicoDisponibilidadResponse;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
 import com.styp.cenate.service.disponibilidad.PeriodoMedicoDisponibilidadService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -76,13 +77,43 @@ public class PeriodoMedicoDisponibilidadController {
         return ResponseEntity.ok(service.listarAnios());
     }
 
+    /**
+     * Endpoint para que los MEDICO accedan a periodos disponibles (todos los estados)
+     */
+    @GetMapping("/disponibles")
+    @CheckMBACPermission(pagina = "/medico/disponibilidad", accion = "ver")
+    public ResponseEntity<List<PeriodoMedicoDisponibilidadResponse>> listarDisponibles() {
+        log.info("Listando todos los periodos médicos de disponibilidad para médico");
+        return ResponseEntity.ok(service.listarTodos());
+    }
+
+    /**
+     * Endpoint para que los MEDICO accedan a periodos vigentes
+     */
+    @GetMapping("/vigentes-disponibles")
+    @CheckMBACPermission(pagina = "/medico/disponibilidad", accion = "ver")
+    public ResponseEntity<List<PeriodoMedicoDisponibilidadResponse>> listarVigentesDisponibles() {
+        log.info("Listando periodos vigentes para médico");
+        return ResponseEntity.ok(service.listarVigentes());
+    }
+
+    /**
+     * Endpoint para que los MEDICO accedan a años disponibles
+     */
+    @GetMapping("/anios-disponibles")
+    @CheckMBACPermission(pagina = "/medico/disponibilidad", accion = "ver")
+    public ResponseEntity<List<Integer>> listarAniosDisponibles() {
+        log.info("Listando años disponibles para médico");
+        return ResponseEntity.ok(service.listarAnios());
+    }
+
     // ============================================================
     // Obtener / CRUD básico
     // ============================================================
 
     @GetMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
-    public ResponseEntity<PeriodoMedicoDisponibilidadResponse> obtenerPorId(@PathVariable Long id) {
+    public ResponseEntity<PeriodoMedicoDisponibilidadResponse> obtenerPorId(@PathVariable("id") Long id) {
         log.info("Obteniendo periodo médico de disponibilidad con ID: {}", id);
         return ResponseEntity.ok(service.obtenerPorId(id));
     }
@@ -102,7 +133,7 @@ public class PeriodoMedicoDisponibilidadController {
     @PutMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
     public ResponseEntity<PeriodoMedicoDisponibilidadResponse> actualizar(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @Valid @RequestBody PeriodoMedicoDisponibilidadRequest request,
             Authentication authentication
     ) {
@@ -114,7 +145,7 @@ public class PeriodoMedicoDisponibilidadController {
     @PutMapping("/{id}/estado")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
     public ResponseEntity<PeriodoMedicoDisponibilidadResponse> cambiarEstado(
-            @PathVariable Long id,
+            @PathVariable("id") Long id,
             @RequestBody Map<String, String> body,
             Authentication authentication
     ) {
@@ -126,7 +157,7 @@ public class PeriodoMedicoDisponibilidadController {
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
-    public ResponseEntity<Void> eliminar(@PathVariable Long id) {
+    public ResponseEntity<Void> eliminar(@PathVariable("id") Long id) {
         log.info("Eliminando periodo médico de disponibilidad con ID: {}", id);
         service.eliminar(id);
         return ResponseEntity.noContent().build();

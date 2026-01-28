@@ -41,22 +41,16 @@ import com.styp.cenate.exception.ExcelCargaDuplicadaException;
 import com.styp.cenate.exception.ExcelValidationException;
 import com.styp.cenate.model.form107.Bolsa107Carga;
 import com.styp.cenate.model.Asegurado;
-import com.styp.cenate.model.TipoBolsa;
 import com.styp.cenate.model.DimServicioEssi;
-import com.styp.cenate.model.EstadoGestionCita;
-import com.styp.cenate.model.bolsas.SolicitudBolsa;
-import com.styp.cenate.model.bolsas.HistorialCargaBolsas;
+import com.styp.cenate.model.form107.Bolsa107Item;
+import com.styp.cenate.model.form107.Bolsa107Error;
 import com.styp.cenate.repository.form107.Bolsa107CargaRepository;
-import com.styp.cenate.repository.form107.Bolsa107RawDao;
-import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
+import com.styp.cenate.repository.form107.Bolsa107ItemRepository;
+import com.styp.cenate.repository.form107.Bolsa107ErrorRepository;
 import com.styp.cenate.repository.AseguradoRepository;
-import com.styp.cenate.repository.TipoBolsaRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
-import com.styp.cenate.repository.EstadoGestionCitaRepository;
-import com.styp.cenate.repository.IpressRepository;
-import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.util.ExcelHeaderNormalizer;
-import com.styp.cenate.model.Ipress;
+import java.time.OffsetDateTime;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,51 +59,43 @@ import lombok.extern.slf4j.Slf4j;
 public class ExcelImportService {
 
 	private final Bolsa107CargaRepository cargaRepo;
-	private final Bolsa107RawDao rawDao;
+	private final Bolsa107ItemRepository itemRepository;
+	private final Bolsa107ErrorRepository errorRepository;
 	private final JdbcTemplate jdbc;
-	private final SolicitudBolsaRepository solicitudRepository;
-	private final HistorialCargaBolsasRepository historialCargaBolsasRepository;
-	private final TipoBolsaRepository tipoBolsaRepository;
 	private final DimServicioEssiRepository servicioRepository;
 	private final AseguradoRepository aseguradoRepository;
-	private final EstadoGestionCitaRepository estadoCitaRepository;
-	private final IpressRepository ipressRepository;
 
 	public ExcelImportService(
 		Bolsa107CargaRepository cargaRepo,
-		Bolsa107RawDao rawDao,
+		Bolsa107ItemRepository itemRepository,
+		Bolsa107ErrorRepository errorRepository,
 		JdbcTemplate jdbc,
-		SolicitudBolsaRepository solicitudRepository,
-		HistorialCargaBolsasRepository historialCargaBolsasRepository,
-		TipoBolsaRepository tipoBolsaRepository,
 		DimServicioEssiRepository servicioRepository,
-		AseguradoRepository aseguradoRepository,
-		EstadoGestionCitaRepository estadoCitaRepository,
-		IpressRepository ipressRepository) {
+		AseguradoRepository aseguradoRepository) {
 		this.cargaRepo = cargaRepo;
-		this.rawDao = rawDao;
+		this.itemRepository = itemRepository;
+		this.errorRepository = errorRepository;
 		this.jdbc = jdbc;
-		this.solicitudRepository = solicitudRepository;
-		this.historialCargaBolsasRepository = historialCargaBolsasRepository;
-		this.tipoBolsaRepository = tipoBolsaRepository;
 		this.servicioRepository = servicioRepository;
 		this.aseguradoRepository = aseguradoRepository;
-		this.estadoCitaRepository = estadoCitaRepository;
-		this.ipressRepository = ipressRepository;
 	}
 
-	// Columnas esperadas del Excel (v1.8.0)
+	// Columnas esperadas del Excel (v2.0.0 - 14 campos)
 	private static final List<String> EXPECTED_COLUMNS = List.of(
-		"FECHA PREFERIDA QUE NO FUE ATENDIDA",
+		"REGISTRO",
+		"OPCIONES DE INGRESO DE LLAMADA",
+		"TELEFONO",
 		"TIPO DOCUMENTO",
 		"DNI",
-		"ASEGURADO",
+		"APELLIDOS Y NOMBRES",
 		"SEXO",
-		"FECHA DE NACIMIENTO",
-		"TELÉFONO",
-		"CORREO",
-		"COD. IPRESS ADSCRIPCIÓN",
-		"TIPO CITA"
+		"FechaNacimiento",
+		"DEPARTAMENTO",
+		"PROVINCIA",
+		"DISTRITO",
+		"MOTIVO DE LA LLAMADA",
+		"AFILIACION",
+		"DERIVACION INTERNA"
 	);
 
 	// Campos obligatorios (SEXO, FECHA DE NACIMIENTO, CORREO son opcionales - se enriquecen desde dim_asegurados por DNI)
@@ -157,8 +143,8 @@ public class ExcelImportService {
 
 		long idCarga = carga.getIdCarga();
 
-	// 4) Procesar Excel e insertar en staging.bolsa_107_raw (Opción A: desacoplado de dim_solicitud_bolsa)
-	ExcelImportResult resultado = procesarEInsertarStaging(file, idCarga);
+	// 4) Procesar Excel e insertar DIRECTAMENTE en bolsa_107_item (v2.0.0 - inserción directa con enriquecimiento)
+	ExcelImportResult resultado = procesarEInsertarDirecto(file, idCarga);
 
 	int insertados = resultado.filas_total;
 	int filasOk = resultado.filas_ok;
@@ -172,20 +158,6 @@ public class ExcelImportService {
 		carga.setFilasError(filasError);
 		carga.setEstadoCarga("PROCESADO");
 		cargaRepo.save(carga);
-
-		// 6B) 🆕 v1.13.5: Guardar también en dim_historial_carga_bolsas (módulo Bolsas)
-		HistorialCargaBolsas historialBolsas = HistorialCargaBolsas.builder()
-			.nombreArchivo(carga.getNombreArchivo())
-			.hashArchivo(carga.getHashArchivo())
-			.usuarioCarga(carga.getUsuarioCarga())
-			.estadoCarga(carga.getEstadoCarga())
-			.fechaReporte(carga.getFechaReporte())
-			.totalFilas(insertados)
-			.filasOk(filasOk)
-			.filasError(filasError)
-			.build();
-		historialCargaBolsasRepository.save(historialBolsas);
-		log.info("✅ Carga registrada también en dim_historial_carga_bolsas (módulo Bolsas)");
 
 		// 7) Leer cabecera actualizada y devolver respuesta
 		Bolsa107Carga finalCarga = cargaRepo.findById(idCarga)
@@ -262,18 +234,29 @@ public class ExcelImportService {
 	
 	
 
+	// MÉTODO ELIMINADO en v2.0.0
+	// procesarEInsertarStaging() - REEMPLAZADO POR procesarEInsertarDirecto()
+	// Razón: Cambio de staging approach a inserción directa en bolsa_107_item
+
 	// ==========================
-	// LECTURA + INSERT STAGING
+	// NUEVO MÉTODO v2.0.0
 	// ==========================
-	private ExcelImportResult procesarEInsertarStaging(MultipartFile file, long idCarga) {
-		try (InputStream is = file.getInputStream(); Workbook wb = new XSSFWorkbook(is)) {
+	/**
+	 * Procesa Excel de 14 campos e inserta DIRECTAMENTE en bolsa_107_item
+	 * con enriquecimiento desde dim_asegurados y dim_servicio_essi.
+	 *
+	 * @version v2.0.0 - Módulo 107 completamente independiente
+	 */
+	private ExcelImportResult procesarEInsertarDirecto(MultipartFile file, long idCarga) {
+		try (InputStream is = file.getInputStream();
+			 Workbook wb = new XSSFWorkbook(is)) {
 
 			Sheet sheet = wb.getSheetAt(0);
+			Row headerRow = sheet.getRow(0);
 
-			int headerIndex = sheet.getFirstRowNum();
-			Row headerRow = sheet.getRow(headerIndex);
-			if (headerRow == null)
-				throw new ExcelValidationException("No se encontró el encabezado (fila 1).");
+			if (headerRow == null) {
+				throw new ExcelValidationException("No se encontró encabezado en fila 1");
+			}
 
 			List<String> actualColumns = readHeader(headerRow);
 			validateHeaderStrict(actualColumns);
@@ -282,137 +265,174 @@ public class ExcelImportService {
 			int filasOk = 0;
 			int filasError = 0;
 
-			List<Map<String, Object>> errores = new ArrayList<>();
-			List<Bolsa107RawRow> batch = new ArrayList<>(500);
+			List<Bolsa107Item> batchItems = new ArrayList<>(500);
+			List<Bolsa107Error> batchErrors = new ArrayList<>(100);
 
 			int lastRow = sheet.getLastRowNum();
 
-			for (int r = headerIndex + 1; r <= lastRow; r++) {
+			for (int r = 1; r <= lastRow; r++) {
 				Row row = sheet.getRow(r);
-				if (row == null || isRowCompletelyEmpty(row))
-					continue;
+				if (row == null || isRowCompletelyEmpty(row)) continue;
 
 				filasTotal++;
 
-				// Mapear columnas del Excel v1.8.0 a campos de staging
-				String fechaPreferida = cellDateStr(row, 0);      // Columna 0
-				String tipoDocumento = cellStr(row, 1);          // Columna 1
-				String numeroDocumento = cellStr(row, 2);        // Columna 2
+				try {
+					// 📋 EXTRAER 14 CAMPOS DEL EXCEL
+					String registro = cellStr(row, 0);
+					String opcionIngreso = cellStr(row, 1);
+					String telefono = cellStr(row, 2);
+					String tipoDocumento = cellStr(row, 3);
+					String numeroDocumento = normalizeDni(cellStr(row, 4));
+					String paciente = cellStr(row, 5);
+					String sexo = cellStr(row, 6);
+					String fechaNacStr = cellDateStr(row, 7);
+					String departamento = cellStr(row, 8);
+					String provincia = cellStr(row, 9);
+					String distrito = cellStr(row, 10);
+					String motivoLlamada = cellStr(row, 11);
+					String afiliacion = cellStr(row, 12);
+					String derivacionInterna = cellStr(row, 13);
 
-			// 🆕 v1.13.9: Normalizar DNI en lectura raw
-			numeroDocumento = normalizeDni(numeroDocumento);
-				String apellidos = cellStr(row, 3);              // Columna 3
-				String sexo = cellStr(row, 4);                   // Columna 4
-				String fechaNac = cellDateStr(row, 5);           // Columna 5
-				String telefono = cellStr(row, 6);               // Columna 6
-				String correo = cellStr(row, 7);                 // Columna 7
-				String codigoIpress = cellStr(row, 8);           // Columna 8
+					// ✅ VALIDAR CAMPOS OBLIGATORIOS (6 de 14)
+					List<String> faltantes = new ArrayList<>();
+					if (isBlank(tipoDocumento)) faltantes.add("TIPO DOCUMENTO");
+					if (isBlank(numeroDocumento)) faltantes.add("DNI");
+					if (isBlank(paciente)) faltantes.add("APELLIDOS Y NOMBRES");
+					if (isBlank(sexo)) faltantes.add("SEXO");
+					if (isBlank(fechaNacStr)) faltantes.add("FechaNacimiento");
+					if (isBlank(derivacionInterna)) faltantes.add("DERIVACION INTERNA");
 
-			// 🆕 v1.13.9: Normalizar código IPRESS a 3 dígitos
-			codigoIpress = normalizeIpress(codigoIpress);
-			// 🆕 v1.15.0: Normalizar código IPRESS a 3 dígitos con padding
-			codigoIpress = normalizeIpress(codigoIpress);
-				String tipoCita = cellStr(row, 9);               // Columna 9
+					if (!faltantes.isEmpty()) {
+						Bolsa107Error error = Bolsa107Error.builder()
+							.idCarga(idCarga)
+							.registro(registro)
+							.codigoError("ERR_CAMPO_OBLIGATORIO")
+							.detalleError("Faltan campos: " + String.join(", ", faltantes))
+							.columnasError(String.join(", ", faltantes))
+							.createdAt(OffsetDateTime.now())
+							.build();
+						batchErrors.add(error);
+						filasError++;
+						continue;
+					}
 
-				// Campos no disponibles en v1.8.0 (se dejan vacíos)
-				String registro = "";
-				String opcionIngreso = "";
-				String dep = "";
-				String prov = "";
-				String dist = "";
-				String motivo = "";
-				String afiliacion = "";
-				String deriv = tipoCita; // Usar TIPO CITA como derivacion (no está en el archivo)
+					// 🔍 ENRIQUECIMIENTO 1: Buscar asegurado por DNI
+					String telCelular = null;
+					String correoElectronico = null;
+					LocalDate fechaNacimiento = null;
 
-				// Validar campos obligatorios (v1.8.0 - solo 3 campos son requeridos)
-				List<String> faltantes = new ArrayList<>();
-				if (isBlank(tipoDocumento))
-					faltantes.add("TIPO DOCUMENTO");
-				if (isBlank(numeroDocumento))
-					faltantes.add("DNI");
-				if (isBlank(apellidos))
-					faltantes.add("ASEGURADO");
+					Optional<Asegurado> aseguradoOpt = aseguradoRepository.findByDocPaciente(numeroDocumento);
+					if (aseguradoOpt.isPresent()) {
+						Asegurado asegurado = aseguradoOpt.get();
+						telCelular = asegurado.getTelCelular();
+						correoElectronico = asegurado.getCorreoElectronico();
+						fechaNacimiento = asegurado.getFecnacimpaciente();
+						log.debug("✅ Asegurado {} enriquecido", numeroDocumento);
+					}
 
-				boolean ok = faltantes.isEmpty();
-				if (ok)
+					if (fechaNacimiento == null && !isBlank(fechaNacStr)) {
+						try {
+							fechaNacimiento = parseDate(fechaNacStr);
+						} catch (Exception e) {
+							log.warn("⚠️ Error parseando fecha: {}", fechaNacStr);
+						}
+					}
+
+					// 🔍 ENRIQUECIMIENTO 2: Buscar especialidad por nombre
+					Integer idServicioEssi = null;
+					String codServicioEssi = null;
+
+					Optional<DimServicioEssi> servicioOpt = servicioRepository
+						.findFirstByDescServicioIgnoreCaseAndEstado(derivacionInterna, "A");
+					if (servicioOpt.isPresent()) {
+						DimServicioEssi servicio = servicioOpt.get();
+						idServicioEssi = servicio.getIdServicio().intValue();
+						codServicioEssi = servicio.getCodServicio();
+						log.debug("✅ Servicio '{}' → id={}", derivacionInterna, idServicioEssi);
+					} else {
+						log.warn("⚠️ Servicio '{}' no encontrado", derivacionInterna);
+					}
+
+					// 💾 CREAR ENTIDAD
+					Bolsa107Item item = Bolsa107Item.builder()
+						.idCarga(idCarga)
+						.fechaReporte(LocalDate.now())
+						.registro(registro)
+						.tipoDocumento(tipoDocumento)
+						.numeroDocumento(numeroDocumento)
+						.paciente(paciente)
+						.sexo(sexo)
+						.fechaNacimiento(fechaNacimiento)
+						.telefono(telefono)
+						.telCelular(telCelular)
+						.correoElectronico(correoElectronico)
+						.opcionIngreso(opcionIngreso)
+						.motivoLlamada(motivoLlamada)
+						.afiliacion(afiliacion)
+						.derivacionInterna(derivacionInterna)
+						.idServicioEssi(idServicioEssi)
+						.codServicioEssi(codServicioEssi)
+						.departamento(departamento)
+						.provincia(provincia)
+						.distrito(distrito)
+						.idEstado(1)
+						.createdAt(OffsetDateTime.now())
+						.updatedAt(OffsetDateTime.now())
+						.build();
+
+					batchItems.add(item);
 					filasOk++;
-				else
+
+					if (batchItems.size() >= 500) {
+						itemRepository.saveAll(batchItems);
+						log.info("💾 Batch: {} items", batchItems.size());
+						batchItems.clear();
+					}
+
+				} catch (Exception e) {
+					log.error("❌ Error fila {}: {}", r + 1, e.getMessage());
+					Bolsa107Error error = Bolsa107Error.builder()
+						.idCarga(idCarga)
+						.registro(cellStr(row, 0))
+						.codigoError("ERR_PROCESAMIENTO")
+						.detalleError(e.getMessage())
+						.columnasError("TODAS")
+						.createdAt(OffsetDateTime.now())
+						.build();
+					batchErrors.add(error);
 					filasError++;
-
-				// Campos opcionales que se enriquecerán desde dim_asegurados (por DNI)
-				List<String> enriquecerDesdeBD = new ArrayList<>();
-				if (isBlank(sexo))
-					enriquecerDesdeBD.add("SEXO");
-				if (isBlank(fechaNac))
-					enriquecerDesdeBD.add("FECHA DE NACIMIENTO");
-				if (isBlank(correo))
-					enriquecerDesdeBD.add("CORREO");
-			
-			String observacion;
-			if (!ok) {
-				if (enriquecerDesdeBD.isEmpty()) {
-					observacion = "Faltan obligatorios: " + String.join(", ", faltantes);
-				} else {
-					observacion = "Faltan obligatorios: " + String.join(", ", faltantes) + " (Se enriquecerá desde BD: " + String.join(", ", enriquecerDesdeBD) + ")";
-				}
-			} else if (!enriquecerDesdeBD.isEmpty()) {
-				observacion = "Se enriquecerá desde BD: " + String.join(", ", enriquecerDesdeBD);
-			} else {
-				observacion = null;
-			}
-
-				// raw_json (guardo todo lo que leí)
-				Map<String, Object> rawMap = new LinkedHashMap<>();
-				rawMap.put("REGISTRO", registro);
-				rawMap.put("OPCIONES DE INGRESO DE LLAMADA", opcionIngreso);
-				rawMap.put("TELEFONO", telefono);
-				rawMap.put("TIPO DE DOCUMENTO", tipoDocumento);
-				rawMap.put("DNI", numeroDocumento);
-				rawMap.put("APELLIDOS Y NOMBRES", apellidos);
-				rawMap.put("SEXO", sexo);
-				rawMap.put("FechaNacimiento", fechaNac);
-				rawMap.put("DEPARTAMENTO", dep);
-				rawMap.put("PROVINCIA", prov);
-				rawMap.put("DISTRITO", dist);
-				rawMap.put("MOTIVO DE LA LLAMADA", motivo);
-				rawMap.put("AFILIACION", afiliacion);
-				rawMap.put("DERIVACION INTERNA", deriv);
-
-				String rawJson = rawDao.toJson(rawMap);
-
-				// Crear fila raw
-				Bolsa107RawRow rawRow = new Bolsa107RawRow(idCarga, r + 1, // fila excel 1-based
-						registro, opcionIngreso, telefono, tipoDocumento, numeroDocumento, apellidos, sexo, fechaNac,
-						dep, prov, dist, motivo, afiliacion, deriv, observacion, rawJson);
-
-				batch.add(rawRow);
-
-				// guardar detalle de errores para respuesta
-				if (!ok) {
-					Map<String, Object> det = new LinkedHashMap<>();
-					det.put("fila_excel", r + 1);
-					det.put("faltantes", faltantes);
-					det.put("dni_preview", numeroDocumento);
-					errores.add(det);
-				}
-
-				// batch insert cada 500
-				if (batch.size() >= 500) {
-					rawDao.insertBatch(batch);
-					batch.clear();
 				}
 			}
 
-			// flush batch final
-			if (!batch.isEmpty())
-				rawDao.insertBatch(batch);
+			if (!batchItems.isEmpty()) {
+				itemRepository.saveAll(batchItems);
+				log.info("💾 Final batch: {} items", batchItems.size());
+			}
+			if (!batchErrors.isEmpty()) {
+				errorRepository.saveAll(batchErrors);
+				log.info("⚠️ Errores: {}", batchErrors.size());
+			}
 
-			return new ExcelImportResult(filasTotal, filasOk, filasError, errores);
+			return new ExcelImportResult(filasTotal, filasOk, filasError, null);
 
-		} catch (ExcelValidationException e) {
-			throw e;
 		} catch (Exception e) {
-			throw new ExcelValidationException("Archivo inválido o corrupto. Debe ser un .xlsx válido.");
+			throw new ExcelValidationException("Archivo inválido: " + e.getMessage());
+		}
+	}
+
+	// Método auxiliar para parsear fechas
+	private LocalDate parseDate(String dateStr) {
+		if (isBlank(dateStr)) return null;
+		try {
+			DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd-MM-yyyy");
+			return LocalDate.parse(dateStr, formatter);
+		} catch (Exception e1) {
+			try {
+				DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+				return LocalDate.parse(dateStr, formatter);
+			} catch (Exception e2) {
+				throw new ExcelValidationException("Formato fecha inválido: " + dateStr);
+			}
 		}
 	}
 
@@ -451,25 +471,22 @@ public class ExcelImportService {
 	 *                    Los datos serán validados por su TIPO, no por su NOMBRE
 	 */
 	private void validateHeaderStrict(List<String> actualColumns) {
-		log.info("📋 Validando estructura Excel (v1.13.0 - Flexible por posición)");
+		log.info("📋 Validando estructura Excel Formulario 107 (v2.0.0 - 14 campos)");
 		log.info("   📊 Total columnas encontradas: {}", actualColumns.size());
-		log.info("   📋 Títulos de columnas: {}", actualColumns);
+		log.info("   📋 Títulos: {}", actualColumns);
 
-		// VALIDACIÓN: Debe haber exactamente 10 columnas
-		// Los títulos pueden ser CUALQUIERA (no importan los nombres)
-		if (actualColumns.size() != 10) {
-			log.error("❌ Estructura inválida: {} columnas encontradas, se esperan 10 (exactas)", actualColumns.size());
+		// VALIDACIÓN: Debe haber exactamente 14 columnas
+		if (actualColumns.size() != 14) {
+			log.error("❌ Estructura inválida: {} columnas, se esperan 14", actualColumns.size());
 			throw new ExcelValidationException(
-				String.format("El archivo debe tener exactamente 10 columnas. Se encontraron: %d. " +
-					"Los títulos no importan, pero la estructura sí: " +
-					"Fecha, TipoDoc, DNI, Nombre, Sexo, FechaNac, Teléfono, Correo, IPRESS, TipoCita",
+				String.format("El Excel debe tener exactamente 14 columnas. Encontradas: %d. " +
+					"Estructura: REGISTRO, OPCIONES INGRESO, TELEFONO, TIPO DOC, DNI, " +
+					"NOMBRES, SEXO, FECHA NAC, DEPTO, PROV, DIST, MOTIVO, AFILIACION, DERIVACION",
 					actualColumns.size()));
 		}
 
 		// ✅ Validación exitosa
-		log.info("✅ Validación exitosa:");
-		log.info("   ✓ Estructura correcta: 10 columnas");
-		log.info("   ✓ Los títulos pueden ser cualquiera (validación por DATOS, no por TÍTULOS)");
+		log.info("✅ Validación OK: 14 columnas");
 		log.info("   ✓ Ejemplos aceptados:");
 		log.info("     • OTORRINO: TIPO DOC, DNI, NOMBRE/ASEGURADO, ...");
 		log.info("     • OFTALMOLOGIA: TIPO DOCUMENTO, DOC_PACIENT, PACIENTE, ...");
@@ -511,21 +528,18 @@ public class ExcelImportService {
 			if (row == null)
 				return true;
 
-			// 🆕 v1.13.1: Check ONLY the 10 fixed columns (0-9)
-			// Don't check the entire row, because Excel's getLastCellNum() might miss columns
-			// We only care if columns 0-9 have ANY data
-			for (int c = 0; c < 10; c++) {
+			// v2.0.0: Check the 14 fixed columns (0-13)
+			// Only validate columns 0-13 for Excel v2.0.0 with 14 campos
+			for (int c = 0; c < 14; c++) {
 				Cell cell = row.getCell(c, Row.MissingCellPolicy.RETURN_BLANK_AS_NULL);
 				if (cell == null)
 					continue;
 				String v = cellToString(cell).trim();
 				if (!v.isEmpty()) {
-					log.debug("✓ Row {} has data in column {}", row.getRowNum(), c);
 					return false; // Row has at least some data
 				}
 			}
-			log.debug("⚠️ Row {} is completely empty (all 10 columns blank)", row.getRowNum());
-			return true; // All 10 columns are empty
+			return true; // All 14 columns are empty
 	}
 
 	private String cellStr(Row row, Integer idx) {

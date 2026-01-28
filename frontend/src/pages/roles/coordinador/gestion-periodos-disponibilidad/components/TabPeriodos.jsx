@@ -259,16 +259,16 @@ export default function TabPeriodos({
                             <Eye className="w-3 h-3" />
                           </button>
                           
-                          {/* Botón Editar - solo disponible si está ACTIVO */}
+                          {/* Botón Editar - disponible si está ACTIVO o BORRADOR */}
                           <button
                             onClick={() => onEditarPeriodo?.(p)}
-                            disabled={p.estado !== "ACTIVO"}
+                            disabled={p.estado !== "ACTIVO" && p.estado !== "BORRADOR"}
                             className={`inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded transition-colors ${
-                              p.estado === "ACTIVO"
+                              (p.estado === "ACTIVO" || p.estado === "BORRADOR")
                                 ? 'bg-amber-600 text-white hover:bg-amber-700'
                                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                             }`}
-                            title={p.estado === "ACTIVO" ? "Editar fechas" : "Solo se puede editar periodos activos"}
+                            title={(p.estado === "ACTIVO" || p.estado === "BORRADOR") ? "Editar fechas" : "Solo se puede editar periodos en estado ACTIVO o BORRADOR"}
                           >
                             <Pencil className="w-3 h-3" />
                           </button>

@@ -5,7 +5,10 @@ import com.styp.cenate.model.bolsas.SolicitudBolsa;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -73,7 +76,7 @@ public class SolicitudBolsaMapper {
     /**
      * Genera número de solicitud automático con formato: BOLSA-YYYYMMDD-XXXXX
      * Ejemplo: BOLSA-20260123-00142
-     * 
+     *
      * @return número de solicitud generado
      */
     public static String generarNumeroSolicitud() {
@@ -81,6 +84,32 @@ public class SolicitudBolsaMapper {
         int aleatorio = (int) (Math.random() * 100000);
         String numeroAleatorio = String.format("%05d", aleatorio);
         return "BOLSA-" + fecha + "-" + numeroAleatorio;
+    }
+
+    /**
+     * Genera múltiples números de solicitud candidatos para evitar colisiones.
+     * Útil para pre-validación antes de guardar en BD.
+     *
+     * @param cantidad número de candidatos a generar
+     * @return lista de números de solicitud únicos (sin duplicados en la misma lista)
+     */
+    public static List<String> generarNumerosExclusivos(int cantidad) {
+        Set<String> generados = new HashSet<>();
+        String fecha = LocalDate.now().format(FECHA_FORMATTER);
+
+        // Intentar generar 'cantidad' números únicos (máximo 100 intentos para evitar bucle infinito)
+        int intentos = 0;
+        int maxIntentos = 100;
+
+        while (generados.size() < cantidad && intentos < maxIntentos) {
+            int aleatorio = (int) (Math.random() * 100000);
+            String numeroAleatorio = String.format("%05d", aleatorio);
+            String numero = "BOLSA-" + fecha + "-" + numeroAleatorio;
+            generados.add(numero);
+            intentos++;
+        }
+
+        return new ArrayList<>(generados);
     }
 
     /**

@@ -129,28 +129,9 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
-  '/roles/medico/dashboard': {
-    component: lazy(() => import('../pages/roles/medico/DashboardMedico')),
-    requiredAction: 'ver',
-  },
-
-  '/roles/medico/pacientes': {
-    component: lazy(() => import('../pages/roles/medico/ModuloPacientes')),
-    requiredAction: 'ver',
-  },
 
   '/roles/medico/disponibilidad': {
-    component: lazy(() => import('../pages/roles/medico/CalendarioDisponibilidad')),
-    requiredAction: 'ver',
-  },
-
-  '/roles/medico/citas': {
-    component: lazy(() => import('../pages/roles/medico/ModuloCitas')),
-    requiredAction: 'ver',
-  },
-
-  '/roles/medico/indicadores': {
-    component: lazy(() => import('../pages/roles/medico/ModuloIndicadores')),
+    component: lazy(() => import('../pages/roles/medico/disponibilidad/FormularioDisponibilidad')),
     requiredAction: 'ver',
   },
 

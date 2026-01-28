@@ -3,12 +3,155 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.37.0**: `IMPLEMENTACION_5_FIXES_CRITICOS.md` (2026-01-28) - 5 Critical Fixes para importación Excel
+> - ⭐ **NUEVO - v1.15.0**: `REPORTE_ERRORES_FRONTEND.md` (2026-01-28) - Reporte de errores (3 niveles)
 > - ⭐ Módulo Tele-ECG: `plan/02_Modulos_Medicos/08_resumen_desarrollo_tele_ecg.md` (v1.24.0 + UI optimizado)
 > - ⭐ **Módulo Bolsas**: `spec/01_Backend/06_resumen_modulo_bolsas_completo.md` (v1.31.0 - NUEVO)
 > - ⭐ **CRUD Tipos Bolsas**: `spec/01_Backend/05_modulo_tipos_bolsas_crud.md` (v1.0.0 - NUEVO)
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.37.1 (2026-01-28) - 🔴 HOTFIX: Corrección Crítica de Servicio en Controlador
+
+### 🚨 Problema Crítico Identificado y Resuelto
+
+**SolicitudBolsaController estaba usando el servicio INCORRECTO para importación Excel.**
+
+```
+❌ ANTES:  excelImportService.importarYProcesar()  ← Form 107 service
+✅ DESPUÉS: solicitudBolsaService.importarDesdeExcel() ← Con dual phone mapping
+```
+
+### 📊 Impacto
+
+| Aspecto | Antes | Después |
+|---------|-------|---------|
+| Dual phone mapping | ❌ NO activo | ✅ ACTIVO |
+| FIX #1: Validación teléfonos | ❌ SALTADO | ✅ ACTIVO |
+| FIX #2: Detección duplicados | ❌ SALTADO | ✅ ACTIVO |
+| FIX #3: UPDATE fallback | ❌ SALTADO | ✅ ACTIVO |
+| FIX #4: DNI en logs | ❌ SALTADO | ✅ ACTIVO |
+| FIX #5: Repository queries | ❌ SALTADO | ✅ ACTIVO |
+
+### ✅ Cambios Realizados
+
+**SolicitudBolsaController.java (v1.7.0)**
+- Remover: `import ExcelImportService`
+- Remover: `private final ExcelImportService excelImportService`
+- Cambiar: `excelImportService.importarYProcesar()` → `solicitudBolsaService.importarDesdeExcel()`
+- Actualizar: Claves de respuesta (filas_total, filas_ok, filas_error)
+- Actualizar: Documentación JavaDoc con v1.7.0
+
+### 🧪 Verificación
+
+✅ Build: Compilación exitosa en 17s
+✅ Backend: Corriendo en localhost:8080
+✅ API: Retornando paciente_telefono_alterno correctamente
+✅ Lógica: Ahora ejecuta SolicitudBolsaService.importarDesdeExcel() con todos los fixes
+
+### 📄 Documentación
+
+- Nueva: `CORRECCION_SERVICIO_IMPORTACION.md` - Detalles de la corrección
+
+**Estado:** ✅ Ready for testing
+
+---
+
+## v1.37.0 (2026-01-28) - 🎯 Importación Excel v1.15.0: 5 Critical Fixes
+
+### ✨ Descripción
+
+**Implementación de 5 Critical Fixes para hacer robusta la importación de solicitudes de bolsa desde Excel.**
+
+Cambios enfocados en:
+1. ✅ Validación de teléfonos con regex pattern
+2. ✅ Detección PRE-save de duplicados
+3. ✅ UPDATE fallback automático cuando hay constraint violation
+4. ✅ DNI siempre disponible en logs de error
+5. ✅ Métodos repository optimizados
+
+### 📋 Cambios Detallados
+
+#### **FIX #1: Validación de Teléfonos (Phone Pattern Validation)**
+- **Archivo:** `SolicitudBolsaServiceImpl.java`
+- **Cambios:**
+  - Constante: `PHONE_PATTERN = "^[0-9+()\\-\\s]*$"`
+  - Método: `validarTelefonos(int filaNumero, String tel1, String tel2)`
+  - Ejecuta: ANTES de procesar cada fila
+  - Reporte: `"Fila X: Formato de teléfono inválido"`
+
+#### **FIX #2: Detección de Duplicados (Duplicate Detection)**
+- **Archivo:** `SolicitudBolsaServiceImpl.java`
+- **Cambios:**
+  - Método: `detectarYManejarDuplicado(int filaNumero, Long idBolsa, ...)`
+  - Query: `existsByIdBolsaAndPacienteIdAndIdServicio()`
+  - Ejecuta: ANTES de intentar INSERT
+  - Reporte: `"DUPLICADO: ya existe solicitud para esta combinación"`
+
+#### **FIX #3: Manejo de Constraint UNIQUE (Smart Update Fallback)**
+- **Archivo:** `SolicitudBolsaServiceImpl.java`
+- **Cambios:**
+  - Try/catch: `DataIntegrityViolationException` (línea 155)
+  - Método: `intentarActualizarSolicitudExistente(Long idBolsa, SolicitudBolsa nuevaSolicitud)`
+  - Lógica: Si INSERT falla → intenta UPDATE automáticamente
+  - Reporte: `"Solicitud actualizada exitosamente (UPDATE)"`
+
+#### **FIX #4: Scope de Variables (DNI en Logs)**
+- **Archivo:** `SolicitudBolsaServiceImpl.java`
+- **Cambios:**
+  - Antes: `SolicitudBolsaExcelRowDTO rowDTO` declarada adentro del try
+  - Ahora: `SolicitudBolsaExcelRowDTO rowDTO = null` declarada fuera del try
+  - Beneficio: rowDTO disponible en catch block para logs
+  - Resultado: Todos los errores incluyen DNI del paciente
+
+#### **FIX #5: Métodos Repository (Efficient Queries)**
+- **Archivo:** `SolicitudBolsaRepository.java`
+- **Cambios:**
+  - Nuevo método: `existsByIdBolsaAndPacienteIdAndIdServicio(Long, Long, Long)`
+  - Nuevo método: `findByIdBolsaAndPacienteIdAndIdServicio(Long, Long, Long)`
+  - Tipo: Métodos derivados de Spring Data JPA
+  - Beneficio: Queries eficientes sin código repetido
+
+### 🔧 Compilación
+
+```
+BUILD SUCCESSFUL in 15s
+6 actionable tasks: 6 executed
+```
+
+### 📊 Impacto
+
+| Métrica | Antes | Después |
+|---------|-------|---------|
+| Validación teléfono | ❌ No | ✅ Sí |
+| Detección duplicados | Solo constraint | ✅ PRE-save |
+| Manejo constraint error | ❌ Crash | ✅ UPDATE fallback |
+| DNI en logs | No siempre | ✅ Siempre |
+| Métodos repository | 1 | ✅ 3 |
+
+### 📝 Documentación Asociada
+
+- ✅ `IMPLEMENTACION_5_FIXES_CRITICOS.md` - Guía técnica completa
+- ✅ `IMPLEMENTACION_DUAL_TELEFONO_OPCION3.md` - Dual phone mapping
+- ✅ `REPORTE_ERRORES_FRONTEND.md` - Reporte de errores (3 niveles)
+- ✅ `REPORTE_ERRORES_RESUMEN_RAPIDO.md` - TL;DR Errores
+
+### ✅ Testing
+
+- ✅ Compilación exitosa
+- ✅ Backend corriendo en localhost:8080
+- ✅ API respondiendo correctamente
+- ✅ Datos de paciente_telefono_alterno visibles en 329 registros
+- ⏳ Pruebas funcionales en entorno de desarrollo (próximo paso)
+
+### 🎯 Próximas Mejoras
+
+1. Tabla expandible de errores en Modal (next sprint)
+2. Exportar errores a CSV
+3. Reintento selectivo de filas fallidas
 
 ---
 

@@ -26,12 +26,50 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     Optional<SolicitudBolsa> findByNumeroSolicitud(String numeroSolicitud);
 
     /**
+     * Verifica si un número de solicitud ya existe (para validación PRE-save)
+     */
+    boolean existsByNumeroSolicitud(String numeroSolicitud);
+
+    /**
      * Verifica si ya existe una solicitud duplicada
      * por la combinación única: bolsa + paciente
      */
     boolean existsByIdBolsaAndPacienteId(
         Long idBolsa,
-        Long pacienteId
+        String pacienteId
+    );
+
+    /**
+     * Verifica si ya existe una solicitud duplicada
+     * por la combinación única: bolsa + paciente + servicio (constraint solicitud_paciente_unique)
+     * ⚠️ DEPRECATED: Usa existsByIdBolsaAndPacienteIdAndIdServicioAndActivoTrue() en su lugar
+     * Esta versión detecta TODAS las solicitudes, incluso las soft-deleted
+     */
+    boolean existsByIdBolsaAndPacienteIdAndIdServicio(
+        Long idBolsa,
+        String pacienteId,
+        Long idServicio
+    );
+
+    /**
+     * Verifica si ya existe una solicitud ACTIVA duplicada
+     * Filtrado por: bolsa + paciente + servicio + activo=true
+     * ✅ CORRECCIÓN v1.18.4: Solo detecta registros activos, permite reusar pacientes de registros soft-deleted
+     */
+    boolean existsByIdBolsaAndPacienteIdAndIdServicioAndActivoTrue(
+        Long idBolsa,
+        String pacienteId,
+        Long idServicio
+    );
+
+    /**
+     * Busca solicitudes por la combinación: bolsa + paciente + servicio
+     * Usado en manejo de duplicados y updates
+     */
+    List<SolicitudBolsa> findByIdBolsaAndPacienteIdAndIdServicio(
+        Long idBolsa,
+        String pacienteId,
+        Long idServicio
     );
 
     /**
@@ -64,11 +102,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
                sb.estado, sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
-               di.desc_ipress, dr.desc_red
+               di.desc_ipress, dr.desc_red, dm.desc_macro
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
-        LEFT JOIN dim_ipress di ON sb.codigo_ipress = di.cod_ipress
+        LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+        LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         WHERE sb.activo = true
         ORDER BY sb.fecha_solicitud DESC
         """, nativeQuery = true)
@@ -162,7 +201,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * 4️⃣ Estadísticas por tipo de cita
-     * Solo 3 tipos válidos: VOLUNTARIA, INTERCONSULTA, RECITA
+     * Tipos válidos: VOLUNTARIA, INTERCONSULTA, RECITA, REFERENCIA
      */
     @Query(value = """
         SELECT
@@ -174,7 +213,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             ROUND(
                 COUNT(sb.id_solicitud) * 100.0 /
                 (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true
-                 AND tipo_cita IN ('VOLUNTARIA', 'INTERCONSULTA', 'RECITA')), 2
+                 AND tipo_cita IN ('VOLUNTARIA', 'INTERCONSULTA', 'RECITA', 'REFERENCIA')), 2
             ) as porcentaje,
             ROUND(
                 COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
@@ -183,13 +222,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
         WHERE sb.activo = true
-          AND sb.tipo_cita IN ('VOLUNTARIA', 'INTERCONSULTA', 'RECITA')
+          AND sb.tipo_cita IN ('VOLUNTARIA', 'INTERCONSULTA', 'RECITA', 'REFERENCIA')
         GROUP BY sb.tipo_cita
         ORDER BY CASE
                    WHEN sb.tipo_cita = 'VOLUNTARIA' THEN 1
                    WHEN sb.tipo_cita = 'INTERCONSULTA' THEN 2
                    WHEN sb.tipo_cita = 'RECITA' THEN 3
-                   ELSE 4
+                   WHEN sb.tipo_cita = 'REFERENCIA' THEN 4
+                   ELSE 5
                  END
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorTipoCita();

@@ -46,6 +46,9 @@ public class Asegurado {
     @Column(name = "correo_electronico")
     private String correoElectronico;
 
+    @Column(name = "vigencia", nullable = false)
+    private Boolean vigencia;
+
     // Getters y Setters
     public String getPkAsegurado() { return pkAsegurado; }
     public void setPkAsegurado(String pkAsegurado) { this.pkAsegurado = pkAsegurado; }
@@ -82,4 +85,7 @@ public class Asegurado {
 
     public String getCorreoElectronico() { return correoElectronico; }
     public void setCorreoElectronico(String correoElectronico) { this.correoElectronico = correoElectronico; }
+
+    public Boolean getVigencia() { return vigencia; }
+    public void setVigencia(Boolean vigencia) { this.vigencia = vigencia; }
 }

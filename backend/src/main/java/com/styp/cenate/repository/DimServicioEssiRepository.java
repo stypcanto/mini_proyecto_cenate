@@ -16,14 +16,15 @@ public interface DimServicioEssiRepository extends JpaRepository<DimServicioEssi
 
 	// Consulta por indicador de CENATE (true o false)
 	List<DimServicioEssi> findByEstadoAndEsCenate(String estado, Boolean esCenate);
-	
+
 	List<DimServicioEssi> findByEstadoAndEsCenateAndEsAperturaNuevos(String estado, Boolean esCenate, Boolean esAperturaNuevos);
-	
+
 	Optional<DimServicioEssi> findByCodServicio(String codigoServicio);
-	
-	
+
+	// Módulo Formulario 107: Buscar servicio por descripción (especialidad)
+	// Ejemplo: "DERMATOLOGÍA" → id_servicio
+	Optional<DimServicioEssi> findFirstByDescServicioIgnoreCaseAndEstado(String descServicio, String estado);
+
 	List<DimServicioEssi> findByEstadoAndEsCenateAndEsRequerimientoIpress(String estado, Boolean esCenate, Boolean esServicioIpress, Sort sort);
-	
-	
-	
+
 }

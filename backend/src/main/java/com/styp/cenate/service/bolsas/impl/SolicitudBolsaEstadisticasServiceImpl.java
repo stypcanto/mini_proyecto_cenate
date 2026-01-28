@@ -237,10 +237,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
             case "VOLUNTARIA" -> "🆓";
             case "INTERCONSULTA" -> "🔄";
             case "RECITA" -> "🔁";
-            case "PRESENCIAL" -> "🏥";
-            case "TELECONSULTA" -> "📞";
-            case "VIDEOCONFERENCIA" -> "📹";
-            case "ONLINE" -> "💻";
+            case "REFERENCIA" -> "➡️";
             default -> "❓";
         };
     }
@@ -251,10 +248,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
             case "VOLUNTARIA" -> "#4ECDC4";       // Turquesa - libre/voluntaria
             case "INTERCONSULTA" -> "#FFE66D";    // Amarillo - interconsulta
             case "RECITA" -> "#FF6B6B";           // Rojo - recita/repetida
-            case "PRESENCIAL" -> "#95E1D3";       // Verde menta - presencial
-            case "TELECONSULTA" -> "#6C5CE7";     // Púrpura - teleconsulta
-            case "VIDEOCONFERENCIA" -> "#00B894"; // Verde - videoconferencia
-            case "ONLINE" -> "#0984E3";           // Azul - online
+            case "REFERENCIA" -> "#9B59B6";       // Púrpura - referencia/derivación
             default -> "#999999";                  // Gris - desconocido
         };
     }

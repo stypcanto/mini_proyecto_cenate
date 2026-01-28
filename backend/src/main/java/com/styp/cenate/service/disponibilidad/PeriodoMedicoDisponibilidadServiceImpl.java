@@ -100,8 +100,9 @@ public class PeriodoMedicoDisponibilidadServiceImpl implements PeriodoMedicoDisp
         PeriodoMedicoDisponibilidad entity = repository.findById(id)
                 .orElseThrow(() -> new BusinessException("Periodo médico de disponibilidad no encontrado con ID: " + id));
 
-        if (!entity.isBorrador()) {
-            throw new BusinessException("Solo se pueden actualizar periodos en estado BORRADOR");
+        // Permitir actualizar solo si está en BORRADOR o ACTIVO
+        if (!entity.isBorrador() && !entity.isActivo()) {
+            throw new BusinessException("Solo se pueden actualizar periodos en estado BORRADOR o ACTIVO");
         }
 
         // Validar duplicados para otro registro

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Upload, AlertCircle, CheckCircle, FileText, Loader, Download, Info, Eye, ChevronDown, ChevronUp } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import bolsasService from '../../services/bolsasService';
+import ModalDeduplicacionAutomatica from '../../components/modals/ModalDeduplicacionAutomatica';
 import * as XLSX from 'xlsx';
 
 /**
@@ -37,18 +38,21 @@ import * as XLSX from 'xlsx';
  *    - Umbral de similitud: 40% para aceptar coincidencia
  *
  * 4️⃣ ESTRUCTURA
- *    - 11 campos en ORDEN FIJO (posiciones no cambian)
- *    - Columna 0: FECHA PREFERIDA (YYYY-MM-DD) [OBLIGATORIO]
- *    - Columna 1: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
- *    - Columna 2: DNI (8 dígitos) [OBLIGATORIO]
- *    - Columna 3: ASEGURADO (nombre) [OBLIGATORIO]
- *    - Columna 4: SEXO (M/F) [OPCIONAL - se llena desde BD si falta]
- *    - Columna 5: FECHA NACIMIENTO (YYYY-MM-DD) [OPCIONAL - se llena desde BD si falta]
- *    - Columna 6: TELÉFONO PRINCIPAL (números) [OPCIONAL - se llena desde BD si falta]
- *    - Columna 7: TELÉFONO ALTERNO (números) [OPCIONAL - se llena desde BD si falta]
- *    - Columna 8: CORREO (email) [OPCIONAL - se llena desde BD si falta]
- *    - Columna 9: COD. IPRESS (números) [OBLIGATORIO]
- *    - Columna 10: TIPO CITA (Recita, Interconsulta, Voluntaria) [OBLIGATORIO]
+ *    - 14 campos en ORDEN FIJO (posiciones no cambian) - v2.0.0
+ *    - Columna 0: REGISTRO [OPCIONAL]
+ *    - Columna 1: OPCIONES DE INGRESO DE LLAMADA [OPCIONAL]
+ *    - Columna 2: TELEFONO [OPCIONAL]
+ *    - Columna 3: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
+ *    - Columna 4: DNI (8 dígitos) [OBLIGATORIO]
+ *    - Columna 5: APELLIDOS Y NOMBRES (nombre) [OBLIGATORIO]
+ *    - Columna 6: SEXO (M/F) [OBLIGATORIO]
+ *    - Columna 7: FechaNacimiento (YYYY-MM-DD) [OBLIGATORIO]
+ *    - Columna 8: DEPARTAMENTO [OPCIONAL]
+ *    - Columna 9: PROVINCIA [OPCIONAL]
+ *    - Columna 10: DISTRITO [OPCIONAL]
+ *    - Columna 11: MOTIVO DE LA LLAMADA [OPCIONAL]
+ *    - Columna 12: AFILIACION [OPCIONAL]
+ *    - Columna 13: DERIVACION INTERNA (especialidad) [OBLIGATORIO]
  *
  *    💡 IMPORTANTE: Si el Asegurado (DNI) no existe en el sistema, será creado automáticamente (v1.13.8)
  *
@@ -82,6 +86,10 @@ export default function CargarDesdeExcel() {
   const [expandedFAQ, setExpandedFAQ] = useState(false);
   const [archivoAutomatico, setArchivoAutomatico] = useState(null);
   const [buscandoArchivo, setBuscandoArchivo] = useState(false);
+
+  // ✅ v2.2.0: Estados para Modal de Deduplicación
+  const [mostrarModalDeduplicacion, setMostrarModalDeduplicacion] = useState(false);
+  const [reporteDeduplicacion, setReporteDeduplicacion] = useState(null);
 
   // Obtener token y usuario del localStorage
   const token = localStorage.getItem('token');
@@ -158,32 +166,32 @@ export default function CargarDesdeExcel() {
 
     const valoresAnalisis = Object.values(filaAnalisis);
 
-    // Validar estructura esperada (11 columnas mínimo)
-    if (valoresAnalisis.length < 11) {
+    // Validar estructura esperada (11 columnas exactamente - v1.16.2 BOLSAS)
+    if (valoresAnalisis.length !== 11) {
       return {
         valido: false,
-        error: `Se detectaron solo ${valoresAnalisis.length} columnas, se esperan al menos 11`
+        error: `Se detectaron ${valoresAnalisis.length} columnas, se esperan exactamente 11. Estructura BOLSAS v1.16.2: FECHA PREFERIDA, TIPO DOC, DNI, ASEGURADO, SEXO, FECHA NACIMIENTO, TELÉFONO PRINCIPAL, TELÉFONO ALTERNO, CORREO, COD. IPRESS, TIPO CITA`
       };
     }
 
-    // Validaciones por columna esperada
+    // Validaciones por columna esperada (11 columnas - BOLSAS v1.16.2)
     const validaciones = {
-      col0_fecha: /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}/.test(valoresAnalisis[0]?.toString() || ''),
-      col1_tipoDoc: /^[A-Za-z]+/.test(valoresAnalisis[1]?.toString() || ''),
-      col2_dni: /^\d{6,10}/.test(valoresAnalisis[2]?.toString() || ''),
-      col3_nombre: valoresAnalisis[3]?.toString().length > 3,
-      col4_sexo: /^[MF]$/i.test(valoresAnalisis[4]?.toString() || ''),
-      col5_fechaNac: /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}/.test(valoresAnalisis[5]?.toString() || ''),
-      col6_telefonoPrincipal: /^\d{6,15}/.test(valoresAnalisis[6]?.toString() || ''),
-      col7_telefonoAlterno: /^\d{6,15}/.test(valoresAnalisis[7]?.toString() || '') || valoresAnalisis[7]?.toString() === '',
-      col8_correo: /^[^\s@]+@[^\s@]+\.[^\s@]+/.test(valoresAnalisis[8]?.toString() || '') || valoresAnalisis[8]?.toString() === '',
-      col9_ipress: /^\d{2,4}/.test(valoresAnalisis[9]?.toString() || ''),
-      col10_tipoCita: /^(Recita|Interconsulta|Voluntaria)/i.test(valoresAnalisis[10]?.toString() || '')
+      col0_fechaPreferida: /^\d{4}-\d{2}-\d{2}|^\d{1,2}\/\d{1,2}\/\d{4}/.test(valoresAnalisis[0]?.toString() || ''), // OBLIGATORIO
+      col1_tipoDoc: /^[A-Za-z]+/.test(valoresAnalisis[1]?.toString() || ''), // OBLIGATORIO
+      col2_dni: /^\d{6,10}/.test(valoresAnalisis[2]?.toString() || ''), // OBLIGATORIO
+      col3_asegurado: valoresAnalisis[3]?.toString().length > 3, // OBLIGATORIO
+      col4_sexo: true, // OPCIONAL - Se enriquece desde BD si falta
+      col5_fechaNac: true, // OPCIONAL - Se enriquece desde BD si falta
+      col6_telPrincipal: true, // OPCIONAL - Se enriquece desde BD si falta
+      col7_telAlterno: true, // OPCIONAL - Se enriquece desde BD si falta
+      col8_correo: true, // OPCIONAL - Se enriquece desde BD si falta
+      col9_codigoIpress: /^\d+/.test(valoresAnalisis[9]?.toString() || ''), // OBLIGATORIO
+      col10_tipoCita: /^(recita|interconsulta|voluntaria)$/i.test(valoresAnalisis[10]?.toString() || '') // OBLIGATORIO
     };
 
-    console.log('✅ Validaciones por columna:', validaciones);
+    console.log('✅ Validaciones por columna (11 campos BOLSAS v1.16.2):', validaciones);
 
-    // Contar validaciones exitosas
+    // Contar validaciones exitosas (11 campos)
     const validacionesExitosas = Object.values(validaciones).filter(v => v).length;
     const porcentajeValido = (validacionesExitosas / 11) * 100;
 
@@ -203,7 +211,7 @@ export default function CargarDesdeExcel() {
       },
       recomendacion: esViable
         ? `✅ Estructura válida (${Math.round(porcentajeValido)}% de coincidencia)`
-        : `❌ Estructura inválida (${Math.round(porcentajeValido)}% de coincidencia). Se esperan 11 columnas en el orden: Fecha, Tipo Doc, DNI, Asegurado, Sexo, Fecha Nac, Teléfono Principal, Teléfono Alterno, Correo, Código IPRESS, Tipo Cita`
+        : `❌ Estructura inválida (${Math.round(porcentajeValido)}% de coincidencia). Se esperan 11 columnas en el orden: Fecha Preferida, Tipo Documento, DNI, Asegurado, Sexo*, Fecha Nacimiento*, Teléfono Principal*, Teléfono Alterno*, Correo*, Código IPRESS, Tipo Cita (*=enriquecibles desde BD)`
     };
   };
 
@@ -727,6 +735,19 @@ export default function CargarDesdeExcel() {
 
       console.log('✅ Respuesta del servidor:', resultado);
 
+      // ✅ v2.2.0: Detectar si hay duplicados consolidados
+      if (resultado.reporte_deduplicacion &&
+          resultado.reporte_deduplicacion.dniDuplicadosSaltados > 0) {
+
+        console.log('🔄 Duplicados detectados, mostrando modal...');
+        setReporteDeduplicacion(resultado);
+        setMostrarModalDeduplicacion(true);
+
+        // No continuar, esperar que usuario confirme en el modal
+        return;
+      }
+
+      // Si no hay duplicados, mostrar éxito directamente
       setImportStatus({
         type: 'success',
         message: resultado.mensaje || 'Archivo importado correctamente',
@@ -755,7 +776,7 @@ export default function CargarDesdeExcel() {
       if (error.message?.includes('mismo hash') || error.message?.includes('Ya se cargó')) {
         mensajeAmigable = '⚠️ Esta bolsa ya fue cargada anteriormente. Si deseas cargar una nueva versión, modifica el archivo o cambia su nombre.';
       } else if (error.message?.includes('400') || error.message?.includes('validación')) {
-        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga los 11 campos obligatorios.';
+        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga exactamente 14 columnas con los 6 campos obligatorios.';
       } else if (error.message?.includes('500')) {
         mensajeAmigable = '❌ Error interno del servidor. Por favor, intenta nuevamente.';
       } else if (error.message?.includes('token') || error.message?.includes('401')) {
@@ -770,6 +791,49 @@ export default function CargarDesdeExcel() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // ✅ v2.2.0: Handler para confirmar deduplicación (usuario acepta consolidación)
+  const handleConfirmarDeduplicacion = () => {
+    console.log('✅ Usuario confirmó consolidación automática');
+    setMostrarModalDeduplicacion(false);
+
+    // Mostrar éxito con detalles de consolidación
+    setImportStatus({
+      type: 'success',
+      message: `✅ Importación completada exitosamente: ${reporteDeduplicacion.filas_ok} registros cargados (${reporteDeduplicacion.filas_deduplicadas_saltadas} consolidados por duplicidad)`,
+      rowsProcessed: reporteDeduplicacion.filas_ok,
+      totalRows: reporteDeduplicacion.filas_total,
+      failedRows: reporteDeduplicacion.filas_deduplicadas_saltadas,
+      reporteDeduplicacion: reporteDeduplicacion,  // Incluir reporte para referencia
+      showModal: true
+    });
+
+    console.log('✅ Importación finalizada:', reporteDeduplicacion);
+
+    // Esperar 5 segundos antes de redirigir
+    setTimeout(() => {
+      setFile(null);
+      setTipoBolesaId(null);
+      setReporteDeduplicacion(null);
+      navigate('/bolsas/solicitudes');
+    }, 5000);
+  };
+
+  // ✅ v2.2.0: Handler para cancelar deduplicación (usuario rechaza)
+  const handleCancelarDeduplicacion = () => {
+    console.log('❌ Usuario canceló la importación');
+    setMostrarModalDeduplicacion(false);
+    setReporteDeduplicacion(null);
+    setFile(null);
+    setTipoBolesaId(null);
+
+    // Mostrar mensaje informativo
+    setImportStatus({
+      type: 'info',
+      message: '⚠️ Importación cancelada por el usuario. Puedes reintentar con otro archivo.',
+      showModal: true
+    });
   };
 
   // Función para descargar plantilla Excel (COMPLETA)
@@ -976,6 +1040,14 @@ export default function CargarDesdeExcel() {
       {/* Modal de resultado */}
       <ResultModal />
 
+      {/* ✅ v2.2.0: Modal de Deduplicación Automática */}
+      <ModalDeduplicacionAutomatica
+        datosDeduplicacion={reporteDeduplicacion}
+        visible={mostrarModalDeduplicacion}
+        onConfirm={handleConfirmarDeduplicacion}
+        onCancel={handleCancelarDeduplicacion}
+      />
+
       <div className="w-full">
         {/* Header Mejorado */}
         <div className="mb-8">
@@ -1002,7 +1074,7 @@ export default function CargarDesdeExcel() {
               >
                 <div className="flex items-center gap-2">
                   <Info size={24} className="text-blue-600" />
-                  <h2 className="text-xl font-bold text-gray-800">Campos Obligatorios (11 campos)</h2>
+                  <h2 className="text-xl font-bold text-gray-800">Estructura Excel (14 campos - 6 obligatorios)</h2>
                 </div>
                 {expandedObligatorios ? (
                   <ChevronUp size={24} className="text-blue-600" />
@@ -1333,11 +1405,15 @@ export default function CargarDesdeExcel() {
                 <select
                   value={tipoBolesaId || ''}
                   onChange={(e) => setTipoBolesaId(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-4 py-3 border-2 border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 bg-white text-gray-800 font-semibold"
+                  className="w-full px-4 py-3 border-2 border-yellow-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 font-semibold cursor-pointer shadow-sm"
+                  style={{
+                    backgroundColor: 'white !important',
+                    color: 'black !important'
+                  }}
                 >
-                  <option value="">-- Selecciona un tipo de bolsa --</option>
+                  <option value="" style={{ backgroundColor: 'white !important', color: 'black !important' }}>-- Selecciona un tipo de bolsa --</option>
                   {tiposBolsas.map((tipo) => (
-                    <option key={tipo.idTipoBolsa} value={tipo.idTipoBolsa}>
+                    <option key={tipo.idTipoBolsa} value={tipo.idTipoBolsa} style={{ backgroundColor: 'white !important', color: 'black !important', padding: '8px' }}>
                       {tipo.codTipoBolsa} - {tipo.descTipoBolsa}
                     </option>
                   ))}
@@ -1363,11 +1439,17 @@ export default function CargarDesdeExcel() {
                 <select
                   value={idServicio || ''}
                   onChange={(e) => setIdServicio(e.target.value ? parseInt(e.target.value) : null)}
-                  className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-800 font-semibold"
+                  className="w-full px-4 py-3 border-2 border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 font-semibold cursor-pointer shadow-sm hover:shadow-md transition-shadow"
+                  style={{
+                    backgroundColor: 'white !important',
+                    color: 'black !important'
+                  }}
                 >
-                  <option value="">-- Selecciona una especialidad --</option>
-                  {servicios.map((servicio) => (
-                    <option key={servicio.idServicio} value={servicio.idServicio}>
+                  <option value="" style={{ backgroundColor: 'white !important', color: 'black !important' }}>-- Selecciona una especialidad --</option>
+                  {[...servicios]
+                    .sort((a, b) => a.descServicio.localeCompare(b.descServicio, 'es', { sensitivity: 'base' }))
+                    .map((servicio) => (
+                    <option key={servicio.idServicio} value={servicio.idServicio} style={{ backgroundColor: 'white !important', color: 'black !important' }}>
                       {servicio.codServicio || servicio.idServicio} - {servicio.descServicio}
                     </option>
                   ))}

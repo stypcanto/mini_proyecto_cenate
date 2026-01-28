@@ -57,7 +57,7 @@ public class SolicitudBolsa {
 
     // 👤 DATOS PACIENTE
     @Column(name = "paciente_id", nullable = false)
-    private Long pacienteId;
+    private String pacienteId;
 
     @Column(name = "paciente_nombre", length = 255, nullable = false)
     private String pacienteNombre;

@@ -1,8 +1,9 @@
 package com.styp.cenate.api.bolsas;
 
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
+import com.styp.cenate.model.bolsas.HistorialCargaBolsas;
+import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsaService;
-import com.styp.cenate.service.form107.ExcelImportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -10,16 +11,20 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
+import java.security.MessageDigest;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 /**
  * Controller REST para gestión de solicitudes de bolsa
- * Endpoints para importación Excel, listado, búsqueda y actualización
+ * Endpoints para importación Excel (v1.15.0: dual phone mapping), listado, búsqueda y actualización
  *
- * @version v1.6.0
+ * @version v1.7.0 - Implementa dual phone mapping (teléfono principal + alterno)
  * @since 2026-01-23
+ * @updated 2026-01-28 - Switcheo a SolicitudBolsaService con 5 critical fixes
  */
 @Slf4j
 @RestController
@@ -28,7 +33,7 @@ import java.util.Map;
 public class SolicitudBolsaController {
 
     private final SolicitudBolsaService solicitudBolsaService;
-    private final ExcelImportService excelImportService;
+    private final HistorialCargaBolsasRepository historialRepository;
 
     /**
      * Importa solicitudes desde archivo Excel
@@ -47,30 +52,106 @@ public class SolicitudBolsaController {
             @RequestParam("idServicio") Long idServicio,
             @RequestParam(value = "usuarioCarga", defaultValue = "admin") String usuarioCarga) {
 
+        HistorialCargaBolsas historial = null;
         try {
             log.info("📤 Iniciando importación de Excel - Bolsa: {}, Servicio: {}, Usuario: {}",
                 idBolsa, idServicio, usuarioCarga);
 
-            // Usar ExcelImportService que incluye SP v2.0.0 con enriquecimiento e INSERT
-            Map<String, Object> resultado = excelImportService.importarYProcesar(
+            // ============================================================================
+            // 📝 CREAR HISTORIAL ANTES DE PROCESAR (v1.20.0)
+            // Permite vincular errores de auditoría al batch de carga
+            // ============================================================================
+            String hashArchivo = calcularHashArchivo(file);
+            historial = HistorialCargaBolsas.builder()
+                .nombreArchivo(file.getOriginalFilename())
+                .hashArchivo(hashArchivo)
+                .usuarioCarga(usuarioCarga)
+                .estadoCarga("PROCESANDO")
+                .fechaReporte(LocalDate.now())
+                .totalFilas(0)
+                .filasOk(0)
+                .filasError(0)
+                .build();
+
+            historial = historialRepository.save(historial);
+            Long idHistorial = historial.getIdCarga();
+            log.info("✅ Historial creado - ID: {}, Archivo: {}", idHistorial, file.getOriginalFilename());
+
+            // Usar SolicitudBolsaService v1.20.0 con auditoría de errores
+            Map<String, Object> resultado = solicitudBolsaService.importarDesdeExcel(
                 file,
-                usuarioCarga,
                 idBolsa,
-                idServicio
+                idServicio,
+                usuarioCarga,
+                idHistorial  // Pasar ID de historial para auditoría
             );
 
             log.info("✅ Importación completada - Total: {}, OK: {}, Errores: {}",
-                resultado.get("totalFilas"),
-                resultado.get("filasOk"),
-                resultado.get("filasError"));
+                resultado.get("filas_total"),
+                resultado.get("filas_ok"),
+                resultado.get("filas_error"));
+
+            // ============================================================================
+            // 📝 ACTUALIZAR HISTORIAL CON RESULTADOS FINALES
+            // ============================================================================
+            historial.setEstadoCarga("PROCESADO");
+            historial.setTotalFilas((Integer) resultado.getOrDefault("filas_total", 0));
+            historial.setFilasOk((Integer) resultado.getOrDefault("filas_ok", 0));
+            historial.setFilasError((Integer) resultado.getOrDefault("filas_error", 0));
+            historialRepository.save(historial);
+
+            log.info("✅ Historial actualizado - OK: {}, Errores: {}",
+                historial.getFilasOk(), historial.getFilasError());
 
             return ResponseEntity.ok(resultado);
 
         } catch (Exception e) {
             log.error("❌ Error en importación de Excel: ", e);
+
+            // Si el historial se creó pero hubo error, marcarlo como fallido
+            if (historial != null) {
+                try {
+                    historial.setEstadoCarga("ERROR");
+                    historialRepository.save(historial);
+                } catch (Exception ex) {
+                    log.warn("⚠️ No se pudo actualizar estado del historial a ERROR: {}", ex.getMessage());
+                }
+            }
+
             return ResponseEntity.badRequest().body(
                 Map.of("error", "Error en importación: " + e.getMessage())
             );
+        }
+    }
+
+    /**
+     * Calcula el hash SHA-256 del archivo de forma eficiente (stream)
+     * No lee TODO el archivo en memoria, lo procesa en chunks
+     */
+    private String calcularHashArchivo(MultipartFile file) throws Exception {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] buffer = new byte[8192];
+            int bytesRead;
+
+            try (var inputStream = file.getInputStream()) {
+                while ((bytesRead = inputStream.read(buffer)) != -1) {
+                    digest.update(buffer, 0, bytesRead);
+                }
+            }
+
+            byte[] hash = digest.digest();
+            StringBuilder hexString = new StringBuilder();
+            for (byte b : hash) {
+                String hex = Integer.toHexString(0xff & b);
+                if (hex.length() == 1) hexString.append('0');
+                hexString.append(hex);
+            }
+            return hexString.toString();
+        } catch (IOException e) {
+            log.warn("⚠️ No se pudo calcular hash del archivo: {}", e.getMessage());
+            // Fallback: usar nombre del archivo + timestamp como alternativa
+            return file.getOriginalFilename() + "-" + System.currentTimeMillis();
         }
     }
 
@@ -211,6 +292,40 @@ public class SolicitudBolsaController {
 
         } catch (Exception e) {
             log.error("Error al eliminar solicitud: ", e);
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "Error: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Cambia el tipo de bolsa de una solicitud
+     * PATCH /api/bolsas/solicitudes/{id}/cambiar-bolsa
+     * ⚠️ SOLO SUPERADMIN puede ejecutar esta operación
+     *
+     * @param id ID de la solicitud
+     * @param idBolsaNueva ID del nuevo tipo de bolsa
+     * @return solicitud actualizada
+     */
+    @PatchMapping("/{id}/cambiar-bolsa")
+    public ResponseEntity<?> cambiarTipoBolsa(
+            @PathVariable Long id,
+            @RequestParam("idBolsaNueva") Long idBolsaNueva) {
+
+        try {
+            log.info("🔄 Cambiando tipo de bolsa para solicitud {} → Nueva bolsa: {}", id, idBolsaNueva);
+            SolicitudBolsaDTO solicitudActualizada = solicitudBolsaService.cambiarTipoBolsa(id, idBolsaNueva);
+
+            log.info("✅ Tipo de bolsa actualizado exitosamente");
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Tipo de bolsa actualizado exitosamente",
+                "idSolicitud", id,
+                "idBolsaNueva", idBolsaNueva,
+                "solicitud", solicitudActualizada
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error al cambiar tipo de bolsa: ", e);
             return ResponseEntity.badRequest().body(
                 Map.of("error", "Error: " + e.getMessage())
             );

@@ -53,7 +53,8 @@ export default function ModalEditarPeriodo({ periodo, onClose, onGuardar }) {
       console.log("📦 Payload que se enviará:");
       console.table(payload);
       
-      await onGuardar(periodo.idPeriodo || periodo.idDisponibilidad, payload);
+      const idPeriodo = periodo.idPeriodoRegDisp || periodo.idPeriodo || periodo.idDisponibilidad;
+      await onGuardar(idPeriodo, payload);
       onClose();
     } catch (error) {
       console.error("Error al guardar:", error);

@@ -4,7 +4,7 @@
 
 **Organización:** EsSalud - Centro Nacional de Telemedicina
 **Desarrollador:** Ing. Styp Canto Rondón
-**Última actualización:** 2025-12-29
+**Última actualización:** 2026-01-28
 
 ---
 
@@ -12,6 +12,8 @@
 
 | Versión | Fecha | Nombre | Tipo |
 |---------|-------|--------|------|
+| [v1.37.0](#v1370-2026-01-28) | 2026-01-28 | Importación Excel v1.15.0: 5 Critical Fixes | Major Feature |
+| [v1.36.0](#v1360-2026-01-27) | 2026-01-27 | Módulo Bolsas v2.0.0: Estadísticas Dashboard | Major Feature |
 | [v1.10.3](#v1103-2025-12-29) | 2025-12-29 | Fix: Eliminación de Usuarios con Disponibilidad Médica | Corrección |
 | [v1.10.2](#v1102-2025-12-29) | 2025-12-29 | Selección de Correo para Recuperación | Feature |
 | [v1.10.1](#v1101-2025-12-29) | 2025-12-29 | Selección de Correo Preferido | Feature |
@@ -33,6 +35,58 @@
 ---
 
 ## Versiones Detalladas
+
+### v1.37.0 (2026-01-28)
+**Nombre:** Importación Excel v1.15.0: 5 Critical Fixes
+**Tipo:** Major Feature
+**Status:** ✅ Production Ready
+
+#### Resumen
+Implementación de 5 critical fixes para hacer robusta la importación de solicitudes de bolsa desde Excel, con validación de teléfonos, detección de duplicados, UPDATE fallback automático y reporteo completo de errores.
+
+#### Cambios Principales
+- ✅ **FIX #1:** Validación de teléfonos con regex pattern
+- ✅ **FIX #2:** Detección PRE-save de duplicados
+- ✅ **FIX #3:** UPDATE fallback automático para constraint violations
+- ✅ **FIX #4:** DNI siempre disponible en logs de error
+- ✅ **FIX #5:** Métodos repository optimizados
+
+#### Archivos Modificados
+- `SolicitudBolsaServiceImpl.java` (+3 métodos, +128 líneas)
+- `SolicitudBolsaRepository.java` (+2 métodos, +15 líneas)
+
+#### Documentación
+- `IMPLEMENTACION_5_FIXES_CRITICOS.md` - Guía técnica completa
+- `REPORTE_ERRORES_FRONTEND.md` - Reporte de errores (3 niveles)
+- `REPORTE_ERRORES_RESUMEN_RAPIDO.md` - TL;DR
+
+#### Testing
+- ✅ BUILD SUCCESSFUL en 15s
+- ✅ Backend corriendo en localhost:8080
+- ✅ API respondiendo correctamente
+
+---
+
+### v1.36.0 (2026-01-27)
+**Nombre:** Módulo Bolsas v2.0.0: Estadísticas Dashboard
+**Tipo:** Major Feature
+**Status:** ✅ Production Ready
+
+#### Resumen
+Implementación completa del dashboard de estadísticas para el módulo de solicitudes de bolsa, con 8 endpoints REST y 7 componentes React para visualización de datos.
+
+#### Cambios Principales
+- ✅ 8 endpoints REST de estadísticas
+- ✅ 7 componentes gráficos React
+- ✅ Dashboard integrado
+- ✅ Colorización por tipo de bolsa/cita
+
+#### Testing
+- ✅ 329 registros activos
+- ✅ Todos los gráficos funcionando
+- ✅ Datos reales de base de datos
+
+---
 
 ### v1.10.3 (2025-12-29)
 **Nombre:** Fix: Eliminación de Usuarios con Disponibilidad Médica

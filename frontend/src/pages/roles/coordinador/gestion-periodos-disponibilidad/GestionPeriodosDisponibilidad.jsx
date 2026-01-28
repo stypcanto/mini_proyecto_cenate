@@ -2,6 +2,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Calendar, FileText, Loader2, RefreshCw } from "lucide-react";
 
+import periodoMedicoDisponibilidadService from "../../../../services/periodoMedicoDisponibilidadService";
 import periodoDisponibilidadService from "../../../../services/periodoDisponibilidadService";
 
 import TabPeriodos from "./components/TabPeriodos";
@@ -76,50 +77,50 @@ export default function GestionPeriodosDisponibilidad() {
   const cargarPeriodos = async () => {
     setLoadingPeriodos(true);
     try {
-      // Adaptar según la API de periodoDisponibilidadService
-      // Por ahora, intentamos obtener todos los períodos
-      let data;
+      let response;
       
-      if (filtrosPeriodos.estado && filtrosPeriodos.estado !== "TODOS") {
-        // Si hay filtro de estado, usar obtenerPorEstado
-        const response = await periodoDisponibilidadService.obtenerPorEstado(
-          filtrosPeriodos.estado,
-          0,
-          100
-        );
-        data = response.data?.content || response.data || [];
+      // Usar el servicio correcto según el filtro de estado
+      if (filtrosPeriodos.estado === "ACTIVO") {
+        response = await periodoMedicoDisponibilidadService.listarActivos();
+      } else if (filtrosPeriodos.estado === "CERRADO") {
+        // Para CERRADO, obtenemos todos y filtramos
+        response = await periodoMedicoDisponibilidadService.listarTodos();
       } else {
-        // Obtener todos
-        const response = await periodoDisponibilidadService.obtenerPeriodos(0, 100);
-        data = response.data?.content || response.data || [];
+        // TODOS
+        response = await periodoMedicoDisponibilidadService.listarTodos();
       }
       
-      // Agrupar por período único (periodo YYYYMM) para mostrar como períodos
-      const periodosUnicos = new Map();
-      if (Array.isArray(data)) {
-        data.forEach((d) => {
-          const periodoKey = d.periodo || `${d.fechaInicio?.substring(0, 7).replace('-', '')}`;
-          if (!periodosUnicos.has(periodoKey)) {
-            periodosUnicos.set(periodoKey, {
-              idPeriodo: periodoKey,
-              periodo: periodoKey,
-              descripcion: d.descripcion || `Periodo ${periodoKey}`,
-              fechaInicio: d.fechaInicio,
-              fechaFin: d.fechaFin,
-              estado: d.estado || "ACTIVO",
-              totalDisponibilidades: 0,
-              enviadas: 0,
-              revisadas: 0,
-            });
-          }
-          const periodo = periodosUnicos.get(periodoKey);
-          periodo.totalDisponibilidades++;
-          if (d.estado === "ENVIADO") periodo.enviadas++;
-          if (d.estado === "REVISADO") periodo.revisadas++;
+      let data = Array.isArray(response) ? response : (response?.data || []);
+      
+      // Filtrar por año si está seleccionado
+      if (filtrosPeriodos.anio) {
+        data = data.filter((p) => {
+          const anioPeriodo = p.anio || (p.periodo ? parseInt(p.periodo.substring(0, 4)) : null);
+          return anioPeriodo === filtrosPeriodos.anio;
         });
       }
       
-      setPeriodos(Array.from(periodosUnicos.values()));
+      // Filtrar por estado CERRADO si está seleccionado
+      if (filtrosPeriodos.estado === "CERRADO") {
+        data = data.filter((p) => p.estado === "CERRADO");
+      }
+      
+      // Mapear los datos del backend al formato esperado por el frontend
+      const periodosMapeados = data.map((p) => ({
+        idPeriodo: p.idPeriodoRegDisp,
+        idPeriodoRegDisp: p.idPeriodoRegDisp,
+        periodo: p.periodo,
+        descripcion: p.descripcion,
+        fechaInicio: p.fechaInicio,
+        fechaFin: p.fechaFin,
+        estado: p.estado,
+        anio: p.anio,
+        totalDisponibilidades: 0, // Se calculará si es necesario
+        enviadas: 0,
+        revisadas: 0,
+      }));
+      
+      setPeriodos(periodosMapeados);
     } catch (err) {
       console.error("Error al cargar periodos:", err);
       setPeriodos([]);
@@ -130,17 +131,25 @@ export default function GestionPeriodosDisponibilidad() {
 
   const cargarAniosDisponibles = async () => {
     try {
-      // Extraer años de los períodos cargados
-      const response = await periodoDisponibilidadService.obtenerPeriodos(0, 1000);
-      const data = response.data?.content || response.data || [];
-      const anios = new Set();
-      data.forEach((d) => {
-        if (d.periodo) {
-          const anio = parseInt(d.periodo.substring(0, 4));
-          if (!isNaN(anio)) anios.add(anio);
-        }
-      });
-      setAniosDisponibles(anios.size > 0 ? Array.from(anios).sort((a, b) => b - a) : [new Date().getFullYear()]);
+      // Usar el endpoint específico para obtener años
+      const response = await periodoMedicoDisponibilidadService.listarAnios();
+      
+      // Extraer correctamente los datos del response
+      let anios = [];
+      if (Array.isArray(response)) {
+        anios = response;
+      } else if (response?.data) {
+        anios = Array.isArray(response.data) ? response.data : [];
+      }
+      
+      console.log('Años recibidos del backend:', anios);
+      
+      if (anios.length > 0) {
+        setAniosDisponibles(anios.sort((a, b) => b - a));
+      } else {
+        // Si no hay años, usar el año actual
+        setAniosDisponibles([new Date().getFullYear()]);
+      }
     } catch (err) {
       console.error("Error al cargar años disponibles:", err);
       setAniosDisponibles([new Date().getFullYear()]);
@@ -195,27 +204,43 @@ export default function GestionPeriodosDisponibilidad() {
     const nuevoEstado = actual === ESTADO_PERIODO.ACTIVO ? ESTADO_PERIODO.CERRADO : ESTADO_PERIODO.ACTIVO;
 
     try {
-      // Adaptar según la API disponible
-      // Por ahora, solo recargamos
+      const idPeriodo = periodo.idPeriodoRegDisp || periodo.idPeriodo;
+      await periodoMedicoDisponibilidadService.cambiarEstado(idPeriodo, nuevoEstado);
       await cargarPeriodos();
       if (activeTab === "disponibilidades") await cargarDisponibilidades();
+      window.alert(`Período ${nuevoEstado === ESTADO_PERIODO.ACTIVO ? 'activado' : 'cerrado'} correctamente`);
     } catch (err) {
       console.error(err);
-      window.alert("Error al cambiar estado del período");
+      const errorMessage = err.message || "Error desconocido al cambiar estado del período";
+      window.alert(`Error al cambiar estado del período:\n\n${errorMessage}`);
     }
   };
 
   const handleAperturarPeriodo = async (nuevoPeriodo) => {
     try {
-      // Adaptar según la API - puede que necesitemos crear un período primero
-      // Por ahora, solo recargamos
+      // Preparar los datos según el formato esperado por el backend
+      const anio = parseInt(nuevoPeriodo.periodo.substring(0, 4));
+      const fechaInicio = nuevoPeriodo.fechaInicio.split('T')[0]; // Solo la fecha sin hora
+      const fechaFin = nuevoPeriodo.fechaFin.split('T')[0];
+      
+      const requestData = {
+        anio: anio,
+        periodo: nuevoPeriodo.periodo,
+        descripcion: nuevoPeriodo.descripcion,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
+      };
+      
+      await periodoMedicoDisponibilidadService.crear(requestData);
       setShowAperturarModal(false);
       await cargarPeriodos();
+      await cargarAniosDisponibles(); // Recargar años por si se agregó uno nuevo
       if (activeTab === "disponibilidades") await cargarDisponibilidades();
       window.alert("Período aperturado correctamente");
     } catch (err) {
       console.error(err);
-      window.alert("Error al aperturar el período");
+      const errorMessage = err.message || "Error desconocido al aperturar el período";
+      window.alert(`Error al aperturar el período:\n\n${errorMessage}`);
     }
   };
 
@@ -224,8 +249,9 @@ export default function GestionPeriodosDisponibilidad() {
     console.log("Periodo recibido:", periodo);
     console.log("Estado del periodo:", periodo?.estado);
     
-    if (periodo.estado !== "ACTIVO") {
-      window.alert("Solo se pueden editar periodos en estado ACTIVO");
+    // Permitir editar si está en ACTIVO o BORRADOR
+    if (periodo.estado !== "ACTIVO" && periodo.estado !== "BORRADOR") {
+      window.alert("Solo se pueden editar periodos en estado ACTIVO o BORRADOR");
       return;
     }
     
@@ -238,11 +264,28 @@ export default function GestionPeriodosDisponibilidad() {
     try {
       console.log("%c💾 GUARDAR EDICIÓN PERIODO", "color: #059669; font-weight: bold; font-size: 14px;");
       console.log("🆔 ID Periodo:", idPeriodo);
-      console.log("📦 Fechas a actualizar:");
-      console.table(fechas);
+      console.log("📦 Fechas a actualizar:", fechas);
       
-      // Adaptar según la API disponible
-      // await periodoDisponibilidadService.actualizarFechas(idPeriodo, fechas);
+      // Obtener el período actual para mantener los demás campos
+      const periodoActual = periodoAEditar;
+      if (!periodoActual) {
+        throw new Error("No se encontró el período a editar");
+      }
+      
+      // Extraer solo la fecha (sin hora) del formato que viene del modal
+      const fechaInicio = fechas.fechaInicio ? fechas.fechaInicio.split(' ')[0] : periodoActual.fechaInicio?.split('T')[0];
+      const fechaFin = fechas.fechaFin ? fechas.fechaFin.split(' ')[0] : periodoActual.fechaFin?.split('T')[0];
+      
+      // Preparar los datos según el formato esperado por el backend
+      const requestData = {
+        anio: periodoActual.anio || parseInt(periodoActual.periodo?.substring(0, 4)),
+        periodo: periodoActual.periodo,
+        descripcion: periodoActual.descripcion,
+        fechaInicio: fechaInicio,
+        fechaFin: fechaFin,
+      };
+      
+      await periodoMedicoDisponibilidadService.actualizar(idPeriodo, requestData);
       
       setShowEditarModal(false);
       setPeriodoAEditar(null);
@@ -270,10 +313,10 @@ export default function GestionPeriodosDisponibilidad() {
     setEliminando(true);
     try {
       console.log("%c🗑️ CONFIRMAR ELIMINACIÓN", "color: #dc2626; font-weight: bold; font-size: 14px;");
-      console.log("🆔 ID del periodo a eliminar:", periodoAEliminar.idPeriodo);
+      const idPeriodo = periodoAEliminar.idPeriodoRegDisp || periodoAEliminar.idPeriodo;
+      console.log("🆔 ID del periodo a eliminar:", idPeriodo);
       
-      // Adaptar según la API disponible
-      // await periodoDisponibilidadService.eliminar(periodoAEliminar.idPeriodo);
+      await periodoMedicoDisponibilidadService.eliminar(idPeriodo);
       
       setShowEliminarModal(false);
       setPeriodoAEliminar(null);
