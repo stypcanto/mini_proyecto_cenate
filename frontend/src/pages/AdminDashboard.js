@@ -13,7 +13,6 @@ import { apiClient } from "../lib/apiClient";
 import auditoriaService from "../services/auditoriaService";
 import dashboardPersonalService from "../services/dashboardPersonalService";
 import NotificationBell from "../components/NotificationBell";
-import PerformanceMonitorCard from "../components/monitoring/PerformanceMonitorCard";
 import {
   obtenerNombreModulo,
   obtenerIconoModulo,
@@ -459,11 +458,6 @@ export default function AdminDashboard() {
             <NotificationBell />
           </div>
         </div>
-      </div>
-
-      {/* 🚀 Performance Monitor Card - v1.37.3 */}
-      <div className="mb-10">
-        <PerformanceMonitorCard />
       </div>
 
       {/* Tarjetas estadísticas */}
