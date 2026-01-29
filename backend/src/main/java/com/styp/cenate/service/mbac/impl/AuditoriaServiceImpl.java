@@ -151,8 +151,8 @@ public class AuditoriaServiceImpl implements AuditoriaService {
 
             return logins.stream().map(login -> {
                 Map<String, Object> sesion = new HashMap<>();
-                sesion.put("usuarioSesion", login.getUsuario());
-                sesion.put("usuario", login.getUsuario());
+                sesion.put("usuarioSesion", login.getUsuarioSesion());
+                sesion.put("usuario", login.getUsuarioSesion());
                 sesion.put("nombreCompleto", login.getNombreCompleto());
                 sesion.put("rol", login.getRoles());
                 sesion.put("ultimaActividad", login.getFechaFormateada());
