@@ -11,12 +11,16 @@ import com.styp.cenate.model.DimServicioEssi;
 import com.styp.cenate.model.Ipress;
 import com.styp.cenate.model.Red;
 import com.styp.cenate.model.TipoBolsa;
+import com.styp.cenate.model.Usuario;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.AseguradoRepository;
 import com.styp.cenate.repository.DimServicioEssiRepository;
 import com.styp.cenate.repository.IpressRepository;
 import com.styp.cenate.repository.RedRepository;
 import com.styp.cenate.repository.TipoBolsaRepository;
+import com.styp.cenate.repository.UsuarioRepository;
+import com.styp.cenate.exception.ResourceNotFoundException;
+import com.styp.cenate.exception.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.poi.ss.usermodel.Cell;
@@ -63,6 +67,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     private final IpressRepository ipressRepository;
     private final RedRepository redRepository;
     private final TipoBolsaRepository tipoBolsaRepository;
+    private final UsuarioRepository usuarioRepository;
 
     @PersistenceContext
     private EntityManager entityManager;
@@ -656,11 +661,58 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     @Override
     @Transactional
     public void asignarGestora(Long idSolicitud, Long idGestora) {
-        // Nota: Este método estaba vinculado a campos que fueron eliminados
-        // en v2.1.0 (responsable_gestora_id, fecha_asignacion).
-        // La asignación de gestoras será implementada en una versión futura.
-        log.warn("asignarGestora() no implementado en v2.1.0 - campos eliminados");
-        throw new UnsupportedOperationException("Asignación de gestoras no está disponible en esta versión");
+        log.info("🔄 Asignando gestora {} a solicitud {}", idGestora, idSolicitud);
+
+        // 1️⃣ VALIDAR que la solicitud existe y está activa
+        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Solicitud " + idSolicitud + " no encontrada"
+            ));
+
+        if (!solicitud.getActivo()) {
+            throw new ValidationException("No se puede asignar gestora a solicitud inactiva");
+        }
+
+        // 2️⃣ VALIDAR que la gestora existe y tiene el rol correcto
+        Usuario gestora = usuarioRepository.findById(idGestora)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Usuario " + idGestora + " no encontrado"
+            ));
+
+        // Verificar rol GESTOR_DE_CITAS
+        boolean tieneRolGestora = gestora.getRoles().stream()
+            .anyMatch(rol -> "GESTOR_DE_CITAS".equals(rol.getDescRol().toUpperCase()));
+
+        if (!tieneRolGestora) {
+            throw new ValidationException(
+                "El usuario " + gestora.getNameUser() +
+                " no tiene el rol GESTOR_DE_CITAS"
+            );
+        }
+
+        // Verificar usuario activo
+        if (!"A".equals(gestora.getStatUser())) {
+            throw new ValidationException(
+                "El usuario " + gestora.getNameUser() + " está inactivo"
+            );
+        }
+
+        // 3️⃣ ACTUALIZAR asignación
+        Long gestoraAnterior = solicitud.getResponsableGestoraId();
+        solicitud.setResponsableGestoraId(idGestora);
+        solicitud.setFechaAsignacion(java.time.OffsetDateTime.now());
+
+        // 4️⃣ GUARDAR
+        solicitudRepository.save(solicitud);
+
+        // 5️⃣ LOG de operación
+        if (gestoraAnterior != null && !gestoraAnterior.equals(idGestora)) {
+            log.info("✅ Solicitud {} REASIGNADA: {} → {} ({})",
+                idSolicitud, gestoraAnterior, idGestora, gestora.getNameUser());
+        } else {
+            log.info("✅ Solicitud {} ASIGNADA a gestora {} ({})",
+                idSolicitud, idGestora, gestora.getNameUser());
+        }
     }
 
     @Override

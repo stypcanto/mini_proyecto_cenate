@@ -4,6 +4,7 @@ import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
 import com.styp.cenate.model.bolsas.HistorialCargaBolsas;
 import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsaService;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -191,12 +192,13 @@ public class SolicitudBolsaController {
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/asignar")
+    @CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
     public ResponseEntity<?> asignarGestora(
             @PathVariable Long id,
             @RequestParam("idGestora") Long idGestora) {
 
         try {
-            log.info("Asignando gestora {} a solicitud {}", idGestora, id);
+            log.info("👤 Asignando gestora {} a solicitud {} (MBAC: COORDINADOR_DE_CITAS)", idGestora, id);
             solicitudBolsaService.asignarGestora(id, idGestora);
 
             return ResponseEntity.ok(Map.of(
@@ -205,10 +207,20 @@ public class SolicitudBolsaController {
                 "idGestora", idGestora
             ));
 
-        } catch (Exception e) {
-            log.error("Error al asignar gestora: ", e);
+        } catch (com.styp.cenate.exception.ResourceNotFoundException e) {
+            log.error("❌ Recurso no encontrado: ", e);
+            return ResponseEntity.status(404).body(
+                Map.of("error", e.getMessage())
+            );
+        } catch (com.styp.cenate.exception.ValidationException e) {
+            log.error("❌ Error de validación: ", e);
             return ResponseEntity.badRequest().body(
-                Map.of("error", "Error: " + e.getMessage())
+                Map.of("error", e.getMessage())
+            );
+        } catch (Exception e) {
+            log.error("❌ Error inesperado al asignar gestora: ", e);
+            return ResponseEntity.status(500).body(
+                Map.of("error", "Error interno del servidor")
             );
         }
     }

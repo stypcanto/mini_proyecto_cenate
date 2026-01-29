@@ -8,10 +8,11 @@ import lombok.Setter;
 
 import jakarta.persistence.*;
 import java.time.OffsetDateTime;
+import com.styp.cenate.model.Usuario;
 
 /**
  * Entidad JPA para solicitudes de bolsas de pacientes
- * Tabla: dim_solicitud_bolsa (27 columnas - v2.3.0)
+ * Tabla: dim_solicitud_bolsa (29 columnas - v2.4.0)
  *
  * Estructura optimizada sin denormalizaciones innecesarias:
  * - Core operativo: identificación + paciente + referencias
@@ -132,6 +133,18 @@ public class SolicitudBolsa {
     // 📊 ESTADO DE GESTIÓN DE CITAS
     @Column(name = "estado_gestion_citas_id", nullable = false)
     private Long estadoGestionCitasId;
+
+    // 👤 ASIGNACIÓN A GESTORA DE CITAS (v2.4.0)
+    @Column(name = "responsable_gestora_id")
+    private Long responsableGestoraId;
+
+    @Column(name = "fecha_asignacion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private OffsetDateTime fechaAsignacion;
+
+    // 🔗 RELACIÓN CON USUARIO GESTORA (LAZY loading para eficiencia)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "responsable_gestora_id", insertable = false, updatable = false)
+    private Usuario gestora;
 
     // 🔔 AUDITORÍA
     @Column(name = "activo", nullable = false)
