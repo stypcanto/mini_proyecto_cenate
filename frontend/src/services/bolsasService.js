@@ -842,6 +842,7 @@ export default {
 
   // NUEVOS - Fase 1
   asignarAGestora,
+  obtenerGestorasDisponibles, // NEW v2.4.0: Lista de gestoras disponibles
   cambiarTelefono,
   cambiarTipoBolsa,
   descargarCSV,

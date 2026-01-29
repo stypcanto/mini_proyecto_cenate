@@ -133,10 +133,11 @@ export default function Solicitudes() {
   const cargarCatalogos = async () => {
     console.log('📦 Cargando catálogos (ejecutarse solo UNA vez)...');
     try {
-      const [estadosData, ipressData, redesData] = await Promise.all([
+      const [estadosData, ipressData, redesData, gestorasData] = await Promise.all([
         bolsasService.obtenerEstadosGestion().catch(() => []),
         bolsasService.obtenerIpress().catch(() => []),
-        bolsasService.obtenerRedes().catch(() => [])
+        bolsasService.obtenerRedes().catch(() => []),
+        bolsasService.obtenerGestorasDisponibles().catch(() => ({ gestoras: [] })) // NEW v2.4.0
       ]);
 
       // Crear cache de estados, IPRESS y Redes
@@ -156,6 +157,12 @@ export default function Solicitudes() {
         const redesMap = {};
         redesData.forEach(r => { redesMap[r.id] = r; });
         setCacheRedes(redesMap);
+      }
+
+      // NEW v2.4.0: Cargar gestoras disponibles al inicio
+      if (gestorasData && gestorasData.gestoras && Array.isArray(gestorasData.gestoras)) {
+        setGestoras(gestorasData.gestoras);
+        console.log('✅ Gestoras cargadas:', gestorasData.gestoras.length);
       }
 
       console.log('✅ Catálogos cargados correctamente');
