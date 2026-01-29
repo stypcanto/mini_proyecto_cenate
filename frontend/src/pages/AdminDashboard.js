@@ -988,18 +988,17 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="col-span-2 flex items-center gap-3 text-xs">
-                        <div
+                        <button
                           onClick={() => {
                             cargarUsuariosConectados();
                             setModalConectados(true);
                           }}
-                          className="flex items-center gap-1 cursor-pointer hover:bg-green-100 px-2 py-1 rounded transition-colors"
-                          title="Haz clic para ver usuarios conectados"
+                          className="flex items-center gap-1.5 cursor-pointer bg-green-500 text-white px-3 py-2 rounded-lg font-semibold transition-all duration-200 hover:bg-green-600 hover:scale-110 hover:shadow-lg"
+                          title="Aquí puedes visualizar quiénes están conectados"
                         >
-                          <span className="w-2 h-2 rounded-full bg-green-500"></span>
-                          <span className="text-gray-600">Activas:</span>
-                          <span className="font-semibold text-green-600">{systemHealth.baseDatos.estadisticas.conexionesActivasServidor}</span>
-                        </div>
+                          <span className="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                          <span>Activas: {usuariosConectados?.length || 0}</span>
+                        </button>
                         <div className="flex items-center gap-1">
                           <span className="w-2 h-2 rounded-full bg-gray-400"></span>
                           <span className="text-gray-600">Idle:</span>
