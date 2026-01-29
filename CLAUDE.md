@@ -1,11 +1,12 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.37.3 (2026-01-28) 🚀
-> **Status:** ✅ Production Ready + RBAC + Performance Optimization + Deduplicación Automática
+> **Versión:** v1.37.4 (2026-01-28) 🚀
+> **Status:** ✅ Production Ready + RBAC + Performance Optimization + Deduplicación Automática + Foto Header
 > **Módulo Bolsas:** v2.2.0 ⭐⭐ Deduplicación KEEP_FIRST + Modal Confirmación + Control de Acceso
 > **🚀 Módulo Performance:** v1.37.3 ⭐ 100 Usuarios Concurrentes + Monitoreo en Vivo
-> **✅ COMPLETADO Hoy (2026-01-28):** v1.37.3 Performance + v2.2.0 Deduplicación Automática
+> **📷 Módulo Foto Header:** v1.37.4 ⭐ Avatar con foto de perfil en header
+> **✅ COMPLETADO Hoy (2026-01-28):** v1.37.3 Performance + v2.2.0 Deduplicación + v1.37.4 Foto Header
 
 ---
 
@@ -131,6 +132,20 @@
 - 📍 [`REPORTE_ERRORES_FRONTEND.md`](REPORTE_ERRORES_FRONTEND.md) - Guía completa de reporte de errores (Frontend + Backend)
 - 📍 [`REPORTE_ERRORES_RESUMEN_RAPIDO.md`](REPORTE_ERRORES_RESUMEN_RAPIDO.md) - TL;DR Errores - Visual y rápido
 
+#### 📷 **Módulo de Foto Header v1.37.4** (⭐ **NUEVO - Production Ready**)
+- 📍 [`spec/backend/11_modulo_foto_header.md`](spec/backend/11_modulo_foto_header.md) - **Backend** - Obtención de foto desde BD, URL encoding, AuthResponse
+- 📍 [`spec/frontend/03_modulo_foto_header.md`](spec/frontend/03_modulo_foto_header.md) - **Frontend** - UserMenu component, AuthContext, Debugging
+
+**🎯 v1.37.4 Features (28-01-2026):**
+- ✅ **Avatar circular** con foto de perfil en header superior derecho
+- ✅ **Búsqueda automática** en `dim_personal_cnt` y `dim_personal_externo`
+- ✅ **URL encoding** para caracteres especiales (espacios, paréntesis, tildes)
+- ✅ **Fallback elegante** a inicial del nombre si no hay foto
+- ✅ **Integración completa** Backend (AuthenticationServiceImpl) + Frontend (UserMenu)
+- ✅ **Responsive design** (móvil muestra solo avatar, desktop muestra avatar + nombre + rol)
+- ✅ **Manejo de errores** con logs de debugging
+- ✅ **Documentación completa** con troubleshooting y ejemplos
+
 #### Otros Módulos
 - 📍 [`spec/backend/01_api_endpoints.md`](spec/backend/01_api_endpoints.md) - Todos los endpoints REST
 - 📍 [`spec/backend/09_teleecg_v3.0.0_guia_rapida.md`](spec/backend/09_teleecg_v3.0.0_guia_rapida.md) - Tele-ECG v1.24.0
@@ -159,9 +174,9 @@
 
 ---
 
-## 📊 STATUS ACTUAL (v1.37.3)
+## 📊 STATUS ACTUAL (v1.37.4)
 
-### ✅ Completado Hoy (2026-01-28) - 🚀 Performance Optimization v1.37.3 + 🔄 Deduplicación Automática v2.2.0
+### ✅ Completado Hoy (2026-01-28) - 🚀 Performance Optimization v1.37.3 + 🔄 Deduplicación Automática v2.2.0 + 📷 Foto Header v1.37.4
 
 | Feature | Versión | Status |
 |---------|---------|--------|
@@ -185,6 +200,21 @@
 | Backend BUILD SUCCESS | Compilación limpia | ✅ EXITOSA |
 | Frontend BUILD SUCCESS | Compilación limpia | ✅ EXITOSA |
 | Documentación Índice Maestro | v2.2.0 completamente actualizado | ✅ COMPLETADO |
+| **Módulo Foto Header** | **v1.37.4 📷 NUEVO** | ✅ COMPLETADO |
+| Backend - Método obtenerFotoUsuario() | AuthenticationServiceImpl.java | ✅ Implementado |
+| Búsqueda en dim_personal_cnt | Query SQL con JdbcTemplate | ✅ Implementado |
+| Búsqueda en dim_personal_externo | Fallback automático | ✅ Implementado |
+| URL Encoding para caracteres especiales | URLEncoder con UTF-8 | ✅ Implementado |
+| Campo foto en AuthResponse DTO | DTO actualizado | ✅ Implementado |
+| Frontend - UserMenu Component | Avatar circular responsive | ✅ Implementado |
+| Frontend - AuthContext Integration | Login + restauración sesión | ✅ Implementado |
+| Manejo de errores de carga de imagen | onError + onLoad handlers | ✅ Implementado |
+| Logs de debugging completos | Console logs para troubleshooting | ✅ Implementado |
+| Docker Backend Rebuild | Caffeine cache + código actualizado | ✅ EXITOSO |
+| Docker Frontend Rebuild | Código actualizado | ✅ EXITOSO |
+| Documentación Backend | spec/backend/11_modulo_foto_header.md | ✅ COMPLETADO |
+| Documentación Frontend | spec/frontend/03_modulo_foto_header.md | ✅ COMPLETADO |
+| README Updates | Backend + Frontend READMEs | ✅ ACTUALIZADOS |
 
 ### ✅ Completado Recientemente (últimas 24h)
 

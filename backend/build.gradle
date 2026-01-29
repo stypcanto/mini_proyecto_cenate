@@ -86,9 +86,15 @@ dependencies {
     // 🔹 UTILIDADES COMUNES
     implementation 'org.apache.commons:commons-lang3:3.14.0'
     implementation 'commons-io:commons-io:2.15.1'
-    
+
     // Archivos Excel
     implementation 'org.apache.poi:poi-ooxml:5.2.5'
+
+    // 🔹 HIBERNATE CACHE (Caffeine) - v1.37.3 Performance Optimization
+    implementation 'org.hibernate.orm:hibernate-jcache:6.6.4.Final'
+    implementation 'javax.cache:cache-api:1.1.1'
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8'
+    implementation 'com.github.ben-manes.caffeine:jcache:3.1.8'
     
     
 

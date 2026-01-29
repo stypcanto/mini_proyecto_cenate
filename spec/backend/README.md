@@ -52,6 +52,15 @@
 - ✅ Toast notifications
 - ✅ Problemas resueltos (3 fixes SQL)
 
+#### 📷 Módulo de Foto Header
+**[11_modulo_foto_header.md](./11_modulo_foto_header.md)** ⭐ **NUEVO v1.37.4**
+- ✅ Foto de perfil en header superior
+- ✅ Búsqueda automática en dim_personal_cnt y dim_personal_externo
+- ✅ URL encoding para caracteres especiales
+- ✅ Integración con AuthResponse DTO
+- ✅ Fallback a inicial del nombre
+- ✅ Documentación completa de troubleshooting
+
 #### 🔧 Otros Módulos
 **[10_modules_other/](./10_modules_other/)**
 - Firma Digital

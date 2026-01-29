@@ -78,6 +78,7 @@ export const AuthProvider = ({ children }) => {
             roles: normalizeRoles(payload.roles || payload.authorities || []),
             permisos: payload.permisos || [],
             nombreCompleto: payload.nombre_completo || payload.name || payload.username || payload.sub || "",
+            foto: payload.foto || null,  // 📷 Foto restaurada del JWT
             requiereCambioPassword: payload.requiereCambioPassword || false,
             token
           };
@@ -158,9 +159,13 @@ export const AuthProvider = ({ children }) => {
       roles: normalizeRoles(payload.roles || data.roles || []),
       permisos: payload.permisos || data.permisos || [],
       nombreCompleto: data.nombreCompleto || data.nombre_completo || payload.nombre_completo,
+      foto: data.foto || payload.foto || null,  // 📷 URL de la foto del usuario
       requiereCambioPassword: data.requiereCambioPassword || false,
       token: jwt
     };
+
+      console.log("📷 Foto del usuario desde backend:", data.foto);
+      console.log("👤 userData completo:", userData);
 
       saveToken(jwt);
       saveUser(userData);
