@@ -114,6 +114,7 @@ export default function Solicitudes() {
   const [modalCambiarBolsa, setModalCambiarBolsa] = useState(false);
   const [bolsaNuevaSeleccionada, setBolsaNuevaSeleccionada] = useState(null);
   const [bolsasDisponibles, setBolsasDisponibles] = useState([]);
+  const [bolsasConCuentas, setBolsasConCuentas] = useState([]); // NEW v2.5.4: Todas las bolsas con conteos
 
   // ============================================================================
   // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
@@ -197,11 +198,12 @@ export default function Solicitudes() {
   const cargarCatalogos = async () => {
     console.log('📦 Cargando catálogos (ejecutarse solo UNA vez)...');
     try {
-      const [estadosData, ipressData, redesData, gestorasData] = await Promise.all([
+      const [estadosData, ipressData, redesData, gestorasData, bolsasData] = await Promise.all([
         bolsasService.obtenerEstadosGestion().catch(() => []),
         bolsasService.obtenerIpress().catch(() => []),
         bolsasService.obtenerRedes().catch(() => []),
-        bolsasService.obtenerGestorasDisponibles().catch(() => []) // NEW v2.4.0
+        bolsasService.obtenerGestorasDisponibles().catch(() => []), // NEW v2.4.0
+        bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []) // NEW v2.5.4: Todas las bolsas con conteos
       ]);
 
       // Crear cache de estados, IPRESS y Redes
@@ -237,6 +239,19 @@ export default function Solicitudes() {
       }
       setGestoras(gestorasArray);
       console.log('✅ Gestoras cargadas:', gestorasArray.length, gestorasArray);
+
+      // NEW v2.5.4: Procesar bolsas con conteos
+      console.log('📦 Bolsas data:', bolsasData);
+      let bolsasConTotales = [];
+      if (bolsasData && Array.isArray(bolsasData)) {
+        bolsasConTotales = bolsasData.map(b => ({
+          nombre: b.tipo_bolsa || b.nombre || 'Sin nombre',
+          cantidad: b.cantidad || 0,
+          codigo: b.codigo || ''
+        }));
+      }
+      setBolsasConCuentas(bolsasConTotales);
+      console.log('✅ Bolsas con conteos cargadas:', bolsasConTotales.length, bolsasConTotales);
 
       console.log('✅ Catálogos cargados correctamente');
       setCatalogosCargados(true);
@@ -1248,12 +1263,12 @@ export default function Solicitudes() {
                 value: filtroBolsa,
                 onChange: (e) => setFiltroBolsa(e.target.value),
                 options: [
-                  { label: `Todas las bolsas (${solicitudes.length})`, value: "todas" },
-                  ...bolsasUnicas
-                    .filter(bolsa => countWithFilters('bolsa', bolsa) > 0)
+                  { label: `Todas las bolsas (${totalElementos})`, value: "todas" },
+                  ...bolsasConCuentas
+                    .filter(bolsa => bolsa.cantidad > 0)
                     .map(bolsa => ({
-                      label: `${bolsa} (${countWithFilters('bolsa', bolsa)})`,
-                      value: bolsa
+                      label: `${bolsa.nombre} (${bolsa.cantidad})`,
+                      value: bolsa.nombre
                     }))
                 ]
               },
