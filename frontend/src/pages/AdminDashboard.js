@@ -1127,7 +1127,7 @@ export default function AdminDashboard() {
                   <div>
                     <h2 className="text-2xl font-bold">Usuarios Conectados</h2>
                     <p className="text-sm text-green-100 mt-1">
-                      {systemHealth?.baseDatos?.estadisticas?.conexionesActivasServidor || 0} sesiones activas
+                      {usuariosConectados?.length || 0} sesiones activas
                     </p>
                   </div>
                 </div>
@@ -1155,9 +1155,12 @@ export default function AdminDashboard() {
                       className="bg-green-50 dark:bg-gray-800 rounded-2xl p-4 border-l-4 border-green-500 hover:bg-green-100 transition-colors"
                     >
                       <div className="flex items-center justify-between">
-                        <div>
-                          <p className="font-semibold text-gray-800 dark:text-gray-200">
-                            {usuario.usuarioSesion || usuario.usuario || 'Usuario'}
+                        <div className="flex-1">
+                          <p className="text-lg font-bold text-green-700 dark:text-green-300">
+                            {usuario.nombreCompleto || usuario.usuarioSesion || 'Usuario'}
+                          </p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            ID: {usuario.usuarioSesion}
                           </p>
                           <p className="text-xs text-gray-500 mt-1">
                             Rol: {usuario.rol || 'N/A'}
