@@ -96,4 +96,13 @@ public interface SolicitudBolsaService {
      * @return la solicitud actualizada
      */
     SolicitudBolsaDTO cambiarTipoBolsa(Long idSolicitud, Long idBolsaNueva);
+
+    /**
+     * Obtiene lista de gestoras disponibles (usuarios con rol GESTOR_DE_CITAS)
+     * Filtra por estado activo
+     * Usado en modal de asignación del frontend
+     *
+     * @return List de maps con {id, nombre, nombreCompleto, activo}
+     */
+    List<Map<String, Object>> obtenerGestorasDisponibles();
 }

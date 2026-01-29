@@ -1958,6 +1958,57 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         return SolicitudBolsaMapper.toDTO(solicitudActualizada);
     }
 
+    @Override
+    public List<Map<String, Object>> obtenerGestorasDisponibles() {
+        log.info("👤 Obteniendo gestoras disponibles (rol GESTOR_DE_CITAS)...");
+
+        try {
+            // 1️⃣ Obtener todos los usuarios
+            List<com.styp.cenate.model.Usuario> todosUsuarios = usuarioRepository.findAll();
+
+            if (todosUsuarios == null || todosUsuarios.isEmpty()) {
+                log.warn("⚠️ No hay usuarios registrados en la BD");
+                return new java.util.ArrayList<>();
+            }
+
+            // 2️⃣ Filtrar: rol GESTOR_DE_CITAS + activo
+            List<Map<String, Object>> gestoras = new java.util.ArrayList<>();
+            for (com.styp.cenate.model.Usuario usuario : todosUsuarios) {
+                // Validar: activo
+                if (!"A".equals(usuario.getStatUser())) {
+                    continue;
+                }
+
+                // Validar: tiene rol GESTOR_DE_CITAS
+                if (usuario.getRoles() == null) {
+                    continue;
+                }
+
+                boolean tieneRolGestor = usuario.getRoles().stream()
+                    .anyMatch(r -> "GESTOR_DE_CITAS".equalsIgnoreCase(r.getDescRol()));
+
+                if (!tieneRolGestor) {
+                    continue;
+                }
+
+                // Agregar a lista
+                java.util.Map<String, Object> gestora = new java.util.HashMap<>();
+                gestora.put("id", usuario.getIdUser());
+                gestora.put("nombre", usuario.getNameUser() != null ? usuario.getNameUser() : "Sin nombre");
+                gestora.put("nombreCompleto", usuario.getNameUser() != null ? usuario.getNameUser() : "Sin nombre");
+                gestora.put("activo", true);
+                gestoras.add(gestora);
+            }
+
+            log.info("✅ Se encontraron {} gestora(s) disponible(s)", gestoras.size());
+            return gestoras;
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener gestoras: ", e);
+            return new java.util.ArrayList<>();
+        }
+    }
+
     /**
      * ✅ NUEVA v2.2.0: Analiza el Excel y detecta DNI duplicados ANTES de procesar
      * Aplica estrategia KEEP_FIRST: mantiene primer DNI, descarta duplicados

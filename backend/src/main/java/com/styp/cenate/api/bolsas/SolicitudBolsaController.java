@@ -268,17 +268,16 @@ public class SolicitudBolsaController {
         try {
             log.info("👤 Obteniendo gestoras disponibles (rol GESTOR_DE_CITAS)...");
 
-            // TODO: Implementar método en servicio para obtener gestoras
-            // Por ahora retornar lista vacía
-            List<Map<String, Object>> gestoras = new ArrayList<>();
+            // Obtener gestoras del servicio
+            List<Map<String, Object>> gestoras = solicitudBolsaService.obtenerGestorasDisponibles();
 
-            log.info("✅ Se encontraron {} gestoras disponibles", gestoras.size());
+            log.info("✅ Se encontraron {} gestora(s) disponible(s)", gestoras.size());
 
             return ResponseEntity.ok(Map.of(
                 "total", gestoras.size(),
                 "gestoras", gestoras,
                 "mensaje", gestoras.isEmpty() ?
-                    "No hay gestoras disponibles" :
+                    "No hay gestoras disponibles en este momento" :
                     "Se encontraron " + gestoras.size() + " gestora(s) disponible(s)"
             ));
 
