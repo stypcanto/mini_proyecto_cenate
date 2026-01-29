@@ -2337,9 +2337,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.info("📄 Obteniendo solicitudes paginadas - page: {}, size: {}",
                 pageable.getPageNumber(), pageable.getPageSize());
 
-            // Consulta con paginación directa en BD
+            // Consulta con paginación directa en BD (v2.5.1: optimizado con índices)
             List<Object[]> resultados = solicitudRepository.findAllWithBolsaDescriptionPaginado(pageable);
-            long total = solicitudRepository.countByActivoTrue();
+            long total = solicitudRepository.countActivosNative();  // Usa índice para mejor performance
 
             // Mapear a DTOs
             List<SolicitudBolsaDTO> dtos = resultados.stream()

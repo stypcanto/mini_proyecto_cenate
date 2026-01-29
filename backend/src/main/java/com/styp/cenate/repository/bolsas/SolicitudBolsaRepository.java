@@ -149,8 +149,16 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * Cuenta total de solicitudes activas (para calcular páginas totales)
+     * Usa índice idx_solicitud_activo para optimización
      */
     long countByActivoTrue();
+
+    /**
+     * Cuenta solicitudes activas usando native SQL (optimizado con índice)
+     * v2.5.1: Para uso en paginación, usa el índice idx_solicitud_activo
+     */
+    @Query(value = "SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true", nativeQuery = true)
+    long countActivosNative();
 
     /**
      * Busca solicitud por DNI del paciente (activas)
