@@ -186,6 +186,13 @@ export default function Solicitudes() {
 
       // Procesar solicitudes y enriquecer con nombres de catálogos
       const solicitudesEnriquecidas = (solicitudesData || []).map(solicitud => {
+        // NEW v2.4.0: Mapear responsable_gestora_id a gestora nombre desde lista de gestoras
+        let gestoraAsignadaNombre = null;
+        if (solicitud.responsable_gestora_id && gestoras && gestoras.length > 0) {
+          const gestoraEncontrada = gestoras.find(g => g.id === solicitud.responsable_gestora_id);
+          gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
+        }
+
         return {
           ...solicitud,
           id: solicitud.id_solicitud,
@@ -209,7 +216,8 @@ export default function Solicitudes() {
           nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
           fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
           fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
-          gestoraAsignada: solicitud.gestora_asignada || solicitud.gestoraAsignada || null,
+          gestoraAsignada: gestoraAsignadaNombre,
+          gestoraAsignadaId: solicitud.responsable_gestora_id,
           // ============================================================================
           // 📋 LOS 10 CAMPOS DEL EXCEL v1.8.0
           // ============================================================================

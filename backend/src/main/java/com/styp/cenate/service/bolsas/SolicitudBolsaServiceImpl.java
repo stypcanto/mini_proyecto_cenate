@@ -531,7 +531,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
      *                  paciente_sexo, paciente_telefono, paciente_telefono_alterno, paciente_email,
      *                  codigo_ipress, tipo_cita, id_bolsa, desc_tipo_bolsa, id_servicio,
      *                  codigo_adscripcion, id_ipress, estado, fecha_solicitud, fecha_actualizacion,
-     *                  estado_gestion_citas_id, activo, desc_ipress, desc_red
+     *                  estado_gestion_citas_id, activo, desc_ipress, desc_red, desc_macro,
+     *                  responsable_gestora_id (28), fecha_asignacion (29) - v2.4.0
      */
     private SolicitudBolsaDTO mapFromResultSet(Object[] row) {
         try {
@@ -542,6 +543,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
             java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[21]); // fecha_solicitud
             java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[22]); // fecha_actualizacion
+            java.time.OffsetDateTime fechaAsignacion = row.length > 29 ? convertToOffsetDateTime(row[29]) : null; // NEW v2.4.0
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -573,6 +575,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .descIpress((String) row[25])        // desc_ipress desde JOIN
                     .descRed((String) row[26])            // desc_red desde JOIN
                     .descMacroregion((String) row[27])    // desc_macro desde JOIN
+                    .responsableGestoraId(row.length > 28 ? toLongSafe("responsable_gestora_id", row[28]) : null) // NEW v2.4.0
+                    .fechaAsignacion(fechaAsignacion)    // NEW v2.4.0
                     .build();
         } catch (Exception e) {
             log.error("❌ Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);

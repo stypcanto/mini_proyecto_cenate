@@ -89,7 +89,10 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
 
     /**
      * Obtiene solicitudes con descripción de bolsa via JOIN
-     * Consulta SQL nativa para traer solicitudes enriquecidas con el tipo de bolsa
+     * Consulta SQL nativa para traer solicitudes enriquecidas con el tipo de bolsa + asignación de gestora
+     * v2.4.0: Incluye campos de asignación de gestora (responsable_gestora_id, fecha_asignacion)
+     *
+     * Campo order: (0-27) = originales, (28) responsable_gestora_id, (29) fecha_asignacion
      */
     @Query(value = """
         SELECT sb.id_solicitud, sb.numero_solicitud, sb.paciente_id, sb.paciente_nombre,
@@ -102,7 +105,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
                sb.estado, sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
-               di.desc_ipress, dr.desc_red, dm.desc_macro
+               di.desc_ipress, dr.desc_red, dm.desc_macro,
+               sb.responsable_gestora_id, sb.fecha_asignacion
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress

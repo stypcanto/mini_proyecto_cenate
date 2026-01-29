@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
 
 /**
  * Mapper para conversión entre SolicitudBolsa (Entity) y SolicitudBolsaDTO
- * Mapea 27 campos necesarios (v2.1.0 LIMPIO)
+ * Mapea 30 campos necesarios (v2.4.0 con asignación de gestora)
  *
- * @version v2.1.0 (Limpieza agresiva: solo 27 campos utilizados)
- * @since 2026-01-27
+ * @version v2.4.0 (Agregar asignación de gestora: responsable_gestora_id, fecha_asignacion)
+ * @since 2026-01-29
  */
 public class SolicitudBolsaMapper {
 
@@ -24,7 +24,7 @@ public class SolicitudBolsaMapper {
 
     /**
      * Convierte una entidad SolicitudBolsa a su DTO correspondiente
-     * Solo mapea los 27 campos necesarios (v2.1.0 limpio)
+     * Mapea 30 campos necesarios (v2.4.0 con asignación de gestora)
      */
     public static SolicitudBolsaDTO toDTO(SolicitudBolsa entity) {
         if (entity == null) {
@@ -42,15 +42,19 @@ public class SolicitudBolsaMapper {
                 .idServicio(entity.getIdServicio())
                 .codigoAdscripcion(entity.getCodigoAdscripcion())
                 .estadoGestionCitasId(entity.getEstadoGestionCitasId())
-                // ===== CAMPOS EXCEL v1.8.0 (8) =====
+                // ===== CAMPOS EXCEL v1.8.0 (9 ahora) =====
                 .tipoDocumento(entity.getTipoDocumento())
                 .pacienteSexo(entity.getPacienteSexo())
                 .fechaNacimiento(entity.getFechaNacimiento())
                 .pacienteTelefono(entity.getPacienteTelefono())
+                .pacienteTelefonoAlterno(entity.getPacienteTelefonoAlterno())
                 .pacienteEmail(entity.getPacienteEmail())
                 .codigoIpressAdscripcion(entity.getCodigoIpressAdscripcion())
                 .tipoCita(entity.getTipoCita())
                 .fechaPreferidaNoAtendida(entity.getFechaPreferidaNoAtendida())
+                // ===== ASIGNACIÓN GESTORA (2) - NEW v2.4.0 =====
+                .responsableGestoraId(entity.getResponsableGestoraId())
+                .fechaAsignacion(entity.getFechaAsignacion())
                 // ===== AUDITORÍA Y TIMESTAMPS (4) =====
                 .fechaSolicitud(entity.getFechaSolicitud())
                 .fechaActualizacion(entity.getFechaActualizacion())
