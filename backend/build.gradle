@@ -64,6 +64,11 @@ dependencies {
     // 🔹 AOP (para MBAC Permission Aspect)
     implementation 'org.springframework.boot:spring-boot-starter-aop'
 
+    // 🔹 CACHÉ (JCache + Ehcache para v1.37.3 Performance Optimization)
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'javax.cache:cache-api:1.1.1'
+    implementation 'org.ehcache:ehcache:3.10.8'
+
     // 🔹 BASE DE DATOS
     runtimeOnly 'org.postgresql:postgresql'
 
