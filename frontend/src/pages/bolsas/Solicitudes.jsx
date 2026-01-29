@@ -133,7 +133,19 @@ export default function Solicitudes() {
   }, [catalogosCargados]);
 
   // ============================================================================
-  // 📦 EFFECT 3: Recargar gestoras cuando se abre el modal
+  // 📦 EFFECT 3: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
+  // ============================================================================
+  useEffect(() => {
+    if (catalogosCargados && currentPage > 1) {
+      console.log('📄 Cambio de página detectado:', currentPage);
+      // currentPage es 1-based, pero backend espera 0-based
+      const pageIndex = currentPage - 1;
+      cargarSolicitudesPaginadas(pageIndex);
+    }
+  }, [currentPage, catalogosCargados]);
+
+  // ============================================================================
+  // 📦 EFFECT 4: Recargar gestoras cuando se abre el modal
   // ============================================================================
   useEffect(() => {
     if (modalAsignarGestora && gestoras.length === 0) {
@@ -344,6 +356,105 @@ export default function Solicitudes() {
     }
   };
 
+  // ============================================================================
+  // 📄 FUNCIÓN 2: Cargar PÁGINA ESPECÍFICA (v2.5.2 - Server-side pagination)
+  // ============================================================================
+  const cargarSolicitudesPaginadas = async (pageIndex) => {
+    console.log('📄 Cargando página:', pageIndex, 'de backend...');
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      // pageIndex es 0-based (page 0, 1, 2, etc)
+      const response = await bolsasService.obtenerSolicitudesPaginado(pageIndex, REGISTROS_POR_PAGINA);
+      console.log('📥 Respuesta página recibida:', response);
+
+      // Manejar respuesta paginada (Page object del backend)
+      let solicitudesData = response;
+      let totalElementosDelBackend = response?.length || 0;
+
+      if (response && response.content && Array.isArray(response.content)) {
+        console.log('📄 Respuesta es Page de Spring Data');
+        solicitudesData = response.content;
+        totalElementosDelBackend = response.totalElements || 0;
+        console.log('📊 Total elementos del backend:', totalElementosDelBackend);
+      }
+
+      if (solicitudesData && solicitudesData.length > 0) {
+        console.log('✅ Página cargada: ', solicitudesData.length, 'registros');
+
+        // Procesar solicitudes y enriquecer con nombres de catálogos (mismo mapeo que antes)
+        const solicitudesEnriquecidas = (solicitudesData || []).map((solicitud, idx) => {
+          try {
+            let gestoraAsignadaNombre = null;
+            if (solicitud.responsable_gestora_id && gestoras && gestoras.length > 0) {
+              const gestoraEncontrada = gestoras.find(g => g.id === solicitud.responsable_gestora_id);
+              gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
+            }
+
+            const fechaAsignacionFormato = solicitud.fecha_asignacion
+              ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE')
+              : null;
+
+            return {
+              ...solicitud,
+              id: solicitud.id_solicitud,
+              dni: solicitud.paciente_dni || '',
+              paciente: solicitud.paciente_nombre || '',
+              telefono: solicitud.paciente_telefono || '',
+              telefonoAlterno: solicitud.paciente_telefono_alterno || '',
+              correo: solicitud.paciente_email || solicitud.email_pers || '',
+              sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
+              edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
+              estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
+              estadoDisplay: getEstadoDisplay(mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id)),
+              estadoCodigo: solicitud.cod_estado_cita,
+              semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
+              diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
+              especialidad: solicitud.especialidad || '',
+              red: solicitud.desc_red || 'Sin asignar',
+              ipress: solicitud.desc_ipress || 'N/A',
+              macroregion: solicitud.desc_macro || 'Sin asignar',
+              bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
+              nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
+              fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
+              fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
+              gestoraAsignada: gestoraAsignadaNombre,
+              gestoraAsignadaId: solicitud.responsable_gestora_id,
+              fechaAsignacionFormato: fechaAsignacionFormato,
+              fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ?
+                (() => {
+                  const [y, m, d] = solicitud.fecha_preferida_no_atendida.split('-');
+                  return `${d}/${m}/${y}`;
+                })() : 'N/A',
+              tipoDocumento: solicitud.tipo_documento || 'N/A',
+              fechaNacimiento: solicitud.fecha_nacimiento ?
+                (() => {
+                  const [y, m, d] = solicitud.fecha_nacimiento.split('-');
+                  return `${d}/${m}/${y}`;
+                })() : 'N/A',
+              tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
+              codigoIpress: solicitud.codigo_adscripcion || 'N/A'
+            };
+          } catch (mapError) {
+            console.error(`❌ Error procesando solicitud [${idx}]:`, mapError);
+            throw mapError;
+          }
+        });
+
+        setSolicitudes(solicitudesEnriquecidas);
+        setTotalElementos(totalElementosDelBackend);
+      } else {
+        console.warn('⚠️ No hay datos en esta página');
+        setSolicitudes([]);
+      }
+    } catch (error) {
+      console.error('❌ Error cargando página paginada:', error);
+      setErrorMessage('Error al cargar la página. Intenta nuevamente.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Helper: Obtener nombre descriptivo del estado para mostrar en tabla
   const getEstadoDisplay = (estadoCodigo) => {
     const displayMap = {
@@ -531,12 +642,16 @@ export default function Solicitudes() {
     setCurrentPage(1);
   }, [searchTerm, filtroBolsa, filtroRed, filtroIpress, filtroMacrorregion, filtroEspecialidad, filtroEstado, filtroTipoCita]);
 
-  // Calcular paginación
-  const totalRegistros = solicitudesFiltradas.length;
-  const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);
+  // Calcular paginación (v2.5.2 - Server-side pagination)
+  // NOTA: totalElementos viene del backend (total global)
+  // solicitudesFiltradas es el resultado del filtrado client-side de la página actual
+  const totalRegistros = totalElementos > 0 ? totalElementos : solicitudesFiltradas.length;  // Usar total del backend
+  const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);  // Páginas reales del backend
   const indiceInicio = (currentPage - 1) * REGISTROS_POR_PAGINA;
   const indiceFin = indiceInicio + REGISTROS_POR_PAGINA;
-  const solicitudesPaginadas = solicitudesFiltradas.slice(indiceInicio, indiceFin);
+  // No paginar client-side, ya estamos pagginando server-side
+  // Mostrar directamente los registros filtrados de la página actual
+  const solicitudesPaginadas = solicitudesFiltradas;  // Esta es la página actual ya paginada del backend
 
   // Debug filtros
   React.useEffect(() => {
@@ -1475,11 +1590,20 @@ export default function Solicitudes() {
                 </tbody>
               </table>
 
-              {/* 📄 PAGINACIÓN v2.1.0 */}
+              {/* 📄 PAGINACIÓN v2.5.2 - Server-side pagination */}
               {solicitudesFiltradas.length > 0 && (
                 <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
                   <div className="text-sm text-gray-600 font-medium">
-                    Mostrando <span className="font-bold text-gray-900">{indiceInicio + 1}</span> - <span className="font-bold text-gray-900">{Math.min(indiceFin, totalRegistros)}</span> de <span className="font-bold text-gray-900">{totalRegistros}</span> registros
+                    {/* Calcular rango real para server-side pagination */}
+                    {(() => {
+                      const registroInicio = (currentPage - 1) * REGISTROS_POR_PAGINA + 1;
+                      const registroFin = Math.min(currentPage * REGISTROS_POR_PAGINA, totalRegistros);
+                      return (
+                        <>
+                          Mostrando <span className="font-bold text-gray-900">{registroInicio}</span> - <span className="font-bold text-gray-900">{registroFin}</span> de <span className="font-bold text-gray-900">{totalRegistros}</span> registros
+                        </>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex items-center gap-2">
