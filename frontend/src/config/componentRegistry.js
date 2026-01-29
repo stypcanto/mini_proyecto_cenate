@@ -472,6 +472,14 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/bolsas/GestionBolsas')),
     requiredAction: 'ver',
   },
+
+  // ========================================================================
+  // 🦟 MÓDULO DENGUE (Integración con Bolsas)
+  // ========================================================================
+  '/dengue/dashboard': {
+    component: lazy(() => import('../pages/dengue/DengueDashboard')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================

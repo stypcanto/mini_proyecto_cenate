@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, Check } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
@@ -200,6 +200,11 @@ export default function Solicitudes() {
           gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
         }
 
+        // Formatear fecha de asignación si existe
+        const fechaAsignacionFormato = solicitud.fecha_asignacion
+          ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE')
+          : null;
+
         return {
           ...solicitud,
           id: solicitud.id_solicitud,
@@ -225,6 +230,7 @@ export default function Solicitudes() {
           fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
           gestoraAsignada: gestoraAsignadaNombre,
           gestoraAsignadaId: solicitud.responsable_gestora_id,
+          fechaAsignacionFormato: fechaAsignacionFormato,
           // ============================================================================
           // 📋 LOS 10 CAMPOS DEL EXCEL v1.8.0
           // ============================================================================
@@ -700,6 +706,30 @@ export default function Solicitudes() {
     } catch (error) {
       console.error('Error asignando gestora:', error);
       alert('Error al asignar la gestora. Intenta nuevamente.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // NEW v2.4.0: Eliminar asignación de gestora
+  const handleEliminarAsignacionGestora = async (solicitud) => {
+    if (!window.confirm(`¿Deseas eliminar la asignación de ${solicitud.gestoraAsignada}?`)) {
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      // Llamar al servicio para eliminar asignación (pasar null como idGestora)
+      await bolsasService.asignarAGestora(
+        solicitud.idSolicitud || solicitud.id,
+        null, // null significa eliminar
+        null
+      );
+      alert('Asignación eliminada correctamente');
+      cargarSolicitudes(); // Recargar solicitudes
+    } catch (error) {
+      console.error('Error eliminando asignación:', error);
+      alert('Error al eliminar la asignación. Intenta nuevamente.');
     } finally {
       setIsProcessing(false);
     }
@@ -1287,17 +1317,57 @@ export default function Solicitudes() {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-sm">
-                        <button
-                          onClick={() => handleAbrirAsignarGestora(solicitud)}
-                          className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors disabled:opacity-50 ${
-                            solicitud.gestoraAsignada
-                              ? 'bg-green-100 hover:bg-green-200 text-green-700'
-                              : 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                          }`}
-                          disabled={isProcessing}
-                        >
-                          {solicitud.gestoraAsignada || 'Sin asignar'}
-                        </button>
+                        {solicitud.gestoraAsignada ? (
+                          // ✅ CON ASIGNACIÓN: Mostrar gestora + 3 iconos
+                          <div className="flex items-center gap-2">
+                            <div className="flex-1">
+                              <div className="font-semibold text-green-700">{solicitud.gestoraAsignada}</div>
+                              {solicitud.fechaAsignacionFormato && (
+                                <div className="text-xs text-gray-500 mt-1">
+                                  📅 {solicitud.fechaAsignacionFormato}
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1">
+                              {/* Icono: Reasignar */}
+                              <button
+                                onClick={() => handleAbrirAsignarGestora(solicitud)}
+                                className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
+                                title="Reasignar gestora"
+                                disabled={isProcessing}
+                              >
+                                <UserPlus size={16} />
+                              </button>
+                              {/* Icono: Ver fecha/detalles */}
+                              <button
+                                className="p-1.5 hover:bg-green-100 rounded-md transition-colors text-green-600 disabled:opacity-50"
+                                title={`Asignado el ${solicitud.fechaAsignacionFormato}`}
+                                disabled={true}
+                              >
+                                <Check size={16} />
+                              </button>
+                              {/* Icono: Eliminar asignación */}
+                              <button
+                                onClick={() => handleEliminarAsignacionGestora(solicitud)}
+                                className="p-1.5 hover:bg-red-100 rounded-md transition-colors text-red-600 disabled:opacity-50"
+                                title="Eliminar asignación"
+                                disabled={isProcessing}
+                              >
+                                <X size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          // ❌ SIN ASIGNACIÓN: Solo botón para asignar
+                          <button
+                            onClick={() => handleAbrirAsignarGestora(solicitud)}
+                            className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
+                            title="Asignar gestora de citas"
+                            disabled={isProcessing}
+                          >
+                            <UserPlus size={18} />
+                          </button>
+                        )}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">

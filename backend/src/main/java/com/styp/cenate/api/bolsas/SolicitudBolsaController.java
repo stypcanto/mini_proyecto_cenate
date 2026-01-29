@@ -259,9 +259,21 @@ public class SolicitudBolsaController {
     @CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
     public ResponseEntity<?> asignarGestora(
             @PathVariable Long id,
-            @RequestParam("idGestora") Long idGestora) {
+            @RequestParam(value = "idGestora", required = false) Long idGestora) {
 
         try {
+            // NEW v2.4.0: Soportar eliminación de asignación (idGestora = null)
+            if (idGestora == null) {
+                log.info("🗑️ Eliminando asignación de gestora en solicitud {}", id);
+                solicitudBolsaService.eliminarAsignacionGestora(id);
+
+                return ResponseEntity.ok(Map.of(
+                    "mensaje", "Asignación de gestora eliminada exitosamente",
+                    "idSolicitud", id
+                ));
+            }
+
+            // ASIGNACIÓN NORMAL
             log.info("👤 Asignando gestora {} a solicitud {} (MBAC: COORDINADOR_DE_CITAS)", idGestora, id);
             solicitudBolsaService.asignarGestora(id, idGestora);
 

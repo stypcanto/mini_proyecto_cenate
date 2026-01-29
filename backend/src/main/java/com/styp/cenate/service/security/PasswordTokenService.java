@@ -205,25 +205,28 @@ public class PasswordTokenService {
     @Transactional(readOnly = true)
     public TokenValidationResult validarToken(String token) {
         if (token == null || token.isBlank()) {
+            log.warn("❌ Token no proporcionado");
             return new TokenValidationResult(false, "Token no proporcionado", null);
         }
 
         var tokenEntity = tokenRepository.findByToken(token).orElse(null);
 
         if (tokenEntity == null) {
-            log.warn("Token no encontrado en BD: {}", token.substring(0, Math.min(10, token.length())) + "...");
-            return new TokenValidationResult(false, "Token inválido o ya utilizado", null);
+            log.warn("❌ Token no encontrado en BD: {}", token.substring(0, Math.min(10, token.length())) + "...");
+            return new TokenValidationResult(false, "Token inválido o no encontrado", null);
         }
 
         if (tokenEntity.getUsado()) {
-            log.warn("Token ya fue usado: {}", tokenEntity.getUsername());
-            return new TokenValidationResult(false, "Token ya utilizado", null);
+            log.warn("❌ Token ya fue usado por: {}", tokenEntity.getUsername());
+            return new TokenValidationResult(false, "Token ya fue utilizado. Por favor, solicita uno nuevo.", null);
         }
 
         if (tokenEntity.isExpirado()) {
-            log.warn("Token expirado para usuario: {}", tokenEntity.getUsername());
-            return new TokenValidationResult(false, "Token expirado", null);
+            log.warn("❌ Token expirado para usuario: {} (expiró a las {})", tokenEntity.getUsername(), tokenEntity.getFechaExpiracion());
+            return new TokenValidationResult(false, "Token expirado. Solicita uno nuevo.", null);
         }
+
+        log.info("✅ Token válido para usuario: {}", tokenEntity.getUsername());
 
         // Crear TokenInfo para compatibilidad
         TokenInfo info = new TokenInfo(
@@ -264,13 +267,17 @@ public class PasswordTokenService {
         usuario.setUpdateAt(LocalDateTime.now());
         usuario.setFailedAttempts(0);
         usuario.setLockedUntil(null);
-        usuarioRepository.save(usuario);
+        // ⚠️ IMPORTANTE: Usar saveAndFlush para asegurar persistencia inmediata
+        usuarioRepository.saveAndFlush(usuario);
+        log.info("✅ Contraseña encriptada y guardada en BD para: {}", usuario.getNameUser());
 
         // Marcar token como usado
         var tokenEntity = tokenRepository.findByToken(token).orElse(null);
         if (tokenEntity != null) {
             tokenEntity.setUsado(true);
-            tokenRepository.save(tokenEntity);
+            // ⚠️ IMPORTANTE: Usar saveAndFlush para asegurar persistencia inmediata
+            tokenRepository.saveAndFlush(tokenEntity);
+            log.info("✅ Token marcado como usado");
         }
 
         log.info("Contraseña cambiada exitosamente para usuario: {}", usuario.getNameUser());

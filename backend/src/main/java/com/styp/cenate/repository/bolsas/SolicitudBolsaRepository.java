@@ -342,4 +342,59 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         """, nativeQuery = true)
     Map<String, Object> estadisticasDelDia();
 
+    // ========================================================================
+    // 🦟 v1.0.0 (2026-01-29): MÉTODOS ESPECÍFICOS PARA MÓDULO DENGUE
+    // ========================================================================
+
+    /**
+     * Busca solicitud por DNI + fecha_atencion para detección de duplicados
+     * Usado en deduplicación: DNI + fecha_atencion = clave única para Dengue
+     *
+     * @param pacienteDni DNI normalizado (8 dígitos)
+     * @param fechaAtencion Fecha de atención
+     * @return Optional con la solicitud si existe
+     */
+    Optional<SolicitudBolsa> findByPacienteDniAndFechaAtencion(
+        String pacienteDni,
+        java.time.LocalDate fechaAtencion
+    );
+
+    /**
+     * Lista todos los casos dengue con paginación
+     * Filtra por: id_bolsa = 2 (BOLSA_DENGUE) Y dx_main IS NOT NULL
+     *
+     * @param pageable Información de paginación
+     * @return Page<SolicitudBolsa> ordenada por fecha_solicitud DESC
+     */
+    @Query("""
+        SELECT s FROM SolicitudBolsa s
+        WHERE s.idBolsa = 2 AND s.dxMain IS NOT NULL AND s.activo = true
+        ORDER BY s.fechaSolicitud DESC
+        """)
+    org.springframework.data.domain.Page<SolicitudBolsa> findAllDengueCasos(
+        org.springframework.data.domain.Pageable pageable
+    );
+
+    /**
+     * Busca casos dengue con filtros opcionales
+     * Filtros: dni (búsqueda parcial) Y/O dxMain (búsqueda exacta)
+     *
+     * @param dni DNI para búsqueda LIKE (opcional)
+     * @param dxMain Código CIE-10 para búsqueda exacta (opcional)
+     * @param pageable Información de paginación
+     * @return Page<SolicitudBolsa> con casos que coinciden
+     */
+    @Query("""
+        SELECT s FROM SolicitudBolsa s
+        WHERE s.idBolsa = 2 AND s.dxMain IS NOT NULL AND s.activo = true
+        AND (:dni IS NULL OR s.pacienteDni LIKE CONCAT('%', :dni, '%'))
+        AND (:dxMain IS NULL OR s.dxMain = :dxMain)
+        ORDER BY s.fechaSolicitud DESC
+        """)
+    org.springframework.data.domain.Page<SolicitudBolsa> buscarDengueCasos(
+        @org.springframework.data.repository.query.Param("dni") String dni,
+        @org.springframework.data.repository.query.Param("dxMain") String dxMain,
+        org.springframework.data.domain.Pageable pageable
+    );
+
 }

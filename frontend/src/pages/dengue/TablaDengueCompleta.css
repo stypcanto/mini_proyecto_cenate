@@ -1,0 +1,342 @@
+/* TablaDengueCompleta.css */
+
+.tabla-dengue-completa-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+/* Table Scroll Container */
+.tabla-scroll {
+  overflow-x: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.tabla-dengue-completa {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+  font-size: 13px;
+}
+
+/* Table Header */
+.tabla-dengue-completa thead {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.tabla-dengue-completa thead tr {
+  height: 50px;
+}
+
+.tabla-dengue-completa th {
+  padding: 12px 8px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+  white-space: nowrap;
+}
+
+/* Table Body */
+.tabla-dengue-completa tbody tr {
+  border-bottom: 1px solid #e0e0e0;
+  transition: background-color 0.2s ease;
+}
+
+.tabla-dengue-completa tbody tr:hover {
+  background: #f5f7ff;
+}
+
+.tabla-dengue-completa tbody tr:nth-child(even) {
+  background: #fafafa;
+}
+
+.tabla-dengue-completa tbody tr:nth-child(even):hover {
+  background: #eff2f9;
+}
+
+.tabla-dengue-completa td {
+  padding: 12px 8px;
+  color: #333;
+}
+
+/* Column Widths */
+.col-dni {
+  min-width: 100px;
+  font-weight: 600;
+  color: #667eea;
+}
+
+.col-nombre {
+  min-width: 180px;
+}
+
+.col-sexo {
+  min-width: 80px;
+  text-align: center;
+}
+
+.col-cas {
+  min-width: 70px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.col-cie10 {
+  min-width: 120px;
+  padding: 8px 4px;
+}
+
+.col-ipress {
+  min-width: 150px;
+}
+
+.col-red {
+  min-width: 140px;
+}
+
+.col-fecha-atencion,
+.col-fecha-sintomas {
+  min-width: 100px;
+  text-align: center;
+}
+
+.col-semana {
+  min-width: 110px;
+  text-align: center;
+  font-weight: 500;
+  color: #666;
+}
+
+.col-estado {
+  min-width: 90px;
+  text-align: center;
+}
+
+/* CIE-10 Styling */
+.cie10-badge {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  gap: 2px;
+  line-height: 1.2;
+  font-size: 12px;
+}
+
+.cie10-badge small {
+  font-size: 10px;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+.cie10-yellow {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.cie10-green {
+  background: #d4edda;
+  color: #155724;
+}
+
+.cie10-red {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.cie10-gray {
+  background: #e2e3e5;
+  color: #383d41;
+}
+
+/* Estado Badge */
+.estado-badge {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.estado-pendiente {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.estado-activo {
+  background: #d4edda;
+  color: #155724;
+}
+
+.estado-completado {
+  background: #d1ecf1;
+  color: #0c5460;
+}
+
+.estado-cancelado {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+/* Legend */
+.tabla-legend {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  font-size: 13px;
+  flex-wrap: wrap;
+}
+
+.legend-title {
+  font-weight: 600;
+  color: #333;
+}
+
+.legend-items {
+  display: flex;
+  gap: 15px;
+  flex-wrap: wrap;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+}
+
+.legend-item.yellow .legend-color {
+  background: #ffc107;
+}
+
+.legend-item.green .legend-color {
+  background: #4caf50;
+}
+
+.legend-item.red .legend-color {
+  background: #f44336;
+}
+
+.legend-label {
+  font-size: 12px;
+  color: #666;
+}
+
+/* Statistics */
+.tabla-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  padding: 15px;
+  background: #f5f7ff;
+  border-radius: 8px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px;
+  background: white;
+  border-radius: 6px;
+  border-left: 4px solid #ddd;
+}
+
+.stat-item .stat-label {
+  font-size: 12px;
+  color: #999;
+  font-weight: 600;
+}
+
+.stat-item .stat-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #333;
+}
+
+.stat-item.green {
+  border-left-color: #4caf50;
+}
+
+.stat-item.green .stat-value {
+  color: #2e7d32;
+}
+
+.stat-item.red {
+  border-left-color: #f44336;
+}
+
+.stat-item.red .stat-value {
+  color: #c62828;
+}
+
+.stat-item.yellow {
+  border-left-color: #ffc107;
+}
+
+.stat-item.yellow .stat-value {
+  color: #f57f17;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .tabla-dengue-completa {
+    font-size: 11px;
+  }
+
+  .tabla-dengue-completa th {
+    padding: 8px 4px;
+    font-size: 11px;
+  }
+
+  .tabla-dengue-completa td {
+    padding: 8px 4px;
+  }
+
+  .col-dni {
+    min-width: 70px;
+  }
+
+  .col-nombre {
+    min-width: 120px;
+  }
+
+  .col-ipress {
+    min-width: 100px;
+  }
+
+  .col-red {
+    min-width: 100px;
+  }
+
+  .cie10-badge {
+    padding: 4px 6px;
+    font-size: 11px;
+  }
+
+  .tabla-legend {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .tabla-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}

@@ -52,6 +52,12 @@ public interface SolicitudBolsaService {
     void asignarGestora(Long idSolicitud, Long idGestora);
 
     /**
+     * Elimina la asignación de gestora (deja en null)
+     * @param idSolicitud ID de la solicitud
+     */
+    void eliminarAsignacionGestora(Long idSolicitud);
+
+    /**
      * Cambia el estado de una solicitud
      */
     void cambiarEstado(Long idSolicitud, Long nuevoEstadoId);

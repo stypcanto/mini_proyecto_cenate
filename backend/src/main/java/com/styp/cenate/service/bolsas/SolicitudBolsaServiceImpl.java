@@ -721,6 +721,31 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     @Override
     @Transactional
+    public void eliminarAsignacionGestora(Long idSolicitud) {
+        log.info("🗑️ Eliminando asignación de gestora en solicitud {}", idSolicitud);
+
+        // Validar que la solicitud existe
+        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Solicitud " + idSolicitud + " no encontrada"
+            ));
+
+        // Guardar info anterior para log
+        Long gestoraAnterior = solicitud.getResponsableGestoraId();
+
+        // Eliminar asignación (setear a null)
+        solicitud.setResponsableGestoraId(null);
+        solicitud.setFechaAsignacion(null);
+
+        // Guardar
+        solicitudRepository.save(solicitud);
+
+        log.info("✅ Asignación de gestora eliminada en solicitud {} (Anterior: {})",
+            idSolicitud, gestoraAnterior);
+    }
+
+    @Override
+    @Transactional
     public void cambiarEstado(Long idSolicitud, Long nuevoEstadoId) {
         SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
             .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
