@@ -20,6 +20,7 @@ public class LoginResponse {
     private Long userId;              // 🆔 ID del usuario
     private String username;          // 👤 Nombre de usuario (login)
     private String nombreCompleto;    // 🧾 Nombre completo para mostrar en el frontend
+    private String foto;              // 📷 URL de la foto del usuario
     private String rolPrincipal;      // 🏷️ Rol principal (ej: ADMIN)
     private List<String> roles;       // 📜 Lista de roles
     private List<String> permisos;    // 🔐 Lista de permisos

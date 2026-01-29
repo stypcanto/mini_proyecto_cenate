@@ -25,7 +25,7 @@ services:
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
 
-      # 📧 Email SMTP (Relay via host.docker.internal → 172.20.0.227:25)
+      # 📧 Email SMTP (EsSalud Corporativo)
       MAIL_HOST: ${MAIL_HOST:-host.docker.internal}
       MAIL_PORT: ${MAIL_PORT:-2525}
       MAIL_USERNAME: ${MAIL_USERNAME:-cenate.contacto@essalud.gob.pe}

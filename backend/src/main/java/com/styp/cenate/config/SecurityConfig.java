@@ -100,6 +100,9 @@ public class SecurityConfig {
                                                 // SEC-006: Otros endpoints de actuator requieren SUPERADMIN
                                                 //.requestMatchers("/actuator/**").hasRole("SUPERADMIN")
                                                 .requestMatchers("/actuator/**").permitAll()
+
+                                                // Health check y pruebas SMTP
+                                                .requestMatchers("/api/health/**").permitAll()
                                                 // =====================================================
                                                 // ENDPOINTS DE CITA (POST/PUT) -Inicio CHATBOT
                                                 // =====================================================

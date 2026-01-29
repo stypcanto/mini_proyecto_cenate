@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import bolsasService from '../../services/bolsasService';
 import ModalDeduplicacionAutomatica from '../../components/modals/ModalDeduplicacionAutomatica';
 import * as XLSX from 'xlsx';
+import { getApiBaseUrl } from '../../utils/apiUrlHelper';
 
 /**
  * 📁 CargarDesdeExcel - Importación de Bolsas desde archivos Excel v1.13.8 (AUTO-DETECCIÓN INTELIGENTE + AUTO-CREACIÓN ASEGURADOS)
@@ -438,7 +439,8 @@ export default function CargarDesdeExcel() {
     // Obtener tipos de bolsas disponibles
     const obtenerTiposBolsasDisponibles = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/admin/tipos-bolsas/todos');
+        const apiBaseUrl = getApiBaseUrl();
+        const response = await fetch(`${apiBaseUrl}/admin/tipos-bolsas/todos`);
         if (!response.ok) throw new Error(`Error: ${response.status}`);
         const datos = await response.json();
         console.log('📋 Tipos de bolsas:', datos);
@@ -454,7 +456,8 @@ export default function CargarDesdeExcel() {
     // Obtener servicios/especialidades disponibles
     const obtenerServicios = async () => {
       try {
-        const response = await fetch('http://localhost:8080/api/servicio-essi/activos-cenate');
+        const apiBaseUrl = getApiBaseUrl();
+        const response = await fetch(`${apiBaseUrl}/servicio-essi/activos-cenate`);
         if (!response.ok) throw new Error(`Error: ${response.status}`);
         const datos = await response.json();
         console.log('📋 Servicios disponibles:', datos);
