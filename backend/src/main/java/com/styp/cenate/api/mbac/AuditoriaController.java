@@ -230,10 +230,14 @@ public class AuditoriaController {
         try {
             boolean cerrada = auditoriaService.cerrarSesionUsuario(usuarioSesion);
             if (cerrada) {
+                // Obtener la lista actualizada de sesiones (sin caché)
+                List<Map<String, Object>> sesionesActualizadas = auditoriaService.obtenerSesionesActivasActualizadas();
+
                 return ResponseEntity.ok(Map.of(
                     "success", true,
                     "message", "Sesión cerrada exitosamente",
-                    "usuario", usuarioSesion
+                    "usuario", usuarioSesion,
+                    "sesionesActivas", sesionesActualizadas
                 ));
             } else {
                 return ResponseEntity.status(404).body(Map.of(

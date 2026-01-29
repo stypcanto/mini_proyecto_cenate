@@ -137,6 +137,14 @@ public interface AuditoriaService {
     List<Map<String, Object>> obtenerSesionesActivas();
 
     /**
+     * Obtiene sesiones activas actualizadas desde BD (sin caché).
+     * Útil después de cambios en sesiones para asegurar datos frescos.
+     *
+     * @return Lista de mapas con información actual de usuarios conectados
+     */
+    List<Map<String, Object>> obtenerSesionesActivasActualizadas();
+
+    /**
      * Cierra forzadamente una sesión activa de un usuario.
      * Crea un evento de LOGOUT en la auditoría.
      *

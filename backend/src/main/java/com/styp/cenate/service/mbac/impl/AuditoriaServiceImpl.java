@@ -217,7 +217,7 @@ public class AuditoriaServiceImpl implements AuditoriaService {
     public boolean cerrarSesionUsuario(String usuarioSesion) {
         log.info("Intentando cerrar sesión del usuario: {}", usuarioSesion);
         try {
-            // Obtener las sesiones activas para verificar que exista
+            // Obtener las sesiones activas ANTES de cerrar para verificar que exista
             List<Map<String, Object>> sesionesActivas = obtenerSesionesActivas();
             boolean sesionEncontrada = sesionesActivas.stream()
                     .anyMatch(s -> usuarioSesion.equals(s.get("usuarioSesion")));
@@ -242,6 +242,59 @@ public class AuditoriaServiceImpl implements AuditoriaService {
         } catch (Exception e) {
             log.error("Error cerrando sesión del usuario {}: {}", usuarioSesion, e.getMessage(), e);
             return false;
+        }
+    }
+
+    /**
+     * Fuerza la recarga de datos de sesiones desde BD (evita caché)
+     */
+    @Override
+    public List<Map<String, Object>> obtenerSesionesActivasActualizadas() {
+        log.info("Obteniendo sesiones activas (sin caché)");
+        // Esta es una versión que siempre consulta la BD sin caché
+        // Útil después de cambios en sesiones activas
+        try {
+            // Usar findAll() directamente sin cachés
+            List<AuditoriaModularView> eventos = auditoriaRepository.findAll().stream()
+                    .filter(a -> "LOGIN".equalsIgnoreCase(a.getAccion()) || "LOGOUT".equalsIgnoreCase(a.getAccion()))
+                    .collect(Collectors.toList());
+
+            // Agrupar por usuario y encontrar el último evento
+            Map<String, AuditoriaModularView> ultimoEventoPorUsuario = new HashMap<>();
+            for (AuditoriaModularView evento : eventos) {
+                String usuario = evento.getUsuarioSesion();
+                if (ultimoEventoPorUsuario.containsKey(usuario)) {
+                    AuditoriaModularView anterior = ultimoEventoPorUsuario.get(usuario);
+                    // Mantener el más reciente
+                    if (evento.getFechaHora().isAfter(anterior.getFechaHora())) {
+                        ultimoEventoPorUsuario.put(usuario, evento);
+                    }
+                } else {
+                    ultimoEventoPorUsuario.put(usuario, evento);
+                }
+            }
+
+            // Filtrar solo los que tienen último evento = LOGIN (sesiones activas)
+            return ultimoEventoPorUsuario.values().stream()
+                    .filter(evento -> "LOGIN".equalsIgnoreCase(evento.getAccion()))
+                    .sorted((a, b) -> b.getFechaHora().compareTo(a.getFechaHora()))
+                    .limit(5)
+                    .map(login -> {
+                        Map<String, Object> sesion = new HashMap<>();
+                        sesion.put("usuarioSesion", login.getUsuarioSesion());
+                        sesion.put("usuario", login.getUsuarioSesion());
+                        sesion.put("nombreCompleto", login.getNombreCompleto());
+                        sesion.put("rol", login.getRoles());
+                        sesion.put("ultimaActividad", login.getFechaFormateada());
+                        sesion.put("ip", login.getIp());
+                        sesion.put("estado", "Activo");
+                        sesion.put("tiempoConectado", calcularTiempoConectado(login.getFechaHora()));
+                        return sesion;
+                    })
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error obteniendo sesiones activas actualizadas", e);
+            return List.of();
         }
     }
 }

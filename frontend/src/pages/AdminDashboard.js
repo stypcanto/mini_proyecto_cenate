@@ -101,9 +101,14 @@ export default function AdminDashboard() {
     try {
       const response = await apiClient.post(`/auditoria/cerrar-sesion/${usuarioSesion}`, {}, true);
       if (response?.success) {
-        alert(`✅ Sesión de ${usuarioSesion} cerrada exitosamente`);
-        // Recargar la lista de usuarios conectados
-        cargarUsuariosConectados();
+        alert(`✅ Sesión cerrada exitosamente`);
+        // Usar la lista actualizada directamente de la respuesta
+        if (response?.sesionesActivas) {
+          setUsuariosConectados(response.sesionesActivas);
+        } else {
+          // Fallback: recargar la lista
+          cargarUsuariosConectados();
+        }
       } else {
         alert(`⚠️ Error: ${response?.message || 'No se pudo cerrar la sesión'}`);
       }
