@@ -929,11 +929,43 @@ export default function AdminDashboard() {
                         </span>
                       </div>
 
-                      {/* Conexiones del servidor PostgreSQL */}
+                      {/* Conexiones del servidor PostgreSQL - CON BARRA VISUAL */}
                       <div className="col-span-2 mt-2 pt-2 border-t border-green-200">
-                        <p className="text-gray-500 font-medium mb-1">Conexiones Servidor PG:</p>
+                        <div className="flex justify-between items-center mb-2">
+                          <p className="text-gray-500 font-medium">👥 Conexiones Simultáneas:</p>
+                          <span className="text-lg font-bold text-green-600">
+                            {systemHealth.baseDatos.estadisticas.conexionesActivasServidor}/{systemHealth.baseDatos.estadisticas.maxConexionesPermitidas}
+                          </span>
+                        </div>
+                        {/* Barra de progreso visual */}
+                        <div className="relative h-6 bg-gray-200 rounded-full overflow-hidden mb-2 border-2 border-green-300">
+                          <div
+                            className={`h-full transition-all flex items-center justify-center ${
+                              (systemHealth.baseDatos.estadisticas.conexionesActivasServidor / systemHealth.baseDatos.estadisticas.maxConexionesPermitidas) * 100 > 80
+                                ? 'bg-red-500'
+                                : (systemHealth.baseDatos.estadisticas.conexionesActivasServidor / systemHealth.baseDatos.estadisticas.maxConexionesPermitidas) * 100 > 50
+                                ? 'bg-yellow-500'
+                                : 'bg-green-500'
+                            }`}
+                            style={{
+                              width: `${Math.round(
+                                (systemHealth.baseDatos.estadisticas.conexionesActivasServidor /
+                                  systemHealth.baseDatos.estadisticas.maxConexionesPermitidas) *
+                                  100
+                              )}%`,
+                            }}
+                          >
+                            <span className="text-white text-xs font-bold drop-shadow">
+                              {Math.round(
+                                (systemHealth.baseDatos.estadisticas.conexionesActivasServidor /
+                                  systemHealth.baseDatos.estadisticas.maxConexionesPermitidas) *
+                                  100
+                              )}%
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="col-span-2 flex items-center gap-3">
+                      <div className="col-span-2 flex items-center gap-3 text-xs">
                         <div className="flex items-center gap-1">
                           <span className="w-2 h-2 rounded-full bg-green-500"></span>
                           <span className="text-gray-600">Activas:</span>
