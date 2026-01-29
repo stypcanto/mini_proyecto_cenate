@@ -42,6 +42,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
     private final AuditLogService auditLogService;
     private final com.styp.cenate.service.session.SessionService sessionService;
     private final com.styp.cenate.util.RequestContextUtil requestContextUtil;
+    private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
 
     // =========================================================
     // 🔐 LOGIN MBAC
@@ -98,6 +99,9 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 roles.stream().map(r -> new SimpleGrantedAuthority("ROLE_" + r)).collect(Collectors.toList())
         );
 
+        // Obtener foto del usuario (desde personal_cnt o personal_externo)
+        String fotoUrl = obtenerFotoUsuario(user.getIdUser());
+
         Map<String, Object> claims = new HashMap<>();
         claims.put("id_user", user.getIdUser());  // 🆕 CRITICO: ID en el JWT para persistencia
         claims.put("roles", roles);
@@ -143,6 +147,7 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 .id_user(user.getIdUser())  // 🆕 CRITICO: ID del usuario para el frontend
                 .username(user.getNameUser())
                 .nombreCompleto(user.getNombreCompleto())  // ✅ Nombre y apellido del usuario
+                .foto(fotoUrl)  // 📷 URL completa de la foto
                 .roles(roles)
                 .permisos(null)
                 .requiereCambioPassword(user.getRequiereCambioPassword() != null ? user.getRequiereCambioPassword() : false)  // 🔑 Flag de primer acceso
@@ -257,5 +262,53 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 password.matches(".*[a-z].*") &&
                 password.matches(".*\\d.*") &&
                 password.matches(".*[!@#$%^&*(),.?\":{}|<>].*");
+    }
+
+    // =========================================================
+    // 📷 OBTENER FOTO DEL USUARIO
+    // =========================================================
+    private String obtenerFotoUsuario(Long userId) {
+        log.info("📷 Buscando foto para usuario ID: {}", userId);
+        try {
+            // Buscar primero en dim_personal_cnt
+            String fotoPersonalCnt = jdbcTemplate.queryForObject(
+                "SELECT foto_pers FROM public.dim_personal_cnt WHERE id_usuario = ? AND foto_pers IS NOT NULL",
+                String.class,
+                userId
+            );
+            if (fotoPersonalCnt != null && !fotoPersonalCnt.trim().isEmpty()) {
+                // URL encode el nombre del archivo para manejar espacios y caracteres especiales
+                String fotoUrlEncoded = java.net.URLEncoder.encode(fotoPersonalCnt, java.nio.charset.StandardCharsets.UTF_8)
+                    .replace("+", "%20"); // Reemplazar + con %20 para espacios
+                String fotoUrl = "/api/personal/foto/" + fotoUrlEncoded;
+                log.info("✅ Foto encontrada en dim_personal_cnt: {} (encoded: {})", fotoPersonalCnt, fotoUrl);
+                return fotoUrl;
+            }
+        } catch (Exception e) {
+            log.debug("No se encontró foto en dim_personal_cnt para usuario {}: {}", userId, e.getMessage());
+        }
+
+        try {
+            // Buscar en dim_personal_externo (si no se encontró en personal_cnt)
+            String fotoPersonalExt = jdbcTemplate.queryForObject(
+                "SELECT foto_ext FROM public.dim_personal_externo WHERE id_usuario = ? AND foto_ext IS NOT NULL",
+                String.class,
+                userId
+            );
+            if (fotoPersonalExt != null && !fotoPersonalExt.trim().isEmpty()) {
+                // URL encode el nombre del archivo
+                String fotoUrlEncoded = java.net.URLEncoder.encode(fotoPersonalExt, java.nio.charset.StandardCharsets.UTF_8)
+                    .replace("+", "%20");
+                String fotoUrl = "/api/personal/foto/" + fotoUrlEncoded;
+                log.info("✅ Foto encontrada en dim_personal_externo: {} (encoded: {})", fotoPersonalExt, fotoUrl);
+                return fotoUrl;
+            }
+        } catch (Exception e) {
+            log.debug("No se encontró foto en dim_personal_externo para usuario {}", userId);
+        }
+
+        // Si no se encontró foto, retornar null
+        log.info("⚠️ No se encontró foto para usuario ID: {}", userId);
+        return null;
     }
 }

@@ -12,6 +12,10 @@ export default function UserMenu() {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
 
+  // 🐛 DEBUG: Verificar si user.foto llega al componente
+  console.log("🖼️ [UserMenu] user.foto:", user?.foto);
+  console.log("👤 [UserMenu] user completo:", user);
+
   if (!user) return null;
 
   const handleLogout = () => {
@@ -39,6 +43,11 @@ export default function UserMenu() {
               src={user.foto}
               alt={user.nombreCompleto}
               className="w-full h-full object-cover"
+              onError={(e) => {
+                console.error("❌ [UserMenu] Error cargando foto:", user.foto);
+                console.error("❌ [UserMenu] Error event:", e);
+              }}
+              onLoad={() => console.log("✅ [UserMenu] Foto cargada exitosamente:", user.foto)}
             />
           ) : (
             <span className="text-white font-bold text-base">

@@ -32,6 +32,15 @@
 - Estructura de formularios
 - Validación de datos
 
+#### 📷 Módulo de Foto Header
+**[03_modulo_foto_header.md](./03_modulo_foto_header.md)** ⭐ **NUEVO v1.37.4**
+- ✅ Avatar circular con foto en header
+- ✅ Integración con AuthContext
+- ✅ Fallback a inicial del nombre
+- ✅ Manejo de errores de carga
+- ✅ Responsive design (móvil/desktop)
+- ✅ Debugging y troubleshooting completo
+
 #### ✨ Características Específicas
 **[09_features/](./09_features/)**
 - Trazabilidad clínica

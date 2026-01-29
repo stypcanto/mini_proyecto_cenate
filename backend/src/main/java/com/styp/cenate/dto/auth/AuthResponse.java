@@ -15,6 +15,7 @@ public class AuthResponse {
     private Long id_user;  // 🆕 ID del usuario para el frontend
     private String username;
     private String nombreCompleto;
+    private String foto;  // 📷 URL completa de la foto del usuario
     private List<String> roles;
     private List<String> permisos;
     private Boolean requiereCambioPassword; // 🔑 Debe cambiar contraseña y actualizar datos
