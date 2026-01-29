@@ -1267,8 +1267,8 @@ export default function Solicitudes() {
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
-                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Asignación</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
@@ -1309,6 +1309,7 @@ export default function Solicitudes() {
                       <td className="px-4 py-3 text-sm text-gray-900 font-semibold" title="Código IPRESS">{solicitud.codigoIpress}</td>
                       <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>{solicitud.ipress || 'N/A'}</td>
                       <td className="px-4 py-3 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
+                      {/* COLUMNA 1: ESTADO */}
                       <td className="px-4 py-3">
                         <span
                           className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block ${getEstadoBadge(solicitud.estado)}`}
@@ -1317,47 +1318,8 @@ export default function Solicitudes() {
                           {solicitud.estadoDisplay}
                         </span>
                       </td>
-                      {/* COLUMNA: GESTORA ASIGNADA */}
-                      <td className="px-4 py-3 text-sm">
-                        {solicitud.gestoraAsignada ? (
-                          // ✅ CON ASIGNACIÓN: Mostrar gestora + 2 iconos
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-green-700 flex-1">{solicitud.gestoraAsignada}</span>
-                            <div className="flex items-center gap-1">
-                              {/* Icono: Reasignar (Dos personas) */}
-                              <button
-                                onClick={() => handleAbrirAsignarGestora(solicitud)}
-                                className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
-                                title="Reasignar gestora"
-                                disabled={isProcessing}
-                              >
-                                <Users size={16} />
-                              </button>
-                              {/* Icono: Eliminar asignación */}
-                              <button
-                                onClick={() => handleEliminarAsignacionGestora(solicitud)}
-                                className="p-1.5 hover:bg-red-100 rounded-md transition-colors text-red-600 disabled:opacity-50"
-                                title="Eliminar asignación"
-                                disabled={isProcessing}
-                              >
-                                <X size={16} />
-                              </button>
-                            </div>
-                          </div>
-                        ) : (
-                          // ❌ SIN ASIGNACIÓN: Solo icono para asignar
-                          <button
-                            onClick={() => handleAbrirAsignarGestora(solicitud)}
-                            className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
-                            title="Asignar gestora de citas"
-                            disabled={isProcessing}
-                          >
-                            <UserPlus size={18} />
-                          </button>
-                        )}
-                      </td>
 
-                      {/* COLUMNA: FECHA ASIGNACIÓN (NEW v2.4.1) */}
+                      {/* COLUMNA 2: FECHA ASIGNACIÓN (v2.4.2) */}
                       <td className="px-4 py-3 text-sm text-gray-600">
                         {solicitud.fechaAsignacionFormato ? (
                           <span className="text-green-700 font-medium">{solicitud.fechaAsignacionFormato}</span>
@@ -1365,30 +1327,82 @@ export default function Solicitudes() {
                           <span className="text-gray-400 italic">—</span>
                         )}
                       </td>
+
+                      {/* COLUMNA 3: GESTORA ASIGNADA (v2.4.2) - Solo nombre */}
+                      <td className="px-4 py-3 text-sm">
+                        {solicitud.gestoraAsignada ? (
+                          <span className="font-semibold text-green-700">{solicitud.gestoraAsignada}</span>
+                        ) : (
+                          <span className="text-gray-400 italic">Sin asignar</span>
+                        )}
+                      </td>
+
+                      {/* COLUMNA 4: ACCIONES (v2.4.2) - Todos los iconos */}
                       <td className="px-4 py-3 text-center">
                         <div className="flex items-center justify-center gap-1">
+                          {/* Acción: Asignar Gestora */}
+                          {!solicitud.gestoraAsignada && (
+                            <button
+                              onClick={() => handleAbrirAsignarGestora(solicitud)}
+                              className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
+                              title="Asignar gestora de citas"
+                              disabled={isProcessing}
+                            >
+                              <UserPlus size={16} />
+                            </button>
+                          )}
+
+                          {/* Acción: Reasignar Gestora */}
+                          {solicitud.gestoraAsignada && (
+                            <button
+                              onClick={() => handleAbrirAsignarGestora(solicitud)}
+                              className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
+                              title="Reasignar gestora"
+                              disabled={isProcessing}
+                            >
+                              <Users size={16} />
+                            </button>
+                          )}
+
+                          {/* Acción: Eliminar Asignación */}
+                          {solicitud.gestoraAsignada && (
+                            <button
+                              onClick={() => handleEliminarAsignacionGestora(solicitud)}
+                              className="p-1.5 hover:bg-red-100 rounded-md transition-colors text-red-600 disabled:opacity-50"
+                              title="Eliminar asignación"
+                              disabled={isProcessing}
+                            >
+                              <X size={16} />
+                            </button>
+                          )}
+
+                          {/* Acción: Marcar Prioridad (TODO - futuro) */}
+                          <button
+                            className="p-1.5 hover:bg-yellow-100 rounded-md transition-colors text-yellow-600 disabled:opacity-50"
+                            title="Marcar prioridad (próximamente)"
+                            disabled={true}
+                          >
+                            <FileText size={16} />
+                          </button>
+
+                          {/* Acción: Cambiar Teléfono */}
                           <button
                             onClick={() => handleAbrirCambiarTelefono(solicitud)}
-                            className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
+                            className="p-1.5 hover:bg-purple-100 rounded-md transition-colors text-purple-600 disabled:opacity-50"
                             title="Cambiar teléfono"
                             disabled={isProcessing}
                           >
                             <Phone size={16} />
                           </button>
+
+                          {/* Acción: Enviar Recordatorio */}
                           <button
                             onClick={() => handleAbrirEnviarRecordatorio(solicitud)}
                             className="p-1.5 hover:bg-green-100 rounded-md transition-colors text-green-600 disabled:opacity-50"
                             title="Enviar recordatorio"
                             disabled={isProcessing}
                           >
-                            <Users size={16} />
-                          </button>
-                          <button
-                            className="p-1.5 hover:bg-red-100 rounded-md transition-colors text-red-600 disabled:opacity-50"
-                            title="Más opciones"
-                            disabled={isProcessing}
-                          >
-                            <FileText size={16} />
+                            <Download size={16} />
                           </button>
                         </div>
                       </td>
