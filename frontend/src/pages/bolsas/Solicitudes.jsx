@@ -48,6 +48,7 @@ export default function Solicitudes() {
 
   const [solicitudes, setSolicitudes] = useState([]);
   const [totalElementos, setTotalElementos] = useState(0); // NEW v2.5.1: Total de elementos del backend
+  const [estadisticasGlobales, setEstadisticasGlobales] = useState(null); // NEW v2.5.2: Stats globales del backend
   const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroBolsa, setFiltroBolsa] = useState('todas');
@@ -129,6 +130,25 @@ export default function Solicitudes() {
     if (catalogosCargados) {
       console.log('📋 Catálogos cargados, iniciando carga de solicitudes...');
       cargarSolicitudes();
+    }
+  }, [catalogosCargados]);
+
+  // ============================================================================
+  // 📦 EFFECT 2.5: Cargar ESTADÍSTICAS GLOBALES (v2.5.2 - Global stats)
+  // ============================================================================
+  useEffect(() => {
+    if (catalogosCargados) {
+      console.log('📊 Cargando estadísticas globales del backend...');
+      (async () => {
+        try {
+          const estadisticas = await bolsasService.obtenerEstadisticas();
+          console.log('✅ Estadísticas globales cargadas:', estadisticas);
+          setEstadisticasGlobales(estadisticas);
+        } catch (error) {
+          console.error('❌ Error cargando estadísticas:', error);
+          // Si falla, usar estadísticas locales (fallback)
+        }
+      })();
     }
   }, [catalogosCargados]);
 
@@ -610,8 +630,18 @@ export default function Solicitudes() {
     }
   };
 
-  // Calcular estadísticas
-  const estadisticas = {
+  // Calcular estadísticas (v2.5.2 - Use global stats from backend)
+  const estadisticas = estadisticasGlobales ? {
+    total: estadisticasGlobales.totalSolicitudes || 0,
+    pendientes: estadisticasGlobales.totalPendientes || 0,
+    citados: (estadisticasGlobales.totalSolicitudes || 0) -
+             (estadisticasGlobales.totalAtendidas || 0) -
+             (estadisticasGlobales.totalCanceladas || 0) -
+             (estadisticasGlobales.totalPendientes || 0) || 0,
+    atendidos: estadisticasGlobales.totalAtendidas || 0,
+    observados: estadisticasGlobales.totalCanceladas || 0,
+  } : {
+    // Fallback: usar estadísticas locales de la página actual si no se cargaron globales
     total: solicitudes.length,
     pendientes: solicitudes.filter(s => s.estado === 'pendiente').length,
     citados: solicitudes.filter(s => s.estado === 'citado').length,
