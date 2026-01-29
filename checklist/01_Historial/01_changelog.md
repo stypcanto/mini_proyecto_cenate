@@ -14,6 +14,67 @@
 
 ---
 
+## v1.37.5 (2026-01-29) - 🔧 FIX: Acceso de Usuarios Externos + Corrección Vista dim_personal_externo
+
+### 🔐 Problemas Resueltos
+
+**1. Usuarios Externos NO podían hacer login (401 Unauthorized)**
+- ❌ ANTES: Contraseña incorrecta en BD para usuario externo (84151616)
+- ✅ DESPUÉS: Contraseña actualizada correctamente usando endpoint de reset
+
+**2. Excepción SQL en AuthenticationServiceImpl.obtenerFotoUsuario()**
+- ❌ ANTES: Vista `dim_personal_externo` NO tenía columna `foto_ext`
+- ✅ DESPUÉS: Añadida columna `foto_ext` a la vista
+
+**3. Transacción marcada como rollback-only**
+- ❌ ANTES: Exception SQL causaba que toda la transacción se revirtiera
+- ✅ DESPUÉS: Vista corregida, transacción completa exitosamente
+
+### 📊 Impacto
+
+| Usuario | Estado Anterior | Estado Actual |
+|---------|-----------------|---------------|
+| Usuarios Internos | ✅ Funcionan | ✅ Funcionan |
+| Usuarios Externos (DNI: 84151616) | ❌ 401 Unauthorized | ✅ Login exitoso |
+| Sesiones activas | ❌ No se guardan | ✅ Se guardan correctamente |
+| Auditoría de login | ❌ No se registra | ✅ Se registra correctamente |
+
+### ✅ Cambios Realizados
+
+**Base de Datos:**
+- Recrear vista `dim_personal_externo` con columna `foto_ext`
+- Script de migración: `2026-01-29_fix_dim_personal_externo_foto_ext.sql`
+
+**Usuario de Prueba:**
+- Rol: INSTITUCION_EX
+- DNI: 84151616
+- Contraseña: @Prueba654321
+- Estado: ACTIVO ✅
+
+### 🧪 Verificación
+
+✅ **Backend Login Test:**
+```bash
+POST /api/auth/login
+{
+  "username": "84151616",
+  "password": "@Prueba654321"
+}
+
+Response: 200 OK
+{
+  "token": "eyJhbGciOiJIUzI1NiJ9...",
+  "id_user": 59,
+  "sessionId": "f8a7e9d4-1495-4e18-acd0-fbe201f8bdb5",
+  "message": "Inicio de sesión exitoso"
+}
+```
+
+✅ **Sesión registrada en BD:** 1562 sesiones activas
+✅ **Auditoría registrada:** Login event grabado correctamente
+
+---
+
 ## v1.37.1 (2026-01-28) - 🔴 HOTFIX: Corrección Crítica de Servicio en Controlador
 
 ### 🚨 Problema Crítico Identificado y Resuelto
