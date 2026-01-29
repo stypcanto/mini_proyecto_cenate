@@ -545,13 +545,27 @@ export const eliminarCarga = async (idCarga) => {
  */
 export const asignarAGestora = async (id, gestoraId, gestoraNombre) => {
   try {
-    const response = await apiClient.patch(`${API_BASE_URL}/solicitudes/${id}/asignar`, {
+    const response = await apiClient.patch(`${API_BASE_URL}/solicitudes/${id}/asignar?idGestora=${gestoraId}`, {
       gestoraId,
       gestoraNombre
     });
     return response;
   } catch (error) {
     console.error(`Error al asignar solicitud ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene lista de gestoras disponibles (rol GESTOR_DE_CITAS)
+ * @returns {Promise<Object>} - Lista de gestoras con id, nombre, activo
+ */
+export const obtenerGestorasDisponibles = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/gestoras-disponibles`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener gestoras disponibles:', error);
     throw error;
   }
 };

@@ -74,6 +74,8 @@ export default function Solicitudes() {
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [nuevoTelefono, setNuevoTelefono] = useState('');
   const [gestoraSeleccionada, setGestoraSeleccionada] = useState(null);
+  const [gestoras, setGestoras] = useState([]); // NEW: Lista de gestoras disponibles
+  const [isLoadingGestoras, setIsLoadingGestoras] = useState(false); // NEW
   const [tipoRecordatorio, setTipoRecordatorio] = useState('EMAIL');
   const [isProcessing, setIsProcessing] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
@@ -627,11 +629,32 @@ export default function Solicitudes() {
     }
   };
 
-  // Abrir modal para asignar gestora
+  // Abrir modal para asignar gestora (cargar gestoras disponibles)
   const handleAbrirAsignarGestora = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
     setGestoraSeleccionada(null);
     setModalAsignarGestora(true);
+    cargarGestoras(); // NEW: Cargar gestoras cuando se abre el modal
+  };
+
+  // NEW: Cargar gestoras disponibles
+  const cargarGestoras = async () => {
+    setIsLoadingGestoras(true);
+    try {
+      const response = await bolsasService.obtenerGestorasDisponibles();
+      if (response.data && response.data.gestoras) {
+        setGestoras(response.data.gestoras);
+        console.log('✅ Gestoras cargadas:', response.data.gestoras.length);
+      } else {
+        console.warn('⚠️ No se encontraron gestoras');
+        setGestoras([]);
+      }
+    } catch (error) {
+      console.error('Error cargando gestoras:', error);
+      setGestoras([]); // Fallback: lista vacía
+    } finally {
+      setIsLoadingGestoras(false);
+    }
   };
 
   // Procesar asignación a gestora
@@ -641,16 +664,24 @@ export default function Solicitudes() {
       return;
     }
 
+    // Obtener datos de la gestora seleccionada
+    const gestoraData = gestoras.find(g => g.id === parseInt(gestoraSeleccionada));
+    if (!gestoraData) {
+      alert('Gestora no encontrada');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       await bolsasService.asignarAGestora(
         solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id,
-        1, // TODO: Usar ID real de gestora cuando esté disponible
-        gestoraSeleccionada
+        parseInt(gestoraSeleccionada), // NEW: Usar ID real
+        gestoraData.nombre
       );
-      alert('Solicitud asignada correctamente');
+      alert('Solicitud asignada correctamente a ' + gestoraData.nombre);
       setModalAsignarGestora(false);
-      cargarSolicitudes(); // Recargar solicitudes (más rápido)
+      setGestoraSeleccionada(null); // Limpiar selección
+      cargarSolicitudes(); // Recargar solicitudes
     } catch (error) {
       console.error('Error asignando gestora:', error);
       alert('Error al asignar la gestora. Intenta nuevamente.');
@@ -1365,39 +1396,68 @@ export default function Solicitudes() {
         {modalAsignarGestora && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
-              <h2 className="text-xl font-bold mb-4 text-gray-900">Asignar a Gestora</h2>
+              <h2 className="text-xl font-bold mb-4 text-gray-900">👤 Asignar Gestora de Citas</h2>
               {solicitudSeleccionada && (
-                <p className="text-sm text-gray-600 mb-4">
-                  Paciente: <strong>{solicitudSeleccionada.paciente}</strong>
-                </p>
+                <div className="mb-4">
+                  <p className="text-sm text-gray-600">
+                    Paciente: <strong>{solicitudSeleccionada.paciente}</strong>
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    DNI: {solicitudSeleccionada.pacienteDni}
+                  </p>
+                </div>
               )}
-              <select
-                value={gestoraSeleccionada || ''}
-                onChange={(e) => setGestoraSeleccionada(e.target.value)}
-                className="w-full px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              >
-                <option value="">Selecciona una gestora</option>
-                <option value="María García">María García</option>
-                <option value="Juan Pérez">Juan Pérez</option>
-                <option value="Ana López">Ana López</option>
-                <option value="Carlos Ruiz">Carlos Ruiz</option>
-              </select>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setModalAsignarGestora(false)}
-                  disabled={isProcessing}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
-                >
-                  Cancelar
-                </button>
-                <button
-                  onClick={handleGuardarAsignarGestora}
-                  disabled={isProcessing}
-                  className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold disabled:opacity-50"
-                >
-                  {isProcessing ? 'Asignando...' : 'Asignar'}
-                </button>
-              </div>
+
+              {/* Loading state */}
+              {isLoadingGestoras && (
+                <div className="text-center py-4">
+                  <p className="text-gray-600">Cargando gestoras...</p>
+                </div>
+              )}
+
+              {/* Gestoras list */}
+              {!isLoadingGestoras && (
+                <>
+                  <select
+                    value={gestoraSeleccionada || ''}
+                    onChange={(e) => setGestoraSeleccionada(e.target.value)}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    disabled={gestoras.length === 0}
+                  >
+                    <option value="">
+                      {gestoras.length === 0
+                        ? 'No hay gestoras disponibles'
+                        : 'Selecciona una gestora'}
+                    </option>
+                    {gestoras.map((gestora) => (
+                      <option key={gestora.id} value={gestora.id}>
+                        {gestora.nombre}
+                      </option>
+                    ))}
+                  </select>
+
+                  {/* Buttons */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={() => {
+                        setModalAsignarGestora(false);
+                        setGestoraSeleccionada(null);
+                      }}
+                      disabled={isProcessing}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      onClick={handleGuardarAsignarGestora}
+                      disabled={isProcessing || gestoras.length === 0}
+                      className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold disabled:opacity-50"
+                    >
+                      {isProcessing ? '⏳ Asignando...' : '✓ Asignar'}
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )}
