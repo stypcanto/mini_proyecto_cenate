@@ -17,6 +17,28 @@ import './DengueValidationReport.css';
 export default function DengueValidationReport({ result, onClose }) {
   const [expandedErrors, setExpandedErrors] = useState(false);
 
+  // Si no hay resultado, mostrar mensaje de que no hay importaciones
+  if (!result) {
+    return (
+      <div className="dengue-validation-report">
+        <div className="report-header">
+          <div className="header-title">
+            <span className="header-icon">ℹ️</span>
+            <h2>Resultados de Importación</h2>
+          </div>
+        </div>
+        <div className="stats-grid">
+          <div style={{ padding: '30px', textAlign: 'center', color: '#666' }}>
+            <p>No hay importaciones registradas</p>
+            <p style={{ fontSize: '14px', marginTop: '10px' }}>
+              Carga un archivo Excel desde la sección "Cargar Excel" para ver los resultados aquí.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const successRate = result.totalProcesados
     ? ((
         ((result.insertados + result.actualizados) /
