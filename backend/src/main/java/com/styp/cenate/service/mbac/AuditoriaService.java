@@ -135,4 +135,13 @@ public interface AuditoriaService {
      * @return Lista de mapas con información de usuarios conectados
      */
     List<Map<String, Object>> obtenerSesionesActivas();
+
+    /**
+     * Cierra forzadamente una sesión activa de un usuario.
+     * Crea un evento de LOGOUT en la auditoría.
+     *
+     * @param usuarioSesion ID del usuario cuya sesión se cerrará
+     * @return true si se cerró exitosamente, false si no había sesión activa
+     */
+    boolean cerrarSesionUsuario(String usuarioSesion);
 }

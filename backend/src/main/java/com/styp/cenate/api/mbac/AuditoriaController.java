@@ -220,6 +220,37 @@ public class AuditoriaController {
     }
 
     // =============================================================
+    // 🔐 Cerrar sesión forzado (solo SUPERADMIN)
+    // =============================================================
+    @PostMapping("/cerrar-sesion/{usuarioSesion}")
+    @PreAuthorize("hasRole('SUPERADMIN')")
+    @Operation(summary = "Cerrar sesión de usuario", description = "Fuerza el cierre de una sesión activa (solo SUPERADMIN)")
+    public ResponseEntity<Map<String, Object>> cerrarSesion(
+            @PathVariable String usuarioSesion) {
+        try {
+            boolean cerrada = auditoriaService.cerrarSesionUsuario(usuarioSesion);
+            if (cerrada) {
+                return ResponseEntity.ok(Map.of(
+                    "success", true,
+                    "message", "Sesión cerrada exitosamente",
+                    "usuario", usuarioSesion
+                ));
+            } else {
+                return ResponseEntity.status(404).body(Map.of(
+                    "success", false,
+                    "message", "No se encontró sesión activa para cerrar"
+                ));
+            }
+        } catch (Exception e) {
+            log.error("Error cerrando sesión de usuario {}: {}", usuarioSesion, e.getMessage(), e);
+            return ResponseEntity.status(500).body(Map.of(
+                "success", false,
+                "message", "Error al cerrar sesión: " + e.getMessage()
+            ));
+        }
+    }
+
+    // =============================================================
     // 📄 Health check
     // =============================================================
     @GetMapping("/health")

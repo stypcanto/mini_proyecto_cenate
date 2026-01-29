@@ -97,6 +97,22 @@ export default function AdminDashboard() {
     }
   };
 
+  const cerrarSesionUsuario = async (usuarioSesion) => {
+    try {
+      const response = await apiClient.post(`/auditoria/cerrar-sesion/${usuarioSesion}`, {}, true);
+      if (response?.success) {
+        alert(`✅ Sesión de ${usuarioSesion} cerrada exitosamente`);
+        // Recargar la lista de usuarios conectados
+        cargarUsuariosConectados();
+      } else {
+        alert(`⚠️ Error: ${response?.message || 'No se pudo cerrar la sesión'}`);
+      }
+    } catch (error) {
+      console.error('Error cerrando sesión:', error);
+      alert('❌ Error al cerrar la sesión: ' + error.message);
+    }
+  };
+
   // ============================================================
   // 📦 Cargar estadísticas (OPTIMIZADO - Usa endpoint de conteos)
   // ============================================================
@@ -1153,7 +1169,7 @@ export default function AdminDashboard() {
                       key={index}
                       className="bg-green-50 dark:bg-gray-800 rounded-2xl p-4 border-l-4 border-green-500 hover:bg-green-100 transition-colors"
                     >
-                      <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between mb-3">
                         <div className="flex-1">
                           <p className="text-lg font-bold text-green-700 dark:text-green-300">
                             {usuario.nombreCompleto || usuario.usuarioSesion || 'Usuario'}
@@ -1168,10 +1184,26 @@ export default function AdminDashboard() {
                             Última actividad: {usuario.ultimaActividad || 'Ahora'}
                           </p>
                         </div>
+                      </div>
+                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
                           <span className="text-xs text-green-600 font-semibold">Activo</span>
                         </div>
+                        {user?.roles?.includes('SUPERADMIN') && (
+                          <button
+                            onClick={() => {
+                              // eslint-disable-next-line no-restricted-globals
+                              if (confirm(`¿Deseas cerrar la sesión de ${usuario.nombreCompleto}?`)) {
+                                cerrarSesionUsuario(usuario.usuarioSesion);
+                              }
+                            }}
+                            className="px-3 py-1.5 bg-red-500 text-white text-xs font-semibold rounded-lg hover:bg-red-600 transition-colors hover:shadow-md"
+                            title="Cerrar sesión de este usuario (solo SUPERADMIN)"
+                          >
+                            ✕ Cerrar
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}

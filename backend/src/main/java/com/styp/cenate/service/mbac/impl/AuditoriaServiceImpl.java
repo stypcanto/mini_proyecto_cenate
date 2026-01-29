@@ -11,6 +11,7 @@ import com.styp.cenate.dto.mbac.AuditoriaModularResponseDTO;
 import com.styp.cenate.model.view.AuditoriaModularView;
 import com.styp.cenate.repository.mbac.AuditoriaModularViewRepository;
 import com.styp.cenate.service.mbac.AuditoriaService;
+import com.styp.cenate.service.auditlog.AuditLogService;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public class AuditoriaServiceImpl implements AuditoriaService {
 
     private final AuditoriaModularViewRepository auditoriaRepository;
+    private final AuditLogService auditLogService;
 
     @Override
     public Page<AuditoriaModularResponseDTO> obtenerAuditoriaModular(Pageable pageable) {
@@ -207,6 +209,39 @@ public class AuditoriaServiceImpl implements AuditoriaService {
                 long dias = horas / 24;
                 return dias + "d";
             }
+        }
+    }
+
+    @Override
+    @Transactional(readOnly = false)
+    public boolean cerrarSesionUsuario(String usuarioSesion) {
+        log.info("Intentando cerrar sesión del usuario: {}", usuarioSesion);
+        try {
+            // Obtener las sesiones activas para verificar que exista
+            List<Map<String, Object>> sesionesActivas = obtenerSesionesActivas();
+            boolean sesionEncontrada = sesionesActivas.stream()
+                    .anyMatch(s -> usuarioSesion.equals(s.get("usuarioSesion")));
+
+            if (!sesionEncontrada) {
+                log.warn("No se encontró sesión activa para el usuario: {}", usuarioSesion);
+                return false;
+            }
+
+            // Registrar evento de LOGOUT forzado
+            auditLogService.registrarEvento(
+                    usuarioSesion,
+                    "LOGOUT",
+                    "SESION",
+                    "Sesión cerrada forzadamente por administrador",
+                    "INFO",
+                    "SUCCESS"
+            );
+
+            log.info("Sesión cerrada exitosamente para: {}", usuarioSesion);
+            return true;
+        } catch (Exception e) {
+            log.error("Error cerrando sesión del usuario {}: {}", usuarioSesion, e.getMessage(), e);
+            return false;
         }
     }
 }
