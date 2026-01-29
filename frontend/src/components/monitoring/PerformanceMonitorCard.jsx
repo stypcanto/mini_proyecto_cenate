@@ -62,7 +62,7 @@ export default function PerformanceMonitorCard() {
       // Obtener conexiones activas desde endpoint del dashboard
       let dbPoolActive = 0;
       try {
-        const dashboardResponse = await fetch('http://localhost:8080/admin/dashboard/system-health');
+        const dashboardResponse = await fetch('http://localhost:8080/api/admin/dashboard/system-health');
         const dashboardData = dashboardResponse.ok ? await dashboardResponse.json() : null;
         if (dashboardData?.baseDatos?.estadisticas?.conexionesActivasServidor) {
           dbPoolActive = dashboardData.baseDatos.estadisticas.conexionesActivasServidor;
