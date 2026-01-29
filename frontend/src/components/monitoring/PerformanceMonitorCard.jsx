@@ -59,8 +59,22 @@ export default function PerformanceMonitorCard() {
       const healthResponse = await fetch('http://localhost:8080/actuator/health');
       const healthData = healthResponse.ok ? await healthResponse.json() : null;
 
+      // Obtener conexiones activas desde endpoint del dashboard
+      let dbPoolActive = 0;
+      try {
+        const dashboardResponse = await fetch('http://localhost:8080/admin/dashboard/system-health');
+        const dashboardData = dashboardResponse.ok ? await dashboardResponse.json() : null;
+        if (dashboardData?.baseDatos?.estadisticas?.conexionesActivasServidor) {
+          dbPoolActive = dashboardData.baseDatos.estadisticas.conexionesActivasServidor;
+        }
+      } catch (e) {
+        console.warn('No se pudo obtener conexiones activas del dashboard:', e);
+        // Fallback: si la BD está UP, mostrar al menos 1 conexión
+        dbPoolActive = healthData?.components?.db?.status === 'UP' ? 1 : 0;
+      }
+
       setMetrics({
-        dbPool: poolData?.measurements?.[0]?.value || 0,
+        dbPool: dbPoolActive || 0,
         dbPoolMax: 100,
         threads: threadsData?.measurements?.[0]?.value || 0,
         threadsMax: 200,
