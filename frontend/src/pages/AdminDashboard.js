@@ -75,6 +75,28 @@ export default function AdminDashboard() {
   const [loadingPersonal, setLoadingPersonal] = useState(true);
   const [modalExternos, setModalExternos] = useState(false);
 
+  // Estados para modal de usuarios conectados
+  const [modalConectados, setModalConectados] = useState(false);
+  const [usuariosConectados, setUsuariosConectados] = useState([]);
+  const [loadingConectados, setLoadingConectados] = useState(false);
+
+  // ============================================================
+  // 👥 Cargar usuarios conectados
+  // ============================================================
+  const cargarUsuariosConectados = async () => {
+    setLoadingConectados(true);
+    try {
+      const response = await apiClient.get('/auditoria/sesiones-activas', true);
+      setUsuariosConectados(Array.isArray(response) ? response : []);
+    } catch (error) {
+      console.error('Error cargando usuarios conectados:', error);
+      // Fallback: mostrar mensaje de no disponible
+      setUsuariosConectados([]);
+    } finally {
+      setLoadingConectados(false);
+    }
+  };
+
   // ============================================================
   // 📦 Cargar estadísticas (OPTIMIZADO - Usa endpoint de conteos)
   // ============================================================
@@ -966,10 +988,17 @@ export default function AdminDashboard() {
                         </div>
                       </div>
                       <div className="col-span-2 flex items-center gap-3 text-xs">
-                        <div className="flex items-center gap-1">
+                        <div
+                          onClick={() => {
+                            cargarUsuariosConectados();
+                            setModalConectados(true);
+                          }}
+                          className="flex items-center gap-1 cursor-pointer hover:bg-green-100 px-2 py-1 rounded transition-colors"
+                          title="Haz clic para ver usuarios conectados"
+                        >
                           <span className="w-2 h-2 rounded-full bg-green-500"></span>
                           <span className="text-gray-600">Activas:</span>
-                          <span className="font-semibold">{systemHealth.baseDatos.estadisticas.conexionesActivasServidor}</span>
+                          <span className="font-semibold text-green-600">{systemHealth.baseDatos.estadisticas.conexionesActivasServidor}</span>
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="w-2 h-2 rounded-full bg-gray-400"></span>
@@ -1085,6 +1114,86 @@ export default function AdminDashboard() {
           ) : null}
         </div>
       </div>
+
+      {/* Modal: Usuarios Conectados */}
+      {modalConectados && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fadeIn">
+          <div className="bg-white dark:bg-[var(--bg-primary)] rounded-3xl shadow-2xl w-11/12 max-w-2xl max-h-[80vh] overflow-hidden">
+            {/* Header del Modal */}
+            <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Users className="w-8 h-8" />
+                  <div>
+                    <h2 className="text-2xl font-bold">Usuarios Conectados</h2>
+                    <p className="text-sm text-green-100 mt-1">
+                      {systemHealth?.baseDatos?.estadisticas?.conexionesActivasServidor || 0} sesiones activas
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setModalConectados(false)}
+                  className="p-2 hover:bg-white/20 rounded-full transition-colors"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenido del Modal */}
+            <div className="p-6 overflow-y-auto max-h-[calc(80vh-120px)]">
+              {loadingConectados ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600"></div>
+                  <p className="ml-3 text-gray-500">Cargando usuarios...</p>
+                </div>
+              ) : usuariosConectados && usuariosConectados.length > 0 ? (
+                <div className="space-y-3">
+                  {usuariosConectados.map((usuario, index) => (
+                    <div
+                      key={index}
+                      className="bg-green-50 dark:bg-gray-800 rounded-2xl p-4 border-l-4 border-green-500 hover:bg-green-100 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-semibold text-gray-800 dark:text-gray-200">
+                            {usuario.usuarioSesion || usuario.usuario || 'Usuario'}
+                          </p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            Rol: {usuario.rol || 'N/A'}
+                          </p>
+                          <p className="text-xs text-gray-400 mt-0.5">
+                            Última actividad: {usuario.ultimaActividad || 'Ahora'}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-3 h-3 rounded-full bg-green-500 animate-pulse"></span>
+                          <span className="text-xs text-green-600 font-semibold">Activo</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-12 text-gray-500">
+                  <Users className="w-16 h-16 mx-auto mb-3 text-gray-300" />
+                  <p>No hay endpoint de sesiones activas disponible</p>
+                  <p className="text-xs text-gray-400 mt-2">
+                    El endpoint /auditoria/sesiones-activas aún no está implementado
+                  </p>
+                </div>
+              )}
+
+              {/* Footer del Modal */}
+              <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 text-center">
+                  Información en tiempo real desde el servidor
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Modal: Desglose por Red (Personal Externo) */}
       {modalExternos && estadisticasPersonal && (
