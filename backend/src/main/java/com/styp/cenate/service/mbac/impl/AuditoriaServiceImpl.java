@@ -142,27 +142,71 @@ public class AuditoriaServiceImpl implements AuditoriaService {
     public List<Map<String, Object>> obtenerSesionesActivas() {
         log.info("Obteniendo sesiones activas");
         try {
-            // Obtener últimos 5 LOGINs sin LOGOUT correspondiente (sesiones activas)
-            List<AuditoriaModularView> logins = auditoriaRepository.findAll().stream()
-                    .filter(a -> "LOGIN".equalsIgnoreCase(a.getAccion()))
-                    .sorted((a, b) -> b.getFechaHora().compareTo(a.getFechaHora()))
-                    .limit(5)
+            // Obtener todos los LOGIN y LOGOUT
+            List<AuditoriaModularView> eventos = auditoriaRepository.findAll().stream()
+                    .filter(a -> "LOGIN".equalsIgnoreCase(a.getAccion()) || "LOGOUT".equalsIgnoreCase(a.getAccion()))
                     .collect(Collectors.toList());
 
-            return logins.stream().map(login -> {
-                Map<String, Object> sesion = new HashMap<>();
-                sesion.put("usuarioSesion", login.getUsuarioSesion());
-                sesion.put("usuario", login.getUsuarioSesion());
-                sesion.put("nombreCompleto", login.getNombreCompleto());
-                sesion.put("rol", login.getRoles());
-                sesion.put("ultimaActividad", login.getFechaFormateada());
-                sesion.put("ip", login.getIp());
-                sesion.put("estado", "Activo");
-                return sesion;
-            }).collect(Collectors.toList());
+            // Agrupar por usuario y encontrar el último evento
+            Map<String, AuditoriaModularView> ultimoEventoPorUsuario = new HashMap<>();
+            for (AuditoriaModularView evento : eventos) {
+                String usuario = evento.getUsuarioSesion();
+                if (ultimoEventoPorUsuario.containsKey(usuario)) {
+                    AuditoriaModularView anterior = ultimoEventoPorUsuario.get(usuario);
+                    // Mantener el más reciente
+                    if (evento.getFechaHora().isAfter(anterior.getFechaHora())) {
+                        ultimoEventoPorUsuario.put(usuario, evento);
+                    }
+                } else {
+                    ultimoEventoPorUsuario.put(usuario, evento);
+                }
+            }
+
+            // Filtrar solo los que tienen último evento = LOGIN (sesiones activas)
+            // Ordenar por fecha más reciente y tomar máximo 5
+            return ultimoEventoPorUsuario.values().stream()
+                    .filter(evento -> "LOGIN".equalsIgnoreCase(evento.getAccion()))
+                    .sorted((a, b) -> b.getFechaHora().compareTo(a.getFechaHora()))
+                    .limit(5)
+                    .map(login -> {
+                        Map<String, Object> sesion = new HashMap<>();
+                        sesion.put("usuarioSesion", login.getUsuarioSesion());
+                        sesion.put("usuario", login.getUsuarioSesion());
+                        sesion.put("nombreCompleto", login.getNombreCompleto());
+                        sesion.put("rol", login.getRoles());
+                        sesion.put("ultimaActividad", login.getFechaFormateada());
+                        sesion.put("ip", login.getIp());
+                        sesion.put("estado", "Activo");
+                        sesion.put("tiempoConectado", calcularTiempoConectado(login.getFechaHora()));
+                        return sesion;
+                    })
+                    .collect(Collectors.toList());
         } catch (Exception e) {
             log.error("Error obteniendo sesiones activas", e);
             return List.of();
+        }
+    }
+
+    /**
+     * Calcula el tiempo que ha estado conectado el usuario desde su último LOGIN
+     */
+    private String calcularTiempoConectado(LocalDateTime fechaLogin) {
+        LocalDateTime ahora = LocalDateTime.now();
+        long minutos = java.time.temporal.ChronoUnit.MINUTES.between(fechaLogin, ahora);
+
+        if (minutos < 1) {
+            return "Ahora";
+        } else if (minutos < 60) {
+            return minutos + " min";
+        } else {
+            long horas = minutos / 60;
+            long minutosRestantes = minutos % 60;
+            if (horas < 24) {
+                return horas + "h " + minutosRestantes + "m";
+            } else {
+                long dias = horas / 24;
+                return dias + "d";
+            }
         }
     }
 }
