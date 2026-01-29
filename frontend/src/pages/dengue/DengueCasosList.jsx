@@ -13,11 +13,16 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useDengue } from '../../hooks/useDengue';
 import TablaDengueCompleta from './TablaDengueCompleta';
 import './DengueCasosList.css';
 
-export default function DengueCasosList({ mode = 'listar' }) {
+export default function DengueCasosList({ mode = null }) {
+  const location = useLocation();
+
+  // Detectar modo desde la URL si no se proporciona
+  const detectedMode = mode || (location.pathname.includes('/buscar') ? 'buscar' : 'listar');
   const {
     casos,
     totalCasos,
@@ -40,16 +45,16 @@ export default function DengueCasosList({ mode = 'listar' }) {
 
   // Cargar datos al iniciar o cambiar página
   useEffect(() => {
-    if (mode === 'listar') {
+    if (detectedMode === 'listar') {
       cargarCasos(0, pageSize, sortBy, sortDirection);
     }
-  }, [mode, pageSize, sortBy, sortDirection]);
+  }, [detectedMode, pageSize, sortBy, sortDirection, cargarCasos]);
 
   /**
    * Realiza la búsqueda
    */
   const handleBuscar = () => {
-    if (mode === 'buscar') {
+    if (detectedMode === 'buscar') {
       buscarCasos({
         dni: filtros.dni || '',
         dxMain: filtros.dxMain || '',
@@ -73,7 +78,7 @@ export default function DengueCasosList({ mode = 'listar' }) {
    * Navega a página
    */
   const handlePageChange = (newPage) => {
-    if (mode === 'buscar') {
+    if (detectedMode === 'buscar') {
       buscarCasos({
         dni: filtros.dni || '',
         dxMain: filtros.dxMain || '',
@@ -91,7 +96,7 @@ export default function DengueCasosList({ mode = 'listar' }) {
    * Cambia tamaño de página
    */
   const handlePageSizeChange = (newSize) => {
-    if (mode === 'buscar') {
+    if (detectedMode === 'buscar') {
       buscarCasos({
         dni: filtros.dni || '',
         dxMain: filtros.dxMain || '',
@@ -110,7 +115,7 @@ export default function DengueCasosList({ mode = 'listar' }) {
   return (
     <div className="dengue-casos-list">
       {/* Filtros */}
-      {mode === 'buscar' && (
+      {detectedMode === 'buscar' && (
         <div className="filtros-section">
           <div className="filtros-container">
             <div className="filtro-group">

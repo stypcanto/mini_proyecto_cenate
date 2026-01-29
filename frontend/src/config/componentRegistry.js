@@ -486,6 +486,26 @@ export const componentRegistry = {
     component: lazy(() => import('../pages/dengue/DengueDashboard')),
     requiredAction: 'ver',
   },
+
+  '/dengue/cargar-excel': {
+    component: lazy(() => import('../pages/dengue/DengueUploadForm')),
+    requiredAction: 'crear',
+  },
+
+  '/dengue/listar-casos': {
+    component: lazy(() => import('../pages/dengue/DengueCasosList')),
+    requiredAction: 'ver',
+  },
+
+  '/dengue/buscar': {
+    component: lazy(() => import('../pages/dengue/DengueCasosList')),
+    requiredAction: 'ver',
+  },
+
+  '/dengue/resultados': {
+    component: lazy(() => import('../pages/dengue/DengueValidationReport')),
+    requiredAction: 'ver',
+  },
 };
 
 // ========================================================================

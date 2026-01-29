@@ -49,6 +49,13 @@ export default function Solicitudes() {
   const [solicitudes, setSolicitudes] = useState([]);
   const [totalElementos, setTotalElementos] = useState(0); // NEW v2.5.1: Total de elementos del backend
   const [estadisticasGlobales, setEstadisticasGlobales] = useState(null); // NEW v2.5.2: Stats globales del backend
+
+  // NEW v2.5.8: Estadísticas de filtros del backend (análisis de TODA la tabla)
+  const [estadisticasTipoBolsa, setEstadisticasTipoBolsa] = useState([]);
+  const [estadisticasEspecialidad, setEstadisticasEspecialidad] = useState([]);
+  const [estadisticasIpress, setEstadisticasIpress] = useState([]);
+  const [estadisticasTipoCita, setEstadisticasTipoCita] = useState([]);
+
   const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroBolsa, setFiltroBolsa] = useState('todas');
@@ -149,6 +156,32 @@ export default function Solicitudes() {
         } catch (error) {
           console.error('❌ Error cargando estadísticas:', error);
           // Si falla, usar estadísticas locales (fallback)
+        }
+      })();
+    }
+  }, [catalogosCargados]);
+
+  // ============================================================================
+  // 📦 EFFECT 2.6: Cargar ESTADÍSTICAS DE FILTROS (v2.5.8 - Filter stats del TOTAL)
+  // ============================================================================
+  useEffect(() => {
+    if (catalogosCargados) {
+      console.log('📊 Cargando estadísticas de filtros del backend (TOTAL: 1293)...');
+      (async () => {
+        try {
+          const [bolsas, especialidades, ipress, tipoCita] = await Promise.all([
+            bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
+            bolsasService.obtenerEstadisticasPorEspecialidad().catch(() => []),
+            bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
+            bolsasService.obtenerEstadisticasPorTipoCita().catch(() => [])
+          ]);
+          console.log('✅ Estadísticas de filtros cargadas:', { bolsas, especialidades, ipress, tipoCita });
+          setEstadisticasTipoBolsa(bolsas || []);
+          setEstadisticasEspecialidad(especialidades || []);
+          setEstadisticasIpress(ipress || []);
+          setEstadisticasTipoCita(tipoCita || []);
+        } catch (error) {
+          console.error('❌ Error cargando estadísticas de filtros:', error);
         }
       })();
     }
@@ -1277,7 +1310,7 @@ export default function Solicitudes() {
                 value: filtroMacrorregion,
                 onChange: (e) => setFiltroMacrorregion(e.target.value),
                 options: [
-                  { label: `Todas las macrorregiones (${solicitudes.length})`, value: "todas" },
+                  { label: `Todas las macrorregiones (${totalElementos})`, value: "todas" },
                   ...macrorregionesUnicas
                     .filter(macro => countWithFilters('macro', macro) > 0)
                     .map(macro => ({
@@ -1291,7 +1324,7 @@ export default function Solicitudes() {
                 value: filtroRed,
                 onChange: (e) => setFiltroRed(e.target.value),
                 options: [
-                  { label: `Todas las redes (${solicitudes.length})`, value: "todas" },
+                  { label: `Todas las redes (${totalElementos})`, value: "todas" },
                   ...redesUnicas
                     .filter(red => countWithFilters('red', red) > 0)
                     .map(red => ({
@@ -1305,12 +1338,13 @@ export default function Solicitudes() {
                 value: filtroIpress,
                 onChange: (e) => setFiltroIpress(e.target.value),
                 options: [
-                  { label: `Todas las IPRESS (${solicitudes.length})`, value: "todas" },
-                  ...ipressUnicas
-                    .filter(ipress => countWithFilters('ipress', ipress) > 0)
-                    .map(ipress => ({
-                      label: `${ipress} (${countWithFilters('ipress', ipress)})`,
-                      value: ipress
+                  { label: `Todas las IPRESS (${totalElementos})`, value: "todas" },
+                  ...estadisticasIpress
+                    .filter(i => i.cantidad > 0)
+                    .sort((a, b) => b.cantidad - a.cantidad)
+                    .map(i => ({
+                      label: `${i.nombre} (${i.cantidad})`,
+                      value: i.nombre
                     }))
                 ]
               },
@@ -1319,12 +1353,13 @@ export default function Solicitudes() {
                 value: filtroEspecialidad,
                 onChange: (e) => setFiltroEspecialidad(e.target.value),
                 options: [
-                  { label: `Todas las especialidades (${solicitudes.length})`, value: "todas" },
-                  ...especialidadesUnicas
-                    .filter(esp => countWithFilters('especialidad', esp) > 0)
-                    .map(esp => ({
-                      label: `${esp} (${countWithFilters('especialidad', esp)})`,
-                      value: esp
+                  { label: `Todas las especialidades (${totalElementos})`, value: "todas" },
+                  ...estadisticasEspecialidad
+                    .filter(e => e.cantidad > 0)
+                    .sort((a, b) => b.cantidad - a.cantidad)
+                    .map(e => ({
+                      label: `${e.nombre} (${e.cantidad})`,
+                      value: e.nombre
                     }))
                 ]
               },
@@ -1333,12 +1368,13 @@ export default function Solicitudes() {
                 value: filtroTipoCita,
                 onChange: (e) => setFiltroTipoCita(e.target.value),
                 options: [
-                  { label: `Todas las citas (${solicitudes.length})`, value: "todas" },
-                  ...tiposCitaUnicos
-                    .filter(tipo => countWithFilters('cita', tipo) > 0)
-                    .map(tipo => ({
-                      label: `${tipo} (${countWithFilters('cita', tipo)})`,
-                      value: tipo
+                  { label: `Todas las citas (${totalElementos})`, value: "todas" },
+                  ...estadisticasTipoCita
+                    .filter(t => t.cantidad > 0)
+                    .sort((a, b) => b.cantidad - a.cantidad)
+                    .map(t => ({
+                      label: `${t.nombre} (${t.cantidad})`,
+                      value: t.nombre
                     }))
                 ]
               }
