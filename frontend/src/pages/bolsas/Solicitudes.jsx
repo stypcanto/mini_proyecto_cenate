@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X, Check } from 'lucide-react';
+import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
 import ListHeader from '../../components/ListHeader';
@@ -1268,6 +1268,7 @@ export default function Solicitudes() {
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Red</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado</th>
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Gestora Asignada</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Asignación</th>
                     <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Acciones</th>
                   </tr>
                 </thead>
@@ -1316,35 +1317,21 @@ export default function Solicitudes() {
                           {solicitud.estadoDisplay}
                         </span>
                       </td>
+                      {/* COLUMNA: GESTORA ASIGNADA */}
                       <td className="px-4 py-3 text-sm">
                         {solicitud.gestoraAsignada ? (
-                          // ✅ CON ASIGNACIÓN: Mostrar gestora + 3 iconos
+                          // ✅ CON ASIGNACIÓN: Mostrar gestora + 2 iconos
                           <div className="flex items-center gap-2">
-                            <div className="flex-1">
-                              <div className="font-semibold text-green-700">{solicitud.gestoraAsignada}</div>
-                              {solicitud.fechaAsignacionFormato && (
-                                <div className="text-xs text-gray-500 mt-1">
-                                  📅 {solicitud.fechaAsignacionFormato}
-                                </div>
-                              )}
-                            </div>
+                            <span className="font-semibold text-green-700 flex-1">{solicitud.gestoraAsignada}</span>
                             <div className="flex items-center gap-1">
-                              {/* Icono: Reasignar */}
+                              {/* Icono: Reasignar (Dos personas) */}
                               <button
                                 onClick={() => handleAbrirAsignarGestora(solicitud)}
                                 className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
                                 title="Reasignar gestora"
                                 disabled={isProcessing}
                               >
-                                <UserPlus size={16} />
-                              </button>
-                              {/* Icono: Ver fecha/detalles */}
-                              <button
-                                className="p-1.5 hover:bg-green-100 rounded-md transition-colors text-green-600 disabled:opacity-50"
-                                title={`Asignado el ${solicitud.fechaAsignacionFormato}`}
-                                disabled={true}
-                              >
-                                <Check size={16} />
+                                <Users size={16} />
                               </button>
                               {/* Icono: Eliminar asignación */}
                               <button
@@ -1358,7 +1345,7 @@ export default function Solicitudes() {
                             </div>
                           </div>
                         ) : (
-                          // ❌ SIN ASIGNACIÓN: Solo botón para asignar
+                          // ❌ SIN ASIGNACIÓN: Solo icono para asignar
                           <button
                             onClick={() => handleAbrirAsignarGestora(solicitud)}
                             className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
@@ -1367,6 +1354,15 @@ export default function Solicitudes() {
                           >
                             <UserPlus size={18} />
                           </button>
+                        )}
+                      </td>
+
+                      {/* COLUMNA: FECHA ASIGNACIÓN (NEW v2.4.1) */}
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {solicitud.fechaAsignacionFormato ? (
+                          <span className="text-green-700 font-medium">{solicitud.fechaAsignacionFormato}</span>
+                        ) : (
+                          <span className="text-gray-400 italic">—</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">

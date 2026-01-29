@@ -9,50 +9,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * DTO que contiene los resultados de una importación de Excel Dengue
- *
- * Respuesta que se envía al frontend con estadísticas de:
- * - Registros procesados
- * - Insertados
- * - Actualizados
- * - Errores con detalles
- * - Tiempo de ejecución
+ * DTO para reportar resultados de importación de dengue
  *
  * @version 1.0.0
  * @since 2026-01-29
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class DengueImportResultDTO {
 
-    private Boolean exitoso;                    // true si no hay errores críticos
-    private Integer totalProcesados;            // Total de filas en el Excel
-    private Integer insertados;                 // Nuevos registros creados
-    private Integer actualizados;               // Registros existentes actualizados
-    private Integer errores;                    // Filas que generaron error
-
+    private Boolean exitoso;              // ¿Fue exitosa la carga?
+    private Integer totalProcesados;      // Total de filas procesadas
+    private Integer insertados;           // Registros insertados
+    private Integer actualizados;         // Registros actualizados (deduplicados)
+    private Integer errores;              // Total de errores
+    private Long tiempoMs;                // Tiempo de procesamiento en ms
+    
     @Builder.Default
-    private List<String> mensajesError = new ArrayList<>();  // Detalles de errores
-
-    private Long tiempoMs;                      // Tiempo de ejecución en milisegundos
+    private List<String> mensajesError = new ArrayList<>();
 
     /**
-     * Calcula el porcentaje de éxito
-     * @return Porcentaje de registros procesados exitosamente (0-100)
-     */
-    public Double getPorcentajeExito() {
-        if (totalProcesados == null || totalProcesados == 0) {
-            return 0.0;
-        }
-        int exitosos = (insertados != null ? insertados : 0) + (actualizados != null ? actualizados : 0);
-        return (exitosos * 100.0) / totalProcesados;
-    }
-
-    /**
-     * Agrega mensaje de error a la lista
-     * @param mensaje Mensaje a agregar
+     * Agrega un error a la lista
      */
     public void agregarError(String mensaje) {
         if (this.mensajesError == null) {
@@ -61,4 +40,13 @@ public class DengueImportResultDTO {
         this.mensajesError.add(mensaje);
     }
 
+    /**
+     * Obtiene tasa de éxito (0-100)
+     */
+    public Double getTasaExito() {
+        if (totalProcesados == null || totalProcesados == 0) {
+            return 0.0;
+        }
+        return ((double) (insertados + actualizados) / totalProcesados) * 100;
+    }
 }

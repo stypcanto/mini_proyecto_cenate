@@ -8,35 +8,59 @@ import lombok.NoArgsConstructor;
 import java.time.LocalDate;
 
 /**
- * DTO que mapea una fila del Excel de Dengue
+ * DTO para mapear cada fila del Excel de Dengue
  *
- * Representa los 14 campos del archivo:
- * "Atendidos Dengue CENATE 2026-01-27.xlsx"
+ * VINCULACIONES:
+ * 1️⃣  dni → Normalizar a 8 dígitos + buscar en asegurados
+ * 2️⃣  dx_main → Validar CIE-10 (A97.0, A97.1, A97.2)
+ * 3️⃣  cenasicod → Lookup IPRESS + red asistencial
+ * 4️⃣  fecha_aten → Usar como campo existing fecha_atencion
+ * 5️⃣  fecha_st + semana → Guardar en BD
  *
  * @version 1.0.0
  * @since 2026-01-29
  */
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
 public class DengueExcelRowDTO {
 
-    // 📋 Campos del Excel (14 columnas)
+    // PACIENTE (Columnas 1-4)
+    private Object dni;                   // Columna A: DNI (puede ser String o número)
+    private String sexo;                  // Columna B: Sexo (M/F)
+    private Integer edad;                 // Columna C: Edad
+    private LocalDate fechaAten;          // Columna D: Fecha Atención
 
-    private String dni;                 // Column 1: dni → paciente_dni (normalizar a 8 dígitos)
-    private String sexo;                // Column 2: sexo → paciente_sexo
-    private Integer edad;               // Column 3: edad → paciente_edad
-    private LocalDate fechaAten;        // Column 4: fec_aten → fecha_atencion
-    private Integer cenasicod;          // Column 5: cenasicod → LOOKUP a dim_ipress
-    private String dxMain;              // Column 6: dx_main → VALIDAR contra CIE-10
-    private String servicio;            // Column 7: servicio (informativo)
-    private String ipress;              // Column 8: ipress → LOOKUP a dim_ipress por cenasicod
-    private String red;                 // Column 9: red → LOOKUP a dim_ipress por cenasicod
-    private String nombre;              // Column 10: nombre → LOOKUP en asegurados o directamente
-    private String telefFijo;           // Column 11: telef_fijo → paciente_telefono
-    private String telefMovil;          // Column 12: telef_movil → paciente_telefono_alterno
-    private LocalDate fechaSt;          // Column 13: fec_st → fecha_sintomas (GUARDAR, no mostrar)
-    private String semana;              // Column 14: semana → semana_epidem (GUARDAR, no mostrar)
+    // UBICACIÓN/INFRAESTRUCTURA (Columnas 5-7)
+    private Integer cenasicod;            // Columna E: CAS (Código Cenasi)
+    private String dxMain;                // Columna F: CIE-10 (Diagnóstico principal)
+    private String servicio;              // Columna G: Servicio de atención
 
+    // IPRESS (Columnas 8-9)
+    private String ipress;                // Columna H: Nombre IPRESS
+    private String red;                   // Columna I: Red Asistencial
+
+    // PACIENTE INFO (Columnas 10-12)
+    private String nombre;                // Columna J: Nombre completo paciente
+    private String telefFijo;             // Columna K: Teléfono fijo
+    private String telefMovil;            // Columna L: Teléfono móvil
+
+    // DENGUE SPECIFIC (Columnas 13-14)
+    private LocalDate fechaSt;            // Columna M: Fecha de síntomas
+    private String semana;                // Columna N: Semana epidemiológica (ej: 2025SE25)
+
+    public boolean esValida() {
+        return dni != null && fechaAten != null && dxMain != null;
+    }
+
+    @Override
+    public String toString() {
+        return "DengueExcelRowDTO{" +
+                "dni=" + dni +
+                ", nombre='" + nombre + '\'' +
+                ", dxMain='" + dxMain + '\'' +
+                ", fechaAten=" + fechaAten +
+                '}';
+    }
 }
