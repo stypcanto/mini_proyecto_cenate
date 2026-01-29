@@ -7,8 +7,12 @@ import com.styp.cenate.service.bolsas.SolicitudBolsaService;
 import com.styp.cenate.security.mbac.CheckMBACPermission;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -220,15 +224,52 @@ public class SolicitudBolsaController {
     }
 
     /**
-     * Obtiene todas las solicitudes activas
-     * GET /api/bolsas/solicitudes
+     * Obtiene solicitudes asignadas a la gestora actual (Mi Bandeja)
+     * GET /api/bolsas/solicitudes/mi-bandeja
      *
-     * @return lista de solicitudes
+     * IMPORTANTE: Este endpoint DEBE estar antes de /{id} para evitar routing ambiguo
+     * Solo gestoras (rol GESTOR_DE_CITAS) pueden acceder
+     * Retorna lista de solicitudes donde responsable_gestora_id = current user
+     */
+    @GetMapping("/mi-bandeja")
+    @PreAuthorize("hasAnyRole('GESTOR_DE_CITAS')")
+    public ResponseEntity<?> obtenerMiBandeja() {
+        try {
+            log.info("📬 Obteniendo solicitudes de la gestora actual (Mi Bandeja)...");
+
+            // Obtener solicitudes asignadas a la gestora actual
+            List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.obtenerSolicitudesAsignadasAGestora();
+
+            log.info("✅ Se encontraron {} solicitud(es) en la bandeja de la gestora", solicitudes.size());
+
+            return ResponseEntity.ok(Map.of(
+                "total", solicitudes.size(),
+                "solicitudes", solicitudes,
+                "mensaje", solicitudes.isEmpty() ?
+                    "No tienes solicitudes asignadas aún" :
+                    "Se encontraron " + solicitudes.size() + " solicitud(es) asignada(s)"
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener bandeja de gestora: ", e);
+            return ResponseEntity.status(500).body(
+                Map.of("error", "Error al obtener bandeja: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Obtiene todas las solicitudes activas CON PAGINACIÓN
+     * GET /api/bolsas/solicitudes?page=0&size=25
+     *
+     * @param pageable información de paginación (default: 25 registros para alinear con frontend)
+     * @return página de solicitudes
      */
     @GetMapping
-    public ResponseEntity<List<SolicitudBolsaDTO>> listarTodas() {
-        log.info("Listando todas las solicitudes de bolsa");
-        return ResponseEntity.ok(solicitudBolsaService.listarTodas());
+    public ResponseEntity<Page<SolicitudBolsaDTO>> listarTodas(
+            @PageableDefault(size = 25, page = 0) Pageable pageable) {
+        log.info("Listando solicitudes - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+        return ResponseEntity.ok(solicitudBolsaService.listarTodasPaginado(pageable));
     }
 
     /**
@@ -250,12 +291,15 @@ public class SolicitudBolsaController {
     /**
      * Asigna una gestora a una solicitud
      * PATCH /api/bolsas/solicitudes/{id}/asignar
-     * 
+     *
+     * Roles permitidos: SUPERADMIN, ADMIN, COORDINADOR_GESTION_DE_CITAS
+     *
      * @param id ID de la solicitud
      * @param idGestora ID de la gestora a asignar
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/asignar")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR_GESTION_DE_CITAS')")
     @CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
     public ResponseEntity<?> asignarGestora(
             @PathVariable Long id,
@@ -304,12 +348,15 @@ public class SolicitudBolsaController {
     /**
      * Cambia el estado de una solicitud
      * PATCH /api/bolsas/solicitudes/{id}/estado
-     * 
+     *
+     * Roles permitidos: SUPERADMIN, ADMIN, COORDINADOR_GESTION_DE_CITAS, GESTOR_DE_CITAS
+     *
      * @param id ID de la solicitud
      * @param nuevoEstadoId ID del nuevo estado (de dim_estados_gestion_citas)
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/estado")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR_GESTION_DE_CITAS', 'GESTOR_DE_CITAS')")
     public ResponseEntity<?> cambiarEstado(
             @PathVariable Long id,
             @RequestParam("nuevoEstadoId") Long nuevoEstadoId) {
@@ -326,6 +373,43 @@ public class SolicitudBolsaController {
 
         } catch (Exception e) {
             log.error("Error al cambiar estado: ", e);
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "Error: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Actualiza los teléfonos (principal y/o alterno) de una solicitud
+     * PUT /api/bolsas/solicitudes/{id}
+     *
+     * @param id ID de la solicitud
+     * @param pacienteTelefono teléfono principal (puede ser null o blank)
+     * @param pacienteTelefonoAlterno teléfono alterno (puede ser null o blank)
+     * @return mensaje de éxito
+     */
+    @PutMapping("/{id}")
+    @CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "actualizar")
+    public ResponseEntity<?> actualizarTelefonos(
+            @PathVariable Long id,
+            @RequestParam(value = "pacienteTelefono", required = false) String pacienteTelefono,
+            @RequestParam(value = "pacienteTelefonoAlterno", required = false) String pacienteTelefonoAlterno) {
+
+        try {
+            log.info("📱 Actualizando teléfonos de solicitud {} - Principal: {}, Alterno: {}",
+                id, pacienteTelefono, pacienteTelefonoAlterno);
+
+            solicitudBolsaService.actualizarTelefonos(id, pacienteTelefono, pacienteTelefonoAlterno);
+
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Teléfonos actualizados exitosamente",
+                "idSolicitud", id,
+                "telefonoPrincipal", pacienteTelefono != null ? pacienteTelefono : "",
+                "telefonoAlterno", pacienteTelefonoAlterno != null ? pacienteTelefonoAlterno : ""
+            ));
+
+        } catch (Exception e) {
+            log.error("Error al actualizar teléfonos: ", e);
             return ResponseEntity.badRequest().body(
                 Map.of("error", "Error: " + e.getMessage())
             );

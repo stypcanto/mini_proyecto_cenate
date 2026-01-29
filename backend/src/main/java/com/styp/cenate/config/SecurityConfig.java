@@ -94,7 +94,8 @@ public class SecurityConfig {
                                                                 "/api/admin/estados-gestion-citas/**", // Catálogo público de estados gestión citas
                                                                 "/api/bolsas/solicitudes/**", // Importación y gestión de solicitudes de bolsa
                                                                 "/api/bolsas/estadisticas/**", // Estadísticas y dashboards del módulo Bolsas
-                                                                "/api/bolsas/errores-importacion/**") // Auditoría de errores de importación
+                                                                "/api/bolsas/errores-importacion/**", // Auditoría de errores de importación
+                                                                "/api/menu-usuario/**") // Menú de usuario con permisos (necesario para sidebar)
                                                 .permitAll()
 
                                                 // SEC-006: Otros endpoints de actuator requieren SUPERADMIN
@@ -198,6 +199,14 @@ public class SecurityConfig {
                                                 // 📹 TELEMEDICINA - Videollamadas Jitsi
                                                 // =====================================================
                                                 .requestMatchers("/api/telemedicina/**").authenticated()
+
+                                                // =====================================================
+                                                // 🦟 DENGUE (Control epidemiológico)
+                                                // =====================================================
+                                                .requestMatchers(HttpMethod.GET, "/api/dengue/**").authenticated()
+                                                .requestMatchers(HttpMethod.POST, "/api/dengue/**").hasAnyRole("SUPERADMIN", "ADMIN", "COORDINADOR")
+                                                .requestMatchers(HttpMethod.PUT, "/api/dengue/**").hasAnyRole("SUPERADMIN", "ADMIN", "COORDINADOR")
+                                                .requestMatchers(HttpMethod.DELETE, "/api/dengue/**").hasAnyRole("SUPERADMIN", "ADMIN", "COORDINADOR")
 
                                                 // =====================================================
                                                 // 🫀 TELE-ECG (Electrocardiogramas)

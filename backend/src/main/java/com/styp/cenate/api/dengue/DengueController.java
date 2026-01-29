@@ -25,7 +25,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/dengue")
-@RequiredArgsConstructor
 @Slf4j
 @CrossOrigin(
         origins = {
@@ -39,6 +38,11 @@ import java.util.Map;
 public class DengueController {
 
     private final DengueService dengueService;
+
+    public DengueController(DengueService dengueService) {
+        this.dengueService = dengueService;
+        log.info("✅✅✅ DengueController inicializado exitosamente ✅✅✅");
+    }
 
     @PostMapping("/cargar-excel")
     @PreAuthorize("hasAnyRole('ADMIN', 'COORDINADOR')")

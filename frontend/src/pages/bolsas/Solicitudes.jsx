@@ -47,7 +47,8 @@ export default function Solicitudes() {
   const { esSuperAdmin } = usePermisos();
 
   const [solicitudes, setSolicitudes] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [totalElementos, setTotalElementos] = useState(0); // NEW v2.5.1: Total de elementos del backend
+  const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroBolsa, setFiltroBolsa] = useState('todas');
   const [filtroRed, setFiltroRed] = useState('todas');
@@ -73,9 +74,11 @@ export default function Solicitudes() {
   const [modalImportar, setModalImportar] = useState(false);
   const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
   const [nuevoTelefono, setNuevoTelefono] = useState('');
+  const [nuevoTelefonoAlterno, setNuevoTelefonoAlterno] = useState(''); // NEW v2.4.3
   const [gestoraSeleccionada, setGestoraSeleccionada] = useState(null);
   const [gestoras, setGestoras] = useState([]); // NEW: Lista de gestoras disponibles
   const [isLoadingGestoras, setIsLoadingGestoras] = useState(false); // NEW
+  const [filtroGestora, setFiltroGestora] = useState(''); // NEW: Filtro de búsqueda de gestoras
   const [tipoRecordatorio, setTipoRecordatorio] = useState('EMAIL');
   const [isProcessing, setIsProcessing] = useState(false);
   const [importStatus, setImportStatus] = useState(null);
@@ -115,6 +118,7 @@ export default function Solicitudes() {
   // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
   // ============================================================================
   useEffect(() => {
+    console.log('🚀 Montaje inicial - Cargando catálogos...');
     cargarCatalogos();
   }, []);
 
@@ -123,9 +127,36 @@ export default function Solicitudes() {
   // ============================================================================
   useEffect(() => {
     if (catalogosCargados) {
+      console.log('📋 Catálogos cargados, iniciando carga de solicitudes...');
       cargarSolicitudes();
     }
   }, [catalogosCargados]);
+
+  // ============================================================================
+  // 📦 EFFECT 3: Recargar gestoras cuando se abre el modal
+  // ============================================================================
+  useEffect(() => {
+    if (modalAsignarGestora && gestoras.length === 0) {
+      console.log('👤 Modal abierto, reintentando cargar gestoras...');
+      (async () => {
+        try {
+          const gestorasData = await bolsasService.obtenerGestorasDisponibles();
+          let gestorasArray = [];
+          if (gestorasData) {
+            if (Array.isArray(gestorasData)) {
+              gestorasArray = gestorasData;
+            } else if (gestorasData.gestoras && Array.isArray(gestorasData.gestoras)) {
+              gestorasArray = gestorasData.gestoras;
+            }
+          }
+          setGestoras(gestorasArray);
+          console.log('✅ Gestoras recargadas:', gestorasArray.length);
+        } catch (error) {
+          console.error('❌ Error recargando gestoras:', error);
+        }
+      })();
+    }
+  }, [modalAsignarGestora]);
 
   // ============================================================================
   // 🔄 FUNCIÓN 1: Cargar CATÁLOGOS (se ejecuta UNA sola vez)
@@ -137,7 +168,7 @@ export default function Solicitudes() {
         bolsasService.obtenerEstadosGestion().catch(() => []),
         bolsasService.obtenerIpress().catch(() => []),
         bolsasService.obtenerRedes().catch(() => []),
-        bolsasService.obtenerGestorasDisponibles().catch(() => ({ gestoras: [] })) // NEW v2.4.0
+        bolsasService.obtenerGestorasDisponibles().catch(() => []) // NEW v2.4.0
       ]);
 
       // Crear cache de estados, IPRESS y Redes
@@ -160,10 +191,19 @@ export default function Solicitudes() {
       }
 
       // NEW v2.4.0: Cargar gestoras disponibles al inicio
-      if (gestorasData && gestorasData.gestoras && Array.isArray(gestorasData.gestoras)) {
-        setGestoras(gestorasData.gestoras);
-        console.log('✅ Gestoras cargadas:', gestorasData.gestoras.length);
+      console.log('📊 DEBUG gestorasData:', gestorasData);
+      let gestorasArray = [];
+      if (gestorasData) {
+        if (Array.isArray(gestorasData)) {
+          // Si es array directo
+          gestorasArray = gestorasData;
+        } else if (gestorasData.gestoras && Array.isArray(gestorasData.gestoras)) {
+          // Si es objeto con propiedad gestoras
+          gestorasArray = gestorasData.gestoras;
+        }
       }
+      setGestoras(gestorasArray);
+      console.log('✅ Gestoras cargadas:', gestorasArray.length, gestorasArray);
 
       console.log('✅ Catálogos cargados correctamente');
       setCatalogosCargados(true);
@@ -178,78 +218,113 @@ export default function Solicitudes() {
   // 🔄 FUNCIÓN 2: Cargar SOLICITUDES (se puede ejecutar múltiples veces)
   // ============================================================================
   const cargarSolicitudes = async () => {
-    console.log('⚡ Cargando solicitudes...');
+    console.log('⚡ Cargando solicitudes (página: 0, size: 25)...');
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const solicitudesData = await bolsasService.obtenerSolicitudes();
+      console.log('📡 Llamando a bolsasService.obtenerSolicitudesPaginado()...');
+      // v2.5.1: Usar endpoint paginado para mejorar performance (25 registros por página)
+      const response = await bolsasService.obtenerSolicitudesPaginado(0, REGISTROS_POR_PAGINA);
+      console.log('📥 Respuesta recibida:', response);
+      console.log('📊 Tipo de respuesta:', typeof response);
+
+      // Manejar respuesta paginada (Page object del backend)
+      let solicitudesData = response;
+      let totalElementosDelBackend = response?.length || 0;
+
+      // Si es una respuesta de Page (tiene structure: {content, totalElements, totalPages, etc})
+      if (response && response.content && Array.isArray(response.content)) {
+        console.log('📄 Respuesta es Page de Spring Data');
+        solicitudesData = response.content;
+        totalElementosDelBackend = response.totalElements || 0;
+        console.log('📊 Total elementos del backend:', totalElementosDelBackend);
+        console.log('📊 Total páginas:', response.totalPages);
+      }
+
+      console.log('📊 Registros en esta página:', solicitudesData?.length);
+      console.log('📊 Es array?:', Array.isArray(solicitudesData));
 
       // Debug: Verificar estructura de API response
       if (solicitudesData && solicitudesData.length > 0) {
+        console.log('📊 DEBUG - Total solicitudes:', solicitudesData.length);
         console.log('📊 DEBUG - Primera solicitud del API:', JSON.stringify(solicitudesData[0], null, 2));
         console.log('📊 DEBUG - Campos disponibles:', Object.keys(solicitudesData[0]));
-        console.log('📊 DEBUG - Total solicitudes:', solicitudesData.length);
+      } else {
+        console.warn('⚠️ solicitudesData está vacío o no es un array');
+        setSolicitudes([]);
+        setTotalElementos(totalElementosDelBackend);
+        setIsLoading(false);
+        return;
       }
 
+      // Guardar total de elementos del backend para cálculo de paginación
+      setTotalElementos(totalElementosDelBackend);
+
       // Procesar solicitudes y enriquecer con nombres de catálogos
-      const solicitudesEnriquecidas = (solicitudesData || []).map(solicitud => {
-        // NEW v2.4.0: Mapear responsable_gestora_id a gestora nombre desde lista de gestoras
-        let gestoraAsignadaNombre = null;
-        if (solicitud.responsable_gestora_id && gestoras && gestoras.length > 0) {
-          const gestoraEncontrada = gestoras.find(g => g.id === solicitud.responsable_gestora_id);
-          gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
+      const solicitudesEnriquecidas = (solicitudesData || []).map((solicitud, idx) => {
+        try {
+          // NEW v2.4.0: Mapear responsable_gestora_id a gestora nombre desde lista de gestoras
+          let gestoraAsignadaNombre = null;
+          if (solicitud.responsable_gestora_id && gestoras && gestoras.length > 0) {
+            const gestoraEncontrada = gestoras.find(g => g.id === solicitud.responsable_gestora_id);
+            gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
+          }
+
+          // Formatear fecha de asignación si existe
+          const fechaAsignacionFormato = solicitud.fecha_asignacion
+            ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE')
+            : null;
+
+          return {
+            ...solicitud,
+            id: solicitud.id_solicitud,
+            dni: solicitud.paciente_dni || '',
+            paciente: solicitud.paciente_nombre || '',
+            telefono: solicitud.paciente_telefono || '',
+            telefonoAlterno: solicitud.paciente_telefono_alterno || '',
+            correo: solicitud.paciente_email || solicitud.email_pers || '',
+            sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
+            edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
+            estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
+            estadoDisplay: getEstadoDisplay(mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id)),
+            estadoCodigo: solicitud.cod_estado_cita,
+            semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
+            diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
+            especialidad: solicitud.especialidad || '',
+            red: solicitud.desc_red || 'Sin asignar',
+            ipress: solicitud.desc_ipress || 'N/A',
+            macroregion: solicitud.desc_macro || 'Sin asignar',
+            bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
+            nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
+            fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
+            fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
+            gestoraAsignada: gestoraAsignadaNombre,
+            gestoraAsignadaId: solicitud.responsable_gestora_id,
+            fechaAsignacionFormato: fechaAsignacionFormato,
+            // ============================================================================
+            // 📋 LOS 10 CAMPOS DEL EXCEL v1.8.0
+            // ============================================================================
+            fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ?
+              (() => {
+                const [y, m, d] = solicitud.fecha_preferida_no_atendida.split('-');
+                return `${d}/${m}/${y}`;
+              })() : 'N/A',
+            tipoDocumento: solicitud.tipo_documento || 'N/A',
+            fechaNacimiento: solicitud.fecha_nacimiento ?
+              (() => {
+                const [y, m, d] = solicitud.fecha_nacimiento.split('-');
+                return `${d}/${m}/${y}`;
+              })() : 'N/A',
+            tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
+            codigoIpress: solicitud.codigo_adscripcion || 'N/A'
+          };
+        } catch (mapError) {
+          console.error(`❌ Error procesando solicitud [${idx}]:`, mapError, 'Solicitud:', solicitud);
+          throw mapError;
         }
-
-        // Formatear fecha de asignación si existe
-        const fechaAsignacionFormato = solicitud.fecha_asignacion
-          ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE')
-          : null;
-
-        return {
-          ...solicitud,
-          id: solicitud.id_solicitud,
-          dni: solicitud.paciente_dni || '',
-          paciente: solicitud.paciente_nombre || '',
-          telefono: solicitud.paciente_telefono || '',
-          telefonoAlterno: solicitud.paciente_telefono_alterno || '',
-          correo: solicitud.paciente_email || solicitud.email_pers || '',
-          sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
-          edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
-          estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
-          estadoDisplay: getEstadoDisplay(mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id)),
-          estadoCodigo: solicitud.cod_estado_cita,
-          semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
-          diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
-          especialidad: solicitud.especialidad || '',
-          red: solicitud.desc_red || 'Sin asignar',
-          ipress: solicitud.desc_ipress || 'N/A',
-          macroregion: solicitud.desc_macro || 'Sin asignar',
-          bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
-          nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
-          fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
-          fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
-          gestoraAsignada: gestoraAsignadaNombre,
-          gestoraAsignadaId: solicitud.responsable_gestora_id,
-          fechaAsignacionFormato: fechaAsignacionFormato,
-          // ============================================================================
-          // 📋 LOS 10 CAMPOS DEL EXCEL v1.8.0
-          // ============================================================================
-          fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ?
-            (() => {
-              const [y, m, d] = solicitud.fecha_preferida_no_atendida.split('-');
-              return `${d}/${m}/${y}`;
-            })() : 'N/A',
-          tipoDocumento: solicitud.tipo_documento || 'N/A',
-          fechaNacimiento: solicitud.fecha_nacimiento ?
-            (() => {
-              const [y, m, d] = solicitud.fecha_nacimiento.split('-');
-              return `${d}/${m}/${y}`;
-            })() : 'N/A',
-          tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
-          codigoIpress: solicitud.codigo_adscripcion || 'N/A'
-        };
       });
 
+      console.log('✅ Solicitudes enriquecidas (primeras 3):', solicitudesEnriquecidas.slice(0, 3));
       setSolicitudes(solicitudesEnriquecidas);
 
       // Debug: Ver primera solicitud DESPUÉS del procesamiento
@@ -622,29 +697,37 @@ export default function Solicitudes() {
   // 📋 HANDLERS DE ACCIONES
   // ========================================================================
 
-  // Abrir modal para cambiar teléfono
+  // Abrir modal para cambiar teléfono (v2.4.3 - ambos teléfonos)
   const handleAbrirCambiarTelefono = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
     setNuevoTelefono(solicitud.telefono || '');
+    setNuevoTelefonoAlterno(solicitud.telefonoAlterno || '');
     setModalCambiarTelefono(true);
   };
 
-  // Procesar cambio de teléfono
+  // Procesar cambio de teléfono (v2.4.3 - permite editar ambos, pueden estar en blanco)
   const handleGuardarCambiarTelefono = async () => {
-    if (!nuevoTelefono.trim()) {
-      alert('Por favor ingresa un teléfono válido');
+    // Validar que al menos uno tenga contenido
+    if (!nuevoTelefono.trim() && !nuevoTelefonoAlterno.trim()) {
+      alert('Por favor ingresa al menos un teléfono');
       return;
     }
 
     setIsProcessing(true);
     try {
-      await bolsasService.cambiarTelefono(solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id, nuevoTelefono);
-      alert('Teléfono actualizado correctamente');
+      await bolsasService.actualizarTelefonos(
+        solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id,
+        nuevoTelefono.trim() || null,
+        nuevoTelefonoAlterno.trim() || null
+      );
+      alert('Teléfonos actualizados correctamente');
       setModalCambiarTelefono(false);
-      cargarSolicitudes(); // Recargar solicitudes (más rápido)
+      setNuevoTelefono('');
+      setNuevoTelefonoAlterno('');
+      cargarSolicitudes();
     } catch (error) {
-      console.error('Error cambiar teléfono:', error);
-      alert('Error al cambiar el teléfono. Intenta nuevamente.');
+      console.error('Error actualizando teléfonos:', error);
+      alert('Error al actualizar los teléfonos. Intenta nuevamente.');
     } finally {
       setIsProcessing(false);
     }
@@ -654,28 +737,8 @@ export default function Solicitudes() {
   const handleAbrirAsignarGestora = (solicitud) => {
     setSolicitudSeleccionada(solicitud);
     setGestoraSeleccionada(null);
+    console.log('👤 Abriendo modal de asignación. Gestoras disponibles:', gestoras);
     setModalAsignarGestora(true);
-    cargarGestoras(); // NEW: Cargar gestoras cuando se abre el modal
-  };
-
-  // NEW: Cargar gestoras disponibles
-  const cargarGestoras = async () => {
-    setIsLoadingGestoras(true);
-    try {
-      const response = await bolsasService.obtenerGestorasDisponibles();
-      if (response.data && response.data.gestoras) {
-        setGestoras(response.data.gestoras);
-        console.log('✅ Gestoras cargadas:', response.data.gestoras.length);
-      } else {
-        console.warn('⚠️ No se encontraron gestoras');
-        setGestoras([]);
-      }
-    } catch (error) {
-      console.error('Error cargando gestoras:', error);
-      setGestoras([]); // Fallback: lista vacía
-    } finally {
-      setIsLoadingGestoras(false);
-    }
   };
 
   // Procesar asignación a gestora
@@ -1221,8 +1284,9 @@ export default function Solicitudes() {
           {/* Tabla con nuevo diseño visual */}
           <div className="overflow-x-auto">
             {isLoading ? (
-              <div className="flex items-center justify-center h-64">
+              <div className="flex flex-col items-center justify-center h-64 gap-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                <p className="text-gray-600 font-medium">Cargando solicitudes...</p>
               </div>
             ) : errorMessage ? (
               <div className="p-8 text-center">
@@ -1444,32 +1508,74 @@ export default function Solicitudes() {
               </>
             ) : (
               <div className="p-12 text-center">
-                <p className="text-gray-600 font-semibold text-lg">No hay solicitudes para mostrar</p>
+                {solicitudes.length === 0 ? (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-8 inline-block">
+                    <p className="text-gray-700 text-base">No hay solicitudes de bolsa registradas en el sistema.</p>
+                  </div>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 inline-block">
+                    <p className="text-yellow-700 font-semibold text-base mb-2">⚠️ Ninguna coincide con los filtros</p>
+                    <p className="text-yellow-600 text-sm">Se encontraron {solicitudes.length} solicitudes, pero ninguna coincide con los filtros aplicados.</p>
+                    <p className="text-yellow-600 text-xs mt-2">Intenta cambiar los filtros o limpiar la búsqueda.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* ====== MODAL 1: CAMBIAR TELÉFONO ====== */}
+        {/* ====== MODAL 1: CAMBIAR TELÉFONO (v2.4.3 - ambos campos) ====== */}
         {modalCambiarTelefono && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
-              <h2 className="text-xl font-bold mb-4 text-gray-900">Cambiar Teléfono</h2>
+              <h2 className="text-xl font-bold mb-4 text-gray-900">📞 Actualizar Teléfonos</h2>
               {solicitudSeleccionada && (
                 <p className="text-sm text-gray-600 mb-4">
                   Paciente: <strong>{solicitudSeleccionada.paciente}</strong>
                 </p>
               )}
-              <input
-                type="tel"
-                value={nuevoTelefono}
-                onChange={(e) => setNuevoTelefono(e.target.value)}
-                placeholder="Ingresa el nuevo teléfono"
-                className="w-full px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
+
+              {/* Campo 1: Teléfono Principal */}
+              <div className="mb-4">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Teléfono Principal
+                </label>
+                <input
+                  type="tel"
+                  value={nuevoTelefono}
+                  onChange={(e) => setNuevoTelefono(e.target.value)}
+                  placeholder="Ej: 987654321"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
+              {/* Campo 2: Teléfono Alterno */}
+              <div className="mb-6">
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Teléfono Alterno
+                </label>
+                <input
+                  type="tel"
+                  value={nuevoTelefonoAlterno}
+                  onChange={(e) => setNuevoTelefonoAlterno(e.target.value)}
+                  placeholder="Ej: 912345678"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
+
+              {/* Nota de validación */}
+              <p className="text-xs text-gray-500 mb-6">
+                * Al menos uno de los teléfonos es requerido
+              </p>
+
+              {/* Botones */}
               <div className="flex gap-3">
                 <button
-                  onClick={() => setModalCambiarTelefono(false)}
+                  onClick={() => {
+                    setModalCambiarTelefono(false);
+                    setNuevoTelefono('');
+                    setNuevoTelefonoAlterno('');
+                  }}
                   disabled={isProcessing}
                   className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
                 >
@@ -1489,73 +1595,180 @@ export default function Solicitudes() {
 
         {/* ====== MODAL 2: ASIGNAR GESTORA ====== */}
         {modalAsignarGestora && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
-              <h2 className="text-xl font-bold mb-4 text-gray-900">👤 Asignar Gestora de Citas</h2>
-              {solicitudSeleccionada && (
-                <div className="mb-4">
-                  <p className="text-sm text-gray-600">
-                    Paciente: <strong>{solicitudSeleccionada.paciente}</strong>
-                  </p>
-                  <p className="text-xs text-gray-500 mt-1">
-                    DNI: {solicitudSeleccionada.pacienteDni}
-                  </p>
-                </div>
-              )}
-
-              {/* Loading state */}
-              {isLoadingGestoras && (
-                <div className="text-center py-4">
-                  <p className="text-gray-600">Cargando gestoras...</p>
-                </div>
-              )}
-
-              {/* Gestoras list */}
-              {!isLoadingGestoras && (
-                <>
-                  <select
-                    value={gestoraSeleccionada || ''}
-                    onChange={(e) => setGestoraSeleccionada(e.target.value)}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md mb-6 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    disabled={gestoras.length === 0}
-                  >
-                    <option value="">
-                      {gestoras.length === 0
-                        ? 'No hay gestoras disponibles'
-                        : 'Selecciona una gestora'}
-                    </option>
-                    {gestoras.map((gestora) => (
-                      <option key={gestora.id} value={gestora.id}>
-                        {gestora.nombre}
-                      </option>
-                    ))}
-                  </select>
-
-                  {/* Buttons */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={() => {
-                        setModalAsignarGestora(false);
-                        setGestoraSeleccionada(null);
-                      }}
-                      disabled={isProcessing}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 font-semibold hover:bg-gray-50 disabled:opacity-50"
-                    >
-                      Cancelar
-                    </button>
-                    <button
-                      onClick={handleGuardarAsignarGestora}
-                      disabled={isProcessing || gestoras.length === 0}
-                      className="flex-1 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-md font-semibold disabled:opacity-50"
-                    >
-                      {isProcessing ? '⏳ Asignando...' : '✓ Asignar'}
-                    </button>
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fade-in"
+               onClick={(e) => {
+                 if (e.target === e.currentTarget && !isProcessing) {
+                   setModalAsignarGestora(false);
+                   setGestoraSeleccionada(null);
+                 }
+               }}>
+            <div className="bg-white rounded-xl shadow-2xl max-w-2xl w-full mx-auto animate-slide-up overflow-hidden">
+              {/* Header */}
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-white/20 rounded-lg flex items-center justify-center">
+                    <span className="text-xl">👤</span>
                   </div>
-                </>
-              )}
+                  <div>
+                    <h2 className="text-2xl font-bold text-white">Asignar Gestora de Citas</h2>
+                    <p className="text-blue-100 text-sm mt-1">Selecciona la gestora responsable de esta solicitud</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setModalAsignarGestora(false);
+                    setGestoraSeleccionada(null);
+                    setFiltroGestora('');
+                  }}
+                  disabled={isProcessing}
+                  className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors disabled:opacity-50"
+                >
+                  <span className="text-2xl">✕</span>
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="p-8">
+                {/* Solicitud info */}
+                {solicitudSeleccionada && (
+                  <div className="mb-8 bg-gray-50 rounded-lg p-4 border border-gray-200">
+                    <p className="text-sm text-gray-600 mb-1">Paciente:</p>
+                    <p className="font-bold text-gray-900">{solicitudSeleccionada.paciente}</p>
+                    <p className="text-xs text-gray-500 mt-2">DNI: {solicitudSeleccionada.dni}</p>
+                  </div>
+                )}
+
+                {/* Gestoras list with search */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-3">
+                    Gestoras Disponibles ({gestoras.filter(g => g.nombre.toLowerCase().includes(filtroGestora.toLowerCase())).length})
+                  </label>
+
+                  {/* Search field */}
+                  {gestoras.length > 0 && (
+                    <div className="mb-4">
+                      <input
+                        type="text"
+                        placeholder="🔍 Busca por nombre..."
+                        value={filtroGestora}
+                        onChange={(e) => setFiltroGestora(e.target.value)}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                      />
+                    </div>
+                  )}
+
+                  {gestoras.length === 0 ? (
+                    <div className="text-center py-12">
+                      <p className="text-gray-500">❌ No hay gestoras disponibles en el sistema</p>
+                    </div>
+                  ) : gestoras.filter(g => g.nombre.toLowerCase().includes(filtroGestora.toLowerCase())).length === 0 ? (
+                    <div className="text-center py-8">
+                      <p className="text-gray-500">No se encontraron gestoras que coincidan con "{filtroGestora}"</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 gap-3 max-h-80 overflow-y-auto">
+                      {gestoras
+                        .filter(g => g.nombre.toLowerCase().includes(filtroGestora.toLowerCase()))
+                        .map((gestora) => (
+                        <div
+                          key={gestora.id}
+                          onClick={() => !isProcessing && setGestoraSeleccionada(gestora.id.toString())}
+                          className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                            gestoraSeleccionada === gestora.id.toString()
+                              ? 'border-blue-500 bg-blue-50 shadow-md'
+                              : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
+                          } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white text-sm ${
+                              gestoraSeleccionada === gestora.id.toString()
+                                ? 'bg-blue-500'
+                                : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                            }`}>
+                              {gestora.nombre.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-semibold text-gray-900 truncate">{gestora.nombre}</p>
+                              {gestora.activo && (
+                                <p className="text-xs text-green-600 flex items-center gap-1">
+                                  <span>●</span> Activa
+                                </p>
+                              )}
+                            </div>
+                            {gestoraSeleccionada === gestora.id.toString() && (
+                              <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0">
+                                ✓
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="bg-gray-50 px-8 py-4 border-t border-gray-200 flex gap-3 justify-end">
+                <button
+                  onClick={() => {
+                    setModalAsignarGestora(false);
+                    setGestoraSeleccionada(null);
+                    setFiltroGestora('');
+                  }}
+                  disabled={isProcessing}
+                  className="px-6 py-2 text-gray-700 font-semibold border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={handleGuardarAsignarGestora}
+                  disabled={isProcessing || gestoras.length === 0 || !gestoraSeleccionada}
+                  className="px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white font-semibold rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center gap-2"
+                >
+                  {isProcessing ? (
+                    <>
+                      <span className="inline-block animate-spin">⟳</span>
+                      Asignando...
+                    </>
+                  ) : (
+                    <>
+                      <span>✓</span>
+                      Asignar
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         )}
+
+        <style>{`
+          @keyframes fade-in {
+            from {
+              opacity: 0;
+            }
+            to {
+              opacity: 1;
+            }
+          }
+          @keyframes slide-up {
+            from {
+              transform: translateY(20px);
+              opacity: 0;
+            }
+            to {
+              transform: translateY(0);
+              opacity: 1;
+            }
+          }
+          .animate-fade-in {
+            animation: fade-in 0.2s ease-out;
+          }
+          .animate-slide-up {
+            animation: slide-up 0.3s ease-out;
+          }
+        `}</style>
 
         {/* ====== MODAL 3: ENVIAR RECORDATORIO ====== */}
         {modalEnviarRecordatorio && (

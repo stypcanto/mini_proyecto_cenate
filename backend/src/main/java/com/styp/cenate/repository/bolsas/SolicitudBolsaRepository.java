@@ -118,9 +118,54 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<Object[]> findAllWithBolsaDescription();
 
     /**
+     * Obtiene solicitudes con descripción de bolsa via JOIN con PAGINACIÓN (v2.5.1)
+     * Similar a findAllWithBolsaDescription() pero con LIMIT y OFFSET para paginación
+     * @param pageable información de paginación
+     * @return lista paginada de Object[]
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.numero_solicitud, sb.paciente_id, sb.paciente_nombre,
+               sb.paciente_dni, sb.especialidad, sb.fecha_preferida_no_atendida,
+               sb.tipo_documento, sb.fecha_nacimiento, sb.paciente_sexo,
+               sb.paciente_telefono, sb.paciente_telefono_alterno,
+               sb.paciente_email,
+               sb.codigo_ipress, sb.tipo_cita,
+               sb.id_bolsa, tb.desc_tipo_bolsa,
+               sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
+               sb.estado, sb.fecha_solicitud, sb.fecha_actualizacion,
+               sb.estado_gestion_citas_id, sb.activo,
+               di.desc_ipress, dr.desc_red, dm.desc_macro,
+               sb.responsable_gestora_id, sb.fecha_asignacion
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
+        LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
+        LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+        LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+        WHERE sb.activo = true
+        ORDER BY sb.fecha_solicitud DESC
+        LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
+        """, nativeQuery = true)
+    List<Object[]> findAllWithBolsaDescriptionPaginado(org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Cuenta total de solicitudes activas (para calcular páginas totales)
+     */
+    long countByActivoTrue();
+
+    /**
      * Busca solicitud por DNI del paciente (activas)
      */
     List<SolicitudBolsa> findByPacienteDniAndActivoTrue(String pacienteDni);
+
+    /**
+     * Obtiene solicitudes asignadas a una gestora específica (Mi Bandeja)
+     * Filtra por responsable_gestora_id y activas
+     * Usado en endpoint /mi-bandeja para gestoras
+     *
+     * @param gestoraId ID del usuario gestor_de_citas
+     * @return lista de solicitudes asignadas a esa gestora (activas)
+     */
+    List<SolicitudBolsa> findByResponsableGestoraIdAndActivoTrue(Long gestoraId);
 
     // ========================================================================
     // 🆕 v2.0.0: ESTADÍSTICAS - Métodos para dashboard y reportes
@@ -345,19 +390,6 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     // ========================================================================
     // 🦟 v1.0.0 (2026-01-29): MÉTODOS ESPECÍFICOS PARA MÓDULO DENGUE
     // ========================================================================
-
-    /**
-     * Busca solicitud por DNI + fecha_atencion para detección de duplicados
-     * Usado en deduplicación: DNI + fecha_atencion = clave única para Dengue
-     *
-     * @param pacienteDni DNI normalizado (8 dígitos)
-     * @param fechaAtencion Fecha de atención
-     * @return Optional con la solicitud si existe
-     */
-    Optional<SolicitudBolsa> findByPacienteDniAndFechaAtencion(
-        String pacienteDni,
-        java.time.LocalDate fechaAtencion
-    );
 
     /**
      * Lista todos los casos dengue con paginación

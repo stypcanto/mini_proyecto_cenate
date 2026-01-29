@@ -65,7 +65,7 @@ public class PaginaModulo {
     /**
      * Subpáginas (items hijos si esta es una página contenedora)
      */
-    @OneToMany(mappedBy = "paginaPadre", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "paginaPadre", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
     private List<PaginaModulo> subpaginas;
 
@@ -93,7 +93,9 @@ public class PaginaModulo {
    
     @Column(name = "orden")
     private Integer orden;
-    
+
+    @Column(name = "icono", length = 50)
+    private String icono;
 
     // ============================================================
     // 🔗 Relación con Permisos Modulares

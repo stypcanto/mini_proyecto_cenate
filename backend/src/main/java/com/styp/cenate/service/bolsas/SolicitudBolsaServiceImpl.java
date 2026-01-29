@@ -31,6 +31,8 @@ import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 
@@ -683,19 +685,19 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 "Usuario " + idGestora + " no encontrado"
             ));
 
-        // Verificar rol GESTOR_DE_CITAS
+        // Verificar rol GESTOR DE CITAS
         boolean tieneRolGestora = gestora.getRoles().stream()
-            .anyMatch(rol -> "GESTOR_DE_CITAS".equals(rol.getDescRol().toUpperCase()));
+            .anyMatch(rol -> rol.getDescRol() != null && "GESTOR DE CITAS".equals(rol.getDescRol().toUpperCase()));
 
         if (!tieneRolGestora) {
             throw new ValidationException(
                 "El usuario " + gestora.getNameUser() +
-                " no tiene el rol GESTOR_DE_CITAS"
+                " no tiene el rol GESTOR DE CITAS"
             );
         }
 
         // Verificar usuario activo
-        if (!"A".equals(gestora.getStatUser())) {
+        if (gestora.getStatUser() == null || (!gestora.getStatUser().equalsIgnoreCase("A") && !gestora.getStatUser().equalsIgnoreCase("ACTIVO"))) {
             throw new ValidationException(
                 "El usuario " + gestora.getNameUser() + " está inactivo"
             );
@@ -1988,8 +1990,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     @Override
+    @Transactional(readOnly = true)
     public List<Map<String, Object>> obtenerGestorasDisponibles() {
-        log.info("👤 Obteniendo gestoras disponibles (rol GESTOR_DE_CITAS)...");
+        log.info("👤 Obteniendo gestoras disponibles (rol GESTOR DE CITAS)...");
 
         try {
             // 1️⃣ Obtener todos los usuarios
@@ -2000,21 +2003,21 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 return new java.util.ArrayList<>();
             }
 
-            // 2️⃣ Filtrar: rol GESTOR_DE_CITAS + activo
+            // 2️⃣ Filtrar: rol GESTOR DE CITAS + activo
             List<Map<String, Object>> gestoras = new java.util.ArrayList<>();
             for (com.styp.cenate.model.Usuario usuario : todosUsuarios) {
                 // Validar: activo
-                if (!"A".equals(usuario.getStatUser())) {
+                if (usuario.getStatUser() == null || (!usuario.getStatUser().equalsIgnoreCase("A") && !usuario.getStatUser().equalsIgnoreCase("ACTIVO"))) {
                     continue;
                 }
 
-                // Validar: tiene rol GESTOR_DE_CITAS
+                // Validar: tiene rol GESTOR DE CITAS
                 if (usuario.getRoles() == null) {
                     continue;
                 }
 
                 boolean tieneRolGestor = usuario.getRoles().stream()
-                    .anyMatch(r -> "GESTOR_DE_CITAS".equalsIgnoreCase(r.getDescRol()));
+                    .anyMatch(r -> r.getDescRol() != null && "GESTOR DE CITAS".equalsIgnoreCase(r.getDescRol()));
 
                 if (!tieneRolGestor) {
                     continue;
@@ -2023,8 +2026,37 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 // Agregar a lista
                 java.util.Map<String, Object> gestora = new java.util.HashMap<>();
                 gestora.put("id", usuario.getIdUser());
-                gestora.put("nombre", usuario.getNameUser() != null ? usuario.getNameUser() : "Sin nombre");
-                gestora.put("nombreCompleto", usuario.getNameUser() != null ? usuario.getNameUser() : "Sin nombre");
+
+                // Obtener nombre completo desde PersonalCnt si está disponible
+                String nombreCompleto = "Sin nombre";
+                if (usuario.getPersonalCnt() != null) {
+                    String nombre = usuario.getPersonalCnt().getNomPers() != null ? usuario.getPersonalCnt().getNomPers() : "";
+                    String apePat = usuario.getPersonalCnt().getApePaterPers() != null ? usuario.getPersonalCnt().getApePaterPers() : "";
+                    String apeMat = usuario.getPersonalCnt().getApeMaterPers() != null ? usuario.getPersonalCnt().getApeMaterPers() : "";
+
+                    // Construir nombre completo: "Apellido Paterno Apellido Materno, Nombre"
+                    StringBuilder sb = new StringBuilder();
+                    if (!apePat.trim().isEmpty()) sb.append(apePat.trim());
+                    if (!apeMat.trim().isEmpty()) {
+                        if (sb.length() > 0) sb.append(" ");
+                        sb.append(apeMat.trim());
+                    }
+                    if (!nombre.trim().isEmpty()) {
+                        if (sb.length() > 0) sb.append(", ");
+                        sb.append(nombre.trim());
+                    }
+
+                    if (sb.length() > 0) {
+                        nombreCompleto = sb.toString();
+                    } else if (usuario.getNameUser() != null) {
+                        nombreCompleto = usuario.getNameUser();
+                    }
+                } else if (usuario.getNameUser() != null) {
+                    nombreCompleto = usuario.getNameUser();
+                }
+
+                gestora.put("nombre", nombreCompleto);
+                gestora.put("nombreCompleto", nombreCompleto);
                 gestora.put("activo", true);
                 gestoras.add(gestora);
             }
@@ -2036,6 +2068,48 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.error("❌ Error al obtener gestoras: ", e);
             return new java.util.ArrayList<>();
         }
+    }
+
+    @Override
+    @Transactional
+    public void actualizarTelefonos(Long idSolicitud, String telefonoPrincipal, String telefonoAlterno) {
+        log.info("📱 Actualizando teléfonos de solicitud {}", idSolicitud);
+
+        // 1️⃣ VALIDAR que la solicitud existe y está activa
+        SolicitudBolsa solicitud = solicitudRepository.findById(idSolicitud)
+            .orElseThrow(() -> new ResourceNotFoundException(
+                "Solicitud " + idSolicitud + " no encontrada"
+            ));
+
+        if (!solicitud.getActivo()) {
+            throw new ValidationException("No se puede actualizar teléfonos de solicitud inactiva");
+        }
+
+        // 2️⃣ VALIDAR que al menos uno de los teléfonos está presente
+        if ((telefonoPrincipal == null || telefonoPrincipal.trim().isEmpty()) &&
+            (telefonoAlterno == null || telefonoAlterno.trim().isEmpty())) {
+            throw new ValidationException("Al menos uno de los teléfonos es requerido");
+        }
+
+        // 3️⃣ ACTUALIZAR teléfonos (pueden ser null/blank)
+        String telPrincipalAnterior = solicitud.getPacienteTelefono();
+        String telAlternoAnterior = solicitud.getPacienteTelefonoAlterno();
+
+        solicitud.setPacienteTelefono(
+            telefonoPrincipal != null && !telefonoPrincipal.trim().isEmpty() ? telefonoPrincipal.trim() : null
+        );
+        solicitud.setPacienteTelefonoAlterno(
+            telefonoAlterno != null && !telefonoAlterno.trim().isEmpty() ? telefonoAlterno.trim() : null
+        );
+
+        // 4️⃣ GUARDAR
+        solicitudRepository.save(solicitud);
+
+        // 5️⃣ LOG de operación
+        log.info("✅ Teléfonos actualizados en solicitud {}. Principal: {} → {}, Alterno: {} → {}",
+            idSolicitud,
+            telPrincipalAnterior, solicitud.getPacienteTelefono(),
+            telAlternoAnterior, solicitud.getPacienteTelefonoAlterno());
     }
 
     /**
@@ -2174,6 +2248,113 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         );
         log.error(errorMsg);
         throw new RuntimeException(errorMsg);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<SolicitudBolsaDTO> obtenerSolicitudesAsignadasAGestora() {
+        try {
+            // 1️⃣ OBTENER USUARIO ACTUAL DEL CONTEXTO DE SEGURIDAD
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+
+            if (authentication == null || !authentication.isAuthenticated()) {
+                log.warn("⚠️ No hay usuario autenticado para obtener Mi Bandeja");
+                return new ArrayList<>();
+            }
+
+            String username = authentication.getName();
+            log.info("📬 Obteniendo solicitudes para gestora: {}", username);
+
+            // 2️⃣ OBTENER USUARIO COMPLETO DESDE BD
+            Usuario usuarioActual = usuarioRepository.findByNameUser(username)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Usuario " + username + " no encontrado en el sistema"
+                ));
+
+            Long usuarioId = usuarioActual.getIdUser();
+            log.info("   Usuario ID: {}, Rol: {}", usuarioId, usuarioActual.getNombreCompleto());
+
+            // 3️⃣ OBTENER SOLICITUDES ASIGNADAS A ESTA GESTORA
+            List<SolicitudBolsa> solicitudes = solicitudRepository.findByResponsableGestoraIdAndActivoTrue(usuarioId);
+
+            log.info("✅ Se encontraron {} solicitud(es) asignada(s) a gestora {}",
+                solicitudes.size(), username);
+
+            // 4️⃣ MAPEAR A DTOs CON ENRIQUECIMIENTO
+            return solicitudes.stream()
+                .map(this::mapSolicitudBolsaToDTO)
+                .collect(Collectors.toList());
+
+        } catch (ResourceNotFoundException e) {
+            log.error("❌ Usuario no encontrado: {}", e.getMessage());
+            throw e;
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo bandeja de gestora: ", e);
+            throw new RuntimeException("Error al obtener solicitudes asignadas: " + e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Mapea una SolicitudBolsa a SolicitudBolsaDTO con datos enriquecidos
+     * Método auxiliar para obtenerSolicitudesAsignadasAGestora()
+     */
+    private SolicitudBolsaDTO mapSolicitudBolsaToDTO(SolicitudBolsa solicitud) {
+        return SolicitudBolsaDTO.builder()
+            .idSolicitud(solicitud.getIdSolicitud())
+            .numeroSolicitud(solicitud.getNumeroSolicitud())
+            .pacienteId(solicitud.getPacienteId())
+            .pacienteNombre(solicitud.getPacienteNombre())
+            .pacienteDni(solicitud.getPacienteDni())
+            .especialidad(solicitud.getEspecialidad())
+            .fechaPreferidaNoAtendida(solicitud.getFechaPreferidaNoAtendida())
+            .tipoDocumento(solicitud.getTipoDocumento())
+            .fechaNacimiento(solicitud.getFechaNacimiento())
+            .pacienteSexo(solicitud.getPacienteSexo())
+            .pacienteTelefono(solicitud.getPacienteTelefono())
+            .pacienteTelefonoAlterno(solicitud.getPacienteTelefonoAlterno())
+            .pacienteEmail(solicitud.getPacienteEmail())
+            .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
+            .tipoCita(solicitud.getTipoCita())
+            .idBolsa(solicitud.getIdBolsa())
+            .idServicio(solicitud.getIdServicio())
+            .codigoAdscripcion(solicitud.getCodigoAdscripcion())
+            .idIpress(solicitud.getIdIpress())
+            .estado(solicitud.getEstado())
+            .fechaSolicitud(solicitud.getFechaSolicitud())
+            .fechaActualizacion(solicitud.getFechaActualizacion())
+            .estadoGestionCitasId(solicitud.getEstadoGestionCitasId())
+            .activo(solicitud.getActivo())
+            .responsableGestoraId(solicitud.getResponsableGestoraId())
+            .fechaAsignacion(solicitud.getFechaAsignacion())
+            .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public org.springframework.data.domain.Page<SolicitudBolsaDTO> listarTodasPaginado(
+            org.springframework.data.domain.Pageable pageable) {
+        try {
+            log.info("📄 Obteniendo solicitudes paginadas - page: {}, size: {}",
+                pageable.getPageNumber(), pageable.getPageSize());
+
+            // Consulta con paginación directa en BD
+            List<Object[]> resultados = solicitudRepository.findAllWithBolsaDescriptionPaginado(pageable);
+            long total = solicitudRepository.countByActivoTrue();
+
+            // Mapear a DTOs
+            List<SolicitudBolsaDTO> dtos = resultados.stream()
+                .map(this::mapFromResultSet)
+                .collect(Collectors.toList());
+
+            log.info("✅ Página obtenida: {}/{} ({}  registros)",
+                pageable.getPageNumber(), (total / pageable.getPageSize()), dtos.size());
+
+            return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
+
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo solicitudes paginadas: ", e);
+            throw new RuntimeException("Error al obtener solicitudes: " + e.getMessage(), e);
+        }
     }
 
 }

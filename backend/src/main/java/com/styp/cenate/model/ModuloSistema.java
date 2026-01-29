@@ -85,7 +85,7 @@ public class ModuloSistema {
     // 🔗 Relaciones
     // ==========================================================
     /** Páginas asociadas al módulo (dim_paginas_modulo) */
-    @OneToMany(mappedBy = "modulo", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "modulo", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
     @JsonManagedReference
 //    private List<PaginaModulo> paginas;
     @Builder.Default

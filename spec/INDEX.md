@@ -1,7 +1,7 @@
-# 📚 CENATE Documentation Index v1.34.1
+# 📚 CENATE Documentation Index v1.37.4
 
-**Última actualización:** 2026-01-26  
-**Estado:** Documentación reorganizada ✅
+**Última actualización:** 2026-01-29
+**Estado:** Phase 7 UAT Completado ✅ - LISTO PARA PRODUCCIÓN 🚀
 
 ---
 
@@ -29,6 +29,7 @@ spec/
 - API Endpoints: `backend/01_api/003_api_endpoints.md`
 - Módulo Bolsas: `backend/08_modulo_bolsas_pacientes_completo.md`
 - **NUEVO Tipos de Bolsas:** `backend/11_modulo_tipos_bolsas_completo.md` (v1.37.0 ⭐)
+- **NUEVO Gestión de Iconos:** `backend/13_gestion_iconos.md` (v1.37.4 ⭐)
 - Estados Citas: `backend/07_modulo_estados_gestion_citas_crud.md`
 
 ### Para Desarrolladores Frontend
@@ -56,6 +57,14 @@ spec/
 - Problemas Comunes: `troubleshooting/01_guia_problemas_comunes.md`
 - Estados Citas: `troubleshooting/02_guia_estados_gestion_citas.md`
 
+### Para QA/Testing
+**Comienza en:** `/test/README.md`
+- **NUEVO Phase 7 Integration Testing:** `test/02_dengue_integration_testing_phase7.md` (v1.37.4 ⭐)
+- **NUEVO Smoke Tests Report:** `test/03_dengue_smoke_tests_report.md` (v1.37.4 ⭐)
+- **NUEVO UAT Checklist:** `test/04_dengue_uat_checklist_v1.37.4.md` (v1.37.4 ⭐)
+- **NUEVO Phase 7 Completion:** `test/05_phase7_completion_report.md` (v1.37.4 ⭐)
+- Playwright Tests: `frontend/tests/dengue-module.spec.ts`
+
 ### Scripts y Herramientas
 **Comienza en:** `/sh/README.md`
 - Scripts SQL: `sh/01_database/`
@@ -65,13 +74,14 @@ spec/
 
 ## 📋 Documentos Principales por Tipo
 
-### 📦 Backend (6 docs principales)
+### 📦 Backend (7 docs principales)
 1. `backend/01_api/003_api_endpoints.md` - Endpoints REST v1.34.1
 2. `backend/08_modulo_bolsas_pacientes_completo.md` - Módulo bolsas v1.32.1
 3. `backend/07_modulo_estados_gestion_citas_crud.md` - Estados citas v1.33.0
 4. **`backend/11_modulo_tipos_bolsas_completo.md` - Tipos bolsas v1.37.0 ⭐ NUEVO**
-5. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
-6. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0 (anterior)
+5. **`backend/13_gestion_iconos.md` - Gestión de iconos v1.37.4 ⭐ NUEVO**
+6. `backend/06_resumen_modulo_bolsas_completo.md` - Resumen módulo
+7. `backend/05_modulo_tipos_bolsas_crud.md` - Tipos bolsas v1.1.0 (anterior)
 
 ### 📱 Frontend (4 docs principales)
 1. `frontend/02_pages/01_estructura_minima_paginas.md` - Patrón arquitectónico
@@ -95,6 +105,13 @@ spec/
 
 ### 📊 UML (1 documento maestro)
 1. `uml/UML_COMPLETO_FINAL_v1_6_ESTADOS_CITAS.md` - Diagrama completo v1.6.0
+
+### ✅ Testing & QA (5 docs - Phase 7 v1.37.4)
+1. **`test/02_dengue_integration_testing_phase7.md` - Integration Testing Plan ⭐ NUEVO**
+2. **`test/03_dengue_smoke_tests_report.md` - Smoke Tests Report (4/4 PASS) ⭐ NUEVO**
+3. **`test/04_dengue_uat_checklist_v1.37.4.md` - UAT Checklist (52/52 PASS) ⭐ NUEVO**
+4. **`test/05_phase7_completion_report.md` - Phase 7 Completion Report ⭐ NUEVO**
+5. `frontend/tests/dengue-module.spec.ts` - Playwright Test Suite (40+ tests)
 
 ---
 
@@ -157,7 +174,8 @@ spec/
 
 ---
 
-**Versión:** 1.34.1  
-**Última actualización:** 2026-01-26  
+**Versión:** 1.37.4
+**Última actualización:** 2026-01-29
+**Status:** ✅ READY FOR PRODUCTION
 **Responsable:** Sistema CENATE
 

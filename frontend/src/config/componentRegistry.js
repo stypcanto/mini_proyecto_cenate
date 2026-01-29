@@ -447,6 +447,12 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/bolsas/mi-bandeja': {
+    component: lazy(() => import('../pages/bolsas/MiBandeja')),
+    requiredAction: 'ver',
+    requiredRoles: ['GESTOR_DE_CITAS'],
+  },
+
   '/bolsas/errores-importacion': {
     component: lazy(() => import('../pages/bolsas/ErroresImportacion')),
     requiredAction: 'ver',

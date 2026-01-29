@@ -258,18 +258,27 @@ public class PasswordTokenService {
         TokenInfo info = validacion.info;
         Usuario usuario = usuarioRepository.findById(info.idUsuario).orElse(null);
         if (usuario == null) {
+            log.error("❌ Usuario no encontrado con ID: {}", info.idUsuario);
             return new CambioContrasenaResult(false, "Usuario no encontrado");
         }
 
+        log.info("🔄 Iniciando cambio de contraseña para usuario: {} (ID: {})", usuario.getNameUser(), usuario.getIdUser());
+
         // Cambiar contraseña
-        usuario.setPassUser(passwordEncoder.encode(nuevaContrasena));
+        String passwordEncriptada = passwordEncoder.encode(nuevaContrasena);
+        log.info("🔐 Contraseña original: {} caracteres", nuevaContrasena.length());
+        log.info("🔐 Contraseña encriptada: {}", passwordEncriptada.substring(0, Math.min(20, passwordEncriptada.length())) + "...");
+
+        usuario.setPassUser(passwordEncriptada);
         usuario.setRequiereCambioPassword(false);
         usuario.setUpdateAt(LocalDateTime.now());
         usuario.setFailedAttempts(0);
         usuario.setLockedUntil(null);
+
         // ⚠️ IMPORTANTE: Usar saveAndFlush para asegurar persistencia inmediata
         usuarioRepository.saveAndFlush(usuario);
-        log.info("✅ Contraseña encriptada y guardada en BD para: {}", usuario.getNameUser());
+        log.info("✅ Contraseña GUARDADA EN BD para usuario: {}", usuario.getNameUser());
+        log.info("✅ RequiereCambioPassword actualizado a: {}", usuario.getRequiereCambioPassword());
 
         // Marcar token como usado
         var tokenEntity = tokenRepository.findByToken(token).orElse(null);

@@ -325,7 +325,32 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 			PaginaModulo pagina = paginasMap.get(entry.getKey());
 			if (pagina == null) continue;
 
+			// Solo procesar páginas padre (sin padre)
+			if (pagina.getPaginaPadre() != null) continue;
+
 			SeguPermisosRolPagina permiso = entry.getValue();
+
+			// Construir subpáginas si existen
+			List<PaginaMenuDTO> subpaginas = new ArrayList<>();
+			if (pagina.getSubpaginas() != null && !pagina.getSubpaginas().isEmpty()) {
+				subpaginas = pagina.getSubpaginas().stream()
+						.filter(sub -> Boolean.TRUE.equals(sub.getActivo()))
+						.sorted(Comparator.comparing(PaginaModulo::getOrden, Comparator.nullsLast(Integer::compareTo)))
+						.map(sub -> new PaginaMenuDTO(
+								sub.getRutaPagina(),
+								sub.getOrden(),
+								sub.getNombrePagina(),
+								sub.getIdPagina(),
+								true,
+								true,
+								true,
+								true,
+								true,
+								null
+						))
+						.collect(Collectors.toList());
+			}
+
 			PaginaMenuDTO paginaDTO = new PaginaMenuDTO(
 					pagina.getRutaPagina(),
 					pagina.getOrden(),
@@ -335,7 +360,8 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 					Boolean.TRUE.equals(permiso.getPuedeCrear()),
 					Boolean.TRUE.equals(permiso.getPuedeEditar()),
 					Boolean.TRUE.equals(permiso.getPuedeEliminar()),
-					Boolean.TRUE.equals(permiso.getPuedeExportar())
+					Boolean.TRUE.equals(permiso.getPuedeExportar()),
+					subpaginas.isEmpty() ? null : subpaginas
 			);
 
 			Integer idModulo = pagina.getModulo() != null ? pagina.getModulo().getIdModulo() : null;
@@ -399,7 +425,8 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 								true,
 								true,
 								true,
-								null
+								null,
+								sub.getIcono()
 						))
 						.collect(Collectors.toList());
 			}
@@ -415,7 +442,8 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 					true,
 					true,
 					true,
-					subpaginas.isEmpty() ? null : subpaginas
+					subpaginas.isEmpty() ? null : subpaginas,
+					pagina.getIcono()
 			);
 
 			paginasMenu.add(paginaDTO);
@@ -513,7 +541,8 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 									true,
 									true,
 									true,
-									null // Las subpáginas no tienen más subpáginas
+									null, // Las subpáginas no tienen más subpáginas
+									sub.getIcono()
 							))
 							.collect(Collectors.toList());
 				}
@@ -534,7 +563,8 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 						permisoPagina != null ? Boolean.TRUE.equals(permisoPagina.getPuedeEditar()) : false,
 						permisoPagina != null ? Boolean.TRUE.equals(permisoPagina.getPuedeEliminar()) : false,
 						permisoPagina != null ? Boolean.TRUE.equals(permisoPagina.getPuedeExportar()) : false,
-						subpaginas.isEmpty() ? null : subpaginas
+						subpaginas.isEmpty() ? null : subpaginas,
+						pagina.getIcono()
 				);
 
 				paginasMenu.add(paginaDTO);

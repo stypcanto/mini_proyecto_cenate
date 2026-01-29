@@ -16,6 +16,6 @@ public interface PaginaRepository extends JpaRepository<PaginaModulo, Integer> {
      * Carga todas las páginas PADRE con sus subpáginas (EAGER loading)
      * Solo trae páginas que NO tienen padre (id_pagina_padre IS NULL)
      */
-    @Query("SELECT DISTINCT p FROM PaginaModulo p LEFT JOIN FETCH p.subpaginas sub WHERE p.activo = true AND p.paginaPadre IS NULL ORDER BY p.orden ASC, sub.orden ASC")
+    @Query("SELECT p FROM PaginaModulo p LEFT JOIN FETCH p.subpaginas WHERE p.activo = true AND p.paginaPadre IS NULL ORDER BY p.orden ASC")
     List<PaginaModulo> findAllWithSubpaginas();
 }

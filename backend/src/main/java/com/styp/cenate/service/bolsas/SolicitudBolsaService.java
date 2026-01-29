@@ -42,6 +42,14 @@ public interface SolicitudBolsaService {
     List<SolicitudBolsaDTO> listarTodas();
 
     /**
+     * Obtiene todas las solicitudes activas CON PAGINACIÓN
+     * @param pageable información de paginación
+     * @return página de solicitudes
+     */
+    org.springframework.data.domain.Page<SolicitudBolsaDTO> listarTodasPaginado(
+            org.springframework.data.domain.Pageable pageable);
+
+    /**
      * Obtiene una solicitud por su ID
      */
     Optional<SolicitudBolsaDTO> obtenerPorId(Long id);
@@ -111,4 +119,25 @@ public interface SolicitudBolsaService {
      * @return List de maps con {id, nombre, nombreCompleto, activo}
      */
     List<Map<String, Object>> obtenerGestorasDisponibles();
+
+    /**
+     * Actualiza los teléfonos (principal y/o alterno) de una solicitud
+     * Al menos uno de los teléfonos debe estar presente (no ambos null/blank)
+     *
+     * @param idSolicitud ID de la solicitud
+     * @param telefonoPrincipal teléfono principal (puede ser null o blank)
+     * @param telefonoAlterno teléfono alterno (puede ser null o blank)
+     * @throws ValidationException si ambos teléfonos están blank o si solicitud es inactiva
+     * @throws ResourceNotFoundException si solicitud no existe
+     */
+    void actualizarTelefonos(Long idSolicitud, String telefonoPrincipal, String telefonoAlterno);
+
+    /**
+     * Obtiene solicitudes asignadas a la gestora actual (Mi Bandeja)
+     * Filtra por responsable_gestora_id = ID del usuario actual
+     * Solo usuarios con rol GESTOR_DE_CITAS pueden acceder
+     *
+     * @return lista de solicitudes asignadas a la gestora actual
+     */
+    List<SolicitudBolsaDTO> obtenerSolicitudesAsignadasAGestora();
 }

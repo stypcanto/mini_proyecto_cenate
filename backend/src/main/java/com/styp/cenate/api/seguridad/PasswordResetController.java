@@ -51,9 +51,12 @@ public class PasswordResetController {
      */
     @PostMapping("/cambiar")
     public ResponseEntity<?> cambiarContrasena(@RequestBody CambioContrasenaRequest request) {
-        log.info("Solicitud de cambio de contraseña con token");
+        log.info("🔐 === SOLICITUD DE CAMBIO DE CONTRASEÑA ===");
+        log.info("Token: {}...", request.token().substring(0, Math.min(10, request.token().length())));
+        log.info("Nueva contraseña: {} caracteres", request.nuevaContrasena().length());
 
         if (request.token() == null || request.token().isBlank()) {
+            log.error("❌ Token no proporcionado");
             return ResponseEntity.badRequest().body(Map.of(
                 "exitoso", false,
                 "mensaje", "Token no proporcionado"
@@ -61,6 +64,7 @@ public class PasswordResetController {
         }
 
         if (request.nuevaContrasena() == null || request.nuevaContrasena().length() < 8) {
+            log.error("❌ Contraseña muy corta: {} caracteres", request.nuevaContrasena().length());
             return ResponseEntity.badRequest().body(Map.of(
                 "exitoso", false,
                 "mensaje", "La contraseña debe tener al menos 8 caracteres"
@@ -68,23 +72,27 @@ public class PasswordResetController {
         }
 
         if (!request.nuevaContrasena().equals(request.confirmarContrasena())) {
+            log.error("❌ Las contraseñas no coinciden");
             return ResponseEntity.badRequest().body(Map.of(
                 "exitoso", false,
                 "mensaje", "Las contraseñas no coinciden"
             ));
         }
 
+        log.info("✅ Validaciones pasadas, llamando al servicio...");
         CambioContrasenaResult resultado = passwordTokenService.cambiarContrasenaConToken(
             request.token(),
             request.nuevaContrasena()
         );
 
         if (resultado.exitoso()) {
+            log.info("✅ CONTRASEÑA CAMBIADA EXITOSAMENTE");
             return ResponseEntity.ok(Map.of(
                 "exitoso", true,
                 "mensaje", resultado.mensaje()
             ));
         } else {
+            log.error("❌ Error al cambiar contraseña: {}", resultado.mensaje());
             return ResponseEntity.badRequest().body(Map.of(
                 "exitoso", false,
                 "mensaje", resultado.mensaje()

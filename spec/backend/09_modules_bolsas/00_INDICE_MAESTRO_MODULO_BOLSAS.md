@@ -1,9 +1,9 @@
-# 📚 ÍNDICE MAESTRO - Módulo de Bolsas v2.2.0
+# 📚 ÍNDICE MAESTRO - Módulo de Bolsas v2.5.0
 
-> **Documentación unificada del módulo completo de Bolsas de Pacientes**
-> **Fecha:** 2026-01-28
-> **Versión:** v2.2.0 (Deduplicación Automática + KEEP_FIRST + Modal Confirmación)
-> **Status:** ✅ Production Ready + RBAC + Deduplicación Inteligente ⭐
+> **Documentación unificada del módulo completo de Bolsas de Pacientes con soporte para Gestoras**
+> **Fecha:** 2026-01-29
+> **Versión:** v2.5.0 (Módulo Gestoras + Mi Bandeja + Estado Atendido)
+> **Status:** ✅ Production Ready + Gestoras + Mi Bandeja ⭐
 
 ---
 

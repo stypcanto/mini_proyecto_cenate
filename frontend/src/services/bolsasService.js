@@ -141,7 +141,8 @@ export const importarSolicitudesDesdeExcel = async (formData) => {
 };
 
 /**
- * Obtiene todas las solicitudes de bolsas
+ * Obtiene todas las solicitudes de bolsas (sin paginación)
+ * DEPRECATED: Usar obtenerSolicitudesPaginado() para nuevas implementaciones
  * @returns {Promise<Array>} - Listado de solicitudes
  */
 export const obtenerSolicitudes = async () => {
@@ -150,6 +151,23 @@ export const obtenerSolicitudes = async () => {
     return response;
   } catch (error) {
     console.error('Error al obtener solicitudes:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene solicitudes con paginación server-side
+ * v2.5.1 - Alineado con backend pagination (25 registros por página)
+ * @param {number} page - Número de página (0-based)
+ * @param {number} size - Registros por página (default: 25)
+ * @returns {Promise<Object>} - Página con solicitudes, totalElements, totalPages
+ */
+export const obtenerSolicitudesPaginado = async (page = 0, size = 25) => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes?page=${page}&size=${size}`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener solicitudes paginadas:', error);
     throw error;
   }
 };
@@ -589,6 +607,34 @@ export const cambiarTelefono = async (id, nuevoTelefono) => {
 };
 
 /**
+ * Actualiza ambos teléfonos (principal y alterno) de una solicitud
+ * v2.4.3: Permite actualizar uno, el otro o ambos
+ * @param {number} id - ID de la solicitud
+ * @param {string} telefonoPrincipal - Nuevo teléfono principal (puede ser null)
+ * @param {string} telefonoAlterno - Nuevo teléfono alterno (puede ser null)
+ * @returns {Promise<Object>} - Solicitud actualizada
+ */
+export const actualizarTelefonos = async (id, telefonoPrincipal, telefonoAlterno) => {
+  try {
+    const params = new URLSearchParams();
+    if (telefonoPrincipal) {
+      params.append('pacienteTelefono', telefonoPrincipal);
+    }
+    if (telefonoAlterno) {
+      params.append('pacienteTelefonoAlterno', telefonoAlterno);
+    }
+
+    const response = await apiClient.put(
+      `${API_BASE_URL}/solicitudes/${id}?${params.toString()}`
+    );
+    return response;
+  } catch (error) {
+    console.error(`Error al actualizar teléfonos solicitud ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
  * Cambia el tipo de bolsa de una solicitud
  * ⚠️ SOLO SUPERADMIN
  * @param {number} id - ID de la solicitud
@@ -641,6 +687,47 @@ export const enviarRecordatorio = async (id, tipo, mensaje = '') => {
     return response;
   } catch (error) {
     console.error(`Error al enviar recordatorio solicitud ${id}:`, error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene la bandeja de la gestora actual (Mi Bandeja)
+ * GET /api/bolsas/solicitudes/mi-bandeja
+ * Solo usuarios con rol GESTOR_DE_CITAS pueden acceder
+ * @returns {Promise<Object>} - Lista de solicitudes asignadas a la gestora
+ */
+export const obtenerMiBandeja = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/mi-bandeja`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener Mi Bandeja:', error);
+    throw error;
+  }
+};
+
+/**
+ * Cambia el estado de una solicitud
+ * PATCH /api/bolsas/solicitudes/{id}/estado
+ * @param {number} id - ID de la solicitud
+ * @param {number} nuevoEstadoId - ID del nuevo estado
+ * @returns {Promise<Object>} - Solicitud actualizada
+ */
+export const cambiarEstado = async (id, nuevoEstadoId) => {
+  try {
+    const response = await apiClient.patch(
+      `${API_BASE_URL}/solicitudes/${id}/estado`,
+      {},
+      {
+        params: {
+          nuevoEstadoId
+        }
+      }
+    );
+    return response;
+  } catch (error) {
+    console.error(`Error al cambiar estado solicitud ${id}:`, error);
     throw error;
   }
 };
@@ -811,6 +898,7 @@ export default {
   // Solicitudes
   importarSolicitudesDesdeExcel,
   obtenerSolicitudes,
+  obtenerSolicitudesPaginado, // NEW v2.5.1: Paginación server-side
   obtenerSolicitudPorId,
   crearSolicitud,
   actualizarSolicitud,
@@ -844,6 +932,7 @@ export default {
   asignarAGestora,
   obtenerGestorasDisponibles, // NEW v2.4.0: Lista de gestoras disponibles
   cambiarTelefono,
+  actualizarTelefonos, // NEW v2.5.0: Actualizar teléfono principal y/o alterno
   cambiarTipoBolsa,
   descargarCSV,
   enviarRecordatorio,
@@ -858,4 +947,8 @@ export default {
   // ERRORES DE IMPORTACIÓN (v2.1.0)
   obtenerErroresImportacion,
   exportarErroresImportacion,
+
+  // MI BANDEJA - Para gestoras (v2.5.0)
+  obtenerMiBandeja, // NEW: Obtener solicitudes asignadas a la gestora
+  cambiarEstado, // NEW: Cambiar estado de una solicitud
 };

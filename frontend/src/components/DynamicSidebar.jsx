@@ -56,6 +56,8 @@ import {
   Upload,
   ListChecks,
   FolderOpen,
+  Bug,
+  List,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -99,6 +101,8 @@ const iconMap = {
   'Upload': Upload,
   'ListChecks': ListChecks,
   'FolderOpen': FolderOpen,
+  'Bug': Bug,
+  'List': List,
 };
 
 const getIconComponent = (iconName) => {
@@ -444,16 +448,35 @@ function TooltipWrapper({ children, collapsed, text }) {
 
 // Función helper para obtener el icono según el módulo y página
 function getPageIcon(nombreModulo, nombrePagina) {
+  const lowerName = nombrePagina.toLowerCase();
+
+  // Iconos para Dengue
+  if (lowerName === 'dengue') {
+    return Bug;
+  }
+  if (lowerName === 'cargar excel') {
+    return Upload;
+  }
+  if (lowerName === 'listar casos') {
+    return List;
+  }
+  if (lowerName === 'buscar') {
+    return Search;
+  }
+  if (lowerName === 'resultados') {
+    return BarChart3;
+  }
+
   if (nombreModulo === 'Bolsas de Pacientes') {
-    if (nombrePagina.toLowerCase().includes('excel') || nombrePagina.toLowerCase().includes('cargar')) {
+    if (lowerName.includes('excel') || lowerName.includes('cargar')) {
       return Upload;
-    } else if (nombrePagina.toLowerCase().includes('solicitud')) {
+    } else if (lowerName.includes('solicitud')) {
       return ListChecks;
-    } else if (nombrePagina.toLowerCase().includes('error')) {
+    } else if (lowerName.includes('error')) {
       return FileSearch;
-    } else if (nombrePagina.toLowerCase().includes('estadísticas')) {
+    } else if (lowerName.includes('estadísticas')) {
       return BarChart3;
-    } else if (nombrePagina.toLowerCase().includes('historial')) {
+    } else if (lowerName.includes('historial')) {
       return FolderOpen;
     }
   }
@@ -461,11 +484,12 @@ function getPageIcon(nombreModulo, nombrePagina) {
 }
 
 // Componente para renderizar una página con submenú (nivel 3)
-function PaginaConSubmenu({ pagina, location, nombreModulo }) {
+function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent }) {
   const [isSubOpen, setIsSubOpen] = React.useState(false);
   const hasActiveSubpage = pagina.subpaginas?.some((sub) => location.pathname === sub.ruta);
   const subStateKey = `${nombreModulo}-${pagina.id_pagina}`;
-  const PageIcon = getPageIcon(nombreModulo, pagina.nombre);
+  // Priorizar hardcoded icons basado en nombre, si no hay usa API
+  const PageIcon = getPageIcon(nombreModulo, pagina.nombre) || (pagina.icono ? getIconComponent(pagina.icono) : Folder);
 
   return (
     <div className="space-y-1">
@@ -494,6 +518,8 @@ function PaginaConSubmenu({ pagina, location, nombreModulo }) {
         <div className="ml-3 pl-3 border-l-2 border-slate-700/30 space-y-1 animate-fadeIn">
           {pagina.subpaginas.map((subpagina, subIdx) => {
             const isActive = location.pathname === subpagina.ruta;
+            // Priorizar hardcoded icons basado en nombre
+            const SubIcon = getPageIcon(nombreModulo, subpagina.nombre) || (subpagina.icono ? getIconComponent(subpagina.icono) : Folder);
             return (
               <NavLink
                 key={subpagina.id_pagina || subIdx}
@@ -504,7 +530,7 @@ function PaginaConSubmenu({ pagina, location, nombreModulo }) {
                     : "hover:bg-slate-800/40 text-slate-400 hover:text-white"
                 }`}
               >
-                <span className="text-slate-500">└─</span>
+                <SubIcon className="w-4 h-4 flex-shrink-0" />
                 <span className="truncate">{subpagina.nombre}</span>
               </NavLink>
             );
@@ -629,6 +655,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
                   pagina={pagina}
                   location={location}
                   nombreModulo={nombreModulo}
+                  getIconComponent={getIconComponent}
                 />
               );
             } else {

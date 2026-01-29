@@ -1,10 +1,10 @@
-# 📦 Módulo de Bolsas - Índice Maestro v2.1.0
+# 📦 Módulo de Bolsas - Índice Maestro v2.5.0
 
 > **Sistema completo de importación, gestión, análisis, estadísticas y control de acceso RBAC**
-> **Versión:** v2.1.0 | **Status:** ✅ Production Ready + RBAC
-> **Última actualización:** 2026-01-28
+> **Versión:** v2.5.0 | **Status:** ✅ Production Ready + Gestoras
+> **Última actualización:** 2026-01-29
 > **Datos en BD:** 329 registros activos
-> **✨ NUEVO v2.1.0:** Control de Acceso RBAC + Filtros Dinámicos + Teléfono Alterno
+> **✨ NUEVO v2.5.0:** Módulo Mi Bandeja + Permisos Expandidos + Estado "Atendido"
 
 ---
 
@@ -25,7 +25,22 @@
 
 ---
 
-### 🆕 CHANGELOG v2.1.0 - Novedades Recientes
+### 🆕 CHANGELOG v2.5.0 - Gestoras (Novedades 2026-01-29)
+
+**[`16_CHANGELOG_v2.5.0_MODULO_GESTORAS.md`](./16_CHANGELOG_v2.5.0_MODULO_GESTORAS.md)** ← **VER CAMBIOS v2.5.0**
+
+Changelog detallado con:
+- 🎯 Permisos expandidos para asignar gestoras
+- 📬 Nuevo módulo "Mi Bandeja" para gestoras
+- ✅ Funcionalidad cambiar estado a "Atendido"
+- 👤 Endpoints protegidos por rol GESTOR_DE_CITAS
+- 🔒 Control de acceso basado en usuario actual
+- 📊 UI dashboard para gestoras
+- 🛠️ Implementación técnica completa
+
+---
+
+### 📋 CHANGELOG v2.1.0 - Controles de Acceso
 
 **[`14_CHANGELOG_v2.1.0.md`](./14_CHANGELOG_v2.1.0.md)** ← **VER CAMBIOS v2.1.0**
 
@@ -55,7 +70,7 @@ Guía paso a paso para:
 
 ## 📚 Documentación por Componente
 
-### 1️⃣ SOLICITUDES - Importación y Gestión (v2.4.0)
+### 1️⃣ SOLICITUDES - Importación y Gestión (v2.5.0)
 
 **[`12_modulo_solicitudes_bolsa_v1.12.0.md`](./12_modulo_solicitudes_bolsa_v1.12.0.md)**
 
@@ -67,7 +82,15 @@ Guía paso a paso para:
 - 8 endpoints REST CRUD
 - Enriquecimiento automático de datos
 
-✨ **NUEVO v2.1.0:**
+✨ **NUEVO v2.5.0 - Gestoras:**
+- 👤 Asignación a gestoras de citas (GESTOR_DE_CITAS)
+- 📬 Módulo "Mi Bandeja" para que gestoras vean sus solicitudes asignadas
+- ✅ Cambio de estado a "Atendido" por parte de gestoras
+- 🔒 Permisos expandidos: SUPERADMIN + COORDINADOR_GESTION_DE_CITAS
+- 🎯 Filtros y búsqueda en bandeja
+- 📊 Estadísticas por estado en tiempo real
+
+✨ **ANTERIOR v2.1.0:**
 - 🔒 Control de Acceso RBAC (Botón Borrar → SUPERADMIN)
 - 📊 Filtros dinámicos con contadores en tiempo real
 - 📱 Teléfono alterno (Excel col 8 → asegurados.tel_celular)
@@ -76,7 +99,24 @@ Guía paso a paso para:
 - 🗺️ Enriquecimiento cascada (IPRESS→RED→MACRORREGIÓN)
 - 🎨 UI mejorada con ListHeader.jsx v2.0.0
 
-📊 **Estado:** ✅ v2.4.0 Production Ready + RBAC
+📊 **Estado:** ✅ v2.5.0 Production Ready + Gestoras
+
+---
+
+### 🆕 MÓDULO MI BANDEJA - Para Gestoras (v2.5.0)
+
+**[`16_CHANGELOG_v2.5.0_MODULO_GESTORAS.md`](./16_CHANGELOG_v2.5.0_MODULO_GESTORAS.md)** ⭐ **NUEVO**
+
+✨ **Características:**
+- 📬 Dashboard personal para gestoras de citas
+- 🔍 Búsqueda y filtrado de solicitudes asignadas
+- ✅ Marcar solicitud como "Atendido"
+- 📊 Estadísticas rápidas (Total, Pendientes, Atendidas, Canceladas)
+- 🔒 Acceso restringido a rol GESTOR_DE_CITAS
+- 👤 Aislamiento por usuario (cada gestora ve solo sus solicitudes)
+- 🛠️ Endpoints: GET /mi-bandeja, PATCH /{id}/estado
+
+📊 **Estado:** ✅ v2.5.0 Production Ready (NUEVO)
 
 ---
 
@@ -196,35 +236,41 @@ Guía paso a paso para:
 
 ---
 
-## 🏗️ Arquitectura Integrada
+## 🏗️ Arquitectura Integrada v2.5.0
 
 ```
 ┌─────────────────────────────────────────────┐
 │ FRONTEND (React 19)                         │
 ├─────────────────────────────────────────────┤
 │ ├─ CargarDesdeExcel.jsx (v1.12.0)          │
-│ ├─ Solicitudes.jsx (v2.3.0)                │
+│ ├─ Solicitudes.jsx (v2.5.0) 👤             │
+│ ├─ MiBandeja.jsx (v2.5.0) ⭐ NUEVO         │
 │ ├─ TiposBolsas.jsx (v1.1.0)                │
 │ ├─ EstadosGestion.jsx (v1.33.0)            │
-│ └─ EstadisticasDashboard.jsx (v2.0.0) ⭐   │
+│ └─ EstadisticasDashboard.jsx (v2.0.0)      │
 └──────────────┬──────────────────────────────┘
                │ HTTP REST API
 ┌──────────────▼──────────────────────────────┐
 │ BACKEND (Spring Boot 3.5.6)                │
 ├─────────────────────────────────────────────┤
 │ Controllers:                                │
-│ ├─ SolicitudBolsaController (v1.8.0)       │
+│ ├─ SolicitudBolsaController (v2.5.0) 👤    │
+│ │  ├─ POST /{id}/asignar (expandido)       │
+│ │  └─ GET /mi-bandeja (NEW) ⭐             │
 │ ├─ TipoBolsaController (v1.3.0)            │
 │ ├─ EstadoGestionController (v1.2.0)       │
-│ └─ SolicitudBolsaEstadisticasController v2.0.0 ⭐│
+│ └─ SolicitudBolsaEstadisticasController v2.0.0│
 │                                            │
 │ Services:                                  │
-│ ├─ SolicitudBolsaServiceImpl               │
+│ ├─ SolicitudBolsaServiceImpl (v2.5.0) 👤   │
+│ │  └─ obtenerSolicitudesAsignadasAGestora()│
 │ ├─ ExcelImportService (v1.9.1)            │
-│ └─ SolicitudBolsaEstadisticasServiceImpl (v2.0.0) ⭐│
+│ └─ SolicitudBolsaEstadisticasServiceImpl    │
 │                                            │
 │ Repositories:                              │
-│ └─ SolicitudBolsaRepository (v1.6.0)      │
+│ ├─ SolicitudBolsaRepository (v1.7.0) ⭐    │
+│ │  └─ findByResponsableGestoraIdAndActivo..│
+│ └─ UsuarioRepository                       │
 └──────────────┬──────────────────────────────┘
                │ SQL
 ┌──────────────▼──────────────────────────────┐
@@ -232,10 +278,13 @@ Guía paso a paso para:
 ├─────────────────────────────────────────────┤
 │ Central:                                    │
 │ └─ dim_solicitud_bolsa (329 registros)     │
+│    ├─ responsable_gestora_id (NEW v2.5.0) │
+│    └─ fecha_asignacion (NEW v2.5.0)        │
 │                                            │
 │ Referencias:                               │
 │ ├─ dim_tipos_bolsas                        │
 │ ├─ dim_estados_gestion_citas (10 estados) │
+│ ├─ dim_usuarios (para gestoras)            │
 │ ├─ dim_asegurados (enriquecimiento)       │
 │ ├─ dim_ipress + dim_red (geo)             │
 │ └─ dim_servicios (especialidades)         │
@@ -244,35 +293,39 @@ Guía paso a paso para:
 
 ---
 
-## 📋 Matrix de Funcionalidades v2.0.0
+## 📋 Matrix de Funcionalidades v2.5.0
 
-| Funcionalidad | v1.12.0 | v1.33.0 | v1.1.0 | v2.0.0 |
-|---------------|---------|---------|--------|--------|
-| **CRUD Solicitudes** | ✅ | - | - | - |
-| **Auto-detección Excel** | ✅ | - | - | - |
-| **Soft Delete lote** | ✅ | - | - | - |
-| **Gestión Estados** | - | ✅ | - | - |
-| **CRUD Tipos Bolsa** | - | - | ✅ | - |
-| **Dashboard Estadísticas** | - | - | - | ✅ |
-| **Pie Charts** | - | - | - | ✅ |
-| **Barras H. Tipo Bolsa** | - | - | - | ✅ |
-| **Línea Temporal** | - | - | - | ✅ |
-| **KPIs Detallados** | - | - | - | ✅ |
+| Funcionalidad | v1.12.0 | v1.33.0 | v1.1.0 | v2.0.0 | v2.5.0 |
+|---------------|---------|---------|--------|--------|--------|
+| **CRUD Solicitudes** | ✅ | - | - | - | ✅ |
+| **Auto-detección Excel** | ✅ | - | - | - | ✅ |
+| **Soft Delete lote** | ✅ | - | - | - | ✅ |
+| **Asignar a Gestora** | - | - | - | - | ✅ ⭐ |
+| **Mi Bandeja Gestora** | - | - | - | - | ✅ ⭐ |
+| **Cambiar a Atendido** | - | - | - | - | ✅ ⭐ |
+| **Gestión Estados** | - | ✅ | - | - | ✅ |
+| **CRUD Tipos Bolsa** | - | - | ✅ | - | ✅ |
+| **Dashboard Estadísticas** | - | - | - | ✅ | ✅ |
+| **Pie Charts** | - | - | - | ✅ | ✅ |
+| **Barras H. Tipo Bolsa** | - | - | - | ✅ | ✅ |
+| **Línea Temporal** | - | - | - | ✅ | ✅ |
+| **KPIs Detallados** | - | - | - | ✅ | ✅ |
 
 ---
 
-## 📁 Estructura de Carpetas v2.1.0
+## 📁 Estructura de Carpetas v2.5.0
 
 ```
 spec/backend/09_modules_bolsas/
-├── 00_INDICE_MAESTRO_MODULO_BOLSAS.md           ⭐ ÍNDICE (v2.1.0)
+├── 00_INDICE_MAESTRO_MODULO_BOLSAS.md           ⭐ ÍNDICE (v2.5.0)
 ├── 01_GUIA_RAPIDA_SETUP.md                      🚀 GUÍA RÁPIDA (v2.0.0)
 ├── 05_modulo_tipos_bolsas_crud.md               📚 Tipos (v1.1.0)
 ├── 07_modulo_estados_gestion_citas_crud.md      📚 Estados (v1.33.0)
-├── 12_modulo_solicitudes_bolsa_v1.12.0.md       📚 Solicitudes (v2.4.0) + RBAC
+├── 12_modulo_solicitudes_bolsa_v1.12.0.md       📚 Solicitudes (v2.5.0) + Gestoras
 ├── 13_estadisticas_dashboard_v2.0.0.md          📊 Estadísticas (v2.0.0)
-├── 14_CHANGELOG_v2.1.0.md                       📝 CHANGELOG (NEW v2.1.0) ✨
-└── README.md                                     📄 Este archivo (v2.1.0)
+├── 14_CHANGELOG_v2.1.0.md                       📝 CHANGELOG (v2.1.0)
+├── 16_CHANGELOG_v2.5.0_MODULO_GESTORAS.md       📝 CHANGELOG (NEW v2.5.0) ⭐
+└── README.md                                     📄 Este archivo (v2.5.0)
 ```
 
 ---
@@ -291,19 +344,22 @@ spec/backend/09_modules_bolsas/
 
 ---
 
-## ✅ Estado Módulo v2.1.0
+## ✅ Estado Módulo v2.5.0
 
 | Componente | Versión | Status | Documentado |
 |-----------|---------|--------|-------------|
-| Solicitudes | v2.4.0 | ✅ Production + RBAC | ✅ Completo |
+| Solicitudes | v2.5.0 | ✅ Production + Gestoras | ✅ Completo ⭐ |
+| Asignación Gestora | v2.5.0 | ✅ Production | ✅ Completo ⭐ |
+| Mi Bandeja | v2.5.0 | ✅ Production | ✅ Completo ⭐ |
+| Cambio Estado | v2.5.0 | ✅ Production | ✅ Completo ⭐ |
 | Estadísticas | v2.0.0 | ✅ Production | ✅ Completo |
 | Tipos Bolsa | v1.1.0 | ✅ Production | ✅ Completo |
 | Estados Citas | v1.33.0 | ✅ Production | ✅ Completo |
-| Acceso RBAC | v2.1.0 | ✅ Production | ✅ Completo ✨ |
-| Filtros Dinámicos | v2.1.0 | ✅ Production | ✅ Completo ✨ |
-| **Documentación** | **v2.1.0** | **✅ Actualizada** | **✅ Completa** |
+| Acceso RBAC | v2.5.0 | ✅ Production | ✅ Completo ⭐ |
+| Filtros Dinámicos | v2.1.0 | ✅ Production | ✅ Completo |
+| **Documentación** | **v2.5.0** | **✅ Actualizada** | **✅ Completa ⭐** |
 
-**Todos los componentes listos para producción con RBAC.** 🚀
+**Todos los componentes listos para producción. Nuevo módulo Mi Bandeja para gestoras.** 🚀
 
 ---
 
@@ -324,6 +380,6 @@ spec/backend/09_modules_bolsas/
 
 **Desarrollador:** Ing. Styp Canto Rondón
 **Email:** stypcanto@essalud.gob.pe
-**Última actualización:** 2026-01-28
-**Versión Sistema:** v2.1.0
-**Status:** ✅ Production Ready + RBAC + Dynamic Filters
+**Última actualización:** 2026-01-29
+**Versión Sistema:** v2.5.0
+**Status:** ✅ Production Ready + Gestoras + Mi Bandeja + Estado Atendido

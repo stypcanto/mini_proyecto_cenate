@@ -99,42 +99,64 @@ public class DengueServiceImpl implements DengueService {
                 });
     }
 
+    /**
+     * Procesa una fila del Excel aplicando las 5 vinculaciones
+     * Deduplicación por: idBolsa + pacienteDni (ya existe constraint en DB)
+     */
     private void procesarFilaDengue(DengueExcelRowDTO fila, DengueImportResultDTO resultado) {
+        // 1️⃣ Normalizar DNI
         String dniNormalizado = normalizarDni(fila.getDni());
+        
+        // 2️⃣ Validar CIE-10
         validarYVincularCIE10(fila.getDxMain());
 
-        Optional<SolicitudBolsa> existente = solicitudRepository
-                .findByPacienteDniAndFechaAtencion(dniNormalizado, fila.getFechaAten());
+        // 3️⃣ Verificar duplicado por DNI (constraint: id_bolsa + paciente_id)
+        // Usando existsByIdBolsaAndPacienteIdAndIdServicioAndActivoTrue
+        boolean yaExiste = solicitudRepository.existsByIdBolsaAndPacienteIdAndIdServicioAndActivoTrue(
+                2L,  // id_bolsa = DENGUE
+                dniNormalizado,
+                1L   // id_servicio default
+        );
 
-        if (existente.isPresent()) {
-            SolicitudBolsa caso = existente.get();
-            caso.setDxMain(fila.getDxMain());
-            caso.setCenasicod(fila.getCenasicod());
-            caso.setFechaSintomas(fila.getFechaSt());
-            caso.setSemanaEpidem(fila.getSemana());
-            solicitudRepository.save(caso);
-            resultado.setActualizados(resultado.getActualizados() + 1);
-            log.debug("🔄 Caso actualizado: {}", dniNormalizado);
+        if (yaExiste) {
+            // UPDATE - Buscar y actualizar
+            var existentes = solicitudRepository.findByIdBolsaAndPacienteIdAndIdServicio(
+                    2L, dniNormalizado, 1L
+            );
+            if (!existentes.isEmpty()) {
+                SolicitudBolsa caso = existentes.get(0);
+                caso.setDxMain(fila.getDxMain());
+                caso.setCenasicod(fila.getCenasicod());
+                caso.setFechaSintomas(fila.getFechaSt());
+                caso.setSemanaEpidem(fila.getSemana());
+                solicitudRepository.save(caso);
+                resultado.setActualizados(resultado.getActualizados() + 1);
+                log.debug("🔄 Caso actualizado: {}", dniNormalizado);
+            }
         } else {
+            // INSERT - Crear nuevo
             SolicitudBolsa caso = SolicitudBolsa.builder()
                     .numeroSolicitud("DENGUE-" + System.nanoTime())
+                    // Datos Paciente
+                    .pacienteId(dniNormalizado)
                     .pacienteDni(dniNormalizado)
                     .pacienteNombre(fila.getNombre() != null ? fila.getNombre().toUpperCase() : "")
                     .pacienteSexo(fila.getSexo())
                     .pacienteTelefono(fila.getTelefFijo())
                     .pacienteTelefonoAlterno(fila.getTelefMovil())
-                    .nombreIpress(fila.getIpress() != null ? fila.getIpress().toUpperCase() : "")
-                    .redAsistencial(fila.getRed() != null ? fila.getRed().toUpperCase() : "")
+                    // IPRESS
+                    .codigoAdscripcion(fila.getIpress() != null ? fila.getIpress().toUpperCase() : "DENGUE")
+                    // Campos Dengue
                     .dxMain(fila.getDxMain())
                     .cenasicod(fila.getCenasicod())
                     .fechaSintomas(fila.getFechaSt())
                     .semanaEpidem(fila.getSemana())
-                    .idBolsa(2L)
-                    .codTipoBolsa("BOLSA_DENGUE")
-                    .descTipoBolsa("Dengue")
-                    .fechaAtencion(fila.getFechaAten())
+                    // Referencias
+                    .idBolsa(2L)  // BOLSA_DENGUE
+                    .idServicio(1L)  // Default
                     .estado("PENDIENTE")
                     .activo(true)
+                    .estadoGestionCitasId(1L)
                     .build();
 
             solicitudRepository.save(caso);
@@ -143,6 +165,9 @@ public class DengueServiceImpl implements DengueService {
         }
     }
 
+    /**
+     * Validar CIE-10: solo A97.0, A97.1, A97.2
+     */
     private void validarYVincularCIE10(String dxMain) {
         if (dxMain == null || dxMain.isEmpty()) {
             throw new RuntimeException("dx_main no puede estar vacío");
@@ -153,6 +178,9 @@ public class DengueServiceImpl implements DengueService {
         }
     }
 
+    /**
+     * Normalizar DNI a 8 dígitos
+     */
     private String normalizarDni(Object dni) {
         if (dni == null) {
             throw new RuntimeException("DNI no puede ser nulo");
