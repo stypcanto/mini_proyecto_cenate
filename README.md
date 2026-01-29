@@ -1,7 +1,7 @@
 # 🏥 CENATE - Centro Nacional de Telemedicina
 
 > **Sistema integral de coordinación de atenciones médicas remotas para EsSalud**
-> **Versión:** v1.34.1 (2026-01-26)
+> **Versión:** v1.37.4 (2026-01-28)
 > **Status:** ✅ Production Ready
 
 ---
@@ -253,6 +253,8 @@ Maven/Gradle (build)
 |---------|-----------|
 | **CLAUDE.md** | Instrucciones para Claude (este proyecto) |
 | **README.md** | Este archivo - Navegación general |
+| **docker-compose.yml** | Configuración Docker para producción |
+| **start-smtp-relay.sh** | Inicia relay SMTP para envío de correos |
 | **build.gradle** | Configuración Gradle (Backend) |
 | **package.json** | Configuración npm (Frontend) |
 | **.gitignore** | Archivos ignorados por Git |
@@ -266,7 +268,8 @@ Maven/Gradle (build)
 - [ ] Ir al README según tu rol (5 min)
 - [ ] Revisar la documentación de tu módulo (20 min)
 - [ ] Clonar el repositorio y compilar (15 min)
-- [ ] Ejecutar backend y frontend (10 min)
+- [ ] Ejecutar `./start-smtp-relay.sh` (1 min)
+- [ ] Ejecutar `docker-compose up -d` (5 min)
 
 **Total:** ~1 hora para estar operativo 🚀
 
@@ -290,6 +293,34 @@ npm start                  # Desarrollo (puerto 3000)
 npm run build              # Producción
 ```
 
+### Docker (Producción)
+```bash
+# Iniciar SMTP Relay (REQUERIDO para envío de correos)
+./start-smtp-relay.sh
+
+# Levantar servicios
+docker-compose up -d
+
+# Reconstruir después de cambios
+docker-compose up -d --build backend
+
+# Ver logs
+docker-compose logs -f backend
+```
+
+### Servidor de Correo (SMTP)
+```bash
+# IMPORTANTE: Ejecutar ANTES de docker-compose
+./start-smtp-relay.sh
+
+# Probar envío de correo
+curl "http://localhost:8080/api/health/smtp-test?email=tu@email.com"
+
+# Configuración:
+# - Relay: localhost:2525 → 172.20.0.227:25 (EsSalud)
+# - Remitente: cenate.contacto@essalud.gob.pe
+```
+
 ### Database
 ```bash
 # Conectarse a PostgreSQL
@@ -304,8 +335,8 @@ ls -lh spec/sh/02_backup/
 ## 📞 CONTACTOS Y REFERENCIAS
 
 **Desarrollado por:** Ing. Styp Canto Rondón
-**Versión Actual:** v1.34.1
-**Última Actualización:** 2026-01-26
+**Versión Actual:** v1.37.4
+**Última Actualización:** 2026-01-28
 **Email:** stypcanto@essalud.gob.pe
 
 ---
@@ -323,6 +354,8 @@ ls -lh spec/sh/02_backup/
 
 ## 📝 VERSIONADO
 
+- **v1.37.4** (2026-01-28) - SMTP Relay EsSalud + Endpoint health/smtp-test
+- **v1.37.3** (2026-01-28) - Performance Optimization 100 usuarios
 - **v1.34.1** (2026-01-26) - Excel v1.8.0, Reorganización Documentación
 - **v1.33.0** (2026-01-22) - Estados Gestión Citas
 - **v1.24.0** (2026-01-22) - Tele-ECG optimizado
@@ -340,7 +373,8 @@ ls -lh spec/sh/02_backup/
 | Backend | ✅ Production | v3.5.6 |
 | Frontend | ✅ Production | v19 |
 | Database | ✅ Production | v14+ |
-| Documentación | ✅ Completa | v1.34.1 |
+| SMTP Relay | ✅ Production | EsSalud |
+| Documentación | ✅ Completa | v1.37.4 |
 | Tests | ⏳ Próximamente | - |
 
 ---

@@ -20,8 +20,14 @@ public class EmailService {
     @Value("${app.mail.from-name:CENATE Sistema}")
     private String fromName;
 
-    @Value("${app.mail.from-address:cenateinformatica@gmail.com}")
+    @Value("${app.mail.from-address:cenate.contacto@essalud.gob.pe}")
     private String fromAddress;
+
+    @Value("${spring.mail.host:172.20.0.227}")
+    private String mailHost;
+
+    @Value("${spring.mail.port:25}")
+    private int mailPort;
 
     /**
      * Enviar correo de bienvenida cuando se aprueba una solicitud de usuario externo
@@ -412,20 +418,20 @@ public class EmailService {
 
         if (mensaje.contains("bad greeting") || mensaje.contains("[EOF]")) {
             log.warn("  ⚠️ PROBLEMA: El servidor SMTP no responde correctamente");
-            log.warn("  📍 Causa probable: Servidor SMTP no disponible, firewall bloquea puerto 25, o problemas de red");
+            log.warn("  📍 Causa probable: Relay SMTP no está corriendo");
             log.warn("  ✅ Soluciones:");
-            log.warn("     1. Verificar que el servidor 172.20.0.227:25 está disponible");
-            log.warn("     2. Verificar conectividad de red: ping 172.20.0.227");
-            log.warn("     3. Verificar firewall no bloquea puerto 25");
-            log.warn("     4. Si está en desarrollo, habilitar Gmail fallback: MAIL_USE_GMAIL_FALLBACK=true");
+            log.warn("     1. Ejecutar: ./start-smtp-relay.sh");
+            log.warn("     2. Verificar que el contenedor smtp-relay-cenate está corriendo");
         } else if (mensaje.contains("Authentication failed") || mensaje.contains("535")) {
             log.warn("  ⚠️ PROBLEMA: Autenticación SMTP fallida");
-            log.warn("  📍 Causa probable: Credenciales incorrectas o autenticación requerida");
+            log.warn("  📍 Causa probable: Credenciales incorrectas");
             log.warn("  ✅ Soluciones: Verificar MAIL_USERNAME y MAIL_PASSWORD");
         } else if (mensaje.contains("Connection refused") || mensaje.contains("connect timed out")) {
             log.warn("  ⚠️ PROBLEMA: No se puede conectar al servidor SMTP");
-            log.warn("  📍 Causa probable: Servidor SMTP no está escuchando, puerto incorrecto, o red no accesible");
-            log.warn("  ✅ Soluciones: Verificar MAIL_HOST={} y MAIL_PORT={}", fromAddress, 25);
+            log.warn("  📍 Causa probable: Relay no corriendo o servidor EsSalud no accesible");
+            log.warn("  ✅ Soluciones:");
+            log.warn("     1. Ejecutar: ./start-smtp-relay.sh");
+            log.warn("     2. Verificar VPN/red hacia 172.20.0.227:25");
         } else {
             log.warn("  ⚠️ PROBLEMA: {}", mensaje);
         }
@@ -436,7 +442,7 @@ public class EmailService {
      */
     public boolean probarConexionSMTP(String emailPrueba) {
         log.info("=== PRUEBA DE CONEXIÓN SMTP ===");
-        log.info("Servidor: verificando configuración...");
+        log.info("Servidor SMTP: {}:{}", mailHost, mailPort);
         log.info("From Address configurado: {}", fromAddress);
         log.info("From Name configurado: {}", fromName);
 

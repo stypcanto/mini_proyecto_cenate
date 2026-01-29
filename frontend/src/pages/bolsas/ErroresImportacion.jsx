@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { AlertCircle, Download, Filter, Eye, ChevronDown, Search } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import ListHeader from '../../components/ListHeader';
+import { getApiBaseUrl } from '../../utils/apiUrlHelper';
 
 /**
  * 📋 Errores de Importación - Visualización de Errores de Carga
@@ -32,7 +33,8 @@ export default function ErroresImportacion() {
   const cargarErrores = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:8080/api/bolsas/errores-importacion', {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/bolsas/errores-importacion`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth.token')}`,
           'Content-Type': 'application/json'
@@ -79,7 +81,8 @@ export default function ErroresImportacion() {
   // Descargar reporte
   const descargarReporte = async () => {
     try {
-      const response = await fetch('http://localhost:8080/api/bolsas/errores-importacion/exportar', {
+      const apiBaseUrl = getApiBaseUrl();
+      const response = await fetch(`${apiBaseUrl}/bolsas/errores-importacion/exportar`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('auth.token')}`
         }
