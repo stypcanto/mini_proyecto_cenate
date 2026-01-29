@@ -204,6 +204,22 @@ public class AuditoriaController {
     }
 
     // =============================================================
+    // 👥 Sesiones activas (usuarios conectados)
+    // =============================================================
+    @GetMapping("/sesiones-activas")
+    @PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+    @Operation(summary = "Obtener usuarios conectados", description = "Retorna los usuarios con sesiones activas")
+    public ResponseEntity<List<Map<String, Object>>> obtenerSesionesActivas() {
+        try {
+            List<Map<String, Object>> sesionesActivas = auditoriaService.obtenerSesionesActivas();
+            return ResponseEntity.ok(sesionesActivas);
+        } catch (Exception e) {
+            log.error("Error obteniendo sesiones activas", e);
+            return ResponseEntity.ok(List.of());
+        }
+    }
+
+    // =============================================================
     // 📄 Health check
     // =============================================================
     @GetMapping("/health")

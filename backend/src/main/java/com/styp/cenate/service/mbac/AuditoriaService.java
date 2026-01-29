@@ -122,10 +122,17 @@ public interface AuditoriaService {
 
     /**
      * Busca en la auditoría por texto en el detalle.
-     * 
+     *
      * @param searchText Texto a buscar
      * @param pageable Información de paginación
      * @return Página de registros que coinciden con la búsqueda
      */
     Page<AuditoriaModularResponseDTO> buscarEnDetalle(String searchText, Pageable pageable);
+
+    /**
+     * Obtiene sesiones activas (usuarios conectados).
+     *
+     * @return Lista de mapas con información de usuarios conectados
+     */
+    List<Map<String, Object>> obtenerSesionesActivas();
 }

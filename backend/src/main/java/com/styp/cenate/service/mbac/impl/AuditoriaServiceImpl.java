@@ -137,4 +137,32 @@ public class AuditoriaServiceImpl implements AuditoriaService {
                 .dispositivo(view.getDispositivo())
                 .build();
     }
+
+    @Override
+    public List<Map<String, Object>> obtenerSesionesActivas() {
+        log.info("Obteniendo sesiones activas");
+        try {
+            // Obtener últimos 5 LOGINs sin LOGOUT correspondiente (sesiones activas)
+            List<AuditoriaModularView> logins = auditoriaRepository.findAll().stream()
+                    .filter(a -> "LOGIN".equalsIgnoreCase(a.getAccion()))
+                    .sorted((a, b) -> b.getFechaHora().compareTo(a.getFechaHora()))
+                    .limit(5)
+                    .collect(Collectors.toList());
+
+            return logins.stream().map(login -> {
+                Map<String, Object> sesion = new HashMap<>();
+                sesion.put("usuarioSesion", login.getUsuario());
+                sesion.put("usuario", login.getUsuario());
+                sesion.put("nombreCompleto", login.getNombreCompleto());
+                sesion.put("rol", login.getRoles());
+                sesion.put("ultimaActividad", login.getFechaFormateada());
+                sesion.put("ip", login.getIp());
+                sesion.put("estado", "Activo");
+                return sesion;
+            }).collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error obteniendo sesiones activas", e);
+            return List.of();
+        }
+    }
 }
