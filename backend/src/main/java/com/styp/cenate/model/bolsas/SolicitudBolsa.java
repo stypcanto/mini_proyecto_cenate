@@ -102,6 +102,22 @@ public class SolicitudBolsa {
     private String tipoCita;
 
     // ============================================================================
+    // 🦟 CAMPOS ESPECÍFICOS DE DENGUE (v1.0.0 - 2026-01-29)
+    // ============================================================================
+
+    @Column(name = "cenasicod")
+    private Integer cenasicod;
+
+    @Column(name = "dx_main", length = 10)
+    private String dxMain;
+
+    @Column(name = "fecha_sintomas")
+    private java.time.LocalDate fechaSintomas;
+
+    @Column(name = "semana_epidem", length = 20)
+    private String semanaEpidem;
+
+    // ============================================================================
     // 📦 REFERENCIA A TIPO DE BOLSA
     // ============================================================================
 

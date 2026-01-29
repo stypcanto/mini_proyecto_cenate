@@ -157,9 +157,72 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * Obtiene lista de gestoras disponibles (usuarios con rol GESTOR_DE_CITAS)
+     * GET /api/bolsas/solicitudes/gestoras-disponibles
+     *
+     * IMPORTANTE: Este endpoint DEBE estar antes de /{id} para evitar routing ambiguo
+     * Retorna lista de usuarios activos con rol GESTOR_DE_CITAS para asignación
+     * Usado en modal de asignación del frontend
+     */
+    @GetMapping("/gestoras-disponibles")
+    public ResponseEntity<?> obtenerGestorasDisponibles() {
+        try {
+            log.info("👤 Obteniendo gestoras disponibles (rol GESTOR_DE_CITAS)...");
+
+            // Obtener gestoras del servicio
+            List<Map<String, Object>> gestoras = solicitudBolsaService.obtenerGestorasDisponibles();
+
+            log.info("✅ Se encontraron {} gestora(s) disponible(s)", gestoras.size());
+
+            return ResponseEntity.ok(Map.of(
+                "total", gestoras.size(),
+                "gestoras", gestoras,
+                "mensaje", gestoras.isEmpty() ?
+                    "No hay gestoras disponibles en este momento" :
+                    "Se encontraron " + gestoras.size() + " gestora(s) disponible(s)"
+            ));
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener gestoras: ", e);
+            return ResponseEntity.status(500).body(
+                Map.of("error", "Error al obtener gestoras: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Obtiene asegurados nuevos detectados (que no existen en BD)
+     * GET /api/bolsas/solicitudes/asegurados-nuevos
+     *
+     * IMPORTANTE: Este endpoint DEBE estar antes de /{id} para evitar routing ambiguo
+     * Retorna lista de DNIs en solicitudes que no tienen correspondencia en tabla asegurados
+     */
+    @GetMapping("/asegurados-nuevos")
+    public ResponseEntity<?> obtenerAseguradosNuevos() {
+        try {
+            log.info("Obteniendo asegurados nuevos detectados...");
+            List<Map<String, Object>> aseguradosNuevos = solicitudBolsaService.obtenerAseguradosNuevos();
+
+            return ResponseEntity.ok(Map.of(
+                "total", aseguradosNuevos.size(),
+                "asegurados", aseguradosNuevos,
+                "mensaje", aseguradosNuevos.isEmpty() ?
+                    "No hay asegurados nuevos pendientes de sincronización" :
+                    "Se encontraron " + aseguradosNuevos.size() + " asegurados nuevos"
+            ));
+
+        } catch (Exception e) {
+            log.error("Error al obtener asegurados nuevos: ", e);
+            return ResponseEntity.badRequest().body(
+                Map.of("error", "Error: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
      * Obtiene todas las solicitudes activas
      * GET /api/bolsas/solicitudes
-     * 
+     *
      * @return lista de solicitudes
      */
     @GetMapping
@@ -171,7 +234,8 @@ public class SolicitudBolsaController {
     /**
      * Obtiene una solicitud por ID
      * GET /api/bolsas/solicitudes/{id}
-     * 
+     *
+     * IMPORTANTE: Este endpoint DEBE estar al final para evitar capturar rutas específicas
      * @param id ID de la solicitud
      * @return solicitud encontrada o 404
      */
@@ -250,67 +314,6 @@ public class SolicitudBolsaController {
 
         } catch (Exception e) {
             log.error("Error al cambiar estado: ", e);
-            return ResponseEntity.badRequest().body(
-                Map.of("error", "Error: " + e.getMessage())
-            );
-        }
-    }
-
-    /**
-     * Obtiene lista de gestoras disponibles (usuarios con rol GESTOR_DE_CITAS)
-     * GET /api/bolsas/solicitudes/gestoras-disponibles
-     *
-     * Retorna lista de usuarios activos con rol GESTOR_DE_CITAS para asignación
-     * Usado en modal de asignación del frontend
-     */
-    @GetMapping("/gestoras-disponibles")
-    public ResponseEntity<?> obtenerGestorasDisponibles() {
-        try {
-            log.info("👤 Obteniendo gestoras disponibles (rol GESTOR_DE_CITAS)...");
-
-            // Obtener gestoras del servicio
-            List<Map<String, Object>> gestoras = solicitudBolsaService.obtenerGestorasDisponibles();
-
-            log.info("✅ Se encontraron {} gestora(s) disponible(s)", gestoras.size());
-
-            return ResponseEntity.ok(Map.of(
-                "total", gestoras.size(),
-                "gestoras", gestoras,
-                "mensaje", gestoras.isEmpty() ?
-                    "No hay gestoras disponibles en este momento" :
-                    "Se encontraron " + gestoras.size() + " gestora(s) disponible(s)"
-            ));
-
-        } catch (Exception e) {
-            log.error("❌ Error al obtener gestoras: ", e);
-            return ResponseEntity.status(500).body(
-                Map.of("error", "Error al obtener gestoras: " + e.getMessage())
-            );
-        }
-    }
-
-    /**
-     * Obtiene asegurados nuevos detectados (que no existen en BD)
-     * GET /api/bolsas/solicitudes/asegurados-nuevos
-     *
-     * Retorna lista de DNIs en solicitudes que no tienen correspondencia en tabla asegurados
-     */
-    @GetMapping("/asegurados-nuevos")
-    public ResponseEntity<?> obtenerAseguradosNuevos() {
-        try {
-            log.info("Obteniendo asegurados nuevos detectados...");
-            List<Map<String, Object>> aseguradosNuevos = solicitudBolsaService.obtenerAseguradosNuevos();
-
-            return ResponseEntity.ok(Map.of(
-                "total", aseguradosNuevos.size(),
-                "asegurados", aseguradosNuevos,
-                "mensaje", aseguradosNuevos.isEmpty() ?
-                    "No hay asegurados nuevos pendientes de sincronización" :
-                    "Se encontraron " + aseguradosNuevos.size() + " asegurados nuevos"
-            ));
-
-        } catch (Exception e) {
-            log.error("Error al obtener asegurados nuevos: ", e);
             return ResponseEntity.badRequest().body(
                 Map.of("error", "Error: " + e.getMessage())
             );
