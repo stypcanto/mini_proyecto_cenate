@@ -1348,7 +1348,8 @@ export default function Solicitudes() {
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-300 rounded-lg flex items-center justify-between">
                   <div>
                     <p className="text-sm text-blue-900 font-semibold">
-                      📌 Tienes {solicitudesFiltradas.length} solicitudes totales (aplicando filtros)
+                      📌 Tienes {totalElementos || solicitudesFiltradas.length} solicitudes totales (en la BD)
+                      {searchTerm && ` - Mostrando ${solicitudesFiltradas.length} en esta página`}
                     </p>
                     <p className="text-xs text-blue-700">
                       Actualmente seleccionadas: {selectedRows.size}
