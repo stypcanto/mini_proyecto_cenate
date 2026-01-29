@@ -33,30 +33,30 @@ export default function PerformanceMonitorCard() {
       setLoading(true);
 
       // Pool de conexiones
-      const poolResponse = await fetch('http://localhost:9090/actuator/metrics/db.connection.pool.size');
+      const poolResponse = await fetch('http://localhost:8080/actuator/metrics/db.connection.pool.size');
       const poolData = poolResponse.ok ? await poolResponse.json() : null;
 
       // Threads activos
-      const threadsResponse = await fetch('http://localhost:9090/actuator/metrics/process.threads.live');
+      const threadsResponse = await fetch('http://localhost:8080/actuator/metrics/process.threads.live');
       const threadsData = threadsResponse.ok ? await threadsResponse.json() : null;
 
       // Memoria JVM
-      const memoryResponse = await fetch('http://localhost:9090/actuator/metrics/jvm.memory.used');
+      const memoryResponse = await fetch('http://localhost:8080/actuator/metrics/jvm.memory.used');
       const memoryData = memoryResponse.ok ? await memoryResponse.json() : null;
 
-      const memoryMaxResponse = await fetch('http://localhost:9090/actuator/metrics/jvm.memory.max');
+      const memoryMaxResponse = await fetch('http://localhost:8080/actuator/metrics/jvm.memory.max');
       const memoryMaxData = memoryMaxResponse.ok ? await memoryMaxResponse.json() : null;
 
       // Uptime
-      const uptimeResponse = await fetch('http://localhost:9090/actuator/metrics/process.uptime');
+      const uptimeResponse = await fetch('http://localhost:8080/actuator/metrics/process.uptime');
       const uptimeData = uptimeResponse.ok ? await uptimeResponse.json() : null;
 
       // CPU
-      const cpuResponse = await fetch('http://localhost:9090/actuator/metrics/process.cpu.usage');
+      const cpuResponse = await fetch('http://localhost:8080/actuator/metrics/process.cpu.usage');
       const cpuData = cpuResponse.ok ? await cpuResponse.json() : null;
 
       // Health check
-      const healthResponse = await fetch('http://localhost:9090/actuator/health');
+      const healthResponse = await fetch('http://localhost:8080/actuator/health');
       const healthData = healthResponse.ok ? await healthResponse.json() : null;
 
       setMetrics({
