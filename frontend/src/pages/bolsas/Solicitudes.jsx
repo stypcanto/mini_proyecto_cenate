@@ -134,15 +134,16 @@ export default function Solicitudes() {
   }, [catalogosCargados]);
 
   // ============================================================================
-  // 📦 EFFECT 2.5: Cargar ESTADÍSTICAS GLOBALES (v2.5.2 - Global stats)
+  // 📦 EFFECT 2.5: Cargar ESTADÍSTICAS POR ESTADO (v2.5.2 - Global stats)
   // ============================================================================
   useEffect(() => {
     if (catalogosCargados) {
-      console.log('📊 Cargando estadísticas globales del backend...');
+      console.log('📊 Cargando estadísticas por estado del backend...');
       (async () => {
         try {
-          const estadisticas = await bolsasService.obtenerEstadisticas();
-          console.log('✅ Estadísticas globales cargadas:', estadisticas);
+          // Usar por-estado para obtener desglose correcto de cada estado
+          const estadisticas = await bolsasService.obtenerEstadisticasPorEstado();
+          console.log('✅ Estadísticas por estado cargadas:', estadisticas);
           setEstadisticasGlobales(estadisticas);
         } catch (error) {
           console.error('❌ Error cargando estadísticas:', error);
@@ -631,23 +632,37 @@ export default function Solicitudes() {
   };
 
   // Calcular estadísticas (v2.5.2 - Use global stats from backend)
-  const estadisticas = estadisticasGlobales ? {
-    total: estadisticasGlobales.totalSolicitudes || 0,
-    pendientes: estadisticasGlobales.totalPendientes || 0,
-    citados: (estadisticasGlobales.totalSolicitudes || 0) -
-             (estadisticasGlobales.totalAtendidas || 0) -
-             (estadisticasGlobales.totalCanceladas || 0) -
-             (estadisticasGlobales.totalPendientes || 0) || 0,
-    atendidos: estadisticasGlobales.totalAtendidas || 0,
-    observados: estadisticasGlobales.totalCanceladas || 0,
-  } : {
-    // Fallback: usar estadísticas locales de la página actual si no se cargaron globales
-    total: solicitudes.length,
-    pendientes: solicitudes.filter(s => s.estado === 'pendiente').length,
-    citados: solicitudes.filter(s => s.estado === 'citado').length,
-    atendidos: solicitudes.filter(s => s.estado === 'atendido').length,
-    observados: solicitudes.filter(s => s.estado === 'observado').length,
-  };
+  const estadisticas = (() => {
+    if (estadisticasGlobales && Array.isArray(estadisticasGlobales)) {
+      // estadisticasGlobales es un array de EstadisticasPorEstadoDTO
+      const statsMap = {};
+      let total = 0;
+
+      estadisticasGlobales.forEach(stat => {
+        const estado = stat.estado?.toUpperCase();
+        const cantidad = stat.cantidad || 0;
+        statsMap[estado] = cantidad;
+        total += cantidad;
+      });
+
+      return {
+        total: total,
+        pendientes: statsMap['PENDIENTE'] || 0,           // PENDIENTE_CITA → estado 'pendiente'
+        citados: statsMap['CITADO'] || 0,                 // CITADO → estado 'citado'
+        atendidos: statsMap['ASISTIO'] || statsMap['ATENDIDO'] || 0,  // ATENDIDO o ASISTIO
+        observados: (statsMap['CANCELADO'] || 0) + (statsMap['OBSERVADO'] || 0),  // CANCELADO + OBSERVADO
+      };
+    } else {
+      // Fallback: usar estadísticas locales de la página actual si no se cargaron globales
+      return {
+        total: solicitudes.length,
+        pendientes: solicitudes.filter(s => s.estado === 'pendiente').length,
+        citados: solicitudes.filter(s => s.estado === 'citado').length,
+        atendidos: solicitudes.filter(s => s.estado === 'atendido').length,
+        observados: solicitudes.filter(s => s.estado === 'observado').length,
+      };
+    }
+  })();
 
   // Aplicar filtros
   const solicitudesFiltradas = solicitudes.filter(sol => {
