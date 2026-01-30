@@ -1,6 +1,6 @@
 # Módulo de Correo SMTP - CENATE
 
-> **Versión:** 1.0.0 (2026-01-30)
+> **Versión:** 1.1.0 (2026-01-30)
 > **Estado:** Producción
 
 ---
@@ -70,24 +70,167 @@ smtp-relay:
 
 ---
 
-## Tipos de Correos
+## Casos de Uso - ¿Cuándo se Envían Correos?
 
-### 1. Correo de Bienvenida (Nuevo Usuario)
+### Resumen de Triggers
 
-- **Trigger:** Creación de usuario via `/api/usuarios/crear`
-- **Contenido:** Enlace para configurar contraseña
-- **Token:** Válido por 24 horas
+| # | Caso de Uso | Endpoint | Archivo | Línea |
+|---|-------------|----------|---------|-------|
+| 1 | **Bienvenida (Usuario Nuevo)** | `POST /api/usuarios/crear` | `UsuarioServiceImpl.java` | 405 |
+| 2 | **Recuperación de Contraseña** | `POST /api/sesion/recuperar` | `SesionController.java` | 232 |
+| 3 | **Reset de Contraseña (Admin)** | `POST /api/usuarios/{id}/reset-password` | `UsuarioController.java` | 330-334 |
+| 4 | **Aprobación Solicitud Cuenta** | `PUT /api/account-requests/{id}/approve` | `AccountRequestService.java` | 245 |
+| 5 | **Rechazo Solicitud Cuenta** | `PUT /api/account-requests/{id}/reject` | `AccountRequestService.java` | 434 |
+| 6 | **Reenvío Token Activación** | `POST /api/account-requests/{id}/resend-email` | `AccountRequestService.java` | 791 |
+| 7 | **Prueba SMTP** | `GET /api/health/smtp-test` | `HealthController.java` | 46 |
 
-### 2. Correo de Recuperación de Contraseña
+---
 
-- **Trigger:** Solicitud via `/api/sesion/recuperar`
-- **Contenido:** Enlace para restablecer contraseña
-- **Token:** Válido por 24 horas
+### Detalle por Flujo
 
-### 3. Correo de Prueba
+#### 1. Creación de Usuario Nuevo (Admin crea usuario)
+```
+POST /api/usuarios/crear
+    └── UsuarioServiceImpl.createUser()
+        └── passwordTokenService.crearTokenYEnviarEmail(usuario, "BIENVENIDO")
+            └── emailService.enviarCorreoCambioContrasena()
+```
+**Correo enviado:** Enlace para configurar contraseña inicial
+**Token válido:** 24 horas
 
-- **Endpoint:** `GET /api/health/smtp-test?email={correo}`
-- **Uso:** Diagnóstico de conectividad SMTP
+#### 2. Recuperación de Contraseña (Usuario olvidó contraseña)
+```
+POST /api/sesion/recuperar
+    └── SesionController.iniciarRecuperacion()
+        └── passwordTokenService.crearTokenYEnviarEmail(idUsuario, correo, "RECUPERACION")
+            └── emailService.enviarCorreoCambioContrasena()
+```
+**Correo enviado:** Enlace para restablecer contraseña olvidada
+**Token válido:** 24 horas
+
+#### 3. Reset de Contraseña por Admin
+```
+POST /api/usuarios/{id}/reset-password
+    └── UsuarioController.resetPassword()
+        └── passwordTokenService.crearTokenYEnviarEmail(id, "RESET")
+            └── emailService.enviarCorreoCambioContrasena()
+```
+**Correo enviado:** Enlace para que usuario configure nueva contraseña
+**Token válido:** 24 horas
+
+#### 4. Aprobación de Solicitud de Cuenta Externa
+```
+PUT /api/account-requests/{id}/approve
+    └── AccountRequestService.approveRequest()
+        └── passwordTokenService.crearTokenYEnviarEmailDirecto()
+            └── emailService.enviarCorreoCambioContrasena()
+```
+**Correo enviado:** Notificación de aprobación + enlace para activar cuenta
+**Token válido:** 24 horas
+
+#### 5. Rechazo de Solicitud de Cuenta
+```
+PUT /api/account-requests/{id}/reject
+    └── AccountRequestService.rejectRequest()
+        └── emailService.enviarCorreoRechazoSolicitud()
+```
+**Correo enviado:** Notificación de rechazo con motivo
+**Sin token**
+
+#### 6. Reenvío de Email de Activación
+```
+POST /api/account-requests/{id}/resend-email
+    └── AccountRequestService.resendActivationEmail()
+        └── passwordTokenService.crearTokenYEnviarEmailDirecto()
+            └── emailService.enviarCorreoCambioContrasena()
+```
+**Correo enviado:** Nuevo enlace de activación (invalida el anterior)
+**Token válido:** 24 horas
+
+#### 7. Prueba de Conexión SMTP
+```
+GET /api/health/smtp-test?email={correo}
+    └── HealthController.probarSMTP()
+        └── emailService.probarConexionSMTP()
+```
+**Correo enviado:** Mensaje de prueba de conectividad
+**Uso:** Diagnóstico del sistema
+
+---
+
+### Diagrama de Flujo Completo
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                    TRIGGERS DE CORREO                           │
+├─────────────────────────────────────────────────────────────────┤
+│                                                                 │
+│  [Usuario]                         [Admin]                      │
+│     │                                 │                         │
+│     ├─ Olvidó contraseña             ├─ Crear usuario           │
+│     │  POST /sesion/recuperar        │  POST /usuarios/crear    │
+│     │                                │                          │
+│     └─ Solicita cuenta externa       ├─ Reset contraseña        │
+│        POST /account-requests        │  POST /usuarios/{id}/    │
+│                                      │       reset-password     │
+│                                      │                          │
+│                                      ├─ Aprobar solicitud       │
+│                                      │  PUT /account-requests/  │
+│                                      │       {id}/approve       │
+│                                      │                          │
+│                                      └─ Rechazar solicitud      │
+│                                         PUT /account-requests/  │
+│                                              {id}/reject        │
+│                                                                 │
+│                          ▼                                      │
+│  ┌─────────────────────────────────────────┐                    │
+│  │         PasswordTokenService            │                    │
+│  │    crearTokenYEnviarEmail()             │                    │
+│  │    - Genera token único (UUID)          │                    │
+│  │    - Guarda en BD (24h expiración)      │                    │
+│  │    - Invalida tokens anteriores         │                    │
+│  └──────────────────┬──────────────────────┘                    │
+│                     │                                           │
+│                     ▼                                           │
+│  ┌─────────────────────────────────────────┐                    │
+│  │            EmailService                 │                    │
+│  │   - enviarCorreoCambioContrasena()      │                    │
+│  │   - enviarCorreoRechazoSolicitud()      │                    │
+│  │   - enviarCorreoAprobacionSolicitud()   │                    │
+│  │   (Envío asíncrono con @Async)          │                    │
+│  └──────────────────┬──────────────────────┘                    │
+│                     │                                           │
+│                     ▼                                           │
+│  ┌─────────────────────────────────────────┐                    │
+│  │         SMTP Relay (Postfix)            │                    │
+│  │         host.docker.internal:2525       │                    │
+│  └──────────────────┬──────────────────────┘                    │
+│                     │                                           │
+│                     ▼                                           │
+│  ┌─────────────────────────────────────────┐                    │
+│  │         SMTP EsSalud                    │                    │
+│  │         172.20.0.227:25                 │                    │
+│  │         (Cumple política DMARC)         │                    │
+│  └──────────────────┬──────────────────────┘                    │
+│                     │                                           │
+│                     ▼                                           │
+│              [Gmail/Outlook/EsSalud]                            │
+│                                                                 │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Métodos de EmailService
+
+| Método | Propósito | Usado en |
+|--------|-----------|----------|
+| `enviarCorreoCambioContrasena()` | Token para configurar/cambiar contraseña | PasswordTokenService |
+| `enviarCorreoAprobacionSolicitud()` | Solicitud de cuenta aprobada | AccountRequestService |
+| `enviarCorreoRechazoSolicitud()` | Solicitud de cuenta rechazada | AccountRequestService |
+| `enviarCorreoBienvenidaUsuario()` | Bienvenida (disponible, no usado) | - |
+| `enviarCorreoResetPassword()` | **DEPRECADO** - usar `enviarCorreoCambioContrasena` | - |
+| `probarConexionSMTP()` | Diagnóstico de conectividad | HealthController |
 
 ---
 
@@ -250,6 +393,7 @@ docker exec smtp-relay-cenate postsuper -d ALL
 
 | Fecha | Versión | Cambio |
 |-------|---------|--------|
+| 2026-01-30 | 1.1.0 | Agregar análisis completo de casos de uso y triggers |
 | 2026-01-30 | 1.0.0 | Configuración inicial con relay SMTP |
 
 ---
