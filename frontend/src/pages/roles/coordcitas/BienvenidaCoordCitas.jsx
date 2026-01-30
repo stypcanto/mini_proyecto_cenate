@@ -45,7 +45,7 @@ export default function BienvenidaCoordCitas() {
           <div className="grid md:grid-cols-5 gap-6 p-8 text-white items-center">
             {/* Contenido */}
             <div className="md:col-span-4 space-y-3">
-              <h2 className="text-3xl font-bold">
+              <h2 className="text-2xl font-bold">
                 Módulo de Coordinación de Gestión de Citas
               </h2>
               <p className="text-blue-100 text-sm leading-relaxed">
