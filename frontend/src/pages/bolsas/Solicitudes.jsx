@@ -926,8 +926,9 @@ export default function Solicitudes() {
       const matchIpress = filterKey === 'ipress' ? sol.ipress === filterValue : (filtroIpress === 'todas' ? true : sol.ipress === filtroIpress);
       const matchEspecialidad = filterKey === 'especialidad' ? sol.especialidad === filterValue : (filtroEspecialidad === 'todas' ? true : sol.especialidad === filtroEspecialidad);
       const matchTipoCita = filterKey === 'cita' ? (sol.tipoCita?.toUpperCase?.() || '') === filterValue : (filtroTipoCita === 'todas' ? true : (sol.tipoCita?.toUpperCase?.() || '') === filtroTipoCita);
+      const matchEstado = filterKey === 'estado' ? sol.estadoCodigo === filterValue : (filtroEstado === 'todos' ? true : sol.estadoCodigo === filtroEstado);
 
-      return matchSearch && matchBolsa && matchMacrorregion && matchRed && matchIpress && matchEspecialidad && matchTipoCita;
+      return matchSearch && matchBolsa && matchMacrorregion && matchRed && matchIpress && matchEspecialidad && matchTipoCita && matchEstado;
     }).length;
   };
 
@@ -946,6 +947,9 @@ export default function Solicitudes() {
         .filter(tipo => TIPOS_CITA_VALIDOS.includes(tipo))
     )
   ].sort();
+
+  // Estados únicos del filtro dinámico (usar código original para filtrado)
+  const estadosUnicos = [...new Set(solicitudes.map(s => s.estadoCodigo))].filter(e => e && e !== 'N/A').sort();
 
   // Manejar selección de filas
   const toggleRowSelection = (id) => {
@@ -1405,13 +1409,13 @@ export default function Solicitudes() {
                 onChange: (e) => setFiltroBolsa(e.target.value),
                 options: [
                   { label: `Todas las bolsas (${totalElementos})`, value: "todas" },
-                  ...tiposBolsasActivos
-                    .slice()
-                    .sort((a, b) => (a.descTipoBolsa || '').localeCompare(b.descTipoBolsa || ''))
+                  ...estadisticasTipoBolsa
+                    .filter(bolsa => bolsa.total > 0)
+                    .sort((a, b) => (a.tipoBolsa || '').localeCompare(b.tipoBolsa || ''))
                     .map(bolsa => {
-                      const nombreBolsa = generarAliasBolsa(bolsa.descTipoBolsa);
+                      const nombreBolsa = generarAliasBolsa(bolsa.tipoBolsa);
                       return {
-                        label: nombreBolsa,
+                        label: `${nombreBolsa} (${bolsa.total})`,
                         value: nombreBolsa
                       };
                     })
@@ -1493,15 +1497,22 @@ export default function Solicitudes() {
                 onChange: (e) => setFiltroEstado(e.target.value),
                 options: [
                   { label: `Todos los estados (${totalElementos})`, value: "todos" },
-                  ...(estadisticasGlobales ? Object.entries(estadisticasGlobales).map(([key, valor]) => {
-                    if (typeof valor === 'number') {
-                      return {
-                        label: `${key.charAt(0).toUpperCase() + key.slice(1)} (${valor})`,
-                        value: key
+                  ...estadosUnicos
+                    .filter(estadoCodigo => countWithFilters('estado', estadoCodigo) > 0)
+                    .map(estadoCodigo => {
+                      // Mapear código API a display name
+                      const mappingDisplay = {
+                        'PENDIENTE_CITA': 'Pendiente Citar',
+                        'CITADO': 'Citado',
+                        'ATENDIDA': 'Asistió',
+                        'NO_CONTESTA': 'Observado',
+                        'CANCELADO': 'Observado'
                       };
-                    }
-                    return null;
-                  }).filter(Boolean) : [])
+                      return {
+                        label: `${mappingDisplay[estadoCodigo] || estadoCodigo} (${countWithFilters('estado', estadoCodigo)})`,
+                        value: estadoCodigo
+                      };
+                    })
                 ]
               }
             ]}

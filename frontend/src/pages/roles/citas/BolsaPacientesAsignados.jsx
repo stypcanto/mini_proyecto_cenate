@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Package, Search, Filter, Plus, MoreVertical, AlertCircle, ChevronDown } from 'lucide-react';
+import { Users, Headphones, Search, Filter, Plus, MoreVertical, AlertCircle, ChevronDown, UserCheck } from 'lucide-react';
 import { useAuth } from '../../../context/AuthContext';
 import { getToken } from '../../../constants/auth';
 import toast from 'react-hot-toast';
@@ -140,7 +140,7 @@ export default function BolsaPacientesAsignados() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
-            <Package className="w-8 h-8 text-blue-600" />
+            <Headphones className="w-8 h-8 text-blue-600" />
             Bolsa de Pacientes Asignados
           </h1>
           <p className="text-gray-600 mt-1">Gestiona la asignación de pacientes a gestores de citas</p>
@@ -223,7 +223,7 @@ export default function BolsaPacientesAsignados() {
           </div>
         ) : solicitudesFiltradas.length === 0 ? (
           <div className="p-12 text-center">
-            <Package className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+            <Headphones className="w-12 h-12 text-gray-300 mx-auto mb-3" />
             <p className="text-gray-600">No hay solicitudes para mostrar</p>
           </div>
         ) : (
