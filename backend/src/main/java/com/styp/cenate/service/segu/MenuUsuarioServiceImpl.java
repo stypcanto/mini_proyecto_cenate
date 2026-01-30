@@ -411,9 +411,12 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 
 		// 2. Obtener IDs de los roles del usuario
 		List<Integer> roleIds = usuario.getRoles().stream()
-				.map(rol -> rol.getIdRol())
+				.map(rol -> {
+					log.info("🔍 Rol encontrado: ID={}, Nombre={}", rol.getIdRol(), rol.getDescRol());
+					return rol.getIdRol();
+				})
 				.collect(Collectors.toList());
-		log.info("📋 Roles del usuario {}: {}", idUser, roleIds);
+		log.info("📋 Roles del usuario {}: {} (Total: {})", idUser, roleIds, roleIds.size());
 
 		// 3. Obtener permisos de rol desde segu_permisos_rol_pagina
 		List<SeguPermisosRolPagina> permisosRol = permisoRolPaginaRepository.findByIdRolInAndActivoTrue(roleIds);
