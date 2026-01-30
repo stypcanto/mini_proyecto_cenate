@@ -177,6 +177,34 @@ export default function BienvenidaExterno() {
           </button>
         </div>
 
+        {/* Dashboard de Diferimiento de Lecturas Pendientes */}
+        <div className="pt-8">
+          <div className="space-y-4">
+            <h3 className="text-2xl font-bold text-slate-900">
+              📊 Seguimiento de Lecturas Pendientes
+            </h3>
+            <p className="text-slate-600">
+              Panel de control en tiempo real para monitorear las lecturas pendientes de procesamiento en tu IPRESS.
+            </p>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden mt-6 border border-slate-200">
+            <iframe
+              title="Dashboard de Diferimiento de Lecturas Pendientes"
+              width="100%"
+              height="600"
+              src="https://app.powerbi.com/view?r=eyJrIjoiMDZhMDI0ODEtMDJiMi00ZDE1LWJjMmMtOTExM2FjMzEwYjNjIiwidCI6IjM0ZjMyNDE5LTFjMDUtNDc1Ni04OTZlLTQ1ZDYzMzcyNjU5YiIsImMiOjR9"
+              frameBorder="0"
+              allowFullScreen={true}
+              style={{ borderRadius: "16px" }}
+            ></iframe>
+          </div>
+
+          <p className="text-sm text-slate-500 mt-4 text-center">
+            Este dashboard se actualiza automáticamente. Para reportar problemas de datos, contacta al equipo técnico de CENATE.
+          </p>
+        </div>
+
         {/* Footer */}
         <div className="text-center text-sm text-slate-500 pt-8 border-t border-slate-200">
           <p>
