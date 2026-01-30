@@ -108,7 +108,7 @@ export default function BienvenidaExterno() {
             <QuickActionCard
               icon={<Calendar className="w-6 h-6" />}
               title="Solicitud de Turnos"
-              description="Solicita consultas de telemedicina para tus pacientes. Recibe confirmación y seguimiento."
+              description="Solicita las especialidades médicas que requieres de CENATE para que programe médicos a atender a tus pacientes por telemedicina."
               color="emerald"
               action={() => navigate("/roles/externo/solicitud-turnos")}
             />
