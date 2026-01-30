@@ -13,6 +13,7 @@ import {
   BarChart3,
   ArrowRight,
   CheckCircle2,
+  Headphones,
 } from "lucide-react";
 
 export default function BienvenidaCitas() {
@@ -55,34 +56,9 @@ export default function BienvenidaCitas() {
               </div>
             </div>
 
-            {/* Ícono minimalista */}
+            {/* Ícono minimalista - Teleoperadora */}
             <div className="flex justify-center items-center md:col-span-1">
-              <svg
-                className="w-24 h-24"
-                viewBox="0 0 100 100"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                {/* Calendario */}
-                <rect x="20" y="25" width="60" height="55" rx="3" fill="white" opacity="0.95"/>
-                <line x1="20" y1="35" x2="80" y2="35" stroke="white" strokeWidth="2" opacity="0.9"/>
-
-                {/* Días del calendario */}
-                <circle cx="32" cy="48" r="2.5" fill="white" opacity="0.8"/>
-                <circle cx="50" cy="48" r="2.5" fill="white" opacity="0.8"/>
-                <circle cx="68" cy="48" r="2.5" fill="white" opacity="0.8"/>
-
-                <circle cx="32" cy="60" r="2.5" fill="white" opacity="0.8"/>
-                <circle cx="50" cy="60" r="2.5" fill="white" opacity="0.9" strokeWidth="1.5" stroke="#1e40af"/>
-                <circle cx="68" cy="60" r="2.5" fill="white" opacity="0.8"/>
-
-                <circle cx="32" cy="72" r="2.5" fill="white" opacity="0.8"/>
-                <circle cx="50" cy="72" r="2.5" fill="white" opacity="0.8"/>
-
-                {/* Manecillas de reloj */}
-                <line x1="50" y1="60" x2="50" y2="50" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" opacity="0.9"/>
-                <line x1="50" y1="60" x2="58" y2="60" stroke="#60a5fa" strokeWidth="2" strokeLinecap="round" opacity="0.9"/>
-              </svg>
+              <Headphones className="w-24 h-24 text-white opacity-90" strokeWidth={1.5} />
             </div>
           </div>
         </div>
