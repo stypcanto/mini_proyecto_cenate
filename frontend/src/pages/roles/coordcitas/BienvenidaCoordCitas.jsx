@@ -46,7 +46,7 @@ export default function BienvenidaCoordCitas() {
             {/* Contenido */}
             <div className="md:col-span-4 space-y-3">
               <h2 className="text-3xl font-bold">
-                Módulo Bolsas de Pacientes
+                Módulo de Coordinación de Gestión de Citas
               </h2>
               <p className="text-blue-100 text-sm leading-relaxed">
                 Como Coordinador de Gestión de Citas, gestiona bolsas de pacientes,
