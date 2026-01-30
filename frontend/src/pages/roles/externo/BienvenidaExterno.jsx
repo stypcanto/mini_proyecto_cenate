@@ -191,20 +191,16 @@ function QuickActionCard({ icon, title, description, color, badge, action }) {
     purple: "bg-purple-100 text-purple-600",
   };
 
-  const badgeColorClasses = {
-    indigo: "bg-indigo-100 text-indigo-700",
-    emerald: "bg-emerald-100 text-emerald-700",
-    purple: "bg-purple-100 text-purple-700",
-  };
-
   return (
     <button
       onClick={action}
       className={`${colorClasses[color]} border rounded-xl p-5 transition-all cursor-pointer group text-left w-full relative`}
     >
       {badge && (
-        <div className={`${badgeColorClasses[color]} absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold`}>
-          {badge}
+        <div className="absolute top-3 right-3 animate-pulse">
+          <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg shadow-red-500/50">
+            {badge}
+          </div>
         </div>
       )}
       <div className={`${iconColorClasses[color]} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
