@@ -180,10 +180,13 @@ export default function GestionAsegurado() {
       }
 
       const data = await response.json();
+      console.log("📦 Response structure:", data);
+
       // The endpoint returns { total, solicitudes, mensaje }
-      const solicitudes = data?.solicitudes || data?.data?.content || [];
+      const solicitudes = data?.solicitudes || data?.data?.content || data?.content || [];
 
       console.log(`✅ Found ${solicitudes.length} assigned patient(s)`);
+      console.log("📋 Sample solicitud:", solicitudes[0]);
 
       // Transform SolicitudBolsaDTO to match citas table structure
       const transformedCitas = solicitudes.map((solicitud) => ({
@@ -369,10 +372,27 @@ export default function GestionAsegurado() {
                     <h3 className="text-lg font-semibold text-slate-900">
                       Médicos y Disponibilidad
                     </h3>
-                    <button className="bg-slate-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center gap-2">
-                      <UserPlus className="w-4 h-4" />
-                      Citar Paciente
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => {
+                          window.location.href = "/bolsas/solicitudes";
+                        }}
+                        className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center gap-2"
+                      >
+                        <UserPlus className="w-4 h-4" />
+                        Asignar Pacientes
+                      </button>
+                      <button
+                        onClick={() => {
+                          console.log("🔄 Recargando pacientes asignados...");
+                          fetchCitasRealizadas();
+                        }}
+                        className="bg-green-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-green-700 transition-colors flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-4 h-4" />
+                        Actualizar
+                      </button>
+                    </div>
                   </div>
 
                   {/* Tabla de Médicos */}
