@@ -3,6 +3,7 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.41.0**: Módulo Gestión de Citas - Estado Dropdown + Actualizar Teléfono (2026-01-30)
 > - ⭐ **NUEVO - v1.39.4**: Reestructuración PowerBI - Dashboard en página separada para EXTERNO (2026-01-30)
 > - ⭐ **NUEVO - v1.39.3**: Fix timeouts SMTP - Aumentar de 15s a 30s para servidor EsSalud (2026-01-30)
 > - ⭐ **NUEVO - v1.39.2**: Fix eliminación usuarios - Nombres de tablas de tokens incorrectos (2026-01-30)
