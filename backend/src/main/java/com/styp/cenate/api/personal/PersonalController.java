@@ -164,7 +164,7 @@ public class PersonalController {
     // 📋 LISTAR TODO EL PERSONAL (CNT + EXTERNO)
     // ============================================================
     @GetMapping
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORDINADOR_CITAS', 'GESTOR_CITAS')")
     public ResponseEntity<List<PersonalTotalView>> getAllPersonal() {
         log.info("📋 Consultando todo el personal (CNT + Externo)");
         return ResponseEntity.ok(personalTotalService.listarTodo());
@@ -220,7 +220,7 @@ public class PersonalController {
     // 📋 LISTAR SOLO PERSONAL CNT
     // ============================================================
     @GetMapping("/cnt")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORDINADOR_CITAS', 'GESTOR_CITAS')")
     public ResponseEntity<List<PersonalResponse>> getAllPersonalCnt() {
         log.info("📋 Consultando personal CNT");
         return ResponseEntity.ok(personalCntService.getAllPersonalCnt());
@@ -240,7 +240,7 @@ public class PersonalController {
     // 🔍 BUSCAR PERSONAL POR NÚMERO DE DOCUMENTO
     // ============================================================
     @GetMapping("/buscar/{numeroDocumento}")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORDINADOR_CITAS', 'GESTOR_CITAS')")
     public ResponseEntity<?> buscarPorDocumento(@PathVariable String numeroDocumento) {
         log.info("🔍 Buscando personal por documento: {}", numeroDocumento);
         

@@ -174,7 +174,9 @@ export default function GestionAsegurado() {
       );
 
       if (!response.ok) {
-        console.warn("Could not fetch assigned patients from mi-bandeja");
+        console.warn(`❌ Error fetching mi-bandeja: Status ${response.status}`);
+        const errorData = await response.json().catch(() => null);
+        console.error("Error details:", errorData);
         setCitasRealizadas([]);
         return;
       }

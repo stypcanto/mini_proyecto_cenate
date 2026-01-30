@@ -249,11 +249,10 @@ public class SolicitudBolsaController {
      * GET /api/bolsas/solicitudes/mi-bandeja
      *
      * IMPORTANTE: Este endpoint DEBE estar antes de /{id} para evitar routing ambiguo
-     * Solo gestoras (rol GESTOR_DE_CITAS) pueden acceder
      * Retorna lista de solicitudes donde responsable_gestora_id = current user
+     * v1.40.4: Removida restricción de rol para permitir acceso desde módulo Gestión de Citas
      */
     @GetMapping("/mi-bandeja")
-    @PreAuthorize("hasAnyRole('GESTOR_DE_CITAS')")
     public ResponseEntity<?> obtenerMiBandeja() {
         try {
             log.info("📬 Obteniendo solicitudes de la gestora actual (Mi Bandeja)...");
