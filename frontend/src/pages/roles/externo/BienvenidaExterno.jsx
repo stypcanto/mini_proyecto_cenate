@@ -110,6 +110,7 @@ export default function BienvenidaExterno() {
               title="Solicitud de Turnos"
               description="Solicita las especialidades médicas que requieres de CENATE para que programe médicos a atender a tus pacientes por telemedicina."
               color="emerald"
+              badge="Disponible a partir de marzo"
               action={() => navigate("/roles/externo/solicitud-turnos")}
             />
 
@@ -177,7 +178,7 @@ export default function BienvenidaExterno() {
 // ============================================================
 // 🔧 Componente: Tarjeta de Acción Rápida
 // ============================================================
-function QuickActionCard({ icon, title, description, color, action }) {
+function QuickActionCard({ icon, title, description, color, badge, action }) {
   const colorClasses = {
     indigo: "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300",
     emerald: "bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300",
@@ -190,11 +191,22 @@ function QuickActionCard({ icon, title, description, color, action }) {
     purple: "bg-purple-100 text-purple-600",
   };
 
+  const badgeColorClasses = {
+    indigo: "bg-indigo-100 text-indigo-700",
+    emerald: "bg-emerald-100 text-emerald-700",
+    purple: "bg-purple-100 text-purple-700",
+  };
+
   return (
     <button
       onClick={action}
-      className={`${colorClasses[color]} border rounded-xl p-5 transition-all cursor-pointer group text-left w-full`}
+      className={`${colorClasses[color]} border rounded-xl p-5 transition-all cursor-pointer group text-left w-full relative`}
     >
+      {badge && (
+        <div className={`${badgeColorClasses[color]} absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold`}>
+          {badge}
+        </div>
+      )}
       <div className={`${iconColorClasses[color]} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
