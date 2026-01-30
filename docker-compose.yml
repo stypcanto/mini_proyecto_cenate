@@ -25,13 +25,13 @@ services:
       JWT_SECRET: ${JWT_SECRET:-404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
       JWT_EXPIRATION: ${JWT_EXPIRATION:-86400000}
 
-      # 📧 Email SMTP (EsSalud Corporativo)
+      # 📧 Email SMTP (via host a servidor EsSalud)
       MAIL_HOST: ${MAIL_HOST:-host.docker.internal}
       MAIL_PORT: ${MAIL_PORT:-2525}
       MAIL_USERNAME: ${MAIL_USERNAME:-cenate.contacto@essalud.gob.pe}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-essaludc50}
       MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH:-false}
-      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-true}
+      MAIL_SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS:-false}
       MAIL_SMTP_SSL: ${MAIL_SMTP_SSL:-false}
 
       # 🔗 Frontend URL (para enlaces en emails de recuperación de contraseña)
@@ -47,6 +47,8 @@ services:
     extra_hosts:
       # Permite al contenedor acceder a la red del host (macOS Docker Desktop)
       - "host.docker.internal:host-gateway"
+    depends_on:
+      - smtp-relay
     networks:
       - cenate-net
     restart: unless-stopped
@@ -55,6 +57,26 @@ services:
         limits:
           memory: 2.5G
 
+
+  # ------------------------------------------------------------
+  # 📧 SMTP RELAY - Postfix (reenvía al servidor EsSalud)
+  # ------------------------------------------------------------
+  smtp-relay:
+    container_name: smtp-relay-cenate
+    image: boky/postfix
+    ports:
+      - "2525:25"
+    environment:
+      - RELAYHOST=172.20.0.227:25
+      - ALLOWED_SENDER_DOMAINS=essalud.gob.pe
+      - POSTFIX_myhostname=cenate.essalud.gob.pe
+      - TZ=America/Lima
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "postfix", "status"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   # ------------------------------------------------------------
   # 💻 FRONTEND - REACT + NGINX
