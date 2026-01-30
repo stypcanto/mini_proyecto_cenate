@@ -99,7 +99,7 @@ export default function BienvenidaCitas() {
               title="Mi Bandeja"
               description="Revisa solicitudes de pacientes (Bolsa 107, Dengue, IVR, CENACRON), asigna citas, coordina teleconsultas y gestiona reagendamientos"
               color="blue"
-              action={() => navigate("/citas/gestion-pacientes")}
+              action={() => navigate("/citas/gestion-asegurado")}
             />
 
             {/* Card 2: Reportes y Seguimiento */}
@@ -116,7 +116,7 @@ export default function BienvenidaCitas() {
         {/* Botón de acción principal */}
         <div className="flex justify-center pt-4">
           <button
-            onClick={() => navigate("/citas/gestion-pacientes")}
+            onClick={() => navigate("/citas/gestion-asegurado")}
             className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all transform hover:scale-105"
           >
             <span>Comenzar a Gestionar</span>
