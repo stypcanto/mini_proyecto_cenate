@@ -47,8 +47,7 @@ export default function BienvenidaPersonal107() {
                 Módulo 107 - Gestión de Pacientes
               </h2>
               <p className="text-blue-100 text-sm leading-relaxed">
-                Como Personal del Módulo 107, gestiona pacientes asignados, registra atenciones clínicas,
-                realiza seguimientos y coordina el cuidado integral de los pacientes bajo esta especialidad.
+                Desde este módulo podrás consultar los pacientes que fueron enviados a CENATE y conocer el estado de su atención.
               </p>
 
               {/* Rol */}
