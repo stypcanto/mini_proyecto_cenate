@@ -130,7 +130,7 @@ export default function BienvenidaExterno() {
             <QuickActionCard
               icon={<Settings className="w-6 h-6" />}
               title="Gestión de Modalidades"
-              description="Informa si tu IPRESS cuenta con teleconsultorios y para qué servicios. Programa atenciones especializadas desde tu institución o desde el domicilio del paciente por teleconsulta."
+              description="Actualiza información sobre los teleconsultorios disponibles en tu IPRESS y para qué servicios. Permite programar atenciones especializadas desde tu institución o desde el domicilio del paciente por teleconsulta."
               color="purple"
               action={() => navigate("/roles/externo/gestion-modalidad")}
             />
