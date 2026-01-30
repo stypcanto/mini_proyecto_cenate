@@ -117,15 +117,16 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 			return obtenerMenuParaAdminDesdePermisos(idUser);
 		}
 
-		// 1. Obtener permisos activos del usuario directamente de la tabla permisos_modulares
+		// 1. Obtener permisos activos del usuario directamente de la tabla permisos_modulares (nueva)
 		List<PermisoModular> permisos = permisoModularRepository.findByIdUserAndActivoTrue(idUser);
 
+		// 2. Si no hay permisos modulares, hacer fallback a permisos de rol (tabla antigua)
 		if (permisos.isEmpty()) {
-			log.warn("⚠️ Usuario {} no tiene permisos modulares asignados", idUser);
-			return new ArrayList<>();
+			log.warn("⚠️ Usuario {} no tiene permisos modulares asignados, intentando fallback a permisos de rol", idUser);
+			return obtenerMenuDesdePermisosRol(idUser);
 		}
 
-		log.info("✅ Encontrados {} permisos para el usuario {}", permisos.size(), idUser);
+		log.info("✅ Encontrados {} permisos modulares para el usuario {}", permisos.size(), idUser);
 
 		// 2. Cargar información completa de los módulos para obtener icono, descripción, etc.
 		Map<Integer, com.styp.cenate.model.ModuloSistema> modulosMap = moduloSistemaRepository.findAll()
@@ -391,6 +392,145 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 
 		menu.sort(Comparator.comparing(MenuUsuarioDTO::orden, Comparator.nullsLast(Integer::compareTo)));
 		log.info("👑 Menú para admin basado en permisos generado con {} módulos", menu.size());
+		return menu;
+	}
+
+	/**
+	 * Obtiene el menú para usuarios NO-ADMIN desde sus permisos de rol (fallback)
+	 * Se usa cuando la tabla permisos_modulares está vacía pero el usuario tiene rol con permisos
+	 */
+	private List<MenuUsuarioDTO> obtenerMenuDesdePermisosRol(Long idUser) {
+		log.info("🔄 Fallback: Obteniendo menú desde permisos de rol para usuario ID: {}", idUser);
+
+		// 1. Obtener los roles del usuario
+		Usuario usuario = usuarioRepository.findByIdWithRoles(idUser).orElse(null);
+		if (usuario == null || usuario.getRoles() == null || usuario.getRoles().isEmpty()) {
+			log.warn("⚠️ Usuario {} no encontrado o sin roles asignados", idUser);
+			return new ArrayList<>();
+		}
+
+		// 2. Obtener IDs de los roles del usuario
+		List<Integer> roleIds = usuario.getRoles().stream()
+				.map(rol -> rol.getIdRol())
+				.collect(Collectors.toList());
+		log.info("📋 Roles del usuario {}: {}", idUser, roleIds);
+
+		// 3. Obtener permisos de rol desde segu_permisos_rol_pagina
+		List<SeguPermisosRolPagina> permisosRol = permisoRolPaginaRepository.findByIdRolInAndActivoTrue(roleIds);
+		if (permisosRol.isEmpty()) {
+			log.warn("⚠️ Usuario {} no tiene permisos de rol configurados", idUser);
+			return new ArrayList<>();
+		}
+
+		// 4. Filtrar solo los que tienen puedeVer = true
+		permisosRol = permisosRol.stream()
+				.filter(p -> Boolean.TRUE.equals(p.getPuedeVer()))
+				.collect(Collectors.toList());
+
+		if (permisosRol.isEmpty()) {
+			log.warn("⚠️ Usuario {} no tiene permisos de rol con acceso de vista", idUser);
+			return new ArrayList<>();
+		}
+
+		// 5. Cargar módulos y páginas
+		Map<Integer, ModuloSistema> modulosMap = moduloSistemaRepository.findAll()
+				.stream()
+				.filter(m -> Boolean.TRUE.equals(m.getActivo()))
+				.collect(Collectors.toMap(ModuloSistema::getIdModulo, m -> m));
+
+		Map<Integer, PaginaModulo> paginasMap = paginaRepository.findAllWithSubpaginas()
+				.stream()
+				.filter(p -> Boolean.TRUE.equals(p.getActivo()))
+				.collect(Collectors.toMap(PaginaModulo::getIdPagina, p -> p));
+
+		// 6. Agrupar permisos por página (tomar el mejor permiso si hay múltiples roles)
+		Map<Integer, SeguPermisosRolPagina> mejoresPermisos = new LinkedHashMap<>();
+		for (SeguPermisosRolPagina p : permisosRol) {
+			mejoresPermisos.merge(p.getIdPagina(), p, (existing, nuevo) -> {
+				// Combinar permisos: si alguno tiene el permiso, se mantiene
+				existing.setPuedeCrear(existing.getPuedeCrear() || nuevo.getPuedeCrear());
+				existing.setPuedeEditar(existing.getPuedeEditar() || nuevo.getPuedeEditar());
+				existing.setPuedeEliminar(existing.getPuedeEliminar() || nuevo.getPuedeEliminar());
+				existing.setPuedeExportar(existing.getPuedeExportar() || nuevo.getPuedeExportar());
+				return existing;
+			});
+		}
+
+		// 7. Agrupar páginas por módulo
+		Map<Integer, List<PaginaMenuDTO>> paginasPorModulo = new LinkedHashMap<>();
+		for (Map.Entry<Integer, SeguPermisosRolPagina> entry : mejoresPermisos.entrySet()) {
+			PaginaModulo pagina = paginasMap.get(entry.getKey());
+			if (pagina == null) continue;
+
+			// Solo procesar páginas padre (sin padre)
+			if (pagina.getPaginaPadre() != null) continue;
+
+			SeguPermisosRolPagina permiso = entry.getValue();
+
+			// Construir subpáginas si existen
+			List<PaginaMenuDTO> subpaginas = new ArrayList<>();
+			if (pagina.getSubpaginas() != null && !pagina.getSubpaginas().isEmpty()) {
+				subpaginas = pagina.getSubpaginas().stream()
+						.filter(sub -> Boolean.TRUE.equals(sub.getActivo()))
+						.sorted(Comparator.comparing(PaginaModulo::getOrden, Comparator.nullsLast(Integer::compareTo)))
+						.map(sub -> new PaginaMenuDTO(
+								sub.getRutaPagina(),
+								sub.getOrden(),
+								sub.getNombrePagina(),
+								sub.getIdPagina(),
+								true,
+								true,
+								true,
+								true,
+								true,
+								null,
+								sub.getIcono()
+						))
+						.collect(Collectors.toList());
+			}
+
+			PaginaMenuDTO paginaDTO = new PaginaMenuDTO(
+					pagina.getRutaPagina(),
+					pagina.getOrden(),
+					pagina.getNombrePagina(),
+					pagina.getIdPagina(),
+					true, // puedeVer ya está filtrado
+					Boolean.TRUE.equals(permiso.getPuedeCrear()),
+					Boolean.TRUE.equals(permiso.getPuedeEditar()),
+					Boolean.TRUE.equals(permiso.getPuedeEliminar()),
+					Boolean.TRUE.equals(permiso.getPuedeExportar()),
+					subpaginas.isEmpty() ? null : subpaginas,
+					pagina.getIcono()
+			);
+
+			Integer idModulo = pagina.getModulo() != null ? pagina.getModulo().getIdModulo() : null;
+			if (idModulo == null) continue;
+			paginasPorModulo.computeIfAbsent(idModulo, k -> new ArrayList<>()).add(paginaDTO);
+		}
+
+		// 8. Construir menú
+		List<MenuUsuarioDTO> menu = new ArrayList<>();
+		for (Map.Entry<Integer, List<PaginaMenuDTO>> entry : paginasPorModulo.entrySet()) {
+			ModuloSistema modulo = modulosMap.get(entry.getKey());
+			if (modulo == null) continue;
+
+			List<PaginaMenuDTO> paginas = entry.getValue();
+			paginas.sort(Comparator.comparing(PaginaMenuDTO::orden, Comparator.nullsLast(Integer::compareTo)));
+
+			MenuUsuarioDTO menuModulo = new MenuUsuarioDTO(
+					modulo.getIdModulo(),
+					modulo.getNombreModulo(),
+					modulo.getDescripcion(),
+					modulo.getIcono(),
+					modulo.getRutaBase(),
+					modulo.getOrden(),
+					paginas
+			);
+			menu.add(menuModulo);
+		}
+
+		menu.sort(Comparator.comparing(MenuUsuarioDTO::orden, Comparator.nullsLast(Integer::compareTo)));
+		log.info("✅ Menú desde permisos de rol generado con {} módulos para usuario {}", menu.size(), idUser);
 		return menu;
 	}
 
