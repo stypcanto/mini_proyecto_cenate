@@ -49,17 +49,9 @@ export default function BienvenidaCitas() {
                 Módulo de Gestión de Citas
               </h2>
               <p className="text-blue-100 text-sm leading-relaxed">
-                Como Gestor de Citas, tu rol incluye:
+                Gestiona tu bandeja de pacientes (Bolsa 107, Dengue, Reprogramaciones, IVR, CENACRON),
+                asigna citas médicas, coordina teleconsultas y realiza seguimiento de casos clínicos.
               </p>
-
-              {/* Funcionalidades clave */}
-              <ul className="text-blue-100 text-xs space-y-1 ml-4">
-                <li><strong>📋 Gestión de Pacientes:</strong> Revisa, asigna y realiza seguimiento a pacientes de Bolsa 107, Dengue, Reprogramaciones, IVR, CENACRON, gestionando sus estados y derivaciones.</li>
-                <li><strong>📞 Coordinación de Citas:</strong> Asigna citas médicas según disponibilidad de especialistas, coordina teleconsultas y gestiona reagendamientos.</li>
-                <li><strong>👥 Asignación de Casos:</strong> Deriva pacientes a médicos especialistas según complejidad y disponibilidad horaria.</li>
-                <li><strong>📊 Reportes y Seguimiento:</strong> Genera reportes de atenciones realizadas, pacientes pendientes y métricas de gestión.</li>
-                <li><strong>🔐 Seguridad:</strong> Actualiza tu contraseña cada 90 días para mantener acceso seguro.</li>
-              </ul>
 
               {/* Rol */}
               <div className="pt-2 flex items-center gap-2 text-blue-100 text-sm">
