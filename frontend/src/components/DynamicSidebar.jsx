@@ -159,6 +159,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   const isExterno = roles.includes("EXTERNO") || roles.includes("INSTITUCION_EX");
   const isCoordinadorRed = roles.includes("COORDINADOR_RED");
   const isGestorCitas = roles.includes("GESTOR DE CITAS") || roles.includes("GESTOR_CITAS");
+  const isCoordinadorGestionCitas = roles.includes("COORDINADOR_GESTION_CITAS") || roles.includes("COORD_GESTION_CITAS") || roles.includes("COORDINADOR GESTION CITAS") || roles.includes("COORD. GESTION CITAS");
   const isEnfermeria = roles.includes("ENFERMERIA");
 
   // ============================================================
@@ -254,12 +255,22 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
+      // Para usuarios COORDINADOR_GESTION_CITAS: expandir "Bolsas de Pacientes"
+      if (isCoordinadorGestionCitas) {
+        const moduloBolsas = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase() === "bolsas de pacientes"
+        );
+        if (moduloBolsas) {
+          sectionsToOpen[moduloBolsas.nombreModulo] = true;
+        }
+      }
+
       // Si hay secciones para abrir, establecerlas
       if (Object.keys(sectionsToOpen).length > 0) {
         setOpenSections(prev => ({ ...prev, ...sectionsToOpen }));
       }
     }
-  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isEnfermeria]);
+  }, [loading, modulosPermitidos, collapsed, isSuperAdmin, isExterno, isCoordinadorRed, isGestorCitas, isCoordinadorGestionCitas, isEnfermeria]);
 
   // ============================================================
   // Render principal - Menu dinamico desde la BD
