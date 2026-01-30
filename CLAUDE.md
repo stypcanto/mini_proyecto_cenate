@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.39.3 (2026-01-30) 🚀
+> **Versión:** v1.41.0 (2026-01-30) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -50,6 +50,14 @@
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.41.0 - Completado (2026-01-30) 📋 NEW
+✅ **Módulo Gestión de Citas** - Dropdown de 11 estados + Modal Actualizar Teléfono
+✅ **Entidad DimEstadosGestionCitas** - Mapeo JPA de tabla de estados
+✅ **3 Nuevos Endpoints** - Estados, teléfono, y listado de pacientes asignados
+✅ **4 Bugs Corregidos** - Token, autorización, parámetros, mapeo código→ID
+
+**Docs:** [`spec/frontend/12_modulo_gestion_citas.md`](spec/frontend/12_modulo_gestion_citas.md) | [`spec/backend/13_gestion_citas_endpoints.md`](spec/backend/13_gestion_citas_endpoints.md) | [`checklist/01_Historial/GESTION_CITAS_v1.41.0.md`](checklist/01_Historial/GESTION_CITAS_v1.41.0.md)
 
 ### v1.39.3 - Completado (2026-01-30) ⏱️
 ✅ **Fix Timeouts SMTP** - Aumentar timeouts de 15s a 30s para conexiones lentas

@@ -1,7 +1,7 @@
 # 🏥 CENATE - Centro Nacional de Telemedicina
 
 > **Sistema integral de coordinación de atenciones médicas remotas para EsSalud**
-> **Versión:** v1.39.0 (2026-01-30)
+> **Versión:** v1.41.0 (2026-01-30)
 > **Status:** ✅ Production Ready
 
 ---
@@ -191,6 +191,7 @@ README.md de esa carpeta
 
 | Módulo | Documentación |
 |--------|---------------|
+| **Gestión de Citas v1.41.0** | `spec/backend/13_gestion_citas_endpoints.md` + `spec/frontend/12_modulo_gestion_citas.md` |
 | **Solicitudes Bolsa v1.8.0** | `spec/backend/08_modulo_bolsas_pacientes_completo.md` |
 | **Estados Gestión Citas v1.33.0** | `spec/backend/07_modulo_estados_gestion_citas_crud.md` |
 | **Tele-ECG v1.24.0** | `spec/backend/09_teleecg_v3.0.0_guia_rapida.md` |
@@ -338,7 +339,7 @@ ls -lh spec/sh/02_backup/
 ## 📞 CONTACTOS Y REFERENCIAS
 
 **Desarrollado por:** Ing. Styp Canto Rondón
-**Versión Actual:** v1.39.0
+**Versión Actual:** v1.41.0
 **Última Actualización:** 2026-01-30
 **Email:** stypcanto@essalud.gob.pe
 
@@ -357,6 +358,7 @@ ls -lh spec/sh/02_backup/
 
 ## 📝 VERSIONADO
 
+- **v1.41.0** (2026-01-30) - Módulo Gestión de Citas v1.41.0 + Endpoints estado + Actualizar teléfono
 - **v1.39.0** (2026-01-30) - SMTP Relay integrado en docker-compose + Documentación
 - **v1.38.0** (2026-01-29) - Módulo Bolsas v3.0.0 + Módulo 107
 - **v1.37.4** (2026-01-28) - SMTP Relay EsSalud + Endpoint health/smtp-test
@@ -379,7 +381,8 @@ ls -lh spec/sh/02_backup/
 | Frontend | ✅ Production | v19 |
 | Database | ✅ Production | v14+ |
 | SMTP Relay | ✅ Production | EsSalud |
-| Documentación | ✅ Completa | v1.39.0 |
+| Gestión de Citas | ✅ Production | v1.41.0 |
+| Documentación | ✅ Completa | v1.41.0 |
 | Tests | ⏳ Próximamente | - |
 
 ---
