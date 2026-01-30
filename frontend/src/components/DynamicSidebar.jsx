@@ -461,9 +461,9 @@ function TooltipWrapper({ children, collapsed, text }) {
 function getPageIcon(nombreModulo, nombrePagina) {
   const lowerName = nombrePagina.toLowerCase();
 
-  // Iconos para Dengue
+  // Iconos para Dengue (enfermedad/virus)
   if (lowerName === 'dengue') {
-    return Bug;
+    return HeartPulse;
   }
 
   // Iconos generales
@@ -501,7 +501,7 @@ function getPageIcon(nombreModulo, nombrePagina) {
     return FolderOpen;
   }
   if (lowerName.includes('módulo') || lowerName.includes('modulo') || lowerName.includes('grupo')) {
-    return Layers;
+    return Database;
   }
 
   return FileText;
