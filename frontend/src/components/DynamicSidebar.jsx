@@ -58,6 +58,9 @@ import {
   FolderOpen,
   Bug,
   List,
+  Headphones,
+  Phone,
+  PhoneCall,
 } from "lucide-react";
 
 // Mapeo de nombres de iconos a componentes de Lucide
@@ -103,6 +106,9 @@ const iconMap = {
   'FolderOpen': FolderOpen,
   'Bug': Bug,
   'List': List,
+  'Headphones': Headphones,  // 🎧 Para teleoperadoras/gestoras de citas
+  'Phone': Phone,
+  'PhoneCall': PhoneCall,
 };
 
 const getIconComponent = (iconName) => {
