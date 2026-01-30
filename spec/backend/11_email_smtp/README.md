@@ -1,6 +1,6 @@
 # Módulo de Correo SMTP - CENATE
 
-> **Versión:** 1.3.0 (2026-01-30)
+> **Versión:** 1.4.0 (2026-01-30)
 > **Estado:** Producción
 
 ---
@@ -551,6 +551,7 @@ docker exec smtp-relay-cenate postsuper -d ALL
 
 | Fecha | Versión | Cambio |
 |-------|---------|--------|
+| 2026-01-30 | 1.4.0 | **Aumentar timeouts SMTP** de 15s a 30s para conexiones lentas al servidor EsSalud |
 | 2026-01-30 | 1.3.0 | **Fix crítico:** Corrección de sincronización de relaciones JPA para envío de correos |
 | 2026-01-30 | 1.2.0 | Agregar aviso de red EsSalud en templates + documentación de templates |
 | 2026-01-30 | 1.1.0 | Agregar análisis completo de casos de uso y triggers |
@@ -582,6 +583,36 @@ docker exec smtp-relay-cenate postsuper -d ALL
 **Solución:**
 1. Sincronizar manualmente la relación después de guardar: `usuario.setPersonalCnt(personalCnt)`
 2. Usar queries con `JOIN FETCH` para cargar relaciones al buscar usuario por ID
+
+### Detalle v1.4.0 - Aumento de Timeouts SMTP
+
+**Problema detectado:** Al crear usuarios nuevos, el correo de bienvenida fallaba con `SocketTimeoutException: Read timed out` después de exactamente 15 segundos.
+
+**Causa raíz:** El relay SMTP (Postfix) necesita conectarse al servidor de EsSalud (172.20.0.227:25) para reenviar el correo. Cuando el servidor de EsSalud tiene latencia alta, la conexión tarda más de 15 segundos y el backend cancela la operación.
+
+**Archivo modificado:** `application.properties`
+
+```properties
+# ANTES (15 segundos - insuficiente)
+spring.mail.properties.mail.smtp.connectiontimeout=15000
+spring.mail.properties.mail.smtp.timeout=15000
+spring.mail.properties.mail.smtp.writetimeout=15000
+
+# DESPUÉS (30 segundos - suficiente para conexiones lentas)
+spring.mail.properties.mail.smtp.connectiontimeout=30000
+spring.mail.properties.mail.smtp.timeout=30000
+spring.mail.properties.mail.smtp.writetimeout=30000
+```
+
+**Configuración de timeouts:**
+
+| Timeout | Valor | Descripción |
+|---------|-------|-------------|
+| `connectiontimeout` | 30000ms | Tiempo máximo para establecer conexión TCP |
+| `timeout` | 30000ms | Tiempo máximo para leer respuesta del servidor |
+| `writetimeout` | 30000ms | Tiempo máximo para escribir datos al servidor |
+
+**Nota:** Los correos se envían de forma asíncrona (`@Async`), por lo que estos timeouts no afectan el tiempo de respuesta de la API al crear usuarios.
 
 ---
 

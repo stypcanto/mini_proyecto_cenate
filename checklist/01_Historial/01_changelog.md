@@ -3,6 +3,8 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.39.3**: Fix timeouts SMTP - Aumentar de 15s a 30s para servidor EsSalud (2026-01-30)
+> - ⭐ **NUEVO - v1.39.2**: Fix eliminación usuarios - Nombres de tablas de tokens incorrectos (2026-01-30)
 > - ⭐ **NUEVO - v1.39.1**: Fix crítico envío correos - Sincronización relaciones JPA (2026-01-30)
 > - ⭐ **NUEVO - v1.37.5**: `FIXAUTORIZACION_COORDINADOR.md` (2026-01-30) - Fix: Autorización Coordinador en Historial de Bolsas
 > - ⭐ **NUEVO - v3.0.0**: `Módulo 107 Migración` (2026-01-29) - Fusión de Bolsa 107 con dim_solicitud_bolsa + Búsqueda + Estadísticas
@@ -14,6 +16,38 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.39.3 (2026-01-30) - ⏱️ Fix: Timeouts SMTP para Servidor EsSalud
+
+### 📌 Problema Identificado
+
+**Error:** Al crear usuarios nuevos, el correo de bienvenida fallaba con `SocketTimeoutException: Read timed out` después de exactamente 15 segundos.
+
+**Log de error:**
+```
+MailException al enviar correo: Mail server connection failed
+Caused by: java.net.SocketTimeoutException: Read timed out
+```
+
+**Causa Raíz:** El relay SMTP (Postfix) necesita conectarse al servidor de EsSalud (172.20.0.227:25) para reenviar el correo. Cuando el servidor de EsSalud tiene latencia alta, la conexión tarda más de 15 segundos y el backend cancela la operación.
+
+### ✅ Solución Implementada
+
+**Archivo modificado:** `application.properties`
+
+| Timeout | Antes | Después |
+|---------|-------|---------|
+| `connectiontimeout` | 15000ms | 30000ms |
+| `timeout` | 15000ms | 30000ms |
+| `writetimeout` | 30000ms | 30000ms |
+
+### 📊 Resultado
+
+- ✅ Correos de bienvenida ahora se envían correctamente al crear usuarios
+- ✅ Tolerancia a latencia alta del servidor SMTP de EsSalud
+- ✅ No afecta tiempo de respuesta de API (envío es asíncrono)
 
 ---
 
@@ -101,6 +135,60 @@ Usuario usuario = usuarioRepository.findByIdWithFullDetails(idUsuario).orElse(nu
 | Reset contraseña desde panel admin | ❌ No encontraba email | ✅ Funciona |
 | Aprobar solicitud externa | ✅ Ya funcionaba | ✅ Funciona |
 | Rechazar solicitud externa | ✅ Ya funcionaba | ✅ Funciona |
+
+---
+
+## v1.39.2 (2026-01-30) - 🗑️ Fix: Error SQL al eliminar usuarios
+
+### 📌 Problema Identificado
+
+**Error:** Al intentar eliminar usuarios desde `/admin/users`, el sistema retornaba:
+```
+HTTP 500 - Internal Server Error
+ERROR: relation "password_reset_tokens" does not exist
+```
+
+**Causa Raíz:** Nombres de tablas incorrectos en el método `deleteUser()` de `UsuarioServiceImpl.java`:
+- Se usaba `password_reset_tokens` → tabla real: `segu_password_reset_tokens`
+- Se usaba `solicitud_contrasena` → tabla real: `solicitud_contrasena_temporal`
+
+### ✅ Solución Implementada
+
+**Archivo modificado:** `UsuarioServiceImpl.java` (líneas 1184, 1188)
+
+```java
+// ANTES (línea 1184)
+DELETE FROM password_reset_tokens WHERE id_usuario = ?
+
+// DESPUÉS
+DELETE FROM segu_password_reset_tokens WHERE id_usuario = ?
+
+// ANTES (línea 1188)
+DELETE FROM solicitud_contrasena WHERE id_usuario = ?
+
+// DESPUÉS
+DELETE FROM solicitud_contrasena_temporal WHERE id_usuario = ?
+```
+
+### 🔄 Contexto Técnico
+
+El sistema de recuperación de contraseña usa dos modelos JPA:
+- `PasswordResetToken.java` → tabla `segu_password_reset_tokens`
+- `SolicitudContrasena.java` → tabla `solicitud_contrasena_temporal`
+
+El método `deleteUser()` usaba JDBC directo (no JPA) con nombres de tabla hardcodeados incorrectos.
+
+### 📊 Resultado
+
+✅ **Eliminación de usuarios funciona correctamente**
+✅ **Tokens de recuperación se limpian al eliminar usuario**
+✅ **Sin cambios en base de datos** - Solo corrección de nombres de tabla en Java
+
+### 🛡️ Impacto
+
+- ✅ Panel de administración `/admin/users` operativo
+- ✅ Cascada de eliminación funciona correctamente
+- ✅ No afecta el flujo de recuperación de contraseña
 
 ---
 
