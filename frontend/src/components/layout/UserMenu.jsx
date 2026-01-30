@@ -24,7 +24,7 @@ export default function UserMenu() {
   };
 
   const handleMyAccount = () => {
-    navigate("/perfil");
+    navigate("/user/profile");
     setIsOpen(false);
   };
 
