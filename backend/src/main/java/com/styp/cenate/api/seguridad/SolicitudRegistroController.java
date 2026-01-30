@@ -90,7 +90,7 @@ public class SolicitudRegistroController {
     @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
     public ResponseEntity<?> aprobarSolicitud(@PathVariable Long id) {
         try {
-            log.info("Aprobando solicitud ID: {}", id);
+            log.info("Aprobando solicitud ID: *********************** {}", id);
             
             SolicitudRegistroDTO solicitud = accountRequestService.aprobarSolicitud(id);
             

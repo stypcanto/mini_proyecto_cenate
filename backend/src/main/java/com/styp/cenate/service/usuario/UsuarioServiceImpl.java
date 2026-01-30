@@ -2,6 +2,7 @@ package com.styp.cenate.service.usuario;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.YearMonth;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -24,6 +25,7 @@ import com.styp.cenate.dto.mbac.PermisoUsuarioResponseDTO;
 import com.styp.cenate.dto.mbac.RolResponse;
 import com.styp.cenate.service.email.EmailService;
 import com.styp.cenate.service.security.PasswordTokenService;
+import com.styp.cenate.utils.Constantes;
 import com.styp.cenate.service.auditlog.AuditLogService;
 import org.springframework.security.core.context.SecurityContextHolder;
 import com.styp.cenate.model.DimServicioEssi;
@@ -397,7 +399,7 @@ public class UsuarioServiceImpl implements UsuarioService {
 			}
 		} else if (esExterno) {
 			log.info("👤 Usuario EXTERNO: {} - Creando registro en dim_personal_externo", usuario.getNameUser());
-
+/*
 			// 🆕 v1.39.1 - Crear PersonalExterno para usuarios externos creados desde panel admin
 			com.styp.cenate.model.PersonalExterno personalExterno = new com.styp.cenate.model.PersonalExterno();
 			personalExterno.setNomExt(request.getNombres());
@@ -405,7 +407,6 @@ public class UsuarioServiceImpl implements UsuarioService {
 			personalExterno.setApeMaterExt(request.getApellido_materno());
 			personalExterno.setNumDocExt(request.getNumero_documento());
 			personalExterno.setIdUser(usuario.getIdUser());
-
 			// Género (normalizar a 1 carácter)
 			String generoExt = request.getGenero();
 			if (generoExt != null && !generoExt.isBlank()) {
@@ -419,7 +420,6 @@ public class UsuarioServiceImpl implements UsuarioService {
 				}
 				personalExterno.setGenExt(generoExt);
 			}
-
 			// Fecha de nacimiento
 			if (request.getFecha_nacimiento() != null && !request.getFecha_nacimiento().isBlank()) {
 				try {
@@ -428,19 +428,16 @@ public class UsuarioServiceImpl implements UsuarioService {
 					log.warn("⚠️ Error al parsear fecha de nacimiento para externo: {}", e.getMessage());
 				}
 			}
-
 			// Contacto
 			personalExterno.setMovilExt(request.getTelefono());
 			personalExterno.setEmailPersExt(request.getCorreo_personal());
 			personalExterno.setEmailCorpExt(request.getCorreo_corporativo());
-
 			// Tipo de documento
 			if (request.getTipo_documento() != null && !request.getTipo_documento().isBlank()) {
 				tipoDocumentoRepository.findByDescTipDoc(request.getTipo_documento()).ifPresentOrElse(
 						personalExterno::setTipoDocumento,
 						() -> log.warn("⚠️ Tipo de documento '{}' no encontrado para externo", request.getTipo_documento()));
 			}
-
 			// IPRESS
 			if (request.getIdIpress() != null) {
 				ipressRepository.findById(request.getIdIpress()).ifPresentOrElse(ipress -> {
@@ -450,10 +447,49 @@ public class UsuarioServiceImpl implements UsuarioService {
 			}
 
 			// Guardar PersonalExterno
-			personalExternoRepository.save(personalExterno);
+			personalExternoRepository.save(personalExterno);//epy
 			// 🔗 Sincronizar relación bidireccional para que el email se pueda obtener
 			usuario.setPersonalExterno(personalExterno);
 			log.info("✅ Registro de PersonalExterno creado exitosamente para: {}", usuario.getNameUser());
+*/
+			
+			request.setId_origen(Constantes.CODIGO_ORIGEN_PERSONAL_EXTERNO);
+			PersonalCnt personalCnt = new PersonalCnt();
+			personalCnt.setNomPers(request.getNombres()); 
+			personalCnt.setApePaterPers(request.getApellido_paterno());
+			personalCnt.setApeMaterPers(request.getApellido_materno());
+			personalCnt.setNumDocPers(request.getNumero_documento().trim());
+			personalCnt.setPerPers(YearMonth.now().toString().replace("-", ""));
+			personalCnt.setStatPers("A");
+			tipoDocumentoRepository.findByDescTipDoc(request.getTipo_documento())
+			  .ifPresentOrElse(personalCnt::setTipoDocumento,
+			     () -> { throw new IllegalArgumentException("Tipo documento requerido/no encontrado"); });
+			if (request.getId_origen() != null && request.getId_origen() != 0) {
+			   repositorioOrigenPersonal.findById(request.getId_origen())
+			      .ifPresentOrElse(personalCnt::setOrigenPersonal,
+			          () -> { throw new IllegalArgumentException("Origen no válido"); });
+			} else {
+			   throw new IllegalArgumentException("id_origen es obligatorio para externos");
+			}
+			personalCnt.setEmailPers(request.getCorreo_personal());
+			personalCnt.setEmailCorpPers(request.getCorreo_corporativo());
+			personalCnt.setMovilPers(request.getTelefono());
+
+			if (request.getIdIpress() != null) {
+				ipressRepository.findById(request.getIdIpress()).ifPresentOrElse(ipress -> {
+					personalCnt.setIpress(ipress);
+					log.info("✅ IPRESS asignada a externo: {} - {}", ipress.getCodIpress(), ipress.getDescIpress());
+				}, () -> log.warn("⚠️ IPRESS con ID {} no encontrada para externo", request.getIdIpress()));
+			}
+
+			personalCnt.setUsuario(usuario);
+			personalCntRepository.save(personalCnt);
+			usuario.setPersonalCnt(personalCnt);
+			log.info("✅ Registro de PersonalExterno creado exitosamente para: {}", usuario.getNameUser());
+
+			
+			
+			
 		} else {
 			log.warn("⚠️ No se proporcionaron datos personales para el usuario: {}", usuario.getNameUser());
 		}

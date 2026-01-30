@@ -845,6 +845,36 @@ export const obtenerRedPorId = async (id) => {
 };
 
 /**
+ * Obtiene todos los tipos de bolsas activos (público)
+ * GET /api/bolsas/tipos-bolsas/activos
+ * @returns {Promise<Array>} - Listado de tipos de bolsas
+ */
+export const obtenerTiposBolsasActivosPublic = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/tipos-bolsas/activos`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener tipos de bolsas activos:', error);
+    throw error;
+  }
+};
+
+/**
+ * Obtiene especialidades activas de CENATE
+ * GET /api/servicio-essi/activos-cenate
+ * @returns {Promise<Array>} - Listado de especialidades activas
+ */
+export const obtenerEspecialidadesActivasCenate = async () => {
+  try {
+    const response = await apiClient.get('/servicio-essi/activos-cenate');
+    return response;
+  } catch (error) {
+    console.error('Error al obtener especialidades activas CENATE:', error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene datos de un asegurado por DNI
  * @param {string} dni - DNI del asegurado
  * @returns {Promise<Object>} - Detalles del asegurado o null
@@ -979,6 +1009,8 @@ export default {
   obtenerRedPorId,
   obtenerAseguradoPorDni,
   crearAsegurado,
+  obtenerTiposBolsasActivosPublic,
+  obtenerEspecialidadesActivasCenate,
 
   // ERRORES DE IMPORTACIÓN (v2.1.0)
   obtenerErroresImportacion,

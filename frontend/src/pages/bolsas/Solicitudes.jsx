@@ -53,7 +53,7 @@ export default function Solicitudes() {
 
   // NEW v2.5.8: Estadísticas de filtros del backend (análisis de TODA la tabla)
   const [estadisticasTipoBolsa, setEstadisticasTipoBolsa] = useState([]);
-  const [estadisticasEspecialidad, setEstadisticasEspecialidad] = useState([]);
+  const [especialidadesActivas, setEspecialidadesActivas] = useState([]); // Especialidades desde catálogo
   const [estadisticasIpress, setEstadisticasIpress] = useState([]);
   const [estadisticasTipoCita, setEstadisticasTipoCita] = useState([]);
 
@@ -122,7 +122,7 @@ export default function Solicitudes() {
   const [modalCambiarBolsa, setModalCambiarBolsa] = useState(false);
   const [bolsaNuevaSeleccionada, setBolsaNuevaSeleccionada] = useState(null);
   const [bolsasDisponibles, setBolsasDisponibles] = useState([]);
-  const [bolsasConCuentas, setBolsasConCuentas] = useState([]); // NEW v2.5.4: Todas las bolsas con conteos
+  const [tiposBolsasActivos, setTiposBolsasActivos] = useState([]); // Tipos de bolsas activos (catálogo)
 
   // ============================================================================
   // 📦 EFFECT 1: Cargar CATÁLOGOS una sola vez al iniciar
@@ -172,13 +172,13 @@ export default function Solicitudes() {
         try {
           const [bolsas, especialidades, ipress, tipoCita] = await Promise.all([
             bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []),
-            bolsasService.obtenerEstadisticasPorEspecialidad().catch(() => []),
+            bolsasService.obtenerEspecialidadesActivasCenate().catch(() => []),
             bolsasService.obtenerEstadisticasPorIpress().catch(() => []),
             bolsasService.obtenerEstadisticasPorTipoCita().catch(() => [])
           ]);
           console.log('✅ Estadísticas de filtros cargadas:', { bolsas, especialidades, ipress, tipoCita });
           setEstadisticasTipoBolsa(bolsas || []);
-          setEstadisticasEspecialidad(especialidades || []);
+          setEspecialidadesActivas(especialidades || []);
           setEstadisticasIpress(ipress || []);
           setEstadisticasTipoCita(tipoCita || []);
         } catch (error) {
@@ -256,12 +256,12 @@ export default function Solicitudes() {
   const cargarCatalogos = async () => {
     console.log('📦 Cargando catálogos (ejecutarse solo UNA vez)...');
     try {
-      const [estadosData, ipressData, redesData, gestorasData, bolsasData] = await Promise.all([
+      const [estadosData, ipressData, redesData, gestorasData, tiposBolsasData] = await Promise.all([
         bolsasService.obtenerEstadosGestion().catch(() => []),
         bolsasService.obtenerIpress().catch(() => []),
         bolsasService.obtenerRedes().catch(() => []),
         bolsasService.obtenerGestorasDisponibles().catch(() => []), // NEW v2.4.0
-        bolsasService.obtenerEstadisticasPorTipoBolsa().catch(() => []) // NEW v2.5.4: Todas las bolsas con conteos
+        bolsasService.obtenerTiposBolsasActivosPublic().catch(() => [])
       ]);
 
       // Crear cache de estados, IPRESS y Redes
@@ -298,18 +298,11 @@ export default function Solicitudes() {
       setGestoras(gestorasArray);
       console.log('✅ Gestoras cargadas:', gestorasArray.length, gestorasArray);
 
-      // NEW v2.5.4: Procesar bolsas con conteos
-      console.log('📦 Bolsas data:', bolsasData);
-      let bolsasConTotales = [];
-      if (bolsasData && Array.isArray(bolsasData)) {
-        bolsasConTotales = bolsasData.map(b => ({
-          nombre: b.tipo_bolsa || b.nombre || 'Sin nombre',
-          cantidad: b.cantidad || 0,
-          codigo: b.codigo || ''
-        }));
-      }
-      setBolsasConCuentas(bolsasConTotales);
-      console.log('✅ Bolsas con conteos cargadas:', bolsasConTotales.length, bolsasConTotales);
+      // Tipos de bolsas activos (catálogo)
+      console.log('📦 Tipos de bolsas activos:', tiposBolsasData);
+      const tiposBolsasArray = Array.isArray(tiposBolsasData) ? tiposBolsasData : [];
+      setTiposBolsasActivos(tiposBolsasArray);
+      console.log('✅ Tipos de bolsas activos cargados:', tiposBolsasArray.length);
 
       console.log('✅ Catálogos cargados correctamente');
       setCatalogosCargados(true);
@@ -1412,12 +1405,16 @@ export default function Solicitudes() {
                 onChange: (e) => setFiltroBolsa(e.target.value),
                 options: [
                   { label: `Todas las bolsas (${totalElementos})`, value: "todas" },
-                  ...bolsasConCuentas
-                    .filter(bolsa => bolsa.cantidad > 0)
-                    .map(bolsa => ({
-                      label: `${bolsa.nombre} (${bolsa.cantidad})`,
-                      value: bolsa.nombre
-                    }))
+                  ...tiposBolsasActivos
+                    .slice()
+                    .sort((a, b) => (a.descTipoBolsa || '').localeCompare(b.descTipoBolsa || ''))
+                    .map(bolsa => {
+                      const nombreBolsa = generarAliasBolsa(bolsa.descTipoBolsa);
+                      return {
+                        label: nombreBolsa,
+                        value: nombreBolsa
+                      };
+                    })
                 ]
               },
               {
@@ -1468,13 +1465,13 @@ export default function Solicitudes() {
                 value: filtroEspecialidad,
                 onChange: (e) => setFiltroEspecialidad(e.target.value),
                 options: [
-                  { label: `Todas las especialidades (${totalElementos})`, value: "todas" },
-                  ...estadisticasEspecialidad
-                    .filter(e => e.cantidad > 0)
-                    .sort((a, b) => b.cantidad - a.cantidad)
-                    .map(e => ({
-                      label: `${e.nombre} (${e.cantidad})`,
-                      value: e.nombre
+                  { label: "Todas las especialidades", value: "todas" },
+                  ...especialidadesActivas
+                    .slice()
+                    .sort((a, b) => (a.descServicio || '').localeCompare(b.descServicio || ''))
+                    .map(esp => ({
+                      label: esp.descServicio,
+                      value: esp.descServicio
                     }))
                 ]
               },
@@ -1483,14 +1480,11 @@ export default function Solicitudes() {
                 value: filtroTipoCita,
                 onChange: (e) => setFiltroTipoCita(e.target.value),
                 options: [
-                  { label: `Todas las citas (${totalElementos})`, value: "todas" },
-                  ...estadisticasTipoCita
-                    .filter(t => t.cantidad > 0)
-                    .sort((a, b) => b.cantidad - a.cantidad)
-                    .map(t => ({
-                      label: `${t.nombre} (${t.cantidad})`,
-                      value: t.nombre
-                    }))
+                  { label: "Todas las citas", value: "todas" },
+                  { label: "Voluntaria", value: "VOLUNTARIA" },
+                  { label: "Recita", value: "RECITA" },
+                  { label: "Interconsulta", value: "INTERCONSULTA" },
+                  { label: "Referencia", value: "REFERENCIA" }
                 ]
               },
               {
