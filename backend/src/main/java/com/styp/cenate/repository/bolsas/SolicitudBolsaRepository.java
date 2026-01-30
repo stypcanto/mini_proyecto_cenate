@@ -437,4 +437,194 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         org.springframework.data.domain.Pageable pageable
     );
 
+    // ========================================================================
+    // 📋 v3.0.0 (2026-01-29): MÉTODOS ESPECÍFICOS PARA MÓDULO 107
+    // Migración: Todas las solicitudes del Módulo 107 ahora usan dim_solicitud_bolsa
+    // con id_bolsa = 107
+    // ========================================================================
+
+    /**
+     * 1️⃣ Lista todos los casos del Módulo 107 con paginación
+     * Filtra por: id_bolsa = 107 Y activo = true
+     *
+     * @param pageable Información de paginación (page, size, sort)
+     * @return Page<SolicitudBolsa> ordenada por fecha_solicitud DESC
+     */
+    @Query("""
+        SELECT s FROM SolicitudBolsa s
+        WHERE s.idBolsa = 107 AND s.activo = true
+        ORDER BY s.fechaSolicitud DESC
+        """)
+    org.springframework.data.domain.Page<SolicitudBolsa> findAllModulo107Casos(
+        org.springframework.data.domain.Pageable pageable
+    );
+
+    /**
+     * 2️⃣ Busca casos del Módulo 107 con filtros avanzados
+     * Filtros opcionales: dni, nombre, codigoIpress, estadoId, fechaDesde, fechaHasta
+     *
+     * @param dni DNI para búsqueda parcial (LIKE)
+     * @param nombre Nombre para búsqueda parcial (LIKE, case-insensitive)
+     * @param codigoIpress Código de IPRESS para búsqueda exacta
+     * @param estadoGestionCitasId ID del estado para filtro exacto
+     * @param fechaDesde Fecha inicio (para rango de fechas)
+     * @param fechaHasta Fecha fin (para rango de fechas)
+     * @param pageable Información de paginación
+     * @return Page<SolicitudBolsa> con casos que coinciden con los filtros
+     */
+    @Query("""
+        SELECT s FROM SolicitudBolsa s
+        WHERE s.idBolsa = 107 AND s.activo = true
+        AND (:dni IS NULL OR s.pacienteDni LIKE CONCAT('%', :dni, '%'))
+        AND (:nombre IS NULL OR LOWER(s.pacienteNombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
+        AND (:codigoIpress IS NULL OR s.codigoAdscripcion = :codigoIpress)
+        AND (:estadoId IS NULL OR s.estadoGestionCitasId = :estadoId)
+        AND (:fechaDesde IS NULL OR s.fechaSolicitud >= :fechaDesde)
+        AND (:fechaHasta IS NULL OR s.fechaSolicitud <= :fechaHasta)
+        ORDER BY s.fechaSolicitud DESC
+        """)
+    org.springframework.data.domain.Page<SolicitudBolsa> buscarModulo107Casos(
+        @org.springframework.data.repository.query.Param("dni") String dni,
+        @org.springframework.data.repository.query.Param("nombre") String nombre,
+        @org.springframework.data.repository.query.Param("codigoIpress") String codigoIpress,
+        @org.springframework.data.repository.query.Param("estadoId") Long estadoGestionCitasId,
+        @org.springframework.data.repository.query.Param("fechaDesde") java.time.OffsetDateTime fechaDesde,
+        @org.springframework.data.repository.query.Param("fechaHasta") java.time.OffsetDateTime fechaHasta,
+        org.springframework.data.domain.Pageable pageable
+    );
+
+    /**
+     * 3️⃣ Estadísticas por especialidad (derivación interna)
+     * Agrupa casos del Módulo 107 por especialidad y calcula métricas
+     *
+     * @return List<Map> con campos: especialidad, total, atendidos, pendientes, cancelados, tasa_completacion
+     */
+    @Query(value = """
+        SELECT
+            s.especialidad,
+            COUNT(s.id_solicitud) as total,
+            COUNT(CASE WHEN d.cod_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN d.cod_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            COUNT(CASE WHEN d.cod_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
+            ROUND(
+                COUNT(CASE WHEN d.cod_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(s.id_solicitud), 0), 2
+            ) as tasa_completacion
+        FROM dim_solicitud_bolsa s
+        LEFT JOIN dim_estados_gestion_citas d ON s.estado_gestion_citas_id = d.id_estado_cita
+        WHERE s.id_bolsa = 107 AND s.activo = true
+        GROUP BY s.especialidad
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasModulo107PorEspecialidad();
+
+    /**
+     * 4️⃣ Estadísticas por estado de gestión de citas
+     * Agrupa casos del Módulo 107 por estado y calcula métricas
+     *
+     * @return List<Map> con campos: estado, descripcion, total, porcentaje, horas_promedio
+     */
+    @Query(value = """
+        SELECT
+            d.cod_estado_cita as estado,
+            d.desc_estado_cita as descripcion,
+            COUNT(s.id_solicitud) as total,
+            ROUND(
+                COUNT(s.id_solicitud) * 100.0 /
+                (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE id_bolsa = 107 AND activo = true),
+                2
+            ) as porcentaje,
+            CAST(ROUND(
+                AVG(EXTRACT(EPOCH FROM (s.fecha_actualizacion - s.fecha_solicitud)) / 3600),
+                2
+            ) AS INTEGER) as horas_promedio
+        FROM dim_solicitud_bolsa s
+        LEFT JOIN dim_estados_gestion_citas d ON s.estado_gestion_citas_id = d.id_estado_cita
+        WHERE s.id_bolsa = 107 AND s.activo = true
+        GROUP BY d.cod_estado_cita, d.desc_estado_cita
+        ORDER BY total DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasModulo107PorEstado();
+
+    /**
+     * 5️⃣ Estadísticas por IPRESS
+     * Agrupa casos del Módulo 107 por código IPRESS (top 10)
+     *
+     * @return List<Map> con campos: codigo_ipress, total, atendidos, pendientes, tasa_completacion
+     */
+    @Query(value = """
+        SELECT
+            s.codigo_adscripcion as codigo_ipress,
+            COUNT(s.id_solicitud) as total,
+            COUNT(CASE WHEN d.cod_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN d.cod_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            ROUND(
+                COUNT(CASE WHEN d.cod_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(s.id_solicitud), 0), 2
+            ) as tasa_completacion
+        FROM dim_solicitud_bolsa s
+        LEFT JOIN dim_estados_gestion_citas d ON s.estado_gestion_citas_id = d.id_estado_cita
+        WHERE s.id_bolsa = 107 AND s.activo = true
+        GROUP BY s.codigo_adscripcion
+        ORDER BY total DESC
+        LIMIT 10
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasModulo107PorIpress();
+
+    /**
+     * 6️⃣ KPIs generales del Módulo 107
+     * Calcula métricas clave de rendimiento
+     *
+     * @return Map con campos: total_pacientes, atendidos, pendientes, cancelados,
+     *                        tasa_completacion, tasa_abandono, horas_promedio, pendientes_vencidas
+     */
+    @Query(value = """
+        SELECT
+            COUNT(s.id_solicitud) as total_pacientes,
+            COUNT(CASE WHEN d.cod_estado_cita = 'ATENDIDO' THEN 1 END) as atendidos,
+            COUNT(CASE WHEN d.cod_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            COUNT(CASE WHEN d.cod_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
+            ROUND(
+                COUNT(CASE WHEN d.cod_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(s.id_solicitud), 0), 2
+            ) as tasa_completacion,
+            ROUND(
+                COUNT(CASE WHEN d.cod_estado_cita = 'CANCELADO' THEN 1 END) * 100.0 /
+                NULLIF(COUNT(s.id_solicitud), 0), 2
+            ) as tasa_abandono,
+            CAST(ROUND(
+                AVG(EXTRACT(EPOCH FROM (s.fecha_actualizacion - s.fecha_solicitud)) / 3600),
+                2
+            ) AS INTEGER) as horas_promedio,
+            COUNT(CASE WHEN d.cod_estado_cita = 'PENDIENTE'
+                AND s.fecha_solicitud < NOW() AT TIME ZONE 'America/Lima' - INTERVAL '7 days'
+                THEN 1 END) as pendientes_vencidas
+        FROM dim_solicitud_bolsa s
+        LEFT JOIN dim_estados_gestion_citas d ON s.estado_gestion_citas_id = d.id_estado_cita
+        WHERE s.id_bolsa = 107 AND s.activo = true
+        """, nativeQuery = true)
+    Map<String, Object> kpisModulo107();
+
+    /**
+     * 7️⃣ Evolución temporal de solicitudes del Módulo 107
+     * Agrupa por día los últimos 30 días para gráficos de tendencia
+     *
+     * @return List<Map> con campos: fecha, total, atendidas, pendientes, canceladas
+     */
+    @Query(value = """
+        SELECT
+            DATE(s.fecha_solicitud AT TIME ZONE 'America/Lima') as fecha,
+            COUNT(s.id_solicitud) as total,
+            COUNT(CASE WHEN d.cod_estado_cita = 'ATENDIDO' THEN 1 END) as atendidas,
+            COUNT(CASE WHEN d.cod_estado_cita = 'PENDIENTE' THEN 1 END) as pendientes,
+            COUNT(CASE WHEN d.cod_estado_cita = 'CANCELADO' THEN 1 END) as canceladas
+        FROM dim_solicitud_bolsa s
+        LEFT JOIN dim_estados_gestion_citas d ON s.estado_gestion_citas_id = d.id_estado_cita
+        WHERE s.id_bolsa = 107 AND s.activo = true
+            AND s.fecha_solicitud >= NOW() AT TIME ZONE 'America/Lima' - INTERVAL '30 days'
+        GROUP BY DATE(s.fecha_solicitud AT TIME ZONE 'America/Lima')
+        ORDER BY fecha ASC
+        """, nativeQuery = true)
+    List<Map<String, Object>> evolucionTemporalModulo107();
+
 }

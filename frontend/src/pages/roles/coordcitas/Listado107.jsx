@@ -3,6 +3,7 @@
 // ------------------------------------------------------------------------
 // Módulo "Bolsa 107" - Importación de pacientes desde archivos Excel
 // Sistema de carga, validación y gestión de pacientes masivos
+// v3.0.0 (2026-01-29): Agrega 5 tabs: Cargar, Historial, Listado, Búsqueda, Estadísticas
 // ========================================================================
 
 import React, { useState, useEffect, useRef } from "react";
@@ -26,12 +27,21 @@ import {
     TrendingUp,
     BarChart3,
     Info,
-    X
+    X,
+    Database,
+    BarChart3 as ChartIcon,
+    List
 } from "lucide-react";
 import formulario107Service from "../../../services/formulario107Service";
+import ListadoPacientes from "./ListadoPacientes";
+import BusquedaAvanzada from "./BusquedaAvanzada";
+import EstadisticasModulo107 from "./EstadisticasModulo107";
 
 export default function Listado107() {
-    // Estados
+    // Estados de Tab (NUEVO v3.0)
+    const [activeTab, setActiveTab] = useState("cargar");
+
+    // Estados existentes
     const [loading, setLoading] = useState(false);
     const [uploading, setUploading] = useState(false);
     const [cargas, setCargas] = useState([]);
@@ -344,7 +354,7 @@ export default function Listado107() {
                             </div>
                             Formulario 107 - Importación de Pacientes
                         </h1>
-                        <p className="text-slate-600">Sistema de carga masiva desde archivos Excel</p>
+                        <p className="text-slate-600">Sistema de carga masiva desde archivos Excel (v3.0)</p>
                     </div>
                     <Button
                         onClick={cargarListaCargas}
@@ -357,7 +367,76 @@ export default function Listado107() {
                 </div>
             </div>
 
-            {/* Estadísticas */}
+            {/* Tabs Navigation (v3.0) */}
+            <div className="mb-6 flex gap-2 overflow-x-auto bg-white rounded-lg shadow-sm p-2 border border-violet-200">
+                <button
+                    onClick={() => setActiveTab("cargar")}
+                    className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 whitespace-nowrap ${
+                        activeTab === "cargar"
+                            ? "bg-violet-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                >
+                    <Upload className="w-4 h-4" />
+                    Cargar Excel
+                </button>
+                <button
+                    onClick={() => setActiveTab("historial")}
+                    className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 whitespace-nowrap ${
+                        activeTab === "historial"
+                            ? "bg-violet-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                >
+                    <Clock className="w-4 h-4" />
+                    Historial
+                </button>
+                <button
+                    onClick={() => setActiveTab("listado")}
+                    className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 whitespace-nowrap ${
+                        activeTab === "listado"
+                            ? "bg-violet-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                >
+                    <List className="w-4 h-4" />
+                    Listado
+                </button>
+                <button
+                    onClick={() => setActiveTab("buscar")}
+                    className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 whitespace-nowrap ${
+                        activeTab === "buscar"
+                            ? "bg-violet-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                >
+                    <Search className="w-4 h-4" />
+                    Búsqueda
+                </button>
+                <button
+                    onClick={() => setActiveTab("estadisticas")}
+                    className={`px-4 py-2 rounded-lg font-semibold transition flex items-center gap-2 whitespace-nowrap ${
+                        activeTab === "estadisticas"
+                            ? "bg-violet-600 text-white"
+                            : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                >
+                    <BarChart3 className="w-4 h-4" />
+                    Estadísticas
+                </button>
+            </div>
+
+            {/* Tab Content Conditional Rendering */}
+            {activeTab === "listado" && <ListadoPacientes />}
+            {activeTab === "buscar" && <BusquedaAvanzada />}
+            {activeTab === "estadisticas" && <EstadisticasModulo107 />}
+
+            {/* Tabs: Cargar & Historial (original content) */}
+            {(activeTab === "cargar" || activeTab === "historial") && (
+                <>
+
+            {/* Estadísticas (only show for cargar/historial tabs) */}
+            {activeTab === "cargar" && (
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                 <Card className="bg-white border-2 border-violet-200 hover:border-violet-400 transition-all duration-300 hover:shadow-lg">
                     <CardContent className="p-6">
@@ -415,6 +494,7 @@ export default function Listado107() {
                     </CardContent>
                 </Card>
             </div>
+            )}
 
             {/* Área de carga de archivos */}
             <Card className="bg-white shadow-lg mb-6 border-2 border-violet-200">
@@ -803,6 +883,8 @@ export default function Listado107() {
                         </CardContent>
                     </Card>
                 </div>
+            )}
+            </>
             )}
         </div>
     );

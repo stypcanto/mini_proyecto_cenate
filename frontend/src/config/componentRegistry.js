@@ -279,15 +279,8 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
-  '/roles/coordcitas/107': {
-    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
-    requiredAction: 'ver',
-  },
-
-  '/roles/coordcitas/pacientes-107': {
-    component: lazy(() => import('../pages/roles/coordcitas/PacientesDe107')),
-    requiredAction: 'ver',
-  },
+  // ⚠️ DEPRECATED: Rutas de Módulo 107 movidas a /bolsas/modulo107/*
+  // Ver sección "MÓDULO 107 (Integración con Bolsas)" para nuevas rutas
 
   // ========================================================================
   // 👤 ADMISION
@@ -504,6 +497,35 @@ export const componentRegistry = {
 
   '/dengue/resultados': {
     component: lazy(() => import('../pages/dengue/DengueValidationReport')),
+    requiredAction: 'ver',
+  },
+
+  // ========================================================================
+  // 📋 MÓDULO 107 (Integración con Bolsas)
+  // v3.0.0: Migración de módulo independiente a integración dentro de Bolsas
+  // ========================================================================
+  '/bolsas/modulo107/dashboard': {
+    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
+    requiredAction: 'ver',
+  },
+
+  '/bolsas/modulo107/cargar-excel': {
+    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
+    requiredAction: 'crear',
+  },
+
+  '/bolsas/modulo107/listado': {
+    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
+    requiredAction: 'ver',
+  },
+
+  '/bolsas/modulo107/buscar': {
+    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
+    requiredAction: 'ver',
+  },
+
+  '/bolsas/modulo107/estadisticas': {
+    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
     requiredAction: 'ver',
   },
 };

@@ -21,9 +21,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.styp.cenate.model.Usuario;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.model.form107.Bolsa107Item;
+import com.styp.cenate.dto.form107.Modulo107PacienteDTO;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.form107.Bolsa107ItemRepository;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.security.mbac.CheckMBACPermission;
+import com.styp.cenate.service.form107.Modulo107Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import java.time.OffsetDateTime;
+import java.time.format.DateTimeFormatter;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,15 +44,18 @@ import lombok.extern.slf4j.Slf4j;
  *
  * Endpoints para listar, filtrar y gestionar pacientes importados
  * desde archivos Excel (Formulario 107 - CENATE)
+ *
+ * @since v3.0.0 Integrado dentro de "Bolsas de Pacientes" module
  */
 @RestController
-@RequestMapping("/api/bolsa107")
+@RequestMapping("/api/bolsas/modulo107")
 @RequiredArgsConstructor
 @Slf4j
 public class Bolsa107Controller {
 
         private final Bolsa107ItemRepository itemRepository;
         private final UsuarioRepository usuarioRepository;
+        private final Modulo107Service modulo107Service;
 
         /**
          * Helper method: Convertir Bolsa107Item a Map
@@ -72,30 +86,6 @@ public class Bolsa107Controller {
                 return map;
         }
 
-        /**
-         * Listar todos los pacientes de la Bolsa 107 con información de IPRESS
-         *
-         * @return Lista de pacientes con todos sus datos incluyendo IPRESS
-         */
-        @GetMapping("/pacientes")
-        public ResponseEntity<?> listarPacientes() {
-                log.info("📋 Listando todos los pacientes de la Bolsa 107 con información de IPRESS");
-
-                try {
-                        List<Map<String, Object>> pacientes = itemRepository.findAllWithIpress();
-
-                        log.info("✅ Retornando {} pacientes de la Bolsa 107", pacientes.size());
-
-                        return ResponseEntity.ok(pacientes);
-
-                } catch (Exception e) {
-                        log.error("❌ Error al listar pacientes de Bolsa 107: ", e);
-                        return ResponseEntity.badRequest()
-                                        .body(Map.of(
-                                                        "error", "Error al cargar pacientes",
-                                                        "message", e.getMessage()));
-                }
-        }
 
         /**
          * Listar pacientes filtrados por derivación interna
@@ -103,7 +93,11 @@ public class Bolsa107Controller {
          * @param derivacion Derivación interna (PSICOLOGIA CENATE, MEDICINA CENATE,
          *                   etc.)
          * @return Lista de pacientes filtrados
+         *
+         * @deprecated Usar GET /api/bolsas/modulo107/pacientes en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "ver")
         @GetMapping("/pacientes/por-derivacion")
         public ResponseEntity<?> listarPorDerivacion(
                         @RequestParam(value = "derivacion", required = false) String derivacion) {
@@ -176,55 +170,17 @@ public class Bolsa107Controller {
                 }
         }
 
-        /**
-         * Obtener estadísticas de la Bolsa 107
-         *
-         * @return Estadísticas generales (total, por derivación, por ubicación, etc.)
-         */
-        @GetMapping("/estadisticas")
-        public ResponseEntity<?> obtenerEstadisticas() {
-                log.info("📊 Obteniendo estadísticas de la Bolsa 107");
-
-                try {
-                        List<com.styp.cenate.model.form107.Bolsa107Item> items = itemRepository.findAll();
-
-                        long total = items.size();
-                        long psicologia = items.stream()
-                                        .filter(i -> i.getDerivacionInterna() != null &&
-                                                        i.getDerivacionInterna().contains("PSICOLOGIA"))
-                                        .count();
-                        long medicina = items.stream()
-                                        .filter(i -> i.getDerivacionInterna() != null &&
-                                                        i.getDerivacionInterna().contains("MEDICINA"))
-                                        .count();
-                        long lima = items.stream()
-                                        .filter(i -> "LIMA".equalsIgnoreCase(i.getDepartamento()))
-                                        .count();
-                        long provincia = total - lima;
-
-                        Map<String, Object> stats = Map.of(
-                                        "total", total,
-                                        "psicologia", psicologia,
-                                        "medicina", medicina,
-                                        "lima", lima,
-                                        "provincia", provincia);
-
-                        log.info("✅ Estadísticas calculadas: {}", stats);
-                        return ResponseEntity.ok(stats);
-
-                } catch (Exception e) {
-                        log.error("❌ Error al calcular estadísticas: ", e);
-                        return ResponseEntity.badRequest()
-                                        .body(Map.of("error", e.getMessage()));
-                }
-        }
 
         /**
          * Asignar un paciente de Bolsa 107 a un admisionista
          *
          * @param request Map con id_item y id_admisionista
          * @return Resultado de la asignación
+         *
+         * @deprecated Usar endpoints v3.0 en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "asignar")
         @PostMapping("/asignar-admisionista")
         public ResponseEntity<?> asignarAdmisionista(@RequestBody Map<String, Object> request) {
                 log.info("👤 Asignando paciente a admisionista");
@@ -278,7 +234,11 @@ public class Bolsa107Controller {
          *
          * @param request Map con id_item y id_gestor
          * @return Resultado de la asignación
+         *
+         * @deprecated Usar endpoints v3.0 en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "asignar")
         @PostMapping("/asignar-gestor")
         public ResponseEntity<?> asignarGestor(@RequestBody Map<String, Object> request) {
                 log.info("👤 Asignando paciente a gestor de citas");
@@ -332,7 +292,11 @@ public class Bolsa107Controller {
          *
          * @param request Map con id_item
          * @return Resultado de la operación
+         *
+         * @deprecated Usar endpoints v3.0 en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "asignar")
         @PostMapping("/desasignar-gestor")
         public ResponseEntity<?> desasignarGestor(@RequestBody Map<String, Object> request) {
                 log.info("🗑️ Desasignando gestor de citas de paciente");
@@ -371,7 +335,11 @@ public class Bolsa107Controller {
          * Obtener pacientes asignados al admisionista logueado
          *
          * @return Lista de pacientes asignados
+         *
+         * @deprecated Usar endpoints v3.0 en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "ver")
         @GetMapping("/mis-asignaciones")
         public ResponseEntity<?> obtenerMisAsignaciones() {
                 log.info("📋 Obteniendo pacientes asignados al admisionista logueado");
@@ -411,7 +379,11 @@ public class Bolsa107Controller {
          * Obtener pacientes asignados al gestor de citas logueado
          *
          * @return Lista de pacientes asignados al gestor
+         *
+         * @deprecated Usar endpoints v3.0 en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "ver")
         @GetMapping("/mis-pacientes-gestor")
         public ResponseEntity<?> obtenerMisPacientesGestor() {
                 log.info("📋 Obteniendo pacientes asignados al gestor de citas logueado");
@@ -451,7 +423,11 @@ public class Bolsa107Controller {
          * Obtener estadísticas del dashboard para el gestor de citas logueado
          *
          * @return Estadísticas resumidas de pacientes asignados
+         *
+         * @deprecated Usar endpoints v3.0 en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/estadisticas", accion = "ver")
         @GetMapping("/estadisticas-gestor")
         @Transactional(readOnly = true)
         public ResponseEntity<?> obtenerEstadisticasGestor() {
@@ -610,7 +586,11 @@ public class Bolsa107Controller {
          * @param idItem ID del item en bolsa_107_item
          * @param datos  Datos a actualizar
          * @return Respuesta con el item actualizado
+         *
+         * @deprecated Usar endpoints v3.0 en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "actualizar")
         @PutMapping("/paciente/{idItem}")
         public ResponseEntity<?> actualizarPaciente(
                         @PathVariable Long idItem,
@@ -712,7 +692,11 @@ public class Bolsa107Controller {
          *
          * @param request Map con "ids" (array de IDs a eliminar)
          * @return Resultado de la operación
+         *
+         * @deprecated Usar endpoints v3.0 en su lugar
          */
+        @Deprecated(since = "v3.0.0", forRemoval = true)
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "eliminar")
         @DeleteMapping("/pacientes")
         @Transactional
         public ResponseEntity<?> eliminarPacientes(@RequestBody Map<String, Object> request) {
@@ -756,6 +740,170 @@ public class Bolsa107Controller {
                         log.error("❌ Error al eliminar pacientes: ", e);
                         return ResponseEntity.badRequest()
                                         .body(Map.of("error", e.getMessage()));
+                }
+        }
+
+        // ========================================================================
+        // 🔄 v3.0.0 (2026-01-29): NUEVOS ENDPOINTS PARA MIGRACIÓN A DIM_SOLICITUD_BOLSA
+        // ========================================================================
+
+        /**
+         * 1️⃣ Listar TODOS los pacientes del Módulo 107 con paginación
+         *
+         * Novedad v3.0: Ahora utiliza dim_solicitud_bolsa en lugar de bolsa_107_item
+         * Los datos se migran automáticamente durante la carga de datos
+         *
+         * @param page Número de página (0-indexed, default: 0)
+         * @param size Cantidad de registros por página (default: 30)
+         * @param sortBy Campo para ordenamiento (default: fechaSolicitud)
+         * @param sortDirection ASC o DESC (default: DESC)
+         * @return Page<SolicitudBolsa> con todos los pacientes activos
+         */
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/listado", accion = "ver")
+        @GetMapping("/pacientes")
+        public ResponseEntity<?> listarPacientes(
+                @RequestParam(defaultValue = "0") int page,
+                @RequestParam(defaultValue = "30") int size,
+                @RequestParam(defaultValue = "fechaSolicitud") String sortBy,
+                @RequestParam(defaultValue = "DESC") String sortDirection
+        ) {
+                try {
+                        log.info("📋 Listando pacientes del Módulo 107 - page={}, size={}", page, size);
+
+                        // Crear Pageable con ordenamiento
+                        Sort.Direction direction = sortDirection.equalsIgnoreCase("ASC")
+                                        ? Sort.Direction.ASC
+                                        : Sort.Direction.DESC;
+                        Pageable pageable = PageRequest.of(page, size, Sort.by(direction, sortBy));
+
+                        // Obtener página de pacientes desde el servicio
+                        Page<Modulo107PacienteDTO> pacientes = modulo107Service.listarPacientes(pageable);
+
+                        // Convertir a mapa para respuesta
+                        Map<String, Object> response = new HashMap<>();
+                        response.put("total", pacientes.getTotalElements());
+                        response.put("page", pacientes.getNumber());
+                        response.put("size", pacientes.getSize());
+                        response.put("totalPages", pacientes.getTotalPages());
+                        response.put("pacientes", pacientes.getContent());
+
+                        return ResponseEntity.ok(response);
+
+                } catch (Exception e) {
+                        log.error("❌ Error al listar pacientes: ", e);
+                        return ResponseEntity.status(500)
+                                        .body(Map.of(
+                                                "error", "Error al obtener pacientes",
+                                                "mensaje", e.getMessage()
+                                        ));
+                }
+        }
+
+        /**
+         * 2️⃣ Buscar pacientes con filtros avanzados
+         *
+         * Permite búsqueda multi-criterio:
+         * - DNI: búsqueda parcial (LIKE)
+         * - Nombre: búsqueda case-insensitive
+         * - IPRESS: búsqueda exacta
+         * - Estado: filtro por estado de gestión de citas
+         * - Fechas: rango de fechas de solicitud
+         *
+         * @param dni DNI del paciente (búsqueda parcial)
+         * @param nombre Nombre del paciente (búsqueda parcial, case-insensitive)
+         * @param codigoIpress Código IPRESS (búsqueda exacta)
+         * @param estadoId ID del estado de gestión de citas
+         * @param fechaDesde Fecha inicio del rango (ISO format: 2026-01-29T00:00:00Z)
+         * @param fechaHasta Fecha fin del rango
+         * @param page Número de página (default: 0)
+         * @param size Cantidad de registros por página (default: 30)
+         * @return Page<SolicitudBolsa> con pacientes que coinciden los filtros
+         */
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/buscar", accion = "ver")
+        @GetMapping("/pacientes/buscar")
+        public ResponseEntity<?> buscarPacientes(
+                @RequestParam(required = false) String dni,
+                @RequestParam(required = false) String nombre,
+                @RequestParam(required = false) String codigoIpress,
+                @RequestParam(required = false) Long estadoId,
+                @RequestParam(required = false) String fechaDesde,
+                @RequestParam(required = false) String fechaHasta,
+                @RequestParam(defaultValue = "0") int page,
+                @RequestParam(defaultValue = "30") int size
+        ) {
+                try {
+                        log.info("🔍 Buscando pacientes con filtros: dni={}, nombre={}, ipress={}, estado={}",
+                                        dni, nombre, codigoIpress, estadoId);
+
+                        // Parsear fechas si están presentes
+                        OffsetDateTime fechaDesdeObj = null;
+                        OffsetDateTime fechaHastaObj = null;
+
+                        if (fechaDesde != null && !fechaDesde.isEmpty()) {
+                                fechaDesdeObj = OffsetDateTime.parse(fechaDesde);
+                        }
+
+                        if (fechaHasta != null && !fechaHasta.isEmpty()) {
+                                fechaHastaObj = OffsetDateTime.parse(fechaHasta);
+                        }
+
+                        // Crear Pageable
+                        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "fechaSolicitud"));
+
+                        // Ejecutar búsqueda desde el servicio
+                        Page<Modulo107PacienteDTO> resultados = modulo107Service.buscarPacientes(
+                                        dni, nombre, codigoIpress, estadoId, fechaDesdeObj, fechaHastaObj, pageable);
+
+                        // Preparar respuesta
+                        Map<String, Object> response = new HashMap<>();
+                        response.put("total", resultados.getTotalElements());
+                        response.put("page", resultados.getNumber());
+                        response.put("size", resultados.getSize());
+                        response.put("totalPages", resultados.getTotalPages());
+                        response.put("pacientes", resultados.getContent());
+
+                        return ResponseEntity.ok(response);
+
+                } catch (Exception e) {
+                        log.error("❌ Error al buscar pacientes: ", e);
+                        return ResponseEntity.status(500)
+                                        .body(Map.of(
+                                                "error", "Error en la búsqueda",
+                                                "mensaje", e.getMessage()
+                                        ));
+                }
+        }
+
+        /**
+         * 3️⃣ Obtener estadísticas completas del Módulo 107
+         *
+         * Retorna un dashboard completo con:
+         * - KPIs generales (total, atendidos, pendientes, etc.)
+         * - Distribución por estado
+         * - Distribución por especialidad
+         * - Top 10 IPRESS
+         * - Evolución temporal (últimos 30 días)
+         *
+         * @return Map con todas las estadísticas
+         */
+        @CheckMBACPermission(pagina = "/bolsas/modulo107/estadisticas", accion = "ver")
+        @GetMapping("/estadisticas")
+        public ResponseEntity<?> obtenerEstadisticas() {
+                try {
+                        log.info("📊 Obteniendo estadísticas del Módulo 107...");
+
+                        // Obtener estadísticas desde el servicio
+                        Map<String, Object> estadisticas = modulo107Service.obtenerEstadisticas();
+
+                        return ResponseEntity.ok(estadisticas);
+
+                } catch (Exception e) {
+                        log.error("❌ Error al obtener estadísticas: ", e);
+                        return ResponseEntity.status(500)
+                                        .body(Map.of(
+                                                "error", "Error al calcular estadísticas",
+                                                "mensaje", e.getMessage()
+                                        ));
                 }
         }
 }
