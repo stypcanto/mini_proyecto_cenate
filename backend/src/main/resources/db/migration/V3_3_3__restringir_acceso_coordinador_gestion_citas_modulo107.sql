@@ -20,8 +20,10 @@ WITH coordinador_gestion_citas AS (
 paginas_restringidas AS (
   SELECT id_pagina
   FROM dim_paginas_modulo
-  WHERE (nombre_pagina = 'Bienvenida' OR ruta_pagina = '/bolsas/modulo107/bienvenida')
-     OR (nombre_pagina = 'Cargar Excel' OR ruta_pagina = '/bolsas/modulo107/cargar-excel')
+  WHERE nombre_pagina IN ('Bienvenida', 'Cargar Excel', 'Carga de Pacientes 107')
+     OR ruta_pagina IN ('/bolsas/modulo107/bienvenida',
+                        '/bolsas/modulo107/cargar-excel',
+                        '/bolsas/modulo107/carga-de-pacientes-107')
 )
 
 -- ============================================================
