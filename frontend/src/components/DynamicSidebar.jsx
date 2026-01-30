@@ -260,6 +260,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
       // Para usuarios COORDINADOR_GESTION_CITAS: expandir "Bolsas de Pacientes"
       if (isCoordinadorGestionCitas) {
         const moduloBolsas = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("bolsa") ||
           m.nombreModulo?.toLowerCase() === "bolsas de pacientes"
         );
         if (moduloBolsas) {
@@ -267,9 +268,10 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
         }
       }
 
-      // Para usuarios PERSONAL_107: expandir "Bolsas de Pacientes" o "Módulo 107"
+      // Para usuarios PERSONAL_107: expandir "Bolsas de Pacientes"
       if (isPersonal107) {
         const moduloBolsas = modulosPermitidos.find(m =>
+          m.nombreModulo?.toLowerCase().includes("bolsa") ||
           m.nombreModulo?.toLowerCase() === "bolsas de pacientes"
         );
         if (moduloBolsas) {
