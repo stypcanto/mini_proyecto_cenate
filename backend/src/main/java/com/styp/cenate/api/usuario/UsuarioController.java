@@ -362,12 +362,52 @@ public class UsuarioController {
 	// ✏️ ACTUALIZAR INFORMACIÓN COMPLETA DEL PERSONAL
 	// ============================================================
 
+	/** 📋 Obtener datos personales completos del usuario */
+	@GetMapping("/personal/{id}")
+	@PreAuthorize("isAuthenticated()")
+	public ResponseEntity<?> obtenerDatosPersonal(@PathVariable("id") Long id, Authentication authentication) {
+		try {
+			// Verificar que el usuario solo puede obtener sus propios datos o es ADMIN/SUPERADMIN
+			String username = authentication.getName();
+			var usuarioActual = usuarioService.getUserByUsername(username);
+
+			if (!usuarioActual.getIdUser().equals(id) &&
+				!authentication.getAuthorities().stream().anyMatch(a ->
+					a.getAuthority().contains("ADMIN") || a.getAuthority().contains("SUPERADMIN"))) {
+				log.warn("⚠️ Usuario {} intentó acceder a datos de otro usuario (ID: {})", username, id);
+				return ResponseEntity.status(403).body(Map.of("message", "No autorizado para acceder a estos datos"));
+			}
+
+			log.info("📋 Obteniendo datos personales completos del usuario ID: {}", id);
+			com.styp.cenate.dto.UsuarioResponse response = usuarioService.getUserById(id);
+			return ResponseEntity.ok(response);
+		} catch (EntityNotFoundException e) {
+			log.error("❌ Usuario no encontrado: {}", e.getMessage());
+			return ResponseEntity.status(404).body(Map.of("message", e.getMessage()));
+		} catch (Exception e) {
+			log.error("❌ Error al obtener datos personales: {}", e.getMessage());
+			return ResponseEntity.badRequest().body(Map.of("message", e.getMessage()));
+		}
+	}
+
 	/** ✏️ Actualizar datos personales, profesionales y laborales */
 	@PutMapping("/personal/{id}")
-	@PreAuthorize("hasAnyRole('SUPERADMIN','ADMIN')")
+	@PreAuthorize("isAuthenticated()")
 	public ResponseEntity<?> actualizarDatosPersonal(@PathVariable("id") Long id,
-			@RequestBody com.styp.cenate.dto.PersonalUpdateRequest request) {
+			@RequestBody com.styp.cenate.dto.PersonalUpdateRequest request,
+			Authentication authentication) {
 		try {
+			// Verificar que el usuario solo puede actualizar sus propios datos o es ADMIN/SUPERADMIN
+			String username = authentication.getName();
+			var usuarioActual = usuarioService.getUserByUsername(username);
+
+			if (!usuarioActual.getIdUser().equals(id) &&
+				!authentication.getAuthorities().stream().anyMatch(a ->
+					a.getAuthority().contains("ADMIN") || a.getAuthority().contains("SUPERADMIN"))) {
+				log.warn("⚠️ Usuario {} intentó actualizar datos de otro usuario (ID: {})", username, id);
+				return ResponseEntity.status(403).body(Map.of("message", "No autorizado para actualizar estos datos"));
+			}
+
 			log.info("✏️ Actualizando datos completos del usuario ID: {}", id);
 			com.styp.cenate.dto.UsuarioResponse response = usuarioService.actualizarDatosPersonal(id, request);
 			return ResponseEntity.ok(Map.of("message", "Datos actualizados correctamente", "usuario", response));
