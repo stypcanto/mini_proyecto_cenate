@@ -203,7 +203,6 @@ public class AccountRequestService {
             }
 
             usuarioRequest.setRol(rolAsignado);
-
             var usuarioCreado = usuarioService.createUser(usuarioRequest);
             Long idUsuario = usuarioCreado.getIdUser();
 
