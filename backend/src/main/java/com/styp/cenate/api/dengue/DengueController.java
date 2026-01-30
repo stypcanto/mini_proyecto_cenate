@@ -45,7 +45,7 @@ public class DengueController {
     }
 
     @PostMapping("/cargar-excel")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'COORD. ESPECIALIDADES', 'GESTIONTERRITORIAL')")
     public ResponseEntity<?> cargarExcelDengue(
             @RequestParam MultipartFile archivo,
             @RequestParam Long usuarioId
@@ -87,7 +87,7 @@ public class DengueController {
     }
 
     @GetMapping("/casos")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'MEDICO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'COORD. ESPECIALIDADES', 'GESTIONTERRITORIAL', 'MEDICO')")
     public ResponseEntity<?> listarCasosDengue(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
@@ -115,7 +115,7 @@ public class DengueController {
     }
 
     @GetMapping("/buscar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'MEDICO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'COORD. ESPECIALIDADES', 'GESTIONTERRITORIAL', 'MEDICO')")
     public ResponseEntity<?> buscarCasosDengue(
             @RequestParam(required = false) String dni,
             @RequestParam(required = false) String dxMain,
@@ -145,7 +145,7 @@ public class DengueController {
     }
 
     @GetMapping("/estadisticas")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'COORD. ESPECIALIDADES', 'GESTIONTERRITORIAL')")
     public ResponseEntity<?> obtenerEstadisticas() {
         log.info("📊 GET /api/dengue/estadisticas");
 
