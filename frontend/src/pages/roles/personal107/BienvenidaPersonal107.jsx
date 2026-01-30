@@ -106,7 +106,7 @@ export default function BienvenidaPersonal107() {
               title="Atenciones Clínicas"
               description="Registra y consulta el historial de atenciones realizadas a pacientes"
               color="blue"
-              action={() => navigate("/bolsas/modulo107/atenciones")}
+              action={() => navigate("/bolsas/modulo107/atenciones-clinicas")}
             />
 
             {/* Card 3: Estadísticas */}
