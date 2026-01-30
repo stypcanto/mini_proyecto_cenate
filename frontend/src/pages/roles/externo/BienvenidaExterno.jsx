@@ -27,8 +27,20 @@ export default function BienvenidaExterno() {
   const genero = user?.genero === "F" || user?.genero === "FEMENINO" ? "a" : "o";
   const nombreUsuario = user?.nombreCompleto || "Usuario";
 
+  // Estilo para animación suave de pulse
+  const subtlePulseStyle = `
+    @keyframes subtlePulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.85; }
+    }
+    .subtle-pulse {
+      animation: subtlePulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+  `;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50 p-6">
+      <style>{subtlePulseStyle}</style>
       <div className="max-w-6xl mx-auto space-y-6">
         {/* Header con bienvenida */}
         <div className="text-center space-y-3">
@@ -197,8 +209,8 @@ function QuickActionCard({ icon, title, description, color, badge, action }) {
       className={`${colorClasses[color]} border rounded-xl p-5 transition-all cursor-pointer group text-left w-full relative`}
     >
       {badge && (
-        <div className="absolute top-3 right-3 animate-pulse">
-          <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold shadow-lg shadow-red-500/50">
+        <div className="absolute top-3 right-3 subtle-pulse">
+          <div className="bg-red-500 text-white px-3 py-1 rounded-full text-xs font-semibold">
             {badge}
           </div>
         </div>
