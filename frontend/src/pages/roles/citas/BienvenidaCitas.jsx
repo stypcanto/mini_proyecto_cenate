@@ -10,7 +10,6 @@ import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardList,
-  Users,
   BarChart3,
   ArrowRight,
   CheckCircle2,
@@ -93,7 +92,7 @@ export default function BienvenidaCitas() {
           <h3 className="text-xl font-bold text-slate-900 mb-4">
             🎯 Acciones Rápidas
           </h3>
-          <div className="grid md:grid-cols-3 gap-4">
+          <div className="grid md:grid-cols-2 gap-4">
             {/* Card 1: Mi Bandeja */}
             <QuickActionCard
               icon={<ClipboardList className="w-6 h-6" />}
@@ -103,16 +102,7 @@ export default function BienvenidaCitas() {
               action={() => navigate("/citas/gestion-pacientes")}
             />
 
-            {/* Card 2: Gestión de Asegurados */}
-            <QuickActionCard
-              icon={<Users className="w-6 h-6" />}
-              title="Gestión de Asegurados"
-              description="Actualiza datos personales, contacto e información médica de pacientes. Realiza derivaciones a especialidades según complejidad del caso"
-              color="emerald"
-              action={() => navigate("/citas/gestion-asegurado")}
-            />
-
-            {/* Card 3: Estadísticas */}
+            {/* Card 2: Reportes y Seguimiento */}
             <QuickActionCard
               icon={<BarChart3 className="w-6 h-6" />}
               title="Reportes y Seguimiento"
