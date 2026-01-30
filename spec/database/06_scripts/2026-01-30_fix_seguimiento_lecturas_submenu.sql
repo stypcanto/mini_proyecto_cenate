@@ -20,7 +20,7 @@
 
 UPDATE dim_paginas_modulo
 SET id_pagina_padre = 90,  -- ID de "Gestión de Modalidad de Atención"
-    orden = 5,              -- Orden dentro del submenu
+    orden = 1,              -- Orden dentro del submenu (1 = primer submenu)
     updated_at = NOW()
 WHERE id_pagina = 125       -- ID de "Seguimiento de Lecturas Pendientes"
   AND ruta_pagina = '/roles/externo/seguimiento-lecturas';
