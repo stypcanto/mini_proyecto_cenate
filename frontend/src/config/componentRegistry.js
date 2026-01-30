@@ -257,7 +257,7 @@ export const componentRegistry = {
   // 📅 MÓDULO CITAS
   // ========================================================================
   '/citas/bienvenida': {
-    component: lazy(() => import('../pages/user/UserDashboard')),
+    component: lazy(() => import('../pages/roles/citas/BienvenidaCitas')),
     requiredAction: 'ver',
   },
 
