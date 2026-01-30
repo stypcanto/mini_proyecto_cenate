@@ -7,6 +7,7 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
+import { getToken } from "../../../constants/auth";
 import {
   Users,
   CheckCircle2,
@@ -16,6 +17,8 @@ import {
   RefreshCw,
   Lock,
   ArrowRight,
+  Edit2,
+  ChevronDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -30,18 +33,50 @@ export default function GestionAsegurado() {
     solicitudesPendientes: 0,
   });
   const [error, setError] = useState(null);
+  const [modalTelefono, setModalTelefono] = useState({
+    visible: false,
+    paciente: null,
+    telefonoPrincipal: "",
+    telefonoAlterno: "",
+    saving: false,
+  });
+
+  const [estadoEditando, setEstadoEditando] = useState(null);
+  const [nuevoEstado, setNuevoEstado] = useState("");
+  const [estadosDisponibles] = useState([
+    { codigo: "PENDIENTE_CITA", descripcion: "Paciente nuevo que ingresó a la bolsa" },
+    { codigo: "CITADO", descripcion: "Citado - Paciente agendado para atención" },
+    { codigo: "ATENDIDO_IPRESS", descripcion: "Atendido por IPRESS - Paciente recibió atención en institución" },
+    { codigo: "NO_CONTESTA", descripcion: "No contesta - Paciente no responde a las llamadas" },
+    { codigo: "NO_DESEA", descripcion: "No desea - Paciente rechaza la atención" },
+    { codigo: "APAGADO", descripcion: "Apagado - Teléfono del paciente apagado" },
+    { codigo: "TEL_SIN_SERVICIO", descripcion: "Teléfono sin servicio - Línea telefónica sin servicio" },
+    { codigo: "NUM_NO_EXISTE", descripcion: "Número no existe - Teléfono registrado no existe" },
+    { codigo: "SIN_VIGENCIA", descripcion: "Sin vigencia de Seguro - Seguro del paciente no vigente" },
+    { codigo: "HC_BLOQUEADA", descripcion: "Historia clínica bloqueada - HC del paciente bloqueada en sistema" },
+    { codigo: "REPROG_FALLIDA", descripcion: "Reprogramación Fallida - No se pudo reprogramar la cita" },
+  ]);
 
   const API_BASE = "http://localhost:8080/api";
-  const token = localStorage.getItem("token");
 
   // Fetch assigned patients from backend
   const fetchPacientesAsignados = async () => {
     try {
+      const token = getToken();
       console.log("📥 Fetching assigned patients from /api/bolsas/solicitudes/mi-bandeja");
+      console.log("🔐 Token disponible:", token ? "✅ Sí" : "❌ No");
+      console.log("🔐 Token value:", token ? `${token.substring(0, 20)}...` : "null");
+
+      if (!token) {
+        console.error("❌ No hay token disponible en localStorage");
+        setError("No hay sesión activa. Por favor, inicia sesión nuevamente.");
+        return;
+      }
 
       const response = await fetch(
         `${API_BASE}/bolsas/solicitudes/mi-bandeja`,
         {
+          method: "GET",
           headers: {
             "Authorization": `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -49,16 +84,30 @@ export default function GestionAsegurado() {
         }
       );
 
+      console.log(`📊 Response Status: ${response.status} ${response.statusText}`);
+      console.log("📋 Response Headers:", {
+        "content-type": response.headers.get("content-type"),
+        "content-length": response.headers.get("content-length"),
+      });
+
       if (!response.ok) {
         console.warn(`❌ Error fetching mi-bandeja: Status ${response.status}`);
-        const errorData = await response.json().catch(() => null);
-        console.error("Error details:", errorData);
+        const responseText = await response.text();
+        console.error("Response text:", responseText);
+        try {
+          const errorData = JSON.parse(responseText);
+          console.error("Error details (JSON):", errorData);
+        } catch (e) {
+          console.error("Could not parse error as JSON");
+        }
         setPacientesAsignados([]);
+        setError(`Error al obtener pacientes: ${response.status} ${response.statusText}`);
         return;
       }
 
       const data = await response.json();
       console.log("📦 Response structure:", data);
+      console.log("📦 Response keys:", Object.keys(data));
 
       // The endpoint returns { total, solicitudes, mensaje }
       const solicitudes = data?.solicitudes || data?.data?.content || data?.content || [];
@@ -101,6 +150,99 @@ export default function GestionAsegurado() {
     } catch (err) {
       console.error("Error fetching assigned patients:", err);
       setPacientesAsignados([]);
+    }
+  };
+
+  // Abrir modal para actualizar teléfono
+  const abrirModalTelefono = (paciente) => {
+    setModalTelefono({
+      visible: true,
+      paciente,
+      telefonoPrincipal: paciente.pacienteTelefono || "",
+      telefonoAlterno: paciente.pacienteTelefonoAlterno || "",
+      saving: false,
+    });
+  };
+
+  // Cerrar modal
+  const cerrarModalTelefono = () => {
+    setModalTelefono({
+      visible: false,
+      paciente: null,
+      telefonoPrincipal: "",
+      telefonoAlterno: "",
+      saving: false,
+    });
+  };
+
+  // Actualizar estado de cita
+  const actualizarEstado = async (pacienteId, nuevoEstadoCodigo) => {
+    try {
+      const token = getToken();
+      const response = await fetch(
+        `${API_BASE}/bolsas/solicitudes/${pacienteId}/estado?nuevoEstadoCodigo=${encodeURIComponent(nuevoEstadoCodigo)}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Estado actualizado correctamente");
+        setEstadoEditando(null);
+        await fetchPacientesAsignados();
+      } else {
+        const errorData = await response.json();
+        console.error("Error details:", errorData);
+        toast.error(errorData.error || "Error al actualizar el estado");
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("Error al actualizar el estado");
+    }
+  };
+
+  // Guardar teléfono actualizado
+  const guardarTelefono = async () => {
+    if (!modalTelefono.telefonoPrincipal && !modalTelefono.telefonoAlterno) {
+      toast.error("Al menos uno de los teléfonos es requerido");
+      return;
+    }
+
+    setModalTelefono({ ...modalTelefono, saving: true });
+
+    try {
+      const token = getToken();
+      const response = await fetch(
+        `${API_BASE}/bolsas/solicitudes/${modalTelefono.paciente.id}/actualizar-telefonos`,
+        {
+          method: "PATCH",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            pacienteTelefono: modalTelefono.telefonoPrincipal,
+            pacienteTelefonoAlterno: modalTelefono.telefonoAlterno,
+          }),
+        }
+      );
+
+      if (response.ok) {
+        toast.success("Teléfono actualizado correctamente");
+        cerrarModalTelefono();
+        await fetchPacientesAsignados();
+      } else {
+        toast.error("Error al actualizar el teléfono");
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      toast.error("Error al actualizar el teléfono");
+    } finally {
+      setModalTelefono({ ...modalTelefono, saving: false });
     }
   };
 
@@ -315,6 +457,9 @@ export default function GestionAsegurado() {
                       <th className="px-6 py-3 text-left font-semibold text-gray-700">
                         Fecha Asignación
                       </th>
+                      <th className="px-6 py-3 text-center font-semibold text-gray-700">
+                        Acciones
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -355,22 +500,64 @@ export default function GestionAsegurado() {
                           {paciente.pacienteTelefonoAlterno}
                         </td>
                         <td className="px-6 py-4">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium ${
-                              paciente.descEstadoCita === "ATENDIDA"
-                                ? "bg-green-100 text-green-800"
-                                : paciente.descEstadoCita === "PENDIENTE"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
-                            }`}
-                          >
-                            {paciente.descEstadoCita}
-                          </span>
+                          {estadoEditando === paciente.id ? (
+                            <select
+                              value={nuevoEstado}
+                              onChange={(e) => {
+                                setNuevoEstado(e.target.value);
+                                if (e.target.value) {
+                                  actualizarEstado(paciente.id, e.target.value);
+                                }
+                              }}
+                              className="px-3 py-1 border border-blue-300 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                              autoFocus
+                            >
+                              <option value="">Seleccionar estado...</option>
+                              {estadosDisponibles.map((est) => (
+                                <option key={est.codigo} value={est.codigo} title={est.descripcion}>
+                                  {est.codigo}
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                  paciente.descEstadoCita === "ATENDIDA"
+                                    ? "bg-green-100 text-green-800"
+                                    : paciente.descEstadoCita === "PENDIENTE"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : "bg-gray-100 text-gray-800"
+                                }`}
+                              >
+                                {paciente.descEstadoCita || "Sin estado"}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setEstadoEditando(paciente.id);
+                                  setNuevoEstado(paciente.estado || "");
+                                }}
+                                className="text-blue-600 hover:text-blue-800 transition-colors"
+                                title="Cambiar estado"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-slate-600 text-xs">
                           {paciente.fechaAsignacion === "-"
                             ? "-"
                             : new Date(paciente.fechaAsignacion).toLocaleDateString("es-ES")}
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <button
+                            onClick={() => abrirModalTelefono(paciente)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
+                            title="Actualizar teléfonos"
+                          >
+                            📱 Teléfono
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -381,6 +568,93 @@ export default function GestionAsegurado() {
           </div>
         </div>
       </div>
+
+      {/* Modal Actualizar Teléfono */}
+      {modalTelefono.visible && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full">
+            <div className="bg-gradient-to-r from-blue-600 to-teal-600 p-6 text-white rounded-t-2xl">
+              <h2 className="text-xl font-bold flex items-center gap-3">
+                <span>📱</span>
+                <span>Actualizar Teléfonos</span>
+              </h2>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <p className="text-sm font-semibold text-gray-700 mb-2">Paciente:</p>
+                <p className="text-gray-900 font-medium">
+                  {modalTelefono.paciente?.pacienteNombre}
+                </p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Teléfono Principal
+                </label>
+                <input
+                  type="tel"
+                  value={modalTelefono.telefonoPrincipal}
+                  onChange={(e) =>
+                    setModalTelefono({
+                      ...modalTelefono,
+                      telefonoPrincipal: e.target.value,
+                    })
+                  }
+                  placeholder="Ej: 987654321"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 mb-2">
+                  Teléfono Alterno
+                </label>
+                <input
+                  type="tel"
+                  value={modalTelefono.telefonoAlterno}
+                  onChange={(e) =>
+                    setModalTelefono({
+                      ...modalTelefono,
+                      telefonoAlterno: e.target.value,
+                    })
+                  }
+                  placeholder="Ej: 912345678"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <p className="text-xs text-gray-500">
+                * Al menos uno de los teléfonos es requerido
+              </p>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={cerrarModalTelefono}
+                  disabled={modalTelefono.saving}
+                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={guardarTelefono}
+                  disabled={modalTelefono.saving}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  {modalTelefono.saving ? (
+                    <>
+                      <span className="animate-spin">⏳</span>
+                      Guardando...
+                    </>
+                  ) : (
+                    "Guardar"
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

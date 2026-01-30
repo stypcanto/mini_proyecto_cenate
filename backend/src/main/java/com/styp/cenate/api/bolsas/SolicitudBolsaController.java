@@ -22,6 +22,11 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import com.styp.cenate.model.bolsas.SolicitudBolsa;
+import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.repository.bolsas.DimEstadosGestionCitasRepository;
+import com.styp.cenate.model.bolsas.DimEstadosGestionCitas;
+import com.styp.cenate.exception.ResourceNotFoundException;
 
 /**
  * Controller REST para gestión de solicitudes de bolsa
@@ -39,6 +44,8 @@ public class SolicitudBolsaController {
 
     private final SolicitudBolsaService solicitudBolsaService;
     private final HistorialCargaBolsasRepository historialRepository;
+    private final SolicitudBolsaRepository solicitudRepository;
+    private final DimEstadosGestionCitasRepository estadosRepository;
 
     /**
      * Importa solicitudes desde archivo Excel
@@ -255,12 +262,15 @@ public class SolicitudBolsaController {
     @GetMapping("/mi-bandeja")
     public ResponseEntity<?> obtenerMiBandeja() {
         try {
-            log.info("📬 Obteniendo solicitudes de la gestora actual (Mi Bandeja)...");
+            log.info("═══════════════════════════════════════════════════════════");
+            log.info("📬 ENDPOINT: GET /api/bolsas/solicitudes/mi-bandeja");
+            log.info("   Obteniendo solicitudes de la gestora actual (Mi Bandeja)...");
 
             // Obtener solicitudes asignadas a la gestora actual
             List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.obtenerSolicitudesAsignadasAGestora();
 
-            log.info("✅ Se encontraron {} solicitud(es) en la bandeja de la gestora", solicitudes.size());
+            log.info("✅ Resultado final: Se encontraron {} solicitud(es) en la bandeja", solicitudes.size());
+            log.info("═══════════════════════════════════════════════════════════");
 
             return ResponseEntity.ok(Map.of(
                 "total", solicitudes.size(),
@@ -272,6 +282,7 @@ public class SolicitudBolsaController {
 
         } catch (Exception e) {
             log.error("❌ Error al obtener bandeja de gestora: ", e);
+            log.error("═══════════════════════════════════════════════════════════");
             return ResponseEntity.status(500).body(
                 Map.of("error", "Error al obtener bandeja: " + e.getMessage())
             );
@@ -369,31 +380,46 @@ public class SolicitudBolsaController {
      * Cambia el estado de una solicitud
      * PATCH /api/bolsas/solicitudes/{id}/estado
      *
-     * Roles permitidos: SUPERADMIN, ADMIN, COORDINADOR_GESTION_DE_CITAS, GESTOR_DE_CITAS
+     * Roles permitidos: SUPERADMIN, ADMIN, COORDINADOR GESTION DE CITAS, GESTOR DE CITAS
      *
      * @param id ID de la solicitud
-     * @param nuevoEstadoId ID del nuevo estado (de dim_estados_gestion_citas)
+     * @param nuevoEstadoCodigo código del nuevo estado (ej: PENDIENTE_CITA, CITADO, etc)
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/estado")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR_GESTION_DE_CITAS', 'GESTOR_DE_CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR GESTION DE CITAS', 'GESTOR DE CITAS')")
     public ResponseEntity<?> cambiarEstado(
             @PathVariable Long id,
-            @RequestParam("nuevoEstadoId") Long nuevoEstadoId) {
+            @RequestParam("nuevoEstadoCodigo") String nuevoEstadoCodigo) {
 
         try {
-            log.info("Cambiando estado de solicitud {} a {}", id, nuevoEstadoId);
-            solicitudBolsaService.cambiarEstado(id, nuevoEstadoId);
+            log.info("📊 Cambiando estado de solicitud {} a {}", id, nuevoEstadoCodigo);
+
+            // Buscar el estado por código en dim_estados_gestion_citas
+            DimEstadosGestionCitas estado = estadosRepository.findByCodigoEstado(nuevoEstadoCodigo)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Estado no encontrado: " + nuevoEstadoCodigo));
+
+            log.info("✅ Estado encontrado: {} (ID: {})", estado.getCodigoEstado(), estado.getIdEstado());
+
+            // Cambiar el estado usando el ID encontrado
+            solicitudBolsaService.cambiarEstado(id, estado.getIdEstado());
 
             return ResponseEntity.ok(Map.of(
                 "mensaje", "Estado actualizado exitosamente",
                 "idSolicitud", id,
-                "nuevoEstadoId", nuevoEstadoId
+                "nuevoEstadoCodigo", nuevoEstadoCodigo,
+                "nuevoEstadoId", estado.getIdEstado()
             ));
 
+        } catch (ResourceNotFoundException e) {
+            log.error("❌ Estado no encontrado: {}", e.getMessage());
+            return ResponseEntity.status(404).body(
+                Map.of("error", e.getMessage())
+            );
         } catch (Exception e) {
-            log.error("Error al cambiar estado: ", e);
-            return ResponseEntity.badRequest().body(
+            log.error("❌ Error al cambiar estado: ", e);
+            return ResponseEntity.status(500).body(
                 Map.of("error", "Error: " + e.getMessage())
             );
         }
@@ -557,6 +583,68 @@ public class SolicitudBolsaController {
             log.error("❌ Error al eliminar solicitudes: ", e);
             return ResponseEntity.status(500).body(
                 Map.of("error", "Error interno del servidor: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Actualizar teléfonos del paciente en una solicitud
+     * PATCH /api/bolsas/solicitudes/{id}/actualizar-telefonos
+     *
+     * @param id ID de la solicitud
+     * @param body { pacienteTelefono, pacienteTelefonoAlterno }
+     * @return Solicitud actualizada
+     */
+    @PatchMapping("/{id}/actualizar-telefonos")
+    public ResponseEntity<?> actualizarTelefonos(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> body) {
+        try {
+            log.info("📞 Actualizando teléfonos para solicitud ID: {}", id);
+
+            String telefonoPrincipal = body.get("pacienteTelefono");
+            String telefonoAlterno = body.get("pacienteTelefonoAlterno");
+
+            // Validar que al menos uno esté presente
+            if ((telefonoPrincipal == null || telefonoPrincipal.trim().isEmpty()) &&
+                (telefonoAlterno == null || telefonoAlterno.trim().isEmpty())) {
+                log.warn("⚠️ Intento de actualizar teléfonos sin proporcionar ninguno");
+                return ResponseEntity.badRequest().body(
+                    Map.of("error", "Al menos uno de los teléfonos es requerido")
+                );
+            }
+
+            // Obtener solicitud actual
+            SolicitudBolsa solicitud = solicitudRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Solicitud no encontrada"));
+
+            // Actualizar teléfonos
+            solicitud.setPacienteTelefono(telefonoPrincipal != null ? telefonoPrincipal.trim() : "");
+            solicitud.setPacienteTelefonoAlterno(telefonoAlterno != null ? telefonoAlterno.trim() : "");
+
+            // Guardar cambios
+            solicitudRepository.save(solicitud);
+
+            log.info("✅ Teléfonos actualizados para solicitud {}", id);
+
+            return ResponseEntity.ok(Map.of(
+                "mensaje", "Teléfonos actualizados correctamente",
+                "solicitud", SolicitudBolsaDTO.builder()
+                    .idSolicitud(solicitud.getIdSolicitud())
+                    .pacienteTelefono(solicitud.getPacienteTelefono())
+                    .pacienteTelefonoAlterno(solicitud.getPacienteTelefonoAlterno())
+                    .build()
+            ));
+
+        } catch (ResourceNotFoundException e) {
+            log.error("❌ Solicitud no encontrada: {}", e.getMessage());
+            return ResponseEntity.status(404).body(
+                Map.of("error", e.getMessage())
+            );
+        } catch (Exception e) {
+            log.error("❌ Error actualizando teléfonos: ", e);
+            return ResponseEntity.status(500).body(
+                Map.of("error", "Error al actualizar teléfonos: " + e.getMessage())
             );
         }
     }

@@ -36,6 +36,7 @@ import toast from "react-hot-toast";
 export default function DashboardCitas() {
     const navigate = useNavigate();
     const [loading, setLoading] = useState(true);
+    const [totalProfesionales, setTotalProfesionales] = useState(0);
     const [estadisticas, setEstadisticas] = useState({
         totalPacientes: 0,
         porDerivacion: { psicologia: 0, medicina: 0, nutricion: 0 },
@@ -43,6 +44,26 @@ export default function DashboardCitas() {
         porEstado: { pendiente: 0, citado: 0, atendido: 0, noContactado: 0, reprogramacionFallida: 0 },
         pacientesRecientes: []
     });
+
+    // Cargar profesionales asistenciales
+    const cargarProfesionales = useCallback(async () => {
+        try {
+            const response = await fetch("http://localhost:8080/api/personal/cnt", {
+                headers: {
+                    "Authorization": `Bearer ${localStorage.getItem("token")}`,
+                    "Content-Type": "application/json",
+                },
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                const profesionales = Array.isArray(data) ? data : data?.data || [];
+                setTotalProfesionales(profesionales.length);
+            }
+        } catch (error) {
+            console.error("Error al cargar profesionales:", error);
+        }
+    }, []);
 
     // Cargar estadísticas del backend
     const cargarEstadisticas = useCallback(async () => {
@@ -60,7 +81,8 @@ export default function DashboardCitas() {
 
     useEffect(() => {
         cargarEstadisticas();
-    }, [cargarEstadisticas]);
+        cargarProfesionales();
+    }, [cargarEstadisticas, cargarProfesionales]);
 
     // Módulos de acceso rápido
     const modulosAcceso = [
@@ -137,6 +159,20 @@ export default function DashboardCitas() {
                 </div>
             ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
+                    <Card className="bg-gradient-to-br from-indigo-500 to-indigo-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
+                        <CardContent className="p-5">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-indigo-100 text-sm font-medium">Profesionales</p>
+                                    <p className="text-3xl font-bold mt-1">{totalProfesionales}</p>
+                                </div>
+                                <div className="p-3 bg-white/20 rounded-xl">
+                                    <Stethoscope className="w-6 h-6" />
+                                </div>
+                            </div>
+                        </CardContent>
+                    </Card>
+
                     <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white border-0 shadow-lg hover:shadow-xl transition-shadow">
                         <CardContent className="p-5">
                             <div className="flex items-center justify-between">

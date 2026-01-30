@@ -2263,7 +2263,8 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             }
 
             String username = authentication.getName();
-            log.info("📬 Obteniendo solicitudes para gestora: {}", username);
+            log.info("📬 [Mi Bandeja] Obteniendo solicitudes para gestora: {}", username);
+            log.info("   Auth type: {}, Principal: {}", authentication.getClass().getName(), authentication.getPrincipal());
 
             // 2️⃣ OBTENER USUARIO COMPLETO DESDE BD
             Usuario usuarioActual = usuarioRepository.findByNameUser(username)
@@ -2272,13 +2273,24 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 ));
 
             Long usuarioId = usuarioActual.getIdUser();
-            log.info("   Usuario ID: {}, Rol: {}", usuarioId, usuarioActual.getNombreCompleto());
+            log.info("   ✓ Usuario encontrado - ID: {}, Username: {}, Estado: {}",
+                usuarioId, usuarioActual.getNameUser(), usuarioActual.getStatUser());
 
             // 3️⃣ OBTENER SOLICITUDES ASIGNADAS A ESTA GESTORA
+            log.info("   🔍 Buscando solicitudes con: responsableGestoraId={} AND activo=true", usuarioId);
             List<SolicitudBolsa> solicitudes = solicitudRepository.findByResponsableGestoraIdAndActivoTrue(usuarioId);
 
-            log.info("✅ Se encontraron {} solicitud(es) asignada(s) a gestora {}",
-                solicitudes.size(), username);
+            log.info("   ✅ Query realizado: Se encontraron {} solicitud(es) asignada(s) a gestora (ID: {})",
+                solicitudes.size(), usuarioId);
+
+            // 5️⃣ DEBUG: Mostrar solicitudes encontradas
+            if (!solicitudes.isEmpty()) {
+                log.info("   📋 Primeras 3 solicitudes:");
+                solicitudes.stream().limit(3).forEach(s ->
+                    log.info("      - ID: {}, DNI: {}, Nombre: {}, Estado: {}",
+                        s.getIdSolicitud(), s.getPacienteDni(), s.getPacienteNombre(), s.getEstado())
+                );
+            }
 
             // 4️⃣ MAPEAR A DTOs CON ENRIQUECIMIENTO
             return solicitudes.stream()
@@ -2296,9 +2308,23 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     /**
      * Mapea una SolicitudBolsa a SolicitudBolsaDTO con datos enriquecidos
+     * v1.41.1: Incluye descriptions de IPRESS y Estado de Cita para Mi Bandeja
      * Método auxiliar para obtenerSolicitudesAsignadasAGestora()
      */
     private SolicitudBolsaDTO mapSolicitudBolsaToDTO(SolicitudBolsa solicitud) {
+        // Enriquecer con descripción de IPRESS si existe
+        String descIpress = null;
+        if (solicitud.getIdIpress() != null) {
+            try {
+                Ipress ipress = ipressRepository.findById(solicitud.getIdIpress()).orElse(null);
+                if (ipress != null) {
+                    descIpress = ipress.getDescIpress();
+                }
+            } catch (Exception e) {
+                log.warn("⚠️ No se pudo cargar descripción de IPRESS: {}", e.getMessage());
+            }
+        }
+
         return SolicitudBolsaDTO.builder()
             .idSolicitud(solicitud.getIdSolicitud())
             .numeroSolicitud(solicitud.getNumeroSolicitud())
@@ -2319,7 +2345,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .idServicio(solicitud.getIdServicio())
             .codigoAdscripcion(solicitud.getCodigoAdscripcion())
             .idIpress(solicitud.getIdIpress())
+            .descIpress(descIpress)
             .estado(solicitud.getEstado())
+            .descEstadoCita(solicitud.getEstado() != null ? solicitud.getEstado() : "PENDIENTE")
             .fechaSolicitud(solicitud.getFechaSolicitud())
             .fechaActualizacion(solicitud.getFechaActualizacion())
             .estadoGestionCitasId(solicitud.getEstadoGestionCitasId())

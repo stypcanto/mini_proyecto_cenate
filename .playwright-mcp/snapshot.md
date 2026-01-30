@@ -1,0 +1,87 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e10]
+        - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - button "Gestión de Citas" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]:
+              - img [ref=e18]
+              - generic [ref=e21]: Gestión de Citas
+            - img [ref=e22]
+          - generic [ref=e24]:
+            - link "Dashboard Citas" [ref=e25] [cursor=pointer]:
+              - /url: /citas/dashboard
+              - img [ref=e26]
+              - generic [ref=e31]: Dashboard Citas
+            - link "Gestionar Citas" [ref=e32] [cursor=pointer]:
+              - /url: /citas/gestion-asegurado
+              - img [ref=e33]
+              - generic [ref=e36]: Gestionar Citas
+      - paragraph [ref=e38]: v1.37.4
+  - main "Contenido principal" [ref=e39]:
+    - generic [ref=e41]:
+      - button "Notificaciones" [ref=e42] [cursor=pointer]:
+        - img [ref=e43]
+      - button "J Jhonatan Test Test GESTOR DE CITAS" [ref=e47] [cursor=pointer]:
+        - generic [ref=e49]: J
+        - generic [ref=e50]:
+          - generic [ref=e51]: Jhonatan Test Test
+          - generic [ref=e52]: GESTOR DE CITAS
+        - img [ref=e53]
+    - generic [ref=e55]:
+      - generic [ref=e57]:
+        - generic [ref=e60]:
+          - generic [ref=e61]: J
+          - generic [ref=e62]:
+            - heading "Bienvenid(a), Jhonatan" [level=1] [ref=e63]
+            - paragraph [ref=e64]: Gestor de Citas - Gestión de Pacientes Asignados
+            - generic [ref=e65]:
+              - generic [ref=e66]: "Rol: GESTOR DE CITAS"
+              - generic [ref=e67]: 📅 viernes, 30 de enero de 2026
+        - generic [ref=e68]:
+          - generic [ref=e70]:
+            - img [ref=e71]
+            - generic [ref=e76]:
+              - paragraph [ref=e77]: Total de Pacientes
+              - paragraph [ref=e78]: "0"
+          - generic [ref=e80]:
+            - img [ref=e81]
+            - generic [ref=e84]:
+              - paragraph [ref=e85]: Pacientes Atendidos
+              - paragraph [ref=e86]: "0"
+          - generic [ref=e88]:
+            - img [ref=e89]
+            - generic [ref=e91]:
+              - paragraph [ref=e92]: Pacientes Pendientes
+              - paragraph [ref=e93]: "0"
+          - generic [ref=e95]:
+            - img [ref=e96]
+            - generic [ref=e98]:
+              - paragraph [ref=e99]: Solicitudes Pendientes
+              - paragraph [ref=e100]: "0"
+        - generic [ref=e101]:
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - heading "Mi Bandeja de Pacientes" [level=2] [ref=e105]
+              - paragraph [ref=e106]: Pacientes asignados desde el módulo de Bolsas de Pacientes
+            - generic [ref=e107]:
+              - button "Asignar Pacientes" [ref=e108] [cursor=pointer]:
+                - img [ref=e109]
+                - text: Asignar Pacientes
+                - img [ref=e112]
+              - button "Actualizar" [ref=e114] [cursor=pointer]:
+                - img [ref=e115]
+                - text: Actualizar
+          - generic [ref=e121]:
+            - img [ref=e122]
+            - paragraph [ref=e124]: No tienes pacientes asignados aún
+            - button "Ir a Asignar Pacientes" [ref=e125] [cursor=pointer]:
+              - img [ref=e126]
+              - text: Ir a Asignar Pacientes
+      - generic [ref=e129]:
+        - paragraph [ref=e130]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e131]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud
