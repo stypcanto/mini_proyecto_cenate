@@ -65,13 +65,16 @@ export default function Login() {
   // ============================================================
   const redirectByRole = (roles = []) => {
     const has = (r) => roles?.includes(r);
+    // Flexible detection for PERSONAL_107 (supports variations like PERSONAL-107)
+    const isPersonal107 = roles?.some(r => r?.includes("PERSONAL") && r?.includes("107"));
 
     if (has("SUPERADMIN") || has("ADMIN")) return "/admin/bienvenida";
+    if (isPersonal107) return "/roles/personal107/bienvenida";
     if (has("MEDICO")) return "/roles/medico/bienvenida";
     if (has("COORDINADOR")) return "/roles/coordinador/bienvenida";
     if (has("GESTOR DE CITAS")) return "/citas/bienvenida";
     if (has("GESTOR_CITAS")) return "/citas/bienvenida";
-    if (has("COORD. GESTION CITAS")) return "/roles/coordcitas/bienvenida";
+    if (has("COORD. GESTION CITAS") || has("COORDINADOR_GESTION_CITAS") || has("COORD_GESTION_CITAS")) return "/roles/coordcitas/bienvenida";
     if (has("EXTERNO") || has("INSTITUCION_EX")) return "/roles/externo/bienvenida";
     return "/user/dashboard"; // ruta por defecto
   };
