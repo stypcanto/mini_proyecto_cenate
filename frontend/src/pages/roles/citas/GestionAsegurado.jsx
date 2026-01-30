@@ -158,16 +158,13 @@ export default function GestionAsegurado() {
     }
   };
 
-  // Fetch completed/realized appointments
+  // Fetch assigned patients from "Mi Bandeja" endpoint
   const fetchCitasRealizadas = async () => {
     try {
-      const now = new Date();
-      const year = now.getFullYear();
-      const month = String(now.getMonth() + 1).padStart(2, '0');
-      const periodo = `${year}${month}`;
+      console.log("📥 Fetching assigned patients from /api/bolsas/solicitudes/mi-bandeja");
 
       const response = await fetch(
-        `${API_BASE}/v1/chatbot/reportes/citas/buscar?periodo=${periodo}&size=50`,
+        `${API_BASE}/bolsas/solicitudes/mi-bandeja`,
         {
           headers: {
             "Authorization": `Bearer ${token}`,
@@ -177,36 +174,41 @@ export default function GestionAsegurado() {
       );
 
       if (!response.ok) {
-        console.warn("Could not fetch realized appointments");
+        console.warn("Could not fetch assigned patients from mi-bandeja");
         setCitasRealizadas([]);
         return;
       }
 
       const data = await response.json();
-      const citas = data?.data?.content || data?.content || [];
+      // The endpoint returns { total, solicitudes, mensaje }
+      const solicitudes = data?.solicitudes || data?.data?.content || [];
 
-      // Transform to match table structure
-      const transformedCitas = citas.map((cita) => ({
-        id: cita.idSolicitud || cita.id,
-        turno: cita.fechaCita || new Date().toISOString().split('T')[0],
-        modalidad: cita.tipoCita || "M",
-        profesional: cita.nombreProfesional || "No asignado",
-        dniProfesional: cita.idPersonal || "-",
-        especialidad: cita.nombreEspecialidad || "-",
-        ipress: cita.nombreIpress || "-",
-        estado: cita.estadoPaciente || "PENDIENTE",
-        hora: cita.horaCita || "-",
-        dni: cita.docPaciente || "-",
-        nombrePaciente: cita.nombrePaciente || "-",
-        edad: cita.edad || "-",
-        genero: cita.sexo || "-",
-        telefono1: cita.telefono || "-",
-        telefonoWSP: cita.telefonoAlterno || "-",
+      console.log(`✅ Found ${solicitudes.length} assigned patient(s)`);
+
+      // Transform SolicitudBolsaDTO to match citas table structure
+      const transformedCitas = solicitudes.map((solicitud) => ({
+        id: solicitud.id_solicitud || solicitud.idSolicitud,
+        turno: solicitud.fecha_solicitud
+          ? new Date(solicitud.fecha_solicitud).toISOString().split('T')[0]
+          : new Date().toISOString().split('T')[0],
+        modalidad: solicitud.tipo_cita || "M",
+        profesional: "Asignado a mi", // Will be populated later
+        dniProfesional: "-",
+        especialidad: solicitud.especialidad || "-",
+        ipress: solicitud.desc_ipress || "-",
+        estado: solicitud.desc_estado_cita || "PENDIENTE",
+        hora: "-",
+        dni: solicitud.paciente_dni || "-",
+        nombrePaciente: solicitud.paciente_nombre || "-",
+        edad: solicitud.paciente_edad || "-",
+        genero: solicitud.paciente_sexo || "-",
+        telefono1: solicitud.paciente_telefono || "-",
+        telefonoWSP: solicitud.paciente_telefono_alterno || "-",
       }));
 
       setCitasRealizadas(transformedCitas);
     } catch (err) {
-      console.error("Error fetching realized appointments:", err);
+      console.error("Error fetching assigned patients:", err);
       setCitasRealizadas([]);
     }
   };
@@ -440,16 +442,16 @@ export default function GestionAsegurado() {
                     </div>
                   )}
 
-                  {/* Citas Realizadas Section */}
+                  {/* Pacientes Asignados Section */}
                   <div className="mt-10 pt-10 border-t border-gray-200">
                     <h3 className="text-lg font-semibold text-slate-900 mb-4">
-                      Citas Realizadas
+                      Pacientes Asignados (Mi Bandeja)
                     </h3>
 
                     {citasRealizadas.length === 0 ? (
                       <div className="text-center py-12">
                         <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-                        <p className="text-gray-500">No hay citas realizadas en este período</p>
+                        <p className="text-gray-500">No tienes pacientes asignados en este momento</p>
                       </div>
                     ) : (
                       <div className="overflow-x-auto">
