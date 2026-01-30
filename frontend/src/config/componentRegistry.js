@@ -279,6 +279,13 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  // 📋 PERSONAL 107
+  // ========================================================================
+  '/roles/personal107/bienvenida': {
+    component: lazy(() => import('../pages/roles/personal107/BienvenidaPersonal107')),
+    requiredAction: 'ver',
+  },
+
   // ⚠️ DEPRECATED: Rutas de Módulo 107 movidas a /bolsas/modulo107/*
   // Ver sección "MÓDULO 107 (Integración con Bolsas)" para nuevas rutas
 

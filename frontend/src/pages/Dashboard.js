@@ -35,6 +35,10 @@ export default function Dashboard() {
 
     if (roles.includes("SUPERADMIN") || roles.includes("ADMIN")) {
       targetPath = "/admin";
+    } else if (roles.includes("PERSONAL_107")) {
+      targetPath = "/roles/personal107/bienvenida";
+    } else if (roles.includes("COORDINADOR_GESTION_CITAS") || roles.includes("COORD_GESTION_CITAS") || roles.includes("COORDINADOR GESTION CITAS") || roles.includes("COORD. GESTION CITAS")) {
+      targetPath = "/roles/coordcitas/bienvenida";
     } else if (roles.includes("MEDICO")) {
       targetPath = "/roles/medico/dashboard";
     } else if (roles.includes("COORDINADOR")) {
