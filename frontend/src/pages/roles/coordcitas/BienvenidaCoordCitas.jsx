@@ -16,6 +16,8 @@ import {
   BarChart3,
   Upload,
   History,
+  HeartPulse,
+  Database,
 } from "lucide-react";
 
 export default function BienvenidaCoordCitas() {
@@ -106,46 +108,57 @@ export default function BienvenidaCoordCitas() {
           </div>
         </div>
 
-        {/* Información útil */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {/* Tips */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Zap className="w-5 h-5 text-amber-600" />
+        {/* Módulos Especializados */}
+        <div>
+          <h3 className="text-xl font-bold text-slate-900 mb-4">
+            🔬 Módulos Especializados
+          </h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            {/* Dengue */}
+            <button
+              onClick={() => navigate("/bolsas/dengue")}
+              className="bg-white border border-red-200 hover:border-red-300 hover:bg-red-50 rounded-xl p-6 shadow-sm transition-all cursor-pointer group"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <HeartPulse className="w-6 h-6 text-red-600" />
+                </div>
+                <div className="text-left flex-1">
+                  <h4 className="font-semibold text-slate-900 mb-2">
+                    🦟 Dengue
+                  </h4>
+                  <p className="text-sm text-slate-600 mb-3">
+                    Gestión de casos de dengue y seguimiento de pacientes diagnosticados
+                  </p>
+                  <div className="flex items-center gap-2 text-red-600 text-sm font-medium group-hover:gap-3 transition-all">
+                    Ver casos <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <h4 className="font-semibold text-slate-900 mb-2">
-                  💡 Gestión Eficiente de Bolsas
-                </h4>
-                <ul className="space-y-1 text-sm text-slate-600">
-                  <li>✓ Revisa solicitudes pendientes regularmente</li>
-                  <li>✓ Asigna casos según especialidad y disponibilidad</li>
-                  <li>✓ Importa datos desde Excel para procesamiento masivo</li>
-                  <li>✓ Consulta estadísticas para optimizar procesos</li>
-                </ul>
-              </div>
-            </div>
-          </div>
+            </button>
 
-          {/* Estado del Sistema */}
-          <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
+            {/* Módulo 107 */}
+            <button
+              onClick={() => navigate("/bolsas/modulo107")}
+              className="bg-white border border-blue-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl p-6 shadow-sm transition-all cursor-pointer group"
+            >
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <Database className="w-6 h-6 text-blue-600" />
+                </div>
+                <div className="text-left flex-1">
+                  <h4 className="font-semibold text-slate-900 mb-2">
+                    📋 Módulo 107
+                  </h4>
+                  <p className="text-sm text-slate-600 mb-3">
+                    Gestión de pacientes bajo el Módulo 107 con atenciones clínicas
+                  </p>
+                  <div className="flex items-center gap-2 text-blue-600 text-sm font-medium group-hover:gap-3 transition-all">
+                    Ver módulo <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
               </div>
-              <div>
-                <h4 className="font-semibold text-slate-900 mb-2">
-                  ✅ Funcionalidades del Módulo
-                </h4>
-                <ul className="space-y-1 text-sm text-slate-600">
-                  <li>• Gestión integral de bolsas de pacientes</li>
-                  <li>• Importación masiva desde archivos Excel</li>
-                  <li>• Deduplicación automática de pacientes</li>
-                  <li>• Reportes y análisis en tiempo real</li>
-                </ul>
-              </div>
-            </div>
+            </button>
           </div>
         </div>
 
