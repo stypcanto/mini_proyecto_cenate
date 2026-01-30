@@ -41,75 +41,53 @@ export default function BienvenidaCoordCitas() {
         </div>
 
         {/* Card principal de bienvenida */}
-        <div className="bg-gradient-to-br from-blue-600 to-teal-600 rounded-3xl shadow-2xl overflow-hidden">
-          <div className="grid md:grid-cols-2 gap-12 p-12 text-white items-center min-h-96">
+        <div className="bg-gradient-to-br from-blue-600 to-teal-600 rounded-2xl shadow-lg overflow-hidden">
+          <div className="grid md:grid-cols-5 gap-6 p-8 text-white items-center">
             {/* Contenido */}
-            <div className="space-y-6">
-              <h2 className="text-5xl font-bold leading-tight">
+            <div className="md:col-span-4 space-y-3">
+              <h2 className="text-3xl font-bold">
                 Módulo Bolsas de Pacientes
               </h2>
-              <p className="text-blue-100 text-lg leading-relaxed">
-                Como Coordinador de Gestión de Citas, tu rol es fundamental para
-                gestionar las bolsas de pacientes y coordinar solicitudes de telemedicina.
-                Aquí puedes revisar, procesar y asignar casos a especialistas, importar
-                datos desde Excel y consultar estadísticas de atenciones.
+              <p className="text-blue-100 text-sm leading-relaxed">
+                Como Coordinador de Gestión de Citas, gestiona bolsas de pacientes,
+                procesa solicitudes de telemedicina y asigna casos a especialistas.
               </p>
 
               {/* Rol */}
-              <div className="pt-4 flex items-center gap-3 text-blue-100">
-                <CheckCircle2 className="w-6 h-6" />
-                <span className="font-medium text-base">Rol: COORDINADOR DE GESTIÓN DE CITAS</span>
+              <div className="pt-2 flex items-center gap-2 text-blue-100 text-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="font-medium">COORDINADOR DE GESTIÓN DE CITAS</span>
               </div>
             </div>
 
-            {/* Ícono de Telemedicina */}
-            <div className="flex justify-center items-center">
-              <div className="relative">
-                {/* Fondo circular con animación */}
-                <div className="absolute inset-0 bg-white/10 rounded-full animate-pulse"></div>
+            {/* Ícono minimalista */}
+            <div className="flex justify-center items-center md:col-span-1">
+              <svg
+                className="w-24 h-24"
+                viewBox="0 0 100 100"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Cabeza */}
+                <circle cx="50" cy="25" r="12" fill="white" opacity="0.95"/>
 
-                {/* SVG de Teleoperador/Médico en telemedicina */}
-                <svg
-                  className="w-48 h-48 relative z-10"
-                  viewBox="0 0 200 200"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  {/* Cabeza */}
-                  <circle cx="100" cy="60" r="25" fill="white" opacity="0.9"/>
+                {/* Cuerpo */}
+                <rect x="38" y="40" width="24" height="28" rx="4" fill="white" opacity="0.9"/>
 
-                  {/* Cuerpo */}
-                  <rect x="75" y="90" width="50" height="50" rx="8" fill="white" opacity="0.85"/>
+                {/* Brazos */}
+                <line x1="38" y1="48" x2="20" y2="42" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.9"/>
+                <line x1="62" y1="48" x2="80" y2="42" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.9"/>
 
-                  {/* Brazos */}
-                  <line x1="75" y1="105" x2="40" y2="90" stroke="white" strokeWidth="8" strokeLinecap="round" opacity="0.85"/>
-                  <line x1="125" y1="105" x2="160" y2="90" stroke="white" strokeWidth="8" strokeLinecap="round" opacity="0.85"/>
+                {/* Piernas */}
+                <line x1="42" y1="68" x2="42" y2="88" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.9"/>
+                <line x1="58" y1="68" x2="58" y2="88" stroke="white" strokeWidth="4" strokeLinecap="round" opacity="0.9"/>
 
-                  {/* Manos */}
-                  <circle cx="35" cy="85" r="8" fill="white" opacity="0.85"/>
-                  <circle cx="165" cy="85" r="8" fill="white" opacity="0.85"/>
-
-                  {/* Piernas */}
-                  <line x1="85" y1="140" x2="85" y2="175" stroke="white" strokeWidth="8" strokeLinecap="round" opacity="0.85"/>
-                  <line x1="115" y1="140" x2="115" y2="175" stroke="white" strokeWidth="8" strokeLinecap="round" opacity="0.85"/>
-
-                  {/* Pies */}
-                  <circle cx="85" cy="180" r="6" fill="white" opacity="0.85"/>
-                  <circle cx="115" cy="180" r="6" fill="white" opacity="0.85"/>
-
-                  {/* Estetoscopio */}
-                  <g opacity="0.95">
-                    <path d="M 70 100 Q 60 90 55 80" stroke="white" strokeWidth="4" fill="none" strokeLinecap="round"/>
-                    <circle cx="55" cy="75" r="6" fill="none" stroke="white" strokeWidth="4" opacity="0.9"/>
-                  </g>
-
-                  {/* Brillo de telemedicina (pantalla) */}
-                  <rect x="130" y="70" width="35" height="40" rx="4" fill="white" opacity="0.3" stroke="white" strokeWidth="2"/>
-                  <line x1="135" y1="80" x2="160" y2="80" stroke="white" strokeWidth="1.5" opacity="0.5"/>
-                  <line x1="135" y1="88" x2="160" y2="88" stroke="white" strokeWidth="1.5" opacity="0.5"/>
-                  <line x1="135" y1="96" x2="155" y2="96" stroke="white" strokeWidth="1.5" opacity="0.5"/>
-                </svg>
-              </div>
+                {/* Estetoscopio simplificado */}
+                <g opacity="0.85">
+                  <path d="M 30 45 Q 25 40 22 35" stroke="white" strokeWidth="2.5" fill="none" strokeLinecap="round"/>
+                  <circle cx="20" cy="33" r="3" fill="white"/>
+                </g>
+              </svg>
             </div>
           </div>
         </div>
@@ -157,7 +135,7 @@ export default function BienvenidaCoordCitas() {
           <div className="grid md:grid-cols-2 gap-4">
             {/* Dengue */}
             <button
-              onClick={() => navigate("/bolsas/dengue")}
+              onClick={() => navigate("/dengue/buscar")}
               className="bg-white border border-red-200 hover:border-red-300 hover:bg-red-50 rounded-xl p-6 shadow-sm transition-all cursor-pointer group"
             >
               <div className="flex items-start gap-4">
