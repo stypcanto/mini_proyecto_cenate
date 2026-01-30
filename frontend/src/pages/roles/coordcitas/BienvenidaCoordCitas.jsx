@@ -50,7 +50,7 @@ export default function BienvenidaCoordCitas() {
               </h2>
               <p className="text-blue-100 text-sm leading-relaxed">
                 Como Coordinador de Gestión de Citas, gestiona bolsas de pacientes,
-                procesa solicitudes de telemedicina y asigna casos a especialistas.
+                procesa solicitudes de telemedicina y asigna casos al grupo de gestión de citas.
               </p>
 
               {/* Rol */}
