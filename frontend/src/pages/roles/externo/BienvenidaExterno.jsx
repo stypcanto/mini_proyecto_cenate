@@ -13,6 +13,11 @@ import {
   CheckCircle2,
   Activity,
   Heart,
+  BarChart3,
+  Zap,
+  Stethoscope,
+  Clipboard,
+  TrendingUp,
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -165,85 +170,135 @@ export default function BienvenidaExterno() {
           </div>
         </div>
 
-        {/* Tarjetas de acciones rápidas */}
+        {/* Secciones de Servicios Disponibles */}
         {modulos.length > 0 && (
-          <div>
-            <h3 className="text-xl font-bold text-slate-900 mb-4">
-              🎯 Acciones Rápidas
-            </h3>
-            <div className={`grid ${
-              modulos.length === 1
-                ? "md:grid-cols-1 max-w-xl"
-                : modulos.length === 2
-                ? "md:grid-cols-2"
-                : "md:grid-cols-3"
-            } gap-4`}>
-              {modulos.map((modulo) => {
-                const Icon = getIconComponent(modulo.icono);
+          <div className="space-y-6">
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">
+                🎯 Acciones Rápidas
+              </h3>
+              <div className={`grid ${
+                modulos.length === 1
+                  ? "md:grid-cols-1 max-w-xl"
+                  : modulos.length === 2
+                  ? "md:grid-cols-2"
+                  : "md:grid-cols-3"
+              } gap-4`}>
+                {modulos.map((modulo) => {
+                  const Icon = getIconComponent(modulo.icono);
 
-                const colorStyleMap = {
-                  blue: {
-                    bg: "bg-blue-50",
-                    border: "border-blue-200",
-                    hoverBg: "hover:bg-blue-100",
-                    hoverBorder: "hover:border-blue-300",
-                    iconBg: "bg-blue-100",
-                    iconText: "text-blue-600",
-                  },
-                  emerald: {
-                    bg: "bg-emerald-50",
-                    border: "border-emerald-200",
-                    hoverBg: "hover:bg-emerald-100",
-                    hoverBorder: "hover:border-emerald-300",
-                    iconBg: "bg-emerald-100",
-                    iconText: "text-emerald-600",
-                  },
-                  purple: {
-                    bg: "bg-purple-50",
-                    border: "border-purple-200",
-                    hoverBg: "hover:bg-purple-100",
-                    hoverBorder: "hover:border-purple-300",
-                    iconBg: "bg-purple-100",
-                    iconText: "text-purple-600",
-                  },
-                  amber: {
-                    bg: "bg-amber-50",
-                    border: "border-amber-200",
-                    hoverBg: "hover:bg-amber-100",
-                    hoverBorder: "hover:border-amber-300",
-                    iconBg: "bg-amber-100",
-                    iconText: "text-amber-600",
-                  },
-                  indigo: {
-                    bg: "bg-indigo-50",
-                    border: "border-indigo-200",
-                    hoverBg: "hover:bg-indigo-100",
-                    hoverBorder: "hover:border-indigo-300",
-                    iconBg: "bg-indigo-100",
-                    iconText: "text-indigo-600",
-                  },
-                };
+                  const colorStyleMap = {
+                    blue: {
+                      bg: "bg-blue-50",
+                      border: "border-blue-200",
+                      hoverBg: "hover:bg-blue-100",
+                      hoverBorder: "hover:border-blue-300",
+                      iconBg: "bg-blue-100",
+                      iconText: "text-blue-600",
+                    },
+                    emerald: {
+                      bg: "bg-emerald-50",
+                      border: "border-emerald-200",
+                      hoverBg: "hover:bg-emerald-100",
+                      hoverBorder: "hover:border-emerald-300",
+                      iconBg: "bg-emerald-100",
+                      iconText: "text-emerald-600",
+                    },
+                    purple: {
+                      bg: "bg-purple-50",
+                      border: "border-purple-200",
+                      hoverBg: "hover:bg-purple-100",
+                      hoverBorder: "hover:border-purple-300",
+                      iconBg: "bg-purple-100",
+                      iconText: "text-purple-600",
+                    },
+                    amber: {
+                      bg: "bg-amber-50",
+                      border: "border-amber-200",
+                      hoverBg: "hover:bg-amber-100",
+                      hoverBorder: "hover:border-amber-300",
+                      iconBg: "bg-amber-100",
+                      iconText: "text-amber-600",
+                    },
+                    indigo: {
+                      bg: "bg-indigo-50",
+                      border: "border-indigo-200",
+                      hoverBg: "hover:bg-indigo-100",
+                      hoverBorder: "hover:border-indigo-300",
+                      iconBg: "bg-indigo-100",
+                      iconText: "text-indigo-600",
+                    },
+                  };
 
-                const styles = colorStyleMap[modulo.color] || colorStyleMap.blue;
+                  const styles = colorStyleMap[modulo.color] || colorStyleMap.blue;
 
-                return (
-                  <button
-                    key={modulo.id}
-                    onClick={() => navigate(modulo.ruta)}
-                    className={`${styles.bg} border ${styles.border} ${styles.hoverBg} ${styles.hoverBorder} rounded-xl p-5 text-left transition-all cursor-pointer group`}
-                  >
-                    <div className={`${styles.iconBg} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
-                      <Icon className={`w-6 h-6 ${styles.iconText}`} />
+                  return (
+                    <button
+                      key={modulo.id}
+                      onClick={() => navigate(modulo.ruta)}
+                      className={`${styles.bg} border ${styles.border} ${styles.hoverBg} ${styles.hoverBorder} rounded-xl p-5 text-left transition-all cursor-pointer group`}
+                    >
+                      <div className={`${styles.iconBg} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                        <Icon className={`w-6 h-6 ${styles.iconText}`} />
+                      </div>
+                      <h4 className="font-semibold text-slate-900 mb-1">
+                        {modulo.moduloNombre}
+                      </h4>
+                      <p className="text-sm text-slate-600">
+                        {modulo.descripcion}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Módulos Especializados */}
+            <div>
+              <h3 className="text-xl font-bold text-slate-900 mb-4">
+                ⚙️ Módulos Especializados
+              </h3>
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Reportes */}
+                <button
+                  onClick={() => navigate("/roles/externo/reportes")}
+                  className="bg-gradient-to-br from-cyan-50 to-blue-50 border border-cyan-200 hover:border-cyan-300 hover:bg-cyan-100 rounded-xl p-6 shadow-sm transition-all cursor-pointer group text-left"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-cyan-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <BarChart3 className="w-6 h-6 text-cyan-600" />
                     </div>
-                    <h4 className="font-semibold text-slate-900 mb-1">
-                      {modulo.moduloNombre}
-                    </h4>
-                    <p className="text-sm text-slate-600">
-                      {modulo.descripcion}
-                    </p>
-                  </button>
-                );
-              })}
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-slate-900 mb-2">
+                        📊 Reportes y Seguimiento
+                      </h4>
+                      <p className="text-sm text-slate-600">
+                        Visualiza el estado de tus solicitudes, reportes de atención y seguimiento de pacientes en telemedicina.
+                      </p>
+                    </div>
+                  </div>
+                </button>
+
+                {/* Dashboard */}
+                <button
+                  onClick={() => navigate("/roles/externo/dashboard")}
+                  className="bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-200 hover:border-violet-300 hover:bg-violet-100 rounded-xl p-6 shadow-sm transition-all cursor-pointer group text-left"
+                >
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 bg-violet-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                      <TrendingUp className="w-6 h-6 text-violet-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-semibold text-slate-900 mb-2">
+                        📈 Dashboard Institucional
+                      </h4>
+                      <p className="text-sm text-slate-600">
+                        Panel de control con métricas, estadísticas y análisis del desempeño de servicios de telemedicina.
+                      </p>
+                    </div>
+                  </div>
+                </button>
+              </div>
             </div>
           </div>
         )}
