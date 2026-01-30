@@ -51,21 +51,18 @@
 
 ## 📊 ÚLTIMAS VERSIONES
 
-<<<<<<< HEAD
-### v1.37.5 - Completado (2026-01-30) 🔐
-✅ **Fix Autorización Coordinador** - Mismatch rol COORD. GESTION CITAS en @PreAuthorize
-✅ **Historial de Bolsas** - Coordinador ahora accede sin Access Denied
-✅ **Documentación** - FIXAUTORIZACION_COORDINADOR.md (análisis completo)
-
-**Docs:** [`checklist/01_Historial/FIXAUTORIZACION_COORDINADOR.md`](checklist/01_Historial/FIXAUTORIZACION_COORDINADOR.md)
-=======
 ### v1.39.0 - Completado (2026-01-30) 🎉
-✅ **Módulo Correo SMTP** v1.0.0 - Relay Postfix integrado en Docker Compose
+✅ **Módulo Correo SMTP** v1.0.0 - Relay Postfix integrado en Docker Compose + Aviso red EsSalud
 ✅ **Configuración DMARC** - Correos enviados via servidor oficial EsSalud (172.20.0.227)
 ✅ **Documentación** - Nueva guía de correo en spec/backend/11_email_smtp/
 
 **Docs:** [`spec/backend/11_email_smtp/`](spec/backend/11_email_smtp/)
->>>>>>> e6bcf894e01a39521e52ca405c2cbc0fc59fd779
+
+### v1.37.5 - Completado (2026-01-30) 🔐
+✅ **Fix Autorización Coordinador** - Mismatch rol COORD. GESTION CITAS en @PreAuthorize
+✅ **Historial de Bolsas** - Coordinador ahora accede sin Access Denied
+
+**Docs:** [`checklist/01_Historial/FIXAUTORIZACION_COORDINADOR.md`](checklist/01_Historial/FIXAUTORIZACION_COORDINADOR.md)
 
 ### v1.38.0 - Completado (2026-01-29)
 ✅ **Módulo Bolsas** v3.0.0 - Módulo 107 completamente integrado + Postman collection
