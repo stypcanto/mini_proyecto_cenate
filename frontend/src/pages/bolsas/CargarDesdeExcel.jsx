@@ -776,10 +776,11 @@ export default function CargarDesdeExcel() {
       // Mapear errores técnicos a mensajes amigables
       let mensajeAmigable = error.message || 'Error al importar archivo';
 
-      if (error.message?.includes('mismo hash') || error.message?.includes('Ya se cargó')) {
+      // ✅ v1.40.0: Detectar error de archivo duplicado por hash
+      if (error.message?.includes('Archivo ya cargado') || error.message?.includes('mismo hash') || error.message?.includes('Ya se cargó')) {
         mensajeAmigable = '⚠️ Esta bolsa ya fue cargada anteriormente. Si deseas cargar una nueva versión, modifica el archivo o cambia su nombre.';
       } else if (error.message?.includes('400') || error.message?.includes('validación')) {
-        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga exactamente 14 columnas con los 6 campos obligatorios.';
+        mensajeAmigable = '❌ El archivo no cumple con la estructura requerida. Verifica que tenga exactamente 11 columnas en el siguiente orden:\n1. Fecha Preferida, 2. Tipo Documento, 3. DNI, 4. Asegurado, 5. Sexo, 6. Fecha Nacimiento, 7. Teléfono Principal, 8. Teléfono Alterno, 9. Correo, 10. Código IPRESS, 11. Tipo Cita.';
       } else if (error.message?.includes('500')) {
         mensajeAmigable = '❌ Error interno del servidor. Por favor, intenta nuevamente.';
       } else if (error.message?.includes('token') || error.message?.includes('401')) {

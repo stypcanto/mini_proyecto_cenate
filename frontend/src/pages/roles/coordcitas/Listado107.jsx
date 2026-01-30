@@ -223,7 +223,7 @@ export default function Listado107() {
                     `❌ Problema detectado:\n` +
                     `   ${errorMessage}\n\n` +
                     `✅ Solución:\n` +
-                    `   • Verifica que el archivo tenga exactamente 14 columnas\n` +
+                    `   • Verifica que el archivo tenga exactamente 11 columnas\n` +
                     `   • Los nombres de las columnas deben coincidir exactamente\n` +
                     `   • Revisa la guía de formato azul que aparece arriba\n\n` +
                     `💡 Tip: Descarga una plantilla de ejemplo del historial.`;
@@ -588,23 +588,20 @@ export default function Listado107() {
 
                                 {/* Columnas requeridas */}
                                 <div className="mb-3">
-                                    <p className="font-semibold text-blue-900 mb-1">📋 El archivo debe contener exactamente 14 columnas en este orden:</p>
+                                    <p className="font-semibold text-blue-900 mb-1">📋 El archivo debe contener exactamente 11 columnas en este orden:</p>
                                     <div className="bg-white/80 rounded p-3 border border-blue-300">
                                         <ol className="text-xs space-y-0.5 text-blue-800 font-mono">
-                                            <li>1. REGISTRO</li>
-                                            <li>2. OPCIONES DE INGRESO DE LLAMADA</li>
-                                            <li>3. TELEFONO</li>
-                                            <li>4. TIPO DE DOCUMENTO</li>
-                                            <li>5. DNI</li>
-                                            <li>6. APELLIDOS Y NOMBRES</li>
-                                            <li>7. SEXO</li>
-                                            <li>8. FechaNacimiento</li>
-                                            <li>9. DEPARTAMENTO</li>
-                                            <li>10. PROVINCIA</li>
-                                            <li>11. DISTRITO</li>
-                                            <li>12. MOTIVO DE LA LLAMADA</li>
-                                            <li>13. AFILIACION</li>
-                                            <li>14. DERIVACION INTERNA</li>
+                                            <li>1. FECHA PREFERIDA QUE NO FUE ATENDIDA</li>
+                                            <li>2. TIPO DOCUMENTO</li>
+                                            <li>3. DNI</li>
+                                            <li>4. ASEGURADO</li>
+                                            <li>5. SEXO</li>
+                                            <li>6. FECHA DE NACIMIENTO</li>
+                                            <li>7. TELÉFONO PRINCIPAL</li>
+                                            <li>8. TELÉFONO ALTERNO</li>
+                                            <li>9. CORREO</li>
+                                            <li>10. COD. IPRESS ADSCRIPCIÓN</li>
+                                            <li>11. TIPO CITA</li>
                                         </ol>
                                     </div>
                                 </div>
@@ -614,7 +611,7 @@ export default function Listado107() {
                                     <p className="font-semibold text-blue-900">✅ Campos obligatorios (sin estos la fila se marca como error):</p>
                                     <div className="bg-amber-50 rounded p-2 border border-amber-300 mt-1">
                                         <p className="text-xs text-amber-900 font-mono">
-                                            TIPO DE DOCUMENTO, DNI, APELLIDOS Y NOMBRES, SEXO, FechaNacimiento, DERIVACION INTERNA
+                                            TIPO DOCUMENTO, DNI, ASEGURADO, COD. IPRESS ADSCRIPCIÓN, TIPO CITA
                                         </p>
                                     </div>
                                 </div>
