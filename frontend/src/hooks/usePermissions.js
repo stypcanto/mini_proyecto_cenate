@@ -82,6 +82,7 @@ export const usePermissions = (userId) => {
           nombre: p.nombre,
           ruta: p.ruta,
           orden: p.orden,
+          icono: p.icono || p.icon || null,  // ✅ Mapear icono desde BD
           puedeVer: p.puedeVer || p.puede_ver || false,
           puedeCrear: p.puedeCrear || p.puede_crear || false,
           puedeEditar: p.puedeEditar || p.puede_editar || false,
