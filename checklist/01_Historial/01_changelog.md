@@ -3,6 +3,7 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.39.4**: Reestructuración PowerBI - Dashboard en página separada para EXTERNO (2026-01-30)
 > - ⭐ **NUEVO - v1.39.3**: Fix timeouts SMTP - Aumentar de 15s a 30s para servidor EsSalud (2026-01-30)
 > - ⭐ **NUEVO - v1.39.2**: Fix eliminación usuarios - Nombres de tablas de tokens incorrectos (2026-01-30)
 > - ⭐ **NUEVO - v1.39.1**: Fix crítico envío correos - Sincronización relaciones JPA (2026-01-30)
@@ -16,6 +17,69 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.39.4 (2026-01-30) - 📊 Feature: Dashboard PowerBI en Página Separada para EXTERNO
+
+### 📌 Problema Identificado
+
+**Arquitectura incorrecta:** El dashboard PowerBI "Seguimiento de Lecturas Pendientes" estaba incrustado directamente en la página de bienvenida de EXTERNO (BienvenidaExterno.jsx), lo cual no es la estructura deseada.
+
+**Requisito:**
+- El dashboard debe estar en una **página separada**
+- Accesible mediante opción/submenu en el sidebar bajo "Gestión de Modalidad de Atención"
+- El usuario navega desde el sidebar o desde un card en la bienvenida
+
+### ✅ Solución Implementada
+
+#### 1. Remover PowerBI de BienvenidaExterno.jsx
+- Eliminado iframe de PowerBI (líneas 180-206)
+- Limpiado sección "Dashboard de Diferimiento de Lecturas Pendientes"
+- Página de bienvenida ahora es más limpia y enfocada
+
+#### 2. Crear Nueva Página SeguimientoLecturasExterno.jsx
+```
+frontend/src/pages/roles/externo/SeguimientoLecturasExterno.jsx
+├── Header con botón "Atrás"
+├── Título: "Seguimiento de Lecturas Pendientes"
+├── Iframe PowerBI (alto: 700px)
+└── Nota informativa de actualización automática
+```
+
+#### 3. Registrar Ruta en componentRegistry.js
+```javascript
+'/roles/externo/seguimiento-lecturas': {
+  component: lazy(() => import('../pages/roles/externo/SeguimientoLecturasExterno')),
+  requiredAction: 'ver',
+}
+```
+
+#### 4. Script SQL para Sidebar
+Crear entrada en `dim_paginas_modulo` bajo módulo EXTERNO:
+```sql
+-- 2026-01-30_agregar_seguimiento_lecturas_externo.sql
+-- Agrega página a sidebar con:
+-- - URL: /roles/externo/seguimiento-lecturas
+-- - Nombre: Seguimiento de Lecturas Pendientes
+-- - Icono: BarChart3
+-- - Permisos: EXTERNO (VER)
+```
+
+### 📊 Resultado
+
+- ✅ PowerBI en página dedicada (no en bienvenida)
+- ✅ Accesible desde sidebar bajo "Gestión de Modalidad de Atención"
+- ✅ Ruta registrada en componentRegistry
+- ✅ SQL script generado para agregar al sidebar
+- ✅ BienvenidaExterno limpia y enfocada
+
+### 🚀 Próximos Pasos
+
+1. Ejecutar script SQL en la BD: `2026-01-30_agregar_seguimiento_lecturas_externo.sql`
+2. Verificar que opción aparece en sidebar para rol EXTERNO
+3. Confirmar navegación correcta desde sidebar o cards de bienvenida
+4. Validar que PowerBI carga correctamente en la nueva página
 
 ---
 
