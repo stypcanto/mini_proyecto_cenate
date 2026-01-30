@@ -46,7 +46,7 @@ export default function BienvenidaExterno() {
             {/* Contenido */}
             <div className="md:col-span-4 space-y-3">
               <h2 className="text-2xl font-bold">
-                Portal de Servicios de Telemedicina
+                Portal de Servicios de Telemedicina para IPRESS Consultantes
               </h2>
               <p className="text-blue-100 text-sm leading-relaxed">
                 Como IPRESS externa, utiliza este portal para solicitar servicios de telemedicina,
