@@ -82,6 +82,11 @@ public class EmailService {
                             <strong>Importante:</strong> Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.
                         </div>
 
+                        <div style="background-color: #dbeafe; border-left: 4px solid #1a56db; padding: 15px; margin: 20px 0;">
+                            <strong>🏥 Acceso desde Red EsSalud:</strong>
+                            <p style="margin: 10px 0 0 0;">El sistema <strong>Intranet CENATE</strong> solo es accesible desde la red interna de EsSalud. Asegúrate de estar conectado a la <strong>red corporativa o VPN</strong> para acceder al sistema.</p>
+                        </div>
+
                         <p>Ya puedes acceder al sistema utilizando las credenciales proporcionadas.</p>
 
                     </div>
@@ -200,6 +205,11 @@ public class EmailService {
                             <strong>Importante:</strong> Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.
                         </div>
 
+                        <div style="background-color: #dbeafe; border-left: 4px solid #1a56db; padding: 15px; margin: 20px 0;">
+                            <strong>🏥 Acceso desde Red EsSalud:</strong>
+                            <p style="margin: 10px 0 0 0;">El sistema <strong>Intranet CENATE</strong> solo es accesible desde la red interna de EsSalud. Asegúrate de estar conectado a la <strong>red corporativa o VPN</strong> para acceder al sistema.</p>
+                        </div>
+
                         <p>Ya puedes acceder al sistema utilizando las credenciales proporcionadas.</p>
 
                     </div>
@@ -284,6 +294,11 @@ public class EmailService {
                             </ul>
                         </div>
 
+                        <div style="background-color: #dbeafe; border-left: 4px solid #1a56db; padding: 15px; margin: 20px 0;">
+                            <strong>🏥 Acceso desde Red EsSalud:</strong>
+                            <p style="margin: 10px 0 0 0;">El sistema <strong>Intranet CENATE</strong> solo es accesible desde la red interna de EsSalud. Asegúrate de estar conectado a la <strong>red corporativa o VPN</strong> antes de hacer clic en el enlace.</p>
+                        </div>
+
                         <p class="link-fallback">
                             Si el botón no funciona, copia y pega este enlace en tu navegador:<br>
                             <a href="%s">%s</a>
@@ -353,6 +368,11 @@ public class EmailService {
 
                         <div class="warning">
                             <strong>Importante:</strong> Por seguridad, deberás cambiar tu contraseña en el próximo inicio de sesión.
+                        </div>
+
+                        <div style="background-color: #dbeafe; border-left: 4px solid #1a56db; padding: 15px; margin: 20px 0;">
+                            <strong>🏥 Acceso desde Red EsSalud:</strong>
+                            <p style="margin: 10px 0 0 0;">El sistema <strong>Intranet CENATE</strong> solo es accesible desde la red interna de EsSalud. Asegúrate de estar conectado a la <strong>red corporativa o VPN</strong> para acceder al sistema.</p>
                         </div>
 
                         <p>Si no solicitaste este cambio, por favor contacta inmediatamente al administrador del sistema.</p>
