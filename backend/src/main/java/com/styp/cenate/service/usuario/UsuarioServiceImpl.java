@@ -299,6 +299,8 @@ public class UsuarioServiceImpl implements UsuarioService {
 			}
 
 			personalCntRepository.save(personalCnt);
+			// 🔗 Sincronizar relación bidireccional para que el email se pueda obtener
+			usuario.setPersonalCnt(personalCnt);
 			log.info("✅ Registro de PersonalCnt creado exitosamente para: {}", usuario.getNameUser());
 
 			// 🆕 v1.14.0 - GUARDAR FIRMA DIGITAL si viene en el request
@@ -394,7 +396,64 @@ public class UsuarioServiceImpl implements UsuarioService {
 				}
 			}
 		} else if (esExterno) {
-			log.info("👤 Usuario EXTERNO: {} - Los datos personales se crearán en dim_personal_externo", usuario.getNameUser());
+			log.info("👤 Usuario EXTERNO: {} - Creando registro en dim_personal_externo", usuario.getNameUser());
+
+			// 🆕 v1.39.1 - Crear PersonalExterno para usuarios externos creados desde panel admin
+			com.styp.cenate.model.PersonalExterno personalExterno = new com.styp.cenate.model.PersonalExterno();
+			personalExterno.setNomExt(request.getNombres());
+			personalExterno.setApePaterExt(request.getApellido_paterno());
+			personalExterno.setApeMaterExt(request.getApellido_materno());
+			personalExterno.setNumDocExt(request.getNumero_documento());
+			personalExterno.setIdUser(usuario.getIdUser());
+
+			// Género (normalizar a 1 carácter)
+			String generoExt = request.getGenero();
+			if (generoExt != null && !generoExt.isBlank()) {
+				generoExt = generoExt.trim().toUpperCase();
+				if (generoExt.startsWith("M")) {
+					generoExt = "M";
+				} else if (generoExt.startsWith("F")) {
+					generoExt = "F";
+				} else if (generoExt.length() > 1) {
+					generoExt = generoExt.substring(0, 1);
+				}
+				personalExterno.setGenExt(generoExt);
+			}
+
+			// Fecha de nacimiento
+			if (request.getFecha_nacimiento() != null && !request.getFecha_nacimiento().isBlank()) {
+				try {
+					personalExterno.setFechNaciExt(java.time.LocalDate.parse(request.getFecha_nacimiento()));
+				} catch (Exception e) {
+					log.warn("⚠️ Error al parsear fecha de nacimiento para externo: {}", e.getMessage());
+				}
+			}
+
+			// Contacto
+			personalExterno.setMovilExt(request.getTelefono());
+			personalExterno.setEmailPersExt(request.getCorreo_personal());
+			personalExterno.setEmailCorpExt(request.getCorreo_corporativo());
+
+			// Tipo de documento
+			if (request.getTipo_documento() != null && !request.getTipo_documento().isBlank()) {
+				tipoDocumentoRepository.findByDescTipDoc(request.getTipo_documento()).ifPresentOrElse(
+						personalExterno::setTipoDocumento,
+						() -> log.warn("⚠️ Tipo de documento '{}' no encontrado para externo", request.getTipo_documento()));
+			}
+
+			// IPRESS
+			if (request.getIdIpress() != null) {
+				ipressRepository.findById(request.getIdIpress()).ifPresentOrElse(ipress -> {
+					personalExterno.setIpress(ipress);
+					log.info("✅ IPRESS asignada a externo: {} - {}", ipress.getCodIpress(), ipress.getDescIpress());
+				}, () -> log.warn("⚠️ IPRESS con ID {} no encontrada para externo", request.getIdIpress()));
+			}
+
+			// Guardar PersonalExterno
+			personalExternoRepository.save(personalExterno);
+			// 🔗 Sincronizar relación bidireccional para que el email se pueda obtener
+			usuario.setPersonalExterno(personalExterno);
+			log.info("✅ Registro de PersonalExterno creado exitosamente para: {}", usuario.getNameUser());
 		} else {
 			log.warn("⚠️ No se proporcionaron datos personales para el usuario: {}", usuario.getNameUser());
 		}
@@ -1122,12 +1181,12 @@ public class UsuarioServiceImpl implements UsuarioService {
 		}
 
 		// 1. Eliminar tokens de recuperación de contraseña
-		int tokens = jdbcTemplate.update("DELETE FROM password_reset_tokens WHERE id_usuario = ?", id);
+		int tokens = jdbcTemplate.update("DELETE FROM segu_password_reset_tokens WHERE id_usuario = ?", id);
 		log.info("  - Tokens de recuperación eliminados: {}", tokens);
 
-		// 2. Eliminar solicitudes de contraseña
-		int solicitudesPass = jdbcTemplate.update("DELETE FROM solicitud_contrasena WHERE id_usuario = ?", id);
-		log.info("  - Solicitudes de contraseña eliminadas: {}", solicitudesPass);
+		// 2. Eliminar solicitudes de contraseña temporal
+		int solicitudesPass = jdbcTemplate.update("DELETE FROM solicitud_contrasena_temporal WHERE id_usuario = ?", id);
+		log.info("  - Solicitudes de contraseña temporal eliminadas: {}", solicitudesPass);
 
 		// 3. Eliminar permisos modulares y de seguridad del usuario
 		int permisos = jdbcTemplate.update("DELETE FROM permisos_modulares WHERE id_user = ?", id);

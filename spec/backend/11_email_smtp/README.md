@@ -1,6 +1,6 @@
 # Módulo de Correo SMTP - CENATE
 
-> **Versión:** 1.2.0 (2026-01-30)
+> **Versión:** 1.4.0 (2026-01-30)
 > **Estado:** Producción
 
 ---
@@ -461,6 +461,37 @@ nc -zv 172.20.0.227 25
 2. Verificar cola: `docker exec smtp-relay-cenate postqueue -p`
 3. Revisar carpeta de spam del destinatario
 
+### Log dice "Usuario no tiene email registrado" al crear usuario
+
+**Causa:** Las relaciones JPA (`PersonalCnt`, `PersonalExterno`) no están sincronizadas en memoria después de guardar.
+
+**Solución (ya implementada en v1.3.0):**
+1. Después de `personalCntRepository.save(personalCnt)`, agregar `usuario.setPersonalCnt(personalCnt)`
+2. Para usuarios externos, crear el `PersonalExterno` en el mismo método `createUser()`
+
+**Verificación:**
+```java
+// Correcto (v1.3.0+)
+personalCntRepository.save(personalCnt);
+usuario.setPersonalCnt(personalCnt);  // ← Sincronizar relación
+log.info("PersonalCnt guardado");
+```
+
+### Reset de contraseña no encuentra email del usuario
+
+**Causa:** El método `findById()` no carga las relaciones LAZY (`PersonalCnt`, `PersonalExterno`).
+
+**Solución (ya implementada en v1.3.0):**
+Usar `findByIdWithFullDetails()` que incluye `JOIN FETCH`:
+
+```java
+// Antes (no funcionaba)
+Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
+
+// Después (funciona)
+Usuario usuario = usuarioRepository.findByIdWithFullDetails(idUsuario).orElse(null);
+```
+
 ---
 
 ## Flujo de Envío de Correo
@@ -520,9 +551,68 @@ docker exec smtp-relay-cenate postsuper -d ALL
 
 | Fecha | Versión | Cambio |
 |-------|---------|--------|
+| 2026-01-30 | 1.4.0 | **Aumentar timeouts SMTP** de 15s a 30s para conexiones lentas al servidor EsSalud |
+| 2026-01-30 | 1.3.0 | **Fix crítico:** Corrección de sincronización de relaciones JPA para envío de correos |
 | 2026-01-30 | 1.2.0 | Agregar aviso de red EsSalud en templates + documentación de templates |
 | 2026-01-30 | 1.1.0 | Agregar análisis completo de casos de uso y triggers |
 | 2026-01-30 | 1.0.0 | Configuración inicial con relay SMTP integrado en docker-compose |
+
+### Detalle v1.3.0 - Fix de Relaciones JPA
+
+**Problema detectado:** Los correos de bienvenida no se enviaban al crear usuarios desde el panel de administración porque las relaciones JPA (`PersonalCnt`, `PersonalExterno`) no estaban sincronizadas en memoria.
+
+**Archivos modificados:**
+
+| Archivo | Cambio |
+|---------|--------|
+| `UsuarioServiceImpl.java` | Sincronizar `usuario.setPersonalCnt()` después de guardar PersonalCnt |
+| `UsuarioServiceImpl.java` | Crear `PersonalExterno` completo para usuarios externos desde panel admin |
+| `UsuarioRepository.java` | Nuevo método `findByIdWithFullDetails()` con FETCH JOIN |
+| `PasswordTokenService.java` | Usar `findByIdWithFullDetails()` en lugar de `findById()` |
+
+**Flujos corregidos:**
+
+| Flujo | Antes | Después |
+|-------|-------|---------|
+| Crear usuario interno desde panel | ❌ No enviaba correo | ✅ Funciona |
+| Crear usuario externo desde panel | ❌ No enviaba correo | ✅ Funciona |
+| Reset contraseña desde panel admin | ❌ No encontraba email | ✅ Funciona |
+
+**Causa raíz:** En JPA, cuando se guarda una entidad relacionada (`personalCntRepository.save(personalCnt)`), la relación bidireccional no se sincroniza automáticamente en memoria. El objeto `Usuario` no sabía que tenía un `PersonalCnt` asociado.
+
+**Solución:**
+1. Sincronizar manualmente la relación después de guardar: `usuario.setPersonalCnt(personalCnt)`
+2. Usar queries con `JOIN FETCH` para cargar relaciones al buscar usuario por ID
+
+### Detalle v1.4.0 - Aumento de Timeouts SMTP
+
+**Problema detectado:** Al crear usuarios nuevos, el correo de bienvenida fallaba con `SocketTimeoutException: Read timed out` después de exactamente 15 segundos.
+
+**Causa raíz:** El relay SMTP (Postfix) necesita conectarse al servidor de EsSalud (172.20.0.227:25) para reenviar el correo. Cuando el servidor de EsSalud tiene latencia alta, la conexión tarda más de 15 segundos y el backend cancela la operación.
+
+**Archivo modificado:** `application.properties`
+
+```properties
+# ANTES (15 segundos - insuficiente)
+spring.mail.properties.mail.smtp.connectiontimeout=15000
+spring.mail.properties.mail.smtp.timeout=15000
+spring.mail.properties.mail.smtp.writetimeout=15000
+
+# DESPUÉS (30 segundos - suficiente para conexiones lentas)
+spring.mail.properties.mail.smtp.connectiontimeout=30000
+spring.mail.properties.mail.smtp.timeout=30000
+spring.mail.properties.mail.smtp.writetimeout=30000
+```
+
+**Configuración de timeouts:**
+
+| Timeout | Valor | Descripción |
+|---------|-------|-------------|
+| `connectiontimeout` | 30000ms | Tiempo máximo para establecer conexión TCP |
+| `timeout` | 30000ms | Tiempo máximo para leer respuesta del servidor |
+| `writetimeout` | 30000ms | Tiempo máximo para escribir datos al servidor |
+
+**Nota:** Los correos se envían de forma asíncrona (`@Async`), por lo que estos timeouts no afectan el tiempo de respuesta de la API al crear usuarios.
 
 ---
 

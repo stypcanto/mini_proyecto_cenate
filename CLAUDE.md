@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.39.0 (2026-01-30) 🚀
+> **Versión:** v1.39.3 (2026-01-30) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -50,6 +50,27 @@
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.39.3 - Completado (2026-01-30) ⏱️
+✅ **Fix Timeouts SMTP** - Aumentar timeouts de 15s a 30s para conexiones lentas
+✅ **Correo Bienvenida** - Ahora funciona correctamente al crear usuarios nuevos
+✅ **Servidor EsSalud** - Tolerancia a latencia alta en 172.20.0.227
+
+**Docs:** [`spec/backend/11_email_smtp/`](spec/backend/11_email_smtp/)
+
+### v1.39.2 - Completado (2026-01-30) 🗑️
+✅ **Fix Eliminación Usuarios** - Nombres de tablas de tokens incorrectos en `deleteUser()`
+✅ **Tabla Corregida** - `password_reset_tokens` → `segu_password_reset_tokens`
+✅ **Tabla Corregida** - `solicitud_contrasena` → `solicitud_contrasena_temporal`
+
+**Docs:** [`checklist/01_Historial/01_changelog.md`](checklist/01_Historial/01_changelog.md)
+
+### v1.39.1 - Completado (2026-01-30) 🔧
+✅ **Fix Correo Bienvenida** - Sincronización relaciones JPA para envío de correos
+✅ **Usuarios Externos** - Creación de PersonalExterno desde panel admin
+✅ **Reset Contraseña** - Nuevo método `findByIdWithFullDetails()` con FETCH JOIN
+
+**Docs:** [`spec/backend/11_email_smtp/`](spec/backend/11_email_smtp/)
 
 ### v1.39.0 - Completado (2026-01-30) 🎉
 ✅ **Módulo Correo SMTP** v1.0.0 - Relay Postfix integrado en Docker Compose + Aviso red EsSalud
