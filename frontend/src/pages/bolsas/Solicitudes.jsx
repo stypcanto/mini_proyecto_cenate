@@ -1410,8 +1410,7 @@ export default function Solicitudes() {
                 options: [
                   { label: `Todas las bolsas (${totalElementos})`, value: "todas" },
                   ...estadisticasTipoBolsa
-                    .filter(bolsa => bolsa.total > 0)
-                    .sort((a, b) => (a.tipoBolsa || '').localeCompare(b.tipoBolsa || ''))
+                    .sort((a, b) => b.total - a.total)
                     .map(bolsa => {
                       const nombreBolsa = generarAliasBolsa(bolsa.tipoBolsa);
                       return {
@@ -1456,11 +1455,11 @@ export default function Solicitudes() {
                 options: [
                   { label: `Todas las IPRESS (${totalElementos})`, value: "todas" },
                   ...estadisticasIpress
-                    .filter(i => i.cantidad > 0)
-                    .sort((a, b) => b.cantidad - a.cantidad)
+                    .filter(i => i.total > 0)
+                    .sort((a, b) => b.total - a.total)
                     .map(i => ({
-                      label: `${i.nombre} (${i.cantidad})`,
-                      value: i.nombre
+                      label: `${i.nombreIpress} (${i.total})`,
+                      value: i.nombreIpress
                     }))
                 ]
               },
