@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.38.0 (2026-01-29) 🚀
+> **Versión:** v1.39.0 (2026-01-30) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -28,6 +28,7 @@
 | **🏗️ Arquitecto** | [`spec/architecture/README.md`](spec/architecture/README.md) |
 | **💾 Admin BD** | [`spec/database/README.md`](spec/database/README.md) |
 | **🚀 DevOps/Performance** | [`spec/backend/10_performance_monitoring/README.md`](spec/backend/10_performance_monitoring/README.md) |
+| **📧 Email/SMTP** | [`spec/backend/11_email_smtp/README.md`](spec/backend/11_email_smtp/README.md) |
 | **🔍 QA/Support** | [`spec/troubleshooting/README.md`](spec/troubleshooting/README.md) |
 | **🔐 Security** | [`plan/01_Seguridad_Auditoria/`](plan/01_Seguridad_Auditoria/) |
 | **🤖 AI/Spring AI** | [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/) |
@@ -36,7 +37,7 @@
 
 | Carpeta | Propósito |
 |---------|-----------|
-| **spec/backend/** | APIs, Servicios, Módulos (10 docs) |
+| **spec/backend/** | APIs, Servicios, Módulos, SMTP (11 docs) |
 | **spec/frontend/** | Componentes, Páginas, UI (8 docs) |
 | **spec/database/** | Esquemas, Auditoría, Backups (15 docs) |
 | **spec/architecture/** | Diagramas, Flujos, Modelos |
@@ -50,12 +51,18 @@
 
 ## 📊 ÚLTIMAS VERSIONES
 
-### v1.38.0 - Completado (2026-01-29) 🎉
+### v1.39.0 - Completado (2026-01-30) 🎉
+✅ **Módulo Correo SMTP** v1.0.0 - Relay Postfix integrado en Docker Compose
+✅ **Configuración DMARC** - Correos enviados via servidor oficial EsSalud (172.20.0.227)
+✅ **Documentación** - Nueva guía de correo en spec/backend/11_email_smtp/
+
+**Docs:** [`spec/backend/11_email_smtp/`](spec/backend/11_email_smtp/)
+
+### v1.38.0 - Completado (2026-01-29)
 ✅ **Módulo Bolsas** v3.0.0 - Módulo 107 completamente integrado + Postman collection
 ✅ **Módulo 107** v3.0.0 - Búsqueda + Estadísticas + MBAC + DTOs
-✅ **Documentación** v3.0.0 - Unificada en 1 documento maestro (antigua eliminada)
 
-**Docs:** [`spec/backend/09_modules_bolsas/`](spec/backend/09_modules_bolsas/) | [`spec/coleccion-postman/`](spec/coleccion-postman/) | [`spec/backend/10_performance_monitoring/`](spec/backend/10_performance_monitoring/)
+**Docs:** [`spec/backend/09_modules_bolsas/`](spec/backend/09_modules_bolsas/) | [`spec/coleccion-postman/`](spec/coleccion-postman/)
 
 ---
 
@@ -66,6 +73,7 @@ Backend:        Spring Boot 3.5.6 + Java 17
 Frontend:       React 19 + TailwindCSS 3.4.18
 Database:       PostgreSQL 14+ (10.0.89.13:5432)
 Seguridad:      JWT + MBAC (Role-Based Access Control)
+Email:          Postfix Relay → SMTP EsSalud (172.20.0.227)
 ```
 
 ---
@@ -173,7 +181,7 @@ Ver: [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
 
 **Desarrollado por:** Ing. Styp Canto Rondón
 **Email:** stypcanto@essalud.gob.pe
-**Versión:** v1.38.0 (2026-01-29)
+**Versión:** v1.39.0 (2026-01-30)
 
 ---
 

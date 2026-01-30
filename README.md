@@ -1,7 +1,7 @@
 # 🏥 CENATE - Centro Nacional de Telemedicina
 
 > **Sistema integral de coordinación de atenciones médicas remotas para EsSalud**
-> **Versión:** v1.37.4 (2026-01-28)
+> **Versión:** v1.39.0 (2026-01-30)
 > **Status:** ✅ Production Ready
 
 ---
@@ -253,8 +253,7 @@ Maven/Gradle (build)
 |---------|-----------|
 | **CLAUDE.md** | Instrucciones para Claude (este proyecto) |
 | **README.md** | Este archivo - Navegación general |
-| **docker-compose.yml** | Configuración Docker para producción |
-| **start-smtp-relay.sh** | Inicia relay SMTP para envío de correos |
+| **docker-compose.yml** | Configuración Docker (backend + frontend + smtp-relay) |
 | **build.gradle** | Configuración Gradle (Backend) |
 | **package.json** | Configuración npm (Frontend) |
 | **.gitignore** | Archivos ignorados por Git |
@@ -268,8 +267,7 @@ Maven/Gradle (build)
 - [ ] Ir al README según tu rol (5 min)
 - [ ] Revisar la documentación de tu módulo (20 min)
 - [ ] Clonar el repositorio y compilar (15 min)
-- [ ] Ejecutar `./start-smtp-relay.sh` (1 min)
-- [ ] Ejecutar `docker-compose up -d` (5 min)
+- [ ] Ejecutar `docker-compose up -d` (5 min) - levanta backend, frontend y SMTP relay
 
 **Total:** ~1 hora para estar operativo 🚀
 
@@ -295,10 +293,7 @@ npm run build              # Producción
 
 ### Docker (Producción)
 ```bash
-# Iniciar SMTP Relay (REQUERIDO para envío de correos)
-./start-smtp-relay.sh
-
-# Levantar servicios
+# Levantar todos los servicios (backend + frontend + smtp-relay)
 docker-compose up -d
 
 # Reconstruir después de cambios
@@ -306,19 +301,27 @@ docker-compose up -d --build backend
 
 # Ver logs
 docker-compose logs -f backend
+
+# Ver estado de servicios
+docker ps
 ```
 
 ### Servidor de Correo (SMTP)
 ```bash
-# IMPORTANTE: Ejecutar ANTES de docker-compose
-./start-smtp-relay.sh
+# El relay SMTP está integrado en docker-compose (se levanta automáticamente)
+# NO es necesario ejecutar scripts adicionales
 
 # Probar envío de correo
 curl "http://localhost:8080/api/health/smtp-test?email=tu@email.com"
 
+# Ver logs del relay SMTP
+docker logs smtp-relay-cenate --tail 50
+
 # Configuración:
-# - Relay: localhost:2525 → 172.20.0.227:25 (EsSalud)
+# - Backend → host.docker.internal:2525 → smtp-relay-cenate
+# - Relay → 172.20.0.227:25 (SMTP EsSalud)
 # - Remitente: cenate.contacto@essalud.gob.pe
+# - Documentación: spec/backend/11_email_smtp/README.md
 ```
 
 ### Database
@@ -335,8 +338,8 @@ ls -lh spec/sh/02_backup/
 ## 📞 CONTACTOS Y REFERENCIAS
 
 **Desarrollado por:** Ing. Styp Canto Rondón
-**Versión Actual:** v1.37.4
-**Última Actualización:** 2026-01-28
+**Versión Actual:** v1.39.0
+**Última Actualización:** 2026-01-30
 **Email:** stypcanto@essalud.gob.pe
 
 ---
@@ -354,6 +357,8 @@ ls -lh spec/sh/02_backup/
 
 ## 📝 VERSIONADO
 
+- **v1.39.0** (2026-01-30) - SMTP Relay integrado en docker-compose + Documentación
+- **v1.38.0** (2026-01-29) - Módulo Bolsas v3.0.0 + Módulo 107
 - **v1.37.4** (2026-01-28) - SMTP Relay EsSalud + Endpoint health/smtp-test
 - **v1.37.3** (2026-01-28) - Performance Optimization 100 usuarios
 - **v1.34.1** (2026-01-26) - Excel v1.8.0, Reorganización Documentación
@@ -374,7 +379,7 @@ ls -lh spec/sh/02_backup/
 | Frontend | ✅ Production | v19 |
 | Database | ✅ Production | v14+ |
 | SMTP Relay | ✅ Production | EsSalud |
-| Documentación | ✅ Completa | v1.37.4 |
+| Documentación | ✅ Completa | v1.39.0 |
 | Tests | ⏳ Próximamente | - |
 
 ---
