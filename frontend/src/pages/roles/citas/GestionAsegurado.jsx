@@ -24,6 +24,7 @@ export default function GestionAsegurado() {
   const [activeTab, setActiveTab] = useState("citar");
   const [loading, setLoading] = useState(true);
   const [medicos, setMedicos] = useState([]);
+  const [citasRealizadas, setCitasRealizadas] = useState([]);
   const [bolsaAsignada, setBolsaAsignada] = useState([]);
   const [metrics, setMetrics] = useState([
     { label: "Total Médicos", value: "0", icon: Users, color: "bg-blue-100" },
@@ -188,6 +189,60 @@ export default function GestionAsegurado() {
     }
   };
 
+  // Fetch completed/realized appointments
+  const fetchCitasRealizadas = async () => {
+    try {
+      // Get current month period
+      const now = new Date();
+      const year = now.getFullYear();
+      const month = String(now.getMonth() + 1).padStart(2, '0');
+      const periodo = `${year}${month}`;
+
+      const response = await fetch(
+        `/api/v1/chatbot/reportes/citas/buscar?periodo=${periodo}&size=50`,
+        {
+          headers: {
+            "Authorization": `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        console.warn("Could not fetch realized appointments");
+        setCitasRealizadas([]);
+        return;
+      }
+
+      const data = await response.json();
+      const citas = data?.data?.content || data?.content || [];
+
+      // Transform to match table structure
+      const transformedCitas = citas.map((cita) => ({
+        id: cita.idSolicitud || cita.id,
+        turno: cita.fechaCita || new Date().toISOString().split('T')[0],
+        modalidad: cita.tipoCita || "M",
+        profesional: cita.nombreProfesional || "No asignado",
+        dniProfesional: cita.idPersonal || "-",
+        especialidad: cita.nombreEspecialidad || "-",
+        ipress: cita.nombreIpress || "-",
+        estado: cita.estadoPaciente || "PENDIENTE",
+        hora: cita.horaCita || "-",
+        dni: cita.docPaciente || "-",
+        nombrePaciente: cita.nombrePaciente || "-",
+        edad: cita.edad || "-",
+        genero: cita.sexo || "-",
+        telefono1: cita.telefono || "-",
+        telefonoWSP: cita.telefonoAlterno || "-",
+      }));
+
+      setCitasRealizadas(transformedCitas);
+    } catch (err) {
+      console.error("Error fetching realized appointments:", err);
+      setCitasRealizadas([]);
+    }
+  };
+
   useEffect(() => {
     const loadAllData = async () => {
       try {
@@ -206,6 +261,9 @@ export default function GestionAsegurado() {
           { label: "Citas Hoy", value: String(citasHoy), icon: Calendar, color: "bg-purple-100" },
           { label: "Solicitudes Pendientes", value: String(pendingReqs), icon: AlertCircle, color: "bg-yellow-100" },
         ]);
+
+        // Fetch completed appointments
+        await fetchCitasRealizadas();
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Error al cargar los datos. Por favor, intente de nuevo.");
@@ -413,6 +471,104 @@ export default function GestionAsegurado() {
                       </table>
                     </div>
                   )}
+
+                  {/* Citas Realizadas Section */}
+                  <div className="mt-10 pt-10 border-t border-gray-200">
+                    <h3 className="text-lg font-semibold text-slate-900 mb-4">
+                      Citas Realizadas
+                    </h3>
+
+                    {citasRealizadas.length === 0 ? (
+                      <div className="text-center py-12">
+                        <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
+                        <p className="text-gray-500">No hay citas realizadas en este período</p>
+                      </div>
+                    ) : (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-sm border-collapse">
+                          <thead>
+                            <tr className="bg-blue-700 text-white sticky top-0">
+                              <th className="px-4 py-3 text-left font-semibold">Turno</th>
+                              <th className="px-4 py-3 text-left font-semibold">Modalidad</th>
+                              <th className="px-4 py-3 text-left font-semibold">Profesional</th>
+                              <th className="px-4 py-3 text-left font-semibold">DNI Prof.</th>
+                              <th className="px-4 py-3 text-left font-semibold">Especialidad</th>
+                              <th className="px-4 py-3 text-left font-semibold">IPRESS</th>
+                              <th className="px-4 py-3 text-left font-semibold">Estado</th>
+                              <th className="px-4 py-3 text-left font-semibold">Hora</th>
+                              <th className="px-4 py-3 text-left font-semibold">DNI Paciente</th>
+                              <th className="px-4 py-3 text-left font-semibold">Nombre Paciente</th>
+                              <th className="px-4 py-3 text-left font-semibold">Edad</th>
+                              <th className="px-4 py-3 text-left font-semibold">Género</th>
+                              <th className="px-4 py-3 text-left font-semibold">Telf. 1</th>
+                              <th className="px-4 py-3 text-left font-semibold">Telf. WSP</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {citasRealizadas.map((cita, idx) => (
+                              <tr
+                                key={cita.id || idx}
+                                className={`border-b ${
+                                  idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                                } hover:bg-blue-50 transition-colors`}
+                              >
+                                <td className="px-4 py-3 font-medium text-slate-900">
+                                  {cita.turno}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600 text-center">
+                                  {cita.modalidad}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {cita.profesional}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {cita.dniProfesional}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {cita.especialidad}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {cita.ipress}
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                                    cita.estado === "ATENDIDA"
+                                      ? "bg-green-100 text-green-800"
+                                      : cita.estado === "PENDIENTE"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-gray-100 text-gray-800"
+                                  }`}>
+                                    {cita.estado}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {cita.hora}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600 font-medium">
+                                  {cita.dni}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {cita.nombrePaciente}
+                                </td>
+                                <td className="px-4 py-3 text-center text-slate-600">
+                                  {cita.edad}
+                                </td>
+                                <td className="px-4 py-3 text-center text-slate-600">
+                                  {cita.genero}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {cita.telefono1}
+                                </td>
+                                <td className="px-4 py-3 text-slate-600">
+                                  {cita.telefonoWSP}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 
