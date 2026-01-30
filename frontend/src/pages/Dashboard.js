@@ -29,13 +29,17 @@ export default function Dashboard() {
     }).filter(Boolean);
 
     console.log("🔍 Roles detectados:", roles);
+    console.log("🔍 Roles raw:", user?.roles);
 
     // Mapeo de roles a rutas
     let targetPath = "/unauthorized";
 
+    // Detección flexible de PERSONAL_107 (puede venir como PERSONAL_107, PERSONAL-107, etc)
+    const isPersonal107 = roles.some(r => r.includes("PERSONAL") && r.includes("107"));
+
     if (roles.includes("SUPERADMIN") || roles.includes("ADMIN")) {
       targetPath = "/admin";
-    } else if (roles.includes("PERSONAL_107")) {
+    } else if (isPersonal107) {
       targetPath = "/roles/personal107/bienvenida";
     } else if (roles.includes("COORDINADOR_GESTION_CITAS") || roles.includes("COORD_GESTION_CITAS") || roles.includes("COORDINADOR GESTION CITAS") || roles.includes("COORD. GESTION CITAS")) {
       targetPath = "/roles/coordcitas/bienvenida";

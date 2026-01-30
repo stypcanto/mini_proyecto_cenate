@@ -160,7 +160,8 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
   const isCoordinadorRed = roles.includes("COORDINADOR_RED");
   const isGestorCitas = roles.includes("GESTOR DE CITAS") || roles.includes("GESTOR_CITAS");
   const isCoordinadorGestionCitas = roles.includes("COORDINADOR_GESTION_CITAS") || roles.includes("COORD_GESTION_CITAS") || roles.includes("COORDINADOR GESTION CITAS") || roles.includes("COORD. GESTION CITAS");
-  const isPersonal107 = roles.includes("PERSONAL_107");
+  // Detección flexible de PERSONAL_107 (puede venir como PERSONAL_107, PERSONAL-107, etc)
+  const isPersonal107 = roles.some(r => r.includes("PERSONAL") && r.includes("107"));
   const isEnfermeria = roles.includes("ENFERMERIA");
 
   // ============================================================
