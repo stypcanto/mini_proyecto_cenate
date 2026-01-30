@@ -522,10 +522,20 @@ function getPageIcon(nombreModulo, nombrePagina) {
 }
 
 // Componente para renderizar una página con submenú (nivel 3)
-function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent }) {
-  const [isSubOpen, setIsSubOpen] = React.useState(false);
+function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent, autoExpand = false }) {
   const hasActiveSubpage = pagina.subpaginas?.some((sub) => location.pathname === sub.ruta);
   const subStateKey = `${nombreModulo}-${pagina.id_pagina}`;
+  // Expandir automáticamente si hay una subpágina activa o si es Módulo 107
+  const shouldAutoExpand = hasActiveSubpage || (autoExpand && pagina.nombre?.toLowerCase().includes("módulo 107"));
+  const [isSubOpen, setIsSubOpen] = React.useState(shouldAutoExpand);
+
+  // Actualizar estado si cambia la subpágina activa
+  React.useEffect(() => {
+    if (hasActiveSubpage || (autoExpand && pagina.nombre?.toLowerCase().includes("módulo 107"))) {
+      setIsSubOpen(true);
+    }
+  }, [hasActiveSubpage, autoExpand, pagina.nombre]);
+
   // Priorizar hardcoded icons basado en nombre, si no hay usa API
   const PageIcon = getPageIcon(nombreModulo, pagina.nombre) || (pagina.icono ? getIconComponent(pagina.icono) : Folder);
 
@@ -694,6 +704,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
                   location={location}
                   nombreModulo={nombreModulo}
                   getIconComponent={getIconComponent}
+                  autoExpand={isPersonal107}
                 />
               );
             } else {
