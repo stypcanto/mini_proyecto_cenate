@@ -297,7 +297,7 @@ export default function PaginasManagement() {
                 className="px-4 py-3 bg-white dark:bg-slate-800 border-2 border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all min-w-[200px]"
               >
                 <option value="">Todos los módulos</option>
-                {modulos.map(mod => (
+                {[...modulos].sort((a, b) => a.nombreModulo.localeCompare(b.nombreModulo, 'es')).map(mod => (
                   <option key={mod.idModulo} value={mod.idModulo}>
                     {mod.nombreModulo}
                   </option>
@@ -532,7 +532,7 @@ export default function PaginasManagement() {
                     className="w-full px-4 py-3 bg-white dark:bg-slate-700 border-2 border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-[#0A5BA9] focus:border-[#0A5BA9] transition-all disabled:opacity-60"
                   >
                     <option value="">Seleccionar módulo...</option>
-                    {modulos.map(mod => (
+                    {[...modulos].sort((a, b) => a.nombreModulo.localeCompare(b.nombreModulo, 'es')).map(mod => (
                       <option key={mod.idModulo} value={mod.idModulo}>
                         {mod.nombreModulo}
                       </option>
