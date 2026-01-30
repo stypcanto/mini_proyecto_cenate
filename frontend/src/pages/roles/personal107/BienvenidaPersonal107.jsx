@@ -12,10 +12,6 @@ import {
   ArrowRight,
   CheckCircle2,
   BarChart3,
-  Upload,
-  Database,
-  HeartPulse,
-  Activity,
 } from "lucide-react";
 
 export default function BienvenidaPersonal107() {
@@ -121,60 +117,6 @@ export default function BienvenidaPersonal107() {
               color="purple"
               action={() => navigate("/bolsas/modulo107/estadisticas")}
             />
-          </div>
-        </div>
-
-        {/* Funcionalidades Adicionales */}
-        <div>
-          <h3 className="text-xl font-bold text-slate-900 mb-4">
-            🔧 Funcionalidades Adicionales
-          </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Cargar Pacientes */}
-            <button
-              onClick={() => navigate("/bolsas/modulo107/cargar-pacientes")}
-              className="bg-white border border-indigo-200 hover:border-indigo-300 hover:bg-indigo-50 rounded-xl p-6 shadow-sm transition-all cursor-pointer group"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <Upload className="w-6 h-6 text-indigo-600" />
-                </div>
-                <div className="text-left flex-1">
-                  <h4 className="font-semibold text-slate-900 mb-2">
-                    📤 Cargar Pacientes
-                  </h4>
-                  <p className="text-sm text-slate-600 mb-3">
-                    Carga masiva de pacientes desde Excel para asignación al Módulo 107
-                  </p>
-                  <div className="flex items-center gap-2 text-indigo-600 text-sm font-medium group-hover:gap-3 transition-all">
-                    Cargar <ArrowRight className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-            </button>
-
-            {/* Estadísticas Detalladas */}
-            <button
-              onClick={() => navigate("/bolsas/modulo107/estadisticas-atencion")}
-              className="bg-white border border-blue-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl p-6 shadow-sm transition-all cursor-pointer group"
-            >
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
-                  <Activity className="w-6 h-6 text-blue-600" />
-                </div>
-                <div className="text-left flex-1">
-                  <h4 className="font-semibold text-slate-900 mb-2">
-                    📊 Estadísticas de Atención
-                  </h4>
-                  <p className="text-sm text-slate-600 mb-3">
-                    Análisis detallado del desempeño y cobertura de atenciones del Módulo
-                  </p>
-                  <div className="flex items-center gap-2 text-blue-600 text-sm font-medium group-hover:gap-3 transition-all">
-                    Ver análisis <ArrowRight className="w-4 h-4" />
-                  </div>
-                </div>
-              </div>
-            </button>
           </div>
         </div>
 
