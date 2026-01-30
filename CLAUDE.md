@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.38.0 (2026-01-29) 🚀
+> **Versión:** v1.37.5 (2026-01-30) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -50,7 +50,14 @@
 
 ## 📊 ÚLTIMAS VERSIONES
 
-### v1.38.0 - Completado (2026-01-29) 🎉
+### v1.37.5 - Completado (2026-01-30) 🔐
+✅ **Fix Autorización Coordinador** - Mismatch rol COORD. GESTION CITAS en @PreAuthorize
+✅ **Historial de Bolsas** - Coordinador ahora accede sin Access Denied
+✅ **Documentación** - FIXAUTORIZACION_COORDINADOR.md (análisis completo)
+
+**Docs:** [`checklist/01_Historial/FIXAUTORIZACION_COORDINADOR.md`](checklist/01_Historial/FIXAUTORIZACION_COORDINADOR.md)
+
+### v1.38.0 - Completado (2026-01-29)
 ✅ **Módulo Bolsas** v3.0.0 - Módulo 107 completamente integrado + Postman collection
 ✅ **Módulo 107** v3.0.0 - Búsqueda + Estadísticas + MBAC + DTOs
 ✅ **Documentación** v3.0.0 - Unificada en 1 documento maestro (antigua eliminada)

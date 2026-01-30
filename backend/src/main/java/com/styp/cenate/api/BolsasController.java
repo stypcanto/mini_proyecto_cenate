@@ -149,14 +149,14 @@ public class BolsasController {
     }
 
     @GetMapping("/importaciones/historial")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORD. GESTION CITAS')")
     public ResponseEntity<List<?>> obtenerHistorialImportaciones() {
         log.info("📋 Consultando historial de importaciones...");
         return ResponseEntity.ok(bolsasService.obtenerHistorialImportaciones());
     }
 
     @GetMapping("/importaciones/{idImportacion}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORD. GESTION CITAS')")
     public ResponseEntity<Object> obtenerDetallesImportacion(@PathVariable Long idImportacion) {
         log.info("🔍 Consultando detalles de importación: {}", idImportacion);
         return ResponseEntity.ok(bolsasService.obtenerDetallesImportacion(idImportacion));

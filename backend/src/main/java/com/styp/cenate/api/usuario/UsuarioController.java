@@ -215,11 +215,25 @@ public class UsuarioController {
 	@DeleteMapping("/id/{id}")
 	@PreAuthorize("hasRole('SUPERADMIN')")
 	@CheckMBACPermission(pagina = "/admin/users", accion = "eliminar", mensajeDenegado = "No tiene permiso para eliminar usuarios")
-	public ResponseEntity<Map<String, String>> deleteUser(@PathVariable Long id) {
-		log.info("Eliminando usuario con ID: {}", id);
-		usuarioService.deleteUser(id);
-		log.info("Usuario con ID {} eliminado exitosamente", id);
-		return ResponseEntity.ok(Map.of("message", "Usuario eliminado exitosamente"));
+	public ResponseEntity<?> deleteUser(@PathVariable Long id) {
+		try {
+			log.info("🗑️ Eliminando usuario con ID: {}", id);
+			usuarioService.deleteUser(id);
+			log.info("✅ Usuario con ID {} eliminado exitosamente", id);
+			return ResponseEntity.ok(Map.of("message", "Usuario eliminado exitosamente"));
+		} catch (EntityNotFoundException e) {
+			log.warn("⚠️ Usuario no encontrado: {}", id);
+			return ResponseEntity.status(404).body(Map.of(
+				"error", "Usuario no encontrado",
+				"message", e.getMessage()
+			));
+		} catch (Exception e) {
+			log.error("❌ Error al eliminar usuario ID {}: {}", id, e.getMessage(), e);
+			return ResponseEntity.status(500).body(Map.of(
+				"error", "Error al eliminar usuario",
+				"message", e.getMessage()
+			));
+		}
 	}
 
 	/** 🟢 Activar usuario */

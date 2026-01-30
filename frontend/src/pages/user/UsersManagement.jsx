@@ -1521,12 +1521,16 @@ const UsersManagement = () => {
   const confirmarEliminar = async () => {
     if (!userToDelete) return;
     try {
-      await api.delete(`/usuarios/id/${userToDelete.id_user}`);
-      alert(`Usuario eliminado correctamente`);
+      const response = await api.delete(`/usuarios/id/${userToDelete.id_user}`);
+      console.log('✅ Usuario eliminado:', response);
+      showToast('Usuario eliminado correctamente', 'success');
+      setShowDeleteModal(false);
+      setUserToDelete(null);
       loadUsers();
     } catch (error) {
-      console.error('Error al eliminar usuario:', error);
-      alert('No se pudo eliminar el usuario.');
+      console.error('❌ Error al eliminar usuario:', error);
+      const errorMsg = error.response?.data?.message || error.message || 'No se pudo eliminar el usuario';
+      showToast(`Error: ${errorMsg}`, 'error');
     } finally {
       setShowDeleteModal(false);
       setUserToDelete(null);

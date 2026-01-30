@@ -3,6 +3,7 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.37.5**: `FIXAUTORIZACION_COORDINADOR.md` (2026-01-30) - Fix: Autorización Coordinador en Historial de Bolsas
 > - ⭐ **NUEVO - v3.0.0**: `Módulo 107 Migración` (2026-01-29) - Fusión de Bolsa 107 con dim_solicitud_bolsa + Búsqueda + Estadísticas
 > - ⭐ **NUEVO - v1.37.0**: `IMPLEMENTACION_5_FIXES_CRITICOS.md` (2026-01-28) - 5 Critical Fixes para importación Excel
 > - ⭐ **NUEVO - v1.15.0**: `REPORTE_ERRORES_FRONTEND.md` (2026-01-28) - Reporte de errores (3 niveles)
@@ -12,6 +13,63 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.37.5 (2026-01-30) - 🔐 Fix: Autorización Coordinador en Historial de Bolsas
+
+### 📌 Problema Identificado
+
+**Error:** Coordinador de Gestión de Citas recibía `Access Denied` al intentar acceder a:
+- `GET /api/bolsas/importaciones/historial`
+- `GET /api/bolsas/importaciones/{idImportacion}`
+
+**Causa Raíz:** Mismatch entre nombre de rol en `@PreAuthorize` vs base de datos
+- **Backend esperaba:** `'COORDINADOR DE GESTIÓN DE CITAS'` (nombre largo)
+- **Base de datos almacenaba:** `'COORD. GESTION CITAS'` (nombre abreviado)
+
+### ✅ Solución Implementada
+
+**Archivo modificado:** `BolsasController.java`
+
+```java
+// ANTES (líneas 152, 159)
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR DE GESTIÓN DE CITAS')")
+
+// DESPUÉS
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORD. GESTION CITAS')")
+```
+
+**Endpoints Afectados:**
+- ✅ `GET /api/bolsas/importaciones/historial` - Obtener historial de importaciones
+- ✅ `GET /api/bolsas/importaciones/{idImportacion}` - Obtener detalles de importación
+
+### 🔄 Pasos Ejecutados
+
+1. ✅ Identificar mismatch en logs de Spring Boot
+2. ✅ Verificar nombre real del rol en base de datos (tabla `dim_roles`)
+   - Rol ID: 27
+   - Nombre: `COORD. GESTION CITAS`
+   - Usuarios: 45721231, 70291746, 70572629
+3. ✅ Actualizar `@PreAuthorize` a nombre correcto
+4. ✅ Compilar con `./gradlew clean build`
+5. ✅ Reiniciar Spring Boot
+6. ✅ Verificar acceso exitoso en logs
+
+### 📊 Resultado
+
+✅ **Coordinador ahora puede acceder a:**
+- Historial de importaciones de bolsas
+- Detalles de cada importación
+- Estadísticas asociadas
+
+✅ **Sin cambios en base de datos** - Solo corrección de anotación Java
+
+### 🛡️ Impacto de Seguridad
+
+- ✅ No afecta permisos de ADMIN/SUPERADMIN
+- ✅ Rol se verifica correctamente contra JWT token
+- ✅ Auditoría de cambios registrada en logs
 
 ---
 
