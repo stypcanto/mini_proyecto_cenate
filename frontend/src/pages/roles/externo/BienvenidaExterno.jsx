@@ -150,7 +150,8 @@ export default function BienvenidaExterno() {
               description="Envío de electrocardiogramas a CENATE para interpretación remota por especialistas. Agiliza el diagnóstico cardiológico."
               color="red"
               buttonText="Enviar EKG"
-              action={() => navigate("/roles/externo/teleecgs")}
+              badge="Actualmente disponible solo para PADOMI"
+              disabled={true}
             />
 
             {/* Reportes y Seguimiento */}
@@ -227,14 +228,14 @@ function QuickActionCard({ icon, title, description, color, badge, action }) {
 // ============================================================
 // 🔧 Componente: Tarjeta de Módulo Especializado
 // ============================================================
-function SpecializedModuleCard({ icon, title, description, color, buttonText, action }) {
+function SpecializedModuleCard({ icon, title, description, color, buttonText, badge, disabled, action }) {
   const borderColorMap = {
     red: "border-red-200 hover:border-red-300",
     cyan: "border-cyan-200 hover:border-cyan-300",
   };
 
   const bgColorMap = {
-    red: "bg-white hover:bg-red-50",
+    red: disabled ? "bg-slate-50" : "bg-white hover:bg-red-50",
     cyan: "bg-white hover:bg-cyan-50",
   };
 
@@ -255,19 +256,29 @@ function SpecializedModuleCard({ icon, title, description, color, buttonText, ac
 
   return (
     <button
-      onClick={action}
-      className={`${bgColorMap[color]} border ${borderColorMap[color]} rounded-xl p-6 shadow-sm transition-all cursor-pointer group text-left`}
+      onClick={!disabled ? action : undefined}
+      disabled={disabled}
+      className={`${bgColorMap[color]} border ${borderColorMap[color]} rounded-xl p-6 shadow-sm transition-all ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer group"} text-left relative`}
     >
+      {badge && (
+        <div className="absolute top-3 right-3 subtle-pulse">
+          <div className={`${disabled ? "bg-slate-600" : "bg-red-500"} text-white px-3 py-1 rounded-full text-xs font-semibold`}>
+            {badge}
+          </div>
+        </div>
+      )}
       <div className="flex items-start gap-4">
-        <div className={`${iconBgColorMap[color]} w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
+        <div className={`${iconBgColorMap[color]} w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 ${!disabled ? "group-hover:scale-110" : ""} transition-transform`}>
           <span className={`${iconColorMap[color]}`}>{icon}</span>
         </div>
         <div className="flex-1">
           <h4 className="font-semibold text-slate-900 mb-2">{title}</h4>
           <p className="text-sm text-slate-600 mb-3">{description}</p>
-          <div className={`flex items-center gap-2 ${buttonColorMap[color]} text-sm font-medium group-hover:gap-3 transition-all`}>
-            {buttonText} <ArrowRight className="w-4 h-4" />
-          </div>
+          {!disabled && (
+            <div className={`flex items-center gap-2 ${buttonColorMap[color]} text-sm font-medium group-hover:gap-3 transition-all`}>
+              {buttonText} <ArrowRight className="w-4 h-4" />
+            </div>
+          )}
         </div>
       </div>
     </button>
