@@ -226,6 +226,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/externo/seguimiento-lecturas': {
+    component: lazy(() => import('../pages/roles/externo/SeguimientoLecturasExterno')),
+    requiredAction: 'ver',
+  },
+
   '/roles/externo/teleekgs': {
     component: lazy(() => import('../pages/roles/externo/TeleEKGDashboard')),
     requiredAction: 'ver',
