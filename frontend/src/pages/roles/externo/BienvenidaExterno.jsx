@@ -99,7 +99,7 @@ export default function BienvenidaExterno() {
             <QuickActionCard
               icon={<FileText className="w-6 h-6" />}
               title="Formulario de Diagnóstico"
-              description="Completa el diagnóstico situacional de tu institución para solicitar servicios de telemedicina."
+              description="Recopila información para el diagnóstico situacional de Telesalud y realiza el requerimiento de servicios."
               color="indigo"
               action={() => navigate("/roles/externo/formulario-diagnostico")}
             />
