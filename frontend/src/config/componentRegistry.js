@@ -275,7 +275,7 @@ export const componentRegistry = {
   // 📋 COORDINADOR DE GESTIÓN DE CITAS
   // ========================================================================
   '/roles/coordcitas/bienvenida': {
-    component: lazy(() => import('../pages/common/Bienvenida')),
+    component: lazy(() => import('../pages/roles/coordcitas/BienvenidaCoordCitas')),
     requiredAction: 'ver',
   },
 
@@ -504,28 +504,28 @@ export const componentRegistry = {
   // 📋 MÓDULO 107 (Integración con Bolsas)
   // v3.0.0: Migración de módulo independiente a integración dentro de Bolsas
   // ========================================================================
-  '/bolsas/modulo107/dashboard': {
-    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
+  '/bolsas/modulo107/bienvenida': {
+    component: lazy(() => import('../pages/roles/coordcitas/Modulo107Bienvenida')),
     requiredAction: 'ver',
   },
 
-  '/bolsas/modulo107/cargar-excel': {
-    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
+  '/bolsas/modulo107/atenciones-clínicas': {
+    component: lazy(() => import('../pages/roles/coordcitas/Modulo107AtencionesClinics')),
+    requiredAction: 'ver',
+  },
+
+  '/bolsas/modulo107/carga-de-pacientes-107': {
+    component: lazy(() => import('../pages/roles/coordcitas/Modulo107CargaPacientes')),
     requiredAction: 'crear',
   },
 
-  '/bolsas/modulo107/listado': {
-    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
-    requiredAction: 'ver',
-  },
-
-  '/bolsas/modulo107/buscar': {
-    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
+  '/bolsas/modulo107/pacientes-de-107': {
+    component: lazy(() => import('../pages/roles/coordcitas/Modulo107PacientesList')),
     requiredAction: 'ver',
   },
 
   '/bolsas/modulo107/estadisticas': {
-    component: lazy(() => import('../pages/roles/coordcitas/Listado107')),
+    component: lazy(() => import('../pages/roles/coordcitas/Modulo107EstadisticasAtencion')),
     requiredAction: 'ver',
   },
 };

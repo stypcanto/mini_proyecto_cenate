@@ -475,12 +475,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     @Query("""
         SELECT s FROM SolicitudBolsa s
         WHERE s.idBolsa = 107 AND s.activo = true
-        AND (:dni IS NULL OR s.pacienteDni LIKE CONCAT('%', :dni, '%'))
-        AND (:nombre IS NULL OR LOWER(s.pacienteNombre) LIKE LOWER(CONCAT('%', :nombre, '%')))
-        AND (:codigoIpress IS NULL OR s.codigoAdscripcion = :codigoIpress)
-        AND (:estadoId IS NULL OR s.estadoGestionCitasId = :estadoId)
-        AND (:fechaDesde IS NULL OR s.fechaSolicitud >= :fechaDesde)
-        AND (:fechaHasta IS NULL OR s.fechaSolicitud <= :fechaHasta)
+        AND COALESCE(:dni, '') = '' OR s.pacienteDni LIKE CONCAT('%', :dni, '%')
+        AND COALESCE(:nombre, '') = '' OR LOWER(s.pacienteNombre) LIKE LOWER(CONCAT('%', :nombre, '%'))
+        AND COALESCE(:codigoIpress, '') = '' OR s.codigoAdscripcion = :codigoIpress
+        AND :estadoId IS NULL OR s.estadoGestionCitasId = :estadoId
+        AND :fechaDesde IS NULL OR s.fechaSolicitud >= :fechaDesde
+        AND :fechaHasta IS NULL OR s.fechaSolicitud <= :fechaHasta
         ORDER BY s.fechaSolicitud DESC
         """)
     org.springframework.data.domain.Page<SolicitudBolsa> buscarModulo107Casos(

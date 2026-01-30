@@ -252,8 +252,8 @@ public class SecurityConfig {
                                                 // =====================================================
                                                 // ⚠️ IMPORTANTE: Ordenar de más específico a más general
 
-                                                // 1️⃣ Fotos públicas para todos (sin autenticación)
-                                                .requestMatchers("/api/personal/foto/**").permitAll()
+                                                // 1️⃣ Fotos de perfil públicas para todos (sin autenticación)
+                                                .requestMatchers("/api/fotos-perfil/**").permitAll()
 
                                                 // 2️⃣ Solo ADMIN/SUPERADMIN pueden CREAR, ACTUALIZAR, ELIMINAR
                                                 .requestMatchers(HttpMethod.POST, "/api/personal/**")

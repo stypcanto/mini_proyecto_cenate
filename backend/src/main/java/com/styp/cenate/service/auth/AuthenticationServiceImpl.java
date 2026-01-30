@@ -277,11 +277,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 userId
             );
             if (fotoPersonalCnt != null && !fotoPersonalCnt.trim().isEmpty()) {
-                // URL encode el nombre del archivo para manejar espacios y caracteres especiales
-                String fotoUrlEncoded = java.net.URLEncoder.encode(fotoPersonalCnt, java.nio.charset.StandardCharsets.UTF_8)
-                    .replace("+", "%20"); // Reemplazar + con %20 para espacios
-                String fotoUrl = "/api/personal/foto/" + fotoUrlEncoded;
-                log.info("✅ Foto encontrada en dim_personal_cnt: {} (encoded: {})", fotoPersonalCnt, fotoUrl);
+                // Si ya contiene la URL completa (/api/fotos-perfil/...), devolverla tal cual
+                if (fotoPersonalCnt.startsWith("/api/")) {
+                    log.info("✅ Foto URL encontrada en dim_personal_cnt: {}", fotoPersonalCnt);
+                    return fotoPersonalCnt;
+                }
+                // Si solo es nombre de archivo, construir la URL
+                String fotoUrl = "/api/fotos-perfil/" + fotoPersonalCnt;
+                log.info("✅ Foto encontrada en dim_personal_cnt: {} -> URL: {}", fotoPersonalCnt, fotoUrl);
                 return fotoUrl;
             }
         } catch (Exception e) {
@@ -296,11 +299,14 @@ public class AuthenticationServiceImpl implements AuthenticationService {
                 userId
             );
             if (fotoPersonalExt != null && !fotoPersonalExt.trim().isEmpty()) {
-                // URL encode el nombre del archivo
-                String fotoUrlEncoded = java.net.URLEncoder.encode(fotoPersonalExt, java.nio.charset.StandardCharsets.UTF_8)
-                    .replace("+", "%20");
-                String fotoUrl = "/api/personal/foto/" + fotoUrlEncoded;
-                log.info("✅ Foto encontrada en dim_personal_externo: {} (encoded: {})", fotoPersonalExt, fotoUrl);
+                // Si ya contiene la URL completa (/api/fotos-perfil/...), devolverla tal cual
+                if (fotoPersonalExt.startsWith("/api/")) {
+                    log.info("✅ Foto URL encontrada en dim_personal_externo: {}", fotoPersonalExt);
+                    return fotoPersonalExt;
+                }
+                // Si solo es nombre de archivo, construir la URL
+                String fotoUrl = "/api/fotos-perfil/" + fotoPersonalExt;
+                log.info("✅ Foto encontrada en dim_personal_externo: {} -> URL: {}", fotoPersonalExt, fotoUrl);
                 return fotoUrl;
             }
         } catch (Exception e) {

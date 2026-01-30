@@ -2183,4 +2183,47 @@ public class UsuarioServiceImpl implements UsuarioService {
 			throw new RuntimeException("Error al listar usuarios con rol " + nombreRol, e);
 		}
 	}
+
+	// ================================================================
+	// 📸 GESTIÓN DE FOTO DE PERFIL
+	// ================================================================
+	/**
+	 * 📤 Actualiza la foto de perfil del usuario
+	 */
+	@Override
+	public void actualizarFotoPerfil(Long idUser, String nombreArchivo) {
+		try {
+			log.info("📸 Actualizando foto de perfil para usuario: {}", idUser);
+
+			// 1. Obtener usuario
+			Usuario usuario = usuarioRepository.findById(idUser)
+				.orElseThrow(() -> new jakarta.persistence.EntityNotFoundException(
+					"Usuario no encontrado: " + idUser
+				));
+
+			// 2. Obtener o crear PersonalCnt
+			PersonalCnt personalCnt = usuario.getPersonalCnt();
+			if (personalCnt == null) {
+				log.warn("⚠️ Usuario {} no tiene PersonalCnt, se creará", idUser);
+				personalCnt = new PersonalCnt();
+				personalCnt.setUsuario(usuario);
+			}
+
+			// 3. Actualizar foto
+			String fotoUrl = "/api/fotos-perfil/" + nombreArchivo;
+			personalCnt.setFotoPers(fotoUrl);
+
+			// 4. Guardar cambios
+			personalCntRepository.save(personalCnt);
+
+			log.info("✅ Foto de perfil actualizada para usuario {}: {}", idUser, fotoUrl);
+
+		} catch (jakarta.persistence.EntityNotFoundException e) {
+			log.error("❌ Usuario no encontrado: {}", idUser);
+			throw e;
+		} catch (Exception e) {
+			log.error("❌ Error al actualizar foto de perfil para usuario {}: {}", idUser, e.getMessage(), e);
+			throw new RuntimeException("Error al actualizar foto de perfil", e);
+		}
+	}
 }

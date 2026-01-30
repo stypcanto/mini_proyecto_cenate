@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.37.4 (2026-01-28) 🚀
+> **Versión:** v1.38.0 (2026-01-29) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -50,12 +50,12 @@
 
 ## 📊 ÚLTIMAS VERSIONES
 
-### v1.37.4 - Completado (2026-01-28)
-✅ **Performance Optimization** v1.37.3 - 100 usuarios concurrentes + 6 métricas en vivo
-✅ **Módulo Bolsas** v2.2.0 - Deduplicación automática KEEP_FIRST + Modal
-✅ **Foto Header** v1.37.4 - Avatar con foto de perfil en header
+### v1.38.0 - Completado (2026-01-29) 🎉
+✅ **Módulo Bolsas** v3.0.0 - Módulo 107 completamente integrado + Postman collection
+✅ **Módulo 107** v3.0.0 - Búsqueda + Estadísticas + MBAC + DTOs
+✅ **Documentación** v3.0.0 - Unificada en 1 documento maestro (antigua eliminada)
 
-**Docs:** [`spec/backend/10_performance_monitoring/`](spec/backend/10_performance_monitoring/) | [`spec/backend/09_modules_bolsas/`](spec/backend/09_modules_bolsas/) | [`spec/backend/11_modulo_foto_header.md`](spec/backend/11_modulo_foto_header.md)
+**Docs:** [`spec/backend/09_modules_bolsas/`](spec/backend/09_modules_bolsas/) | [`spec/coleccion-postman/`](spec/coleccion-postman/) | [`spec/backend/10_performance_monitoring/`](spec/backend/10_performance_monitoring/)
 
 ---
 
@@ -160,9 +160,10 @@ mini_proyecto_cenate/
 
 ## 🚀 Próximos Pasos
 
-1. **Performance Monitoring** - ✅ Completado v1.37.3
-2. **Módulo Bolsas** - ✅ Completado v2.2.0
+1. **Módulo Bolsas** - ✅ Completado v3.0.0 (Módulo 107 integrado)
+2. **Performance Monitoring** - ✅ Completado v1.37.3
 3. **Spring AI Chatbot** - En planificación (7 fases)
+4. **Dengue Module** - Mantenimiento y mejoras
 
 Ver: [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
 
@@ -172,7 +173,7 @@ Ver: [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
 
 **Desarrollado por:** Ing. Styp Canto Rondón
 **Email:** stypcanto@essalud.gob.pe
-**Versión:** v1.37.4 (2026-01-28)
+**Versión:** v1.38.0 (2026-01-29)
 
 ---
 

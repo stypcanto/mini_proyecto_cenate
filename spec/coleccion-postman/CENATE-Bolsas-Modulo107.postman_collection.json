@@ -1,0 +1,500 @@
+{
+  "info": {
+    "name": "CENATE - Bolsas de Pacientes + Módulo 107 v3.0.0",
+    "description": "Colección completa de endpoints para Bolsas de Pacientes y Módulo 107",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "3.0.0",
+    "updated": "2026-01-29"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "🔐 AUTENTICACIÓN",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.environment.set('jwt_token', jsonData.token);",
+                  "  pm.environment.set('username', jsonData.username);",
+                  "  console.log('✅ Token guardado: ' + jsonData.token.substring(0, 50) + '...');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{username}}\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "auth",
+                "login"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📦 MÓDULO 107 - NUEVO v3.0",
+      "item": [
+        {
+          "name": "1️⃣  Listar Pacientes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Respuesta tiene estructura correcta', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData).to.have.property('total');",
+                  "  pm.expect(jsonData).to.have.property('page');",
+                  "  pm.expect(jsonData).to.have.property('size');",
+                  "  pm.expect(jsonData).to.have.property('totalPages');",
+                  "  pm.expect(jsonData).to.have.property('pacientes');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/modulo107/pacientes?page=0&size=10&sortBy=fechaSolicitud&sortDirection=DESC",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "modulo107",
+                "pacientes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                },
+                {
+                  "key": "sortBy",
+                  "value": "fechaSolicitud"
+                },
+                {
+                  "key": "sortDirection",
+                  "value": "DESC"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2️⃣  Buscar Pacientes (Sin Filtros)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/modulo107/pacientes/buscar?page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "modulo107",
+                "pacientes",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2️⃣  Buscar por DNI",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/modulo107/pacientes/buscar?dni=12345678&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "modulo107",
+                "pacientes",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "dni",
+                  "value": "12345678"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2️⃣  Buscar por Nombre",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/modulo107/pacientes/buscar?nombre=Juan&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "modulo107",
+                "pacientes",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "nombre",
+                  "value": "Juan"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2️⃣  Buscar por IPRESS",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/modulo107/pacientes/buscar?codigoIpress=0001&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "modulo107",
+                "pacientes",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "codigoIpress",
+                  "value": "0001"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2️⃣  Buscar por Estado",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/modulo107/pacientes/buscar?estadoId=1&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "modulo107",
+                "pacientes",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "estadoId",
+                  "value": "1"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "2️⃣  Buscar por Rango de Fechas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/modulo107/pacientes/buscar?fechaDesde=2026-01-01T00:00:00Z&fechaHasta=2026-01-31T23:59:59Z&page=0&size=10",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "modulo107",
+                "pacientes",
+                "buscar"
+              ],
+              "query": [
+                {
+                  "key": "fechaDesde",
+                  "value": "2026-01-01T00:00:00Z"
+                },
+                {
+                  "key": "fechaHasta",
+                  "value": "2026-01-31T23:59:59Z"
+                },
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "3️⃣  Obtener Estadísticas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code es 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Contiene KPIs', function () {",
+                  "  var jsonData = pm.response.json();",
+                  "  pm.expect(jsonData).to.have.property('kpis');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/modulo107/estadisticas",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "modulo107",
+                "estadisticas"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 BOLSAS DE PACIENTES (Existentes)",
+      "item": [
+        {
+          "name": "Listar Todas las Bolsas",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas?page=0&size=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Obtener Detalles de Bolsa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/1",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Listar Solicitudes de Bolsa",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/bolsas/solicitudes?page=0&size=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "bolsas",
+                "solicitudes"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "0"
+                },
+                {
+                  "key": "size",
+                  "value": "20"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "api",
+                "health"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:8080",
+      "type": "string"
+    },
+    {
+      "key": "username",
+      "value": "44914706",
+      "type": "string"
+    },
+    {
+      "key": "password",
+      "value": "@Styp654321",
+      "type": "string"
+    },
+    {
+      "key": "jwt_token",
+      "value": "",
+      "type": "string"
+    }
+  ]
+}

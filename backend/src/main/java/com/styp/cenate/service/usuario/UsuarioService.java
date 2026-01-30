@@ -164,4 +164,16 @@ public interface UsuarioService {
      * @return Lista de usuarios con el rol especificado
      */
     List<UsuarioResponse> listarUsuariosPorRol(String nombreRol);
+
+    // ================================================================
+    // 📸 GESTIÓN DE FOTO DE PERFIL
+    // ================================================================
+    /**
+     * 📤 Actualiza la foto de perfil del usuario.
+     *
+     * @param id              ID del usuario
+     * @param nombreArchivo   Nombre del archivo de foto guardado
+     * @throws jakarta.persistence.EntityNotFoundException Si el usuario no existe
+     */
+    void actualizarFotoPerfil(Long id, String nombreArchivo);
 }

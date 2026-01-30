@@ -540,7 +540,7 @@ function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent }) 
       {/* Subpáginas */}
       {isSubOpen && (
         <div className="ml-3 pl-3 border-l-2 border-slate-700/30 space-y-1 animate-fadeIn">
-          {pagina.subpaginas.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es')).map((subpagina, subIdx) => {
+          {pagina.subpaginas.sort((a, b) => (a.orden || 0) - (b.orden || 0)).map((subpagina, subIdx) => {
             const isActive = location.pathname === subpagina.ruta;
             // Priorizar hardcoded icons basado en nombre
             const SubIcon = getPageIcon(nombreModulo, subpagina.nombre) || (subpagina.icono ? getIconComponent(subpagina.icono) : Folder);
@@ -668,7 +668,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
 
       {isOpen && (
         <div className="ml-3 pl-3 border-l-2 border-slate-700/50 space-y-1 animate-fadeIn">
-          {paginas.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es')).map((pagina, idx) => {
+          {paginas.sort((a, b) => (a.orden || 0) - (b.orden || 0)).map((pagina, idx) => {
             // Verificar si tiene subpáginas
             const tieneSubpaginas = pagina.subpaginas && pagina.subpaginas.length > 0;
 

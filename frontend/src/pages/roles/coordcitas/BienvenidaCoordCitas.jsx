@@ -158,7 +158,7 @@ export default function BienvenidaCoordCitas() {
 
             {/* Módulo 107 */}
             <button
-              onClick={() => navigate("/bolsas/modulo107")}
+              onClick={() => navigate("/bolsas/modulo107/pacientes-de-107")}
               className="bg-white border border-blue-200 hover:border-blue-300 hover:bg-blue-50 rounded-xl p-6 shadow-sm transition-all cursor-pointer group"
             >
               <div className="flex items-start gap-4">
