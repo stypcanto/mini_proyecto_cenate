@@ -101,6 +101,7 @@ export default function BienvenidaExterno() {
               title="Formulario de Diagnóstico"
               description="Completa el diagnóstico situacional de tu institución para solicitar servicios de telemedicina."
               color="indigo"
+              action={() => navigate("/roles/externo/formulario-diagnostico")}
             />
 
             {/* Card 2: Solicitud de Turnos */}
@@ -109,6 +110,7 @@ export default function BienvenidaExterno() {
               title="Solicitud de Turnos"
               description="Solicita consultas de telemedicina para tus pacientes. Recibe confirmación y seguimiento."
               color="emerald"
+              action={() => navigate("/roles/externo/solicitud-turnos")}
             />
 
             {/* Card 3: Gestión de Modalidad */}
@@ -117,6 +119,7 @@ export default function BienvenidaExterno() {
               title="Gestión de Modalidades"
               description="Configura las modalidades de atención disponibles en tu institución para telemedicina."
               color="purple"
+              action={() => navigate("/roles/externo/gestion-modalidad")}
             />
           </div>
         </div>
@@ -174,7 +177,7 @@ export default function BienvenidaExterno() {
 // ============================================================
 // 🔧 Componente: Tarjeta de Acción Rápida
 // ============================================================
-function QuickActionCard({ icon, title, description, color }) {
+function QuickActionCard({ icon, title, description, color, action }) {
   const colorClasses = {
     indigo: "bg-indigo-50 border-indigo-200 hover:bg-indigo-100 hover:border-indigo-300",
     emerald: "bg-emerald-50 border-emerald-200 hover:bg-emerald-100 hover:border-emerald-300",
@@ -188,13 +191,16 @@ function QuickActionCard({ icon, title, description, color }) {
   };
 
   return (
-    <div className={`${colorClasses[color]} border rounded-xl p-5 transition-all`}>
-      <div className={`${iconColorClasses[color]} w-10 h-10 rounded-lg flex items-center justify-center mb-3`}>
+    <button
+      onClick={action}
+      className={`${colorClasses[color]} border rounded-xl p-5 transition-all cursor-pointer group text-left w-full`}
+    >
+      <div className={`${iconColorClasses[color]} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
         {icon}
       </div>
       <h4 className="font-semibold text-slate-900 mb-1">{title}</h4>
       <p className="text-sm text-slate-600">{description}</p>
-    </div>
+    </button>
   );
 }
 
