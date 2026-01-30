@@ -85,14 +85,12 @@ WITH modulo_target AS (
 )
 INSERT INTO dim_paginas_modulo (
     id_modulo,
-    url_pagina,
+    ruta_pagina,
     nombre_pagina,
     descripcion,
     icono,
     orden,
-    activo,
-    created_at,
-    updated_at
+    activo
 )
 SELECT
     mt.id_modulo,
@@ -101,16 +99,17 @@ SELECT
     'Panel en tiempo real para monitorear lecturas pendientes de procesamiento en tu IPRESS',
     'BarChart3',
     10,
-    true,
-    NOW(),
-    NOW()
+    true
 FROM modulo_target mt
 WHERE NOT EXISTS (
     SELECT 1 FROM dim_paginas_modulo
-    WHERE url_pagina = '/roles/externo/seguimiento-lecturas'
+    WHERE ruta_pagina = '/roles/externo/seguimiento-lecturas'
 );
 
-RAISE NOTICE '✅ Página "Seguimiento de Lecturas Pendientes" creada exitosamente';
+DO $$
+BEGIN
+    RAISE NOTICE '✅ Página "Seguimiento de Lecturas Pendientes" creada exitosamente';
+END $$;
 
 -- =====================================================================
 -- 4️⃣  CREAR ACCIONES PARA LA NUEVA PÁGINA
@@ -119,7 +118,7 @@ RAISE NOTICE '✅ Página "Seguimiento de Lecturas Pendientes" creada exitosamen
 WITH nueva_pagina AS (
     SELECT id_pagina
     FROM dim_paginas_modulo
-    WHERE url_pagina = '/roles/externo/seguimiento-lecturas'
+    WHERE ruta_pagina = '/roles/externo/seguimiento-lecturas'
     LIMIT 1
 )
 INSERT INTO dim_acciones_por_pagina (
@@ -127,18 +126,14 @@ INSERT INTO dim_acciones_por_pagina (
     codigo_accion,
     nombre_accion,
     descripcion,
-    activo,
-    created_at,
-    updated_at
+    activo
 )
 SELECT
     np.id_pagina,
     'VER',
     'Ver contenido',
     'Ver dashboard de seguimiento de lecturas',
-    true,
-    NOW(),
-    NOW()
+    true
 FROM nueva_pagina np
 WHERE NOT EXISTS (
     SELECT 1 FROM dim_acciones_por_pagina
@@ -146,7 +141,10 @@ WHERE NOT EXISTS (
     AND codigo_accion = 'VER'
 );
 
-RAISE NOTICE '✅ Acciones para página creadas';
+DO $$
+BEGIN
+    RAISE NOTICE '✅ Acciones para página creadas';
+END $$;
 
 -- =====================================================================
 -- 5️⃣  ASIGNAR PERMISOS AL ROL EXTERNO
@@ -156,7 +154,7 @@ RAISE NOTICE '✅ Acciones para página creadas';
 WITH modulo_con_pagina AS (
     SELECT DISTINCT dpm.id_modulo
     FROM dim_paginas_modulo dpm
-    WHERE dpm.url_pagina = '/roles/externo/seguimiento-lecturas'
+    WHERE dpm.ruta_pagina = '/roles/externo/seguimiento-lecturas'
 ),
 rol_externo AS (
     SELECT id_rol
@@ -172,9 +170,7 @@ INSERT INTO dim_roles_modulos (
     puede_crear,
     puede_editar,
     puede_eliminar,
-    activo,
-    created_at,
-    updated_at
+    activo
 )
 SELECT
     re.id_rol,
@@ -183,9 +179,7 @@ SELECT
     false, -- CREAR (no necesario para esto)
     false, -- EDITAR (no necesario para esto)
     false, -- ELIMINAR (no necesario para esto)
-    true,
-    NOW(),
-    NOW()
+    true
 FROM rol_externo re
 CROSS JOIN modulo_con_pagina mcp
 WHERE NOT EXISTS (
@@ -194,7 +188,10 @@ WHERE NOT EXISTS (
     AND drm.id_modulo = mcp.id_modulo
 );
 
-RAISE NOTICE '✅ Permisos asignados al rol EXTERNO';
+DO $$
+BEGIN
+    RAISE NOTICE '✅ Permisos asignados al rol EXTERNO';
+END $$;
 
 -- =====================================================================
 -- 6️⃣  VERIFICACIÓN Y ESTADÍSTICAS
@@ -208,18 +205,18 @@ DECLARE
 BEGIN
     SELECT COUNT(*) INTO v_pagina_existe
     FROM dim_paginas_modulo
-    WHERE url_pagina = '/roles/externo/seguimiento-lecturas';
+    WHERE ruta_pagina = '/roles/externo/seguimiento-lecturas';
 
     SELECT COUNT(*) INTO v_acciones_creadas
     FROM dim_acciones_por_pagina dapp
     INNER JOIN dim_paginas_modulo dpm ON dapp.id_pagina = dpm.id_pagina
-    WHERE dpm.url_pagina = '/roles/externo/seguimiento-lecturas';
+    WHERE dpm.ruta_pagina = '/roles/externo/seguimiento-lecturas';
 
     SELECT COUNT(*) INTO v_permisos_asignados
     FROM dim_roles_modulos drm
     INNER JOIN dim_modulos_sistema dms ON drm.id_modulo = dms.id_modulo
     INNER JOIN dim_paginas_modulo dpm ON dms.id_modulo = dpm.id_modulo
-    WHERE dpm.url_pagina = '/roles/externo/seguimiento-lecturas';
+    WHERE dpm.ruta_pagina = '/roles/externo/seguimiento-lecturas';
 
     RAISE NOTICE '';
     RAISE NOTICE '✅ INSTALACIÓN COMPLETADA';
@@ -233,14 +230,14 @@ END $$;
 
 -- Query final de validación
 SELECT
-    'Seguimiento de Lecturas Pendientes - Instalación EXTERNO' as "🔍 REPORTE",
+    'Seguimiento de Lecturas Pendientes - Instalación EXTERNO' as "REPORTE",
     COUNT(*) as "Estado",
     CASE
-        WHEN COUNT(*) > 0 THEN '✅ INSTALADO'
-        ELSE '❌ NO INSTALADO'
+        WHEN COUNT(*) > 0 THEN 'INSTALADO'
+        ELSE 'NO INSTALADO'
     END as "Status"
 FROM dim_paginas_modulo
-WHERE url_pagina = '/roles/externo/seguimiento-lecturas';
+WHERE ruta_pagina = '/roles/externo/seguimiento-lecturas';
 
 -- =====================================================================
 -- 📝 NOTAS IMPORTANTES
