@@ -18,6 +18,8 @@ import {
 } from "lucide-react";
 import PageHeader from '../../../components/PageHeader';
 import ListHeader from '../../../components/ListHeader';
+import { atencionesClinicasService } from '../../../services/atencionesClinicasService';
+import DetalleAtencionModal from '../../../components/modals/DetalleAtencionModal';
 
 const REGISTROS_POR_PAGINA = 25;
 
@@ -31,12 +33,16 @@ export default function Modulo107AtencionesClinics() {
   const [currentPage, setCurrentPage] = useState(1);
   const [errorMessage, setErrorMessage] = useState("");
 
+  // ==================== ESTADO MODAL ====================
+  const [modalAbierto, setModalAbierto] = useState(false);
+  const [atencionSeleccionada, setAtencionSeleccionada] = useState(null);
+
   // ==================== FILTROS ====================
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [filtroTipoDoc, setFiltroTipoDoc] = useState("todos");
   const [filtroDocumento, setFiltroDocumento] = useState("");
-  const [filtroFechaSolicitudInicio, setFiltroFechaSolicitudInicio] = useState("");
-  const [filtroFechaSolicitudFin, setFiltroFechaSolicitudFin] = useState("");
+  const [filtroRangoFechas, setFiltroRangoFechas] = useState({ inicio: "", fin: "" });
+  const [mostrarSelectorFechas, setMostrarSelectorFechas] = useState(false);
   const [filtroMacrorregion, setFiltroMacrorregion] = useState("todas");
   const [filtroRed, setFiltroRed] = useState("todas");
   const [filtroIpress, setFiltroIpress] = useState("todas");
@@ -66,154 +72,135 @@ export default function Modulo107AtencionesClinics() {
   // ==================== FUNCIONES AUXILIARES ====================
 
   /**
-   * Simula carga de datos desde backend
-   * TODO: Conectar con API real
+   * Carga datos desde API real
    */
   const cargarAtenciones = async () => {
     setIsLoading(true);
+    setErrorMessage("");
+    
     try {
-      // Simulación de datos
-      const datosSimulados = [
-        {
-          id_solicitud: "SOL-001",
-          numero_solicitud: "001",
-          id_bolsa: 1,
-          activo: true,
-          paciente_id: "P001",
-          paciente_nombre: "Juan Pérez García",
-          paciente_dni: "12345678",
-          tipo_documento: "DNI",
-          paciente_sexo: "M",
-          fecha_nacimiento: "1980-05-15",
-          paciente_edad: 44,
-          paciente_telefono: "987654321",
-          codigo_adscripcion: "008",
-          id_ipress: 15,
-          derivacion_interna: "MEDICINA CENATE",
-          estado: "PENDIENTE",
-          fecha_solicitud: "2026-01-25",
-          fecha_actualizacion: "2026-01-30",
-          responsable_gestora_id: null,
-          fecha_asignacion: null,
-          macrorregion: "LIMA",
-          red: "RED METROPOLITANA",
-          ipress_nombre: "Hospital Principal"
-        },
-        {
-          id_solicitud: "SOL-002",
-          numero_solicitud: "002",
-          id_bolsa: 2,
-          activo: true,
-          paciente_id: "P002",
-          paciente_nombre: "María López Rodríguez",
-          paciente_dni: "87654321",
-          tipo_documento: "DNI",
-          paciente_sexo: "F",
-          fecha_nacimiento: "1992-10-22",
-          paciente_edad: 32,
-          paciente_telefono: "987123456",
-          codigo_adscripcion: "008",
-          id_ipress: 20,
-          derivacion_interna: "NUTRICION CENATE",
-          estado: "ATENDIDO",
-          fecha_solicitud: "2026-01-20",
-          fecha_actualizacion: "2026-01-28",
-          responsable_gestora_id: 5,
-          fecha_asignacion: "2026-01-21",
-          macrorregion: "CALLAO",
-          red: "RED CALLAO",
-          ipress_nombre: "Centro Médico Bellavista"
-        }
-      ];
-
-      setAtenciones(datosSimulados);
-      setTotalElementos(datosSimulados.length);
-      setEstadisticas({
-        total: datosSimulados.length,
-        pendientes: datosSimulados.filter(a => a.estado === "PENDIENTE").length,
-        atendidos: datosSimulados.filter(a => a.estado === "ATENDIDO").length
-      });
-
-      // Extraer catálogos únicos
-      const macros = [...new Set(datosSimulados.map(a => a.macrorregion))];
-      const redes = [...new Set(datosSimulados.map(a => a.red))];
-      const ipress = [...new Set(datosSimulados.map(a => a.ipress_nombre))];
-      const tipos = [...new Set(datosSimulados.map(a => a.tipo_documento))];
-
-      setMacrorregionesUnicas(macros);
-      setRedesUnicas(redes);
-      setIpressUnicas(ipress);
-      setTiposDocumentoUnicos(tipos);
-
-      setErrorMessage("");
+      // Preparar filtros para el backend
+      const filtros = {};
+      
+      // Filtros directos (sin mapeo de IDs)
+      if (filtroEstado !== "todos") {
+        filtros.estado = filtroEstado; // Enviar directamente "PENDIENTE" o "ATENDIDO"
+      }
+      
+      // Otros filtros
+      if (filtroTipoDoc !== "todos") filtros.tipoDocumento = filtroTipoDoc;
+      if (filtroDocumento) filtros.pacienteDni = filtroDocumento;
+      if (filtroRangoFechas.inicio) filtros.fechaDesde = filtroRangoFechas.inicio;
+      if (filtroRangoFechas.fin) filtros.fechaHasta = filtroRangoFechas.fin;
+      if (filtroDerivacion !== "todas") filtros.derivacion = filtroDerivacion;
+      if (searchTerm) filtros.searchTerm = searchTerm;
+      
+      // Llamar al servicio
+      console.log('🔍 Filtros enviados al backend:', filtros); // Debug
+      console.log('📋 Estado seleccionado:', filtroEstado); // Debug adicional
+      const response = await atencionesClinicasService.listarConFiltros(
+        filtros, 
+        currentPage - 1, // Backend usa páginas base 0
+        REGISTROS_POR_PAGINA
+      );
+      
+      // Actualizar estado con respuesta
+      setAtenciones(response.content || []);
+      setTotalElementos(response.totalElements || 0);
+      
+      // Extraer catálogos únicos de la respuesta
+      const content = response.content || [];
+      if (content.length > 0) {
+        const tipos = [...new Set(content.map(a => a.tipoDocumento))];
+        setTiposDocumentoUnicos(tipos);
+      }
+      
     } catch (error) {
       console.error("Error al cargar atenciones:", error);
       setErrorMessage("Error al cargar los datos de atenciones clínicas");
+      setAtenciones([]);
+      setTotalElementos(0);
     } finally {
       setIsLoading(false);
     }
   };
+  
+  /**
+   * Cargar estadísticas desde API
+   */
+  const cargarEstadisticas = async () => {
+    try {
+      const stats = await atencionesClinicasService.obtenerEstadisticas();
+      setEstadisticas({
+        total: stats.total || 0,
+        pendientes: stats.pendientes || 0,
+        atendidos: stats.atendidos || 0
+      });
+    } catch (error) {
+      console.error("Error al cargar estadísticas:", error);
+    }
+  };
 
   /**
-   * Filtra atenciones según criterios activos
+   * Los filtros ya no se aplican en frontend, 
+   * se envían al backend en cargarAtenciones()
    */
-  const atencionesFiltradas = useMemo(() => {
-    return atenciones.filter(atencion => {
-      // Filtro por estado
-      if (filtroEstado !== "todos" && atencion.estado !== filtroEstado) return false;
-
-      // Filtro por tipo de documento
-      if (filtroTipoDoc !== "todos" && atencion.tipo_documento !== filtroTipoDoc) return false;
-
-      // Filtro por documento exacto
-      if (filtroDocumento && !atencion.paciente_dni.includes(filtroDocumento)) return false;
-
-      // Filtro por fecha de solicitud (rango)
-      if (filtroFechaSolicitudInicio && atencion.fecha_solicitud < filtroFechaSolicitudInicio) return false;
-      if (filtroFechaSolicitudFin && atencion.fecha_solicitud > filtroFechaSolicitudFin) return false;
-
-      // Filtro por macrorregión
-      if (filtroMacrorregion !== "todas" && atencion.macrorregion !== filtroMacrorregion) return false;
-
-      // Filtro por red
-      if (filtroRed !== "todas" && atencion.red !== filtroRed) return false;
-
-      // Filtro por IPRESS
-      if (filtroIpress !== "todas" && atencion.ipress_nombre !== filtroIpress) return false;
-
-      // Filtro por derivación interna
-      if (filtroDerivacion !== "todas" && atencion.derivacion_interna !== filtroDerivacion) return false;
-
-      // Búsqueda general (nombre, DNI, solicitud)
-      if (searchTerm) {
-        const searchLower = searchTerm.toLowerCase();
-        const matchesNombre = atencion.paciente_nombre.toLowerCase().includes(searchLower);
-        const matchesDni = atencion.paciente_dni.includes(searchTerm);
-        const matchesSolicitud = atencion.numero_solicitud.includes(searchTerm);
-        if (!matchesNombre && !matchesDni && !matchesSolicitud) return false;
-      }
-
-      return true;
-    });
-  }, [
-    atenciones, searchTerm, filtroEstado, filtroTipoDoc, filtroDocumento,
-    filtroFechaSolicitudInicio, filtroFechaSolicitudFin, filtroMacrorregion,
-    filtroRed, filtroIpress, filtroDerivacion
-  ]);
-
+  const atencionesFiltradas = atenciones; // Datos ya vienen filtrados del backend
   // Paginación
-  const atencionesPaginadas = useMemo(() => {
-    const inicio = (currentPage - 1) * REGISTROS_POR_PAGINA;
-    const fin = inicio + REGISTROS_POR_PAGINA;
-    return atencionesFiltradas.slice(inicio, fin);
-  }, [atencionesFiltradas, currentPage]);
+  // Los datos ya vienen paginados del backend
+  const atencionesPaginadas = atencionesFiltradas;
 
-  const totalPaginas = Math.ceil(atencionesFiltradas.length / REGISTROS_POR_PAGINA);
+  // ==================== FUNCIONES MODAL ====================
+  
+  /**
+   * Abrir modal con detalle de atención
+   */
+  const abrirModal = (atencion) => {
+    setAtencionSeleccionada(atencion);
+    setModalAbierto(true);
+  };
 
-  // Cargar datos al montar
+  /**
+   * Cerrar modal de detalle
+   */
+  const cerrarModal = () => {
+    setModalAbierto(false);
+    setAtencionSeleccionada(null);
+  };
+
+  // Calcular páginas basado en totalElementos del backend
+  const totalPaginas = Math.ceil(totalElementos / REGISTROS_POR_PAGINA);
+
+  // Cargar datos iniciales
+  useEffect(() => {
+    cargarEstadisticas();
+  }, []);
+
+  // Recargar atenciones cuando cambien los filtros
   useEffect(() => {
     cargarAtenciones();
-  }, []);
+  }, [
+    currentPage, filtroEstado, filtroTipoDoc, filtroDocumento,
+    filtroRangoFechas.inicio, filtroRangoFechas.fin, 
+    filtroDerivacion, searchTerm
+  ]);
+
+  // Cerrar selector de fechas al hacer clic fuera
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (mostrarSelectorFechas && !event.target.closest('.date-picker-container')) {
+        setMostrarSelectorFechas(false);
+      }
+    };
+
+    if (mostrarSelectorFechas) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [mostrarSelectorFechas]);
 
   // ==================== RENDER ====================
 
@@ -362,31 +349,78 @@ export default function Modulo107AtencionesClinics() {
                 </div>
               </div>
 
-              {/* Fila 2: Fechas */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha Solicitud - Desde</label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    value={filtroFechaSolicitudInicio}
-                    onChange={(e) => {
-                      setFiltroFechaSolicitudInicio(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-gray-700 mb-2">Fecha Solicitud - Hasta</label>
-                  <input
-                    type="date"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    value={filtroFechaSolicitudFin}
-                    onChange={(e) => {
-                      setFiltroFechaSolicitudFin(e.target.value);
-                      setCurrentPage(1);
-                    }}
-                  />
+              {/* Fila 2: Rango de Fechas */}
+              <div className="grid grid-cols-1 gap-4">
+                <div className="relative date-picker-container">
+                  <label className="block text-sm font-semibold text-gray-700 mb-2">
+                    Rango de Fechas de Solicitud
+                  </label>
+                  <div 
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 cursor-pointer bg-white flex items-center justify-between"
+                    onClick={() => setMostrarSelectorFechas(!mostrarSelectorFechas)}
+                  >
+                    <span className="text-gray-700">
+                      {filtroRangoFechas.inicio && filtroRangoFechas.fin
+                        ? `${new Date(filtroRangoFechas.inicio).toLocaleDateString('es-ES')} - ${new Date(filtroRangoFechas.fin).toLocaleDateString('es-ES')}`
+                        : filtroRangoFechas.inicio
+                        ? `Desde: ${new Date(filtroRangoFechas.inicio).toLocaleDateString('es-ES')}`
+                        : filtroRangoFechas.fin
+                        ? `Hasta: ${new Date(filtroRangoFechas.fin).toLocaleDateString('es-ES')}`
+                        : "Seleccionar rango de fechas"
+                      }
+                    </span>
+                    <Calendar className="w-5 h-5 text-gray-400" />
+                  </div>
+                  
+                  {/* Panel desplegable para seleccionar fechas */}
+                  {mostrarSelectorFechas && (
+                    <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-300 rounded-lg shadow-lg z-10 p-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Inicio</label>
+                          <input
+                            type="date"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            value={filtroRangoFechas.inicio}
+                            onChange={(e) => {
+                              setFiltroRangoFechas(prev => ({ ...prev, inicio: e.target.value }));
+                              setCurrentPage(1);
+                            }}
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Fecha de Fin</label>
+                          <input
+                            type="date"
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                            value={filtroRangoFechas.fin}
+                            min={filtroRangoFechas.inicio}
+                            onChange={(e) => {
+                              setFiltroRangoFechas(prev => ({ ...prev, fin: e.target.value }));
+                              setCurrentPage(1);
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="mt-4 flex justify-between">
+                        <button
+                          onClick={() => {
+                            setFiltroRangoFechas({ inicio: "", fin: "" });
+                            setCurrentPage(1);
+                          }}
+                          className="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded hover:bg-gray-50"
+                        >
+                          Limpiar
+                        </button>
+                        <button
+                          onClick={() => setMostrarSelectorFechas(false)}
+                          className="px-4 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700"
+                        >
+                          Aplicar
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -472,8 +506,8 @@ export default function Modulo107AtencionesClinics() {
                     setFiltroEstado("todos");
                     setFiltroTipoDoc("todos");
                     setFiltroDocumento("");
-                    setFiltroFechaSolicitudInicio("");
-                    setFiltroFechaSolicitudFin("");
+                    setFiltroRangoFechas({ inicio: "", fin: "" });
+                    setMostrarSelectorFechas(false);
                     setFiltroMacrorregion("todas");
                     setFiltroRed("todas");
                     setFiltroIpress("todas");
@@ -533,33 +567,46 @@ export default function Modulo107AtencionesClinics() {
                   </thead>
                   <tbody>
                     {atencionesPaginadas.map((atencion) => (
-                      <tr key={atencion.id_solicitud} className="border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                        <td className="px-4 py-3 text-sm text-gray-900 font-semibold">{atencion.id_solicitud}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.numero_solicitud}</td>
-                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">{atencion.paciente_nombre}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.paciente_dni}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.paciente_edad}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.paciente_sexo === "M" ? "Masculino" : "Femenino"}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.paciente_telefono}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.ipress_nombre}</td>
+                      <tr key={atencion.idSolicitud} className="border-b border-gray-200 hover:bg-blue-50 transition-colors">
+                        <td className="px-4 py-3 text-sm text-gray-900 font-semibold">{atencion.idSolicitud}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.numeroSolicitud}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900 font-medium">{atencion.pacienteNombre}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteDni}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteEdad}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteSexo === "M" ? "Masculino" : "Femenino"}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteTelefono}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.ipressNombre}</td>
                         <td className="px-4 py-3 text-sm">
                           <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                            {atencion.derivacion_interna}
+                            {atencion.derivacionInterna}
                           </span>
                         </td>
                         <td className="px-4 py-3 text-sm">
-                          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            atencion.estado === "PENDIENTE"
-                              ? "bg-orange-100 text-orange-700"
-                              : "bg-green-100 text-green-700"
-                          }`}>
-                            {atencion.estado}
-                          </span>
+                          {(() => {
+                            // Usar estadoDescripcion si está disponible, sino usar estado y mapearlo
+                            const estadoTexto = atencion.estadoDescripcion || atencion.estado || "SIN ESTADO";
+                            const estadoNormalizado = estadoTexto.toUpperCase();
+                            
+                            return (
+                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                                estadoNormalizado.includes("PENDIENTE") 
+                                  ? "bg-orange-100 text-orange-700"
+                                  : estadoNormalizado.includes("ATENDIDO") || estadoNormalizado.includes("COMPLETADO")
+                                  ? "bg-green-100 text-green-700"
+                                  : "bg-gray-100 text-gray-700"
+                              }`}>
+                                {estadoTexto}
+                              </span>
+                            );
+                          })()}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.fecha_solicitud}</td>
+                        <td className="px-4 py-3 text-sm text-gray-700">{atencion.fechaSolicitud}</td>
                         <td className="px-4 py-3 text-sm">
-                          <button className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1">
-                            <Eye size={16} /> Ver
+                          <button 
+                            onClick={() => abrirModal(atencion)}
+                            className="text-blue-600 hover:text-blue-800 font-semibold flex items-center gap-1 hover:bg-blue-50 px-2 py-1 rounded transition-colors"
+                          >
+                            <Eye size={16} /> Ver Detalle
                           </button>
                         </td>
                       </tr>
@@ -572,6 +619,8 @@ export default function Modulo107AtencionesClinics() {
                   <div className="text-sm text-gray-600">
                     Mostrando {(currentPage - 1) * REGISTROS_POR_PAGINA + 1} a {Math.min(
                       currentPage * REGISTROS_POR_PAGINA,
+                      totalElementos
+                    )} de {totalElementos} resultados
                       atencionesFiltradas.length
                     )} de {atencionesFiltradas.length} registros
                   </div>
@@ -630,6 +679,13 @@ export default function Modulo107AtencionesClinics() {
           animation: fadeIn 0.6s ease-out;
         }
       `}</style>
+
+      {/* Modal de detalle de atención */}
+      <DetalleAtencionModal
+        isOpen={modalAbierto}
+        onClose={cerrarModal}
+        atencion={atencionSeleccionada}
+      />
     </div>
   );
 }
