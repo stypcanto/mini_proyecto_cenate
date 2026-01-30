@@ -87,7 +87,7 @@ public class DengueController {
     }
 
     @GetMapping("/casos")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'MEDICO')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR', 'COORD. GESTION CITAS', 'MEDICO')")
     public ResponseEntity<?> listarCasosDengue(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "30") int size,
