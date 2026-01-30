@@ -465,32 +465,45 @@ function getPageIcon(nombreModulo, nombrePagina) {
   if (lowerName === 'dengue') {
     return Bug;
   }
-  if (lowerName === 'cargar excel') {
+
+  // Iconos generales
+  if (lowerName.includes('bienvenida') || lowerName.includes('inicio') || lowerName.includes('dashboard')) {
+    return LayoutDashboard;
+  }
+  if (lowerName.includes('excel') || lowerName.includes('cargar') || lowerName.includes('importar')) {
     return Upload;
   }
-  if (lowerName === 'listar casos') {
+  if (lowerName.includes('listar') || lowerName.includes('listado') || lowerName.includes('casos')) {
     return List;
   }
-  if (lowerName === 'buscar') {
+  if (lowerName.includes('buscar') || lowerName.includes('búsqueda') || lowerName.includes('search')) {
     return Search;
   }
-  if (lowerName === 'resultados') {
+  if (lowerName.includes('resultado') || lowerName.includes('estadística') || lowerName.includes('analisis')) {
     return BarChart3;
   }
-
-  if (nombreModulo === 'Bolsas de Pacientes') {
-    if (lowerName.includes('excel') || lowerName.includes('cargar')) {
-      return Upload;
-    } else if (lowerName.includes('solicitud')) {
-      return ListChecks;
-    } else if (lowerName.includes('error')) {
-      return FileSearch;
-    } else if (lowerName.includes('estadísticas')) {
-      return BarChart3;
-    } else if (lowerName.includes('historial')) {
-      return FolderOpen;
-    }
+  if (lowerName.includes('paciente')) {
+    return Users;
   }
+  if (lowerName.includes('atención') || lowerName.includes('atencion') || lowerName.includes('clínica') || lowerName.includes('clinica')) {
+    return Stethoscope;
+  }
+  if (lowerName.includes('asignación') || lowerName.includes('asignacion') || lowerName.includes('assign')) {
+    return UserCheck;
+  }
+  if (lowerName.includes('error') || lowerName.includes('fallo') || lowerName.includes('problema')) {
+    return FileSearch;
+  }
+  if (lowerName.includes('solicitud') || lowerName.includes('request')) {
+    return ListChecks;
+  }
+  if (lowerName.includes('historial') || lowerName.includes('history') || lowerName.includes('log')) {
+    return FolderOpen;
+  }
+  if (lowerName.includes('módulo') || lowerName.includes('modulo') || lowerName.includes('grupo')) {
+    return Layers;
+  }
+
   return FileText;
 }
 
@@ -527,7 +540,7 @@ function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent }) 
       {/* Subpáginas */}
       {isSubOpen && (
         <div className="ml-3 pl-3 border-l-2 border-slate-700/30 space-y-1 animate-fadeIn">
-          {pagina.subpaginas.map((subpagina, subIdx) => {
+          {pagina.subpaginas.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es')).map((subpagina, subIdx) => {
             const isActive = location.pathname === subpagina.ruta;
             // Priorizar hardcoded icons basado en nombre
             const SubIcon = getPageIcon(nombreModulo, subpagina.nombre) || (subpagina.icono ? getIconComponent(subpagina.icono) : Folder);
@@ -655,7 +668,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
 
       {isOpen && (
         <div className="ml-3 pl-3 border-l-2 border-slate-700/50 space-y-1 animate-fadeIn">
-          {paginas.map((pagina, idx) => {
+          {paginas.sort((a, b) => (a.nombre || '').localeCompare(b.nombre || '', 'es')).map((pagina, idx) => {
             // Verificar si tiene subpáginas
             const tieneSubpaginas = pagina.subpaginas && pagina.subpaginas.length > 0;
 
