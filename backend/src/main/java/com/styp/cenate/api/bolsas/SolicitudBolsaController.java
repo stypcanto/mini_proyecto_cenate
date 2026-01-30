@@ -67,6 +67,27 @@ public class SolicitudBolsaController {
             // Permite vincular errores de auditoría al batch de carga
             // ============================================================================
             String hashArchivo = calcularHashArchivo(file);
+
+            // ============================================================================
+            // ✅ v1.40.0: VALIDACIÓN DE ARCHIVO DUPLICADO (hash único)
+            // Verificar si el archivo ya fue cargado previamente
+            // ============================================================================
+            var archivoExistente = historialRepository.findByHashArchivo(hashArchivo);
+            if (archivoExistente.isPresent()) {
+                log.warn("⚠️ Intento de carga de archivo duplicado: {} | Hash: {}",
+                    file.getOriginalFilename(), hashArchivo);
+
+                return ResponseEntity.badRequest().body(Map.of(
+                    "error", "Archivo ya cargado",
+                    "mensaje", "Este archivo ya fue cargado previamente el " +
+                               archivoExistente.get().getFechaCreacion() +
+                               ". No se permiten cargar el mismo archivo dos veces.",
+                    "instrucciones", "Si deseas cargar nuevos pacientes, por favor selecciona un archivo diferente o actualiza los datos en el Excel.",
+                    "archivo_anterior", archivoExistente.get().getNombreArchivo(),
+                    "filas_cargadas_anteriormente", archivoExistente.get().getFilasOk()
+                ));
+            }
+
             historial = HistorialCargaBolsas.builder()
                 .nombreArchivo(file.getOriginalFilename())
                 .hashArchivo(hashArchivo)
