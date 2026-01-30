@@ -132,7 +132,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.codigo_ipress, sb.tipo_cita,
                sb.id_bolsa, tb.desc_tipo_bolsa,
                sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
-               sb.estado, sb.fecha_solicitud, sb.fecha_actualizacion,
+               sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
+               sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
                di.desc_ipress, dr.desc_red, dm.desc_macro,
                sb.responsable_gestora_id, sb.fecha_asignacion
@@ -141,6 +142,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+        LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
         WHERE sb.activo = true
         ORDER BY sb.fecha_solicitud DESC
         LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}

@@ -532,9 +532,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
      *                  especialidad, fecha_preferida_no_atendida, tipo_documento, fecha_nacimiento,
      *                  paciente_sexo, paciente_telefono, paciente_telefono_alterno, paciente_email,
      *                  codigo_ipress, tipo_cita, id_bolsa, desc_tipo_bolsa, id_servicio,
-     *                  codigo_adscripcion, id_ipress, estado, fecha_solicitud, fecha_actualizacion,
-     *                  estado_gestion_citas_id, activo, desc_ipress, desc_red, desc_macro,
-     *                  responsable_gestora_id (28), fecha_asignacion (29) - v2.4.0
+     *                  codigo_adscripcion, id_ipress, estado, cod_estado_cita, fecha_solicitud,
+     *                  fecha_actualizacion, estado_gestion_citas_id, activo, desc_ipress, desc_red, desc_macro,
+     *                  responsable_gestora_id (29), fecha_asignacion (30) - v2.4.0, cod_estado_cita v1.41.1
      */
     private SolicitudBolsaDTO mapFromResultSet(Object[] row) {
         try {
@@ -543,9 +543,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             java.time.LocalDate fechaNacimiento = convertToLocalDate(row[8]); // fecha_nacimiento
             Integer edad = calcularEdad(fechaNacimiento);
 
-            java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[21]); // fecha_solicitud
-            java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[22]); // fecha_actualizacion
-            java.time.OffsetDateTime fechaAsignacion = row.length > 29 ? convertToOffsetDateTime(row[29]) : null; // NEW v2.4.0
+            java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[22]); // fecha_solicitud (ajustado a 22)
+            java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[23]); // fecha_actualizacion (ajustado a 23)
+            java.time.OffsetDateTime fechaAsignacion = row.length > 30 ? convertToOffsetDateTime(row[30]) : null; // NEW v2.4.0 (ajustado a 30)
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -570,15 +570,16 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .codigoAdscripcion((String) row[18])
                     .idIpress(row[19] != null ? toLongSafe("id_ipress", row[19]) : null)
                     .estado((String) row[20])
+                    .codEstadoCita((String) row[21])      // NEW v1.41.1 - cod_estado_cita para filtro Estado
                     .fechaSolicitud(fechaSolicitud)
                     .fechaActualizacion(fechaActualizacion)
-                    .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[23]))
-                    .activo((Boolean) row[24])
-                    .descIpress((String) row[25])        // desc_ipress desde JOIN
-                    .descRed((String) row[26])            // desc_red desde JOIN
-                    .descMacroregion((String) row[27])    // desc_macro desde JOIN
-                    .responsableGestoraId(row.length > 28 ? toLongSafe("responsable_gestora_id", row[28]) : null) // NEW v2.4.0
-                    .fechaAsignacion(fechaAsignacion)    // NEW v2.4.0
+                    .estadoGestionCitasId(toLongSafe("estado_gestion_citas_id", row[24])) // ajustado a 24
+                    .activo((Boolean) row[25])             // ajustado a 25
+                    .descIpress((String) row[26])          // desc_ipress desde JOIN (ajustado a 26)
+                    .descRed((String) row[27])             // desc_red desde JOIN (ajustado a 27)
+                    .descMacroregion((String) row[28])     // desc_macro desde JOIN (ajustado a 28)
+                    .responsableGestoraId(row.length > 29 ? toLongSafe("responsable_gestora_id", row[29]) : null) // NEW v2.4.0 (ajustado a 29)
+                    .fechaAsignacion(fechaAsignacion)      // NEW v2.4.0 (ajustado a 30)
                     .build();
         } catch (Exception e) {
             log.error("❌ Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
