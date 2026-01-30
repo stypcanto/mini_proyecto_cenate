@@ -156,15 +156,51 @@ export const obtenerSolicitudes = async () => {
 };
 
 /**
- * Obtiene solicitudes con paginación server-side
- * v2.5.1 - Alineado con backend pagination (25 registros por página)
+ * Obtiene solicitudes paginadas CON SOPORTE PARA FILTROS (v2.6.0)
+ * UX: Filtrado server-side integrado con paginación
+ * Cuando el usuario selecciona cualquier filtro, recibe resultados al instante
+ *
  * @param {number} page - Número de página (0-based)
  * @param {number} size - Registros por página (default: 25)
- * @returns {Promise<Object>} - Página con solicitudes, totalElements, totalPages
+ * @param {Long} idBolsa - ID bolsa (null/"todas" = todas)
+ * @param {string} macrorregion - Descripción macrorregión (null/"todas" = todas)
+ * @param {string} red - Descripción red (null/"todas" = todas)
+ * @param {string} ipress - Descripción IPRESS (null/"todas" = todas)
+ * @param {string} especialidad - Especialidad (null/"todas" = todas)
+ * @param {Long} estadoId - ID estado cita (null = todos)
+ * @param {string} tipoCita - Tipo cita (null/"todas" = todos)
+ * @param {string} busqueda - Búsqueda libre: paciente/DNI/IPRESS (null = ignorar)
+ * @returns {Promise<Object>} - Página con solicitudes filtradas
  */
-export const obtenerSolicitudesPaginado = async (page = 0, size = 25) => {
+export const obtenerSolicitudesPaginado = async (
+  page = 0,
+  size = 25,
+  bolsa = null,
+  macrorregion = null,
+  red = null,
+  ipress = null,
+  especialidad = null,
+  estado = null,
+  tipoCita = null,
+  busqueda = null
+) => {
   try {
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes?page=${page}&size=${size}`);
+    // Construir query string dinámico
+    const params = new URLSearchParams();
+    params.append('page', page);
+    params.append('size', size);
+
+    // Agregar filtros solo si están definidos y no son "todas"/"todos"
+    if (bolsa && bolsa !== 'todas') params.append('bolsa', bolsa);
+    if (macrorregion && macrorregion !== 'todas') params.append('macrorregion', macrorregion);
+    if (red && red !== 'todas') params.append('red', red);
+    if (ipress && ipress !== 'todas') params.append('ipress', ipress);
+    if (especialidad && especialidad !== 'todas') params.append('especialidad', especialidad);
+    if (estado && estado !== 'todos') params.append('estado', estado);
+    if (tipoCita && tipoCita !== 'todas') params.append('tipoCita', tipoCita);
+    if (busqueda && busqueda.trim()) params.append('busqueda', busqueda.trim());
+
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes?${params.toString()}`);
     return response;
   } catch (error) {
     console.error('Error al obtener solicitudes paginadas:', error);

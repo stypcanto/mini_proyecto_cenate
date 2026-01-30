@@ -6,6 +6,7 @@ import ListHeader from '../../components/ListHeader';
 import bolsasService from '../../services/bolsasService';
 import { usePermisos } from '../../context/PermisosContext';
 import ModalResultadosImportacion from '../../components/modals/ModalResultadosImportacion'; // ✅ NUEVO v1.19.0
+import FilaSolicitud from './FilaSolicitud'; // 🚀 v2.6.0: Componente memorizado para filas
 
 /**
  * 📋 Solicitudes - Recepción de Bolsa
@@ -188,7 +189,31 @@ export default function Solicitudes() {
   }, [catalogosCargados]);
 
   // ============================================================================
-  // 📦 EFFECT 3: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
+  // 📦 EFFECT 3: Filtrado AUTOMÁTICO cuando cambian los filtros (v2.6.0 - UX: instant filtering)
+  // ============================================================================
+  // Cuando el usuario cambia CUALQUIER filtro → resetear a página 1 y recargar con filtros
+  // IMPORTANTE: useRef para evitar ejecutar en la primer inicialización
+  const isFirstLoad = React.useRef(true);
+
+  useEffect(() => {
+    // Primera ejecución: solo marcar que ya pasó el primer mount
+    if (isFirstLoad.current) {
+      console.log('🔍 Primer mount - inicializando filtros...');
+      isFirstLoad.current = false;
+      return;
+    }
+
+    // El usuario cambió un filtro: recargar con filtros
+    console.log('🔍 Filtros cambiados - Reloading solicitudes con filtros:', {
+      filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress,
+      filtroEspecialidad, filtroEstado, filtroTipoCita, searchTerm
+    });
+    setCurrentPage(1); // Reset a página 1
+    cargarSolicitudesConFiltros(); // Cargar CON FILTROS desde el backend
+  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroEspecialidad, filtroEstado, filtroTipoCita, searchTerm]);
+
+  // ============================================================================
+  // 📦 EFFECT 4: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
   // ============================================================================
   useEffect(() => {
     if (catalogosCargados && currentPage > 1) {
@@ -200,7 +225,7 @@ export default function Solicitudes() {
   }, [currentPage, catalogosCargados]);
 
   // ============================================================================
-  // 📦 EFFECT 4: Recargar gestoras cuando se abre el modal
+  // 📦 EFFECT 5: Recargar gestoras cuando se abre el modal
   // ============================================================================
   useEffect(() => {
     if (modalAsignarGestora && gestoras.length === 0) {
@@ -426,15 +451,145 @@ export default function Solicitudes() {
   };
 
   // ============================================================================
-  // 📄 FUNCIÓN 2: Cargar PÁGINA ESPECÍFICA (v2.5.2 - Server-side pagination)
+  // 🆕 FUNCIÓN 1B: Cargar SOLICITUDES CON FILTROS (v2.6.0 - UX: instant filtering)
+  // ============================================================================
+  // Cuando el usuario cambia filtros, el backend devuelve datos filtrados
+  // Esta es la nueva función principal para cargar datos
+  const cargarSolicitudesConFiltros = async () => {
+    console.log('🔍 Cargando solicitudes CON FILTROS desde backend...');
+    setIsLoading(true);
+    setErrorMessage('');
+    try {
+      // Llamar al backend CON parámetros de filtro (v2.6.0)
+      const response = await bolsasService.obtenerSolicitudesPaginado(
+        0, // page 0 (primera página cuando cambian los filtros)
+        REGISTROS_POR_PAGINA,
+        filtroBolsa === 'todas' ? null : filtroBolsa,
+        filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
+        filtroRed === 'todas' ? null : filtroRed,
+        filtroIpress === 'todas' ? null : filtroIpress,
+        filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
+        filtroEstado === 'todos' ? null : filtroEstado,
+        filtroTipoCita === 'todas' ? null : filtroTipoCita,
+        searchTerm.trim() || null
+      );
+
+      console.log('📥 Respuesta con filtros recibida:', response);
+
+      // Manejar respuesta paginada
+      let solicitudesData = response;
+      let totalElementosDelBackend = response?.length || 0;
+
+      if (response && response.content && Array.isArray(response.content)) {
+        console.log('📄 Respuesta es Page de Spring Data');
+        solicitudesData = response.content;
+        totalElementosDelBackend = response.totalElements || 0;
+        console.log('📊 Total elementos con filtros:', totalElementosDelBackend);
+        console.log('📊 Total páginas:', response.totalPages);
+      }
+
+      if (solicitudesData && solicitudesData.length > 0) {
+        console.log('✅ Página con filtros cargada:', solicitudesData.length, 'registros');
+
+        // Procesar solicitudes (MISMO MAPEO QUE ANTES)
+        const solicitudesEnriquecidas = (solicitudesData || []).map((solicitud, idx) => {
+          try {
+            let gestoraAsignadaNombre = null;
+            if (solicitud.responsable_gestora_id && gestoras && gestoras.length > 0) {
+              const gestoraEncontrada = gestoras.find(g => g.id === solicitud.responsable_gestora_id);
+              gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
+            }
+
+            const fechaAsignacionFormato = solicitud.fecha_asignacion
+              ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE')
+              : null;
+
+            return {
+              ...solicitud,
+              id: solicitud.id_solicitud,
+              dni: solicitud.paciente_dni || '',
+              paciente: solicitud.paciente_nombre || '',
+              telefono: solicitud.paciente_telefono || '',
+              telefonoAlterno: solicitud.paciente_telefono_alterno || '',
+              correo: solicitud.paciente_email || solicitud.email_pers || '',
+              sexo: solicitud.paciente_sexo || solicitud.sexo || 'N/A',
+              edad: solicitud.paciente_edad || solicitud.edad || 'N/A',
+              estado: mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id),
+              estadoDisplay: getEstadoDisplay(mapearEstadoAPI(solicitud.cod_estado_cita || solicitud.estado_gestion_citas_id)),
+              estadoCodigo: solicitud.cod_estado_cita,
+              semaforo: solicitud.recordatorio_enviado ? 'verde' : 'rojo',
+              diferimiento: calcularDiferimiento(solicitud.fecha_solicitud),
+              especialidad: solicitud.especialidad || '',
+              red: solicitud.desc_red || 'Sin asignar',
+              ipress: solicitud.desc_ipress || 'N/A',
+              macroregion: solicitud.desc_macro || 'Sin asignar',
+              bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
+              nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
+              fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
+              fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
+              gestoraAsignada: gestoraAsignadaNombre,
+              gestoraAsignadaId: solicitud.responsable_gestora_id,
+              fechaAsignacionFormato: fechaAsignacionFormato,
+              fechaPreferidaNoAtendida: solicitud.fecha_preferida_no_atendida ?
+                (() => {
+                  const [y, m, d] = solicitud.fecha_preferida_no_atendida.split('-');
+                  return `${d}/${m}/${y}`;
+                })() : 'N/A',
+              tipoDocumento: solicitud.tipo_documento || 'N/A',
+              fechaNacimiento: solicitud.fecha_nacimiento ?
+                (() => {
+                  const [y, m, d] = solicitud.fecha_nacimiento.split('-');
+                  return `${d}/${m}/${y}`;
+                })() : 'N/A',
+              tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
+              codigoIpress: solicitud.codigo_adscripcion || 'N/A'
+            };
+          } catch (mapError) {
+            console.error(`❌ Error procesando solicitud [${idx}]:`, mapError);
+            throw mapError;
+          }
+        });
+
+        console.log('✅ Solicitudes enriquecidas con filtros:', solicitudesEnriquecidas.length);
+        setSolicitudes(solicitudesEnriquecidas);
+        setTotalElementos(totalElementosDelBackend);
+      } else {
+        console.warn('⚠️ Sin resultados con estos filtros');
+        setSolicitudes([]);
+        setTotalElementos(0);
+      }
+
+    } catch (error) {
+      console.error('❌ Error cargando con filtros:', error);
+      setErrorMessage('Error al aplicar filtros. Intenta nuevamente.');
+      setSolicitudes([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // ============================================================================
+  // 📄 FUNCIÓN 2: Cargar PÁGINA ESPECÍFICA CON FILTROS (v2.6.0 - integrated filtering)
   // ============================================================================
   const cargarSolicitudesPaginadas = async (pageIndex) => {
-    console.log('📄 Cargando página:', pageIndex, 'de backend...');
+    console.log('📄 Cargando página:', pageIndex, 'con filtros aplicados...');
     setIsLoading(true);
     setErrorMessage('');
     try {
       // pageIndex es 0-based (page 0, 1, 2, etc)
-      const response = await bolsasService.obtenerSolicitudesPaginado(pageIndex, REGISTROS_POR_PAGINA);
+      // IMPORTANTE: Pasar los filtros actuales para mantener la consistencia
+      const response = await bolsasService.obtenerSolicitudesPaginado(
+        pageIndex,
+        REGISTROS_POR_PAGINA,
+        filtroBolsa === 'todas' ? null : filtroBolsa,
+        filtroMacrorregion === 'todas' ? null : filtroMacrorregion,
+        filtroRed === 'todas' ? null : filtroRed,
+        filtroIpress === 'todas' ? null : filtroIpress,
+        filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
+        filtroEstado === 'todos' ? null : filtroEstado,
+        filtroTipoCita === 'todas' ? null : filtroTipoCita,
+        searchTerm.trim() || null
+      );
       console.log('📥 Respuesta página recibida:', response);
 
       // Manejar respuesta paginada (Page object del backend)
@@ -603,7 +758,7 @@ export default function Solicitudes() {
 
     if (seleccionarTodas) {
       // Borrar TODAS las solicitudes filtradas (todas las páginas)
-      idsSeleccionados = solicitudesFiltradas.map(s => s.id);
+      idsSeleccionados = solicitudes.map(s => s.id);
       console.log(`🗑️ Borrado MASIVO: Todas ${idsSeleccionados.length} solicitudes`);
     } else {
       // Borrar solo los seleccionados en los checkboxes
@@ -712,56 +867,16 @@ export default function Solicitudes() {
     }
   })();
 
-  // Aplicar filtros
-  const solicitudesFiltradas = solicitudes.filter(sol => {
-    const matchBusqueda = sol.paciente.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.dni.includes(searchTerm) ||
-                         sol.ipress.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.red.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.especialidad.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchBolsa = filtroBolsa === 'todas' || sol.nombreBolsa === filtroBolsa;
-    const matchRed = filtroRed === 'todas' || sol.red === filtroRed;
-    const matchIpress = filtroIpress === 'todas' || sol.ipress === filtroIpress;
-    const matchMacrorregion = filtroMacrorregion === 'todas' || sol.macroregion === filtroMacrorregion;
-    const matchEspecialidad = filtroEspecialidad === 'todas' || sol.especialidad === filtroEspecialidad;
-    const matchEstado = filtroEstado === 'todos' || sol.estado === filtroEstado;
-    const matchTipoCita = filtroTipoCita === 'todas' || (sol.tipoCita?.toUpperCase?.() || '') === filtroTipoCita;
+  // ✅ v2.6.0 - Filtrado ahora es SERVER-SIDE
+  // Ya no hay necesidad de filtrado client-side
+  // `solicitudes` contiene los registros filtrados del backend
+  // `totalElementos` contiene el total global con filtros aplicados
 
-    return matchBusqueda && matchBolsa && matchRed && matchIpress && matchMacrorregion && matchEspecialidad && matchEstado && matchTipoCita;
-  });
-
-  // Resetear a página 1 cuando cambian los filtros
-  React.useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filtroBolsa, filtroRed, filtroIpress, filtroMacrorregion, filtroEspecialidad, filtroEstado, filtroTipoCita]);
-
-  // Calcular paginación (v2.5.2 - Server-side pagination)
-  // NOTA: totalElementos viene del backend (total global)
-  // solicitudesFiltradas es el resultado del filtrado client-side de la página actual
-  const totalRegistros = totalElementos > 0 ? totalElementos : solicitudesFiltradas.length;  // Usar total del backend
-  const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);  // Páginas reales del backend
-  const indiceInicio = (currentPage - 1) * REGISTROS_POR_PAGINA;
-  const indiceFin = indiceInicio + REGISTROS_POR_PAGINA;
-  // No paginar client-side, ya estamos pagginando server-side
-  // Mostrar directamente los registros filtrados de la página actual
-  const solicitudesPaginadas = solicitudesFiltradas;  // Esta es la página actual ya paginada del backend
-
-  // Debug filtros
-  React.useEffect(() => {
-    if (solicitudes.length > 0 && solicitudesFiltradas.length === 0 && !errorMessage) {
-      console.log('⚠️ DEBUG FILTROS - Solicitudes cargadas pero NINGUNA pasa los filtros:');
-      console.log('  - Total solicitudes:', solicitudes.length);
-      console.log('  - Filtro búsqueda:', searchTerm);
-      console.log('  - Filtro bolsa:', filtroBolsa);
-      console.log('  - Filtro red:', filtroRed);
-      console.log('  - Filtro IPRESS:', filtroIpress);
-      console.log('  - Filtro macrorregión:', filtroMacrorregion);
-      console.log('  - Filtro especialidad:', filtroEspecialidad);
-      console.log('  - Filtro estado:', filtroEstado);
-      console.log('  - Filtro tipo de cita:', filtroTipoCita);
-      console.log('  - Primera solicitud:', solicitudes[0]);
-    }
-  }, [solicitudes, solicitudesFiltradas, searchTerm, filtroBolsa, filtroRed, filtroIpress, filtroMacrorregion, filtroEspecialidad, filtroEstado, filtroTipoCita, errorMessage]);
+  // Calcular paginación (v2.6.0 - Server-side pagination integrada)
+  const totalRegistros = totalElementos > 0 ? totalElementos : solicitudes.length;
+  const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);
+  // Los registros mostrados son directamente `solicitudes` (ya paginados y filtrados desde el backend)
+  const solicitudesPaginadas = solicitudes;
 
   const getEstadoBadge = (estado) => {
     const estilos = {
@@ -851,10 +966,10 @@ export default function Solicitudes() {
   };
 
   const toggleAllRows = () => {
-    if (selectedRows.size === solicitudesFiltradas.length) {
+    if (selectedRows.size === solicitudes.length) {
       setSelectedRows(new Set());
     } else {
-      setSelectedRows(new Set(solicitudesFiltradas.map(s => s.id)));
+      setSelectedRows(new Set(solicitudes.map(s => s.id)));
     }
   };
 
@@ -1377,6 +1492,23 @@ export default function Solicitudes() {
                       value: t.nombre
                     }))
                 ]
+              },
+              {
+                name: "Estado",
+                value: filtroEstado,
+                onChange: (e) => setFiltroEstado(e.target.value),
+                options: [
+                  { label: `Todos los estados (${totalElementos})`, value: "todos" },
+                  ...(estadisticasGlobales ? Object.entries(estadisticasGlobales).map(([key, valor]) => {
+                    if (typeof valor === 'number') {
+                      return {
+                        label: `${key.charAt(0).toUpperCase() + key.slice(1)} (${valor})`,
+                        value: key
+                      };
+                    }
+                    return null;
+                  }).filter(Boolean) : [])
+                ]
               }
             ]}
             onClearFilters={() => {
@@ -1385,6 +1517,7 @@ export default function Solicitudes() {
               setFiltroRed('todas');
               setFiltroIpress('todas');
               setFiltroEspecialidad('todas');
+              setFiltroEstado('todos');
               setFiltroTipoCita('todas');
               setSearchTerm('');
             }}
@@ -1392,15 +1525,15 @@ export default function Solicitudes() {
           </div>
 
           {/* Botones para descargar y borrar selección O TODAS */}
-          {(selectedRows.size > 0 || solicitudesFiltradas.length > 0) && (
+          {(selectedRows.size > 0 || solicitudes.length > 0) && (
             <div className="mb-4">
               {/* Botón para seleccionar TODAS */}
-              {!seleccionarTodas && solicitudesFiltradas.length > selectedRows.size && (
+              {!seleccionarTodas && solicitudes.length > selectedRows.size && (
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-300 rounded-lg flex items-center justify-between">
                   <div>
                     <p className="text-sm text-blue-900 font-semibold">
-                      📌 Tienes {totalElementos || solicitudesFiltradas.length} solicitudes totales (en la BD)
-                      {searchTerm && ` - Mostrando ${solicitudesFiltradas.length} en esta página`}
+                      📌 Tienes {totalElementos || solicitudes.length} solicitudes totales (en la BD)
+                      {searchTerm && ` - Mostrando ${solicitudes.length} en esta página`}
                     </p>
                     <p className="text-xs text-blue-700">
                       Actualmente seleccionadas: {selectedRows.size}
@@ -1409,7 +1542,7 @@ export default function Solicitudes() {
                   <button
                     onClick={() => {
                       setSeleccionarTodas(true);
-                      setCantidadABorrar(solicitudesFiltradas.length);
+                      setCantidadABorrar(solicitudes.length);
                     }}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
                   >
@@ -1472,7 +1605,7 @@ export default function Solicitudes() {
 
                         <button
                           onClick={() => {
-                            const cantidad = seleccionarTodas ? solicitudesFiltradas.length : selectedRows.size;
+                            const cantidad = seleccionarTodas ? solicitudes.length : selectedRows.size;
                             setCantidadABorrar(cantidad);
                             setModalConfirmarBorrado(true);
                           }}
@@ -1483,7 +1616,7 @@ export default function Solicitudes() {
                           }`}
                         >
                           <AlertCircle size={22} className="font-bold" />
-                          Borrar {seleccionarTodas ? `TODAS (${solicitudesFiltradas.length})` : `Selección (${selectedRows.size})`}
+                          Borrar {seleccionarTodas ? `TODAS (${solicitudes.length})` : `Selección (${selectedRows.size})`}
                         </button>
                       </>
                     )}
@@ -1512,7 +1645,7 @@ export default function Solicitudes() {
                   </button>
                 </div>
               </div>
-            ) : solicitudesFiltradas.length > 0 ? (
+            ) : solicitudes.length > 0 ? (
               <>
               <table className="w-full">
                 <thead className="bg-[#0D5BA9] text-white sticky top-0">
@@ -1520,7 +1653,7 @@ export default function Solicitudes() {
                     <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                       <input
                         type="checkbox"
-                        checked={selectedRows.size === solicitudesFiltradas.length && solicitudesFiltradas.length > 0}
+                        checked={selectedRows.size === solicitudes.length && solicitudes.length > 0}
                         onChange={toggleAllRows}
                         className="w-5 h-5 cursor-pointer"
                       />
@@ -1549,146 +1682,26 @@ export default function Solicitudes() {
                   </tr>
                 </thead>
                 <tbody>
+                  {/* 🚀 v2.6.0: Componente memorizado para máxima performance */}
                   {solicitudesPaginadas.map((solicitud) => (
-                    <tr key={solicitud.id} className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
-                      <td className="px-4 py-3">
-                        <input
-                          type="checkbox"
-                          checked={selectedRows.has(solicitud.id)}
-                          onChange={() => toggleRowSelection(solicitud.id)}
-                          className="w-4 h-4 border-2 border-gray-300 rounded cursor-pointer"
-                        />
-                      </td>
-                      {/* Columnas - Orden optimizado v2.1.0 */}
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.nombreBolsa || 'Sin clasificar'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaPreferidaNoAtendida}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.tipoDocumento}</td>
-                      <td className="px-4 py-3 text-sm font-semibold text-blue-600">{solicitud.dni}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{solicitud.paciente}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.fechaNacimiento}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.sexo}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{solicitud.edad}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefono}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.telefonoAlterno}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.correo}>{solicitud.correo}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap inline-block ${
-                          solicitud.tipoCita === 'RECITA' ? 'bg-blue-100 text-blue-700' :
-                          solicitud.tipoCita === 'INTERCONSULTA' ? 'bg-purple-100 text-purple-700' :
-                          solicitud.tipoCita === 'VOLUNTARIA' ? 'bg-green-100 text-green-700' :
-                          'bg-gray-100 text-gray-700'
-                        }`}>
-                          {solicitud.tipoCita}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.especialidad}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-semibold" title="Código IPRESS">{solicitud.codigoIpress}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 max-w-xs truncate" title={solicitud.ipress}>{solicitud.ipress || 'N/A'}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900">{solicitud.red || 'Sin Red'}</td>
-                      {/* COLUMNA 1: ESTADO */}
-                      <td className="px-4 py-3">
-                        <span
-                          className={`px-3 py-1 rounded-md text-xs font-semibold whitespace-nowrap inline-block ${getEstadoBadge(solicitud.estado)}`}
-                          title={solicitud.estadoCodigo || 'Código de estado'}
-                        >
-                          {solicitud.estadoDisplay}
-                        </span>
-                      </td>
-
-                      {/* COLUMNA 2: FECHA ASIGNACIÓN (v2.4.2) */}
-                      <td className="px-4 py-3 text-sm text-gray-600">
-                        {solicitud.fechaAsignacionFormato ? (
-                          <span className="text-green-700 font-medium">{solicitud.fechaAsignacionFormato}</span>
-                        ) : (
-                          <span className="text-gray-400 italic">—</span>
-                        )}
-                      </td>
-
-                      {/* COLUMNA 3: GESTORA ASIGNADA (v2.4.2) - Solo nombre */}
-                      <td className="px-4 py-3 text-sm">
-                        {solicitud.gestoraAsignada ? (
-                          <span className="font-semibold text-green-700">{solicitud.gestoraAsignada}</span>
-                        ) : (
-                          <span className="text-gray-400 italic">Sin asignar</span>
-                        )}
-                      </td>
-
-                      {/* COLUMNA 4: ACCIONES (v2.4.2) - Todos los iconos */}
-                      <td className="px-4 py-3 text-center">
-                        <div className="flex items-center justify-center gap-1">
-                          {/* Acción: Asignar Gestora */}
-                          {!solicitud.gestoraAsignada && (
-                            <button
-                              onClick={() => handleAbrirAsignarGestora(solicitud)}
-                              className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
-                              title="Asignar gestora de citas"
-                              disabled={isProcessing}
-                            >
-                              <UserPlus size={16} />
-                            </button>
-                          )}
-
-                          {/* Acción: Reasignar Gestora */}
-                          {solicitud.gestoraAsignada && (
-                            <button
-                              onClick={() => handleAbrirAsignarGestora(solicitud)}
-                              className="p-1.5 hover:bg-blue-100 rounded-md transition-colors text-blue-600 disabled:opacity-50"
-                              title="Reasignar gestora"
-                              disabled={isProcessing}
-                            >
-                              <Users size={16} />
-                            </button>
-                          )}
-
-                          {/* Acción: Eliminar Asignación */}
-                          {solicitud.gestoraAsignada && (
-                            <button
-                              onClick={() => handleEliminarAsignacionGestora(solicitud)}
-                              className="p-1.5 hover:bg-red-100 rounded-md transition-colors text-red-600 disabled:opacity-50"
-                              title="Eliminar asignación"
-                              disabled={isProcessing}
-                            >
-                              <X size={16} />
-                            </button>
-                          )}
-
-                          {/* Acción: Marcar Prioridad (TODO - futuro) */}
-                          <button
-                            className="p-1.5 hover:bg-yellow-100 rounded-md transition-colors text-yellow-600 disabled:opacity-50"
-                            title="Marcar prioridad (próximamente)"
-                            disabled={true}
-                          >
-                            <FileText size={16} />
-                          </button>
-
-                          {/* Acción: Cambiar Teléfono */}
-                          <button
-                            onClick={() => handleAbrirCambiarTelefono(solicitud)}
-                            className="p-1.5 hover:bg-purple-100 rounded-md transition-colors text-purple-600 disabled:opacity-50"
-                            title="Cambiar teléfono"
-                            disabled={isProcessing}
-                          >
-                            <Phone size={16} />
-                          </button>
-
-                          {/* Acción: Enviar Recordatorio */}
-                          <button
-                            onClick={() => handleAbrirEnviarRecordatorio(solicitud)}
-                            className="p-1.5 hover:bg-green-100 rounded-md transition-colors text-green-600 disabled:opacity-50"
-                            title="Enviar recordatorio"
-                            disabled={isProcessing}
-                          >
-                            <Download size={16} />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <FilaSolicitud
+                      key={solicitud.id}
+                      solicitud={solicitud}
+                      isChecked={selectedRows.has(solicitud.id)}
+                      onToggleCheck={() => toggleRowSelection(solicitud.id)}
+                      onAbrirCambiarTelefono={handleAbrirCambiarTelefono}
+                      onAbrirAsignarGestora={handleAbrirAsignarGestora}
+                      onEliminarAsignacion={handleEliminarAsignacionGestora}
+                      onAbrirEnviarRecordatorio={handleAbrirEnviarRecordatorio}
+                      isProcessing={isProcessing}
+                      getEstadoBadge={getEstadoBadge}
+                    />
                   ))}
                 </tbody>
               </table>
 
               {/* 📄 PAGINACIÓN v2.5.2 - Server-side pagination */}
-              {solicitudesFiltradas.length > 0 && (
+              {solicitudes.length > 0 && (
                 <div className="flex items-center justify-between px-6 py-4 bg-gray-50 border-t border-gray-200">
                   <div className="text-sm text-gray-600 font-medium">
                     {/* Calcular rango real para server-side pagination */}

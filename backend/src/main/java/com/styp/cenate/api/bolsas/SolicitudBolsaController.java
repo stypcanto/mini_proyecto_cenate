@@ -296,10 +296,45 @@ public class SolicitudBolsaController {
      * @param pageable información de paginación (default: 25 registros para alinear con frontend)
      * @return página de solicitudes
      */
+    /**
+     * GET /api/bolsas/solicitudes
+     * Lista solicitudes con soporte para FILTROS AVANZADOS (v2.6.0)
+     * UX: Al usuario le basta seleccionar filtros y recibe resultados filtrados al instante
+     *
+     * @param idBolsa ID de bolsa (null o "todas" = todas las bolsas)
+     * @param macrorregion descripción de macrorregión (null o "todas" = todas)
+     * @param red descripción de red (null o "todas" = todas)
+     * @param ipress descripción de IPRESS (null o "todas" = todas)
+     * @param especialidad especialidad (null o "todas" = todas)
+     * @param estadoId ID estado gestión citas (null = todos)
+     * @param tipoCita tipo de cita (null o "todas" = todos)
+     * @param busqueda búsqueda libre: paciente/DNI/IPRESS (null = ignorar)
+     * @param pageable paginación
+     * @return Page con solicitudes filtradas
+     */
     @GetMapping
     public ResponseEntity<Page<SolicitudBolsaDTO>> listarTodas(
+            @RequestParam(required = false) String bolsa,
+            @RequestParam(required = false) String macrorregion,
+            @RequestParam(required = false) String red,
+            @RequestParam(required = false) String ipress,
+            @RequestParam(required = false) String especialidad,
+            @RequestParam(required = false) String estado,
+            @RequestParam(required = false) String tipoCita,
+            @RequestParam(required = false) String busqueda,
             @PageableDefault(size = 25, page = 0) Pageable pageable) {
-        log.info("Listando solicitudes - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
+
+        // Si hay algún filtro, usar búsqueda con filtros (v2.6.0)
+        if (bolsa != null || macrorregion != null || red != null || ipress != null ||
+            especialidad != null || estado != null || tipoCita != null || busqueda != null) {
+            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Búsqueda: {}",
+                bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, busqueda);
+            return ResponseEntity.ok(solicitudBolsaService.listarConFiltros(
+                    bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, busqueda, pageable));
+        }
+
+        // Sin filtros, listar todas (comportamiento anterior)
+        log.info("📋 Listando solicitudes sin filtros - page: {}, size: {}", pageable.getPageNumber(), pageable.getPageSize());
         return ResponseEntity.ok(solicitudBolsaService.listarTodasPaginado(pageable));
     }
 

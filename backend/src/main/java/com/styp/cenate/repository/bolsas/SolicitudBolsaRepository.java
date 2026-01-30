@@ -148,6 +148,98 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<Object[]> findAllWithBolsaDescriptionPaginado(org.springframework.data.domain.Pageable pageable);
 
     /**
+     * Obtiene solicitudes paginadas CON FILTROS avanzados (v2.6.0)
+     * Soporta filtrado por: bolsa, macrorregión, red, IPRESS, especialidad, estado, tipo de cita, búsqueda
+     * Pensado para UX: filtrado server-side + paginación integrada
+     *
+     * @param idBolsa ID de la bolsa (null = todas)
+     * @param macrorregion descripción de macrorregión (null = todas)
+     * @param red descripción de red (null = todas)
+     * @param ipress descripción de IPRESS (null = todas)
+     * @param especialidad especialidad (null = todas)
+     * @param estadoId ID estado gestión citas (null = todos)
+     * @param tipoCita tipo de cita (null = todos)
+     * @param busqueda búsqueda por paciente, DNI, IPRESS (null = ignorar)
+     * @param pageable paginación
+     * @return lista paginada de solicitudes enriquecidas
+     */
+    @Query(value = """
+        SELECT sb.id_solicitud, sb.numero_solicitud, sb.paciente_id, sb.paciente_nombre,
+               sb.paciente_dni, sb.especialidad, sb.fecha_preferida_no_atendida,
+               sb.tipo_documento, sb.fecha_nacimiento, sb.paciente_sexo,
+               sb.paciente_telefono, sb.paciente_telefono_alterno,
+               sb.paciente_email,
+               sb.codigo_ipress, sb.tipo_cita,
+               sb.id_bolsa, tb.desc_tipo_bolsa,
+               sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
+               sb.estado, sb.fecha_solicitud, sb.fecha_actualizacion,
+               sb.estado_gestion_citas_id, sb.activo,
+               di.desc_ipress, dr.desc_red, dm.desc_macro,
+               sb.responsable_gestora_id, sb.fecha_asignacion
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
+        LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
+        LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+        LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+        WHERE sb.activo = true
+          AND (:bolsaNombre IS NULL OR LOWER(tb.desc_tipo_bolsa) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
+          AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)
+          AND (:red IS NULL OR dr.desc_red = :red)
+          AND (:ipress IS NULL OR di.desc_ipress = :ipress)
+          AND (:especialidad IS NULL OR LOWER(sb.especialidad) LIKE LOWER(CONCAT('%', :especialidad, '%')))
+          AND (:estadoCodigo IS NULL OR UPPER(sb.estado) = UPPER(:estadoCodigo))
+          AND (:tipoCita IS NULL OR UPPER(sb.tipo_cita) = UPPER(:tipoCita))
+          AND (:busqueda IS NULL OR LOWER(sb.paciente_nombre) LIKE LOWER(CONCAT('%', :busqueda, '%'))
+                              OR sb.paciente_dni LIKE CONCAT('%', :busqueda, '%')
+                              OR LOWER(di.desc_ipress) LIKE LOWER(CONCAT('%', :busqueda, '%')))
+        ORDER BY sb.fecha_solicitud DESC
+        LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
+        """, nativeQuery = true)
+    List<Object[]> findAllWithFiltersAndPagination(
+            @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
+            @org.springframework.data.repository.query.Param("macrorregion") String macrorregion,
+            @org.springframework.data.repository.query.Param("red") String red,
+            @org.springframework.data.repository.query.Param("ipress") String ipress,
+            @org.springframework.data.repository.query.Param("especialidad") String especialidad,
+            @org.springframework.data.repository.query.Param("estadoCodigo") String estadoCodigo,
+            @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
+            @org.springframework.data.repository.query.Param("busqueda") String busqueda,
+            org.springframework.data.domain.Pageable pageable);
+
+    /**
+     * Cuenta solicitudes con filtros aplicados (v2.6.0)
+     * Se usa para calcular el total de páginas en filtrado
+     */
+    @Query(value = """
+        SELECT COUNT(*)
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
+        LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
+        LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+        LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+        WHERE sb.activo = true
+          AND (:bolsaNombre IS NULL OR LOWER(tb.desc_tipo_bolsa) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
+          AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)
+          AND (:red IS NULL OR dr.desc_red = :red)
+          AND (:ipress IS NULL OR di.desc_ipress = :ipress)
+          AND (:especialidad IS NULL OR LOWER(sb.especialidad) LIKE LOWER(CONCAT('%', :especialidad, '%')))
+          AND (:estadoCodigo IS NULL OR UPPER(sb.estado) = UPPER(:estadoCodigo))
+          AND (:tipoCita IS NULL OR UPPER(sb.tipo_cita) = UPPER(:tipoCita))
+          AND (:busqueda IS NULL OR LOWER(sb.paciente_nombre) LIKE LOWER(CONCAT('%', :busqueda, '%'))
+                              OR sb.paciente_dni LIKE CONCAT('%', :busqueda, '%')
+                              OR LOWER(di.desc_ipress) LIKE LOWER(CONCAT('%', :busqueda, '%')))
+        """, nativeQuery = true)
+    long countWithFilters(
+            @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
+            @org.springframework.data.repository.query.Param("macrorregion") String macrorregion,
+            @org.springframework.data.repository.query.Param("red") String red,
+            @org.springframework.data.repository.query.Param("ipress") String ipress,
+            @org.springframework.data.repository.query.Param("especialidad") String especialidad,
+            @org.springframework.data.repository.query.Param("estadoCodigo") String estadoCodigo,
+            @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
+            @org.springframework.data.repository.query.Param("busqueda") String busqueda);
+
+    /**
      * Cuenta total de solicitudes activas (para calcular páginas totales)
      * Usa índice idx_solicitud_activo para optimización
      */

@@ -50,6 +50,33 @@ public interface SolicitudBolsaService {
             org.springframework.data.domain.Pageable pageable);
 
     /**
+     * 🆕 v2.6.0 - Obtiene solicitudes CON FILTROS AVANZADOS + PAGINACIÓN
+     * Soporta filtrado server-side integrado con paginación
+     * UX: El usuario selecciona filtros y recibe resultados filtrados al instante
+     *
+     * @param bolsaNombre nombre/descripción bolsa (null = todas)
+     * @param macrorregion descripción macrorregión (null = todas)
+     * @param red descripción red (null = todas)
+     * @param ipress descripción IPRESS (null = todas)
+     * @param especialidad especialidad (null = todas)
+     * @param estadoCodigo código estado gestión citas (null = todos)
+     * @param tipoCita tipo cita (null = todos)
+     * @param busqueda búsqueda libre: paciente/DNI/IPRESS (null = ignorar)
+     * @param pageable paginación
+     * @return Page con solicitudes filtradas
+     */
+    org.springframework.data.domain.Page<SolicitudBolsaDTO> listarConFiltros(
+            String bolsaNombre,
+            String macrorregion,
+            String red,
+            String ipress,
+            String especialidad,
+            String estadoCodigo,
+            String tipoCita,
+            String busqueda,
+            org.springframework.data.domain.Pageable pageable);
+
+    /**
      * Obtiene una solicitud por su ID
      */
     Optional<SolicitudBolsaDTO> obtenerPorId(Long id);

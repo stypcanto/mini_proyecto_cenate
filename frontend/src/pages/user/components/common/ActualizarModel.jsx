@@ -1868,19 +1868,12 @@ const ActualizarModel = ({ user, onClose, onSuccess, initialTab = 'personal', fi
                             onChange={(e) => {
                               const tipo = e.target.value;
                               if (tipo === 'INTERNO') {
-                                // Buscar la IPRESS de CENATE
-                                const cenateIpress = ipress.find(ip =>
-                                  ip.codIpress === '739' ||
-                                  ip.descIpress?.toUpperCase().includes('CENATE') ||
-                                  ip.descIpress?.toUpperCase().includes('NACIONAL DE TELEMEDICINA')
-                                );
-                                if (cenateIpress) {
-                                  setFormData(prev => ({ ...prev, id_ipress: cenateIpress.idIpress, id_red: null }));
-                                  setRedSeleccionada(null);
-                                  setMacroregionInfo(null);
-                                } else {
-                                  alert('No se encontró la IPRESS de CENATE en el sistema');
-                                }
+                                // CENATE siempre tiene ID 2 en la BD
+                                // Usar directamente el ID en lugar de buscar (más confiable)
+                                console.log('✅ Asignando IPRESS CENATE (ID: 2) automáticamente');
+                                setFormData(prev => ({ ...prev, id_ipress: 2, id_red: null }));
+                                setRedSeleccionada(null);
+                                setMacroregionInfo(null);
                               } else {
                                 // Si cambia a EXTERNO, cargar Redes y limpiar selecciones
                                 cargarRedes();

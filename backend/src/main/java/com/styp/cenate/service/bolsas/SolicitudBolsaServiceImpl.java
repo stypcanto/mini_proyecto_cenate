@@ -2385,4 +2385,68 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
     }
 
+    /**
+     * 🆕 v2.6.0 - Listar solicitudes CON FILTROS AVANZADOS + PAGINACIÓN
+     * Pensado para UX máxima facilidad: el usuario selecciona filtros y obtiene resultados al instante
+     *
+     * @param bolsaNombre nombre/descripción de bolsa (null = todas)
+     * @param macrorregion descripción macro (null = todas)
+     * @param red descripción red (null = todas)
+     * @param ipress descripción IPRESS (null = todas)
+     * @param especialidad especialidad (null = todas)
+     * @param estadoCodigo código estado cita (null = todos)
+     * @param tipoCita tipo cita (null = todos)
+     * @param busqueda búsqueda libre: paciente/DNI/IPRESS (null = ignorar)
+     * @param pageable paginación
+     * @return Page con solicitudes que coinciden los filtros
+     */
+    public org.springframework.data.domain.Page<SolicitudBolsaDTO> listarConFiltros(
+            String bolsaNombre,
+            String macrorregion,
+            String red,
+            String ipress,
+            String especialidad,
+            String estadoCodigo,
+            String tipoCita,
+            String busqueda,
+            org.springframework.data.domain.Pageable pageable) {
+        try {
+            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Búsqueda: {}",
+                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, tipoCita, busqueda);
+
+            // Convertir "todas"/"todos" a null para ignorar ese filtro
+            String bolsaNombreFinal = (bolsaNombre == null || "todas".equals(bolsaNombre) || bolsaNombre.trim().isEmpty()) ? null : bolsaNombre.trim();
+            String macrorFinal = (macrorregion == null || "todas".equals(macrorregion) || macrorregion.trim().isEmpty()) ? null : macrorregion.trim();
+            String redFinal = (red == null || "todas".equals(red) || red.trim().isEmpty()) ? null : red.trim();
+            String ipressFinal = (ipress == null || "todas".equals(ipress) || ipress.trim().isEmpty()) ? null : ipress.trim();
+            String especialidadFinal = (especialidad == null || "todas".equals(especialidad) || especialidad.trim().isEmpty()) ? null : especialidad.trim();
+            String estadoCod = (estadoCodigo == null || "todos".equals(estadoCodigo) || estadoCodigo.trim().isEmpty()) ? null : estadoCodigo.trim();
+            String tipoCitaFinal = (tipoCita == null || "todas".equals(tipoCita) || tipoCita.trim().isEmpty()) ? null : tipoCita.trim();
+            String busquedaFinal = (busqueda == null || busqueda.trim().isEmpty()) ? null : busqueda.trim();
+
+            // Llamar al repository con filtros
+            List<Object[]> resultados = solicitudRepository.findAllWithFiltersAndPagination(
+                    bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
+                    estadoCod, tipoCitaFinal, busquedaFinal, pageable);
+
+            long total = solicitudRepository.countWithFilters(
+                    bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
+                    estadoCod, tipoCitaFinal, busquedaFinal);
+
+            // Mapear a DTOs
+            List<SolicitudBolsaDTO> dtos = resultados.stream()
+                    .map(this::mapFromResultSet)
+                    .collect(Collectors.toList());
+
+            log.info("✅ Búsqueda con filtros completada: {} registros en página (Total: {})",
+                    dtos.size(), total);
+
+            return new org.springframework.data.domain.PageImpl<>(dtos, pageable, total);
+
+        } catch (Exception e) {
+            log.error("❌ Error en búsqueda con filtros: ", e);
+            throw new RuntimeException("Error al filtrar solicitudes: " + e.getMessage(), e);
+        }
+    }
+
 }

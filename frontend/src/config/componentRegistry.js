@@ -276,6 +276,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/citas/bolsa-pacientes': {
+    component: lazy(() => import('../pages/roles/citas/BolsaPacientesAsignados')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 📋 COORDINADOR DE GESTIÓN DE CITAS
   // ========================================================================
