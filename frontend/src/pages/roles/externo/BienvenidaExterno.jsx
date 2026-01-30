@@ -1,21 +1,18 @@
 // ========================================================================
 // 👋 BienvenidaExterno.jsx – Página de Bienvenida para Usuarios Externos
 // ========================================================================
-// Muestra bienvenida personalizada y opciones del módulo
+// Diseño moderno inspirado en BienvenidaCoordCitas con opciones vinculadas
 // ========================================================================
 
 import React, { useState, useEffect } from "react";
 import {
-  Sparkles,
   FileText,
   Calendar,
   Settings,
-  Building2,
   ArrowRight,
   CheckCircle2,
-  Info,
-  LogOut,
   Activity,
+  Heart,
 } from "lucide-react";
 import { useAuth } from "../../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
@@ -26,27 +23,18 @@ const iconMap = {
   FileText: FileText,
   Calendar: Calendar,
   Settings: Settings,
-  Activity: Activity,
 };
 
 export default function BienvenidaExterno() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [ipress, setIpress] = useState(null);
   const [modulos, setModulos] = useState([]);
 
   useEffect(() => {
-    // Cargar datos de IPRESS y módulos disponibles
     const fetchData = async () => {
       try {
-        // Cargar IPRESS
-        const ipressData = await ipressService.obtenerMiIpress();
-        setIpress(ipressData.data || ipressData);
-
-        // Cargar módulos disponibles
         const modulosData = await ipressService.obtenerModulosDisponibles();
-        // Ordenar por campo 'orden'
         const modulosOrdenados = (modulosData.data || []).sort(
           (a, b) => (a.orden || 0) - (b.orden || 0)
         );
@@ -61,7 +49,7 @@ export default function BienvenidaExterno() {
             moduloNombre: "Formulario de Diagnóstico",
             descripcion: "Complete el diagnóstico situacional de telesalud",
             icono: "FileText",
-            color: "indigo",
+            color: "blue",
             orden: 1,
             ruta: "/roles/externo/formulario-diagnostico",
           },
@@ -71,7 +59,7 @@ export default function BienvenidaExterno() {
             moduloNombre: "Solicitud de Turnos",
             descripcion: "Solicite turnos de telemedicina para sus pacientes",
             icono: "Calendar",
-            color: "blue",
+            color: "emerald",
             orden: 2,
             ruta: "/roles/externo/solicitud-turnos",
           },
@@ -94,199 +82,218 @@ export default function BienvenidaExterno() {
     fetchData();
   }, []);
 
-  // 🎯 Determinar saludo según género
   const obtenerSaludo = () => {
-    const genero = user?.genero?.toUpperCase() || "";
-    if (genero === "F" || genero === "FEMENINO")
-      return "¡Bienvenida al Sistema CENATE!";
-    if (genero === "M" || genero === "MASCULINO")
-      return "¡Bienvenido al Sistema CENATE!";
-    return "¡Bienvenido(a) al Sistema CENATE!";
+    const genero = user?.genero === "F" || user?.genero === "FEMENINO" ? "a" : "o";
+    const nombreUsuario = user?.nombreCompleto || "Usuario";
+    return `¡Bienvenid${genero}, ${nombreUsuario}!`;
   };
 
-  // 📋 Mapeo de íconos adicionales dinámicos
   const getIconComponent = (iconoNombre) => {
-    const iconMap = {
-      FileText: FileText,
-      Calendar: Calendar,
-      Settings: Settings,
-      Activity: Activity,
-    };
     return iconMap[iconoNombre] || FileText;
   };
 
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
+  const primeraAccion = modulos[0];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-blue-50 p-6 md:p-8">
-      <div className="w-full">
-        {/* 🎯 Header Principal */}
-        <div className="mb-10">
-          <div className="flex items-center gap-3 mb-4">
-            <Sparkles className="w-8 h-8 text-indigo-600" />
-            <h1 className="text-4xl font-bold text-gray-800">
-              {obtenerSaludo()}
-            </h1>
-          </div>
-          <p className="text-gray-600 text-lg ml-11">
-            {new Date().toLocaleDateString("es-PE", {
-              year: "numeric",
-              month: "long",
-              day: "numeric",
-            })}
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-blue-50 p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        {/* Header con bienvenida */}
+        <div className="text-center space-y-3">
+          <h1 className="text-4xl font-bold text-slate-900">
+            {obtenerSaludo()}
+          </h1>
+          <p className="text-lg text-slate-600">
+            Centro Nacional de Telemedicina - CENATE
           </p>
         </div>
 
-        {/* 💼 Card de Información - IPRESS del Usuario */}
-        {ipress && (
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8 border-l-4 border-indigo-600">
-            <div className="bg-gradient-to-r from-indigo-600 to-blue-600 p-6">
-              <div className="flex items-center gap-4">
-                <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center">
-                  <Building2 className="w-10 h-10 text-white" />
-                </div>
-                <div className="flex-1 text-white">
-                  <h2 className="text-2xl font-bold mb-1">
-                    {ipress?.descIpress || "IPRESS"}
-                  </h2>
-                  <div className="flex items-center gap-4 text-indigo-100 text-sm">
-                    <span>📍 Código: {ipress?.codIpress}</span>
-                    <span>🏥 Red: {ipress?.red?.descRed || "—"}</span>
-                    <span>
-                      📡 Modalidad:{" "}
-                      <span className="font-semibold">
-                        {ipress?.nombreModalidadAtencion || "—"}
-                      </span>
-                    </span>
-                  </div>
-                </div>
+        {/* Card principal de bienvenida */}
+        <div className="bg-gradient-to-br from-blue-600 to-teal-600 rounded-2xl shadow-lg overflow-hidden">
+          <div className="grid md:grid-cols-5 gap-6 p-8 text-white items-center">
+            {/* Contenido */}
+            <div className="md:col-span-4 space-y-3">
+              <h2 className="text-2xl font-bold">
+                Portal de Servicios de Telemedicina - CENATE
+              </h2>
+              <p className="text-blue-100 text-sm leading-relaxed">
+                Como IPRESS externa, utiliza este portal para solicitar servicios de telemedicina,
+                verificar el estado de tus solicitudes, informar diagnósticos situacionales y acceder
+                a información sobre los servicios de telemedicina disponibles en CENATE. Coordina la
+                atención remota de tus pacientes de forma eficiente y segura.
+              </p>
+
+              {/* Rol */}
+              <div className="pt-2 flex items-center gap-2 text-blue-100 text-sm">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="font-medium">INSTITUCIÓN EXTERNA (IPRESS)</span>
               </div>
+            </div>
+
+            {/* Ícono minimalista - Edificio médico */}
+            <div className="flex justify-center items-center md:col-span-1">
+              <svg
+                className="w-24 h-24"
+                viewBox="0 0 100 100"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                {/* Edificio */}
+                <rect x="25" y="35" width="50" height="50" rx="4" fill="white" opacity="0.9" />
+
+                {/* Puerta */}
+                <rect x="40" y="55" width="12" height="20" fill="#1e3a8a" opacity="0.8" />
+
+                {/* Ventanas - 3 filas x 2 columnas */}
+                <rect x="32" y="42" width="8" height="8" fill="#1e3a8a" opacity="0.7" />
+                <rect x="52" y="42" width="8" height="8" fill="#1e3a8a" opacity="0.7" />
+                <rect x="32" y="54" width="8" height="8" fill="#1e3a8a" opacity="0.7" />
+                <rect x="52" y="54" width="8" height="8" fill="#1e3a8a" opacity="0.7" />
+
+                {/* Cruz médica */}
+                <line x1="50" y1="20" x2="50" y2="30" stroke="white" strokeWidth="2.5" opacity="0.95" />
+                <line x1="45" y1="25" x2="55" y2="25" stroke="white" strokeWidth="2.5" opacity="0.95" />
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        {/* Tarjetas de acciones rápidas */}
+        {modulos.length > 0 && (
+          <div>
+            <h3 className="text-xl font-bold text-slate-900 mb-4">
+              🎯 Acciones Rápidas
+            </h3>
+            <div className={`grid ${
+              modulos.length === 1
+                ? "md:grid-cols-1 max-w-xl"
+                : modulos.length === 2
+                ? "md:grid-cols-2"
+                : "md:grid-cols-3"
+            } gap-4`}>
+              {modulos.map((modulo) => {
+                const Icon = getIconComponent(modulo.icono);
+
+                const colorStyleMap = {
+                  blue: {
+                    bg: "bg-blue-50",
+                    border: "border-blue-200",
+                    hoverBg: "hover:bg-blue-100",
+                    hoverBorder: "hover:border-blue-300",
+                    iconBg: "bg-blue-100",
+                    iconText: "text-blue-600",
+                  },
+                  emerald: {
+                    bg: "bg-emerald-50",
+                    border: "border-emerald-200",
+                    hoverBg: "hover:bg-emerald-100",
+                    hoverBorder: "hover:border-emerald-300",
+                    iconBg: "bg-emerald-100",
+                    iconText: "text-emerald-600",
+                  },
+                  purple: {
+                    bg: "bg-purple-50",
+                    border: "border-purple-200",
+                    hoverBg: "hover:bg-purple-100",
+                    hoverBorder: "hover:border-purple-300",
+                    iconBg: "bg-purple-100",
+                    iconText: "text-purple-600",
+                  },
+                  amber: {
+                    bg: "bg-amber-50",
+                    border: "border-amber-200",
+                    hoverBg: "hover:bg-amber-100",
+                    hoverBorder: "hover:border-amber-300",
+                    iconBg: "bg-amber-100",
+                    iconText: "text-amber-600",
+                  },
+                  indigo: {
+                    bg: "bg-indigo-50",
+                    border: "border-indigo-200",
+                    hoverBg: "hover:bg-indigo-100",
+                    hoverBorder: "hover:border-indigo-300",
+                    iconBg: "bg-indigo-100",
+                    iconText: "text-indigo-600",
+                  },
+                };
+
+                const styles = colorStyleMap[modulo.color] || colorStyleMap.blue;
+
+                return (
+                  <button
+                    key={modulo.id}
+                    onClick={() => navigate(modulo.ruta)}
+                    className={`${styles.bg} border ${styles.border} ${styles.hoverBg} ${styles.hoverBorder} rounded-xl p-5 text-left transition-all cursor-pointer group`}
+                  >
+                    <div className={`${styles.iconBg} w-10 h-10 rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                      <Icon className={`w-6 h-6 ${styles.iconText}`} />
+                    </div>
+                    <h4 className="font-semibold text-slate-900 mb-1">
+                      {modulo.moduloNombre}
+                    </h4>
+                    <p className="text-sm text-slate-600">
+                      {modulo.descripcion}
+                    </p>
+                  </button>
+                );
+              })}
             </div>
           </div>
         )}
 
-        {/* 📌 Información del Usuario */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-          {/* Usuario */}
-          <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-indigo-500">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-2xl">👤</span>
-              <h3 className="font-semibold text-gray-700">Usuario</h3>
-            </div>
-            <p className="text-gray-800 font-bold">{user?.username}</p>
-          </div>
-
-          {/* Rol */}
-          <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-blue-500">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="text-2xl">🎖️</span>
-              <h3 className="font-semibold text-gray-700">Rol</h3>
-            </div>
-            <p className="text-gray-800 font-bold">
-              {user?.roles?.[0] || "Externo"}
-            </p>
-          </div>
-
-          {/* Estado */}
-          <div className="bg-white rounded-xl shadow-md p-6 border-t-4 border-green-500">
-            <div className="flex items-center gap-3 mb-3">
-              <CheckCircle2 className="w-5 h-5 text-green-500" />
-              <h3 className="font-semibold text-gray-700">Estado</h3>
-            </div>
-            <p className="text-gray-800 font-bold text-green-600">
-              ✓ Activo
-            </p>
-          </div>
-        </div>
-
-        {/* 🎯 Opciones Disponibles */}
+        {/* Sección TELE-EKG */}
         <div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-6">
-            📋 Opciones Disponibles
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {modulos && modulos.length > 0 ? (
-              modulos.map((modulo) => {
-                const Icon = getIconComponent(modulo.icono);
-                const colorClasses = {
-                  indigo: "from-indigo-500 to-indigo-600",
-                  blue: "from-blue-500 to-blue-600",
-                  purple: "from-purple-500 to-purple-600",
-                  rose: "from-rose-500 to-rose-600",
-                  red: "from-red-500 to-red-600",
-                  green: "from-green-500 to-green-600",
-                  amber: "from-amber-500 to-amber-600",
-                };
-
-                return (
-                  <div
-                    key={modulo.id}
-                    className="group cursor-pointer"
-                    onClick={() => navigate(modulo.ruta)}
-                  >
-                    <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
-                      {/* Header con color */}
-                      <div
-                        className={`bg-gradient-to-br ${
-                          colorClasses[modulo.color] || "from-gray-500 to-gray-600"
-                        } p-6 text-white`}
-                      >
-                        <Icon className="w-12 h-12 mb-4" />
-                        <h3 className="text-xl font-bold">
-                          {modulo.moduloNombre}
-                        </h3>
-                      </div>
-
-                      {/* Body */}
-                      <div className="p-6">
-                        <p className="text-gray-600 mb-4">
-                          {modulo.descripcion}
-                        </p>
-                        <div className="flex items-center gap-2 text-indigo-600 font-semibold group-hover:gap-4 transition-all duration-300">
-                          <span>Acceder</span>
-                          <ArrowRight className="w-4 h-4" />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            ) : (
-              <div className="col-span-full text-center py-8">
-                <p className="text-gray-600">No hay módulos disponibles</p>
+          <h3 className="text-xl font-bold text-slate-900 mb-4">
+            ⚡ Módulo Especializado: TELE-EKG
+          </h3>
+          <div className="bg-gradient-to-br from-red-50 to-orange-50 border border-red-200 rounded-xl p-6 shadow-sm">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Heart className="w-6 h-6 text-red-600" />
               </div>
-            )}
+              <div className="flex-1">
+                <h4 className="font-semibold text-slate-900 mb-2">
+                  Envío de Electrocardiogramas a CENATE
+                </h4>
+                <p className="text-sm text-slate-600 mb-3">
+                  El módulo TELE-EKG se ha implementado principalmente para facilitar el envío de imágenes
+                  de electrocardiogramas (EKG) desde tu IPRESS a CENATE. Los especialistas de CENATE podrán
+                  revisar y proporcionar interpretaciones remotas de forma rápida y segura.
+                </p>
+                <div className="flex items-center gap-2 text-red-600 text-sm font-medium">
+                  <CheckCircle2 className="w-4 h-4" />
+                  <span>Disponible en el menú lateral</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* ℹ️ Información Importante */}
-        <div className="mt-10 bg-blue-50 border-l-4 border-blue-500 rounded-lg p-6">
-          <div className="flex gap-4">
-            <Info className="w-6 h-6 text-blue-600 flex-shrink-0 mt-1" />
-            <div>
-              <h3 className="font-semibold text-gray-800 mb-2">
-                ℹ️ Información Importante
-              </h3>
-              <ul className="text-gray-700 space-y-2">
-                <li>
-                  ✓ Puede acceder a cualquiera de las opciones en el menú
-                  lateral
-                </li>
-                <li>
-                  ✓ Sus cambios se guardan automáticamente en la base de datos
-                </li>
-                <li>
-                  ✓ Todas sus acciones son registradas para auditoría y seguridad
-                </li>
-              </ul>
-            </div>
+        {/* Botón de acción principal */}
+        {primeraAccion && (
+          <div className="flex justify-center pt-4">
+            <button
+              onClick={() => navigate(primeraAccion.ruta)}
+              className="flex items-center gap-3 bg-gradient-to-r from-blue-600 to-teal-600 hover:from-blue-700 hover:to-teal-700 text-white px-8 py-3 rounded-xl font-semibold shadow-lg transition-all transform hover:scale-105"
+            >
+              <span>Comenzar a Trabajar</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
           </div>
+        )}
+
+        {/* Footer */}
+        <div className="text-center text-sm text-slate-500 pt-8 border-t border-slate-200">
+          <p>
+            ¿Necesitas ayuda? Contacta al equipo de soporte de CENATE o revisa la documentación en tu panel.
+          </p>
         </div>
       </div>
     </div>
