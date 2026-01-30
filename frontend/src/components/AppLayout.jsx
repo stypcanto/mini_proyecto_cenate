@@ -11,15 +11,28 @@ import React from "react";
 import ResponsiveSidebar from "./layout/ResponsiveSidebar";
 import HeaderCenate from "./layout/HeaderCenate"; // ✅ Header institucional CENATE
 import { useSidebar } from "../context/SidebarContext";
+import { useAuth } from "../context/AuthContext";
 import { VERSION, APP_INFO } from "../config/version";
 
 export default function AppLayout({ children, title = "" }) {
   const { collapsed } = useSidebar();
+  const { user } = useAuth();
+
+  // Detectar si el usuario es EXTERNO
+  const isExternoRole = user?.roles?.some(
+    (rol) =>
+      typeof rol === "string"
+        ? rol.toUpperCase().includes("EXTERNO") || rol.toUpperCase().includes("INSTITUCION")
+        : rol?.authority?.toUpperCase().includes("EXTERNO") || rol?.authority?.toUpperCase().includes("INSTITUCION")
+  ) || false;
 
   // Ajustar márgenes laterales basado en si el sidebar está colapsado
   const horizontalPadding = collapsed
     ? "px-6 md:px-12" // MENOS padding cuando está colapsado = MÁS espacio para contenido
     : "px-24 md:px-32"; // MÁS padding cuando está expandido = MENOS espacio (sidebar ocupa más)
+
+  // Ajustar margen izquierdo para EXTERNO (sidebar más ancho)
+  const mainLeftMargin = isExternoRole ? "lg:ml-[420px]" : "lg:ml-[340px]";
 
   return (
     <div
@@ -34,7 +47,7 @@ export default function AppLayout({ children, title = "" }) {
 
       {/* 🧱 Contenido principal con header fijo */}
       <main
-        className="flex-1 flex flex-col w-full h-screen overflow-hidden mt-24 lg:ml-[340px]"
+        className={`flex-1 flex flex-col w-full h-screen overflow-hidden mt-24 ${mainLeftMargin}`}
         role="main"
         aria-label={title || "Contenido principal"}
       >

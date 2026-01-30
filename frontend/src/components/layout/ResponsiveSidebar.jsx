@@ -11,10 +11,12 @@ import React, { useState, useEffect } from "react";
 import { Menu, X } from "lucide-react";
 import DynamicSidebar from "../DynamicSidebar";
 import { useSidebar } from "../../context/SidebarContext";
+import { useAuth } from "../../context/AuthContext";
 
 export default function ResponsiveSidebar() {
   const [isOpen, setIsOpen] = useState(false);
   const { collapsed, setCollapsed } = useSidebar();
+  const { user } = useAuth();
 
   // 🧠 Bloquea scroll al abrir el sidebar en móvil
   useEffect(() => {
@@ -32,6 +34,19 @@ export default function ResponsiveSidebar() {
   const handleToggleCollapse = () => {
     setCollapsed(!collapsed);
   };
+
+  // Detectar si el usuario es EXTERNO o INSTITUCION_EX
+  const isExternoRole = user?.roles?.some(
+    (rol) =>
+      typeof rol === "string"
+        ? rol.toUpperCase().includes("EXTERNO") || rol.toUpperCase().includes("INSTITUCION")
+        : rol?.authority?.toUpperCase().includes("EXTERNO") || rol?.authority?.toUpperCase().includes("INSTITUCION")
+  ) || false;
+
+  // Ancho del sidebar: más ancho para EXTERNO, normal para otros
+  const sidebarWidth = isExternoRole
+    ? "w-full max-w-lg lg:w-[420px]"  // Más ancho para EXTERNO (420px vs 340px)
+    : "w-4/5 max-w-xs lg:w-[340px]";
 
   return (
     <>
@@ -68,7 +83,7 @@ export default function ResponsiveSidebar() {
                     border-r border-slate-800 shadow-2xl
                     transform transition-all duration-300 ease-in-out
                     ${isOpen ? "translate-x-0" : "-translate-x-full"}
-                    ${collapsed ? "w-20" : "w-4/5 max-w-xs lg:w-[340px]"}
+                    ${collapsed ? "w-20" : sidebarWidth}
                     lg:translate-x-0 lg:shadow-none`}
         style={{ overflow: 'auto' }}
       >

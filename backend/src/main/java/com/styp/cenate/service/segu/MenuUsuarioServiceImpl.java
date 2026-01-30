@@ -443,10 +443,20 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 				.filter(m -> Boolean.TRUE.equals(m.getActivo()))
 				.collect(Collectors.toMap(ModuloSistema::getIdModulo, m -> m));
 
-		Map<Integer, PaginaModulo> paginasMap = paginaRepository.findAllWithSubpaginas()
-				.stream()
+		List<PaginaModulo> todasLasPaginas = paginaRepository.findAllWithSubpaginas();
+		log.info("📚 Total de páginas cargadas desde BD: {}", todasLasPaginas.size());
+		for (PaginaModulo p : todasLasPaginas) {
+			if (p.getIdPagina() == 125) {
+				log.info("🎯 Página 125 encontrada: nombre='{}', activo={}, idModulo={}, padre={}",
+					p.getNombrePagina(), p.getActivo(),
+					p.getModulo() != null ? p.getModulo().getIdModulo() : "null",
+					p.getPaginaPadre() != null ? p.getPaginaPadre().getIdPagina() : "null");
+			}
+		}
+		Map<Integer, PaginaModulo> paginasMap = todasLasPaginas.stream()
 				.filter(p -> Boolean.TRUE.equals(p.getActivo()))
 				.collect(Collectors.toMap(PaginaModulo::getIdPagina, p -> p));
+		log.info("📄 Páginas activas en mapa: {}", paginasMap.keySet());
 
 		// 6. Agrupar permisos por página (tomar el mejor permiso si hay múltiples roles)
 		Map<Integer, SeguPermisosRolPagina> mejoresPermisos = new LinkedHashMap<>();
@@ -464,11 +474,19 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 		// 7. Agrupar páginas por módulo
 		Map<Integer, List<PaginaMenuDTO>> paginasPorModulo = new LinkedHashMap<>();
 		for (Map.Entry<Integer, SeguPermisosRolPagina> entry : mejoresPermisos.entrySet()) {
-			PaginaModulo pagina = paginasMap.get(entry.getKey());
-			if (pagina == null) continue;
+			Integer idPagina = entry.getKey();
+			PaginaModulo pagina = paginasMap.get(idPagina);
+			log.info("🔎 Procesando página {} - Existe en mapa: {}, Nombre: {}", idPagina, pagina != null, pagina != null ? pagina.getNombrePagina() : "N/A");
+			if (pagina == null) {
+				log.warn("❌ Página {} NO ENCONTRADA en paginasMap", idPagina);
+				continue;
+			}
 
 			// Solo procesar páginas padre (sin padre)
-			if (pagina.getPaginaPadre() != null) continue;
+			if (pagina.getPaginaPadre() != null) {
+				log.info("⏭️ Página {} '{}' tiene padre {}, será incluida como subpágina", idPagina, pagina.getNombrePagina(), pagina.getPaginaPadre().getIdPagina());
+				continue;
+			}
 
 			SeguPermisosRolPagina permiso = entry.getValue();
 
@@ -509,7 +527,11 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 			);
 
 			Integer idModulo = pagina.getModulo() != null ? pagina.getModulo().getIdModulo() : null;
-			if (idModulo == null) continue;
+			if (idModulo == null) {
+				log.warn("⚠️ Página {} '{}' no tiene módulo asignado", idPagina, pagina.getNombrePagina());
+				continue;
+			}
+			log.info("✅ Agregando página {} '{}' al módulo {}", idPagina, pagina.getNombrePagina(), idModulo);
 			paginasPorModulo.computeIfAbsent(idModulo, k -> new ArrayList<>()).add(paginaDTO);
 		}
 

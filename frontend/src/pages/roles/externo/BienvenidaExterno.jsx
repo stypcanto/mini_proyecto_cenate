@@ -18,6 +18,9 @@ import {
   Heart,
   TrendingUp,
   Zap,
+  Video,
+  Copy,
+  Radio,
 } from "lucide-react";
 
 export default function BienvenidaExterno() {
@@ -142,7 +145,7 @@ export default function BienvenidaExterno() {
           <h3 className="text-xl font-bold text-slate-900 mb-4">
             ⚙️ Módulos Especializados
           </h3>
-          <div className="grid md:grid-cols-2 gap-4">
+          <div className="grid md:grid-cols-3 gap-4">
             {/* TELE-EKG */}
             <SpecializedModuleCard
               icon={<Heart className="w-6 h-6" />}
@@ -154,15 +157,36 @@ export default function BienvenidaExterno() {
               disabled={true}
             />
 
-            {/* Reportes y Seguimiento */}
+            {/* Seguimiento de Lecturas Pendientes */}
             <SpecializedModuleCard
-              icon={<BarChart3 className="w-6 h-6" />}
-              title="Reportes y Seguimiento"
-              description="Visualiza el estado de tus solicitudes, reportes de atención y seguimiento de pacientes en telemedicina."
-              color="cyan"
-              buttonText="Ver reportes"
-              action={() => navigate("/roles/externo/reportes")}
+              icon={<Zap className="w-6 h-6" />}
+              title="Seguimiento de Lecturas Pendientes"
+              description="Dashboard dinámico para monitorear el número de lecturas pendientes por IPRESS. Accede a los datos actualizados diariamente y filtra por institución."
+              color="purple"
+              buttonText="Ver dashboard"
+              action={() => navigate("/roles/externo/seguimiento-lecturas")}
             />
+
+            {/* Enlace de Videollamada - Teleconsultorio */}
+            <button
+              onClick={() => window.open("https://us06web.zoom.us/j/86422884993?pwd=By6ANg3MnCxbcRVbE0CeotV7G8fLky.1#success", "_blank")}
+              className="bg-white border border-blue-200 hover:border-blue-300 rounded-xl p-6 shadow-sm transition-all duration-300 cursor-pointer group text-left relative hover:shadow-lg hover:scale-105"
+            >
+              <div className="flex items-start gap-4">
+                <div className="bg-blue-100 w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform">
+                  <span className="text-blue-600">
+                    <Video className="w-6 h-6" />
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <h4 className="font-semibold text-slate-900 mb-2">Enlace de Videollamada</h4>
+                  <p className="text-sm text-slate-600 mb-3">Accede a la teleconsulta con CENATE a través de Zoom. Conéctate al enlace para las consultas programadas.</p>
+                  <div className="flex items-center gap-2 text-blue-600 text-sm font-medium group-hover:gap-3 transition-all">
+                    Acceder a Zoom <ArrowRight className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+            </button>
           </div>
         </div>
 
@@ -207,7 +231,7 @@ function QuickActionCard({ icon, title, description, color, badge, action }) {
   return (
     <button
       onClick={action}
-      className={`${colorClasses[color]} border rounded-xl p-5 transition-all cursor-pointer group text-left w-full relative`}
+      className={`${colorClasses[color]} border rounded-xl p-5 transition-all duration-300 cursor-pointer group text-left w-full relative shadow-sm hover:shadow-lg hover:scale-105`}
     >
       {badge && (
         <div className="absolute top-3 right-3 subtle-pulse">
@@ -232,33 +256,38 @@ function SpecializedModuleCard({ icon, title, description, color, buttonText, ba
   const borderColorMap = {
     red: "border-red-200 hover:border-red-300",
     cyan: "border-cyan-200 hover:border-cyan-300",
+    purple: "border-purple-200 hover:border-purple-300",
   };
 
   const bgColorMap = {
     red: disabled ? "bg-slate-50" : "bg-white hover:bg-red-50",
     cyan: "bg-white hover:bg-cyan-50",
+    purple: "bg-white hover:bg-purple-50",
   };
 
   const buttonColorMap = {
     red: "text-red-600",
     cyan: "text-cyan-600",
+    purple: "text-purple-600",
   };
 
   const iconBgColorMap = {
     red: "bg-red-100",
     cyan: "bg-cyan-100",
+    purple: "bg-purple-100",
   };
 
   const iconColorMap = {
     red: "text-red-600",
     cyan: "text-cyan-600",
+    purple: "text-purple-600",
   };
 
   return (
     <button
       onClick={!disabled ? action : undefined}
       disabled={disabled}
-      className={`${bgColorMap[color]} border ${borderColorMap[color]} rounded-xl p-6 shadow-sm transition-all ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer group"} text-left relative`}
+      className={`${bgColorMap[color]} border ${borderColorMap[color]} rounded-xl p-6 shadow-sm transition-all duration-300 ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer group hover:shadow-lg hover:scale-105"} text-left relative`}
     >
       {badge && (
         <div className="absolute top-3 right-3 subtle-pulse">
