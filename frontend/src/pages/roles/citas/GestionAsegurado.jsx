@@ -15,6 +15,7 @@ import {
   UserPlus,
   ChevronDown,
   RefreshCw,
+  Lock,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -205,8 +206,6 @@ export default function GestionAsegurado() {
           { label: "Citas Hoy", value: String(citasHoy), icon: Calendar, color: "bg-purple-100" },
           { label: "Solicitudes Pendientes", value: String(pendingReqs), icon: AlertCircle, color: "bg-yellow-100" },
         ]);
-
-        await fetchAssignedBags();
       } catch (err) {
         console.error("Error loading data:", err);
         setError("Error al cargar los datos. Por favor, intente de nuevo.");
@@ -325,13 +324,11 @@ export default function GestionAsegurado() {
                 Citar Paciente
               </button>
               <button
-                onClick={() => setActiveTab("bolsa")}
-                className={`flex-1 px-6 py-4 font-medium text-sm transition-colors ${
-                  activeTab === "bolsa"
-                    ? "bg-gray-100 text-slate-900 border-b-2 border-blue-600"
-                    : "text-slate-600 hover:bg-gray-50"
-                }`}
+                disabled
+                title="Bolsa Asignada bloqueada - Próximamente"
+                className="flex-1 px-6 py-4 font-medium text-sm transition-colors text-gray-400 bg-gray-50 cursor-not-allowed opacity-60 flex items-center justify-center gap-2"
               >
+                <Lock className="w-4 h-4" />
                 Bolsa Asignada
               </button>
             </div>
@@ -419,8 +416,8 @@ export default function GestionAsegurado() {
                 </div>
               )}
 
-              {/* Tab: Bolsa Asignada */}
-              {activeTab === "bolsa" && (
+              {/* Tab: Bolsa Asignada - BLOQUEADO */}
+              {false && (
                 <div className="space-y-4">
                   <h3 className="text-lg font-semibold text-slate-900 mb-4">
                     Módulos y Bolsas Asignadas
