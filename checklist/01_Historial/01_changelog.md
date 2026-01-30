@@ -3,6 +3,7 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.39.1**: Fix crítico envío correos - Sincronización relaciones JPA (2026-01-30)
 > - ⭐ **NUEVO - v1.37.5**: `FIXAUTORIZACION_COORDINADOR.md` (2026-01-30) - Fix: Autorización Coordinador en Historial de Bolsas
 > - ⭐ **NUEVO - v3.0.0**: `Módulo 107 Migración` (2026-01-29) - Fusión de Bolsa 107 con dim_solicitud_bolsa + Búsqueda + Estadísticas
 > - ⭐ **NUEVO - v1.37.0**: `IMPLEMENTACION_5_FIXES_CRITICOS.md` (2026-01-28) - 5 Critical Fixes para importación Excel
@@ -13,6 +14,93 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.39.1 (2026-01-30) - 🔧 Fix: Envío de Correos - Sincronización Relaciones JPA
+
+### 📌 Problema Identificado
+
+**Error:** Los correos de bienvenida no se enviaban al crear usuarios desde el panel de administración.
+- Log mostraba: `⚠️ No se pudo enviar correo: el usuario no tiene email registrado`
+- El correo SÍ estaba registrado en la base de datos
+
+**Causa Raíz:** Las relaciones JPA (`PersonalCnt`, `PersonalExterno`) no se sincronizaban automáticamente en memoria después de guardar.
+
+```java
+// PROBLEMA: Después de esto, usuario.getPersonalCnt() sigue siendo null
+personalCntRepository.save(personalCnt);
+
+// El método obtenerEmailUsuario() no encontraba el email
+passwordTokenService.crearTokenYEnviarEmail(usuario, "BIENVENIDO");
+```
+
+### ✅ Soluciones Implementadas
+
+#### 1. Sincronizar relación bidireccional (UsuarioServiceImpl.java)
+
+```java
+// ANTES
+personalCntRepository.save(personalCnt);
+log.info("PersonalCnt guardado");
+
+// DESPUÉS
+personalCntRepository.save(personalCnt);
+usuario.setPersonalCnt(personalCnt);  // ← Sincronizar relación
+log.info("PersonalCnt guardado");
+```
+
+#### 2. Crear PersonalExterno para usuarios externos (UsuarioServiceImpl.java)
+
+Agregada creación completa de `PersonalExterno` cuando se crea un usuario externo desde el panel de admin:
+- Datos personales (nombre, apellidos, documento)
+- Género, fecha de nacimiento
+- Contacto (teléfono, email personal, email corporativo)
+- Tipo de documento, IPRESS
+
+#### 3. Nuevo método findByIdWithFullDetails (UsuarioRepository.java)
+
+```java
+@Query("""
+    SELECT DISTINCT u FROM Usuario u
+    LEFT JOIN FETCH u.personalCnt pc
+    LEFT JOIN FETCH u.personalExterno pe
+    LEFT JOIN FETCH pc.ipress
+    LEFT JOIN FETCH pe.ipress
+    WHERE u.idUser = :idUser
+""")
+Optional<Usuario> findByIdWithFullDetails(@Param("idUser") Long idUser);
+```
+
+#### 4. Usar FETCH JOIN en PasswordTokenService
+
+```java
+// ANTES
+Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
+
+// DESPUÉS
+Usuario usuario = usuarioRepository.findByIdWithFullDetails(idUsuario).orElse(null);
+```
+
+### 📁 Archivos Modificados
+
+| Archivo | Cambio |
+|---------|--------|
+| `UsuarioServiceImpl.java:303` | Agregar `usuario.setPersonalCnt(personalCnt)` |
+| `UsuarioServiceImpl.java:398-454` | Crear PersonalExterno para usuarios externos |
+| `UsuarioRepository.java` | Nuevo método `findByIdWithFullDetails()` |
+| `PasswordTokenService.java:93,107` | Usar `findByIdWithFullDetails()` |
+| `spec/backend/11_email_smtp/README.md` | Documentación actualizada a v1.3.0 |
+
+### 📊 Resultado
+
+| Flujo | Antes | Después |
+|-------|-------|---------|
+| Crear usuario interno desde panel | ❌ No enviaba correo | ✅ Funciona |
+| Crear usuario externo desde panel | ❌ No enviaba correo | ✅ Funciona |
+| Reset contraseña desde panel admin | ❌ No encontraba email | ✅ Funciona |
+| Aprobar solicitud externa | ✅ Ya funcionaba | ✅ Funciona |
+| Rechazar solicitud externa | ✅ Ya funcionaba | ✅ Funciona |
 
 ---
 

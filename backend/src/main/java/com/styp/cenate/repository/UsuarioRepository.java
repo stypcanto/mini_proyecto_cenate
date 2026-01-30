@@ -83,6 +83,24 @@ public interface UsuarioRepository extends JpaRepository<Usuario, Long> {
     Optional<Usuario> findByIdWithRoles(@Param("idUser") Long idUser);
 
     /**
+     * 🚀 v1.39.1 - Carga un usuario por ID con todos sus datos personales (interno y externo).
+     * Usado para reset de contraseña y envío de correos.
+     */
+    @Query("""
+        SELECT DISTINCT u
+        FROM Usuario u
+        LEFT JOIN FETCH u.roles r
+        LEFT JOIN FETCH u.personalCnt pc
+        LEFT JOIN FETCH pc.tipoDocumento
+        LEFT JOIN FETCH pc.ipress
+        LEFT JOIN FETCH u.personalExterno pe
+        LEFT JOIN FETCH pe.tipoDocumento
+        LEFT JOIN FETCH pe.ipress
+        WHERE u.idUser = :idUser
+    """)
+    Optional<Usuario> findByIdWithFullDetails(@Param("idUser") Long idUser);
+
+    /**
      * 🚀 Carga todos los usuarios con sus roles y permisos (para gestión MBAC).
      */
     @Query("""

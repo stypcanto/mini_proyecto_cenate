@@ -87,11 +87,13 @@ public class PasswordTokenService {
     }
 
     /**
-     * Crea un token de cambio de contraseña para un usuario y envía email con enlace
+     * Crea un token de cambio de contraseña para un usuario y envía email con enlace.
+     * 🔧 v1.39.1 - Usa findByIdWithFullDetails para cargar PersonalCnt y PersonalExterno.
      */
     @Transactional
     public boolean crearTokenYEnviarEmail(Long idUsuario, String tipoAccion) {
-        Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
+        // 🔧 Usar método que carga las relaciones para obtener el email correctamente
+        Usuario usuario = usuarioRepository.findByIdWithFullDetails(idUsuario).orElse(null);
         if (usuario == null) {
             log.warn("Usuario no encontrado para crear token: {}", idUsuario);
             return false;
@@ -101,11 +103,13 @@ public class PasswordTokenService {
     }
 
     /**
-     * Crea un token de cambio de contraseña para un usuario y envía email a un correo específico
+     * Crea un token de cambio de contraseña para un usuario y envía email a un correo específico.
+     * 🔧 v1.39.1 - Usa findByIdWithFullDetails para cargar relaciones completas.
      */
     @Transactional
     public boolean crearTokenYEnviarEmail(Long idUsuario, String email, String tipoAccion) {
-        Usuario usuario = usuarioRepository.findById(idUsuario).orElse(null);
+        // 🔧 Usar método que carga las relaciones para obtener nombre completo correctamente
+        Usuario usuario = usuarioRepository.findByIdWithFullDetails(idUsuario).orElse(null);
         if (usuario == null) {
             log.warn("Usuario no encontrado para crear token: {}", idUsuario);
             return false;

@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.39.0 (2026-01-30) 🚀
+> **Versión:** v1.39.1 (2026-01-30) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -50,6 +50,13 @@
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.39.1 - Completado (2026-01-30) 🔧
+✅ **Fix Correo Bienvenida** - Sincronización relaciones JPA para envío de correos
+✅ **Usuarios Externos** - Creación de PersonalExterno desde panel admin
+✅ **Reset Contraseña** - Nuevo método `findByIdWithFullDetails()` con FETCH JOIN
+
+**Docs:** [`spec/backend/11_email_smtp/`](spec/backend/11_email_smtp/)
 
 ### v1.39.0 - Completado (2026-01-30) 🎉
 ✅ **Módulo Correo SMTP** v1.0.0 - Relay Postfix integrado en Docker Compose + Aviso red EsSalud
