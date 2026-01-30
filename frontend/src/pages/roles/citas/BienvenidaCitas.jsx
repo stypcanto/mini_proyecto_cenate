@@ -14,10 +14,6 @@ import {
   BarChart3,
   ArrowRight,
   CheckCircle2,
-  Activity,
-  Zap,
-  HeartPulse,
-  Database,
 } from "lucide-react";
 
 export default function BienvenidaCitas() {
@@ -127,34 +123,6 @@ export default function BienvenidaCitas() {
           </div>
         </div>
 
-        {/* Módulos Especializados */}
-        <div>
-          <h3 className="text-xl font-bold text-slate-900 mb-4">
-            ⚙️ Módulos Especializados
-          </h3>
-          <div className="grid md:grid-cols-2 gap-4">
-            {/* Dengue */}
-            <SpecializedModuleCard
-              icon={<HeartPulse className="w-6 h-6" />}
-              title="Dengue"
-              description="Gestión de casos de dengue y seguimiento de pacientes diagnosticados"
-              color="red"
-              buttonText="Ver casos"
-              action={() => navigate("/dengue/buscar")}
-            />
-
-            {/* Módulo 107 */}
-            <SpecializedModuleCard
-              icon={<Database className="w-6 h-6" />}
-              title="Módulo 107"
-              description="Gestión de pacientes bajo el Módulo 107 con atenciones clínicas"
-              color="blue"
-              buttonText="Ver módulo"
-              action={() => navigate("/bolsas/modulo107/pacientes-de-107")}
-            />
-          </div>
-        </div>
-
         {/* Botón de acción principal */}
         <div className="flex justify-center pt-4">
           <button
@@ -207,52 +175,3 @@ function QuickActionCard({ icon, title, description, color, action }) {
   );
 }
 
-// ============================================================
-// 🔧 Componente: Tarjeta de Módulo Especializado
-// ============================================================
-function SpecializedModuleCard({ icon, title, description, color, buttonText, action }) {
-  const borderColorMap = {
-    red: "border-red-200 hover:border-red-300",
-    blue: "border-blue-200 hover:border-blue-300",
-  };
-
-  const bgColorMap = {
-    red: "bg-white hover:bg-red-50",
-    blue: "bg-white hover:bg-blue-50",
-  };
-
-  const buttonColorMap = {
-    red: "text-red-600",
-    blue: "text-blue-600",
-  };
-
-  const iconBgColorMap = {
-    red: "bg-red-100",
-    blue: "bg-blue-100",
-  };
-
-  const iconColorMap = {
-    red: "text-red-600",
-    blue: "text-blue-600",
-  };
-
-  return (
-    <button
-      onClick={action}
-      className={`${bgColorMap[color]} border ${borderColorMap[color]} rounded-xl p-6 shadow-sm transition-all duration-300 cursor-pointer group hover:shadow-lg hover:scale-105 text-left relative`}
-    >
-      <div className="flex items-start gap-4">
-        <div className={`${iconBgColorMap[color]} w-12 h-12 rounded-lg flex items-center justify-center flex-shrink-0 group-hover:scale-110 transition-transform`}>
-          <span className={`${iconColorMap[color]}`}>{icon}</span>
-        </div>
-        <div className="flex-1">
-          <h4 className="font-semibold text-slate-900 mb-2">{title}</h4>
-          <p className="text-sm text-slate-600 mb-3">{description}</p>
-          <div className={`flex items-center gap-2 ${buttonColorMap[color]} text-sm font-medium group-hover:gap-3 transition-all`}>
-            {buttonText} <ArrowRight className="w-4 h-4" />
-          </div>
-        </div>
-      </div>
-    </button>
-  );
-}
