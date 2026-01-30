@@ -39,21 +39,18 @@ import { getApiBaseUrl } from '../../utils/apiUrlHelper';
  *    - Umbral de similitud: 40% para aceptar coincidencia
  *
  * 4️⃣ ESTRUCTURA
- *    - 14 campos en ORDEN FIJO (posiciones no cambian) - v2.0.0
- *    - Columna 0: REGISTRO [OPCIONAL]
- *    - Columna 1: OPCIONES DE INGRESO DE LLAMADA [OPCIONAL]
- *    - Columna 2: TELEFONO [OPCIONAL]
- *    - Columna 3: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
- *    - Columna 4: DNI (8 dígitos) [OBLIGATORIO]
- *    - Columna 5: APELLIDOS Y NOMBRES (nombre) [OBLIGATORIO]
- *    - Columna 6: SEXO (M/F) [OBLIGATORIO]
- *    - Columna 7: FechaNacimiento (YYYY-MM-DD) [OBLIGATORIO]
- *    - Columna 8: DEPARTAMENTO [OPCIONAL]
- *    - Columna 9: PROVINCIA [OPCIONAL]
- *    - Columna 10: DISTRITO [OPCIONAL]
- *    - Columna 11: MOTIVO DE LA LLAMADA [OPCIONAL]
- *    - Columna 12: AFILIACION [OPCIONAL]
- *    - Columna 13: DERIVACION INTERNA (especialidad) [OBLIGATORIO]
+ *    - 11 campos en ORDEN FIJO (posiciones no cambian) - v1.40.0 BOLSAS
+ *    - Columna 0: FECHA PREFERIDA QUE NO FUE ATENDIDA (YYYY-MM-DD) [OBLIGATORIO]
+ *    - Columna 1: TIPO DOCUMENTO (DNI, RUC, etc.) [OBLIGATORIO]
+ *    - Columna 2: DNI (8 dígitos) [OBLIGATORIO]
+ *    - Columna 3: ASEGURADO (nombres completos) [OBLIGATORIO]
+ *    - Columna 4: SEXO (M/F) [OPCIONAL - Se enriquece desde BD]
+ *    - Columna 5: FECHA NACIMIENTO (YYYY-MM-DD) [OPCIONAL - Se enriquece desde BD]
+ *    - Columna 6: TELÉFONO PRINCIPAL (números) [OPCIONAL - Se enriquece desde BD]
+ *    - Columna 7: TELÉFONO ALTERNO (números) [OPCIONAL - Se enriquece desde BD]
+ *    - Columna 8: CORREO (email) [OPCIONAL - Se enriquece desde BD]
+ *    - Columna 9: COD. IPRESS ADSCRIPCIÓN (números) [OBLIGATORIO]
+ *    - Columna 10: TIPO CITA (Recita/Interconsulta/Voluntaria) [OBLIGATORIO]
  *
  *    💡 IMPORTANTE: Si el Asegurado (DNI) no existe en el sistema, será creado automáticamente (v1.13.8)
  *
@@ -1078,7 +1075,7 @@ export default function CargarDesdeExcel() {
               >
                 <div className="flex items-center gap-2">
                   <Info size={24} className="text-blue-600" />
-                  <h2 className="text-xl font-bold text-gray-800">Estructura Excel (14 campos - 6 obligatorios)</h2>
+                  <h2 className="text-xl font-bold text-gray-800">Estructura Excel (11 campos - 5 obligatorios)</h2>
                 </div>
                 {expandedObligatorios ? (
                   <ChevronUp size={24} className="text-blue-600" />
