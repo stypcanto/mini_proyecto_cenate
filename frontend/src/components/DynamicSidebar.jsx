@@ -543,8 +543,8 @@ function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent, au
     }
   }, [hasActiveSubpage, autoExpand, pagina.nombre]);
 
-  // Priorizar hardcoded icons basado en nombre, si no hay usa API
-  const PageIcon = getPageIcon(nombreModulo, pagina.nombre) || (pagina.icono ? getIconComponent(pagina.icono) : Folder);
+  // Priorizar icono de BD (pagina.icono) primero, luego hardcoded, luego por defecto
+  const PageIcon = (pagina.icono ? getIconComponent(pagina.icono) : null) || getPageIcon(nombreModulo, pagina.nombre) || Folder;
 
   return (
     <div className="space-y-1">
@@ -717,7 +717,7 @@ function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, op
             } else {
               // Renderizar como página normal
               const isActive = location.pathname === pagina.ruta;
-              const PageIcon = getPageIcon(nombreModulo, pagina.nombre);
+              const PageIcon = (pagina.icono ? getIconComponent(pagina.icono) : null) || getPageIcon(nombreModulo, pagina.nombre) || Folder;
               return (
                 <NavLink
                   key={pagina.id_pagina || idx}
