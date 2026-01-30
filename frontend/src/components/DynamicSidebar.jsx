@@ -359,6 +359,7 @@ export default function DynamicSidebar({ collapsed = false, onToggleCollapse }) 
             openSections={openSections}
             collapsed={collapsed}
             getIconComponent={getIconComponent}
+            isPersonal107={isPersonal107}
           />
         ))}
       </nav>
@@ -590,7 +591,7 @@ function PaginaConSubmenu({ pagina, location, nombreModulo, getIconComponent, au
 }
 
 // Componente para renderizar modulos dinamicos con iconos de la BD
-function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, openSections, collapsed, getIconComponent }) {
+function DynamicModuleSection({ modulo, colorConfig, location, toggleSection, openSections, collapsed, getIconComponent, isPersonal107 = false }) {
   const { nombreModulo, icono, paginas } = modulo;
 
   // Icono especial para "Bolsas de Pacientes"
