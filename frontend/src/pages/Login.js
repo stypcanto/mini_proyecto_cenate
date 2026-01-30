@@ -61,10 +61,14 @@ export default function Login() {
 
   // ============================================================
   // 🚀 Redirección según rol MBAC
-  // 👋 v1.15.18: Redirigir a Bienvenida en lugar de Dashboard
+  // 👋 v1.40.0: Redirigir a Bienvenida específica por rol + variaciones
   // ============================================================
   const redirectByRole = (roles = []) => {
-    const has = (r) => roles?.includes(r);
+    const has = (r) => roles?.some(rol => rol?.toUpperCase() === r?.toUpperCase());
+    const hasAny = (patterns) => roles?.some(r =>
+      patterns.some(p => r?.toUpperCase().includes(p.toUpperCase()))
+    );
+
     // Flexible detection for PERSONAL_107 (supports variations like PERSONAL-107)
     const isPersonal107 = roles?.some(r => r?.includes("PERSONAL") && r?.includes("107"));
 
@@ -72,11 +76,11 @@ export default function Login() {
     if (isPersonal107) return "/roles/personal107/bienvenida";
     if (has("MEDICO")) return "/roles/medico/bienvenida";
     if (has("COORDINADOR")) return "/roles/coordinador/bienvenida";
-    if (has("GESTOR DE CITAS")) return "/citas/bienvenida";
-    if (has("GESTOR_CITAS")) return "/citas/bienvenida";
-    if (has("COORD. GESTION CITAS") || has("COORDINADOR_GESTION_CITAS") || has("COORD_GESTION_CITAS")) return "/roles/coordcitas/bienvenida";
+    // ✅ v1.40.0: Mejorada detección flexible para GESTOR DE CITAS
+    if (hasAny(["GESTOR_CITAS", "GESTOR DE CITAS", "GESTORCITAS"])) return "/citas/bienvenida";
+    if (hasAny(["COORDINADOR_GESTION_CITAS", "COORD. GESTION CITAS", "COORD_GESTION_CITAS"])) return "/roles/coordcitas/bienvenida";
     if (has("EXTERNO") || has("INSTITUCION_EX")) return "/roles/externo/bienvenida";
-    return "/user/dashboard"; // ruta por defecto
+    return "/citas/bienvenida"; // ruta por defecto → Gestor de Citas
   };
 
   // ============================================================
