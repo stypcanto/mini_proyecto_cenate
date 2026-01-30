@@ -417,6 +417,7 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 
 		// 3. Obtener permisos de rol desde segu_permisos_rol_pagina
 		List<SeguPermisosRolPagina> permisosRol = permisoRolPaginaRepository.findByIdRolInAndActivoTrue(roleIds);
+		log.info("📄 Páginas retornadas por repositorio: {}", permisosRol.stream().map(p -> p.getIdPagina()).collect(Collectors.toList()));
 		if (permisosRol.isEmpty()) {
 			log.warn("⚠️ Usuario {} no tiene permisos de rol configurados", idUser);
 			return new ArrayList<>();
@@ -426,6 +427,7 @@ public class MenuUsuarioServiceImpl implements MenuUsuarioService {
 		permisosRol = permisosRol.stream()
 				.filter(p -> Boolean.TRUE.equals(p.getPuedeVer()))
 				.collect(Collectors.toList());
+		log.info("📄 Páginas con permiso VER: {}", permisosRol.stream().map(p -> p.getIdPagina()).collect(Collectors.toList()));
 
 		if (permisosRol.isEmpty()) {
 			log.warn("⚠️ Usuario {} no tiene permisos de rol con acceso de vista", idUser);
