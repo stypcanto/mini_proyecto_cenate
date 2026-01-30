@@ -1,6 +1,6 @@
 # Módulo de Correo SMTP - CENATE
 
-> **Versión:** 1.1.0 (2026-01-30)
+> **Versión:** 1.2.0 (2026-01-30)
 > **Estado:** Producción
 
 ---
@@ -8,6 +8,13 @@
 ## Descripción
 
 Sistema de envío de correos electrónicos para CENATE que utiliza un relay SMTP (Postfix) para reenviar correos a través del servidor oficial de EsSalud, cumpliendo con las políticas DMARC del dominio.
+
+**Características principales:**
+- Relay SMTP integrado en Docker Compose (no requiere scripts adicionales)
+- Cumplimiento de políticas DMARC de EsSalud
+- Templates HTML profesionales con diseño responsive
+- Aviso de acceso desde red interna de EsSalud en todos los correos
+- Tokens de activación con expiración de 24 horas
 
 ---
 
@@ -234,6 +241,126 @@ GET /api/health/smtp-test?email={correo}
 
 ---
 
+## Templates de Correo
+
+### Estructura de los Correos
+
+Todos los correos HTML siguen una estructura consistente:
+
+```
+┌─────────────────────────────────────┐
+│          HEADER (azul)              │
+│        Título del correo            │
+├─────────────────────────────────────┤
+│                                     │
+│  Saludo: "Estimado/a [Nombre]"      │
+│                                     │
+│  Mensaje principal                  │
+│                                     │
+│  ┌───────────────────────────────┐  │
+│  │  Credenciales o Enlace        │  │
+│  │  (caja con borde)             │  │
+│  └───────────────────────────────┘  │
+│                                     │
+│  ⚠️ Advertencia (amarillo)          │
+│  - Token expira en 24 horas         │
+│  - Solo puede usarse una vez        │
+│                                     │
+│  🏥 Aviso Red EsSalud (azul claro)  │
+│  "El sistema Intranet CENATE solo   │
+│   es accesible desde la red interna │
+│   de EsSalud..."                    │
+│                                     │
+├─────────────────────────────────────┤
+│          FOOTER (gris)              │
+│  "Correo automático - No responder" │
+│  © 2025 CENATE                      │
+└─────────────────────────────────────┘
+```
+
+### Aviso de Acceso desde Red EsSalud
+
+**Todos los correos con enlaces o credenciales incluyen este aviso:**
+
+```html
+<div style="background-color: #dbeafe; border-left: 4px solid #1a56db; padding: 15px; margin: 20px 0;">
+    <strong>🏥 Acceso desde Red EsSalud:</strong>
+    <p>El sistema <strong>Intranet CENATE</strong> solo es accesible desde la red
+    interna de EsSalud. Asegúrate de estar conectado a la <strong>red corporativa
+    o VPN</strong> para acceder al sistema.</p>
+</div>
+```
+
+**Correos que incluyen este aviso:**
+- ✅ `enviarCorreoCambioContrasena` (bienvenida y recuperación)
+- ✅ `enviarCorreoAprobacionSolicitud`
+- ✅ `enviarCorreoBienvenidaUsuario`
+- ✅ `enviarCorreoResetPassword`
+- ❌ `enviarCorreoRechazoSolicitud` (no tiene enlace)
+- ❌ `probarConexionSMTP` (correo de diagnóstico simple)
+
+### Tipos de Correo y Contenido
+
+#### 1. Correo de Cambio/Configuración de Contraseña
+- **Asunto (nuevo usuario):** "CENATE - Configura tu contraseña de acceso"
+- **Asunto (recuperación):** "CENATE - Restablece tu contraseña"
+- **Header:** Azul (#1a56db)
+- **Contenido:**
+  - Usuario de acceso
+  - Botón: "Activar mi Cuenta" o "Restablecer Contraseña"
+  - Enlace: `{FRONTEND_URL}/cambiar-contrasena?token={token}`
+  - Aviso de expiración (24 horas)
+  - Aviso de red EsSalud
+
+#### 2. Correo de Aprobación de Solicitud
+- **Asunto:** "CENATE - Tu solicitud de acceso ha sido aprobada"
+- **Header:** Azul (#1a56db)
+- **Contenido:**
+  - Usuario y contraseña temporal
+  - Aviso de cambio obligatorio en primer login
+  - Aviso de red EsSalud
+
+#### 3. Correo de Rechazo de Solicitud
+- **Asunto:** "CENATE - Respuesta a tu solicitud de acceso"
+- **Header:** Rojo (#dc2626)
+- **Contenido:**
+  - Motivo del rechazo
+  - Sin aviso de red (no hay enlace)
+
+#### 4. Correo de Bienvenida
+- **Asunto:** "CENATE - Cuenta de usuario creada"
+- **Header:** Azul (#1a56db)
+- **Contenido:**
+  - Usuario y contraseña temporal
+  - Aviso de cambio obligatorio
+  - Aviso de red EsSalud
+
+### Configuración de URL del Frontend
+
+Los enlaces en los correos usan la variable `FRONTEND_URL`:
+
+```java
+// PasswordTokenService.java
+@Value("${app.frontend.url:http://localhost:3000}")
+private String frontendUrl;
+
+// Generación del enlace
+String enlace = frontendUrl + "/cambiar-contrasena?token=" + tokenValue;
+```
+
+**Configuración en docker-compose.yml:**
+```yaml
+environment:
+  FRONTEND_URL: ${FRONTEND_URL:-http://10.0.89.239}
+```
+
+| Ambiente | Valor | URL en correos |
+|----------|-------|----------------|
+| Desarrollo | `http://localhost:3000` | `http://localhost:3000/cambiar-contrasena?token=...` |
+| Producción | `http://10.0.89.239` | `http://10.0.89.239/cambiar-contrasena?token=...` |
+
+---
+
 ## Archivos Clave
 
 | Archivo | Descripción |
@@ -393,8 +520,9 @@ docker exec smtp-relay-cenate postsuper -d ALL
 
 | Fecha | Versión | Cambio |
 |-------|---------|--------|
+| 2026-01-30 | 1.2.0 | Agregar aviso de red EsSalud en templates + documentación de templates |
 | 2026-01-30 | 1.1.0 | Agregar análisis completo de casos de uso y triggers |
-| 2026-01-30 | 1.0.0 | Configuración inicial con relay SMTP |
+| 2026-01-30 | 1.0.0 | Configuración inicial con relay SMTP integrado en docker-compose |
 
 ---
 
