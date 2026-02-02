@@ -888,14 +888,17 @@ export const obtenerRedPorId = async (id) => {
  * 🔎 Obtiene todas las especialidades únicas pobladas en la tabla (v1.42.0)
  * GET /api/bolsas/solicitudes/especialidades
  * Usado para llenar dinámicamente el filtro de especialidades
- * @returns {Promise<Array>} - Listado de especialidades únicas ordenadas
+ * @returns {Promise<Object>} - { total: number, especialidades: Array, mensaje: string }
+ * @example
+ * const response = await obtenerEspecialidadesUnicas();
+ * // { total: 9, especialidades: ["CARDIOLOGIA", ...], mensaje: "9 especialidades encontradas" }
  */
 export const obtenerEspecialidadesUnicas = async () => {
   try {
     const response = await apiClient.get(`${API_BASE_URL}/solicitudes/especialidades`);
     return response;
   } catch (error) {
-    console.error('Error al obtener especialidades únicas:', error);
+    console.error('❌ Error al obtener especialidades únicas:', error);
     throw error;
   }
 };

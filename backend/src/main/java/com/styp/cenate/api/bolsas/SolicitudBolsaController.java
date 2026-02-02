@@ -696,15 +696,25 @@ public class SolicitudBolsaController {
      */
     @GetMapping("/especialidades")
     @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<List<String>> obtenerEspecialidadesUnicas() {
+    public ResponseEntity<Map<String, Object>> obtenerEspecialidadesUnicas() {
         try {
             log.info("🔍 Obteniendo especialidades únicas para filtro...");
             List<String> especialidades = solicitudBolsaService.obtenerEspecialidadesUnicas();
             log.info("✅ Especialidades obtenidas: {}", especialidades.size());
-            return ResponseEntity.ok(especialidades);
+
+            return ResponseEntity.ok(Map.of(
+                "total", especialidades.size(),
+                "especialidades", especialidades,
+                "mensaje", especialidades.isEmpty()
+                    ? "No hay especialidades disponibles"
+                    : especialidades.size() + " especialidad(es) encontrada(s)"
+            ));
         } catch (Exception e) {
             log.error("❌ Error obteniendo especialidades: ", e);
-            return ResponseEntity.status(500).build();
+            return ResponseEntity.status(500).body(Map.of(
+                "error", "Error al obtener especialidades",
+                "mensaje", e.getMessage()
+            ));
         }
     }
 }

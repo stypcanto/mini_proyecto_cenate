@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.41.0 (2026-01-30) 🚀
+> **Versión:** v1.42.0 (2026-02-01) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -138,14 +138,19 @@ Frontend (React 19):
 
 ## 📊 ÚLTIMAS VERSIONES
 
-### v1.42.0 - En Desarrollo (2026-02-01) 🏗️ ARQUITECTURA NUEVA
+### v1.42.0 - Completado (2026-02-01) 🏗️ ARQUITECTURA NUEVA + FILTROS
 ✅ **Arquitectura Bolsas 2 Niveles** - Universo General + Mini-Bolsas Especializadas
 ✅ **Mini-Bolsa Módulo 107** - Interfaz dedicada con KPIs, campos y permisos propios
 ✅ **Mini-Bolsa Dengue** - Sistema de búsqueda DNI/CIE-10 independiente
 ✅ **Escalabilidad** - Plantilla lista para futuras bolsas (PADOMI, etc.)
 ✅ **Consolidación** - Todas las mini-bolsas convergen en universo general
+✅ **Filtro Especialidades Dinámico** - Endpoint dedicado + 9 especialidades disponibles + opción "S/E"
 
-**Docs:** Sección "🏗️ ARQUITECTURA DE BOLSAS" en este archivo | [`spec/backend/09_modules_bolsas/ARQUITECTURA_v1.42.0.md`](spec/backend/09_modules_bolsas/ARQUITECTURA_v1.42.0.md) (por crear)
+**Docs:**
+- **Índice:** [`spec/backend/09_modules_bolsas/README.md`](spec/backend/09_modules_bolsas/README.md)
+- **Técnico:** [`spec/backend/09_modules_bolsas/FILTRO_ESPECIALIDADES_v1.42.0.md`](spec/backend/09_modules_bolsas/FILTRO_ESPECIALIDADES_v1.42.0.md)
+- **Changelog:** [`checklist/01_Historial/BOLSAS_FILTRO_ESPECIALIDADES_v1.42.0.md`](checklist/01_Historial/BOLSAS_FILTRO_ESPECIALIDADES_v1.42.0.md)
+- **Arquitectura:** [`spec/backend/09_modules_bolsas/ARQUITECTURA_v1.42.0.md`](spec/backend/09_modules_bolsas/ARQUITECTURA_v1.42.0.md)
 
 ### v1.41.0 - Completado (2026-01-30) 📋
 ✅ **Módulo Gestión de Citas** - Dropdown de 11 estados + Modal Actualizar Teléfono
@@ -299,11 +304,11 @@ mini_proyecto_cenate/
 
 ## 🚀 Próximos Pasos
 
-### Fase 1: Arquitectura de Bolsas v1.42.0 (ACTUAL)
-1. **Universo General** - ✅ `/bolsas/solicitudes` (7,973 registros)
-2. **Mini-Bolsa Módulo 107** - 🔨 Crear `/bolsas/modulo107/pacientes-de-107` con KPIs propios
-3. **Mini-Bolsa Dengue** - 🔨 Criar `/dengue/buscar` con búsqueda DNI/CIE-10
-4. **Template Escalable** - 📋 Documentar patrón para futuras bolsas
+### Fase 1: Arquitectura de Bolsas v1.42.0 (COMPLETADA)
+1. **Universo General** - ✅ `/bolsas/solicitudes` (7,973 registros) + Filtro Especialidades dinámico
+2. **Mini-Bolsa Módulo 107** - ✅ Interfaz dedicada con KPIs propios
+3. **Mini-Bolsa Dengue** - ✅ Sistema de búsqueda DNI/CIE-10 independiente
+4. **Template Escalable** - ✅ Patrón documentado para futuras bolsas
 
 ### Fase 2: Nuevas Bolsas Especializadas (Futuro)
 - **PADOMI** - Bolsa para atención domiciliaria
@@ -324,7 +329,7 @@ Ver: [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
 
 **Desarrollado por:** Ing. Styp Canto Rondón
 **Email:** stypcanto@essalud.gob.pe
-**Versión:** v1.39.0 (2026-01-30)
+**Versión:** v1.42.0 (2026-02-01)
 
 ---
 

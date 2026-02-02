@@ -2347,7 +2347,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .pacienteTelefono(solicitud.getPacienteTelefono())
             .pacienteTelefonoAlterno(solicitud.getPacienteTelefonoAlterno())
             .pacienteEmail(solicitud.getPacienteEmail())
-            .pacienteEdad(solicitud.getPacienteEdad())
+            .pacienteEdad(calcularEdad(solicitud.getFechaNacimiento()))
             .codigoIpressAdscripcion(solicitud.getCodigoIpressAdscripcion())
             .tipoCita(solicitud.getTipoCita())
             .idBolsa(solicitud.getIdBolsa())

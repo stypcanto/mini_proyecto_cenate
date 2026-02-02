@@ -1,0 +1,1068 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e10]
+        - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - navigation [ref=e14]:
+        - generic [ref=e42]:
+          - button "Bolsas de Pacientes" [ref=e43] [cursor=pointer]:
+            - generic [ref=e44]:
+              - img [ref=e45]
+              - generic [ref=e49]: Bolsas de Pacientes
+            - img [ref=e50]
+          - generic [ref=e52]:
+            - link "Cargar desde Excel" [ref=e53] [cursor=pointer]:
+              - /url: /bolsas/cargar-excel
+              - img [ref=e54]
+              - generic [ref=e57]: Cargar desde Excel
+            - link "Solicitudes" [ref=e58] [cursor=pointer]:
+              - /url: /bolsas/solicitudes
+              - img [ref=e59]
+              - generic [ref=e62]: Solicitudes
+            - link "Estadísticas de Bolsas" [ref=e63] [cursor=pointer]:
+              - /url: /bolsas/estadisticas
+              - img [ref=e64]
+              - generic [ref=e66]: Estadísticas de Bolsas
+            - link "Historial de Bolsas" [ref=e67] [cursor=pointer]:
+              - /url: /bolsas/historial
+              - img [ref=e68]
+              - generic [ref=e70]: Historial de Bolsas
+            - link "Errores de Importación" [ref=e71] [cursor=pointer]:
+              - /url: /bolsas/errores-importacion
+              - img [ref=e72]
+              - generic [ref=e74]: Errores de Importación
+            - button "Dengue" [ref=e76] [cursor=pointer]:
+              - generic [ref=e77]:
+                - img [ref=e78]
+                - generic [ref=e87]: Dengue
+              - img [ref=e88]
+            - button "Módulo 107" [ref=e91] [cursor=pointer]:
+              - generic [ref=e92]:
+                - img [ref=e93]
+                - generic [ref=e97]: Módulo 107
+              - img [ref=e98]
+        - button "Gestión de Citas" [ref=e101] [cursor=pointer]:
+          - generic [ref=e102]:
+            - img [ref=e103]
+            - generic [ref=e106]: Gestión de Citas
+          - img [ref=e107]
+      - paragraph [ref=e17]: v1.37.4
+  - main "Contenido principal" [ref=e18]:
+    - generic [ref=e20]:
+      - button "Notificaciones" [ref=e21] [cursor=pointer]:
+        - img [ref=e22]
+      - button "G Gustavo Test Test COORD. GESTION CITAS" [ref=e26] [cursor=pointer]:
+        - generic [ref=e28]: G
+        - generic [ref=e29]:
+          - generic [ref=e30]: Gustavo Test Test
+          - generic [ref=e31]: COORD. GESTION CITAS
+        - img [ref=e32]
+    - generic [ref=e34]:
+      - generic [ref=e110]:
+        - generic [ref=e112]:
+          - generic [ref=e113]:
+            - generic [ref=e114]:
+              - img [ref=e115]
+              - text: Recepción de Bolsa
+            - heading "Solicitudes" [level=1] [ref=e118]
+          - button "Importar desde Excel" [ref=e119] [cursor=pointer]:
+            - img [ref=e120]
+            - text: Importar desde Excel
+        - generic [ref=e121]:
+          - heading "Estadísticas de Solicitudes" [level=3] [ref=e122]
+          - generic [ref=e123]:
+            - generic [ref=e124] [cursor=pointer]:
+              - generic [ref=e125]:
+                - generic [ref=e126]: Total Pacientes
+                - generic [ref=e127]: 👥
+              - generic [ref=e129]: ⟳ Cargando...
+            - generic [ref=e130] [cursor=pointer]:
+              - generic [ref=e131]:
+                - generic [ref=e132]: Pendiente Citar
+                - generic [ref=e133]: ⏳
+              - generic [ref=e135]: ⟳ Cargando...
+            - generic [ref=e136] [cursor=pointer]:
+              - generic [ref=e137]:
+                - generic [ref=e138]: Citados
+                - generic [ref=e139]: 📞
+              - generic [ref=e141]: ⟳ Cargando...
+            - generic [ref=e142] [cursor=pointer]:
+              - generic [ref=e143]:
+                - generic [ref=e144]: Casos Asignados
+                - generic [ref=e145]: 👥
+              - generic [ref=e147]: ⟳ Cargando...
+            - generic [ref=e148] [cursor=pointer]:
+              - generic [ref=e149]:
+                - generic [ref=e150]: Sin Asignar
+                - generic [ref=e151]: 🔲
+              - generic [ref=e153]: ⟳ Cargando...
+        - generic [ref=e154]:
+          - generic [ref=e155]:
+            - heading "Lista de Pacientes" [level=2] [ref=e156]
+            - button "Mostrar filtros" [ref=e157] [cursor=pointer]:
+              - generic [ref=e158]: Mostrar filtros
+              - img [ref=e159]
+          - generic [ref=e162]:
+            - generic:
+              - heading [level=2]
+            - generic [ref=e164]:
+              - img [ref=e165]
+              - textbox "Buscar paciente, DNI o IPRESS..." [ref=e168]
+            - generic [ref=e169]:
+              - generic [ref=e170]:
+                - generic [ref=e171]:
+                  - generic [ref=e172]: Bolsas
+                  - generic [ref=e173]:
+                    - combobox [ref=e174] [cursor=pointer]:
+                      - option "Todas las bolsas (7973)" [selected]
+                    - img
+                - button "Limpiar" [ref=e176] [cursor=pointer]:
+                  - img [ref=e177]
+                  - text: Limpiar
+              - generic [ref=e180]:
+                - generic [ref=e181]:
+                  - generic [ref=e182]: Macrorregión
+                  - generic [ref=e183]:
+                    - combobox [ref=e184] [cursor=pointer]:
+                      - option "Todas las macrorregiones (7973)" [selected]
+                      - option "LIMA ORIENTE (19)"
+                      - option "Sin asignar (6)"
+                    - img
+                - generic [ref=e185]:
+                  - generic [ref=e186]: Redes
+                  - generic [ref=e187]:
+                    - combobox [ref=e188] [cursor=pointer]:
+                      - option "Todas las redes (7973)" [selected]
+                      - option "RED ASISTENCIAL ALMENARA (5)"
+                      - option "RED ASISTENCIAL REBAGLIATI (12)"
+                      - option "RED ASISTENCIAL SABOGAL (2)"
+                      - option "Sin asignar (6)"
+                    - img
+                - generic [ref=e189]:
+                  - generic [ref=e190]: IPRESS
+                  - generic [ref=e191]:
+                    - combobox [ref=e192] [cursor=pointer]:
+                      - option "Todas las IPRESS (7973)" [selected]
+                    - img
+              - generic [ref=e193]:
+                - generic [ref=e194]:
+                  - generic [ref=e195]: Especialidades
+                  - generic [ref=e196]:
+                    - combobox [ref=e197] [cursor=pointer]:
+                      - option "Todas las especialidades (10)" [selected]
+                      - option "CARDIOLOGIA"
+                      - option "HEMATOLOGIA"
+                      - option "MEDICINA INTERNA"
+                      - option "NEUMOLOGIA"
+                      - option "NEUROLOGIA"
+                      - option "OFTALMOLOGIA"
+                      - option "OTORRINOLARINGOLOGIA"
+                      - option "PEDIATRIA"
+                      - option "PSIQUIATRIA"
+                      - option "S/E"
+                    - img
+                - generic [ref=e198]:
+                  - generic [ref=e199]: Tipo de Cita
+                  - generic [ref=e200]:
+                    - combobox [ref=e201] [cursor=pointer]:
+                      - option "Todas las citas" [selected]
+                      - option "Voluntaria"
+                      - option "Recita"
+                      - option "Interconsulta"
+                      - option "Referencia"
+                    - img
+                - generic [ref=e202]:
+                  - generic [ref=e203]: Estado
+                  - generic [ref=e204]:
+                    - combobox [ref=e205] [cursor=pointer]:
+                      - option "Todos los estados (7973)" [selected]
+                      - option "Pendiente Citar (25)"
+                    - img
+          - generic [ref=e210]:
+            - table [ref=e211]:
+              - rowgroup [ref=e212]:
+                - row "Origen de la Bolsa Fecha Preferida Tipo de Documento Número de documento Nombre del Asegurado Fecha de Nacimiento Sexo Edad Teléfono Teléfono Alterno Correo Tipo de Cita Especialidad Cod. IPRESS IPRESS Red Estado Fecha Asignación Gestora Asignada Acciones" [ref=e213]:
+                  - columnheader [ref=e214]:
+                    - checkbox [ref=e215] [cursor=pointer]
+                  - columnheader "Origen de la Bolsa" [ref=e216]
+                  - columnheader "Fecha Preferida" [ref=e217]
+                  - columnheader "Tipo de Documento" [ref=e218]
+                  - columnheader "Número de documento" [ref=e219]
+                  - columnheader "Nombre del Asegurado" [ref=e220]
+                  - columnheader "Fecha de Nacimiento" [ref=e221]
+                  - columnheader "Sexo" [ref=e222]
+                  - columnheader "Edad" [ref=e223]
+                  - columnheader "Teléfono" [ref=e224]
+                  - columnheader "Teléfono Alterno" [ref=e225]
+                  - columnheader "Correo" [ref=e226]
+                  - columnheader "Tipo de Cita" [ref=e227]
+                  - columnheader "Especialidad" [ref=e228]
+                  - columnheader "Cod. IPRESS" [ref=e229]
+                  - columnheader "IPRESS" [ref=e230]
+                  - columnheader "Red" [ref=e231]
+                  - columnheader "Estado" [ref=e232]
+                  - columnheader "Fecha Asignación" [ref=e233]
+                  - columnheader "Gestora Asignada" [ref=e234]
+                  - columnheader "Acciones" [ref=e235]
+              - rowgroup [ref=e236]:
+                - row "Bolsa 107 N/A DNI 08502338 GARCIA CUENCA RITA PETRONILA 04/02/1965 F 61 967396757 VOLUNTARIA 819 IPRESS TREBOL - LOS OLIVOS RED ASISTENCIAL SABOGAL Pendiente Citar — Sin asignar" [ref=e237]:
+                  - cell [ref=e238]:
+                    - checkbox [ref=e239] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e240]
+                  - cell "N/A" [ref=e241]
+                  - cell "DNI" [ref=e242]
+                  - cell "08502338" [ref=e243]
+                  - cell "GARCIA CUENCA RITA PETRONILA" [ref=e244]
+                  - cell "04/02/1965" [ref=e245]
+                  - cell "F" [ref=e246]
+                  - cell "61" [ref=e247]
+                  - cell "967396757" [ref=e248]
+                  - cell [ref=e249]
+                  - cell [ref=e250]
+                  - cell "VOLUNTARIA" [ref=e251]:
+                    - generic [ref=e252]: VOLUNTARIA
+                  - cell [ref=e253]
+                  - cell "819" [ref=e254]
+                  - cell "IPRESS TREBOL - LOS OLIVOS" [ref=e255]
+                  - cell "RED ASISTENCIAL SABOGAL" [ref=e256]
+                  - cell "Pendiente Citar" [ref=e257]:
+                    - generic "PENDIENTE_CITA" [ref=e258]: Pendiente Citar
+                  - cell "—" [ref=e259]
+                  - cell "Sin asignar" [ref=e260]
+                  - cell [ref=e261]:
+                    - generic [ref=e262]:
+                      - button "Asignar gestora de citas" [ref=e263] [cursor=pointer]:
+                        - img [ref=e264]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e267]:
+                        - img [ref=e268]
+                      - button "Cambiar teléfono" [ref=e271] [cursor=pointer]:
+                        - img [ref=e272]
+                      - button "Enviar recordatorio" [ref=e274] [cursor=pointer]:
+                        - img [ref=e275]
+                - row "Bolsa 107 N/A DNI 41683705 REYNAGA AYVAR OMAR YURI 18/09/1982 M 44 961257088 VOLUNTARIA 446 CAP III EL AGUSTINO RED ASISTENCIAL ALMENARA Pendiente Citar — Sin asignar" [ref=e278]:
+                  - cell [ref=e279]:
+                    - checkbox [ref=e280] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e281]
+                  - cell "N/A" [ref=e282]
+                  - cell "DNI" [ref=e283]
+                  - cell "41683705" [ref=e284]
+                  - cell "REYNAGA AYVAR OMAR YURI" [ref=e285]
+                  - cell "18/09/1982" [ref=e286]
+                  - cell "M" [ref=e287]
+                  - cell "44" [ref=e288]
+                  - cell "961257088" [ref=e289]
+                  - cell [ref=e290]
+                  - cell [ref=e291]
+                  - cell "VOLUNTARIA" [ref=e292]:
+                    - generic [ref=e293]: VOLUNTARIA
+                  - cell [ref=e294]
+                  - cell "446" [ref=e295]
+                  - cell "CAP III EL AGUSTINO" [ref=e296]
+                  - cell "RED ASISTENCIAL ALMENARA" [ref=e297]
+                  - cell "Pendiente Citar" [ref=e298]:
+                    - generic "PENDIENTE_CITA" [ref=e299]: Pendiente Citar
+                  - cell "—" [ref=e300]
+                  - cell "Sin asignar" [ref=e301]
+                  - cell [ref=e302]:
+                    - generic [ref=e303]:
+                      - button "Asignar gestora de citas" [ref=e304] [cursor=pointer]:
+                        - img [ref=e305]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e308]:
+                        - img [ref=e309]
+                      - button "Cambiar teléfono" [ref=e312] [cursor=pointer]:
+                        - img [ref=e313]
+                      - button "Enviar recordatorio" [ref=e315] [cursor=pointer]:
+                        - img [ref=e316]
+                - row "Bolsa 107 N/A DNI 07415218 CASTRO LINO OLINDA ELVA 08/07/1948 F 78 923283698 VOLUNTARIA 408 H.I CARLOS ALCANTARA BUTTERFIELD RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e319]:
+                  - cell [ref=e320]:
+                    - checkbox [ref=e321] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e322]
+                  - cell "N/A" [ref=e323]
+                  - cell "DNI" [ref=e324]
+                  - cell "07415218" [ref=e325]
+                  - cell "CASTRO LINO OLINDA ELVA" [ref=e326]
+                  - cell "08/07/1948" [ref=e327]
+                  - cell "F" [ref=e328]
+                  - cell "78" [ref=e329]
+                  - cell "923283698" [ref=e330]
+                  - cell [ref=e331]
+                  - cell [ref=e332]
+                  - cell "VOLUNTARIA" [ref=e333]:
+                    - generic [ref=e334]: VOLUNTARIA
+                  - cell [ref=e335]
+                  - cell "408" [ref=e336]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e337]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e338]
+                  - cell "Pendiente Citar" [ref=e339]:
+                    - generic "PENDIENTE_CITA" [ref=e340]: Pendiente Citar
+                  - cell "—" [ref=e341]
+                  - cell "Sin asignar" [ref=e342]
+                  - cell [ref=e343]:
+                    - generic [ref=e344]:
+                      - button "Asignar gestora de citas" [ref=e345] [cursor=pointer]:
+                        - img [ref=e346]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e349]:
+                        - img [ref=e350]
+                      - button "Cambiar teléfono" [ref=e353] [cursor=pointer]:
+                        - img [ref=e354]
+                      - button "Enviar recordatorio" [ref=e356] [cursor=pointer]:
+                        - img [ref=e357]
+                - row "Bolsa 107 N/A DNI 07812245 DEL CASTILLO DE BARRETO RICARDINA AMABLE 09/10/1955 F 71 994651670 VOLUNTARIA N/A N/A Sin asignar Pendiente Citar — Sin asignar" [ref=e360]:
+                  - cell [ref=e361]:
+                    - checkbox [ref=e362] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e363]
+                  - cell "N/A" [ref=e364]
+                  - cell "DNI" [ref=e365]
+                  - cell "07812245" [ref=e366]
+                  - cell "DEL CASTILLO DE BARRETO RICARDINA AMABLE" [ref=e367]
+                  - cell "09/10/1955" [ref=e368]
+                  - cell "F" [ref=e369]
+                  - cell "71" [ref=e370]
+                  - cell "994651670" [ref=e371]
+                  - cell [ref=e372]
+                  - cell [ref=e373]
+                  - cell "VOLUNTARIA" [ref=e374]:
+                    - generic [ref=e375]: VOLUNTARIA
+                  - cell [ref=e376]
+                  - cell "N/A" [ref=e377]
+                  - cell "N/A" [ref=e378]
+                  - cell "Sin asignar" [ref=e379]
+                  - cell "Pendiente Citar" [ref=e380]:
+                    - generic "PENDIENTE_CITA" [ref=e381]: Pendiente Citar
+                  - cell "—" [ref=e382]
+                  - cell "Sin asignar" [ref=e383]
+                  - cell [ref=e384]:
+                    - generic [ref=e385]:
+                      - button "Asignar gestora de citas" [ref=e386] [cursor=pointer]:
+                        - img [ref=e387]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e390]:
+                        - img [ref=e391]
+                      - button "Cambiar teléfono" [ref=e394] [cursor=pointer]:
+                        - img [ref=e395]
+                      - button "Enviar recordatorio" [ref=e397] [cursor=pointer]:
+                        - img [ref=e398]
+                - row "Bolsa 107 N/A DNI 10478510 RIVERA SUYO PERCY ABDON 21/07/1963 M 63 995135830 VOLUNTARIA 408 H.I CARLOS ALCANTARA BUTTERFIELD RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e401]:
+                  - cell [ref=e402]:
+                    - checkbox [ref=e403] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e404]
+                  - cell "N/A" [ref=e405]
+                  - cell "DNI" [ref=e406]
+                  - cell "10478510" [ref=e407]
+                  - cell "RIVERA SUYO PERCY ABDON" [ref=e408]
+                  - cell "21/07/1963" [ref=e409]
+                  - cell "M" [ref=e410]
+                  - cell "63" [ref=e411]
+                  - cell "995135830" [ref=e412]
+                  - cell [ref=e413]
+                  - cell [ref=e414]
+                  - cell "VOLUNTARIA" [ref=e415]:
+                    - generic [ref=e416]: VOLUNTARIA
+                  - cell [ref=e417]
+                  - cell "408" [ref=e418]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e419]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e420]
+                  - cell "Pendiente Citar" [ref=e421]:
+                    - generic "PENDIENTE_CITA" [ref=e422]: Pendiente Citar
+                  - cell "—" [ref=e423]
+                  - cell "Sin asignar" [ref=e424]
+                  - cell [ref=e425]:
+                    - generic [ref=e426]:
+                      - button "Asignar gestora de citas" [ref=e427] [cursor=pointer]:
+                        - img [ref=e428]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e431]:
+                        - img [ref=e432]
+                      - button "Cambiar teléfono" [ref=e435] [cursor=pointer]:
+                        - img [ref=e436]
+                      - button "Enviar recordatorio" [ref=e438] [cursor=pointer]:
+                        - img [ref=e439]
+                - row "Bolsa 107 N/A DNI 22077421 ALARCON FLORES NORA MARIELLA 20/10/1967 F 59 960407903 VOLUNTARIA 021 POL. PABLO BERMUDEZ RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e442]:
+                  - cell [ref=e443]:
+                    - checkbox [ref=e444] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e445]
+                  - cell "N/A" [ref=e446]
+                  - cell "DNI" [ref=e447]
+                  - cell "22077421" [ref=e448]
+                  - cell "ALARCON FLORES NORA MARIELLA" [ref=e449]
+                  - cell "20/10/1967" [ref=e450]
+                  - cell "F" [ref=e451]
+                  - cell "59" [ref=e452]
+                  - cell "960407903" [ref=e453]
+                  - cell [ref=e454]
+                  - cell [ref=e455]
+                  - cell "VOLUNTARIA" [ref=e456]:
+                    - generic [ref=e457]: VOLUNTARIA
+                  - cell [ref=e458]
+                  - cell "021" [ref=e459]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e460]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e461]
+                  - cell "Pendiente Citar" [ref=e462]:
+                    - generic "PENDIENTE_CITA" [ref=e463]: Pendiente Citar
+                  - cell "—" [ref=e464]
+                  - cell "Sin asignar" [ref=e465]
+                  - cell [ref=e466]:
+                    - generic [ref=e467]:
+                      - button "Asignar gestora de citas" [ref=e468] [cursor=pointer]:
+                        - img [ref=e469]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e472]:
+                        - img [ref=e473]
+                      - button "Cambiar teléfono" [ref=e476] [cursor=pointer]:
+                        - img [ref=e477]
+                      - button "Enviar recordatorio" [ref=e479] [cursor=pointer]:
+                        - img [ref=e480]
+                - row "Bolsa 107 N/A DNI 08471048 BECERRA HERNANDEZ VDA DE BRA NELIDA 27/02/1947 F 79 951213551 VOLUNTARIA 497 CAP III LUIS NEGREIROS VEGA RED ASISTENCIAL SABOGAL Pendiente Citar — Sin asignar" [ref=e483]:
+                  - cell [ref=e484]:
+                    - checkbox [ref=e485] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e486]
+                  - cell "N/A" [ref=e487]
+                  - cell "DNI" [ref=e488]
+                  - cell "08471048" [ref=e489]
+                  - cell "BECERRA HERNANDEZ VDA DE BRA NELIDA" [ref=e490]
+                  - cell "27/02/1947" [ref=e491]
+                  - cell "F" [ref=e492]
+                  - cell "79" [ref=e493]
+                  - cell "951213551" [ref=e494]
+                  - cell [ref=e495]
+                  - cell [ref=e496]
+                  - cell "VOLUNTARIA" [ref=e497]:
+                    - generic [ref=e498]: VOLUNTARIA
+                  - cell [ref=e499]
+                  - cell "497" [ref=e500]
+                  - cell "CAP III LUIS NEGREIROS VEGA" [ref=e501]
+                  - cell "RED ASISTENCIAL SABOGAL" [ref=e502]
+                  - cell "Pendiente Citar" [ref=e503]:
+                    - generic "PENDIENTE_CITA" [ref=e504]: Pendiente Citar
+                  - cell "—" [ref=e505]
+                  - cell "Sin asignar" [ref=e506]
+                  - cell [ref=e507]:
+                    - generic [ref=e508]:
+                      - button "Asignar gestora de citas" [ref=e509] [cursor=pointer]:
+                        - img [ref=e510]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e513]:
+                        - img [ref=e514]
+                      - button "Cambiar teléfono" [ref=e517] [cursor=pointer]:
+                        - img [ref=e518]
+                      - button "Enviar recordatorio" [ref=e520] [cursor=pointer]:
+                        - img [ref=e521]
+                - row "Bolsa 107 N/A DNI 70839453 LIENDO LANCHO FABIO ENZO 10/07/2002 M 24 965718788 VOLUNTARIA 408 H.I CARLOS ALCANTARA BUTTERFIELD RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e524]:
+                  - cell [ref=e525]:
+                    - checkbox [ref=e526] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e527]
+                  - cell "N/A" [ref=e528]
+                  - cell "DNI" [ref=e529]
+                  - cell "70839453" [ref=e530]
+                  - cell "LIENDO LANCHO FABIO ENZO" [ref=e531]
+                  - cell "10/07/2002" [ref=e532]
+                  - cell "M" [ref=e533]
+                  - cell "24" [ref=e534]
+                  - cell "965718788" [ref=e535]
+                  - cell [ref=e536]
+                  - cell [ref=e537]
+                  - cell "VOLUNTARIA" [ref=e538]:
+                    - generic [ref=e539]: VOLUNTARIA
+                  - cell [ref=e540]
+                  - cell "408" [ref=e541]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e542]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e543]
+                  - cell "Pendiente Citar" [ref=e544]:
+                    - generic "PENDIENTE_CITA" [ref=e545]: Pendiente Citar
+                  - cell "—" [ref=e546]
+                  - cell "Sin asignar" [ref=e547]
+                  - cell [ref=e548]:
+                    - generic [ref=e549]:
+                      - button "Asignar gestora de citas" [ref=e550] [cursor=pointer]:
+                        - img [ref=e551]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e554]:
+                        - img [ref=e555]
+                      - button "Cambiar teléfono" [ref=e558] [cursor=pointer]:
+                        - img [ref=e559]
+                      - button "Enviar recordatorio" [ref=e561] [cursor=pointer]:
+                        - img [ref=e562]
+                - row "Bolsa 107 N/A DNI 44351732 CORNEJO PRADO ISAAC HELI 22/03/1987 M 39 904094262 VOLUNTARIA 016 POL. PROCERES RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e565]:
+                  - cell [ref=e566]:
+                    - checkbox [ref=e567] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e568]
+                  - cell "N/A" [ref=e569]
+                  - cell "DNI" [ref=e570]
+                  - cell "44351732" [ref=e571]
+                  - cell "CORNEJO PRADO ISAAC HELI" [ref=e572]
+                  - cell "22/03/1987" [ref=e573]
+                  - cell "M" [ref=e574]
+                  - cell "39" [ref=e575]
+                  - cell "904094262" [ref=e576]
+                  - cell [ref=e577]
+                  - cell [ref=e578]
+                  - cell "VOLUNTARIA" [ref=e579]:
+                    - generic [ref=e580]: VOLUNTARIA
+                  - cell [ref=e581]
+                  - cell "016" [ref=e582]
+                  - cell "POL. PROCERES" [ref=e583]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e584]
+                  - cell "Pendiente Citar" [ref=e585]:
+                    - generic "PENDIENTE_CITA" [ref=e586]: Pendiente Citar
+                  - cell "—" [ref=e587]
+                  - cell "Sin asignar" [ref=e588]
+                  - cell [ref=e589]:
+                    - generic [ref=e590]:
+                      - button "Asignar gestora de citas" [ref=e591] [cursor=pointer]:
+                        - img [ref=e592]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e595]:
+                        - img [ref=e596]
+                      - button "Cambiar teléfono" [ref=e599] [cursor=pointer]:
+                        - img [ref=e600]
+                      - button "Enviar recordatorio" [ref=e602] [cursor=pointer]:
+                        - img [ref=e603]
+                - row "Bolsa 107 N/A DNI 44351732 ISAAC HELI HUMBE CORNEJO PRADO 22/03/1987 M 39 904094262 VOLUNTARIA 016 POL. PROCERES RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e606]:
+                  - cell [ref=e607]:
+                    - checkbox [ref=e608] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e609]
+                  - cell "N/A" [ref=e610]
+                  - cell "DNI" [ref=e611]
+                  - cell "44351732" [ref=e612]
+                  - cell "ISAAC HELI HUMBE CORNEJO PRADO" [ref=e613]
+                  - cell "22/03/1987" [ref=e614]
+                  - cell "M" [ref=e615]
+                  - cell "39" [ref=e616]
+                  - cell "904094262" [ref=e617]
+                  - cell [ref=e618]
+                  - cell [ref=e619]
+                  - cell "VOLUNTARIA" [ref=e620]:
+                    - generic [ref=e621]: VOLUNTARIA
+                  - cell [ref=e622]
+                  - cell "016" [ref=e623]
+                  - cell "POL. PROCERES" [ref=e624]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e625]
+                  - cell "Pendiente Citar" [ref=e626]:
+                    - generic "PENDIENTE_CITA" [ref=e627]: Pendiente Citar
+                  - cell "—" [ref=e628]
+                  - cell "Sin asignar" [ref=e629]
+                  - cell [ref=e630]:
+                    - generic [ref=e631]:
+                      - button "Asignar gestora de citas" [ref=e632] [cursor=pointer]:
+                        - img [ref=e633]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e636]:
+                        - img [ref=e637]
+                      - button "Cambiar teléfono" [ref=e640] [cursor=pointer]:
+                        - img [ref=e641]
+                      - button "Enviar recordatorio" [ref=e643] [cursor=pointer]:
+                        - img [ref=e644]
+                - row "Bolsa 107 N/A DNI 06709436 GAMERO MALPARTIDA CARLOS ROMULO 13/12/1944 M 82 975940115 VOLUNTARIA 010 POL. CHINCHA RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e647]:
+                  - cell [ref=e648]:
+                    - checkbox [ref=e649] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e650]
+                  - cell "N/A" [ref=e651]
+                  - cell "DNI" [ref=e652]
+                  - cell "06709436" [ref=e653]
+                  - cell "GAMERO MALPARTIDA CARLOS ROMULO" [ref=e654]
+                  - cell "13/12/1944" [ref=e655]
+                  - cell "M" [ref=e656]
+                  - cell "82" [ref=e657]
+                  - cell "975940115" [ref=e658]
+                  - cell [ref=e659]
+                  - cell [ref=e660]
+                  - cell "VOLUNTARIA" [ref=e661]:
+                    - generic [ref=e662]: VOLUNTARIA
+                  - cell [ref=e663]
+                  - cell "010" [ref=e664]
+                  - cell "POL. CHINCHA" [ref=e665]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e666]
+                  - cell "Pendiente Citar" [ref=e667]:
+                    - generic "PENDIENTE_CITA" [ref=e668]: Pendiente Citar
+                  - cell "—" [ref=e669]
+                  - cell "Sin asignar" [ref=e670]
+                  - cell [ref=e671]:
+                    - generic [ref=e672]:
+                      - button "Asignar gestora de citas" [ref=e673] [cursor=pointer]:
+                        - img [ref=e674]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e677]:
+                        - img [ref=e678]
+                      - button "Cambiar teléfono" [ref=e681] [cursor=pointer]:
+                        - img [ref=e682]
+                      - button "Enviar recordatorio" [ref=e684] [cursor=pointer]:
+                        - img [ref=e685]
+                - row "Bolsa 107 N/A DNI 06624355 DAVILA DEL PIELAGO VDA. DE VAN HASSELT ENA MARIA 30/05/1926 F 100 910950659 VOLUNTARIA 476 CAP III SAN ISIDRO RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e688]:
+                  - cell [ref=e689]:
+                    - checkbox [ref=e690] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e691]
+                  - cell "N/A" [ref=e692]
+                  - cell "DNI" [ref=e693]
+                  - cell "06624355" [ref=e694]
+                  - cell "DAVILA DEL PIELAGO VDA. DE VAN HASSELT ENA MARIA" [ref=e695]
+                  - cell "30/05/1926" [ref=e696]
+                  - cell "F" [ref=e697]
+                  - cell "100" [ref=e698]
+                  - cell "910950659" [ref=e699]
+                  - cell [ref=e700]
+                  - cell [ref=e701]
+                  - cell "VOLUNTARIA" [ref=e702]:
+                    - generic [ref=e703]: VOLUNTARIA
+                  - cell [ref=e704]
+                  - cell "476" [ref=e705]
+                  - cell "CAP III SAN ISIDRO" [ref=e706]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e707]
+                  - cell "Pendiente Citar" [ref=e708]:
+                    - generic "PENDIENTE_CITA" [ref=e709]: Pendiente Citar
+                  - cell "—" [ref=e710]
+                  - cell "Sin asignar" [ref=e711]
+                  - cell [ref=e712]:
+                    - generic [ref=e713]:
+                      - button "Asignar gestora de citas" [ref=e714] [cursor=pointer]:
+                        - img [ref=e715]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e718]:
+                        - img [ref=e719]
+                      - button "Cambiar teléfono" [ref=e722] [cursor=pointer]:
+                        - img [ref=e723]
+                      - button "Enviar recordatorio" [ref=e725] [cursor=pointer]:
+                        - img [ref=e726]
+                - row "Bolsa 107 N/A DNI 80014702 ZARZO CLEMENTE JORGE 24/02/1974 M 52 940159406 VOLUNTARIA N/A N/A Sin asignar Pendiente Citar — Sin asignar" [ref=e729]:
+                  - cell [ref=e730]:
+                    - checkbox [ref=e731] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e732]
+                  - cell "N/A" [ref=e733]
+                  - cell "DNI" [ref=e734]
+                  - cell "80014702" [ref=e735]
+                  - cell "ZARZO CLEMENTE JORGE" [ref=e736]
+                  - cell "24/02/1974" [ref=e737]
+                  - cell "M" [ref=e738]
+                  - cell "52" [ref=e739]
+                  - cell "940159406" [ref=e740]
+                  - cell [ref=e741]
+                  - cell [ref=e742]
+                  - cell "VOLUNTARIA" [ref=e743]:
+                    - generic [ref=e744]: VOLUNTARIA
+                  - cell [ref=e745]
+                  - cell "N/A" [ref=e746]
+                  - cell "N/A" [ref=e747]
+                  - cell "Sin asignar" [ref=e748]
+                  - cell "Pendiente Citar" [ref=e749]:
+                    - generic "PENDIENTE_CITA" [ref=e750]: Pendiente Citar
+                  - cell "—" [ref=e751]
+                  - cell "Sin asignar" [ref=e752]
+                  - cell [ref=e753]:
+                    - generic [ref=e754]:
+                      - button "Asignar gestora de citas" [ref=e755] [cursor=pointer]:
+                        - img [ref=e756]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e759]:
+                        - img [ref=e760]
+                      - button "Cambiar teléfono" [ref=e763] [cursor=pointer]:
+                        - img [ref=e764]
+                      - button "Enviar recordatorio" [ref=e766] [cursor=pointer]:
+                        - img [ref=e767]
+                - row "Bolsa 107 N/A DNI 43056467 ATOCHE RODRIGUEZ PATRICIA NOEMI 10/05/1985 F 41 901088910 VOLUNTARIA 376 POL. SAN LUIS RED ASISTENCIAL ALMENARA Pendiente Citar — Sin asignar" [ref=e770]:
+                  - cell [ref=e771]:
+                    - checkbox [ref=e772] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e773]
+                  - cell "N/A" [ref=e774]
+                  - cell "DNI" [ref=e775]
+                  - cell "43056467" [ref=e776]
+                  - cell "ATOCHE RODRIGUEZ PATRICIA NOEMI" [ref=e777]
+                  - cell "10/05/1985" [ref=e778]
+                  - cell "F" [ref=e779]
+                  - cell "41" [ref=e780]
+                  - cell "901088910" [ref=e781]
+                  - cell [ref=e782]
+                  - cell [ref=e783]
+                  - cell "VOLUNTARIA" [ref=e784]:
+                    - generic [ref=e785]: VOLUNTARIA
+                  - cell [ref=e786]
+                  - cell "376" [ref=e787]
+                  - cell "POL. SAN LUIS" [ref=e788]
+                  - cell "RED ASISTENCIAL ALMENARA" [ref=e789]
+                  - cell "Pendiente Citar" [ref=e790]:
+                    - generic "PENDIENTE_CITA" [ref=e791]: Pendiente Citar
+                  - cell "—" [ref=e792]
+                  - cell "Sin asignar" [ref=e793]
+                  - cell [ref=e794]:
+                    - generic [ref=e795]:
+                      - button "Asignar gestora de citas" [ref=e796] [cursor=pointer]:
+                        - img [ref=e797]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e800]:
+                        - img [ref=e801]
+                      - button "Cambiar teléfono" [ref=e804] [cursor=pointer]:
+                        - img [ref=e805]
+                      - button "Enviar recordatorio" [ref=e807] [cursor=pointer]:
+                        - img [ref=e808]
+                - row "Bolsa 107 N/A DNI 10243500 ROMO SUAREZ MONICA KARINA 23/01/1975 F 51 992499885 VOLUNTARIA N/A N/A Sin asignar Pendiente Citar — Sin asignar" [ref=e811]:
+                  - cell [ref=e812]:
+                    - checkbox [ref=e813] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e814]
+                  - cell "N/A" [ref=e815]
+                  - cell "DNI" [ref=e816]
+                  - cell "10243500" [ref=e817]
+                  - cell "ROMO SUAREZ MONICA KARINA" [ref=e818]
+                  - cell "23/01/1975" [ref=e819]
+                  - cell "F" [ref=e820]
+                  - cell "51" [ref=e821]
+                  - cell "992499885" [ref=e822]
+                  - cell [ref=e823]
+                  - cell [ref=e824]
+                  - cell "VOLUNTARIA" [ref=e825]:
+                    - generic [ref=e826]: VOLUNTARIA
+                  - cell [ref=e827]
+                  - cell "N/A" [ref=e828]
+                  - cell "N/A" [ref=e829]
+                  - cell "Sin asignar" [ref=e830]
+                  - cell "Pendiente Citar" [ref=e831]:
+                    - generic "PENDIENTE_CITA" [ref=e832]: Pendiente Citar
+                  - cell "—" [ref=e833]
+                  - cell "Sin asignar" [ref=e834]
+                  - cell [ref=e835]:
+                    - generic [ref=e836]:
+                      - button "Asignar gestora de citas" [ref=e837] [cursor=pointer]:
+                        - img [ref=e838]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e841]:
+                        - img [ref=e842]
+                      - button "Cambiar teléfono" [ref=e845] [cursor=pointer]:
+                        - img [ref=e846]
+                      - button "Enviar recordatorio" [ref=e848] [cursor=pointer]:
+                        - img [ref=e849]
+                - row "Bolsa 107 N/A DNI 47457155 HILARIO CRUZ TERESA 04/11/1992 F 34 938294985 VOLUNTARIA N/A N/A Sin asignar Pendiente Citar — Sin asignar" [ref=e852]:
+                  - cell [ref=e853]:
+                    - checkbox [ref=e854] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e855]
+                  - cell "N/A" [ref=e856]
+                  - cell "DNI" [ref=e857]
+                  - cell "47457155" [ref=e858]
+                  - cell "HILARIO CRUZ TERESA" [ref=e859]
+                  - cell "04/11/1992" [ref=e860]
+                  - cell "F" [ref=e861]
+                  - cell "34" [ref=e862]
+                  - cell "938294985" [ref=e863]
+                  - cell [ref=e864]
+                  - cell [ref=e865]
+                  - cell "VOLUNTARIA" [ref=e866]:
+                    - generic [ref=e867]: VOLUNTARIA
+                  - cell [ref=e868]
+                  - cell "N/A" [ref=e869]
+                  - cell "N/A" [ref=e870]
+                  - cell "Sin asignar" [ref=e871]
+                  - cell "Pendiente Citar" [ref=e872]:
+                    - generic "PENDIENTE_CITA" [ref=e873]: Pendiente Citar
+                  - cell "—" [ref=e874]
+                  - cell "Sin asignar" [ref=e875]
+                  - cell [ref=e876]:
+                    - generic [ref=e877]:
+                      - button "Asignar gestora de citas" [ref=e878] [cursor=pointer]:
+                        - img [ref=e879]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e882]:
+                        - img [ref=e883]
+                      - button "Cambiar teléfono" [ref=e886] [cursor=pointer]:
+                        - img [ref=e887]
+                      - button "Enviar recordatorio" [ref=e889] [cursor=pointer]:
+                        - img [ref=e890]
+                - row "Bolsa 107 N/A DNI 27151393 salazar GUARNIZ MILADI 16/05/1969 M 57 977167458 VOLUNTARIA 017 H.II RAMON CASTILLA RED ASISTENCIAL ALMENARA Pendiente Citar — Sin asignar" [ref=e893]:
+                  - cell [ref=e894]:
+                    - checkbox [ref=e895] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e896]
+                  - cell "N/A" [ref=e897]
+                  - cell "DNI" [ref=e898]
+                  - cell "27151393" [ref=e899]
+                  - cell "salazar GUARNIZ MILADI" [ref=e900]
+                  - cell "16/05/1969" [ref=e901]
+                  - cell "M" [ref=e902]
+                  - cell "57" [ref=e903]
+                  - cell "977167458" [ref=e904]
+                  - cell [ref=e905]
+                  - cell [ref=e906]
+                  - cell "VOLUNTARIA" [ref=e907]:
+                    - generic [ref=e908]: VOLUNTARIA
+                  - cell [ref=e909]
+                  - cell "017" [ref=e910]
+                  - cell "H.II RAMON CASTILLA" [ref=e911]
+                  - cell "RED ASISTENCIAL ALMENARA" [ref=e912]
+                  - cell "Pendiente Citar" [ref=e913]:
+                    - generic "PENDIENTE_CITA" [ref=e914]: Pendiente Citar
+                  - cell "—" [ref=e915]
+                  - cell "Sin asignar" [ref=e916]
+                  - cell [ref=e917]:
+                    - generic [ref=e918]:
+                      - button "Asignar gestora de citas" [ref=e919] [cursor=pointer]:
+                        - img [ref=e920]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e923]:
+                        - img [ref=e924]
+                      - button "Cambiar teléfono" [ref=e927] [cursor=pointer]:
+                        - img [ref=e928]
+                      - button "Enviar recordatorio" [ref=e930] [cursor=pointer]:
+                        - img [ref=e931]
+                - row "Bolsa 107 N/A DNI 07303081 CHAVEZ MARIACA LUZ ANGELICA 14/06/1932 F 94 017323990 VOLUNTARIA 408 H.I CARLOS ALCANTARA BUTTERFIELD RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e934]:
+                  - cell [ref=e935]:
+                    - checkbox [ref=e936] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e937]
+                  - cell "N/A" [ref=e938]
+                  - cell "DNI" [ref=e939]
+                  - cell "07303081" [ref=e940]
+                  - cell "CHAVEZ MARIACA LUZ ANGELICA" [ref=e941]
+                  - cell "14/06/1932" [ref=e942]
+                  - cell "F" [ref=e943]
+                  - cell "94" [ref=e944]
+                  - cell "017323990" [ref=e945]
+                  - cell [ref=e946]
+                  - cell [ref=e947]
+                  - cell "VOLUNTARIA" [ref=e948]:
+                    - generic [ref=e949]: VOLUNTARIA
+                  - cell [ref=e950]
+                  - cell "408" [ref=e951]
+                  - cell "H.I CARLOS ALCANTARA BUTTERFIELD" [ref=e952]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e953]
+                  - cell "Pendiente Citar" [ref=e954]:
+                    - generic "PENDIENTE_CITA" [ref=e955]: Pendiente Citar
+                  - cell "—" [ref=e956]
+                  - cell "Sin asignar" [ref=e957]
+                  - cell [ref=e958]:
+                    - generic [ref=e959]:
+                      - button "Asignar gestora de citas" [ref=e960] [cursor=pointer]:
+                        - img [ref=e961]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e964]:
+                        - img [ref=e965]
+                      - button "Cambiar teléfono" [ref=e968] [cursor=pointer]:
+                        - img [ref=e969]
+                      - button "Enviar recordatorio" [ref=e971] [cursor=pointer]:
+                        - img [ref=e972]
+                - row "Bolsa 107 N/A DNI 48297289 SANCHEZ QUISPE SHEYLA ROSEMARY 27/08/1993 F 33 961024283 VOLUNTARIA 405 H.I ULDARICO ROCCA FERNANDEZ RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e975]:
+                  - cell [ref=e976]:
+                    - checkbox [ref=e977] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e978]
+                  - cell "N/A" [ref=e979]
+                  - cell "DNI" [ref=e980]
+                  - cell "48297289" [ref=e981]
+                  - cell "SANCHEZ QUISPE SHEYLA ROSEMARY" [ref=e982]
+                  - cell "27/08/1993" [ref=e983]
+                  - cell "F" [ref=e984]
+                  - cell "33" [ref=e985]
+                  - cell "961024283" [ref=e986]
+                  - cell [ref=e987]
+                  - cell [ref=e988]
+                  - cell "VOLUNTARIA" [ref=e989]:
+                    - generic [ref=e990]: VOLUNTARIA
+                  - cell [ref=e991]
+                  - cell "405" [ref=e992]
+                  - cell "H.I ULDARICO ROCCA FERNANDEZ" [ref=e993]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e994]
+                  - cell "Pendiente Citar" [ref=e995]:
+                    - generic "PENDIENTE_CITA" [ref=e996]: Pendiente Citar
+                  - cell "—" [ref=e997]
+                  - cell "Sin asignar" [ref=e998]
+                  - cell [ref=e999]:
+                    - generic [ref=e1000]:
+                      - button "Asignar gestora de citas" [ref=e1001] [cursor=pointer]:
+                        - img [ref=e1002]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e1005]:
+                        - img [ref=e1006]
+                      - button "Cambiar teléfono" [ref=e1009] [cursor=pointer]:
+                        - img [ref=e1010]
+                      - button "Enviar recordatorio" [ref=e1012] [cursor=pointer]:
+                        - img [ref=e1013]
+                - row "Bolsa 107 N/A DNI 25606682 SARAVIA BRUGOS FLORENTINO 20/09/1943 M 83 930312128 VOLUNTARIA N/A N/A Sin asignar Pendiente Citar — Sin asignar" [ref=e1016]:
+                  - cell [ref=e1017]:
+                    - checkbox [ref=e1018] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e1019]
+                  - cell "N/A" [ref=e1020]
+                  - cell "DNI" [ref=e1021]
+                  - cell "25606682" [ref=e1022]
+                  - cell "SARAVIA BRUGOS FLORENTINO" [ref=e1023]
+                  - cell "20/09/1943" [ref=e1024]
+                  - cell "M" [ref=e1025]
+                  - cell "83" [ref=e1026]
+                  - cell "930312128" [ref=e1027]
+                  - cell [ref=e1028]
+                  - cell [ref=e1029]
+                  - cell "VOLUNTARIA" [ref=e1030]:
+                    - generic [ref=e1031]: VOLUNTARIA
+                  - cell [ref=e1032]
+                  - cell "N/A" [ref=e1033]
+                  - cell "N/A" [ref=e1034]
+                  - cell "Sin asignar" [ref=e1035]
+                  - cell "Pendiente Citar" [ref=e1036]:
+                    - generic "PENDIENTE_CITA" [ref=e1037]: Pendiente Citar
+                  - cell "—" [ref=e1038]
+                  - cell "Sin asignar" [ref=e1039]
+                  - cell [ref=e1040]:
+                    - generic [ref=e1041]:
+                      - button "Asignar gestora de citas" [ref=e1042] [cursor=pointer]:
+                        - img [ref=e1043]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e1046]:
+                        - img [ref=e1047]
+                      - button "Cambiar teléfono" [ref=e1050] [cursor=pointer]:
+                        - img [ref=e1051]
+                      - button "Enviar recordatorio" [ref=e1053] [cursor=pointer]:
+                        - img [ref=e1054]
+                - row "Bolsa 107 N/A DNI 08840457 MORALES VALDERRAMA JORGE LUIS 29/06/1954 M 72 932167763 VOLUNTARIA 477 CAP III SURQUILLO RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e1057]:
+                  - cell [ref=e1058]:
+                    - checkbox [ref=e1059] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e1060]
+                  - cell "N/A" [ref=e1061]
+                  - cell "DNI" [ref=e1062]
+                  - cell "08840457" [ref=e1063]
+                  - cell "MORALES VALDERRAMA JORGE LUIS" [ref=e1064]
+                  - cell "29/06/1954" [ref=e1065]
+                  - cell "M" [ref=e1066]
+                  - cell "72" [ref=e1067]
+                  - cell "932167763" [ref=e1068]
+                  - cell [ref=e1069]
+                  - cell [ref=e1070]
+                  - cell "VOLUNTARIA" [ref=e1071]:
+                    - generic [ref=e1072]: VOLUNTARIA
+                  - cell [ref=e1073]
+                  - cell "477" [ref=e1074]
+                  - cell "CAP III SURQUILLO" [ref=e1075]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e1076]
+                  - cell "Pendiente Citar" [ref=e1077]:
+                    - generic "PENDIENTE_CITA" [ref=e1078]: Pendiente Citar
+                  - cell "—" [ref=e1079]
+                  - cell "Sin asignar" [ref=e1080]
+                  - cell [ref=e1081]:
+                    - generic [ref=e1082]:
+                      - button "Asignar gestora de citas" [ref=e1083] [cursor=pointer]:
+                        - img [ref=e1084]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e1087]:
+                        - img [ref=e1088]
+                      - button "Cambiar teléfono" [ref=e1091] [cursor=pointer]:
+                        - img [ref=e1092]
+                      - button "Enviar recordatorio" [ref=e1094] [cursor=pointer]:
+                        - img [ref=e1095]
+                - row "Bolsa 107 N/A DNI 09543684 SELINA NIEVES PERALES HUAYASCACHE 03/08/1969 F 57 992287189 VOLUNTARIA N/A N/A Sin asignar Pendiente Citar — Sin asignar" [ref=e1098]:
+                  - cell [ref=e1099]:
+                    - checkbox [ref=e1100] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e1101]
+                  - cell "N/A" [ref=e1102]
+                  - cell "DNI" [ref=e1103]
+                  - cell "09543684" [ref=e1104]
+                  - cell "SELINA NIEVES PERALES HUAYASCACHE" [ref=e1105]
+                  - cell "03/08/1969" [ref=e1106]
+                  - cell "F" [ref=e1107]
+                  - cell "57" [ref=e1108]
+                  - cell "992287189" [ref=e1109]
+                  - cell [ref=e1110]
+                  - cell [ref=e1111]
+                  - cell "VOLUNTARIA" [ref=e1112]:
+                    - generic [ref=e1113]: VOLUNTARIA
+                  - cell [ref=e1114]
+                  - cell "N/A" [ref=e1115]
+                  - cell "N/A" [ref=e1116]
+                  - cell "Sin asignar" [ref=e1117]
+                  - cell "Pendiente Citar" [ref=e1118]:
+                    - generic "PENDIENTE_CITA" [ref=e1119]: Pendiente Citar
+                  - cell "—" [ref=e1120]
+                  - cell "Sin asignar" [ref=e1121]
+                  - cell [ref=e1122]:
+                    - generic [ref=e1123]:
+                      - button "Asignar gestora de citas" [ref=e1124] [cursor=pointer]:
+                        - img [ref=e1125]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e1128]:
+                        - img [ref=e1129]
+                      - button "Cambiar teléfono" [ref=e1132] [cursor=pointer]:
+                        - img [ref=e1133]
+                      - button "Enviar recordatorio" [ref=e1135] [cursor=pointer]:
+                        - img [ref=e1136]
+                - row "Bolsa 107 N/A DNI 06042892 TORRES BARRAZA DE RIOS FELIPA 23/08/1948 F 78 978678705 VOLUNTARIA 017 H.II RAMON CASTILLA RED ASISTENCIAL ALMENARA Pendiente Citar — Sin asignar" [ref=e1139]:
+                  - cell [ref=e1140]:
+                    - checkbox [ref=e1141] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e1142]
+                  - cell "N/A" [ref=e1143]
+                  - cell "DNI" [ref=e1144]
+                  - cell "06042892" [ref=e1145]
+                  - cell "TORRES BARRAZA DE RIOS FELIPA" [ref=e1146]
+                  - cell "23/08/1948" [ref=e1147]
+                  - cell "F" [ref=e1148]
+                  - cell "78" [ref=e1149]
+                  - cell "978678705" [ref=e1150]
+                  - cell [ref=e1151]
+                  - cell [ref=e1152]
+                  - cell "VOLUNTARIA" [ref=e1153]:
+                    - generic [ref=e1154]: VOLUNTARIA
+                  - cell [ref=e1155]
+                  - cell "017" [ref=e1156]
+                  - cell "H.II RAMON CASTILLA" [ref=e1157]
+                  - cell "RED ASISTENCIAL ALMENARA" [ref=e1158]
+                  - cell "Pendiente Citar" [ref=e1159]:
+                    - generic "PENDIENTE_CITA" [ref=e1160]: Pendiente Citar
+                  - cell "—" [ref=e1161]
+                  - cell "Sin asignar" [ref=e1162]
+                  - cell [ref=e1163]:
+                    - generic [ref=e1164]:
+                      - button "Asignar gestora de citas" [ref=e1165] [cursor=pointer]:
+                        - img [ref=e1166]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e1169]:
+                        - img [ref=e1170]
+                      - button "Cambiar teléfono" [ref=e1173] [cursor=pointer]:
+                        - img [ref=e1174]
+                      - button "Enviar recordatorio" [ref=e1176] [cursor=pointer]:
+                        - img [ref=e1177]
+                - row "Bolsa 107 N/A DNI 06645849 ARROYO GUZMAN MARIA VICTORIA 02/12/1935 F 91 941956339 VOLUNTARIA 407 POL. JUAN JOSE RODRIGUEZ LAZO RED ASISTENCIAL REBAGLIATI Pendiente Citar — Sin asignar" [ref=e1180]:
+                  - cell [ref=e1181]:
+                    - checkbox [ref=e1182] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e1183]
+                  - cell "N/A" [ref=e1184]
+                  - cell "DNI" [ref=e1185]
+                  - cell "06645849" [ref=e1186]
+                  - cell "ARROYO GUZMAN MARIA VICTORIA" [ref=e1187]
+                  - cell "02/12/1935" [ref=e1188]
+                  - cell "F" [ref=e1189]
+                  - cell "91" [ref=e1190]
+                  - cell "941956339" [ref=e1191]
+                  - cell [ref=e1192]
+                  - cell [ref=e1193]
+                  - cell "VOLUNTARIA" [ref=e1194]:
+                    - generic [ref=e1195]: VOLUNTARIA
+                  - cell [ref=e1196]
+                  - cell "407" [ref=e1197]
+                  - cell "POL. JUAN JOSE RODRIGUEZ LAZO" [ref=e1198]
+                  - cell "RED ASISTENCIAL REBAGLIATI" [ref=e1199]
+                  - cell "Pendiente Citar" [ref=e1200]:
+                    - generic "PENDIENTE_CITA" [ref=e1201]: Pendiente Citar
+                  - cell "—" [ref=e1202]
+                  - cell "Sin asignar" [ref=e1203]
+                  - cell [ref=e1204]:
+                    - generic [ref=e1205]:
+                      - button "Asignar gestora de citas" [ref=e1206] [cursor=pointer]:
+                        - img [ref=e1207]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e1210]:
+                        - img [ref=e1211]
+                      - button "Cambiar teléfono" [ref=e1214] [cursor=pointer]:
+                        - img [ref=e1215]
+                      - button "Enviar recordatorio" [ref=e1217] [cursor=pointer]:
+                        - img [ref=e1218]
+                - row "Bolsa 107 N/A DNI 72721266 GONZALES SUMOSO MILAGROS 13/10/1996 F 30 977786791 VOLUNTARIA 406 H.I AURELIO DIAZ-UFANO Y PERAL RED ASISTENCIAL ALMENARA Pendiente Citar — Sin asignar" [ref=e1221]:
+                  - cell [ref=e1222]:
+                    - checkbox [ref=e1223] [cursor=pointer]
+                  - cell "Bolsa 107" [ref=e1224]
+                  - cell "N/A" [ref=e1225]
+                  - cell "DNI" [ref=e1226]
+                  - cell "72721266" [ref=e1227]
+                  - cell "GONZALES SUMOSO MILAGROS" [ref=e1228]
+                  - cell "13/10/1996" [ref=e1229]
+                  - cell "F" [ref=e1230]
+                  - cell "30" [ref=e1231]
+                  - cell "977786791" [ref=e1232]
+                  - cell [ref=e1233]
+                  - cell [ref=e1234]
+                  - cell "VOLUNTARIA" [ref=e1235]:
+                    - generic [ref=e1236]: VOLUNTARIA
+                  - cell [ref=e1237]
+                  - cell "406" [ref=e1238]
+                  - cell "H.I AURELIO DIAZ-UFANO Y PERAL" [ref=e1239]
+                  - cell "RED ASISTENCIAL ALMENARA" [ref=e1240]
+                  - cell "Pendiente Citar" [ref=e1241]:
+                    - generic "PENDIENTE_CITA" [ref=e1242]: Pendiente Citar
+                  - cell "—" [ref=e1243]
+                  - cell "Sin asignar" [ref=e1244]
+                  - cell [ref=e1245]:
+                    - generic [ref=e1246]:
+                      - button "Asignar gestora de citas" [ref=e1247] [cursor=pointer]:
+                        - img [ref=e1248]
+                      - button "Marcar prioridad (próximamente)" [disabled] [ref=e1251]:
+                        - img [ref=e1252]
+                      - button "Cambiar teléfono" [ref=e1255] [cursor=pointer]:
+                        - img [ref=e1256]
+                      - button "Enviar recordatorio" [ref=e1258] [cursor=pointer]:
+                        - img [ref=e1259]
+            - generic [ref=e1262]:
+              - generic [ref=e1263]: Mostrando 1 - 25 de 7973 registros
+              - generic [ref=e1264]:
+                - button "← Anterior" [disabled] [ref=e1265]
+                - generic [ref=e1266]: Página 1 de 319
+                - button "Siguiente →" [ref=e1267] [cursor=pointer]
+      - generic [ref=e39]:
+        - paragraph [ref=e40]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e41]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud

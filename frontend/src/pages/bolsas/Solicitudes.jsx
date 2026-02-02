@@ -54,6 +54,7 @@ export default function Solicitudes() {
   // NEW v2.5.8: Estadísticas de filtros del backend (análisis de TODA la tabla)
   const [estadisticasTipoBolsa, setEstadisticasTipoBolsa] = useState([]);
   const [especialidadesActivas, setEspecialidadesActivas] = useState([]); // Especialidades desde backend (v1.42.0)
+  const [errorEspecialidades, setErrorEspecialidades] = useState(null); // Error al cargar especialidades (v1.42.0)
   const [estadisticasIpress, setEstadisticasIpress] = useState([]);
   const [estadisticasTipoCita, setEstadisticasTipoCita] = useState([]);
 
@@ -159,6 +160,46 @@ export default function Solicitudes() {
     return () => {
       isMountedRef.current = false;
     };
+  }, []);
+
+  // ============================================================================
+  // 📦 EFFECT 1.5: Cargar ESPECIALIDADES como efecto separado
+  // ============================================================================
+  useEffect(() => {
+    const cargarEspecialidades = async () => {
+      try {
+        setErrorEspecialidades(null); // Limpiar errores previos
+        const response = await bolsasService.obtenerEspecialidadesUnicas();
+
+        if (isMountedRef.current) {
+          // Manejar respuesta estandarizada con metadata
+          if (response.especialidades && Array.isArray(response.especialidades)) {
+            setEspecialidadesActivas(response.especialidades);
+          } else {
+            // Fallback si respuesta no tiene estructura esperada
+            console.warn('⚠️ Respuesta inesperada de especialidades:', response);
+            setErrorEspecialidades('Formato de respuesta inesperado');
+          }
+        }
+      } catch (error) {
+        console.error('❌ Error cargando especialidades:', error);
+        if (isMountedRef.current) {
+          setErrorEspecialidades('No se pudieron cargar las especialidades');
+          // Fallback: Calcular especialidades desde registros locales si API falla
+          const localEspecialidades = [...new Set(
+            solicitudes
+              .map(s => s.especialidad)
+              .filter(e => e && e.trim() !== '')
+          )].sort();
+          if (localEspecialidades.length > 0) {
+            setEspecialidadesActivas(localEspecialidades);
+            setErrorEspecialidades('Usando especialidades de página actual');
+          }
+        }
+      }
+    };
+
+    cargarEspecialidades();
   }, []);
 
   // ============================================================================
@@ -322,14 +363,14 @@ export default function Solicitudes() {
   const cargarCatalogos = React.useCallback(async () => {
     console.log('📦 Cargando catálogos (ejecutarse solo UNA vez)...');
     try {
-      const [estadosData, ipressData, redesData, gestorasData, tiposBolsasData, especialidadesData] = await Promise.all([
+      const [estadosData, ipressData, redesData, gestorasData, tiposBolsasData] = await Promise.all([
         bolsasService.obtenerEstadosGestion().catch(() => []),
         bolsasService.obtenerIpress().catch(() => []),
         bolsasService.obtenerRedes().catch(() => []),
         bolsasService.obtenerGestorasDisponibles().catch(() => []), // NEW v2.4.0
-        bolsasService.obtenerTiposBolsasActivosPublic().catch(() => []),
-        bolsasService.obtenerEspecialidadesUnicas().catch(() => []) // NEW v1.42.0: Especialidades desde backend
+        bolsasService.obtenerTiposBolsasActivosPublic().catch(() => [])
       ]);
+
 
       // Crear cache de estados, IPRESS y Redes
       if (estadosData && Array.isArray(estadosData)) {
@@ -371,19 +412,10 @@ export default function Solicitudes() {
       if (isMountedRef.current) setTiposBolsasActivos(tiposBolsasArray);
       console.log('✅ Tipos de bolsas activos cargados:', tiposBolsasArray.length);
 
-      // NEW v1.42.0: Cargar especialidades desde backend (TODAS, no solo de la página actual)
-      console.log('📦 Especialidades desde backend:', especialidadesData);
-      const especialidadesArray = Array.isArray(especialidadesData) ? especialidadesData : [];
-      if (isMountedRef.current) setEspecialidadesActivas(especialidadesArray);
-      console.log('✅ Especialidades cargadas desde backend:', especialidadesArray.length, especialidadesArray);
-
-      console.log('✅ Catálogos cargados correctamente - ANTES de setCatalogosCargados(true)');
-
       // ✅ v3.0.0: Estadísticas ahora se cargan via EFFECT 2 (consolidated endpoint)
       // NO cargar estadísticas aquí - dejar que el useEffect 2 maneje eso
       if (isMountedRef.current) {
         setCatalogosCargados(true);
-        console.log('✅ setCatalogosCargados(true) LLAMADO - EFFECT 2 se dispará para cargar estadísticas consolidadas');
       }
     } catch (error) {
       console.error('❌ Error cargando catálogos:', error);
@@ -1100,10 +1132,9 @@ export default function Solicitudes() {
   const macrorregionesUnicas = [...new Set(solicitudes.map(s => s.macroregion))].filter(m => m && m !== 'N/A').sort();
 
   // NEW v1.42.0: Usar especialidades desde backend (TODAS, no solo de página actual)
-  // El backend devuelve especialidades reales; agregar "S/E" si hay registros sin especialidad
   const especialidadesUnicas = especialidadesActivas && especialidadesActivas.length > 0
     ? especialidadesActivas
-    : []; // Si el backend no devuelve especialidades, dejar vacío
+    : [];
 
   // Verificar si hay registros SIN especialidad y agregar "S/E"
   const hayRegistrosSinEspecialidad = solicitudes.some(s => !s.especialidad || s.especialidad.trim() === '');
@@ -1798,6 +1829,19 @@ export default function Solicitudes() {
             }}
           />
           </div>
+
+          {/* ⚠️ Mensaje de error/aviso de especialidades (v1.42.0) */}
+          {errorEspecialidades && (
+            <div className={`px-4 py-2 rounded-lg text-sm font-medium mb-3 ${
+              errorEspecialidades.includes('Usando')
+                ? 'bg-orange-50 text-orange-700 border border-orange-200'
+                : 'bg-red-50 text-red-700 border border-red-200'
+            }`}>
+              {errorEspecialidades.includes('Usando')
+                ? '⚠️ ' + errorEspecialidades + ' (mostrando datos de página actual)'
+                : '❌ ' + errorEspecialidades}
+            </div>
+          )}
           </div>
 
           {/* 📌 ESPACIADO: Separación entre filtros y tabla */}
