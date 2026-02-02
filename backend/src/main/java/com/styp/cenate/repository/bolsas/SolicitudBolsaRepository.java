@@ -136,13 +136,17 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
                di.desc_ipress, dr.desc_red, dm.desc_macro,
-               sb.responsable_gestora_id, sb.fecha_asignacion
+               sb.responsable_gestora_id, sb.fecha_asignacion,
+               sb.fecha_cambio_estado, sb.usuario_cambio_estado_id,
+               COALESCE(pc.nombre_completo, u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
+        LEFT JOIN segu_usuario u ON sb.usuario_cambio_estado_id = u.id_user
+        LEFT JOIN segu_personal_cnt pc ON u.id_user = pc.id_user
         WHERE sb.activo = true
         ORDER BY sb.fecha_solicitud DESC
         LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
@@ -178,13 +182,17 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
                di.desc_ipress, dr.desc_red, dm.desc_macro,
-               sb.responsable_gestora_id, sb.fecha_asignacion
+               sb.responsable_gestora_id, sb.fecha_asignacion,
+               sb.fecha_cambio_estado, sb.usuario_cambio_estado_id,
+               COALESCE(pc.nombre_completo, u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado
         FROM dim_solicitud_bolsa sb
         LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
+        LEFT JOIN segu_usuario u ON sb.usuario_cambio_estado_id = u.id_user
+        LEFT JOIN segu_personal_cnt pc ON u.id_user = pc.id_user
         WHERE sb.activo = true
           AND (:bolsaNombre IS NULL OR LOWER(COALESCE(tb.desc_tipo_bolsa, '')) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
           AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)

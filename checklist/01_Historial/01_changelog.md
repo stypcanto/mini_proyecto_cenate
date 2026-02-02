@@ -3,6 +3,7 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v3.3.1**: Auditoría Cambios de Estado + Fix Endpoint bolsas/solicitudes (2026-02-02) - Fecha + Usuario cambio estado
 > - ⭐ **NUEVO - v1.42.1**: Fix Estadísticas + Tipo Cita (2026-02-01) - Estadísticas correctas + 6,404 N/A → Voluntaria
 > - ⭐ **NUEVO - v1.41.0**: Módulo Gestión de Citas - Estado Dropdown + Actualizar Teléfono (2026-01-30)
 > - ⭐ **NUEVO - v1.39.4**: Reestructuración PowerBI - Dashboard en página separada para EXTERNO (2026-01-30)
@@ -19,6 +20,127 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v3.3.1 (2026-02-02) - 🔐 Auditoría: Cambios de Estado + Fix bolsas/solicitudes Endpoint
+
+### ✅ Funcionalidad Implementada
+
+**Auditoría completa de cambios de estado en solicitudes de bolsa:**
+- Captura automática de **fecha del cambio de estado** (`fecha_cambio_estado`)
+- Registro del **usuario que realizó el cambio** (`usuario_cambio_estado_id`)
+- Visualización del **nombre completo del usuario** en interfaces frontend
+
+**Problema Resuelto:**
+- Endpoint `/api/bolsas/solicitudes` no incluía campos de auditoría en respuesta
+- Resultado: Tabla bolsas/solicitudes mostraba dashes ("—") en columnas FECHA CAMBIO ESTADO y USUARIO CAMBIO ESTADO
+- Mismo dato existía en GestionAsegurado.jsx pero no en solicitudes universales
+
+### 🔧 Cambios Backend
+
+#### 1. SolicitudBolsaRepository.java
+**Actualizar SQL queries para incluir auditoría:**
+```sql
+-- Antes: Sin campos de auditoría
+SELECT sb.id_solicitud, sb.numero_solicitud, ... sb.fecha_asignacion
+
+-- Después: Con auditoría + nombre completo
+SELECT sb.id_solicitud, sb.numero_solicitud, ...
+       sb.responsable_gestora_id, sb.fecha_asignacion,
+       sb.fecha_cambio_estado, sb.usuario_cambio_estado_id,
+       COALESCE(pc.nombre_completo, u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado
+FROM dim_solicitud_bolsa sb
+LEFT JOIN segu_usuario u ON sb.usuario_cambio_estado_id = u.id_user
+LEFT JOIN segu_personal_cnt pc ON u.id_user = pc.id_user
+```
+
+**Métodos modificados:**
+- `findAllWithBolsaDescriptionPaginado()` - Paginación sin filtros
+- `findAllWithFiltersAndPagination()` - Paginación con filtros avanzados
+
+#### 2. SolicitudBolsaServiceImpl.java
+**Actualizar mapeo en `mapFromResultSet()`:**
+```java
+// Línea 549: Nueva variable para fecha cambio estado
+java.time.OffsetDateTime fechaCambioEstado = row.length > 31
+    ? convertToOffsetDateTime(row[31]) : null;
+
+// Líneas 601-603: Nuevos campos en builder
+.fechaCambioEstado(fechaCambioEstado)
+.usuarioCambioEstadoId(row.length > 32 ? toLongSafe("usuario_cambio_estado_id", row[32]) : null)
+.nombreUsuarioCambioEstado(row.length > 33 ? (String) row[33] : null)
+```
+
+**Mapeo de índices de filas:**
+| Campo | Índice | Fuente |
+|-------|--------|--------|
+| `fecha_asignacion` | row[30] | Existente |
+| `fecha_cambio_estado` | row[31] | NUEVO ✅ |
+| `usuario_cambio_estado_id` | row[32] | NUEVO ✅ |
+| `nombre_usuario_cambio_estado` | row[33] | NUEVO ✅ |
+
+### 📱 Cambios Frontend
+
+**GestionAsegurado.jsx** - Ya funcionaba correctamente
+- Columna "Fecha Cambio Estado" - Muestra timestamp ISO
+- Columna "Usuario Cambio Estado" - Muestra nombre completo del usuario
+- Ej: "Jhonatan Test Test" en lugar de "Usuario 181"
+
+**bolsas/solicitudes** - Ahora también funciona
+- Mismas columnas visibles en tabla
+- Datos se cargan desde API actualizado
+- Usuarios que realizaron cambios son identificados correctamente
+
+### 📊 Verificación
+
+**API Response (Antes):**
+```json
+{
+  "id_solicitud": 9916,
+  "nombre_usuario_cambio_estado": null,
+  "fecha_cambio_estado": null
+}
+```
+
+**API Response (Después):**
+```json
+{
+  "id_solicitud": 9916,
+  "fecha_cambio_estado": "2026-02-02T13:25:07Z",
+  "usuario_cambio_estado_id": 181,
+  "nombre_usuario_cambio_estado": "Jhonatan Test Test"
+}
+```
+
+### 📝 Archivos Modificados
+
+| Archivo | Cambios |
+|---------|---------|
+| `SolicitudBolsaRepository.java` | SQL queries con LEFT JOINs a segu_usuario + segu_personal_cnt |
+| `SolicitudBolsaServiceImpl.java` | Mapeo de 4 nuevos índices en mapFromResultSet() |
+| `SolicitudBolsaMapper.java` | Soporte para nombreUsuarioCambioEstado (ya existía) |
+| `SolicitudBolsaDTO.java` | Campos ya presentes: fechaCambioEstado, usuarioCambioEstadoId, nombreUsuarioCambioEstado |
+
+### ✅ Testing
+
+**Verificado en:**
+- ✅ GestionAsegurado.jsx: Muestra datos de auditoría correctamente
+- ✅ bolsas/solicitudes: Columnas ahora tienen datos (no vacías)
+- ✅ Backend: Queries retornan auditoría completa
+- ✅ Build: Sin errores de compilación
+
+### 🔄 Impacto
+
+**Endpoints afectados:**
+- `GET /api/bolsas/solicitudes` - Con paginación (sin filtros)
+- `GET /api/bolsas/solicitudes?filters=...` - Con filtros + paginación
+- `GET /api/bolsas/solicitudes/mi-bandeja` - Mi bandeja personal
+
+**Módulos mejorados:**
+1. **Bolsas de Pacientes** - Rastreo completo de cambios
+2. **Gestión de Citas** - Auditoría de estados
+3. **Reportes** - Datos para análisis histórico
 
 ---
 

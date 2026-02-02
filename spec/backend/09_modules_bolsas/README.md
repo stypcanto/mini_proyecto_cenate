@@ -1,9 +1,9 @@
-# 📦 Módulo de Bolsas - Documentación Unificada v3.0.0
+# 📦 Módulo de Bolsas - Documentación Unificada v3.3.1
 
 > **Sistema integral de importación, gestión, estadísticas y análisis de solicitudes**
-> **Incluye: Bolsas de Pacientes + Módulo 107 (Formulario 107) integrado**
-> **Versión:** v3.0.0 | **Status:** ✅ Production Ready
-> **Última actualización:** 2026-01-29
+> **Incluye: Bolsas de Pacientes + Módulo 107 (Formulario 107) integrado + Auditoría de Cambios**
+> **Versión:** v3.3.1 | **Status:** ✅ Production Ready
+> **Última actualización:** 2026-02-02
 
 ---
 
@@ -48,9 +48,18 @@ Este archivo **único** contiene:
 
 ---
 
-## ✅ QUÉ CAMBIÓ EN v3.0.0
+## ✅ QUÉ CAMBIÓ EN v3.3.1
 
-### ✨ NUEVO: Módulo 107 (Formulario 107)
+### 🔐 NUEVO: Auditoría Completa de Cambios de Estado
+
+- ✅ Captura automática de `fecha_cambio_estado` (timestamp ISO)
+- ✅ Registro de `usuario_cambio_estado_id` (usuario que realizó cambio)
+- ✅ Visualización de `nombre_usuario_cambio_estado` (nombre completo del usuario)
+- ✅ Fix: Endpoint `/api/bolsas/solicitudes` ahora retorna auditoría completa
+- ✅ Sincronización entre GestionAsegurado.jsx y bolsas/solicitudes
+- ✅ SQL queries optimizadas con LEFT JOINs a `segu_usuario` + `segu_personal_cnt`
+
+### ✨ ANTERIOR: Módulo 107 (Formulario 107) - v3.0.0
 
 - ✅ Completamente integrado en `dim_solicitud_bolsa` con `id_bolsa = 107`
 - ✅ 4 nuevos endpoints de búsqueda y estadísticas

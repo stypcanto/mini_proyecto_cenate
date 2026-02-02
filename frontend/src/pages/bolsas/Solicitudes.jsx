@@ -659,7 +659,14 @@ export default function Solicitudes() {
                   return `${d}/${m}/${y}`;
                 })() : 'N/A',
               tipoCita: solicitud.tipo_cita ? solicitud.tipo_cita.toUpperCase() : 'N/A',
-              codigoIpress: solicitud.codigo_adscripcion || 'N/A'
+              codigoIpress: solicitud.codigo_adscripcion || 'N/A',
+              // ============================================================================
+              // 📋 AUDITORÍA: CAMBIOS DE ESTADO (v3.3.1) - MAPEO FALTANTE
+              // ============================================================================
+              fechaCambioEstado: solicitud.fecha_cambio_estado
+                ? new Date(solicitud.fecha_cambio_estado).toLocaleString('es-PE')
+                : null,
+              usuarioCambioEstado: solicitud.nombre_usuario_cambio_estado || null
             };
           } catch (mapError) {
             console.error(`❌ Error procesando solicitud [${idx}]:`, mapError);

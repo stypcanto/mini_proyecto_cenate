@@ -174,6 +174,11 @@ public class SolicitudBolsa {
     @JoinColumn(name = "responsable_gestora_id", insertable = false, updatable = false)
     private Usuario gestora;
 
+    // 🔗 RELACIÓN CON ESTADO DE GESTIÓN DE CITAS (v3.3.1 - para cargar descripción)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estado_gestion_citas_id", insertable = false, updatable = false)
+    private DimEstadosGestionCitas estadoGestionCitas;
+
     // 🔔 AUDITORÍA
     @Column(name = "activo", nullable = false)
     private Boolean activo;

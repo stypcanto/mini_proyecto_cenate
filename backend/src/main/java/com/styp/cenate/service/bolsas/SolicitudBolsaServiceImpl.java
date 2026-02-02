@@ -546,6 +546,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             java.time.OffsetDateTime fechaSolicitud = convertToOffsetDateTime(row[22]); // fecha_solicitud (ajustado a 22)
             java.time.OffsetDateTime fechaActualizacion = convertToOffsetDateTime(row[23]); // fecha_actualizacion (ajustado a 23)
             java.time.OffsetDateTime fechaAsignacion = row.length > 30 ? convertToOffsetDateTime(row[30]) : null; // NEW v2.4.0 (ajustado a 30)
+            java.time.OffsetDateTime fechaCambioEstado = row.length > 31 ? convertToOffsetDateTime(row[31]) : null; // NEW v3.3.1 (ajustado a 31)
 
             return SolicitudBolsaDTO.builder()
                     .idSolicitud(toLongSafe("id_solicitud", row[0]))
@@ -580,9 +581,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                     .descMacroregion((String) row[28])     // desc_macro desde JOIN (ajustado a 28)
                     .responsableGestoraId(row.length > 29 ? toLongSafe("responsable_gestora_id", row[29]) : null) // NEW v2.4.0 (ajustado a 29)
                     .fechaAsignacion(fechaAsignacion)      // NEW v2.4.0 (ajustado a 30)
+                    .fechaCambioEstado(fechaCambioEstado)  // NEW v3.3.1 (ajustado a 31)
+                    .usuarioCambioEstadoId(row.length > 32 ? toLongSafe("usuario_cambio_estado_id", row[32]) : null) // NEW v3.3.1 (ajustado a 32)
+                    .nombreUsuarioCambioEstado(row.length > 33 ? (String) row[33] : null) // NEW v3.3.1 (ajustado a 33)
                     .build();
         } catch (Exception e) {
-            log.error("❌ Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
+            log.error("Error mapeando resultado SQL en índice. Error: {}", e.getMessage(), e);
             throw new RuntimeException("Error procesando fila de solicitud: " + e.getMessage(), e);
         }
     }
@@ -762,7 +766,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
         solicitud.setEstadoGestionCitasId(nuevoEstadoId);
 
-        // 📝 AUDITORÍA: Registrar fecha y usuario del cambio de estado (v3.3.1)
+        // AUDITORIA: Registrar fecha y usuario del cambio de estado (v3.3.1)
         solicitud.setFechaCambioEstado(java.time.OffsetDateTime.now());
 
         try {
@@ -780,7 +784,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 }
             }
         } catch (Exception e) {
-            log.warn("Error obteniendo usuario para auditoría de cambio de estado: {}", e.getMessage());
+            log.warn("Error obteniendo usuario para auditoria de cambio de estado: {}", e.getMessage());
         }
 
         solicitudRepository.save(solicitud);
@@ -1488,18 +1492,18 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             if (solicitudExistente.getFechaNacimiento() == null &&
                 nuevaSolicitud.getFechaNacimiento() != null) {
                 solicitudExistente.setFechaNacimiento(nuevaSolicitud.getFechaNacimiento());
-                log.info("🎂 [UPDATE FECHA_NAC] {}: {}",
+                log.info("[UPDATE FECHA_NAC] {}: {}",
                     solicitudExistente.getPacienteDni(), nuevaSolicitud.getFechaNacimiento());
                 cambios = true;
             }
 
             if (cambios) {
                 solicitudRepository.save(solicitudExistente);
-                log.info("✅ [UPDATE COMPLETADO] Solicitud {} actualizada con nuevos datos",
+                log.info("[UPDATE COMPLETADO] Solicitud {} actualizada con nuevos datos",
                     solicitudExistente.getIdSolicitud());
                 return true;
             } else {
-                log.info("ℹ️ [UPDATE] No hay cambios en solicitud {}", solicitudExistente.getIdSolicitud());
+                log.info("[UPDATE] No hay cambios en solicitud {}", solicitudExistente.getIdSolicitud());
                 return true; // Considerar como éxito porque la solicitud existe
             }
 
@@ -2375,13 +2379,17 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .idIpress(solicitud.getIdIpress())
             .descIpress(descIpress)
             .estado(solicitud.getEstado())
-            .descEstadoCita(solicitud.getEstado() != null ? solicitud.getEstado() : "PENDIENTE")
+            .codEstadoCita(solicitud.getEstadoGestionCitas() != null ? solicitud.getEstadoGestionCitas().getCodigoEstado() : null)
+            .descEstadoCita(solicitud.getEstadoGestionCitas() != null ? solicitud.getEstadoGestionCitas().getDescripcionEstado() : "PENDIENTE")
             .fechaSolicitud(solicitud.getFechaSolicitud())
             .fechaActualizacion(solicitud.getFechaActualizacion())
             .estadoGestionCitasId(solicitud.getEstadoGestionCitasId())
             .activo(solicitud.getActivo())
             .responsableGestoraId(solicitud.getResponsableGestoraId())
             .fechaAsignacion(solicitud.getFechaAsignacion())
+            .fechaCambioEstado(solicitud.getFechaCambioEstado())
+            .usuarioCambioEstadoId(solicitud.getUsuarioCambioEstadoId())
+            .nombreUsuarioCambioEstado(obtenerNombreCompleto(solicitud.getUsuarioCambioEstado()))
             .build();
     }
 
@@ -2546,6 +2554,32 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             log.error("❌ Error exportando solicitudes asignadas a CSV: ", e);
             return new byte[0];
         }
+    }
+
+    /**
+     * Obtiene el nombre completo del usuario desde PersonalCnt o retorna username
+     * @param usuario usuario del cual obtener el nombre
+     * @return nombre completo o username si no está disponible
+     */
+    private String obtenerNombreCompleto(Usuario usuario) {
+        if (usuario == null) {
+            return null;
+        }
+
+        try {
+            // Intentar cargar PersonalCnt para obtener nombre completo
+            if (usuario.getPersonalCnt() != null) {
+                String nombreCompleto = usuario.getPersonalCnt().getNombreCompleto();
+                if (nombreCompleto != null && !nombreCompleto.trim().isEmpty()) {
+                    return nombreCompleto;
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error cargando nombre completo de PersonalCnt para usuario {}: {}", usuario.getIdUser(), e.getMessage());
+        }
+
+        // Fallback al username si no está disponible el nombre completo
+        return usuario.getNameUser();
     }
 
     /**

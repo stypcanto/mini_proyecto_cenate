@@ -75,6 +75,11 @@ export default function GestionAsegurado() {
   const [expandFiltros, setExpandFiltros] = useState(false); // Filtros colapsados por defecto
   const [selectedRows, setSelectedRows] = useState(new Set()); // Selección de pacientes para descarga
 
+  // Estados para manejar edición de estado con botones Guardar/Cancelar
+  const [pacienteEditandoEstado, setPacienteEditandoEstado] = useState(null);
+  const [nuevoEstadoSeleccionado, setNuevoEstadoSeleccionado] = useState("");
+  const [guardandoEstado, setGuardandoEstado] = useState(false);
+
   const API_BASE = "http://localhost:8080/api";
 
   // Fetch assigned patients from backend
@@ -141,7 +146,7 @@ export default function GestionAsegurado() {
       // Transform SolicitudBolsaDTO to table structure
       const pacientes = solicitudes.map((solicitud, idx) => {
         // Mapear código de estado a descripción
-        const codigoEstado = solicitud.desc_estado_cita || solicitud.descEstadoCita || "PENDIENTE";
+        const codigoEstado = solicitud.cod_estado_cita || solicitud.codEstadoCita || "PENDIENTE";
         const estadoObj = estadosDisponibles.find(e => e.codigo === codigoEstado);
         const descEstadoFinal = estadoObj ? estadoObj.descripcion : codigoEstado;
 
@@ -162,12 +167,8 @@ export default function GestionAsegurado() {
           fechaSolicitud: solicitud.fecha_solicitud || solicitud.fechaSolicitud || new Date().toISOString(),
           fechaAsignacion: solicitud.fecha_asignacion || solicitud.fechaAsignacion || "-",
           // Auditoría: Fecha y usuario del cambio de estado (v3.3.1)
-          fechaCambioEstado: solicitud.fecha_cambio_estado
-            ? new Date(solicitud.fecha_cambio_estado).toLocaleString('es-PE')
-            : null,
-          usuarioCambioEstado: solicitud.usuario_cambio_estado_id
-            ? `Usuario ${solicitud.usuario_cambio_estado_id}`
-            : null,
+          fechaCambioEstado: solicitud.fecha_cambio_estado || null,
+          usuarioCambioEstado: solicitud.nombre_usuario_cambio_estado || null,
         };
       });
 
@@ -246,6 +247,44 @@ export default function GestionAsegurado() {
       await fetchPacientesAsignados();
     }
   );
+
+  // Handlers para cambio de estado con Guardar/Cancelar
+  const handleGuardarEstado = async () => {
+    if (!pacienteEditandoEstado || !nuevoEstadoSeleccionado) {
+      toast.error("Por favor selecciona un estado válido");
+      return;
+    }
+
+    const paciente = pacientesAsignados.find(p => p.id === pacienteEditandoEstado);
+    if (!paciente) return;
+
+    setGuardandoEstado(true);
+
+    try {
+      // Llama al hook que maneja la lógica de cambio de estado
+      const estadoObj = estadosDisponibles.find(e => e.codigo === nuevoEstadoSeleccionado);
+      changeStatus(
+        pacienteEditandoEstado,
+        nuevoEstadoSeleccionado,
+        paciente.descEstadoCita || "Sin estado",
+        paciente.pacienteNombre
+      );
+
+      // Limpiar estado de edición
+      setPacienteEditandoEstado(null);
+      setNuevoEstadoSeleccionado("");
+    } catch (error) {
+      console.error("Error guardando estado:", error);
+      toast.error("Error al guardar el estado");
+    } finally {
+      setGuardandoEstado(false);
+    }
+  };
+
+  const handleCancelarEstado = () => {
+    setPacienteEditandoEstado(null);
+    setNuevoEstadoSeleccionado("");
+  };
 
   // Guardar teléfono actualizado
   const guardarTelefono = async () => {
@@ -978,40 +1017,62 @@ export default function GestionAsegurado() {
                           {paciente.pacienteTelefonoAlterno}
                         </td>
                         <td className="px-4 py-3">
-                          <select
-                            value={
-                              estadosDisponibles.find(e =>
-                                e.descripcion === paciente.descEstadoCita
-                              )?.codigo || ""
-                            }
-                            onChange={(e) => {
-                              const estadoObj = estadosDisponibles.find(
-                                est => est.codigo === e.target.value
-                              );
-                              if (estadoObj) {
-                                changeStatus(
-                                  paciente.id,
-                                  estadoObj.codigo,
-                                  paciente.descEstadoCita || "Sin estado",
-                                  paciente.pacienteNombre
-                                );
-                              }
-                            }}
-                            className={`px-3 py-1.5 border-2 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 transition-all ${
-                              paciente.codigoEstado === "ATENDIDO_IPRESS"
-                                ? "border-green-300 focus:border-green-500"
-                                : paciente.codigoEstado === "PENDIENTE"
-                                ? "border-blue-300 focus:border-blue-500"
-                                : "border-gray-300 focus:border-blue-500"
-                            }`}
-                          >
-                            <option value="">Seleccionar estado...</option>
-                            {estadosDisponibles.map((est) => (
-                              <option key={est.codigo} value={est.codigo} title={est.descripcion}>
-                                {est.descripcion.split(" - ")[0]}
-                              </option>
-                            ))}
-                          </select>
+                          {pacienteEditandoEstado === paciente.id ? (
+                            <div className="space-y-2">
+                              <select
+                                value={nuevoEstadoSeleccionado}
+                                onChange={(e) => setNuevoEstadoSeleccionado(e.target.value)}
+                                className="w-full px-3 py-1.5 border-2 border-orange-400 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              >
+                                <option value="">Seleccionar estado...</option>
+                                {estadosDisponibles.map((est) => (
+                                  <option key={est.codigo} value={est.codigo} title={est.descripcion}>
+                                    {est.descripcion.split(" - ")[0]}
+                                  </option>
+                                ))}
+                              </select>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={handleGuardarEstado}
+                                  disabled={!nuevoEstadoSeleccionado || guardandoEstado}
+                                  className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                                >
+                                  {guardandoEstado ? "Guardando..." : "Guardar"}
+                                </button>
+                                <button
+                                  onClick={handleCancelarEstado}
+                                  disabled={guardandoEstado}
+                                  className="flex-1 bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
+                                >
+                                  Cancelar
+                                </button>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-between">
+                              <span className={`px-3 py-1.5 rounded-lg text-xs font-medium inline-block ${
+                                paciente.codigoEstado === "ATENDIDO_IPRESS"
+                                  ? "bg-green-100 text-green-800"
+                                  : paciente.codigoEstado === "PENDIENTE"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}>
+                                {paciente.descEstadoCita?.split(" - ")[0] || "Sin estado"}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  setPacienteEditandoEstado(paciente.id);
+                                  setNuevoEstadoSeleccionado(
+                                    estadosDisponibles.find(e => e.descripcion === paciente.descEstadoCita)?.codigo || ""
+                                  );
+                                }}
+                                className="text-blue-600 hover:text-blue-800 ml-2"
+                                title="Editar estado"
+                              >
+                                <Edit2 size={16} />
+                              </button>
+                            </div>
+                          )}
                         </td>
                         {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
                         <td className="px-4 py-3 text-slate-600 text-xs">

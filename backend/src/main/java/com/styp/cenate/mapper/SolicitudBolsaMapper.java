@@ -42,6 +42,9 @@ public class SolicitudBolsaMapper {
                 .idServicio(entity.getIdServicio())
                 .codigoAdscripcion(entity.getCodigoAdscripcion())
                 .estadoGestionCitasId(entity.getEstadoGestionCitasId())
+                // ===== DESCRIPCIÓN ESTADO DE GESTIÓN CITAS (v3.3.1) =====
+                .codEstadoCita(entity.getEstadoGestionCitas() != null ? entity.getEstadoGestionCitas().getCodigoEstado() : null)
+                .descEstadoCita(entity.getEstadoGestionCitas() != null ? entity.getEstadoGestionCitas().getDescripcionEstado() : null)
                 // ===== CAMPOS EXCEL v1.8.0 (9 ahora) =====
                 .tipoDocumento(entity.getTipoDocumento())
                 .pacienteSexo(entity.getPacienteSexo())
@@ -60,6 +63,7 @@ public class SolicitudBolsaMapper {
                 .fechaActualizacion(entity.getFechaActualizacion())
                 .fechaCambioEstado(entity.getFechaCambioEstado())
                 .usuarioCambioEstadoId(entity.getUsuarioCambioEstadoId())
+                .nombreUsuarioCambioEstado(entity.getUsuarioCambioEstado() != null ? entity.getUsuarioCambioEstado().getNameUser() : null)
                 .activo(entity.getActivo())
                 .estado(entity.getEstado())
                 // ===== IPRESS (1) =====

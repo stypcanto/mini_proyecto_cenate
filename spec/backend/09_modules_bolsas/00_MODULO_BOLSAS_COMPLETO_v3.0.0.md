@@ -1,10 +1,10 @@
-# 📦 MÓDULO DE BOLSAS COMPLETO v3.0.0
+# 📦 MÓDULO DE BOLSAS COMPLETO v3.3.1
 
-> **Sistema integral de importación, gestión, estadísticas y análisis de solicitudes de pacientes**
-> **Incluye: Bolsas de Pacientes + Módulo 107 (Formulario 107)**
-> **Versión:** v3.0.0 | **Status:** ✅ Production Ready
-> **Última actualización:** 2026-01-29
-> **Datos en BD:** 329 registros activos en Bolsas + Módulo 107
+> **Sistema integral de importación, gestión, estadísticas, auditoría y análisis de solicitudes de pacientes**
+> **Incluye: Bolsas de Pacientes + Módulo 107 (Formulario 107) + Auditoría de Cambios**
+> **Versión:** v3.3.1 | **Status:** ✅ Production Ready
+> **Última actualización:** 2026-02-02
+> **Datos en BD:** 7,973 registros activos en Bolsas + Módulo 107
 
 ---
 
@@ -12,25 +12,26 @@
 
 1. [Vista General](#vista-general)
 2. [Arquitectura y Componentes](#arquitectura-y-componentes)
-3. [Módulo 107 - Integración](#módulo-107---integración)
-4. [API REST - Endpoints](#api-rest---endpoints)
-5. [Flujos de Negocio](#flujos-de-negocio)
-6. [Base de Datos](#base-de-datos)
-7. [Frontend - Componentes](#frontend---componentes)
-8. [Seguridad y Permisos](#seguridad-y-permisos)
-9. [Ejemplos de Uso](#ejemplos-de-uso)
-10. [Troubleshooting](#troubleshooting)
+3. [Auditoría de Cambios](#auditoría-de-cambios) ⭐ NUEVO v3.3.1
+4. [Módulo 107 - Integración](#módulo-107---integración)
+5. [API REST - Endpoints](#api-rest---endpoints)
+6. [Flujos de Negocio](#flujos-de-negocio)
+7. [Base de Datos](#base-de-datos)
+8. [Frontend - Componentes](#frontend---componentes)
+9. [Seguridad y Permisos](#seguridad-y-permisos)
+10. [Ejemplos de Uso](#ejemplos-de-uso)
+11. [Troubleshooting](#troubleshooting)
 
 ---
 
 ## VISTA GENERAL
 
-El **Módulo de Bolsas** es un sistema integral para gestionar solicitudes de atención de pacientes en CENATE. Comprende 5 componentes que trabajan integrados:
+El **Módulo de Bolsas** es un sistema integral para gestionar solicitudes de atención de pacientes en CENATE. Comprende 6 componentes que trabajan integrados:
 
 ```
 ┌────────────────────────────────────────────────────────────┐
-│         MÓDULO DE BOLSAS v3.0.0                            │
-│   (Importación, gestión, análisis y control)               │
+│         MÓDULO DE BOLSAS v3.3.1                            │
+│   (Importación, gestión, auditoría, análisis y control)    │
 ├────────────────────────────────────────────────────────────┤
 │                                                            │
 │ ✅ Solicitudes de Bolsa (v2.5.0+)                          │
@@ -38,9 +39,17 @@ El **Módulo de Bolsas** es un sistema integral para gestionar solicitudes de at
 │    ├─ CRUD completo                                        │
 │    ├─ Asignación a gestoras de citas                       │
 │    ├─ Soft delete con auditoría                            │
+│    ├─ Auditoría de cambios de estado (v3.3.1) ⭐           │
 │    └─ 9 endpoints REST                                     │
 │                                                            │
-│ ✅ Módulo 107 (v3.0.0 - NUEVO ⭐)                          │
+│ ✅ Auditoría de Cambios (v3.3.1 - NUEVO ⭐)                │
+│    ├─ Captura de fecha_cambio_estado (timestamp)           │
+│    ├─ Registro de usuario_cambio_estado_id                 │
+│    ├─ Visualización de nombre completo del usuario         │
+│    ├─ Sincronización en 3 endpoints                        │
+│    └─ Rastreo completo en interfaz GestionAsegurado        │
+│                                                            │
+│ ✅ Módulo 107 (v3.0.0)                                     │
 │    ├─ Integrado en dim_solicitud_bolsa con id_bolsa=107   │
 │    ├─ Búsqueda avanzada por DNI/Nombre/IPRESS/Estado      │
 │    ├─ Estadísticas completas (KPIs, distribuciones)       │
@@ -333,6 +342,147 @@ GET /api/bolsas/estadisticas/dashboard-completo
 - Línea temporal: Evolución 30 días
 - Tablas: Especialidad e IPRESS
 - Distribución estados
+
+---
+
+## AUDITORÍA DE CAMBIOS (v3.3.1 - NUEVO)
+
+### Funcionalidad
+
+El sistema captura automáticamente **quién cambió el estado** de una solicitud y **cuándo lo hizo**. Esto proporciona un rastreo completo del ciclo de vida de cada solicitud.
+
+**Campos de Auditoría:**
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `fecha_cambio_estado` | `TIMESTAMP` | Fecha y hora exacta del cambio (ISO 8601) |
+| `usuario_cambio_estado_id` | `INT` | ID del usuario que realizó el cambio |
+| `nombreUsuarioCambioEstado` | `VARCHAR` | Nombre completo del usuario (desde PersonalCnt) |
+
+**Captura Automática:**
+- Se registra cada vez que se ejecuta `cambiarEstado()`
+- Timestamp en UTC (Zulu time)
+- Usuario obtenido de `@CurrentSecurityContext`
+- Nombre completo cargado desde relación JPA `PersonalCnt`
+
+### Visualización
+
+**GestionAsegurado.jsx (Mi Bandeja de Pacientes):**
+```
+┌─────────────────────────────────────────────────┐
+│ Fecha Cambio Estado    │ Usuario Cambio Estado   │
+├─────────────────────────────────────────────────┤
+│ 2/2/2026, 1:25:07     │ Jhonatan Test Test      │
+│ 2/2/2026, 1:29:13     │ Jhonatan Test Test      │
+└─────────────────────────────────────────────────┘
+```
+
+**bolsas/solicitudes (Universo General):**
+```
+Tabla de solicitudes ahora incluye:
+├─ Fecha Cambio Estado (timestamp ISO)
+└─ Usuario Cambio Estado (nombre completo)
+```
+
+### Implementación Backend
+
+**SQL Queries Actualizadas (v3.3.1):**
+
+```sql
+-- Antes (v3.0.0): Sin auditoría
+SELECT sb.id_solicitud, sb.numero_solicitud, ... sb.fecha_asignacion
+FROM dim_solicitud_bolsa sb
+
+-- Después (v3.3.1): Con auditoría + nombre completo
+SELECT sb.id_solicitud, sb.numero_solicitud, ...
+       sb.fecha_asignacion,
+       sb.fecha_cambio_estado,
+       sb.usuario_cambio_estado_id,
+       COALESCE(pc.nombre_completo, u.name_user, 'Sin asignar') as nombre_usuario_cambio_estado
+FROM dim_solicitud_bolsa sb
+LEFT JOIN segu_usuario u ON sb.usuario_cambio_estado_id = u.id_user
+LEFT JOIN segu_personal_cnt pc ON u.id_user = pc.id_user
+```
+
+**Service Mapper (v3.3.1):**
+
+```java
+// mapFromResultSet() ahora mapea 4 índices adicionales:
+private SolicitudBolsaDTO mapFromResultSet(Object[] row) {
+    java.time.OffsetDateTime fechaCambioEstado =
+        row.length > 31 ? convertToOffsetDateTime(row[31]) : null;
+
+    return SolicitudBolsaDTO.builder()
+            // ... campos anteriores ...
+            .fechaCambioEstado(fechaCambioEstado)        // row[31]
+            .usuarioCambioEstadoId(
+                row.length > 32 ? toLongSafe(..., row[32]) : null)  // row[32]
+            .nombreUsuarioCambioEstado(
+                row.length > 33 ? (String) row[33] : null)          // row[33]
+            .build();
+}
+```
+
+**Endpoints que retornan Auditoría (v3.3.1):**
+
+1. `GET /api/bolsas/solicitudes` - Listado paginado (sin filtros)
+2. `GET /api/bolsas/solicitudes?filters=...` - Listado con filtros avanzados
+3. `GET /api/bolsas/solicitudes/mi-bandeja` - Mi bandeja personal
+
+### Rastreo de Cambios
+
+**Flujo Completo:**
+
+```
+1. Usuario cambia estado en GestionAsegurado.jsx
+   └─ Click en "Editar estado" → Dropdown → Click "Guardar"
+
+2. Frontend envía PATCH a /api/bolsas/solicitudes/{id}/estado
+
+3. Backend ejecuta cambiarEstado():
+   ├─ Obtener usuario actual desde @CurrentSecurityContext
+   ├─ Establecer fecha_cambio_estado = NOW()
+   ├─ Establecer usuario_cambio_estado_id = currentUser.id
+   ├─ Guardar en BD
+   └─ Return SolicitudBolsaDTO enriquecido
+
+4. Respuesta incluye:
+   {
+     "id_solicitud": 9916,
+     "cod_estado_cita": "CITADO",
+     "fecha_cambio_estado": "2026-02-02T13:25:07Z",
+     "usuario_cambio_estado_id": 181,
+     "nombre_usuario_cambio_estado": "Jhonatan Test Test"
+   }
+
+5. Frontend actualiza tabla:
+   ├─ GestionAsegurado: Muestra timestamp + nombre
+   └─ bolsas/solicitudes: También muestra los mismos datos
+
+6. Usuario puede ver quién y cuándo cambió cada solicitud
+```
+
+### Casos de Uso
+
+**1. Auditoría para SLA:**
+- ¿Cuándo se citó el paciente?
+- ¿Quién fue responsable?
+- Verificar cumplimiento de tiempos de respuesta
+
+**2. Análisis de Performance:**
+- Tiempo promedio de asignación por gestor
+- Velocidad de procesamiento por IPRESS
+- Historial de cambios por periodo
+
+**3. Compliance y Reportes:**
+- Generar reportes de quién hizo qué y cuándo
+- Auditoría regulatoria para EsSalud
+- Trazabilidad completa de decisiones
+
+**4. Debugging de Problemas:**
+- ¿Cuándo cambió a este estado?
+- ¿Quién lo movió?
+- ¿Hay patrones anómalos?
 
 ---
 

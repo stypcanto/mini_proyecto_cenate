@@ -1,0 +1,206 @@
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e10]
+        - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - button "Gestión de Citas" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]:
+              - img [ref=e18]
+              - generic [ref=e21]: Gestión de Citas
+            - img [ref=e22]
+          - generic [ref=e24]:
+            - link "Bienvenida" [ref=e25] [cursor=pointer]:
+              - /url: /citas/bienvenida
+              - img [ref=e26]
+              - generic [ref=e28]: Bienvenida
+            - link "Dashboard Citas" [ref=e29] [cursor=pointer]:
+              - /url: /citas/dashboard
+              - img [ref=e30]
+              - generic [ref=e32]: Dashboard Citas
+            - link "Gestionar Citas" [ref=e33] [cursor=pointer]:
+              - /url: /citas/gestion-asegurado
+              - img [ref=e34]
+              - generic [ref=e38]: Gestionar Citas
+            - link "Bolsa de Pacientes Asignados" [ref=e39] [cursor=pointer]:
+              - /url: /citas/bolsa-pacientes
+              - img [ref=e40]
+              - generic [ref=e42]: Bolsa de Pacientes Asignados
+      - paragraph [ref=e44]: v1.37.4
+  - main "Contenido principal" [ref=e45]:
+    - generic [ref=e47]:
+      - button "Notificaciones" [ref=e48] [cursor=pointer]:
+        - img [ref=e49]
+      - button "J Jhonatan Test Test GESTOR DE CITAS" [ref=e53] [cursor=pointer]:
+        - generic [ref=e55]: J
+        - generic [ref=e56]:
+          - generic [ref=e57]: Jhonatan Test Test
+          - generic [ref=e58]: GESTOR DE CITAS
+        - img [ref=e59]
+    - generic [ref=e61]:
+      - generic [ref=e63]:
+        - generic [ref=e66]:
+          - generic [ref=e67]: J
+          - generic [ref=e68]:
+            - heading "Bienvenid(a), Jhonatan" [level=1] [ref=e69]
+            - paragraph [ref=e70]: Gestor de Citas - Gestión de Pacientes Asignados
+            - generic [ref=e71]:
+              - generic [ref=e72]: "Rol: GESTOR DE CITAS"
+              - generic [ref=e73]: 📅 lunes, 2 de febrero de 2026
+        - generic [ref=e74]:
+          - generic [ref=e76]:
+            - img [ref=e77]
+            - generic [ref=e82]:
+              - paragraph [ref=e83]: Total de Pacientes
+              - paragraph [ref=e84]: "3"
+          - generic [ref=e86]:
+            - img [ref=e87]
+            - generic [ref=e90]:
+              - paragraph [ref=e91]: Pacientes Atendidos
+              - paragraph [ref=e92]: "0"
+          - generic [ref=e94]:
+            - img [ref=e95]
+            - generic [ref=e97]:
+              - paragraph [ref=e98]: Pacientes Pendientes
+              - paragraph [ref=e99]: "3"
+          - generic [ref=e101]:
+            - img [ref=e102]
+            - generic [ref=e104]:
+              - paragraph [ref=e105]: Solicitudes Pendientes
+              - paragraph [ref=e106]: "3"
+        - generic [ref=e107]:
+          - generic [ref=e109]:
+            - generic [ref=e110]:
+              - heading "Mi Bandeja de Pacientes" [level=2] [ref=e111]
+              - paragraph [ref=e112]: Pacientes asignados desde el módulo de Bolsas de Pacientes
+            - generic [ref=e113]:
+              - button "Actualizar" [ref=e114] [cursor=pointer]:
+                - img [ref=e115]
+                - text: Actualizar
+              - button "🔄✓ Auto" [ref=e120] [cursor=pointer]
+              - generic [ref=e121]: 1:08:14
+          - generic [ref=e122]:
+            - generic [ref=e124]:
+              - heading "Filtros" [level=3] [ref=e125]
+              - button "Mostrar filtros" [ref=e126] [cursor=pointer]:
+                - text: Mostrar filtros
+                - img [ref=e127]
+            - table [ref=e130]:
+              - rowgroup [ref=e131]:
+                - row "Seleccionar todo Fecha Asignación DNI Paciente Nombre Paciente Edad Género Especialidad IPRESS Tipo de Cita Teléfono 1 Teléfono 2 Estado Fecha Cambio Estado Usuario Cambio Estado Acciones" [ref=e132]:
+                  - columnheader "Seleccionar todo" [ref=e133]:
+                    - checkbox "Seleccionar todo" [ref=e134] [cursor=pointer]
+                  - columnheader "Fecha Asignación" [ref=e135]
+                  - columnheader "DNI Paciente" [ref=e136]
+                  - columnheader "Nombre Paciente" [ref=e137]
+                  - columnheader "Edad" [ref=e138]
+                  - columnheader "Género" [ref=e139]
+                  - columnheader "Especialidad" [ref=e140]
+                  - columnheader "IPRESS" [ref=e141]
+                  - columnheader "Tipo de Cita" [ref=e142]
+                  - columnheader "Teléfono 1" [ref=e143]
+                  - columnheader "Teléfono 2" [ref=e144]
+                  - columnheader "Estado" [ref=e145]
+                  - columnheader "Fecha Cambio Estado" [ref=e146]
+                  - columnheader "Usuario Cambio Estado" [ref=e147]
+                  - columnheader "Acciones" [ref=e148]
+              - rowgroup [ref=e149]:
+                - row "30/01/2026, 10:09 a. m. 10417941 AMADO HUAPAYA MANUEL ROBERTO 70 M NEUROLOGIA POL.- APP - GUILLERMO KAELIN DE LA F. Interconsulta 910412263 - Pendiente Citar — — 📱 Teléfono" [ref=e150]:
+                  - cell [ref=e151]:
+                    - checkbox [ref=e152] [cursor=pointer]
+                  - cell "30/01/2026, 10:09 a. m." [ref=e153]
+                  - cell "10417941" [ref=e154]
+                  - cell "AMADO HUAPAYA MANUEL ROBERTO" [ref=e155]
+                  - cell "70" [ref=e156]
+                  - cell "M" [ref=e157]
+                  - cell "NEUROLOGIA" [ref=e158]
+                  - cell "POL.- APP - GUILLERMO KAELIN DE LA F." [ref=e159]
+                  - cell "Interconsulta" [ref=e160]
+                  - cell "910412263" [ref=e161]
+                  - cell "-" [ref=e162]
+                  - cell "Pendiente Citar" [ref=e163]:
+                    - combobox [ref=e164]:
+                      - option "Seleccionar estado..."
+                      - option "Pendiente Citar" [selected]
+                      - option "Citado"
+                      - option "Atendido por IPRESS"
+                      - option "No contesta"
+                      - option "No desea"
+                      - option "Apagado"
+                      - option "Teléfono sin servicio"
+                      - option "Número no existe"
+                      - option "Sin vigencia de Seguro"
+                      - option "Historia clínica bloqueada"
+                      - option "Reprogramación Fallida"
+                  - cell "—" [ref=e165]
+                  - cell "—" [ref=e166]
+                  - cell "📱 Teléfono" [ref=e167]:
+                    - button "📱 Teléfono" [ref=e168] [cursor=pointer]
+                - row "30/01/2026, 10:06 a. m. 07328704 SALAS BELAOCHAGA ENRIQUE ADOLFO 82 M - POL. PABLO BERMUDEZ Voluntaria 962825861 - Pendiente Citar — — 📱 Teléfono" [ref=e169]:
+                  - cell [ref=e170]:
+                    - checkbox [ref=e171] [cursor=pointer]
+                  - cell "30/01/2026, 10:06 a. m." [ref=e172]
+                  - cell "07328704" [ref=e173]
+                  - cell "SALAS BELAOCHAGA ENRIQUE ADOLFO" [ref=e174]
+                  - cell "82" [ref=e175]
+                  - cell "M" [ref=e176]
+                  - cell "-" [ref=e177]
+                  - cell "POL. PABLO BERMUDEZ" [ref=e178]
+                  - cell "Voluntaria" [ref=e179]
+                  - cell "962825861" [ref=e180]
+                  - cell "-" [ref=e181]
+                  - cell "Pendiente Citar" [ref=e182]:
+                    - combobox [ref=e183]:
+                      - option "Seleccionar estado..."
+                      - option "Pendiente Citar" [selected]
+                      - option "Citado"
+                      - option "Atendido por IPRESS"
+                      - option "No contesta"
+                      - option "No desea"
+                      - option "Apagado"
+                      - option "Teléfono sin servicio"
+                      - option "Número no existe"
+                      - option "Sin vigencia de Seguro"
+                      - option "Historia clínica bloqueada"
+                      - option "Reprogramación Fallida"
+                  - cell "—" [ref=e184]
+                  - cell "—" [ref=e185]
+                  - cell "📱 Teléfono" [ref=e186]:
+                    - button "📱 Teléfono" [ref=e187] [cursor=pointer]
+                - row "29/01/2026, 12:28 p. m. 46183586 MAMANI CCOSI DIEGO JESUS 36 M NEUROLOGIA CAP III SURQUILLO Referencia 987654321 - Pendiente Citar — — 📱 Teléfono" [ref=e188]:
+                  - cell [ref=e189]:
+                    - checkbox [ref=e190] [cursor=pointer]
+                  - cell "29/01/2026, 12:28 p. m." [ref=e191]
+                  - cell "46183586" [ref=e192]
+                  - cell "MAMANI CCOSI DIEGO JESUS" [ref=e193]
+                  - cell "36" [ref=e194]
+                  - cell "M" [ref=e195]
+                  - cell "NEUROLOGIA" [ref=e196]
+                  - cell "CAP III SURQUILLO" [ref=e197]
+                  - cell "Referencia" [ref=e198]
+                  - cell "987654321" [ref=e199]
+                  - cell "-" [ref=e200]
+                  - cell "Pendiente Citar" [ref=e201]:
+                    - combobox [ref=e202]:
+                      - option "Seleccionar estado..."
+                      - option "Pendiente Citar" [selected]
+                      - option "Citado"
+                      - option "Atendido por IPRESS"
+                      - option "No contesta"
+                      - option "No desea"
+                      - option "Apagado"
+                      - option "Teléfono sin servicio"
+                      - option "Número no existe"
+                      - option "Sin vigencia de Seguro"
+                      - option "Historia clínica bloqueada"
+                      - option "Reprogramación Fallida"
+                  - cell "—" [ref=e203]
+                  - cell "—" [ref=e204]
+                  - cell "📱 Teléfono" [ref=e205]:
+                    - button "📱 Teléfono" [ref=e206] [cursor=pointer]
+      - generic [ref=e207]:
+        - paragraph [ref=e208]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e209]: v1.37.4 - Performance Optimization + Deduplicación Automática + Foto Header + SMTP EsSalud

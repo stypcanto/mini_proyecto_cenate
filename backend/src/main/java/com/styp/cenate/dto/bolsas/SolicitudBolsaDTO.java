@@ -147,6 +147,9 @@ public class SolicitudBolsaDTO {
     @JsonProperty("usuario_cambio_estado_id")
     private Long usuarioCambioEstadoId;
 
+    @JsonProperty("nombre_usuario_cambio_estado")
+    private String nombreUsuarioCambioEstado;
+
     // 🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;

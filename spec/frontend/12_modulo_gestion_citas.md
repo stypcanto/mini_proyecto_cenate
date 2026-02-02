@@ -1,9 +1,9 @@
-# 📋 Módulo de Gestión de Citas v1.41.0
+# 📋 Módulo de Gestión de Citas v1.42.0
 
 > **Gestión de Pacientes Asignados - Frontend**
-> **Versión:** v1.41.0
+> **Versión:** v1.42.0 (con Auditoría de Cambios de Estado)
 > **Estado:** ✅ Producción
-> **Última actualización:** 2026-01-30
+> **Última actualización:** 2026-02-02
 
 ---
 
@@ -315,13 +315,100 @@ Nuevos:
 
 ---
 
+## 🔐 Auditoría de Cambios de Estado (v1.42.0 - IMPLEMENTADO ✅)
+
+### Funcionalidad
+
+El sistema captura automáticamente **quién cambió el estado** de cada paciente y **cuándo lo hizo**. Esta información se muestra en dos nuevas columnas:
+
+**Columnas Implementadas:**
+- **"Fecha Cambio Estado"** - Timestamp ISO del cambio (ej: `2/2/2026, 1:25:07`)
+- **"Usuario Cambio Estado"** - Nombre completo del gestor (ej: `Jhonatan Test Test`)
+
+### Visualización
+
+```
+Tabla GestionAsegurado.jsx
+┌────────────────────────────┬──────────────────────────┐
+│ Fecha Cambio Estado        │ Usuario Cambio Estado    │
+├────────────────────────────┼──────────────────────────┤
+│ 2/2/2026, 1:25:07          │ Jhonatan Test Test       │
+│ 2/2/2026, 1:29:13          │ Jhonatan Test Test       │
+│ —                          │ —                        │ (sin cambios)
+└────────────────────────────┴──────────────────────────┘
+```
+
+### Cómo Funciona
+
+1. **Al cambiar estado:**
+   - Click en "Editar estado" → Seleccionar nuevo estado
+   - Backend registra: `fecha_cambio_estado = NOW()` y `usuario_cambio_estado_id = currentUser.id`
+
+2. **Visualización:**
+   - Frontend obtiene datos de `/api/bolsas/solicitudes/mi-bandeja`
+   - Mapea campos: `fecha_cambio_estado` y `nombre_usuario_cambio_estado`
+   - Muestra en tabla con formato legible
+
+3. **Datos Persistentes:**
+   - Se guarda en BD: `dim_solicitud_bolsa.fecha_cambio_estado`
+   - Relación con usuario: `dim_solicitud_bolsa.usuario_cambio_estado_id → segu_usuario`
+   - Nombre completo desde: `segu_usuario → segu_personal_cnt.nombre_completo`
+
+### Cambios en Frontend (GestionAsegurado.jsx)
+
+**Nuevas columnas en tabla:**
+```javascript
+<columnheader>Fecha Cambio Estado</columnheader>
+<columnheader>Usuario Cambio Estado</columnheader>
+```
+
+**Mapeo de datos:**
+```javascript
+// Mostrar timestamp de cambio
+const fechaCambio = solicitud.fecha_cambio_estado
+  ? new Date(solicitud.fecha_cambio_estado).toLocaleString()
+  : "—";
+
+// Mostrar nombre completo del usuario
+const usuarioNombre = solicitud.nombre_usuario_cambio_estado || "—";
+```
+
+### Cambios en Backend
+
+**SolicitudBolsaRepository.java:**
+- SQL queries actualizadas para incluir auditoría
+- LEFT JOINs a `segu_usuario` + `segu_personal_cnt`
+- Métodos: `findAllWithBolsaDescriptionPaginado()`, `findAllWithFiltersAndPagination()`
+
+**SolicitudBolsaServiceImpl.java:**
+- `mapFromResultSet()` mapea 3 índices nuevos:
+  - `row[31]` → `fechaCambioEstado`
+  - `row[32]` → `usuarioCambioEstadoId`
+  - `row[33]` → `nombreUsuarioCambioEstado`
+
+**Endpoints que lo usan:**
+- `GET /api/bolsas/solicitudes/mi-bandeja` - Respuesta incluye auditoría
+- `GET /api/bolsas/solicitudes` - Todas las solicitudes con auditoría
+- `GET /api/bolsas/solicitudes?filters=...` - Filtradas con auditoría
+
+### Rastreo Completo
+
+Ahora es posible:
+✅ Ver **quién** hizo cada cambio de estado
+✅ Ver **cuándo** se realizó cada cambio
+✅ Reportes de velocidad de gestión por usuario
+✅ Auditoría completa para compliance regulatorio
+✅ Debugging de problemas con datos históricos
+
+---
+
 ## 🚀 Próximos Pasos
 
-1. **Persistencia del estado display:** Actualizar campo `estado` junto con `estadoGestionCitasId`
-2. **Auditoría:** Registrar cambios de estado en tabla de auditoría
+1. **Persistencia del estado display:** ✅ IMPLEMENTADO en v1.42.0
+2. **Auditoría:** ✅ IMPLEMENTADO en v1.42.0
 3. **Validaciones:** Agregar reglas de transición entre estados
 4. **Notificaciones:** Alertar a paciente cuando estado cambia
-5. **Reportes:** Dashboard con estadísticas de estados
+5. **Reportes:** Dashboard con estadísticas de estados y gestores
 
 ---
 
@@ -334,7 +421,7 @@ Nuevos:
 
 ---
 
-**Versión:** v1.41.0
+**Versión:** v1.42.0 (con Auditoría de Cambios)
 **Autor:** Claude Haiku 4.5
-**Fecha:** 2026-01-30
+**Fecha:** 2026-02-02
 **Status:** ✅ Producción

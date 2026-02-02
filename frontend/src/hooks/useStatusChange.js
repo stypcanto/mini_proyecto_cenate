@@ -27,13 +27,13 @@ export const useStatusChange = (onStatusChange, onStatusChangedBackend) => {
       // 1️⃣ CAMBIO OPTIMISTA - Actualizar UI inmediatamente (sin esperar backend)
       onStatusChange(pacienteId, newStatus);
 
-      // 2️⃣ MOSTRAR TOAST CON UNDO (5 segundos)
+      // 2️⃣ MOSTRAR TOAST CON UNDO (5 segundos) - Verde suave
       toastRef.current = toast((t) => (
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center justify-between gap-4 bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex-1">
-            <p className="font-medium text-gray-900">Estado actualizado</p>
-            <p className="text-sm text-gray-600">
-              {pacienteNombre}: <span className="font-semibold">{newStatus}</span>
+            <p className="font-semibold text-green-900">✅ Estado actualizado</p>
+            <p className="text-sm text-green-800">
+              {pacienteNombre}: <span className="font-bold text-green-700">{newStatus}</span>
             </p>
           </div>
           <button
@@ -48,7 +48,7 @@ export const useStatusChange = (onStatusChange, onStatusChangedBackend) => {
                 clearTimeout(timeoutRef.current);
               }
             }}
-            className="px-3 py-1 bg-white text-blue-600 rounded hover:bg-gray-50 font-medium text-sm whitespace-nowrap transition-colors"
+            className="px-3 py-1 bg-white text-green-600 border border-green-300 rounded hover:bg-green-100 font-medium text-sm whitespace-nowrap transition-colors"
           >
             ↶ Deshacer
           </button>
@@ -56,6 +56,11 @@ export const useStatusChange = (onStatusChange, onStatusChangedBackend) => {
       ), {
         duration: 5000,
         position: 'bottom-right',
+        style: {
+          background: 'transparent',
+          boxShadow: 'none',
+          padding: '0'
+        }
       });
 
       // 3️⃣ COMMIT AL BACKEND DESPUÉS DE 5 SEGUNDOS (si no se deshizo)
