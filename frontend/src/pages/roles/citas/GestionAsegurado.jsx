@@ -53,7 +53,7 @@ export default function GestionAsegurado() {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const [estadosDisponibles] = useState([
-    { codigo: "PENDIENTE_CITA", descripcion: "Paciente nuevo que ingresó a la bolsa" },
+    { codigo: "PENDIENTE", descripcion: "Pendiente Citar - Paciente nuevo que ingresó a la bolsa" },
     { codigo: "CITADO", descripcion: "Citado - Paciente agendado para atención" },
     { codigo: "ATENDIDO_IPRESS", descripcion: "Atendido por IPRESS - Paciente recibió atención en institución" },
     { codigo: "NO_CONTESTA", descripcion: "No contesta - Paciente no responde a las llamadas" },
@@ -144,7 +144,7 @@ export default function GestionAsegurado() {
       // Transform SolicitudBolsaDTO to table structure
       const pacientes = solicitudes.map((solicitud, idx) => {
         // Mapear código de estado a descripción
-        const codigoEstado = solicitud.desc_estado_cita || solicitud.descEstadoCita || "PENDIENTE_CITA";
+        const codigoEstado = solicitud.desc_estado_cita || solicitud.descEstadoCita || "PENDIENTE";
         const estadoObj = estadosDisponibles.find(e => e.codigo === codigoEstado);
         const descEstadoFinal = estadoObj ? estadoObj.descripcion : codigoEstado;
 
@@ -171,9 +171,7 @@ export default function GestionAsegurado() {
 
       // Calculate metrics
       const atendidos = pacientes.filter(p => p.codigoEstado === "ATENDIDO_IPRESS").length;
-      const pendientes = pacientes.filter(p =>
-        p.codigoEstado === "PENDIENTE_CITA" || p.codigoEstado === "PENDIENTE"
-      ).length;
+      const pendientes = pacientes.filter(p => p.codigoEstado === "PENDIENTE").length;
 
       setMetrics({
         totalPacientes: pacientes.length,
@@ -942,7 +940,7 @@ export default function GestionAsegurado() {
                                 className={`px-3 py-1 rounded-full text-xs font-medium ${
                                   paciente.codigoEstado === "ATENDIDO_IPRESS"
                                     ? "bg-green-100 text-green-800"
-                                    : paciente.codigoEstado === "PENDIENTE_CITA" || paciente.codigoEstado === "PENDIENTE"
+                                    : paciente.codigoEstado === "PENDIENTE"
                                     ? "bg-yellow-100 text-yellow-800"
                                     : "bg-gray-100 text-gray-800"
                                 }`}
