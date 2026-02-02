@@ -384,16 +384,6 @@ export default function GestionAsegurado() {
               <div className="flex gap-2">
                 <button
                   onClick={() => {
-                    window.location.href = "/bolsas/solicitudes";
-                  }}
-                  className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Asignar Pacientes
-                  <ArrowRight className="w-4 h-4" />
-                </button>
-                <button
-                  onClick={() => {
                     console.log("🔄 Recargando pacientes asignados...");
                     setLoading(true);
                     fetchPacientesAsignados().finally(() => setLoading(false));
