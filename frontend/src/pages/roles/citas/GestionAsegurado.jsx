@@ -449,10 +449,10 @@ export default function GestionAsegurado() {
                         Tipo de Cita
                       </th>
                       <th className="px-6 py-3 text-left font-semibold text-gray-700">
-                        Teléfono
+                        Teléfono 1
                       </th>
                       <th className="px-6 py-3 text-left font-semibold text-gray-700">
-                        Whatsapp
+                        Teléfono 2
                       </th>
                       <th className="px-6 py-3 text-left font-semibold text-gray-700">
                         Estado
