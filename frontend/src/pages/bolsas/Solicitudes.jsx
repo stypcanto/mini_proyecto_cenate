@@ -1538,7 +1538,7 @@ export default function Solicitudes() {
               </div>
               <div className="text-2xl font-bold">
                 {estadisticas.total === null ? (
-                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
                   estadisticas.total
                 )}
@@ -1558,7 +1558,7 @@ export default function Solicitudes() {
               </div>
               <div className="text-2xl font-bold">
                 {estadisticas.pendientes === null ? (
-                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
                   estadisticas.pendientes
                 )}
@@ -1578,7 +1578,7 @@ export default function Solicitudes() {
               </div>
               <div className="text-2xl font-bold">
                 {estadisticas.citados === null ? (
-                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
                   estadisticas.citados
                 )}
@@ -1598,7 +1598,7 @@ export default function Solicitudes() {
               </div>
               <div className="text-2xl font-bold">
                 {estadisticas.asignados === null ? (
-                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
                   estadisticas.asignados
                 )}
@@ -1618,7 +1618,7 @@ export default function Solicitudes() {
               </div>
               <div className="text-2xl font-bold">
                 {estadisticas.sinAsignar === null ? (
-                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                  <span className="inline-block animate-pulse text-sm">⟳ Cargando...</span>
                 ) : (
                   estadisticas.sinAsignar
                 )}
