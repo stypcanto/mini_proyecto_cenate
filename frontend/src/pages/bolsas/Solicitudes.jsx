@@ -1394,7 +1394,7 @@ export default function Solicitudes() {
 
           {/* Filtros - Collapse/Expand con animación suave y contenedor visual mejorado */}
           <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
-            expandFiltros ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+            expandFiltros ? 'max-h-[600px] opacity-100' : 'max-h-0 opacity-0'
           }`}>
           <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
           <ListHeader
