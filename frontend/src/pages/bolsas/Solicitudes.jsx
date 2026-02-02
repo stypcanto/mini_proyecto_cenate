@@ -1430,11 +1430,11 @@ export default function Solicitudes() {
               <div className="text-2xl font-bold">{estadisticas.citados}</div>
             </div>
 
-            {/* Asistió - Verde */}
+            {/* Emitidas de casos asignados - Verde */}
             <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-green-100">Asistió</span>
-                <span className="text-xl">✓</span>
+                <span className="text-green-100">Emitidas de casos asignados</span>
+                <span className="text-xl">📋</span>
               </div>
               <div className="text-2xl font-bold">{estadisticas.atendidos}</div>
             </div>
