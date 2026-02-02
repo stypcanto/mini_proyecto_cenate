@@ -142,28 +142,38 @@ export default function GestionAsegurado() {
       }
 
       // Transform SolicitudBolsaDTO to table structure
-      const pacientes = solicitudes.map((solicitud, idx) => ({
-        id: solicitud.id_solicitud || solicitud.idSolicitud || idx,
-        numeroSolicitud: solicitud.numero_solicitud || solicitud.numeroSolicitud || "-",
-        pacienteDni: solicitud.paciente_dni || solicitud.pacienteDni || "-",
-        pacienteNombre: solicitud.paciente_nombre || solicitud.pacienteNombre || "-",
-        pacienteEdad: solicitud.paciente_edad || solicitud.pacienteEdad || "-",
-        pacienteSexo: solicitud.paciente_sexo || solicitud.pacienteSexo || "-",
-        pacienteTelefono: solicitud.paciente_telefono || solicitud.pacienteTelefono || "-",
-        pacienteTelefonoAlterno: solicitud.paciente_telefono_alterno || solicitud.pacienteTelefonoAlterno || "-",
-        especialidad: solicitud.especialidad || "-",
-        tipoCita: solicitud.tipo_cita || solicitud.tipoCita || "-",
-        descIpress: solicitud.desc_ipress || solicitud.descIpress || "-",
-        descEstadoCita: solicitud.desc_estado_cita || solicitud.descEstadoCita || "PENDIENTE",
-        fechaSolicitud: solicitud.fecha_solicitud || solicitud.fechaSolicitud || new Date().toISOString(),
-        fechaAsignacion: solicitud.fecha_asignacion || solicitud.fechaAsignacion || "-",
-      }));
+      const pacientes = solicitudes.map((solicitud, idx) => {
+        // Mapear código de estado a descripción
+        const codigoEstado = solicitud.desc_estado_cita || solicitud.descEstadoCita || "PENDIENTE_CITA";
+        const estadoObj = estadosDisponibles.find(e => e.codigo === codigoEstado);
+        const descEstadoFinal = estadoObj ? estadoObj.descripcion : codigoEstado;
+
+        return {
+          id: solicitud.id_solicitud || solicitud.idSolicitud || idx,
+          numeroSolicitud: solicitud.numero_solicitud || solicitud.numeroSolicitud || "-",
+          pacienteDni: solicitud.paciente_dni || solicitud.pacienteDni || "-",
+          pacienteNombre: solicitud.paciente_nombre || solicitud.pacienteNombre || "-",
+          pacienteEdad: solicitud.paciente_edad || solicitud.pacienteEdad || "-",
+          pacienteSexo: solicitud.paciente_sexo || solicitud.pacienteSexo || "-",
+          pacienteTelefono: solicitud.paciente_telefono || solicitud.pacienteTelefono || "-",
+          pacienteTelefonoAlterno: solicitud.paciente_telefono_alterno || solicitud.pacienteTelefonoAlterno || "-",
+          especialidad: solicitud.especialidad || "-",
+          tipoCita: solicitud.tipo_cita || solicitud.tipoCita || "-",
+          descIpress: solicitud.desc_ipress || solicitud.descIpress || "-",
+          descEstadoCita: descEstadoFinal,
+          codigoEstado: codigoEstado, // Guardar también el código para comparaciones
+          fechaSolicitud: solicitud.fecha_solicitud || solicitud.fechaSolicitud || new Date().toISOString(),
+          fechaAsignacion: solicitud.fecha_asignacion || solicitud.fechaAsignacion || "-",
+        };
+      });
 
       setPacientesAsignados(pacientes);
 
       // Calculate metrics
-      const atendidos = pacientes.filter(p => p.descEstadoCita === "ATENDIDA").length;
-      const pendientes = pacientes.filter(p => p.descEstadoCita === "PENDIENTE").length;
+      const atendidos = pacientes.filter(p => p.codigoEstado === "ATENDIDO_IPRESS").length;
+      const pendientes = pacientes.filter(p =>
+        p.codigoEstado === "PENDIENTE_CITA" || p.codigoEstado === "PENDIENTE"
+      ).length;
 
       setMetrics({
         totalPacientes: pacientes.length,
@@ -930,9 +940,9 @@ export default function GestionAsegurado() {
                             <div className="flex items-center gap-2">
                               <span
                                 className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  paciente.descEstadoCita === "ATENDIDA"
+                                  paciente.codigoEstado === "ATENDIDO_IPRESS"
                                     ? "bg-green-100 text-green-800"
-                                    : paciente.descEstadoCita === "PENDIENTE"
+                                    : paciente.codigoEstado === "PENDIENTE_CITA" || paciente.codigoEstado === "PENDIENTE"
                                     ? "bg-yellow-100 text-yellow-800"
                                     : "bg-gray-100 text-gray-800"
                                 }`}
