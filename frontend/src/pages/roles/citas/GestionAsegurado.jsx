@@ -825,10 +825,16 @@ export default function GestionAsegurado() {
                           idx % 2 === 0 ? "bg-white" : "bg-gray-50"
                         }`}
                       >
-                        <td className="px-4 py-3 text-slate-600 text-xs">
+                        <td className="px-4 py-3 text-gray-900 text-xs font-medium">
                           {paciente.fechaAsignacion === "-"
                             ? "-"
-                            : new Date(paciente.fechaAsignacion).toLocaleDateString("es-ES")}
+                            : new Date(paciente.fechaAsignacion).toLocaleString("es-ES", {
+                                year: 'numeric',
+                                month: '2-digit',
+                                day: '2-digit',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
                         </td>
                         <td className="px-4 py-3 font-medium text-slate-900">
                           {paciente.pacienteDni}
