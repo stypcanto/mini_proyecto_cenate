@@ -1392,10 +1392,11 @@ export default function Solicitudes() {
             </button>
           </div>
 
-          {/* Filtros - Collapse/Expand con animación suave */}
+          {/* Filtros - Collapse/Expand con animación suave y contenedor visual mejorado */}
           <div className={`overflow-hidden transition-all duration-500 ease-in-out ${
             expandFiltros ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
           }`}>
+          <div className="bg-gradient-to-br from-gray-50 to-gray-100 border border-gray-200 rounded-xl p-6 shadow-sm mb-6">
           <ListHeader
             title=""
             showTitle={false}
@@ -1527,16 +1528,18 @@ export default function Solicitudes() {
             }}
           />
           </div>
+          </div>
 
           {/* 📌 ESPACIADO: Separación entre filtros y tabla */}
-          <div className="h-6"></div>
+          <div className="h-4"></div>
 
           {/* Botones para descargar y borrar selección O TODAS */}
           {(selectedRows.size > 0 || solicitudes.length > 0) && (
-            <div className="mb-8">
+            <div className="mb-8 bg-gradient-to-r from-blue-50 via-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 shadow-sm">
               {/* Botón para seleccionar TODAS */}
               {!seleccionarTodas && solicitudes.length > selectedRows.size && (
-                <div className="mb-3 p-3 bg-blue-50 border border-blue-300 rounded-lg flex items-center justify-between">
+                <div className="mb-4 p-4 bg-white border border-blue-300 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
+
                   <div>
                     <p className="text-sm text-blue-900 font-semibold">
                       📌 Tienes {totalElementos || solicitudes.length} solicitudes totales (en la BD)
@@ -1634,10 +1637,10 @@ export default function Solicitudes() {
           )}
 
           {/* 📌 ESPACIADO ADICIONAL: Separación antes de la tabla */}
-          <div className="h-8"></div>
+          <div className="h-4"></div>
 
-          {/* Tabla con nuevo diseño visual */}
-          <div className="overflow-x-auto">
+          {/* Tabla con nuevo diseño visual - Contenedor mejorado */}
+          <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-200">
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-64 gap-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
