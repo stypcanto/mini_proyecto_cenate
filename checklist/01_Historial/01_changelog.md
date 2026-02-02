@@ -3,6 +3,7 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.42.1**: Fix Estadísticas + Tipo Cita (2026-02-01) - Estadísticas correctas + 6,404 N/A → Voluntaria
 > - ⭐ **NUEVO - v1.41.0**: Módulo Gestión de Citas - Estado Dropdown + Actualizar Teléfono (2026-01-30)
 > - ⭐ **NUEVO - v1.39.4**: Reestructuración PowerBI - Dashboard en página separada para EXTERNO (2026-01-30)
 > - ⭐ **NUEVO - v1.39.3**: Fix timeouts SMTP - Aumentar de 15s a 30s para servidor EsSalud (2026-01-30)
@@ -18,6 +19,61 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.42.1 (2026-02-01) - 🔧 Fix: Estadísticas Módulo 107 + Estandarización Tipo Cita
+
+### ✅ Problema Identificado
+
+1. **Estadísticas incorrectas en Módulo 107**
+   - Card "Total Pacientes" mostraba 25 (primer página) en lugar de 7,973
+   - Pendientes y Atendidos hardcodeados a 0
+   - BD contiene datos correctos, pero servicio no los calculaba
+
+2. **Tipo Cita con valores N/A**
+   - 6,404 registros en `dim_solicitud_bolsa` con `tipo_cita = 'N/A'`
+   - Debería ser "Voluntaria" para consistencia
+
+### ✅ Solución Implementada
+
+#### Backend (Módulo 107):
+```java
+// Repository: Agregar método para contar por estado
+@Query("SELECT COUNT(...) FROM AtencionClinica107 a WHERE UPPER(a.estado) = UPPER(:estado)")
+Long contarPorEstadoDescripcion(@Param("estado") String estado);
+
+// Servicio: Calcular estadísticas reales
+Long pendientes = repository.contarPorEstadoDescripcion("PENDIENTE");
+Long atendidos = repository.contarPorEstadoDescripcion("ATENDIDO");
+```
+
+#### Base de Datos:
+```sql
+-- Actualizar 6,404 registros
+UPDATE dim_solicitud_bolsa
+SET tipo_cita = 'Voluntaria'
+WHERE tipo_cita = 'N/A' OR tipo_cita IS NULL;
+
+-- Script: spec/database/06_scripts/002_fix_tipo_cita_na_to_voluntaria.sql
+```
+
+### 📊 Resultados
+
+| Métrica | Antes | Después |
+|---------|-------|---------|
+| Total Pacientes | 25 | 7,973 ✅ |
+| Pendientes | 0 | Valor real ✅ |
+| Atendidos | 0 | Valor real ✅ |
+| Registros N/A | 6,404 | 0 ✅ |
+| Total Voluntaria | 6,737 | 7,141 ✅ |
+
+### 📝 Archivos Modificados
+
+- `AtencionClinica107Repository.java` - Agregar método contarPorEstadoDescripcion()
+- `AtencionClinica107ServiceImpl.java` - Implementar cálculo de estadísticas
+- `spec/database/06_scripts/002_fix_tipo_cita_na_to_voluntaria.sql` - Migración BD
+- `checklist/01_Historial/01_changelog.md` - Este documento
 
 ---
 
