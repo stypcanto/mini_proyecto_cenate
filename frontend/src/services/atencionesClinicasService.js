@@ -2,13 +2,96 @@
 // atencionesClinicasService.js - Servicio para gestión de atenciones clínicas
 // ------------------------------------------------------------------------
 // CENATE 2026 | Servicio para comunicación con API de trazabilidad clínica
+// Módulo 107 - Atenciones Clínicas
 // ========================================================================
 
 import api from './apiClient';
 
-const BASE_URL = '/atenciones-clinicas';
+const BASE_URL = '/atenciones-clinicas-107';
 
 export const atencionesClinicasService = {
+
+  /**
+   * Listar atenciones clínicas con filtros avanzados
+   * @param {Object} filtros - Filtros a aplicar
+   * @param {number} pageNumber - Número de página (default: 0)
+   * @param {number} pageSize - Tamaño de página (default: 25)
+   */
+  listarConFiltros: async (filtros = {}, pageNumber = 0, pageSize = 25) => {
+    try {
+      const params = new URLSearchParams();
+      
+      // Agregar parámetros de paginación
+      params.append('pageNumber', pageNumber.toString());
+      params.append('pageSize', pageSize.toString());
+      
+      // Agregar filtros si existen y no son valores por defecto
+      if (filtros.estado && filtros.estado !== "todos") {
+        params.append('estado', filtros.estado);
+      }
+      
+      if (filtros.estadoGestionCitasId && filtros.estadoGestionCitasId !== "todos") {
+        params.append('estadoGestionCitasId', filtros.estadoGestionCitasId);
+      }
+      
+      if (filtros.tipoDocumento && filtros.tipoDocumento !== "todos") {
+        params.append('tipoDocumento', filtros.tipoDocumento);
+      }
+      
+      if (filtros.pacienteDni) {
+        params.append('pacienteDni', filtros.pacienteDni);
+      }
+      
+      if (filtros.fechaDesde) {
+        params.append('fechaDesde', filtros.fechaDesde);
+      }
+      
+      if (filtros.fechaHasta) {
+        params.append('fechaHasta', filtros.fechaHasta);
+      }
+      
+      if (filtros.idIpress) {
+        params.append('idIpress', filtros.idIpress);
+      }
+      
+      if (filtros.derivacion && filtros.derivacion !== "todas") {
+        params.append('derivacion', filtros.derivacion);
+      }
+      
+      if (filtros.especialidad && filtros.especialidad !== "todas") {
+        params.append('especialidad', filtros.especialidad);
+      }
+      
+      if (filtros.tipoCita && filtros.tipoCita !== "todas") {
+        params.append('tipoCita', filtros.tipoCita);
+      }
+      
+      if (filtros.searchTerm) {
+        params.append('searchTerm', filtros.searchTerm);
+      }
+      
+      const url = `${BASE_URL}/listar?${params.toString()}`;
+      const data = await api.get(url);
+      return data;
+    } catch (error) {
+      console.error('Error al listar atenciones clínicas con filtros:', error);
+      throw error;
+    }
+  },
+
+  /**
+   * Obtener estadísticas de atenciones clínicas
+   */
+  obtenerEstadisticas: async () => {
+    try {
+      const data = await api.get(`${BASE_URL}/estadisticas`);
+      return data;
+    } catch (error) {
+      console.error('Error al obtener estadísticas:', error);
+      throw error;
+    }
+  },
+
   /**
    * Obtener atenciones de un asegurado (paginado)
    * @param {string} pkAsegurado - PK del asegurado
