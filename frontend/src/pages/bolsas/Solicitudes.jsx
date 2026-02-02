@@ -888,14 +888,17 @@ export default function Solicitudes() {
         const estado = stat.estado?.toUpperCase();
         const cantidad = stat.cantidad || 0;
         statsMap[estado] = cantidad;
-        total += cantidad;
+        // 👥 v1.41.0: Total NO incluye ASIGNADOS (es una métrica separada)
+        if (estado !== 'ASIGNADOS') {
+          total += cantidad;
+        }
       });
 
       return {
         total: total,
         pendientes: statsMap['PENDIENTE'] || 0,           // PENDIENTE_CITA → estado 'pendiente'
         citados: statsMap['CITADO'] || 0,                 // CITADO → estado 'citado'
-        atendidos: statsMap['ASISTIO'] || statsMap['ATENDIDO'] || 0,  // ATENDIDO o ASISTIO
+        asignados: statsMap['ASIGNADOS'] || 0,            // 👥 v1.41.0: Casos asignados a gestora
         observados: (statsMap['CANCELADO'] || 0) + (statsMap['OBSERVADO'] || 0),  // CANCELADO + OBSERVADO
       };
     } else {
@@ -904,7 +907,7 @@ export default function Solicitudes() {
         total: solicitudes.length,
         pendientes: solicitudes.filter(s => s.estado === 'pendiente').length,
         citados: solicitudes.filter(s => s.estado === 'citado').length,
-        atendidos: solicitudes.filter(s => s.estado === 'atendido').length,
+        asignados: 0,  // 👥 v1.41.0: Fallback sin datos
         observados: solicitudes.filter(s => s.estado === 'observado').length,
       };
     }
@@ -1436,7 +1439,7 @@ export default function Solicitudes() {
                 <span className="text-green-100">Casos Asignados</span>
                 <span className="text-xl">👥</span>
               </div>
-              <div className="text-2xl font-bold">{estadisticas.atendidos}</div>
+              <div className="text-2xl font-bold">{estadisticas.asignados}</div>
             </div>
 
             {/* Observados - Rojo */}
