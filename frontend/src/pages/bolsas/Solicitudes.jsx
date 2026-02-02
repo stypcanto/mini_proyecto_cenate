@@ -1752,7 +1752,7 @@ export default function Solicitudes() {
               scrollbarColor: '#3b82f6 #f3f4f6',
             }}
           >
-            <div style={{ width: '100%', height: '1px' }}></div>
+            <div style={{ width: '3000px', height: '1px' }}></div>
           </div>
 
           <style>{`
