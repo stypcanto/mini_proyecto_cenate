@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Plus, Search, Phone, ChevronDown, Circle, Eye, Users, UserPlus, Download, FileText, FolderOpen, ListChecks, Upload, AlertCircle, Edit, X } from 'lucide-react';
 import PageHeader from '../../components/PageHeader';
 import StatCard from '../../components/StatCard';
@@ -103,6 +103,24 @@ export default function Solicitudes() {
   const [aseguradosNuevos, setAseguradosNuevos] = useState([]);
 
   // Estado para asegurados sincronizados recientemente
+
+  // Referencias para sincronizar scroll horizontal
+  const topScrollRef = useRef(null);
+  const bottomScrollRef = useRef(null);
+
+  // Sincronizar scroll horizontal top → bottom
+  const handleTopScroll = () => {
+    if (topScrollRef.current && bottomScrollRef.current) {
+      bottomScrollRef.current.scrollLeft = topScrollRef.current.scrollLeft;
+    }
+  };
+
+  // Sincronizar scroll horizontal bottom → top
+  const handleBottomScroll = () => {
+    if (topScrollRef.current && bottomScrollRef.current) {
+      topScrollRef.current.scrollLeft = bottomScrollRef.current.scrollLeft;
+    }
+  };
   const [modalAseguradosSincronizados, setModalAseguradosSincronizados] = useState(false);
   const [aseguradosSincronizados, setAseguradosSincronizados] = useState([]);
 
@@ -1611,41 +1629,9 @@ export default function Solicitudes() {
           {/* 📌 ESPACIADO: Separación entre filtros y tabla */}
           <div className="h-4"></div>
 
-          {/* Botones para descargar y borrar selección O TODAS */}
+          {/* Botones de acción: asignar gestora, descargar, cambiar bolsa, limpiar y borrar */}
           {(selectedRows.size > 0 || solicitudes.length > 0) && (
-            <div className="mb-8 bg-gradient-to-r from-blue-50 via-blue-50 to-indigo-50 rounded-xl p-4 border border-blue-200 shadow-sm">
-              {/* Botón para seleccionar TODAS */}
-              {!seleccionarTodas && solicitudes.length > selectedRows.size && (
-                <div className="mb-4 p-4 bg-white border border-blue-300 rounded-lg flex items-center justify-between shadow-sm hover:shadow-md transition-shadow">
-
-                  <div>
-                    <p className="text-sm text-blue-900 font-semibold">
-                      📌 Tienes {totalElementos || solicitudes.length} solicitudes totales (en la BD)
-                      {searchTerm && ` - Mostrando ${solicitudes.length} en esta página`}
-                    </p>
-                    <p className="text-sm font-bold text-blue-700 flex items-center gap-2">
-                      ✓ <span className="text-lg text-blue-600">{selectedRows.size}</span> seleccionadas
-                      {selectedRows.size > 0 && totalElementos && (
-                        <span className="text-xs text-blue-600">
-                          ({((selectedRows.size / totalElementos) * 100).toFixed(1)}% del total)
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setSeleccionarTodas(true);
-                      setCantidadABorrar(solicitudes.length);
-                    }}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold text-sm transition-colors"
-                  >
-                    Seleccionar TODAS
-                  </button>
-                </div>
-              )}
-
-              {/* Botones de acción: asignar gestora, descargar, cambiar bolsa, limpiar y borrar */}
-              <div className="flex justify-end gap-3 flex-wrap">
+            <div className="flex justify-end gap-3 flex-wrap">
                 {selectedRows.size > 1 && !seleccionarTodas && (
                   <button
                     onClick={() => {
@@ -1736,8 +1722,84 @@ export default function Solicitudes() {
           {/* 📌 ESPACIADO ADICIONAL: Separación antes de la tabla */}
           <div className="h-4"></div>
 
+          {/* SCROLL SUPERIOR para indicar que hay más columnas */}
+          <style>{`
+            .scroll-top::-webkit-scrollbar {
+              height: 12px;
+            }
+            .scroll-top::-webkit-scrollbar-track {
+              background: #dbeafe;
+              border-radius: 6px;
+            }
+            .scroll-top::-webkit-scrollbar-thumb {
+              background: #0ea5e9;
+              border-radius: 6px;
+              border: 1px solid #dbeafe;
+            }
+            .scroll-top::-webkit-scrollbar-thumb:hover {
+              background: #0284c7;
+            }
+          `}</style>
+          <div
+            ref={topScrollRef}
+            onScroll={handleTopScroll}
+            className="overflow-x-auto bg-cyan-50 border-2 border-cyan-300 rounded-t-xl py-2 px-4 scroll-top"
+            style={{
+              scrollbarWidth: 'thick',
+              scrollbarColor: '#0ea5e9 #dbeafe',
+            }}
+          >
+            <div className="flex whitespace-nowrap text-xs font-semibold text-cyan-700">
+              <span className="inline-block w-16 px-2">📋</span>
+              <span className="inline-block w-32 px-2">Origen Bolsa</span>
+              <span className="inline-block w-32 px-2">Fecha Preferida</span>
+              <span className="inline-block w-28 px-2">Tipo Doc</span>
+              <span className="inline-block w-24 px-2">DNI</span>
+              <span className="inline-block w-48 px-2">Paciente</span>
+              <span className="inline-block w-32 px-2">F. Nacimiento</span>
+              <span className="inline-block w-16 px-2">Sexo</span>
+              <span className="inline-block w-16 px-2">Edad</span>
+              <span className="inline-block w-28 px-2">Teléfono</span>
+              <span className="inline-block w-32 px-2">Tel. Alterno</span>
+              <span className="inline-block w-40 px-2">Correo</span>
+              <span className="inline-block w-24 px-2">Tipo Cita</span>
+              <span className="inline-block w-32 px-2">Especialidad</span>
+              <span className="inline-block w-20 px-2">Cod IPRESS</span>
+              <span className="inline-block w-32 px-2">IPRESS</span>
+              <span className="inline-block w-24 px-2">Red</span>
+              <span className="inline-block w-24 px-2">Estado</span>
+              <span className="inline-block w-32 px-2">F. Asignación</span>
+              <span className="inline-block w-28 px-2">Gestora</span>
+              <span className="inline-block w-24 px-2">Acciones</span>
+            </div>
+          </div>
+
           {/* Tabla con nuevo diseño visual - Contenedor mejorado */}
-          <div className="overflow-x-auto bg-white rounded-xl shadow-lg border border-gray-200">
+          <style>{`
+            .table-container::-webkit-scrollbar {
+              height: 14px;
+            }
+            .table-container::-webkit-scrollbar-track {
+              background: #f3f4f6;
+            }
+            .table-container::-webkit-scrollbar-thumb {
+              background: #3b82f6;
+              border-radius: 7px;
+              border: 2px solid #f3f4f6;
+            }
+            .table-container::-webkit-scrollbar-thumb:hover {
+              background: #1d4ed8;
+            }
+          `}</style>
+          <div
+            ref={bottomScrollRef}
+            onScroll={handleBottomScroll}
+            className="overflow-x-auto bg-white rounded-b-xl shadow-lg border border-gray-200 table-container"
+            style={{
+              scrollbarWidth: 'thick',
+              scrollbarColor: '#3b82f6 #f3f4f6',
+            }}
+          >
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-64 gap-4">
                 <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>

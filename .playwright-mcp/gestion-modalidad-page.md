@@ -1,0 +1,82 @@
+### Page state
+- Page URL: http://localhost:3000/roles/externo/gestion-modalidad
+- Page Title: Intranet CENATE
+- Page Snapshot:
+```yaml
+- generic [ref=e3]:
+  - complementary [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e9]:
+        - img "Logo CENATE" [ref=e10]
+        - button "Colapsar menu" [ref=e11] [cursor=pointer]:
+          - img [ref=e12]
+      - navigation [ref=e14]:
+        - generic [ref=e15]:
+          - button "Gestión de Personal Externo" [ref=e16] [cursor=pointer]:
+            - generic [ref=e17]:
+              - img [ref=e18]
+              - generic [ref=e23]: Gestión de Personal Externo
+            - img [ref=e24]
+          - generic [ref=e26]:
+            - link "Formulario de Diagnóstico" [ref=e27] [cursor=pointer]:
+              - /url: /roles/externo/formulario-diagnostico
+              - img [ref=e28]
+              - generic [ref=e31]: Formulario de Diagnóstico
+            - link "Solicitud de Turnos" [ref=e32] [cursor=pointer]:
+              - /url: /roles/externo/solicitud-turnos
+              - img [ref=e33]
+              - generic [ref=e36]: Solicitud de Turnos
+      - paragraph [ref=e38]: v1.15.11
+  - main "Contenido principal" [ref=e39]:
+    - generic [ref=e41]:
+      - heading [level=1]
+      - button "Menú de usuario" [ref=e44] [cursor=pointer]:
+        - generic [ref=e46]: JL
+        - generic [ref=e47]:
+          - generic "Jesus Lopez" [ref=e48]
+          - generic "H.I ALTO MAYO" [ref=e49]
+        - img [ref=e50]
+    - generic [ref=e53]:
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - heading "Información de su Institución" [level=2] [ref=e56]
+          - generic [ref=e57]:
+            - generic [ref=e58]:
+              - generic [ref=e59]: Código IPRESS
+              - paragraph [ref=e60]: "281"
+            - generic [ref=e61]:
+              - generic [ref=e62]: ID IPRESS
+              - paragraph [ref=e63]: "3"
+            - generic [ref=e64]:
+              - generic [ref=e65]: Nombre
+              - paragraph [ref=e66]: H.I ALTO MAYO
+            - generic [ref=e67]:
+              - generic [ref=e68]: Red de Salud
+              - paragraph [ref=e69]: MICRORED ASISTENCIAL MOYOBAMBA
+            - generic [ref=e70]:
+              - generic [ref=e71]: Modalidad Actual
+              - paragraph [ref=e72]: NO SE BRINDA SERVICIO
+        - generic [ref=e73]:
+          - heading "Actualizar Modalidad de Atención" [level=2] [ref=e74]
+          - generic [ref=e75]:
+            - generic [ref=e76]:
+              - generic [ref=e77]: Modalidad de Atención *
+              - combobox [active] [ref=e78]:
+                - option "-- Seleccionar modalidad --" [selected]
+            - generic [ref=e79]:
+              - button "Guardar Cambios" [ref=e80] [cursor=pointer]:
+                - img [ref=e81]
+                - text: Guardar Cambios
+              - button "Recargar" [ref=e83] [cursor=pointer]:
+                - img [ref=e84]
+                - text: Recargar
+        - generic [ref=e89]:
+          - heading "ℹ️ Información" [level=3] [ref=e90]
+          - list [ref=e91]:
+            - listitem [ref=e92]: Puede actualizar la modalidad de atención de su institución las veces que sea necesario
+            - listitem [ref=e93]: Si selecciona MIXTA, debe proporcionar detalles de ambas modalidades (Teleconsulta y Teleconsultorio)
+            - listitem [ref=e94]: Los cambios se guardarán inmediatamente en la base de datos
+      - generic [ref=e95]:
+        - paragraph [ref=e96]: CENATE - Sistema de Telemedicina - EsSalud 2026
+        - paragraph [ref=e97]: v1.15.11 - Corrección Estados Dashboard
+```
