@@ -22,6 +22,7 @@ import {
   ArrowRight,
   Edit2,
   ChevronDown,
+  Download,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -72,6 +73,7 @@ export default function GestionAsegurado() {
   const [filtroTipoCita, setFiltroTipoCita] = useState("todas");
   const [filtroEstado, setFiltroEstado] = useState("todos");
   const [expandFiltros, setExpandFiltros] = useState(false); // Filtros colapsados por defecto
+  const [selectedRows, setSelectedRows] = useState(new Set()); // Selección de pacientes para descarga
 
   const API_BASE = "http://localhost:8080/api";
 
@@ -300,6 +302,85 @@ export default function GestionAsegurado() {
       toast.error("Error al actualizar el teléfono");
     } finally {
       setModalTelefono({ ...modalTelefono, saving: false });
+    }
+  };
+
+  // ============================================================================
+  // ✅ FUNCIONES DE SELECCIÓN Y DESCARGA
+  // ============================================================================
+
+  // Toggle selección individual
+  const toggleRowSelection = (id) => {
+    const newSelected = new Set(selectedRows);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
+    }
+    setSelectedRows(newSelected);
+  };
+
+  // Toggle seleccionar todos los visibles (filtrados)
+  const toggleAllRows = () => {
+    if (selectedRows.size === pacientesFiltrados.length && pacientesFiltrados.length > 0) {
+      setSelectedRows(new Set());
+    } else {
+      setSelectedRows(new Set(pacientesFiltrados.map(p => p.id)));
+    }
+  };
+
+  // Descargar selección de pacientes
+  const descargarSeleccion = async () => {
+    if (selectedRows.size === 0) {
+      toast.error("Selecciona al menos un paciente para descargar");
+      return;
+    }
+
+    try {
+      const idsSeleccionados = Array.from(selectedRows);
+      console.log("📊 Pacientes seleccionados para descargar:", idsSeleccionados);
+
+      const token = getToken();
+      const queryParams = new URLSearchParams({
+        ids: idsSeleccionados.join(","),
+      });
+
+      const response = await fetch(
+        `${API_BASE}/bolsas/solicitudes/exportar-asignados?${queryParams}`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/octet-stream",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const csvBlob = await response.blob();
+
+      // Descargar archivo
+      const element = document.createElement("a");
+      const url = URL.createObjectURL(csvBlob);
+      element.setAttribute("href", url);
+      element.setAttribute(
+        "download",
+        `pacientes_asignados_${new Date().toISOString().split("T")[0]}.csv`
+      );
+      element.style.display = "none";
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      URL.revokeObjectURL(url);
+
+      toast.success(`Descargados ${selectedRows.size} paciente(s)`);
+      setSelectedRows(new Set());
+    } catch (error) {
+      console.error("Error descargando CSV:", error);
+      toast.error("Error al descargar el archivo. Intenta nuevamente.");
     }
   };
 
@@ -566,6 +647,16 @@ export default function GestionAsegurado() {
                   Actualizar
                 </button>
 
+                {selectedRows.size > 0 && (
+                  <button
+                    onClick={descargarSeleccion}
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-semibold transition-colors shadow-md hover:shadow-lg"
+                  >
+                    <Download size={20} />
+                    Descargar ({selectedRows.size})
+                  </button>
+                )}
+
                 <button
                   onClick={() => setAutoRefreshEnabled(!autoRefreshEnabled)}
                   className={`px-3 py-2 rounded-lg font-medium transition-colors text-xs flex items-center gap-1 ${
@@ -774,6 +865,15 @@ export default function GestionAsegurado() {
                   <thead className="bg-[#0D5BA9] text-white sticky top-0">
                     <tr className="border-b-2 border-blue-800">
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        <input
+                          type="checkbox"
+                          checked={selectedRows.size === pacientesFiltrados.length && pacientesFiltrados.length > 0}
+                          onChange={toggleAllRows}
+                          className="w-5 h-5 cursor-pointer"
+                          title={selectedRows.size === pacientesFiltrados.length ? "Deseleccionar todo" : "Seleccionar todo"}
+                        />
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Fecha Asignación
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
@@ -822,9 +922,21 @@ export default function GestionAsegurado() {
                       <tr
                         key={paciente.id}
                         className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
-                          idx % 2 === 0 ? "bg-white" : "bg-gray-50"
+                          selectedRows.has(paciente.id) ? 'bg-blue-100 border-blue-300' : (idx % 2 === 0 ? "bg-white" : "bg-gray-50")
                         }`}
                       >
+                        <td className="px-4 py-3">
+                          <input
+                            type="checkbox"
+                            checked={selectedRows.has(paciente.id)}
+                            onChange={() => toggleRowSelection(paciente.id)}
+                            className={`w-5 h-5 border-2 rounded cursor-pointer transition-all ${
+                              selectedRows.has(paciente.id)
+                                ? 'bg-blue-600 border-blue-600 accent-white'
+                                : 'border-gray-300 hover:border-blue-400'
+                            }`}
+                          />
+                        </td>
                         <td className="px-4 py-3 text-gray-900 text-xs font-medium">
                           {paciente.fechaAsignacion === "-"
                             ? "-"

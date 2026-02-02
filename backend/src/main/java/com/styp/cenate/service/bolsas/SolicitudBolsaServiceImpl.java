@@ -2497,4 +2497,71 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
     }
 
+    /**
+     * Exporta solicitudes asignadas a la gestora actual a formato CSV
+     * Usado en la descarga desde "Mi Bandeja" (GestionAsegurado)
+     *
+     * @param ids lista de IDs de solicitudes a exportar
+     * @return datos CSV en bytes
+     */
+    @Override
+    public byte[] exportarCSVAsignados(List<Long> ids) {
+        try {
+            log.info("📄 Exportando {} solicitudes asignadas a CSV", ids.size());
+
+            // Obtener las solicitudes por IDs especificados
+            List<SolicitudBolsaDTO> solicitudes = ids.stream()
+                .map(id -> obtenerPorId(id).orElse(null))
+                .filter(s -> s != null)
+                .toList();
+
+            if (solicitudes.isEmpty()) {
+                log.warn("⚠️ No hay solicitudes para exportar");
+                return new byte[0];
+            }
+
+            // Construir CSV manualmente con los campos deseados para gestión de citas
+            StringBuilder csv = new StringBuilder();
+
+            // Encabezados
+            csv.append("DNI,NOMBRE,EDAD,SEXO,TELÉFONO 1,TELÉFONO 2,ESPECIALIDAD,IPRESS,ESTADO,FECHA ASIGNACIÓN\n");
+
+            // Datos
+            for (SolicitudBolsaDTO solicitud : solicitudes) {
+                csv.append(escaparCSV(solicitud.getPacienteDni())).append(",");
+                csv.append(escaparCSV(solicitud.getPacienteNombre())).append(",");
+                csv.append(escaparCSV(String.valueOf(solicitud.getPacienteEdad()))).append(",");
+                csv.append(escaparCSV(solicitud.getPacienteSexo())).append(",");
+                csv.append(escaparCSV(solicitud.getPacienteTelefono())).append(",");
+                csv.append(escaparCSV(solicitud.getPacienteTelefonoAlterno())).append(",");
+                csv.append(escaparCSV(solicitud.getEspecialidad())).append(",");
+                csv.append(escaparCSV(solicitud.getDescIpress())).append(",");
+                csv.append(escaparCSV(solicitud.getDescEstadoCita())).append(",");
+                csv.append(escaparCSV(String.valueOf(solicitud.getFechaAsignacion()))).append("\n");
+            }
+
+            log.info("✅ CSV generado exitosamente con {} registros", solicitudes.size());
+            return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.error("❌ Error exportando solicitudes asignadas a CSV: ", e);
+            return new byte[0];
+        }
+    }
+
+    /**
+     * Escapa caracteres especiales en campos CSV
+     * @param valor valor a escapar
+     * @return valor escapado
+     */
+    private String escaparCSV(String valor) {
+        if (valor == null || valor.isEmpty()) {
+            return "";
+        }
+        // Si contiene coma, comillas o saltos de línea, envolver en comillas y escapar comillas internas
+        if (valor.contains(",") || valor.contains("\"") || valor.contains("\n")) {
+            return "\"" + valor.replace("\"", "\"\"") + "\"";
+        }
+        return valor;
+    }
+
 }

@@ -717,4 +717,54 @@ public class SolicitudBolsaController {
             ));
         }
     }
+
+    /**
+     * Exporta solicitudes asignadas (Mi Bandeja) de la gestora actual a CSV
+     * GET /api/bolsas/solicitudes/exportar-asignados
+     *
+     * @param ids lista opcional de IDs específicos a exportar
+     * @return archivo CSV con las solicitudes seleccionadas
+     */
+    @GetMapping("/exportar-asignados")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> exportarAsignados(
+            @RequestParam(value = "ids", required = false) String ids) {
+        try {
+            log.info("📄 Exportando solicitudes asignadas a CSV");
+
+            List<Long> idsList = new ArrayList<>();
+            if (ids != null && !ids.isEmpty()) {
+                // Parsear los IDs del parámetro (formato: "1,2,3")
+                idsList = java.util.Arrays.stream(ids.split(","))
+                    .map(String::trim)
+                    .map(Long::parseLong)
+                    .toList();
+                log.info("✅ Exportando {} solicitudes específicas", idsList.size());
+            } else {
+                // Si no se especifican IDs, exportar todas las asignadas a la gestora actual
+                idsList = solicitudBolsaService.obtenerSolicitudesAsignadasAGestora()
+                    .stream()
+                    .map(SolicitudBolsaDTO::getIdSolicitud)
+                    .toList();
+                log.info("✅ Exportando {} solicitudes asignadas a la gestora actual", idsList.size());
+            }
+
+            if (idsList.isEmpty()) {
+                log.warn("⚠️ No hay solicitudes para exportar");
+                return ResponseEntity.badRequest().body("No hay solicitudes para exportar".getBytes());
+            }
+
+            // Obtener el servicio adecuado para exportar
+            // Usando BolsasService que tiene el método exportarCSV
+            byte[] csvData = solicitudBolsaService.exportarCSVAsignados(idsList);
+
+            return ResponseEntity.ok()
+                .header("Content-Type", "text/csv; charset=UTF-8")
+                .header("Content-Disposition", "attachment; filename=\"pacientes_asignados.csv\"")
+                .body(csvData);
+        } catch (Exception e) {
+            log.error("❌ Error exportando solicitudes asignadas: ", e);
+            return ResponseEntity.status(500).body(("Error: " + e.getMessage()).getBytes());
+        }
+    }
 }

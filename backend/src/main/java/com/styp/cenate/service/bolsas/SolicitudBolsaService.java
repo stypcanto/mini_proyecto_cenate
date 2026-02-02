@@ -179,4 +179,13 @@ public interface SolicitudBolsaService {
      * @return lista de especialidades únicas (nunca NULL, nunca vacío)
      */
     List<String> obtenerEspecialidadesUnicas();
+
+    /**
+     * Exporta solicitudes asignadas a la gestora actual a formato CSV
+     * Usado en la descarga desde "Mi Bandeja" (GestionAsegurado)
+     *
+     * @param ids lista de IDs de solicitudes a exportar
+     * @return datos CSV en bytes
+     */
+    byte[] exportarCSVAsignados(List<Long> ids);
 }
