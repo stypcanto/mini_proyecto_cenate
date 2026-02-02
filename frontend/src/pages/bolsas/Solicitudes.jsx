@@ -482,9 +482,9 @@ export default function Solicitudes() {
             gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
           }
 
-          // Formatear fecha de asignación si existe
+          // Formatear fecha de asignación si existe (con hora)
           const fechaAsignacionFormato = solicitud.fecha_asignacion
-            ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE')
+            ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE')
             : null;
 
           return {

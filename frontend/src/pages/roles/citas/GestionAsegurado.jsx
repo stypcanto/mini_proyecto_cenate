@@ -970,6 +970,11 @@ export default function GestionAsegurado() {
                   placeholder="Ej: 987654321"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {modalTelefono.telefonoPrincipal && modalTelefono.telefonoPrincipal.length < 9 && (
+                  <p className="text-xs text-red-600 mt-1">
+                    ⚠️ Mínimo 9 dígitos (actual: {modalTelefono.telefonoPrincipal.length})
+                  </p>
+                )}
               </div>
 
               <div>
@@ -988,10 +993,15 @@ export default function GestionAsegurado() {
                   placeholder="Ej: 912345678"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {modalTelefono.telefonoAlterno && modalTelefono.telefonoAlterno.length < 9 && (
+                  <p className="text-xs text-red-600 mt-1">
+                    ⚠️ Mínimo 9 dígitos (actual: {modalTelefono.telefonoAlterno.length})
+                  </p>
+                )}
               </div>
 
-              <p className="text-xs text-gray-500">
-                * Al menos uno de los teléfonos es requerido
+              <p className="text-xs text-gray-600 bg-blue-50 p-2 rounded border-l-2 border-blue-300">
+                💡 <strong>Formato:</strong> Mínimo <strong>9 dígitos</strong> por teléfono. Al menos uno es requerido.
               </p>
 
               <div className="flex gap-3 pt-4">
