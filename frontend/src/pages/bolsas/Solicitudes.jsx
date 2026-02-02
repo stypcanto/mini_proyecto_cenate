@@ -928,7 +928,7 @@ export default function Solicitudes() {
   // ✅ v3.0.1: Calcular estadísticas SOLO desde datos del backend, nunca desde tabla local
   // Esto previene mostrar números incorrectos en la primera carga
   const estadisticas = (() => {
-    if (estadisticasGlobales && Array.isArray(estadisticasGlobales)) {
+    if (estadisticasGlobales && Array.isArray(estadisticasGlobales) && estadisticasGlobales.length > 0) {
       // estadisticasGlobales es un array de EstadisticasPorEstadoDTO desde el backend
       const statsMap = {};
       let total = 0;
@@ -952,14 +952,14 @@ export default function Solicitudes() {
         sinAsignar: total - asignados,                    // ✅ v1.42.0: Casos sin asignar
       };
     } else {
-      // ✅ v3.0.1: Si las estadísticas no han cargado aún, mostrar valores en blanco
+      // ✅ v3.0.3: Si las estadísticas no han cargado aún, mostrar loader animado
       // NO usar solicitudes.length porque eso causa números incorrectos en la primera carga
       return {
-        total: '-',
-        pendientes: '-',
-        citados: '-',
-        asignados: '-',
-        sinAsignar: '-',
+        total: null,  // null = mostrar loader
+        pendientes: null,
+        citados: null,
+        asignados: null,
+        sinAsignar: null,
       };
     }
   })();
@@ -1536,7 +1536,13 @@ export default function Solicitudes() {
                 <span className="text-blue-100">Total Pacientes</span>
                 <span className="text-xl">👥</span>
               </div>
-              <div className="text-2xl font-bold">{estadisticas.total}</div>
+              <div className="text-2xl font-bold">
+                {estadisticas.total === null ? (
+                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                ) : (
+                  estadisticas.total
+                )}
+              </div>
             </div>
 
             {/* Pendiente Citar - Naranja */}
@@ -1550,7 +1556,13 @@ export default function Solicitudes() {
                 <span className="text-orange-100">Pendiente Citar</span>
                 <span className="text-xl">⏳</span>
               </div>
-              <div className="text-2xl font-bold">{estadisticas.pendientes}</div>
+              <div className="text-2xl font-bold">
+                {estadisticas.pendientes === null ? (
+                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                ) : (
+                  estadisticas.pendientes
+                )}
+              </div>
             </div>
 
             {/* Citados - Púrpura */}
@@ -1564,7 +1576,13 @@ export default function Solicitudes() {
                 <span className="text-purple-100">Citados</span>
                 <span className="text-xl">📞</span>
               </div>
-              <div className="text-2xl font-bold">{estadisticas.citados}</div>
+              <div className="text-2xl font-bold">
+                {estadisticas.citados === null ? (
+                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                ) : (
+                  estadisticas.citados
+                )}
+              </div>
             </div>
 
             {/* Casos Asignados - Verde */}
@@ -1578,7 +1596,13 @@ export default function Solicitudes() {
                 <span className="text-green-100">Casos Asignados</span>
                 <span className="text-xl">👥</span>
               </div>
-              <div className="text-2xl font-bold">{estadisticas.asignados}</div>
+              <div className="text-2xl font-bold">
+                {estadisticas.asignados === null ? (
+                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                ) : (
+                  estadisticas.asignados
+                )}
+              </div>
             </div>
 
             {/* Sin Asignar - Gris */}
@@ -1592,7 +1616,13 @@ export default function Solicitudes() {
                 <span className="text-gray-100">Sin Asignar</span>
                 <span className="text-xl">🔲</span>
               </div>
-              <div className="text-2xl font-bold">{estadisticas.sinAsignar}</div>
+              <div className="text-2xl font-bold">
+                {estadisticas.sinAsignar === null ? (
+                  <span className="inline-block animate-pulse">⟳ Cargando...</span>
+                ) : (
+                  estadisticas.sinAsignar
+                )}
+              </div>
             </div>
           </div>
         </div>
