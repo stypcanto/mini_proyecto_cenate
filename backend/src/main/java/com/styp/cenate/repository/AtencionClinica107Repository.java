@@ -117,4 +117,10 @@ public interface AtencionClinica107Repository
      */
     @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a")
     Long contarTotal();
+
+    /**
+     * Contar por estado (PENDIENTE o ATENDIDO)
+     */
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE UPPER(a.estado) = UPPER(:estado)")
+    Long contarPorEstadoDescripcion(@Param("estado") String estado);
 }

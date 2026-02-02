@@ -134,17 +134,19 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             long inicio = System.currentTimeMillis();
 
             Long total = repository.contarTotal();
+            Long pendientes = repository.contarPorEstadoDescripcion("PENDIENTE");
+            Long atendidos = repository.contarPorEstadoDescripcion("ATENDIDO");
 
             long tiempo = System.currentTimeMillis() - inicio;
 
             EstadisticasAtencion107DTO stats = EstadisticasAtencion107DTO.builder()
                 .total(total != null ? total : 0L)
-                .pendientes(0L)  // Placeholder - depende del estado específico en BD
-                .atendidos(0L)   // Placeholder - depende del estado específico en BD
+                .pendientes(pendientes != null ? pendientes : 0L)
+                .atendidos(atendidos != null ? atendidos : 0L)
                 .build();
 
-            log.info("✅ [MODULO 107] Estadísticas: Total={} ({}ms)", 
-                total, tiempo);
+            log.info("✅ [MODULO 107] Estadísticas: Total={}, Pendientes={}, Atendidos={} ({}ms)",
+                total, pendientes, atendidos, tiempo);
 
             return stats;
 
