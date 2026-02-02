@@ -193,9 +193,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
           AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
-          AND (:asignacion IS NULL
-               OR (:asignacion = 'asignados' AND sb.responsable_gestora_id IS NOT NULL)
-               OR (:asignacion = 'sin_asignar' AND sb.responsable_gestora_id IS NULL))
+          AND (CASE
+               WHEN :asignacion IS NULL THEN true
+               WHEN :asignacion = 'asignados' THEN sb.responsable_gestora_id IS NOT NULL
+               WHEN :asignacion = 'sin_asignar' THEN sb.responsable_gestora_id IS NULL
+               ELSE false
+               END)
           AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
                               OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
                               OR LOWER(COALESCE(di.desc_ipress, '')) LIKE LOWER(CONCAT('%', :busqueda, '%')))
@@ -233,9 +236,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
           AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
-          AND (:asignacion IS NULL
-               OR (:asignacion = 'asignados' AND sb.responsable_gestora_id IS NOT NULL)
-               OR (:asignacion = 'sin_asignar' AND sb.responsable_gestora_id IS NULL))
+          AND (CASE
+               WHEN :asignacion IS NULL THEN true
+               WHEN :asignacion = 'asignados' THEN sb.responsable_gestora_id IS NOT NULL
+               WHEN :asignacion = 'sin_asignar' THEN sb.responsable_gestora_id IS NULL
+               ELSE false
+               END)
           AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
                               OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
                               OR LOWER(COALESCE(di.desc_ipress, '')) LIKE LOWER(CONCAT('%', :busqueda, '%')))
