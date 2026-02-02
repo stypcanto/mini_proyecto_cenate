@@ -828,7 +828,7 @@ export default function GestionAsegurado() {
                         <td className="px-4 py-3 text-gray-900 text-xs font-medium">
                           {paciente.fechaAsignacion === "-"
                             ? "-"
-                            : new Date(paciente.fechaAsignacion).toLocaleString("es-ES", {
+                            : new Date(paciente.fechaAsignacion).toLocaleString("es-PE", {
                                 year: 'numeric',
                                 month: '2-digit',
                                 day: '2-digit',
