@@ -312,7 +312,7 @@ export default function GestionAsegurado() {
 
   // Auto-refresh polling
   useEffect(() => {
-    if (!autoRefreshEnabled || estadoEditando !== null) return;
+    if (!autoRefreshEnabled) return;
 
     const intervalo = setInterval(async () => {
       console.log("🔄 Auto-refresh pacientes...");
@@ -326,7 +326,7 @@ export default function GestionAsegurado() {
 
     return () => clearInterval(intervalo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [autoRefreshEnabled, estadoEditando]);
+  }, [autoRefreshEnabled]);
 
   // ============================================================================
   // 🔍 FUNCIÓN DE FILTRADO ESPECIALIZADO
