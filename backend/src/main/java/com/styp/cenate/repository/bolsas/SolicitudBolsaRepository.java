@@ -146,7 +146,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
         LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
-        LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_user
+        LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
         WHERE sb.activo = true
         ORDER BY sb.fecha_solicitud DESC
         LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
@@ -192,7 +192,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
         LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
-        LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_user
+        LEFT JOIN dim_personal_cnt pc ON u.id_user = pc.id_usuario
         WHERE sb.activo = true
           AND (:bolsaNombre IS NULL OR LOWER(COALESCE(tb.desc_tipo_bolsa, '')) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
           AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)
