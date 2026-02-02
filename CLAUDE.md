@@ -15,6 +15,93 @@
 
 ---
 
+## 🏗️ ARQUITECTURA DE BOLSAS (v1.42.0+)
+
+### **Modelo de Dos Niveles: Universo General + Mini-Bolsas**
+
+El sistema de bolsas opera en **2 niveles jerárquicos escalables**:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│          UNIVERSO GENERAL DE BOLSAS                          │
+│          /bolsas/solicitudes                                 │
+│  ✅ 7,973 REGISTROS (Módulo 107 + Dengue + Otras)            │
+│  ✅ Visible: COORDINADORES                                   │
+│  ✅ Campos: DNI, Nombre, IPRESS, Red, Estado, Teléfono       │
+│  ✅ KPIs: Total, Pendiente Citar, Citados, Asistió           │
+│  ✅ Filtros: Por bolsa, macrorregión, red, IPRESS, etc.      │
+└─────────────────────────────────────────────────────────────┘
+         ↓↓↓ Cada bolsa tiene su MINI-INTERFAZ ↓↓↓
+
+┌──────────────────────────┐  ┌──────────────────────────┐
+│   MÓDULO 107             │  │   DENGUE                 │
+│ /bolsas/modulo107/*      │  │ /dengue/*                │
+│ 6,404 pacientes          │  │ X pacientes dengue       │
+│ Rol: COORDINADORES +     │  │ Rol: EPIDEMIOLOGÍA +     │
+│       MÉDICOS 107        │  │       MÉDICOS            │
+│                          │  │                          │
+│ Campos: Fecha Registro,  │  │ Campos: DNI, CIE-10,     │
+│ Especialista, Fecha      │  │ Síntomas, Severidad      │
+│ Atención, Estado         │  │                          │
+│ Atención                 │  │ KPIs: Casos, Severidad   │
+│                          │  │                          │
+│ KPIs: Atendidos,         │  │ Filtros: DNI, Código     │
+│ Pendientes, En Proceso   │  │ CIE-10, Fecha            │
+│                          │  │                          │
+│ Filtros: IPRESS, Estado  │  │                          │
+│ Atención                 │  │                          │
+└──────────────────────────┘  └──────────────────────────┘
+
+         ↓↓↓ Futuras Bolsas (escalable) ↓↓↓
+
+┌──────────────────────────┐  ┌──────────────────────────┐
+│   BOLSA XXXXX            │  │   BOLSA YYYYY            │
+│ /bolsas/xxxx/*           │  │ /bolsas/yyyy/*           │
+│ Estructura específica     │  │ Estructura específica     │
+│ Permisos específicos      │  │ Permisos específicos      │
+│ KPIs específicos          │  │ KPIs específicos          │
+│ Campos específicos        │  │ Campos específicos        │
+└──────────────────────────┘  └──────────────────────────┘
+```
+
+### **Características de cada Mini-Bolsa:**
+
+| Aspecto | Descripción |
+|---------|-------------|
+| **Ruta dedicada** | Cada bolsa tiene su propia URL (`/bolsas/modulo107/`, `/dengue/`, etc.) |
+| **Permisos MBAC** | Usuarios ven SOLO su bolsa asignada (controlado por roles) |
+| **DTO personalizado** | Cada bolsa envía datos optimizados para su caso de uso |
+| **KPIs específicos** | Módulo 107 muestra "Atendidos, Pendientes", Dengue muestra "Casos, Severidad" |
+| **Campos únicos** | Módulo 107 incluye "Especialista, Fecha Atención"; Dengue incluye "CIE-10" |
+| **Filtros customizados** | Módulo 107 filtra por IPRESS; Dengue filtra por CIE-10 |
+| **Estadísticas propias** | Cada bolsa tiene endpoints `/modulo107/estadisticas`, `/dengue/estadisticas`, etc. |
+| **Consolidación** | Todos los registros se consolidan en el universo general (`/bolsas/solicitudes`) |
+
+### **Implementación Técnica:**
+
+```
+Backend (Spring Boot):
+├─ /api/bolsas/solicitudes                 ← Universo general (todos)
+├─ /api/bolsas/modulo107/pacientes         ← Mini-bolsa Módulo 107
+│  ├─ /pacientes                           ← Listado paginado
+│  ├─ /pacientes/buscar                    ← Búsqueda avanzada
+│  ├─ /estadisticas                        ← KPIs específicos
+│  └─ Dto: Modulo107PacienteDTO            ← Campos específicos
+├─ /api/dengue/*                           ← Mini-bolsa Dengue
+│  ├─ /buscar                              ← Búsqueda por DNI/CIE-10
+│  ├─ /estadisticas                        ← KPIs dengue
+│  └─ Dto: DengueCasoDTO                   ← Campos específicos
+└─ /api/bolsas/[futuro]/*                  ← Escalable para nuevas bolsas
+
+Frontend (React 19):
+├─ /bolsas/solicitudes                     ← Universo general
+├─ /bolsas/modulo107/pacientes-de-107      ← Módulo 107
+├─ /dengue/buscar                          ← Dengue
+└─ /bolsas/[futuro]/*                      ← Escalable
+```
+
+---
+
 ## 📚 DOCUMENTACIÓN - START HERE
 
 **👉 Índice Maestro:** [`spec/INDEX.md`](spec/INDEX.md)
@@ -51,7 +138,16 @@
 
 ## 📊 ÚLTIMAS VERSIONES
 
-### v1.41.0 - Completado (2026-01-30) 📋 NEW
+### v1.42.0 - En Desarrollo (2026-02-01) 🏗️ ARQUITECTURA NUEVA
+✅ **Arquitectura Bolsas 2 Niveles** - Universo General + Mini-Bolsas Especializadas
+✅ **Mini-Bolsa Módulo 107** - Interfaz dedicada con KPIs, campos y permisos propios
+✅ **Mini-Bolsa Dengue** - Sistema de búsqueda DNI/CIE-10 independiente
+✅ **Escalabilidad** - Plantilla lista para futuras bolsas (PADOMI, etc.)
+✅ **Consolidación** - Todas las mini-bolsas convergen en universo general
+
+**Docs:** Sección "🏗️ ARQUITECTURA DE BOLSAS" en este archivo | [`spec/backend/09_modules_bolsas/ARQUITECTURA_v1.42.0.md`](spec/backend/09_modules_bolsas/ARQUITECTURA_v1.42.0.md) (por crear)
+
+### v1.41.0 - Completado (2026-01-30) 📋
 ✅ **Módulo Gestión de Citas** - Dropdown de 11 estados + Modal Actualizar Teléfono
 ✅ **Entidad DimEstadosGestionCitas** - Mapeo JPA de tabla de estados
 ✅ **3 Nuevos Endpoints** - Estados, teléfono, y listado de pacientes asignados
@@ -203,10 +299,22 @@ mini_proyecto_cenate/
 
 ## 🚀 Próximos Pasos
 
-1. **Módulo Bolsas** - ✅ Completado v3.0.0 (Módulo 107 integrado)
-2. **Performance Monitoring** - ✅ Completado v1.37.3
-3. **Spring AI Chatbot** - En planificación (7 fases)
-4. **Dengue Module** - Mantenimiento y mejoras
+### Fase 1: Arquitectura de Bolsas v1.42.0 (ACTUAL)
+1. **Universo General** - ✅ `/bolsas/solicitudes` (7,973 registros)
+2. **Mini-Bolsa Módulo 107** - 🔨 Crear `/bolsas/modulo107/pacientes-de-107` con KPIs propios
+3. **Mini-Bolsa Dengue** - 🔨 Criar `/dengue/buscar` con búsqueda DNI/CIE-10
+4. **Template Escalable** - 📋 Documentar patrón para futuras bolsas
+
+### Fase 2: Nuevas Bolsas Especializadas (Futuro)
+- **PADOMI** - Bolsa para atención domiciliaria
+- **Referencia INTER** - Bolsa de referencias entre instituciones
+- **Consulta Externa** - Bolsa de consultas generales
+- (Cada una seguirá el patrón definido en v1.42.0)
+
+### Fase 3: Integraciones Avanzadas
+- **Spring AI Chatbot** - Asistente de atención (7 fases)
+- **Analytics Dashboard** - Dashboard consolidado de todas las bolsas
+- **Notificaciones Inteligentes** - Alertas por bolsa y rol
 
 Ver: [`plan/06_Integracion_Spring_AI/`](plan/06_Integracion_Spring_AI/)
 
