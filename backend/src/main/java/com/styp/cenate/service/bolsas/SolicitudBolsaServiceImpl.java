@@ -589,6 +589,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
 
     /**
      * Convierte java.sql.Date o java.time.LocalDate a LocalDate
+     * También maneja Instant y Timestamp desde queries con COALESCE
      */
     private java.time.LocalDate convertToLocalDate(Object value) {
         if (value == null) {
@@ -599,6 +600,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
         if (value instanceof java.sql.Date) {
             return ((java.sql.Date) value).toLocalDate();
+        }
+        if (value instanceof java.time.Instant) {
+            return ((java.time.Instant) value).atZone(java.time.ZoneId.systemDefault()).toLocalDate();
+        }
+        if (value instanceof java.sql.Timestamp) {
+            return ((java.sql.Timestamp) value).toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate();
         }
         throw new ClassCastException("No se puede convertir " + value.getClass().getName() + " a LocalDate");
     }
