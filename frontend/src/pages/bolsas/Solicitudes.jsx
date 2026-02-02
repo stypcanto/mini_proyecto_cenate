@@ -1545,11 +1545,6 @@ export default function Solicitudes() {
             icon: FolderOpen
           }}
           title="Solicitudes"
-          primaryAction={{
-            label: "Importar desde Excel",
-            onClick: () => setModalImportar(true),
-            icon: Upload
-          }}
         />
 
         {/* Tarjetas de Estadísticas - Siempre Visible */}
