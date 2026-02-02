@@ -1741,6 +1741,20 @@ export default function Solicitudes() {
           `}</style>
 
           {/* Tabla con nuevo diseño visual - Contenedor mejorado */}
+          {/* 📜 SCROLL SUPERIOR SINCRONIZADO */}
+          <div
+            ref={topScrollRef}
+            onScroll={handleTopScroll}
+            className="overflow-x-auto rounded-t-xl border border-b-0 border-gray-200 bg-white"
+            style={{
+              height: '12px',
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#3b82f6 #f3f4f6',
+            }}
+          >
+            <div style={{ width: '100%', height: '1px' }}></div>
+          </div>
+
           <style>{`
             .table-container::-webkit-scrollbar {
               height: 14px;
