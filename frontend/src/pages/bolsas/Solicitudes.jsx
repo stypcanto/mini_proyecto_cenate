@@ -1739,39 +1739,6 @@ export default function Solicitudes() {
               background: #0284c7;
             }
           `}</style>
-          <div
-            ref={topScrollRef}
-            onScroll={handleTopScroll}
-            className="overflow-x-auto bg-cyan-50 border-2 border-cyan-300 rounded-t-xl py-2 px-4 scroll-top"
-            style={{
-              scrollbarWidth: 'thick',
-              scrollbarColor: '#0ea5e9 #dbeafe',
-            }}
-          >
-            <div className="flex whitespace-nowrap text-xs font-semibold text-cyan-700">
-              <span className="inline-block w-16 px-2">📋</span>
-              <span className="inline-block w-32 px-2">Origen Bolsa</span>
-              <span className="inline-block w-32 px-2">Fecha Preferida</span>
-              <span className="inline-block w-28 px-2">Tipo Doc</span>
-              <span className="inline-block w-24 px-2">DNI</span>
-              <span className="inline-block w-48 px-2">Paciente</span>
-              <span className="inline-block w-32 px-2">F. Nacimiento</span>
-              <span className="inline-block w-16 px-2">Sexo</span>
-              <span className="inline-block w-16 px-2">Edad</span>
-              <span className="inline-block w-28 px-2">Teléfono</span>
-              <span className="inline-block w-32 px-2">Tel. Alterno</span>
-              <span className="inline-block w-40 px-2">Correo</span>
-              <span className="inline-block w-24 px-2">Tipo Cita</span>
-              <span className="inline-block w-32 px-2">Especialidad</span>
-              <span className="inline-block w-20 px-2">Cod IPRESS</span>
-              <span className="inline-block w-32 px-2">IPRESS</span>
-              <span className="inline-block w-24 px-2">Red</span>
-              <span className="inline-block w-24 px-2">Estado</span>
-              <span className="inline-block w-32 px-2">F. Asignación</span>
-              <span className="inline-block w-28 px-2">Gestora</span>
-              <span className="inline-block w-24 px-2">Acciones</span>
-            </div>
-          </div>
 
           {/* Tabla con nuevo diseño visual - Contenedor mejorado */}
           <style>{`
