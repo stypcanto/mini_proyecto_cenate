@@ -945,7 +945,7 @@ export default function GestionAsegurado() {
                                     : "bg-gray-100 text-gray-800"
                                 }`}
                               >
-                                {paciente.descEstadoCita || "Sin estado"}
+                                {(paciente.descEstadoCita || "Sin estado").split(" - ")[0]}
                               </span>
                               <button
                                 onClick={() => {
