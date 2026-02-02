@@ -12,6 +12,7 @@ import java.time.LocalDateTime;
  * Tabla base: dim_solicitud_bolsa (ya desnormalizada con todos los datos)
  * Estructura: Directa sin JOINs complejos (solo JOIN a dim_ipress si es necesario)
  * No se persiste directamente, solo se consulta
+ * Limitaciones: Solo se usa para el modulo de bolsas. 
  */
 @Entity
 @Table(name = "dim_solicitud_bolsa")
@@ -76,9 +77,6 @@ public class AtencionClinica107 {
     @Column(name = "codigo_ipress")
     private String codigoIpress;
 
-    @Column(name = "ipress_nombre")
-    private String ipressNombre;
-
     // 🏷️ Derivación Interna (VARCHAR, no FK)
     @Column(name = "derivacion_interna")
     private String derivacionInterna;
@@ -109,16 +107,6 @@ public class AtencionClinica107 {
     @Column(name = "responsable_gestora_id")
     private Long responsableGestoraId;
 
-    @Column(name = "responsable_nombre")
-    private String responsableNombre;
-
     @Column(name = "fecha_asignacion")
     private LocalDateTime fechaAsignacion;
-
-    // 📌 Estado - Relaciones
-    @Column(name = "estado_codigo")
-    private String estadoCodigo;
-
-    @Column(name = "estado_descripcion")
-    private String estadoDescripcion;
 }

@@ -19,6 +19,7 @@ import {
 import PageHeader from '../../../components/PageHeader';
 import ListHeader from '../../../components/ListHeader';
 import { atencionesClinicasService } from '../../../services/atencionesClinicasService';
+import { filtrosUbicacionService } from '../../../services/filtrosUbicacionService';
 import DetalleAtencionModal from '../../../components/modals/DetalleAtencionModal';
 
 const REGISTROS_POR_PAGINA = 25;
@@ -69,6 +70,56 @@ export default function Modulo107AtencionesClinics() {
     "PSICOLOGIA CENATE"
   ];
 
+  // ==================== FUNCIONES PARA CARGAR FILTROS ====================
+
+  /**
+   * Cargar macrorregiones desde el servicio
+   */
+  const cargarMacrorregiones = async () => {
+    try {
+      const data = await filtrosUbicacionService.obtenerMacroregiones();
+      setMacrorregionesUnicas(data);
+    } catch (error) {
+      console.error("Error al cargar macrorregiones:", error);
+    }
+  };
+
+  /**
+   * Cargar redes cuando cambia la macrorregión seleccionada
+   */
+  const cargarRedes = async (macroId) => {
+    if (!macroId || macroId === "todas") {
+      setRedesUnicas([]);
+      setFiltroRed("todas");
+      return;
+    }
+    try {
+      const data = await filtrosUbicacionService.obtenerRedesPorMacro(macroId);
+      setRedesUnicas(data);
+      setFiltroRed("todas");
+    } catch (error) {
+      console.error("Error al cargar redes:", error);
+    }
+  };
+
+  /**
+   * Cargar IPRESS cuando cambia la red seleccionada
+   */
+  const cargarIpress = async (redId) => {
+    if (!redId || redId === "todas") {
+      setIpressUnicas([]);
+      setFiltroIpress("todas");
+      return;
+    }
+    try {
+      const data = await filtrosUbicacionService.obtenerIpressPorRed(redId);
+      setIpressUnicas(data);
+      setFiltroIpress("todas");
+    } catch (error) {
+      console.error("Error al cargar IPRESS:", error);
+    }
+  }
+
   // ==================== FUNCIONES AUXILIARES ====================
 
   /**
@@ -87,12 +138,20 @@ export default function Modulo107AtencionesClinics() {
         filtros.estado = filtroEstado; // Enviar directamente "PENDIENTE" o "ATENDIDO"
       }
       
+      // Filtro de IPRESS (el backend soporta este)
+      if (filtroIpress && filtroIpress !== "todas") {
+        const ipressSeleccionada = ipressUnicas.find(i => i.descripcion === filtroIpress);
+        if (ipressSeleccionada) {
+          filtros.idIpress = ipressSeleccionada.id;
+        }
+      }
+      
       // Otros filtros
       if (filtroTipoDoc !== "todos") filtros.tipoDocumento = filtroTipoDoc;
       if (filtroDocumento) filtros.pacienteDni = filtroDocumento;
       if (filtroRangoFechas.inicio) filtros.fechaDesde = filtroRangoFechas.inicio;
       if (filtroRangoFechas.fin) filtros.fechaHasta = filtroRangoFechas.fin;
-      if (filtroDerivacion !== "todas") filtros.derivacion = filtroDerivacion;
+      if (filtroDerivacion !== "todas") filtros.derivacionInterna = filtroDerivacion;
       if (searchTerm) filtros.searchTerm = searchTerm;
       
       // Llamar al servicio
@@ -174,7 +233,20 @@ export default function Modulo107AtencionesClinics() {
   // Cargar datos iniciales
   useEffect(() => {
     cargarEstadisticas();
+    cargarMacrorregiones();
   }, []);
+
+  // Cargar redes cuando cambia la macrorregión seleccionada
+  useEffect(() => {
+    const macroId = macrorregionesUnicas.find(m => m.descripcion === filtroMacrorregion)?.id;
+    cargarRedes(macroId);
+  }, [filtroMacrorregion, macrorregionesUnicas]);
+
+  // Cargar IPRESS cuando cambia la red seleccionada
+  useEffect(() => {
+    const redId = redesUnicas.find(r => r.descripcion === filtroRed)?.id;
+    cargarIpress(redId);
+  }, [filtroRed, redesUnicas]);
 
   // Recargar atenciones cuando cambien los filtros
   useEffect(() => {
@@ -182,7 +254,8 @@ export default function Modulo107AtencionesClinics() {
   }, [
     currentPage, filtroEstado, filtroTipoDoc, filtroDocumento,
     filtroRangoFechas.inicio, filtroRangoFechas.fin, 
-    filtroDerivacion, searchTerm
+    filtroDerivacion, searchTerm, filtroMacrorregion, filtroRed, filtroIpress,
+    macrorregionesUnicas, redesUnicas, ipressUnicas
   ]);
 
   // Cerrar selector de fechas al hacer clic fuera
@@ -438,7 +511,7 @@ export default function Modulo107AtencionesClinics() {
                   >
                     <option value="todas">Todas</option>
                     {macrorregionesUnicas.map(macro => (
-                      <option key={macro} value={macro}>{macro}</option>
+                      <option key={macro.id} value={macro.descripcion}>{macro.descripcion}</option>
                     ))}
                   </select>
                 </div>
@@ -452,10 +525,11 @@ export default function Modulo107AtencionesClinics() {
                       setCurrentPage(1);
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    disabled={redesUnicas.length === 0}
                   >
                     <option value="todas">Todas</option>
                     {redesUnicas.map(red => (
-                      <option key={red} value={red}>{red}</option>
+                      <option key={red.id} value={red.descripcion}>{red.descripcion} ({red.codigo})</option>
                     ))}
                   </select>
                 </div>
@@ -469,10 +543,11 @@ export default function Modulo107AtencionesClinics() {
                       setCurrentPage(1);
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    disabled={ipressUnicas.length === 0}
                   >
                     <option value="todas">Todas</option>
                     {ipressUnicas.map(ipress => (
-                      <option key={ipress} value={ipress}>{ipress}</option>
+                      <option key={ipress.id} value={ipress.descripcion}>{ipress.descripcion} ({ipress.codigo})</option>
                     ))}
                   </select>
                 </div>
@@ -519,6 +594,67 @@ export default function Modulo107AtencionesClinics() {
                   Limpiar Filtros
                 </button>
               </div>
+
+              {/* Resumen de Filtros Activos */}
+              {(filtroEstado !== "todos" || filtroTipoDoc !== "todos" || filtroDocumento || 
+                filtroRangoFechas.inicio || filtroRangoFechas.fin || filtroMacrorregion !== "todas" || 
+                filtroRed !== "todas" || filtroIpress !== "todas" || filtroDerivacion !== "todas" || searchTerm) && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <p className="text-sm font-semibold text-blue-900 mb-3">📋 Filtros Activos:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {filtroEstado !== "todos" && (
+                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
+                        Estado: {filtroEstado}
+                      </span>
+                    )}
+                    {filtroTipoDoc !== "todos" && (
+                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
+                        Tipo Doc: {filtroTipoDoc}
+                      </span>
+                    )}
+                    {filtroDocumento && (
+                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
+                        Documento: {filtroDocumento}
+                      </span>
+                    )}
+                    {filtroRangoFechas.inicio && (
+                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
+                        Desde: {new Date(filtroRangoFechas.inicio).toLocaleDateString('es-ES')}
+                      </span>
+                    )}
+                    {filtroRangoFechas.fin && (
+                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
+                        Hasta: {new Date(filtroRangoFechas.fin).toLocaleDateString('es-ES')}
+                      </span>
+                    )}
+                    {filtroMacrorregion !== "todas" && (
+                      <span className="px-3 py-1 bg-purple-200 text-purple-800 rounded-full text-sm">
+                        Macro: {filtroMacrorregion}
+                      </span>
+                    )}
+                    {filtroRed !== "todas" && (
+                      <span className="px-3 py-1 bg-purple-200 text-purple-800 rounded-full text-sm">
+                        Red: {filtroRed}
+                      </span>
+                    )}
+                    {filtroIpress !== "todas" && (
+                      <span className="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm">
+                        IPRESS: {filtroIpress}
+                      </span>
+                    )}
+                    {filtroDerivacion !== "todas" && (
+                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
+                        Derivación: {filtroDerivacion}
+                      </span>
+                    )}
+                    {searchTerm && (
+                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
+                        Búsqueda: {searchTerm}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
@@ -620,9 +756,7 @@ export default function Modulo107AtencionesClinics() {
                     Mostrando {(currentPage - 1) * REGISTROS_POR_PAGINA + 1} a {Math.min(
                       currentPage * REGISTROS_POR_PAGINA,
                       totalElementos
-                    )} de {totalElementos} resultados
-                      atencionesFiltradas.length
-                    )} de {atencionesFiltradas.length} registros
+                    )} de {totalElementos} registros
                   </div>
                   <div className="flex gap-2">
                     <button

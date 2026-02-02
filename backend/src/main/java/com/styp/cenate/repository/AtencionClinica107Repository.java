@@ -35,9 +35,9 @@ public interface AtencionClinica107Repository
     Page<AtencionClinica107> findByEstadoGestionCitasId(@Param("estadoId") Long estadoId, Pageable pageable);
 
     /**
-     * Buscar por descripción de estado (PENDIENTE, ATENDIDO)
+     * Buscar por estado (PENDIENTE, ATENDIDO)
      */
-    @Query("SELECT a FROM AtencionClinica107 a WHERE UPPER(a.estadoDescripcion) = UPPER(:estado) OR UPPER(a.estado) = UPPER(:estado) ORDER BY a.fechaSolicitud DESC")
+    @Query("SELECT a FROM AtencionClinica107 a WHERE UPPER(a.estado) = UPPER(:estado) ORDER BY a.fechaSolicitud DESC")
     Page<AtencionClinica107> findByEstado(@Param("estado") String estado, Pageable pageable);
 
     /**
