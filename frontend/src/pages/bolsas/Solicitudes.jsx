@@ -1716,7 +1716,6 @@ export default function Solicitudes() {
                   </>
                 )}
               </div>
-            </div>
           )}
 
           {/* 📌 ESPACIADO ADICIONAL: Separación antes de la tabla */}
