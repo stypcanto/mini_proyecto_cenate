@@ -207,23 +207,15 @@ export default function Solicitudes() {
   // ============================================================================
   // ✅ v1.42.0: Esperar a que estadísticas estén cargadas para evitar números incorrectos
   // ✅ v3.0.1: Usar cargarSolicitudesConFiltros() para aplicar filtros por defecto en la carga inicial
-  // ✅ v3.0.2: Esperar a que estadisticasGlobales sea un array válido para evitar timing issues
+  // ✅ v3.0.3: Cargar solicitudes INMEDIATAMENTE cuando catálogos están listos
+  // Las estadísticas (tarjetas) cargan en paralelo sin bloquear la tabla
   useEffect(() => {
-    const estadisticasDisponibles = estadisticasGlobales && Array.isArray(estadisticasGlobales) && estadisticasGlobales.length > 0;
-
-    if (catalogosCargados && estadisticasCargadas && estadisticasDisponibles) {
-      console.log('📋 Catálogos Y estadísticas cargados, iniciando carga de solicitudes CON FILTROS...', {
-        catalogosCargados,
-        estadisticasCargadas,
-        estadisticasGlobales: estadisticasGlobales.length
-      });
+    if (catalogosCargados) {
+      console.log('📋 Catálogos cargados, iniciando carga de solicitudes CON FILTROS...');
       cargarSolicitudesConFiltros();
-    } else if (catalogosCargados && estadisticasCargadas && !estadisticasDisponibles) {
-      // ⚠️ Si estadísticas cargó pero está vacío, aún cargar solicitudes (fallback)
-      console.warn('⚠️ Estadísticas cargadas pero vacío, cargando solicitudes de todas formas...');
-      cargarSolicitudesConFiltros();
+      console.log('ℹ️ Las estadísticas cargan en paralelo sin bloquear la tabla');
     }
-  }, [catalogosCargados, estadisticasCargadas, estadisticasGlobales]);
+  }, [catalogosCargados]);
 
   // ============================================================================
   // 📦 EFFECT 2.5: DEPRECADO (v3.0.0)
