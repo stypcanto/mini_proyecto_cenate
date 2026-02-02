@@ -1528,9 +1528,12 @@ export default function Solicitudes() {
           />
           </div>
 
+          {/* 📌 ESPACIADO: Separación entre filtros y tabla */}
+          <div className="h-6"></div>
+
           {/* Botones para descargar y borrar selección O TODAS */}
           {(selectedRows.size > 0 || solicitudes.length > 0) && (
-            <div className="mb-4">
+            <div className="mb-8">
               {/* Botón para seleccionar TODAS */}
               {!seleccionarTodas && solicitudes.length > selectedRows.size && (
                 <div className="mb-3 p-3 bg-blue-50 border border-blue-300 rounded-lg flex items-center justify-between">
@@ -1629,6 +1632,9 @@ export default function Solicitudes() {
               </div>
             </div>
           )}
+
+          {/* 📌 ESPACIADO ADICIONAL: Separación antes de la tabla */}
+          <div className="h-8"></div>
 
           {/* Tabla con nuevo diseño visual */}
           <div className="overflow-x-auto">
