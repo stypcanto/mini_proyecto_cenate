@@ -174,7 +174,8 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                sb.codigo_ipress, sb.tipo_cita,
                sb.id_bolsa, tb.desc_tipo_bolsa,
                sb.id_servicio, sb.codigo_adscripcion, sb.id_ipress,
-               sb.estado, sb.fecha_solicitud, sb.fecha_actualizacion,
+               sb.estado, COALESCE(deg.cod_estado_cita, 'PENDIENTE_CITA') as cod_estado_cita,
+               sb.fecha_solicitud, sb.fecha_actualizacion,
                sb.estado_gestion_citas_id, sb.activo,
                di.desc_ipress, dr.desc_red, dm.desc_macro,
                sb.responsable_gestora_id, sb.fecha_asignacion
@@ -183,6 +184,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_ipress di ON sb.id_ipress = di.id_ipress
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+        LEFT JOIN dim_estados_gestion_citas deg ON sb.estado_gestion_citas_id = deg.id_estado_cita
         WHERE sb.activo = true
           AND (:bolsaNombre IS NULL OR LOWER(COALESCE(tb.desc_tipo_bolsa, '')) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
           AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)
@@ -720,5 +722,46 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         ORDER BY fecha ASC
         """, nativeQuery = true)
     List<Map<String, Object>> evolucionTemporalModulo107();
+
+    // ========================================================================
+    // 🆕 v3.0.0: ESTADÍSTICAS POR MACRORREGIÓN y RED (para filtros consolidados)
+    // ========================================================================
+
+    /**
+     * Estadísticas agrupadas por macrorregión
+     * Para el dropdown de Macrorregión en la página de Solicitudes
+     * v3.0.0: Corregida para usar JOINs correctos a dim_macroregion
+     */
+    @Query(value = """
+        SELECT
+            COALESCE(dm.desc_macro, 'Sin asignar') as macrorregion,
+            COUNT(sb.id_solicitud) as cantidad
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_ipress di ON sb.codigo_ipress = di.cod_ipress
+        LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+        LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
+        WHERE sb.activo = true
+        GROUP BY dm.desc_macro
+        ORDER BY cantidad DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorMacrorregion();
+
+    /**
+     * Estadísticas agrupadas por red asistencial
+     * Para el dropdown de Redes en la página de Solicitudes
+     * v3.0.0: Corregida para usar JOINs correctos a dim_red
+     */
+    @Query(value = """
+        SELECT
+            COALESCE(dr.desc_red, 'Sin asignar') as red,
+            COUNT(sb.id_solicitud) as cantidad
+        FROM dim_solicitud_bolsa sb
+        LEFT JOIN dim_ipress di ON sb.codigo_ipress = di.cod_ipress
+        LEFT JOIN dim_red dr ON di.id_red = dr.id_red
+        WHERE sb.activo = true
+        GROUP BY dr.desc_red
+        ORDER BY cantidad DESC
+        """, nativeQuery = true)
+    List<Map<String, Object>> estadisticasPorRed();
 
 }

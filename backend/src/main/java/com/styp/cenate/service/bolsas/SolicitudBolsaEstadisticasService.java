@@ -92,6 +92,18 @@ public interface SolicitudBolsaEstadisticasService {
     EstadisticasGeneralesDTO obtenerEstadisticasDelDia();
 
     /**
+     * 🆕 v3.0.0: Obtiene estadísticas consolidadas para filtros (optimización)
+     * Una sola llamada en lugar de 7 separadas
+     *
+     * Incluye todas las estadísticas necesarias para los dropdowns de:
+     * - Bolsas, Macrorregión, Redes, IPRESS, Especialidades, Tipo Cita, Estado
+     *
+     * @return Map con por_tipo_bolsa, por_macrorregion, por_red, por_ipress,
+     *         por_especialidad, por_tipo_cita, por_estado
+     */
+    java.util.Map<String, Object> obtenerEstadisticasFiltros();
+
+    /**
      * Obtiene un dashboard completo con todas las estadísticas
      * Útil para export o visualización integrada
      *

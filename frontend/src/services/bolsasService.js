@@ -460,6 +460,33 @@ export const obtenerKpis = async () => {
 };
 
 /**
+ * 🆕 v3.0.0 - Obtiene estadísticas consolidadas para filtros (optimización)
+ * Una sola llamada en lugar de 7 separadas
+ *
+ * Antes: 7 llamadas al iniciar la página de Solicitudes
+ * Ahora: 1 llamada con todos los datos para los dropdowns
+ *
+ * Retorna un objeto con:
+ * - por_tipo_bolsa: estadísticas para dropdown Bolsas
+ * - por_macrorregion: estadísticas para dropdown Macrorregión
+ * - por_red: estadísticas para dropdown Redes
+ * - por_ipress: estadísticas para dropdown IPRESS
+ * - por_especialidad: estadísticas para dropdown Especialidades
+ * - por_tipo_cita: estadísticas para dropdown Tipo Cita
+ * - por_estado: estadísticas para dropdown Estado
+ */
+export const obtenerEstadisticasFiltros = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/estadisticas/filtros`);
+    console.log('✅ Estadísticas consolidadas cargadas (1 llamada = 7 antiguas)');
+    return response;
+  } catch (error) {
+    console.error('Error al obtener estadísticas consolidadas:', error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene dashboard completo con todas las estadísticas
  */
 export const obtenerDashboardCompleto = async () => {

@@ -251,6 +251,43 @@ public class SolicitudBolsaEstadisticasController {
     }
 
     // ========================================================================
+    // 🎯 FILTROS CONSOLIDADOS (v3.0.0)
+    // ========================================================================
+
+    /**
+     * Estadísticas consolidadas para los filtros de la página de Solicitudes
+     * GET /api/bolsas/estadisticas/filtros
+     *
+     * ⚡ OPTIMIZACIÓN: Una sola llamada en lugar de 7 separadas
+     * Antes: 9 llamadas al iniciar la página
+     * Ahora: 1 llamada con todos los datos de filtros
+     *
+     * Retorna un Map con claves:
+     * - por_tipo_bolsa: List<EstadisticasPorTipoBolsaDTO> (para dropdown Bolsas)
+     * - por_macrorregion: List (para dropdown Macrorregión)
+     * - por_red: List (para dropdown Redes)
+     * - por_ipress: List<EstadisticasPorIpressDTO> (para dropdown IPRESS)
+     * - por_especialidad: List<EstadisticasPorEspecialidadDTO> (para dropdown Especialidades)
+     * - por_tipo_cita: List<EstadisticasPorTipoCitaDTO> (para dropdown Tipo Cita)
+     * - por_estado: List<EstadisticasPorEstadoDTO> (para dropdown Estado)
+     */
+    @GetMapping("/filtros")
+    @Operation(
+        summary = "Estadísticas consolidadas para filtros",
+        description = "Una sola llamada con todos los datos necesarios para los dropdowns de filtros. Reduce carga de red de 7 a 1 request.",
+        tags = {"Filtros"}
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "OK - Estadísticas consolidadas para filtros"
+    )
+    public ResponseEntity<Map<String, Object>> obtenerEstadisticasFiltros() {
+        log.info("GET /api/bolsas/estadisticas/filtros - Optimización: consolidar 7 llamadas en 1");
+        Map<String, Object> datos = estadisticasService.obtenerEstadisticasFiltros();
+        return ResponseEntity.ok(datos);
+    }
+
+    // ========================================================================
     // 🖥️ DASHBOARD COMPLETO
     // ========================================================================
 

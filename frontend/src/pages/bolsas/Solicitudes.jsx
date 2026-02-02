@@ -330,20 +330,11 @@ export default function Solicitudes() {
 
       console.log('✅ Catálogos cargados correctamente - ANTES de setCatalogosCargados(true)');
 
-      // Cargar estadísticas directamente aquí (antes de marcar catálogos como cargados)
-      console.log('📊 Cargando estadísticas por estado...');
-      const estadisticas = await bolsasService.obtenerEstadisticasPorEstado().catch((err) => {
-        console.error('❌ Error al obtener estadísticas por estado:', err);
-        return [];
-      });
-      console.log('✅ Estadísticas por estado cargadas:', estadisticas, 'length:', Array.isArray(estadisticas) ? estadisticas.length : 'N/A');
+      // ✅ v3.0.0: Estadísticas ahora se cargan via EFFECT 2 (consolidated endpoint)
+      // NO cargar estadísticas aquí - dejar que el useEffect 2 maneje eso
       if (isMountedRef.current) {
-        if (estadisticas && estadisticas.length > 0) {
-          setEstadisticasGlobales(estadisticas);
-          console.log('✅ Estado de estadísticas global actualizado');
-        }
         setCatalogosCargados(true);
-        console.log('✅ setCatalogosCargados(true) LLAMADO');
+        console.log('✅ setCatalogosCargados(true) LLAMADO - EFFECT 2 se dispará para cargar estadísticas consolidadas');
       }
     } catch (error) {
       console.error('❌ Error cargando catálogos:', error);
@@ -1109,12 +1100,15 @@ export default function Solicitudes() {
       return;
     }
 
-    // Obtener datos de la gestora seleccionada
-    const gestoraData = gestoras.find(g => g.id === parseInt(gestoraSeleccionada));
+    // Obtener datos de la gestora seleccionada (comparar como strings para evitar type mismatch)
+    const gestoraData = gestoras.find(g => String(g.id) === String(gestoraSeleccionada));
     if (!gestoraData) {
+      console.error('Gestora no encontrada. Buscando:', gestoraSeleccionada, 'En lista:', gestoras.map(g => ({ id: g.id, idStr: String(g.id), nombre: g.nombre })));
       alert('Gestora no encontrada');
       return;
     }
+
+    console.log('✅ Gestora encontrada:', gestoraData);
 
     setIsProcessing(true);
     try {
@@ -1130,7 +1124,7 @@ export default function Solicitudes() {
             const solicitud = solicitudes.find(s => s.idSolicitud === solicitudId);
             await bolsasService.asignarAGestora(
               solicitudId,
-              parseInt(gestoraSeleccionada),
+              Number(gestoraSeleccionada),
               gestoraData.nombre
             );
             asignacionesExitosas++;
@@ -1149,7 +1143,7 @@ export default function Solicitudes() {
         // ASIGNACIÓN INDIVIDUAL: Una sola solicitud
         await bolsasService.asignarAGestora(
           solicitudSeleccionada.idSolicitud || solicitudSeleccionada.id,
-          parseInt(gestoraSeleccionada),
+          Number(gestoraSeleccionada),
           gestoraData.nombre
         );
         alert('✅ Solicitud asignada correctamente a ' + gestoraData.nombre);
@@ -1158,7 +1152,9 @@ export default function Solicitudes() {
       setModalAsignarGestora(false);
       setGestoraSeleccionada(null); // Limpiar selección
       setSelectedRows(new Set()); // Limpiar selecciones después de asignar
-      cargarSolicitudes(); // Recargar solicitudes
+      setTimeout(() => {
+        cargarSolicitudesConFiltros(); // Recargar solicitudes manteniendo filtros actuales
+      }, 300); // Pequeño delay para asegurar que el backend procese la asignación
     } catch (error) {
       console.error('Error asignando gestora:', error);
       alert('❌ Error al asignar la gestora. Intenta nuevamente.');
@@ -2024,9 +2020,15 @@ export default function Solicitudes() {
                         .map((gestora) => (
                         <div
                           key={gestora.id}
-                          onClick={() => !isProcessing && setGestoraSeleccionada(gestora.id.toString())}
+                          onClick={() => {
+                            if (!isProcessing) {
+                              const gestoraIdStr = String(gestora.id);
+                              console.log('👤 Gestora seleccionada:', { id: gestora.id, idStr: gestoraIdStr, nombre: gestora.nombre });
+                              setGestoraSeleccionada(gestoraIdStr);
+                            }
+                          }}
                           className={`p-4 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                            gestoraSeleccionada === gestora.id.toString()
+                            String(gestoraSeleccionada) === String(gestora.id)
                               ? 'border-blue-500 bg-blue-50 shadow-md'
                               : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm'
                           } ${isProcessing ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -2047,7 +2049,7 @@ export default function Solicitudes() {
                                 </p>
                               )}
                             </div>
-                            {gestoraSeleccionada === gestora.id.toString() && (
+                            {String(gestoraSeleccionada) === String(gestora.id) && (
                               <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm flex-shrink-0">
                                 ✓
                               </div>

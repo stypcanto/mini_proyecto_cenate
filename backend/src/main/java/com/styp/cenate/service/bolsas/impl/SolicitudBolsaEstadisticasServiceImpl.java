@@ -484,4 +484,60 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
         if (tasaAtencion > 0.5) return "🟡 Carga normal";
         return "🔴 Sobrecarga";
     }
+
+    // ========================================================================
+    // 🎯 FILTROS CONSOLIDADOS (v3.0.0 - Optimización)
+    // ========================================================================
+
+    @Override
+    public Map<String, Object> obtenerEstadisticasFiltros() {
+        log.info("🎯 Obteniendo estadísticas CONSOLIDADAS para filtros (v3.0.0)");
+
+        Map<String, Object> resultado = new LinkedHashMap<>();
+
+        // Todas las estadísticas necesarias para los dropdowns en UNA sola llamada
+        resultado.put("por_tipo_bolsa", obtenerEstadisticasPorTipoBolsa());
+        resultado.put("por_macrorregion", obtenerEstadisticasPorMacrorregion());
+        resultado.put("por_red", obtenerEstadisticasPorRed());
+        resultado.put("por_ipress", obtenerEstadisticasPorIpress());
+        resultado.put("por_especialidad", obtenerEstadisticasPorEspecialidad());
+        resultado.put("por_tipo_cita", obtenerEstadisticasPorTipoCita());
+        resultado.put("por_estado", obtenerEstadisticasPorEstado());
+        resultado.put("timestamp", OffsetDateTime.now(ZoneId.of("America/Lima")));
+
+        log.info("✅ Estadísticas consolidadas obtenidas (1 llamada = 7 antiguas)");
+        return resultado;
+    }
+
+    /**
+     * Obtiene estadísticas agrupadas por macrorregión
+     * Calcula automáticamente desde los datos de solicitudes
+     */
+    private List<Map<String, Object>> obtenerEstadisticasPorMacrorregion() {
+        log.info("📊 Calculando estadísticas por macrorregión...");
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorMacrorregion();
+        return resultados.stream()
+                .sorted((a, b) -> {
+                    Long cantA = ((Number) a.get("cantidad")).longValue();
+                    Long cantB = ((Number) b.get("cantidad")).longValue();
+                    return cantB.compareTo(cantA);
+                })
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Obtiene estadísticas agrupadas por red asistencial
+     * Calcula automáticamente desde los datos de solicitudes
+     */
+    private List<Map<String, Object>> obtenerEstadisticasPorRed() {
+        log.info("📊 Calculando estadísticas por red...");
+        List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorRed();
+        return resultados.stream()
+                .sorted((a, b) -> {
+                    Long cantA = ((Number) a.get("cantidad")).longValue();
+                    Long cantB = ((Number) b.get("cantidad")).longValue();
+                    return cantB.compareTo(cantA);
+                })
+                .collect(Collectors.toList());
+    }
 }
