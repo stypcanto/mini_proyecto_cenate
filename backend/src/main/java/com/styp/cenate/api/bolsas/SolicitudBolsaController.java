@@ -694,7 +694,7 @@ public class SolicitudBolsaController {
      * @return lista de especialidades únicas ordenadas alfabéticamente
      */
     @GetMapping("/especialidades")
-    @PreAuthorize("hasAnyRole('COORDINADOR', 'COORDINADOR_ESPECIALIDADES', 'COORDINADOR_RED', 'MEDICO', 'SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'COORDINADOR_ESPECIALIDADES', 'COORDINADOR_RED', 'COORDINADOR_GESTION_CITAS', 'GESTOR_DE_CITAS', 'MEDICO', 'SUPERADMIN', 'ADMIN')")
     public ResponseEntity<List<String>> obtenerEspecialidadesUnicas() {
         try {
             log.info("🔍 Obteniendo especialidades únicas para filtro...");
