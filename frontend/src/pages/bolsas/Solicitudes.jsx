@@ -1051,7 +1051,11 @@ export default function Solicitudes() {
       const matchMacrorregion = filterKey === 'macro' ? sol.macroregion === filterValue : (filtroMacrorregion === 'todas' ? true : sol.macroregion === filtroMacrorregion);
       const matchRed = filterKey === 'red' ? sol.red === filterValue : (filtroRed === 'todas' ? true : sol.red === filtroRed);
       const matchIpress = filterKey === 'ipress' ? sol.ipress === filterValue : (filtroIpress === 'todas' ? true : sol.ipress === filtroIpress);
-      const matchEspecialidad = filterKey === 'especialidad' ? sol.especialidad === filterValue : (filtroEspecialidad === 'todas' ? true : sol.especialidad === filtroEspecialidad);
+      const getEspecialidadDisplay = (s) => {
+        return (s.especialidad && s.especialidad.trim() !== '') ? s.especialidad : 'S/E';
+      };
+      const especDisplayValue = getEspecialidadDisplay(sol);
+      const matchEspecialidad = filtroEspecialidad === 'todas' ? true : especDisplayValue === filtroEspecialidad;
       const matchTipoCita = filterKey === 'cita' ? (sol.tipoCita?.toUpperCase?.() || '') === filterValue : (filtroTipoCita === 'todas' ? true : (sol.tipoCita?.toUpperCase?.() || '') === filtroTipoCita);
       const matchEstado = filterKey === 'estado' ? sol.estadoCodigo === filterValue : (filtroEstado === 'todos' ? true : sol.estadoCodigo === filtroEstado);
 
@@ -1064,7 +1068,13 @@ export default function Solicitudes() {
   const redesUnicas = [...new Set(solicitudes.map(s => s.red))].sort();
   const ipressUnicas = [...new Set(solicitudes.map(s => s.ipress))].filter(i => i && i !== 'N/A').sort();
   const macrorregionesUnicas = [...new Set(solicitudes.map(s => s.macroregion))].filter(m => m && m !== 'N/A').sort();
-  const especialidadesUnicas = [...new Set(solicitudes.map(s => s.especialidad))].sort();
+  // Extraer especialidades: rellenar vacíos con "S/E" para poder filtrar
+  const especialidadesUnicas = [...new Set(
+    solicitudes.map(s => {
+      const esp = s.especialidad && s.especialidad.trim() !== '' ? s.especialidad : 'S/E';
+      return esp;
+    })
+  )].sort();
   // Whitelist de tipos de cita válidos
   const TIPOS_CITA_VALIDOS = ['VOLUNTARIA', 'INTERCONSULTA', 'RECITA', 'REFERENCIA'];
   const tiposCitaUnicos = [
