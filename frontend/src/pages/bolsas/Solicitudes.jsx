@@ -985,14 +985,23 @@ export default function Solicitudes() {
 
   // Manejar selección de filas - Simple y robusto
   const toggleRowSelection = (id) => {
+    console.log('🔄 ANTES de toggle:', { id, selectedRows: Array.from(selectedRows), tamaño: selectedRows.size });
     const newSelected = new Set(selectedRows);
     if (newSelected.has(id)) {
+      console.log(`❌ Removiendo ${id} de selección`);
       newSelected.delete(id);
     } else {
+      console.log(`✅ Agregando ${id} a selección`);
       newSelected.add(id);
     }
+    console.log('🔄 DESPUÉS de toggle:', { id, selectedRows: Array.from(newSelected), tamaño: newSelected.size });
     setSelectedRows(newSelected);
   };
+
+  // Monitoreo de cambios en selectedRows
+  useEffect(() => {
+    console.log('📊 selectedRows actualizado:', Array.from(selectedRows), 'Total:', selectedRows.size);
+  }, [selectedRows]);
 
   const toggleAllRows = () => {
     if (selectedRows.size === solicitudes.length) {

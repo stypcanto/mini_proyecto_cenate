@@ -183,10 +183,11 @@ function FilaSolicitud({
 
 // ✨ Memorizar: solo re-renderizar si las props cambian
 export default React.memo(FilaSolicitud, (prevProps, nextProps) => {
-  // Comparación custom para máxima performance
+  // Comparación custom comparando por ID y valores en lugar de referencias
   return (
-    prevProps.solicitud === nextProps.solicitud &&
+    prevProps.solicitud?.id === nextProps.solicitud?.id &&
     prevProps.isChecked === nextProps.isChecked &&
-    prevProps.isProcessing === nextProps.isProcessing
+    prevProps.isProcessing === nextProps.isProcessing &&
+    prevProps.getEstadoBadge === nextProps.getEstadoBadge
   );
 });
