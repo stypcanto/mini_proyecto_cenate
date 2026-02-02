@@ -797,12 +797,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
      * Retorna SOLO especialidades pobladas para evitar duplicados "S/E"
      */
     @Query(value = """
-        SELECT DISTINCT COALESCE(sb.especialidad, '') as especialidad
+        SELECT DISTINCT sb.especialidad
         FROM dim_solicitud_bolsa sb
         WHERE sb.activo = true
             AND sb.especialidad IS NOT NULL
             AND sb.especialidad != ''
-        ORDER BY especialidad ASC
+        ORDER BY sb.especialidad ASC
         """, nativeQuery = true)
     List<String> obtenerEspecialidadesUnicas();
 
