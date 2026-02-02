@@ -194,10 +194,10 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
-               WHEN :asignacion IS NULL THEN true
+               WHEN :asignacion IS NULL THEN 1=1
                WHEN :asignacion = 'asignados' THEN sb.responsable_gestora_id IS NOT NULL
                WHEN :asignacion = 'sin_asignar' THEN sb.responsable_gestora_id IS NULL
-               ELSE false
+               ELSE 1=0
                END)
           AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
                               OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
@@ -237,10 +237,10 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
           AND (CASE
-               WHEN :asignacion IS NULL THEN true
+               WHEN :asignacion IS NULL THEN 1=1
                WHEN :asignacion = 'asignados' THEN sb.responsable_gestora_id IS NOT NULL
                WHEN :asignacion = 'sin_asignar' THEN sb.responsable_gestora_id IS NULL
-               ELSE false
+               ELSE 1=0
                END)
           AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
                               OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
