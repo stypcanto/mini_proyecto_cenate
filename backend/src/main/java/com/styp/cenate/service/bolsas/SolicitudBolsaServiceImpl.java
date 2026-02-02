@@ -772,7 +772,7 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 Usuario usuario = usuarioRepository.findByNameUser(username)
                     .orElse(null);
                 if (usuario != null) {
-                    solicitud.setUsuarioCambioEstadoId(usuario.getIdUsuario());
+                    solicitud.setUsuarioCambioEstadoId(usuario.getIdUser());
                     log.info("Estado actualizado en solicitud {}: {} por usuario {}",
                         idSolicitud, nuevoEstadoId, username);
                 } else {

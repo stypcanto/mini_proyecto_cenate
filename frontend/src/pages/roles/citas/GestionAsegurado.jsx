@@ -868,7 +868,7 @@ export default function GestionAsegurado() {
                               paciente.codigoEstado === "ATENDIDO_IPRESS"
                                 ? "border-green-300 focus:border-green-500"
                                 : paciente.codigoEstado === "PENDIENTE"
-                                ? "border-yellow-300 focus:border-yellow-500"
+                                ? "border-blue-300 focus:border-blue-500"
                                 : "border-gray-300 focus:border-blue-500"
                             }`}
                           >
