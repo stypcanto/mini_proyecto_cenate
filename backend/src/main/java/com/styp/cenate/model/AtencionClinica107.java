@@ -98,6 +98,14 @@ public class AtencionClinica107 {
     @Column(name = "estado")
     private String estado;
 
+    /**
+     * 🔗 Relación ManyToOne con EstadoGestionCita
+     * Permite acceder a la descripción completa del estado
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estado_gestion_citas_id", insertable = false, updatable = false)
+    private EstadoGestionCita estadoGestionCita;
+
     @Column(name = "fecha_solicitud")
     private LocalDateTime fechaSolicitud;
 

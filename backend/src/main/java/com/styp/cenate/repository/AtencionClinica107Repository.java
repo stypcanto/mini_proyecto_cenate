@@ -21,7 +21,7 @@ import java.time.LocalDateTime;
  */
 @Repository
 public interface AtencionClinica107Repository 
-    extends JpaRepository<AtencionClinica107, Long>, JpaSpecificationExecutor<AtencionClinica107> {
+    extends JpaRepository<AtencionClinica107, Long>, JpaSpecificationExecutor<AtencionClinica107>, AtencionClinica107RepositoryCustom {
 
     /**
      * Listar todas las atenciones con paginación
@@ -107,20 +107,20 @@ public interface AtencionClinica107Repository
     Page<AtencionClinica107> buscarGeneral(@Param("search") String search, Pageable pageable);
 
     /**
-     * Estadísticas globales - Contar por estado de gestión de citas
+     * Estadísticas globales - Contar por estado de gestión de citas (Bolsa 1)
      */
-    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.estadoGestionCitasId = :estadoId")
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.estadoGestionCitasId = :estadoId AND a.idBolsa = 1")
     Long contarPorEstado(@Param("estadoId") Long estadoId);
 
     /**
-     * Estadísticas globales - Contar total
+     * Estadísticas globales - Contar total (Bolsa 1 - MÓDULO 107)
      */
-    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a")
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE a.idBolsa = 1")
     Long contarTotal();
 
     /**
-     * Contar por estado (PENDIENTE o ATENDIDO)
+     * Contar por estado (PENDIENTE o ATENDIDO) para Bolsa 1
      */
-    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE UPPER(a.estado) = UPPER(:estado)")
+    @Query("SELECT COUNT(DISTINCT a.idSolicitud) FROM AtencionClinica107 a WHERE UPPER(a.estado) = UPPER(:estado) AND a.idBolsa = 1")
     Long contarPorEstadoDescripcion(@Param("estado") String estado);
 }

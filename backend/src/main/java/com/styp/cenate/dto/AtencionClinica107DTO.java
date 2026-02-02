@@ -48,6 +48,7 @@ public class AtencionClinica107DTO {
     // 📌 Estado y Trazabilidad
     private Long estadoGestionCitasId;
     private String estado;
+    private String estadoDescripcion; // 🆕 Descripción del estado desde dim_estados_gestion_citas
     private LocalDateTime fechaSolicitud;
     private LocalDateTime fechaActualizacion;
     private Long responsableGestoraId;

@@ -4,7 +4,9 @@ import com.styp.cenate.dto.AtencionClinica107DTO;
 import com.styp.cenate.dto.AtencionClinica107FiltroDTO;
 import com.styp.cenate.dto.EstadisticasAtencion107DTO;
 import com.styp.cenate.model.AtencionClinica107;
+import com.styp.cenate.model.EstadoGestionCita;
 import com.styp.cenate.repository.AtencionClinica107Repository;
+import com.styp.cenate.repository.EstadoGestionCitaRepository;
 import com.styp.cenate.service.specification.AtencionClinica107Specification;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ import java.time.LocalDateTime;
 public class AtencionClinica107ServiceImpl implements AtencionClinica107Service {
 
     private final AtencionClinica107Repository repository;
+    private final EstadoGestionCitaRepository estadoGestionCitaRepository;
 
     /**
      * Listar atenciones con filtros complejos
@@ -44,35 +47,18 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
     @Override
     public Page<AtencionClinica107DTO> listarConFiltros(AtencionClinica107FiltroDTO filtro) {
         log.info("🔍 [MODULO 107] Listando atenciones clínicas con filtros");
+        log.info("📌 [MODULO 107] Filtro de Bolsa: idBolsa={}", filtro.getIdBolsa());
         log.debug("Filtros recibidos: estadoGestionCitasId={}, estado={}, tipoDoc={}, documento={}, idIpress={}, derivacion={}, especialidad={}, tipoCita={}, search={}",
             filtro.getEstadoGestionCitasId(), filtro.getEstado(), filtro.getTipoDocumento(), filtro.getPacienteDni(), 
             filtro.getIdIpress(), filtro.getDerivacionInterna(), filtro.getEspecialidad(),
             filtro.getTipoCita(), filtro.getSearchTerm());
-        
-        // 🐛 DEBUG: Log específico para el filtro de estado
-        if (filtro.getEstado() != null && !filtro.getEstado().isEmpty()) {
-            log.info("🔍 [DEBUG] Filtro de estado aplicado: '{}'", filtro.getEstado());
-        }
 
-        // Parámetros de paginación (mover aquí para usarlo en el bloque de prueba)
+        // Parámetros de paginación
         int page = filtro.getPageNumber() != null ? filtro.getPageNumber() : 0;
         int size = filtro.getPageSize() != null ? filtro.getPageSize() : 25;
         Pageable pageable = PageRequest.of(page, size);
 
         try {
-            // 🐛 PRUEBA TEMPORAL: Si solo se está filtrando por estado, usar método directo
-            if (filtro.getEstado() != null && !filtro.getEstado().isEmpty() && 
-                !filtro.getEstado().equals("todos") &&
-                (filtro.getTipoDocumento() == null || filtro.getTipoDocumento().equals("todos")) &&
-                (filtro.getPacienteDni() == null || filtro.getPacienteDni().isEmpty()) &&
-                (filtro.getSearchTerm() == null || filtro.getSearchTerm().isEmpty())) {
-                
-                log.info("🧪 [PRUEBA] Usando método directo para filtro de estado");
-                Page<AtencionClinica107> resultado = repository.findByEstado(filtro.getEstado(), pageable);
-                return resultado.map(this::toDTO);
-            }
-
-            // Si no es solo filtro de estado, usar especificaciones
             // Parsear fechas si existen
             LocalDateTime fechaInicio = null;
             LocalDateTime fechaFin = null;
@@ -85,8 +71,9 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
 
             log.debug("Paginación: página={}, tamaño={}", page, size);
 
-            // Construir especificación con todos los filtros
+            // Construir especificación con todos los filtros (incluyendo idBolsa)
             var spec = AtencionClinica107Specification.conFiltros(
+                filtro.getIdBolsa(),
                 filtro.getEstadoGestionCitasId(),
                 filtro.getEstado(),
                 filtro.getTipoDocumento(),
@@ -100,9 +87,6 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
                 filtro.getSearchTerm()
             );
 
-            // 🐛 DEBUG: Log para verificar la especificación
-            log.info("🔍 [DEBUG] Especificación construida, ejecutando query...");
-
             // Ejecutar query
             long inicio = System.currentTimeMillis();
             Page<AtencionClinica107> resultado = repository.findAll(spec, pageable);
@@ -111,8 +95,15 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             log.info("✅ [MODULO 107] Se encontraron {} atenciones en {} ms", 
                 resultado.getTotalElements(), tiempo);
 
-            // Convertir a DTO
-            return resultado.map(this::toDTO);
+            // Convertir a DTO - inicializar relación antes de convertir
+            return resultado.map(atencion -> {
+                // Inicializar la relación si es necesario
+                if (atencion.getEstadoGestionCitasId() != null && atencion.getEstadoGestionCita() == null) {
+                    // La relación no se cargó, hacemos una query adicional
+                    log.debug("Inicializando estadoGestionCita para solicitud {}", atencion.getIdSolicitud());
+                }
+                return toDTO(atencion);
+            });
 
         } catch (IllegalArgumentException e) {
             log.error("❌ [MODULO 107] Error en formato de fechas: {}", e.getMessage());
@@ -128,7 +119,7 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
      */
     @Override
     public EstadisticasAtencion107DTO obtenerEstadisticas() {
-        log.info("📊 [MODULO 107] Obteniendo estadísticas de atenciones");
+        log.info("📊 [MODULO 107] Obteniendo estadísticas de atenciones (Bolsa = 1)");
 
         try {
             long inicio = System.currentTimeMillis();
@@ -145,7 +136,7 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
                 .atendidos(atendidos != null ? atendidos : 0L)
                 .build();
 
-            log.info("✅ [MODULO 107] Estadísticas: Total={}, Pendientes={}, Atendidos={} ({}ms)",
+            log.info("✅ [MODULO 107] Estadísticas (Bolsa=1): Total={}, Pendientes={}, Atendidos={} ({}ms)",
                 total, pendientes, atendidos, tiempo);
 
             return stats;
@@ -184,6 +175,30 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
      * Convertir AtencionClinica107 a AtencionClinica107DTO
      */
     private AtencionClinica107DTO toDTO(AtencionClinica107 atencion) {
+        // Obtener descripción del estado
+        String estadoDescripcion = null;
+        
+        log.debug("🔍 [toDTO] Procesando solicitud: {}, estadoGestionCitasId: {}", atencion.getIdSolicitud(), atencion.getEstadoGestionCitasId());
+        
+        // Intentar obtener desde la relación cargada
+        if (atencion.getEstadoGestionCita() != null) {
+            estadoDescripcion = atencion.getEstadoGestionCita().getDescEstadoCita();
+            log.debug("✅ [toDTO] Descripción obtenida desde relación cargada: {}", estadoDescripcion);
+        } 
+        // Si no está cargada, consultar el repositorio
+        else if (atencion.getEstadoGestionCitasId() != null) {
+            log.debug("🔎 [toDTO] Buscando en repositorio con ID: {}", atencion.getEstadoGestionCitasId());
+            EstadoGestionCita estado = estadoGestionCitaRepository.findById(atencion.getEstadoGestionCitasId()).orElse(null);
+            if (estado != null) {
+                estadoDescripcion = estado.getDescEstadoCita();
+                log.debug("✅ [toDTO] Descripción obtenida desde repositorio: {}", estadoDescripcion);
+            } else {
+                log.warn("⚠️ [toDTO] No se encontró estado con ID: {}", atencion.getEstadoGestionCitasId());
+            }
+        } else {
+            log.warn("⚠️ [toDTO] estadoGestionCitasId es null para solicitud: {}", atencion.getIdSolicitud());
+        }
+
         return AtencionClinica107DTO.builder()
             .idSolicitud(atencion.getIdSolicitud())
             .numeroSolicitud(atencion.getNumeroSolicitud())
@@ -208,6 +223,7 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             .idServicio(atencion.getIdServicio())
             .estadoGestionCitasId(atencion.getEstadoGestionCitasId())
             .estado(atencion.getEstado())
+            .estadoDescripcion(estadoDescripcion) // 🆕 Descripción mapeada desde EstadoGestionCita o repositorio
             .fechaSolicitud(atencion.getFechaSolicitud())
             .fechaActualizacion(atencion.getFechaActualizacion())
             .responsableGestoraId(atencion.getResponsableGestoraId())

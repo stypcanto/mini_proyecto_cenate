@@ -25,6 +25,9 @@ export const atencionesClinicasService = {
       params.append('pageNumber', pageNumber.toString());
       params.append('pageSize', pageSize.toString());
       
+      // Filtro de Bolsa (OBLIGATORIO: siempre 1 para Módulo 107)
+      params.append('idBolsa', '1');
+      
       // Agregar filtros si existen y no son valores por defecto
       if (filtros.estado && filtros.estado !== "todos") {
         params.append('estado', filtros.estado);

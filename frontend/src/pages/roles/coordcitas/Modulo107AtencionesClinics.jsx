@@ -39,7 +39,7 @@ export default function Modulo107AtencionesClinics() {
   const [atencionSeleccionada, setAtencionSeleccionada] = useState(null);
 
   // ==================== FILTROS ====================
-  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [filtroEstado, setFiltroEstado] = useState("todos"); // "todos" o ID numérico del estado
   const [filtroTipoDoc, setFiltroTipoDoc] = useState("todos");
   const [filtroDocumento, setFiltroDocumento] = useState("");
   const [filtroRangoFechas, setFiltroRangoFechas] = useState({ inicio: "", fin: "" });
@@ -61,7 +61,7 @@ export default function Modulo107AtencionesClinics() {
   const [redesUnicas, setRedesUnicas] = useState([]);
   const [ipressUnicas, setIpressUnicas] = useState([]);
   const [tiposDocumentoUnicos, setTiposDocumentoUnicos] = useState([]);
-  const [estadosUnicos, setEstadosUnicos] = useState(["PENDIENTE", "ATENDIDO"]);
+  const [estadosUnicos, setEstadosUnicos] = useState([]);
 
   // Derivaciones internas disponibles
   const derivacionesInternas = [
@@ -71,6 +71,39 @@ export default function Modulo107AtencionesClinics() {
   ];
 
   // ==================== FUNCIONES PARA CARGAR FILTROS ====================
+
+  /**
+   * Cargar estados de gestión de citas desde el backend
+   */
+  const cargarEstadosGestion = async () => {
+    try {
+      const response = await fetch("/api/admin/estados-gestion-citas/todos", {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include"
+      });
+      
+      if (!response.ok) {
+        throw new Error("Error al cargar estados de gestión");
+      }
+      
+      const data = await response.json();
+      console.log("✅ Estados de gestión cargados:", data);
+      
+      // Mapear respuesta - usar los campos correctos del DTO
+      const estadosMapeados = data.map(estado => ({
+        id: estado.idEstadoCita,
+        codigo: estado.codEstadoCita,
+        descripcion: estado.descEstadoCita
+      }));
+      
+      setEstadosUnicos(estadosMapeados);
+    } catch (error) {
+      console.error("❌ Error al cargar estados de gestión:", error);
+    }
+  };
 
   /**
    * Cargar macrorregiones desde el servicio
@@ -133,9 +166,9 @@ export default function Modulo107AtencionesClinics() {
       // Preparar filtros para el backend
       const filtros = {};
       
-      // Filtros directos (sin mapeo de IDs)
-      if (filtroEstado !== "todos") {
-        filtros.estado = filtroEstado; // Enviar directamente "PENDIENTE" o "ATENDIDO"
+      // Filtro Estado - Usar estadoGestionCitasId (ID del estado)
+      if (filtroEstado !== "todos" && filtroEstado) {
+        filtros.estadoGestionCitasId = filtroEstado; // Enviar el ID del estado
       }
       
       // Filtro de IPRESS (el backend soporta este)
@@ -234,6 +267,7 @@ export default function Modulo107AtencionesClinics() {
   useEffect(() => {
     cargarEstadisticas();
     cargarMacrorregiones();
+    cargarEstadosGestion();
   }, []);
 
   // Cargar redes cuando cambia la macrorregión seleccionada
@@ -385,8 +419,11 @@ export default function Modulo107AtencionesClinics() {
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="todos">Todos los estados</option>
-                    <option value="PENDIENTE">Pendiente</option>
-                    <option value="ATENDIDO">Atendido</option>
+                    {estadosUnicos && Array.isArray(estadosUnicos) && estadosUnicos.map((estado) => (
+                      <option key={estado.id} value={estado.id}>
+                        {estado.descripcion}
+                      </option>
+                    ))}
                   </select>
                 </div>
 
@@ -719,16 +756,27 @@ export default function Modulo107AtencionesClinics() {
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {(() => {
-                            // Usar estadoDescripcion si está disponible, sino usar estado y mapearlo
-                            const estadoTexto = atencion.estadoDescripcion || atencion.estado || "SIN ESTADO";
+                            // Debug
+                            console.log("Atencion object - estadoDescripcion:", atencion.estadoDescripcion, "estadoGestionCitasId:", atencion.estadoGestionCitasId);
+                            
+                            // Solo mostrar si tenemos descripción
+                            if (!atencion.estadoDescripcion) {
+                              return <span className="text-gray-500 text-xs">Sin estado</span>;
+                            }
+                            
+                            const estadoTexto = atencion.estadoDescripcion;
                             const estadoNormalizado = estadoTexto.toUpperCase();
                             
                             return (
                               <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                                estadoNormalizado.includes("PENDIENTE") 
-                                  ? "bg-orange-100 text-orange-700"
-                                  : estadoNormalizado.includes("ATENDIDO") || estadoNormalizado.includes("COMPLETADO")
+                                estadoNormalizado.includes("CITADO")
+                                  ? "bg-blue-100 text-blue-700"
+                                  : estadoNormalizado.includes("NO_CONTESTA")
+                                  ? "bg-red-100 text-red-700"
+                                  : estadoNormalizado.includes("ATENDIDO")
                                   ? "bg-green-100 text-green-700"
+                                  : estadoNormalizado.includes("PENDIENTE")
+                                  ? "bg-orange-100 text-orange-700"
                                   : "bg-gray-100 text-gray-700"
                               }`}>
                                 {estadoTexto}
