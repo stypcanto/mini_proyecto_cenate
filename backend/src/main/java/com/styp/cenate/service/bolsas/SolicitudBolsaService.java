@@ -51,6 +51,7 @@ public interface SolicitudBolsaService {
 
     /**
      * 🆕 v2.6.0 - Obtiene solicitudes CON FILTROS AVANZADOS + PAGINACIÓN
+     * ✅ v1.42.0 - Agregado filtro asignación (cards clickeables)
      * Soporta filtrado server-side integrado con paginación
      * UX: El usuario selecciona filtros y recibe resultados filtrados al instante
      *
@@ -61,6 +62,7 @@ public interface SolicitudBolsaService {
      * @param especialidad especialidad (null = todas)
      * @param estadoCodigo código estado gestión citas (null = todos)
      * @param tipoCita tipo cita (null = todos)
+     * @param asignacion filtro asignación: "asignados" (con gestora) o "sin_asignar" (sin gestora), null = todos
      * @param busqueda búsqueda libre: paciente/DNI/IPRESS (null = ignorar)
      * @param pageable paginación
      * @return Page con solicitudes filtradas
@@ -73,6 +75,7 @@ public interface SolicitudBolsaService {
             String especialidad,
             String estadoCodigo,
             String tipoCita,
+            String asignacion,
             String busqueda,
             org.springframework.data.domain.Pageable pageable);
 

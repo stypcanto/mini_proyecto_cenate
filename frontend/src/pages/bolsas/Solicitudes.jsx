@@ -66,6 +66,8 @@ export default function Solicitudes() {
   const [filtroEspecialidad, setFiltroEspecialidad] = useState('todas');
   const [filtroEstado, setFiltroEstado] = useState('todos');
   const [filtroTipoCita, setFiltroTipoCita] = useState('todas');
+  const [filtroAsignacion, setFiltroAsignacion] = useState('todos');  // ✅ v1.42.0: Filtro asignación (cards clickeables)
+  const [cardSeleccionado, setCardSeleccionado] = useState(null);     // ✅ v1.42.0: Rastrear card activo
   const [selectedRows, setSelectedRows] = useState(new Set());
   const [currentPage, setCurrentPage] = useState(1);
 
@@ -245,11 +247,11 @@ export default function Solicitudes() {
     // El usuario cambió un filtro: recargar con filtros
     console.log('🔍 Filtros cambiados - Reloading solicitudes con filtros:', {
       filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress,
-      filtroEspecialidad, filtroEstado, filtroTipoCita, searchTerm
+      filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, searchTerm
     });
     setCurrentPage(1); // Reset a página 1
     cargarSolicitudesConFiltros(); // Cargar CON FILTROS desde el backend
-  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroEspecialidad, filtroEstado, filtroTipoCita, searchTerm]);
+  }, [filtroBolsa, filtroMacrorregion, filtroRed, filtroIpress, filtroEspecialidad, filtroEstado, filtroTipoCita, filtroAsignacion, searchTerm]);
 
   // ============================================================================
   // 📦 EFFECT 4: Cargar SIGUIENTE PÁGINA cuando cambia currentPage (v2.5.2 - Server-side pagination)
@@ -503,7 +505,7 @@ export default function Solicitudes() {
     setIsLoading(true);
     setErrorMessage('');
     try {
-      // Llamar al backend CON parámetros de filtro (v2.6.0)
+      // Llamar al backend CON parámetros de filtro (v2.6.0 + v1.42.0: asignación)
       const response = await bolsasService.obtenerSolicitudesPaginado(
         0, // page 0 (primera página cuando cambian los filtros)
         REGISTROS_POR_PAGINA,
@@ -514,6 +516,7 @@ export default function Solicitudes() {
         filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
         filtroEstado === 'todos' ? null : filtroEstado,
         filtroTipoCita === 'todas' ? null : filtroTipoCita,
+        filtroAsignacion === 'todos' ? null : filtroAsignacion,
         searchTerm.trim() || null
       );
 
@@ -631,6 +634,7 @@ export default function Solicitudes() {
         filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
         filtroEstado === 'todos' ? null : filtroEstado,
         filtroTipoCita === 'todas' ? null : filtroTipoCita,
+        filtroAsignacion === 'todos' ? null : filtroAsignacion,
         searchTerm.trim() || null
       );
       console.log('📥 Respuesta página recibida:', response);
@@ -926,6 +930,49 @@ export default function Solicitudes() {
   const totalPaginas = Math.ceil(totalRegistros / REGISTROS_POR_PAGINA);
   // Los registros mostrados son directamente `solicitudes` (ya paginados y filtrados desde el backend)
   const solicitudesPaginadas = solicitudes;
+
+  // ✅ v1.42.0: Manejador para clics en cards de estadísticas
+  const handleCardClick = (cardType) => {
+    if (cardSeleccionado === cardType) {
+      // Click nuevamente → deseleccionar y limpiar filtros
+      setCardSeleccionado(null);
+      setFiltroEstado('todos');
+      setFiltroAsignacion('todos');
+    } else {
+      // Seleccionar este card → aplicar filtro correspondiente
+      setCardSeleccionado(cardType);
+
+      switch (cardType) {
+        case 'total':
+          // Total Pacientes → limpiar todos los filtros
+          setFiltroEstado('todos');
+          setFiltroAsignacion('todos');
+          break;
+        case 'pendiente':
+          // Pendiente Citar → filtrar por estado PENDIENTE
+          setFiltroEstado('PENDIENTE');
+          setFiltroAsignacion('todos');
+          break;
+        case 'citado':
+          // Citados → filtrar por estado CITADO
+          setFiltroEstado('CITADO');
+          setFiltroAsignacion('todos');
+          break;
+        case 'asignado':
+          // Casos Asignados → filtrar por asignación = asignados
+          setFiltroEstado('todos');
+          setFiltroAsignacion('asignados');
+          break;
+        case 'sin_asignar':
+          // Sin Asignar → filtrar por asignación = sin_asignar
+          setFiltroEstado('todos');
+          setFiltroAsignacion('sin_asignar');
+          break;
+        default:
+          break;
+      }
+    }
+  };
 
   const getEstadoBadge = (estado) => {
     const estilos = {
@@ -1410,7 +1457,12 @@ export default function Solicitudes() {
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Solicitudes</h3>
           <div className="grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
             {/* Total Pacientes - Azul */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            <div
+              onClick={() => handleCardClick('total')}
+              className={`bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
+                cardSeleccionado === 'total' ? 'ring-4 ring-blue-300 shadow-2xl' : ''
+              }`}
+            >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-blue-100">Total Pacientes</span>
                 <span className="text-xl">👥</span>
@@ -1419,7 +1471,12 @@ export default function Solicitudes() {
             </div>
 
             {/* Pendiente Citar - Naranja */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            <div
+              onClick={() => handleCardClick('pendiente')}
+              className={`bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
+                cardSeleccionado === 'pendiente' ? 'ring-4 ring-orange-300 shadow-2xl' : ''
+              }`}
+            >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-orange-100">Pendiente Citar</span>
                 <span className="text-xl">⏳</span>
@@ -1428,7 +1485,12 @@ export default function Solicitudes() {
             </div>
 
             {/* Citados - Púrpura */}
-            <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            <div
+              onClick={() => handleCardClick('citado')}
+              className={`bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
+                cardSeleccionado === 'citado' ? 'ring-4 ring-purple-300 shadow-2xl' : ''
+              }`}
+            >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-purple-100">Citados</span>
                 <span className="text-xl">📞</span>
@@ -1437,7 +1499,12 @@ export default function Solicitudes() {
             </div>
 
             {/* Casos Asignados - Verde */}
-            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            <div
+              onClick={() => handleCardClick('asignado')}
+              className={`bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
+                cardSeleccionado === 'asignado' ? 'ring-4 ring-green-300 shadow-2xl' : ''
+              }`}
+            >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-green-100">Casos Asignados</span>
                 <span className="text-xl">👥</span>
@@ -1446,7 +1513,12 @@ export default function Solicitudes() {
             </div>
 
             {/* Sin Asignar - Gris */}
-            <div className="bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            <div
+              onClick={() => handleCardClick('sin_asignar')}
+              className={`bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl cursor-pointer ${
+                cardSeleccionado === 'sin_asignar' ? 'ring-4 ring-gray-300 shadow-2xl' : ''
+              }`}
+            >
               <div className="flex items-center justify-between mb-4">
                 <span className="text-gray-100">Sin Asignar</span>
                 <span className="text-xl">🔲</span>
@@ -1571,13 +1643,12 @@ export default function Solicitudes() {
                 value: filtroEspecialidad,
                 onChange: (e) => setFiltroEspecialidad(e.target.value),
                 options: [
-                  { label: "Todas las especialidades", value: "todas" },
-                  ...especialidadesActivas
-                    .slice()
-                    .sort((a, b) => (a.descServicio || '').localeCompare(b.descServicio || ''))
+                  { label: `Todas las especialidades (${especialidadesUnicas.length})`, value: "todas" },
+                  ...especialidadesUnicas
+                    .filter(esp => esp && esp.trim() !== '')
                     .map(esp => ({
-                      label: esp.descServicio,
-                      value: esp.descServicio
+                      label: esp,
+                      value: esp
                     }))
                 ]
               },

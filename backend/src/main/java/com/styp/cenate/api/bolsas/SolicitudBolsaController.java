@@ -298,7 +298,7 @@ public class SolicitudBolsaController {
      */
     /**
      * GET /api/bolsas/solicitudes
-     * Lista solicitudes con soporte para FILTROS AVANZADOS (v2.6.0)
+     * Lista solicitudes con soporte para FILTROS AVANZADOS (v2.6.0 + v1.42.0: asignación)
      * UX: Al usuario le basta seleccionar filtros y recibe resultados filtrados al instante
      *
      * @param idBolsa ID de bolsa (null o "todas" = todas las bolsas)
@@ -308,6 +308,7 @@ public class SolicitudBolsaController {
      * @param especialidad especialidad (null o "todas" = todas)
      * @param estadoId ID estado gestión citas (null = todos)
      * @param tipoCita tipo de cita (null o "todas" = todos)
+     * @param asignacion filtro asignación: null/"todos" = todos, "asignados" = con gestora, "sin_asignar" = sin gestora
      * @param busqueda búsqueda libre: paciente/DNI/IPRESS (null = ignorar)
      * @param pageable paginación
      * @return Page con solicitudes filtradas
@@ -321,16 +322,17 @@ public class SolicitudBolsaController {
             @RequestParam(required = false) String especialidad,
             @RequestParam(required = false) String estado,
             @RequestParam(required = false) String tipoCita,
+            @RequestParam(required = false) String asignacion,
             @RequestParam(required = false) String busqueda,
             @PageableDefault(size = 25, page = 0) Pageable pageable) {
 
         // Si hay algún filtro, usar búsqueda con filtros (v2.6.0)
         if (bolsa != null || macrorregion != null || red != null || ipress != null ||
-            especialidad != null || estado != null || tipoCita != null || busqueda != null) {
-            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Búsqueda: {}",
-                bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, busqueda);
+            especialidad != null || estado != null || tipoCita != null || asignacion != null || busqueda != null) {
+            log.info("🔍 Solicitud con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}",
+                bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, asignacion, busqueda);
             return ResponseEntity.ok(solicitudBolsaService.listarConFiltros(
-                    bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, busqueda, pageable));
+                    bolsa, macrorregion, red, ipress, especialidad, estado, tipoCita, asignacion, busqueda, pageable));
         }
 
         // Sin filtros, listar todas (comportamiento anterior)

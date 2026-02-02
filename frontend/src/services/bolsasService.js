@@ -182,6 +182,7 @@ export const obtenerSolicitudesPaginado = async (
   especialidad = null,
   estado = null,
   tipoCita = null,
+  asignacion = null,
   busqueda = null
 ) => {
   try {
@@ -198,6 +199,7 @@ export const obtenerSolicitudesPaginado = async (
     if (especialidad && especialidad !== 'todas') params.append('especialidad', especialidad);
     if (estado && estado !== 'todos') params.append('estado', estado);
     if (tipoCita && tipoCita !== 'todas') params.append('tipoCita', tipoCita);
+    if (asignacion && asignacion !== 'todos') params.append('asignacion', asignacion);
     if (busqueda && busqueda.trim()) params.append('busqueda', busqueda.trim());
 
     const response = await apiClient.get(`${API_BASE_URL}/solicitudes?${params.toString()}`);

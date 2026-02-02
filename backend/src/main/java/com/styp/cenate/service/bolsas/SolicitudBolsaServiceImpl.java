@@ -2416,11 +2416,12 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String especialidad,
             String estadoCodigo,
             String tipoCita,
+            String asignacion,
             String busqueda,
             org.springframework.data.domain.Pageable pageable) {
         try {
-            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Búsqueda: {}",
-                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, tipoCita, busqueda);
+            log.info("🔍 Listando solicitudes con filtros - Bolsa: {}, Macro: {}, Red: {}, IPRESS: {}, Especialidad: {}, Estado: {}, TipoCita: {}, Asignación: {}, Búsqueda: {}",
+                bolsaNombre, macrorregion, red, ipress, especialidad, estadoCodigo, tipoCita, asignacion, busqueda);
 
             // Convertir "todas"/"todos" a null para ignorar ese filtro
             String bolsaNombreFinal = (bolsaNombre == null || "todas".equals(bolsaNombre) || bolsaNombre.trim().isEmpty()) ? null : bolsaNombre.trim();
@@ -2430,16 +2431,17 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             String especialidadFinal = (especialidad == null || "todas".equals(especialidad) || especialidad.trim().isEmpty()) ? null : especialidad.trim();
             String estadoCod = (estadoCodigo == null || "todos".equals(estadoCodigo) || estadoCodigo.trim().isEmpty()) ? null : estadoCodigo.trim();
             String tipoCitaFinal = (tipoCita == null || "todas".equals(tipoCita) || tipoCita.trim().isEmpty()) ? null : tipoCita.trim();
+            String asignacionFinal = (asignacion == null || "todos".equals(asignacion) || asignacion.trim().isEmpty()) ? null : asignacion.trim();
             String busquedaFinal = (busqueda == null || busqueda.trim().isEmpty()) ? null : busqueda.trim();
 
             // Llamar al repository con filtros
             List<Object[]> resultados = solicitudRepository.findAllWithFiltersAndPagination(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, tipoCitaFinal, busquedaFinal, pageable);
+                    estadoCod, tipoCitaFinal, asignacionFinal, busquedaFinal, pageable);
 
             long total = solicitudRepository.countWithFilters(
                     bolsaNombreFinal, macrorFinal, redFinal, ipressFinal, especialidadFinal,
-                    estadoCod, tipoCitaFinal, busquedaFinal);
+                    estadoCod, tipoCitaFinal, asignacionFinal, busquedaFinal);
 
             // Mapear a DTOs
             List<SolicitudBolsaDTO> dtos = resultados.stream()

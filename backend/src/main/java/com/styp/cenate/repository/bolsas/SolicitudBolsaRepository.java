@@ -193,6 +193,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
           AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
+          AND (:asignacion IS NULL
+               OR (:asignacion = 'asignados' AND sb.responsable_gestora_id IS NOT NULL)
+               OR (:asignacion = 'sin_asignar' AND sb.responsable_gestora_id IS NULL))
           AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
                               OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
                               OR LOWER(COALESCE(di.desc_ipress, '')) LIKE LOWER(CONCAT('%', :busqueda, '%')))
@@ -207,11 +210,12 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("especialidad") String especialidad,
             @org.springframework.data.repository.query.Param("estadoCodigo") String estadoCodigo,
             @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
+            @org.springframework.data.repository.query.Param("asignacion") String asignacion,
             @org.springframework.data.repository.query.Param("busqueda") String busqueda,
             org.springframework.data.domain.Pageable pageable);
 
     /**
-     * Cuenta solicitudes con filtros aplicados (v2.6.0)
+     * Cuenta solicitudes con filtros aplicados (v2.6.0 + v1.42.0: asignación)
      * Se usa para calcular el total de páginas en filtrado
      */
     @Query(value = """
@@ -229,6 +233,9 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
           AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
           AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
           AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
+          AND (:asignacion IS NULL
+               OR (:asignacion = 'asignados' AND sb.responsable_gestora_id IS NOT NULL)
+               OR (:asignacion = 'sin_asignar' AND sb.responsable_gestora_id IS NULL))
           AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
                               OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
                               OR LOWER(COALESCE(di.desc_ipress, '')) LIKE LOWER(CONCAT('%', :busqueda, '%')))
@@ -241,6 +248,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             @org.springframework.data.repository.query.Param("especialidad") String especialidad,
             @org.springframework.data.repository.query.Param("estadoCodigo") String estadoCodigo,
             @org.springframework.data.repository.query.Param("tipoCita") String tipoCita,
+            @org.springframework.data.repository.query.Param("asignacion") String asignacion,
             @org.springframework.data.repository.query.Param("busqueda") String busqueda);
 
     /**
