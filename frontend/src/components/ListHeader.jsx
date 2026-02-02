@@ -33,36 +33,36 @@ export default function ListHeader({
   onClearFilters = () => {}
 }) {
   return (
-    <div className="p-6 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold text-gray-800">{title}</h2>
+    <div className="p-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+      <div className="flex items-center justify-between mb-2">
+        <h2 className="text-lg font-bold text-gray-800">{title}</h2>
       </div>
 
       {/* Búsqueda */}
-      <div className="mb-4">
+      <div className="mb-2">
         <div className="relative">
-          <Search size={20} className="absolute left-4 top-3.5 text-gray-400" />
+          <Search size={18} className="absolute left-3 top-2.5 text-gray-400" />
           <input
             type="text"
             placeholder={searchPlaceholder}
             value={searchValue}
             onChange={onSearchChange}
-            className="w-full pl-12 pr-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm font-medium transition-all"
+            className="w-full pl-10 pr-4 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs font-medium transition-all"
           />
         </div>
       </div>
 
       {/* Filtros */}
-      <div className="space-y-3">
+      <div className="space-y-2">
         {/* Primera fila: Bolsas + Botón Limpiar */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
           <div className="md:col-span-3 relative">
-            <label className="block text-xs font-semibold text-gray-600 mb-1.5">{filters[0]?.name}</label>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">{filters[0]?.name}</label>
             <div className="relative">
               <select
                 value={filters[0]?.value}
                 onChange={filters[0]?.onChange}
-                className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
+                className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
               >
                 {filters[0]?.options?.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -70,7 +70,7 @@ export default function ListHeader({
                   </option>
                 ))}
               </select>
-              <ChevronDown size={18} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+              <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
             </div>
           </div>
 
@@ -78,24 +78,24 @@ export default function ListHeader({
           <div className="flex items-end">
             <button
               onClick={onClearFilters}
-              className="w-full px-4 py-2.5 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-2 transition-all shadow-md hover:shadow-lg"
+              className="w-full px-3 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg font-medium flex items-center justify-center gap-1.5 transition-all shadow-md hover:shadow-lg text-xs"
             >
-              <RotateCcw size={18} />
+              <RotateCcw size={16} />
               Limpiar
             </button>
           </div>
         </div>
 
         {/* Segunda fila: Macrorregión | Redes | IPRESS (siempre juntas) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {filters.slice(1, 4).map((filter, index) => (
             <div key={index + 1} className="relative">
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">{filter.name}</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>
               <div className="relative">
                 <select
                   value={filter.value}
                   onChange={filter.onChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
                 >
                   {filter.options?.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -103,22 +103,22 @@ export default function ListHeader({
                     </option>
                   ))}
                 </select>
-                <ChevronDown size={18} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+                <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
               </div>
             </div>
           ))}
         </div>
 
         {/* Tercera fila: Especialidades | Tipo de Cita */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
           {filters.slice(4).map((filter, index) => (
             <div key={index + 4} className="relative">
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">{filter.name}</label>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">{filter.name}</label>
               <div className="relative">
                 <select
                   value={filter.value}
                   onChange={filter.onChange}
-                  className="w-full px-4 py-2.5 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
+                  className="w-full px-3 py-2 border-2 border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-xs appearance-none cursor-pointer bg-white font-medium transition-all hover:border-gray-400"
                 >
                   {filter.options?.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -126,7 +126,7 @@ export default function ListHeader({
                     </option>
                   ))}
                 </select>
-                <ChevronDown size={18} className="absolute right-3 top-3 text-gray-400 pointer-events-none" />
+                <ChevronDown size={16} className="absolute right-2 top-2.5 text-gray-400 pointer-events-none" />
               </div>
             </div>
           ))}
