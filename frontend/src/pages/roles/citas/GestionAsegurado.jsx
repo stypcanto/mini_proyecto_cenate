@@ -76,7 +76,7 @@ export default function GestionAsegurado() {
   const [filtroEspecialidad, setFiltroEspecialidad] = useState("todas");
   const [filtroTipoCita, setFiltroTipoCita] = useState("todas");
   const [filtroEstado, setFiltroEstado] = useState("todos");
-  const [expandFiltros, setExpandFiltros] = useState(true); // Filtros expandidos por defecto
+  const [expandFiltros, setExpandFiltros] = useState(false); // Filtros colapsados por defecto
 
   const API_BASE = "http://localhost:8080/api";
 
@@ -817,6 +817,9 @@ export default function GestionAsegurado() {
                   <thead className="bg-[#0D5BA9] text-white sticky top-0">
                     <tr className="border-b-2 border-blue-800">
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Fecha Asignación
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         DNI Paciente
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
@@ -846,9 +849,6 @@ export default function GestionAsegurado() {
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Estado
                       </th>
-                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
-                        Fecha Asignación
-                      </th>
                       <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
                         Acciones
                       </th>
@@ -862,6 +862,11 @@ export default function GestionAsegurado() {
                           idx % 2 === 0 ? "bg-white" : "bg-gray-50"
                         }`}
                       >
+                        <td className="px-4 py-3 text-slate-600 text-xs">
+                          {paciente.fechaAsignacion === "-"
+                            ? "-"
+                            : new Date(paciente.fechaAsignacion).toLocaleDateString("es-ES")}
+                        </td>
                         <td className="px-4 py-3 font-medium text-slate-900">
                           {paciente.pacienteDni}
                         </td>
@@ -966,11 +971,6 @@ export default function GestionAsegurado() {
                               </button>
                             </div>
                           )}
-                        </td>
-                        <td className="px-4 py-3 text-slate-600 text-xs">
-                          {paciente.fechaAsignacion === "-"
-                            ? "-"
-                            : new Date(paciente.fechaAsignacion).toLocaleDateString("es-ES")}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
