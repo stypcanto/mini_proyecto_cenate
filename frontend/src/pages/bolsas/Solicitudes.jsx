@@ -58,6 +58,7 @@ export default function Solicitudes() {
   const [estadisticasTipoCita, setEstadisticasTipoCita] = useState([]);
 
   const [isLoading, setIsLoading] = useState(true); // Inicia con loader por defecto
+  const [estadisticasCargadas, setEstadisticasCargadas] = useState(false); // ✅ v1.42.0: Rastrear carga de estadísticas
   const [searchTerm, setSearchTerm] = useState('');
   const [filtroBolsa, setFiltroBolsa] = useState('todas');
   const [filtroRed, setFiltroRed] = useState('todas');
@@ -161,14 +162,15 @@ export default function Solicitudes() {
   }, []);
 
   // ============================================================================
-  // 📦 EFFECT 2: Cargar SOLICITUDES después de que los catálogos estén listos
+  // 📦 EFFECT 2: Cargar SOLICITUDES después de que catálogos Y estadísticas estén listos
   // ============================================================================
+  // ✅ v1.42.0: Esperar a que estadísticas estén cargadas para evitar números incorrectos
   useEffect(() => {
-    if (catalogosCargados) {
-      console.log('📋 Catálogos cargados, iniciando carga de solicitudes...');
+    if (catalogosCargados && estadisticasCargadas) {
+      console.log('📋 Catálogos Y estadísticas cargados, iniciando carga de solicitudes...');
       cargarSolicitudes();
     }
-  }, [catalogosCargados]);
+  }, [catalogosCargados, estadisticasCargadas]);
 
   // ============================================================================
   // 📦 EFFECT 2.5: DEPRECADO (v3.0.0)
@@ -205,6 +207,9 @@ export default function Solicitudes() {
 
             // Estadísticas globales por estado (para resumen superior)
             setEstadisticasGlobales(estadisticasFiltros.por_estado || []);
+
+            // ✅ v1.42.0: Marcar que las estadísticas están cargadas
+            setEstadisticasCargadas(true);
           }
         } catch (error) {
           console.error('❌ Error cargando estadísticas consolidadas:', error);
@@ -221,8 +226,13 @@ export default function Solicitudes() {
             setEstadisticasIpress(ipress || []);
             setEstadisticasTipoCita(tipoCita || []);
             setEstadisticasGlobales(estado || []);
+
+            // ✅ v1.42.0: Marcar que las estadísticas están cargadas (fallback)
+            setEstadisticasCargadas(true);
           } catch (fallbackError) {
             console.error('❌ Fallback también falló:', fallbackError);
+            // Incluso si falla, permitir cargar solicitudes
+            setEstadisticasCargadas(true);
           }
         }
       })();
