@@ -1407,45 +1407,45 @@ export default function Solicitudes() {
             <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-blue-100">Total Pacientes</span>
-                <span className="text-3xl">👥</span>
+                <span className="text-xl">👥</span>
               </div>
-              <div className="text-4xl font-bold">{estadisticas.total}</div>
+              <div className="text-2xl font-bold">{estadisticas.total}</div>
             </div>
 
             {/* Pendiente Citar - Naranja */}
             <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-orange-100">Pendiente Citar</span>
-                <span className="text-3xl">⏳</span>
+                <span className="text-xl">⏳</span>
               </div>
-              <div className="text-4xl font-bold">{estadisticas.pendientes}</div>
+              <div className="text-2xl font-bold">{estadisticas.pendientes}</div>
             </div>
 
             {/* Citados - Púrpura */}
             <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-purple-100">Citados</span>
-                <span className="text-3xl">📞</span>
+                <span className="text-xl">📞</span>
               </div>
-              <div className="text-4xl font-bold">{estadisticas.citados}</div>
+              <div className="text-2xl font-bold">{estadisticas.citados}</div>
             </div>
 
             {/* Asistió - Verde */}
             <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-green-100">Asistió</span>
-                <span className="text-3xl">✓</span>
+                <span className="text-xl">✓</span>
               </div>
-              <div className="text-4xl font-bold">{estadisticas.atendidos}</div>
+              <div className="text-2xl font-bold">{estadisticas.atendidos}</div>
             </div>
 
             {/* Observados - Rojo */}
             <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-red-100">Observados</span>
-                <span className="text-3xl">⚠️</span>
+                <span className="text-xl">⚠️</span>
               </div>
-              <div className="text-4xl font-bold">{estadisticas.observados}</div>
+              <div className="text-2xl font-bold">{estadisticas.observados}</div>
             </div>
           </div>
         </div>
