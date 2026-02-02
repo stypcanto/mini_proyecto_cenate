@@ -266,7 +266,13 @@ export default function GestionAsegurado() {
   };
 
   const confirmarGuardarEstado = async () => {
-    const { pacienteId, nuevoEstado: _ } = confirmDialog;
+    if (!confirmDialog.pacienteId) {
+      console.warn("⚠️ pacienteId no definido en confirmDialog");
+      setConfirmDialog({ visible: false });
+      return;
+    }
+
+    const pacienteId = confirmDialog.pacienteId;
     const pendiente = estadoPendienteGuardar[pacienteId];
 
     if (pendiente && pendiente.nuevoEstado) {
