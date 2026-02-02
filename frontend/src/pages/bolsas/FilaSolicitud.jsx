@@ -18,14 +18,23 @@ function FilaSolicitud({
   getEstadoBadge,
 }) {
   return (
-    <tr className="border-b border-gray-200 hover:bg-gray-50 transition-colors duration-200">
+    <tr className={`border-b transition-colors duration-200 ${
+      isChecked
+        ? 'bg-blue-100 border-blue-300 hover:bg-blue-150'
+        : 'border-gray-200 hover:bg-gray-50'
+    }`}>
       {/* CHECKBOX */}
       <td className="px-4 py-3">
         <input
           type="checkbox"
           checked={isChecked}
-          onChange={onToggleCheck}
-          className="w-4 h-4 border-2 border-gray-300 rounded cursor-pointer"
+          onChange={(e) => onToggleCheck(e.shiftKey)}
+          className={`w-5 h-5 border-2 rounded cursor-pointer transition-all ${
+            isChecked
+              ? 'bg-blue-600 border-blue-600 accent-white'
+              : 'border-gray-300 hover:border-blue-400'
+          }`}
+          title="Shift+Click para seleccionar rango"
         />
       </td>
 
