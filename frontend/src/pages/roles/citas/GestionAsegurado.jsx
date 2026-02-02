@@ -814,42 +814,42 @@ export default function GestionAsegurado() {
 
                 <div className="overflow-x-auto">
                   <table className="w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-gray-200 bg-gray-50">
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                  <thead className="bg-[#0D5BA9] text-white sticky top-0">
+                    <tr className="border-b-2 border-blue-800">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         DNI Paciente
                       </th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Nombre Paciente
                       </th>
-                      <th className="px-6 py-3 text-center font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
                         Edad
                       </th>
-                      <th className="px-6 py-3 text-center font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
                         Género
                       </th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Especialidad
                       </th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         IPRESS
                       </th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Tipo de Cita
                       </th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Teléfono 1
                       </th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Teléfono 2
                       </th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Estado
                       </th>
-                      <th className="px-6 py-3 text-left font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Fecha Asignación
                       </th>
-                      <th className="px-6 py-3 text-center font-semibold text-gray-700">
+                      <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
                         Acciones
                       </th>
                     </tr>
@@ -858,40 +858,40 @@ export default function GestionAsegurado() {
                     {pacientesFiltrados.map((paciente, idx) => (
                       <tr
                         key={paciente.id}
-                        className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
+                        className={`border-b border-gray-200 hover:bg-blue-50 transition-colors ${
                           idx % 2 === 0 ? "bg-white" : "bg-gray-50"
                         }`}
                       >
-                        <td className="px-6 py-4 font-medium text-slate-900">
+                        <td className="px-4 py-3 font-medium text-slate-900">
                           {paciente.pacienteDni}
                         </td>
-                        <td className="px-6 py-4 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600">
                           {paciente.pacienteNombre}
                         </td>
-                        <td className="px-6 py-4 text-center text-slate-600">
+                        <td className="px-4 py-3 text-center text-slate-600">
                           {paciente.pacienteEdad}
                         </td>
-                        <td className="px-6 py-4 text-center text-slate-600">
+                        <td className="px-4 py-3 text-center text-slate-600">
                           {paciente.pacienteSexo}
                         </td>
-                        <td className="px-6 py-4 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600">
                           {paciente.especialidad}
                         </td>
-                        <td className="px-6 py-4 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600">
                           <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
                             {paciente.descIpress}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600">
                           {paciente.tipoCita}
                         </td>
-                        <td className="px-6 py-4 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600">
                           {paciente.pacienteTelefono}
                         </td>
-                        <td className="px-6 py-4 text-slate-600">
+                        <td className="px-4 py-3 text-slate-600">
                           {paciente.pacienteTelefonoAlterno}
                         </td>
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-3">
                           {estadoEditando === paciente.id ? (
                             <div className="space-y-2">
                               <select
@@ -967,12 +967,12 @@ export default function GestionAsegurado() {
                             </div>
                           )}
                         </td>
-                        <td className="px-6 py-4 text-slate-600 text-xs">
+                        <td className="px-4 py-3 text-slate-600 text-xs">
                           {paciente.fechaAsignacion === "-"
                             ? "-"
                             : new Date(paciente.fechaAsignacion).toLocaleDateString("es-ES")}
                         </td>
-                        <td className="px-6 py-4 text-center">
+                        <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => abrirModalTelefono(paciente)}
                             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
