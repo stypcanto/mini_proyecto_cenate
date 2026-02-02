@@ -639,9 +639,14 @@ export const eliminarCarga = async (idCarga) => {
  */
 export const asignarAGestora = async (id, gestoraId, gestoraNombre) => {
   try {
-    const response = await apiClient.patch(`${API_BASE_URL}/solicitudes/${id}/asignar?idGestora=${gestoraId}`, {
-      gestoraId,
-      gestoraNombre
+    // Construir URL dinámicamente: solo incluir parámetro si gestoraId es válido
+    const url = gestoraId !== null && gestoraId !== undefined
+      ? `${API_BASE_URL}/solicitudes/${id}/asignar?idGestora=${gestoraId}`
+      : `${API_BASE_URL}/solicitudes/${id}/asignar`;
+
+    const response = await apiClient.patch(url, {
+      gestoraId: gestoraId || null,
+      gestoraNombre: gestoraNombre || null
     });
     return response;
   } catch (error) {
