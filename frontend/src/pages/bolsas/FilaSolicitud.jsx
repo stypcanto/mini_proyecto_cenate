@@ -92,7 +92,7 @@ function FilaSolicitud({
       </td>
 
       {/* FECHA ASIGNACIÓN */}
-      <td className="px-4 py-3 text-sm text-gray-600">
+      <td className="px-4 py-3 text-xs text-gray-600">
         {solicitud.fechaAsignacionFormato ? (
           <span className="text-green-700 font-medium">{solicitud.fechaAsignacionFormato}</span>
         ) : (

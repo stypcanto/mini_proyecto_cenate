@@ -457,9 +457,15 @@ export default function Solicitudes() {
             gestoraAsignadaNombre = gestoraEncontrada ? gestoraEncontrada.nombre : null;
           }
 
-          // Formatear fecha de asignación si existe (con hora)
+          // Formatear fecha de asignación si existe (con hora, sin segundos)
           const fechaAsignacionFormato = solicitud.fecha_asignacion
-            ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE')
+            ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit'
+              })
             : null;
 
           return {
@@ -606,7 +612,13 @@ export default function Solicitudes() {
             }
 
             const fechaAsignacionFormato = solicitud.fecha_asignacion
-              ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE')
+              ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
               : null;
 
             return {
@@ -722,7 +734,13 @@ export default function Solicitudes() {
             }
 
             const fechaAsignacionFormato = solicitud.fecha_asignacion
-              ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE')
+              ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE', {
+                  year: 'numeric',
+                  month: '2-digit',
+                  day: '2-digit',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })
               : null;
 
             return {
