@@ -9,6 +9,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../../context/AuthContext";
 import { getToken } from "../../../constants/auth";
+import { useStatusChange } from "../../../hooks/useStatusChange";
 import ListHeader from "../../../components/ListHeader";
 import {
   Users,
@@ -23,7 +24,6 @@ import {
   ChevronDown,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import ConfirmDialog from "../../../components/modals/ConfirmDialog";
 
 export default function GestionAsegurado() {
   const { user } = useAuth();
@@ -45,11 +45,6 @@ export default function GestionAsegurado() {
     saving: false,
   });
 
-  const [estadoEditando, setEstadoEditando] = useState(null);
-  const [nuevoEstado, setNuevoEstado] = useState("");
-  const [estadoPendienteGuardar, setEstadoPendienteGuardar] = useState({});
-  const [guardandoEstado, setGuardandoEstado] = useState(null);
-  const [confirmDialog, setConfirmDialog] = useState({ visible: false });
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const [estadosDisponibles] = useState([
@@ -207,13 +202,23 @@ export default function GestionAsegurado() {
     });
   };
 
-  // Actualizar estado de cita (API call)
-  const actualizarEstado = async (pacienteId, nuevoEstadoCodigo) => {
-    try {
-      setGuardandoEstado(pacienteId);
+  // Hook para cambiar estado con patrón Toast + Undo
+  const { changeStatus } = useStatusChange(
+    // Callback 1: Actualizar UI localmente (optimistic update)
+    (pacienteId, newStatus) => {
+      setPacientesAsignados(prev =>
+        prev.map(p =>
+          p.id === pacienteId
+            ? { ...p, descEstadoCita: newStatus }
+            : p
+        )
+      );
+    },
+    // Callback 2: API call al backend
+    async (pacienteId, newStatus) => {
       const token = getToken();
       const response = await fetch(
-        `${API_BASE}/bolsas/solicitudes/${pacienteId}/estado?nuevoEstadoCodigo=${encodeURIComponent(nuevoEstadoCodigo)}`,
+        `${API_BASE}/bolsas/solicitudes/${pacienteId}/estado?nuevoEstadoCodigo=${encodeURIComponent(newStatus)}`,
         {
           method: "PATCH",
           headers: {
@@ -223,72 +228,15 @@ export default function GestionAsegurado() {
         }
       );
 
-      if (response.ok) {
-        toast.success("Estado actualizado correctamente");
-        setEstadoEditando(null);
-        setEstadoPendienteGuardar(prev => {
-          const newState = { ...prev };
-          delete newState[pacienteId];
-          return newState;
-        });
-        await fetchPacientesAsignados();
-      } else {
+      if (!response.ok) {
         const errorData = await response.json();
-        console.error("Error details:", errorData);
-        toast.error(errorData.error || "Error al actualizar el estado");
+        throw new Error(errorData.error || "Error al actualizar el estado");
       }
-    } catch (err) {
-      console.error("Error:", err);
-      toast.error("Error al actualizar el estado");
-    } finally {
-      setGuardandoEstado(null);
+
+      // Refrescar datos desde backend para asegurar sincronización
+      await fetchPacientesAsignados();
     }
-  };
-
-  // Handlers para guardar y cancelar estado
-  const handleGuardarEstado = (pacienteId) => {
-    const pendiente = estadoPendienteGuardar[pacienteId];
-    if (!pendiente || !pendiente.nuevoEstado) {
-      toast.error("Selecciona un estado válido");
-      return;
-    }
-
-    const estadoActual = pacientesAsignados.find(p => p.id === pacienteId)?.descEstadoCita || "Desconocido";
-    const nuevoEstadoDesc = estadosDisponibles.find(e => e.codigo === pendiente.nuevoEstado)?.descripcion || pendiente.nuevoEstado;
-
-    setConfirmDialog({
-      visible: true,
-      pacienteId,
-      estadoActual,
-      nuevoEstado: nuevoEstadoDesc,
-    });
-  };
-
-  const handleCancelarEstado = (pacienteId) => {
-    setEstadoEditando(null);
-    setEstadoPendienteGuardar(prev => {
-      const newState = { ...prev };
-      delete newState[pacienteId];
-      return newState;
-    });
-  };
-
-  const confirmarGuardarEstado = async () => {
-    if (!confirmDialog.pacienteId) {
-      console.warn("⚠️ pacienteId no definido en confirmDialog");
-      setConfirmDialog({ visible: false });
-      return;
-    }
-
-    const pacienteId = confirmDialog.pacienteId;
-    const pendiente = estadoPendienteGuardar[pacienteId];
-
-    if (pendiente && pendiente.nuevoEstado) {
-      await actualizarEstado(pacienteId, pendiente.nuevoEstado);
-    }
-
-    setConfirmDialog({ visible: false });
-  };
+  );
 
   // Guardar teléfono actualizado
   const guardarTelefono = async () => {
@@ -897,80 +845,40 @@ export default function GestionAsegurado() {
                           {paciente.pacienteTelefonoAlterno}
                         </td>
                         <td className="px-4 py-3">
-                          {estadoEditando === paciente.id ? (
-                            <div className="space-y-2">
-                              <select
-                                value={estadoPendienteGuardar[paciente.id]?.nuevoEstado || ""}
-                                onChange={(e) => {
-                                  setEstadoPendienteGuardar({
-                                    ...estadoPendienteGuardar,
-                                    [paciente.id]: {
-                                      originalEstado: paciente.descEstadoCita,
-                                      nuevoEstado: e.target.value,
-                                      isDirty: true,
-                                    },
-                                  });
-                                }}
-                                className="px-3 py-1 border border-blue-300 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 w-full"
-                                autoFocus
-                              >
-                                <option value="">Seleccionar estado...</option>
-                                {estadosDisponibles.map((est) => (
-                                  <option key={est.codigo} value={est.codigo} title={est.descripcion}>
-                                    {est.codigo}
-                                  </option>
-                                ))}
-                              </select>
-
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() => handleGuardarEstado(paciente.id)}
-                                  disabled={guardandoEstado === paciente.id}
-                                  className="flex-1 text-xs px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  {guardandoEstado === paciente.id ? "⏳" : "✓"} Guardar
-                                </button>
-                                <button
-                                  onClick={() => handleCancelarEstado(paciente.id)}
-                                  disabled={guardandoEstado === paciente.id}
-                                  className="flex-1 text-xs px-2 py-1 bg-gray-400 hover:bg-gray-500 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                                >
-                                  Cancelar
-                                </button>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-2">
-                              <span
-                                className={`px-3 py-1 rounded-full text-xs font-medium ${
-                                  paciente.codigoEstado === "ATENDIDO_IPRESS"
-                                    ? "bg-green-100 text-green-800"
-                                    : paciente.codigoEstado === "PENDIENTE"
-                                    ? "bg-yellow-100 text-yellow-800"
-                                    : "bg-gray-100 text-gray-800"
-                                }`}
-                              >
-                                {(paciente.descEstadoCita || "Sin estado").split(" - ")[0]}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  setEstadoEditando(paciente.id);
-                                  setEstadoPendienteGuardar({
-                                    ...estadoPendienteGuardar,
-                                    [paciente.id]: {
-                                      originalEstado: paciente.descEstadoCita,
-                                      nuevoEstado: "",
-                                      isDirty: false,
-                                    },
-                                  });
-                                }}
-                                className="text-blue-600 hover:text-blue-800 transition-colors"
-                                title="Cambiar estado"
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          )}
+                          <select
+                            value={
+                              estadosDisponibles.find(e =>
+                                e.descripcion === paciente.descEstadoCita
+                              )?.codigo || ""
+                            }
+                            onChange={(e) => {
+                              const estadoObj = estadosDisponibles.find(
+                                est => est.codigo === e.target.value
+                              );
+                              if (estadoObj) {
+                                changeStatus(
+                                  paciente.id,
+                                  estadoObj.codigo,
+                                  paciente.descEstadoCita || "Sin estado",
+                                  paciente.pacienteNombre
+                                );
+                              }
+                            }}
+                            className={`px-3 py-1.5 border-2 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 transition-all ${
+                              paciente.codigoEstado === "ATENDIDO_IPRESS"
+                                ? "border-green-300 focus:border-green-500"
+                                : paciente.codigoEstado === "PENDIENTE"
+                                ? "border-yellow-300 focus:border-yellow-500"
+                                : "border-gray-300 focus:border-blue-500"
+                            }`}
+                          >
+                            <option value="">Seleccionar estado...</option>
+                            {estadosDisponibles.map((est) => (
+                              <option key={est.codigo} value={est.codigo} title={est.descripcion}>
+                                {est.codigo}
+                              </option>
+                            ))}
+                          </select>
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
@@ -1079,32 +987,6 @@ export default function GestionAsegurado() {
         </div>
       )}
 
-      {/* Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={confirmDialog.visible}
-        onConfirm={confirmarGuardarEstado}
-        onCancel={() => setConfirmDialog({ visible: false })}
-        title="Confirmar Cambio de Estado"
-        message={`¿Cambiar el estado del paciente?`}
-        details={
-          confirmDialog.visible && (
-            <div className="space-y-2">
-              <div>
-                <p className="text-xs font-semibold text-gray-600">Estado actual:</p>
-                <p className="text-sm font-medium text-gray-900">{confirmDialog.estadoActual}</p>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-gray-600">Nuevo estado:</p>
-                <p className="text-sm font-medium text-gray-900">{confirmDialog.nuevoEstado}</p>
-              </div>
-            </div>
-          )
-        }
-        type="info"
-        confirmText="Confirmar Cambio"
-        cancelText="Cancelar"
-        isLoading={guardandoEstado !== null}
-      />
     </div>
   );
 }
