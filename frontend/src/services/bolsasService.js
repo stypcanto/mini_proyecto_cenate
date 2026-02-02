@@ -199,10 +199,15 @@ export const obtenerSolicitudesPaginado = async (
     if (especialidad && especialidad !== 'todas') params.append('especialidad', especialidad);
     if (estado && estado !== 'todos') params.append('estado', estado);
     if (tipoCita && tipoCita !== 'todas') params.append('tipoCita', tipoCita);
-    if (asignacion && asignacion !== 'todos') params.append('asignacion', asignacion);
+    if (asignacion && asignacion !== 'todos') {
+      console.log('🔍 Agregando filtro asignacion:', asignacion);
+      params.append('asignacion', asignacion);
+    }
     if (busqueda && busqueda.trim()) params.append('busqueda', busqueda.trim());
 
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes?${params.toString()}`);
+    const finalUrl = `${API_BASE_URL}/solicitudes?${params.toString()}`;
+    console.log('🌐 URL de solicitud:', finalUrl);
+    const response = await apiClient.get(finalUrl);
     return response;
   } catch (error) {
     console.error('Error al obtener solicitudes paginadas:', error);

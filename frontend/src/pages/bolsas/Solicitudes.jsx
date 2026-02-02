@@ -502,10 +502,24 @@ export default function Solicitudes() {
   // Esta es la nueva función principal para cargar datos
   const cargarSolicitudesConFiltros = async () => {
     console.log('🔍 Cargando solicitudes CON FILTROS desde backend...');
+    console.log('📋 Filtros actuales:', {
+      filtroBolsa,
+      filtroMacrorregion,
+      filtroRed,
+      filtroIpress,
+      filtroEspecialidad,
+      filtroEstado,
+      filtroTipoCita,
+      filtroAsignacion,
+      searchTerm
+    });
     setIsLoading(true);
     setErrorMessage('');
     try {
       // Llamar al backend CON parámetros de filtro (v2.6.0 + v1.42.0: asignación)
+      const asignacionFinal = filtroAsignacion === 'todos' ? null : filtroAsignacion;
+      console.log('✅ asignacionFinal para enviar:', asignacionFinal);
+
       const response = await bolsasService.obtenerSolicitudesPaginado(
         0, // page 0 (primera página cuando cambian los filtros)
         REGISTROS_POR_PAGINA,
@@ -516,7 +530,7 @@ export default function Solicitudes() {
         filtroEspecialidad === 'todas' ? null : filtroEspecialidad,
         filtroEstado === 'todos' ? null : filtroEstado,
         filtroTipoCita === 'todas' ? null : filtroTipoCita,
-        filtroAsignacion === 'todos' ? null : filtroAsignacion,
+        asignacionFinal,
         searchTerm.trim() || null
       );
 
@@ -933,42 +947,52 @@ export default function Solicitudes() {
 
   // ✅ v1.42.0: Manejador para clics en cards de estadísticas
   const handleCardClick = (cardType) => {
+    console.log('📊 handleCardClick - cardType:', cardType, 'cardSeleccionado actual:', cardSeleccionado);
+
     if (cardSeleccionado === cardType) {
       // Click nuevamente → deseleccionar y limpiar filtros
+      console.log('🔄 Deseleccionando card - limpiando todos los filtros');
       setCardSeleccionado(null);
       setFiltroEstado('todos');
       setFiltroAsignacion('todos');
     } else {
       // Seleccionar este card → aplicar filtro correspondiente
+      console.log('✅ Seleccionando card:', cardType);
       setCardSeleccionado(cardType);
 
       switch (cardType) {
         case 'total':
           // Total Pacientes → limpiar todos los filtros
+          console.log('🔄 Total Pacientes - limpiando filtros');
           setFiltroEstado('todos');
           setFiltroAsignacion('todos');
           break;
         case 'pendiente':
           // Pendiente Citar → filtrar por estado PENDIENTE
+          console.log('⏳ Pendiente Citar - filtroEstado=PENDIENTE');
           setFiltroEstado('PENDIENTE');
           setFiltroAsignacion('todos');
           break;
         case 'citado':
           // Citados → filtrar por estado CITADO
+          console.log('📞 Citados - filtroEstado=CITADO');
           setFiltroEstado('CITADO');
           setFiltroAsignacion('todos');
           break;
         case 'asignado':
           // Casos Asignados → filtrar por asignación = asignados
+          console.log('👥 Casos Asignados - filtroAsignacion=asignados');
           setFiltroEstado('todos');
           setFiltroAsignacion('asignados');
           break;
         case 'sin_asignar':
           // Sin Asignar → filtrar por asignación = sin_asignar
+          console.log('🔲 Sin Asignar - filtroAsignacion=sin_asignar');
           setFiltroEstado('todos');
           setFiltroAsignacion('sin_asignar');
           break;
         default:
+          console.warn('⚠️ Caso no reconocido:', cardType);
           break;
       }
     }
