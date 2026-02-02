@@ -115,6 +115,9 @@ export default function GestionAsegurado() {
       console.log(`✅ Found ${solicitudes.length} assigned patient(s)`);
       if (solicitudes.length > 0) {
         console.log("📋 Sample solicitud:", solicitudes[0]);
+        console.log("📋 Campos disponibles en solicitud[0]:", Object.keys(solicitudes[0]));
+        console.log("📋 paciente_edad:", solicitudes[0].paciente_edad);
+        console.log("📋 pacienteEdad:", solicitudes[0].pacienteEdad);
       }
 
       // Transform SolicitudBolsaDTO to table structure
