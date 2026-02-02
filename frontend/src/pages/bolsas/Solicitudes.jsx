@@ -165,12 +165,24 @@ export default function Solicitudes() {
   // 📦 EFFECT 2: Cargar SOLICITUDES después de que catálogos Y estadísticas estén listos
   // ============================================================================
   // ✅ v1.42.0: Esperar a que estadísticas estén cargadas para evitar números incorrectos
+  // ✅ v3.0.1: Usar cargarSolicitudesConFiltros() para aplicar filtros por defecto en la carga inicial
+  // ✅ v3.0.2: Esperar a que estadisticasGlobales sea un array válido para evitar timing issues
   useEffect(() => {
-    if (catalogosCargados && estadisticasCargadas) {
-      console.log('📋 Catálogos Y estadísticas cargados, iniciando carga de solicitudes...');
-      cargarSolicitudes();
+    const estadisticasDisponibles = estadisticasGlobales && Array.isArray(estadisticasGlobales) && estadisticasGlobales.length > 0;
+
+    if (catalogosCargados && estadisticasCargadas && estadisticasDisponibles) {
+      console.log('📋 Catálogos Y estadísticas cargados, iniciando carga de solicitudes CON FILTROS...', {
+        catalogosCargados,
+        estadisticasCargadas,
+        estadisticasGlobales: estadisticasGlobales.length
+      });
+      cargarSolicitudesConFiltros();
+    } else if (catalogosCargados && estadisticasCargadas && !estadisticasDisponibles) {
+      // ⚠️ Si estadísticas cargó pero está vacío, aún cargar solicitudes (fallback)
+      console.warn('⚠️ Estadísticas cargadas pero vacío, cargando solicitudes de todas formas...');
+      cargarSolicitudesConFiltros();
     }
-  }, [catalogosCargados, estadisticasCargadas]);
+  }, [catalogosCargados, estadisticasCargadas, estadisticasGlobales]);
 
   // ============================================================================
   // 📦 EFFECT 2.5: DEPRECADO (v3.0.0)
@@ -913,9 +925,11 @@ export default function Solicitudes() {
   };
 
   // Calcular estadísticas (v2.5.2 - Use global stats from backend)
+  // ✅ v3.0.1: Calcular estadísticas SOLO desde datos del backend, nunca desde tabla local
+  // Esto previene mostrar números incorrectos en la primera carga
   const estadisticas = (() => {
     if (estadisticasGlobales && Array.isArray(estadisticasGlobales)) {
-      // estadisticasGlobales es un array de EstadisticasPorEstadoDTO
+      // estadisticasGlobales es un array de EstadisticasPorEstadoDTO desde el backend
       const statsMap = {};
       let total = 0;
 
@@ -938,15 +952,14 @@ export default function Solicitudes() {
         sinAsignar: total - asignados,                    // ✅ v1.42.0: Casos sin asignar
       };
     } else {
-      // Fallback: usar estadísticas locales de la página actual si no se cargaron globales
-      const asignados = 0;
-      const total = solicitudes.length;
+      // ✅ v3.0.1: Si las estadísticas no han cargado aún, mostrar valores en blanco
+      // NO usar solicitudes.length porque eso causa números incorrectos en la primera carga
       return {
-        total: total,
-        pendientes: solicitudes.filter(s => s.estado === 'pendiente').length,
-        citados: solicitudes.filter(s => s.estado === 'citado').length,
-        asignados: asignados,  // 👥 v1.41.0: Fallback sin datos
-        sinAsignar: total - asignados,  // ✅ v1.42.0: Casos sin asignar
+        total: '-',
+        pendientes: '-',
+        citados: '-',
+        asignados: '-',
+        sinAsignar: '-',
       };
     }
   })();
