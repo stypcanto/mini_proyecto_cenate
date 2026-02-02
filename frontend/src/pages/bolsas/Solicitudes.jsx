@@ -13,7 +13,7 @@ import FilaSolicitud from './FilaSolicitud'; // 🚀 v2.6.0: Componente memoriza
  * v2.0.0 - Redesign con estadísticas y filtros mejorados
  *
  * Características:
- * - Dashboard de estadísticas por estado (Total, Pendientes, Citados, Atendidos, Observados)
+ * - Dashboard de estadísticas por estado (Total, Pendientes, Citados, Asignados, Sin Asignar)
  * - Tabla mejorada con IPRESS, Bolsa, Fechas, Estado, Semáforo
  * - Filtros dropdown para Bolsas, Redes, Especialidades, Estados
  * - Indicadores de tráfico (semáforo) por paciente
@@ -894,21 +894,24 @@ export default function Solicitudes() {
         }
       });
 
+      const asignados = statsMap['ASIGNADOS'] || 0;
       return {
         total: total,
         pendientes: statsMap['PENDIENTE'] || 0,           // PENDIENTE_CITA → estado 'pendiente'
         citados: statsMap['CITADO'] || 0,                 // CITADO → estado 'citado'
-        asignados: statsMap['ASIGNADOS'] || 0,            // 👥 v1.41.0: Casos asignados a gestora
-        observados: (statsMap['CANCELADO'] || 0) + (statsMap['OBSERVADO'] || 0),  // CANCELADO + OBSERVADO
+        asignados: asignados,                             // 👥 v1.41.0: Casos asignados a gestora
+        sinAsignar: total - asignados,                    // ✅ v1.42.0: Casos sin asignar
       };
     } else {
       // Fallback: usar estadísticas locales de la página actual si no se cargaron globales
+      const asignados = 0;
+      const total = solicitudes.length;
       return {
-        total: solicitudes.length,
+        total: total,
         pendientes: solicitudes.filter(s => s.estado === 'pendiente').length,
         citados: solicitudes.filter(s => s.estado === 'citado').length,
-        asignados: 0,  // 👥 v1.41.0: Fallback sin datos
-        observados: solicitudes.filter(s => s.estado === 'observado').length,
+        asignados: asignados,  // 👥 v1.41.0: Fallback sin datos
+        sinAsignar: total - asignados,  // ✅ v1.42.0: Casos sin asignar
       };
     }
   })();
@@ -1442,13 +1445,13 @@ export default function Solicitudes() {
               <div className="text-2xl font-bold">{estadisticas.asignados}</div>
             </div>
 
-            {/* Observados - Rojo */}
-            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
+            {/* Sin Asignar - Gris */}
+            <div className="bg-gradient-to-br from-gray-600 to-gray-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-red-100">Observados</span>
-                <span className="text-xl">⚠️</span>
+                <span className="text-gray-100">Sin Asignar</span>
+                <span className="text-xl">🔲</span>
               </div>
-              <div className="text-2xl font-bold">{estadisticas.observados}</div>
+              <div className="text-2xl font-bold">{estadisticas.sinAsignar}</div>
             </div>
           </div>
         </div>
