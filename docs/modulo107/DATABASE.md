@@ -4,7 +4,7 @@
 **Esquema:** public  
 **Tabla Principal:** `dim_solicitud_bolsa`  
 **Estado:** ✅ INTEGRADO Y FUNCIONANDO CON TABLA DIRECTA  
-**Fecha:** 30 Enero 2026
+**Fecha:** 30 Enero 2026 | **Corregido:** 2 Feb 2026
 
 ---
 
@@ -15,6 +15,64 @@ Base de datos optimizada para la gestión de **Atenciones Clínicas** del Módul
 **ESTADO ACTUAL:** Base de datos completamente funcional con ~15,000+ registros de atenciones clínicas. El backend Spring Boot accede directamente a `dim_solicitud_bolsa` para máximo rendimiento, integrado con el frontend React.
 
 **🔄 OPTIMIZACIÓN**: Se eliminó la dependencia de la vista `vw_atenciones_clinicas_107` para acceso directo a la tabla, mejorando el rendimiento y simplificando la arquitectura.
+
+---
+
+## 🐛 **[02/Feb/2026] CORRECCIÓN DE MAPEOS JPA**
+
+### Problema Encontrado (Iteración 1)
+```
+ERROR: column ac1_0.estado_codigo does not exist
+```
+
+### Problema Encontrado (Iteración 2)
+```
+ERROR: column ac1_0.ipress_nombre does not exist
+```
+
+**Causa:** La entidad JPA `AtencionClinica107` contenía mapeos a columnas que no existen en la tabla `dim_solicitud_bolsa`:
+- ❌ `estado_codigo`
+- ❌ `estado_descripcion`
+- ❌ `responsable_nombre`
+- ❌ `ipress_nombre`
+
+### Solución Implementada ✅
+
+**Total de 4 columnas removidas** de la mappeo JPA:
+
+1. **Removidas de entidad JPA** (`AtencionClinica107.java`):
+   - Eliminado campo `estadoCodigo`
+   - Eliminado campo `estadoDescripcion`
+   - Eliminado campo `responsableNombre`
+   - Eliminado campo `ipressNombre`
+
+2. **Actualizado DTO** (`AtencionClinica107DTO.java`):
+   - Removidos campos: `estadoCodigo`, `estadoDescripcion`, `responsableNombre`, `ipressNombre`
+
+3. **Actualizado Service** (`AtencionClinica107ServiceImpl.java`):
+   - Método `toDTO()` ahora solo mapea campos reales de la tabla
+
+### Campos Reales en `dim_solicitud_bolsa`
+
+Campos de estado disponibles para filtrado:
+```sql
+estado VARCHAR(20)              -- Valores: 'pendiente', 'atendido'
+estado_gestion_citas_id BIGINT  -- FK a dim_estados_gestion_citas (ID)
+id_ipress BIGINT                -- FK a dim_ipress (ID)
+codigo_ipress VARCHAR(20)       -- Código del IPRESS
+responsable_gestora_id BIGINT   -- Solo ID, sin nombre desnormalizado
+```
+
+**❌ Columnas Inexistentes (NO mapear en JPA):**
+```
+estado_codigo         (no existe)
+estado_descripcion    (no existe)
+responsable_nombre    (no existe)
+ipress_nombre         (no existe)
+```
+
+**Nota:** Para obtener descripciones/nombres, requiere JOIN explícito con tablas relacionadas
+(dim_estados_gestion_citas, dim_ipress, dim_usuarios, etc.)
 
 ---
 

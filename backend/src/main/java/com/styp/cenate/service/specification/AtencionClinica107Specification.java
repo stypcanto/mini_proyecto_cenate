@@ -22,14 +22,11 @@ public class AtencionClinica107Specification {
     }
 
     /**
-     * Filtra por descripción de estado (PENDIENTE, ATENDIDO)
-     * Busca tanto en 'estado' como en 'estadoDescripcion'
+     * Filtra por estado (PENDIENTE, ATENDIDO)
+     * Busca en el campo 'estado'
      */
-    public static Specification<AtencionClinica107> conEstado(String estadoDescripcion) {
-        return (root, query, cb) -> cb.or(
-            cb.equal(cb.upper(root.get("estado")), estadoDescripcion.toUpperCase()),
-            cb.equal(cb.upper(root.get("estadoDescripcion")), estadoDescripcion.toUpperCase())
-        );
+    public static Specification<AtencionClinica107> conEstado(String estado) {
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("estado")), estado.toUpperCase());
     }
 
     /**
