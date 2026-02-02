@@ -477,11 +477,17 @@ export const obtenerKpis = async () => {
  */
 export const obtenerEstadisticasFiltros = async () => {
   try {
+    console.log('🔍 [obtenerEstadisticasFiltros] Iniciando llamada a /estadisticas/filtros');
     const response = await apiClient.get(`${API_BASE_URL}/estadisticas/filtros`);
+    console.log('✅ Respuesta recibida:', response);
+    console.log('✅ Tipo de respuesta:', typeof response);
+    console.log('✅ Keys de respuesta:', Object.keys(response));
     console.log('✅ Estadísticas consolidadas cargadas (1 llamada = 7 antiguas)');
     return response;
   } catch (error) {
-    console.error('Error al obtener estadísticas consolidadas:', error);
+    console.error('❌ [obtenerEstadisticasFiltros] Error completo:', error);
+    console.error('❌ Error message:', error?.message);
+    console.error('❌ Error stack:', error?.stack);
     throw error;
   }
 };

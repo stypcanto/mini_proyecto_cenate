@@ -28,13 +28,12 @@ function FilaSolicitud({
         <input
           type="checkbox"
           checked={isChecked}
-          onChange={(e) => onToggleCheck(e.shiftKey)}
+          onChange={onToggleCheck}
           className={`w-5 h-5 border-2 rounded cursor-pointer transition-all ${
             isChecked
               ? 'bg-blue-600 border-blue-600 accent-white'
               : 'border-gray-300 hover:border-blue-400'
           }`}
-          title="Shift+Click para seleccionar rango"
         />
       </td>
 

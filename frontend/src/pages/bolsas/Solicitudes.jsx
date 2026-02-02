@@ -983,39 +983,14 @@ export default function Solicitudes() {
   // Estados únicos del filtro dinámico (usar código original para filtrado)
   const estadosUnicos = [...new Set(solicitudes.map(s => s.estadoCodigo))].filter(e => e && e !== 'N/A').sort();
 
-  // Manejar selección de filas (con soporte para Shift+Click)
-  const lastSelectedIndexRef = React.useRef(null);
-
-  const toggleRowSelection = (isShiftKey, id = null) => {
-    // Si no hay ID, usar el parámetro como ID (compatibilidad hacia atrás)
-    const actualId = typeof isShiftKey === 'object' && isShiftKey.id ? isShiftKey.id : id;
-    const isShift = typeof isShiftKey === 'boolean' ? isShiftKey : (isShiftKey && isShiftKey.shiftKey);
-
+  // Manejar selección de filas - Simple y robusto
+  const toggleRowSelection = (id) => {
     const newSelected = new Set(selectedRows);
-
-    if (isShift && lastSelectedIndexRef.current !== null && actualId) {
-      // Shift+Click: seleccionar rango
-      const currentIndex = solicitudesPaginadas.findIndex(s => s.id === actualId);
-      const lastIndex = lastSelectedIndexRef.current;
-      const startIndex = Math.min(currentIndex, lastIndex);
-      const endIndex = Math.max(currentIndex, lastIndex);
-
-      // Seleccionar todas las filas en el rango
-      for (let i = startIndex; i <= endIndex; i++) {
-        if (solicitudesPaginadas[i]) {
-          newSelected.add(solicitudesPaginadas[i].id);
-        }
-      }
-    } else if (actualId) {
-      // Click normal: toggle selección
-      if (newSelected.has(actualId)) {
-        newSelected.delete(actualId);
-      } else {
-        newSelected.add(actualId);
-      }
-      lastSelectedIndexRef.current = solicitudesPaginadas.findIndex(s => s.id === actualId);
+    if (newSelected.has(id)) {
+      newSelected.delete(id);
+    } else {
+      newSelected.add(id);
     }
-
     setSelectedRows(newSelected);
   };
 
@@ -1396,32 +1371,6 @@ export default function Solicitudes() {
             icon: Upload
           }}
         />
-
-        {/* 📍 BANNER STICKY: Mostrar selecciones activas */}
-        {selectedRows.size > 0 && (
-          <div className="sticky top-0 z-40 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-lg mb-6 shadow-lg flex items-center justify-between animate-slide-down">
-            <div className="flex items-center gap-3">
-              <span className="text-2xl">✓</span>
-              <div>
-                <p className="font-bold text-lg">{selectedRows.size} paciente{selectedRows.size !== 1 ? 's' : ''} seleccionado{selectedRows.size !== 1 ? 's' : ''}</p>
-                {totalElementos && (
-                  <p className="text-blue-100 text-sm">
-                    {((selectedRows.size / totalElementos) * 100).toFixed(1)}% del total ({totalElementos} registros)
-                  </p>
-                )}
-              </div>
-            </div>
-            <button
-              onClick={() => {
-                setSelectedRows(new Set());
-                setSeleccionarTodas(false);
-              }}
-              className="px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg font-semibold transition-all"
-            >
-              Limpiar ✕
-            </button>
-          </div>
-        )}
 
         {/* Tarjetas de Estadísticas - Siempre Visible */}
         <div className="mb-8">
@@ -1840,7 +1789,7 @@ export default function Solicitudes() {
                       key={solicitud.id}
                       solicitud={solicitud}
                       isChecked={selectedRows.has(solicitud.id)}
-                      onToggleCheck={(isShiftKey) => toggleRowSelection(isShiftKey, solicitud.id)}
+                      onToggleCheck={() => toggleRowSelection(solicitud.id)}
                       onAbrirCambiarTelefono={handleAbrirCambiarTelefono}
                       onAbrirAsignarGestora={handleAbrirAsignarGestora}
                       onEliminarAsignacion={handleEliminarAsignacionGestora}
@@ -2172,24 +2121,11 @@ export default function Solicitudes() {
               opacity: 1;
             }
           }
-          @keyframes slide-down {
-            from {
-              transform: translateY(-20px);
-              opacity: 0;
-            }
-            to {
-              transform: translateY(0);
-              opacity: 1;
-            }
-          }
           .animate-fade-in {
             animation: fade-in 0.2s ease-out;
           }
           .animate-slide-up {
             animation: slide-up 0.3s ease-out;
-          }
-          .animate-slide-down {
-            animation: slide-down 0.3s ease-out;
           }
         `}</style>
 
