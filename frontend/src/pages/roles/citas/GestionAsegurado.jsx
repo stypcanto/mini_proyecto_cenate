@@ -352,14 +352,18 @@ export default function GestionAsegurado() {
   useEffect(() => {
     if (!autoRefreshEnabled || estadoEditando !== null) return;
 
-    const intervalo = setInterval(() => {
+    const intervalo = setInterval(async () => {
       console.log("🔄 Auto-refresh pacientes...");
-      fetchPacientesAsignados().then(() => {
+      try {
+        await fetchPacientesAsignados();
         setLastRefreshTime(new Date());
-      });
+      } catch (err) {
+        console.error("Error en auto-refresh:", err);
+      }
     }, 30000); // 30 segundos
 
     return () => clearInterval(intervalo);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefreshEnabled, estadoEditando]);
 
   // ============================================================================
