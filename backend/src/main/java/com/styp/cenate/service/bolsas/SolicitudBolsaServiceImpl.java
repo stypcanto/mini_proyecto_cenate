@@ -2459,4 +2459,22 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
         }
     }
 
+    /**
+     * 🔎 Obtiene todas las especialidades únicas pobladas
+     * v1.42.0: Para llenar dinámicamente el filtro de especialidades
+     * @return lista de especialidades ordenadas alfabéticamente
+     */
+    @Override
+    public List<String> obtenerEspecialidadesUnicas() {
+        log.info("🔍 Obteniendo especialidades únicas de la base de datos...");
+        try {
+            List<String> especialidades = solicitudRepository.obtenerEspecialidadesUnicas();
+            log.info("✅ Especialidades únicas obtenidas: {}", especialidades.size());
+            return especialidades != null ? especialidades : List.of();
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo especialidades únicas: ", e);
+            return List.of(); // Retornar lista vacía en caso de error
+        }
+    }
+
 }

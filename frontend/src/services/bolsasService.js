@@ -885,6 +885,22 @@ export const obtenerRedPorId = async (id) => {
 };
 
 /**
+ * 🔎 Obtiene todas las especialidades únicas pobladas en la tabla (v1.42.0)
+ * GET /api/bolsas/solicitudes/especialidades
+ * Usado para llenar dinámicamente el filtro de especialidades
+ * @returns {Promise<Array>} - Listado de especialidades únicas ordenadas
+ */
+export const obtenerEspecialidadesUnicas = async () => {
+  try {
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/especialidades`);
+    return response;
+  } catch (error) {
+    console.error('Error al obtener especialidades únicas:', error);
+    throw error;
+  }
+};
+
+/**
  * Obtiene todos los tipos de bolsas activos (público)
  * GET /api/bolsas/tipos-bolsas/activos
  * @returns {Promise<Array>} - Listado de tipos de bolsas
@@ -1059,4 +1075,7 @@ export default {
   // MI BANDEJA - Para gestoras (v2.5.0)
   obtenerMiBandeja, // NEW: Obtener solicitudes asignadas a la gestora
   cambiarEstado, // NEW: Cambiar estado de una solicitud
+
+  // FILTROS DINÁMICOS (v1.42.0)
+  obtenerEspecialidadesUnicas, // NEW: Obtener todas las especialidades únicas de la tabla
 };

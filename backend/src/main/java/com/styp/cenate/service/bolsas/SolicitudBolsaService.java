@@ -170,4 +170,13 @@ public interface SolicitudBolsaService {
      * @return lista de solicitudes asignadas a la gestora actual
      */
     List<SolicitudBolsaDTO> obtenerSolicitudesAsignadasAGestora();
+
+    /**
+     * 🔎 Obtiene todas las especialidades únicas pobladas en la tabla
+     * v1.42.0: Para llenar dinámicamente el filtro de especialidades
+     * Retorna SOLO especialidades no-vacías ordenadas alfabéticamente
+     *
+     * @return lista de especialidades únicas (nunca NULL, nunca vacío)
+     */
+    List<String> obtenerEspecialidadesUnicas();
 }

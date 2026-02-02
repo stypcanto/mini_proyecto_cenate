@@ -53,7 +53,7 @@ export default function Solicitudes() {
 
   // NEW v2.5.8: Estadísticas de filtros del backend (análisis de TODA la tabla)
   const [estadisticasTipoBolsa, setEstadisticasTipoBolsa] = useState([]);
-  const [especialidadesActivas, setEspecialidadesActivas] = useState([]); // Especialidades desde catálogo
+  const [especialidadesActivas, setEspecialidadesActivas] = useState([]); // Especialidades desde backend (v1.42.0)
   const [estadisticasIpress, setEstadisticasIpress] = useState([]);
   const [estadisticasTipoCita, setEstadisticasTipoCita] = useState([]);
 
@@ -300,12 +300,13 @@ export default function Solicitudes() {
   const cargarCatalogos = React.useCallback(async () => {
     console.log('📦 Cargando catálogos (ejecutarse solo UNA vez)...');
     try {
-      const [estadosData, ipressData, redesData, gestorasData, tiposBolsasData] = await Promise.all([
+      const [estadosData, ipressData, redesData, gestorasData, tiposBolsasData, especialidadesData] = await Promise.all([
         bolsasService.obtenerEstadosGestion().catch(() => []),
         bolsasService.obtenerIpress().catch(() => []),
         bolsasService.obtenerRedes().catch(() => []),
         bolsasService.obtenerGestorasDisponibles().catch(() => []), // NEW v2.4.0
-        bolsasService.obtenerTiposBolsasActivosPublic().catch(() => [])
+        bolsasService.obtenerTiposBolsasActivosPublic().catch(() => []),
+        bolsasService.obtenerEspecialidadesUnicas().catch(() => []) // NEW v1.42.0: Especialidades desde backend
       ]);
 
       // Crear cache de estados, IPRESS y Redes
@@ -347,6 +348,12 @@ export default function Solicitudes() {
       const tiposBolsasArray = Array.isArray(tiposBolsasData) ? tiposBolsasData : [];
       if (isMountedRef.current) setTiposBolsasActivos(tiposBolsasArray);
       console.log('✅ Tipos de bolsas activos cargados:', tiposBolsasArray.length);
+
+      // NEW v1.42.0: Cargar especialidades desde backend (TODAS, no solo de la página actual)
+      console.log('📦 Especialidades desde backend:', especialidadesData);
+      const especialidadesArray = Array.isArray(especialidadesData) ? especialidadesData : [];
+      if (isMountedRef.current) setEspecialidadesActivas(especialidadesArray);
+      console.log('✅ Especialidades cargadas desde backend:', especialidadesArray.length, especialidadesArray);
 
       console.log('✅ Catálogos cargados correctamente - ANTES de setCatalogosCargados(true)');
 
@@ -1044,7 +1051,7 @@ export default function Solicitudes() {
                          sol.dni.includes(searchTerm) ||
                          sol.ipress.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          sol.red.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         sol.especialidad.toLowerCase().includes(searchTerm.toLowerCase());
+                         (sol.especialidad && sol.especialidad.toLowerCase().includes(searchTerm.toLowerCase()));
 
       // Si estamos contando esta opción, usa filterValue; si no, usa el filtro activo
       const matchBolsa = filterKey === 'bolsa' ? sol.nombreBolsa === filterValue : (filtroBolsa === 'todas' ? true : sol.nombreBolsa === filtroBolsa);
@@ -1068,13 +1075,18 @@ export default function Solicitudes() {
   const redesUnicas = [...new Set(solicitudes.map(s => s.red))].sort();
   const ipressUnicas = [...new Set(solicitudes.map(s => s.ipress))].filter(i => i && i !== 'N/A').sort();
   const macrorregionesUnicas = [...new Set(solicitudes.map(s => s.macroregion))].filter(m => m && m !== 'N/A').sort();
-  // Extraer especialidades: rellenar vacíos con "S/E" para poder filtrar
-  const especialidadesUnicas = [...new Set(
-    solicitudes.map(s => {
-      const esp = s.especialidad && s.especialidad.trim() !== '' ? s.especialidad : 'S/E';
-      return esp;
-    })
-  )].sort();
+
+  // NEW v1.42.0: Usar especialidades desde backend (TODAS, no solo de página actual)
+  // El backend devuelve especialidades reales; agregar "S/E" si hay registros sin especialidad
+  const especialidadesUnicas = especialidadesActivas && especialidadesActivas.length > 0
+    ? especialidadesActivas
+    : []; // Si el backend no devuelve especialidades, dejar vacío
+
+  // Verificar si hay registros SIN especialidad y agregar "S/E"
+  const hayRegistrosSinEspecialidad = solicitudes.some(s => !s.especialidad || s.especialidad.trim() === '');
+  const especialidadesConSE = hayRegistrosSinEspecialidad
+    ? ['S/E', ...especialidadesUnicas].sort()
+    : especialidadesUnicas.sort();
   // Whitelist de tipos de cita válidos
   const TIPOS_CITA_VALIDOS = ['VOLUNTARIA', 'INTERCONSULTA', 'RECITA', 'REFERENCIA'];
   const tiposCitaUnicos = [
@@ -1677,13 +1689,11 @@ export default function Solicitudes() {
                 value: filtroEspecialidad,
                 onChange: (e) => setFiltroEspecialidad(e.target.value),
                 options: [
-                  { label: `Todas las especialidades (${especialidadesUnicas.length})`, value: "todas" },
-                  ...especialidadesUnicas
-                    .filter(esp => esp && esp.trim() !== '')
-                    .map(esp => ({
-                      label: esp,
-                      value: esp
-                    }))
+                  { label: `Todas las especialidades (${especialidadesConSE.length})`, value: "todas" },
+                  ...especialidadesConSE.map(esp => ({
+                    label: esp,
+                    value: esp
+                  }))
                 ]
               },
               {

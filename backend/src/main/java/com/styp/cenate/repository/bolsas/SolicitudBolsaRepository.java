@@ -791,4 +791,19 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         """, nativeQuery = true)
     Long contarCasosAsignados();
 
+    /**
+     * 🔎 Obtiene todas las especialidades únicas (no vacías) de la tabla
+     * v1.42.0: Filtro dinámico de especialidades
+     * Retorna SOLO especialidades pobladas para evitar duplicados "S/E"
+     */
+    @Query(value = """
+        SELECT DISTINCT COALESCE(sb.especialidad, '') as especialidad
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true
+            AND sb.especialidad IS NOT NULL
+            AND sb.especialidad != ''
+        ORDER BY especialidad ASC
+        """, nativeQuery = true)
+    List<String> obtenerEspecialidadesUnicas();
+
 }

@@ -685,4 +685,25 @@ public class SolicitudBolsaController {
             );
         }
     }
+
+    /**
+     * 🔎 Obtiene todas las especialidades únicas pobladas
+     * GET /api/bolsas/solicitudes/especialidades
+     * v1.42.0: Para llenar dinámicamente el dropdown de filtro de especialidades
+     *
+     * @return lista de especialidades únicas ordenadas alfabéticamente
+     */
+    @GetMapping("/especialidades")
+    @PreAuthorize("hasAnyRole('COORDINADOR', 'COORDINADOR_ESPECIALIDADES', 'COORDINADOR_RED', 'MEDICO', 'SUPERADMIN', 'ADMIN')")
+    public ResponseEntity<List<String>> obtenerEspecialidadesUnicas() {
+        try {
+            log.info("🔍 Obteniendo especialidades únicas para filtro...");
+            List<String> especialidades = solicitudBolsaService.obtenerEspecialidadesUnicas();
+            log.info("✅ Especialidades obtenidas: {}", especialidades.size());
+            return ResponseEntity.ok(especialidades);
+        } catch (Exception e) {
+            log.error("❌ Error obteniendo especialidades: ", e);
+            return ResponseEntity.status(500).build();
+        }
+    }
 }
