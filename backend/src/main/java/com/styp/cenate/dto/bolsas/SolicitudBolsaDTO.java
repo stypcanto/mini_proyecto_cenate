@@ -140,6 +140,13 @@ public class SolicitudBolsaDTO {
     @JsonProperty("fecha_asignacion")
     private OffsetDateTime fechaAsignacion;
 
+    // 📋 AUDITORÍA: CAMBIOS DE ESTADO (v3.3.1)
+    @JsonProperty("fecha_cambio_estado")
+    private OffsetDateTime fechaCambioEstado;
+
+    @JsonProperty("usuario_cambio_estado_id")
+    private Long usuarioCambioEstadoId;
+
     // 🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;

@@ -13,10 +13,10 @@ import java.util.stream.Collectors;
 
 /**
  * Mapper para conversión entre SolicitudBolsa (Entity) y SolicitudBolsaDTO
- * Mapea 30 campos necesarios (v2.4.0 con asignación de gestora)
+ * Mapea 32 campos necesarios (v3.3.1 con auditoría de cambios de estado)
  *
- * @version v2.4.0 (Agregar asignación de gestora: responsable_gestora_id, fecha_asignacion)
- * @since 2026-01-29
+ * @version v3.3.1 (Agregar auditoría de cambios de estado: fecha_cambio_estado, usuario_cambio_estado_id)
+ * @since 2026-02-01
  */
 public class SolicitudBolsaMapper {
 
@@ -24,7 +24,7 @@ public class SolicitudBolsaMapper {
 
     /**
      * Convierte una entidad SolicitudBolsa a su DTO correspondiente
-     * Mapea 30 campos necesarios (v2.4.0 con asignación de gestora)
+     * Mapea 32 campos necesarios (v3.3.1 con auditoría de cambios de estado)
      */
     public static SolicitudBolsaDTO toDTO(SolicitudBolsa entity) {
         if (entity == null) {
@@ -55,9 +55,11 @@ public class SolicitudBolsaMapper {
                 // ===== ASIGNACIÓN GESTORA (2) - NEW v2.4.0 =====
                 .responsableGestoraId(entity.getResponsableGestoraId())
                 .fechaAsignacion(entity.getFechaAsignacion())
-                // ===== AUDITORÍA Y TIMESTAMPS (4) =====
+                // ===== AUDITORÍA Y TIMESTAMPS (6) - v3.3.1: +2 campos cambio estado =====
                 .fechaSolicitud(entity.getFechaSolicitud())
                 .fechaActualizacion(entity.getFechaActualizacion())
+                .fechaCambioEstado(entity.getFechaCambioEstado())
+                .usuarioCambioEstadoId(entity.getUsuarioCambioEstadoId())
                 .activo(entity.getActivo())
                 .estado(entity.getEstado())
                 // ===== IPRESS (1) =====

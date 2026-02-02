@@ -157,6 +157,18 @@ public class SolicitudBolsa {
     @Column(name = "fecha_asignacion", columnDefinition = "TIMESTAMP WITH TIME ZONE")
     private OffsetDateTime fechaAsignacion;
 
+    // ⏰ AUDITORÍA: CAMBIOS DE ESTADO (v3.3.1)
+    @Column(name = "fecha_cambio_estado", columnDefinition = "TIMESTAMP WITH TIME ZONE")
+    private OffsetDateTime fechaCambioEstado;
+
+    @Column(name = "usuario_cambio_estado_id")
+    private Long usuarioCambioEstadoId;
+
+    // 🔗 RELACIÓN CON USUARIO QUE CAMBIÓ ESTADO (LAZY loading para eficiencia)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "usuario_cambio_estado_id", insertable = false, updatable = false)
+    private Usuario usuarioCambioEstado;
+
     // 🔗 RELACIÓN CON USUARIO GESTORA (LAZY loading para eficiencia)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "responsable_gestora_id", insertable = false, updatable = false)

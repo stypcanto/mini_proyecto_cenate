@@ -761,10 +761,29 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .orElseThrow(() -> new RuntimeException("Solicitud no encontrada"));
 
         solicitud.setEstadoGestionCitasId(nuevoEstadoId);
-        // En producción, obtener cod y desc desde DimEstadosGestionCitas
-        solicitudRepository.save(solicitud);
 
-        log.info("Estado actualizado en solicitud {}: {}", idSolicitud, nuevoEstadoId);
+        // 📝 AUDITORÍA: Registrar fecha y usuario del cambio de estado (v3.3.1)
+        solicitud.setFechaCambioEstado(java.time.OffsetDateTime.now());
+
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            if (auth != null && auth.isAuthenticated()) {
+                String username = auth.getName();
+                Usuario usuario = usuarioRepository.findByNameUser(username)
+                    .orElse(null);
+                if (usuario != null) {
+                    solicitud.setUsuarioCambioEstadoId(usuario.getIdUsuario());
+                    log.info("Estado actualizado en solicitud {}: {} por usuario {}",
+                        idSolicitud, nuevoEstadoId, username);
+                } else {
+                    log.warn("Usuario no encontrado para cambio de estado en solicitud {}", idSolicitud);
+                }
+            }
+        } catch (Exception e) {
+            log.warn("Error obteniendo usuario para auditoría de cambio de estado: {}", e.getMessage());
+        }
+
+        solicitudRepository.save(solicitud);
     }
 
     @Override

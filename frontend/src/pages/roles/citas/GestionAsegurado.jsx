@@ -875,7 +875,7 @@ export default function GestionAsegurado() {
                             <option value="">Seleccionar estado...</option>
                             {estadosDisponibles.map((est) => (
                               <option key={est.codigo} value={est.codigo} title={est.descripcion}>
-                                {est.codigo}
+                                {est.descripcion.split(" - ")[0]}
                               </option>
                             ))}
                           </select>
