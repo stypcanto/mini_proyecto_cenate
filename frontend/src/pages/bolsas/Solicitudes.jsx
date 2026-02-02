@@ -606,7 +606,7 @@ export default function Solicitudes() {
             }
 
             const fechaAsignacionFormato = solicitud.fecha_asignacion
-              ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE')
+              ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE')
               : null;
 
             return {
@@ -630,8 +630,8 @@ export default function Solicitudes() {
               macroregion: solicitud.desc_macro || 'Sin asignar',
               bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
               nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
-              fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
-              fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
+              fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE') : 'N/A',
+              fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE') : 'N/A',
               gestoraAsignada: gestoraAsignadaNombre,
               gestoraAsignadaId: solicitud.responsable_gestora_id,
               fechaAsignacionFormato: fechaAsignacionFormato,
@@ -722,7 +722,7 @@ export default function Solicitudes() {
             }
 
             const fechaAsignacionFormato = solicitud.fecha_asignacion
-              ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE')
+              ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE')
               : null;
 
             return {
@@ -746,8 +746,8 @@ export default function Solicitudes() {
               macroregion: solicitud.desc_macro || 'Sin asignar',
               bolsa: solicitud.cod_tipo_bolsa || 'Sin clasificar',
               nombreBolsa: generarAliasBolsa(solicitud.desc_tipo_bolsa),
-              fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleDateString('es-PE') : 'N/A',
-              fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleDateString('es-PE') : 'N/A',
+              fechaCita: solicitud.fecha_asignacion ? new Date(solicitud.fecha_asignacion).toLocaleString('es-PE') : 'N/A',
+              fechaAsignacion: solicitud.fecha_solicitud ? new Date(solicitud.fecha_solicitud).toLocaleString('es-PE') : 'N/A',
               gestoraAsignada: gestoraAsignadaNombre,
               gestoraAsignadaId: solicitud.responsable_gestora_id,
               fechaAsignacionFormato: fechaAsignacionFormato,
