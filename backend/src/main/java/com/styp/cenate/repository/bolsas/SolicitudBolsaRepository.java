@@ -764,4 +764,17 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         """, nativeQuery = true)
     List<Map<String, Object>> estadisticasPorRed();
 
+    /**
+     * 📊 Cuenta solicitudes que YA han sido asignadas a una gestora de citas
+     * v1.41.0: Nueva métrica para tarjeta "Casos Asignados" en dashboard
+     * Filtra por: responsable_gestora_id IS NOT NULL AND activo = true
+     */
+    @Query(value = """
+        SELECT COUNT(sb.id_solicitud) as casos_asignados
+        FROM dim_solicitud_bolsa sb
+        WHERE sb.activo = true
+            AND sb.responsable_gestora_id IS NOT NULL
+        """, nativeQuery = true)
+    Long contarCasosAsignados();
+
 }

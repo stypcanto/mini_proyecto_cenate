@@ -77,9 +77,28 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
         log.info("📊 Obteniendo estadísticas por estado...");
 
         List<Map<String, Object>> resultados = solicitudRepository.estadisticasPorEstado();
-
-        return resultados.stream()
+        List<EstadisticasPorEstadoDTO> dtos = resultados.stream()
                 .map(this::mapearAEstadoDTO)
+                .collect(Collectors.toList());
+
+        // 👥 v1.41.0: Agregar métrica de "Casos Asignados" (solicitudes con gestoraAsignada != null)
+        Long casosAsignados = solicitudRepository.contarCasosAsignados();
+        Long totalSolicitudes = dtos.stream().mapToLong(EstadisticasPorEstadoDTO::getCantidad).sum();
+
+        if (totalSolicitudes > 0) {
+            BigDecimal porcentajeAsignados = BigDecimal.valueOf(casosAsignados * 100.0 / totalSolicitudes)
+                    .setScale(2, java.math.RoundingMode.HALF_UP);
+
+            dtos.add(EstadisticasPorEstadoDTO.builder()
+                    .estado("ASIGNADOS")
+                    .cantidad(casosAsignados)
+                    .porcentaje(porcentajeAsignados)
+                    .color("#00AA00")  // Verde
+                    .emoji("👥")       // Personas
+                    .build());
+        }
+
+        return dtos.stream()
                 .sorted(Comparator.comparingLong(EstadisticasPorEstadoDTO::getCantidad).reversed())
                 .collect(Collectors.toList());
     }
@@ -110,6 +129,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
             case "CANCELADO" -> "#FF0000";      // Rojo
             case "DERIVADO" -> "#9900FF";       // Púrpura
             case "OBSERVADO" -> "#FF9900";      // Naranja oscuro
+            case "ASIGNADOS" -> "#00AA00";      // Verde - v1.41.0
             default -> "#666666";               // Gris
         };
     }
@@ -122,6 +142,7 @@ public class SolicitudBolsaEstadisticasServiceImpl implements SolicitudBolsaEsta
             case "CANCELADO" -> "❌";
             case "DERIVADO" -> "🚀";
             case "OBSERVADO" -> "👀";
+            case "ASIGNADOS" -> "👥";           // Personas - v1.41.0
             default -> "❓";
         };
     }
