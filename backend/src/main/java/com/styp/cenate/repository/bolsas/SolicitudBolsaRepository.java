@@ -184,16 +184,16 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         WHERE sb.activo = true
-          AND (:bolsaNombre IS NULL OR LOWER(tb.desc_tipo_bolsa) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
+          AND (:bolsaNombre IS NULL OR LOWER(COALESCE(tb.desc_tipo_bolsa, '')) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
           AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)
           AND (:red IS NULL OR dr.desc_red = :red)
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
-          AND (:especialidad IS NULL OR LOWER(sb.especialidad) LIKE LOWER(CONCAT('%', :especialidad, '%')))
-          AND (:estadoCodigo IS NULL OR UPPER(sb.estado) = UPPER(:estadoCodigo))
-          AND (:tipoCita IS NULL OR UPPER(sb.tipo_cita) = UPPER(:tipoCita))
-          AND (:busqueda IS NULL OR LOWER(sb.paciente_nombre) LIKE LOWER(CONCAT('%', :busqueda, '%'))
-                              OR sb.paciente_dni LIKE CONCAT('%', :busqueda, '%')
-                              OR LOWER(di.desc_ipress) LIKE LOWER(CONCAT('%', :busqueda, '%')))
+          AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
+          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
+          AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
+          AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
+                              OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
+                              OR LOWER(COALESCE(di.desc_ipress, '')) LIKE LOWER(CONCAT('%', :busqueda, '%')))
         ORDER BY sb.fecha_solicitud DESC
         LIMIT :#{#pageable.pageSize} OFFSET :#{#pageable.offset}
         """, nativeQuery = true)
@@ -220,16 +220,16 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
         LEFT JOIN dim_red dr ON di.id_red = dr.id_red
         LEFT JOIN dim_macroregion dm ON dr.id_macro = dm.id_macro
         WHERE sb.activo = true
-          AND (:bolsaNombre IS NULL OR LOWER(tb.desc_tipo_bolsa) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
+          AND (:bolsaNombre IS NULL OR LOWER(COALESCE(tb.desc_tipo_bolsa, '')) LIKE LOWER(CONCAT('%', :bolsaNombre, '%')))
           AND (:macrorregion IS NULL OR dm.desc_macro = :macrorregion)
           AND (:red IS NULL OR dr.desc_red = :red)
           AND (:ipress IS NULL OR di.desc_ipress = :ipress)
-          AND (:especialidad IS NULL OR LOWER(sb.especialidad) LIKE LOWER(CONCAT('%', :especialidad, '%')))
-          AND (:estadoCodigo IS NULL OR UPPER(sb.estado) = UPPER(:estadoCodigo))
-          AND (:tipoCita IS NULL OR UPPER(sb.tipo_cita) = UPPER(:tipoCita))
-          AND (:busqueda IS NULL OR LOWER(sb.paciente_nombre) LIKE LOWER(CONCAT('%', :busqueda, '%'))
-                              OR sb.paciente_dni LIKE CONCAT('%', :busqueda, '%')
-                              OR LOWER(di.desc_ipress) LIKE LOWER(CONCAT('%', :busqueda, '%')))
+          AND (:especialidad IS NULL OR LOWER(COALESCE(sb.especialidad, '')) LIKE LOWER(CONCAT('%', :especialidad, '%')))
+          AND (:estadoCodigo IS NULL OR UPPER(COALESCE(sb.estado, '')) = UPPER(:estadoCodigo))
+          AND (:tipoCita IS NULL OR UPPER(COALESCE(sb.tipo_cita, 'N/A')) = UPPER(:tipoCita))
+          AND (:busqueda IS NULL OR LOWER(COALESCE(sb.paciente_nombre, '')) LIKE LOWER(CONCAT('%', :busqueda, '%'))
+                              OR COALESCE(sb.paciente_dni, '') LIKE CONCAT('%', :busqueda, '%')
+                              OR LOWER(COALESCE(di.desc_ipress, '')) LIKE LOWER(CONCAT('%', :busqueda, '%')))
         """, nativeQuery = true)
     long countWithFilters(
             @org.springframework.data.repository.query.Param("bolsaNombre") String bolsaNombre,
