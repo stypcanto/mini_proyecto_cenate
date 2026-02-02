@@ -690,11 +690,12 @@ public class SolicitudBolsaController {
      * 🔎 Obtiene todas las especialidades únicas pobladas
      * GET /api/bolsas/solicitudes/especialidades
      * v1.42.0: Para llenar dinámicamente el dropdown de filtro de especialidades
+     * Cualquier usuario autenticado puede acceder (es solo lectura de datos públicos)
      *
      * @return lista de especialidades únicas ordenadas alfabéticamente
      */
     @GetMapping("/especialidades")
-    @PreAuthorize("hasAnyRole('COORDINADOR', 'COORDINADOR_ESPECIALIDADES', 'COORDINADOR_RED', 'COORDINADOR_GESTION_CITAS', 'GESTOR_DE_CITAS', 'MEDICO', 'SUPERADMIN', 'ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<String>> obtenerEspecialidadesUnicas() {
         try {
             log.info("🔍 Obteniendo especialidades únicas para filtro...");
