@@ -159,6 +159,13 @@ export default function GestionAsegurado() {
           codigoEstado: codigoEstado, // Guardar también el código para comparaciones
           fechaSolicitud: solicitud.fecha_solicitud || solicitud.fechaSolicitud || new Date().toISOString(),
           fechaAsignacion: solicitud.fecha_asignacion || solicitud.fechaAsignacion || "-",
+          // Auditoría: Fecha y usuario del cambio de estado (v3.3.1)
+          fechaCambioEstado: solicitud.fecha_cambio_estado
+            ? new Date(solicitud.fecha_cambio_estado).toLocaleString('es-PE')
+            : null,
+          usuarioCambioEstado: solicitud.usuario_cambio_estado_id
+            ? `Usuario ${solicitud.usuario_cambio_estado_id}`
+            : null,
         };
       });
 
@@ -284,7 +291,9 @@ export default function GestionAsegurado() {
         cerrarModalTelefono();
         await fetchPacientesAsignados();
       } else {
-        toast.error("Error al actualizar el teléfono");
+        const errorData = await response.json();
+        console.error("Error details:", errorData);
+        toast.error(errorData.error || errorData.message || "Error al actualizar el teléfono");
       }
     } catch (err) {
       console.error("Error:", err);
@@ -797,6 +806,12 @@ export default function GestionAsegurado() {
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         Estado
                       </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Fecha Cambio Estado
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Usuario Cambio Estado
+                      </th>
                       <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">
                         Acciones
                       </th>
@@ -879,6 +894,26 @@ export default function GestionAsegurado() {
                               </option>
                             ))}
                           </select>
+                        </td>
+                        {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
+                        <td className="px-4 py-3 text-slate-600 text-xs">
+                          {paciente.fechaCambioEstado ? (
+                            <span className="text-blue-700 font-medium">
+                              {new Date(paciente.fechaCambioEstado).toLocaleString("es-ES")}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 italic">—</span>
+                          )}
+                        </td>
+                        {/* USUARIO CAMBIO ESTADO - Auditoría v3.3.1 */}
+                        <td className="px-4 py-3 text-slate-600 text-xs">
+                          {paciente.usuarioCambioEstado ? (
+                            <span className="text-gray-900 font-medium">
+                              {paciente.usuarioCambioEstado}
+                            </span>
+                          ) : (
+                            <span className="text-gray-400 italic">—</span>
+                          )}
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
