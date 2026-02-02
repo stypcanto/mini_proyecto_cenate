@@ -1,84 +1,105 @@
 import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, AlertCircle, Info, CheckCircle2 } from 'lucide-react';
 
-const ConfirmDialog = ({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
+const ConfirmDialog = ({
+  isOpen,
+  onClose,
+  onCancel,
+  onConfirm,
   title = '¿Está seguro?',
   message = 'Esta acción no se puede deshacer.',
+  details,
   confirmText = 'Confirmar',
   cancelText = 'Cancelar',
-  type = 'danger' // 'danger', 'warning', 'info'
+  type = 'danger', // 'danger', 'warning', 'info', 'success'
+  isLoading = false
 }) => {
   if (!isOpen) return null;
 
-  const getColors = () => {
+  const handleCancel = onCancel || onClose;
+
+  const getConfig = () => {
     switch (type) {
       case 'danger':
         return {
-          icon: 'text-red-500',
-          button: 'bg-red-500 hover:bg-red-600'
+          headerBg: 'bg-red-600',
+          icon: AlertTriangle,
+          iconColor: 'text-red-600',
+          button: 'bg-red-600 hover:bg-red-700'
         };
       case 'warning':
         return {
-          icon: 'text-yellow-500',
-          button: 'bg-yellow-500 hover:bg-yellow-600'
+          headerBg: 'bg-amber-600',
+          icon: AlertCircle,
+          iconColor: 'text-amber-600',
+          button: 'bg-amber-600 hover:bg-amber-700'
         };
       case 'info':
         return {
-          icon: 'text-blue-500',
-          button: 'bg-blue-500 hover:bg-blue-600'
+          headerBg: 'bg-blue-600',
+          icon: Info,
+          iconColor: 'text-blue-600',
+          button: 'bg-blue-600 hover:bg-blue-700'
+        };
+      case 'success':
+        return {
+          headerBg: 'bg-green-600',
+          icon: CheckCircle2,
+          iconColor: 'text-green-600',
+          button: 'bg-green-600 hover:bg-green-700'
         };
       default:
         return {
-          icon: 'text-gray-500',
-          button: 'bg-gray-500 hover:bg-gray-600'
+          headerBg: 'bg-gray-600',
+          icon: AlertTriangle,
+          iconColor: 'text-gray-600',
+          button: 'bg-gray-600 hover:bg-gray-700'
         };
     }
   };
 
-  const colors = getColors();
+  const config = getConfig();
+  const IconComponent = config.icon;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-        <div className="p-6">
-          {/* Icon */}
-          <div className="flex items-center justify-center mb-4">
-            <div className={`rounded-full p-3 bg-gray-100 ${colors.icon}`}>
-              <AlertTriangle className="w-8 h-8" />
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden">
+        {/* Header */}
+        <div className={`${config.headerBg} p-6 text-white`}>
+          <div className="flex items-center gap-3">
+            <IconComponent className="w-6 h-6" />
+            <h2 className="text-xl font-bold">{title}</h2>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="p-6 space-y-4">
+          <p className="text-gray-700">{message}</p>
+
+          {details && (
+            <div className={`bg-gray-50 p-4 rounded-lg border border-gray-200 ${config.iconColor}`}>
+              {details}
             </div>
-          </div>
+          )}
+        </div>
 
-          {/* Title */}
-          <h3 className="text-lg font-bold text-gray-800 text-center mb-2">
-            {title}
-          </h3>
-
-          {/* Message */}
-          <p className="text-gray-600 text-center mb-6">
-            {message}
-          </p>
-
-          {/* Buttons */}
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-semibold"
-            >
-              {cancelText}
-            </button>
-            <button
-              onClick={() => {
-                onConfirm();
-                onClose();
-              }}
-              className={`flex-1 px-4 py-2 ${colors.button} text-white rounded-lg transition-colors font-semibold`}
-            >
-              {confirmText}
-            </button>
-          </div>
+        {/* Footer */}
+        <div className="flex gap-3 p-4 border-t border-gray-200">
+          <button
+            onClick={handleCancel}
+            disabled={isLoading}
+            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {cancelText}
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={isLoading}
+            className={`flex-1 px-4 py-2 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 ${config.button}`}
+          >
+            {isLoading && <span className="animate-spin">⏳</span>}
+            {confirmText}
+          </button>
         </div>
       </div>
     </div>

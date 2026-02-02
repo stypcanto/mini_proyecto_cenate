@@ -8,6 +8,7 @@
 import React, { useState, useEffect } from "react";
 import { useAuth } from "../../../context/AuthContext";
 import { getToken } from "../../../constants/auth";
+import ListHeader from "../../../components/ListHeader";
 import {
   Users,
   CheckCircle2,
@@ -56,6 +57,18 @@ export default function GestionAsegurado() {
     { codigo: "HC_BLOQUEADA", descripcion: "Historia clínica bloqueada - HC del paciente bloqueada en sistema" },
     { codigo: "REPROG_FALLIDA", descripcion: "Reprogramación Fallida - No se pudo reprogramar la cita" },
   ]);
+
+  // ============================================================================
+  // 🔍 FILTROS ESPECIALIZADOS v1.42.0 (inspirados en Solicitudes)
+  // ============================================================================
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filtroMacrorregion, setFiltroMacrorregion] = useState("todas");
+  const [filtroRed, setFiltroRed] = useState("todas");
+  const [filtroIpress, setFiltroIpress] = useState("todas");
+  const [filtroEspecialidad, setFiltroEspecialidad] = useState("todas");
+  const [filtroTipoCita, setFiltroTipoCita] = useState("todas");
+  const [filtroEstado, setFiltroEstado] = useState("todos");
+  const [expandFiltros, setExpandFiltros] = useState(true); // Filtros expandidos por defecto
 
   const API_BASE = "http://localhost:8080/api";
 
@@ -265,6 +278,103 @@ export default function GestionAsegurado() {
     loadData();
   }, []);
 
+  // ============================================================================
+  // 🔍 FUNCIÓN DE FILTRADO ESPECIALIZADO
+  // ============================================================================
+  const pacientesFiltr ados = pacientesAsignados.filter((paciente) => {
+    // 🔎 Búsqueda por DNI, Nombre o IPRESS
+    const searchMatch =
+      searchTerm === "" ||
+      paciente.pacienteDni?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      paciente.pacienteNombre?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      paciente.descIpress?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // 🌎 Filtro Macrorregión
+    const macrorregionMatch =
+      filtroMacrorregion === "todas" ||
+      paciente.macrorregion === filtroMacrorregion;
+
+    // 🌐 Filtro Red
+    const redMatch =
+      filtroRed === "todas" ||
+      paciente.red === filtroRed;
+
+    // 🏥 Filtro IPRESS
+    const ipressMatch =
+      filtroIpress === "todas" ||
+      paciente.descIpress === filtroIpress;
+
+    // 🏨 Filtro Especialidad
+    const especialidadMatch =
+      filtroEspecialidad === "todas" ||
+      (filtroEspecialidad === "S/E" && !paciente.especialidad) ||
+      paciente.especialidad === filtroEspecialidad;
+
+    // 📅 Filtro Tipo de Cita
+    const tipoCitaMatch =
+      filtroTipoCita === "todas" ||
+      paciente.tipoCita === filtroTipoCita;
+
+    // 📌 Filtro Estado
+    const estadoMatch =
+      filtroEstado === "todos" ||
+      paciente.estado === filtroEstado;
+
+    return (
+      searchMatch &&
+      macrorregionMatch &&
+      redMatch &&
+      ipressMatch &&
+      especialidadMatch &&
+      tipoCitaMatch &&
+      estadoMatch
+    );
+  });
+
+  // ============================================================================
+  // 📊 CALCULAR OPCIONES DISPONIBLES PARA FILTROS
+  // ============================================================================
+  const macrorregionesUnicas = [
+    ...new Set(pacientesAsignados
+      .map((p) => p.macrorregion)
+      .filter((m) => m))
+  ].sort();
+
+  const redesUnicas = [
+    ...new Set(pacientesAsignados
+      .map((p) => p.red)
+      .filter((r) => r))
+  ].sort();
+
+  const ipressUnicas = [
+    ...new Set(pacientesAsignados
+      .map((p) => p.descIpress)
+      .filter((i) => i))
+  ].sort();
+
+  const especialidadesUnicas = [
+    ...new Set(
+      pacientesAsignados
+        .map((p) => (p.especialidad && p.especialidad.trim() !== "" ? p.especialidad : null))
+        .filter((e) => e !== null)
+    )
+  ].sort();
+
+  const hayRegistrosSinEspecialidad = pacientesAsignados.some(
+    (p) => !p.especialidad || p.especialidad.trim() === ""
+  );
+
+  const especialidadesConSE = [
+    ...especialidadesUnicas,
+    ...(hayRegistrosSinEspecialidad ? ["S/E"] : [])
+  ];
+
+  const tiposCitaUnicos = [
+    ...new Set(pacientesAsignados
+      .map((p) => p.tipoCita)
+      .filter((t) => t))
+  ].sort();
+
   if (loading) {
     return (
       <div className="w-full flex items-center justify-center min-h-screen">
@@ -413,8 +523,178 @@ export default function GestionAsegurado() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
+              <>
+                {/* 🔍 FILTROS ESPECIALIZADOS */}
+                <div className="mb-6 bg-gray-50 border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="text-sm font-semibold text-gray-700">Filtros</h3>
+                    <button
+                      onClick={() => setExpandFiltros(!expandFiltros)}
+                      className="text-xs font-medium text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                    >
+                      {expandFiltros ? "Ocultar" : "Mostrar"} filtros
+                      <ChevronDown
+                        size={16}
+                        className={`transition-transform ${
+                          expandFiltros ? "rotate-180" : ""
+                        }`}
+                      />
+                    </button>
+                  </div>
+
+                  {expandFiltros && (
+                    <div className="space-y-3">
+                      {/* Búsqueda */}
+                      <div>
+                        <input
+                          type="text"
+                          placeholder="Buscar paciente, DNI o IPRESS..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+
+                      {/* Dropdowns */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                        {/* Macrorregión */}
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                            Macrorregión
+                          </label>
+                          <select
+                            value={filtroMacrorregion}
+                            onChange={(e) => setFiltroMacrorregion(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="todas">Todas las macrorregiones</option>
+                            {macrorregionesUnicas.map((m) => (
+                              <option key={m} value={m}>
+                                {m}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Red */}
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                            Red
+                          </label>
+                          <select
+                            value={filtroRed}
+                            onChange={(e) => setFiltroRed(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="todas">Todas las redes</option>
+                            {redesUnicas.map((r) => (
+                              <option key={r} value={r}>
+                                {r}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* IPRESS */}
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                            IPRESS
+                          </label>
+                          <select
+                            value={filtroIpress}
+                            onChange={(e) => setFiltroIpress(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="todas">Todas las IPRESS</option>
+                            {ipressUnicas.map((i) => (
+                              <option key={i} value={i}>
+                                {i}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Especialidad */}
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                            Especialidad
+                          </label>
+                          <select
+                            value={filtroEspecialidad}
+                            onChange={(e) => setFiltroEspecialidad(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="todas">Todas las especialidades</option>
+                            {especialidadesConSE.map((e) => (
+                              <option key={e} value={e}>
+                                {e}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Tipo de Cita */}
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                            Tipo de Cita
+                          </label>
+                          <select
+                            value={filtroTipoCita}
+                            onChange={(e) => setFiltroTipoCita(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="todas">Todos los tipos</option>
+                            {tiposCitaUnicos.map((t) => (
+                              <option key={t} value={t}>
+                                {t}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+
+                        {/* Estado */}
+                        <div>
+                          <label className="text-xs font-semibold text-gray-600 block mb-1">
+                            Estado
+                          </label>
+                          <select
+                            value={filtroEstado}
+                            onChange={(e) => setFiltroEstado(e.target.value)}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="todos">Todos los estados</option>
+                            {estadosDisponibles.map((e) => (
+                              <option key={e.codigo} value={e.codigo}>
+                                {e.descripcion}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Botón Limpiar */}
+                      <div className="flex justify-end pt-2">
+                        <button
+                          onClick={() => {
+                            setSearchTerm("");
+                            setFiltroMacrorregion("todas");
+                            setFiltroRed("todas");
+                            setFiltroIpress("todas");
+                            setFiltroEspecialidad("todas");
+                            setFiltroTipoCita("todas");
+                            setFiltroEstado("todos");
+                          }}
+                          className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 text-sm font-medium rounded-lg transition-colors"
+                        >
+                          🗑️ Limpiar
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-gray-200 bg-gray-50">
                       <th className="px-6 py-3 text-left font-semibold text-gray-700">
@@ -456,7 +736,7 @@ export default function GestionAsegurado() {
                     </tr>
                   </thead>
                   <tbody>
-                    {pacientesAsignados.map((paciente, idx) => (
+                    {pacientesFiltrados.map((paciente, idx) => (
                       <tr
                         key={paciente.id}
                         className={`border-b border-gray-200 hover:bg-gray-50 transition-colors ${
@@ -557,6 +837,7 @@ export default function GestionAsegurado() {
                   </tbody>
                 </table>
               </div>
+              </>
             )}
           </div>
         </div>
