@@ -1100,7 +1100,7 @@ export default function GestionAsegurado() {
             </div>
           )
         }
-        variant="warning"
+        type="info"
         confirmText="Confirmar Cambio"
         cancelText="Cancelar"
         isLoading={guardandoEstado !== null}
