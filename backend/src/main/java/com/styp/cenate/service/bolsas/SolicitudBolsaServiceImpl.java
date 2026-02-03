@@ -2560,6 +2560,60 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     /**
+     * Exporta solicitudes seleccionadas a formato CSV
+     * Versión general que permite exportar cualquier solicitud sin restricción de gestora
+     *
+     * @param ids lista de IDs de solicitudes a exportar
+     * @return datos CSV en bytes
+     */
+    @Override
+    public byte[] exportarCSV(List<Long> ids) {
+        try {
+            log.info("📄 Exportando {} solicitudes seleccionadas a CSV", ids.size());
+
+            // Obtener las solicitudes por IDs especificados
+            List<SolicitudBolsaDTO> solicitudes = ids.stream()
+                .map(id -> obtenerPorId(id).orElse(null))
+                .filter(s -> s != null)
+                .toList();
+
+            if (solicitudes.isEmpty()) {
+                log.warn("⚠️ No hay solicitudes para exportar");
+                return new byte[0];
+            }
+
+            // Construir CSV manualmente con los campos deseados
+            StringBuilder csv = new StringBuilder();
+
+            // Encabezados
+            csv.append("DNI,NOMBRE,EDAD,SEXO,TELÉFONO 1,TELÉFONO 2,ESPECIALIDAD,IPRESS,RED,MACRORREGIÓN,TIPO BOLSA,ESTADO,FECHA SOLICITUD\n");
+
+            // Datos
+            for (SolicitudBolsaDTO solicitud : solicitudes) {
+                csv.append(escaparCSV(solicitud.getPacienteDni())).append(",");
+                csv.append(escaparCSV(solicitud.getPacienteNombre())).append(",");
+                csv.append(escaparCSV(String.valueOf(solicitud.getPacienteEdad()))).append(",");
+                csv.append(escaparCSV(solicitud.getPacienteSexo())).append(",");
+                csv.append(escaparCSV(solicitud.getPacienteTelefono())).append(",");
+                csv.append(escaparCSV(solicitud.getPacienteTelefonoAlterno())).append(",");
+                csv.append(escaparCSV(solicitud.getEspecialidad())).append(",");
+                csv.append(escaparCSV(solicitud.getDescIpress())).append(",");
+                csv.append(escaparCSV(solicitud.getDescRed())).append(",");
+                csv.append(escaparCSV(solicitud.getDescMacroregion())).append(",");
+                csv.append(escaparCSV(solicitud.getDescTipoBolsa())).append(",");
+                csv.append(escaparCSV(solicitud.getDescEstadoCita())).append(",");
+                csv.append(escaparCSV(String.valueOf(solicitud.getFechaSolicitud()))).append("\n");
+            }
+
+            log.info("✅ CSV generado exitosamente con {} registros", solicitudes.size());
+            return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        } catch (Exception e) {
+            log.error("❌ Error exportando solicitudes a CSV: ", e);
+            return new byte[0];
+        }
+    }
+
+    /**
      * Obtiene el nombre completo del usuario desde PersonalCnt o retorna username
      * @param usuario usuario del cual obtener el nombre
      * @return nombre completo o username si no está disponible

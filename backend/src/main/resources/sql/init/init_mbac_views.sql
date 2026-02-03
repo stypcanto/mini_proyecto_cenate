@@ -77,7 +77,7 @@ FROM permisos_modulares pm
 JOIN dim_usuarios        u ON pm.id_user   = u.id_user
 JOIN dim_roles           r ON pm.id_rol    = r.id_rol
 JOIN dim_modulos_sistema m ON pm.id_modulo = m.id_modulo
-JOIN dim_paginas         p ON pm.id_pagina = p.id_pagina
+JOIN dim_paginas_modulo  p ON pm.id_pagina = p.id_pagina
 WHERE pm.activo = TRUE
 ORDER BY m.id_modulo, p.id_pagina;
 

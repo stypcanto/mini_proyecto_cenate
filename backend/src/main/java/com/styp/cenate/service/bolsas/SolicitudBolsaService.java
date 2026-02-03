@@ -188,4 +188,14 @@ public interface SolicitudBolsaService {
      * @return datos CSV en bytes
      */
     byte[] exportarCSVAsignados(List<Long> ids);
+
+    /**
+     * Exporta solicitudes seleccionadas a formato CSV
+     * Usado en la descarga desde el universo general de solicitudes
+     * Puede exportar cualquier solicitud (sin restricción de gestora)
+     *
+     * @param ids lista de IDs de solicitudes a exportar
+     * @return datos CSV en bytes
+     */
+    byte[] exportarCSV(List<Long> ids);
 }

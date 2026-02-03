@@ -345,6 +345,43 @@ public class SolicitudBolsaController {
     }
 
     /**
+     * Exporta solicitudes seleccionadas a formato CSV
+     * GET /api/bolsas/solicitudes/exportar?ids=1,2,3
+     *
+     * Permite descargar un archivo CSV con las solicitudes seleccionadas por el usuario
+     * Campos incluidos: DNI, NOMBRE, EDAD, SEXO, TELÉFONO 1, TELÉFONO 2, ESPECIALIDAD,
+     *                   IPRESS, RED, MACRORREGIÓN, TIPO BOLSA, ESTADO, FECHA SOLICITUD
+     *
+     * Accesible a: Todos los usuarios autenticados (ADMIN, SUPERADMIN, COORDINADOR, MEDICO, etc.)
+     *
+     * @param ids lista de IDs de solicitudes a exportar (parámetro query)
+     * @return archivo CSV con los datos de las solicitudes
+     */
+    @GetMapping("/exportar")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<byte[]> exportarCSV(
+        @RequestParam(value = "ids", required = false) List<Long> ids) {
+        log.info("📄 Exportando {} solicitudes seleccionadas a CSV", ids != null ? ids.size() : 0);
+
+        if (ids == null || ids.isEmpty()) {
+            log.warn("⚠️ No se especificaron IDs para exportar");
+            return ResponseEntity.badRequest().build();
+        }
+
+        byte[] csvData = solicitudBolsaService.exportarCSV(ids);
+
+        if (csvData.length == 0) {
+            log.warn("⚠️ No hay datos para exportar");
+            return ResponseEntity.noContent().build();
+        }
+
+        return ResponseEntity.ok()
+            .header("Content-Type", "text/csv; charset=UTF-8")
+            .header("Content-Disposition", "attachment; filename=\"solicitudes_" + System.currentTimeMillis() + ".csv\"")
+            .body(csvData);
+    }
+
+    /**
      * Obtiene una solicitud por ID
      * GET /api/bolsas/solicitudes/{id}
      *
@@ -364,7 +401,7 @@ public class SolicitudBolsaController {
      * Asigna una gestora a una solicitud
      * PATCH /api/bolsas/solicitudes/{id}/asignar
      *
-     * Roles permitidos: SUPERADMIN, ADMIN, COORDINADOR_GESTION_DE_CITAS
+     * Roles permitidos: SUPERADMIN, ADMIN, COORD. GESTION CITAS
      *
      * @param id ID de la solicitud
      * @param idGestora ID de la gestora a asignar

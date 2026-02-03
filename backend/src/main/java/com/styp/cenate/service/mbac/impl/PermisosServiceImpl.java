@@ -354,7 +354,7 @@ public class PermisosServiceImpl implements PermisosService {
                 .anyMatch(p -> switch (accion.toLowerCase()) {
                     case "ver" -> Boolean.TRUE.equals(p.getVer());
                     case "crear" -> Boolean.TRUE.equals(p.getCrear());
-                    case "editar", "actualizar" -> Boolean.TRUE.equals(p.getEditar());
+                    case "editar", "actualizar", "asignar" -> Boolean.TRUE.equals(p.getEditar());
                     case "eliminar" -> Boolean.TRUE.equals(p.getEliminar());
                     case "exportar" -> Boolean.TRUE.equals(p.getExportar());
                     case "aprobar" -> Boolean.TRUE.equals(p.getAprobar());
