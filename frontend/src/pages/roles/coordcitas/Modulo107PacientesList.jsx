@@ -290,7 +290,7 @@ export default function Modulo107PacientesList() {
         "Derivación": p.derivacionInterna || "",
         "Estado Atención": p.estadoDescripcion || "",
         "Fecha Atención": p.fechaAtencion ? formatFecha(p.fechaAtencion) : "",
-        "Hora Atención": p.horaAtencion || "",
+        "Hora Atención": p.horaAtencion ? formatHora(p.horaAtencion) : "",
         "Personal ID": p.idPersonal || "",
       }));
 
@@ -329,6 +329,15 @@ export default function Modulo107PacientesList() {
     const mes = String(date.getMonth() + 1).padStart(2, "0");
     const anio = date.getFullYear();
     return `${dia}/${mes}/${anio}`;
+  };
+
+  const formatHora = (hora) => {
+    if (!hora) return "";
+    // Si viene en formato "HH:mm:ss", extraer solo "HH:mm"
+    if (hora.includes(":")) {
+      return hora.split(":").slice(0, 2).join(":");
+    }
+    return hora;
   };
 
   const calcularEdad = (fechaNacimiento) => {
@@ -903,7 +912,7 @@ export default function Modulo107PacientesList() {
                         {formatFecha(paciente.fechaAtencion) || "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
-                        {paciente.horaAtencion || "—"}
+                        {formatHora(paciente.horaAtencion) || "—"}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-700">
                         {paciente.idPersonal || "—"}
