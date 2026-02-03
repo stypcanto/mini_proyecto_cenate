@@ -719,7 +719,11 @@ export default function GestionAsegurado() {
     // 📌 Filtro Estado
     const estadoMatch =
       filtroEstado === "todos" ||
-      paciente.estado === filtroEstado;
+      paciente.codigoEstado === filtroEstado;
+    
+    if (filtroEstado !== "todos" && !estadoMatch) {
+      console.log(`❌ Paciente ${paciente.pacienteNombre} rechazado por estado. Esperado: ${filtroEstado}, Actual: ${paciente.codigoEstado}`);
+    }
 
     return (
       searchMatch &&
