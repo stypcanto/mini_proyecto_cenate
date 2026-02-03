@@ -371,8 +371,8 @@ public class SolicitudBolsaController {
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/asignar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR_GESTION_DE_CITAS','COORD. GESTION CITAS')")
-    //@CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS')")
+    @CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
     public ResponseEntity<?> asignarGestora(
             @PathVariable Long id,
             @RequestParam(value = "idGestora", required = false) Long idGestora) {
@@ -428,7 +428,7 @@ public class SolicitudBolsaController {
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/estado")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR GESTION DE CITAS', 'GESTOR DE CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     public ResponseEntity<?> cambiarEstado(
             @PathVariable Long id,
             @RequestParam("nuevoEstadoCodigo") String nuevoEstadoCodigo) {
@@ -483,7 +483,7 @@ public class SolicitudBolsaController {
      * @return mensaje de éxito + solicitud actualizada
      */
     @PatchMapping("/{id}/estado-y-cita")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR GESTION DE CITAS', 'GESTOR DE CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     @Transactional
     public ResponseEntity<?> cambiarEstadoYCita(
             @PathVariable Long id,
