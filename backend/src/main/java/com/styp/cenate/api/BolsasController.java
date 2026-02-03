@@ -215,181 +215,35 @@ public class BolsasController {
         return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("mensaje", "Creación de solicitudes debe ser a través de importación Excel"));
     }
 
-    /*
     // ========================================================================
-    // 📋 SOLICITUDES - COMENTADAS (v1.6.0 en SolicitudBolsaController)
+    // 📋 ENDPOINT DE EXPORTACIÓN - DESCOMENTAR SOLO ESTE (v1.42.0+)
     // ========================================================================
-    // DEPRECADO: Los endpoints de solicitudes fueron movidos a SolicitudBolsaController
-    // para evitar conflictos de rutas con la nueva versión v1.6.0.
-    // USE: /api/bolsas/solicitudes endpoints en SolicitudBolsaController en su lugar.
-
-    @GetMapping("/solicitudes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR', 'MEDICO')")
-    public ResponseEntity<List<SolicitudBolsaDTO>> obtenerTodasSolicitudes() {
-        log.info("📋 Consultando todas las solicitudes...");
-        return ResponseEntity.ok(solicitudBolsasService.obtenerTodasLasSolicitudes());
-    }
-
-    @GetMapping("/solicitudes/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR', 'MEDICO')")
-    public ResponseEntity<SolicitudBolsaDTO> obtenerSolicitudPorId(@PathVariable Long id) {
-        log.info("🔍 Consultando solicitud ID: {}", id);
-        return ResponseEntity.ok(solicitudBolsasService.obtenerSolicitudPorId(id));
-    }
-
-    @GetMapping("/solicitudes/numero/{numero}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR', 'MEDICO')")
-    public ResponseEntity<SolicitudBolsaDTO> obtenerSolicitudPorNumero(@PathVariable String numero) {
-        log.info("🔍 Consultando solicitud: {}", numero);
-        return ResponseEntity.ok(solicitudBolsasService.obtenerSolicitudPorNumero(numero));
-    }
-
-    @GetMapping("/solicitudes/bolsa/{idBolsa}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR', 'MEDICO')")
-    public ResponseEntity<List<SolicitudBolsaDTO>> obtenerSolicitudesPorBolsa(@PathVariable Long idBolsa) {
-        log.info("📋 Consultando solicitudes de bolsa: {}", idBolsa);
-        return ResponseEntity.ok(solicitudBolsasService.obtenerSolicitudesPorBolsa(idBolsa));
-    }
-
-    @GetMapping("/solicitudes/paciente/{dni}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR', 'MEDICO')")
-    public ResponseEntity<List<SolicitudBolsaDTO>> obtenerSolicitudesPorPaciente(@PathVariable String dni) {
-        log.info("📋 Consultando solicitudes de paciente: {}", dni);
-        return ResponseEntity.ok(solicitudBolsasService.obtenerSolicitudesPorPaciente(dni));
-    }
-
-    @GetMapping("/solicitudes/estado/{estado}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    public ResponseEntity<List<SolicitudBolsaDTO>> obtenerSolicitudesPorEstado(@PathVariable String estado) {
-        log.info("📋 Consultando solicitudes por estado: {}", estado);
-        return ResponseEntity.ok(solicitudBolsasService.obtenerSolicitudesPorEstado(estado));
-    }
-
-    @GetMapping("/solicitudes/pendientes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    public ResponseEntity<List<SolicitudBolsaDTO>> obtenerSolicitudesPendientes() {
-        log.info("📋 Consultando solicitudes pendientes...");
-        return ResponseEntity.ok(solicitudBolsasService.obtenerSolicitudesPendientes());
-    }
-
-    @GetMapping("/solicitudes/buscar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    public ResponseEntity<Page<SolicitudBolsaDTO>> buscarSolicitudes(
-        @RequestParam(required = false) String nombrePaciente,
-        @RequestParam(required = false) String dni,
-        @RequestParam(required = false) String estado,
-        @RequestParam(required = false) String numeroSolicitud,
-        Pageable pageable) {
-        log.info("🔎 Buscando solicitudes: paciente={}, dni={}, estado={}", nombrePaciente, dni, estado);
-        return ResponseEntity.ok(solicitudBolsasService.buscarSolicitudes(nombrePaciente, dni, estado, numeroSolicitud, pageable));
-    }
-
-    @GetMapping("/solicitudes/estadisticas")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
-    public ResponseEntity<Object> obtenerEstadisticasSolicitudes() {
-        log.info("📊 Consultando estadísticas de solicitudes...");
-        return ResponseEntity.ok(solicitudBolsasService.obtenerEstadisticas());
-    }
-
-    @PostMapping("/solicitudes")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR', 'MEDICO')")
-    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "crear")
-    public ResponseEntity<SolicitudBolsaDTO> crearSolicitud(
-        @Valid @RequestBody SolicitudBolsaRequestDTO request) {
-        log.info("✏️ Creando nueva solicitud para paciente: {}", request.pacienteDni());
-        SolicitudBolsaDTO nuevaSolicitud = solicitudBolsasService.crearSolicitud(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(nuevaSolicitud);
-    }
-
-    @PutMapping("/solicitudes/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
-    public ResponseEntity<SolicitudBolsaDTO> actualizarSolicitud(
-        @PathVariable Long id,
-        @Valid @RequestBody SolicitudBolsaRequestDTO request) {
-        log.info("✏️ Actualizando solicitud ID: {}", id);
-        SolicitudBolsaDTO solicitudActualizada = solicitudBolsasService.actualizarSolicitud(id, request);
-        return ResponseEntity.ok(solicitudActualizada);
-    }
-
-    @PutMapping("/solicitudes/{id}/aprobar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
-    public ResponseEntity<SolicitudBolsaDTO> aprobarSolicitud(
-        @PathVariable Long id,
-        @RequestParam Long responsableId,
-        @RequestParam String responsableNombre,
-        @RequestParam(required = false) String notas) {
-        log.info("✅ Aprobando solicitud ID: {}", id);
-        SolicitudBolsaDTO solicitudAprobada = solicitudBolsasService.aprobarSolicitud(id, responsableId, responsableNombre, notas);
-        return ResponseEntity.ok(solicitudAprobada);
-    }
-
-    @PutMapping("/solicitudes/{id}/rechazar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
-    public ResponseEntity<SolicitudBolsaDTO> rechazarSolicitud(
-        @PathVariable Long id,
-        @RequestParam Long responsableId,
-        @RequestParam String responsableNombre,
-        @RequestParam String razon) {
-        log.info("❌ Rechazando solicitud ID: {}", id);
-        SolicitudBolsaDTO solicitudRechazada = solicitudBolsasService.rechazarSolicitud(id, responsableId, responsableNombre, razon);
-        return ResponseEntity.ok(solicitudRechazada);
-    }
-
-    @DeleteMapping("/solicitudes/{id}")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN')")
-    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "eliminar")
-    public ResponseEntity<Void> eliminarSolicitud(@PathVariable Long id) {
-        log.warn("🗑️ Eliminando solicitud ID: {}", id);
-        solicitudBolsasService.eliminarSolicitud(id);
-        return ResponseEntity.noContent().build();
-    }
-
-    @PatchMapping("/solicitudes/{id}/asignar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
-    public ResponseEntity<SolicitudBolsaDTO> asignarAGestora(
-        @PathVariable Long id,
-        @Valid @RequestBody AsignarGestoraRequest request) {
-        log.info("👤 Asignando solicitud ID: {} a gestora: {}", id, request.getGestoraNombre());
-        SolicitudBolsaDTO solicitudAsignada = solicitudBolsasService.asignarAGestora(id, request);
-        return ResponseEntity.ok(solicitudAsignada);
-    }
+    // Endpoint restaurado para exportar solicitudes seleccionadas a CSV
+    // Usa la nueva versión v1.6.0 del servicio SolicitudBolsaService
 
     @GetMapping("/solicitudes/exportar")
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
     public ResponseEntity<byte[]> exportarCSV(
         @RequestParam(value = "ids", required = false) List<Long> ids) {
-        log.info("📄 Exportando solicitudes a CSV");
+        log.info("📄 Exportando solicitudes seleccionadas a CSV");
 
         if (ids == null || ids.isEmpty()) {
-            ids = solicitudBolsasService.obtenerTodasLasSolicitudes()
-                .stream()
-                .map(SolicitudBolsaDTO::getIdSolicitud)
-                .toList();
+            log.warn("⚠️ No se especificaron IDs para exportar");
+            return ResponseEntity.badRequest().build();
         }
 
-        byte[] csvData = solicitudBolsasService.exportarCSV(ids);
+        byte[] csvData = solicitudBolsaService.exportarCSV(ids);
+
+        if (csvData.length == 0) {
+            log.warn("⚠️ No hay datos para exportar");
+            return ResponseEntity.noContent().build();
+        }
 
         return ResponseEntity.ok()
             .header("Content-Type", "text/csv; charset=UTF-8")
-            .header("Content-Disposition", "attachment; filename=\"solicitudes_bolsas.csv\"")
+            .header("Content-Disposition", "attachment; filename=\"solicitudes_" + System.currentTimeMillis() + ".csv\"")
             .body(csvData);
     }
-
-    @PostMapping("/solicitudes/{id}/recordatorio")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    @CheckMBACPermission(pagina = "/bolsas/solicitudes", accion = "editar")
-    public ResponseEntity<SolicitudBolsaDTO> enviarRecordatorio(
-        @PathVariable Long id,
-        @Valid @RequestBody EnviarRecordatorioRequest request) {
-        log.info("📧 Enviando recordatorio {} para solicitud ID: {}", request.getTipo(), id);
-        SolicitudBolsaDTO solicitudActualizada = solicitudBolsasService.enviarRecordatorio(id, request);
-        return ResponseEntity.ok(solicitudActualizada);
-    }
-    */
 
     // ========================================================================
     // 🔄 SINCRONIZACIÓN DE ASEGURADOS
