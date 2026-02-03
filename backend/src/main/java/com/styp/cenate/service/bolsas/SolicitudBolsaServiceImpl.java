@@ -2390,6 +2390,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .fechaCambioEstado(solicitud.getFechaCambioEstado())
             .usuarioCambioEstadoId(solicitud.getUsuarioCambioEstadoId())
             .nombreUsuarioCambioEstado(obtenerNombreCompleto(solicitud.getUsuarioCambioEstado()))
+            .fechaAtencion(solicitud.getFechaAtencion())
+            .horaAtencion(solicitud.getHoraAtencion())
+            .idPersonal(solicitud.getIdPersonal())
             .build();
     }
 
