@@ -739,13 +739,16 @@ export const cambiarTipoBolsa = async (id, idBolsaNueva) => {
 /**
  * Exporta solicitudes a CSV
  * @param {Array<number>} ids - IDs de solicitudes a exportar
- * @returns {Promise<Blob>} - Archivo CSV
+ * @returns {Promise<Blob>} - Archivo CSV como Blob
  */
 export const descargarCSV = async (ids = []) => {
   try {
     const params = ids && ids.length > 0 ? { ids } : {};
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/exportar`, { params });
-    return response;
+    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/exportar`, {
+      params,
+      responseType: 'blob' // ✅ IMPORTANTE: Especificar que esperamos un Blob
+    });
+    return response.data; // Retornar el Blob (response.data)
   } catch (error) {
     console.error('Error al descargar CSV:', error);
     throw error;
