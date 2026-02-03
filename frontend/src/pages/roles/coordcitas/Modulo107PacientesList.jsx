@@ -173,6 +173,13 @@ export default function Modulo107PacientesList() {
       // Mapear respuesta al formato esperado
       const data = response.content || response || [];
       
+      // Ordenar por fecha de registro descendente (más nuevos primero)
+      data.sort((a, b) => {
+        const fechaA = new Date(a.fechaSolicitud || 0).getTime();
+        const fechaB = new Date(b.fechaSolicitud || 0).getTime();
+        return fechaB - fechaA; // Descendente
+      });
+      
       // Guardar total de elementos
       setTotalElementos(response.totalElements || data.length);
       

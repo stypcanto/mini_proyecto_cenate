@@ -172,6 +172,13 @@ export default function GestionAsegurado() {
         };
       });
 
+      // Ordenar por fecha de solicitud descendente (más nuevas primero)
+      pacientes.sort((a, b) => {
+        const fechaA = new Date(a.fechaSolicitud || 0).getTime();
+        const fechaB = new Date(b.fechaSolicitud || 0).getTime();
+        return fechaB - fechaA; // Descendente
+      });
+
       setPacientesAsignados(pacientes);
 
       // Calculate metrics

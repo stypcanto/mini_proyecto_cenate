@@ -197,7 +197,16 @@ export default function Modulo107AtencionesClinics() {
       );
       
       // Actualizar estado con respuesta
-      setAtenciones(response.content || []);
+      const data = response.content || [];
+      
+      // Ordenar por fecha de solicitud descendente (más nuevas primero)
+      data.sort((a, b) => {
+        const fechaA = new Date(a.fechaSolicitud || 0).getTime();
+        const fechaB = new Date(b.fechaSolicitud || 0).getTime();
+        return fechaB - fechaA; // Descendente
+      });
+      
+      setAtenciones(data);
       setTotalElementos(response.totalElements || 0);
       
       // Extraer catálogos únicos de la respuesta
