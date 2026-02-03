@@ -216,36 +216,6 @@ public class BolsasController {
     }
 
     // ========================================================================
-    // 📋 ENDPOINT DE EXPORTACIÓN - DESCOMENTAR SOLO ESTE (v1.42.0+)
-    // ========================================================================
-    // Endpoint restaurado para exportar solicitudes seleccionadas a CSV
-    // Usa la nueva versión v1.6.0 del servicio SolicitudBolsaService
-
-    @GetMapping("/solicitudes/exportar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
-    public ResponseEntity<byte[]> exportarCSV(
-        @RequestParam(value = "ids", required = false) List<Long> ids) {
-        log.info("📄 Exportando solicitudes seleccionadas a CSV");
-
-        if (ids == null || ids.isEmpty()) {
-            log.warn("⚠️ No se especificaron IDs para exportar");
-            return ResponseEntity.badRequest().build();
-        }
-
-        byte[] csvData = solicitudBolsaService.exportarCSV(ids);
-
-        if (csvData.length == 0) {
-            log.warn("⚠️ No hay datos para exportar");
-            return ResponseEntity.noContent().build();
-        }
-
-        return ResponseEntity.ok()
-            .header("Content-Type", "text/csv; charset=UTF-8")
-            .header("Content-Disposition", "attachment; filename=\"solicitudes_" + System.currentTimeMillis() + ".csv\"")
-            .body(csvData);
-    }
-
-    // ========================================================================
     // 🔄 SINCRONIZACIÓN DE ASEGURADOS
     // ========================================================================
 
