@@ -348,11 +348,13 @@ public class SolicitudBolsaController {
      * Campos incluidos: DNI, NOMBRE, EDAD, SEXO, TELÉFONO 1, TELÉFONO 2, ESPECIALIDAD,
      *                   IPRESS, RED, MACRORREGIÓN, TIPO BOLSA, ESTADO, FECHA SOLICITUD
      *
+     * Accesible a: Todos los usuarios autenticados (ADMIN, SUPERADMIN, COORDINADOR, MEDICO, etc.)
+     *
      * @param ids lista de IDs de solicitudes a exportar (parámetro query)
      * @return archivo CSV con los datos de las solicitudes
      */
     @GetMapping("/exportar")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPERADMIN', 'COORDINADOR')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> exportarCSV(
         @RequestParam(value = "ids", required = false) List<Long> ids) {
         log.info("📄 Exportando {} solicitudes seleccionadas a CSV", ids != null ? ids.size() : 0);
