@@ -75,14 +75,14 @@ public class AtencionClinica107Specification {
      * Filtra por derivación interna
      */
     public static Specification<AtencionClinica107> conDerivacionInterna(String derivacion) {
-        return (root, query, cb) -> cb.equal(root.get("derivacionInterna"), derivacion);
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("derivacionInterna")), derivacion.toUpperCase());
     }
 
     /**
      * Filtra por especialidad
      */
     public static Specification<AtencionClinica107> conEspecialidad(String especialidad) {
-        return (root, query, cb) -> cb.equal(root.get("especialidad"), especialidad);
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("especialidad")), especialidad.toUpperCase());
     }
 
     /**
@@ -161,6 +161,7 @@ public class AtencionClinica107Specification {
 
         // Filtro Derivación
         if (derivacion != null && !derivacion.isEmpty() && !derivacion.equals("todas")) {
+            System.out.println("[DEBUG SPEC] Aplicando filtro de derivación: " + derivacion);
             spec = spec.and(conDerivacionInterna(derivacion));
         }
 

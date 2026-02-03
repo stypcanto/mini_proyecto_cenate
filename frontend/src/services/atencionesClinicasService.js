@@ -57,8 +57,9 @@ export const atencionesClinicasService = {
         params.append('idIpress', filtros.idIpress);
       }
       
-      if (filtros.derivacion && filtros.derivacion !== "todas") {
-        params.append('derivacion', filtros.derivacion);
+      // Derivación Interna (filtro corregido: nombre del parámetro en backend es 'derivacion')
+      if (filtros.derivacionInterna && filtros.derivacionInterna !== "todas") {
+        params.append('derivacion', filtros.derivacionInterna);
       }
       
       if (filtros.especialidad && filtros.especialidad !== "todas") {

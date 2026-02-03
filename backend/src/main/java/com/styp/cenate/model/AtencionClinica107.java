@@ -77,6 +77,14 @@ public class AtencionClinica107 {
     @Column(name = "codigo_ipress")
     private String codigoIpress;
 
+    /**
+     * 🔗 Relación ManyToOne con Ipress
+     * Permite acceder al nombre/descripción de la IPRESS
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_ipress", insertable = false, updatable = false)
+    private Ipress ipress;
+
     // 🏷️ Derivación Interna (VARCHAR, no FK)
     @Column(name = "derivacion_interna")
     private String derivacionInterna;

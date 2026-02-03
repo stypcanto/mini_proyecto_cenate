@@ -750,9 +750,28 @@ export default function Modulo107AtencionesClinics() {
                         <td className="px-4 py-3 text-sm text-gray-700">{atencion.pacienteTelefono}</td>
                         <td className="px-4 py-3 text-sm text-gray-700">{atencion.ipressNombre}</td>
                         <td className="px-4 py-3 text-sm">
-                          <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-semibold">
-                            {atencion.derivacionInterna}
-                          </span>
+                          {(() => {
+                            const derivacion = atencion.derivacionInterna;
+                            let bgColor = "bg-gray-100";
+                            let textColor = "text-gray-700";
+                            
+                            if (derivacion === "PSICOLOGIA CENATE") {
+                              bgColor = "bg-pink-100";
+                              textColor = "text-pink-700";
+                            } else if (derivacion === "NUTRICION CENATE") {
+                              bgColor = "bg-green-100";
+                              textColor = "text-green-700";
+                            } else if (derivacion === "MEDICINA CENATE") {
+                              bgColor = "bg-blue-100";
+                              textColor = "text-blue-700";
+                            }
+                            
+                            return (
+                              <span className={`px-3 py-1 ${bgColor} ${textColor} rounded-full text-xs font-semibold`}>
+                                {derivacion}
+                              </span>
+                            );
+                          })()}
                         </td>
                         <td className="px-4 py-3 text-sm">
                           {(() => {

@@ -178,25 +178,22 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
         // Obtener descripción del estado
         String estadoDescripcion = null;
         
-        log.debug("🔍 [toDTO] Procesando solicitud: {}, estadoGestionCitasId: {}", atencion.getIdSolicitud(), atencion.getEstadoGestionCitasId());
-        
         // Intentar obtener desde la relación cargada
         if (atencion.getEstadoGestionCita() != null) {
             estadoDescripcion = atencion.getEstadoGestionCita().getDescEstadoCita();
-            log.debug("✅ [toDTO] Descripción obtenida desde relación cargada: {}", estadoDescripcion);
         } 
         // Si no está cargada, consultar el repositorio
         else if (atencion.getEstadoGestionCitasId() != null) {
-            log.debug("🔎 [toDTO] Buscando en repositorio con ID: {}", atencion.getEstadoGestionCitasId());
             EstadoGestionCita estado = estadoGestionCitaRepository.findById(atencion.getEstadoGestionCitasId()).orElse(null);
             if (estado != null) {
                 estadoDescripcion = estado.getDescEstadoCita();
-                log.debug("✅ [toDTO] Descripción obtenida desde repositorio: {}", estadoDescripcion);
-            } else {
-                log.warn("⚠️ [toDTO] No se encontró estado con ID: {}", atencion.getEstadoGestionCitasId());
             }
-        } else {
-            log.warn("⚠️ [toDTO] estadoGestionCitasId es null para solicitud: {}", atencion.getIdSolicitud());
+        }
+        
+        // Obtener nombre/descripción de la IPRESS
+        String ipressNombre = null;
+        if (atencion.getIpress() != null) {
+            ipressNombre = atencion.getIpress().getDescIpress();
         }
 
         return AtencionClinica107DTO.builder()
@@ -217,13 +214,14 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             .codigoAdscripcion(atencion.getCodigoAdscripcion())
             .idIpress(atencion.getIdIpress())
             .codigoIpress(atencion.getCodigoIpress())
+            .ipressNombre(ipressNombre) // 🆕 Nombre de la IPRESS
             .derivacionInterna(atencion.getDerivacionInterna())
             .especialidad(atencion.getEspecialidad())
             .tipoCita(atencion.getTipoCita())
             .idServicio(atencion.getIdServicio())
             .estadoGestionCitasId(atencion.getEstadoGestionCitasId())
             .estado(atencion.getEstado())
-            .estadoDescripcion(estadoDescripcion) // 🆕 Descripción mapeada desde EstadoGestionCita o repositorio
+            .estadoDescripcion(estadoDescripcion)
             .fechaSolicitud(atencion.getFechaSolicitud())
             .fechaActualizacion(atencion.getFechaActualizacion())
             .responsableGestoraId(atencion.getResponsableGestoraId())

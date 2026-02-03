@@ -72,6 +72,7 @@ public class AtencionClinica107PublicController {
     ) {
         try {
             log.info("📋 [MODULO 107] GET /listar - página {}, tamaño {}, bolsa {}", pageNumber, pageSize, idBolsa);
+            log.debug("🔍 [MODULO 107] Parámetros recibidos: derivacion='{}', especialidad='{}', idIpress={}", derivacion, especialidad, idIpress);
 
             // Construir DTO con filtros
             AtencionClinica107FiltroDTO filtro = AtencionClinica107FiltroDTO.builder()
@@ -90,6 +91,8 @@ public class AtencionClinica107PublicController {
                 .pageNumber(pageNumber)
                 .pageSize(pageSize)
                 .build();
+
+            log.debug("📦 [MODULO 107] DTO construido: derivacionInterna='{}'", filtro.getDerivacionInterna());
 
             // Obtener resultados
             Page<AtencionClinica107DTO> resultado = service.listarConFiltros(filtro);

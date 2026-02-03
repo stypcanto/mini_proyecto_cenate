@@ -36,6 +36,7 @@ public class AtencionClinica107DTO {
     private String codigoAdscripcion;
     private Long idIpress;
     private String codigoIpress;
+    private String ipressNombre; // 🆕 Nombre/descripción de la IPRESS
 
     // 🏷️ Derivación Interna
     private String derivacionInterna;
