@@ -743,14 +743,32 @@ export const cambiarTipoBolsa = async (id, idBolsaNueva) => {
  */
 export const descargarCSV = async (ids = []) => {
   try {
-    const params = ids && ids.length > 0 ? { ids } : {};
-    const response = await apiClient.get(`${API_BASE_URL}/solicitudes/exportar`, {
-      params,
-      responseType: 'blob' // ✅ IMPORTANTE: Especificar que esperamos un Blob
+    const token = localStorage.getItem('auth.token');
+    const idsParam = ids && ids.length > 0 ? ids.join(',') : '';
+    const url = `${API_BASE_URL}/solicitudes/exportar?ids=${idsParam}`;
+
+    console.log(`📥 Descargando CSV desde: ${url}`);
+
+    // ✅ Usar fetch directamente para obtener Blob
+    // (apiClient convierte todo a texto)
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
     });
-    return response.data; // Retornar el Blob (response.data)
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    // Obtener como Blob (NO convertir a texto)
+    const blob = await response.blob();
+    console.log(`✅ CSV descargado como Blob:`, blob.type, blob.size, 'bytes');
+    return blob;
   } catch (error) {
-    console.error('Error al descargar CSV:', error);
+    console.error('❌ Error al descargar CSV:', error);
     throw error;
   }
 };
