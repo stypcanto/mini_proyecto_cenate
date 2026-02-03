@@ -360,14 +360,14 @@ public class SolicitudBolsaController {
      * Asigna una gestora a una solicitud
      * PATCH /api/bolsas/solicitudes/{id}/asignar
      *
-     * Roles permitidos: SUPERADMIN, ADMIN, COORDINADOR_GESTION_DE_CITAS
+     * Roles permitidos: SUPERADMIN, ADMIN, COORD. GESTION CITAS
      *
      * @param id ID de la solicitud
      * @param idGestora ID de la gestora a asignar
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/asignar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR_GESTION_DE_CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS')")
     @CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
     public ResponseEntity<?> asignarGestora(
             @PathVariable Long id,
