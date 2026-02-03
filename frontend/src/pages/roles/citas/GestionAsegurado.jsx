@@ -80,6 +80,17 @@ export default function GestionAsegurado() {
   const [nuevoEstadoSeleccionado, setNuevoEstadoSeleccionado] = useState("");
   const [guardandoEstado, setGuardandoEstado] = useState(false);
 
+  // Estados para manejar fecha/hora y especialista por paciente
+  const [citasAgendadas, setCitasAgendadas] = useState({}); // { pacienteId: { fecha, hora, especialista } }
+  const [especialistasDisponibles] = useState([
+    "Dr. Carlos Médico",
+    "Dra. María García",
+    "Dr. Juan López",
+    "Dra. Ana Rodríguez",
+    "Dr. Roberto Silva",
+    "Dra. Carla Torres",
+  ]);
+
   const API_BASE = "http://localhost:8080/api";
 
   // Fetch assigned patients from backend
@@ -938,6 +949,12 @@ export default function GestionAsegurado() {
                         Especialidad
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Especialista
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Fecha y Hora de Cita
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         IPRESS
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
@@ -1008,6 +1025,47 @@ export default function GestionAsegurado() {
                         </td>
                         <td className="px-4 py-3 text-slate-600">
                           {paciente.especialidad}
+                        </td>
+                        {/* ESPECIALISTA */}
+                        <td className="px-4 py-3 text-slate-600">
+                          <select
+                            value={citasAgendadas[paciente.id]?.especialista || ""}
+                            onChange={(e) => {
+                              setCitasAgendadas(prev => ({
+                                ...prev,
+                                [paciente.id]: {
+                                  ...prev[paciente.id],
+                                  especialista: e.target.value
+                                }
+                              }));
+                            }}
+                            className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="">Seleccionar especialista...</option>
+                            {especialistasDisponibles.map((esp, idx) => (
+                              <option key={idx} value={esp}>
+                                {esp}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+                        {/* FECHA Y HORA DE CITA */}
+                        <td className="px-4 py-3 text-slate-600">
+                          <input
+                            type="datetime-local"
+                            value={citasAgendadas[paciente.id]?.fecha || ""}
+                            onChange={(e) => {
+                              setCitasAgendadas(prev => ({
+                                ...prev,
+                                [paciente.id]: {
+                                  ...prev[paciente.id],
+                                  fecha: e.target.value
+                                }
+                              }));
+                            }}
+                            className="w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Seleccionar fecha y hora"
+                          />
                         </td>
                         <td className="px-4 py-3 text-slate-600">
                           <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
