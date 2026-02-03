@@ -54,4 +54,9 @@ public class AtencionClinica107DTO {
     private LocalDateTime fechaActualizacion;
     private Long responsableGestoraId;
     private LocalDateTime fechaAsignacion;
+
+    // 🕐 Datos de Atención Programada
+    private LocalDate fechaAtencion;
+    private String horaAtencion;
+    private Long idPersonal;
 }

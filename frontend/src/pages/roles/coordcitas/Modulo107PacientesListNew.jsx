@@ -17,14 +17,10 @@ import {
   AlertCircle,
   CheckCircle2,
   Clock,
-  Eye,
-  Activity,
-  BarChart3,
-  FileText,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import * as XLSX from "xlsx";
-import { atencionesClinicasService } from "../../../services/atencionesClinicasService";
+import apiClient from "../../../lib/apiClient";
 import { filtrosUbicacionService } from "../../../services/filtrosUbicacionService";
 
 const REGISTROS_POR_PAGINA = 25;
@@ -32,7 +28,6 @@ const REGISTROS_POR_PAGINA = 25;
 export default function Modulo107PacientesList() {
   // ==================== ESTADO GENERAL ====================
   const [pacientes, setPacientes] = useState([]);
-  const [totalElementos, setTotalElementos] = useState(0);
   const [loading, setLoading] = useState(true);
   const [expandFiltros, setExpandFiltros] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
@@ -139,71 +134,63 @@ export default function Modulo107PacientesList() {
   const cargarPacientes = useCallback(async () => {
     setLoading(true);
     try {
-      // Preparar filtros para el backend
-      const filtros = {};
-      
-      // Filtro Estado
-      if (filtroEstado !== "todos" && filtroEstado) {
-        filtros.estadoGestionCitasId = filtroEstado;
-      }
-      
-      // Filtro de IPRESS
-      if (filtroIpress && filtroIpress !== "todas") {
-        const ipressSeleccionada = ipressUnicas.find(i => i.descripcion === filtroIpress);
-        if (ipressSeleccionada) {
-          filtros.idIpress = ipressSeleccionada.id;
-        }
-      }
-      
-      // Otros filtros
-      if (filtroTipoDoc !== "todos") filtros.tipoDocumento = filtroTipoDoc;
-      if (filtroDocumento) filtros.pacienteDni = filtroDocumento;
-      if (filtroRangoFechas.inicio) filtros.fechaDesde = filtroRangoFechas.inicio;
-      if (filtroRangoFechas.fin) filtros.fechaHasta = filtroRangoFechas.fin;
-      if (filtroDerivacion !== "todas") filtros.derivacionInterna = filtroDerivacion;
-      if (searchTerm) filtros.searchTerm = searchTerm;
-      
-      // Llamar al servicio
-      const response = await atencionesClinicasService.listarConFiltros(
-        filtros, 
-        currentPage - 1,
-        REGISTROS_POR_PAGINA
-      );
-      
-      // Mapear respuesta al formato esperado
-      const data = response.content || response || [];
-      
-      // Guardar total de elementos
-      setTotalElementos(response.totalElements || data.length);
-      
+      // Llamar al backend con filtros
+      const response = await apiClient.get("/api/bolsa107/pacientes", true);
+      const data = response || [];
+
       // Extraer tipos de documento únicos
-      const tipos = [...new Set(data.map(p => p.tipoDocumento).filter(Boolean))];
+      const tipos = [...new Set(data.map(p => p.tipo_documento).filter(Boolean))];
       setTiposDocumentoUnicos(tipos);
-      
-      // Estadísticas
-      setStats({
-        total: response.totalElements || data.length,
-        atendidos: data.filter(p => p.estadoDescripcion?.includes("ATENDIDO")).length,
-        pendientes: data.filter(p => p.estadoDescripcion?.includes("PENDIENTE")).length,
-        en_proceso: data.filter(p => p.estadoDescripcion?.includes("PROCESO")).length,
-        cancelados: data.filter(p => p.estadoDescripcion?.includes("CANCELADO")).length,
+
+      // Aplicar filtros en cliente (como respaldo)
+      const pacientesFiltrados = data.filter(p => {
+        const matchSearch = !searchTerm ||
+          p.numero_documento?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          p.paciente?.toLowerCase().includes(searchTerm.toLowerCase());
+
+        const matchEstado = filtroEstado === "todos" || p.estado_atencion === filtroEstado;
+        const matchTipoDoc = filtroTipoDoc === "todos" || p.tipo_documento === filtroTipoDoc;
+        const matchDocumento = !filtroDocumento || p.numero_documento?.includes(filtroDocumento);
+        const matchMacro = filtroMacrorregion === "todas" || p.macrorregion === filtroMacrorregion;
+        const matchRed = filtroRed === "todas" || p.red === filtroRed;
+        const matchIpress = filtroIpress === "todas" || p.desc_ipress === filtroIpress;
+        const matchDerivacion = filtroDerivacion === "todas" || p.derivacion_interna === filtroDerivacion;
+
+        let matchFechas = true;
+        if (filtroRangoFechas.inicio && filtroRangoFechas.fin) {
+          const fechaRegistro = new Date(p.created_at);
+          const inicio = new Date(filtroRangoFechas.inicio);
+          const fin = new Date(filtroRangoFechas.fin);
+          matchFechas = fechaRegistro >= inicio && fechaRegistro <= fin;
+        }
+
+        return matchSearch && matchEstado && matchTipoDoc && matchDocumento && 
+               matchMacro && matchRed && matchIpress && matchDerivacion && matchFechas;
       });
-      
-      // Los datos ya vienen filtrados del backend
-      setPacientes(data);
-      
+
+      setPacientes(pacientesFiltrados);
+
+      // Calcular estadísticas
+      const atendidos = pacientesFiltrados.filter(p => p.estado_atencion === "ATENDIDO").length;
+      const pendientes = pacientesFiltrados.filter(p => p.estado_atencion === "PENDIENTE").length;
+      const en_proceso = pacientesFiltrados.filter(p => p.estado_atencion === "EN_PROCESO").length;
+      const cancelados = pacientesFiltrados.filter(p => p.estado_atencion === "CANCELADO").length;
+
+      setStats({
+        total: pacientesFiltrados.length,
+        atendidos,
+        pendientes,
+        en_proceso,
+        cancelados,
+      });
     } catch (error) {
-      console.error("Error al cargar atenciones:", error);
-      toast.error("Error al cargar los datos");
-      setPacientes([]);
+      console.error("Error al cargar pacientes:", error);
+      toast.error("Error al cargar los pacientes del Módulo 107");
     } finally {
       setLoading(false);
     }
-  }, [
-    filtroEstado, filtroTipoDoc, filtroDocumento, 
-    filtroRangoFechas, filtroDerivacion, searchTerm,
-    filtroIpress, currentPage, ipressUnicas
-  ]);
+  }, [searchTerm, filtroEstado, filtroTipoDoc, filtroDocumento, filtroRangoFechas, 
+      filtroMacrorregion, filtroRed, filtroIpress, filtroDerivacion]);
 
   // ==================== EFECTOS ====================
 
@@ -240,10 +227,11 @@ export default function Modulo107PacientesList() {
   }, [mostrarSelectorFechas]);
 
   // ==================== PAGINACIÓN ====================
-  
-  // Nota: La paginación ahora es manejada por el backend
-  // Los datos ya vienen paginados en la respuesta
-  const pacientesPaginados = pacientes;
+
+  const totalPages = Math.ceil(pacientes.length / REGISTROS_POR_PAGINA);
+  const startIndex = (currentPage - 1) * REGISTROS_POR_PAGINA;
+  const endIndex = startIndex + REGISTROS_POR_PAGINA;
+  const pacientesPaginados = pacientes.slice(startIndex, endIndex);
 
   // ==================== SELECCIÓN ====================
 
@@ -254,7 +242,7 @@ export default function Modulo107PacientesList() {
   };
 
   const handleSelectAll = () => {
-    const idsEnPaginaActual = pacientesPaginados.map((p) => p.idSolicitud);
+    const idsEnPaginaActual = pacientesPaginados.map((p) => p.id_item);
     const todosSeleccionados = idsEnPaginaActual.every((id) => selectedIds.includes(id));
     if (todosSeleccionados) {
       setSelectedIds((prev) => prev.filter((id) => !idsEnPaginaActual.includes(id)));
@@ -272,19 +260,18 @@ export default function Modulo107PacientesList() {
     }
 
     try {
-      const pacientesExportar = pacientes.filter((p) => selectedIds.includes(p.idSolicitud));
+      const pacientesExportar = pacientes.filter((p) => selectedIds.includes(p.id_item));
       const datosExcel = pacientesExportar.map((p) => ({
-        "Fecha Registro": p.fechaSolicitud ? formatFecha(p.fechaSolicitud) : "",
-        DNI: p.pacienteDni || "",
-        Paciente: p.pacienteNombre || "",
-        Sexo: p.pacienteSexo === "M" ? "Masculino" : "Femenino" || "",
-        Edad: p.pacienteEdad || "",
-        "IPRESS Nombre": p.ipressNombre || "",
-        "Derivación": p.derivacionInterna || "",
-        "Estado Atención": p.estadoDescripcion || "",
-        "Fecha Atención": p.fechaAtencion ? formatFecha(p.fechaAtencion) : "",
-        "Hora Atención": p.horaAtencion || "",
-        "Personal ID": p.idPersonal || "",
+        "Fecha Registro": p.created_at ? formatFecha(p.created_at) : "",
+        DNI: p.numero_documento || "",
+        Paciente: p.paciente || "",
+        Sexo: p.sexo || "",
+        Edad: calcularEdad(p.fecha_nacimiento) || "",
+        "IPRESS Nombre": p.desc_ipress || "",
+        "Estado Atención": p.estado_atencion || "",
+        "Fecha Atención": p.fecha_atencion ? formatFecha(p.fecha_atencion) : "",
+        "Hora Atención": p.hora_atencion || "",
+        "Personal ID": p.id_personal || "",
       }));
 
       const ws = XLSX.utils.json_to_sheet(datosExcel);
@@ -293,7 +280,7 @@ export default function Modulo107PacientesList() {
 
       const colWidths = [
         { wch: 15 }, { wch: 12 }, { wch: 35 }, { wch: 6 }, { wch: 6 },
-        { wch: 50 }, { wch: 20 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 },
+        { wch: 50 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 12 },
       ];
       ws["!cols"] = colWidths;
 
@@ -359,22 +346,6 @@ export default function Modulo107PacientesList() {
     );
   };
 
-  const getDerivacionBadge = (derivacion) => {
-    const estilos = {
-      "MEDICINA CENATE": "bg-blue-100 text-blue-800 border-blue-300 border",
-      "NUTRICION CENATE": "bg-green-100 text-green-800 border-green-300 border",
-      "PSICOLOGIA CENATE": "bg-purple-100 text-purple-800 border-purple-300 border",
-    };
-
-    const estilo = estilos[derivacion] || "bg-gray-100 text-gray-800 border-gray-300 border";
-
-    return (
-      <span className={`px-3 py-1 rounded-lg text-xs font-semibold ${estilo}`}>
-        {derivacion || "—"}
-      </span>
-    );
-  };
-
   // ==================== RENDER ====================
 
   return (
@@ -404,52 +375,64 @@ export default function Modulo107PacientesList() {
         </div>
 
         {/* Estadísticas */}
-        <div className="mb-8">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Estadísticas de Pacientes</h3>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4 animate-fade-in">
-            {/* Total */}
-            <div className="bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-blue-100">Total Pacientes</span>
-                <span className="text-3xl">👥</span>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+          <div className="bg-white border-2 border-blue-200 rounded-xl p-6 hover:shadow-lg transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600 mb-1">Total Pacientes</p>
+                <p className="text-3xl font-bold text-blue-600">{stats.total}</p>
               </div>
-              <div className="text-4xl font-bold">{stats.total}</div>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <Users className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
+          </div>
 
-            {/* Atendidos */}
-            <div className="bg-gradient-to-br from-green-600 to-green-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-green-100">Atendidos</span>
-                <span className="text-3xl">✓</span>
+          <div className="bg-white border-2 border-green-200 rounded-xl p-6 hover:shadow-lg transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600 mb-1">Atendidos</p>
+                <p className="text-3xl font-bold text-green-600">{stats.atendidos}</p>
               </div>
-              <div className="text-4xl font-bold">{stats.atendidos}</div>
+              <div className="p-3 bg-green-100 rounded-lg">
+                <CheckCircle2 className="w-6 h-6 text-green-600" />
+              </div>
             </div>
+          </div>
 
-            {/* Pendientes */}
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-orange-100">Pendientes</span>
-                <span className="text-3xl">⏳</span>
+          <div className="bg-white border-2 border-yellow-200 rounded-xl p-6 hover:shadow-lg transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600 mb-1">Pendientes</p>
+                <p className="text-3xl font-bold text-yellow-600">{stats.pendientes}</p>
               </div>
-              <div className="text-4xl font-bold">{stats.pendientes}</div>
+              <div className="p-3 bg-yellow-100 rounded-lg">
+                <Clock className="w-6 h-6 text-yellow-600" />
+              </div>
             </div>
+          </div>
 
-            {/* En Proceso */}
-            <div className="bg-gradient-to-br from-purple-600 to-purple-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-purple-100">En Proceso</span>
-                <span className="text-3xl">🔄</span>
+          <div className="bg-white border-2 border-blue-200 rounded-xl p-6 hover:shadow-lg transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600 mb-1">En Proceso</p>
+                <p className="text-3xl font-bold text-blue-600">{stats.en_proceso}</p>
               </div>
-              <div className="text-4xl font-bold">{stats.en_proceso}</div>
+              <div className="p-3 bg-blue-100 rounded-lg">
+                <RefreshCw className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
+          </div>
 
-            {/* Cancelados */}
-            <div className="bg-gradient-to-br from-red-600 to-red-700 rounded-lg shadow-lg p-6 text-white transform hover:scale-105 transition-all duration-300 hover:shadow-xl">
-              <div className="flex items-center justify-between mb-4">
-                <span className="text-red-100">Cancelados</span>
-                <span className="text-3xl">✕</span>
+          <div className="bg-white border-2 border-red-200 rounded-xl p-6 hover:shadow-lg transition-all">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-slate-600 mb-1">Cancelados</p>
+                <p className="text-3xl font-bold text-red-600">{stats.cancelados}</p>
               </div>
-              <div className="text-4xl font-bold">{stats.cancelados}</div>
+              <div className="p-3 bg-red-100 rounded-lg">
+                <AlertCircle className="w-6 h-6 text-red-600" />
+              </div>
             </div>
           </div>
         </div>
@@ -512,7 +495,7 @@ export default function Modulo107PacientesList() {
                   >
                     <option value="todos">Todos los estados</option>
                     {estadosUnicos.map((estado) => (
-                      <option key={estado.id} value={estado.id}>
+                      <option key={estado.id} value={estado.descripcion}>
                         {estado.descripcion}
                       </option>
                     ))}
@@ -701,89 +684,6 @@ export default function Modulo107PacientesList() {
                   </select>
                 </div>
               </div>
-
-              {/* Botones de acción */}
-              <div className="flex gap-3">
-                <button
-                  onClick={() => {
-                    setSearchTerm("");
-                    setFiltroEstado("todos");
-                    setFiltroTipoDoc("todos");
-                    setFiltroDocumento("");
-                    setFiltroRangoFechas({ inicio: "", fin: "" });
-                    setMostrarSelectorFechas(false);
-                    setFiltroMacrorregion("todas");
-                    setFiltroRed("todas");
-                    setFiltroIpress("todas");
-                    setFiltroDerivacion("todas");
-                    setCurrentPage(1);
-                  }}
-                  className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-800 rounded-lg font-semibold transition-colors"
-                >
-                  Limpiar Filtros
-                </button>
-              </div>
-
-              {/* Resumen de Filtros Activos */}
-              {(filtroEstado !== "todos" || filtroTipoDoc !== "todos" || filtroDocumento || 
-                filtroRangoFechas.inicio || filtroRangoFechas.fin || filtroMacrorregion !== "todas" || 
-                filtroRed !== "todas" || filtroIpress !== "todas" || filtroDerivacion !== "todas" || searchTerm) && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <p className="text-sm font-semibold text-blue-900 mb-3">📋 Filtros Activos:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {searchTerm && (
-                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Búsqueda: {searchTerm}
-                      </span>
-                    )}
-                    {filtroEstado !== "todos" && (
-                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Estado: {filtroEstado}
-                      </span>
-                    )}
-                    {filtroTipoDoc !== "todos" && (
-                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Tipo Doc: {filtroTipoDoc}
-                      </span>
-                    )}
-                    {filtroDocumento && (
-                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Documento: {filtroDocumento}
-                      </span>
-                    )}
-                    {filtroRangoFechas.inicio && (
-                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Desde: {new Date(filtroRangoFechas.inicio).toLocaleDateString('es-ES')}
-                      </span>
-                    )}
-                    {filtroRangoFechas.fin && (
-                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Hasta: {new Date(filtroRangoFechas.fin).toLocaleDateString('es-ES')}
-                      </span>
-                    )}
-                    {filtroMacrorregion !== "todas" && (
-                      <span className="px-3 py-1 bg-purple-200 text-purple-800 rounded-full text-sm">
-                        Macro: {filtroMacrorregion}
-                      </span>
-                    )}
-                    {filtroRed !== "todas" && (
-                      <span className="px-3 py-1 bg-purple-200 text-purple-800 rounded-full text-sm">
-                        Red: {filtroRed}
-                      </span>
-                    )}
-                    {filtroIpress !== "todas" && (
-                      <span className="px-3 py-1 bg-green-200 text-green-800 rounded-full text-sm">
-                        IPRESS: {filtroIpress}
-                      </span>
-                    )}
-                    {filtroDerivacion !== "todas" && (
-                      <span className="px-3 py-1 bg-blue-200 text-blue-800 rounded-full text-sm">
-                        Derivación: {filtroDerivacion}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
@@ -818,96 +718,94 @@ export default function Modulo107PacientesList() {
           {/* Tabla */}
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-[#0D5BA9] text-white sticky top-0">
-                <tr className="border-b-2 border-blue-800">
+              <thead>
+                <tr className="border-b-2 border-slate-200 bg-slate-50">
                   <th className="text-left py-3 px-4">
                     <input
                       type="checkbox"
                       checked={
                         pacientesPaginados.length > 0 &&
-                        pacientesPaginados.every((p) => selectedIds.includes(p.idSolicitud))
+                        pacientesPaginados.every((p) => selectedIds.includes(p.id_item))
                       }
                       onChange={handleSelectAll}
                       className="w-4 h-4 text-blue-600 rounded"
                     />
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Registro</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">DNI</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Paciente</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Sexo</th>
-                  <th className="px-4 py-3 text-center text-xs font-bold uppercase tracking-wider">Edad</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">IPRESS</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Derivación</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Estado Atención</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Fecha Atención</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Hora Atención</th>
-                  <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">Personal ID</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Fecha Registro</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">DNI</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Paciente</th>
+                  <th className="text-center py-3 px-4 font-semibold text-slate-700">Sexo</th>
+                  <th className="text-center py-3 px-4 font-semibold text-slate-700">Edad</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">IPRESS</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Estado Atención</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Fecha Atención</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Hora Atención</th>
+                  <th className="text-left py-3 px-4 font-semibold text-slate-700">Personal ID</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan="12" className="py-12 text-center">
+                    <td colSpan="11" className="py-12 text-center">
                       <RefreshCw className="w-12 h-12 text-slate-300 animate-spin mx-auto mb-2" />
                       <p className="font-medium text-lg text-slate-500">Cargando pacientes...</p>
                     </td>
                   </tr>
                 ) : pacientesPaginados.length > 0 ? (
                   pacientesPaginados.map((paciente) => (
-                    <tr key={paciente.idSolicitud} className="border-b border-gray-200 hover:bg-blue-50 transition-colors">
-                      <td className="px-4 py-3">
+                    <tr key={paciente.id_item} className="border-b border-slate-100 hover:bg-blue-50/30">
+                      <td className="py-3 px-4">
                         <input
                           type="checkbox"
-                          checked={selectedIds.includes(paciente.idSolicitud)}
-                          onChange={() => handleSelectOne(paciente.idSolicitud)}
+                          checked={selectedIds.includes(paciente.id_item)}
+                          onChange={() => handleSelectOne(paciente.id_item)}
                           className="w-4 h-4 text-blue-600 rounded"
                         />
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">{formatFecha(paciente.fechaSolicitud)}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700 font-mono">{paciente.pacienteDni}</td>
-                      <td className="px-4 py-3 text-sm text-gray-900 font-medium">{paciente.pacienteNombre}</td>
-                      <td className="px-4 py-3 text-sm text-center">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          paciente.pacienteSexo === "M"
+                      <td className="py-3 px-4 text-sm text-slate-700">{formatFecha(paciente.created_at)}</td>
+                      <td className="py-3 px-4 font-mono text-slate-800">{paciente.numero_documento}</td>
+                      <td className="py-3 px-4 font-medium text-slate-800">{paciente.paciente}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          paciente.sexo === "M"
                             ? "bg-blue-100 text-blue-800"
                             : "bg-pink-100 text-pink-800"
                         }`}>
-                          {paciente.pacienteSexo === "M" ? "M" : "F"}
+                          {paciente.sexo}
                         </span>
                       </td>
-                      <td className="px-4 py-3 text-sm text-center text-gray-700">
-                        {paciente.pacienteEdad}
+                      <td className="py-3 px-4 text-center text-slate-700">
+                        {calcularEdad(paciente.fecha_nacimiento)}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {paciente.ipressNombre ? (
-                          <div className="flex flex-col">
-                            <span className="font-medium">{paciente.ipressNombre}</span>
-                            <span className="text-xs text-gray-500">{paciente.ipressCodigo}</span>
-                          </div>
-                        ) : (
-                          <span className="text-gray-400 italic">Sin IPRESS</span>
-                        )}
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col">
+                          {paciente.desc_ipress ? (
+                            <>
+                              <span className="text-sm font-medium text-slate-800">{paciente.desc_ipress}</span>
+                              <span className="text-xs text-slate-500">Código: {paciente.cod_ipress}</span>
+                            </>
+                          ) : (
+                            <span className="text-sm text-slate-400 italic">Sin IPRESS</span>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {getDerivacionBadge(paciente.derivacionInterna)}
+                      <td className="py-3 px-4">{getEstadoBadge(paciente.estado_atencion || "PENDIENTE")}</td>
+                      <td className="py-3 px-4 text-sm text-slate-700">
+                        {formatFecha(paciente.fecha_atencion)}
                       </td>
-                      <td className="px-4 py-3 text-sm">{getEstadoBadge(paciente.estadoDescripcion || "PENDIENTE")}</td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {formatFecha(paciente.fechaAtencion) || "—"}
+                      <td className="py-3 px-4 text-sm text-slate-700">
+                        {paciente.hora_atencion || "—"}
                       </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {paciente.horaAtencion || "—"}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-700">
-                        {paciente.idPersonal || "—"}
+                      <td className="py-3 px-4 text-sm text-slate-700">
+                        {paciente.id_personal || "—"}
                       </td>
                     </tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="12" className="py-12 text-center">
-                      <Activity className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                      <p className="text-gray-500 font-medium">No se encontraron pacientes con los filtros aplicados</p>
+                    <td colSpan="11" className="py-12 text-center">
+                      <Users className="w-16 h-16 text-slate-300 mx-auto mb-3" />
+                      <p className="font-medium text-lg text-slate-500">No hay pacientes registrados</p>
                     </td>
                   </tr>
                 )}
@@ -919,26 +817,25 @@ export default function Modulo107PacientesList() {
           {!loading && pacientes.length > 0 && (
             <div className="border-t pt-4 p-6">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-                <div className="text-sm text-gray-600">
-                  Mostrando <strong>{(currentPage - 1) * REGISTROS_POR_PAGINA + 1}</strong> a{" "}
-                  <strong>{Math.min(currentPage * REGISTROS_POR_PAGINA, totalElementos)}</strong> de{" "}
-                  <strong>{totalElementos}</strong> registros
+                <div className="text-sm text-slate-600">
+                  Mostrando <strong>{startIndex + 1}</strong> a{" "}
+                  <strong>{Math.min(endIndex, pacientes.length)}</strong> de{" "}
+                  <strong>{pacientes.length}</strong> pacientes
                 </div>
 
-                {totalElementos > REGISTROS_POR_PAGINA && (
+                {totalPages > 1 && (
                   <div className="flex items-center gap-2">
                     <button
                       onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
                       disabled={currentPage === 1}
-                      className="px-3 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 rounded-lg"
+                      className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50 rounded-lg"
                     >
                       <ChevronLeft className="w-4 h-4" />
                     </button>
 
                     <div className="flex items-center gap-1">
-                      {Array.from({ length: Math.ceil(totalElementos / REGISTROS_POR_PAGINA) }, (_, i) => i + 1)
+                      {Array.from({ length: totalPages }, (_, i) => i + 1)
                         .filter((page) => {
-                          const totalPages = Math.ceil(totalElementos / REGISTROS_POR_PAGINA);
                           if (page === 1 || page === totalPages) return true;
                           if (Math.abs(page - currentPage) <= 2) return true;
                           return false;
@@ -964,12 +861,9 @@ export default function Modulo107PacientesList() {
                     </div>
 
                     <button
-                      onClick={() => {
-                        const totalPages = Math.ceil(totalElementos / REGISTROS_POR_PAGINA);
-                        setCurrentPage((prev) => Math.min(totalPages, prev + 1));
-                      }}
-                      disabled={currentPage === Math.ceil(totalElementos / REGISTROS_POR_PAGINA)}
-                      className="px-3 py-2 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50 rounded-lg"
+                      onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-2 bg-white border border-slate-300 text-slate-700 hover:bg-slate-50 disabled:opacity-50 rounded-lg"
                     >
                       <ChevronRight className="w-4 h-4" />
                     </button>
@@ -980,22 +874,6 @@ export default function Modulo107PacientesList() {
           )}
         </div>
       </div>
-
-      <style>{`
-        @keyframes fadeIn {
-          from {
-            opacity: 0;
-            transform: translateY(10px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-        .animate-fade-in {
-          animation: fadeIn 0.6s ease-out;
-        }
-      `}</style>
     </div>
   );
 }

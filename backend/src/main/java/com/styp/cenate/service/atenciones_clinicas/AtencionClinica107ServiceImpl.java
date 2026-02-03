@@ -226,6 +226,9 @@ public class AtencionClinica107ServiceImpl implements AtencionClinica107Service 
             .fechaActualizacion(atencion.getFechaActualizacion())
             .responsableGestoraId(atencion.getResponsableGestoraId())
             .fechaAsignacion(atencion.getFechaAsignacion())
+            .fechaAtencion(atencion.getFechaAtencion()) // 🆕 Fecha de atención programada
+            .horaAtencion(atencion.getHoraAtencion()) // 🆕 Hora de atención programada
+            .idPersonal(atencion.getIdPersonal()) // 🆕 ID del personal que atiende
             .build();
     }
 }

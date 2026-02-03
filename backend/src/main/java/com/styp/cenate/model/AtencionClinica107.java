@@ -125,4 +125,14 @@ public class AtencionClinica107 {
 
     @Column(name = "fecha_asignacion")
     private LocalDateTime fechaAsignacion;
+
+    // 🕐 Datos de Atención Programada
+    @Column(name = "fecha_atencion")
+    private LocalDate fechaAtencion;
+
+    @Column(name = "hora_atencion")
+    private String horaAtencion;
+
+    @Column(name = "id_personal")
+    private Long idPersonal;
 }
