@@ -371,8 +371,8 @@ public class SolicitudBolsaController {
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/asignar")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR_GESTION_DE_CITAS')")
-    @CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR_GESTION_DE_CITAS','COORD. GESTION CITAS')")
+    //@CheckMBACPermission(pagina = "/modulos/bolsas/solicitudes", accion = "asignar")
     public ResponseEntity<?> asignarGestora(
             @PathVariable Long id,
             @RequestParam(value = "idGestora", required = false) Long idGestora) {
