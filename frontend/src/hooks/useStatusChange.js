@@ -16,6 +16,12 @@ export const useStatusChange = (onStatusChange, onStatusChangedBackend) => {
 
   const changeStatus = useCallback(
     async (pacienteId, newStatus, previousStatus, pacienteNombre) => {
+      console.log("📋 changeStatus INICIADO");
+      console.log("  pacienteId:", pacienteId);
+      console.log("  newStatus:", newStatus);
+      console.log("  previousStatus:", previousStatus);
+      console.log("  pacienteNombre:", pacienteNombre);
+      
       // Limpiar toast y timeout previos si existen
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -25,9 +31,11 @@ export const useStatusChange = (onStatusChange, onStatusChangedBackend) => {
       }
 
       // 1️⃣ CAMBIO OPTIMISTA - Actualizar UI inmediatamente (sin esperar backend)
+      console.log("1️⃣ Actualizando UI localmente (optimistic)");
       onStatusChange(pacienteId, newStatus);
 
       // 2️⃣ MOSTRAR TOAST CON UNDO (5 segundos) - Verde suave
+      console.log("2️⃣ Mostrando toast con Undo");
       toastRef.current = toast((t) => (
         <div className="flex items-center justify-between gap-4 bg-green-50 border border-green-200 rounded-lg p-4">
           <div className="flex-1">
@@ -38,6 +46,7 @@ export const useStatusChange = (onStatusChange, onStatusChangedBackend) => {
           </div>
           <button
             onClick={() => {
+              console.log("↶ Usuario hizo clic en Deshacer");
               // DESHACER: Restaurar estado anterior
               onStatusChange(pacienteId, previousStatus);
               toast.dismiss(t.id);
@@ -64,14 +73,17 @@ export const useStatusChange = (onStatusChange, onStatusChangedBackend) => {
       });
 
       // 3️⃣ COMMIT AL BACKEND DESPUÉS DE 5 SEGUNDOS (si no se deshizo)
+      console.log("3️⃣ Programando commit al backend para después de 5 segundos");
       timeoutRef.current = setTimeout(async () => {
+        console.log("⏱️ 5 segundos pasados, enviando al backend");
+        console.log("🌐 Llamando a onStatusChangedBackend");
         try {
           await onStatusChangedBackend(pacienteId, newStatus);
 
           // Mostrar confirmación silenciosa (solo en log)
-          console.log(`✅ Estado guardado: ${pacienteNombre} → ${newStatus}`);
+          console.log(`✅ Estado guardado en backend: ${pacienteNombre} → ${newStatus}`);
         } catch (error) {
-          console.error('❌ Error guardando estado:', error);
+          console.error('❌ Error guardando estado en backend:', error);
 
           // ROLLBACK AUTOMÁTICO en caso de error
           onStatusChange(pacienteId, previousStatus);

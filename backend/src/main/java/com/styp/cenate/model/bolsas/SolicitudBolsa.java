@@ -179,6 +179,19 @@ public class SolicitudBolsa {
     @JoinColumn(name = "estado_gestion_citas_id", insertable = false, updatable = false)
     private DimEstadosGestionCitas estadoGestionCitas;
 
+    // ============================================================================
+    // 🏥 DETALLES DE CITA AGENDADA (v1.0.0 - 2026-02-03)
+    // ============================================================================
+    
+    @Column(name = "fecha_atencion")
+    private java.time.LocalDate fechaAtencion;
+
+    @Column(name = "hora_atencion")
+    private java.time.LocalTime horaAtencion;
+
+    @Column(name = "id_personal")
+    private Long idPersonal;
+
     // 🔔 AUDITORÍA
     @Column(name = "activo", nullable = false)
     private Boolean activo;

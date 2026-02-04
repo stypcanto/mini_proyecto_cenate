@@ -18,6 +18,9 @@ import java.time.LocalDate;
 public class AtencionClinica107FiltroDTO {
     // 📌 Filtros Disponibles
     
+    // Bolsa
+    private Long idBolsa; // OBLIGATORIO: 1 para Módulo 107
+    
     // Fecha
     private LocalDate fechaDesde;
     private LocalDate fechaHasta;

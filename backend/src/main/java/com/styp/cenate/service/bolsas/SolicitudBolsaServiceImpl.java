@@ -2390,6 +2390,9 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
             .fechaCambioEstado(solicitud.getFechaCambioEstado())
             .usuarioCambioEstadoId(solicitud.getUsuarioCambioEstadoId())
             .nombreUsuarioCambioEstado(obtenerNombreCompleto(solicitud.getUsuarioCambioEstado()))
+            .fechaAtencion(solicitud.getFechaAtencion())
+            .horaAtencion(solicitud.getHoraAtencion())
+            .idPersonal(solicitud.getIdPersonal())
             .build();
     }
 
@@ -2506,6 +2509,167 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
     }
 
     /**
+     * Exporta solicitudes asignadas a la gestora actual a formato EXCEL
+     * Incluye TODAS las columnas de la tabla GestionAsegurado
+     * Usado en la descarga desde "Mi Bandeja"
+     *
+     * @param ids lista de IDs de solicitudes a exportar
+     * @return datos EXCEL (.xlsx) en bytes
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] exportarExcelAsignados(List<Long> ids) {
+        try {
+            log.info("📊 Exportando {} solicitudes asignadas a EXCEL", ids.size());
+
+            if (ids.isEmpty()) {
+                log.warn("⚠️ No hay solicitudes para exportar");
+                return new byte[0];
+            }
+
+            // Usar query SQL nativa que trae TODOS los datos con JOINs
+            String sql = """
+                SELECT 
+                    sb.fecha_asignacion,
+                    sb.paciente_dni,
+                    sb.paciente_nombre,
+                    EXTRACT(YEAR FROM AGE(sb.fecha_nacimiento)) as paciente_edad,
+                    sb.paciente_sexo,
+                    sb.especialidad,
+                    per.nom_pers as especialista_nombre,
+                    sb.fecha_atencion,
+                    sb.hora_atencion,
+                    ir.desc_ipress as desc_ipress,
+                    sb.tipo_cita,
+                    sb.paciente_telefono,
+                    sb.paciente_telefono_alterno,
+                    dec.desc_estado_cita as desc_estado_cita,
+                    sb.fecha_cambio_estado,
+                    u.name_user as nombre_usuario_cambio_estado
+                FROM dim_solicitud_bolsa sb
+                LEFT JOIN dim_personal_cnt per ON sb.id_personal = per.id_pers
+                LEFT JOIN dim_ipress ir ON sb.id_ipress = ir.id_ipress
+                LEFT JOIN dim_estados_gestion_citas dec ON sb.estado_gestion_citas_id = dec.id_estado_cita
+                LEFT JOIN dim_usuarios u ON sb.usuario_cambio_estado_id = u.id_user
+                WHERE sb.id_solicitud IN (:ids)
+                ORDER BY sb.fecha_asignacion DESC
+                """;
+
+            var query = entityManager.createNativeQuery(sql);
+            query.setParameter("ids", ids);
+            List<Object[]> resultados = query.getResultList();
+
+            if (resultados.isEmpty()) {
+                log.warn("⚠️ No hay solicitudes para exportar");
+                return new byte[0];
+            }
+
+            // Crear workbook Excel con Apache POI
+            try (var workbook = new org.apache.poi.xssf.usermodel.XSSFWorkbook()) {
+                var sheet = workbook.createSheet("Pacientes Asignados");
+                
+                // Estilos
+                var headerStyle = workbook.createCellStyle();
+                headerStyle.setFillForegroundColor(org.apache.poi.ss.usermodel.IndexedColors.DARK_BLUE.getIndex());
+                headerStyle.setFillPattern(org.apache.poi.ss.usermodel.FillPatternType.SOLID_FOREGROUND);
+                var headerFont = workbook.createFont();
+                headerFont.setColor(org.apache.poi.ss.usermodel.IndexedColors.WHITE.getIndex());
+                headerFont.setBold(true);
+                headerStyle.setFont(headerFont);
+                headerStyle.setAlignment(org.apache.poi.ss.usermodel.HorizontalAlignment.CENTER);
+                
+                // Encabezados
+                String[] headers = {
+                    "FECHA ASIGNACIÓN", "DNI PACIENTE", "NOMBRE PACIENTE", "EDAD", "GÉNERO",
+                    "ESPECIALIDAD", "ESPECIALISTA", "FECHA Y HORA CITA", "IPRESS", "TIPO CITA",
+                    "TELÉFONO 1", "TELÉFONO 2", "ESTADO", "FECHA CAMBIO ESTADO", "USUARIO CAMBIO ESTADO"
+                };
+                
+                // Crear fila de encabezado
+                var headerRow = sheet.createRow(0);
+                for (int i = 0; i < headers.length; i++) {
+                    var cell = headerRow.createCell(i);
+                    cell.setCellValue(headers[i]);
+                    cell.setCellStyle(headerStyle);
+                }
+                
+                // Llenar datos desde resultados SQL
+                int rowNum = 1;
+                for (Object[] row : resultados) {
+                    var excelRow = sheet.createRow(rowNum++);
+                    
+                    int col = 0;
+                    // 0: fecha_asignacion
+                    excelRow.createCell(col++).setCellValue(row[0] != null ? row[0].toString() : "");
+                    
+                    // 1: paciente_dni
+                    excelRow.createCell(col++).setCellValue(row[1] != null ? row[1].toString() : "");
+                    
+                    // 2: paciente_nombre
+                    excelRow.createCell(col++).setCellValue(row[2] != null ? row[2].toString() : "");
+                    
+                    // 3: paciente_edad
+                    excelRow.createCell(col++).setCellValue(row[3] != null ? row[3].toString() : "");
+                    
+                    // 4: paciente_sexo
+                    excelRow.createCell(col++).setCellValue(row[4] != null ? row[4].toString() : "");
+                    
+                    // 5: especialidad
+                    excelRow.createCell(col++).setCellValue(row[5] != null ? row[5].toString() : "");
+                    
+                    // 6: especialista_nombre
+                    excelRow.createCell(col++).setCellValue(row[6] != null ? row[6].toString() : "");
+                    
+                    // 7-8: fecha_atencion + hora_atencion
+                    String fechaHora = "";
+                    if (row[7] != null && row[8] != null) {
+                        fechaHora = row[7].toString() + " " + row[8].toString();
+                    } else if (row[7] != null) {
+                        fechaHora = row[7].toString();
+                    }
+                    excelRow.createCell(col++).setCellValue(fechaHora);
+                    
+                    // 9: desc_ipress
+                    excelRow.createCell(col++).setCellValue(row[9] != null ? row[9].toString() : "");
+                    
+                    // 10: tipo_cita
+                    excelRow.createCell(col++).setCellValue(row[10] != null ? row[10].toString() : "");
+                    
+                    // 11: paciente_telefono
+                    excelRow.createCell(col++).setCellValue(row[11] != null ? row[11].toString() : "");
+                    
+                    // 12: paciente_telefono_alterno
+                    excelRow.createCell(col++).setCellValue(row[12] != null ? row[12].toString() : "");
+                    
+                    // 13: desc_estado_cita
+                    excelRow.createCell(col++).setCellValue(row[13] != null ? row[13].toString() : "");
+                    
+                    // 14: fecha_cambio_estado
+                    excelRow.createCell(col++).setCellValue(row[14] != null ? row[14].toString() : "");
+                    
+                    // 15: nombre_usuario_cambio_estado
+                    excelRow.createCell(col++).setCellValue(row[15] != null ? row[15].toString() : "");
+                }
+                
+                // Ajustar ancho de columnas
+                for (int i = 0; i < headers.length; i++) {
+                    sheet.autoSizeColumn(i);
+                }
+                
+                // Convertir a bytes
+                var outputStream = new java.io.ByteArrayOutputStream();
+                workbook.write(outputStream);
+                log.info("✅ EXCEL generado exitosamente con {} registros", resultados.size());
+                return outputStream.toByteArray();
+            }
+
+        } catch (Exception e) {
+            log.error("❌ Error exportando solicitudes asignadas a EXCEL: ", e);
+            return new byte[0];
+        }
+    }
+
+    /**
      * Exporta solicitudes asignadas a la gestora actual a formato CSV
      * Usado en la descarga desde "Mi Bandeja" (GestionAsegurado)
      *
@@ -2528,27 +2692,73 @@ public class SolicitudBolsaServiceImpl implements SolicitudBolsaService {
                 return new byte[0];
             }
 
-            // Construir CSV manualmente con los campos deseados para gestión de citas
+            // Construir CSV manualmente con TODAS LAS COLUMNAS de la tabla
             StringBuilder csv = new StringBuilder();
 
-            // Encabezados
-            csv.append("DNI,NOMBRE,EDAD,SEXO,TELÉFONO 1,TELÉFONO 2,ESPECIALIDAD,IPRESS,ESTADO,FECHA ASIGNACIÓN\n");
+            // Encabezados (coincidiendo con las columnas de la tabla en GestionAsegurado)
+            csv.append("FECHA ASIGNACIÓN,DNI PACIENTE,NOMBRE PACIENTE,EDAD,GÉNERO,ESPECIALIDAD,ESPECIALISTA,");
+            csv.append("FECHA Y HORA CITA,IPRESS,TIPO CITA,TELÉFONO 1,TELÉFONO 2,ESTADO,");
+            csv.append("FECHA CAMBIO ESTADO,USUARIO CAMBIO ESTADO\n");
 
-            // Datos
+            // Datos - con formato compatible
             for (SolicitudBolsaDTO solicitud : solicitudes) {
+                // Fecha Asignación
+                String fechaAsignacion = solicitud.getFechaAsignacion() != null 
+                    ? solicitud.getFechaAsignacion().toString() 
+                    : "";
+                csv.append(escaparCSV(fechaAsignacion)).append(",");
+                
+                // DNI Paciente
                 csv.append(escaparCSV(solicitud.getPacienteDni())).append(",");
+                
+                // Nombre Paciente
                 csv.append(escaparCSV(solicitud.getPacienteNombre())).append(",");
-                csv.append(escaparCSV(String.valueOf(solicitud.getPacienteEdad()))).append(",");
+                
+                // Edad
+                csv.append(escaparCSV(String.valueOf(solicitud.getPacienteEdad() != null ? solicitud.getPacienteEdad() : ""))).append(",");
+                
+                // Género
                 csv.append(escaparCSV(solicitud.getPacienteSexo())).append(",");
-                csv.append(escaparCSV(solicitud.getPacienteTelefono())).append(",");
-                csv.append(escaparCSV(solicitud.getPacienteTelefonoAlterno())).append(",");
+                
+                // Especialidad
                 csv.append(escaparCSV(solicitud.getEspecialidad())).append(",");
+                
+                // Especialista (ID del personal/médico asignado)
+                String especialista = solicitud.getIdPersonal() != null ? String.valueOf(solicitud.getIdPersonal()) : "";
+                csv.append(escaparCSV(especialista)).append(",");
+                
+                // Fecha y Hora de Cita
+                String fechaHoraCita = solicitud.getFechaAtencion() != null && solicitud.getHoraAtencion() != null
+                    ? solicitud.getFechaAtencion() + " " + solicitud.getHoraAtencion()
+                    : "";
+                csv.append(escaparCSV(fechaHoraCita)).append(",");
+                
+                // IPRESS
                 csv.append(escaparCSV(solicitud.getDescIpress())).append(",");
+                
+                // Tipo de Cita
+                csv.append(escaparCSV(solicitud.getTipoCita())).append(",");
+                
+                // Teléfono 1
+                csv.append(escaparCSV(solicitud.getPacienteTelefono())).append(",");
+                
+                // Teléfono 2
+                csv.append(escaparCSV(solicitud.getPacienteTelefonoAlterno())).append(",");
+                
+                // Estado
                 csv.append(escaparCSV(solicitud.getDescEstadoCita())).append(",");
-                csv.append(escaparCSV(String.valueOf(solicitud.getFechaAsignacion()))).append("\n");
+                
+                // Fecha Cambio Estado
+                String fechaCambioEstado = solicitud.getFechaCambioEstado() != null 
+                    ? solicitud.getFechaCambioEstado().toString() 
+                    : "";
+                csv.append(escaparCSV(fechaCambioEstado)).append(",");
+                
+                // Usuario Cambio Estado
+                csv.append(escaparCSV(solicitud.getNombreUsuarioCambioEstado() != null ? solicitud.getNombreUsuarioCambioEstado() : "")).append("\n");
             }
 
-            log.info("✅ CSV generado exitosamente con {} registros", solicitudes.size());
+            log.info("✅ CSV generado exitosamente con {} registros (todas las columnas)", solicitudes.size());
             return csv.toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
         } catch (Exception e) {
             log.error("❌ Error exportando solicitudes asignadas a CSV: ", e);

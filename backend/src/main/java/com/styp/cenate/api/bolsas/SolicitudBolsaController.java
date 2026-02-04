@@ -1,6 +1,7 @@
 package com.styp.cenate.api.bolsas;
 
 import com.styp.cenate.dto.bolsas.SolicitudBolsaDTO;
+import com.styp.cenate.dto.bolsas.ActualizarEstadoCitaDTO;
 import com.styp.cenate.model.bolsas.HistorialCargaBolsas;
 import com.styp.cenate.repository.bolsas.HistorialCargaBolsasRepository;
 import com.styp.cenate.service.bolsas.SolicitudBolsaService;
@@ -13,13 +14,15 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
@@ -461,7 +464,7 @@ public class SolicitudBolsaController {
      * @return mensaje de éxito
      */
     @PatchMapping("/{id}/estado")
-    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORDINADOR GESTION DE CITAS', 'GESTOR DE CITAS')")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
     public ResponseEntity<?> cambiarEstado(
             @PathVariable Long id,
             @RequestParam("nuevoEstadoCodigo") String nuevoEstadoCodigo) {
@@ -493,6 +496,127 @@ public class SolicitudBolsaController {
             );
         } catch (Exception e) {
             log.error("❌ Error al cambiar estado: ", e);
+            return ResponseEntity.status(500).body(
+                Map.of("error", "Error: " + e.getMessage())
+            );
+        }
+    }
+
+    /**
+     * Actualiza estado de solicitud + detalles de cita (fecha, hora, médico)
+     * PATCH /api/bolsas/solicitudes/{id}/estado-y-cita
+     *
+     * Versión mejorada del endpoint /estado que permite guardar además:
+     * - Fecha de la cita agendada
+     * - Hora de la cita agendada
+     * - ID del médico/personal asignado
+     * - Notas adicionales
+     *
+     * Roles permitidos: SUPERADMIN, ADMIN, COORDINADOR GESTION DE CITAS, GESTOR DE CITAS
+     *
+     * @param id ID de la solicitud
+     * @param dto Objeto con estado, fecha, hora, idMedico, notas
+     * @return mensaje de éxito + solicitud actualizada
+     */
+    @PatchMapping("/{id}/estado-y-cita")
+    @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN', 'COORD. GESTION CITAS', 'GESTOR DE CITAS')")
+    @Transactional
+    public ResponseEntity<?> cambiarEstadoYCita(
+            @PathVariable Long id,
+            @RequestBody ActualizarEstadoCitaDTO dto) {
+
+        try {
+            log.warn("🎬🎬🎬 ENDPOINT LLAMADO: cambiarEstadoYCita");
+            log.warn("📊 ID Solicitud: {}", id);
+            log.warn("📊 DTO Recibido: {}", dto);
+            log.warn("📊 Estado Código: {}", dto.getNuevoEstadoCodigo());
+            log.warn("📊 Fecha Atención: {}", dto.getFechaAtencion());
+            log.warn("📊 Hora Atención: {}", dto.getHoraAtencion());
+            log.warn("📊 ID Personal: {}", dto.getIdPersonal());
+            
+            log.info("📊 Actualizando estado y cita de solicitud {} a {}", id, dto.getNuevoEstadoCodigo());
+            log.info("   Fecha: {}, Hora: {}, Personal: {}", dto.getFechaAtencion(), dto.getHoraAtencion(), dto.getIdPersonal());
+
+            // Validar que el estado sea válido
+            if (dto.getNuevoEstadoCodigo() == null || dto.getNuevoEstadoCodigo().trim().isEmpty()) {
+                log.error("❌ VALIDACIÓN FALLIDA: nuevoEstadoCodigo es nulo o vacío");
+                return ResponseEntity.status(400).body(
+                    Map.of("error", "nuevoEstadoCodigo es obligatorio")
+                );
+            }
+
+            // Buscar el estado por código
+            DimEstadosGestionCitas estado = estadosRepository.findByCodigoEstado(dto.getNuevoEstadoCodigo())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Estado no encontrado: " + dto.getNuevoEstadoCodigo()));
+
+            log.info("✅ Estado encontrado: {} (ID: {})", estado.getCodigoEstado(), estado.getIdEstado());
+
+            // Obtener la solicitud
+            SolicitudBolsa solicitud = solicitudRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                    "Solicitud no encontrada con ID: " + id));
+
+            log.info("✅ Solicitud encontrada: {}", solicitud.getNumeroSolicitud());
+
+            // Actualizar estado usando el ID encontrado
+            log.info("🔄 Actualizando estadoGestionCitasId a {}", estado.getIdEstado());
+            solicitud.setEstadoGestionCitasId(estado.getIdEstado());
+            solicitud.setFechaCambioEstado(OffsetDateTime.now());
+
+            // Guardar detalles de cita si se proporcionan
+            if (dto.getFechaAtencion() != null) {
+                log.info("📅 Guardando fecha de atención: {}", dto.getFechaAtencion());
+                solicitud.setFechaAtencion(dto.getFechaAtencion());
+            } else {
+                log.warn("⚠️  fechaAtencion es NULL");
+            }
+
+            if (dto.getHoraAtencion() != null) {
+                log.info("⏰ Guardando hora de atención: {}", dto.getHoraAtencion());
+                solicitud.setHoraAtencion(dto.getHoraAtencion());
+            } else {
+                log.warn("⚠️  horaAtencion es NULL");
+            }
+
+            if (dto.getIdPersonal() != null && dto.getIdPersonal() > 0) {
+                log.info("👨‍⚕️ Guardando personal/médico: {}", dto.getIdPersonal());
+                solicitud.setIdPersonal(dto.getIdPersonal());
+            } else {
+                log.warn("⚠️  idPersonal es NULL o 0");
+            }
+
+            // Guardar cambios en BD
+            log.info("💾 Guardando solicitud en BD...");
+            solicitudRepository.save(solicitud);
+            log.warn("✅✅✅ SOLICITUD ACTUALIZADA EXITOSAMENTE EN BD");
+
+            // Construir respuesta segura (verificar nulls)
+            Map<String, Object> response = new HashMap<>();
+            response.put("mensaje", "Estado y cita actualizados exitosamente");
+            response.put("idSolicitud", id);
+            response.put("numeroSolicitud", solicitud.getNumeroSolicitud() != null ? solicitud.getNumeroSolicitud() : "");
+            response.put("nuevoEstadoCodigo", dto.getNuevoEstadoCodigo());
+            response.put("fechaAtencion", dto.getFechaAtencion());
+            response.put("horaAtencion", dto.getHoraAtencion());
+            response.put("idPersonal", dto.getIdPersonal());
+            response.put("notas", dto.getNotas());
+            
+            log.warn("📤 Retornando response: {}", response);
+            return ResponseEntity.ok(response);
+
+        } catch (ResourceNotFoundException e) {
+            log.error("❌ Recurso no encontrado: {}", e.getMessage());
+            return ResponseEntity.status(404).body(
+                Map.of("error", e.getMessage())
+            );
+        } catch (IllegalArgumentException e) {
+            log.error("❌ Argumento inválido: {}", e.getMessage());
+            return ResponseEntity.status(400).body(
+                Map.of("error", e.getMessage())
+            );
+        } catch (Exception e) {
+            log.error("❌ Error al actualizar estado y cita: ", e);
             return ResponseEntity.status(500).body(
                 Map.of("error", "Error: " + e.getMessage())
             );
@@ -756,18 +880,18 @@ public class SolicitudBolsaController {
     }
 
     /**
-     * Exporta solicitudes asignadas (Mi Bandeja) de la gestora actual a CSV
+     * Exporta solicitudes asignadas (Mi Bandeja) de la gestora actual a EXCEL
      * GET /api/bolsas/solicitudes/exportar-asignados
      *
      * @param ids lista opcional de IDs específicos a exportar
-     * @return archivo CSV con las solicitudes seleccionadas
+     * @return archivo EXCEL con todas las columnas de la tabla
      */
     @GetMapping("/exportar-asignados")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> exportarAsignados(
             @RequestParam(value = "ids", required = false) String ids) {
         try {
-            log.info("📄 Exportando solicitudes asignadas a CSV");
+            log.info("📄 Exportando solicitudes asignadas a EXCEL");
 
             List<Long> idsList = new ArrayList<>();
             if (ids != null && !ids.isEmpty()) {
@@ -791,17 +915,18 @@ public class SolicitudBolsaController {
                 return ResponseEntity.badRequest().body("No hay solicitudes para exportar".getBytes());
             }
 
-            // Obtener el servicio adecuado para exportar
-            // Usando BolsasService que tiene el método exportarCSV
-            byte[] csvData = solicitudBolsaService.exportarCSVAsignados(idsList);
+            // Obtener datos en formato EXCEL
+            byte[] excelData = solicitudBolsaService.exportarExcelAsignados(idsList);
 
             return ResponseEntity.ok()
-                .header("Content-Type", "text/csv; charset=UTF-8")
-                .header("Content-Disposition", "attachment; filename=\"pacientes_asignados.csv\"")
-                .body(csvData);
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .header("Content-Disposition", "attachment; filename=\"pacientes_asignados.xlsx\"")
+                .body(excelData);
         } catch (Exception e) {
             log.error("❌ Error exportando solicitudes asignadas: ", e);
             return ResponseEntity.status(500).body(("Error: " + e.getMessage()).getBytes());
         }
     }
 }
+
+

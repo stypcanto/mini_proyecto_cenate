@@ -55,6 +55,7 @@ public class AtencionClinica107PublicController {
      */
     @GetMapping("/listar")
     public ResponseEntity<Map<String, Object>> listar(
+        @RequestParam(value = "idBolsa", required = false, defaultValue = "1") Long idBolsa,
         @RequestParam(value = "estadoGestionCitasId", required = false) Long estadoGestionCitasId,
         @RequestParam(value = "estado", required = false) String estado,
         @RequestParam(value = "tipoDocumento", required = false) String tipoDocumento,
@@ -70,10 +71,12 @@ public class AtencionClinica107PublicController {
         @RequestParam(value = "pageSize", defaultValue = "10") Integer pageSize
     ) {
         try {
-            log.info("📋 [MODULO 107] GET /listar - página {}, tamaño {}", pageNumber, pageSize);
+            log.info("📋 [MODULO 107] GET /listar - página {}, tamaño {}, bolsa {}", pageNumber, pageSize, idBolsa);
+            log.debug("🔍 [MODULO 107] Parámetros recibidos: derivacion='{}', especialidad='{}', idIpress={}", derivacion, especialidad, idIpress);
 
             // Construir DTO con filtros
             AtencionClinica107FiltroDTO filtro = AtencionClinica107FiltroDTO.builder()
+                .idBolsa(idBolsa)
                 .estadoGestionCitasId(estadoGestionCitasId)
                 .estado(estado)
                 .tipoDocumento(tipoDocumento)
@@ -88,6 +91,8 @@ public class AtencionClinica107PublicController {
                 .pageNumber(pageNumber)
                 .pageSize(pageSize)
                 .build();
+
+            log.debug("📦 [MODULO 107] DTO construido: derivacionInterna='{}'", filtro.getDerivacionInterna());
 
             // Obtener resultados
             Page<AtencionClinica107DTO> resultado = service.listarConFiltros(filtro);
@@ -195,3 +200,4 @@ public class AtencionClinica107PublicController {
         ));
     }
 }
+

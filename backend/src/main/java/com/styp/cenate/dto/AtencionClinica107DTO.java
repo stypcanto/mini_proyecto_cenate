@@ -36,6 +36,7 @@ public class AtencionClinica107DTO {
     private String codigoAdscripcion;
     private Long idIpress;
     private String codigoIpress;
+    private String ipressNombre; // 🆕 Nombre/descripción de la IPRESS
 
     // 🏷️ Derivación Interna
     private String derivacionInterna;
@@ -48,8 +49,14 @@ public class AtencionClinica107DTO {
     // 📌 Estado y Trazabilidad
     private Long estadoGestionCitasId;
     private String estado;
+    private String estadoDescripcion; // 🆕 Descripción del estado desde dim_estados_gestion_citas
     private LocalDateTime fechaSolicitud;
     private LocalDateTime fechaActualizacion;
     private Long responsableGestoraId;
     private LocalDateTime fechaAsignacion;
+
+    // 🕐 Datos de Atención Programada
+    private LocalDate fechaAtencion;
+    private String horaAtencion;
+    private Long idPersonal;
 }

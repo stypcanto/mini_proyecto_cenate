@@ -118,6 +118,14 @@ public interface PersonalCntRepository extends JpaRepository<PersonalCnt, Long> 
 	Page<PersonalCnt> findAllWithRelations(Pageable pageable);
 
 	/**
+	 * Obtiene todos los médicos asociados a un servicio (especialidad) específico.
+	 * 
+	 * @param idServicio identificador del servicio ESSI
+	 * @return lista de personal CNT asociado al servicio
+	 */
+	List<PersonalCnt> findByServicioEssi_IdServicio(Long idServicio);
+
+	/**
 	 * Obtiene todo el personal asistencial de CENATE (CAS y 728) con servicioEssi y profesiones cargados.
 	 *
 	 * Optimizado para el módulo de Firma Digital:

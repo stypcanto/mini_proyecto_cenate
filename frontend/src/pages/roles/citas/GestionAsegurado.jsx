@@ -80,7 +80,82 @@ export default function GestionAsegurado() {
   const [nuevoEstadoSeleccionado, setNuevoEstadoSeleccionado] = useState("");
   const [guardandoEstado, setGuardandoEstado] = useState(false);
 
-  const API_BASE = "http://localhost:8080/api";
+  // Estados para manejar fecha/hora y especialista por paciente
+  const [citasAgendadas, setCitasAgendadas] = useState({}); // { pacienteId: { fecha, hora, especialista } }
+  
+  // Estado para almacenar médicos dinámicos por servicio
+  const [medicosPorServicio, setMedicosPorServicio] = useState({}); // { idServicio: [médicos] }
+  const [cargandoMedicos, setCargandoMedicos] = useState(false);
+
+  // 🔧 API_BASE dinámico basado en el host actual o variable de entorno
+  const getApiBase = () => {
+    // Prioridad: variable de entorno > window.location
+    if (process.env.REACT_APP_API_URL) {
+      return process.env.REACT_APP_API_URL;
+    }
+    
+    // Fallback: construir desde window.location (recomendado para producción)
+    const protocol = window.location.protocol; // http: o https:
+    const hostname = window.location.hostname; // IP o dominio
+    const port = window.location.port ? `:${window.location.port}` : '';
+    return `${protocol}//${hostname}${port}/api`;
+  };
+  
+  const API_BASE = getApiBase();
+
+  // ============================================================================
+  // 🏥 CARGAR MÉDICOS POR SERVICIO (DINÁMICO)
+  // ============================================================================
+  const obtenerMedicosPorServicio = async (idServicio) => {
+    // No hacer llamada si idServicio no es válido
+    if (!idServicio || isNaN(idServicio)) {
+      return;
+    }
+
+    // Si ya tenemos los médicos cacheados, no hacer segunda llamada
+    if (medicosPorServicio[idServicio]) {
+      return;
+    }
+
+    setCargandoMedicos(true);
+    try {
+      const token = getToken();
+      const response = await fetch(
+        `${API_BASE}/atenciones-clinicas/detalle-medico/por-servicio/${idServicio}`,
+        {
+          method: "GET",
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        const medicos = data.data || [];
+        console.log(`✅ Se obtuvieron ${medicos.length} médicos para servicio ${idServicio}`);
+
+        setMedicosPorServicio(prev => ({
+          ...prev,
+          [idServicio]: medicos
+        }));
+      } else {
+        setMedicosPorServicio(prev => ({
+          ...prev,
+          [idServicio]: []
+        }));
+      }
+    } catch (error) {
+      console.error("❌ Error al obtener médicos:", error);
+      setMedicosPorServicio(prev => ({
+        ...prev,
+        [idServicio]: []
+      }));
+    } finally {
+      setCargandoMedicos(false);
+    }
+  };
 
   // Fetch assigned patients from backend
   const fetchPacientesAsignados = async () => {
@@ -160,6 +235,7 @@ export default function GestionAsegurado() {
           pacienteTelefono: solicitud.paciente_telefono || solicitud.pacienteTelefono || "-",
           pacienteTelefonoAlterno: solicitud.paciente_telefono_alterno || solicitud.pacienteTelefonoAlterno || "-",
           especialidad: solicitud.especialidad || "-",
+          idServicio: solicitud.id_servicio || solicitud.idServicio || null, // ID numérico del servicio
           tipoCita: solicitud.tipo_cita || solicitud.tipoCita || "-",
           descIpress: solicitud.desc_ipress || solicitud.descIpress || "-",
           descEstadoCita: descEstadoFinal,
@@ -169,10 +245,49 @@ export default function GestionAsegurado() {
           // Auditoría: Fecha y usuario del cambio de estado (v3.3.1)
           fechaCambioEstado: solicitud.fecha_cambio_estado || null,
           usuarioCambioEstado: solicitud.nombre_usuario_cambio_estado || null,
+          // 📅 Detalles de cita agendada (NEW v3.4.0)
+          fechaAtencion: solicitud.fecha_atencion || null,
+          horaAtencion: solicitud.hora_atencion || null,
+          idPersonal: solicitud.id_personal || null,
         };
       });
 
+      // Ordenar por fecha de solicitud descendente (más nuevas primero)
+      pacientes.sort((a, b) => {
+        const fechaA = new Date(a.fechaSolicitud || 0).getTime();
+        const fechaB = new Date(b.fechaSolicitud || 0).getTime();
+        return fechaB - fechaA; // Descendente
+      });
+
       setPacientesAsignados(pacientes);
+
+      // 📅 Cargar datos guardados de citas en el estado citasAgendadas
+      const citasGuardadas = {};
+      pacientes.forEach(paciente => {
+        if (paciente.fechaAtencion || paciente.horaAtencion || paciente.idPersonal) {
+          // Combinar fecha y hora en formato datetime-local: YYYY-MM-DDTHH:mm
+          let datetimeValue = "";
+          if (paciente.fechaAtencion) {
+            datetimeValue = paciente.fechaAtencion;
+            if (paciente.horaAtencion) {
+              datetimeValue += `T${paciente.horaAtencion}`;
+            }
+          }
+          citasGuardadas[paciente.id] = {
+            fecha: datetimeValue,
+            especialista: paciente.idPersonal,
+          };
+        }
+      });
+      
+      // Si hay citas guardadas, actualizar estado
+      if (Object.keys(citasGuardadas).length > 0) {
+        setCitasAgendadas(prev => ({
+          ...prev,
+          ...citasGuardadas
+        }));
+        console.log("📅 Citas guardadas cargadas:", citasGuardadas);
+      }
 
       // Calculate metrics
       const atendidos = pacientes.filter(p => p.codigoEstado === "ATENDIDO_IPRESS").length;
@@ -224,57 +339,155 @@ export default function GestionAsegurado() {
         )
       );
     },
-    // Callback 2: API call al backend
+    // Callback 2: API call al backend - NUEVO ENDPOINT CON FECHA, HORA Y MÉDICO
     async (pacienteId, newStatus) => {
+      console.log("📤 CALLBACK 2 INICIADO - Enviando al backend");
+      console.log("  pacienteId:", pacienteId);
+      console.log("  newStatus:", newStatus);
+      
       const token = getToken();
-      const response = await fetch(
-        `${API_BASE}/bolsas/solicitudes/${pacienteId}/estado?nuevoEstadoCodigo=${encodeURIComponent(newStatus)}`,
-        {
-          method: "PATCH",
-          headers: {
-            "Authorization": `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Error al actualizar el estado");
+      console.log("🔑 Token obtenido:", token ? "SÍ" : "NO");
+      
+      // newStatus es la descripción, pero necesitamos el código
+      // Encontrar el código a partir de la descripción
+      const estadoObj = estadosDisponibles.find(e => e.descripcion === newStatus);
+      const nuevoEstadoCodigo = estadoObj?.codigo || newStatus; // Si no encuentra, usar el valor
+      
+      console.log("🔍 Búsqueda de estado:");
+      console.log("  estadoObj:", estadoObj);
+      console.log("  nuevoEstadoCodigo:", nuevoEstadoCodigo);
+      
+      // Obtener datos de la cita agendada si existen
+      const citaAgendada = citasAgendadas[pacienteId] || {};
+      
+      console.log("📅 Datos de cita agendada:", citaAgendada);
+      console.log("  citaAgendada.fecha:", citaAgendada.fecha);
+      console.log("  citaAgendada.especialista:", citaAgendada.especialista);
+      
+      // Extraer fecha y hora del datetime-local: "2026-02-08T14:30" → fecha: "2026-02-08", hora: "14:30"
+      let fechaAtencion = null;
+      let horaAtencion = null;
+      
+      if (citaAgendada.fecha) {
+        const datetimeValue = citaAgendada.fecha;
+        console.log("⏰ Extrayendo fecha y hora de:", datetimeValue);
+        const [fecha, hora] = datetimeValue.split('T');
+        fechaAtencion = fecha; // YYYY-MM-DD
+        horaAtencion = hora;   // HH:mm
+        console.log("  fechaAtencion:", fechaAtencion);
+        console.log("  horaAtencion:", horaAtencion);
       }
+      
+      // Preparar body con estado + detalles de cita
+      const bodyData = {
+        nuevoEstadoCodigo: nuevoEstadoCodigo,
+        fechaAtencion: fechaAtencion,
+        horaAtencion: horaAtencion,
+        idPersonal: citaAgendada.especialista || null,
+      };
 
-      // Refrescar datos desde backend para asegurar sincronización
-      await fetchPacientesAsignados();
+      console.log("📦 Body a enviar:", bodyData);
+      console.log("📤 Enviando PATCH a: /bolsas/solicitudes/" + pacienteId + "/estado-y-cita");
+
+      try {
+        const response = await fetch(
+          `${API_BASE}/bolsas/solicitudes/${pacienteId}/estado-y-cita`,
+          {
+            method: "PATCH",
+            headers: {
+              "Authorization": `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify(bodyData),
+          }
+        );
+
+        console.log("📡 Response status:", response.status);
+        console.log("📡 Response ok:", response.ok);
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error("❌ Error response from backend:", errorData);
+          throw new Error(errorData.error || "Error al actualizar el estado");
+        }
+
+        const responseData = await response.json();
+        console.log("✅ Backend response OK:", responseData);
+
+        // Refrescar datos desde backend para asegurar sincronización
+        console.log("🔄 Recargando datos desde backend...");
+        await fetchPacientesAsignados();
+        console.log("✅ Datos recargados exitosamente");
+      } catch (error) {
+        console.error("❌ Error en CALLBACK 2:", error);
+        throw error;
+      }
     }
   );
 
   // Handlers para cambio de estado con Guardar/Cancelar
   const handleGuardarEstado = async () => {
+    console.log("🎬 handleGuardarEstado INICIADO");
+    console.log("📊 pacienteEditandoEstado:", pacienteEditandoEstado);
+    console.log("📊 nuevoEstadoSeleccionado:", nuevoEstadoSeleccionado);
+    
     if (!pacienteEditandoEstado || !nuevoEstadoSeleccionado) {
       toast.error("Por favor selecciona un estado válido");
+      console.error("❌ Validación fallida: pacienteEditandoEstado=", pacienteEditandoEstado, "nuevoEstadoSeleccionado=", nuevoEstadoSeleccionado);
+      return;
+    }
+
+    // 📅 VALIDAR QUE FECHA Y HORA ESTÉN COMPLETOS
+    const citaAgendada = citasAgendadas[pacienteEditandoEstado] || {};
+    console.log("🔍 Cita agendada:", citaAgendada);
+    
+    if (!citaAgendada.fecha) {
+      toast.error("⚠️ Por favor selecciona la fecha y hora de la cita");
+      console.error("❌ Validación fallida: fecha vacía");
       return;
     }
 
     const paciente = pacientesAsignados.find(p => p.id === pacienteEditandoEstado);
-    if (!paciente) return;
+    if (!paciente) {
+      console.error("❌ Paciente no encontrado:", pacienteEditandoEstado);
+      return;
+    }
+
+    console.log("📝 Paciente a guardar:", paciente);
+    console.log("📝 Especialista:", citaAgendada.especialista);
+    console.log("📝 Fecha/Hora:", citaAgendada.fecha);
+    console.log("📝 Estado:", nuevoEstadoSeleccionado);
 
     setGuardandoEstado(true);
 
     try {
+      console.log("✅ Todas las validaciones pasaron");
+      
       // Llama al hook que maneja la lógica de cambio de estado
       const estadoObj = estadosDisponibles.find(e => e.codigo === nuevoEstadoSeleccionado);
+      console.log("📊 Objeto estado encontrado:", estadoObj);
+      console.log("🚀 Llamando a changeStatus con:", {
+        pacienteId: pacienteEditandoEstado,
+        newStatus: estadoObj?.descripcion,
+        previousStatus: paciente.descEstadoCita,
+        pacienteNombre: paciente.pacienteNombre
+      });
+      
       changeStatus(
         pacienteEditandoEstado,
-        nuevoEstadoSeleccionado,
+        estadoObj ? estadoObj.descripcion : nuevoEstadoSeleccionado,
         paciente.descEstadoCita || "Sin estado",
         paciente.pacienteNombre
       );
 
+      console.log("✅ changeStatus fue llamado");
+
       // Limpiar estado de edición
       setPacienteEditandoEstado(null);
       setNuevoEstadoSeleccionado("");
+      console.log("✅ Estado de edición limpiado");
     } catch (error) {
-      console.error("Error guardando estado:", error);
+      console.error("❌ Error en handleGuardarEstado:", error);
       toast.error("Error al guardar el estado");
     } finally {
       setGuardandoEstado(false);
@@ -399,15 +612,15 @@ export default function GestionAsegurado() {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      const csvBlob = await response.blob();
+      const excelBlob = await response.blob();
 
       // Descargar archivo
       const element = document.createElement("a");
-      const url = URL.createObjectURL(csvBlob);
+      const url = URL.createObjectURL(excelBlob);
       element.setAttribute("href", url);
       element.setAttribute(
         "download",
-        `pacientes_asignados_${new Date().toISOString().split("T")[0]}.csv`
+        `pacientes_asignados_${new Date().toISOString().split("T")[0]}.xlsx`
       );
       element.style.display = "none";
       document.body.appendChild(element);
@@ -418,7 +631,7 @@ export default function GestionAsegurado() {
       toast.success(`Descargados ${selectedRows.size} paciente(s)`);
       setSelectedRows(new Set());
     } catch (error) {
-      console.error("Error descargando CSV:", error);
+      console.error("Error descargando Excel:", error);
       toast.error("Error al descargar el archivo. Intenta nuevamente.");
     }
   };
@@ -456,6 +669,29 @@ export default function GestionAsegurado() {
     return () => clearInterval(intervalo);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoRefreshEnabled]);
+
+  // Cargar automáticamente médicos de pacientes que ya tienen idPersonal
+  useEffect(() => {
+    if (pacientesAsignados.length === 0) return;
+
+    const serviciosConMedicos = new Set();
+    
+    // Recolectar todos los idServicio únicos que tienen idPersonal guardado
+    pacientesAsignados.forEach(paciente => {
+      if (paciente.idPersonal && paciente.idServicio && !serviciosConMedicos.has(paciente.idServicio)) {
+        serviciosConMedicos.add(paciente.idServicio);
+        console.log(`👨‍⚕️ Paciente ${paciente.pacienteNombre} tiene idPersonal ${paciente.idPersonal}, cargando médicos del servicio ${paciente.idServicio}`);
+      }
+    });
+
+    // Cargar médicos para cada servicio
+    serviciosConMedicos.forEach(idServicio => {
+      if (!medicosPorServicio[idServicio]) {
+        console.log(`🔄 Obteniendo médicos del servicio ${idServicio}...`);
+        obtenerMedicosPorServicio(idServicio);
+      }
+    });
+  }, [pacientesAsignados, medicosPorServicio]);
 
   // ============================================================================
   // 🔍 FUNCIÓN DE FILTRADO ESPECIALIZADO
@@ -497,7 +733,11 @@ export default function GestionAsegurado() {
     // 📌 Filtro Estado
     const estadoMatch =
       filtroEstado === "todos" ||
-      paciente.estado === filtroEstado;
+      paciente.codigoEstado === filtroEstado;
+    
+    if (filtroEstado !== "todos" && !estadoMatch) {
+      console.log(`❌ Paciente ${paciente.pacienteNombre} rechazado por estado. Esperado: ${filtroEstado}, Actual: ${paciente.codigoEstado}`);
+    }
 
     return (
       searchMatch &&
@@ -720,13 +960,6 @@ export default function GestionAsegurado() {
               <div className="text-center py-12">
                 <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-500 mb-4">No tienes pacientes asignados aún</p>
-                <button
-                  onClick={() => navigate("/bolsas/solicitudes")}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 inline-flex items-center gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Ir a Asignar Pacientes
-                </button>
               </div>
             ) : (
               <>
@@ -931,6 +1164,12 @@ export default function GestionAsegurado() {
                         Especialidad
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Especialista
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
+                        Fecha y Hora de Cita
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
                         IPRESS
                       </th>
                       <th className="px-4 py-3 text-left text-xs font-bold uppercase tracking-wider">
@@ -1002,6 +1241,141 @@ export default function GestionAsegurado() {
                         <td className="px-4 py-3 text-slate-600">
                           {paciente.especialidad}
                         </td>
+                        {/* ESPECIALISTA - CARGADO DINÁMICAMENTE - EDITABLE EN MODO EDICIÓN */}
+                        <td className="px-4 py-3 text-slate-600">
+                          {pacienteEditandoEstado === paciente.id ? (
+                            // MODO EDICIÓN: Mostrar dropdown editable
+                            (() => {
+                              const idServicio = paciente.idServicio;
+                              const esValidoNumerico = idServicio && !isNaN(idServicio);
+                              
+                              if (esValidoNumerico) {
+                                if (!medicosPorServicio[idServicio] && !cargandoMedicos) {
+                                  obtenerMedicosPorServicio(idServicio);
+                                }
+                              }
+
+                              const medicos = medicosPorServicio[idServicio] || [];
+                              const hayMedicos = medicos.length > 0;
+                              const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
+                              const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
+
+                              return (
+                                <>
+                                  {esValidoNumerico ? (
+                                    <div className="space-y-1">
+                                      {cargandoMedicos && !medicosPorServicio[idServicio] ? (
+                                        <div className="text-center py-1">
+                                          <span className="text-xs text-blue-600 font-medium">Cargando...</span>
+                                        </div>
+                                      ) : hayMedicos ? (
+                                        <select
+                                          value={seleccionadoId || ""}
+                                          onChange={(e) => {
+                                            const idPers = e.target.value ? parseInt(e.target.value) : "";
+                                            setCitasAgendadas(prev => ({
+                                              ...prev,
+                                              [paciente.id]: {
+                                                ...prev[paciente.id],
+                                                especialista: idPers
+                                              }
+                                            }));
+                                          }}
+                                          className="w-full px-2 py-1.5 border border-green-400 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                                        >
+                                          <option value="">Seleccionar médico...</option>
+                                          {medicos.map((medico) => (
+                                            <option key={medico.idPers} value={medico.idPers}>
+                                              {medico.nombre} {medico.colegPers ? `(${medico.colegPers})` : ""}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      ) : (
+                                        <div className="text-center py-1">
+                                          <span className="text-xs text-red-600 font-medium">Sin médicos</span>
+                                        </div>
+                                      )}
+                                      {medicoSeleccionado && (
+                                        <div className="bg-green-50 border border-green-200 rounded p-1.5 mt-1">
+                                          <p className="text-xs font-semibold text-green-900">{medicoSeleccionado.nombre}</p>
+                                          <p className="text-xs text-green-700">📱 {medicoSeleccionado.movilPers || "N/A"}</p>
+                                          <p className="text-xs text-green-700">📧 {medicoSeleccionado.emailCorpPers || "N/A"}</p>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <div className="bg-gray-100 border border-gray-300 rounded px-2 py-1.5 text-center">
+                                      <span className="text-xs text-gray-500">Sin servicio asignado</span>
+                                    </div>
+                                  )}
+                                </>
+                              );
+                            })()
+                          ) : (
+                            // MODO NORMAL: Mostrar especialista seleccionado como texto
+                            (() => {
+                              const idServicio = paciente.idServicio;
+                              const medicos = medicosPorServicio[idServicio] || [];
+                              const seleccionadoId = citasAgendadas[paciente.id]?.especialista;
+                              const medicoSeleccionado = medicos.find(m => m.idPers === seleccionadoId);
+                              
+                              return (
+                                <div className="space-y-1">
+                                  {medicoSeleccionado ? (
+                                    <>
+                                      <div className="text-xs font-semibold text-gray-900">
+                                        {medicoSeleccionado.nombre}
+                                      </div>
+                                      <div className="bg-blue-50 border border-blue-200 rounded p-1">
+                                        <p className="text-xs text-blue-700">📱 {medicoSeleccionado.movilPers || "N/A"}</p>
+                                        <p className="text-xs text-blue-700">📧 {medicoSeleccionado.emailCorpPers || "N/A"}</p>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <span className="text-xs text-gray-400 italic">No seleccionado</span>
+                                  )}
+                                </div>
+                              );
+                            })()
+                          )}
+                        </td>
+                        {/* FECHA Y HORA DE CITA - EDITABLE EN MODO EDICIÓN */}
+                        <td className="px-4 py-3 text-slate-600">
+                          {pacienteEditandoEstado === paciente.id ? (
+                            // MODO EDICIÓN: Input editable
+                            <input
+                              type="datetime-local"
+                              value={citasAgendadas[paciente.id]?.fecha || ""}
+                              onChange={(e) => {
+                                setCitasAgendadas(prev => ({
+                                  ...prev,
+                                  [paciente.id]: {
+                                    ...prev[paciente.id],
+                                    fecha: e.target.value
+                                  }
+                                }));
+                              }}
+                              className="w-full px-2 py-1.5 border-2 border-green-400 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                              placeholder="Seleccionar fecha y hora"
+                            />
+                          ) : (
+                            // MODO NORMAL: Mostrar como texto
+                            (() => {
+                              const fechaVal = citasAgendadas[paciente.id]?.fecha;
+                              if (fechaVal) {
+                                // Convertir de "2026-02-07T13:15" a "07/02/2026 13:15"
+                                const [fecha, hora] = fechaVal.split('T');
+                                const [año, mes, día] = fecha.split('-');
+                                return (
+                                  <div className="text-xs font-semibold text-gray-900">
+                                    {día}/{mes}/{año} {hora || ""}
+                                  </div>
+                                );
+                              }
+                              return <span className="text-xs text-gray-400 italic">No seleccionado</span>;
+                            })()
+                          )}
+                        </td>
                         <td className="px-4 py-3 text-slate-600">
                           <span className="text-xs bg-blue-50 text-blue-700 px-2 py-1 rounded">
                             {paciente.descIpress}
@@ -1018,60 +1392,32 @@ export default function GestionAsegurado() {
                         </td>
                         <td className="px-4 py-3">
                           {pacienteEditandoEstado === paciente.id ? (
-                            <div className="space-y-2">
-                              <select
-                                value={nuevoEstadoSeleccionado}
-                                onChange={(e) => setNuevoEstadoSeleccionado(e.target.value)}
-                                className="w-full px-3 py-1.5 border-2 border-orange-400 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                              >
-                                <option value="">Seleccionar estado...</option>
-                                {estadosDisponibles.map((est) => (
-                                  <option key={est.codigo} value={est.codigo} title={est.descripcion}>
-                                    {est.descripcion.split(" - ")[0]}
-                                  </option>
-                                ))}
-                              </select>
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={handleGuardarEstado}
-                                  disabled={!nuevoEstadoSeleccionado || guardandoEstado}
-                                  className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                                >
-                                  {guardandoEstado ? "Guardando..." : "Guardar"}
-                                </button>
-                                <button
-                                  onClick={handleCancelarEstado}
-                                  disabled={guardandoEstado}
-                                  className="flex-1 bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-2 py-1 rounded text-xs font-medium transition-colors"
-                                >
-                                  Cancelar
-                                </button>
-                              </div>
-                            </div>
+                            // Modo Edición: Mostrar Select
+                            <select
+                              value={nuevoEstadoSeleccionado}
+                              onChange={(e) => setNuevoEstadoSeleccionado(e.target.value)}
+                              className="w-full px-3 py-1.5 border-2 border-orange-400 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                            >
+                              <option value="">Seleccionar estado...</option>
+                              {estadosDisponibles.map((est) => (
+                                <option key={est.codigo} value={est.codigo} title={est.descripcion}>
+                                  {est.descripcion.split(" - ")[0]}
+                                </option>
+                              ))}
+                            </select>
                           ) : (
-                            <div className="flex items-center justify-between">
-                              <span className={`px-3 py-1.5 rounded-lg text-xs font-medium inline-block ${
-                                paciente.codigoEstado === "ATENDIDO_IPRESS"
-                                  ? "bg-green-100 text-green-800"
-                                  : paciente.codigoEstado === "PENDIENTE"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-gray-100 text-gray-800"
-                              }`}>
-                                {paciente.descEstadoCita?.split(" - ")[0] || "Sin estado"}
-                              </span>
-                              <button
-                                onClick={() => {
-                                  setPacienteEditandoEstado(paciente.id);
-                                  setNuevoEstadoSeleccionado(
-                                    estadosDisponibles.find(e => e.descripcion === paciente.descEstadoCita)?.codigo || ""
-                                  );
-                                }}
-                                className="text-blue-600 hover:text-blue-800 ml-2"
-                                title="Editar estado"
-                              >
-                                <Edit2 size={16} />
-                              </button>
-                            </div>
+                            // Modo Normal: Mostrar Badge del Estado
+                            <span className={`px-3 py-1.5 rounded-lg text-xs font-medium inline-block ${
+                              paciente.codigoEstado === "ATENDIDO_IPRESS"
+                                ? "bg-green-100 text-green-800"
+                                : paciente.codigoEstado === "PENDIENTE"
+                                ? "bg-blue-100 text-blue-800"
+                                : paciente.codigoEstado === "CITADO"
+                                ? "bg-purple-100 text-purple-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}>
+                              {paciente.descEstadoCita?.split(" - ")[0] || "Sin estado"}
+                            </span>
                           )}
                         </td>
                         {/* FECHA CAMBIO ESTADO - Auditoría v3.3.1 */}
@@ -1094,14 +1440,51 @@ export default function GestionAsegurado() {
                             <span className="text-gray-400 italic">—</span>
                           )}
                         </td>
+                        {/* COLUMNA ACCIONES - Lápiz para editar + Guardar/Cancelar */}
                         <td className="px-4 py-3 text-center">
-                          <button
-                            onClick={() => abrirModalTelefono(paciente)}
-                            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-xs font-medium transition-colors"
-                            title="Actualizar teléfonos"
-                          >
-                            📱 Teléfono
-                          </button>
+                          {pacienteEditandoEstado === paciente.id ? (
+                            // Modo Edición: Mostrar Guardar y Cancelar
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                onClick={handleGuardarEstado}
+                                disabled={!nuevoEstadoSeleccionado || guardandoEstado}
+                                className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+                                title="Guardar cambios"
+                              >
+                                💾 Guardar
+                              </button>
+                              <button
+                                onClick={handleCancelarEstado}
+                                disabled={guardandoEstado}
+                                className="bg-gray-400 hover:bg-gray-500 disabled:bg-gray-300 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+                                title="Cancelar edición"
+                              >
+                                ✕ Cancelar
+                              </button>
+                            </div>
+                          ) : (
+                            // Modo Normal: Mostrar Lápiz de Editar
+                            <div className="flex gap-2 justify-center">
+                              <button
+                                onClick={() => {
+                                  setPacienteEditandoEstado(paciente.id);
+                                  setNuevoEstadoSeleccionado(paciente.codigoEstado || "");
+                                }}
+                                className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                                title="Editar estado y cita"
+                              >
+                                <Edit2 size={14} />
+                                Editar
+                              </button>
+                              <button
+                                onClick={() => abrirModalTelefono(paciente)}
+                                className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded text-xs font-medium transition-colors"
+                                title="Actualizar teléfonos"
+                              >
+                                📱
+                              </button>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     ))}

@@ -77,6 +77,14 @@ public class AtencionClinica107 {
     @Column(name = "codigo_ipress")
     private String codigoIpress;
 
+    /**
+     * 🔗 Relación ManyToOne con Ipress
+     * Permite acceder al nombre/descripción de la IPRESS
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "id_ipress", insertable = false, updatable = false)
+    private Ipress ipress;
+
     // 🏷️ Derivación Interna (VARCHAR, no FK)
     @Column(name = "derivacion_interna")
     private String derivacionInterna;
@@ -98,6 +106,14 @@ public class AtencionClinica107 {
     @Column(name = "estado")
     private String estado;
 
+    /**
+     * 🔗 Relación ManyToOne con EstadoGestionCita
+     * Permite acceder a la descripción completa del estado
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "estado_gestion_citas_id", insertable = false, updatable = false)
+    private EstadoGestionCita estadoGestionCita;
+
     @Column(name = "fecha_solicitud")
     private LocalDateTime fechaSolicitud;
 
@@ -109,4 +125,14 @@ public class AtencionClinica107 {
 
     @Column(name = "fecha_asignacion")
     private LocalDateTime fechaAsignacion;
+
+    // 🕐 Datos de Atención Programada
+    @Column(name = "fecha_atencion")
+    private LocalDate fechaAtencion;
+
+    @Column(name = "hora_atencion")
+    private String horaAtencion;
+
+    @Column(name = "id_personal")
+    private Long idPersonal;
 }

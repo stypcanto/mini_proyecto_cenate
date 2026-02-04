@@ -22,6 +22,13 @@ public class AtencionClinica107Specification {
     }
 
     /**
+     * Filtra por ID de Bolsa (OBLIGATORIO para Módulo 107)
+     */
+    public static Specification<AtencionClinica107> conIdBolsa(Long idBolsa) {
+        return (root, query, cb) -> cb.equal(root.get("idBolsa"), idBolsa);
+    }
+
+    /**
      * Filtra por estado (PENDIENTE, ATENDIDO)
      * Busca en el campo 'estado'
      */
@@ -68,14 +75,14 @@ public class AtencionClinica107Specification {
      * Filtra por derivación interna
      */
     public static Specification<AtencionClinica107> conDerivacionInterna(String derivacion) {
-        return (root, query, cb) -> cb.equal(root.get("derivacionInterna"), derivacion);
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("derivacionInterna")), derivacion.toUpperCase());
     }
 
     /**
      * Filtra por especialidad
      */
     public static Specification<AtencionClinica107> conEspecialidad(String especialidad) {
-        return (root, query, cb) -> cb.equal(root.get("especialidad"), especialidad);
+        return (root, query, cb) -> cb.equal(cb.upper(root.get("especialidad")), especialidad.toUpperCase());
     }
 
     /**
@@ -101,6 +108,7 @@ public class AtencionClinica107Specification {
      * Manejo inteligente: ignora valores null o "todos"
      */
     public static Specification<AtencionClinica107> conFiltros(
+        Long idBolsa,
         Long estadoGestionCitasId,
         String estado,
         String tipoDocumento,
@@ -114,6 +122,11 @@ public class AtencionClinica107Specification {
         String search
     ) {
         Specification<AtencionClinica107> spec = Specification.where(null);
+
+        // Filtro ID Bolsa (OBLIGATORIO)
+        if (idBolsa != null) {
+            spec = spec.and(conIdBolsa(idBolsa));
+        }
 
         // Filtro Estado de Gestión de Citas (ID)
         if (estadoGestionCitasId != null) {
@@ -148,6 +161,7 @@ public class AtencionClinica107Specification {
 
         // Filtro Derivación
         if (derivacion != null && !derivacion.isEmpty() && !derivacion.equals("todas")) {
+            System.out.println("[DEBUG SPEC] Aplicando filtro de derivación: " + derivacion);
             spec = spec.and(conDerivacionInterna(derivacion));
         }
 

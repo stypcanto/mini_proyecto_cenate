@@ -150,7 +150,17 @@ public class SolicitudBolsaDTO {
     @JsonProperty("nombre_usuario_cambio_estado")
     private String nombreUsuarioCambioEstado;
 
-    // 🔔 AUDITORÍA
+    // � DETALLES DE CITA AGENDADA (NEW v3.4.0)
+    @JsonProperty("fecha_atencion")
+    private java.time.LocalDate fechaAtencion;
+
+    @JsonProperty("hora_atencion")
+    private java.time.LocalTime horaAtencion;
+
+    @JsonProperty("id_personal")
+    private Long idPersonal;
+
+    // �🔔 AUDITORÍA
     @JsonProperty("activo")
     private Boolean activo;
 }
