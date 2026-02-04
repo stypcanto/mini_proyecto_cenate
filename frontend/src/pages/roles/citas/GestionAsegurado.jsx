@@ -946,13 +946,6 @@ export default function GestionAsegurado() {
               <div className="text-center py-12">
                 <Calendar className="w-12 h-12 text-gray-400 mx-auto mb-3" />
                 <p className="text-gray-500 mb-4">No tienes pacientes asignados aún</p>
-                <button
-                  onClick={() => navigate("/bolsas/solicitudes")}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-medium hover:bg-blue-700 inline-flex items-center gap-2"
-                >
-                  <UserPlus className="w-4 h-4" />
-                  Ir a Asignar Pacientes
-                </button>
               </div>
             ) : (
               <>
