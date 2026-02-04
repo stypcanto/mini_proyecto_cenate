@@ -1207,29 +1207,48 @@ export default function Solicitudes() {
     }
   };
 
-  // Descargar selección de bolsas
+  // Descargar selección de bolsas en Excel
   const descargarSeleccion = async () => {
     if (selectedRows.size === 0) {
-      alert('Selecciona al menos una bolsa para descargar');
+      alert('Selecciona al menos una solicitud para descargar');
       return;
     }
 
     try {
       const idsSeleccionados = Array.from(selectedRows);
-      const csvBlob = await bolsasService.descargarCSV(idsSeleccionados);
+      const token = localStorage.getItem('auth.token');
+      const queryParams = new URLSearchParams({
+        ids: idsSeleccionados.join(','),
+      });
 
-      // Descargar archivo
+      const response = await fetch(
+        `/api/bolsas/solicitudes/exportar-asignados?${queryParams}`,
+        {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+
+      const excelBlob = await response.blob();
+
+      // Descargar archivo Excel
       const element = document.createElement('a');
-      const url = URL.createObjectURL(csvBlob);
+      const url = URL.createObjectURL(excelBlob);
       element.setAttribute('href', url);
-      element.setAttribute('download', `bolsas_${new Date().toISOString().split('T')[0]}.csv`);
+      element.setAttribute('download', `solicitudes_${new Date().toISOString().split('T')[0]}.xlsx`);
       element.style.display = 'none';
       document.body.appendChild(element);
       element.click();
       document.body.removeChild(element);
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error descargando CSV:', error);
+      console.error('Error descargando Excel:', error);
       alert('Error al descargar el archivo. Intenta nuevamente.');
     }
   };

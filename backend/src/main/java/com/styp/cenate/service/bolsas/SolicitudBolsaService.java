@@ -181,6 +181,16 @@ public interface SolicitudBolsaService {
     List<String> obtenerEspecialidadesUnicas();
 
     /**
+     * Exporta solicitudes asignadas a la gestora actual a formato EXCEL
+     * Usado en la descarga desde "Mi Bandeja" (GestionAsegurado)
+     * Incluye TODAS las columnas de la tabla
+     *
+     * @param ids lista de IDs de solicitudes a exportar
+     * @return datos EXCEL (.xlsx) en bytes
+     */
+    byte[] exportarExcelAsignados(List<Long> ids);
+
+    /**
      * Exporta solicitudes asignadas a la gestora actual a formato CSV
      * Usado en la descarga desde "Mi Bandeja" (GestionAsegurado)
      *

@@ -612,15 +612,15 @@ export default function GestionAsegurado() {
         throw new Error(`Error ${response.status}: ${response.statusText}`);
       }
 
-      const csvBlob = await response.blob();
+      const excelBlob = await response.blob();
 
       // Descargar archivo
       const element = document.createElement("a");
-      const url = URL.createObjectURL(csvBlob);
+      const url = URL.createObjectURL(excelBlob);
       element.setAttribute("href", url);
       element.setAttribute(
         "download",
-        `pacientes_asignados_${new Date().toISOString().split("T")[0]}.csv`
+        `pacientes_asignados_${new Date().toISOString().split("T")[0]}.xlsx`
       );
       element.style.display = "none";
       document.body.appendChild(element);
@@ -631,7 +631,7 @@ export default function GestionAsegurado() {
       toast.success(`Descargados ${selectedRows.size} paciente(s)`);
       setSelectedRows(new Set());
     } catch (error) {
-      console.error("Error descargando CSV:", error);
+      console.error("Error descargando Excel:", error);
       toast.error("Error al descargar el archivo. Intenta nuevamente.");
     }
   };

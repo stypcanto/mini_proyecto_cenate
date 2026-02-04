@@ -412,6 +412,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     /**
      * 4️⃣ bis Estadísticas por tipo de bolsa
      * Agrupa solicitudes por tipo de bolsa con métricas
+     * Muestra TODAS las bolsas del catálogo (incluso sin solicitudes)
      */
     @Query(value = """
         SELECT
@@ -422,7 +423,7 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
             COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) as cancelados,
             ROUND(
                 COUNT(sb.id_solicitud) * 100.0 /
-                (SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true), 2
+                NULLIF((SELECT COUNT(*) FROM dim_solicitud_bolsa WHERE activo = true), 0), 2
             ) as porcentaje,
             ROUND(
                 COUNT(CASE WHEN dgc.desc_estado_cita = 'ATENDIDO' THEN 1 END) * 100.0 /
@@ -432,14 +433,14 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
                 COUNT(CASE WHEN dgc.desc_estado_cita = 'CANCELADO' THEN 1 END) * 100.0 /
                 NULLIF(COUNT(sb.id_solicitud), 0), 2
             ) as tasa_cancelacion,
-            CAST(ROUND(
+            COALESCE(CAST(ROUND(
                 AVG(EXTRACT(EPOCH FROM (sb.fecha_actualizacion - sb.fecha_solicitud)) / 3600),
                 2
-            ) AS INTEGER) as horas_promedio
-        FROM dim_solicitud_bolsa sb
-        LEFT JOIN dim_tipos_bolsas tb ON sb.id_bolsa = tb.id_tipo_bolsa
+            ) AS INTEGER), 0) as horas_promedio
+        FROM dim_tipos_bolsas tb
+        LEFT JOIN dim_solicitud_bolsa sb ON tb.id_tipo_bolsa = sb.id_bolsa AND sb.activo = true
         LEFT JOIN dim_estados_gestion_citas dgc ON sb.estado_gestion_citas_id = dgc.id_estado_cita
-        WHERE sb.activo = true AND sb.id_bolsa IS NOT NULL
+        WHERE tb.stat_tipo_bolsa = 'A'
         GROUP BY tb.desc_tipo_bolsa, tb.id_tipo_bolsa
         ORDER BY total DESC
         """, nativeQuery = true)
@@ -815,3 +816,4 @@ public interface SolicitudBolsaRepository extends JpaRepository<SolicitudBolsa, 
     List<String> obtenerEspecialidadesUnicas();
 
 }
+

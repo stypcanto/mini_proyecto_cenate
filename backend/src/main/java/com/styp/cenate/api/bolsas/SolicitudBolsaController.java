@@ -880,18 +880,18 @@ public class SolicitudBolsaController {
     }
 
     /**
-     * Exporta solicitudes asignadas (Mi Bandeja) de la gestora actual a CSV
+     * Exporta solicitudes asignadas (Mi Bandeja) de la gestora actual a EXCEL
      * GET /api/bolsas/solicitudes/exportar-asignados
      *
      * @param ids lista opcional de IDs específicos a exportar
-     * @return archivo CSV con las solicitudes seleccionadas
+     * @return archivo EXCEL con todas las columnas de la tabla
      */
     @GetMapping("/exportar-asignados")
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<byte[]> exportarAsignados(
             @RequestParam(value = "ids", required = false) String ids) {
         try {
-            log.info("📄 Exportando solicitudes asignadas a CSV");
+            log.info("📄 Exportando solicitudes asignadas a EXCEL");
 
             List<Long> idsList = new ArrayList<>();
             if (ids != null && !ids.isEmpty()) {
@@ -915,14 +915,13 @@ public class SolicitudBolsaController {
                 return ResponseEntity.badRequest().body("No hay solicitudes para exportar".getBytes());
             }
 
-            // Obtener el servicio adecuado para exportar
-            // Usando BolsasService que tiene el método exportarCSV
-            byte[] csvData = solicitudBolsaService.exportarCSVAsignados(idsList);
+            // Obtener datos en formato EXCEL
+            byte[] excelData = solicitudBolsaService.exportarExcelAsignados(idsList);
 
             return ResponseEntity.ok()
-                .header("Content-Type", "text/csv; charset=UTF-8")
-                .header("Content-Disposition", "attachment; filename=\"pacientes_asignados.csv\"")
-                .body(csvData);
+                .header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+                .header("Content-Disposition", "attachment; filename=\"pacientes_asignados.xlsx\"")
+                .body(excelData);
         } catch (Exception e) {
             log.error("❌ Error exportando solicitudes asignadas: ", e);
             return ResponseEntity.status(500).body(("Error: " + e.getMessage()).getBytes());
