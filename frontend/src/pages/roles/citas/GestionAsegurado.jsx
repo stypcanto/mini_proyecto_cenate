@@ -87,7 +87,21 @@ export default function GestionAsegurado() {
   const [medicosPorServicio, setMedicosPorServicio] = useState({}); // { idServicio: [médicos] }
   const [cargandoMedicos, setCargandoMedicos] = useState(false);
 
-  const API_BASE = "http://localhost:8080/api";
+  // 🔧 API_BASE dinámico basado en el host actual o variable de entorno
+  const getApiBase = () => {
+    // Prioridad: variable de entorno > window.location
+    if (process.env.REACT_APP_API_URL) {
+      return process.env.REACT_APP_API_URL;
+    }
+    
+    // Fallback: construir desde window.location (recomendado para producción)
+    const protocol = window.location.protocol; // http: o https:
+    const hostname = window.location.hostname; // IP o dominio
+    const port = window.location.port ? `:${window.location.port}` : '';
+    return `${protocol}//${hostname}${port}/api`;
+  };
+  
+  const API_BASE = getApiBase();
 
   // ============================================================================
   // 🏥 CARGAR MÉDICOS POR SERVICIO (DINÁMICO)
