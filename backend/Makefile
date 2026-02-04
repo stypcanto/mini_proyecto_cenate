@@ -117,14 +117,14 @@ test-report:
 ## Verificar conexión a PostgreSQL
 db-check:
 	@echo "$(GREEN)🔍 Verificando conexión a PostgreSQL...$(NC)"
-	@PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -c "SELECT version();" 2>/dev/null && \
+	@PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "SELECT version();" 2>/dev/null && \
 		echo "$(GREEN)✅ Conexión exitosa$(NC)" || \
 		echo "$(YELLOW)⚠️  No se pudo conectar (psql no instalado o BD inaccesible)$(NC)"
 
 ## Mostrar estadísticas de BD
 db-stats:
 	@echo "$(GREEN)📊 Estadísticas de BD...$(NC)"
-	@PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -c "\
+	@PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "\
 		SELECT \
 			pg_size_pretty(pg_database_size('maestro_cenate')) as tamano, \
 			(SELECT count(*) FROM dim_usuarios) as usuarios, \
@@ -187,7 +187,7 @@ info:
 	@echo "$(BLUE)════════════════════════════════════════════════════════$(NC)"
 	@echo ""
 	@echo "  $(YELLOW)Puerto:$(NC)      $(PORT)"
-	@echo "  $(YELLOW)BD Host:$(NC)     10.0.89.13:5432"
+	@echo "  $(YELLOW)BD Host:$(NC)     10.0.89.241:5432"
 	@echo "  $(YELLOW)BD Nombre:$(NC)   maestro_cenate"
 	@echo "  $(YELLOW)Swagger:$(NC)     http://localhost:$(PORT)/swagger-ui.html"
 	@echo "  $(YELLOW)Health:$(NC)      http://localhost:$(PORT)/api/health"

@@ -65,11 +65,11 @@ Este SP procesa solicitudes de bolsa importadas desde Excel y **enriquece autom√
 
 ```bash
 # Conectar a BD y ejecutar script
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/database/06_scripts/053_sp_bolsa_107_procesar_con_enriquecimiento.sql
 
 # Verificar que se cre√≥
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -c "\df sp_bolsa_107_procesar"
 ```
 

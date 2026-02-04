@@ -89,7 +89,7 @@ COMMENT ON VIEW vw_permisos_usuario_activos IS
 
  -- 💾 Instrucciones de respaldo
  -- Para restaurar las vistas manualmente en tu servidor remoto:
- -- psql -h 10.0.89.13 -U postgres -d maestro_cenate -f backend/src/main/resources/sql/init/init_mbac_views.sql
+ -- psql -h 10.0.89.241 -U postgres -d maestro_cenate -f backend/src/main/resources/sql/init/init_mbac_views.sql
 
  -- Verifica que las vistas se regeneraron correctamente:
  -- \dv vw_*

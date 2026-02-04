@@ -1,7 +1,7 @@
 # ✅ VALIDACIÓN DE BACKUPS AUTOMÁTICOS - 2026-01-25
 
 **Fecha de Validación:** 2026-01-25 23:45
-**Servidor:** 10.0.89.13 (PostgreSQL Docker)
+**Servidor:** 10.0.89.241 (PostgreSQL Docker)
 **Base de Datos:** maestro_cenate
 **Status:** ✅ **BACKUPS FUNCIONANDO CORRECTAMENTE**
 
@@ -226,5 +226,5 @@
 
 **Validado por:** Claude Code
 **Fecha:** 2026-01-25
-**Servidor:** cenate@10.0.89.13
+**Servidor:** cenate@10.0.89.241
 **Próxima revisión:** 2026-02-25 (Mensual)

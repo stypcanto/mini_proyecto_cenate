@@ -22,8 +22,8 @@ import java.util.Map;
         "http://localhost",
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://10.0.89.13:3000",
-        "http://10.0.89.13:5173"
+        "http://10.0.89.241:3000",
+        "http://10.0.89.241:5173"
 })
 @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
 @Data

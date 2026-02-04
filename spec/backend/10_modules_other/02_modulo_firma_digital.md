@@ -240,7 +240,7 @@ if (firma.tieneCertificadoVigente()) {
 
 **Ejecutar:**
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/04_BaseDatos/06_scripts/015_crear_tabla_firma_digital_personal.sql
 ```
 

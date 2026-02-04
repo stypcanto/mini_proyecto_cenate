@@ -209,7 +209,7 @@ Based on the project context:
 - Document MBAC (Module-Based Access Control) requirements on all endpoints
 - Include @CheckMBACPermission annotations for Spring Boot controllers
 - Provide examples with actual CENATE data structures (paciente_id, doc_paciente, DNI, etc.)
-- Document integration with PostgreSQL (10.0.89.13:5432, maestro_cenate database)
+- Document integration with PostgreSQL (10.0.89.241:5432, maestro_cenate database)
 - Show JWT authentication patterns used in the project
 - Include examples for all relevant modules (Bolsas, Tele-ECG, Estados Gestión Citas, etc.)
 - Reference existing documentation in spec/backend/01_api_endpoints.md

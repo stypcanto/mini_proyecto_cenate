@@ -119,7 +119,7 @@ When presenting findings, use this structure:
 
 Based on the project context provided, you know:
 - Database: `maestro_cenate` on PostgreSQL 14+
-- Server: `10.0.89.13:5432`
+- Server: `10.0.89.241:5432`
 - 51+ entities (tables) in use
 - Recent additions: audit_logs, disponibilidad_medica, account_requests
 - Active development with frequent schema changes

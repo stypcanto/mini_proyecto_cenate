@@ -4336,7 +4336,7 @@ APTO PARA PRODUCCIÓN: SÍ (con bug fixes)
 
 1. **Esta semana**: Fijar bugs críticos (2-3 días)
 2. **Próxima semana**: Mejoras UX + optimización (3-4 días)
-3. **Semana siguiente**: Deploy staging 10.0.89.13 (2-3 días)
+3. **Semana siguiente**: Deploy staging 10.0.89.241 (2-3 días)
 4. **Monitoreo 24h post-deploy** ✅
 
 ---
@@ -7825,7 +7825,7 @@ WHERE
 
 ```bash
 # Verificar cambio en BD
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -c \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate -c \
   "SELECT nombre_pagina, ruta_pagina FROM dim_paginas_modulo WHERE id_pagina = 70;"
 ```
 
@@ -9185,11 +9185,11 @@ Estado: SUCCESS
 
 ```bash
 # Aplicar fix de vista
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/009_fix_vista_auditoria_completa.sql
 
 # Verificar resultado
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -c "SELECT COUNT(*) FROM vw_auditoria_modular_detallada;"
 # Debe retornar 2732 (igual a audit_logs)
 ```
@@ -9400,7 +9400,7 @@ Para que el envío de correos funcione, el backend DEBE iniciarse con estas vari
 ```bash
 export MAIL_USERNAME="cenateinformatica@gmail.com"
 export MAIL_PASSWORD="nolq uisr fwdw zdly"
-export DB_URL="jdbc:postgresql://10.0.89.13:5432/maestro_cenate"
+export DB_URL="jdbc:postgresql://10.0.89.241:5432/maestro_cenate"
 export DB_USERNAME="postgres"
 export DB_PASSWORD="Essalud2025"
 export JWT_SECRET="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"
@@ -9694,7 +9694,7 @@ backend/src/main/java/com/styp/cenate/
 
 Ejecutar con:
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/003_modulo_red_coordinador.sql
 ```
 
@@ -10365,7 +10365,7 @@ export const VERSION = {
 ### Configuracion de Infraestructura
 
 **Base de Datos Remota:**
-- Servidor: `10.0.89.13:5432`
+- Servidor: `10.0.89.241:5432`
 - Base de datos: `maestro_cenate`
 - Usuario: `postgres` / Contrasena: `Essalud2025`
 

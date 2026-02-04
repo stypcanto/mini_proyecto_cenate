@@ -29,7 +29,7 @@ import java.util.Map;
         "http://localhost:5173",
         "http://localhost",
         "http://127.0.0.1",
-        "http://10.0.89.13",
+        "http://10.0.89.241",
         "http://10.0.89.239"
 })
 @Data

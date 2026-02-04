@@ -168,7 +168,7 @@ public ResponseEntity<?> logout(...)
 
 **Comando para crear tabla:**
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/004_token_blacklist.sql
 ```
 
@@ -199,7 +199,7 @@ cors.allowed-origins=http://localhost:3000,http://localhost:8080
 
 3. `application-prod.properties`:
 ```properties
-cors.allowed-origins=http://10.0.89.13,http://10.0.89.13:80,http://10.0.89.239,http://10.0.89.239:80
+cors.allowed-origins=http://10.0.89.241,http://10.0.89.241:80,http://10.0.89.239,http://10.0.89.239:80
 ```
 
 **Verificacion:**
@@ -349,14 +349,14 @@ springdoc.swagger-ui.enabled=false
 ### 1. Ejecutar Script SQL (OBLIGATORIO)
 
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/004_token_blacklist.sql
 ```
 
 ### 2. Configurar Variables de Entorno en Produccion
 
 ```bash
-export DB_URL=jdbc:postgresql://10.0.89.13:5432/maestro_cenate
+export DB_URL=jdbc:postgresql://10.0.89.241:5432/maestro_cenate
 export DB_USERNAME=postgres
 export DB_PASSWORD=Essalud2025
 export JWT_SECRET=clave-secreta-produccion-minimo-32-caracteres

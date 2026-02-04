@@ -554,7 +554,7 @@ public Long getTotalImagenes();
 **Verificación en BD:**
 
 ```sql
--- Ejecutar en: psql -h 10.0.89.13 -U postgres -d maestro_cenate
+-- Ejecutar en: psql -h 10.0.89.241 -U postgres -d maestro_cenate
 
 -- Query actual (INCORRECTO):
 SELECT COUNT(*) FROM tele_ecg_imagenes
@@ -893,7 +893,7 @@ async descargarImagen(idImagen, nombreArchivo) {
 
 - [ ] Testing completo después de cada fix
 - [ ] Ejecutar 65+ tests automatizados
-- [ ] Validación en servidor 10.0.89.13
+- [ ] Validación en servidor 10.0.89.241
 - [ ] Code review final
 - [ ] UAT (User Acceptance Testing)
 - [ ] Deploy a staging
@@ -909,7 +909,7 @@ async descargarImagen(idImagen, nombreArchivo) {
 ```
 Backend:     localhost:8080
 Frontend:    localhost:3000
-BD:          10.0.89.13:5432 (maestro_cenate)
+BD:          10.0.89.241:5432 (maestro_cenate)
 Usuario:     84151616 (PADOMI - INSTITUCION_EX)
 Admin:       Styp Canto (SUPERADMIN)
 ```
@@ -919,7 +919,7 @@ Admin:       Styp Canto (SUPERADMIN)
 1. **T-ECG-001 & T-ECG-002:**
    ```bash
    # Ejecutar query de verificación en BD
-   psql -h 10.0.89.13 -U postgres -d maestro_cenate
+   psql -h 10.0.89.241 -U postgres -d maestro_cenate
    SELECT COUNT(*) FROM tele_ecg_imagenes WHERE stat_imagen = 'A';
    ```
 

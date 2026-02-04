@@ -29,7 +29,7 @@ info:
 servers:
   - url: http://localhost:8080/api
     description: Desarrollo local
-  - url: http://10.0.89.13:8080/api
+  - url: http://10.0.89.241:8080/api
     description: Servidor interno EsSalud (staging)
   - url: https://telemedicina.essalud.gob.pe/api
     description: Producción

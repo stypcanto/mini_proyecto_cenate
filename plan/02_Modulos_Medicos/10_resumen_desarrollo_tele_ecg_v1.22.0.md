@@ -275,7 +275,7 @@ ANORMAL             Rojo        #EF4444
 
 ### Base de Datos
 - **DBMS**: PostgreSQL 14+
-- **Host**: 10.0.89.13:5432
+- **Host**: 10.0.89.241:5432
 - **Database**: maestro_cenate
 - **Tablas**: 2 (imagenes + auditoria)
 

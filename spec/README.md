@@ -83,29 +83,29 @@ spec/
 ### Auditoría
 ```bash
 # Crear vista e índices de auditoría
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f BD/scripts/001_audit_view_and_indexes.sql
 
 # Renombrar menú a "Auditoría"
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f BD/scripts/002_rename_logs_to_auditoria.sql
 ```
 
 ### Disponibilidad Médica
 ```bash
 # Crear tablas de disponibilidad
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f BD/scripts/005_disponibilidad_medica.sql
 
 # Agregar card al dashboard médico
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f BD/scripts/006_agregar_card_disponibilidad.sql
 ```
 
 ### Email Preferido
 ```bash
 # Agregar campo email_preferido
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f BD/scripts/007_agregar_email_preferido.sql
 ```
 

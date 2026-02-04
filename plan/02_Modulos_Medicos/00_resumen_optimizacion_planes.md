@@ -413,7 +413,7 @@ Resultado: Disponibilidad + Integración + Chatbot = Sistema completo
 - [ ] Leer `plan/02_Modulos_Medicos/01_plan_disponibilidad_turnos.md` (v2.0.0) completo
 - [ ] Leer `spec/04_BaseDatos/07_horarios_sistema/01_modelo_horarios_existente.md`
 - [ ] Leer `spec/04_BaseDatos/07_horarios_sistema/02_guia_integracion_horarios.md`
-- [ ] Verificar acceso a base de datos `maestro_cenate` (10.0.89.13)
+- [ ] Verificar acceso a base de datos `maestro_cenate` (10.0.89.241)
 - [ ] Confirmar existencia de tipos de turno TRN_CHATBOT en `dim_tipo_turno`
 - [ ] Confirmar catálogo de horarios (158, 131, 200A) en `dim_horario`
 

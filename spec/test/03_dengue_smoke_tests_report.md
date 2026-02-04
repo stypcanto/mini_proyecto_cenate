@@ -246,7 +246,7 @@ $ curl -X GET http://localhost:8080/api/menu-usuario/usuario/1 \
 
 #### Conexión:
 ```bash
-$ PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
+$ PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate
 
 psql (14.7)
 Type "help" for help.

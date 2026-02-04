@@ -26,7 +26,7 @@
 ## Resumen Ejecutivo
 
 ### Pregunta Inicial
-**¿Instalar Ollama en el servidor de base de datos (10.0.89.13) contribuirá al proyecto CENATE?**
+**¿Instalar Ollama en el servidor de base de datos (10.0.89.241) contribuirá al proyecto CENATE?**
 
 ### Respuesta Corta
 **SÍ, pero NO en el servidor actual de base de datos.**
@@ -299,7 +299,7 @@ GPU: NVIDIA A100/H100 o múltiples RTX 4090
 └──────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────┐
-│  Servidor PostgreSQL (10.0.89.13)      │
+│  Servidor PostgreSQL (10.0.89.241)      │
 │  - Base de datos maestro_cenate         │
 │  - NO ejecuta Ollama                    │
 └──────────────┬──────────────────────────┘
@@ -339,7 +339,7 @@ GPU: NVIDIA A100/H100 o múltiples RTX 4090
 
 ```
 ┌─────────────────────────────────────────┐
-│  Servidor Actual (10.0.89.13)          │
+│  Servidor Actual (10.0.89.241)          │
 ├─────────────────────────────────────────┤
 │                                         │
 │  ┌────────────────┐  ┌──────────────┐  │
@@ -1535,7 +1535,7 @@ public class VerificadorRespuestasService {
 
 ### 1. Infraestructura
 ```
-❌ NO instalar en servidor de BD actual (10.0.89.13)
+❌ NO instalar en servidor de BD actual (10.0.89.241)
 ✅ SÍ implementar en servidor dedicado (nuevo 10.0.89.XX)
 ✅ SÍ empezar con prototipo en Mac de desarrollo
 ```

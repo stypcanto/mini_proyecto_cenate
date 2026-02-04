@@ -68,7 +68,7 @@ u.name_user AS username  -- ⭐ NUEVO
 
 **Ejecución**:
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/04_BaseDatos/06_scripts/016_agregar_username_vw_personal_total.sql
 ```
 

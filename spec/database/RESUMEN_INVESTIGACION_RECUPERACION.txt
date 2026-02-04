@@ -1,6 +1,6 @@
 ╔══════════════════════════════════════════════════════════════════════════════╗
 ║           INVESTIGACIÓN DE RECUPERACIÓN - TABLA ASEGURADOS                   ║
-║                     Servidor: 10.0.89.13 PostgreSQL                          ║
+║                     Servidor: 10.0.89.241 PostgreSQL                          ║
 ║                          Fecha: 2026-01-23                                   ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 
@@ -99,7 +99,7 @@ PROTECCIÓN DE ROLES:
 ═══════════════════════════════════════════════════════════════════════════════
 Documento:  REPORTE_RECUPERACION_ASEGURADOS.md (Ruta del proyecto)
 Dump SQL:   /tmp/maestro_cenate_backup.sql (2.7GB)
-Servidor:   cenate@10.0.89.13 (ssh -o StrictHostKeyChecking=no)
+Servidor:   cenate@10.0.89.241 (ssh -o StrictHostKeyChecking=no)
 
 ═══════════════════════════════════════════════════════════════════════════════
 Conclusión: RECUPERACIÓN VIABLE ✅

@@ -36,7 +36,7 @@ El módulo **TeleECG** es un sistema **production-ready** para gestión centrali
 |---------|--------|-------------|-------|
 | **Backend** | ✅ Listo | 100% | 11 endpoints, 1,000+ líneas, CASCADE DELETE ✅ |
 | **Frontend** | ✅ Funcional | 100% | 8 componentes, 2,100+ líneas, UX issues menores |
-| **Base de Datos** | ✅ Operativo | 100% | Ejecutado en 10.0.89.13, FK CASCADE ✅ |
+| **Base de Datos** | ✅ Operativo | 100% | Ejecutado en 10.0.89.241, FK CASCADE ✅ |
 | **Seguridad** | ✅ Compliant | 100% | OWASP Top 10, JWT, MBAC, auditoría completa |
 | **Testing** | ✅ Exhaustivo | 89% | 65+ tests automatizados |
 | **Deployment** | ⏳ Pendiente | 12% | Requiere 4 bug fixes restantes + validación |
@@ -63,7 +63,7 @@ El módulo **TeleECG** es un sistema **production-ready** para gestión centrali
 ├─────────────────────────────────────────────────┤
 │ Frontend: React 19 + TailwindCSS + Lucide React │
 │ Backend:  Spring Boot 3.5.6 + Java 17           │
-│ BD:       PostgreSQL 14+ (10.0.89.13:5432)      │
+│ BD:       PostgreSQL 14+ (10.0.89.241:5432)      │
 │ Storage:  Filesystem /opt/cenate/teleekgs/      │
 │ Auth:     JWT 24h + MBAC (Module-Based Access)  │
 └─────────────────────────────────────────────────┘
@@ -903,7 +903,7 @@ Response (200):
      └─ T-ECG-001, T-ECG-002, T-ECG-003, T-ECG-004, T-ECG-005
 □ 2. Testing post-fixes (4h)
      └─ Ejecutar 65+ tests automatizados
-□ 3. Verificar servidor 10.0.89.13
+□ 3. Verificar servidor 10.0.89.241
      └─ /opt/cenate/teleekgs/ directory con chmod 755
      └─ PostgreSQL tables existentes
      └─ SMTP relay funcional
@@ -920,7 +920,7 @@ Response (200):
 2. Build Frontend
    └─ npm run build
 
-3. Deploy a staging 10.0.89.13
+3. Deploy a staging 10.0.89.241
    └─ Backend: puerto 8081 (test)
    └─ Frontend: puerto 3001 (test)
 

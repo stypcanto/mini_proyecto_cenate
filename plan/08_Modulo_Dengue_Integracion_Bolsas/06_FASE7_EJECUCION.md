@@ -80,7 +80,7 @@ BUILD SUCCESSFUL in 9s
 
 3. **Database accesible:**
    ```bash
-   PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
+   PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate
    # Verificar: maestro_cenate=#
    ```
 

@@ -342,11 +342,11 @@ Visualización interactiva
 → Acción: INMEDIATA
 → Verificar:
   1. PostgreSQL está corriendo
-  2. Conexión a 10.0.89.13:5432
+  2. Conexión a 10.0.89.241:5432
   3. Credenciales correctas
   4. Network/Firewall
 → Comando:
-  psql -h 10.0.89.13 -U postgres -d maestro_cenate
+  psql -h 10.0.89.241 -U postgres -d maestro_cenate
 ```
 
 ---

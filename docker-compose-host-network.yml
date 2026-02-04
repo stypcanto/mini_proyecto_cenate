@@ -1,6 +1,6 @@
 # ========================================================================
 # ⚙️ DOCKER COMPOSE - CENATE PLATFORM (HOST NETWORK MODE)
-# Usa la red del host para poder acceder a PostgreSQL en 10.0.89.13
+# Usa la red del host para poder acceder a PostgreSQL en 10.0.89.241
 # ========================================================================
 
 services:
@@ -14,7 +14,7 @@ services:
       dockerfile: Dockerfile
     environment:
       # 🗄️ Base de datos
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://10.0.89.13:5432/maestro_cenate}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://10.0.89.241:5432/maestro_cenate}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-postgres}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-Essalud2025}
       SPRING_JPA_HIBERNATE_DDL_AUTO: none

@@ -225,7 +225,7 @@ Resultados esperados:
 ✅ **Base de Datos:**
 ```sql
 -- Ejecutado en servidor
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f V3_0_8__mejora_dim_bolsa_relaciones_fix.sql
 
 -- Validación

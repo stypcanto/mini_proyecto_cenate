@@ -1237,7 +1237,7 @@ const cargarImagenIndice = async (index, imagenes) => {
 
 ### Base de Datos
 - **DBMS**: PostgreSQL 14+
-- **Host**: 10.0.89.13:5432
+- **Host**: 10.0.89.241:5432
 - **Database**: maestro_cenate
 - **Tablas**: 2 (imagenes + auditoria)
 - **Índices**: 9 (optimizados)
@@ -1350,7 +1350,7 @@ DESPUÉS (v1.21.5): 1 fila consolidada ✅
 ## 🚀 Próximos Pasos (Post-Deployment)
 
 1. **Testing**: Ejecutar 65+ tests automatizados
-2. **Validación**: En servidor staging (10.0.89.13)
+2. **Validación**: En servidor staging (10.0.89.241)
 3. **Code Review**: Validación técnica final
 4. **UAT**: User Acceptance Testing
 5. **Deployment**: A producción con monitoreo 24h

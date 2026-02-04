@@ -510,23 +510,23 @@ POST /api/security/dashboard/verificar-integridad               (Solo SUPERADMIN
 export PGPASSWORD=Essalud2025
 
 # Script 1: Emojis MBAC en auditoría
-psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/010_agregar_emojis_mbac_auditoria.sql
 
 # Script 2: Tabla de sesiones activas
-psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/011_crear_tabla_active_sessions.sql
 
 # Script 3: Columnas tracking de cambios
-psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/012_agregar_columnas_tracking_cambios.sql
 
 # Script 4: Hash de integridad
-psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/013_agregar_hash_integridad.sql
 
 # Script 5: Tabla de alertas de seguridad
-psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/014_crear_tabla_security_alerts.sql
 ```
 
@@ -534,14 +534,14 @@ psql -h 10.0.89.13 -U postgres -d maestro_cenate \
 
 ```bash
 # Verificar tablas creadas
-psql -h 10.0.89.13 -U postgres -d maestro_cenate -c "
+psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "
 SELECT table_name FROM information_schema.tables
 WHERE table_schema = 'public'
   AND table_name IN ('active_sessions', 'security_alerts')
 ORDER BY table_name;"
 
 # Verificar columnas agregadas a audit_logs
-psql -h 10.0.89.13 -U postgres -d maestro_cenate -c "
+psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "
 SELECT column_name, data_type
 FROM information_schema.columns
 WHERE table_name = 'audit_logs'
@@ -549,14 +549,14 @@ WHERE table_name = 'audit_logs'
 ORDER BY column_name;"
 
 # Verificar vistas creadas
-psql -h 10.0.89.13 -U postgres -d maestro_cenate -c "
+psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "
 SELECT table_name FROM information_schema.views
 WHERE table_schema = 'public'
   AND table_name LIKE '%security%' OR table_name LIKE '%sesion%'
 ORDER BY table_name;"
 
 # Verificar funciones creadas
-psql -h 10.0.89.13 -U postgres -d maestro_cenate -c "
+psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "
 SELECT routine_name FROM information_schema.routines
 WHERE routine_schema = 'public'
   AND (routine_name LIKE '%hash%' OR routine_name LIKE '%alerta%')

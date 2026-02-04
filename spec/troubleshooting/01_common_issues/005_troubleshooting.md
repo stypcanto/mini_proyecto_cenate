@@ -10,7 +10,7 @@
 
 ```bash
 # Verificar conexion a PostgreSQL remoto
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -c "SELECT 1"
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "SELECT 1"
 
 # Verificar puerto 8080
 lsof -i :8080
@@ -20,7 +20,7 @@ lsof -i :8080
 
 Verificar que `application.properties` apunte al servidor correcto:
 ```properties
-spring.datasource.url=jdbc:postgresql://10.0.89.13:5432/maestro_cenate
+spring.datasource.url=jdbc:postgresql://10.0.89.241:5432/maestro_cenate
 spring.datasource.password=Essalud2025
 ```
 

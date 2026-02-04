@@ -27,7 +27,7 @@ info:
 
     ## Base de Datos
 
-    - **Host:** 10.0.89.13:5432
+    - **Host:** 10.0.89.241:5432
     - **Database:** maestro_cenate
     - **Principales tablas:** dim_solicitud_bolsa, dim_tipos_bolsas, bolsa_107_item, dim_ipress, dim_red
 

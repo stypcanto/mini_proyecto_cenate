@@ -47,9 +47,9 @@ Progreso: [███████████████████████
   - **Verificación:** Script compila sin errores de sintaxis ✅
   - **Fecha completada:** 2026-01-03
 
-- [X] **Tarea 2:** Ejecutar script en PostgreSQL (10.0.89.13:5432/maestro_cenate) ✅
+- [X] **Tarea 2:** Ejecutar script en PostgreSQL (10.0.89.241:5432/maestro_cenate) ✅
   ```bash
-  PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -f spec/04_BaseDatos/06_scripts/005b_migracion_disponibilidad_v2.sql
+  PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate -f spec/04_BaseDatos/06_scripts/005b_migracion_disponibilidad_v2.sql
   ```
   - **Verificación:** Query exitoso, tablas migradas con nuevas columnas ✅
   - **Fecha completada:** 2026-01-03

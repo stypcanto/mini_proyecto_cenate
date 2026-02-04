@@ -168,7 +168,7 @@ curl -X GET http://localhost:8080/api/menu-usuario/usuario/1 \
 
 ```bash
 # Conectar a BD
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate
 
 # Verificar tablas
 SELECT id_pagina, nombre_pagina, icono FROM dim_paginas_modulo

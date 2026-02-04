@@ -197,7 +197,7 @@ FROM dim_solicitud_bolsa; -- Debe coincidir aprox.
 BACKUP_DIR="/home/cenate/backups/asegurados"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 DB_USER="postgres"
-DB_HOST="10.0.89.13"
+DB_HOST="10.0.89.241"
 DB_NAME="maestro_cenate"
 
 # Crear directorio si no existe
@@ -285,7 +285,7 @@ crontab -e
 ---
 
 **Creado por:** Claude Code
-**Servidor investigado:** 10.0.89.13 PostgreSQL Docker
+**Servidor investigado:** 10.0.89.241 PostgreSQL Docker
 **Acceso a ESSI:** Exitoso (Usuario 44914706)
 **Estado de datos:** Perdidos pero recuperables desde ESSI
 

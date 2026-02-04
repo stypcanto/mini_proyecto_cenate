@@ -71,7 +71,7 @@
 | 1.3.3 | Crear página "Administración ECG" | ✅ Documentado | Admin | 2026-01-13 | Para MEDICO, COORDINADOR, ADMIN |
 | 1.3.4 | Crear página "Dashboard TeleEKG" | ✅ Documentado | Admin | 2026-01-13 | Para ADMIN, SUPERADMIN |
 | 1.3.5 | Asignar permisos a roles | ✅ Documentado | Admin | 2026-01-13 | Script: SECTION 5.4 |
-| 1.3.6 | Validar permisos en sistema | ⏳ Pendiente | QA | - | Ejecutar en servidor 10.0.89.13 |
+| 1.3.6 | Validar permisos en sistema | ⏳ Pendiente | QA | - | Ejecutar en servidor 10.0.89.241 |
 
 ## 1.4 Validar Backup y Recovery
 
@@ -373,7 +373,7 @@
 | # | Tarea | Estado | Responsable | Fecha | Notas |
 |---|-------|--------|-------------|-------|-------|
 | 5.1.1 | Crear rama `feature/teleekgs` | ⏳ Pendiente | Backend | - | Git flow |
-| 5.1.2 | Configurar variables de entorno | ⏳ Pendiente | DevOps | - | En servidor 10.0.89.13 |
+| 5.1.2 | Configurar variables de entorno | ⏳ Pendiente | DevOps | - | En servidor 10.0.89.241 |
 | 5.1.3 | Crear archivo `.env` en servidor | ⏳ Pendiente | DevOps | - | MAIL_HOST, DB_URL, etc |
 | 5.1.4 | Validar conectividad BD | ⏳ Pendiente | DBA | - | PostgreSQL accesible |
 | 5.1.5 | Crear backups previos | ⏳ Pendiente | DBA | - | Antes de deploy |
@@ -409,7 +409,7 @@
 | 5.4.1 | Crear Pull Request | ⏳ Pendiente | Backend | - | feature/teleekgs → main |
 | 5.4.2 | Code review | ⏳ Pendiente | Architect | - | Aprobación requerida |
 | 5.4.3 | Merge a main | ⏳ Pendiente | Backend | - | Sin conflictos |
-| 5.4.4 | Deploy a producción | ⏳ Pendiente | DevOps | - | Servidor 10.0.89.13 |
+| 5.4.4 | Deploy a producción | ⏳ Pendiente | DevOps | - | Servidor 10.0.89.241 |
 | 5.4.5 | Validar en producción | ⏳ Pendiente | QA | - | Flujos críticos |
 | 5.4.6 | Monitorear logs | ⏳ Pendiente | DevOps | - | Primeras 24h |
 | 5.4.7 | Comunicar a usuarios | ⏳ Pendiente | Product | - | Anuncio módulo nuevo |
@@ -521,7 +521,7 @@ TOTAL: ██████████████████ 100% ✅✅ DEPLOY
 
 **CONCLUSIÓN: ✅ APTO PARA PRODUCCIÓN**
 
-El módulo TeleEKG está completamente testeado, documentado y listo para desplegarse en el servidor 10.0.89.13. Todos los criterios de aceptación han sido cumplidos.
+El módulo TeleEKG está completamente testeado, documentado y listo para desplegarse en el servidor 10.0.89.241. Todos los criterios de aceptación han sido cumplidos.
 
 ---
 
@@ -584,7 +584,7 @@ El módulo TeleEKG está completamente testeado, documentado y listo para desple
 
 | # | Tarea | Estado | Responsable | Responsable | Notas |
 |---|-------|--------|-------------|-------------|-------|
-| 5.2.1 | Verificar servidor 10.0.89.13 conectividad | ⏳ Pendiente | DevOps | SSH test |
+| 5.2.1 | Verificar servidor 10.0.89.241 conectividad | ⏳ Pendiente | DevOps | SSH test |
 | 5.2.2 | Validar /opt/cenate/teleekgs/ directory | ⏳ Pendiente | DevOps | chmod 755, escritura |
 | 5.2.3 | Verificar tablas BD existentes | ⏳ Pendiente | DBA | psql query |
 | 5.2.4 | Validar SMTP relay funcional | ⏳ Pendiente | DevOps | Test email envío |

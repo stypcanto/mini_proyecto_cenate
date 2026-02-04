@@ -32,6 +32,6 @@ CREATE INDEX IF NOT EXISTS idx_token_blacklist_exp
 
 -- ============================================================
 -- Para ejecutar:
--- PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+-- PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
 --   -f spec/scripts/004_token_blacklist.sql
 -- ============================================================

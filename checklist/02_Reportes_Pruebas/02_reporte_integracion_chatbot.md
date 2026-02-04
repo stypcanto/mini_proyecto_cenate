@@ -58,7 +58,7 @@ Frontend:
 
 Base de Datos:
   SGBD: PostgreSQL 16.9
-  Servidor: 10.0.89.13:5432
+  Servidor: 10.0.89.241:5432
   Database: maestro_cenate
   Usuario: postgres
   Pooling: HikariCP (máx. 10 conexiones)
@@ -73,7 +73,7 @@ Red:
 
 ```bash
 # Variables de entorno backend
-DB_URL=jdbc:postgresql://10.0.89.13:5432/maestro_cenate
+DB_URL=jdbc:postgresql://10.0.89.241:5432/maestro_cenate
 DB_USERNAME=postgres
 DB_PASSWORD=Essalud2025
 JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
@@ -1197,7 +1197,7 @@ Para operaciones DELETE seguidas de INSERT en misma transacción:
 4. **Migración a producción**:
 ```sql
 -- Backup completo de BD antes de deploy
-pg_dump -h 10.0.89.13 -U postgres maestro_cenate > backup_pre_v1.17.0.sql
+pg_dump -h 10.0.89.241 -U postgres maestro_cenate > backup_pre_v1.17.0.sql
 
 -- Ejecutar scripts de migración:
 -- 1. Crear tabla sincronizacion_horario_log si no existe
@@ -1308,7 +1308,7 @@ ORDER BY shl.fecha_sincronizacion;
 **application.properties (backend)**
 ```properties
 # Database
-spring.datasource.url=${DB_URL:jdbc:postgresql://10.0.89.13:5432/maestro_cenate}
+spring.datasource.url=${DB_URL:jdbc:postgresql://10.0.89.241:5432/maestro_cenate}
 spring.datasource.username=${DB_USERNAME:postgres}
 spring.datasource.password=${DB_PASSWORD:Essalud2025}
 spring.datasource.driver-class-name=org.postgresql.Driver

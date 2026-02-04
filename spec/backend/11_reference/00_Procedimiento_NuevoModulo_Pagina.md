@@ -404,11 +404,11 @@ export default function Dashboard[Nombre]() {
 
 ```bash
 # 1. Ejecutar script SQL
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/04_BaseDatos/06_scripts/XXX_crear_modulo_[nombre].sql
 
 # 2. Verificar en BD
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate
 
 -- Dentro de psql:
 SELECT id_modulo, nombre_modulo FROM dim_modulos WHERE nombre_modulo LIKE '%[nombre]%';
@@ -435,7 +435,7 @@ Identifica a qué módulo agregarás la página:
 
 ```bash
 # Conectarse a PostgreSQL
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate
 
 -- Ver módulos existentes
 SELECT id_modulo, nombre_modulo FROM dim_modulos ORDER BY nombre_modulo;
@@ -845,12 +845,12 @@ Agregar dentro de la sección del módulo correspondiente:
 
 ```bash
 # 1. Ejecutar scripts SQL
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/04_BaseDatos/06_scripts/XXX_crear_tablas_[nombre].sql \
   -f spec/04_BaseDatos/06_scripts/XXX_agregar_pagina_[nombre].sql
 
 # 2. Verificar en BD
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate << 'EOF'
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate << 'EOF'
 SELECT nombre_pagina, ruta_pagina, orden FROM dim_paginas_modulo
 WHERE id_modulo = 19 ORDER BY orden;
 EOF
@@ -1042,12 +1042,12 @@ SELECT * FROM dim_horario LIMIT 1;
 
 2. Usar `\i` en psql para ejecutar el script:
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate -c "\i spec/04_BaseDatos/06_scripts/046_agregar_paginas_coordinador_rendimiento_feriados.sql"
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "\i spec/04_BaseDatos/06_scripts/046_agregar_paginas_coordinador_rendimiento_feriados.sql"
 ```
 
 3. Si hay errores, revisar la salida detallada con:
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate < spec/04_BaseDatos/06_scripts/046_agregar_paginas_coordinador_rendimiento_feriados.sql 2>&1 | head -50
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate < spec/04_BaseDatos/06_scripts/046_agregar_paginas_coordinador_rendimiento_feriados.sql 2>&1 | head -50
 ```
 
 ### Problema: Datos no se muestran en la página

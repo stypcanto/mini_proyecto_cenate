@@ -31,8 +31,8 @@ import java.util.concurrent.TimeUnit;
 @CrossOrigin(origins = {
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://10.0.89.13:3000",
-        "http://10.0.89.13:5173"
+        "http://10.0.89.241:3000",
+        "http://10.0.89.241:5173"
 })
 @Data
 public class PersonalCntController {

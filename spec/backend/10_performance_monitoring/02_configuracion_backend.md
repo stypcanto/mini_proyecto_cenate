@@ -205,7 +205,7 @@ server.error.include-message=always
 # ============================================================
 # CORS - Solo origenes de producción
 # ============================================================
-cors.allowed-origins=http://10.0.89.13,http://10.0.89.13:80,http://10.0.89.239,http://10.0.89.239:80
+cors.allowed-origins=http://10.0.89.241,http://10.0.89.241:80,http://10.0.89.239,http://10.0.89.239:80
 
 # ============================================================
 # TOMCAT SERVLET THREADS PRODUCCIÓN

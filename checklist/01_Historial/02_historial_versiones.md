@@ -894,7 +894,7 @@ export const VERSION = {
 #### Configuración de Infraestructura
 
 **Base de Datos Remota:**
-- Servidor: `10.0.89.13:5432`
+- Servidor: `10.0.89.241:5432`
 - Base de datos: `maestro_cenate`
 - Usuario: `postgres`
 - Contraseña: `Essalud2025`

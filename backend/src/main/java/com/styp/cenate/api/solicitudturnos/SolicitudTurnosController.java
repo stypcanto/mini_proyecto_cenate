@@ -22,8 +22,8 @@ import java.util.Map;
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
-        "http://10.0.89.13:5173",
-        "http://10.0.89.13:3000"
+        "http://10.0.89.241:5173",
+        "http://10.0.89.241:3000"
 })
 
 // Se observa que hay tablas con datos similares. Esto no tomar en cuenta. Tomare en cuenta las tablas:

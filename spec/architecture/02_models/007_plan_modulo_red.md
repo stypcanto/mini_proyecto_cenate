@@ -177,7 +177,7 @@ ON CONFLICT (id_rol, id_pagina) DO UPDATE SET
 
 **Comando de ejecucion:**
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/003_modulo_red_coordinador.sql
 ```
 

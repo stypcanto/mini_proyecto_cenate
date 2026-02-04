@@ -207,7 +207,7 @@ Frontend (React 19):
 ```
 Backend:        Spring Boot 3.5.6 + Java 17
 Frontend:       React 19 + TailwindCSS 3.4.18
-Database:       PostgreSQL 14+ (10.0.89.13:5432)
+Database:       PostgreSQL 14+ (10.0.89.241:5432)
 Seguridad:      JWT + MBAC (Role-Based Access Control)
 Email:          Postfix Relay → SMTP EsSalud (172.20.0.227)
 ```
@@ -224,7 +224,7 @@ cd backend && ./gradlew bootRun
 cd frontend && npm start
 
 # Database
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate
 ```
 
 **Env Vars:** `DB_URL`, `DB_USERNAME`, `DB_PASSWORD`, `JWT_SECRET`, `ANTHROPIC_API_KEY`

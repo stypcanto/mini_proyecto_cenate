@@ -409,7 +409,7 @@ backend/src/main/java/com/styp/cenate/
 
 Ejecutar con:
 ```bash
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/003_modulo_red_coordinador.sql
 ```
 
@@ -1080,7 +1080,7 @@ export const VERSION = {
 ### Configuracion de Infraestructura
 
 **Base de Datos Remota:**
-- Servidor: `10.0.89.13:5432`
+- Servidor: `10.0.89.241:5432`
 - Base de datos: `maestro_cenate`
 - Usuario: `postgres` / Contrasena: `Essalud2025`
 

@@ -148,7 +148,7 @@ REEMPLAZADOS:
 ```
 
 **Bases de Datos:**
-- Host: 10.0.89.13:5432
+- Host: 10.0.89.241:5432
 - User: postgres
 - Database: maestro_cenate
 

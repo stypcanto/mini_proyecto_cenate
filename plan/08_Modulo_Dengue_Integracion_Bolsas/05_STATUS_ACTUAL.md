@@ -252,7 +252,7 @@ http://localhost:3000/dengue/dashboard
 
 ### Requisitos
 - Backend: http://localhost:8080
-- Database: PostgreSQL en 10.0.89.13:5432
+- Database: PostgreSQL en 10.0.89.241:5432
 - Auth: Token JWT válido
 - Roles: ADMIN, COORDINADOR
 

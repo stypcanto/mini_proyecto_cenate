@@ -1,5 +1,5 @@
 #!/bin/bash
-export DB_URL="jdbc:postgresql://10.0.89.13:5432/maestro_cenate"
+export DB_URL="jdbc:postgresql://10.0.89.241:5432/maestro_cenate"
 export DB_USERNAME="postgres"
 export DB_PASSWORD="Essalud2025"
 export JWT_SECRET="404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970"

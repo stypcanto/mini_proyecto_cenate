@@ -759,7 +759,7 @@ curl -X POST http://localhost:8080/api/integracion-horario/sincronizar \
 # Response: {"resultado": "EXITOSO", "tipoOperacion": "CREACION"}
 
 # 3. Verificar creación en BD
-psql -h 10.0.89.13 -U postgres -d maestro_cenate -c \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate -c \
   "SELECT COUNT(*) FROM ctr_horario_det WHERE id_ctr_horario = (SELECT id_ctr_horario FROM ctr_horario WHERE id_disponibilidad = 2);"
 
 # Resultado: 18 ✅
@@ -795,7 +795,7 @@ curl -X POST http://localhost:8080/api/integracion-horario/resincronizar \
 }
 
 # 6. Verificar actualización en BD
-psql -h 10.0.89.13 -U postgres -d maestro_cenate -c \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate -c \
   "SELECT COUNT(*), SUM(horas) FROM ctr_horario_det WHERE id_ctr_horario = (SELECT id_ctr_horario FROM ctr_horario WHERE id_disponibilidad = 2);"
 
 # Resultado: count=18, sum=198 ✅

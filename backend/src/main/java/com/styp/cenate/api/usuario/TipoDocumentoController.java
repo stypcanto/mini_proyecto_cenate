@@ -26,7 +26,7 @@ import java.util.Map;
                 "http://localhost:3000",
                 "http://localhost:5173",
                 "http://127.0.0.1:5173",
-                "http://10.0.89.13:5173",
+                "http://10.0.89.241:5173",
                 "http://10.0.89.239"
         },
         allowCredentials = "true"

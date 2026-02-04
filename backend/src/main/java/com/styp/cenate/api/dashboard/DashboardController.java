@@ -38,8 +38,8 @@ import java.util.*;
         "http://localhost:3000",
         "http://localhost:5173",
         "http://127.0.0.1:5173",
-        "http://10.0.89.13:3000",
-        "http://10.0.89.13:5173",
+        "http://10.0.89.241:3000",
+        "http://10.0.89.241:5173",
         "http://10.0.89.239"
 })
 @PreAuthorize("hasAnyRole('SUPERADMIN', 'ADMIN')")
@@ -53,7 +53,7 @@ public class DashboardController {
     private final PermisoModularRepository permisoModularRepository;
     private final DataSource dataSource;
 
-    @Value("${spring.datasource.url:jdbc:postgresql://10.0.89.13:5432/maestro_cenate}")
+    @Value("${spring.datasource.url:jdbc:postgresql://10.0.89.241:5432/maestro_cenate}")
     private String databaseUrl;
 
     @Value("${jwt.secret:}")
@@ -597,7 +597,7 @@ public class DashboardController {
 
     private String extractHostFromUrl(String url) {
         try {
-            // jdbc:postgresql://10.0.89.13:5432/maestro_cenate
+            // jdbc:postgresql://10.0.89.241:5432/maestro_cenate
             String withoutPrefix = url.replace("jdbc:postgresql://", "");
             int slashIndex = withoutPrefix.indexOf('/');
             return slashIndex > 0 ? withoutPrefix.substring(0, slashIndex) : withoutPrefix;

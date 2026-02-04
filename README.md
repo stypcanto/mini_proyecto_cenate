@@ -222,7 +222,7 @@ Context API
 
 ### Infraestructura
 ```
-PostgreSQL 14+ (10.0.89.13:5432)
+PostgreSQL 14+ (10.0.89.241:5432)
 Docker (contenedores)
 Git (control de versiones)
 Maven/Gradle (build)
@@ -328,7 +328,7 @@ docker logs smtp-relay-cenate --tail 50
 ### Database
 ```bash
 # Conectarse a PostgreSQL
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate
 
 # Ver backups
 ls -lh spec/sh/02_backup/

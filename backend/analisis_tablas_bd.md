@@ -1,7 +1,7 @@
 # Análisis de Base de Datos - maestro_cenate
 
 ## Fecha: 2025-12-30
-## Base de Datos: PostgreSQL 14+ en 10.0.89.13:5432
+## Base de Datos: PostgreSQL 14+ en 10.0.89.241:5432
 
 ---
 
@@ -375,7 +375,7 @@ DROP TABLE IF EXISTS permisos_usuario_pagina;
 ```sql
 -- SOLO SI el módulo está oficialmente descontinuado
 -- Hacer backup primero:
-pg_dump -h 10.0.89.13 -U postgres -d maestro_cenate \
+pg_dump -h 10.0.89.241 -U postgres -d maestro_cenate \
   -t bolsa_107_carga -t bolsa_107_error \
   -t bolsa_107_hist_estado -t bolsa_107_item \
   -t dim_estado_bolsa_107 > backup_bolsa_107_$(date +%Y%m%d).sql
@@ -393,7 +393,7 @@ DROP TABLE IF EXISTS dim_estado_bolsa_107;
 -- Verificar si fue reemplazado por disponibilidad_medica
 -- Consultar con equipo médico/coordinadores
 -- Si está obsoleto, archivar:
-pg_dump -h 10.0.89.13 -U postgres -d maestro_cenate \
+pg_dump -h 10.0.89.241 -U postgres -d maestro_cenate \
   -t ctr_horario -t ctr_horario_det -t ctr_horario_log \
   -t ctr_periodo -t dim_catalogo_horario -t dim_horario \
   -t rendimiento_horario > backup_ctr_$(date +%Y%m%d).sql
@@ -418,7 +418,7 @@ pg_dump -h 10.0.89.13 -U postgres -d maestro_cenate \
 ### Fase 1: Seguridad (Semana 1)
 ```bash
 # Crear backup completo de la base de datos
-pg_dump -h 10.0.89.13 -U postgres -d maestro_cenate \
+pg_dump -h 10.0.89.241 -U postgres -d maestro_cenate \
   -F c -f maestro_cenate_backup_$(date +%Y%m%d).dump
 
 # Verificar integridad del backup
@@ -567,7 +567,7 @@ FROM information_schema.triggers
 WHERE event_object_table = 'TABLA';
 
 # 4. Hacer backup específico
-pg_dump -h 10.0.89.13 -U postgres -d maestro_cenate \
+pg_dump -h 10.0.89.241 -U postgres -d maestro_cenate \
   -t TABLA > backup_TABLA_$(date +%Y%m%d).sql
 
 # 5. Verificar accesos recientes (última semana)
@@ -612,7 +612,7 @@ WHERE relname = 'TABLA';
 
 2. **Crear backup completo** (1 día)
    ```bash
-   pg_dump -h 10.0.89.13 -U postgres -d maestro_cenate \
+   pg_dump -h 10.0.89.241 -U postgres -d maestro_cenate \
      -F c -f /backup/maestro_cenate_pre_limpieza_$(date +%Y%m%d).dump
    ```
 
@@ -650,4 +650,4 @@ WHERE relname = 'TABLA';
 **Generado por:** Claude Sonnet 4.5
 **Fecha:** 2025-12-30
 **Versión Sistema:** v1.13.0
-**Base de Datos:** PostgreSQL 14+ en 10.0.89.13:5432/maestro_cenate
+**Base de Datos:** PostgreSQL 14+ en 10.0.89.241:5432/maestro_cenate

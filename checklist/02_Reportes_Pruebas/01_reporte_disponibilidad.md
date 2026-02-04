@@ -374,11 +374,11 @@ public ResponseEntity<?> marcarRevisado(...)
 
 ```bash
 # Crear tablas
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/005_disponibilidad_medica.sql
 
 # Agregar card al dashboard
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/scripts/006_agregar_card_disponibilidad.sql
 ```
 

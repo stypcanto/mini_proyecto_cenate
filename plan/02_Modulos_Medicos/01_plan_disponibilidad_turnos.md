@@ -1469,7 +1469,7 @@ La vista `vw_disponibilidad_vs_horario` permite detectar:
    - Tablas: `disponibilidad_medica` (con `horas_asistenciales`, `horas_sanitarias`, `total_horas`), `detalle_disponibilidad`
    - Tabla: `sincronizacion_horario_log` (NUEVA v2.0)
    - Vista: `vw_disponibilidad_vs_horario` (NUEVA v2.0)
-2. [ ] Ejecutar script en PostgreSQL (10.0.89.13:5432)
+2. [ ] Ejecutar script en PostgreSQL (10.0.89.241:5432)
 3. [ ] Crear `DisponibilidadMedica.java` (con campos de sincronización)
 4. [ ] Crear `DetalleDisponibilidad.java`
 5. [ ] Crear 6 DTOs + 3 DTOs nuevos de integración

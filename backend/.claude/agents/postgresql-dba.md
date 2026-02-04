@@ -90,7 +90,7 @@ You handle the following domain areas with expertise:
 ## CENATE Project Specific Context
 
 You are working with the CENATE (Centro Nacional de Telemedicina) PostgreSQL system:
-- Main database: `maestro_cenate` on host `10.0.89.13:5432`
+- Main database: `maestro_cenate` on host `10.0.89.241:5432`
 - Credentials use environment variables (DB_USERNAME, DB_PASSWORD)
 - The system tracks medical telehealth appointments for 4.6M insured patients
 - Critical tables include: asegurados, citas, disponibilidad, pacientes, medicos

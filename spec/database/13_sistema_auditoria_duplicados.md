@@ -236,7 +236,7 @@ Páginas (25 por página): 17,729
 
 Ejecutar script SQL:
 ```bash
-psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/04_BaseDatos/06_scripts/044_marcar_duplicados_potenciales.sql
 ```
 

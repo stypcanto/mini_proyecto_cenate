@@ -2,7 +2,7 @@
 
 **Fecha Actualización:** 2026-01-25 23:45
 **Versión Script:** v2.0 (Mejorado para backup total de BD)
-**Servidor:** 10.0.89.13 (PostgreSQL 16.9 Docker)
+**Servidor:** 10.0.89.241 (PostgreSQL 16.9 Docker)
 **Base de Datos:** maestro_cenate
 
 ---
@@ -437,4 +437,4 @@ Implementar NIVEL 2 (backup externo a USB/Cloud) para descarga de almacenamiento
 **Documento:** spec/04_BaseDatos/10_contenido_backups_completo.md
 **Actualizado:** 2026-01-25 23:45
 **Script versión:** backup-maestro-cenate.sh v2.0
-**Servidor:** 10.0.89.13
+**Servidor:** 10.0.89.241

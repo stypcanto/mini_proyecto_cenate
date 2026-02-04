@@ -2,7 +2,7 @@
 
 **Fecha:** 2026-01-23 20:30 UTC
 **Estado Crítico:** Pérdida de datos confirmada - 4 millones de registros en tabla `asegurados` (maestro_cenate)
-**Servidor:** 10.0.89.13:5432 (Docker PostgreSQL)
+**Servidor:** 10.0.89.241:5432 (Docker PostgreSQL)
 
 ---
 
@@ -283,5 +283,5 @@ GRANT DELETE ON asegurados TO Admin_DBA;
 ---
 
 **Investigación realizada por:** Claude Code
-**Servidor:** 10.0.89.13 - PostgreSQL 16.9 Docker
+**Servidor:** 10.0.89.241 - PostgreSQL 16.9 Docker
 **Dump disponible:** `/tmp/maestro_cenate_backup.sql` (2.8GB)

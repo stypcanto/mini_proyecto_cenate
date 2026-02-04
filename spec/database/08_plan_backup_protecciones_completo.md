@@ -2,7 +2,7 @@
 
 **Versión:** 2.0 (Completo)
 **Fecha:** 2026-01-24
-**Servidor:** 10.0.89.13 (PostgreSQL Docker)
+**Servidor:** 10.0.89.241 (PostgreSQL Docker)
 **Base de Datos:** maestro_cenate
 **Tabla Protegida:** asegurados (5,165,000 registros)
 **Status:** ✅ NIVELES 1, 3 Y 5 IMPLEMENTADOS | ⏳ NIVELES 2 Y 4 PENDIENTES
@@ -357,7 +357,7 @@ Configurar servidor standby PostgreSQL que recibe cambios en tiempo real para m�
 ## Arquitectura
 
 ```
-Servidor Primario (10.0.89.13)
+Servidor Primario (10.0.89.241)
 ├── maestro_cenate database
 ├── WAL logs stream
 └─────────────→ Servidor Standby
@@ -485,7 +485,7 @@ CSV_BACKUPS=$(find "$BACKUP_DIR" -name "asegurados_*$(date +%Y%m%d)*.csv.gz" | w
 ### Falta Backup
 ```
 CRÍTICO: No hay backup diario
-Servidor: 10.0.89.13
+Servidor: 10.0.89.241
 Fecha: 2026-01-24
 Directorio: /home/cenate/backups/maestro_cenate/
 ```

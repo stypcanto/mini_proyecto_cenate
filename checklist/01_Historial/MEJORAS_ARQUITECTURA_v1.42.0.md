@@ -56,7 +56,7 @@ ANALYZE dim_solicitud_bolsa;
 
 ```bash
 # 1. En producción, ejecutar migración
-psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   -f spec/database/06_scripts/migrations/v1.42.0_index_especialidades.sql
 
 # 2. Verificar índice creado
@@ -264,7 +264,7 @@ useEffect(() => {
 ### Test de Índice DB
 ```bash
 # Ejecutar migración
-psql -h 10.0.89.13 -U postgres maestro_cenate \
+psql -h 10.0.89.241 -U postgres maestro_cenate \
   -f spec/database/06_scripts/migrations/v1.42.0_index_especialidades.sql
 
 # Verificar

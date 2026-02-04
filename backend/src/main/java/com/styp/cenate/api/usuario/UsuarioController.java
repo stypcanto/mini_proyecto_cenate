@@ -28,8 +28,8 @@ import java.util.Map;
 @RequestMapping("/api/usuarios")
 @RequiredArgsConstructor
 @Slf4j
-@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173", "http://10.0.89.13:3000",
-		"http://10.0.89.13:5173" })
+@CrossOrigin(origins = { "http://localhost:3000", "http://localhost:5173", "http://10.0.89.241:3000",
+		"http://10.0.89.241:5173" })
 public class UsuarioController {
 
 	private final UsuarioService usuarioService;

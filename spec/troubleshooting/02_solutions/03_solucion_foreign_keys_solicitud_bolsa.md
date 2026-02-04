@@ -37,16 +37,16 @@ La tabla se creó inicialmente **sin constraints de FK**. Solo existen en:
 spec/04_BaseDatos/06_scripts/053_crear_foreign_keys_solicitud_bolsa.sql
 ```
 
-### Paso 2: Ejecutar en servidor remoto (10.0.89.13)
+### Paso 2: Ejecutar en servidor remoto (10.0.89.241)
 
 ```bash
 # Opción A: SSH al servidor
-ssh cenate@10.0.89.13
+ssh cenate@10.0.89.241
 PGPASSWORD='Essalud2025' psql -U postgres -d maestro_cenate \
   < /tmp/053_crear_foreign_keys_solicitud_bolsa.sql
 
 # Opción B: Ejecutar desde tu máquina
-PGPASSWORD='Essalud2025' psql -h 10.0.89.13 -U postgres -d maestro_cenate \
+PGPASSWORD='Essalud2025' psql -h 10.0.89.241 -U postgres -d maestro_cenate \
   < /path/to/053_crear_foreign_keys_solicitud_bolsa.sql
 
 # Opción C: En DBeaver (copiar SQL y ejecutar)
@@ -58,7 +58,7 @@ PGPASSWORD='Essalud2025' psql -h 10.0.89.13 -U postgres -d maestro_cenate \
 ### Paso 3: Verificar que se crearon correctamente
 
 ```bash
-PGPASSWORD='Essalud2025' psql -h 10.0.89.13 -U postgres -d maestro_cenate << 'EOF'
+PGPASSWORD='Essalud2025' psql -h 10.0.89.241 -U postgres -d maestro_cenate << 'EOF'
 
 SELECT constraint_name, table_name, column_name, foreign_table_name
 FROM information_schema.key_column_usage
@@ -245,7 +245,7 @@ ERROR: relation "dim_tipos_bolsas" does not exist
 **Solución:** Asegúrate que las tablas referenciadas existen:
 ```bash
 # Verificar tablas existen
-PGPASSWORD='Essalud2025' psql -h 10.0.89.13 -U postgres -d maestro_cenate << 'EOF'
+PGPASSWORD='Essalud2025' psql -h 10.0.89.241 -U postgres -d maestro_cenate << 'EOF'
 
 \dt dim_tipos_bolsas dim_servicio_essi asegurados dim_ipress dim_usuarios dim_estados_gestion_citas;
 
@@ -275,7 +275,7 @@ ALTER TABLE dim_solicitud_bolsa DROP CONSTRAINT IF EXISTS fk_solicitud_bolsa_tip
 ## 📋 Checklist de Verificación
 
 - [ ] Script descargado de `spec/04_BaseDatos/06_scripts/053_...sql`
-- [ ] Ejecutado en servidor 10.0.89.13 sobre base maestro_cenate
+- [ ] Ejecutado en servidor 10.0.89.241 sobre base maestro_cenate
 - [ ] Query de verificación muestra 8 FK creadas
 - [ ] DBeaver muestra relaciones en diagrama
 - [ ] Test de integridad referencial pasa ✅

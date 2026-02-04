@@ -28,8 +28,8 @@ import java.util.Map;
 @CrossOrigin(origins = {
         "http://localhost:3000",
         "http://localhost:5173",
-        "http://10.0.89.13:5173",
-        "http://10.0.89.13:3000"
+        "http://10.0.89.241:5173",
+        "http://10.0.89.241:3000"
 })
 public class AdminRecuperacionController {
 

@@ -14,7 +14,7 @@
 ✅ TeleECGService completamente implementado (10/10 tests ✅)
 ✅ 29/29 tests unitarios PASANDO
 ✅ Filesystem storage: /opt/cenate/teleekgs/YYYY/MM/DD/IPRESS_XXX/
-✅ Base de datos migraciones ejecutadas en servidor 10.0.89.13
+✅ Base de datos migraciones ejecutadas en servidor 10.0.89.241
 ✅ TeleECGAuditoriaRepository FIELD REFERENCES CORREGIDAS ✅
 ✅ Application startup sin PropertyReferenceException ✅
 🟢 LISTO PARA PRODUCCIÓN - v2.1 puede comenzar inmediatamente
@@ -201,7 +201,7 @@ spec/04_BaseDatos/06_scripts/
 │   ├── Agregar 8 columnas de metadata filesystem
 │   ├── Eliminar columna BYTEA
 │   ├── Crear índices optimizados
-│   └── [Ejecutado en servidor 10.0.89.13]
+│   └── [Ejecutado en servidor 10.0.89.241]
 │
 └── 014_rollback_filesystem.sql ✅
 
@@ -213,7 +213,7 @@ backend/scripts/
 ### Base de Datos - Migraciones Completadas ✅
 
 ```
-PostgreSQL 10.0.89.13:5432/maestro_cenate
+PostgreSQL 10.0.89.241:5432/maestro_cenate
 
 Tabla: tele_ecg_imagenes (Migrada)
 ├── Columnas elimadas: contenido_imagen (BYTEA)
@@ -746,7 +746,7 @@ cd backend && ./gradlew clean build
 ./gradlew build --stacktrace
 
 # Conectarse a BD:
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate
 ```
 
 ---

@@ -43,7 +43,7 @@ import lombok.extern.slf4j.Slf4j;
         "http://localhost:5173",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:5173",
-        "http://10.0.89.13:5173",
+        "http://10.0.89.241:5173",
         "http://10.0.89.239:5173"
 })
 public class PersonalController {

@@ -15,7 +15,7 @@
 # La migración se aplica automáticamente al iniciar Spring Boot
 # O ejecutar manualmente:
 
-PGPASSWORD=Essalud2025 psql -h 10.0.89.13 -U postgres -d maestro_cenate << 'EOF'
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate << 'EOF'
 \i backend/src/main/resources/db/migration/V3_3_0__migrar_bolsa_107_a_solicitud_bolsa.sql
 EOF
 
