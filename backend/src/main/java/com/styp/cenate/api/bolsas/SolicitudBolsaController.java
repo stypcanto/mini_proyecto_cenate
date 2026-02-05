@@ -26,14 +26,21 @@ import java.security.MessageDigest;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
 import com.styp.cenate.repository.bolsas.DimEstadosGestionCitasRepository;
 import com.styp.cenate.model.bolsas.DimEstadosGestionCitas;
 import com.styp.cenate.exception.ResourceNotFoundException;
+import com.styp.cenate.model.Especialidad;
+import com.styp.cenate.repository.EspecialidadRepository;
+import com.styp.cenate.dto.DetalleMedicoDTO;
+import com.styp.cenate.service.atenciones_clinicas.DetalleMedicoService;
 
 /**
  * Controller REST para gestión de solicitudes de bolsa
@@ -53,6 +60,8 @@ public class SolicitudBolsaController {
     private final HistorialCargaBolsasRepository historialRepository;
     private final SolicitudBolsaRepository solicitudRepository;
     private final DimEstadosGestionCitasRepository estadosRepository;
+    private final EspecialidadRepository especialidadRepository; // v1.46.8: Para obtener médicos
+    private final DetalleMedicoService detalleMedicoService; // v1.46.8: Para obtener médicos
 
     /**
      * Importa solicitudes desde archivo Excel
@@ -971,6 +980,57 @@ public class SolicitudBolsaController {
         log.info("🔍 GET /api/bolsas/solicitudes/buscar-dni/{}", dni);
         List<SolicitudBolsaDTO> solicitudes = solicitudBolsaService.buscarPorDni(dni);
         return ResponseEntity.ok(solicitudes);
+    }
+
+    /**
+     * Obtener médicos por especialidad (v1.46.8)
+     * GET /api/bolsas/solicitudes/medicos-por-especialidad?especialidad=CARDIOLOGIA
+     *
+     * @param especialidad nombre de la especialidad (ej: "CARDIOLOGIA", "NUTRICION")
+     * @return lista de médicos activos para esa especialidad
+     */
+    @GetMapping("/medicos-por-especialidad")
+    @CheckMBACPermission(pagina = "/citas/gestion-asegurado", accion = "ver")
+    public ResponseEntity<?> obtenerMedicosPorEspecialidad(@RequestParam String especialidad) {
+        log.info("📥 GET /api/bolsas/solicitudes/medicos-por-especialidad?especialidad={}", especialidad);
+
+        try {
+            // 1. Buscar el ID de la especialidad por nombre (case-insensitive)
+            Optional<Especialidad> especialidadOpt = especialidadRepository
+                    .findByDescServicioIgnoreCase(especialidad);
+
+            if (especialidadOpt.isEmpty()) {
+                log.warn("⚠️ Especialidad no encontrada: {}", especialidad);
+                return ResponseEntity.ok()
+                        .body(Map.of("status", "success", "data", Collections.emptyList()));
+            }
+
+            Long idServicio = especialidadOpt.get().getIdServicio();
+
+            // 2. Obtener médicos usando el servicio existente
+            List<DetalleMedicoDTO> medicos = detalleMedicoService
+                    .obtenerMedicosPorServicio(idServicio);
+
+            // 3. Formatear para el frontend (solo campos necesarios)
+            List<Map<String, Object>> medicosList = new ArrayList<>();
+            for (DetalleMedicoDTO m : medicos) {
+                Map<String, Object> medicoMap = new HashMap<>();
+                medicoMap.put("idPers", m.getIdPers());
+                medicoMap.put("nombre", m.getNombre());
+                medicoMap.put("documento", m.getNumDocPers());
+                medicosList.add(medicoMap);
+            }
+
+            log.info("✅ Se encontraron {} médicos para {}", medicosList.size(), especialidad);
+
+            return ResponseEntity.ok()
+                    .body(Map.of("status", "success", "data", medicosList));
+
+        } catch (Exception e) {
+            log.error("❌ Error al obtener médicos para especialidad {}: {}", especialidad, e.getMessage(), e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(Map.of("status", "error", "message", "Error al obtener médicos"));
+        }
     }
 }
 

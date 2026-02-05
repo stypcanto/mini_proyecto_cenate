@@ -99,6 +99,10 @@ export default function GestionAsegurado() {
   const [resultadosBusqueda, setResultadosBusqueda] = useState([]);
   const [cargandoBusqueda, setCargandoBusqueda] = useState(false);
   const [agregandoPaciente, setAgregandoPaciente] = useState(false);
+  const [especialidadSeleccionada, setEspecialidadSeleccionada] = useState("");
+  const [medicoSeleccionado, setMedicoSeleccionado] = useState(""); // v1.46.7: Médico en modal
+  const [fechaHoraCitaSeleccionada, setFechaHoraCitaSeleccionada] = useState(""); // v1.46.7: Fecha/Hora en modal
+  const [medicosDisponibles, setMedicosDisponibles] = useState([]); // v1.46.7: Médicos por especialidad
 
   // 🔧 API_BASE dinámico basado en el host actual o variable de entorno
   const getApiBase = () => {
@@ -752,9 +756,58 @@ export default function GestionAsegurado() {
   }, [busquedaAsegurado, buscarAsegurados]);
 
   // ============================================================================
+  // 🏥 CARGAR MÉDICOS POR ESPECIALIDAD (v1.46.8)
+  // ============================================================================
+  const cargarMedicosPorEspecialidad = async (especialidad) => {
+    if (!especialidad) {
+      setMedicosDisponibles([]);
+      setMedicoSeleccionado("");
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `${getApiBase()}/api/bolsas/solicitudes/medicos-por-especialidad?especialidad=${encodeURIComponent(especialidad)}`,
+        {
+          method: "GET",
+          headers: getHeaders(),
+        }
+      );
+
+      if (response.ok) {
+        const result = await response.json();
+        setMedicosDisponibles(result.data || []);
+        console.log(`✅ Cargados ${result.data?.length || 0} médicos para ${especialidad}`);
+      } else {
+        console.error("Error al cargar médicos:", response.statusText);
+        setMedicosDisponibles([]);
+      }
+    } catch (error) {
+      console.error("Error al cargar médicos:", error);
+      setMedicosDisponibles([]);
+    }
+  };
+
+  // 🏥 v1.46.8: Cargar médicos cuando cambia especialidad
+  React.useEffect(() => {
+    if (especialidadSeleccionada) {
+      cargarMedicosPorEspecialidad(especialidadSeleccionada);
+    } else {
+      setMedicosDisponibles([]);
+      setMedicoSeleccionado("");
+    }
+  }, [especialidadSeleccionada]);
+
+  // ============================================================================
   // ➕ IMPORTAR PACIENTE ADICIONAL (v1.46.0) - FIXED v1.46.1
   // ============================================================================
   const importarPacienteAdicional = async (asegurado) => {
+    // ✅ v1.46.5: Validar especialidad seleccionada
+    if (!especialidadSeleccionada || especialidadSeleccionada.trim() === "") {
+      toast.error("⚠️ Debes seleccionar una especialidad antes de importar");
+      return;
+    }
+
     setAgregandoPaciente(true);
     try {
       const dni = asegurado.docPaciente;
@@ -779,6 +832,7 @@ export default function GestionAsegurado() {
             origen: "Importación Manual",
             codEstadoCita: "01",
             usuarioCreacion: user?.id,
+            especialidad: especialidadSeleccionada, // ✅ v1.46.5: Agregar especialidad
           }),
         }
       );
@@ -788,12 +842,15 @@ export default function GestionAsegurado() {
         throw new Error(errorData.message || `Error al crear en dim_solicitud_bolsa (${createBolsaRes.status})`);
       }
 
-      toast.success(`Paciente ${asegurado.paciente} agregado correctamente`);
+      toast.success(`Paciente ${asegurado.paciente} importado a ${especialidadSeleccionada}`);
 
       // 4. Cerrar modal y recargar tabla
       setModalImportar(false);
       setBusquedaAsegurado("");
       setResultadosBusqueda([]);
+      setEspecialidadSeleccionada(""); // ✅ v1.46.5: Resetear especialidad
+      setMedicoSeleccionado(""); // ✅ v1.46.7: Resetear médico
+      setFechaHoraCitaSeleccionada(""); // ✅ v1.46.7: Resetear fecha/hora
       await fetchPacientesAsignados();
     } catch (error) {
       console.error("Error importando paciente:", error);
@@ -938,6 +995,19 @@ export default function GestionAsegurado() {
       .map((p) => p.descIpress)
       .filter((i) => i))
   ].sort();
+
+  // 🏥 Especialidades disponibles para importación (v1.46.5)
+  const especialidadesDisponibles = [
+    "NUTRICION",
+    "CARDIOLOGIA",
+    "MEDICINA GENERAL",
+    "NEUROLOGIA",
+    "PSIQUIATRIA",
+    "PEDIATRIA",
+    "DERMATOLOGIA",
+    "OFTALMOLOGIA",
+    "S/E"
+  ];
 
   const especialidadesUnicas = [
     ...new Set(
@@ -1915,6 +1985,74 @@ export default function GestionAsegurado() {
                               <p className="text-sm text-gray-700">
                                 {asegurado.nombreIpress || "Sin IPRESS"}
                               </p>
+                            </div>
+                            <div className="col-span-2 bg-gradient-to-r from-green-50 to-emerald-50 p-3 rounded-lg border-2 border-green-300">
+                              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                                📋 Especialidad <span className="text-red-600 text-lg">*</span>
+                              </label>
+                              <select
+                                value={especialidadSeleccionada}
+                                onChange={(e) => setEspecialidadSeleccionada(e.target.value)}
+                                className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-green-600 focus:border-green-600 text-sm font-medium transition-all ${
+                                  especialidadSeleccionada
+                                    ? "bg-white border-green-500 text-green-900"
+                                    : "bg-green-50 border-green-300 text-gray-500"
+                                }`}
+                              >
+                                <option value="" disabled className="text-gray-400">
+                                  🔴 Seleccionar especialidad (obligatorio)
+                                </option>
+                                {especialidadesDisponibles.map((esp) => (
+                                  <option key={esp} value={esp} className="text-gray-900">
+                                    ✓ {esp}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* 👨‍⚕️ Médico - v1.46.8: Select dinámico por especialidad */}
+                            <div className="col-span-2 bg-blue-50 p-3 rounded-lg border-2 border-blue-300">
+                              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                                👨‍⚕️ Médico Especialista
+                              </label>
+                              <select
+                                value={medicoSeleccionado}
+                                onChange={(e) => setMedicoSeleccionado(e.target.value)}
+                                disabled={!especialidadSeleccionada || medicosDisponibles.length === 0}
+                                className={`w-full px-3 py-2.5 border-2 rounded-lg focus:ring-2 focus:ring-blue-600 focus:border-blue-600 text-sm font-medium transition-all ${
+                                  !especialidadSeleccionada || medicosDisponibles.length === 0
+                                    ? "bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed"
+                                    : medicoSeleccionado
+                                    ? "bg-white border-blue-500 text-blue-900"
+                                    : "bg-white border-blue-300 text-gray-700"
+                                }`}
+                              >
+                                <option value="">
+                                  {!especialidadSeleccionada
+                                    ? "⚠️ Primero selecciona una especialidad"
+                                    : medicosDisponibles.length === 0
+                                    ? "⚠️ No hay médicos disponibles"
+                                    : "Seleccionar médico (opcional)"}
+                                </option>
+                                {medicosDisponibles.map((medico) => (
+                                  <option key={medico.idPers} value={medico.idPers}>
+                                    Dr(a). {medico.nombre} - DNI: {medico.documento}
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            {/* 📅 Fecha y Hora de Cita - v1.46.7 */}
+                            <div className="col-span-2 bg-purple-50 p-3 rounded-lg border-2 border-purple-300">
+                              <label className="block text-sm font-semibold text-gray-800 mb-2">
+                                📅 Fecha y Hora de Cita
+                              </label>
+                              <input
+                                type="datetime-local"
+                                value={fechaHoraCitaSeleccionada}
+                                onChange={(e) => setFechaHoraCitaSeleccionada(e.target.value)}
+                                className="w-full px-3 py-2.5 border-2 border-purple-300 rounded-lg focus:ring-2 focus:ring-purple-600 focus:border-purple-600 text-sm"
+                              />
                             </div>
                           </div>
 

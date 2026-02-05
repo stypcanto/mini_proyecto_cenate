@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface EspecialidadRepository extends JpaRepository<Especialidad, Long> {
@@ -23,4 +24,7 @@ public interface EspecialidadRepository extends JpaRepository<Especialidad, Long
             "WHERE p.stat_pers_prof = 'A' AND e.estado = 'A' " +
             "ORDER BY e.desc_servicio ASC", nativeQuery = true)
     List<Especialidad> findEspecialidadesConMedicosActivos();
+
+    // 🏥 v1.46.8: Buscar especialidad por nombre (sin case)
+    Optional<Especialidad> findByDescServicioIgnoreCase(String descServicio);
 }
