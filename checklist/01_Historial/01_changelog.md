@@ -3,6 +3,8 @@
 > Changelog detallado del proyecto
 >
 > 📌 **IMPORTANTE**: Ver documentación en:
+> - ⭐ **NUEVO - v1.42.2**: Fix Vista Auditoría + Styling EmailAuditLogs (2026-02-05) - Crear vista vw_auditoria_modular_detallada + Tema claro (blanco/azul)
+> - ⭐ **NUEVO - v1.42.1**: Módulo Email Audit + Correo Bienvenida (2026-02-04) - Sistema completo de logs de correos (Backend + Frontend)
 > - ⭐ **NUEVO - v3.3.1**: Auditoría Cambios de Estado + Fix Endpoint bolsas/solicitudes (2026-02-02) - Fecha + Usuario cambio estado
 > - ⭐ **NUEVO - v1.42.1**: Fix Estadísticas + Tipo Cita (2026-02-01) - Estadísticas correctas + 6,404 N/A → Voluntaria
 > - ⭐ **NUEVO - v1.41.0**: Módulo Gestión de Citas - Estado Dropdown + Actualizar Teléfono (2026-01-30)
@@ -20,6 +22,97 @@
 > - ⭐ **Mejoras UI/UX Bienvenida v2.0.0**: `spec/frontend/05_mejoras_ui_ux_bienvenida_v2.md` (2026-01-26)
 > - ⭐ **Mejoras UI/UX Módulo Asegurados v1.2.0**: `spec/UI-UX/01_design_system_tablas.md` (2026-01-26)
 > - ⭐ **Sistema Auditoría Duplicados v1.1.0**: `spec/database/13_sistema_auditoria_duplicados.md` (2026-01-26)
+
+---
+
+## v1.42.2 (2026-02-05) - 🔍 Fix Vista Auditoría + 🎨 Styling EmailAuditLogs
+
+### ✅ Problemas Resueltos
+
+**1. Página de Auditoría no cargaba (/admin/logs)**
+- **Error**: `ERROR: relation "vw_auditoria_modular_detallada" does not exist`
+- **Causa**: Vista SQL no estaba creada en la base de datos PostgreSQL
+- **Solución**: Ejecutar script `/spec/sh/001_audit_view_and_indexes.sql` para crear vista + 8 índices de optimización
+
+**2. EmailAuditLogs con tema oscuro (no coincidía con aplicación)**
+- **Problema**: Fondo negro (slate-900) vs aplicación con fondo blanco
+- **Solución**: Cambiar a tema claro (blanco/azul) que match con CENATE UI
+
+### 🔧 Cambios Backend
+
+**Vista SQL: `vw_auditoria_modular_detallada`**
+```sql
+-- Ubicación: spec/sh/001_audit_view_and_indexes.sql
+-- Combina datos de: audit_logs + dim_usuarios + dim_personal_cnt
+-- Campos: id, fecha_hora, usuario_sesion, username, dni, nombre_completo, roles,
+--         correo_corporativo, correo_personal, modulo, accion, estado, detalle, ip, dispositivo, etc.
+-- Índices creados: 8 índices para optimizar consultas por fecha, usuario, módulo, acción, nivel, estado
+```
+
+**Cómo aplicar el fix:**
+```bash
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate < spec/sh/001_audit_view_and_indexes.sql
+```
+
+### 🎨 Cambios Frontend
+
+**EmailAuditLogs.jsx - Conversión Tema Oscuro → Claro**
+
+| Elemento | Antes | Después |
+|----------|-------|---------|
+| **Background Principal** | `bg-gradient-to-br from-slate-900 to-slate-800` | `bg-white` |
+| **Título** | `text-white` | `text-gray-900` |
+| **Subtítulo** | `text-gray-400` | `text-gray-600` |
+| **Icono Header** | `text-blue-400` | `text-blue-500` |
+| **Tabs Activas** | `text-blue-400 border-blue-400` | `text-blue-600 border-blue-600` |
+| **Tabs Inactivas** | `text-gray-400` | `text-gray-600` |
+| **Contenedor Filtros** | `bg-slate-800 border-slate-700` | `bg-gray-50 border-gray-200` |
+| **Inputs/Selects** | `bg-slate-700 text-white` | `bg-white text-gray-900 border-gray-300` |
+| **Cards Resumen** | Gradientes oscuros (`from-green-900`) | Fondos claros (`bg-green-50 border-green-200`) |
+| **Empty State** | `bg-slate-800` | `bg-gray-50` |
+| **Error Messages** | `bg-red-900 bg-opacity-30` | `bg-red-50 border-red-200` |
+
+### 📱 Verificación
+
+**1. Auditoría del Sistema (/admin/logs)**
+```bash
+# Debería mostrar logs sin errores
+curl -H "Authorization: Bearer <token>" http://localhost:8080/api/auditoria/ultimos?limit=10
+# Response: 200 OK con array de registros
+```
+
+**2. Auditoría de Correos (/admin/email-audit)**
+```bash
+# Verificar que el nuevo styling está aplicado
+# - Fondo blanco
+# - Texto oscuro
+# - Azul para elementos interactivos
+```
+
+### 📁 Archivos Modificados
+
+```
+✅ spec/sh/001_audit_view_and_indexes.sql
+   └─ Vista: vw_auditoria_modular_detallada
+   └─ Índices: 8 índices para optimización
+
+✅ frontend/src/pages/admin/EmailAuditLogs.jsx
+   └─ Cambio: Tema oscuro → Tema claro (blanco/azul)
+   └─ Componentes: Header, Tabs, Filtros, Cards, Status, Error messages
+```
+
+### 🧪 Testing
+
+```bash
+# 1. Crear base de datos con vista
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate < spec/sh/001_audit_view_and_indexes.sql
+
+# 2. Verificar vista existe
+PGPASSWORD=Essalud2025 psql -h 10.0.89.241 -U postgres -d maestro_cenate -c "SELECT COUNT(*) FROM vw_auditoria_modular_detallada;"
+
+# 3. Acceder a /admin/logs (debería cargar sin errores)
+# 4. Verificar tema blanco/azul en /admin/email-audit
+```
 
 ---
 

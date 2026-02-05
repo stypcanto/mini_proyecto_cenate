@@ -1,7 +1,7 @@
 # CLAUDE.md - Proyecto CENATE
 
 > **Sistema de Telemedicina - EsSalud Perú**
-> **Versión:** v1.42.0 (2026-02-01) 🚀
+> **Versión:** v1.42.2 (2026-02-05) 🚀
 > **Status:** ✅ Production Ready
 
 ---
@@ -137,6 +137,32 @@ Frontend (React 19):
 ---
 
 ## 📊 ÚLTIMAS VERSIONES
+
+### v1.42.2 - Completado (2026-02-05) 🔍 FIX AUDITORÍA + 🎨 STYLING EMAILS
+✅ **Vista Auditoría Restaurada** - Crear `vw_auditoria_modular_detallada` en PostgreSQL
+✅ **Página /admin/logs** - Ahora carga sin errores "relation does not exist"
+✅ **EmailAuditLogs Styling** - Tema claro (blanco/azul) matching CENATE UI
+✅ **Índices Optimizados** - 8 índices creados (fecha, usuario, módulo, acción, nivel, estado)
+
+**Cambios:**
+- Ejecutar: `spec/sh/001_audit_view_and_indexes.sql` en PostgreSQL
+- Frontend: EmailAuditLogs.jsx con tema profesional blanco
+
+**Docs:** [`checklist/01_Historial/01_changelog.md#v1422-2026-02-05`](checklist/01_Historial/01_changelog.md)
+
+### v1.42.1 - Completado (2026-02-04) 📧 EMAIL AUDIT LOG SYSTEM
+✅ **Sistema Auditoría Correos** - Backend + Frontend completo
+✅ **API Endpoints** - 6 endpoints para auditoría (/fallidos, /resumen, /estadisticas, /destinatario, /usuario/{id}, /errores-conexion)
+✅ **Correo Bienvenida Integrado** - Auditoría automática de todos los correos
+✅ **Dashboard EmailAuditLogs** - Visualización de logs, filtros avanzados, estadísticas
+
+**Cambios:**
+- Entity: `EmailAuditLog.java` + Repository + Service
+- Controller: `EmailAuditLogController.java` (6 endpoints protegidos)
+- Frontend: `EmailAuditLogs.jsx` (componente con 3 tabs + filtros)
+- Integración automática en `EmailService.java`
+
+**Docs:** [`checklist/01_Historial/01_changelog.md#v1421-2026-02-04`](checklist/01_Historial/01_changelog.md)
 
 ### v1.42.0 - Completado (2026-02-01) 🏗️ ARQUITECTURA NUEVA + FILTROS
 ✅ **Arquitectura Bolsas 2 Niveles** - Universo General + Mini-Bolsas Especializadas
