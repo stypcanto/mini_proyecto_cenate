@@ -49,7 +49,7 @@ export default function GestionAsegurado() {
   const [autoRefreshEnabled, setAutoRefreshEnabled] = useState(true);
   const [lastRefreshTime, setLastRefreshTime] = useState(new Date());
   const [estadosDisponibles] = useState([
-    { codigo: "PENDIENTE", descripcion: "Pendiente Citar - Paciente nuevo que ingresó a la bolsa" },
+    { codigo: "PENDIENTE_CITA", descripcion: "Pendiente Citar - Paciente nuevo que ingresó a la bolsa" },
     { codigo: "CITADO", descripcion: "Citado - Paciente agendado para atención" },
     { codigo: "ATENDIDO_IPRESS", descripcion: "Atendido por IPRESS - Paciente recibió atención en institución" },
     { codigo: "NO_CONTESTA", descripcion: "No contesta - Paciente no responde a las llamadas" },
@@ -221,7 +221,7 @@ export default function GestionAsegurado() {
       // Transform SolicitudBolsaDTO to table structure
       const pacientes = solicitudes.map((solicitud, idx) => {
         // Mapear código de estado a descripción
-        const codigoEstado = solicitud.cod_estado_cita || solicitud.codEstadoCita || "PENDIENTE";
+        const codigoEstado = solicitud.cod_estado_cita || solicitud.codEstadoCita || "PENDIENTE_CITA";
         const estadoObj = estadosDisponibles.find(e => e.codigo === codigoEstado);
         const descEstadoFinal = estadoObj ? estadoObj.descripcion : codigoEstado;
 
@@ -291,7 +291,7 @@ export default function GestionAsegurado() {
 
       // Calculate metrics
       const atendidos = pacientes.filter(p => p.codigoEstado === "ATENDIDO_IPRESS").length;
-      const pendientes = pacientes.filter(p => p.codigoEstado === "PENDIENTE").length;
+      const pendientes = pacientes.filter(p => p.codigoEstado === "PENDIENTE_CITA").length;
 
       setMetrics({
         totalPacientes: pacientes.length,
@@ -365,25 +365,35 @@ export default function GestionAsegurado() {
       console.log("  citaAgendada.especialista:", citaAgendada.especialista);
       
       // Extraer fecha y hora del datetime-local: "2026-02-08T14:30" → fecha: "2026-02-08", hora: "14:30"
+      // ⚠️ SOLO si el estado es "CITADO" - para otros estados, estos campos se envían como null
       let fechaAtencion = null;
       let horaAtencion = null;
+      let idPersonalEspecialista = null;
       
-      if (citaAgendada.fecha) {
-        const datetimeValue = citaAgendada.fecha;
-        console.log("⏰ Extrayendo fecha y hora de:", datetimeValue);
-        const [fecha, hora] = datetimeValue.split('T');
-        fechaAtencion = fecha; // YYYY-MM-DD
-        horaAtencion = hora;   // HH:mm
-        console.log("  fechaAtencion:", fechaAtencion);
-        console.log("  horaAtencion:", horaAtencion);
+      if (nuevoEstadoCodigo === "CITADO") {
+        // Estado CITADO: incluir fecha, hora y especialista si están disponibles
+        if (citaAgendada.fecha) {
+          const datetimeValue = citaAgendada.fecha;
+          console.log("⏰ Extrayendo fecha y hora de:", datetimeValue);
+          const [fecha, hora] = datetimeValue.split('T');
+          fechaAtencion = fecha; // YYYY-MM-DD
+          horaAtencion = hora;   // HH:mm
+          console.log("  fechaAtencion:", fechaAtencion);
+          console.log("  horaAtencion:", horaAtencion);
+        }
+        idPersonalEspecialista = citaAgendada.especialista || null;
+        console.log("✅ Estado CITADO: Incluyendo fecha, hora y especialista");
+      } else {
+        // Estado NO CITADO: no incluir estos campos (enviados como null)
+        console.log("⏭️ Estado NO es CITADO: Limpiando fecha, hora y especialista");
       }
       
-      // Preparar body con estado + detalles de cita
+      // Preparar body con estado + detalles de cita (null si no es CITADO)
       const bodyData = {
         nuevoEstadoCodigo: nuevoEstadoCodigo,
         fechaAtencion: fechaAtencion,
         horaAtencion: horaAtencion,
-        idPersonal: citaAgendada.especialista || null,
+        idPersonal: idPersonalEspecialista,
       };
 
       console.log("📦 Body a enviar:", bodyData);
@@ -437,14 +447,29 @@ export default function GestionAsegurado() {
       return;
     }
 
-    // 📅 VALIDAR QUE FECHA Y HORA ESTÉN COMPLETOS
+    // 📅 VALIDACIÓN CONDICIONAL: Fecha y Médico SOLO requeridos si estado es "CITADO"
     const citaAgendada = citasAgendadas[pacienteEditandoEstado] || {};
     console.log("🔍 Cita agendada:", citaAgendada);
+    console.log("🔍 Estado seleccionado:", nuevoEstadoSeleccionado);
     
-    if (!citaAgendada.fecha) {
-      toast.error("⚠️ Por favor selecciona la fecha y hora de la cita");
-      console.error("❌ Validación fallida: fecha vacía");
-      return;
+    // ✅ Si el estado es "CITADO", requiere fecha y médico
+    if (nuevoEstadoSeleccionado === "CITADO") {
+      if (!citaAgendada.fecha) {
+        toast.error("⚠️ Para estado CITADO: Por favor selecciona la fecha y hora de la cita");
+        console.error("❌ Validación fallida: estado CITADO pero fecha vacía");
+        return;
+      }
+      
+      if (!citaAgendada.especialista) {
+        toast.error("⚠️ Para estado CITADO: Por favor selecciona un médico/especialista");
+        console.error("❌ Validación fallida: estado CITADO pero especialista no seleccionado");
+        return;
+      }
+      
+      console.log("✅ Estado CITADO: Validación de fecha y médico PASADA");
+    } else {
+      // ✅ Para otros estados (NO_CONTESTA, NO_DESEA, APAGADO, etc.), fecha y médico son OPCIONALES
+      console.log("✅ Estado " + nuevoEstadoSeleccionado + ": Validación de fecha y médico OMITIDA (no requerida)");
     }
 
     const paciente = pacientesAsignados.find(p => p.id === pacienteEditandoEstado);
@@ -1281,7 +1306,13 @@ export default function GestionAsegurado() {
                                               }
                                             }));
                                           }}
-                                          className="w-full px-2 py-1.5 border border-green-400 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                                          disabled={nuevoEstadoSeleccionado !== "CITADO"}
+                                          className={`w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
+                                            nuevoEstadoSeleccionado === "CITADO"
+                                              ? "border-green-400 bg-green-50 focus:ring-green-500 cursor-pointer"
+                                              : "border-gray-300 bg-gray-100 opacity-50 cursor-not-allowed"
+                                          }`}
+                                          title={nuevoEstadoSeleccionado === "CITADO" ? "" : "Solo requerido para estado CITADO"}
                                         >
                                           <option value="">Seleccionar médico...</option>
                                           {medicos.map((medico) => (
@@ -1355,8 +1386,14 @@ export default function GestionAsegurado() {
                                   }
                                 }));
                               }}
-                              className="w-full px-2 py-1.5 border-2 border-green-400 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-green-500 bg-green-50"
+                              disabled={nuevoEstadoSeleccionado !== "CITADO"}
+                              className={`w-full px-2 py-1.5 border rounded-lg text-xs focus:outline-none focus:ring-2 ${
+                                nuevoEstadoSeleccionado === "CITADO"
+                                  ? "border-green-400 bg-green-50 focus:ring-green-500 cursor-pointer"
+                                  : "border-gray-300 bg-gray-100 opacity-50 cursor-not-allowed"
+                              }`}
                               placeholder="Seleccionar fecha y hora"
+                              title={nuevoEstadoSeleccionado === "CITADO" ? "Selecciona la fecha y hora de la cita" : "Solo requerido para estado CITADO"}
                             />
                           ) : (
                             // MODO NORMAL: Mostrar como texto
@@ -1393,24 +1430,52 @@ export default function GestionAsegurado() {
                         <td className="px-4 py-3">
                           {pacienteEditandoEstado === paciente.id ? (
                             // Modo Edición: Mostrar Select
-                            <select
-                              value={nuevoEstadoSeleccionado}
-                              onChange={(e) => setNuevoEstadoSeleccionado(e.target.value)}
-                              className="w-full px-3 py-1.5 border-2 border-orange-400 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
-                            >
-                              <option value="">Seleccionar estado...</option>
-                              {estadosDisponibles.map((est) => (
-                                <option key={est.codigo} value={est.codigo} title={est.descripcion}>
-                                  {est.descripcion.split(" - ")[0]}
-                                </option>
-                              ))}
-                            </select>
+                            <div className="space-y-1">
+                              <select
+                                value={nuevoEstadoSeleccionado}
+                                onChange={(e) => {
+                                  const nuevoEstado = e.target.value;
+                                  setNuevoEstadoSeleccionado(nuevoEstado);
+                                  
+                                  // ✅ Si el estado NO es CITADO, limpiar médico, fecha y hora
+                                  if (nuevoEstado !== "CITADO") {
+                                    setCitasAgendadas(prev => ({
+                                      ...prev,
+                                      [paciente.id]: {
+                                        ...prev[paciente.id],
+                                        especialista: null,
+                                        fecha: null
+                                      }
+                                    }));
+                                    console.log(`🧹 Limpiados médico y fecha para paciente ${paciente.id} (estado: ${nuevoEstado})`);
+                                  }
+                                }}
+                                className="w-full px-3 py-1.5 border-2 border-orange-400 rounded-lg text-xs font-medium bg-white focus:outline-none focus:ring-2 focus:ring-orange-500"
+                              >
+                                <option value="">Seleccionar estado...</option>
+                                {estadosDisponibles.map((est) => (
+                                  <option key={est.codigo} value={est.codigo} title={est.descripcion}>
+                                    {est.descripcion.split(" - ")[0]}
+                                  </option>
+                                ))}
+                              </select>
+                              {nuevoEstadoSeleccionado && nuevoEstadoSeleccionado !== "CITADO" && (
+                                <p className="text-xs text-gray-600 italic">
+                                  ℹ️ Para este estado, médico y fecha son opcionales
+                                </p>
+                              )}
+                              {nuevoEstadoSeleccionado === "CITADO" && (
+                                <p className="text-xs text-orange-600 font-medium">
+                                  ⚠️ Requiere médico y fecha de cita
+                                </p>
+                              )}
+                            </div>
                           ) : (
                             // Modo Normal: Mostrar Badge del Estado
                             <span className={`px-3 py-1.5 rounded-lg text-xs font-medium inline-block ${
                               paciente.codigoEstado === "ATENDIDO_IPRESS"
                                 ? "bg-green-100 text-green-800"
-                                : paciente.codigoEstado === "PENDIENTE"
+                                : paciente.codigoEstado === "PENDIENTE_CITA"
                                 ? "bg-blue-100 text-blue-800"
                                 : paciente.codigoEstado === "CITADO"
                                 ? "bg-purple-100 text-purple-800"

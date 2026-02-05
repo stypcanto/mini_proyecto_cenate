@@ -564,26 +564,30 @@ public class SolicitudBolsaController {
             solicitud.setEstadoGestionCitasId(estado.getIdEstado());
             solicitud.setFechaCambioEstado(OffsetDateTime.now());
 
-            // Guardar detalles de cita si se proporcionan
+            // Guardar detalles de cita
+            // ✅ IMPORTANTE: Si son null, limpiar los campos existentes (útil cuando cambia de estado)
             if (dto.getFechaAtencion() != null) {
                 log.info("📅 Guardando fecha de atención: {}", dto.getFechaAtencion());
                 solicitud.setFechaAtencion(dto.getFechaAtencion());
             } else {
-                log.warn("⚠️  fechaAtencion es NULL");
+                log.warn("⚠️  fechaAtencion es NULL - Limpiando campo en BD");
+                solicitud.setFechaAtencion(null);  // ✅ LIMPIAR
             }
 
             if (dto.getHoraAtencion() != null) {
                 log.info("⏰ Guardando hora de atención: {}", dto.getHoraAtencion());
                 solicitud.setHoraAtencion(dto.getHoraAtencion());
             } else {
-                log.warn("⚠️  horaAtencion es NULL");
+                log.warn("⚠️  horaAtencion es NULL - Limpiando campo en BD");
+                solicitud.setHoraAtencion(null);  // ✅ LIMPIAR
             }
 
             if (dto.getIdPersonal() != null && dto.getIdPersonal() > 0) {
                 log.info("👨‍⚕️ Guardando personal/médico: {}", dto.getIdPersonal());
                 solicitud.setIdPersonal(dto.getIdPersonal());
             } else {
-                log.warn("⚠️  idPersonal es NULL o 0");
+                log.warn("⚠️  idPersonal es NULL o 0 - Limpiando campo en BD");
+                solicitud.setIdPersonal(null);  // ✅ LIMPIAR
             }
 
             // Guardar cambios en BD
