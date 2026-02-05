@@ -141,6 +141,11 @@ export const componentRegistry = {
     requiredAction: 'ver',
   },
 
+  '/roles/medico/pacientes': {
+    component: lazy(() => import('../pages/roles/medico/pacientes/MisPacientes')),
+    requiredAction: 'ver',
+  },
+
   // ========================================================================
   // 📊 MÓDULO COORDINADOR
   // ========================================================================
