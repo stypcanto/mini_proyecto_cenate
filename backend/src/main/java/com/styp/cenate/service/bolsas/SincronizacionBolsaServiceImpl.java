@@ -1,10 +1,12 @@
 package com.styp.cenate.service.bolsas;
 
+import com.styp.cenate.constants.EstadosCitaConstants;
 import com.styp.cenate.exception.SincronizacionException;
 import com.styp.cenate.model.bolsas.SolicitudBolsa;
 import com.styp.cenate.model.chatbot.SolicitudCita;
 import com.styp.cenate.repository.UsuarioRepository;
 import com.styp.cenate.repository.bolsas.SolicitudBolsaRepository;
+import com.styp.cenate.service.auditlog.AuditLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.Authentication;
@@ -29,8 +31,7 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
 
     private final SolicitudBolsaRepository solicitudBolsaRepository;
     private final UsuarioRepository usuarioRepository;
-
-    private static final Long ESTADO_ATENDIDO_IPRESS_ID = 2L;
+    private final AuditLogService auditLogService;
 
     @Override
     public boolean sincronizarEstadoAtendido(SolicitudCita solicitudCita) {
@@ -45,6 +46,17 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
             if (solicitudesEnBolsa.isEmpty()) {
                 log.warn("⚠️  [SINCRONIZACIÓN] Paciente DNI {} no encontrado en dim_solicitud_bolsa",
                     dni);
+
+                // Auditar: paciente no encontrado (advertencia, no error)
+                auditLogService.registrarEvento(
+                    obtenerUsuarioActual().map(u -> u.getNameUser()).orElse("SISTEMA"),
+                    "SINCRONIZAR_ESTADO_ATENDIDO",
+                    "SINCRONIZACION_BOLSA",
+                    "Paciente DNI " + dni + " no encontrado en dim_solicitud_bolsa",
+                    "ADVERTENCIA",
+                    "COMPLETADO"
+                );
+
                 return false;
             }
 
@@ -53,7 +65,7 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
             for (SolicitudBolsa solicitudBolsa : solicitudesEnBolsa) {
 
                 // Validar: solo actualizar si NO está ya ATENDIDO
-                if (ESTADO_ATENDIDO_IPRESS_ID.equals(
+                if (EstadosCitaConstants.BOLSA_ATENDIDO_IPRESS.equals(
                     solicitudBolsa.getEstadoGestionCitasId())) {
                     log.info("ℹ️  [SINCRONIZACIÓN] Solicitud {} ya está en estado ATENDIDO, saltando",
                         solicitudBolsa.getIdSolicitud());
@@ -61,7 +73,7 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
                 }
 
                 // Actualizar estado
-                solicitudBolsa.setEstadoGestionCitasId(ESTADO_ATENDIDO_IPRESS_ID);
+                solicitudBolsa.setEstadoGestionCitasId(EstadosCitaConstants.BOLSA_ATENDIDO_IPRESS);
 
                 // Guardar fecha y hora de atención
                 solicitudBolsa.setFechaAtencion(solicitudCita.getFechaCita());
@@ -89,19 +101,77 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
                     solicitudCita.getPersonal() != null ?
                         solicitudCita.getPersonal().getIdPers() : "N/A",
                     dni);
+
+                // Auditar: sincronización exitosa
+                auditLogService.registrarEvento(
+                    obtenerUsuarioActual().map(u -> u.getNameUser()).orElse("SISTEMA"),
+                    "SINCRONIZAR_ESTADO_ATENDIDO",
+                    "SINCRONIZACION_BOLSA",
+                    String.format(
+                        "Sincronización exitosa: solicitud_cita %d → dim_solicitud_bolsa %d (DNI: %s, Médico: %d)",
+                        solicitudCita.getIdSolicitud(),
+                        solicitudBolsa.getIdSolicitud(),
+                        dni,
+                        solicitudCita.getPersonal() != null ?
+                            solicitudCita.getPersonal().getIdPers() : null
+                    ),
+                    "INFO",
+                    "COMPLETADO"
+                );
             }
 
             log.info("🎉 [SINCRONIZACIÓN] Completada exitosamente. Registros actualizados: {}",
                 actualizados);
+
+            // Auditar: sincronización completada
+            if (actualizados > 0) {
+                auditLogService.registrarEvento(
+                    obtenerUsuarioActual().map(u -> u.getNameUser()).orElse("SISTEMA"),
+                    "SINCRONIZAR_ESTADO_ATENDIDO",
+                    "SINCRONIZACION_BOLSA",
+                    "Sincronización completada: " + actualizados + " registros actualizados para DNI " + dni,
+                    "INFO",
+                    "COMPLETADO"
+                );
+            }
+
             return true;
 
+        } catch (SincronizacionException e) {
+            // Excepciones esperadas de sincronización (ej: paciente no existe)
+            log.warn(
+                "⚠️  [SINCRONIZACIÓN] Sincronización fallida (esperado) para DNI {}: {}",
+                dni, e.getMessage());
+
+            auditLogService.registrarEvento(
+                obtenerUsuarioActual().map(u -> u.getNameUser()).orElse("SISTEMA"),
+                "SINCRONIZAR_ESTADO_ATENDIDO",
+                "SINCRONIZACION_BOLSA",
+                "Sincronización fallida: " + e.getMessage() + " (DNI: " + dni + ")",
+                "ADVERTENCIA",
+                "ERROR"
+            );
+
+            throw e;
+
         } catch (Exception e) {
+            // Errores inesperados (BD caída, constraint violations, etc.)
             log.error(
-                "❌ [SINCRONIZACIÓN] Error al sincronizar estado ATENDIDO para DNI {}: {}",
+                "❌ CRITICAL [SINCRONIZACIÓN] Error inesperado al sincronizar DNI {}: {}",
                 dni, e.getMessage(), e);
 
+            auditLogService.registrarEvento(
+                obtenerUsuarioActual().map(u -> u.getNameUser()).orElse("SISTEMA"),
+                "SINCRONIZAR_ESTADO_ATENDIDO",
+                "SINCRONIZACION_BOLSA",
+                "ERROR CRÍTICO: " + e.getClass().getSimpleName() + " - " + e.getMessage() + " (DNI: " + dni + ")",
+                "ERROR",
+                "ERROR"
+            );
+
+            // Re-lanzar como SincronizacionException para que el caller lo maneje
             throw new SincronizacionException(
-                "Error al sincronizar estado ATENDIDO: " + e.getMessage(), e
+                "Error crítico al sincronizar estado ATENDIDO: " + e.getMessage(), e
             );
         }
     }

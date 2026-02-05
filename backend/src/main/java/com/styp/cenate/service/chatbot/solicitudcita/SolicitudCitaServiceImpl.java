@@ -10,6 +10,7 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.styp.cenate.constants.EstadosCitaConstants;
 import com.styp.cenate.dto.chatbot.SolicitudCitaRequestDTO;
 import com.styp.cenate.dto.chatbot.SolicitudCitaResponseDTO;
 import com.styp.cenate.exception.AseguradoNoEncontradoException;
@@ -210,7 +211,7 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 
 		// ✨ v1.43.0: SINCRONIZACIÓN AUTOMÁTICA CON dim_solicitud_bolsa
 		// Si el nuevo estado es ATENDIDO (id=4), sincronizar automáticamente con módulo de bolsas
-		if (estado.equals(4L)) {  // ATENDIDO
+		if (estado.equals(EstadosCitaConstants.CITA_ATENDIDO)) {  // ATENDIDO
 			log.info("🔄 [SINCRONIZACIÓN] Estado ATENDIDO detectado (solicitud {}), iniciando sincronización con dim_solicitud_bolsa...", id);
 			try {
 				boolean sincronizado = sincronizacionBolsaService.sincronizarEstadoAtendido(solicitud);
