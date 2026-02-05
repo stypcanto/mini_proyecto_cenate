@@ -30,4 +30,7 @@ public interface IGestionPacienteService {
 
     // Buscar asegurado por DNI (para agregar a gestión)
     Optional<GestionPacienteDTO> buscarAseguradoPorDni(String dni);
+
+    // Pacientes asignados al médico
+    List<GestionPacienteDTO> obtenerPacientesDelMedicoActual();
 }

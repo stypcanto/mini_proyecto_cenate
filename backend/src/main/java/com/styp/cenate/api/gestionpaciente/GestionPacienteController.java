@@ -200,4 +200,16 @@ public class GestionPacienteController {
         GestionPacienteDTO actualizado = servicio.actualizarCondicion(id, condicion, observaciones);
         return ResponseEntity.ok(actualizado);
     }
+
+    // ========================================================================
+    // Pacientes asignados al médico actual
+    // ========================================================================
+
+    @GetMapping("/medico/asignados")
+    @CheckMBACPermission(pagina = "/roles/medico/pacientes", accion = "ver", mensajeDenegado = "No tiene permiso para ver sus pacientes")
+    public ResponseEntity<List<GestionPacienteDTO>> obtenerPacientesDelMedicoActual() {
+        log.info("GET /api/gestion-pacientes/medico/asignados - Obteniendo pacientes del médico actual");
+        List<GestionPacienteDTO> pacientes = servicio.obtenerPacientesDelMedicoActual();
+        return ResponseEntity.ok(pacientes);
+    }
 }
