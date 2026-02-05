@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -27,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * v1.43.0 - Sincronización automática cuando médico marca ATENDIDO
  * v1.43.1 - Métricas Micrometer para monitoreo (counters, timers, gauges)
+ * v1.44.0 - Batch update optimization (saveAll en lugar de save individual)
  */
 @Service
 @Transactional
@@ -47,6 +49,8 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
     private Counter counterFallos;
     // Métrica: Contador de pacientes no encontrados
     private Counter counterNoEncontrados;
+    // Métrica: Gauge para batch size (cantidad de registros procesados en batch)
+    private AtomicInteger batchSizeGauge;
 
     /**
      * Inicializa los contadores de métricas de Micrometer
@@ -66,6 +70,10 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
             counterNoEncontrados = Counter.builder("sincronizacion.atendido.noEncontrados")
                 .description("Pacientes no encontrados en dim_solicitud_bolsa")
                 .register(meterRegistry);
+            // v1.44.0: Métrica para batch size (optimización)
+            batchSizeGauge = new AtomicInteger(0);
+            meterRegistry.gauge("sincronizacion.atendido.batch.size",
+                batchSizeGauge);
         }
     }
 
@@ -113,7 +121,10 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
             }
 
             // 2. Actualizar TODOS los registros activos del paciente
+            // v1.44.0: Batch optimization - accumulate all updates and save once
+            List<SolicitudBolsa> toUpdate = new ArrayList<>();
             int actualizados = 0;
+
             for (SolicitudBolsa solicitudBolsa : solicitudesEnBolsa) {
 
                 // Validar: solo actualizar si NO está ya ATENDIDO
@@ -145,12 +156,12 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
                     solicitudBolsa.setUsuarioCambioEstadoId(usuario.getIdUser())
                 );
 
-                // Guardar en BD
-                solicitudBolsaRepository.save(solicitudBolsa);
+                // v1.44.0: Acumular para batch save (no guardar individualmente)
+                toUpdate.add(solicitudBolsa);
                 actualizados++;
                 registrosProcesados.incrementAndGet();
 
-                log.info("✅ [SINCRONIZACIÓN] Solicitud {} actualizada a ATENDIDO_IPRESS (Médico: {}, DNI: {})",
+                log.info("✅ [SINCRONIZACIÓN] Solicitud {} preparada para actualización (Médico: {}, DNI: {})",
                     solicitudBolsa.getIdSolicitud(),
                     solicitudCita.getPersonal() != null ?
                         solicitudCita.getPersonal().getIdPers() : "N/A",
@@ -172,6 +183,16 @@ public class SincronizacionBolsaServiceImpl implements SincronizacionBolsaServic
                     "INFO",
                     "COMPLETADO"
                 );
+            }
+
+            // v1.44.0: Batch save - una sola llamada a BD para todos los registros
+            if (!toUpdate.isEmpty()) {
+                log.info("📦 [BATCH] Guardando {} registros en batch mode (reduciendo BD roundtrips)...",
+                    toUpdate.size());
+                solicitudBolsaRepository.saveAll(toUpdate);
+                batchSizeGauge.set(toUpdate.size());
+                log.info("✅ [BATCH] Batch saved successfully - {} registros guardados con 1 llamada a BD",
+                    toUpdate.size());
             }
 
             log.info("🎉 [SINCRONIZACIÓN] Completada exitosamente. Registros actualizados: {}",

@@ -135,8 +135,8 @@ class SincronizacionBolsaServiceImplTest {
         List<SolicitudBolsa> bolsas = List.of(solicitudBolsaMock1);
         when(solicitudBolsaRepository.findByPacienteDniAndActivoTrue("12345678"))
             .thenReturn(bolsas);
-        when(solicitudBolsaRepository.save(any(SolicitudBolsa.class)))
-            .thenReturn(solicitudBolsaMock1);
+        when(solicitudBolsaRepository.saveAll(any()))
+            .thenReturn(bolsas);
 
         // Act
         boolean resultado = service.sincronizarEstadoAtendido(solicitudCitaMock);
@@ -176,8 +176,8 @@ class SincronizacionBolsaServiceImplTest {
         List<SolicitudBolsa> bolsas = List.of(solicitudBolsaMock1, solicitudBolsaMock2);
         when(solicitudBolsaRepository.findByPacienteDniAndActivoTrue("12345678"))
             .thenReturn(bolsas);
-        when(solicitudBolsaRepository.save(any(SolicitudBolsa.class)))
-            .thenReturn(solicitudBolsaMock1);
+        when(solicitudBolsaRepository.saveAll(any()))
+            .thenReturn(bolsas);
 
         // Act
         boolean resultado = service.sincronizarEstadoAtendido(solicitudCitaMock);
@@ -185,8 +185,8 @@ class SincronizacionBolsaServiceImplTest {
         // Assert
         assertTrue(resultado, "Sincronización debe retornar true");
 
-        // Verificar que ambas bolsas fueron actualizadas
-        verify(solicitudBolsaRepository, times(2)).save(any(SolicitudBolsa.class));
+        // Verificar que se hizo batch save (una sola llamada con ambas bolsas)
+        verify(solicitudBolsaRepository, times(1)).saveAll(any());
         assertEquals(EstadosCitaConstants.BOLSA_ATENDIDO_IPRESS,
             solicitudBolsaMock1.getEstadoGestionCitasId(),
             "Primera bolsa debe cambiar a ATENDIDO_IPRESS");
@@ -261,7 +261,7 @@ class SincronizacionBolsaServiceImplTest {
         List<SolicitudBolsa> bolsas = List.of(solicitudBolsaMock1);
         when(solicitudBolsaRepository.findByPacienteDniAndActivoTrue("12345678"))
             .thenReturn(bolsas);
-        when(solicitudBolsaRepository.save(any(SolicitudBolsa.class)))
+        when(solicitudBolsaRepository.saveAll(any()))
             .thenThrow(new RuntimeException("Conexión BD rechazada"));
 
         // Act & Assert
@@ -289,8 +289,8 @@ class SincronizacionBolsaServiceImplTest {
         List<SolicitudBolsa> bolsas = List.of(solicitudBolsaMock1);
         when(solicitudBolsaRepository.findByPacienteDniAndActivoTrue("12345678"))
             .thenReturn(bolsas);
-        when(solicitudBolsaRepository.save(any(SolicitudBolsa.class)))
-            .thenReturn(solicitudBolsaMock1);
+        when(solicitudBolsaRepository.saveAll(any()))
+            .thenReturn(bolsas);
 
         // Act
         boolean resultado = service.sincronizarEstadoAtendido(solicitudCitaMock);
@@ -312,8 +312,8 @@ class SincronizacionBolsaServiceImplTest {
         List<SolicitudBolsa> bolsas = List.of(solicitudBolsaMock1);
         when(solicitudBolsaRepository.findByPacienteDniAndActivoTrue("12345678"))
             .thenReturn(bolsas);
-        when(solicitudBolsaRepository.save(any(SolicitudBolsa.class)))
-            .thenReturn(solicitudBolsaMock1);
+        when(solicitudBolsaRepository.saveAll(any()))
+            .thenReturn(bolsas);
 
         // Act
         boolean resultado = service.sincronizarEstadoAtendido(solicitudCitaMock);
