@@ -136,6 +136,25 @@ Frontend (React 19):
 
 ---
 
+---
+
+## 📖 DOCUMENTACIÓN PRINCIPAL POR VERSIÓN
+
+### ✅ v1.45.2 - Documentación Completa
+- **Frontend Spec:** [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md) - Mis Pacientes Médico (350+ líneas)
+- **Changelog:** [`checklist/01_Historial/01_changelog.md#v1452-2026-02-05`](checklist/01_Historial/01_changelog.md) - IPRESS Names Implementation
+- **Index:** [`spec/INDEX.md`](spec/INDEX.md) - Referencia maestra actualizada
+- **Backend:** `GestionPacienteServiceImpl.java:382` - obtenerNombreIpress() call
+- **Frontend:** `MisPacientes.jsx` - Display IPRESS names
+
+### ✅ v1.45.1 - Documentación Completa
+- **Frontend Spec:** [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md) - Complete Workflow (350+ líneas)
+- **Changelog:** [`checklist/01_Historial/01_changelog.md#v1451-2026-02-05`](checklist/01_Historial/01_changelog.md) - Mis Pacientes Complete + 3 Actions
+- **Backend:** `GestionPacienteServiceImpl.java` - bolsaToGestionDTO() method
+- **Frontend:** `MisPacientes.jsx` - Table layout + modals + stats
+
+---
+
 ## 📊 ÚLTIMAS VERSIONES
 
 ### v1.45.2 - Completado (2026-02-05) 🏥 IPRESS NAMES + TABLE LAYOUT
@@ -155,7 +174,9 @@ Frontend (React 19):
 - API Response: `"ipress": "CAP II LURIN"` (antes: `"ipress": "450"`)
 - Frontend: MisPacientes.jsx recibe y muestra directamente los nombres
 
-**Docs:** [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md) (crear)
+**Docs:**
+- ⭐ Frontend Spec: [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md) ✅ COMPLETO
+- Changelog: [`checklist/01_Historial/01_changelog.md#v1452-2026-02-05`](checklist/01_Historial/01_changelog.md)
 
 **Verification:**
 ```bash
@@ -193,7 +214,9 @@ curl -H "Authorization: Bearer $TOKEN" \
 - Service: bolsaToGestionDTO() nuevo método (v1.45.1)
 - Date formatting: ISO 8601 con timezone parsing
 
-**Docs:** [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md)
+**Docs:**
+- ⭐ Frontend Spec: [`spec/frontend/15_mis_pacientes_medico.md`](spec/frontend/15_mis_pacientes_medico.md) ✅ COMPLETO
+- Changelog: [`checklist/01_Historial/01_changelog.md#v1451-2026-02-05`](checklist/01_Historial/01_changelog.md)
 
 **Live Testing Results:**
 - ✅ Patient assignment visible in table
