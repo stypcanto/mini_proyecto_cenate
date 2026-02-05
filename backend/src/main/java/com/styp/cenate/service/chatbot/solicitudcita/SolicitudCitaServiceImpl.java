@@ -15,6 +15,7 @@ import com.styp.cenate.dto.chatbot.SolicitudCitaResponseDTO;
 import com.styp.cenate.exception.AseguradoNoEncontradoException;
 import com.styp.cenate.exception.RegistroCitaExistenteException;
 import com.styp.cenate.exception.ResourceNotFoundException;
+import com.styp.cenate.service.bolsas.SincronizacionBolsaService;
 import com.styp.cenate.mapper.SolicitudCitaMapper;
 import com.styp.cenate.model.Asegurado;
 import com.styp.cenate.model.chatbot.DimEstadoCita;
@@ -47,6 +48,7 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 	private final SubactividadEssiRepository subactividadRepo;
 	private final DimEstadoCitaRepository estadoCitaRepo;
 	private final AseguradoRepository aseguradoRepo;
+	private final SincronizacionBolsaService sincronizacionBolsaService;
 
 	@Override
 	public SolicitudCitaResponseDTO guardar(SolicitudCitaRequestDTO dto) {
@@ -203,8 +205,28 @@ public class SolicitudCitaServiceImpl implements ISolicitudCitaService {
 	        throw new IllegalArgumentException("Estado no válido: " + estado);
 	    }
 	    
-	    solicitud.setIdEstadoCita(estado); 
+	    solicitud.setIdEstadoCita(estado);
 		solicitud.setObservacion(observacion);
+
+		// ✨ v1.43.0: SINCRONIZACIÓN AUTOMÁTICA CON dim_solicitud_bolsa
+		// Si el nuevo estado es ATENDIDO (id=4), sincronizar automáticamente con módulo de bolsas
+		if (estado.equals(4L)) {  // ATENDIDO
+			log.info("🔄 [SINCRONIZACIÓN] Estado ATENDIDO detectado (solicitud {}), iniciando sincronización con dim_solicitud_bolsa...", id);
+			try {
+				boolean sincronizado = sincronizacionBolsaService.sincronizarEstadoAtendido(solicitud);
+				if (sincronizado) {
+					log.info("✅ [SINCRONIZACIÓN] Sincronización exitosa para solicitud {}", id);
+				} else {
+					log.warn("⚠️  [SINCRONIZACIÓN] Paciente DNI {} no encontrado en dim_solicitud_bolsa (OK - puede no estar en bolsa)",
+						solicitud.getDocPaciente());
+				}
+			} catch (Exception e) {
+				// NO FALLAR la operación principal si falla la sincronización
+				// La atención médica ya ocurrió (es un hecho del mundo real)
+				log.error("❌ [SINCRONIZACIÓN] Error al sincronizar estado ATENDIDO (solicitud {}): {}. La cita se marca como ATENDIDA pero no se sincronizó con bolsas.",
+					id, e.getMessage(), e);
+			}
+		}
 
 		return SolicitudCitaMapper.toDto(solicitudRepo.save(solicitud));
 	}
