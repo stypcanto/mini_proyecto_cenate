@@ -1,7 +1,7 @@
-# 📚 CENATE Documentation Index v1.37.4
+# 📚 CENATE Documentation Index v1.44.0
 
-**Última actualización:** 2026-01-29
-**Estado:** Phase 7 UAT Completado ✅ - LISTO PARA PRODUCCIÓN 🚀
+**Última actualización:** 2026-02-05
+**Estado:** Sincronización ATENDIDO + Batch Optimization ✅ - PRODUCCIÓN 🚀
 
 ---
 
@@ -28,8 +28,9 @@ spec/
 **Comienza en:** `/backend/README.md`
 - API Endpoints: `backend/01_api/003_api_endpoints.md`
 - Módulo Bolsas: `backend/08_modulo_bolsas_pacientes_completo.md`
-- **NUEVO Tipos de Bolsas:** `backend/11_modulo_tipos_bolsas_completo.md` (v1.37.0 ⭐)
-- **NUEVO Gestión de Iconos:** `backend/13_gestion_iconos.md` (v1.37.4 ⭐)
+- **🔥 NUEVO Sincronización ATENDIDO:** `backend/14_sincronizacion_atendido/README.md` (v1.43.0-44.0 ⭐⭐)
+- **NUEVO Tipos de Bolsas:** `backend/11_modulo_tipos_bolsas_completo.md` (v1.37.0)
+- **NUEVO Gestión de Iconos:** `backend/13_gestion_iconos.md` (v1.37.4)
 - Estados Citas: `backend/07_modulo_estados_gestion_citas_crud.md`
 
 ### Para Desarrolladores Frontend
